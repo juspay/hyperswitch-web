@@ -1,0 +1,1593 @@
+{
+  "countries": [
+    {
+      "country_code": "AF",
+      "phone_number_code": "+93",
+      "validation_regex": "^(\\+?93)?\\d{9}$",
+      "format_example": "0701234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "AL",
+      "phone_number_code": "+355",
+      "validation_regex": "^(\\+?355|0)6[789]\\d{7}$",
+      "format_example": "0671234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "DZ",
+      "phone_number_code": "+213",
+      "validation_regex": "^(\\+?213|0)(5|6|7)\\d{8}$",
+      "format_example": "0551234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "AD",
+      "phone_number_code": "+376",
+      "validation_regex": "^(\\+?376)?\\d{6}$",
+      "format_example": "612345",
+      "format_regex": "^\\d{6}$"
+    },
+    {
+      "country_code": "AO",
+      "phone_number_code": "+244",
+      "validation_regex": "^(\\+?244)\\d{9}$",
+      "format_example": "923123456",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "AG",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?268\\d{7}$",
+      "format_example": "(268) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "AR",
+      "phone_number_code": "+54",
+      "validation_regex": "^(\\+?54)?9?(11|2\\d|3[0-9])\\d{8}$",
+      "format_example": "91123456789",
+      "format_regex": "^(\\d{2})?(\\d{4})(\\d{4})$"
+    },
+    {
+      "country_code": "AM",
+      "phone_number_code": "+374",
+      "validation_regex": "^(\\+?374)?(10|55|77|93)\\d{6}$",
+      "format_example": "091123456",
+      "format_regex": "^(\\d{3})(\\d{6})$"
+    },
+    {
+      "country_code": "AU",
+      "phone_number_code": "+61",
+      "validation_regex": "^(\\+?61|0)[2-478](?!11)\\d{8}$",
+      "format_example": "0412345678",
+      "format_regex": "^(\\d{4})(\\d{3})(\\d{3})$"
+    },
+    {
+      "country_code": "AT",
+      "phone_number_code": "+43",
+      "validation_regex": "^(\\+?43|0)\\d{4,5}\\d{4,}$",
+      "format_example": "06641234567",
+      "format_regex": "^(\\d{4,5})(\\d{4,})$"
+    },
+    {
+      "country_code": "AZ",
+      "phone_number_code": "+994",
+      "validation_regex": "^(\\+?994|0)5\\d{8}$",
+      "format_example": "0501234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "BS",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?242\\d{7}$",
+      "format_example": "(242) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "BH",
+      "phone_number_code": "+973",
+      "validation_regex": "^(\\+?973)?\\d{8}$",
+      "format_example": "34567890",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "BD",
+      "phone_number_code": "+880",
+      "validation_regex": "^(\\+?880|0)1[13456789][0-9]{8}$",
+      "format_example": "01712345678",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "BB",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?246\\d{7}$",
+      "format_example": "(246) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "BY",
+      "phone_number_code": "+375",
+      "validation_regex": "^(\\+?375)(24|25|29|33|44)\\d{7}$",
+      "format_example": "291234567",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "BE",
+      "phone_number_code": "+32",
+      "validation_regex": "^(\\+?32|0)\\d{8,9}$",
+      "format_example": "0470123456",
+      "format_regex": "^(\\d{3})(\\d{2})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "BZ",
+      "phone_number_code": "+501",
+      "validation_regex": "^(\\+?501)?\\d{7}$",
+      "format_example": "6101234",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "BJ",
+      "phone_number_code": "+229",
+      "validation_regex": "^(\\+?229)?\\d{8}$",
+      "format_example": "90123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "BT",
+      "phone_number_code": "+975",
+      "validation_regex": "^(\\+?975)?\\d{7}$",
+      "format_example": "17123456",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "BO",
+      "phone_number_code": "+591",
+      "validation_regex": "^(\\+?591)?([2679]\\d{7,8}|[1-5]\\d{1,7})$",
+      "format_example": "71234567",
+      "format_regex": "^(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{1})$"
+    },
+    {
+      "country_code": "BA",
+      "phone_number_code": "+387",
+      "validation_regex": "^(\\+?387|0)6[0-6]\\d{6}$",
+      "format_example": "061234567",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "BW",
+      "phone_number_code": "+267",
+      "validation_regex": "^(\\+?267)?\\d{7}$",
+      "format_example": "71123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "BR",
+      "phone_number_code": "+55",
+      "validation_regex": "^(\\+?55|0[1-9]{2})[2-9]\\d{7,8}$",
+      "format_example": "01123456789",
+      "format_regex": "^(\\d{2})(\\d{5})(\\d{4})$"
+    },
+    {
+      "country_code": "BN",
+      "phone_number_code": "+673",
+      "validation_regex": "^(\\+?673)?\\d{7}$",
+      "format_example": "7123456",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "BG",
+      "phone_number_code": "+359",
+      "validation_regex": "^(\\+?359|0)8[789]\\d{7}$",
+      "format_example": "0888123456",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "BF",
+      "phone_number_code": "+226",
+      "validation_regex": "^(\\+?226)?\\d{8}$",
+      "format_example": "70123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "BI",
+      "phone_number_code": "+257",
+      "validation_regex": "^(\\+?257)?\\d{8}$",
+      "format_example": "79123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "KH",
+      "phone_number_code": "+855",
+      "validation_regex": "^(\\+?855|0)1\\d{8}$",
+      "format_example": "091234567",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "CM",
+      "phone_number_code": "+237",
+      "validation_regex": "^(\\+?237)?[2368]\\d{7,8}$",
+      "format_example": "671234567",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "CA",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?[2-9]\\d{2}[2-9](?!11)\\d{6}$",
+      "format_example": "(123) 456-7890",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "CV",
+      "phone_number_code": "+238",
+      "validation_regex": "^(\\+?238)?\\d{7}$",
+      "format_example": "9912345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "CF",
+      "phone_number_code": "+236",
+      "validation_regex": "^(\\+?236)?\\d{8}$",
+      "format_example": "70123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "TD",
+      "phone_number_code": "+235",
+      "validation_regex": "^(\\+?235)?\\d{6}$",
+      "format_example": "66123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "CL",
+      "phone_number_code": "+56",
+      "validation_regex": "^(\\+?56|0)[2-9]\\d{1}\\d{7}$",
+      "format_example": "091234567",
+      "format_regex": "^(\\d{2})(\\d{7})$"
+    },
+    {
+      "country_code": "CN",
+      "phone_number_code": "+86",
+      "validation_regex": "^(\\+?86)?1[345789]\\d{9}$",
+      "format_example": "13812345678",
+      "format_regex": "^(\\d{3})(\\d{4})(\\d{4})$"
+    },
+    {
+      "country_code": "CO",
+      "phone_number_code": "+57",
+      "validation_regex": "^(\\+?57)?[1-8]\\d{7,10}$",
+      "format_example": "3212345678",
+      "format_regex": "^(\\d{3})(\\d{7,10})$"
+    },
+    {
+      "country_code": "KM",
+      "phone_number_code": "+269",
+      "validation_regex": "^(\\+?269|0)3\\d{6}$",
+      "format_example": "3212345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "CG",
+      "phone_number_code": "+242",
+      "validation_regex": "^(\\+?242)?\\d{6}$",
+      "format_example": "06123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "CD",
+      "phone_number_code": "+243",
+      "validation_regex": "^(\\+?243)?\\d{9}$",
+      "format_example": "081234567",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "CR",
+      "phone_number_code": "+506",
+      "validation_regex": "^(\\+?506)?[24578]\\d{7}$",
+      "format_example": "83123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "HR",
+      "phone_number_code": "+385",
+      "validation_regex": "^(\\+?385|0)9\\d{8}$",
+      "format_example": "0912345678",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "CU",
+      "phone_number_code": "+53",
+      "validation_regex": "^(\\+?53)?5[2-9]\\d{7}$",
+      "format_example": "5281234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "CY",
+      "phone_number_code": "+357",
+      "validation_regex": "^(\\+?357|0)9\\d{7}$",
+      "format_example": "96123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "CZ",
+      "phone_number_code": "+420",
+      "validation_regex": "^(\\+?420)?[26789]\\d{8}$",
+      "format_example": "601123456",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{3})$"
+    },
+    {
+      "country_code": "CI",
+      "phone_number_code": "+225",
+      "validation_regex": "^(\\+?225)?\\d{8}$",
+      "format_example": "01234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "DK",
+      "phone_number_code": "+45",
+      "validation_regex": "^(\\+?45)?\\d{8}$",
+      "format_example": "12345678",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "DJ",
+      "phone_number_code": "+253",
+      "validation_regex": "^(\\+?253)?\\d{6}$",
+      "format_example": "77123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "DM",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?767\\d{7}$",
+      "format_example": "(767) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "DO",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?809\\d{7}$",
+      "format_example": "(809) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "TL",
+      "phone_number_code": "+670",
+      "validation_regex": "^(\\+?670)?\\d{7}$",
+      "format_example": "7721234",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "EC",
+      "phone_number_code": "+593",
+      "validation_regex": "^(\\+?593|0)([2-7]|9[2-9])\\d{7}$",
+      "format_example": "091234567",
+      "format_regex": "^(\\d{2})(\\d{7})$"
+    },
+    {
+      "country_code": "EG",
+      "phone_number_code": "+20",
+      "validation_regex": "^(\\+?20|0)1[0-2]\\d{8}$",
+      "format_example": "01012345678",
+      "format_regex": "^(\\d{4})(\\d{2})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "SV",
+      "phone_number_code": "+503",
+      "validation_regex": "^(\\+?503)?[67]\\d{7}$",
+      "format_example": "70123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "GQ",
+      "phone_number_code": "+240",
+      "validation_regex": "^(\\+?240)?\\d{6}$",
+      "format_example": "222123456",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "ER",
+      "phone_number_code": "+291",
+      "validation_regex": "^(\\+?291)?\\d{7}$",
+      "format_example": "07123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "EE",
+      "phone_number_code": "+372",
+      "validation_regex": "^(\\+?372)?\\d{7}$",
+      "format_example": "51234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "ET",
+      "phone_number_code": "+251",
+      "validation_regex": "^(\\+?251|0)9\\d{8}$",
+      "format_example": "0911234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "FK",
+      "phone_number_code": "+500",
+      "validation_regex": "^(\\+?500)?\\d{5}$",
+      "format_example": "51234",
+      "format_regex": "^\\d{5}$"
+    },
+    {
+      "country_code": "FO",
+      "phone_number_code": "+298",
+      "validation_regex": "^(\\+?298)?\\d{6}$",
+      "format_example": "211234",
+      "format_regex": "^\\d{6}$"
+    },
+    {
+      "country_code": "FJ",
+      "phone_number_code": "+679",
+      "validation_regex": "^(\\+?679)?\\d{7}$",
+      "format_example": "7012345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "FI",
+      "phone_number_code": "+358",
+      "validation_regex": "^(\\+?358|0)4\\d{8}$",
+      "format_example": "0412345678",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "FR",
+      "phone_number_code": "+33",
+      "validation_regex": "^(\\+?33|0)[67]\\d{8}$",
+      "format_example": "0612345678",
+      "format_regex": "^(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "GF",
+      "phone_number_code": "+594",
+      "validation_regex": "^(\\+?594|0)6\\d{8}$",
+      "format_example": "0691234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "PF",
+      "phone_number_code": "+689",
+      "validation_regex": "^(\\+?689)\\d{6}$",
+      "format_example": "401234",
+      "format_regex": "^\\d{6}$"
+    },
+    {
+      "country_code": "GA",
+      "phone_number_code": "+241",
+      "validation_regex": "^(\\+?241)?\\d{6}$",
+      "format_example": "06123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "GM",
+      "phone_number_code": "+220",
+      "validation_regex": "^(\\+?220)?\\d{7}$",
+      "format_example": "3012345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "GE",
+      "phone_number_code": "+995",
+      "validation_regex": "^(\\+?995|0)5\\d{8}$",
+      "format_example": "599123456",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "DE",
+      "phone_number_code": "+49",
+      "validation_regex": "^(\\+?49|0)(\\d{2,4}-?\\d{2,12})$",
+      "format_example": "030 12345678",
+      "format_regex": "^\\d{3} \\d{8,12}$"
+    },
+    {
+      "country_code": "GH",
+      "phone_number_code": "+233",
+      "validation_regex": "^(\\+?233|0)([236]-?\\d{7,9}|[45]\\d{8})$",
+      "format_example": "0241234567",
+      "format_regex": "^(\\d{3})(\\d{7})$"
+    },
+    {
+      "country_code": "GI",
+      "phone_number_code": "+350",
+      "validation_regex": "^(\\+?350)?\\d{8}$",
+      "format_example": "57123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "GR",
+      "phone_number_code": "+30",
+      "validation_regex": "^(\\+?30|0)6\\d{9}$",
+      "format_example": "6912345678",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "GL",
+      "phone_number_code": "+299",
+      "validation_regex": "^(\\+?299)?\\d{6}$",
+      "format_example": "221234",
+      "format_regex": "^\\d{6}$"
+    },
+    {
+      "country_code": "GD",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?473\\d{7}$",
+      "format_example": "(473) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "GP",
+      "phone_number_code": "+590",
+      "validation_regex": "^(\\+?590|0)690\\d{6}$",
+      "format_example": "0690123456",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "GT",
+      "phone_number_code": "+502",
+      "validation_regex": "^(\\+?502)?[24568]\\d{7}$",
+      "format_example": "50123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "GG",
+      "phone_number_code": "+44",
+      "validation_regex": "^(\\+?44|0)1481\\d{6}$",
+      "format_example": "01481123456",
+      "format_regex": "^\\d{11}$"
+    },
+    {
+      "country_code": "GN",
+      "phone_number_code": "+224",
+      "validation_regex": "^(\\+?224)\\d{8}$",
+      "format_example": "601123456",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "GW",
+      "phone_number_code": "+245",
+      "validation_regex": "^(\\+?245)\\d{7}$",
+      "format_example": "5512345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "GY",
+      "phone_number_code": "+592",
+      "validation_regex": "^(\\+?592)\\d{6}$",
+      "format_example": "6123456",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "HT",
+      "phone_number_code": "+509",
+      "validation_regex": "^(\\+?509)?[2-9]\\d{7}$",
+      "format_example": "34123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "HN",
+      "phone_number_code": "+504",
+      "validation_regex": "^(\\+?504)?[78]\\d{7}$",
+      "format_example": "97123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "HK",
+      "phone_number_code": "+852",
+      "validation_regex": "^(\\+?852)?[569]\\d{3}\\d{4}$",
+      "format_example": "9123 4567",
+      "format_regex": "^(\\d{4})(\\d{4})$"
+    },
+    {
+      "country_code": "HU",
+      "phone_number_code": "+36",
+      "validation_regex": "^(\\+?36)(20|30|70)\\d{7}$",
+      "format_example": "201234567",
+      "format_regex": "^(\\d{3})(\\d{6})$"
+    },
+    {
+      "country_code": "IS",
+      "phone_number_code": "+354",
+      "validation_regex": "^(\\+?354)?\\d{7}$",
+      "format_example": "6112345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "IN",
+      "phone_number_code": "+91",
+      "validation_regex": "^(\\+?91|0)?[6789]\\d{9}$",
+      "format_example": "9123456789",
+      "format_regex": "^(\\d{3})(\\d{4})(\\d{4})$"
+    },
+    {
+      "country_code": "ID",
+      "phone_number_code": "+62",
+      "validation_regex": "^(\\+?62|0)[2-9]\\d{7,11}$",
+      "format_example": "08123456789",
+      "format_regex": "^(\\d{4})(\\d{4,7})$"
+    },
+    {
+      "country_code": "IR",
+      "phone_number_code": "+98",
+      "validation_regex": "^(\\+?98|0)9\\d{9}$",
+      "format_example": "09123456789",
+      "format_regex": "^(\\d{4})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "IQ",
+      "phone_number_code": "+964",
+      "validation_regex": "^(\\+?964|0)7[0-9]\\d{8}$",
+      "format_example": "07912345678",
+      "format_regex": "^\\d{11}$"
+    },
+    {
+      "country_code": "IE",
+      "phone_number_code": "+353",
+      "validation_regex": "^(\\+?353|0)\\d{8,9}$",
+      "format_example": "0871234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "IM",
+      "phone_number_code": "+44",
+      "validation_regex": "^(\\+?44|0)1624\\d{6}$",
+      "format_example": "01624 123456",
+      "format_regex": "^(\\d{5})(\\d{6})$"
+    },
+    {
+      "country_code": "IL",
+      "phone_number_code": "+972",
+      "validation_regex": "^(\\+?972|0)([23489]|5[0248]|77)[1-9]\\d{6}$",
+      "format_example": "0501234567",
+      "format_regex": "^(\\d{3})(\\d{4})(\\d{3})$"
+    },
+    {
+      "country_code": "IT",
+      "phone_number_code": "+39",
+      "validation_regex": "^(\\+?39)?\\d{10}$",
+      "format_example": "3123456789",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "JM",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?876\\d{7}$",
+      "format_example": "(876) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "JP",
+      "phone_number_code": "+81",
+      "validation_regex": "^(\\+?81|0)\\d{1,4}-?\\d{1,4}-?\\d{4}$",
+      "format_example": "090-1234-5678",
+      "format_regex": "^(\\d{1,4})(\\d{1,4})(\\d{4})$"
+    },
+    {
+      "country_code": "JE",
+      "phone_number_code": "+44",
+      "validation_regex": "^(\\+?44|0)1534\\d{6}$",
+      "format_example": "01534 123456",
+      "format_regex": "^(\\d{5})(\\d{6})$"
+    },
+    {
+      "country_code": "JO",
+      "phone_number_code": "+962",
+      "validation_regex": "^(\\+?962|0)7[789]\\d{7}$",
+      "format_example": "0791234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "KZ",
+      "phone_number_code": "+7",
+      "validation_regex": "^(\\+?7|8)7\\d{9}$",
+      "format_example": "87771234567",
+      "format_regex": "^\\d{11}$"
+    },
+    {
+      "country_code": "KE",
+      "phone_number_code": "+254",
+      "validation_regex": "^(\\+?254|0)7\\d{8}$",
+      "format_example": "0712345678",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "KI",
+      "phone_number_code": "+686",
+      "validation_regex": "^(\\+?686)?\\d{5}$",
+      "format_example": "90123",
+      "format_regex": "^\\d{5}$"
+    },
+    {
+      "country_code": "KW",
+      "phone_number_code": "+965",
+      "validation_regex": "^(\\+?965)?\\d{8}$",
+      "format_example": "51234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "KG",
+      "phone_number_code": "+996",
+      "validation_regex": "^(\\+?996)?\\d{9}$",
+      "format_example": "0700123456",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "LA",
+      "phone_number_code": "+856",
+      "validation_regex": "^(\\+?856|0)20\\d{8}$",
+      "format_example": "020 12345678",
+      "format_regex": "^\\d{11}$"
+    },
+    {
+      "country_code": "LV",
+      "phone_number_code": "+371",
+      "validation_regex": "^(\\+?371)2\\d{7}$",
+      "format_example": "21234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "LB",
+      "phone_number_code": "+961",
+      "validation_regex": "^(\\+?961|0)3\\d{7}$",
+      "format_example": "03123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "LS",
+      "phone_number_code": "+266",
+      "validation_regex": "^(\\+?266)?\\d{8}$",
+      "format_example": "50123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "LR",
+      "phone_number_code": "+231",
+      "validation_regex": "^(\\+?231)[56]\\d{7}$",
+      "format_example": "65123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "LY",
+      "phone_number_code": "+218",
+      "validation_regex": "^(\\+?218|0)9\\d{8}$",
+      "format_example": "0912345678",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "LI",
+      "phone_number_code": "+423",
+      "validation_regex": "^(\\+?423)?\\d{7}$",
+      "format_example": "6612345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "LT",
+      "phone_number_code": "+370",
+      "validation_regex": "^(\\+?370)\\d{8}$",
+      "format_example": "61234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "LU",
+      "phone_number_code": "+352",
+      "validation_regex": "^(\\+?352)\\d{6}$",
+      "format_example": "621123456",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "MO",
+      "phone_number_code": "+853",
+      "validation_regex": "^(\\+?853)?6\\d{7}$",
+      "format_example": "66123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "MK",
+      "phone_number_code": "+389",
+      "validation_regex": "^(\\+?389)7\\d{8}$",
+      "format_example": "071234567",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "MG",
+      "phone_number_code": "+261",
+      "validation_regex": "^(\\+?261)?3[2-9]\\d{7}$",
+      "format_example": "0321234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "MW",
+      "phone_number_code": "+265",
+      "validation_regex": "^(\\+?265)\\d{8}$",
+      "format_example": "991234567",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "MY",
+      "phone_number_code": "+60",
+      "validation_regex": "^(\\+?60|0)([3467-9]|1[2-5789])\\d{7,9}$",
+      "format_example": "012-3456789",
+      "format_regex": "^(\\d{3})(\\d{7,9})$"
+    },
+    {
+      "country_code": "MV",
+      "phone_number_code": "+960",
+      "validation_regex": "^(\\+?960)?\\d{7}$",
+      "format_example": "7712345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "ML",
+      "phone_number_code": "+223",
+      "validation_regex": "^(\\+?223)[67]\\d{7}$",
+      "format_example": "65123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "MT",
+      "phone_number_code": "+356",
+      "validation_regex": "^(\\+?356)?[79]\\d{7}$",
+      "format_example": "79012345",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "MH",
+      "phone_number_code": "+692",
+      "validation_regex": "^(\\+?692)?\\d{7}$",
+      "format_example": "2351234",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "MQ",
+      "phone_number_code": "+596",
+      "validation_regex": "^(\\+?596|0)696\\d{6}$",
+      "format_example": "0696123456",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "MR",
+      "phone_number_code": "+222",
+      "validation_regex": "^(\\+?222)?\\d{6}$",
+      "format_example": "22123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "MU",
+      "phone_number_code": "+230",
+      "validation_regex": "^(\\+?230)?\\d{7}$",
+      "format_example": "51234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "YT",
+      "phone_number_code": "+262",
+      "validation_regex": "^(\\+?262|0)639\\d{6}$",
+      "format_example": "0639123456",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "MX",
+      "phone_number_code": "+52",
+      "validation_regex": "^(\\+?52|01)?[1-9]\\d{9}$",
+      "format_example": "5512345678",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "MD",
+      "phone_number_code": "+373",
+      "validation_regex": "^(\\+?373|0)(6[369]|\\d{2})\\d{6}$",
+      "format_example": "062123456",
+      "format_regex": "^(\\d{3})(\\d{6})$"
+    },
+    {
+      "country_code": "MC",
+      "phone_number_code": "+377",
+      "validation_regex": "^(\\+?377)\\d{8}$",
+      "format_example": "61234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "MN",
+      "phone_number_code": "+976",
+      "validation_regex": "^(\\+?976)?\\d{8}$",
+      "format_example": "88123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "ME",
+      "phone_number_code": "+382",
+      "validation_regex": "^(\\+?382|0)6[0-6]\\d{6}$",
+      "format_example": "067123456",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "MS",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?664\\d{7}$",
+      "format_example": "(664) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "MA",
+      "phone_number_code": "+212",
+      "validation_regex": "^(\\+?212|0)\\d{9}$",
+      "format_example": "0612345678",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{2})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "MZ",
+      "phone_number_code": "+258",
+      "validation_regex": "^(\\+?258)?[28]\\d{7,8}$",
+      "format_example": "821234567",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "MM",
+      "phone_number_code": "+95",
+      "validation_regex": "^(\\+?95|0)\\d{9}$",
+      "format_example": "0912345678",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{2})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "NA",
+      "phone_number_code": "+264",
+      "validation_regex": "^(\\+?264|0)\\d{8,9}$",
+      "format_example": "0811234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "NR",
+      "phone_number_code": "+674",
+      "validation_regex": "^(\\+?674)\\d{5}$",
+      "format_example": "5551234",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "NP",
+      "phone_number_code": "+977",
+      "validation_regex": "^(\\+?977)?9[78]\\d{8}$",
+      "format_example": "9812345678",
+      "format_regex": "^(\\d{4})(\\d{6})$"
+    },
+    {
+      "country_code": "NL",
+      "phone_number_code": "+31",
+      "validation_regex": "^(\\+?31|0)6\\d{8}$",
+      "format_example": "0612345678",
+      "format_regex": "^(\\d{2})(\\d{8})$"
+    },
+    {
+      "country_code": "NC",
+      "phone_number_code": "+687",
+      "validation_regex": "^(\\+?687)\\d{6}$",
+      "format_example": "751234",
+      "format_regex": "^\\d{6}$"
+    },
+    {
+      "country_code": "NZ",
+      "phone_number_code": "+64",
+      "validation_regex": "^(\\+?64|0)2\\d{7,9}$",
+      "format_example": "021123456",
+      "format_regex": "^(\\d{3})(\\d{7,9})$"
+    },
+    {
+      "country_code": "NI",
+      "phone_number_code": "+505",
+      "validation_regex": "^(\\+?505)\\d{8}$",
+      "format_example": "81234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "NE",
+      "phone_number_code": "+227",
+      "validation_regex": "^(\\+?227)[25-7]\\d{7}$",
+      "format_example": "92123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "NG",
+      "phone_number_code": "+234",
+      "validation_regex": "^(\\+?234)[7-9]\\d{9}$",
+      "format_example": "08123456789",
+      "format_regex": "^(\\d{3})(\\d{4})(\\d{4})$"
+    },
+    {
+      "country_code": "NU",
+      "phone_number_code": "+683",
+      "validation_regex": "^(\\+?683)\\d{4}$",
+      "format_example": "4012",
+      "format_regex": "^\\d{4}$"
+    },
+    {
+      "country_code": "NF",
+      "phone_number_code": "+672",
+      "validation_regex": "^(\\+?672)3\\d{3}$",
+      "format_example": "3123",
+      "format_regex": "^\\d{4}$"
+    },
+    {
+      "country_code": "KP",
+      "phone_number_code": "+850",
+      "validation_regex": "^(\\+?850)?\\d{8}$",
+      "format_example": "1921234567",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "MP",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?670\\d{7}$",
+      "format_example": "(670) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "NO",
+      "phone_number_code": "+47",
+      "validation_regex": "^(\\+?47)?[29]\\d{7}$",
+      "format_example": "912 34 567",
+      "format_regex": "^(\\d{3}) \\d{2} \\d{3}$"
+    },
+    {
+      "country_code": "OM",
+      "phone_number_code": "+968",
+      "validation_regex": "^(\\+?968)?9\\d{7}$",
+      "format_example": "91234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "PK",
+      "phone_number_code": "+92",
+      "validation_regex": "^(\\+?92|0)3\\d{9}$",
+      "format_example": "03123456789",
+      "format_regex": "^(\\d{4})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "PW",
+      "phone_number_code": "+680",
+      "validation_regex": "^(\\+?680)?\\d{7}$",
+      "format_example": "6201234",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "PS",
+      "phone_number_code": "+970",
+      "validation_regex": "^(\\+?970)5[02-9]\\d{7}$",
+      "format_example": "0599123456",
+      "format_regex": "^(\\d{4})(\\d{3})(\\d{3})$"
+    },
+    {
+      "country_code": "PA",
+      "phone_number_code": "+507",
+      "validation_regex": "^(\\+?507)\\d{7,8}$",
+      "format_example": "61234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "PG",
+      "phone_number_code": "+675",
+      "validation_regex": "^(\\+?675)\\d{7}$",
+      "format_example": "70123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "PY",
+      "phone_number_code": "+595",
+      "validation_regex": "^(\\+?595|0)9[678]\\d{7}$",
+      "format_example": "0986123456",
+      "format_regex": "^(\\d{3})(\\d{7})$"
+    },
+    {
+      "country_code": "PE",
+      "phone_number_code": "+51",
+      "validation_regex": "^(\\+?51|0)9\\d{8}$",
+      "format_example": "912345678",
+      "format_regex": "^(\\d{3})(\\d{6})$"
+    },
+    {
+      "country_code": "PH",
+      "phone_number_code": "+63",
+      "validation_regex": "^(\\+?63|0)\\d{10}$",
+      "format_example": "09123456789",
+      "format_regex": "^(\\d{4})(\\d{6})$"
+    },
+    {
+      "country_code": "PN",
+      "phone_number_code": "+870",
+      "validation_regex": "^(\\+?870)\\d{8}$",
+      "format_example": "51234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "PL",
+      "phone_number_code": "+48",
+      "validation_regex": "^(\\+?48)?[5-8]\\d{8}$",
+      "format_example": "512345678",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "PT",
+      "phone_number_code": "+351",
+      "validation_regex": "^(\\+?351)?9[1236]\\d{7}$",
+      "format_example": "912345678",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{3})$"
+    },
+    {
+      "country_code": "PR",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?787\\d{7}$",
+      "format_example": "(787) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "QA",
+      "phone_number_code": "+974",
+      "validation_regex": "^(\\+?974)?\\d{8}$",
+      "format_example": "33123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "RE",
+      "phone_number_code": "+262",
+      "validation_regex": "^(\\+?262|0)6\\d{8}$",
+      "format_example": "0692123456",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "RO",
+      "phone_number_code": "+40",
+      "validation_regex": "^(\\+?40|0)7[2-8]\\d{7}$",
+      "format_example": "0712345678",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "RU",
+      "phone_number_code": "+7",
+      "validation_regex": "^(\\+?7|8)9\\d{9}$",
+      "format_example": "9123456789",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "RW",
+      "phone_number_code": "+250",
+      "validation_regex": "^(\\+?250)\\d{9}$",
+      "format_example": "0781234567",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "BL",
+      "phone_number_code": "+590",
+      "validation_regex": "^(\\+?590|0)690\\d{6}$",
+      "format_example": "0690123456",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "SH",
+      "phone_number_code": "+290",
+      "validation_regex": "^(\\+?290)\\d{4}$",
+      "format_example": "5123",
+      "format_regex": "^\\d{4}$"
+    },
+    {
+      "country_code": "KN",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?869\\d{7}$",
+      "format_example": "(869) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "LC",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?758\\d{7}$",
+      "format_example": "(758) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "MF",
+      "phone_number_code": "+590",
+      "validation_regex": "^(\\+?590|0)696\\d{6}$",
+      "format_example": "0696123456",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "PM",
+      "phone_number_code": "+508",
+      "validation_regex": "^(\\+?508)\\d{6}$",
+      "format_example": "551234",
+      "format_regex": "^\\d{6}$"
+    },
+    {
+      "country_code": "VC",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?784\\d{7}$",
+      "format_example": "(784) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "WS",
+      "phone_number_code": "+685",
+      "validation_regex": "^(\\+?685)\\d{6}$",
+      "format_example": "601234",
+      "format_regex": "^\\d{6}$"
+    },
+    {
+      "country_code": "SM",
+      "phone_number_code": "+378",
+      "validation_regex": "^(\\+?378)\\d{5,11}$",
+      "format_example": "666123456",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "ST",
+      "phone_number_code": "+239",
+      "validation_regex": "^(\\+?239)\\d{7}$",
+      "format_example": "9812345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "SA",
+      "phone_number_code": "+966",
+      "validation_regex": "^(\\+?966|0)(5(0|[5-9])|[67]\\d)\\d{7}$",
+      "format_example": "0501234567",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "SN",
+      "phone_number_code": "+221",
+      "validation_regex": "^(\\+?221)[4679]\\d{7}$",
+      "format_example": "701234567",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "RS",
+      "phone_number_code": "+381",
+      "validation_regex": "^(\\+?3816|0)\\d{7,9}$",
+      "format_example": "601234567",
+      "format_regex": "^(\\d{3})(\\d{6,8})$"
+    },
+    {
+      "country_code": "SC",
+      "phone_number_code": "+248",
+      "validation_regex": "^(\\+?248)\\d{6}$",
+      "format_example": "2512345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "SL",
+      "phone_number_code": "+232",
+      "validation_regex": "^(\\+?232)\\d{8}$",
+      "format_example": "076123456",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "SG",
+      "phone_number_code": "+65",
+      "validation_regex": "^(\\+?65)?[689]\\d{7}$",
+      "format_example": "91234567",
+      "format_regex": "^(\\d{4})(\\d{4})$"
+    },
+    {
+      "country_code": "SX",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?721\\d{7}$",
+      "format_example": "(721) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "SK",
+      "phone_number_code": "+421",
+      "validation_regex": "^(\\+?421)?9\\d{8}$",
+      "format_example": "0912345678",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{3})$"
+    },
+    {
+      "country_code": "SI",
+      "phone_number_code": "+386",
+      "validation_regex": "^(\\+?386)\\d{8}$",
+      "format_example": "03123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "SB",
+      "phone_number_code": "+677",
+      "validation_regex": "^(\\+?677)\\d{5}$",
+      "format_example": "50123",
+      "format_regex": "^\\d{5}$"
+    },
+    {
+      "country_code": "SO",
+      "phone_number_code": "+252",
+      "validation_regex": "^(\\+?252)\\d{7,8}$",
+      "format_example": "71234567",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "ZA",
+      "phone_number_code": "+27",
+      "validation_regex": "^(\\+?27|0)\\d{9}$",
+      "format_example": "0712345678",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "GS",
+      "phone_number_code": "+500",
+      "validation_regex": "^(\\+?500)\\d{4}$",
+      "format_example": "51234",
+      "format_regex": "^\\d{5}$"
+    },
+    {
+      "country_code": "KR",
+      "phone_number_code": "+82",
+      "validation_regex": "^(\\+?82|0)1\\d{9}$",
+      "format_example": "01012345678",
+      "format_regex": "^(\\d{3})(\\d{4})(\\d{4})$"
+    },
+    {
+      "country_code": "SS",
+      "phone_number_code": "+211",
+      "validation_regex": "^(\\+?211)?\\d{9}$",
+      "format_example": "977123456",
+      "format_regex": "^\\d{9}$"
+    },
+    {
+      "country_code": "ES",
+      "phone_number_code": "+34",
+      "validation_regex": "^(\\+?34)?[6789]\\d{8}$",
+      "format_example": "612345678",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{3})$"
+    },
+    {
+      "country_code": "LK",
+      "phone_number_code": "+94",
+      "validation_regex": "^(\\+?94|0)[1-9]\\d{8}$",
+      "format_example": "0712345678",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "SD",
+      "phone_number_code": "+249",
+      "validation_regex": "^(\\+?249)\\d{9}$",
+      "format_example": "0912345678",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "SR",
+      "phone_number_code": "+597",
+      "validation_regex": "^(\\+?597)\\d{6}$",
+      "format_example": "8512345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "SJ",
+      "phone_number_code": "+47",
+      "validation_regex": "^(\\+?47)?[2489]\\d{7}$",
+      "format_example": "91234567",
+      "format_regex": "^(\\d{2})(\\d{2})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "SZ",
+      "phone_number_code": "+268",
+      "validation_regex": "^(\\+?268)\\d{7}$",
+      "format_example": "76123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "SE",
+      "phone_number_code": "+46",
+      "validation_regex": "^(\\+?46|0)7[02369]\\d{7}$",
+      "format_example": "0701234567",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "CH",
+      "phone_number_code": "+41",
+      "validation_regex": "^(\\+?41|0)7[56789]\\d{7}$",
+      "format_example": "0781234567",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "SY",
+      "phone_number_code": "+963",
+      "validation_regex": "^(\\+?963|0)9\\d{8}$",
+      "format_example": "0912345678",
+      "format_regex": "^\\d{10}$"
+    },
+    {
+      "country_code": "TW",
+      "phone_number_code": "+886",
+      "validation_regex": "^(\\+?886\\-?|0)?9\\d{8}$",
+      "format_example": "0912345678",
+      "format_regex": "^(\\d{4})(\\d{6})$"
+    },
+    {
+      "country_code": "TJ",
+      "phone_number_code": "+992",
+      "validation_regex": "^(\\+?992\\-?)?[5-9]\\d{8}$",
+      "format_example": "901234567",
+      "format_regex": "^(\\d{3})(\\d{6})$"
+    },
+    {
+      "country_code": "TZ",
+      "phone_number_code": "+255",
+      "validation_regex": "^(\\+?255)\\d{9}$",
+      "format_example": "0712345678",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "TH",
+      "phone_number_code": "+66",
+      "validation_regex": "^(\\+?66|0)\\d{8,9}$",
+      "format_example": "0812345678",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "TG",
+      "phone_number_code": "+228",
+      "validation_regex": "^(\\+?228)\\d{8}$",
+      "format_example": "90123456",
+      "format_regex": "^\\d{8}$"
+    },
+    {
+      "country_code": "TK",
+      "phone_number_code": "+690",
+      "validation_regex": "^(\\+?690)\\d{4}$",
+      "format_example": "3123",
+      "format_regex": "^\\d{4}$"
+    },
+    {
+      "country_code": "TO",
+      "phone_number_code": "+676",
+      "validation_regex": "^(\\+?676)\\d{5}$",
+      "format_example": "20123",
+      "format_regex": "^\\d{5}$"
+    },
+    {
+      "country_code": "TT",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?868\\d{7}$",
+      "format_example": "(868) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "TN",
+      "phone_number_code": "+216",
+      "validation_regex": "^(\\+?216)?[2459]\\d{7}$",
+      "format_example": "20123456",
+      "format_regex": "^(\\d{2})(\\d{6})$"
+    },
+    {
+      "country_code": "TR",
+      "phone_number_code": "+90",
+      "validation_regex": "^(\\+?90|0)?5\\d{9}$",
+      "format_example": "05321234567",
+      "format_regex": "^(\\d{4})(\\d{3})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "TM",
+      "phone_number_code": "+993",
+      "validation_regex": "^(\\+?993\\-?)?\\d{7}$",
+      "format_example": "6612345",
+      "format_regex": "^\\d{7}$"
+    },
+    {
+      "country_code": "TC",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?649\\d{7}$",
+      "format_example": "(649) 123-4567",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "TV",
+      "phone_number_code": "+688",
+      "validation_regex": "^(\\+?688)\\d{5}$",
+      "format_example": "90123",
+      "format_regex": "^\\d{5}$"
+    },
+    {
+      "country_code": "UG",
+      "phone_number_code": "+256",
+      "validation_regex": "^(\\+?256)\\d{9}$",
+      "format_example": "0712345678",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "UA",
+      "phone_number_code": "+380",
+      "validation_regex": "^(\\+?380)\\d{9}$",
+      "format_example": "0661234567",
+      "format_regex": "^(\\d{3})(\\d{2})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "AE",
+      "phone_number_code": "+971",
+      "validation_regex": "^(\\+?971|0)5[056-9]\\d{7}$",
+      "format_example": "0501234567",
+      "format_regex": "^(\\d{3})(\\d{4})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "GB",
+      "phone_number_code": "+44",
+      "validation_regex": "^(\\+?44|0)7\\d{9}$",
+      "format_example": "07123456789",
+      "format_regex": "^(\\d{4})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "US",
+      "phone_number_code": "+1",
+      "validation_regex": "^(\\+?1)?[2-9]\\d{2}[2-9](?!11)\\d{6}$",
+      "format_example": "(123) 456-7890",
+      "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
+    },
+    {
+      "country_code": "UY",
+      "phone_number_code": "+598",
+      "validation_regex": "^(\\+?598|0)9\\d{7}$",
+      "format_example": "091234567",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "UZ",
+      "phone_number_code": "+998",
+      "validation_regex": "^(\\+?998\\-?)[13-79]\\d{7}$",
+      "format_example": "901234567",
+      "format_regex": "^(\\d{3})(\\d{6})$"
+    },
+    {
+      "country_code": "VU",
+      "phone_number_code": "+678",
+      "validation_regex": "^(\\+?678)\\d{5}$",
+      "format_example": "59123",
+      "format_regex": "^\\d{5}$"
+    },
+    {
+      "country_code": "VE",
+      "phone_number_code": "+58",
+      "validation_regex": "^(\\+?58)?[41269]\\d{7}$",
+      "format_example": "04121234567",
+      "format_regex": "^(\\d{4})(\\d{7})$"
+    },
+    {
+      "country_code": "VN",
+      "phone_number_code": "+84",
+      "validation_regex": "^(\\+?84|0)1\\d{9}$",
+      "format_example": "0912345678",
+      "format_regex": "^(\\d{3})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "WF",
+      "phone_number_code": "+681",
+      "validation_regex": "^(\\+?681)\\d{6}$",
+      "format_example": "501234",
+      "format_regex": "^\\d{6}$"
+    },
+    {
+      "country_code": "EH",
+      "phone_number_code": "+212",
+      "validation_regex": "^(\\+?212)\\d{9}$",
+      "format_example": "0651234567",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{2})(\\d{2})$"
+    },
+    {
+      "country_code": "YE",
+      "phone_number_code": "+967",
+      "validation_regex": "^(\\+?967)?[12569]\\d{7}$",
+      "format_example": "712345678",
+      "format_regex": "^(\\d{3})(\\d{6})$"
+    },
+    {
+      "country_code": "ZM",
+      "phone_number_code": "+260",
+      "validation_regex": "^(\\+?260)\\d{9}$",
+      "format_example": "0951234567",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{4})$"
+    },
+    {
+      "country_code": "ZW",
+      "phone_number_code": "+263",
+      "validation_regex": "^(\\+?263)\\d{9}$",
+      "format_example": "0712345678",
+      "format_regex": "^(\\d{2})(\\d{3})(\\d{4})$"
+    }
+  ]
+}

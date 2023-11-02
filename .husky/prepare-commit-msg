@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Adding hooks to prepare commit message.
+# This hook triggers Jira input modules.
+# Helps in maintaining code compatblity.
+
+# JS Code Check
+echo "*****~~~~~ Checking ReScript Code ~~~~~~*****"
+if (! npm run re:build)
+then
+    echo
+    echo "*****~~~~~ ReScript Code Compilation Failed! ~~~~~*****"
+    exit 1
+fi
+echo "***** ReScript Code Compiled! *****"
+
+#Trailing Space Check
+echo "Evaluating for trailing spaces"
+
+find . -type f -name '.DS_Store' -exec rm {} +
+
+
+TRAIL_SRC=$(grep -r '[[:blank:]]$' src --exclude='*.bs.js' --exclude='*.resi')
+
+if [[ ! -z "$TRAIL_SRC" ]]
+then
+  echo "$TRAIL_SRC"
+  echo
+  echo "!Please remove trailing spaces before commiting changes"
+  echo "Usage of EditorConfig [https://editorconfig.org/#download] plugin is recommended for development "
+  exit 1
+fi
+
+echo "Done Evaluating"
+
+BRANCH_NAME=$(git branch | grep '*' | sed 's/* //')
+
+if [[ $BRANCH_NAME != *"no branch"* ]]
+then
+  exec < /dev/tty && node_modules/.bin/git-cz --hook || true
+fi
