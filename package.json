@@ -1,0 +1,142 @@
+{
+  "name": "orca-payment-page",
+  "version": "0.1.0",
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "@aws-sdk/client-cloudfront": "^3.414.0",
+    "@aws-sdk/client-s3": "^3.417.0",
+    "@kount/kount-web-client-sdk": "^1.1.6",
+    "@rescript/react": "^0.10.3",
+    "@sentry/react": "^7.64.0",
+    "@sentry/webpack-plugin": "^2.7.0",
+    "bs-fetch": "^0.6.2",
+    "bs-webapi": "^0.19.1",
+    "fast-glob": "^3.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recoil": "^0.1.2",
+    "webpack-merge": "^5.9.0"
+  },
+  "scripts": {
+    "build:dev": "sdkEnv=sandbox webpack --config webpack.dev.js",
+    "build:dev-integ": "sdkEnv=integ webpack --config webpack.dev.js",
+    "start": "sdkEnv=local webpack --config webpack.dev.js && webpack serve --config webpack.dev.js",
+    "build:prod": "sdkEnv=prod webpack --config webpack.common.js",
+    "build:sandbox": "sdkEnv=sandbox webpack --config webpack.common.js",
+    "build:integ": "sdkEnv=integ webpack --config webpack.common.js",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "re:build": "rescript",
+    "re:clean": "rescript clean",
+    "re:start": "rescript build -w",
+    "start:playground": "cd Hyperswitch-React-Demo-App && npm run start",
+    "prepare": "husky install",
+    "deploy-to-s3": "node ./scripts/pushToS3.js",
+    "postinstall": "cd Hyperswitch-React-Demo-App && npm i && npx patch-package"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.0.3",
+    "@commitlint/config-conventional": "^17.0.3",
+    "@digitalroute/cz-conventional-changelog-for-jira": "^7.4.2",
+    "@semantic-release/changelog": "^6.0.1",
+    "@semantic-release/commit-analyzer": "^9.0.2",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/npm": "^9.0.1",
+    "@semantic-release/release-notes-generator": "^10.0.3",
+    "autoprefixer": "^10.4.8",
+    "commitlint-config-jira": "^1.6.4",
+    "commitlint-plugin-jira-rules": "^1.6.4",
+    "concurrently": "4.1.2",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.7.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^8.0.3",
+    "mini-css-extract-plugin": "^1.3.1",
+    "postcss": "^8.4.16",
+    "postcss-loader": "^7.0.1",
+    "react-scripts": "5.0.1",
+    "rescript": "^9.1.4",
+    "semantic-release": "^19.0.2",
+    "tailwindcss": "^3.1.8",
+    "terser-webpack-plugin": "^5.3.7",
+    "webpack": "^5.74.0",
+    "webpack-bundle-analyzer": "^4.8.0",
+    "webpack-cli": "^4.1.0",
+    "webpack-dev-server": "^3.11.3"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/@digitalroute/cz-conventional-changelog-for-jira",
+      "jiraPrefix": "HS",
+      "jiraLocation": "post-type",
+      "jiraAppend": ":"
+    }
+  },
+  "commitlint": {
+    "plugins": [
+      "commitlint-plugin-jira-rules"
+    ],
+    "extends": [
+      "jira"
+    ],
+    "rules": {
+      "jira-task-id-max-length": [
+        0
+      ],
+      "jira-commit-message-separator": [
+        0
+      ],
+      "jira-commit-status-case": [
+        0
+      ],
+      "jira-task-id-project-key": [
+        0
+      ],
+      "jira-task-id-separator": [
+        0
+      ],
+      "jira-task-id-case": [
+        0
+      ],
+      "jira-task-id-min-length": [
+        0
+      ]
+    }
+  },
+  "release": {
+    "branches": [
+      "main",
+      {
+        "name": "release-[0-9]+",
+        "prerelease": true
+      }
+    ],
+    "repositoryUrl": "https://github.com/juspay/hyperswitch-web.git",
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      "@semantic-release/changelog",
+      "@semantic-release/git"
+    ]
+  }
+}
