@@ -1,5 +1,5 @@
 @react.component
-let make = (~sessionId, ~publishableKey, ~clientSecret) => {
+let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
   open Utils
   let logger = OrcaLogger.make(
     ~sessionId,
@@ -20,21 +20,21 @@ let make = (~sessionId, ~publishableKey, ~clientSecret) => {
         ~publishableKey,
         ~logger,
         ~switchToCustomPod=false,
-        ~endpoint=ApiEndpoint.getApiEndPoint(~publishableKey, ()),
+        ~endpoint,
       ),
       PaymentHelpers.useCustomerDetails(
         ~clientSecret,
         ~publishableKey,
         ~optLogger=Some(logger),
         ~switchToCustomPod=false,
-        ~endpoint=ApiEndpoint.getApiEndPoint(~publishableKey, ()),
+        ~endpoint,
       ),
       PaymentHelpers.useSessions(
         ~clientSecret,
         ~publishableKey,
         ~optLogger=Some(logger),
         ~switchToCustomPod=false,
-        ~endpoint=ApiEndpoint.getApiEndPoint(~publishableKey, ()),
+        ~endpoint,
         (),
       ),
     )

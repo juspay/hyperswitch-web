@@ -4,7 +4,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   open RecoilAtoms
   //<...>//
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
-  let setApiEndpoint = Recoil.useSetRecoilState(endPoint)
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentlist, setList) = Recoil.useRecoilState(list)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
@@ -169,7 +168,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
               if dict->getDictIsSome("publishableKey") {
                 let publishableKey = dict->getString("publishableKey", "")
                 logger.setMerchantId(publishableKey)
-                setApiEndpoint(._ => ApiEndpoint.getApiEndPoint(~publishableKey, ()))
+              }
+              if dict->getDictIsSome("endpoint") {
+                let endpoint = dict->getString("endpoint", "")
+                ApiEndpoint.setApiEndPoint(endpoint)
               }
 
               if dict->getDictIsSome("paymentOptions") {

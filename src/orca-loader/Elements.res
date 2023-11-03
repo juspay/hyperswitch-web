@@ -57,7 +57,7 @@ let make = (
         ->Belt.Option.flatMap(Js.Json.decodeBoolean)
         ->Belt.Option.getWithDefault(false)
       : false
-    let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
+    let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())->Js.Global.encodeURIComponent
 
     let localSelectorString = "hyper-preMountLoader-iframe"
     let mountPreMountLoaderIframe = () => {
@@ -76,7 +76,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}"
+          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}"
           allow="*"
           name="orca-payment"
         ></iframe>
@@ -274,6 +274,7 @@ let make = (
           ]
           ->Js.Dict.fromArray
           ->Js.Json.object_
+        let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
         let message =
           [
             ("paymentElementCreate", (componentType == "payment")->Js.Json.boolean),
@@ -287,6 +288,7 @@ let make = (
             ("sdkHandleConfirmPayment", sdkHandleConfirmPayment->Js.Json.boolean),
             ("AOrcaBBlockPConfirm", blockConfirm->Js.Json.boolean),
             ("switchToCustomPodABP", switchToCustomPod->Js.Json.boolean),
+            ("endpoint", endpoint->Js.Json.string),
             ("parentURL", "*"->Js.Json.string),
           ]->Js.Dict.fromArray
 
@@ -441,7 +443,6 @@ let make = (
               ->then(res => {
                 let (json, applePayPresent, googlePayPresent) = res
                 if componentType === "payment" && applePayPresent->Belt.Option.isSome {
-
                   let processPayment = (token: Js.Json.t) => {
                     let msg = [("applePayProcessPayment", token)]->Js.Dict.fromArray
                     mountedIframeRef->Window.iframePostMessage(msg)
