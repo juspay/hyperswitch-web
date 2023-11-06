@@ -302,6 +302,15 @@ let intentCall = (
               ~message="Payment failed. Try again!",
             )
             if uri->Js.String2.includes("force_sync=true") {
+              handleLogging(
+                ~optLogger,
+                ~value=intent.nextAction.type_,
+                ~internalMetadata=intent.nextAction.type_,
+                ~eventName=REDIRECTING_USER,
+                ~paymentMethod,
+                ~logType=ERROR,
+                (),
+              )
               openUrl(url.href)
             }
           }
