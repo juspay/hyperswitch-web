@@ -9,20 +9,20 @@ function Payment() {
   const [clientSecret, setClientSecret] = useState("");
 
   useEffect(() => {
-    fetch("/config").then(async (r) => {
-      const { publishableKey } = await r.json();
-      setHyperPromise(loadHyper(publishableKey));
-    });
-  }, []);
-
-  useEffect(() => {
-    fetch("/create-payment-intent", {
-      method: "POST",
-      body: JSON.stringify({}),
-    }).then(async (result) => {
-      var { clientSecret } = await result.json();
-      setClientSecret(clientSecret);
-    });
+    Promise.all([fetch("/config"), fetch("/server"), fetch("/create-payment-intent")])
+      .then(responses => {
+        return Promise.all(responses.map(response => response.json()));
+      })
+      .then(dataArray => {
+        const { publishableKey } = dataArray[0];
+        const { serverUrl } = dataArray[1];
+        const { clientSecret } = dataArray[2];
+        setHyperPromise(loadHyper(publishableKey, { customBackendUrl: serverUrl }));
+        setClientSecret(clientSecret);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
   }, []);
 
   return (

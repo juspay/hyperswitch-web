@@ -28,13 +28,10 @@ export default function CheckoutForm() {
       },
     });
 
-    if (
-      error &&
-      (error.type === "card_error" || error.type === "validation_error")
-    ) {
+    if (error) {
       setMessage(error.message);
     } else {
-      setMessage("An unexpected error occured.");
+      window.location.href = `${window.location.origin}/completion`
     }
 
     setIsProcessing(false);

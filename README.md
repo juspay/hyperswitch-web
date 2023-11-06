@@ -149,11 +149,9 @@ Try the steps below to get a feel of how quick the setup is:
 <a href="#Connect your Hyperswitch self hosted Server">
   <h2 id="Connect with you Hyperswitch Server">🔌Connect your Hyperswitch self hosted Server</h2>
 </a>
-Modify the backendEndPoint in /webpack.dev.js by adding the BE hosted url
 
-```
-let backendEndPoint ="HOSTED_URL"
-```
+Modify the `HYPERSWITCH_SERVER_URL` key in `.env file` by adding the BE hosted url
+
 
 <a href="#FAQs">
   <h2 id="FAQs">🤔 FAQs</h2>
