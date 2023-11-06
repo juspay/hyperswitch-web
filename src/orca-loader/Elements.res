@@ -536,12 +536,6 @@ let make = (
                                         ("applePaySyncPayment", true->Js.Json.boolean),
                                       ]->Js.Dict.fromArray
                                     mountedIframeRef->Window.iframePostMessage(msg)
-                                    logger.setLogInfo(
-                                      ~value="",
-                                      ~eventName=PAYMENT_DATA_FILLED,
-                                      ~paymentMethod="APPLE_PAY",
-                                      (),
-                                    )
                                     resolve()
                                   })
                                   ->catch(err => {

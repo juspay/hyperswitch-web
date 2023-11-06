@@ -75,10 +75,12 @@ let handleLogging = (
   ~internalMetadata="",
   ~eventName,
   ~paymentMethod,
+  ~logType: OrcaLogger.logType=INFO,
   (),
 ) => {
   switch optLogger {
-  | Some(logger) => logger.setLogInfo(~value, ~internalMetadata, ~eventName, ~paymentMethod, ())
+  | Some(logger) =>
+    logger.setLogInfo(~value, ~internalMetadata, ~eventName, ~paymentMethod, ~logType, ())
   | _ => ()
   }
 }
