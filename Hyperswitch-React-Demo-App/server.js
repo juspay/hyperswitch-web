@@ -1,3 +1,4 @@
+const fetch = require("node-fetch");
 const express = require("express");
 const app = express();
 const { resolve } = require("path");
@@ -15,18 +16,47 @@ const hyper = require("@juspay-tech/hyperswitch-node")(
   process.env.HYPERSWITCH_SECRET_KEY
 );
 
+const SERVER_URL = process.env.HYPERSWITCH_SERVER_URL == "SERVER_URL" ? "" : process.env.HYPERSWITCH_SERVER_URL;
+
 app.get("/config", (req, res) => {
   res.send({
     publishableKey: process.env.HYPERSWITCH_PUBLISHABLE_KEY,
   });
 });
 
-app.post("/create-payment-intent", async (req, res) => {
+app.get("/server", (req, res) => {
+  res.send({
+    serverUrl: SERVER_URL,
+  });
+});
+
+app.get("/create-payment-intent", async (req, res) => {
   try {
-    const paymentIntent = await hyper.paymentIntents.create({
+    var paymentIntent;
+    const request = {
       currency: "USD",
       amount: 2999,
-    });
+    }
+    if (SERVER_URL) {
+      const apiResponse = await fetch(`${process.env.HYPERSWITCH_SERVER_URL}/payments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'api-key': process.env.HYPERSWITCH_SECRET_KEY,
+        },
+        body: JSON.stringify(request),
+      });
+      paymentIntent = await apiResponse.json();
+
+      if (paymentIntent.error) {
+        return res.status(400).send({
+          error: paymentIntent.error,
+        });
+      }
+    } else {
+      paymentIntent = await hyper.paymentIntents.create(request);
+    }
 
     // Send publishable key and PaymentIntent details to client
     res.send({
