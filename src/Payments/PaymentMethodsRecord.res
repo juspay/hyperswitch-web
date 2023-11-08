@@ -24,11 +24,14 @@ type bankNames = {
   eligible_connectors: array<string>,
 }
 
-type surchargeType = FIXED | PERCENTAGE | NONE
+type surchargeType = FIXED | RATE | NONE
+type surchargeValue =
+  | VAL(float)
+  | PERCENTAGE({percentage: float})
 
 type surcharge = {
   surchargeType: surchargeType,
-  value: float,
+  value: surchargeValue,
 }
 
 type surchargeDetails = {surcharge: surcharge}
@@ -663,7 +666,7 @@ let getPaymentExperience = (dict, str) => {
 let getSurchargeTypeFromStr = str => {
   switch str->Js.String2.toLowerCase {
   | "fixed" => FIXED
-  | "percentage" => PERCENTAGE
+  | "rate" => RATE
   | _ => NONE
   }
 }
@@ -678,19 +681,33 @@ let getSurchargeDetails = dict => {
     ->Belt.Option.getWithDefault(Js.Dict.empty())
 
   let surchargeType = surchargDetails->Utils.getString("type", "none")->getSurchargeTypeFromStr
-  let surchargeVal =
-    surchargDetails
-    ->Js.Dict.get("value")
-    ->Belt.Option.getWithDefault(Js.Json.null)
-    ->Js.Json.decodeNumber
-    ->Belt.Option.getWithDefault(0.0)
+  let getSurchargeVal = switch surchargeType {
+  | RATE =>
+    PERCENTAGE({
+      percentage: surchargDetails
+      ->Js.Dict.get("value")
+      ->Belt.Option.flatMap(Js.Json.decodeObject)
+      ->Belt.Option.flatMap(x => x->Js.Dict.get("percentage"))
+      ->Belt.Option.flatMap(Js.Json.decodeNumber)
+      ->Belt.Option.getWithDefault(0.0),
+    })
+  | FIXED
+  | _ =>
+    VAL(
+      surchargDetails
+      ->Js.Dict.get("value")
+      ->Belt.Option.flatMap(Js.Json.decodeNumber)
+      ->Belt.Option.getWithDefault(0.0),
+    )
+  }
+
   switch surchargeType {
   | FIXED
-  | PERCENTAGE =>
+  | RATE =>
     Some({
       surcharge: {
         surchargeType: surchargeType,
-        value: surchargeVal,
+        value: getSurchargeVal,
       },
     })
   | _ => None
