@@ -496,7 +496,11 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
           returnUrlArr,
           manual_retry,
         ])
-      let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
+      let endpoint = ApiEndpoint.getApiEndPoint(
+        ~publishableKey=confirmParam.publishableKey,
+        ~isConfirmCall=true,
+        (),
+      )
       let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
       let fetchMethod = Fetch.Post
       let loggerPayload = body->Js.Dict.fromArray->maskPayload

@@ -27,19 +27,28 @@ let sdkUrl =
   sdkEnv === "prod"
     ? "https://checkout.hyperswitch.io"
     : sdkEnv === "sandbox"
-    ? "https://beta.hyperswitch.io"
-    : sdkEnv === "integ"
-    ? "https://dev.hyperswitch.io"
-    : "http://localhost:9050";
+      ? "https://beta.hyperswitch.io"
+      : sdkEnv === "integ"
+        ? "https://dev.hyperswitch.io"
+        : "http://localhost:9050";
 
 let backendEndPoint =
   sdkEnv === "prod"
     ? "https://checkout.hyperswitch.io/api"
     : sdkEnv === "sandbox"
-    ? "https://beta.hyperswitch.io/api"
-    : sdkEnv === "integ"
-    ? "https://integ-api.hyperswitch.io"
-    : "https://beta.hyperswitch.io/api";
+      ? "https://beta.hyperswitch.io/api"
+      : sdkEnv === "integ"
+        ? "https://integ-api.hyperswitch.io"
+        : "https://beta.hyperswitch.io/api";
+
+let confirmEndPoint =
+  sdkEnv === "prod"
+    ? "https://api.hyperswitch.io"
+    : sdkEnv === "sandbox"
+      ? "https://sandbox.hyperswitch.io"
+      : sdkEnv === "integ"
+        ? "https://integ-api.hyperswitch.io"
+        : "https://sandbox.hyperswitch.io";
 
 let logEndpoint =
   sdkEnv === "prod"
@@ -89,6 +98,7 @@ module.exports = (publicPath = "auto") => {
         publicPath: JSON.stringify(repoPublicPath),
         sdkUrl: JSON.stringify(sdkUrl),
         backendEndPoint: JSON.stringify(backendEndPoint),
+        confirmEndPoint: JSON.stringify(confirmEndPoint),
         logEndpoint: JSON.stringify(logEndpoint),
         sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
         sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),

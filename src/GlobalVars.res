@@ -2,6 +2,7 @@
 @val external repoVersion: string = "repoVersion"
 @val external repoPublicPath: string = "publicPath"
 @val external backendEndPoint: string = "backendEndPoint"
+@val external confirmEndPoint: string = "confirmEndPoint"
 @val external sdkUrl: string = "sdkUrl"
 @val external logEndpoint: string = "logEndpoint"
 @val external sentryDSN: string = "sentryDSN"
