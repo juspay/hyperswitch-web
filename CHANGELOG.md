@@ -1,3 +1,10 @@
+# [0.3.0](https://github.com/juspay/hyperswitch-web/compare/v0.2.1...v0.3.0) (2023-11-08)
+
+
+### Features
+
+* HS-154: Made max length of accordion items customizable ([#11](https://github.com/juspay/hyperswitch-web/issues/11)) ([7d9c32f](https://github.com/juspay/hyperswitch-web/commit/7d9c32fab182836650d6ebd4286942155143cafe))
+
 ## [0.2.1](https://github.com/juspay/hyperswitch-web/compare/v0.2.0...v0.2.1) (2023-11-07)
 
 
