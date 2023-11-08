@@ -8,15 +8,16 @@ let setApiEndPoint = str => {
   apiEndPoint := Some(str)
 }
 
-let getApiEndPoint = (~publishableKey="", ()) => {
+let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false, ()) => {
   let testMode = publishableKey->Js.String2.startsWith("pk_snd_")
   switch apiEndPoint.contents {
   | Some(str) => str
   | None =>
+    let backendEndPoint = isConfirmCall ? GlobalVars.confirmEndPoint : GlobalVars.backendEndPoint
     if GlobalVars.isProd {
-      testMode ? "https://sandbox.hyperswitch.io" : {GlobalVars.backendEndPoint}
+      testMode ? "https://sandbox.hyperswitch.io" : backendEndPoint
     } else {
-      {GlobalVars.backendEndPoint}
+      backendEndPoint
     }
   }
 }
