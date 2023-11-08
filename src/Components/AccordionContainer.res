@@ -70,11 +70,11 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
   let cardOptionDetails =
     paymentOptions
     ->PaymentMethodsRecord.getPaymentDetails
-    ->Js.Array2.slice(~start=0, ~end_=layoutClass.maxLength)
+    ->Js.Array2.slice(~start=0, ~end_=layoutClass.maxAccordionItems)
   let dropDownOptionsDetails =
     paymentOptions
     ->PaymentMethodsRecord.getPaymentDetails
-    ->Js.Array2.sliceFrom(layoutClass.maxLength)
+    ->Js.Array2.sliceFrom(layoutClass.maxAccordionItems)
 
   let getBorderRadiusStyleForCardOptionDetails = index => {
     if (
@@ -146,7 +146,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
         />
       })
       ->React.array}
-      <Loader cardShimmerCount=layoutClass.maxLength />
+      <Loader cardShimmerCount=layoutClass.maxAccordionItems />
       <RenderIf condition={showMore}>
         {dropDownOptionsDetails
         ->Js.Array2.mapi((payOption, i) => {

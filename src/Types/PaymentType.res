@@ -99,7 +99,7 @@ type layoutConfig = {
   defaultCollapsed: bool,
   radios: bool,
   spacedAccordionItems: bool,
-  maxLength: int,
+  maxAccordionItems: int,
   \"type": layout,
 }
 
@@ -158,7 +158,7 @@ let defaultLayout = {
   defaultCollapsed: false,
   radios: false,
   spacedAccordionItems: false,
-  maxLength: 4,
+  maxAccordionItems: 4,
   \"type": Tabs,
 }
 let defaultAddress: address = {
@@ -564,7 +564,7 @@ let getLayoutValues = (val, logger) => {
         defaultCollapsed: getBoolWithWarning(json, "defaultCollapsed", false, ~logger),
         radios: getBoolWithWarning(json, "radios", false, ~logger),
         spacedAccordionItems: getBoolWithWarning(json, "spacedAccordionItems", false, ~logger),
-        maxLength: getNumberWithWarning(json, "maxLength", 4, ~logger),
+        maxAccordionItems: getNumberWithWarning(json, "maxAccordionItems", 4, ~logger),
         \"type": layoutType->getLayout(logger),
       }
     })
