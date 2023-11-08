@@ -68,9 +68,13 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
 
   let cardOptionDetails =
-    paymentOptions->PaymentMethodsRecord.getPaymentDetails->Js.Array2.slice(~start=0, ~end_=4)
+    paymentOptions
+    ->PaymentMethodsRecord.getPaymentDetails
+    ->Js.Array2.slice(~start=0, ~end_=layoutClass.maxAccordionItems)
   let dropDownOptionsDetails =
-    paymentOptions->PaymentMethodsRecord.getPaymentDetails->Js.Array2.sliceFrom(4)
+    paymentOptions
+    ->PaymentMethodsRecord.getPaymentDetails
+    ->Js.Array2.sliceFrom(layoutClass.maxAccordionItems)
 
   let getBorderRadiusStyleForCardOptionDetails = index => {
     if (
@@ -142,7 +146,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
         />
       })
       ->React.array}
-      <Loader cardShimmerCount=4 />
+      <Loader cardShimmerCount=layoutClass.maxAccordionItems />
       <RenderIf condition={showMore}>
         {dropDownOptionsDetails
         ->Js.Array2.mapi((payOption, i) => {
