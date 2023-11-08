@@ -16,7 +16,10 @@ const hyper = require("@juspay-tech/hyperswitch-node")(
   process.env.HYPERSWITCH_SECRET_KEY
 );
 
-const SERVER_URL = process.env.HYPERSWITCH_SERVER_URL == "SERVER_URL" ? "" : process.env.HYPERSWITCH_SERVER_URL;
+const SERVER_URL =
+  process.env.HYPERSWITCH_SERVER_URL == "SELF_HOSTED_SERVER_URL"
+    ? ""
+    : process.env.HYPERSWITCH_SERVER_URL;
 
 app.get("/config", (req, res) => {
   res.send({
@@ -36,17 +39,20 @@ app.get("/create-payment-intent", async (req, res) => {
     const request = {
       currency: "USD",
       amount: 2999,
-    }
+    };
     if (SERVER_URL) {
-      const apiResponse = await fetch(`${process.env.HYPERSWITCH_SERVER_URL}/payments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'api-key': process.env.HYPERSWITCH_SECRET_KEY,
-        },
-        body: JSON.stringify(request),
-      });
+      const apiResponse = await fetch(
+        `${process.env.HYPERSWITCH_SERVER_URL}/payments`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "api-key": process.env.HYPERSWITCH_SECRET_KEY,
+          },
+          body: JSON.stringify(request),
+        }
+      );
       paymentIntent = await apiResponse.json();
 
       if (paymentIntent.error) {
