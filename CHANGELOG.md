@@ -1,3 +1,10 @@
+## [0.3.1](https://github.com/juspay/hyperswitch-web/compare/v0.3.0...v0.3.1) (2023-11-08)
+
+
+### Bug Fixes
+
+* HS-158: TrustPay ApplePay user gesture fix for MWeb ([#12](https://github.com/juspay/hyperswitch-web/issues/12)) ([6d1bbc4](https://github.com/juspay/hyperswitch-web/commit/6d1bbc45428d25b45bbdc62da99748b3b275da51))
+
 # [0.3.0](https://github.com/juspay/hyperswitch-web/compare/v0.2.1...v0.3.0) (2023-11-08)
 
 
