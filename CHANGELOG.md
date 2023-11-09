@@ -1,3 +1,10 @@
+# [0.4.0](https://github.com/juspay/hyperswitch-web/compare/v0.3.1...v0.4.0) (2023-11-09)
+
+
+### Features
+
+* HS-154: Added debug logs for apple pay ([#14](https://github.com/juspay/hyperswitch-web/issues/14)) ([ce7eef9](https://github.com/juspay/hyperswitch-web/commit/ce7eef971f7e19d5f7f07bb24eb2044a05d4182c))
+
 ## [0.3.1](https://github.com/juspay/hyperswitch-web/compare/v0.3.0...v0.3.1) (2023-11-08)
 
 
