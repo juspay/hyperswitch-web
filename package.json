@@ -30,7 +30,8 @@
     "re:build": "rescript",
     "re:clean": "rescript clean",
     "re:start": "rescript build -w",
-    "start:playground": "cd Hyperswitch-React-Demo-App && npm run start",
+    "start:dev": "npm run re:start & npm run start",
+    "start:playground": "cd Hyperswitch-React-Demo-App && node promptScript.js && npm run start",
     "prepare": "husky install",
     "deploy-to-s3": "node ./scripts/pushToS3.js",
     "postinstall": "cd Hyperswitch-React-Demo-App && npm i && npx patch-package"
