@@ -148,6 +148,13 @@ let make = (
               let trustPayScript = Window.createElement("script")
               trustPayScript->Window.elementSrc(trustPayScriptURL)
               trustPayScript->Window.elementOnerror(err => {
+                logger.setLogInfo(
+                  ~value="ERROR DURING LOADING TRUSTPAY APPLE PAY: " ++
+                  err->toJson->Js.Json.stringify,
+                  ~eventName=TRUSTPAY_SCRIPT,
+                  ~logType=ERROR,
+                  (),
+                )
                 Utils.logInfo(Js.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
               })
               Window.body->Window.appendChild(trustPayScript)
@@ -471,6 +478,7 @@ let make = (
                                 ~value="Delayed Session Token Flow",
                                 ~eventName=APPLE_PAY_FLOW,
                                 ~paymentMethod="APPLE_PAY",
+                                ~logType=DEBUG,
                                 (),
                               )
 
@@ -493,6 +501,7 @@ let make = (
                                   ~value="TrustPay Connector Flow",
                                   ~eventName=APPLE_PAY_FLOW,
                                   ~paymentMethod="APPLE_PAY",
+                                  ~logType=DEBUG,
                                   (),
                                 )
                                 let secrets =
@@ -521,7 +530,21 @@ let make = (
                                   ->Belt.Option.getWithDefault("")
 
                                 try {
+                                  logger.setLogInfo(
+                                    ~value="Creating TrustpayApi instance",
+                                    ~eventName=APPLE_PAY_FLOW,
+                                    ~paymentMethod="APPLE_PAY",
+                                    ~logType=DEBUG,
+                                    (),
+                                  )
                                   let trustpay = trustPayApi(secrets)
+                                  logger.setLogInfo(
+                                    ~value="TrustpayApi instance created",
+                                    ~eventName=APPLE_PAY_FLOW,
+                                    ~paymentMethod="APPLE_PAY",
+                                    ~logType=DEBUG,
+                                    (),
+                                  )
                                   trustpay.finishApplePaymentV2(. payment, paymentRequest)
                                   ->then(res => {
                                     logger.setLogInfo(
@@ -529,6 +552,7 @@ let make = (
                                       ~internalMetadata=res->Js.Json.stringify,
                                       ~eventName=APPLE_PAY_FLOW,
                                       ~paymentMethod="APPLE_PAY",
+                                      ~logType=DEBUG,
                                       (),
                                     )
                                     let msg =
@@ -545,6 +569,8 @@ let make = (
                                       ~eventName=APPLE_PAY_FLOW,
                                       ~paymentMethod="APPLE_PAY",
                                       ~value=exceptionMessage,
+                                      ~logType=ERROR,
+                                      ~internalMetadata="finishApplePaymentV2 catch",
                                       (),
                                     )
                                     let msg =
@@ -561,6 +587,8 @@ let make = (
                                       ~value=exn->Utils.formatException->Js.Json.stringify,
                                       ~eventName=APPLE_PAY_FLOW,
                                       ~paymentMethod="APPLE_PAY",
+                                      ~logType=ERROR,
+                                      ~internalMetadata="outer catch",
                                       (),
                                     )
                                     let msg =

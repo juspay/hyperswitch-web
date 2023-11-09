@@ -439,7 +439,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     ]
     arrayOfLogs
     ->Js.Array2.find(log => {
-      log.logType === ERROR ||
+      [ERROR, DEBUG]->Js.Array2.includes(log.logType) ||
         (priorityEventNames->Js.Array2.includes(log.eventName) && log.firstEvent)
     })
     ->Belt.Option.isSome || arrayOfLogs->Js.Array2.length > 8
