@@ -6,7 +6,7 @@ let default = (props: props) => {
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Applepay)
+  let intent = PaymentHelpers.usePaymentIntent(None, Applepay)
   let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Applepay)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
@@ -196,12 +196,6 @@ let default = (props: props) => {
   }`
 
   let onApplePayButtonClicked = () => {
-    loggerState.setLogInfo(
-      ~value="Apple Pay Button Clicked",
-      ~eventName=APPLE_PAY_FLOW,
-      ~paymentMethod="APPLE_PAY",
-      (),
-    )
     setApplePayClicked(_ => true)
 
     if isInvokeSDKFlow {
