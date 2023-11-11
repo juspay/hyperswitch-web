@@ -103,7 +103,6 @@ let make = (
   let displayIcon = ele => {
     <span className={`scale-90 animate-slowShow ${toggleIconElement ? "hidden" : ""}`}> ele </span>
   }
-
   <div className="w-full">
     <div
       ref={payOptionsRef->ReactDOM.Ref.domRef}
@@ -161,11 +160,15 @@ let make = (
               {React.string(
                 selectedPaymentOption.displayName === "Card"
                   ? localeString.card
-                  : PaymentUtils.getDisplayName(
-                      customMethodNames,
-                      selectedPaymentOption.paymentMethodName,
-                      selectedPaymentOption.displayName,
-                    ),
+                  : {
+                      let (name, _) = PaymentUtils.getDisplayNameAndIcon(
+                        customMethodNames,
+                        selectedPaymentOption.paymentMethodName,
+                        selectedPaymentOption.displayName,
+                        selectedPaymentOption.icon,
+                      )
+                      name
+                    },
               )}
             </option>
             {dropDownOptionsDetails
@@ -177,11 +180,15 @@ let make = (
                 {React.string(
                   item.displayName === "card"
                     ? localeString.card
-                    : PaymentUtils.getDisplayName(
-                        customMethodNames,
-                        item.paymentMethodName,
-                        item.displayName,
-                      ),
+                    : {
+                        let (name, _) = PaymentUtils.getDisplayNameAndIcon(
+                          customMethodNames,
+                          item.paymentMethodName,
+                          item.displayName,
+                          item.icon,
+                        )
+                        name
+                      },
                 )}
               </option>
             })

@@ -173,10 +173,11 @@ let getPaymentDetails = (arr: array<string>) => {
   ->ignore
   finalArr
 }
-let getDisplayName = (
+let getDisplayNameAndIcon = (
   customNames: PaymentType.customMethodNames,
   paymentMethodName,
   defaultName,
+  defaultIcon,
 ) => {
   let customNameObj =
     customNames
@@ -185,7 +186,21 @@ let getDisplayName = (
     })
     ->Belt.Array.get(0)
   switch customNameObj {
-  | Some(val) => val.paymentMethodName === "classic" ? val.aliasName : defaultName
-  | None => defaultName
+  | Some(val) =>
+    val.paymentMethodName === "classic"
+      ? {
+          let id = val.aliasName->Js.String2.split(" ")
+          (
+            val.aliasName,
+            Some(
+              PaymentMethodsRecord.icon(
+                id->Belt.Array.get(0)->Belt.Option.getWithDefault(""),
+                ~size=19,
+              ),
+            ),
+          )
+        }
+      : (defaultName, defaultIcon)
+  | None => (defaultName, defaultIcon)
   }
 }
