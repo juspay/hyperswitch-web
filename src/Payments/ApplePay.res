@@ -221,12 +221,6 @@ let default = (props: props) => {
       let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
       processPayment(bodyDict)
     }
-    loggerState.setLogInfo(
-      ~value="",
-      ~eventName=PAYMENT_DATA_FILLED,
-      ~paymentMethod="APPLE_PAY",
-      (),
-    )
   }
 
   React.useEffect1(() => {
