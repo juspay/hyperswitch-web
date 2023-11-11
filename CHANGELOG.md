@@ -1,3 +1,10 @@
+## [0.4.2](https://github.com/juspay/hyperswitch-web/compare/v0.4.1...v0.4.2) (2023-11-11)
+
+
+### Bug Fixes
+
+* HS-158: ApplePay build trigger ([#19](https://github.com/juspay/hyperswitch-web/issues/19)) ([afa65f8](https://github.com/juspay/hyperswitch-web/commit/afa65f8dd141f1ade0fab828817e85a79921849b))
+
 ## [0.4.1](https://github.com/juspay/hyperswitch-web/compare/v0.4.0...v0.4.1) (2023-11-11)
 
 
