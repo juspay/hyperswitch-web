@@ -474,14 +474,6 @@ let make = (
                               ->Belt.Option.getWithDefault(false)
 
                             if isDelayedSessionToken {
-                              logger.setLogInfo(
-                                ~value="Delayed Session Token Flow",
-                                ~eventName=APPLE_PAY_FLOW,
-                                ~paymentMethod="APPLE_PAY",
-                                ~logType=DEBUG,
-                                (),
-                              )
-
                               let applePayPresent =
                                 dict
                                 ->Js.Dict.get("applePayPresent")
@@ -497,13 +489,6 @@ let make = (
 
                               switch connector {
                               | "trustpay" =>
-                                logger.setLogInfo(
-                                  ~value="TrustPay Connector Flow",
-                                  ~eventName=APPLE_PAY_FLOW,
-                                  ~paymentMethod="APPLE_PAY",
-                                  ~logType=DEBUG,
-                                  (),
-                                )
                                 let secrets =
                                   applePayPresent
                                   ->Js.Dict.get("session_token_data")
@@ -530,21 +515,7 @@ let make = (
                                   ->Belt.Option.getWithDefault("")
 
                                 try {
-                                  logger.setLogInfo(
-                                    ~value="Creating TrustpayApi instance",
-                                    ~eventName=APPLE_PAY_FLOW,
-                                    ~paymentMethod="APPLE_PAY",
-                                    ~logType=DEBUG,
-                                    (),
-                                  )
                                   let trustpay = trustPayApi(secrets)
-                                  logger.setLogInfo(
-                                    ~value="TrustpayApi instance created",
-                                    ~eventName=APPLE_PAY_FLOW,
-                                    ~paymentMethod="APPLE_PAY",
-                                    ~logType=DEBUG,
-                                    (),
-                                  )
                                   trustpay.finishApplePaymentV2(. payment, paymentRequest)
                                   ->then(res => {
                                     logger.setLogInfo(
