@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/juspay/hyperswitch-web/compare/v0.4.0...v0.4.1) (2023-11-11)
+
+
+### Bug Fixes
+
+* HS-158: AB testing for third party ApplePay ([#17](https://github.com/juspay/hyperswitch-web/issues/17)) ([4853f2a](https://github.com/juspay/hyperswitch-web/commit/4853f2aff7b8e78832809b383f276699c578d2f0))
+
 # [0.4.0](https://github.com/juspay/hyperswitch-web/compare/v0.3.1...v0.4.0) (2023-11-09)
 
 
