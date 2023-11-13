@@ -223,6 +223,11 @@ let default = (props: props) => {
     }
   }
 
+  React.useEffect0(() => {
+    setIsShowOrPayUsing(.prev => prev || showApplePay)
+    None
+  })
+
   React.useEffect1(() => {
     Utils.handlePostMessage([("applePayMounted", true->Js.Json.boolean)])
     let handleApplePayMessages = (ev: Window.event) => {
@@ -262,8 +267,6 @@ let default = (props: props) => {
       },
     )
   }, [isInvokeSDKFlow])
-
-  setIsShowOrPayUsing(.prev => prev || showApplePay)
 
   <div>
     <style> {React.string(css)} </style>
