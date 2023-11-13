@@ -1,3 +1,10 @@
+## [0.4.3](https://github.com/juspay/hyperswitch-web/compare/v0.4.2...v0.4.3) (2023-11-13)
+
+
+### Bug Fixes
+
+* HS-158:minor refactor in ApplePay file ([#20](https://github.com/juspay/hyperswitch-web/issues/20)) ([3da29ab](https://github.com/juspay/hyperswitch-web/commit/3da29abd1c2c5dd8496c47ec87531b1e3713f359))
+
 ## [0.4.2](https://github.com/juspay/hyperswitch-web/compare/v0.4.1...v0.4.2) (2023-11-11)
 
 
