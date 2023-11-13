@@ -1,3 +1,10 @@
+## [0.4.4](https://github.com/juspay/hyperswitch-web/compare/v0.4.3...v0.4.4) (2023-11-13)
+
+
+### Bug Fixes
+
+* HS-154: OrcaLogger setTimeout intervals changed ([#21](https://github.com/juspay/hyperswitch-web/issues/21)) ([346cde3](https://github.com/juspay/hyperswitch-web/commit/346cde3685a9943860079b2000a3e137852e3bfb))
+
 ## [0.4.3](https://github.com/juspay/hyperswitch-web/compare/v0.4.2...v0.4.3) (2023-11-13)
 
 
