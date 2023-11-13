@@ -2,7 +2,6 @@ type props = {sessionObj: option<Js.Json.t>, list: PaymentMethodsRecord.list}
 
 let default = (props: props) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
@@ -234,11 +233,6 @@ let default = (props: props) => {
       (),
     )
   }
-
-  React.useEffect0(() => {
-    setIsShowOrPayUsing(.prev => prev || showApplePay)
-    None
-  })
 
   React.useEffect1(() => {
     Utils.handlePostMessage([("applePayMounted", true->Js.Json.boolean)])
