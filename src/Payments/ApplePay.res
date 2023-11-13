@@ -1,8 +1,9 @@
 type props = {sessionObj: option<Js.Json.t>, list: PaymentMethodsRecord.list}
 
 let default = (props: props) => {
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
   let intent = PaymentHelpers.usePaymentIntent(None, Applepay)
@@ -195,6 +196,12 @@ let default = (props: props) => {
   }`
 
   let onApplePayButtonClicked = () => {
+    loggerState.setLogInfo(
+      ~value="Apple Pay Button Clicked",
+      ~eventName=APPLE_PAY_FLOW,
+      ~paymentMethod="APPLE_PAY",
+      (),
+    )
     setApplePayClicked(_ => true)
 
     if isInvokeSDKFlow {
@@ -220,6 +227,12 @@ let default = (props: props) => {
       let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
       processPayment(bodyDict)
     }
+    loggerState.setLogInfo(
+      ~value="",
+      ~eventName=PAYMENT_DATA_FILLED,
+      ~paymentMethod="APPLE_PAY",
+      (),
+    )
   }
 
   React.useEffect0(() => {

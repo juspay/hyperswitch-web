@@ -7,12 +7,13 @@ type url = {searchParams: searchParams, href: string}
 @new external urlSearch: string => url = "URL"
 
 open LoggerUtils
+open ApiEndpoint
 type payment = Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Other
 
 let closePaymentLoaderIfAny = () =>
   Utils.handlePostMessage([("fullscreen", false->Js.Json.boolean)])
 
-let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
+let retrievePaymentIntent = (clientSecret, headers, ~optLogger) => {
   open Promise
   let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]
   let endpoint = ApiEndpoint.getApiEndPoint()
@@ -27,12 +28,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
     ~logCategory=API,
     (),
   )
-  fetchApi(
-    uri,
-    ~method_=Fetch.Get,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
-    (),
-  )
+  fetchApi(uri, ~method_=Fetch.Get, ~headers=headers->ApiEndpoint.addCustomPodHeader(), ())
   ->then(res => {
     let statusCode = res->Fetch.Response.status->string_of_int
     if statusCode->Js.String2.charAt(0) !== "2" {
@@ -72,9 +68,9 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
   })
 }
 
-let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
+let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger) => {
   open Promise
-  retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
+  retrievePaymentIntent(clientSecret, headers, ~optLogger)
   ->then(json => {
     let dict = json->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
     let status = dict->getString("status", "")
@@ -83,13 +79,13 @@ let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchT
       resolve(json)
     } else {
       delay(2000)->then(_val => {
-        pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
+        pollRetrievePaymentIntent(clientSecret, headers, ~optLogger)
       })
     }
   })
   ->catch(e => {
     Js.log2("Unable to retrieve payment due to following error", e)
-    pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
+    pollRetrievePaymentIntent(clientSecret, headers, ~optLogger)
   })
 }
 
@@ -112,7 +108,6 @@ let intentCall = (
   ~iframeId,
   ~fetchMethod,
   ~setIsManualRetryEnabled,
-  ~switchToCustomPod,
 ) => {
   open Promise
   let isConfirm = uri->Js.String2.includes("/confirm")
@@ -131,7 +126,7 @@ let intentCall = (
   fetchApi(
     uri,
     ~method_=fetchMethod,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(),
     ~bodyStr,
     (),
   )
@@ -302,15 +297,6 @@ let intentCall = (
               ~message="Payment failed. Try again!",
             )
             if uri->Js.String2.includes("force_sync=true") {
-              handleLogging(
-                ~optLogger,
-                ~value=intent.nextAction.type_,
-                ~internalMetadata=intent.nextAction.type_,
-                ~eventName=REDIRECTING_USER,
-                ~paymentMethod,
-                ~logType=ERROR,
-                (),
-              )
               openUrl(url.href)
             }
           }
@@ -402,7 +388,6 @@ let intentCall = (
 let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
   let list = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(RecoilAtoms.isManualRetryEnabled)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="", ()) => {
     switch keys.clientSecret {
@@ -426,7 +411,6 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           ~iframeId,
           ~fetchMethod=Fetch.Get,
           ~setIsManualRetryEnabled,
-          ~switchToCustomPod,
         )
       }
       switch list {
@@ -469,8 +453,6 @@ let rec maskPayload = payloadDict => {
 }
 
 let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
-  let blockConfirm = Recoil.useRecoilValueFromAtom(RecoilAtoms.isConfirmBlocked)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
   let list = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let (isManualRetryEnabled, setIsManualRetryEnabled) = Recoil.useRecoilState(
@@ -516,6 +498,15 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
             ~paymentMethod="CARD",
             (),
           )
+        | Applepay =>
+          handleLogging(
+            ~optLogger,
+            ~value="",
+            ~internalMetadata=loggerPayload,
+            ~eventName=PAYMENT_ATTEMPT,
+            ~paymentMethod="APPLE_PAY",
+            (),
+          )
         | _ =>
           let _ = bodyArr->Js.Array2.map(((str, json)) => {
             if str === "payment_method_type" {
@@ -531,27 +522,23 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
             ()
           })
         }
-        if blockConfirm && Window.isInteg {
-          Js.log3("CONFIRM IS BLOCKED", body->Js.Json.parseExn, headers)
-        } else {
-          intentCall(
-            ~fetchApi,
-            ~uri,
-            ~headers,
-            ~bodyStr=body,
-            ~confirmParam: ConfirmType.confirmParams,
-            ~clientSecret,
-            ~optLogger,
-            ~handleUserError,
-            ~paymentType,
-            ~iframeId,
-            ~fetchMethod,
-            ~setIsManualRetryEnabled,
-            ~switchToCustomPod,
-          )
-        }
+        intentCall(
+          ~fetchApi,
+          ~uri,
+          ~headers,
+          ~bodyStr=body,
+          ~confirmParam: ConfirmType.confirmParams,
+          ~clientSecret,
+          ~optLogger,
+          ~handleUserError,
+          ~paymentType,
+          ~iframeId,
+          ~fetchMethod,
+          ~setIsManualRetryEnabled,
+        )
       }
 
+      // open Promise
       let broswerInfo = BrowserSpec.broswerInfo
       let intentWithoutMandate = () => {
         let bodyStr =
@@ -607,11 +594,10 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
 let useSessions = (
   ~clientSecret,
   ~publishableKey,
+  ~endpoint,
   ~wallets=[],
   ~isDelayedSessionToken=false,
   ~optLogger,
-  ~switchToCustomPod,
-  ~endpoint,
   (),
 ) => {
   open Promise
@@ -641,7 +627,7 @@ let useSessions = (
     uri,
     ~method_=Fetch.Post,
     ~bodyStr=body->Js.Json.stringify,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    ~headers=headers->addCustomPodHeader(),
     (),
   )
   ->then(resp => {
@@ -693,13 +679,7 @@ let useSessions = (
   })
 }
 
-let usePaymentMethodList = (
-  ~clientSecret,
-  ~publishableKey,
-  ~logger,
-  ~switchToCustomPod,
-  ~endpoint,
-) => {
+let usePaymentMethodList = (~clientSecret, ~publishableKey, ~endpoint, ~logger) => {
   open Promise
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
   let uri = `${endpoint}/account/payment_methods?client_secret=${clientSecret}`
@@ -712,12 +692,7 @@ let usePaymentMethodList = (
     ~logCategory=API,
     (),
   )
-  fetchApi(
-    uri,
-    ~method_=Fetch.Get,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
-    (),
-  )
+  fetchApi(uri, ~method_=Fetch.Get, ~headers=headers->addCustomPodHeader(), ())
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status->string_of_int
     if statusCode->Js.String2.charAt(0) !== "2" {
@@ -767,13 +742,7 @@ let usePaymentMethodList = (
   })
 }
 
-let useCustomerDetails = (
-  ~clientSecret,
-  ~publishableKey,
-  ~endpoint,
-  ~optLogger,
-  ~switchToCustomPod,
-) => {
+let useCustomerDetails = (~clientSecret, ~publishableKey, ~endpoint, ~optLogger) => {
   open Promise
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
   let uri = `${endpoint}/customers/payment_methods?client_secret=${clientSecret}`
@@ -786,12 +755,7 @@ let useCustomerDetails = (
     ~logCategory=API,
     (),
   )
-  fetchApi(
-    uri,
-    ~method_=Fetch.Get,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
-    (),
-  )
+  fetchApi(uri, ~method_=Fetch.Get, ~headers=headers->ApiEndpoint.addCustomPodHeader(), ())
   ->then(res => {
     let statusCode = res->Fetch.Response.status->string_of_int
     if statusCode->Js.String2.charAt(0) !== "2" {
