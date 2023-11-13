@@ -1,13 +1,12 @@
 type props = {sessionObj: option<Js.Json.t>, list: PaymentMethodsRecord.list}
 
 let default = (props: props) => {
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
   let intent = PaymentHelpers.usePaymentIntent(None, Applepay)
-  let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Applepay)
+  let sync = PaymentHelpers.usePaymentSync(None, Applepay)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
   let isApplePaySDKFlow = props.sessionObj->Belt.Option.isSome
