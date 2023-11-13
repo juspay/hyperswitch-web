@@ -51,7 +51,6 @@ let make = () => {
           paymentIntentId,
           headers->Js.Dict.entries,
           ~optLogger=Some(logger),
-          ~switchToCustomPod,
         )
         ->then(res => {
           Modal.close(setOpenModal)
@@ -80,12 +79,7 @@ let make = () => {
 
   let closeModal = () => {
     open Promise
-    PaymentHelpers.retrievePaymentIntent(
-      clientSecret,
-      headers,
-      ~optLogger=Some(logger),
-      ~switchToCustomPod,
-    )
+    PaymentHelpers.retrievePaymentIntent(clientSecret, headers, ~optLogger=Some(logger))
     ->then(json => {
       let dict = json->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
       let status = dict->getString("status", "")
