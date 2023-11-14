@@ -1,3 +1,38 @@
+## [0.4.5](https://github.com/juspay/hyperswitch-web/compare/v0.4.4...v0.4.5) (2023-11-13)
+
+
+### Bug Fixes
+
+* HS-158: Updated the ApplePay file on main ([#23](https://github.com/juspay/hyperswitch-web/issues/23)) ([3252670](https://github.com/juspay/hyperswitch-web/commit/3252670de391be737455b46cdede6a5b50015798))
+
+## [0.4.4](https://github.com/juspay/hyperswitch-web/compare/v0.4.3...v0.4.4) (2023-11-13)
+
+
+### Bug Fixes
+
+* HS-154: OrcaLogger setTimeout intervals changed ([#21](https://github.com/juspay/hyperswitch-web/issues/21)) ([346cde3](https://github.com/juspay/hyperswitch-web/commit/346cde3685a9943860079b2000a3e137852e3bfb))
+
+## [0.4.3](https://github.com/juspay/hyperswitch-web/compare/v0.4.2...v0.4.3) (2023-11-13)
+
+
+### Bug Fixes
+
+* HS-158:minor refactor in ApplePay file ([#20](https://github.com/juspay/hyperswitch-web/issues/20)) ([3da29ab](https://github.com/juspay/hyperswitch-web/commit/3da29abd1c2c5dd8496c47ec87531b1e3713f359))
+
+## [0.4.2](https://github.com/juspay/hyperswitch-web/compare/v0.4.1...v0.4.2) (2023-11-11)
+
+
+### Bug Fixes
+
+* HS-158: ApplePay build trigger ([#19](https://github.com/juspay/hyperswitch-web/issues/19)) ([afa65f8](https://github.com/juspay/hyperswitch-web/commit/afa65f8dd141f1ade0fab828817e85a79921849b))
+
+## [0.4.1](https://github.com/juspay/hyperswitch-web/compare/v0.4.0...v0.4.1) (2023-11-11)
+
+
+### Bug Fixes
+
+* HS-158: AB testing for third party ApplePay ([#17](https://github.com/juspay/hyperswitch-web/issues/17)) ([4853f2a](https://github.com/juspay/hyperswitch-web/commit/4853f2aff7b8e78832809b383f276699c578d2f0))
+
 # [0.4.0](https://github.com/juspay/hyperswitch-web/compare/v0.3.1...v0.4.0) (2023-11-09)
 
 

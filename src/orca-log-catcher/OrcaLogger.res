@@ -413,9 +413,9 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     switch timeOut.contents {
     | Some(val) => {
         Js.Global.clearTimeout(val)
-        timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 10000))
+        timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
       }
-    | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 10000))
+    | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
     }
     beaconApiCall(mainLogFile)
     let len = mainLogFile->Js.Array2.length
@@ -449,9 +449,9 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     switch timeOut.contents {
     | Some(val) => {
         Js.Global.clearTimeout(val)
-        timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 2000))
+        timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 20000))
       }
-    | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 2000))
+    | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 20000))
     }
 
     if mainLogFile->checkForPriorityEvents {
