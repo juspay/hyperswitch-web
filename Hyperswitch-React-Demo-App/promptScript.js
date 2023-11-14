@@ -9,7 +9,6 @@ const appServerURL = prompt("Application Server URL : ");
 const appClientURL = prompt("Application Client URL : ");
 
 const envPath = "./.env";
-const patchPath = "./patches/@juspay-tech+hyper-js+1.6.0";
 
 const publishableKeyDesc = "Publishable key added";
 const secretKeyDesc = "Secret key added";
@@ -56,4 +55,3 @@ replace(
 );
 replace(envPath, "GET_SECRET_KEY_FROM_DASHBOARD", secretKey, secretKeyDesc);
 replace(envPath, "SELF_HOSTED_SERVER_URL", serverURL, serverURLDesc);
-replace(patchPath, "http://localhost:9050", clientURL, clientURLDesc);
