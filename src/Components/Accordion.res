@@ -28,6 +28,12 @@ let make = (
         : ("", "", "", false),
     [isActive],
   )
+  let (displayName, icon) = PaymentUtils.getDisplayNameAndIcon(
+    customMethodNames,
+    paymentOption.paymentMethodName,
+    paymentOption.displayName,
+    paymentOption.icon,
+  )
   <div
     className={`AccordionItem flex flex-col`}
     style={ReactDOMStyle.make(
@@ -47,21 +53,13 @@ let make = (
       style={ReactDOMStyle.make(~columnGap=themeObj.spacingUnit, ())}>
       <RenderIf condition=layoutClass.radios> <Radio checked=radioClass /> </RenderIf>
       <div className={`AccordionItemIcon ${accordionItemIconClass} flex items-center`}>
-        {switch paymentOption.icon {
+        {switch icon {
         | Some(ele) => ele
         | None => React.string("<icon>")
         }}
       </div>
       <div className={`AccordionItemLabel ${accordionItemLabelClass} flex items-center`}>
-        {React.string(
-          paymentOption.paymentMethodName === "card"
-            ? localeString.card
-            : PaymentUtils.getDisplayName(
-                customMethodNames,
-                paymentOption.paymentMethodName,
-                paymentOption.displayName,
-              ),
-        )}
+        {React.string(paymentOption.paymentMethodName === "card" ? localeString.card : displayName)}
       </div>
     </div>
     <RenderIf condition={selectedOption == paymentOption.paymentMethodName}>

@@ -8,6 +8,12 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
     () => isActive ? ("Tab--selected", "TabLabel--selected", "TabIcon--selected") : ("", "", ""),
     [isActive],
   )
+  let (displayName, icon) = PaymentUtils.getDisplayNameAndIcon(
+    customMethodNames,
+    paymentOption.paymentMethodName,
+    paymentOption.displayName,
+    paymentOption.icon,
+  )
   <button
     className={`Tab ${tabClass} flex flex-col animate-slowShow`}
     type_="button"
@@ -22,21 +28,13 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
     )}
     onClick={_ => setSelectedOption(._ => paymentOption.paymentMethodName)}>
     <div className={`TabIcon ${tabIconClass}`}>
-      {switch paymentOption.icon {
+      {switch icon {
       | Some(ele) => ele
       | None => <Icon name="default-card" size=19 />
       }}
     </div>
     <div className={`TabLabel ${tabLabelClass}`}>
-      {React.string(
-        paymentOption.paymentMethodName === "card"
-          ? localeString.card
-          : PaymentUtils.getDisplayName(
-              customMethodNames,
-              paymentOption.paymentMethodName,
-              paymentOption.displayName,
-            ),
-      )}
+      {React.string(paymentOption.paymentMethodName === "card" ? localeString.card : displayName)}
     </div>
   </button>
 }
