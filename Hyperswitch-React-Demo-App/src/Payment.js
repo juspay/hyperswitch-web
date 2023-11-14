@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import React from "react";
 import { HyperElements } from "@juspay-tech/react-hyper-js";
 import { loadHyper } from "@juspay-tech/hyper-js";
 import CheckoutForm from "./CheckoutForm";
@@ -9,19 +9,25 @@ function Payment() {
   const [clientSecret, setClientSecret] = useState("");
 
   useEffect(() => {
-    Promise.all([fetch("/config"), fetch("/server"), fetch("/create-payment-intent")])
-      .then(responses => {
-        return Promise.all(responses.map(response => response.json()));
+    Promise.all([
+      fetch(`${endPoint}/config`),
+      fetch(`${endPoint}/server`),
+      fetch(`${endPoint}/create-payment-intent`),
+    ])
+      .then((responses) => {
+        return Promise.all(responses.map((response) => response.json()));
       })
-      .then(dataArray => {
+      .then((dataArray) => {
         const { publishableKey } = dataArray[0];
         const { serverUrl } = dataArray[1];
         const { clientSecret } = dataArray[2];
-        setHyperPromise(loadHyper(publishableKey, { customBackendUrl: serverUrl }));
+        setHyperPromise(
+          loadHyper(publishableKey, { customBackendUrl: serverUrl })
+        );
         setClientSecret(clientSecret);
       })
-      .catch(error => {
-        console.error('Error:', error);
+      .catch((error) => {
+        console.error("Error:", error);
       });
   }, []);
 

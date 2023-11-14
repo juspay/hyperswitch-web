@@ -1,6 +1,7 @@
 import { PaymentElement } from "@juspay-tech/react-hyper-js";
 import { useState } from "react";
 import { useHyper, useElements } from "@juspay-tech/react-hyper-js";
+import React from "react";
 
 export default function CheckoutForm() {
   const hyper = useHyper();
@@ -31,7 +32,7 @@ export default function CheckoutForm() {
     if (error) {
       setMessage(error.message);
     } else {
-      window.location.href = `${window.location.origin}/completion`
+      window.location.href = `${window.location.origin}/completion`;
     }
 
     setIsProcessing(false);
