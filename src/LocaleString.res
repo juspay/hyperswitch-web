@@ -46,6 +46,8 @@ type localeStrings = {
   surchargeMsgPercentage: string => string,
   surchargeMsgAmountForCard: string => string,
   surchargeMsgPercentageForCard: string => string,
+  billingNameLabel: string,
+  billingNamePlaceholder: string,
 }
 
 let defaultLocale = {
@@ -101,6 +103,8 @@ let defaultLocale = {
     `A surcharge amount of upto ${str} will be applied for this transaction`,
   surchargeMsgPercentageForCard: str =>
     `A surcharge of upto ${str}% will be applied for this transaction`,
+  billingNameLabel: "Billing name",
+  billingNamePlaceholder: "First and last name",
 }
 
 type locale = {localeStrings: array<localeStrings>}
@@ -158,6 +162,8 @@ let localeStrings = [
       `A surcharge amount of upto ${str} will be applied for this transaction`,
     surchargeMsgPercentageForCard: str =>
       `A surcharge of upto ${str}% will be applied for this transaction`,
+    billingNameLabel: "Billing name",
+    billingNamePlaceholder: "First and last name",
   },
   {
     locale: "he",
@@ -210,7 +216,10 @@ let localeStrings = [
     surchargeMsgPercentage: str => `תוספת של ${str}% תחול עבור עסקה זו`,
     surchargeMsgAmountForCard: str =>
       `סכום היטל של עד ${str} יחול עבור עסקה זו`,
-    surchargeMsgPercentageForCard: str => `תוספת של עד ${str}% תחול על עסקה זו`,
+    surchargeMsgPercentageForCard: str =>
+      `תוספת של עד ${str}% תחול על עסקה זו`,
+    billingNameLabel: `שם החיוב`,
+    billingNamePlaceholder: `שם פרטי ושם משפחה`,
   },
   {
     locale: `fr`,
@@ -261,11 +270,14 @@ let localeStrings = [
     card: `Carte`,
     surchargeMsgAmount: str =>
       `Un montant supplémentaire d'${str} sera appliqué pour cette transaction`,
-    surchargeMsgPercentage: str => `Un supplément de ${str}% sera appliqué pour cette transaction`,
+    surchargeMsgPercentage: str =>
+      `Un supplément de ${str}% sera appliqué pour cette transaction`,
     surchargeMsgAmountForCard: str =>
       `Un montant supplémentaire allant jusqu'à ${str} sera appliqué pour cette transaction.`,
     surchargeMsgPercentageForCard: str =>
       `Un supplément allant jusqu'à ${str}% sera appliqué pour cette transaction`,
+    billingNameLabel: `Nom de facturation`,
+    billingNamePlaceholder: `Prénom et nom de famille`,
   },
   {
     locale: "en-GB",
@@ -320,6 +332,8 @@ let localeStrings = [
       `A surcharge amount of upto ${str} will be applied for this transaction`,
     surchargeMsgPercentageForCard: str =>
       `A surcharge of upto ${str}% will be applied for this transaction`,
+    billingNameLabel: "Billing name",
+    billingNamePlaceholder: "First and last name",
   },
   {
     locale: "ar",
@@ -376,6 +390,8 @@ let localeStrings = [
       `سيتم تطبيق مبلغ إضافي يصل إلى ${str} على هذه المعاملة`,
     surchargeMsgPercentageForCard: str =>
       `سيتم تطبيق رسوم إضافية تصل إلى ${str}% على هذه المعاملة`,
+    billingNameLabel: `اسم الفواتير`,
+    billingNamePlaceholder: `الاسم الأول والاسم الأخير`,
   },
   {
     locale: "ja",
@@ -425,11 +441,14 @@ let localeStrings = [
     enterValidDetailsText: `有効な詳細を入力してください`,
     card: `カード`,
     surchargeMsgAmount: str => `この取引には ${str} の追加料金が適用されます`,
-    surchargeMsgPercentage: str => `この取引には ${str}% の追加料金が適用されます`,
+    surchargeMsgPercentage: str =>
+      `この取引には ${str}% の追加料金が適用されます`,
     surchargeMsgAmountForCard: str =>
       `この取引には ${str} までの追加料金が適用されます`,
     surchargeMsgPercentageForCard: str =>
       `この取引には ${str}% までの追加料金が適用されます`,
+    billingNameLabel: `課金名`,
+    billingNamePlaceholder: `名前と苗字`,
   },
   {
     locale: "de",
@@ -485,5 +504,7 @@ let localeStrings = [
       `Für diese Transaktion wird ein Zuschlagsbetrag von bis zu ${str} erhoben`,
     surchargeMsgPercentageForCard: str =>
       `Für diese Transaktion wird ein Zuschlag von bis zu ${str}% erhoben`,
+    billingNameLabel: `Abrechnungsname`,
+    billingNamePlaceholder: `Vor-und Nachname`,
   },
 ]

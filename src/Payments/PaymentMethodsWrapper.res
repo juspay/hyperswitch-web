@@ -9,11 +9,11 @@ type props = {
 }
 
 let default = (props: props) => {
-  let {publishableKey, iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
   let phoneNumber = Recoil.useRecoilValueFromAtom(userPhoneNumber)
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let optionPaymentMethodDetails =
     props.list
@@ -32,84 +32,25 @@ let default = (props: props) => {
     ->Belt.Option.getWithDefault(RedirectToURL)
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
-  let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", loggerState)
-  let (country, setCountry) = Recoil.useRecoilState(userCountry)
-  let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
-  let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let (currency, _) = Recoil.useLoggedRecoilState(userCurrency, "currency", loggerState)
+  let (country, _) = Recoil.useRecoilState(userCountry)
+  let (selectedBank, _) = Recoil.useRecoilState(userBank)
   let setFieldComplete = Recoil.useSetRecoilState(fieldsComplete)
-  let showDetails = PaymentType.getShowAddressDetails(
-    ~billingDetails=fields.billingDetails,
-    ~logger=loggerState,
-  )
-  let countryNames = Utils.getCountryNames(Country.getCountry(props.paymentMethodName))
-  let bankNames =
-    Bank.getBanks(props.paymentMethodName)->Utils.getBankNames(paymentMethodDetails.bankNames)
-  let setCountry = val => {
-    setCountry(. val)
-  }
-  let setCurrency = val => {
-    setCurrency(. val)
-  }
-  let setSelectedBank = val => {
-    setSelectedBank(. val)
-  }
   let cleanBlik = str => str->Js.String2.replaceByRe(%re("/-/g"), "")
   let cleanPhoneNumber = str => str->Js.String2.replaceByRe(%re("/\s/g"), "")
-  React.useEffect0(() => {
-    let clientTimeZone = dateTimeFormat(.).resolvedOptions(.).timeZone
-    let clientCountry = getClientCountry(clientTimeZone)
-    setCountry(_ => clientCountry.countryName)
-    let bank = bankNames->Belt.Array.get(0)->Belt.Option.getWithDefault("")
-    setSelectedBank(_ => bank)
-    None
-  })
-  //<...>//
-  let requiredField =
-    PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~list=props.list,
-      ~paymentMethod=paymentMethodDetails.methodType,
-      ~paymentMethodType=paymentMethodDetails.paymentMethodName,
-    )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
-  let fieldsArr =
-    props.paymentMethodName->PaymentMethodsRecord.getPaymentMethodFields(
-      requiredField.required_fields,
-    )
-  //<...>//
-  let complete = React.useMemo4(() => {
-    fieldsArr
-    ->Js.Array2.map(field => {
-      switch field {
-      | Email => email.value != "" && email.isValid->Belt.Option.getWithDefault(false)
-      | FullName => fullName.value !== ""
-      | Country => country !== ""
-      | _ => true
-      }
-    })
-    ->Js.Array2.reduce((acc, condition) => {
-      acc && condition
-    }, true)
-  }, (props.paymentMethodName, email, fullName, country))
+
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+
+  let complete = areRequiredFieldsValid
 
   React.useEffect1(() => {
     setFieldComplete(._ => complete)
     None
   }, [complete])
 
-  let empty = React.useMemo4(() => {
-    props.paymentMethodName
-    ->PaymentMethodsRecord.getPaymentMethodFields(requiredField.required_fields)
-    ->Js.Array2.map(field => {
-      switch field {
-      | Email => email.value == ""
-      | FullName => fullName.value == ""
-      | Country => country == ""
-      | _ => false
-      }
-    })
-    ->Js.Array2.reduce((acc, condition) => {
-      acc || condition
-    }, false)
-  }, (props.paymentMethodName, email, fullName, country))
+  let empty = areRequiredFieldsEmpty
 
   React.useEffect2(() => {
     handlePostMessageEvents(
@@ -148,7 +89,12 @@ let default = (props: props) => {
             ~phoneNumber=phoneNumber.value->cleanPhoneNumber,
             ~paymentExperience=paymentFlow,
             ~currency,
-          ),
+          )
+          ->Js.Dict.fromArray
+          ->Js.Json.object_
+          ->OrcaUtils.flattenObject(true)
+          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->OrcaUtils.getArrayOfTupleFromDict,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~iframeId,
@@ -165,63 +111,20 @@ let default = (props: props) => {
     blikCode,
     props.paymentMethodName,
     phoneNumber.value,
-    (selectedBank, currency),
+    (selectedBank, currency, requiredFieldsBody),
   ))
   submitPaymentData(submitCallback)
-  let bottomElement = <InfoElement />
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
-    {fieldsArr
-    ->Js.Array2.map(field => {
-      switch field {
-      | Email => <EmailPaymentInput paymentType={props.paymentType} />
-      | FullName => <FullNamePaymentInput paymentType={props.paymentType} />
-      | Country =>
-        <RenderIf condition={showDetails.country == Auto}>
-          <DropdownField
-            appearance=config.appearance
-            fieldName=localeString.countryLabel
-            value=country
-            setValue=setCountry
-            disabled=false
-            options=countryNames
-          />
-        </RenderIf>
-      | Bank =>
-        <DropdownField
-          appearance=config.appearance
-          fieldName=localeString.bankLabel
-          value=selectedBank
-          setValue=setSelectedBank
-          disabled=false
-          options=bankNames
-        />
-      | SpecialField(element) => element
-      | InfoElement => <>
-          <Surcharge
-            list=props.list
-            paymentMethod=paymentMethodDetails.methodType
-            paymentMethodType=paymentMethodDetails.paymentMethodName
-          />
-          {if fieldsArr->Js.Array2.length > 1 {
-            <InfoElement />
-          } else {
-            <Block bottomElement />
-          }}
-        </>
-      | Currency(currencyArr) =>
-        <DropdownField
-          appearance=config.appearance
-          fieldName=localeString.currencyLabel
-          value=currency
-          setValue=setCurrency
-          disabled=false
-          options=currencyArr
-        />
-      | _ => React.null
-      }
-    })
-    ->React.array}
+    <RenderIf condition={props.list.payment_methods->Js.Array.length !== 0}>
+      <DynamicFields
+        paymentType=props.paymentType
+        list=props.list
+        paymentMethod=paymentMethodDetails.methodType
+        paymentMethodType=paymentMethodDetails.paymentMethodName
+        setRequiredFieldsBody
+      />
+    </RenderIf>
   </div>
 }

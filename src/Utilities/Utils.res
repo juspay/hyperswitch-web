@@ -347,7 +347,7 @@ let getClientCountry = clientTimeZone => {
   ->Belt.Option.getWithDefault(Country.defaultTimeZone)
 }
 
-let removeDuplicate = (arr: array<string>) => {
+let removeDuplicate = arr => {
   arr->Js.Array2.filteri((item, i) => {
     arr->Js.Array2.indexOf(item) === i
   })

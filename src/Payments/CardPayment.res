@@ -77,6 +77,10 @@ let make = (
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
 
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+
   React.useEffect1(() => {
     switch customerPaymentMethods {
     | LoadingSavedCards => ()
@@ -195,17 +199,30 @@ let make = (
       let validFormat =
         isCardValid->Belt.Option.getWithDefault(false) &&
         isExpiryValid->Belt.Option.getWithDefault(false) &&
-        (isBancontact || isCVCValid->Belt.Option.getWithDefault(false))
+        (isBancontact || isCVCValid->Belt.Option.getWithDefault(false)) &&
+        areRequiredFieldsValid
       if validFormat && (showFields || isBancontact) {
         intent(
-          ~bodyArr={isBancontact ? banContactBody : cardBody},
+          ~bodyArr={
+            (isBancontact ? banContactBody : cardBody)
+            ->Js.Dict.fromArray
+            ->Js.Json.object_
+            ->OrcaUtils.flattenObject(true)
+            ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+            ->OrcaUtils.getArrayOfTupleFromDict
+          },
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           (),
         )
       } else if complete && !empty {
         intent(
-          ~bodyArr=savedCardBody,
+          ~bodyArr=savedCardBody
+          ->Js.Dict.fromArray
+          ->Js.Json.object_
+          ->OrcaUtils.flattenObject(true)
+          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->OrcaUtils.getArrayOfTupleFromDict,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           (),
@@ -311,6 +328,11 @@ let make = (
               </div>
             </RenderIf>
           </div>
+          <RenderIf condition={list.payment_methods->Js.Array.length !== 0}>
+            <DynamicFields
+              paymentType list paymentMethod="card" paymentMethodType="debit" setRequiredFieldsBody
+            />
+          </RenderIf>
           <RenderIf condition={!isBancontact && !options.disableSaveCards}>
             <div className="pt-4 pb-2 flex items-center justify-start">
               <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
