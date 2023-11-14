@@ -3,12 +3,15 @@ const prompt = require("prompt-sync")({ sigint: true });
 const publishableKey = prompt("Publishable Key : ");
 const secretKey = prompt("Secret Key : ");
 const serverURL = prompt("Server URL : ");
+const clientURL = prompt("Client URL : ");
 
 const envPath = "./.env";
+const patchPath = "./patches/@juspay-tech+hyper-js+1.6.0";
 
 const publishableKeyDesc = "Publishable key added";
 const secretKeyDesc = "Secret key added";
 const serverURLDesc = "Server URL added";
+const clientURLDesc = "Client URL added";
 
 function replace(filePath, oldLine, newLine, desc) {
   try {
@@ -35,3 +38,4 @@ replace(
 );
 replace(envPath, "GET_SECRET_KEY_FROM_DASHBOARD", secretKey, secretKeyDesc);
 replace(envPath, "SELF_HOSTED_SERVER_URL", serverURL, serverURLDesc);
+replace(patchPath, "http://localhost:9050", clientURL, clientURLDesc);
