@@ -31,7 +31,7 @@ let make = (
     let savedPaymentElement = Js.Dict.empty()
     let localOptions = options->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
     let clientSecretId = localOptions->getRequiredString("clientSecret", "", ~logger)
-    let endpoint = ApiEndpoint.getApiEndPoint()
+    let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
     let appearance =
       localOptions
       ->Js.Dict.get("appearance")
