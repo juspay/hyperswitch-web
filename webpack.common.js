@@ -40,8 +40,6 @@ if (envSdkUrl === undefined) {
   sdkUrl = envSdkUrl;
 }
 
-console.log("envs", envSdkUrl, envBackendUrl);
-
 let backendEndPoint;
 if (envBackendUrl === undefined) {
   backendEndPoint =
@@ -56,14 +54,19 @@ if (envBackendUrl === undefined) {
   backendEndPoint = envBackendUrl;
 }
 
-let confirmEndPoint =
-  sdkEnv === "prod"
-    ? "https://api.hyperswitch.io"
-    : sdkEnv === "sandbox"
-    ? "https://sandbox.hyperswitch.io"
-    : sdkEnv === "integ"
-    ? "https://integ-api.hyperswitch.io"
-    : "https://sandbox.hyperswitch.io";
+let confirmEndPoint;
+if (envBackendUrl === undefined) {
+  confirmEndPoint =
+    sdkEnv === "prod"
+      ? "https://api.hyperswitch.io"
+      : sdkEnv === "sandbox"
+      ? "https://sandbox.hyperswitch.io"
+      : sdkEnv === "integ"
+      ? "https://integ-api.hyperswitch.io"
+      : "https://sandbox.hyperswitch.io";
+} else {
+  confirmEndPoint = envBackendUrl;
+}
 
 let logEndpoint =
   sdkEnv === "prod"
