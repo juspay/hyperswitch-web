@@ -47,9 +47,10 @@ module.exports = (endpoint, publicPath = "auto") => {
         template: "./public/playgroundIndex.html",
       }),
       new webpack.DefinePlugin({
-        endPoint: endpoint
-          ? JSON.stringify(endpoint)
-          : JSON.stringify(process.env.SELF_SERVER_URL),
+        endPoint:
+          typeof endpoint === "string"
+            ? JSON.stringify(endpoint)
+            : JSON.stringify(process.env.SELF_SERVER_URL),
         SCRIPT_SRC: JSON.stringify(process.env.HYPERSWITCH_CLIENT_URL),
       }),
       new BundleAnalyzerPlugin({

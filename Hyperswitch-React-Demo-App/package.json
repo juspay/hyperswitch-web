@@ -26,7 +26,7 @@
     "start": "concurrently \"npm run start-client\" \"npm run start-server\"",
     "start-client": " webpack --config webpack.dev.js && webpack serve --config webpack.dev.js",
     "start-server": "node server.js",
-    "build": "webpack --config webpack.dev.js",
+    "build": "webpack --config webpack.common.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "format": "prettier --write \"**/*.{js,jsx}\"",
