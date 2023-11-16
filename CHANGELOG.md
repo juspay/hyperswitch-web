@@ -1,3 +1,15 @@
+# [0.5.0](https://github.com/juspay/hyperswitch-web/compare/v0.4.4...v0.5.0) (2023-11-16)
+
+
+### Bug Fixes
+
+* HS-158: Updated the ApplePay file on main ([#23](https://github.com/juspay/hyperswitch-web/issues/23)) ([90b211d](https://github.com/juspay/hyperswitch-web/commit/90b211dc71dd2a7115546cf4b0d3cfae8750205e))
+
+
+### Features
+
+* HS-162: Added Custom CashToCode svg ([#16](https://github.com/juspay/hyperswitch-web/issues/16)) ([fff1a54](https://github.com/juspay/hyperswitch-web/commit/fff1a546f887111bb60138d8d00ab8e752b1822e))
+
 ## [0.4.4](https://github.com/juspay/hyperswitch-web/compare/v0.4.3...v0.4.4) (2023-11-13)
 
 
