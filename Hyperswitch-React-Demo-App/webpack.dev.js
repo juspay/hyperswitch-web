@@ -21,7 +21,7 @@ let devServer = {
 };
 
 module.exports = merge([
-  common("/payments"),
+  common("/"),
   {
     mode: "development",
     devServer: devServer,

@@ -5,9 +5,9 @@ const { resolve } = require("path");
 
 // Replace if using a different env file or config
 const env = require("dotenv").config({ path: "./.env" });
-app.use(express.static(process.env.STATIC_DIR));
+app.use(express.static("./dist"));
 app.get("/", (req, res) => {
-  const path = resolve(process.env.STATIC_DIR + "/index.html");
+  const path = resolve("./dist" + "/index.html");
   res.sendFile(path);
 });
 
