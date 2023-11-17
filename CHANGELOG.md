@@ -1,3 +1,10 @@
+## [0.5.1](https://github.com/juspay/hyperswitch-web/compare/v0.5.0...v0.5.1) (2023-11-17)
+
+
+### Bug Fixes
+
+* HS-165: custom backend url fix with prelim check on sentry url ([#27](https://github.com/juspay/hyperswitch-web/issues/27)) ([e0a420b](https://github.com/juspay/hyperswitch-web/commit/e0a420b3ddc9de5e94affa7327f1e7b4804244b6))
+
 # [0.5.0](https://github.com/juspay/hyperswitch-web/compare/v0.4.4...v0.5.0) (2023-11-16)
 
 
