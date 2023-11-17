@@ -31,8 +31,7 @@ let make = (
     let savedPaymentElement = Js.Dict.empty()
     let localOptions = options->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
     let clientSecretId = localOptions->getRequiredString("clientSecret", "", ~logger)
-    let testMode = publishableKey->Js.String2.startsWith("pk_snd_")
-    let endpoint = testMode ? "https://sandbox.hyperswitch.io" : "https://api.hyperswitch.io"
+    let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
     let appearance =
       localOptions
       ->Js.Dict.get("appearance")
