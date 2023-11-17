@@ -20,7 +20,7 @@ yarn.lock
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-
+dist
 
 # Sentry Auth Token
 .env.sentry-build-plugin

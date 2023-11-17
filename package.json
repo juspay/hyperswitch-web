@@ -31,10 +31,11 @@
     "re:clean": "rescript clean",
     "re:start": "rescript build -w",
     "start:dev": "npm run re:start & npm run start",
-    "start:playground": "cd Hyperswitch-React-Demo-App && node promptScript.js && npm run start",
+    "start:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js && npm run start",
+    "build:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js && npm run build",
     "prepare": "husky install",
     "deploy-to-s3": "node ./scripts/pushToS3.js",
-    "postinstall": "cd Hyperswitch-React-Demo-App && npm i && npx patch-package"
+    "postinstall": "cd Hyperswitch-React-Demo-App && npm i"
   },
   "eslintConfig": {
     "extends": [

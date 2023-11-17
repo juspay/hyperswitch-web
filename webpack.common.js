@@ -22,33 +22,51 @@ let branchName = require("child_process")
   .trim();
 
 const sdkEnv = process.env.sdkEnv;
+const envSdkUrl = process.env.envSdkUrl;
+const envBackendUrl = process.env.envBackendUrl;
 
-let sdkUrl =
-  sdkEnv === "prod"
-    ? "https://checkout.hyperswitch.io"
-    : sdkEnv === "sandbox"
+let sdkUrl;
+
+if (envSdkUrl === undefined) {
+  sdkUrl =
+    sdkEnv === "prod"
+      ? "https://checkout.hyperswitch.io"
+      : sdkEnv === "sandbox"
       ? "https://beta.hyperswitch.io"
       : sdkEnv === "integ"
-        ? "https://dev.hyperswitch.io"
-        : "http://localhost:9050";
+      ? "https://dev.hyperswitch.io"
+      : "http://localhost:9050";
+} else {
+  sdkUrl = envSdkUrl;
+}
 
-let backendEndPoint =
-  sdkEnv === "prod"
-    ? "https://checkout.hyperswitch.io/api"
-    : sdkEnv === "sandbox"
+let backendEndPoint;
+if (envBackendUrl === undefined) {
+  backendEndPoint =
+    sdkEnv === "prod"
+      ? "https://checkout.hyperswitch.io/api"
+      : sdkEnv === "sandbox"
       ? "https://beta.hyperswitch.io/api"
       : sdkEnv === "integ"
-        ? "https://integ-api.hyperswitch.io"
-        : "https://beta.hyperswitch.io/api";
+      ? "https://integ-api.hyperswitch.io"
+      : "https://beta.hyperswitch.io/api";
+} else {
+  backendEndPoint = envBackendUrl;
+}
 
-let confirmEndPoint =
-  sdkEnv === "prod"
-    ? "https://api.hyperswitch.io"
-    : sdkEnv === "sandbox"
+let confirmEndPoint;
+if (envBackendUrl === undefined) {
+  confirmEndPoint =
+    sdkEnv === "prod"
+      ? "https://api.hyperswitch.io"
+      : sdkEnv === "sandbox"
       ? "https://sandbox.hyperswitch.io"
       : sdkEnv === "integ"
-        ? "https://integ-api.hyperswitch.io"
-        : "https://sandbox.hyperswitch.io";
+      ? "https://integ-api.hyperswitch.io"
+      : "https://sandbox.hyperswitch.io";
+} else {
+  confirmEndPoint = envBackendUrl;
+}
 
 let logEndpoint =
   sdkEnv === "prod"
