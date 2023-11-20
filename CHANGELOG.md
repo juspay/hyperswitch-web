@@ -1,3 +1,10 @@
+## [0.5.4](https://github.com/juspay/hyperswitch-web/compare/v0.5.3...v0.5.4) (2023-11-20)
+
+
+### Bug Fixes
+
+* HS-1222: Added redirects file ([#34](https://github.com/juspay/hyperswitch-web/issues/34)) ([bc5b26a](https://github.com/juspay/hyperswitch-web/commit/bc5b26adee429543623228fdfe3309cf0b867f7f))
+
 ## [0.5.3](https://github.com/juspay/hyperswitch-web/compare/v0.5.2...v0.5.3) (2023-11-20)
 
 
