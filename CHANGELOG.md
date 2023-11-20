@@ -1,3 +1,10 @@
+## [0.5.3](https://github.com/juspay/hyperswitch-web/compare/v0.5.2...v0.5.3) (2023-11-20)
+
+
+### Bug Fixes
+
+* HS-136: LoadHyper bugfix ([#31](https://github.com/juspay/hyperswitch-web/issues/31)) ([4d2ac97](https://github.com/juspay/hyperswitch-web/commit/4d2ac977a3648a353a73688e84c2ee1bd65c808d))
+
 ## [0.5.2](https://github.com/juspay/hyperswitch-web/compare/v0.5.1...v0.5.2) (2023-11-17)
 
 
