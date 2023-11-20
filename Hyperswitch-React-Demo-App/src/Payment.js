@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import React from "react";
 import { HyperElements } from "@juspay-tech/react-hyper-js";
-import { loadHyper } from "@juspay-tech/hyper-js";
 import CheckoutForm from "./CheckoutForm";
 
 function Payment() {
@@ -11,7 +10,7 @@ function Payment() {
   useEffect(() => {
     Promise.all([
       fetch(`${endPoint}/config`),
-      fetch(`${endPoint}/server`),
+      fetch(`${endPoint}/urls`),
       fetch(`${endPoint}/create-payment-intent`),
     ])
       .then((responses) => {
@@ -19,15 +18,31 @@ function Payment() {
       })
       .then((dataArray) => {
         const { publishableKey } = dataArray[0];
-        const { serverUrl } = dataArray[1];
+        const { serverUrl, clientUrl } = dataArray[1];
         const { clientSecret } = dataArray[2];
-        setHyperPromise(
-          loadHyper(publishableKey, { customBackendUrl: serverUrl })
-        );
         setClientSecret(clientSecret);
-      })
-      .catch((error) => {
-        console.error("Error:", error);
+        const script = document.createElement("script");
+        script.src = `${clientUrl}/HyperLoader.js`;
+        document.head.appendChild(script);
+        script.onload = () => {
+          setHyperPromise(
+            new Promise((resolve, _) => {
+              resolve(
+                window.Hyper(publishableKey, {
+                  customBackendUrl: serverUrl,
+                })
+              );
+            })
+          );
+        };
+
+        script.onerror = () => {
+          setHyperPromise(
+            new Promise((_, reject) => {
+              reject("Script could not be loaded");
+            })
+          );
+        };
       });
   }, []);
 
