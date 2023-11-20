@@ -1,3 +1,17 @@
+## [0.5.3](https://github.com/juspay/hyperswitch-web/compare/v0.5.2...v0.5.3) (2023-11-20)
+
+
+### Bug Fixes
+
+* HS-136: LoadHyper bugfix ([#31](https://github.com/juspay/hyperswitch-web/issues/31)) ([4d2ac97](https://github.com/juspay/hyperswitch-web/commit/4d2ac977a3648a353a73688e84c2ee1bd65c808d))
+
+## [0.5.2](https://github.com/juspay/hyperswitch-web/compare/v0.5.1...v0.5.2) (2023-11-17)
+
+
+### Bug Fixes
+
+* HS-154: Added loggerState for ApplePay intent and sync ([#26](https://github.com/juspay/hyperswitch-web/issues/26)) ([ed4b09e](https://github.com/juspay/hyperswitch-web/commit/ed4b09e32b0178aa7a02cab8dd316fd7805bbe54))
+
 ## [0.5.1](https://github.com/juspay/hyperswitch-web/compare/v0.5.0...v0.5.1) (2023-11-17)
 
 

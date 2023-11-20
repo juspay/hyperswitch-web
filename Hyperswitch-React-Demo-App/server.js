@@ -20,6 +20,10 @@ const SERVER_URL =
   process.env.HYPERSWITCH_SERVER_URL == "SELF_HOSTED_SERVER_URL"
     ? ""
     : process.env.HYPERSWITCH_SERVER_URL;
+const CLIENT_URL =
+  process.env.HYPERSWITCH_CLIENT_URL == "SELF_HOSTED_CLIENT_URL"
+    ? ""
+    : process.env.HYPERSWITCH_CLIENT_URL;
 
 app.get("/config", (req, res) => {
   res.send({
@@ -27,9 +31,10 @@ app.get("/config", (req, res) => {
   });
 });
 
-app.get("/server", (req, res) => {
+app.get("/urls", (req, res) => {
   res.send({
     serverUrl: SERVER_URL,
+    clientUrl: CLIENT_URL,
   });
 });
 

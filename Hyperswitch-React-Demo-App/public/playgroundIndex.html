@@ -28,23 +28,10 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
   <title>React Hyperswitch Payment Element</title>
-  <script src="/env-config.js"></script>
 </head>
 
 <body>
-  <!-- <script src="<%= SCRIPT_SRC%>/HyperLoader.js"></script> -->
-
-  <script>
-    (function (w, d) {
-      var src = "https://dev.hyperswitch.io/v1/HyperLoader.js";
-      if (w && w["_env_"] && w["_env_"]["HYPERSWITCH_CLIENT_URL"]) {
-        src = w["_env_"]["HYPERSWITCH_CLIENT_URL"]
-      }
-      var s = d.createElement("script");
-      s.setAttribute("src", src);
-      d.body.appendChild(s);
-    })(window, document);
-  </script>
+  <!-- <script src="<%= SCRIPT_SRC%>/HyperLoader.js" difer></script> -->
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <div id="app"></div>
   <script src="/app.js"></script>
