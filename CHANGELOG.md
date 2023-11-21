@@ -1,3 +1,10 @@
+# [0.7.0](https://github.com/juspay/hyperswitch-web/compare/v0.6.0...v0.7.0) (2023-11-21)
+
+
+### Features
+
+* HS-132: Added Dynamic Fields for Cards and Blik ([#25](https://github.com/juspay/hyperswitch-web/issues/25)) ([d7efc5b](https://github.com/juspay/hyperswitch-web/commit/d7efc5bd5b7afe682bd577b4dc2da0ea48fe41eb))
+
 # [0.6.0](https://github.com/juspay/hyperswitch-web/compare/v0.5.7...v0.6.0) (2023-11-21)
 
 
