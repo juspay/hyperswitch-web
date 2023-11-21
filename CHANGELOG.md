@@ -1,3 +1,10 @@
+## [0.5.6](https://github.com/juspay/hyperswitch-web/compare/v0.5.5...v0.5.6) (2023-11-21)
+
+
+### Bug Fixes
+
+* HS-165: Endpoint changes to non CDN ([#38](https://github.com/juspay/hyperswitch-web/issues/38)) ([73a8f98](https://github.com/juspay/hyperswitch-web/commit/73a8f9851e0991a79c4e7fc52a72ce9b66bd62ff))
+
 ## [0.5.5](https://github.com/juspay/hyperswitch-web/compare/v0.5.4...v0.5.5) (2023-11-21)
 
 
