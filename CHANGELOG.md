@@ -1,3 +1,10 @@
+## [0.5.7](https://github.com/juspay/hyperswitch-web/compare/v0.5.6...v0.5.7) (2023-11-21)
+
+
+### Bug Fixes
+
+* HS-148: Added Surcharge support for rate ([#13](https://github.com/juspay/hyperswitch-web/issues/13)) ([21d862c](https://github.com/juspay/hyperswitch-web/commit/21d862cf9d907f5ef235c4a3fee4673463bc5424))
+
 ## [0.5.6](https://github.com/juspay/hyperswitch-web/compare/v0.5.5...v0.5.6) (2023-11-21)
 
 
