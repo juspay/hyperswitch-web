@@ -1,3 +1,10 @@
+## [0.5.5](https://github.com/juspay/hyperswitch-web/compare/v0.5.4...v0.5.5) (2023-11-21)
+
+
+### Bug Fixes
+
+* HS-154: reverting ApplePay file to older version for AB testing ([#37](https://github.com/juspay/hyperswitch-web/issues/37)) ([c998bbf](https://github.com/juspay/hyperswitch-web/commit/c998bbfbe67444f463ec5427af8255a09b994d34))
+
 ## [0.5.4](https://github.com/juspay/hyperswitch-web/compare/v0.5.3...v0.5.4) (2023-11-20)
 
 
