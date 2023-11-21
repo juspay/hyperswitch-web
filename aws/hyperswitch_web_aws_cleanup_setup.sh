@@ -30,7 +30,7 @@ fi
 
 
 export ALL_KEY_PAIRS=($(aws ec2 describe-key-pairs \
-            --filters "Name=tag:ManagedBy,Values=hyperswitch" \
+            --filters "Name=tag:ManagedBy,Values=hyperswitch-web" \
 --region $REGION \
     --query 'KeyPairs[*].KeyPairId' --output text))
 
@@ -43,12 +43,12 @@ if yes_or_no; then
 fi
 
 export ALL_INSTANCES=$(aws ec2 describe-instances \
-            --filters 'Name=tag:ManagedBy,Values=hyperswitch' 'Name=instance-state-name,Values=running' \
+            --filters 'Name=tag:ManagedBy,Values=hyperswitch-web' 'Name=instance-state-name,Values=running' \
 --region $REGION \
     --query 'Reservations[*].Instances[*].InstanceId' --output text)
 
 export ALL_EBS=$(aws ec2 describe-instances \
-            --filters 'Name=tag:ManagedBy,Values=hyperswitch' \
+            --filters 'Name=tag:ManagedBy,Values=hyperswitch-web' \
 --region $REGION \
             --query 'Reservations[*].Instances[*].BlockDeviceMappings[*].Ebs.VolumeId' \
     --output text)
@@ -63,7 +63,7 @@ fi
 
 
 export ALL_SECURITY_GROUPS=$(aws ec2 describe-security-groups \
-            --filters 'Name=tag:ManagedBy,Values=hyperswitch' \
+            --filters 'Name=tag:ManagedBy,Values=hyperswitch-web' \
 --region $REGION \
 --query 'SecurityGroups[*].GroupId' --output json | jq .[] --raw-output)
 

@@ -27,12 +27,12 @@ fi
 #     apiBaseUrl="https://sandbox.hyperswitch.io"
 # fi
 
-echo "Please enter the URL where you have hosted Hyperswitch Client SDK (https://beta.hyperswitch.io/v1/HyperLoader.js) "
+echo "Please enter the URL where you have hosted Hyperswitch Client SDK (https://beta.hyperswitch.io/v1) "
 read HYPERSWITCH_CLIENT_URL < /dev/tty
 
 if [ -z "$HYPERSWITCH_CLIENT_URL" ]; then
-    echo "Using default api url: https://beta.hyperswitch.io/v1/HyperLoader.js"
-    HYPERSWITCH_CLIENT_URL="https://beta.hyperswitch.io/v1/HyperLoader.js"
+    echo "Using default api url: https://beta.hyperswitch.io/v1"
+    HYPERSWITCH_CLIENT_URL="https://beta.hyperswitch.io/v1"
 fi
 
 echo "Please enter the Publishable Key for your account (pk_*************). Can be found in Hyperswitch Control Center.(https://app.hyperswitch.io) "
@@ -75,7 +75,7 @@ echo `(aws ec2 create-security-group \
 --region $REGION \
 --group-name $EC2_SG \
 --description "Security Group for Hyperswitch EC2 instance" \
---tag-specifications "ResourceType=security-group,Tags=[{Key=ManagedBy,Value=hyperswitch}]" \
+--tag-specifications "ResourceType=security-group,Tags=[{Key=ManagedBy,Value=hyperswitch-web}]" \
 )`
 
 export APP_SG_ID=$(aws ec2 describe-security-groups --group-names $EC2_SG --region $REGION --output text --query 'SecurityGroups[0].GroupId')
@@ -115,7 +115,7 @@ sudo usermod -a -G docker ec2-user
 
 docker pull juspaydotin/hyperswitch-web:v1.0.0
 
-docker run -p 9000:5252 -e HYPERSWITCH_SERVER_URL=${HYPERSWITCH_SERVER_URL} -e SELF_SERVER_URL=http://localhost:9000/ -e HYPERSWITCH_CLIENT_URL=${HYPERSWITCH_CLIENT_URL} -e HYPERSWITCH_PUBLISHABLE_KEY=${PUBLISHABLE_KEY} -e HYPERSWITCH_SECRET_KEY=${SECRET_KEY}  juspaydotin/hyperswitch-web:v1.0.0
+docker run -p 80:5252 -e HYPERSWITCH_SERVER_URL=${HYPERSWITCH_SERVER_URL} -e SELF_SERVER_URL=http://localhost:9000/ -e HYPERSWITCH_CLIENT_URL=${HYPERSWITCH_CLIENT_URL} -e HYPERSWITCH_PUBLISHABLE_KEY=${PUBLISHABLE_KEY} -e HYPERSWITCH_SECRET_KEY=${SECRET_KEY}  juspaydotin/hyperswitch-web:v1.0.0 
 
 EOF
 
@@ -132,7 +132,7 @@ rm -rf hyperswitch-keypair.pem
 aws ec2 create-key-pair \
     --key-name hyperswitch-ec2-keypair \
     --query 'KeyMaterial' \
-    --tag-specifications "ResourceType=key-pair,Tags=[{Key=ManagedBy,Value=hyperswitch}]" \
+    --tag-specifications "ResourceType=key-pair,Tags=[{Key=ManagedBy,Value=hyperswitch-web}]" \
     --region $REGION \
     --output text > hyperswitch-keypair.pem
 
@@ -159,14 +159,14 @@ echo "Add Tags to EC2 instance..."
 
 echo `aws ec2 create-tags \
 --resources $HYPERSWITCH_INSTANCE_ID \
---tags "Key=Name,Value=hyperswitch-control-center" \
+--tags "Key=Name,Value=hyperswitch-web" \
 --region $REGION`
 
 echo "Tag added to EC2 instance.\n"
 
 echo `aws ec2 create-tags \
 --resources $HYPERSWITCH_INSTANCE_ID \
---tags "Key=ManagedBy,Value=hyperswitch" \
+--tags "Key=ManagedBy,Value=hyperswitch-web" \
 --region $REGION`
 
 echo "ManagedBy tag added to EC2 instance.\n"
