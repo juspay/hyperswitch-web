@@ -12,9 +12,16 @@ let make = (~list, ~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTF
 
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
+  let getSurchargeValue = (surchargeDetails: PaymentMethodsRecord.surchargeDetails) => {
+    switch surchargeDetails.surcharge.value {
+    | VAL(val) => val
+    | PERCENTAGE(percent) => percent.percentage
+    }->Js.Float.toString
+  }
+
   let getMessage = (surchargeDetails: PaymentMethodsRecord.surchargeDetails) => {
     let surchargeType = surchargeDetails.surcharge.surchargeType
-    let surchargeValue = surchargeDetails.surcharge.value->Js.Float.toString
+    let surchargeValue = surchargeDetails->getSurchargeValue
 
     let getLocaleStrForSurcharge = (cardLocale, altPaymentLocale) => {
       paymentMethod === "card" ? cardLocale(surchargeValue) : altPaymentLocale(surchargeValue)
@@ -28,7 +35,7 @@ let make = (~list, ~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTF
           localeString.surchargeMsgAmount,
         ),
       )
-    | PERCENTAGE =>
+    | RATE =>
       Some(
         getLocaleStrForSurcharge(
           localeString.surchargeMsgPercentageForCard,
@@ -58,7 +65,10 @@ let make = (~list, ~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTF
 
         switch (debitCardNetwork.surcharge_details, creditCardNetwork.surcharge_details) {
         | (Some(debitSurchargeDetails), Some(creditSurchargeDetails)) =>
-          if creditSurchargeDetails.surcharge.value >= debitSurchargeDetails.surcharge.value {
+          let creditCardSurcharge = creditSurchargeDetails->getSurchargeValue
+          let debitCardSurcharge = debitSurchargeDetails->getSurchargeValue
+
+          if creditCardSurcharge >= debitCardSurcharge {
             creditSurchargeDetails->getMessage
           } else {
             debitSurchargeDetails->getMessage
@@ -78,7 +88,7 @@ let make = (~list, ~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTF
   | Some(surchargeMessage) =>
     <div className="flex items-center text-xs mt-2">
       <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
-      <span> {React.string(surchargeMessage)} </span>
+      <span className="text-left"> {React.string(surchargeMessage)} </span>
     </div>
   | None => React.null
   }
