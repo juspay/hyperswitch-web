@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/juspay/hyperswitch-web/compare/v0.5.7...v0.6.0) (2023-11-21)
+
+
+### Features
+
+* HS-169: Script added for setup and clean up on AWS standalone deployment ([#35](https://github.com/juspay/hyperswitch-web/issues/35)) ([e3a7985](https://github.com/juspay/hyperswitch-web/commit/e3a79851d47c693599c05a25bdd8a47b4bd31205))
+
 ## [0.5.7](https://github.com/juspay/hyperswitch-web/compare/v0.5.6...v0.5.7) (2023-11-21)
 
 
