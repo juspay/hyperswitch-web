@@ -21,6 +21,7 @@ yarn.lock
 !.yarn/sdks
 !.yarn/versions
 dist
-
+user_data.sh
+*.pem
 # Sentry Auth Token
 .env.sentry-build-plugin
