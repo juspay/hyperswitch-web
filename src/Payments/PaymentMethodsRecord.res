@@ -16,7 +16,7 @@ type paymentMethodsFields =
   | AddressCity
   | AddressPincode
   | AddressState
-  | AddressCountry
+  | AddressCountry(array<string>)
   | BlikCode
   | Currency(array<string>)
 type bankNames = {
@@ -233,7 +233,7 @@ let paymentMethodsFields = [
     paymentMethodName: "blik",
     icon: Some(icon("blik", ~size=19, ~width=25)),
     displayName: "Blik",
-    fields: [SpecialField(<BlikCodePaymentInput />), InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -439,28 +439,27 @@ let getPaymentMethodsFieldTypeFromString = str => {
   | "user_address_city" => AddressCity
   | "user_address_pincode" => AddressPincode
   | "user_address_state" => AddressState
-  | "user_address_country" => AddressCountry
   | "user_blik_code" => BlikCode
+  | "user_billing_name" => BillingName
   | _ => None
   }
 }
 
 let getPaymentMethodsFieldTypeFromDict = dict => {
   let keysArr = dict->Js.Dict.keys
-  let key =
-    keysArr->Js.Array2.find(item => item === "user_currency")->Belt.Option.getWithDefault("")
+  let key = keysArr->Belt.Array.get(0)->Belt.Option.getWithDefault("")
   switch key {
   | "user_currency" => {
-      let options =
-        dict
-        ->Js.Dict.get("user_currency")
-        ->Belt.Option.flatMap(Js.Json.decodeObject)
-        ->Belt.Option.getWithDefault(Js.Dict.empty())
-        ->Js.Dict.get("options")
-        ->Belt.Option.flatMap(Js.Json.decodeArray)
-        ->Belt.Option.getWithDefault([])
-        ->Belt.Array.keepMap(Js.Json.decodeString)
+      let options = dict->Utils.getArrayValFromJsonDict("user_currency", "options")
       Currency(options)
+    }
+  | "user_address_country" => {
+      let options = dict->Utils.getArrayValFromJsonDict("user_address_country", "options")
+      switch options->Belt.Array.get(0)->Belt.Option.getWithDefault("") {
+      | "" => None
+      | "ALL" => AddressCountry(Country.country->Js.Array2.map(item => item.countryName))
+      | _ => AddressCountry(options)
+      }
     }
   | _ => None
   }
@@ -494,9 +493,11 @@ let getRequiredFieldsFromJson = dict => {
   }
 }
 
+let dynamicFieldsEnabledPaymentMethods = ["crypto_currency", "debit", "credit", "blik"]
+
 let getPaymentMethodFields = (paymentMethod, requiredFields) => {
   let requiredFieldsArr =
-    paymentMethod === "crypto_currency"
+    dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethod)
       ? requiredFields
         ->Utils.getDictFromJson
         ->Js.Dict.values

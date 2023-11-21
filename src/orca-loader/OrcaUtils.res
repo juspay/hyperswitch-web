@@ -315,3 +315,18 @@ let getThemePromise = dict => {
   | _ => None
   }
 }
+
+let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
+  dict1
+  ->Js.Dict.entries
+  ->Js.Array2.concat(dict2->Js.Dict.entries)
+  ->Js.Dict.fromArray
+  ->Js.Json.object_
+  ->unflattenObject
+}
+
+let getArrayOfTupleFromDict = dict => {
+  dict
+  ->Js.Dict.keys
+  ->Belt.Array.map(key => (key, Js.Dict.get(dict, key)->Belt.Option.getWithDefault(Js.Json.null)))
+}
