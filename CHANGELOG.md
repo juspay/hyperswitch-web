@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/juspay/hyperswitch-web/compare/v0.7.0...v0.8.0) (2023-11-22)
+
+
+### Features
+
+* HS-170: Added Card Redirect Payment Method Type ([#36](https://github.com/juspay/hyperswitch-web/issues/36)) ([e9c310b](https://github.com/juspay/hyperswitch-web/commit/e9c310be7275233fba775290208bb9fbeba3a1f5))
+
 # [0.7.0](https://github.com/juspay/hyperswitch-web/compare/v0.6.0...v0.7.0) (2023-11-21)
 
 
