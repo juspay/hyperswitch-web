@@ -33,6 +33,7 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
     PaymentMethodsRecord.getPaymentMethodFields(paymentMethodType, requiredFields)
     ->Utils.removeDuplicate
     ->Js.Array2.filter(item => item !== None)
+    ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
   //<...>//
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -44,8 +45,8 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
 
   let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", logger)
   let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline1, "line2", logger)
-  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressline1, "city", logger)
+  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
+  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
   let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", logger)
   let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
     userAddressPincode,
@@ -55,7 +56,7 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
   let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
   let (fullName, setFullName) = Recoil.useLoggedRecoilState(userFullName, "fullName", logger)
   let (blikCode, setBlikCode) = Recoil.useLoggedRecoilState(userBlikCode, "blikCode", logger)
-  let (phone, _) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", logger)
+  let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", logger)
   let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
   let (billingName, setBillingName) = Recoil.useLoggedRecoilState(
     userBillingName,
@@ -163,11 +164,23 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
       switch paymentMethodFields {
       | Email => email.isValid
       | FullName => Some(fullName.value !== "")
-      | Country => Some(country !== "")
+      | Country
+      | AddressCountry(_) =>
+        Some(country !== "")
       | BillingName => Some(billingName.value !== "")
       | AddressLine1 => Some(line1.value !== "")
-      | AddressLine2 => Some(line2.value !== "")
-      | _ => Some(true)
+      | Bank => Some(selectedBank !== "")
+      | PhoneNumber => Some(phone.value !== "")
+      | AddressCity => Some(city.value !== "")
+      | AddressPincode => Some(postalCode.value !== "")
+      | AddressState => Some(state.value !== "")
+      | BlikCode => Some(blikCode.value !== "")
+      | Currency(_) => Some(currency !== "")
+      | AddressLine2
+      | SpecialField(_)
+      | InfoElement
+      | None =>
+        Some(true)
       }->Belt.Option.getWithDefault(false)
     }, true)
     setAreRequiredFieldsValid(._ => areRequiredFieldsValid)
@@ -177,11 +190,22 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
       switch paymentMethodFields {
       | Email => email.value === ""
       | FullName => fullName.value === ""
-      | Country => country === ""
+      | Country
+      | AddressCountry(_) =>
+        country === ""
       | BillingName => billingName.value === ""
       | AddressLine1 => line1.value === ""
-      | AddressLine2 => line2.value === ""
-      | _ => false
+      | Bank => selectedBank === ""
+      | PhoneNumber => phone.value === ""
+      | AddressCity => city.value === ""
+      | AddressPincode => postalCode.value === ""
+      | AddressState => state.value === ""
+      | BlikCode => blikCode.value === ""
+      | Currency(_) => currency === ""
+      | AddressLine2
+      | SpecialField(_)
+      | InfoElement
+      | None => false
       }
     }, false)
     setAreRequiredFieldsEmpty(._ => areRequiredFieldsEmpty)
@@ -197,24 +221,45 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
     )
 
   React.useEffect0(() => {
+    let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
+      requiredFieldsType
+      ->Js.Array2.filter(requiredFields => requiredFields.field_type === item.field_type)
+      ->Js.Array2.reduce((acc, item) => {
+        let requiredFieldsArr = item.required_field->Js.String2.split(".")
+        switch requiredFieldsArr
+        ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
+        ->Belt.Option.getWithDefault("") {
+        | "first_name" => item.value->Js.String2.concat(acc)
+        | "last_name" => acc->Js.String2.concatMany([" ", item.value])
+        | _ => acc
+        }
+      }, "")
+    }
+
     let setFields = (
       setMethod: (. RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
       field: RecoilAtomTypes.field,
-      fieldValue,
+      item: PaymentMethodsRecord.required_fields,
+      isNameField,
     ) => {
-      field.value === ""
-        ? setMethod(.prev => {
-            ...prev,
-            value: fieldValue,
-          })
-        : ()
+      if isNameField && field.value === "" {
+        setMethod(.prev => {
+          ...prev,
+          value: getNameValue(item),
+        })
+      } else if field.value === "" {
+        setMethod(.prev => {
+          ...prev,
+          value: item.value,
+        })
+      }
     }
 
     requiredFieldsType->Js.Array2.forEach(requiredField => {
       let value = requiredField.value
       switch requiredField.field_type {
       | Email => {
-          setFields(setEmail, email, value)
+          setFields(setEmail, email, requiredField, false)
           let newEmail: RecoilAtomTypes.field = {
             value: value,
             isValid: None,
@@ -222,11 +267,16 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
           }
           Utils.checkEmailValid(newEmail, setEmail)
         }
-      | FullName => setFields(setFullName, fullName, value)
-      | AddressLine1 => setFields(setLine1, line1, value)
-      | AddressLine2 => setFields(setLine2, line2, value)
-      | BlikCode => setFields(setBlikCode, blikCode, value)
-      | BillingName => setFields(setBillingName, billingName, value)
+      | FullName => setFields(setFullName, fullName, requiredField, true)
+      | AddressLine1 => setFields(setLine1, line1, requiredField, false)
+      | AddressLine2 => setFields(setLine2, line2, requiredField, false)
+      | AddressState => setFields(setState, state, requiredField, false)
+      | AddressCity => setFields(setCity, city, requiredField, false)
+      | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
+      | PhoneNumber => setFields(setPhone, phone, requiredField, false)
+      | BlikCode => setFields(setBlikCode, blikCode, requiredField, false)
+      | BillingName => setFields(setBillingName, billingName, requiredField, true)
+      | Country
       | AddressCountry(_) => {
           let countryCode =
             Country.getCountry(paymentMethodType)
@@ -235,7 +285,11 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
             ->Belt.Option.getWithDefault(Country.defaultTimeZone)
           setCountry(_ => countryCode.countryName)
         }
-      | _ => ()
+      | Currency(_) => setCurrency(_ => value)
+      | Bank => setSelectedBank(_ => value)
+      | SpecialField(_)
+      | InfoElement
+      | None => ()
       }
     })
     None
@@ -264,6 +318,10 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
         | Email => email.value
         | FullName => getName(item, fullName)
         | AddressLine1 => line1.value
+        | AddressLine2 => line2.value
+        | AddressCity => city.value
+        | AddressPincode => postalCode.value
+        | AddressState => state.value
         | BlikCode => blikCode.value
         | PhoneNumber => phone.value
         | Currency(_) => currency
@@ -278,7 +336,9 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
               ->Belt.Option.getWithDefault(Country.defaultTimeZone)
             countryCode.isoAlpha2
           }
-        | _ => ""
+        | SpecialField(_)
+        | InfoElement
+        | None => ""
         }
         acc->Js.Dict.set(item.required_field, value->Js.Json.string)
         acc
@@ -290,6 +350,10 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
     fullName.value,
     email.value,
     line1.value,
+    line2.value,
+    city.value,
+    postalCode.value,
+    state.value,
     blikCode.value,
     phone.value,
     currency,
@@ -298,6 +362,21 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
   ])
 
   let bottomElement = <InfoElement />
+
+  let getCustomFieldName = (item: PaymentMethodsRecord.paymentMethodsFields) => {
+    if (
+      requiredFieldsType
+      ->Js.Array2.filter(requiredFieldType =>
+        requiredFieldType.field_type === item &&
+          requiredFieldType.display_name === "card_holder_name"
+      )
+      ->Belt.Array.length > 0
+    ) {
+      Some(localeString.cardHolderName)
+    } else {
+      None
+    }
+  }
 
   <div>
     {fieldsArr
@@ -311,8 +390,10 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
           (),
         )}>
         {switch item {
-        | FullName => <FullNamePaymentInput paymentType />
-        | BillingName => <BillingNamePaymentInput paymentType />
+        | FullName =>
+          <FullNamePaymentInput paymentType customFieldName={item->getCustomFieldName} />
+        | BillingName =>
+          <BillingNamePaymentInput paymentType customFieldName={item->getCustomFieldName} />
         | Email => <EmailPaymentInput paymentType />
         | PhoneNumber => <PhoneNumberPaymentInput />
         | AddressLine1 =>
