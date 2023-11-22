@@ -1437,6 +1437,24 @@ let multibancoBody = (~email) => [
   ),
 ]
 
+let cardRedirectBody = () => {
+  [
+    ("payment_method", "card_redirect"->Js.Json.string),
+    ("payment_method_type", "card_redirect"->Js.Json.string),
+    (
+      "payment_method_data",
+      [
+        (
+          "card_redirect",
+          [("card_redirect", Js.Dict.empty()->Js.Json.object_)]->Js.Dict.fromArray->Js.Json.object_,
+        ),
+      ]
+      ->Js.Dict.fromArray
+      ->Js.Json.object_,
+    ),
+  ]
+}
+
 let getPaymentBody = (
   ~paymentMethod,
   ~fullName,
@@ -1497,6 +1515,7 @@ let getPaymentBody = (
   | "atome" => atomeBody()
   | "multibanco" => multibancoBody(~email)
   | "classic" => rewardBody()
+  | "card_redirect" => cardRedirectBody()
   | _ => []
   }
 }

@@ -418,6 +418,13 @@ let paymentMethodsFields = [
     fields: [Email, InfoElement],
     miniIcon: None,
   },
+  {
+    paymentMethodName: "card_redirect",
+    icon: Some(icon("default-card", ~size=19)),
+    displayName: "Card",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
