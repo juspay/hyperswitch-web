@@ -222,7 +222,8 @@ let make = (
           ->Js.Json.object_
           ->OrcaUtils.flattenObject(true)
           ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->OrcaUtils.getArrayOfTupleFromDict,
+          ->OrcaUtils.getArrayOfTupleFromDict
+          ->Js.Array2.filter(((key, _)) => key !== "payment_method_data"),
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           (),
@@ -254,7 +255,14 @@ let make = (
   <div className="animate-slowShow">
     <RenderIf condition={!showFields && !isBancontact}>
       <SavedMethods
-        paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType list
+        paymentToken
+        setPaymentToken
+        savedMethods
+        loadSavedCards
+        cvcProps
+        paymentType
+        list
+        setRequiredFieldsBody
       />
     </RenderIf>
     <RenderIf condition={showFields || isBancontact}>

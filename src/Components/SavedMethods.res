@@ -8,6 +8,7 @@ let make = (
   ~cvcProps,
   ~paymentType,
   ~list,
+  ~setRequiredFieldsBody,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFeilds, setShowFeilds) = Recoil.useRecoilState(RecoilAtoms.showCardFeildsAtom)
@@ -70,6 +71,11 @@ let make = (
           <Block bottomElement padding="px-4 py-1" className="max-h-[309px] overflow-auto" />
         </RenderIf>
       }}
+      <RenderIf condition={list.payment_methods->Js.Array.length !== 0}>
+        <DynamicFields
+          paymentType list paymentMethod="card" paymentMethodType="debit" setRequiredFieldsBody
+        />
+      </RenderIf>
       <RenderIf condition={!showFeilds}>
         <div
           className="Label flex flex-row gap-3 items-end cursor-pointer"

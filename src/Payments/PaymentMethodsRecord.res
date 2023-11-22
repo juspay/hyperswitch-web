@@ -19,6 +19,24 @@ type paymentMethodsFields =
   | AddressCountry(array<string>)
   | BlikCode
   | Currency(array<string>)
+
+let getPaymentMethodsFieldsOrder = paymentMethodField => {
+  switch paymentMethodField {
+  | AddressLine1 => 1
+  | AddressLine2 => 2
+  | AddressCity => 3
+  | AddressState => 4
+  | AddressCountry(_) => 5
+  | AddressPincode => 6
+  | _ => 0
+  }
+}
+
+let sortPaymentMethodFields = (firstPaymentMethodField, secondPaymentMethodField) => {
+  firstPaymentMethodField->getPaymentMethodsFieldsOrder -
+    secondPaymentMethodField->getPaymentMethodsFieldsOrder
+}
+
 type bankNames = {
   bank_name: array<string>,
   eligible_connectors: array<string>,

@@ -48,6 +48,7 @@ type localeStrings = {
   surchargeMsgPercentageForCard: string => string,
   billingNameLabel: string,
   billingNamePlaceholder: string,
+  cardHolderName: string,
 }
 
 let defaultLocale = {
@@ -105,6 +106,7 @@ let defaultLocale = {
     `A surcharge of upto ${str}% will be applied for this transaction`,
   billingNameLabel: "Billing name",
   billingNamePlaceholder: "First and last name",
+  cardHolderName: "Card Holder Name",
 }
 
 type locale = {localeStrings: array<localeStrings>}
@@ -164,6 +166,7 @@ let localeStrings = [
       `A surcharge of upto ${str}% will be applied for this transaction`,
     billingNameLabel: "Billing name",
     billingNamePlaceholder: "First and last name",
+    cardHolderName: "Card Holder Name",
   },
   {
     locale: "he",
@@ -220,6 +223,7 @@ let localeStrings = [
       `תוספת של עד ${str}% תחול על עסקה זו`,
     billingNameLabel: `שם החיוב`,
     billingNamePlaceholder: `שם פרטי ושם משפחה`,
+    cardHolderName: `שם בעל הכרטיס`,
   },
   {
     locale: `fr`,
@@ -278,6 +282,7 @@ let localeStrings = [
       `Un supplément allant jusqu'à ${str}% sera appliqué pour cette transaction`,
     billingNameLabel: `Nom de facturation`,
     billingNamePlaceholder: `Prénom et nom de famille`,
+    cardHolderName: `Nom du titulaire`,
   },
   {
     locale: "en-GB",
@@ -334,6 +339,7 @@ let localeStrings = [
       `A surcharge of upto ${str}% will be applied for this transaction`,
     billingNameLabel: "Billing name",
     billingNamePlaceholder: "First and last name",
+    cardHolderName: "Card Holder Name",
   },
   {
     locale: "ar",
@@ -392,6 +398,7 @@ let localeStrings = [
       `سيتم تطبيق رسوم إضافية تصل إلى ${str}% على هذه المعاملة`,
     billingNameLabel: `اسم الفواتير`,
     billingNamePlaceholder: `الاسم الأول والاسم الأخير`,
+    cardHolderName: `إسم صاحب البطاقة`,
   },
   {
     locale: "ja",
@@ -449,6 +456,7 @@ let localeStrings = [
       `この取引には ${str}% までの追加料金が適用されます`,
     billingNameLabel: `課金名`,
     billingNamePlaceholder: `名前と苗字`,
+    cardHolderName: `クレジットカード名義人氏名`,
   },
   {
     locale: "de",
@@ -506,5 +514,6 @@ let localeStrings = [
       `Für diese Transaktion wird ein Zuschlag von bis zu ${str}% erhoben`,
     billingNameLabel: `Abrechnungsname`,
     billingNamePlaceholder: `Vor-und Nachname`,
+    cardHolderName: `Name des Karteninhabers`,
   },
 ]
