@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/juspay/hyperswitch-web/compare/v0.9.0...v0.10.0) (2023-11-23)
+
+
+### Features
+
+* HS-167: Added Open Banking UK Payment Method ([#30](https://github.com/juspay/hyperswitch-web/issues/30)) ([05888e5](https://github.com/juspay/hyperswitch-web/commit/05888e55490ae25bfcc7fba38006e7f25a14330e))
+
 # [0.9.0](https://github.com/juspay/hyperswitch-web/compare/v0.8.1...v0.9.0) (2023-11-23)
 
 
