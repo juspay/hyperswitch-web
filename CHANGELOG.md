@@ -1,3 +1,10 @@
+# [0.9.0](https://github.com/juspay/hyperswitch-web/compare/v0.8.1...v0.9.0) (2023-11-23)
+
+
+### Features
+
+* HS-172: Added feature flag for logging ([#40](https://github.com/juspay/hyperswitch-web/issues/40)) ([aa8a2ef](https://github.com/juspay/hyperswitch-web/commit/aa8a2ef5a52c1e1df83314dd853552fbd310ba79))
+
 ## [0.8.1](https://github.com/juspay/hyperswitch-web/compare/v0.8.0...v0.8.1) (2023-11-22)
 
 
