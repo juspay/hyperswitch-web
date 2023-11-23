@@ -1,6 +1,5 @@
-type logType = DEBUG | INFO | ERROR | WARNING
+type logType = DEBUG | INFO | ERROR | WARNING | SILENT
 type logCategory = API | USER_ERROR | USER_EVENT | MERCHANT_EVENT
-type loggingLevel = DEBUG | INFO | ERROR | WARNING | SILENT
 
 type eventName =
   | APP_RENDERED
@@ -228,6 +227,7 @@ let logFileToObj = logFile => {
       | INFO => "INFO"
       | ERROR => "ERROR"
       | WARNING => "WARNING"
+      | SILENT => "SILENT"
       }->Js.Json.string,
     ),
     ("component", "WEB"->Js.Json.string),
@@ -375,7 +375,7 @@ let browserDetect = content => {
 let arrayOfNameAndVersion = Js.String2.split(Window.userAgent->browserDetect, "-")
 
 let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantId=?, ()) => {
-  let loggingLevel: loggingLevel = switch GlobalVars.loggingLevelStr {
+  let loggingLevel = switch GlobalVars.loggingLevelStr {
   | "DEBUG" => DEBUG
   | "INFO" => INFO
   | "WARNING" => WARNING
@@ -406,17 +406,15 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
       switch loggingLevel {
       | DEBUG => log->Js.Array2.push(mainLogFile, _)->ignore
       | INFO =>
-        ([INFO, WARNING, ERROR]: array<logType>)->Js.Array2.includes(log.logType)
+        [INFO, WARNING, ERROR]->Js.Array2.includes(log.logType)
           ? log->Js.Array2.push(mainLogFile, _)->ignore
           : ()
       | WARNING =>
-        ([WARNING, ERROR]: array<logType>)->Js.Array2.includes(log.logType)
+        [WARNING, ERROR]->Js.Array2.includes(log.logType)
           ? log->Js.Array2.push(mainLogFile, _)->ignore
           : ()
       | ERROR =>
-        ([ERROR]: array<logType>)->Js.Array2.includes(log.logType)
-          ? log->Js.Array2.push(mainLogFile, _)->ignore
-          : ()
+        [ERROR]->Js.Array2.includes(log.logType) ? log->Js.Array2.push(mainLogFile, _)->ignore : ()
       | SILENT => ()
       }
     }
@@ -470,7 +468,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     ]
     arrayOfLogs
     ->Js.Array2.find(log => {
-      ([ERROR, DEBUG]: array<logType>)->Js.Array2.includes(log.logType) ||
+      [ERROR, DEBUG]->Js.Array2.includes(log.logType) ||
         (priorityEventNames->Js.Array2.includes(log.eventName) && log.firstEvent)
     })
     ->Belt.Option.isSome || arrayOfLogs->Js.Array2.length > 8
@@ -522,7 +520,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     ~internalMetadata="",
     ~eventName,
     ~timestamp=?,
-    ~logType=INFO: logType,
+    ~logType=INFO,
     ~logCategory=USER_EVENT,
     ~paymentMethod="",
     (),
@@ -573,7 +571,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     ~internalMetadata: setlogApiValueType,
     ~eventName,
     ~timestamp=?,
-    ~logType=INFO: logType,
+    ~logType=INFO,
     ~logCategory=API,
     ~paymentMethod="",
     ~type_="",
@@ -625,7 +623,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     ~internalMetadata="",
     ~eventName,
     ~timestamp=?,
-    ~logType=ERROR: logType,
+    ~logType=ERROR,
     ~logCategory=USER_ERROR,
     ~paymentMethod="",
     (),
