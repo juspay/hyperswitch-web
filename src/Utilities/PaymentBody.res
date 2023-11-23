@@ -1455,6 +1455,31 @@ let cardRedirectBody = () => {
   ]
 }
 
+let openBankingUKBody = (~country) => {
+  [
+    ("payment_method", "bank_redirect"->Js.Json.string),
+    ("payment_method_type", "open_banking_uk"->Js.Json.string),
+    (
+      "payment_method_data",
+      [
+        (
+          "bank_redirect",
+          [
+            (
+              "open_banking_uk",
+              [("country", country->Js.Json.string)]->Js.Dict.fromArray->Js.Json.object_,
+            ),
+          ]
+          ->Js.Dict.fromArray
+          ->Js.Json.object_,
+        ),
+      ]
+      ->Js.Dict.fromArray
+      ->Js.Json.object_,
+    ),
+  ]
+}
+
 let getPaymentBody = (
   ~paymentMethod,
   ~fullName,
@@ -1516,6 +1541,7 @@ let getPaymentBody = (
   | "multibanco" => multibancoBody(~email)
   | "classic" => rewardBody()
   | "card_redirect" => cardRedirectBody()
+  | "open_banking_uk" => openBankingUKBody(~country)
   | _ => []
   }
 }
