@@ -410,17 +410,19 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
   let events = ref(Js.Dict.empty())
 
   let rec sendLogs = () => {
-    switch timeOut.contents {
-    | Some(val) => {
-        Js.Global.clearTimeout(val)
-        timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
+    if GlobalVars.enableLogging {
+      switch timeOut.contents {
+      | Some(val) => {
+          Js.Global.clearTimeout(val)
+          timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
+        }
+      | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
       }
-    | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
-    }
-    beaconApiCall(mainLogFile)
-    let len = mainLogFile->Js.Array2.length
-    for _ in 0 to len - 1 {
-      mainLogFile->Js.Array2.pop->ignore
+      beaconApiCall(mainLogFile)
+      let len = mainLogFile->Js.Array2.length
+      for _ in 0 to len - 1 {
+        mainLogFile->Js.Array2.pop->ignore
+      }
     }
   }
 
