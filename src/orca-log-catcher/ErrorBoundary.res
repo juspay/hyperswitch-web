@@ -108,32 +108,36 @@ module ErrorCard = {
     }
 
     React.useEffect0(() => {
-      let errorLog: OrcaLogger.logFile = {
-        logType: ERROR,
-        timestamp: Js.Date.now()->Belt.Float.toString,
-        sessionId: "",
-        source: "orca-elements",
-        version: GlobalVars.repoVersion,
-        value: error->errorToJson->Js.Json.stringify,
-        internalMetadata: "",
-        category: USER_ERROR,
-        paymentId: "",
-        merchantId: "",
-        browserName: OrcaLogger.arrayOfNameAndVersion
-        ->Belt.Array.get(0)
-        ->Belt.Option.getWithDefault("Others"),
-        browserVersion: OrcaLogger.arrayOfNameAndVersion
-        ->Belt.Array.get(1)
-        ->Belt.Option.getWithDefault("0"),
-        platform: Window.platform,
-        userAgent: Window.userAgent,
-        appId: "",
-        eventName: "SDK_CRASH",
-        latency: "",
-        paymentMethod: "",
-        firstEvent: false,
+      let loggingLevel = GlobalVars.loggingLevelStr
+      let enableLogging = GlobalVars.enableLogging
+      if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Js.Array2.includes(loggingLevel) {
+        let errorLog: OrcaLogger.logFile = {
+          logType: ERROR,
+          timestamp: Js.Date.now()->Belt.Float.toString,
+          sessionId: "",
+          source: "orca-elements",
+          version: GlobalVars.repoVersion,
+          value: error->errorToJson->Js.Json.stringify,
+          internalMetadata: "",
+          category: USER_ERROR,
+          paymentId: "",
+          merchantId: "",
+          browserName: OrcaLogger.arrayOfNameAndVersion
+          ->Belt.Array.get(0)
+          ->Belt.Option.getWithDefault("Others"),
+          browserVersion: OrcaLogger.arrayOfNameAndVersion
+          ->Belt.Array.get(1)
+          ->Belt.Option.getWithDefault("0"),
+          platform: Window.platform,
+          userAgent: Window.userAgent,
+          appId: "",
+          eventName: "SDK_CRASH",
+          latency: "",
+          paymentMethod: "",
+          firstEvent: false,
+        }
+        beaconApiCall([errorLog])
       }
-      beaconApiCall([errorLog])
       None
     })
 

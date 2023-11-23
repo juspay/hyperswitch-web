@@ -1,5 +1,6 @@
 type logType = DEBUG | INFO | ERROR | WARNING
 type logCategory = API | USER_ERROR | USER_EVENT | MERCHANT_EVENT
+type loggingLevel = DEBUG | INFO | ERROR | WARNING | SILENT
 
 type eventName =
   | APP_RENDERED
@@ -374,6 +375,15 @@ let browserDetect = content => {
 let arrayOfNameAndVersion = Js.String2.split(Window.userAgent->browserDetect, "-")
 
 let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantId=?, ()) => {
+  let loggingLevel: loggingLevel = switch GlobalVars.loggingLevelStr {
+  | "DEBUG" => DEBUG
+  | "INFO" => INFO
+  | "WARNING" => WARNING
+  | "ERROR" => ERROR
+  | "SILENT"
+  | _ =>
+    SILENT
+  }
   let mainLogFile: array<logFile> = []
   let sessionId = getRefFromOption(sessionId)
   let setSessionId = value => {
@@ -389,6 +399,27 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
   let merchantId = getRefFromOption(merchantId)
   let setMerchantId = value => {
     merchantId := value
+  }
+
+  let conditionalLogPush = (log: logFile) => {
+    if GlobalVars.enableLogging {
+      switch loggingLevel {
+      | DEBUG => log->Js.Array2.push(mainLogFile, _)->ignore
+      | INFO =>
+        ([INFO, WARNING, ERROR]: array<logType>)->Js.Array2.includes(log.logType)
+          ? log->Js.Array2.push(mainLogFile, _)->ignore
+          : ()
+      | WARNING =>
+        ([WARNING, ERROR]: array<logType>)->Js.Array2.includes(log.logType)
+          ? log->Js.Array2.push(mainLogFile, _)->ignore
+          : ()
+      | ERROR =>
+        ([ERROR]: array<logType>)->Js.Array2.includes(log.logType)
+          ? log->Js.Array2.push(mainLogFile, _)->ignore
+          : ()
+      | SILENT => ()
+      }
+    }
   }
 
   let beaconApiCall = data => {
@@ -410,19 +441,17 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
   let events = ref(Js.Dict.empty())
 
   let rec sendLogs = () => {
-    if GlobalVars.enableLogging {
-      switch timeOut.contents {
-      | Some(val) => {
-          Js.Global.clearTimeout(val)
-          timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
-        }
-      | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
+    switch timeOut.contents {
+    | Some(val) => {
+        Js.Global.clearTimeout(val)
+        timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
       }
-      beaconApiCall(mainLogFile)
-      let len = mainLogFile->Js.Array2.length
-      for _ in 0 to len - 1 {
-        mainLogFile->Js.Array2.pop->ignore
-      }
+    | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
+    }
+    beaconApiCall(mainLogFile)
+    let len = mainLogFile->Js.Array2.length
+    for _ in 0 to len - 1 {
+      mainLogFile->Js.Array2.pop->ignore
     }
   }
 
@@ -441,7 +470,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     ]
     arrayOfLogs
     ->Js.Array2.find(log => {
-      [ERROR, DEBUG]->Js.Array2.includes(log.logType) ||
+      ([ERROR, DEBUG]: array<logType>)->Js.Array2.includes(log.logType) ||
         (priorityEventNames->Js.Array2.includes(log.eventName) && log.firstEvent)
     })
     ->Belt.Option.isSome || arrayOfLogs->Js.Array2.length > 8
@@ -493,7 +522,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     ~internalMetadata="",
     ~eventName,
     ~timestamp=?,
-    ~logType=INFO,
+    ~logType=INFO: logType,
     ~logCategory=USER_EVENT,
     ~paymentMethod="",
     (),
@@ -527,7 +556,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
       paymentMethod: paymentMethod,
       firstEvent: firstEvent,
     }
-    ->Js.Array2.push(mainLogFile, _)
+    ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
     events.contents->Js.Dict.set(eventNameStr, localTimestampFloat)
@@ -544,7 +573,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     ~internalMetadata: setlogApiValueType,
     ~eventName,
     ~timestamp=?,
-    ~logType=INFO,
+    ~logType=INFO: logType,
     ~logCategory=API,
     ~paymentMethod="",
     ~type_="",
@@ -585,7 +614,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
       paymentMethod: paymentMethod,
       firstEvent: firstEvent,
     }
-    ->Js.Array2.push(mainLogFile, _)
+    ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
     events.contents->Js.Dict.set(eventNameStr, localTimestampFloat)
@@ -596,7 +625,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     ~internalMetadata="",
     ~eventName,
     ~timestamp=?,
-    ~logType=ERROR,
+    ~logType=ERROR: logType,
     ~logCategory=USER_ERROR,
     ~paymentMethod="",
     (),
@@ -630,7 +659,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
       paymentMethod: paymentMethod,
       firstEvent: firstEvent,
     }
-    ->Js.Array2.push(mainLogFile, _)
+    ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
     events.contents->Js.Dict.set(eventNameStr, localTimestampFloat)
@@ -663,7 +692,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
       paymentMethod: "",
       firstEvent: firstEvent,
     }
-    ->Js.Array2.push(mainLogFile, _)
+    ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
     events.contents->Js.Dict.set(eventName, Js.Date.now())

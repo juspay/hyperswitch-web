@@ -70,6 +70,9 @@ let logEndpoint =
 
 let enableLogging = false;
 
+// Choose from DEBUG, INFO, WARNING, ERROR, SILENT
+let loggingLevel = "DEBUG";
+
 module.exports = (publicPath = "auto") => {
   let entries = {
     app: "./index.js",
@@ -118,6 +121,7 @@ module.exports = (publicPath = "auto") => {
         sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
         sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
         enableLogging: JSON.stringify(enableLogging),
+        loggingLevel: JSON.stringify(loggingLevel),
       }),
       new HtmlWebpackPlugin({
         inject: false,
