@@ -68,7 +68,7 @@ let logEndpoint =
     ? "https://api.hyperswitch.io/sdk-logs"
     : "https://sandbox.juspay.io/godel/analytics";
 
-let enableLogging = true;
+let enableLogging = false;
 
 module.exports = (publicPath = "auto") => {
   let entries = {
