@@ -154,8 +154,8 @@ let loggingLevel = "DEBUG";
 
 <br>
 <div style="display: flex; align-items: center; flex-direction: column;">
-<img  src="./docs/imgs/logging_levels.png" />
-<i>Understanding Logging Levels</i>
+  <img src="./docs/imgs/logging_levels.png" />
+  <i>Understanding Logging Levels</i>
 </div>
 <br>
 
