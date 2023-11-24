@@ -1,3 +1,10 @@
+## [0.12.2](https://github.com/juspay/hyperswitch-web/compare/v0.12.1...v0.12.2) (2023-11-24)
+
+
+### Bug Fixes
+
+* HS-132: Currency Fix and other small Fixes ([#42](https://github.com/juspay/hyperswitch-web/issues/42)) ([e0051f0](https://github.com/juspay/hyperswitch-web/commit/e0051f073626408e5a34094c5ebdd0e5b91e743c))
+
 ## [0.12.1](https://github.com/juspay/hyperswitch-web/compare/v0.12.0...v0.12.1) (2023-11-24)
 
 
