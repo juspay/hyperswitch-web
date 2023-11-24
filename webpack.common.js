@@ -68,7 +68,8 @@ let logEndpoint =
     ? "https://api.hyperswitch.io/sdk-logs"
     : "https://sandbox.juspay.io/godel/analytics";
 
-let enableLogging = false;
+// Set this to true to enable logging
+let enableLogging = true;
 
 // Choose from DEBUG, INFO, WARNING, ERROR, SILENT
 let loggingLevel = "DEBUG";

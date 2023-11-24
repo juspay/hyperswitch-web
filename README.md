@@ -129,6 +129,36 @@ To see your Web Client functioning you can run the command below, this will open
 npm run start:playground
 ```
 
+### Logging
+
+Logging from the payment checkout web client is crucial for tracking and monitoring the flow of payments. It provides a transparent record of events, errors, and user interactions, aiding developers and support teams in identifying issues, debugging, and ensuring the security and reliability of payment processes. Well-implemented logging enhances traceability and facilitates a more efficient resolution of potential problems in the payment checkout experience.
+
+Logs are sent to the server via non-blocking Beacon API requests. This means that even if the logging endpoint configured is incorrect, it would not affect the core payment functionalities. You can find more about the structure of logging request payload in the `beaconApiCall` function in the [`OrcaLogger.res`](./src/orca-log-catcher/OrcaLogger.res#L423C7-L423C20) file.
+
+If you want to collect logs, you can do so by setting up an endpoint on your server to receive, process and persist logs.
+
+In the [`webpack.common.js`](./webpack.common.js) file, you would have to enable the logging flag, and configure the logging endpoint and log level.
+
+```javascipt
+let logEndpoint =
+  sdkEnv === "prod"
+    ? "<YOUR_PRODUCTION_LOGGING_ENDPOINT>"
+    : "<YOUR_SANDBOX_LOGGING_ENDPOINT>";
+
+// Set this to true to enable logging
+let enableLogging = true;
+
+// Choose from DEBUG, INFO, WARNING, ERROR, SILENT
+let loggingLevel = "DEBUG";
+```
+
+<br>
+<div style="display: flex; align-items: center; flex-direction: column;">
+  <img src="./docs/imgs/logging_levels.png" />
+  <i>Understanding Logging Levels</i>
+</div>
+<br>
+
 Now let's test the integration by making a payment from your web client!
 
 <a href="#Integrate Hyperswitch on your App">
@@ -151,7 +181,6 @@ Try the steps below to get a feel of how quick the setup is:
 </a>
 
 Modify the `HYPERSWITCH_SERVER_URL` key in `.env file` by adding the BE hosted url
-
 
 <a href="#FAQs">
   <h2 id="FAQs">🤔 FAQs</h2>
