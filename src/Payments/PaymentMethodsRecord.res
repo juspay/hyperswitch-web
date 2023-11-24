@@ -530,19 +530,17 @@ let dynamicFieldsEnabledPaymentMethods = ["crypto_currency", "debit", "credit", 
 
 let getPaymentMethodFields = (paymentMethod, requiredFields, ~isSavedCardFlow=false, ()) => {
   let requiredFieldsArr =
-    dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethod)
-      ? requiredFields
-        ->Utils.getDictFromJson
-        ->Js.Dict.values
-        ->Js.Array2.map(item => {
-          let val = item->Utils.getDictFromJson->getRequiredFieldsFromJson
-          if isSavedCardFlow && val.display_name === "card_holder_name" {
-            None
-          } else {
-            val.field_type
-          }
-        })
-      : []
+    requiredFields
+    ->Utils.getDictFromJson
+    ->Js.Dict.values
+    ->Js.Array2.map(item => {
+      let val = item->Utils.getDictFromJson->getRequiredFieldsFromJson
+      if isSavedCardFlow && val.display_name === "card_holder_name" {
+        None
+      } else {
+        val.field_type
+      }
+    })
   requiredFieldsArr->Js.Array2.concat(
     (
       paymentMethodsFields

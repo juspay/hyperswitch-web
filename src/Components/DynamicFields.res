@@ -8,6 +8,11 @@ let make = (
   ~setRequiredFieldsBody,
   ~isSavedCardFlow=false,
 ) => {
+  React.useEffect1(() => {
+    setRequiredFieldsBody(_ => Js.Dict.empty())
+    None
+  }, [paymentMethodType])
+
   //<...>//
   let paymentMethodTypes =
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -31,13 +36,22 @@ let make = (
     )
     ->Js.Dict.fromArray
     ->Js.Json.object_
-  } else {
+  } else if (
+    PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethodType)
+  ) {
     paymentMethodTypes.required_fields
+  } else {
+    Js.Json.null
   }
 
   //<...>//
   let fieldsArr =
-    PaymentMethodsRecord.getPaymentMethodFields(paymentMethodType, requiredFields, ~isSavedCardFlow, ())
+    PaymentMethodsRecord.getPaymentMethodFields(
+      paymentMethodType,
+      requiredFields,
+      ~isSavedCardFlow,
+      (),
+    )
     ->Utils.removeDuplicate
     ->Js.Array2.filter(item => item !== None)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
@@ -304,7 +318,8 @@ let make = (
       | BlikCode => setFields(setBlikCode, blikCode, requiredField, false)
       | BillingName => setFields(setBillingName, billingName, requiredField, true)
       | Country
-      | AddressCountry(_) => {
+      | AddressCountry(_) =>
+        if value !== "" {
           let countryCode =
             Country.getCountry(paymentMethodType)
             ->Js.Array2.filter(item => item.isoAlpha2 === value)
@@ -312,8 +327,14 @@ let make = (
             ->Belt.Option.getWithDefault(Country.defaultTimeZone)
           setCountry(_ => countryCode.countryName)
         }
-      | Currency(_) => setCurrency(_ => value)
-      | Bank => setSelectedBank(_ => value)
+      | Currency(_) =>
+        if value !== "" {
+          setCurrency(_ => value)
+        }
+      | Bank =>
+        if value !== "" {
+          setSelectedBank(_ => value)
+        }
       | SpecialField(_)
       | InfoElement
       | None => ()
