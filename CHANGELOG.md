@@ -1,3 +1,10 @@
+## [0.12.1](https://github.com/juspay/hyperswitch-web/compare/v0.12.0...v0.12.1) (2023-11-24)
+
+
+### Bug Fixes
+
+* HS-132: Fixes for Dynamic Fields ([#41](https://github.com/juspay/hyperswitch-web/issues/41)) ([6e1895a](https://github.com/juspay/hyperswitch-web/commit/6e1895abfbf4ec6c594e4b092bd4075be3c1b551))
+
 # [0.12.0](https://github.com/juspay/hyperswitch-web/compare/v0.11.0...v0.12.0) (2023-11-24)
 
 
