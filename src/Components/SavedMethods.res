@@ -73,7 +73,7 @@ let make = (
       }}
       <RenderIf condition={list.payment_methods->Js.Array.length !== 0}>
         <DynamicFields
-          paymentType list paymentMethod="card" paymentMethodType="debit" setRequiredFieldsBody
+          paymentType list paymentMethod="card" paymentMethodType="debit" setRequiredFieldsBody isSavedCardFlow=true
         />
       </RenderIf>
       <RenderIf condition={!showFeilds}>

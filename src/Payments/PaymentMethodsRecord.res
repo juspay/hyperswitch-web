@@ -28,6 +28,7 @@ let getPaymentMethodsFieldsOrder = paymentMethodField => {
   | AddressState => 4
   | AddressCountry(_) => 5
   | AddressPincode => 6
+  | InfoElement => 99
   | _ => 0
   }
 }
@@ -527,7 +528,7 @@ let getRequiredFieldsFromJson = dict => {
 
 let dynamicFieldsEnabledPaymentMethods = ["crypto_currency", "debit", "credit", "blik"]
 
-let getPaymentMethodFields = (paymentMethod, requiredFields) => {
+let getPaymentMethodFields = (paymentMethod, requiredFields, ~isSavedCardFlow=false, ()) => {
   let requiredFieldsArr =
     dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethod)
       ? requiredFields
@@ -535,7 +536,11 @@ let getPaymentMethodFields = (paymentMethod, requiredFields) => {
         ->Js.Dict.values
         ->Js.Array2.map(item => {
           let val = item->Utils.getDictFromJson->getRequiredFieldsFromJson
-          val.field_type
+          if isSavedCardFlow && val.display_name === "card_holder_name" {
+            None
+          } else {
+            val.field_type
+          }
         })
       : []
   requiredFieldsArr->Js.Array2.concat(
@@ -871,6 +876,7 @@ let buildFromPaymentList = (plist: list) => {
           fields: getPaymentMethodFields(
             paymentMethodName,
             individualPaymentMethod.required_fields,
+            (),
           ),
           paymentFlow: paymentExperience,
           handleUserError: handleUserError,
