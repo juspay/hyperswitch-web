@@ -1,3 +1,10 @@
+# [0.11.0](https://github.com/juspay/hyperswitch-web/compare/v0.10.0...v0.11.0) (2023-11-24)
+
+
+### Features
+
+* HS-172: Conditional log push based on loggingLevel ([#43](https://github.com/juspay/hyperswitch-web/issues/43)) ([5ee2f78](https://github.com/juspay/hyperswitch-web/commit/5ee2f78adf88dff693ae253db3ec7ee7b2390dff))
+
 # [0.10.0](https://github.com/juspay/hyperswitch-web/compare/v0.9.0...v0.10.0) (2023-11-23)
 
 
