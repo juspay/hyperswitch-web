@@ -215,7 +215,7 @@ let make = (
           ~handleUserError=false,
           (),
         )
-      } else if complete && !empty {
+      } else if areRequiredFieldsValid && complete && !empty {
         intent(
           ~bodyArr=savedCardBody
           ->Js.Dict.fromArray

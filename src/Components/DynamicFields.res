@@ -1,6 +1,13 @@
 open RecoilAtoms
 @react.component
-let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequiredFieldsBody) => {
+let make = (
+  ~paymentType,
+  ~list,
+  ~paymentMethod,
+  ~paymentMethodType,
+  ~setRequiredFieldsBody,
+  ~isSavedCardFlow=false,
+) => {
   //<...>//
   let paymentMethodTypes =
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -30,7 +37,7 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
 
   //<...>//
   let fieldsArr =
-    PaymentMethodsRecord.getPaymentMethodFields(paymentMethodType, requiredFields)
+    PaymentMethodsRecord.getPaymentMethodFields(paymentMethodType, requiredFields, ~isSavedCardFlow, ())
     ->Utils.removeDuplicate
     ->Js.Array2.filter(item => item !== None)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
@@ -210,7 +217,24 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
     }, false)
     setAreRequiredFieldsEmpty(._ => areRequiredFieldsEmpty)
     None
-  }, (fieldsArr, email, fullName, country, billingName, line1, line2))
+  }, (
+    fieldsArr,
+    currency,
+    fullName.value,
+    country,
+    billingName.value,
+    line1.value,
+    (
+      email,
+      line2.value,
+      selectedBank,
+      phone.value,
+      city.value,
+      postalCode.value,
+      state.value,
+      blikCode.value,
+    ),
+  ))
 
   let requiredFieldsType =
     requiredFields
@@ -259,13 +283,16 @@ let make = (~paymentType, ~list, ~paymentMethod, ~paymentMethodType, ~setRequire
       let value = requiredField.value
       switch requiredField.field_type {
       | Email => {
+          let emailValue = email.value
           setFields(setEmail, email, requiredField, false)
-          let newEmail: RecoilAtomTypes.field = {
-            value: value,
-            isValid: None,
-            errorString: "",
+          if emailValue === "" {
+            let newEmail: RecoilAtomTypes.field = {
+              value: value,
+              isValid: None,
+              errorString: "",
+            }
+            Utils.checkEmailValid(newEmail, setEmail)
           }
-          Utils.checkEmailValid(newEmail, setEmail)
         }
       | FullName => setFields(setFullName, fullName, requiredField, true)
       | AddressLine1 => setFields(setLine1, line1, requiredField, false)
