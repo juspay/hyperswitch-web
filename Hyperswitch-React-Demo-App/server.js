@@ -5,12 +5,15 @@ const { resolve } = require("path");
 
 // Replace if using a different env file or config
 const env = require("dotenv").config({ path: "./.env" });
-app.use(express.static(process.env.STATIC_DIR));
+app.use(express.static("./dist"));
 app.get("/", (req, res) => {
-  const path = resolve(process.env.STATIC_DIR + "/index.html");
+  const path = resolve("./dist" + "/index.html");
   res.sendFile(path);
 });
-
+app.get("/completion", (req, res) => {
+  const path = resolve("./dist" + "/index.html");
+  res.sendFile(path);
+});
 // replace the test api key with your hyperswitch api key
 const hyper = require("@juspay-tech/hyperswitch-node")(
   process.env.HYPERSWITCH_SECRET_KEY
