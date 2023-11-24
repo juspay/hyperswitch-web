@@ -1,3 +1,10 @@
+# [0.12.0](https://github.com/juspay/hyperswitch-web/compare/v0.11.0...v0.12.0) (2023-11-24)
+
+
+### Features
+
+* HS-145: New Design for playground | Bug fixes ([#44](https://github.com/juspay/hyperswitch-web/issues/44)) ([c357019](https://github.com/juspay/hyperswitch-web/commit/c35701972850900111efad8c10a526873bb3b1a0))
+
 # [0.11.0](https://github.com/juspay/hyperswitch-web/compare/v0.10.0...v0.11.0) (2023-11-24)
 
 
