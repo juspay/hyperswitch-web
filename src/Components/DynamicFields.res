@@ -319,7 +319,7 @@ let make = (
       | BillingName => setFields(setBillingName, billingName, requiredField, true)
       | Country
       | AddressCountry(_) =>
-        if value !== "" {
+        if value !== "" && country === "" {
           let countryCode =
             Country.getCountry(paymentMethodType)
             ->Js.Array2.filter(item => item.isoAlpha2 === value)
@@ -328,11 +328,11 @@ let make = (
           setCountry(_ => countryCode.countryName)
         }
       | Currency(_) =>
-        if value !== "" {
+        if value !== "" && currency === "" {
           setCurrency(_ => value)
         }
       | Bank =>
-        if value !== "" {
+        if value !== "" && selectedBank === "" {
           setSelectedBank(_ => value)
         }
       | SpecialField(_)
