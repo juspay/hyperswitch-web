@@ -7,6 +7,7 @@ let make = (
   ~paymentMethodType,
   ~setRequiredFieldsBody,
   ~isSavedCardFlow=false,
+  ~savedCards=[]: array<PaymentType.customerMethods>,
 ) => {
   React.useEffect1(() => {
     setRequiredFieldsBody(_ => Js.Dict.empty())
@@ -44,12 +45,17 @@ let make = (
     Js.Json.null
   }
 
+  let isAllStoredCardsHaveName = React.useMemo1(() => {
+    PaymentType.getIsAllStoredCardsHaveName(savedCards)
+  }, [savedCards])
+
   //<...>//
   let fieldsArr =
     PaymentMethodsRecord.getPaymentMethodFields(
       paymentMethodType,
       requiredFields,
       ~isSavedCardFlow,
+      ~isAllStoredCardsHaveName,
       (),
     )
     ->Utils.removeDuplicate
@@ -388,7 +394,20 @@ let make = (
         | InfoElement
         | None => ""
         }
-        acc->Js.Dict.set(item.required_field, value->Js.Json.string)
+        if (
+          isSavedCardFlow &&
+          item.display_name === "card_holder_name" &&
+          (item.field_type === BillingName || item.field_type === FullName)
+        ) {
+          if !isAllStoredCardsHaveName {
+            acc->Js.Dict.set(
+              "payment_method_data.card_token.card_holder_name",
+              value->Js.Json.string,
+            )
+          }
+        } else {
+          acc->Js.Dict.set(item.required_field, value->Js.Json.string)
+        }
         acc
       }, Js.Dict.empty())
 

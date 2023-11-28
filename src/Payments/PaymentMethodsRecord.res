@@ -528,14 +528,14 @@ let getRequiredFieldsFromJson = dict => {
 
 let dynamicFieldsEnabledPaymentMethods = ["crypto_currency", "debit", "credit", "blik"]
 
-let getPaymentMethodFields = (paymentMethod, requiredFields, ~isSavedCardFlow=false, ()) => {
+let getPaymentMethodFields = (paymentMethod, requiredFields, ~isSavedCardFlow=false, ~isAllStoredCardsHaveName=false, ()) => {
   let requiredFieldsArr =
     requiredFields
     ->Utils.getDictFromJson
     ->Js.Dict.values
     ->Js.Array2.map(item => {
       let val = item->Utils.getDictFromJson->getRequiredFieldsFromJson
-      if isSavedCardFlow && val.display_name === "card_holder_name" {
+      if isSavedCardFlow && val.display_name === "card_holder_name" && isAllStoredCardsHaveName {
         None
       } else {
         val.field_type
