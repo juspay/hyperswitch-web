@@ -1,3 +1,11 @@
+## [0.12.3](https://github.com/juspay/hyperswitch-web/compare/v0.12.2...v0.12.3) (2023-11-28)
+
+
+### Bug Fixes
+
+* HS-132: Country fix ([#47](https://github.com/juspay/hyperswitch-web/issues/47)) ([797db9f](https://github.com/juspay/hyperswitch-web/commit/797db9f310a8d2743e0dd044817b9b4298073474))
+* HS-444: Updated prompt script ([#45](https://github.com/juspay/hyperswitch-web/issues/45)) ([8be15ad](https://github.com/juspay/hyperswitch-web/commit/8be15ade745dba942b95cfb979f6af104208c62b))
+
 ## [0.12.2](https://github.com/juspay/hyperswitch-web/compare/v0.12.1...v0.12.2) (2023-11-24)
 
 
