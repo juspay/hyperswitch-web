@@ -1,3 +1,10 @@
+## [0.12.5](https://github.com/juspay/hyperswitch-web/compare/v0.12.4...v0.12.5) (2023-11-29)
+
+
+### Bug Fixes
+
+* HS-333: Fix : fixed endpoint for local development ([#49](https://github.com/juspay/hyperswitch-web/issues/49)) ([a4a70e6](https://github.com/juspay/hyperswitch-web/commit/a4a70e60c6ccf6467f1a16cbd4d5d62452b7bea6))
+
 ## [0.12.4](https://github.com/juspay/hyperswitch-web/compare/v0.12.3...v0.12.4) (2023-11-29)
 
 
