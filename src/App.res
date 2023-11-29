@@ -9,9 +9,13 @@ let make = () => {
 
   let logger = React.useMemo0(() => {
     let log = OrcaLogger.make()
-    setLoggerState(._ => log)
     log
   })
+
+  React.useEffect1(()=>{
+    setLoggerState(._=>logger)
+    None
+  },[logger])
 
   let renderFullscreen = {
     switch fullscreenMode {

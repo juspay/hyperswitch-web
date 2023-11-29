@@ -43,7 +43,6 @@ let preloadFile = (~type_, ~href=``, ()) => {
 }
 
 let preloader = () => {
-  preloadFile(~type_="document", ~href=`${ApiEndpoint.sdkDomainUrl}/`, ())
   preloadFile(~type_="script", ~href=`${ApiEndpoint.sdkDomainUrl}/app.js`, ())
   preloadFile(~type_="style", ~href=`${ApiEndpoint.sdkDomainUrl}/app.css`, ())
   preloadFile(~type_="image", ~href=`${ApiEndpoint.sdkDomainUrl}/icons/orca.svg`, ())
