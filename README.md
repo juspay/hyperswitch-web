@@ -129,6 +129,17 @@ To see your Web Client functioning you can run the command below, this will open
 npm run start:playground
 ```
 
+### About Env Configs
+
+For ease of development and deployment there are configs in /Hyperswitch-react-demo-app/.env
+
+- `HYPERSWITCH_PUBLISHABLE_KEY` - Publishable key of your Hyperswitch Account
+- `HYPERSWITCH_SECRET_KEY` - Api key of your Hyperswitch Account
+- `HYPERSWITCH_SERVER_URL` - URL of your hosted Hyperswitch Backend server
+- `HYPERSWITCH_CLIENT_URL` - URL of your hosted Hyperswitch SDK
+- `SELF_SERVER_URL` - URL of your node server (/Hyperswitch-react-demo-app/server.js)
+- `SELF_CLIENT_URL` - URL where your application is running
+
 ### Logging
 
 Logging from the payment checkout web client is crucial for tracking and monitoring the flow of payments. It provides a transparent record of events, errors, and user interactions, aiding developers and support teams in identifying issues, debugging, and ensuring the security and reliability of payment processes. Well-implemented logging enhances traceability and facilitates a more efficient resolution of potential problems in the payment checkout experience.
