@@ -1,3 +1,10 @@
+## [0.12.4](https://github.com/juspay/hyperswitch-web/compare/v0.12.3...v0.12.4) (2023-11-29)
+
+
+### Bug Fixes
+
+* HS-174: Removed console warning for using link with document and Batcher error for Recoil ([#48](https://github.com/juspay/hyperswitch-web/issues/48)) ([2c8eef3](https://github.com/juspay/hyperswitch-web/commit/2c8eef3a230ebd4303583ce2640bcf16abf82ba5))
+
 ## [0.12.3](https://github.com/juspay/hyperswitch-web/compare/v0.12.2...v0.12.3) (2023-11-28)
 
 
