@@ -1,3 +1,10 @@
+# [0.13.0](https://github.com/juspay/hyperswitch-web/compare/v0.12.5...v0.13.0) (2023-11-29)
+
+
+### Features
+
+* HS-132: Passing Card Holder Name in Saved Cards Flow ([#50](https://github.com/juspay/hyperswitch-web/issues/50)) ([62812a4](https://github.com/juspay/hyperswitch-web/commit/62812a48ee9a01dae05315b0e784551a450e58b8))
+
 ## [0.12.5](https://github.com/juspay/hyperswitch-web/compare/v0.12.4...v0.12.5) (2023-11-29)
 
 
