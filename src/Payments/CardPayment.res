@@ -222,8 +222,7 @@ let make = (
           ->Js.Json.object_
           ->OrcaUtils.flattenObject(true)
           ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->OrcaUtils.getArrayOfTupleFromDict
-          ->Js.Array2.filter(((key, _)) => key !== "payment_method_data"),
+          ->OrcaUtils.getArrayOfTupleFromDict,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           (),

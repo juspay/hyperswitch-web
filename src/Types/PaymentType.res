@@ -856,3 +856,15 @@ let itemToObjMapper = (dict, logger) => {
 }
 
 type loadType = Loading | Loaded(Js.Json.t) | SemiLoaded | LoadError(Js.Json.t)
+
+let getIsAllStoredCardsHaveName = (savedCards: array<customerMethods>) => {
+  savedCards
+  ->Js.Array2.filter(savedCard => {
+    switch savedCard.card.cardHolderName {
+    | None
+    | Some("") => false
+    | _ => true
+    }
+  })
+  ->Belt.Array.length === savedCards->Belt.Array.length
+}
