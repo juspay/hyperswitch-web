@@ -23,6 +23,7 @@
     "build:dev-integ": "sdkEnv=integ webpack --config webpack.dev.js",
     "start": "sdkEnv=local webpack --config webpack.dev.js && webpack serve --config webpack.dev.js",
     "build:prod": "sdkEnv=prod webpack --config webpack.common.js",
+    "build": "webpack --config webpack.common.js",
     "build:sandbox": "sdkEnv=sandbox webpack --config webpack.common.js",
     "build:integ": "sdkEnv=integ webpack --config webpack.common.js",
     "test": "react-scripts test",
