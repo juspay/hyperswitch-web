@@ -23,8 +23,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "concurrently \"npm run start-client\" \"npm run start-server\"",
-    "start-client": " webpack --config webpack.dev.js && webpack serve --config webpack.dev.js",
+    "start": " webpack --config webpack.dev.js && concurrently \"npm run start-client\" \"npm run start-server\"",
+    "start-client": "webpack serve --config webpack.dev.js",
     "start-server": "node dist/server.js",
     "build": "webpack --config webpack.common.js",
     "test": "react-scripts test",
