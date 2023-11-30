@@ -1,3 +1,10 @@
+## [0.13.2](https://github.com/juspay/hyperswitch-web/compare/v0.13.1...v0.13.2) (2023-11-30)
+
+
+### Bug Fixes
+
+* HS-175: Improved prompts and endpoint fix ([#52](https://github.com/juspay/hyperswitch-web/issues/52)) ([28b7d5f](https://github.com/juspay/hyperswitch-web/commit/28b7d5f7dd2c41570f8bc8c856eabae6f44c95c4))
+
 ## [0.13.1](https://github.com/juspay/hyperswitch-web/compare/v0.13.0...v0.13.1) (2023-11-30)
 
 
