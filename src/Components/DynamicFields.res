@@ -191,18 +191,17 @@ let make = (
       switch paymentMethodFields {
       | Email => email.isValid
       | FullName => Some(fullName.value !== "")
-      | Country
-      | AddressCountry(_) =>
-        Some(country !== "")
+      | Country => Some(country !== "" || countryNames->Belt.Array.length === 0)
+      | AddressCountry(countryArr) => Some(country !== "" || countryArr->Belt.Array.length === 0)
       | BillingName => Some(billingName.value !== "")
       | AddressLine1 => Some(line1.value !== "")
-      | Bank => Some(selectedBank !== "")
+      | Bank => Some(selectedBank !== "" || bankNames->Belt.Array.length === 0)
       | PhoneNumber => Some(phone.value !== "")
       | AddressCity => Some(city.value !== "")
       | AddressPincode => Some(postalCode.value !== "")
       | AddressState => Some(state.value !== "")
       | BlikCode => Some(blikCode.value !== "")
-      | Currency(_) => Some(currency !== "")
+      | Currency(currencyArr) => Some(currency !== "" || currencyArr->Belt.Array.length === 0)
       | AddressLine2
       | SpecialField(_)
       | InfoElement
@@ -217,18 +216,17 @@ let make = (
       switch paymentMethodFields {
       | Email => email.value === ""
       | FullName => fullName.value === ""
-      | Country
-      | AddressCountry(_) =>
-        country === ""
+      | Country => country === "" && countryNames->Belt.Array.length > 0
+      | AddressCountry(countryArr) => country === "" && countryArr->Belt.Array.length > 0
       | BillingName => billingName.value === ""
       | AddressLine1 => line1.value === ""
-      | Bank => selectedBank === ""
+      | Bank => selectedBank === "" && bankNames->Belt.Array.length > 0
       | PhoneNumber => phone.value === ""
       | AddressCity => city.value === ""
       | AddressPincode => postalCode.value === ""
       | AddressState => state.value === ""
       | BlikCode => blikCode.value === ""
-      | Currency(_) => currency === ""
+      | Currency(currencyArr) => currency === "" && currencyArr->Belt.Array.length > 0
       | AddressLine2
       | SpecialField(_)
       | InfoElement
