@@ -1,3 +1,10 @@
+## [0.13.1](https://github.com/juspay/hyperswitch-web/compare/v0.13.0...v0.13.1) (2023-11-30)
+
+
+### Bug Fixes
+
+* HS-132: Dropdown Bank requiredFieldsValid fix ([#53](https://github.com/juspay/hyperswitch-web/issues/53)) ([b3630a3](https://github.com/juspay/hyperswitch-web/commit/b3630a39590f9bcab4ba4ff9fa63f313fed3d5b0))
+
 # [0.13.0](https://github.com/juspay/hyperswitch-web/compare/v0.12.5...v0.13.0) (2023-11-29)
 
 
