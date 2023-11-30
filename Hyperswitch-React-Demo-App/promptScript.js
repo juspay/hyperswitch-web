@@ -1,22 +1,15 @@
 const fs = require("fs");
 const prompt = require("prompt-sync")({ sigint: true });
-const publishableKey = prompt("Publishable Key : ");
-const secretKey = prompt("Secret Key : ");
-const serverURL = prompt("Self-hosted Hyperswitch Server URL : ");
-const clientURL = prompt("Self-hosted Hyperswitch Client URL : ");
-
-const appServerURL = prompt("Application Server URL : ");
-const appClientURL = prompt("Application Client URL : ");
 
 const envPath = "./.env";
 
 const obj = {
-  HYPERSWITCH_PUBLISHABLE_KEY: publishableKey,
-  HYPERSWITCH_SECRET_KEY: secretKey,
-  HYPERSWITCH_SERVER_URL: serverURL,
-  HYPERSWITCH_CLIENT_URL: clientURL,
-  SELF_SERVER_URL: appServerURL,
-  SELF_CLIENT_URL: appClientURL,
+  HYPERSWITCH_PUBLISHABLE_KEY: "Publishable Key",
+  HYPERSWITCH_SECRET_KEY: "Secret Key",
+  HYPERSWITCH_SERVER_URL: "Self-hosted Hyperswitch Server URL (URL of your Hyperswitch Backend)",
+  HYPERSWITCH_CLIENT_URL: "Self-hosted Hyperswitch Client URL (URL of your Hyperswitch SDK)",
+  SELF_SERVER_URL: "Application Server URL (URL of your node server)",
+  SELF_CLIENT_URL: "Application Client URL (URL where your application is running)",
 };
 
 function initializeValues(filePath, keyValuePairs) {
@@ -32,11 +25,15 @@ function initializeValues(filePath, keyValuePairs) {
       let index = lines.findIndex((line) => line.startsWith(`${key}=`));
 
       if (index !== -1) {
-        // If the key exists, update its value
-        lines[index] = `${key}="${value}"`;
+        if (lines[index] === `${key}=` || lines[index] === `${key}=""`) {
+          const promptVal = prompt(`${value} : `)
+          // If the key exists, and has not been updated once, update its value
+          lines[index] = `${key}="${promptVal}"`;
+        }
       } else {
+        const promptVal = prompt(`${value} : `)
         // If the key doesn't exist, add a new line with the key-value pair
-        lines.push(`${key}="${value}"`);
+        lines.push(`${key}="${promptVal}"`);
       }
     });
 
