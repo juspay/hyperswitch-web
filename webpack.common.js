@@ -17,8 +17,8 @@ let repoName = require("./package.json").name;
 let repoPublicPath = `/${repoVersion}/${majorVersion}`;
 
 const sdkEnv = process.env.sdkEnv;
-const envSdkUrl = process.env.envSdkUrl;
-const envBackendUrl = process.env.envBackendUrl;
+const envSdkUrl = JSON.stringify(process.env.envSdkUrl);
+const envBackendUrl = JSON.stringify(process.env.envBackendUrl);
 
 let sdkUrl;
 
