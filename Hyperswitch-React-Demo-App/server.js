@@ -54,8 +54,6 @@ app.get("/create-payment-intent", async (req, res) => {
           amount: 2999,
         },
       ],
-      business_country: "US",
-      business_label: "default",
       currency: "USD",
       confirm: false,
       capture_method: "automatic",

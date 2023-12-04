@@ -17,6 +17,15 @@ let paymentListLookupNew = (list: PaymentMethodsRecord.list, ~order) => {
     "samsung_pay",
   ]
   let otherPaymentList = []
+  let googlePayFields = pmList->Js.Array2.find(item => item.paymentMethodName === "google_pay")
+  switch googlePayFields {
+  | Some(val) =>
+    if val.fields->Js.Array2.length > 0 {
+      walletToBeDisplayedInTabs->Js.Array2.push("google_pay")->ignore
+    }
+  | None => ()
+  }
+
   pmList->Js.Array2.forEach(item => {
     if walletToBeDisplayedInTabs->Js.Array2.includes(item.paymentMethodName) {
       otherPaymentList->Js.Array2.push(item.paymentMethodName)->ignore
