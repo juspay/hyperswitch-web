@@ -1,3 +1,10 @@
+# [0.14.0](https://github.com/juspay/hyperswitch-web/compare/v0.13.2...v0.14.0) (2023-12-04)
+
+
+### Features
+
+* HS-169: AWS Prod Deployment Script ([#55](https://github.com/juspay/hyperswitch-web/issues/55)) ([7578307](https://github.com/juspay/hyperswitch-web/commit/7578307ce869fa2d126bd1b359f113aca9cd6aa8))
+
 ## [0.13.2](https://github.com/juspay/hyperswitch-web/compare/v0.13.1...v0.13.2) (2023-11-30)
 
 
