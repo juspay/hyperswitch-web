@@ -46,7 +46,7 @@ fi
 
 echo "Building the distributable bundle for the application"
 if [ -z "$AWS_BUCKET_LOCATION" ]; then
-    echo "Enter the AWS S3 bucket name where you wish to store the Hyperswitch Client (my-bucket.s3.us-east-2.amazonaws.com)"
+    echo "Enter the AWS S3 bucket location where you wish to store the Hyperswitch Client (my-bucket.s3.us-east-2.amazonaws.com)"
     read AWS_BUCKET_LOCATION </dev/tty
 fi
 echo "Setting bucket as public"
@@ -76,8 +76,14 @@ echo $( (aws s3api put-bucket-policy --bucket $MY_AWS_S3_BUCKET_NAME --policy "$
 
 echo "Bucket configuration updated"
 
-echo "Enter the backend endpoint your Hyperswitch Client will hit (hosted Hyperswitch Backend):"
+echo "Enter the backend endpoint your Hyperswitch Client will hit (hosted Hyperswitch Backend, https://sandbox.hyperswitch.io is taken by default):"
 read AWS_BACKEND_URL </dev/tty
+
+if [ -z $AWS_BACKEND_URL ]; then
+    echo "Setting backend URL value to https://sandbox.hyperswitch.io by default"
+    AWS_BACKEND_URL="https://sandbox.hyperswitch.io"
+
+fi
 
 export envSdkUrl="${AWS_BUCKET_LOCATION%?}"
 export envBackendUrl=$AWS_BACKEND_URL
