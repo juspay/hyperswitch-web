@@ -1,3 +1,10 @@
+## [0.14.1](https://github.com/juspay/hyperswitch-web/compare/v0.14.0...v0.14.1) (2023-12-05)
+
+
+### Bug Fixes
+
+* HS-132: Removing Dynamic Fields from rendering on SDK ([#58](https://github.com/juspay/hyperswitch-web/issues/58)) ([b9eee72](https://github.com/juspay/hyperswitch-web/commit/b9eee72567838d19d9dfa41f1c2a8038fccfb3a6))
+
 # [0.14.0](https://github.com/juspay/hyperswitch-web/compare/v0.13.2...v0.14.0) (2023-12-04)
 
 
