@@ -2,11 +2,10 @@ open RecoilAtoms
 open RecoilAtomTypes
 open Utils
 
-type props = {paymentType: CardThemeType.mode, list: PaymentMethodsRecord.list}
+@react.component
+let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
+  let cleanBSB = str => str->Js.String2.replaceByRe(%re("/-/g"), "")
 
-let cleanBSB = str => str->Js.String2.replaceByRe(%re("/-/g"), "")
-
-let default = (props: props) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -87,11 +86,15 @@ let default = (props: props) => {
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
-    <EmailPaymentInput paymentType=props.paymentType />
-    <FullNamePaymentInput paymentType=props.paymentType />
+    <EmailPaymentInput paymentType />
+    <FullNamePaymentInput paymentType />
     <AddBankAccount modalData setModalData />
-    <FullScreenPortal> <BankDebitModal setModalData /> </FullScreenPortal>
-    <Surcharge list=props.list paymentMethod="bank_debit" paymentMethodType="becs" />
+    <FullScreenPortal>
+      <BankDebitModal setModalData />
+    </FullScreenPortal>
+    <Surcharge list paymentMethod="bank_debit" paymentMethodType="becs" />
     <Terms mode=PaymentModeType.BecsBankDebit />
   </div>
 }
+
+let default = make

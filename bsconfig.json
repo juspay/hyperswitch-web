@@ -1,8 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/rescript-lang/rescript-compiler/master/docs/docson/build-schema.json",
   "name": "orca-payment-page",
-  "reason": {
-    "react-jsx": 3
+  "jsx": {
+    "version": 4,
+    "mode": "classic"
   },
   "bsc-flags": ["-bs-super-errors"],
   "sources": {
@@ -16,5 +17,10 @@
     "module": "es6",
     "in-source": true
   },
-  "bs-dependencies": ["@rescript/react", "bs-fetch", "bs-webapi"]
+  "bs-dependencies": [
+    "@rescript/react",
+    "bs-fetch",
+    "@ryyppy/rescript-promise",
+    "rescript-webapi"
+  ]
 }

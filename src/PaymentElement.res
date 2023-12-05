@@ -222,7 +222,9 @@ let make = (
           <BacsBankTransferLazy paymentType list />
         </React.Suspense>
       | ACHBankDebit =>
-        <React.Suspense fallback={loader()}> <ACHBankDebitLazy paymentType list /> </React.Suspense>
+        <React.Suspense fallback={loader()}>
+          <ACHBankDebitLazy paymentType list />
+        </React.Suspense>
       | SepaBankDebit =>
         <React.Suspense fallback={loader()}>
           <SepaBankDebitLazy paymentType list />
@@ -266,7 +268,9 @@ let make = (
         }}
       </div>
       <RenderIf condition={sdkHandleConfirmPayment}>
-        <div className="mt-4"> <PayNowButton /> </div>
+        <div className="mt-4">
+          <PayNowButton />
+        </div>
       </RenderIf>
       <PoweredBy />
     </RenderIf>

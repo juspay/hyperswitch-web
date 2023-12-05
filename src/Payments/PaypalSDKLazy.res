@@ -1,10 +1,8 @@
 open LazyUtils
 
-@obj
-external makeProps: (
-  ~sessionObj: SessionsType.token,
-  ~list: PaymentMethodsRecord.list,
-  unit,
-) => componentProps = ""
+type props = {
+  sessionObj: SessionsType.token,
+  list: PaymentMethodsRecord.list,
+}
 
-let make = reactLazy(.() => import_("./PaypalSDK.bs.js"))
+let make: props => React.element = reactLazy(.() => import_("./PaypalSDK.bs.js"))

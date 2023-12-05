@@ -1,11 +1,9 @@
 open LazyUtils
 
-@obj
-external makeProps: (
-  ~sessionObj: option<SessionsType.token>,
-  ~list: PaymentMethodsRecord.list,
-  ~thirdPartySessionObj: option<Js.Json.t>,
-  unit,
-) => componentProps = ""
+type props = {
+  sessionObj: option<SessionsType.token>,
+  list: PaymentMethodsRecord.list,
+  thirdPartySessionObj: option<Js.Json.t>,
+}
 
-let make = reactLazy(.() => import_("./GPay.bs.js"))
+let make: props => React.element = reactLazy(.() => import_("./GPay.bs.js"))

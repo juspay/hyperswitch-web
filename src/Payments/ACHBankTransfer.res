@@ -1,12 +1,8 @@
 open RecoilAtoms
 open Utils
 
-type props = {
-  paymentType: CardThemeType.mode,
-  list: PaymentMethodsRecord.list,
-}
-
-let default = (props: props) => {
+@react.component
+let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -32,7 +28,7 @@ let default = (props: props) => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if complete {
-        let (connectors, _) = props.list->PaymentUtils.getConnectors(BankTransfer(ACH))
+        let (connectors, _) = list->PaymentUtils.getConnectors(BankTransfer(ACH))
         intent(
           ~bodyArr=PaymentBody.achBankTransferBody(~email=email.value, ~connectors),
           ~confirmParam=confirm.confirmParams,
@@ -50,6 +46,9 @@ let default = (props: props) => {
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingTab, ())}>
-    <EmailPaymentInput paymentType=props.paymentType /> <InfoElement />
+    <EmailPaymentInput paymentType />
+    <InfoElement />
   </div>
 }
+
+let default = make

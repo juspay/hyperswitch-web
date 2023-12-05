@@ -1,6 +1,5 @@
-type props = {sessionObj: option<Js.Json.t>, list: PaymentMethodsRecord.list}
-
-let default = (props: props) => {
+@react.component
+let make = (~sessionObj: option<Js.Json.t>, ~list: PaymentMethodsRecord.list) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
@@ -10,18 +9,18 @@ let default = (props: props) => {
   let sync = PaymentHelpers.usePaymentSync(None, Applepay)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
-  let isApplePaySDKFlow = props.sessionObj->Belt.Option.isSome
+  let isApplePaySDKFlow = sessionObj->Belt.Option.isSome
 
   let applePayPaymentMethodType = React.useMemo1(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~list=props.list,
+      ~list,
       ~paymentMethod="wallet",
       ~paymentMethodType="apple_pay",
     ) {
     | Some(paymentMethodType) => paymentMethodType
     | None => PaymentMethodsRecord.defaultPaymentMethodType
     }
-  }, [props.list])
+  }, [list])
 
   let paymentExperience = React.useMemo1(() => {
     applePayPaymentMethodType.payment_experience->Js.Array2.length == 0
@@ -31,18 +30,18 @@ let default = (props: props) => {
 
   let isInvokeSDKFlow = React.useMemo1(() => {
     paymentExperience == PaymentMethodsRecord.InvokeSDK && isApplePaySDKFlow
-  }, [props.sessionObj])
+  }, [sessionObj])
 
   let (connectors, _) = isInvokeSDKFlow
-    ? props.list->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
-    : props.list->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
+    ? list->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
+    : list->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
 
   let processPayment = bodyArr => {
     intent(
       ~bodyArr,
       ~confirmParam={
         return_url: options.wallets.walletReturnUrl,
-        publishableKey: publishableKey,
+        publishableKey,
       },
       ~handleUserError=true,
       (),
@@ -53,7 +52,7 @@ let default = (props: props) => {
     sync(
       ~confirmParam={
         return_url: options.wallets.walletReturnUrl,
-        publishableKey: publishableKey,
+        publishableKey,
       },
       ~handleUserError=true,
       (),
@@ -206,7 +205,7 @@ let default = (props: props) => {
 
     if isInvokeSDKFlow {
       let isDelayedSessionToken =
-        props.sessionObj
+        sessionObj
         ->Belt.Option.getWithDefault(Js.Json.null)
         ->Js.Json.decodeObject
         ->Belt.Option.getWithDefault(Js.Dict.empty())
@@ -273,13 +272,16 @@ let default = (props: props) => {
     <style> {React.string(css)} </style>
     {if showApplePay {
       if showApplePayLoader {
-        <div className="apple-pay-loader-div"> <div className="apple-pay-loader" /> </div>
+        <div className="apple-pay-loader-div">
+          <div className="apple-pay-loader" />
+        </div>
       } else {
         <button
           disabled=applePayClicked
           className="apple-pay-button-with-text apple-pay-button-black-with-text"
           onClick={_ => onApplePayButtonClicked()}>
-          <span className="text"> {React.string("Pay with")} </span> <span className="logo" />
+          <span className="text"> {React.string("Pay with")} </span>
+          <span className="logo" />
         </button>
       }
     } else {
@@ -287,3 +289,5 @@ let default = (props: props) => {
     }}
   </div>
 }
+
+let default = make
