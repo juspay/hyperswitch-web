@@ -15,6 +15,8 @@ let make = (
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
   let dropdownRef = React.useRef(Js.Nullable.null)
+  let (inputFocused, setInputFocused) = React.useState(_ => false)
+  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
 
   let getClassName = initialLabel => {
     if value.value->Js.String2.length == 0 {
@@ -26,6 +28,22 @@ let make = (
       }
     }
   }
+  let handleFocus = _ => {
+    setInputFocused(_ => true)
+    setValue(.prev => {
+      ...prev,
+      isValid: None,
+      errorString: "",
+    })
+    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
+  }
+  let focusClass = if inputFocused || value.value->Js.String2.length > 0 {
+    `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`
+  } else {
+    "transition-all ease-in duration-75"
+  }
+  let floatinglabelClass = inputFocused ? "Label--floating" : "Label--resting"
+
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
 
@@ -62,13 +80,14 @@ let make = (
           style={ReactDOMStyle.make(
             ~background=disabled ? disbaledBG : themeObj.colorBackground,
             ~opacity=disabled ? "35%" : "",
-            ~padding=themeObj.spacingUnit,
+            ~padding="11px 20px 11px 11px",
             ~width="100%",
             (),
           )}
           name=""
           value=value.value
           disabled={readOnly || disabled}
+          onFocus={handleFocus}
           onChange=handleChange
           className={`Input ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {defaultSelected
@@ -82,6 +101,21 @@ let make = (
           })
           ->React.array}
         </select>
+        <RenderIf condition={config.appearance.labels == Floating}>
+          <div
+            className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
+            style={ReactDOMStyle.make(
+              ~marginBottom={
+                inputFocused || value.value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
+              },
+              ~fontSize={
+                inputFocused || value.value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
+              },
+              (),
+            )}>
+            {React.string(fieldName)}
+          </div>
+        </RenderIf>
         <div
           className="self-center absolute"
           style={ReactDOMStyle.make(

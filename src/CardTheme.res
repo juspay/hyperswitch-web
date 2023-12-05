@@ -272,8 +272,9 @@ let getAppearance = (
       labels: switch getWarningString(json, "labels", "above", ~logger) {
       | "above" => Above
       | "floating" => Floating
+      | "none" => Never
       | str => {
-          str->unknownPropValueWarning(["above", "floating"], "appearance.labels", ~logger)
+          str->unknownPropValueWarning(["above", "floating", "never"], "appearance.labels", ~logger)
           Above
         }
       },
