@@ -14,6 +14,8 @@ type paymentMethodsFields =
   | AddressLine1
   | AddressLine2
   | AddressCity
+  | StateAndCity
+  | CountryAndPincode(array<string>)
   | AddressPincode
   | AddressState
   | AddressCountry(array<string>)
@@ -28,6 +30,8 @@ let getPaymentMethodsFieldsOrder = paymentMethodField => {
   | AddressState => 4
   | AddressCountry(_) => 5
   | AddressPincode => 6
+  | StateAndCity => 4
+  | CountryAndPincode(_) => 5
   | InfoElement => 99
   | _ => 0
   }

@@ -105,7 +105,9 @@ let make = (
           ?maxLength
           ?pattern
           className={`Input ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
-          placeholder={config.appearance.labels == Above ? placeholder : ""}
+          placeholder={config.appearance.labels == Above || config.appearance.labels == Never
+            ? placeholder
+            : ""}
           value={value.value}
           autoComplete="on"
           onChange
@@ -114,7 +116,7 @@ let make = (
         />
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
-            className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} text-opacity-20`}
+            className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
             style={ReactDOMStyle.make(
               ~marginBottom={
                 inputFocused || value.value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
