@@ -1,3 +1,10 @@
+# [0.15.0](https://github.com/juspay/hyperswitch-web/compare/v0.14.1...v0.15.0) (2023-12-06)
+
+
+### Features
+
+* HS-454: Support for Google pay (Bank of america) ([#57](https://github.com/juspay/hyperswitch-web/issues/57)) ([6602c71](https://github.com/juspay/hyperswitch-web/commit/6602c71c262c456387af8f18935d3cd0d1983aff))
+
 ## [0.14.1](https://github.com/juspay/hyperswitch-web/compare/v0.14.0...v0.14.1) (2023-12-05)
 
 
