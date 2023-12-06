@@ -109,6 +109,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "google_pay",
+    fields: [],
+    icon: Some(icon("google_pay", ~size=19, ~width=25)),
+    displayName: "Google Pay",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "mb_way",
     fields: [SpecialField(<PhoneNumberPaymentInput />), InfoElement],
     icon: Some(icon("mbway", ~size=19)),
@@ -526,7 +533,13 @@ let getRequiredFieldsFromJson = dict => {
   }
 }
 
-let dynamicFieldsEnabledPaymentMethods = ["crypto_currency", "debit", "credit", "blik"]
+let dynamicFieldsEnabledPaymentMethods = [
+  "crypto_currency",
+  "debit",
+  "credit",
+  "blik",
+  "google_pay",
+]
 
 let getPaymentMethodFields = (
   paymentMethod,

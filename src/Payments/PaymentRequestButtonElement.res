@@ -46,9 +46,20 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
                   switch googlePayThirdPartyToken {
                   | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
                     <GPayLazy
-                      sessionObj=optToken list thirdPartySessionObj=googlePayThirdPartyOptToken
+                      paymentType=NONE
+                      sessionObj=optToken
+                      list
+                      thirdPartySessionObj=googlePayThirdPartyOptToken
+                      walletOptions
                     />
-                  | _ => <GPayLazy sessionObj=optToken list thirdPartySessionObj=None />
+                  | _ =>
+                    <GPayLazy
+                      paymentType=NONE
+                      sessionObj=optToken
+                      list
+                      thirdPartySessionObj=None
+                      walletOptions
+                    />
                   }
                 | _ => React.null
                 }}
