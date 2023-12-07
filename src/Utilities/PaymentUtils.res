@@ -229,51 +229,40 @@ let updateDynamicFields = (arr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsF
     )
     ->Js.Array2.length == 2
 
-  let newArr = {
-    let options = arr->Js.Array2.reduce((acc, item) => {
-      acc->Js.Array2.concat(
-        switch item {
-        | AddressCountry(val) => val
-        | _ => [""]
-        },
-      )
-    }, [""])
-    switch (hasStateAndCity, hasCountryAndPostal) {
-    | (true, true) => {
-        arr->Js.Array2.push(StateAndCity)->ignore
-        arr->Js.Array2.push(CountryAndPincode(options))->ignore
-        arr->Js.Array2.filter(item =>
-          switch item {
-          | AddressCity
-          | AddressPincode
-          | AddressState
-          | AddressCountry(_) => false
-          | _ => true
-          }
-        )
+  let options = arr->Js.Array2.reduce((acc, item) => {
+    acc->Js.Array2.concat(
+      switch item {
+      | AddressCountry(val) => val
+      | _ => [""]
+      },
+    )
+  }, [""])
+
+  if hasStateAndCity {
+    arr->Js.Array2.push(StateAndCity)->ignore
+    arr
+    ->Js.Array2.filter(item =>
+      switch item {
+      | AddressCity
+      | AddressState => false
+      | _ => true
       }
-    | (true, false) => {
-        arr->Js.Array2.push(StateAndCity)->ignore
-        arr->Js.Array2.filter(item =>
-          switch item {
-          | AddressCity
-          | AddressState => false
-          | _ => true
-          }
-        )
-      }
-    | (false, true) => {
-        arr->Js.Array2.push(CountryAndPincode(options))->ignore
-        arr->Js.Array2.filter(item =>
-          switch item {
-          | AddressPincode
-          | AddressCountry(_) => false
-          | _ => true
-          }
-        )
-      }
-    | (_, _) => arr
-    }
+    )
+    ->ignore
   }
-  newArr
+
+  if hasCountryAndPostal {
+    arr->Js.Array2.push(CountryAndPincode(options))->ignore
+    arr
+    ->Js.Array2.filter(item =>
+      switch item {
+      | AddressPincode
+      | AddressCountry(_) => false
+      | _ => true
+      }
+    )
+    ->ignore
+  }
+
+  arr
 }

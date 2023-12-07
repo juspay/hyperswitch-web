@@ -323,21 +323,6 @@ let make = (
       | FullName => setFields(setFullName, fullName, requiredField, true)
       | AddressLine1 => setFields(setLine1, line1, requiredField, false)
       | AddressLine2 => setFields(setLine2, line2, requiredField, false)
-      | StateAndCity => {
-          setFields(setState, state, requiredField, false)
-          setFields(setCity, city, requiredField, false)
-        }
-      | CountryAndPincode(_) => {
-          setFields(setPostalCode, postalCode, requiredField, false)
-          if value !== "" && country === "" {
-            let countryCode =
-              Country.getCountry(paymentMethodType)
-              ->Js.Array2.filter(item => item.isoAlpha2 === value)
-              ->Belt.Array.get(0)
-              ->Belt.Option.getWithDefault(Country.defaultTimeZone)
-            setCountry(_ => countryCode.countryName)
-          }
-        }
       | AddressState => setFields(setState, state, requiredField, false)
       | AddressCity => setFields(setCity, city, requiredField, false)
       | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
@@ -362,6 +347,8 @@ let make = (
         if value !== "" && selectedBank === "" {
           setSelectedBank(_ => value)
         }
+      | StateAndCity
+      | CountryAndPincode(_)
       | SpecialField(_)
       | InfoElement
       | None => ()
@@ -411,18 +398,11 @@ let make = (
               ->Belt.Option.getWithDefault(Country.defaultTimeZone)
             countryCode.isoAlpha2
           }
+        | StateAndCity
+        | CountryAndPincode(_)
         | SpecialField(_)
         | InfoElement
-        | _ => ""
-        }
-        switch item.field_type {
-        | StateAndCity =>
-          acc->Js.Dict.set("billing.address.city", city.value->Js.Json.string)
-          acc->Js.Dict.set("billing.address.state", state.value->Js.Json.string)
-        | CountryAndPincode(_) =>
-          acc->Js.Dict.set("billing.address.country", city.value->Js.Json.string)
-          acc->Js.Dict.set("billing.address.zip", postalCode.value->Js.Json.string)
-        | _ => ()
+        | None => ""
         }
         if (
           isSavedCardFlow &&
