@@ -1,3 +1,10 @@
+## [0.15.5](https://github.com/juspay/hyperswitch-web/compare/v0.15.4...v0.15.5) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-177: GooglePay submitCallback fix ([#65](https://github.com/juspay/hyperswitch-web/issues/65)) ([31777ca](https://github.com/juspay/hyperswitch-web/commit/31777cacf7c9051d05148000f698c38d25ff6c77))
+
 ## [0.15.4](https://github.com/juspay/hyperswitch-web/compare/v0.15.3...v0.15.4) (2023-12-07)
 
 
