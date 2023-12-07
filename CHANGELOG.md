@@ -1,3 +1,10 @@
+## [0.15.6](https://github.com/juspay/hyperswitch-web/compare/v0.15.5...v0.15.6) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-178: Passing payment type in confirm call for all mandates ([#66](https://github.com/juspay/hyperswitch-web/issues/66)) ([a97c7a6](https://github.com/juspay/hyperswitch-web/commit/a97c7a6d002e16d12ec24005357e5ebe8b47b876))
+
 ## [0.15.5](https://github.com/juspay/hyperswitch-web/compare/v0.15.4...v0.15.5) (2023-12-07)
 
 
