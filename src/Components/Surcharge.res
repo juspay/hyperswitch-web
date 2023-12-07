@@ -12,38 +12,19 @@ let make = (~list, ~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTF
 
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
-  let getSurchargeValue = (surchargeDetails: PaymentMethodsRecord.surchargeDetails) => {
-    switch surchargeDetails.surcharge.value {
-    | VAL(val) => val
-    | PERCENTAGE(percent) => percent.percentage
-    }->Js.Float.toString
-  }
-
   let getMessage = (surchargeDetails: PaymentMethodsRecord.surchargeDetails) => {
-    let surchargeType = surchargeDetails.surcharge.surchargeType
-    let surchargeValue = surchargeDetails->getSurchargeValue
+    let surchargeValue = surchargeDetails.displayTotalSurchargeAmount->Js.Float.toString
 
     let getLocaleStrForSurcharge = (cardLocale, altPaymentLocale) => {
       paymentMethod === "card" ? cardLocale(surchargeValue) : altPaymentLocale(surchargeValue)
     }
 
-    switch surchargeType {
-    | FIXED =>
-      Some(
-        getLocaleStrForSurcharge(
-          localeString.surchargeMsgAmountForCard,
-          localeString.surchargeMsgAmount,
-        ),
-      )
-    | RATE =>
-      Some(
-        getLocaleStrForSurcharge(
-          localeString.surchargeMsgPercentageForCard,
-          localeString.surchargeMsgPercentage,
-        ),
-      )
-    | NONE => None
-    }
+    Some(
+      getLocaleStrForSurcharge(
+        localeString.surchargeMsgAmountForCard,
+        localeString.surchargeMsgAmount,
+      ),
+    )
   }
 
   let getCardNetwork = (paymentMethodType: PaymentMethodsRecord.paymentMethodTypes) => {
@@ -65,8 +46,8 @@ let make = (~list, ~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTF
 
         switch (debitCardNetwork.surcharge_details, creditCardNetwork.surcharge_details) {
         | (Some(debitSurchargeDetails), Some(creditSurchargeDetails)) =>
-          let creditCardSurcharge = creditSurchargeDetails->getSurchargeValue
-          let debitCardSurcharge = debitSurchargeDetails->getSurchargeValue
+          let creditCardSurcharge = creditSurchargeDetails.displayTotalSurchargeAmount
+          let debitCardSurcharge = debitSurchargeDetails.displayTotalSurchargeAmount
 
           if creditCardSurcharge >= debitCardSurcharge {
             creditSurchargeDetails->getMessage

@@ -43,17 +43,7 @@ type bankNames = {
   eligible_connectors: array<string>,
 }
 
-type surchargeType = FIXED | RATE | NONE
-type surchargeValue =
-  | VAL(float)
-  | PERCENTAGE({percentage: float})
-
-type surcharge = {
-  surchargeType: surchargeType,
-  value: surchargeValue,
-}
-
-type surchargeDetails = {surcharge: surcharge}
+type surchargeDetails = {displayTotalSurchargeAmount: float}
 
 type paymentMethodsContent = {
   paymentMethodName: string,
@@ -726,54 +716,25 @@ let getPaymentExperience = (dict, str) => {
   })
 }
 
-let getSurchargeTypeFromStr = str => {
-  switch str->Js.String2.toLowerCase {
-  | "fixed" => FIXED
-  | "rate" => RATE
-  | _ => NONE
-  }
-}
-
 let getSurchargeDetails = dict => {
   let surchargDetails =
     dict
     ->Js.Dict.get("surcharge_details")
     ->Belt.Option.flatMap(Js.Json.decodeObject)
-    ->Belt.Option.flatMap(x => x->Js.Dict.get("surcharge"))
-    ->Belt.Option.flatMap(Js.Json.decodeObject)
     ->Belt.Option.getWithDefault(Js.Dict.empty())
 
-  let surchargeType = surchargDetails->Utils.getString("type", "none")->getSurchargeTypeFromStr
-  let getSurchargeVal = switch surchargeType {
-  | RATE =>
-    PERCENTAGE({
-      percentage: surchargDetails
-      ->Js.Dict.get("value")
-      ->Belt.Option.flatMap(Js.Json.decodeObject)
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("percentage"))
-      ->Belt.Option.flatMap(Js.Json.decodeNumber)
-      ->Belt.Option.getWithDefault(0.0),
-    })
-  | FIXED
-  | _ =>
-    VAL(
-      surchargDetails
-      ->Js.Dict.get("value")
-      ->Belt.Option.flatMap(Js.Json.decodeNumber)
-      ->Belt.Option.getWithDefault(0.0),
-    )
-  }
+  let displayTotalSurchargeAmount =
+    surchargDetails
+    ->Js.Dict.get("display_total_surcharge_amount")
+    ->Belt.Option.flatMap(Js.Json.decodeNumber)
+    ->Belt.Option.getWithDefault(0.0)
 
-  switch surchargeType {
-  | FIXED
-  | RATE =>
+  if displayTotalSurchargeAmount !== 0.0 {
     Some({
-      surcharge: {
-        surchargeType: surchargeType,
-        value: getSurchargeVal,
-      },
+      displayTotalSurchargeAmount,
     })
-  | _ => None
+  } else {
+    None
   }
 }
 
