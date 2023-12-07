@@ -225,22 +225,27 @@ let default = (props: props) => {
   setIsShowOrPayUsing(.prev => prev || isRenderGooglePayButton)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-      handlePostMessage([
-        ("fullscreen", true->Js.Json.boolean),
-        ("param", "paymentloader"->Js.Json.string),
-        ("iframeId", iframeId->Js.Json.string),
-      ])
-      options.readOnly ? () : handlePostMessage([("GpayClicked", true->Js.Json.boolean)])
-    } else if areRequiredFieldsEmpty {
-      postFailedSubmitResponse(~errortype="validation_error", ~message=localeString.enterFieldsText)
-    } else if !areRequiredFieldsValid {
-      postFailedSubmitResponse(
-        ~errortype="validation_error",
-        ~message=localeString.enterValidDetailsText,
-      )
+    if !isWallet {
+      let json = ev.data->Js.Json.parseExn
+      let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+      if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
+        handlePostMessage([
+          ("fullscreen", true->Js.Json.boolean),
+          ("param", "paymentloader"->Js.Json.string),
+          ("iframeId", iframeId->Js.Json.string),
+        ])
+        options.readOnly ? () : handlePostMessage([("GpayClicked", true->Js.Json.boolean)])
+      } else if areRequiredFieldsEmpty {
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterFieldsText,
+        )
+      } else if !areRequiredFieldsValid {
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterValidDetailsText,
+        )
+      }
     }
   })
   submitPaymentData(submitCallback)
