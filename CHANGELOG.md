@@ -1,3 +1,10 @@
+## [0.15.3](https://github.com/juspay/hyperswitch-web/compare/v0.15.2...v0.15.3) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-132: Fixed Required Fields default value ([#64](https://github.com/juspay/hyperswitch-web/issues/64)) ([cb97557](https://github.com/juspay/hyperswitch-web/commit/cb97557042b5bb4c5f9dee8c83fc7255a4983679))
+
 ## [0.15.2](https://github.com/juspay/hyperswitch-web/compare/v0.15.1...v0.15.2) (2023-12-07)
 
 
