@@ -276,6 +276,7 @@ let make = (
         | _ => acc
         }
       }, "")
+      ->Js.String2.trim
     }
 
     let setFields = (
@@ -394,8 +395,9 @@ let make = (
         }
         if (
           isSavedCardFlow &&
+          (item.field_type === BillingName || item.field_type === FullName) &&
           item.display_name === "card_holder_name" &&
-          (item.field_type === BillingName || item.field_type === FullName)
+          item.required_field === "payment_method_data.card.card_holder_name"
         ) {
           if !isAllStoredCardsHaveName {
             acc->Js.Dict.set(
