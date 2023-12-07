@@ -1,3 +1,10 @@
+## [0.15.7](https://github.com/juspay/hyperswitch-web/compare/v0.15.6...v0.15.7) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-179: Passing endpoint to loader controller ([#67](https://github.com/juspay/hyperswitch-web/issues/67)) ([b04cbc0](https://github.com/juspay/hyperswitch-web/commit/b04cbc0289adfaec93c32846e58c7d08d5c8566c))
+
 ## [0.15.6](https://github.com/juspay/hyperswitch-web/compare/v0.15.5...v0.15.6) (2023-12-07)
 
 
