@@ -1,3 +1,10 @@
+## [0.15.2](https://github.com/juspay/hyperswitch-web/compare/v0.15.1...v0.15.2) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-132: Fixed Card Holder Name ([#61](https://github.com/juspay/hyperswitch-web/issues/61)) ([a0694da](https://github.com/juspay/hyperswitch-web/commit/a0694da7f91c071c7d31250f59278f35c2f88074))
+
 ## [0.15.1](https://github.com/juspay/hyperswitch-web/compare/v0.15.0...v0.15.1) (2023-12-07)
 
 
