@@ -129,7 +129,6 @@ For ease of development and deployment there are configs in /Hyperswitch-react-d
 - `HYPERSWITCH_SERVER_URL` - URL of your hosted Hyperswitch Backend server
 - `HYPERSWITCH_CLIENT_URL` - URL of your hosted Hyperswitch SDK
 - `SELF_SERVER_URL` - URL of your node server (/Hyperswitch-react-demo-app/server.js)
-- `SELF_CLIENT_URL` - URL where your application is running
 
 ### Logging
 

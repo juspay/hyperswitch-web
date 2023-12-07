@@ -6,10 +6,11 @@ const envPath = "./.env";
 const obj = {
   HYPERSWITCH_PUBLISHABLE_KEY: "Publishable Key",
   HYPERSWITCH_SECRET_KEY: "Secret Key",
-  HYPERSWITCH_SERVER_URL: "Self-hosted Hyperswitch Server URL (URL of your Hyperswitch Backend)",
-  HYPERSWITCH_CLIENT_URL: "Self-hosted Hyperswitch Client URL (URL of your Hyperswitch SDK)",
+  HYPERSWITCH_SERVER_URL:
+    "Self-hosted Hyperswitch Server URL (URL of your Hyperswitch Backend)",
+  HYPERSWITCH_CLIENT_URL:
+    "Self-hosted Hyperswitch Client URL (URL of your Hyperswitch SDK)",
   SELF_SERVER_URL: "Application Server URL (URL of your node server)",
-  SELF_CLIENT_URL: "Application Client URL (URL where your application is running)",
 };
 
 function initializeValues(filePath, keyValuePairs) {
@@ -26,12 +27,12 @@ function initializeValues(filePath, keyValuePairs) {
 
       if (index !== -1) {
         if (lines[index] === `${key}=` || lines[index] === `${key}=""`) {
-          const promptVal = prompt(`${value} : `)
+          const promptVal = prompt(`${value} : `);
           // If the key exists, and has not been updated once, update its value
           lines[index] = `${key}="${promptVal}"`;
         }
       } else {
-        const promptVal = prompt(`${value} : `)
+        const promptVal = prompt(`${value} : `);
         // If the key doesn't exist, add a new line with the key-value pair
         lines.push(`${key}="${promptVal}"`);
       }

@@ -24,7 +24,7 @@ if [ -z "$AWS_REGION" ]; then
     echo "Using us-east-2 by default"
     AWS_REGION="us-east-2"
 fi
-echo "Do you wish to crate a new bucket on AWS S3? Ensure you have CreateBucket access on AWS (Y/N)"
+echo "Do you wish to create a new bucket on AWS S3? Ensure you have CreateBucket access on AWS (Y/N)"
 read CREATE_BUCKET_BOOL </dev/tty
 
 if [[ "$CREATE_BUCKET_BOOL" == "Y" ]] || [[ "$CREATE_BUCKET_BOOL" == "y" ]]; then
