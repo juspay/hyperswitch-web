@@ -62,7 +62,7 @@ let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber) => [
   ("card_cvc", cvcNumber->Js.Json.string),
 ]
 
-let mandateBody = () => {
+let mandateBody = paymentType => {
   [
     (
       "mandate_data",
@@ -87,6 +87,7 @@ let mandateBody = () => {
       ->Js.Json.object_,
     ),
     ("setup_future_usage", "off_session"->Js.Json.string),
+    ("payment_type", {paymentType === "" ? Js.Json.null : paymentType->Js.Json.string}),
   ]
 }
 
@@ -106,7 +107,6 @@ let achBankDebitBody = (
     ("payment_method", "bank_debit"->Js.Json.string),
     ("setup_future_usage", "off_session"->Js.Json.string),
     ("payment_method_type", "ach"->Js.Json.string),
-    ("payment_type", {paymentType === "" ? Js.Json.null : paymentType->Js.Json.string}),
     (
       "payment_method_data",
       [
@@ -154,7 +154,7 @@ let achBankDebitBody = (
       ->Js.Dict.fromArray
       ->Js.Json.object_,
     ),
-  ]->Js.Array2.concat(mandateBody())
+  ]->Js.Array2.concat(mandateBody(paymentType))
 
 let sepaBankDebitBody = (
   ~fullName,
