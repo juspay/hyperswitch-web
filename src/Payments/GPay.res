@@ -75,7 +75,7 @@ let default = (props: props) => {
     )
   }
 
-  React.useEffect0(() => {
+  React.useEffect1(() => {
     let handle = (ev: Window.event) => {
       let json = try {
         ev.data->Js.Json.parseExn
@@ -105,7 +105,7 @@ let default = (props: props) => {
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  })
+  }, [requiredFieldsBody])
 
   let (_, buttonType, _) = options.wallets.style.type_
   let (_, heightType, _) = options.wallets.style.height
