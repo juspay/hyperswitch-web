@@ -1,3 +1,10 @@
+## [0.15.1](https://github.com/juspay/hyperswitch-web/compare/v0.15.0...v0.15.1) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-222: Google pay dynamic fields body going as empty ([#63](https://github.com/juspay/hyperswitch-web/issues/63)) ([05fadf5](https://github.com/juspay/hyperswitch-web/commit/05fadf5b9ae55a62dc6046a0e786ce74d18f1f6d))
+
 # [0.15.0](https://github.com/juspay/hyperswitch-web/compare/v0.14.1...v0.15.0) (2023-12-06)
 
 
