@@ -1,3 +1,12 @@
+## [0.15.4](https://github.com/juspay/hyperswitch-web/compare/v0.15.3...v0.15.4) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-123: Removed self client url from prompt ([#62](https://github.com/juspay/hyperswitch-web/issues/62)) ([5d05f5f](https://github.com/juspay/hyperswitch-web/commit/5d05f5f032705fb9b3af4e8f4fce82733ecf111b))
+* HS-148: Changed Flow for Surcharge ([#51](https://github.com/juspay/hyperswitch-web/issues/51)) ([5f5cff9](https://github.com/juspay/hyperswitch-web/commit/5f5cff91736076b8bf88a9cce67c545e0badd34f))
+* HS-175: Added external services and brought parity to setup ([#56](https://github.com/juspay/hyperswitch-web/issues/56)) ([5d62d5c](https://github.com/juspay/hyperswitch-web/commit/5d62d5c384cc509f96e55a309980b9b8ef3f9db9))
+
 ## [0.15.3](https://github.com/juspay/hyperswitch-web/compare/v0.15.2...v0.15.3) (2023-12-07)
 
 
