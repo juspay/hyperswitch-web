@@ -1,3 +1,10 @@
+## [0.15.8](https://github.com/juspay/hyperswitch-web/compare/v0.15.7...v0.15.8) (2023-12-08)
+
+
+### Bug Fixes
+
+* HS-333: removed immediate stringify ([#68](https://github.com/juspay/hyperswitch-web/issues/68)) ([ea35bda](https://github.com/juspay/hyperswitch-web/commit/ea35bda95178e1975262dfdf9a49e9473655dfeb))
+
 ## [0.15.7](https://github.com/juspay/hyperswitch-web/compare/v0.15.6...v0.15.7) (2023-12-07)
 
 
