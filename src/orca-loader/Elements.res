@@ -44,10 +44,19 @@ let make = (
       ->Belt.Option.getWithDefault([])
       ->Js.Json.array
 
+    let switchToCustomPod = GlobalVars.isInteg
+      ? options
+        ->Js.Json.decodeObject
+        ->Belt.Option.flatMap(x => x->Js.Dict.get("switchToCustomPodABP"))
+        ->Belt.Option.flatMap(Js.Json.decodeBoolean)
+        ->Belt.Option.getWithDefault(false)
+      : false
+
     let paymentMethodListPromise = PaymentHelpers.usePaymentMethodList(
       ~clientSecret=clientSecretId,
       ~publishableKey,
       ~endpoint,
+      ~switchToCustomPod,
       ~logger,
     )
 
@@ -55,6 +64,7 @@ let make = (
       ~clientSecret=clientSecretId,
       ~publishableKey,
       ~endpoint,
+      ~switchToCustomPod,
       ~optLogger=Some(logger),
       (),
     )
@@ -113,6 +123,7 @@ let make = (
         ~clientSecret=clientSecretId,
         ~publishableKey,
         ~endpoint,
+        ~switchToCustomPod,
         ~optLogger=Some(logger),
       )
       open Promise
