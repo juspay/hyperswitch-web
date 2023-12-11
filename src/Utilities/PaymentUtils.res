@@ -238,31 +238,43 @@ let updateDynamicFields = (arr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsF
     )
   }, [""])
 
-  if hasStateAndCity {
-    arr->Js.Array2.push(StateAndCity)->ignore
-    arr
-    ->Js.Array2.filter(item =>
-      switch item {
-      | AddressCity
-      | AddressState => false
-      | _ => true
+  let newArr = {
+    switch (hasStateAndCity, hasCountryAndPostal) {
+    | (true, true) => {
+        arr->Js.Array2.push(StateAndCity)->ignore
+        arr->Js.Array2.push(CountryAndPincode(options))->ignore
+        arr->Js.Array2.filter(item =>
+          switch item {
+          | AddressCity
+          | AddressPincode
+          | AddressState
+          | AddressCountry(_) => false
+          | _ => true
+          }
+        )
       }
-    )
-    ->ignore
-  }
-
-  if hasCountryAndPostal {
-    arr->Js.Array2.push(CountryAndPincode(options))->ignore
-    arr
-    ->Js.Array2.filter(item =>
-      switch item {
-      | AddressPincode
-      | AddressCountry(_) => false
-      | _ => true
+    | (true, false) => {
+        arr->Js.Array2.push(StateAndCity)->ignore
+        arr->Js.Array2.filter(item =>
+          switch item {
+          | AddressCity
+          | AddressState => false
+          | _ => true
+          }
+        )
       }
-    )
-    ->ignore
+    | (false, true) => {
+        arr->Js.Array2.push(CountryAndPincode(options))->ignore
+        arr->Js.Array2.filter(item =>
+          switch item {
+          | AddressPincode
+          | AddressCountry(_) => false
+          | _ => true
+          }
+        )
+      }
+    | (_, _) => arr
+    }
   }
-
-  arr
+  newArr
 }

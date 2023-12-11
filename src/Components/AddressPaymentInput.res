@@ -273,7 +273,6 @@ let make = (~paymentType, ~className="") => {
                 className
                 setValue=setState
                 options={options->getStateNames(country)}
-                defaultSelected=false
               />
             | None => React.null
             }}

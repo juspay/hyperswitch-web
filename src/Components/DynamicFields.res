@@ -532,7 +532,6 @@ let make = (
                           isValid: None,
                           errorString: "",
                         })}
-                        defaultSelected=false
                       />
                     | None => React.null
                     }}
@@ -623,7 +622,6 @@ let make = (
                         isValid: None,
                         errorString: "",
                       })}
-                      defaultSelected=false
                     />
                   | None => React.null
                   }
