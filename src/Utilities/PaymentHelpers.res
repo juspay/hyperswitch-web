@@ -549,11 +549,14 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
           ->Js.Json.stringify
         callIntent(bodyStr)
       }
-      let intentWithMandate = () => {
+      let intentWithMandate = mandatePaymentType => {
         let bodyStr =
           body
           ->Js.Array2.concat(
-            bodyArr->Js.Array2.concatMany([PaymentBody.mandateBody(), broswerInfo()]),
+            bodyArr->Js.Array2.concatMany([
+              PaymentBody.mandateBody(mandatePaymentType),
+              broswerInfo(),
+            ]),
           )
           ->Js.Dict.fromArray
           ->Js.Json.object_
@@ -573,7 +576,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
           | KlarnaRedirect
           | Paypal
           | BankDebits =>
-            intentWithMandate()
+            intentWithMandate(paymentList.payment_type)
           | _ => intentWithoutMandate()
           }
         | None => intentWithoutMandate()

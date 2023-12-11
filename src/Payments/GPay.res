@@ -8,15 +8,21 @@ let make = (
   ~sessionObj: option<SessionsType.token>,
   ~list: PaymentMethodsRecord.list,
   ~thirdPartySessionObj: option<Js.Json.t>,
+  ~paymentType: option<CardThemeType.mode>,
+  ~walletOptions: array<string>,
 ) => {
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Gpay)
   let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Gpay)
   let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
   let isGooglePaySDKFlow = React.useMemo1(() => {
     sessionObj->Belt.Option.isSome
@@ -34,6 +40,7 @@ let make = (
   | None => PaymentMethodsRecord.defaultPaymentMethodType
   }
 
+  let isWallet = walletOptions->Js.Array2.includes("google_pay")
   let paymentExperience =
     googlePayPaymentMethodType.payment_experience->Js.Array2.length == 0
       ? PaymentMethodsRecord.RedirectToURL
@@ -67,7 +74,7 @@ let make = (
     )
   }
 
-  React.useEffect0(() => {
+  React.useEffect1(() => {
     let handle = (ev: Window.event) => {
       let json = try {
         ev.data->Js.Json.parseExn
@@ -78,16 +85,26 @@ let make = (
       if dict->Js.Dict.get("gpayResponse")->Belt.Option.isSome {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
         let obj = metadata->getDictFromJson->itemToObjMapper
-        let body = PaymentBody.gpayBody(~payObj=obj, ~connectors)
+        let body = {
+          PaymentBody.gpayBody(~payObj=obj, ~connectors)
+          ->Js.Dict.fromArray
+          ->Js.Json.object_
+          ->OrcaUtils.flattenObject(true)
+          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->OrcaUtils.getArrayOfTupleFromDict
+        }
         processPayment(body)
       }
       if dict->Js.Dict.get("gpayError")->Belt.Option.isSome {
         Utils.handlePostMessage([("fullscreen", false->Js.Json.boolean)])
+        if !isWallet {
+          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+        }
       }
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  })
+  }, [requiredFieldsBody])
 
   let (_, buttonType, _) = options.wallets.style.type_
   let (_, heightType, _) = options.wallets.style.height
@@ -165,9 +182,10 @@ let make = (
   React.useEffect5(() => {
     if (
       status == "ready" &&
-        (isGPayReady ||
-        isDelayedSessionToken ||
-        paymentExperience == PaymentMethodsRecord.RedirectToURL)
+      (isGPayReady ||
+      isDelayedSessionToken ||
+      paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
+      isWallet
     ) {
       addGooglePayButton()
     }
@@ -199,17 +217,58 @@ let make = (
   })
 
   let isRenderGooglePayButton =
-    isGPayReady || paymentExperience == PaymentMethodsRecord.RedirectToURL || isDelayedSessionToken
+    (isGPayReady ||
+    paymentExperience == PaymentMethodsRecord.RedirectToURL ||
+    isDelayedSessionToken) && isWallet
 
   setIsShowOrPayUsing(.prev => prev || isRenderGooglePayButton)
 
-  <RenderIf condition={isRenderGooglePayButton}>
-    <div
-      style={ReactDOMStyle.make(~height=`${height->Belt.Int.toString}px`, ())}
-      id="google-pay-button"
-      className={`w-full flex flex-row justify-center rounded-md`}
-    />
-  </RenderIf>
+  let submitCallback = React.useCallback((ev: Window.event) => {
+    if !isWallet {
+      let json = ev.data->Js.Json.parseExn
+      let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+      if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
+        handlePostMessage([
+          ("fullscreen", true->Js.Json.boolean),
+          ("param", "paymentloader"->Js.Json.string),
+          ("iframeId", iframeId->Js.Json.string),
+        ])
+        options.readOnly ? () : handlePostMessage([("GpayClicked", true->Js.Json.boolean)])
+      } else if areRequiredFieldsEmpty {
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterFieldsText,
+        )
+      } else if !areRequiredFieldsValid {
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterValidDetailsText,
+        )
+      }
+    }
+  })
+  submitPaymentData(submitCallback)
+
+  {
+    isWallet
+      ? <RenderIf condition={isRenderGooglePayButton}>
+          <div
+            style={ReactDOMStyle.make(~height=`${height->Belt.Int.toString}px`, ())}
+            id="google-pay-button"
+            className={`w-full flex flex-row justify-center rounded-md`}
+          />
+        </RenderIf>
+      : <DynamicFields
+          paymentType={switch paymentType {
+          | Some(val) => val
+          | _ => NONE
+          }}
+          list
+          paymentMethod="wallet"
+          paymentMethodType="google_pay"
+          setRequiredFieldsBody
+        />
+  }
 }
 
 let default = make

@@ -43,17 +43,7 @@ type bankNames = {
   eligible_connectors: array<string>,
 }
 
-type surchargeType = FIXED | RATE | NONE
-type surchargeValue =
-  | VAL(float)
-  | PERCENTAGE({percentage: float})
-
-type surcharge = {
-  surchargeType: surchargeType,
-  value: surchargeValue,
-}
-
-type surchargeDetails = {surcharge: surcharge}
+type surchargeDetails = {displayTotalSurchargeAmount: float}
 
 type paymentMethodsContent = {
   paymentMethodName: string,
@@ -106,6 +96,13 @@ let paymentMethodsFields = [
     fields: [Email, FullName, InfoElement],
     icon: Some(icon("afterpay", ~size=19)),
     displayName: "After Pay",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "google_pay",
+    fields: [],
+    icon: Some(icon("google_pay", ~size=19, ~width=25)),
+    displayName: "Google Pay",
     miniIcon: None,
   },
   {
@@ -526,19 +523,39 @@ let getRequiredFieldsFromJson = dict => {
   }
 }
 
-let dynamicFieldsEnabledPaymentMethods = ["crypto_currency", "debit", "credit", "blik"]
+let dynamicFieldsEnabledPaymentMethods = [
+  "crypto_currency",
+  "debit",
+  "credit",
+  "blik",
+  "google_pay",
+]
 
-let getPaymentMethodFields = (paymentMethod, requiredFields, ~isSavedCardFlow=false, ~isAllStoredCardsHaveName=false, ()) => {
+let getPaymentMethodFields = (
+  paymentMethod,
+  requiredFields,
+  ~isSavedCardFlow=false,
+  ~isAllStoredCardsHaveName=false,
+  (),
+) => {
   let requiredFieldsArr =
     requiredFields
     ->Utils.getDictFromJson
     ->Js.Dict.values
     ->Js.Array2.map(item => {
-      let val = item->Utils.getDictFromJson->getRequiredFieldsFromJson
-      if isSavedCardFlow && val.display_name === "card_holder_name" && isAllStoredCardsHaveName {
-        None
+      let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson
+      if requiredField.value === "" {
+        if (
+          isSavedCardFlow &&
+          requiredField.display_name === "card_holder_name" &&
+          isAllStoredCardsHaveName
+        ) {
+          None
+        } else {
+          requiredField.field_type
+        }
       } else {
-        val.field_type
+        None
       }
     })
   requiredFieldsArr->Js.Array2.concat(
@@ -699,54 +716,25 @@ let getPaymentExperience = (dict, str) => {
   })
 }
 
-let getSurchargeTypeFromStr = str => {
-  switch str->Js.String2.toLowerCase {
-  | "fixed" => FIXED
-  | "rate" => RATE
-  | _ => NONE
-  }
-}
-
 let getSurchargeDetails = dict => {
   let surchargDetails =
     dict
     ->Js.Dict.get("surcharge_details")
     ->Belt.Option.flatMap(Js.Json.decodeObject)
-    ->Belt.Option.flatMap(x => x->Js.Dict.get("surcharge"))
-    ->Belt.Option.flatMap(Js.Json.decodeObject)
     ->Belt.Option.getWithDefault(Js.Dict.empty())
 
-  let surchargeType = surchargDetails->Utils.getString("type", "none")->getSurchargeTypeFromStr
-  let getSurchargeVal = switch surchargeType {
-  | RATE =>
-    PERCENTAGE({
-      percentage: surchargDetails
-      ->Js.Dict.get("value")
-      ->Belt.Option.flatMap(Js.Json.decodeObject)
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("percentage"))
-      ->Belt.Option.flatMap(Js.Json.decodeNumber)
-      ->Belt.Option.getWithDefault(0.0),
-    })
-  | FIXED
-  | _ =>
-    VAL(
-      surchargDetails
-      ->Js.Dict.get("value")
-      ->Belt.Option.flatMap(Js.Json.decodeNumber)
-      ->Belt.Option.getWithDefault(0.0),
-    )
-  }
+  let displayTotalSurchargeAmount =
+    surchargDetails
+    ->Js.Dict.get("display_total_surcharge_amount")
+    ->Belt.Option.flatMap(Js.Json.decodeNumber)
+    ->Belt.Option.getWithDefault(0.0)
 
-  switch surchargeType {
-  | FIXED
-  | RATE =>
+  if displayTotalSurchargeAmount !== 0.0 {
     Some({
-      surcharge: {
-        surchargeType: surchargeType,
-        value: getSurchargeVal,
-      },
+      displayTotalSurchargeAmount,
     })
-  | _ => None
+  } else {
+    None
   }
 }
 

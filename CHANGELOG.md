@@ -1,3 +1,82 @@
+## [0.15.8](https://github.com/juspay/hyperswitch-web/compare/v0.15.7...v0.15.8) (2023-12-08)
+
+
+### Bug Fixes
+
+* HS-333: removed immediate stringify ([#68](https://github.com/juspay/hyperswitch-web/issues/68)) ([ea35bda](https://github.com/juspay/hyperswitch-web/commit/ea35bda95178e1975262dfdf9a49e9473655dfeb))
+
+## [0.15.7](https://github.com/juspay/hyperswitch-web/compare/v0.15.6...v0.15.7) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-179: Passing endpoint to loader controller ([#67](https://github.com/juspay/hyperswitch-web/issues/67)) ([b04cbc0](https://github.com/juspay/hyperswitch-web/commit/b04cbc0289adfaec93c32846e58c7d08d5c8566c))
+
+## [0.15.6](https://github.com/juspay/hyperswitch-web/compare/v0.15.5...v0.15.6) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-178: Passing payment type in confirm call for all mandates ([#66](https://github.com/juspay/hyperswitch-web/issues/66)) ([a97c7a6](https://github.com/juspay/hyperswitch-web/commit/a97c7a6d002e16d12ec24005357e5ebe8b47b876))
+
+## [0.15.5](https://github.com/juspay/hyperswitch-web/compare/v0.15.4...v0.15.5) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-177: GooglePay submitCallback fix ([#65](https://github.com/juspay/hyperswitch-web/issues/65)) ([31777ca](https://github.com/juspay/hyperswitch-web/commit/31777cacf7c9051d05148000f698c38d25ff6c77))
+
+## [0.15.4](https://github.com/juspay/hyperswitch-web/compare/v0.15.3...v0.15.4) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-123: Removed self client url from prompt ([#62](https://github.com/juspay/hyperswitch-web/issues/62)) ([5d05f5f](https://github.com/juspay/hyperswitch-web/commit/5d05f5f032705fb9b3af4e8f4fce82733ecf111b))
+* HS-148: Changed Flow for Surcharge ([#51](https://github.com/juspay/hyperswitch-web/issues/51)) ([5f5cff9](https://github.com/juspay/hyperswitch-web/commit/5f5cff91736076b8bf88a9cce67c545e0badd34f))
+* HS-175: Added external services and brought parity to setup ([#56](https://github.com/juspay/hyperswitch-web/issues/56)) ([5d62d5c](https://github.com/juspay/hyperswitch-web/commit/5d62d5c384cc509f96e55a309980b9b8ef3f9db9))
+
+## [0.15.3](https://github.com/juspay/hyperswitch-web/compare/v0.15.2...v0.15.3) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-132: Fixed Required Fields default value ([#64](https://github.com/juspay/hyperswitch-web/issues/64)) ([cb97557](https://github.com/juspay/hyperswitch-web/commit/cb97557042b5bb4c5f9dee8c83fc7255a4983679))
+
+## [0.15.2](https://github.com/juspay/hyperswitch-web/compare/v0.15.1...v0.15.2) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-132: Fixed Card Holder Name ([#61](https://github.com/juspay/hyperswitch-web/issues/61)) ([a0694da](https://github.com/juspay/hyperswitch-web/commit/a0694da7f91c071c7d31250f59278f35c2f88074))
+
+## [0.15.1](https://github.com/juspay/hyperswitch-web/compare/v0.15.0...v0.15.1) (2023-12-07)
+
+
+### Bug Fixes
+
+* HS-222: Google pay dynamic fields body going as empty ([#63](https://github.com/juspay/hyperswitch-web/issues/63)) ([05fadf5](https://github.com/juspay/hyperswitch-web/commit/05fadf5b9ae55a62dc6046a0e786ce74d18f1f6d))
+
+# [0.15.0](https://github.com/juspay/hyperswitch-web/compare/v0.14.1...v0.15.0) (2023-12-06)
+
+
+### Features
+
+* HS-454: Support for Google pay (Bank of america) ([#57](https://github.com/juspay/hyperswitch-web/issues/57)) ([6602c71](https://github.com/juspay/hyperswitch-web/commit/6602c71c262c456387af8f18935d3cd0d1983aff))
+
+## [0.14.1](https://github.com/juspay/hyperswitch-web/compare/v0.14.0...v0.14.1) (2023-12-05)
+
+
+### Bug Fixes
+
+* HS-132: Removing Dynamic Fields from rendering on SDK ([#58](https://github.com/juspay/hyperswitch-web/issues/58)) ([b9eee72](https://github.com/juspay/hyperswitch-web/commit/b9eee72567838d19d9dfa41f1c2a8038fccfb3a6))
+
+# [0.14.0](https://github.com/juspay/hyperswitch-web/compare/v0.13.2...v0.14.0) (2023-12-04)
+
+
+### Features
+
+* HS-169: AWS Prod Deployment Script ([#55](https://github.com/juspay/hyperswitch-web/issues/55)) ([7578307](https://github.com/juspay/hyperswitch-web/commit/7578307ce869fa2d126bd1b359f113aca9cd6aa8))
+
 ## [0.13.2](https://github.com/juspay/hyperswitch-web/compare/v0.13.1...v0.13.2) (2023-11-30)
 
 

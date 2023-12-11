@@ -221,6 +221,7 @@ let make = (
             ("paymentOptions", widgetOptions),
             ("iframeId", selectorString->Js.Json.string),
             ("publishableKey", publishableKey->Js.Json.string),
+            ("endpoint", endpoint->Js.Json.string),
             ("sdkSessionId", sdkSessionId->Js.Json.string),
             ("sdkHandleConfirmPayment", sdkHandleConfirmPayment->Js.Json.boolean),
             ("parentURL", "*"->Js.Json.string),
