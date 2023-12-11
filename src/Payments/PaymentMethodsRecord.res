@@ -113,6 +113,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "google_pay",
+    fields: [],
+    icon: Some(icon("google_pay", ~size=19, ~width=25)),
+    displayName: "Google Pay",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "mb_way",
     fields: [SpecialField(<PhoneNumberPaymentInput />), InfoElement],
     icon: Some(icon("mbway", ~size=19)),
@@ -530,7 +537,13 @@ let getRequiredFieldsFromJson = dict => {
   }
 }
 
-let dynamicFieldsEnabledPaymentMethods = ["crypto_currency", "debit", "credit", "blik"]
+let dynamicFieldsEnabledPaymentMethods = [
+  "crypto_currency",
+  "debit",
+  "credit",
+  "blik",
+  "google_pay",
+]
 
 let getPaymentMethodFields = (
   paymentMethod,
@@ -544,11 +557,19 @@ let getPaymentMethodFields = (
     ->Utils.getDictFromJson
     ->Js.Dict.values
     ->Js.Array2.map(item => {
-      let val = item->Utils.getDictFromJson->getRequiredFieldsFromJson
-      if isSavedCardFlow && val.display_name === "card_holder_name" && isAllStoredCardsHaveName {
-        None
+      let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson
+      if requiredField.value === "" {
+        if (
+          isSavedCardFlow &&
+          requiredField.display_name === "card_holder_name" &&
+          isAllStoredCardsHaveName
+        ) {
+          None
+        } else {
+          requiredField.field_type
+        }
       } else {
-        val.field_type
+        None
       }
     })
   requiredFieldsArr->Js.Array2.concat(

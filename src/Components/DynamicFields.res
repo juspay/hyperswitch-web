@@ -283,6 +283,7 @@ let make = (
         | _ => acc
         }
       }, "")
+      ->Js.String2.trim
     }
 
     let setFields = (
@@ -361,6 +362,8 @@ let make = (
         if value !== "" && selectedBank === "" {
           setSelectedBank(_ => value)
         }
+      | StateAndCity
+      | CountryAndPincode(_)
       | SpecialField(_)
       | InfoElement
       | None => ()
@@ -410,6 +413,8 @@ let make = (
               ->Belt.Option.getWithDefault(Country.defaultTimeZone)
             countryCode.isoAlpha2
           }
+        | StateAndCity
+        | CountryAndPincode(_)
         | SpecialField(_)
         | InfoElement
         | _ => ""
@@ -425,8 +430,9 @@ let make = (
         }
         if (
           isSavedCardFlow &&
+          (item.field_type === BillingName || item.field_type === FullName) &&
           item.display_name === "card_holder_name" &&
-          (item.field_type === BillingName || item.field_type === FullName)
+          item.required_field === "payment_method_data.card.card_holder_name"
         ) {
           if !isAllStoredCardsHaveName {
             acc->Js.Dict.set(
