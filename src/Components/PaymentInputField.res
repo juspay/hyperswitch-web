@@ -105,9 +105,7 @@ let make = (
           ?maxLength
           ?pattern
           className={`Input ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
-          placeholder={appearance.labels == Above || appearance.labels == Floating
-            ? placeholder
-            : ""}
+          placeholder={appearance.labels == Above ? placeholder : ""}
           value
           autoComplete="on"
           onChange
