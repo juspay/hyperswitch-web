@@ -1,3 +1,10 @@
+## [0.15.9](https://github.com/juspay/hyperswitch-web/compare/v0.15.8...v0.15.9) (2023-12-13)
+
+
+### Bug Fixes
+
+* HS:132: card holder name passed as non-empty value ([#70](https://github.com/juspay/hyperswitch-web/issues/70)) ([08d6db8](https://github.com/juspay/hyperswitch-web/commit/08d6db82cceca3f536fc5131589dc5e63480d5de))
+
 ## [0.15.8](https://github.com/juspay/hyperswitch-web/compare/v0.15.7...v0.15.8) (2023-12-08)
 
 
