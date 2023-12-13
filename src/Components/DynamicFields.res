@@ -402,7 +402,7 @@ let make = (
           if !isAllStoredCardsHaveName {
             acc->Js.Dict.set(
               "payment_method_data.card_token.card_holder_name",
-              value->Js.Json.string,
+              value === "" ? Js.Json.null : value->Js.Json.string,
             )
           }
         } else {
