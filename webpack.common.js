@@ -92,7 +92,7 @@ module.exports = (publicPath = "auto") => {
     },
     optimization: {
       sideEffects: true,
-      minimize: false,
+      minimize: true,
       minimizer: [
         new TerserPlugin({
           terserOptions: {
