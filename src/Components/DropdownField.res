@@ -9,9 +9,16 @@ let make = (
   ~disabled=false,
   ~className="",
 ) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
   let dropdownRef = React.useRef(Js.Nullable.null)
+  let (inputFocused, setInputFocused) = React.useState(_ => false)
+  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+
+  let handleFocus = _ => {
+    setInputFocused(_ => true)
+    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
+  }
 
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
@@ -27,6 +34,15 @@ let make = (
     }
     None
   })
+
+  let focusClass = if inputFocused || value->Js.String2.length > 0 {
+    `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`
+  } else {
+    "transition-all ease-in duration-75"
+  }
+
+  let floatinglabelClass = inputFocused ? "Label--floating" : "Label--resting"
+
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
   <RenderIf condition={options->Js.Array2.length > 0}>
     <div className="flex flex-col w-full">
@@ -56,6 +72,7 @@ let make = (
           value
           disabled={readOnly || disabled}
           onChange=handleChange
+          onFocus=handleFocus
           className={`Input ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
           ->Js.Array2.mapi((item: string, i) => {
@@ -63,6 +80,21 @@ let make = (
           })
           ->React.array}
         </select>
+        <RenderIf condition={config.appearance.labels == Floating}>
+          <div
+            className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass}`}
+            style={ReactDOMStyle.make(
+              ~marginBottom={
+                inputFocused || value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
+              },
+              ~fontSize={
+                inputFocused || value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
+              },
+              (),
+            )}>
+            {React.string(fieldName)}
+          </div>
+        </RenderIf>
         <div
           className="self-center absolute"
           style={ReactDOMStyle.make(

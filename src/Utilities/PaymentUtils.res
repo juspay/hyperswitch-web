@@ -213,3 +213,68 @@ let getDisplayNameAndIcon = (
   | None => (defaultName, defaultIcon)
   }
 }
+
+let updateDynamicFields = (arr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsFields>, ()) => {
+  open PaymentMethodsRecord
+  let hasStateAndCity =
+    arr->Js.Array2.includes(AddressState) && arr->Js.Array2.includes(AddressCity)
+  let hasCountryAndPostal =
+    arr
+    ->Js.Array2.filter(item =>
+      switch item {
+      | AddressCountry(_) => true
+      | AddressPincode => true
+      | _ => false
+      }
+    )
+    ->Js.Array2.length == 2
+
+  let options = arr->Js.Array2.reduce((acc, item) => {
+    acc->Js.Array2.concat(
+      switch item {
+      | AddressCountry(val) => val
+      | _ => [""]
+      },
+    )
+  }, [""])
+
+  let newArr = {
+    switch (hasStateAndCity, hasCountryAndPostal) {
+    | (true, true) => {
+        arr->Js.Array2.push(StateAndCity)->ignore
+        arr->Js.Array2.push(CountryAndPincode(options))->ignore
+        arr->Js.Array2.filter(item =>
+          switch item {
+          | AddressCity
+          | AddressPincode
+          | AddressState
+          | AddressCountry(_) => false
+          | _ => true
+          }
+        )
+      }
+    | (true, false) => {
+        arr->Js.Array2.push(StateAndCity)->ignore
+        arr->Js.Array2.filter(item =>
+          switch item {
+          | AddressCity
+          | AddressState => false
+          | _ => true
+          }
+        )
+      }
+    | (false, true) => {
+        arr->Js.Array2.push(CountryAndPincode(options))->ignore
+        arr->Js.Array2.filter(item =>
+          switch item {
+          | AddressPincode
+          | AddressCountry(_) => false
+          | _ => true
+          }
+        )
+      }
+    | (_, _) => arr
+    }
+  }
+  newArr
+}

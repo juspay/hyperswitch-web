@@ -11,7 +11,7 @@ type mode =
   | CardExpiryElement
   | CardCVCElement
   | NONE
-type label = Above | Floating
+type label = Above | Floating | Never
 type themeClass = {
   fontFamily: string,
   fontSizeBase: string,

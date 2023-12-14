@@ -55,6 +55,7 @@ let defaultRules = theme =>
     },
     ".Label": {
       "color": theme.colorText,
+      "opacity": "10",
       "textAlign": "left",
     },
     ".Tab--selected": {

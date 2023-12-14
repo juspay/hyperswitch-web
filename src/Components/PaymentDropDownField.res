@@ -5,7 +5,6 @@ let make = (
   ~setValue: (
     . OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field,
   ) => unit,
-  ~defaultSelected=true,
   ~fieldName,
   ~options,
   ~disabled=false,
@@ -15,6 +14,8 @@ let make = (
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
   let dropdownRef = React.useRef(Js.Nullable.null)
+  let (inputFocused, setInputFocused) = React.useState(_ => false)
+  let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
 
   let getClassName = initialLabel => {
     if value.value->Js.String2.length == 0 {
@@ -26,6 +27,31 @@ let make = (
       }
     }
   }
+  React.useEffect0(() => {
+    if value.value === "" {
+      setValue(.prev => {
+        ...prev,
+        value: options->Belt.Array.get(0)->Belt.Option.getWithDefault(""),
+      })
+    }
+    None
+  })
+  let handleFocus = _ => {
+    setInputFocused(_ => true)
+    setValue(.prev => {
+      ...prev,
+      isValid: None,
+      errorString: "",
+    })
+    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
+  }
+  let focusClass = if inputFocused || value.value->Js.String2.length > 0 {
+    `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`
+  } else {
+    "transition-all ease-in duration-75"
+  }
+  let floatinglabelClass = inputFocused ? "Label--floating" : "Label--resting"
+
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
 
@@ -62,26 +88,52 @@ let make = (
           style={ReactDOMStyle.make(
             ~background=disabled ? disbaledBG : themeObj.colorBackground,
             ~opacity=disabled ? "35%" : "",
-            ~padding=themeObj.spacingUnit,
+            ~padding="11px 20px 11px 11px",
             ~width="100%",
             (),
           )}
           name=""
           value=value.value
           disabled={readOnly || disabled}
+          onFocus={handleFocus}
           onChange=handleChange
           className={`Input ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
-          {defaultSelected
-            ? React.null
-            : <option value="" disabled={true} style={ReactDOMStyle.make(~opacity="70%", ())}>
-                {React.string("Select")}
-              </option>}
           {options
           ->Js.Array2.mapi((item: string, i) => {
             <option key={string_of_int(i)} value=item> {React.string(item)} </option>
           })
           ->React.array}
         </select>
+        <RenderIf condition={config.appearance.labels == Floating}>
+          <div
+            className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
+            style={ReactDOMStyle.make(
+              ~marginBottom={
+                inputFocused || value.value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
+              },
+              ~fontSize={
+                inputFocused || value.value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
+              },
+              (),
+            )}>
+            {React.string(fieldName)}
+          </div>
+        </RenderIf>
+        <RenderIf condition={config.appearance.labels == Floating}>
+          <div
+            className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass}`}
+            style={ReactDOMStyle.make(
+              ~marginBottom={
+                inputFocused || value.value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
+              },
+              ~fontSize={
+                inputFocused || value.value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
+              },
+              (),
+            )}>
+            {React.string(fieldName)}
+          </div>
+        </RenderIf>
         <div
           className="self-center absolute"
           style={ReactDOMStyle.make(
