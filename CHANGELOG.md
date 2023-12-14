@@ -1,3 +1,10 @@
+## [0.15.10](https://github.com/juspay/hyperswitch-web/compare/v0.15.9...v0.15.10) (2023-12-14)
+
+
+### Bug Fixes
+
+* HS-465: UI changes and Code refactor for billing address ([#60](https://github.com/juspay/hyperswitch-web/issues/60)) ([8209ec3](https://github.com/juspay/hyperswitch-web/commit/8209ec39827fac94a1b081daaeb0a6b014327526))
+
 ## [0.15.9](https://github.com/juspay/hyperswitch-web/compare/v0.15.8...v0.15.9) (2023-12-13)
 
 
