@@ -893,3 +893,20 @@ let getPaymentMethodTypeFromList = (~list: list, ~paymentMethod, ~paymentMethodT
     item.payment_method_type == paymentMethodType
   })
 }
+
+let checkIsFieldValid = (requiredFieldsType, paymentMethodFields, field: RecoilAtomTypes.field) => {
+  requiredFieldsType
+  ->Js.Array2.filter(required_field => required_field.field_type === paymentMethodFields)
+  ->Js.Array2.reduce((acc, item) => {
+    let fieldNameArr = field.value->Js.String2.split(" ")
+    let requiredFieldsArr = item.required_field->Js.String2.split(".")
+    let fieldValue = switch requiredFieldsArr
+    ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
+    ->Belt.Option.getWithDefault("") {
+    | "first_name" => fieldNameArr->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+    | "last_name" => fieldNameArr->Belt.Array.get(1)->Belt.Option.getWithDefault("")
+    | _ => field.value
+    }
+    acc && fieldValue !== ""
+  }, true)
+}
