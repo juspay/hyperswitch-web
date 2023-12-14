@@ -185,29 +185,44 @@ let make = (
     }
   }
 
+  let requiredFieldsType =
+    requiredFields
+    ->Utils.getDictFromJson
+    ->Js.Dict.values
+    ->Js.Array2.map(item =>
+      item->Utils.getDictFromJson->PaymentMethodsRecord.getRequiredFieldsFromJson
+    )
+
   React.useEffect7(() => {
     let areRequiredFieldsValid = fieldsArr->Js.Array2.reduce((acc, paymentMethodFields) => {
       acc &&
       switch paymentMethodFields {
-      | Email => email.isValid
-      | FullName => Some(fullName.value !== "")
-      | Country => Some(country !== "" || countryNames->Belt.Array.length === 0)
-      | AddressCountry(countryArr) => Some(country !== "" || countryArr->Belt.Array.length === 0)
-      | BillingName => Some(billingName.value !== "")
-      | AddressLine1 => Some(line1.value !== "")
-      | Bank => Some(selectedBank !== "" || bankNames->Belt.Array.length === 0)
-      | PhoneNumber => Some(phone.value !== "")
-      | AddressCity => Some(city.value !== "")
-      | AddressPincode => Some(postalCode.value !== "")
-      | AddressState => Some(state.value !== "")
-      | BlikCode => Some(blikCode.value !== "")
-      | Currency(currencyArr) => Some(currency !== "" || currencyArr->Belt.Array.length === 0)
+      | Email => email.isValid->Belt.Option.getWithDefault(false)
+      | FullName =>
+        PaymentMethodsRecord.checkIsFieldValid(requiredFieldsType, paymentMethodFields, fullName)
+      | Country => country !== "" || countryNames->Belt.Array.length === 0
+      | AddressCountry(countryArr) => country !== "" || countryArr->Belt.Array.length === 0
+      | BillingName =>
+        PaymentMethodsRecord.checkIsFieldValid(requiredFieldsType, paymentMethodFields, billingName)
+      | AddressLine1 =>
+        PaymentMethodsRecord.checkIsFieldValid(requiredFieldsType, paymentMethodFields, line1)
+      | Bank => selectedBank !== "" || bankNames->Belt.Array.length === 0
+      | PhoneNumber =>
+        PaymentMethodsRecord.checkIsFieldValid(requiredFieldsType, paymentMethodFields, phone)
+      | AddressCity =>
+        PaymentMethodsRecord.checkIsFieldValid(requiredFieldsType, paymentMethodFields, city)
+      | AddressPincode =>
+        PaymentMethodsRecord.checkIsFieldValid(requiredFieldsType, paymentMethodFields, postalCode)
+      | AddressState =>
+        PaymentMethodsRecord.checkIsFieldValid(requiredFieldsType, paymentMethodFields, state)
+      | BlikCode =>
+        PaymentMethodsRecord.checkIsFieldValid(requiredFieldsType, paymentMethodFields, blikCode)
+      | Currency(currencyArr) => currency !== "" || currencyArr->Belt.Array.length === 0
       | AddressLine2
       | SpecialField(_)
       | InfoElement
-      | None =>
-        Some(true)
-      }->Belt.Option.getWithDefault(false)
+      | None => true
+      }
     }, true)
     setAreRequiredFieldsValid(._ => areRequiredFieldsValid)
 
@@ -253,14 +268,6 @@ let make = (
       blikCode.value,
     ),
   ))
-
-  let requiredFieldsType =
-    requiredFields
-    ->Utils.getDictFromJson
-    ->Js.Dict.values
-    ->Js.Array2.map(item =>
-      item->Utils.getDictFromJson->PaymentMethodsRecord.getRequiredFieldsFromJson
-    )
 
   React.useEffect0(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -458,9 +465,17 @@ let make = (
         )}>
         {switch item {
         | FullName =>
-          <FullNamePaymentInput paymentType customFieldName={item->getCustomFieldName} />
+          <FullNamePaymentInput
+            paymentType
+            customFieldName={item->getCustomFieldName}
+            maybeRequiredFields={Some(requiredFieldsType)}
+          />
         | BillingName =>
-          <BillingNamePaymentInput paymentType customFieldName={item->getCustomFieldName} />
+          <BillingNamePaymentInput
+            paymentType
+            customFieldName={item->getCustomFieldName}
+            maybeRequiredFields={Some(requiredFieldsType)}
+          />
         | Email => <EmailPaymentInput paymentType />
         | PhoneNumber => <PhoneNumberPaymentInput />
         | AddressLine1 =>
