@@ -1,17 +1,16 @@
 open Utils
 open RecoilAtoms
 
-type props = {
-  sessionObj: option<SessionsType.token>,
-  list: PaymentMethodsRecord.list,
-  thirdPartySessionObj: option<Js.Json.t>,
-  paymentType: option<CardThemeType.mode>,
-  walletOptions: array<string>,
-}
-
 open GooglePayType
 
-let default = (props: props) => {
+@react.component
+let make = (
+  ~sessionObj: option<SessionsType.token>,
+  ~list: PaymentMethodsRecord.list,
+  ~thirdPartySessionObj: option<Js.Json.t>,
+  ~paymentType: option<CardThemeType.mode>,
+  ~walletOptions: array<string>,
+) => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
@@ -26,14 +25,14 @@ let default = (props: props) => {
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
   let isGooglePaySDKFlow = React.useMemo1(() => {
-    props.sessionObj->Belt.Option.isSome
-  }, [props.sessionObj])
+    sessionObj->Belt.Option.isSome
+  }, [sessionObj])
   let isGooglePayThirdPartyFlow = React.useMemo1(() => {
-    props.thirdPartySessionObj->Belt.Option.isSome
-  }, [props.sessionObj])
+    thirdPartySessionObj->Belt.Option.isSome
+  }, [sessionObj])
 
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
-    ~list=props.list,
+    ~list,
     ~paymentMethod="wallet",
     ~paymentMethodType="google_pay",
   ) {
@@ -41,7 +40,7 @@ let default = (props: props) => {
   | None => PaymentMethodsRecord.defaultPaymentMethodType
   }
 
-  let isWallet = props.walletOptions->Js.Array2.includes("google_pay")
+  let isWallet = walletOptions->Js.Array2.includes("google_pay")
   let paymentExperience =
     googlePayPaymentMethodType.payment_experience->Js.Array2.length == 0
       ? PaymentMethodsRecord.RedirectToURL
@@ -50,25 +49,25 @@ let default = (props: props) => {
   let isInvokeSDKFlow = React.useMemo1(() => {
     (isGooglePaySDKFlow || isGooglePayThirdPartyFlow) &&
       paymentExperience == PaymentMethodsRecord.InvokeSDK
-  }, [props.sessionObj])
+  }, [sessionObj])
   let (connectors, _) = isInvokeSDKFlow
-    ? props.list->PaymentUtils.getConnectors(Wallets(Gpay(SDK)))
-    : props.list->PaymentUtils.getConnectors(Wallets(Gpay(Redirect)))
+    ? list->PaymentUtils.getConnectors(Wallets(Gpay(SDK)))
+    : list->PaymentUtils.getConnectors(Wallets(Gpay(Redirect)))
 
   let isDelayedSessionToken = React.useMemo1(() => {
-    props.thirdPartySessionObj
+    thirdPartySessionObj
     ->Belt.Option.flatMap(Js.Json.decodeObject)
     ->Belt.Option.flatMap(x => x->Js.Dict.get("delayed_session_token"))
     ->Belt.Option.flatMap(Js.Json.decodeBoolean)
     ->Belt.Option.getWithDefault(false)
-  }, [props.thirdPartySessionObj])
+  }, [thirdPartySessionObj])
 
   let processPayment = (body: array<(string, Js.Json.t)>) => {
     intent(
       ~bodyArr=body,
       ~confirmParam={
         return_url: options.wallets.walletReturnUrl,
-        publishableKey: publishableKey,
+        publishableKey,
       },
       ~handleUserError=true,
       (),
@@ -122,7 +121,7 @@ let default = (props: props) => {
     sync(
       ~confirmParam={
         return_url: options.wallets.walletReturnUrl,
-        publishableKey: publishableKey,
+        publishableKey,
       },
       ~handleUserError=true,
       (),
@@ -180,7 +179,7 @@ let default = (props: props) => {
     gpayWrapper.innerHTML = ""
     gpayWrapper.appendChild(. button)
   }
-  React.useEffect3(() => {
+  React.useEffect5(() => {
     if (
       status == "ready" &&
       (isGPayReady ||
@@ -191,7 +190,7 @@ let default = (props: props) => {
       addGooglePayButton()
     }
     None
-  }, (status, props, isGPayReady))
+  }, (status, list, sessionObj, thirdPartySessionObj, isGPayReady))
 
   React.useEffect0(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
@@ -260,14 +259,16 @@ let default = (props: props) => {
           />
         </RenderIf>
       : <DynamicFields
-          paymentType={switch props.paymentType {
+          paymentType={switch paymentType {
           | Some(val) => val
           | _ => NONE
           }}
-          list=props.list
+          list
           paymentMethod="wallet"
           paymentMethodType="google_pay"
           setRequiredFieldsBody
         />
   }
 }
+
+let default = make

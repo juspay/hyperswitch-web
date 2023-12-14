@@ -3,7 +3,7 @@ open RecoilAtomTypes
 @react.component
 let make = (
   ~setValue=?,
-  ~value,
+  ~value: RecoilAtomTypes.field,
   ~onChange,
   ~onBlur=?,
   ~rightIcon=React.null,

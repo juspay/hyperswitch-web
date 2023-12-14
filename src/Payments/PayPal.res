@@ -1,6 +1,5 @@
 open RecoilAtoms
 
-type props = {list: PaymentMethodsRecord.list}
 module Loader = {
   @react.component
   let make = () => {
@@ -11,7 +10,8 @@ module Loader = {
 }
 let payPalIcon = <Icon size=35 width=90 name="paypal" />
 
-let default = (props: props) => {
+@react.component
+let make = (~list: PaymentMethodsRecord.list) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
@@ -37,13 +37,13 @@ let default = (props: props) => {
       (),
     )
     setPaypalClicked(_ => true)
-    let (connectors, _) = props.list->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
+    let (connectors, _) = list->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
     let body = PaymentBody.paypalRedirectionBody(~connectors)
     intent(
       ~bodyArr=body,
       ~confirmParam={
         return_url: options.wallets.walletReturnUrl,
-        publishableKey: publishableKey,
+        publishableKey,
       },
       ~handleUserError=true,
       (),
@@ -71,3 +71,5 @@ let default = (props: props) => {
     </div>
   </button>
 }
+
+let default = make

@@ -364,7 +364,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let animate = cardBrand->cardType == NOTFOUND ? "animate-slideLeft" : "animate-slideRight"
   let icon = <div className=animate> cardBrandIcon </div>
 
-  let cardProps = (
+  let cardProps: CardUtils.cardProps = (
     isCardValid,
     setIsCardValid,
     cardNumber,
@@ -376,7 +376,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     setCardError,
     maxCardLength,
   )
-  let expiryProps = (
+
+  let expiryProps: CardUtils.expiryProps = (
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
@@ -387,7 +388,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     expiryError,
     setExpiryError,
   )
-  let cvcProps = (
+
+  let cvcProps: CardUtils.cvcProps = (
     isCVCValid,
     setIsCVCValid,
     cvcNumber,
@@ -399,7 +401,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     cvcError,
     setCvcError,
   )
-  let zipProps = (
+
+  let zipProps: CardUtils.zipProps = (
     isZipValid,
     setIsZipValid,
     zipCode,

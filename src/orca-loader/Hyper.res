@@ -458,12 +458,12 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
       let returnObject = {
-        confirmPayment: confirmPayment,
-        elements: elements,
+        confirmPayment,
+        elements,
         widgets: elements,
         confirmCardPayment: confirmCardPaymentFn,
         retrievePaymentIntent: retrievePaymentIntentFn,
-        paymentRequest: paymentRequest,
+        paymentRequest,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

@@ -1,11 +1,9 @@
 open LazyUtils
 
-@obj
-external makeProps: (
-  ~paymentType: CardThemeType.mode,
-  ~list: PaymentMethodsRecord.list,
-  ~paymentMethodName: string,
-  unit,
-) => componentProps = ""
+type props = {
+  paymentType: CardThemeType.mode,
+  list: PaymentMethodsRecord.list,
+  paymentMethodName: string,
+}
 
-let make = reactLazy(.() => import_("./PaymentMethodsWrapper.bs.js"))
+let make: props => React.element = reactLazy(.() => import_("./PaymentMethodsWrapper.bs.js"))

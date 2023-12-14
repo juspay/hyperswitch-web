@@ -14,6 +14,53 @@ type cardIssuer =
   | INTERAC
   | NOTFOUND
 
+type cardProps = (
+  option<bool>,
+  (option<bool> => option<bool>) => unit,
+  string,
+  JsxEvent.Form.t => unit,
+  JsxEvent.Focus.t => unit,
+  React.ref<Js.Nullable.t<Dom.element>>,
+  React.element,
+  string,
+  (string => string) => unit,
+  int,
+)
+
+type expiryProps = (
+  option<bool>,
+  (option<bool> => option<bool>) => unit,
+  string,
+  JsxEvent.Form.t => unit,
+  JsxEvent.Focus.t => unit,
+  React.ref<Js.Nullable.t<Dom.element>>,
+  ReactEvent.Keyboard.t => unit,
+  string,
+  (string => string) => unit,
+)
+
+type cvcProps = (
+  option<bool>,
+  (option<bool> => option<bool>) => unit,
+  string,
+  (string => string) => unit,
+  JsxEvent.Form.t => unit,
+  JsxEvent.Focus.t => unit,
+  React.ref<Js.Nullable.t<Dom.element>>,
+  ReactEvent.Keyboard.t => unit,
+  string,
+  (string => string) => unit,
+)
+type zipProps = (
+  option<bool>,
+  (option<bool> => option<bool>) => unit,
+  string,
+  ReactEvent.Form.t => unit,
+  ReactEvent.Focus.t => unit,
+  React.ref<Js.Nullable.t<Dom.element>>,
+  ReactEvent.Keyboard.t => unit,
+  bool,
+)
 @val external document: 'a = "document"
 
 @send external focus: Dom.element => unit = "focus"

@@ -2,13 +2,12 @@ open RecoilAtoms
 open RecoilAtomTypes
 open Utils
 
-type props = {
-  paymentType: CardThemeType.mode,
-  list: PaymentMethodsRecord.list,
-  paymentMethodName: string,
-}
-
-let default = (props: props) => {
+@react.component
+let make = (
+  ~paymentType: CardThemeType.mode,
+  ~list: PaymentMethodsRecord.list,
+  ~paymentMethodName: string,
+) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
@@ -16,9 +15,9 @@ let default = (props: props) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let optionPaymentMethodDetails =
-    props.list
+    list
     ->PaymentMethodsRecord.buildFromPaymentList
-    ->Js.Array2.find(x => x.paymentMethodName === props.paymentMethodName)
+    ->Js.Array2.find(x => x.paymentMethodName === paymentMethodName)
   let paymentMethodDetails =
     optionPaymentMethodDetails->Belt.Option.getWithDefault(
       PaymentMethodsRecord.defaultPaymentMethodContent,
@@ -68,19 +67,19 @@ let default = (props: props) => {
     if confirm.doSubmit {
       if complete {
         let countryCode =
-          Country.getCountry(props.paymentMethodName)
+          Country.getCountry(paymentMethodName)
           ->Js.Array2.filter(item => item.countryName == country)
           ->Belt.Array.get(0)
           ->Belt.Option.getWithDefault(Country.defaultTimeZone)
 
         let bank =
-          Bank.getBanks(props.paymentMethodName)
+          Bank.getBanks(paymentMethodName)
           ->Js.Array2.filter(item => item.displayName == selectedBank)
           ->Belt.Array.get(0)
           ->Belt.Option.getWithDefault(Bank.defaultBank)
         intent(
           ~bodyArr=PaymentBody.getPaymentBody(
-            ~paymentMethod=props.paymentMethodName,
+            ~paymentMethod=paymentMethodName,
             ~country=countryCode.isoAlpha2,
             ~fullName=fullName.value,
             ~email=email.value,
@@ -109,7 +108,7 @@ let default = (props: props) => {
     email,
     country,
     blikCode,
-    props.paymentMethodName,
+    paymentMethodName,
     phoneNumber.value,
     (selectedBank, currency, requiredFieldsBody),
   ))
@@ -117,10 +116,10 @@ let default = (props: props) => {
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
-    <RenderIf condition={props.list.payment_methods->Js.Array.length !== 0}>
+    <RenderIf condition={list.payment_methods->Js.Array.length !== 0}>
       <DynamicFields
-        paymentType=props.paymentType
-        list=props.list
+        paymentType
+        list
         paymentMethod=paymentMethodDetails.methodType
         paymentMethodType=paymentMethodDetails.paymentMethodName
         setRequiredFieldsBody
@@ -128,3 +127,5 @@ let default = (props: props) => {
     </RenderIf>
   </div>
 }
+
+let default = make

@@ -21,12 +21,8 @@ type some = {
 
 @val external klarnaInit: some = "Klarna.Payments"
 
-type props = {
-  sessionObj: SessionsType.token,
-  list: PaymentMethodsRecord.list,
-}
-
-let default = (props: props) => {
+@react.component
+let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) => {
   open Utils
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
@@ -59,7 +55,7 @@ let default = (props: props) => {
         },
         Js.Dict.empty()->Js.Json.object_,
         (res: res) => {
-          let (connectors, _) = props.list->PaymentUtils.getConnectors(PayLater(Klarna(SDK)))
+          let (connectors, _) = list->PaymentUtils.getConnectors(PayLater(Klarna(SDK)))
           let body = PaymentBody.klarnaSDKbody(~token=res.authorization_token, ~connectors)
           res.approved
             ? intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
@@ -75,7 +71,7 @@ let default = (props: props) => {
       let klarnaWrapper = GooglePayType.getElementById(Utils.document, "klarna-payments")
       klarnaWrapper.innerHTML = ""
       klarnaInit.init(. {
-        client_token: props.sessionObj.token,
+        client_token: sessionObj.token,
       })
 
       klarnaInit.load(.
@@ -94,6 +90,9 @@ let default = (props: props) => {
 
   let bottomElement = <InfoElement />
   <div className="p-1 animate-slowShow">
-    <div id="klarna-payments" className="m-3 hidden" /> <Block bottomElement />
+    <div id="klarna-payments" className="m-3 hidden" />
+    <Block bottomElement />
   </div>
 }
+
+let default = make

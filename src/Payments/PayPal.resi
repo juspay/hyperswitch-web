@@ -1,3 +1,2 @@
-type props = {list: PaymentMethodsRecord.list}
-
-let default: props => React.element
+@react.component
+let default: (~list: PaymentMethodsRecord.list) => React.element

@@ -1,13 +1,12 @@
 open RecoilAtoms
 open Utils
 
-type props = {
-  paymentType: CardThemeType.mode,
-  list: PaymentMethodsRecord.list,
-  countryProps: (string, array<string>),
-}
-
-let default = (props: props) => {
+@react.component
+let make = (
+  ~paymentType: CardThemeType.mode,
+  ~list: PaymentMethodsRecord.list,
+  ~countryProps: (string, array<string>),
+) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -20,7 +19,7 @@ let default = (props: props) => {
     ~billingDetails=fields.billingDetails,
     ~logger=loggerState,
   )
-  let (_clientCountry, countryNames) = props.countryProps
+  let (_clientCountry, countryNames) = countryProps
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let clientCountryCode =
     Country.country
@@ -44,7 +43,7 @@ let default = (props: props) => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if complete {
-        let (connectors, _) = props.list->PaymentUtils.getConnectors(BankTransfer(Sepa))
+        let (connectors, _) = list->PaymentUtils.getConnectors(BankTransfer(Sepa))
         intent(
           ~bodyArr=PaymentBody.sepaBankTransferBody(
             ~email=email.value,
@@ -67,8 +66,8 @@ let default = (props: props) => {
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingTab, ())}>
-    <EmailPaymentInput paymentType=props.paymentType />
-    <FullNamePaymentInput paymentType={props.paymentType} />
+    <EmailPaymentInput paymentType />
+    <FullNamePaymentInput paymentType={paymentType} />
     <RenderIf condition={showAddressDetails.country == Auto}>
       <DropdownField
         appearance=config.appearance
@@ -82,3 +81,5 @@ let default = (props: props) => {
     <InfoElement />
   </div>
 }
+
+let default = make

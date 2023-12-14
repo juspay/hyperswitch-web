@@ -2,9 +2,8 @@ open RecoilAtoms
 open Utils
 open PaymentModeType
 
-type props = {paymentType: CardThemeType.mode, list: PaymentMethodsRecord.list}
-
-let default = (props: props) => {
+@react.component
+let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -77,7 +76,7 @@ let default = (props: props) => {
             ~city=city.value,
             ~postalCode=postalCode.value,
             ~state=state.value,
-            ~paymentType=props.list.payment_type,
+            ~paymentType=list.payment_type,
           )
           intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
         | None => ()
@@ -93,8 +92,8 @@ let default = (props: props) => {
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
-    <FullNamePaymentInput paymentType={props.paymentType} />
-    <EmailPaymentInput paymentType=props.paymentType />
+    <FullNamePaymentInput paymentType={paymentType} />
+    <EmailPaymentInput paymentType />
     <div className="flex flex-col">
       <AddBankAccount modalData setModalData />
       <RenderIf condition={bankError->Js.String2.length > 0}>
@@ -111,8 +110,12 @@ let default = (props: props) => {
         </div>
       </RenderIf>
     </div>
-    <Surcharge list=props.list paymentMethod="bank_debit" paymentMethodType="ach" />
+    <Surcharge list paymentMethod="bank_debit" paymentMethodType="ach" />
     <Terms mode=ACHBankDebit />
-    <FullScreenPortal> <BankDebitModal setModalData /> </FullScreenPortal>
+    <FullScreenPortal>
+      <BankDebitModal setModalData />
+    </FullScreenPortal>
   </div>
 }
+
+let default = make

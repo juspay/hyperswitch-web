@@ -1,10 +1,8 @@
 open LazyUtils
 
-@obj
-external makeProps: (
-  ~sessionObj: option<Js.Json.t>,
-  ~list: PaymentMethodsRecord.list,
-  unit,
-) => componentProps = ""
+type props = {
+  sessionObj: option<Js.Json.t>,
+  list: PaymentMethodsRecord.list,
+}
 
-let make = reactLazy(.() => import_("./ApplePay.bs.js"))
+let make: props => React.element = reactLazy(.() => import_("./ApplePay.bs.js"))

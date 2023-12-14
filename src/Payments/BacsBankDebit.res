@@ -1,7 +1,6 @@
 open RecoilAtoms
 open RecoilAtomTypes
 open Utils
-type props = {paymentType: CardThemeType.mode, list: PaymentMethodsRecord.list}
 
 let formatSortCode = sortcode => {
   let formatted = sortcode->Js.String2.replaceByRe(%re("/\D+/g"), "")
@@ -21,7 +20,8 @@ let formatSortCode = sortcode => {
 }
 let cleanSortCode = str => str->Js.String2.replaceByRe(%re("/-/g"), "")
 
-let default = (props: props) => {
+@react.component
+let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -125,7 +125,7 @@ let default = (props: props) => {
         fieldName=localeString.sortCodeText
         value=sortcode
         onChange=changeSortCode
-        paymentType=props.paymentType
+        paymentType
         errorString=sortCodeError
         isValid={sortCodeError == "" ? None : Some(false)}
         type_="tel"
@@ -139,18 +139,18 @@ let default = (props: props) => {
         fieldName=localeString.accountNumberText
         value=accountNumber
         onChange=changeAccNum
-        paymentType=props.paymentType
+        paymentType
         type_="text"
         appearance=config.appearance
         inputRef=accNumRef
         placeholder="00012345"
       />
     </div>
-    <EmailPaymentInput paymentType=props.paymentType />
-    <FullNamePaymentInput
-      paymentType={props.paymentType} customFieldName=Some("Bank Holder Name")
-    />
-    <AddressPaymentInput paymentType=props.paymentType />
-    <Surcharge list=props.list paymentMethod="bank_debit" paymentMethodType="becs" />
+    <EmailPaymentInput paymentType />
+    <FullNamePaymentInput paymentType={paymentType} customFieldName=Some("Bank Holder Name") />
+    <AddressPaymentInput paymentType />
+    <Surcharge list paymentMethod="bank_debit" paymentMethodType="becs" />
   </div>
 }
+
+let default = make

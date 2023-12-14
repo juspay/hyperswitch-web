@@ -16,8 +16,11 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
   open SessionsType
   let dict = sessions->Utils.getDictFromJson
 
-  let sessionObj = itemToObjMapper(dict, Others)
-  let paypalToken = getPaymentSessionObj(sessionObj.sessionsToken, Paypal)
+  let sessionObj = React.useMemo1(() => itemToObjMapper(dict, Others), [dict])
+  let paypalToken = React.useMemo1(
+    () => getPaymentSessionObj(sessionObj.sessionsToken, Paypal),
+    [sessionObj],
+  )
   let gPayToken = getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
   let applePaySessionObj = itemToObjMapper(dict, ApplePayObject)
   let applePayToken = getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
