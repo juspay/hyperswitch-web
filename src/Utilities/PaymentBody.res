@@ -25,34 +25,9 @@ let cardPaymentBody = (~cardNumber, ~month, ~year, ~cardHolderName, ~cvcNumber, 
   ),
 ]
 
-let bancontactBody = (~cardNumber, ~month, ~year, ~cardHolderName) => [
+let bancontactBody = () => [
   ("payment_method", "bank_redirect"->Js.Json.string),
   ("payment_method_type", "bancontact_card"->Js.Json.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "bank_redirect",
-        [
-          (
-            "bancontact_card",
-            [
-              ("card_number", cardNumber->CardUtils.clearSpaces->Js.Json.string),
-              ("card_exp_month", month->Js.Json.string),
-              ("card_exp_year", year->Js.Json.string),
-              ("card_holder_name", cardHolderName->Js.Json.string),
-            ]
-            ->Js.Dict.fromArray
-            ->Js.Json.object_,
-          ),
-        ]
-        ->Js.Dict.fromArray
-        ->Js.Json.object_,
-      ),
-    ]
-    ->Js.Dict.fromArray
-    ->Js.Json.object_,
-  ),
 ]
 
 let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber) => [
