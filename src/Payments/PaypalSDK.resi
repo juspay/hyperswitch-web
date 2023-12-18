@@ -1,2 +1,9 @@
 @react.component
-let default: (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) => React.element
+let make: (
+  ~sessionObj: OrcaPaymentPage.SessionsType.token,
+  ~list: OrcaPaymentPage.PaymentMethodsRecord.list,
+) => React.element
+let default: props<
+  OrcaPaymentPage.SessionsType.token,
+  OrcaPaymentPage.PaymentMethodsRecord.list,
+> => React.element

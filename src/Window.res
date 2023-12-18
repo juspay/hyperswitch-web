@@ -37,6 +37,7 @@ type eventData = {
   focus: bool,
   blur: bool,
   confirmTriggered: bool,
+  oneClickConfirmTriggered: bool,
 }
 type loaderEvent = {key: string, data: eventData}
 @set external innerHTML: (Dom.element, string) => unit = "innerHTML"

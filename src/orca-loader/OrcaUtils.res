@@ -243,6 +243,7 @@ let eventHandlerFunc = (
       | Ready
       | Focus
       | ConfirmPayment
+      | OneClickConfirmPayment
       | Blur =>
         switch eventHandler {
         | Some(eH) => eH(Some(ev.data))
@@ -329,4 +330,31 @@ let getArrayOfTupleFromDict = dict => {
   dict
   ->Js.Dict.keys
   ->Belt.Array.map(key => (key, Js.Dict.get(dict, key)->Belt.Option.getWithDefault(Js.Json.null)))
+}
+
+let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
+  Js.Promise.make((~resolve, ~reject as _) => {
+    if sdkHandleOneClickConfirmPayment {
+      resolve(. Js.Json.boolean(true))
+    } else {
+      let rec handle = (ev: Window.event) => {
+        let json = try {
+          ev.data->Js.Json.parseExn
+        } catch {
+        | _ => Js.Dict.empty()->Js.Json.object_
+        }
+        let dict = json->Utils.getDictFromJson
+        if dict->Js.Dict.get("onOneClickPaymentConfirm")->Belt.Option.isSome {
+          resolve(.
+            dict
+            ->Js.Dict.get("onOneClickPaymentConfirm")
+            ->Belt.Option.getWithDefault(true->Js.Json.boolean),
+          )
+          Window.removeEventListener("message", handle)
+        }
+      }
+      Window.addEventListener("message", handle)
+      Utils.handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true, ())
+    }
+  })
 }

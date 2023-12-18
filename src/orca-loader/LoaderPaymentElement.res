@@ -25,6 +25,14 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       ->Belt.Option.flatMap(x => x->Js.Dict.get("sdkHandleConfirmPayment"))
       ->Belt.Option.flatMap(Js.Json.decodeBoolean)
       ->Belt.Option.getWithDefault(false)
+
+    let sdkHandleOneClickConfirmPayment =
+      options
+      ->Js.Json.decodeObject
+      ->Belt.Option.flatMap(x => x->Js.Dict.get("sdkHandleOneClickConfirmPayment"))
+      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
+      ->Belt.Option.getWithDefault(true)
+
     let disableSaveCards =
       options
       ->Js.Json.decodeObject
@@ -64,6 +72,13 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           eventHandler,
           ConfirmPayment,
           "onHelpConfirmPayment",
+        )
+      | OneClickConfirmPayment =>
+        eventHandlerFunc(
+          ev => ev.data.oneClickConfirmTriggered,
+          eventHandler,
+          OneClickConfirmPayment,
+          "onHelpOneClickConfirmPayment",
         )
       | _ => ()
       }
@@ -292,6 +307,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`),
             localSelectorString,
             sdkHandleConfirmPayment,
+            sdkHandleOneClickConfirmPayment,
             disableSaveCards,
           )
         }

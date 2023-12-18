@@ -1,7 +1,9 @@
 @react.component
 let make = (~sessionObj: option<Js.Json.t>, ~list: PaymentMethodsRecord.list) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.keys,
+  )
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
@@ -202,30 +204,40 @@ let make = (~sessionObj: option<Js.Json.t>, ~list: PaymentMethodsRecord.list) =>
       (),
     )
     setApplePayClicked(_ => true)
+    open Promise
+    OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
+    ->then(result => {
+      let result = result->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)
+      if result {
+        if isInvokeSDKFlow {
+          let isDelayedSessionToken =
+            sessionObj
+            ->Belt.Option.getWithDefault(Js.Json.null)
+            ->Js.Json.decodeObject
+            ->Belt.Option.getWithDefault(Js.Dict.empty())
+            ->Js.Dict.get("delayed_session_token")
+            ->Belt.Option.getWithDefault(Js.Json.null)
+            ->Js.Json.decodeBoolean
+            ->Belt.Option.getWithDefault(false)
 
-    if isInvokeSDKFlow {
-      let isDelayedSessionToken =
-        sessionObj
-        ->Belt.Option.getWithDefault(Js.Json.null)
-        ->Js.Json.decodeObject
-        ->Belt.Option.getWithDefault(Js.Dict.empty())
-        ->Js.Dict.get("delayed_session_token")
-        ->Belt.Option.getWithDefault(Js.Json.null)
-        ->Js.Json.decodeBoolean
-        ->Belt.Option.getWithDefault(false)
-
-      if isDelayedSessionToken {
-        setShowApplePayLoader(_ => true)
-        let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
-        processPayment(bodyDict)
+          if isDelayedSessionToken {
+            setShowApplePayLoader(_ => true)
+            let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
+            processPayment(bodyDict)
+          } else {
+            let message = [("applePayButtonClicked", true->Js.Json.boolean)]
+            Utils.handlePostMessage(message)
+          }
+        } else {
+          let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
+          processPayment(bodyDict)
+        }
       } else {
-        let message = [("applePayButtonClicked", true->Js.Json.boolean)]
-        Utils.handlePostMessage(message)
+        setApplePayClicked(_ => false)
       }
-    } else {
-      let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
-      processPayment(bodyDict)
-    }
+      resolve()
+    })
+    ->ignore
   }
 
   React.useEffect1(() => {
