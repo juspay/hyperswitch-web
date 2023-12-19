@@ -1,3 +1,10 @@
+# [0.16.0](https://github.com/juspay/hyperswitch-web/compare/v0.15.10...v0.16.0) (2023-12-19)
+
+
+### Features
+
+* HS-182: Added Evoucher Payment Method Type Redirection flow ([#73](https://github.com/juspay/hyperswitch-web/issues/73)) ([414ee37](https://github.com/juspay/hyperswitch-web/commit/414ee370dc18a33795802c89822d3da6d9e13133))
+
 ## [0.15.10](https://github.com/juspay/hyperswitch-web/compare/v0.15.9...v0.15.10) (2023-12-14)
 
 
