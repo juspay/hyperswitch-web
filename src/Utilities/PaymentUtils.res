@@ -196,18 +196,22 @@ let getDisplayNameAndIcon = (
     ->Belt.Array.get(0)
   switch customNameObj {
   | Some(val) =>
-    val.paymentMethodName === "classic"
+    val.paymentMethodName === "classic" || val.paymentMethodName === "evoucher"
       ? {
-          let id = val.aliasName->Js.String2.split(" ")
-          (
-            val.aliasName,
-            Some(
-              PaymentMethodsRecord.icon(
-                id->Belt.Array.get(0)->Belt.Option.getWithDefault(""),
-                ~size=19,
+          switch val.aliasName {
+          | "" => (defaultName, defaultIcon)
+          | aliasName =>
+            let id = aliasName->Js.String2.split(" ")
+            (
+              aliasName,
+              Some(
+                PaymentMethodsRecord.icon(
+                  id->Belt.Array.get(0)->Belt.Option.getWithDefault(""),
+                  ~size=19,
+                ),
               ),
-            ),
-          )
+            )
+          }
         }
       : (defaultName, defaultIcon)
   | None => (defaultName, defaultIcon)

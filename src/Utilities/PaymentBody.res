@@ -1332,9 +1332,9 @@ let bizumBody = () => [
   ),
 ]
 
-let rewardBody = () => [
+let rewardBody = (~paymentMethodType) => [
   ("payment_method", "reward"->Js.Json.string),
-  ("payment_method_type", "classic"->Js.Json.string),
+  ("payment_method_type", paymentMethodType->Js.Json.string),
   ("payment_method_data", "reward"->Js.Json.string),
 ]
 
@@ -1545,9 +1545,10 @@ let getPaymentBody = (
   | "alma" => almaBody()
   | "atome" => atomeBody()
   | "multibanco" => multibancoBody(~email)
-  | "classic" => rewardBody()
+  | "classic" => rewardBody(~paymentMethodType=paymentMethod)
   | "card_redirect" => cardRedirectBody()
   | "open_banking_uk" => openBankingUKBody(~country)
+  | "evoucher" => rewardBody(~paymentMethodType=paymentMethod)
   | _ => []
   }
 }

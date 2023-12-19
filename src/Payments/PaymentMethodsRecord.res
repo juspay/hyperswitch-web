@@ -452,6 +452,13 @@ let paymentMethodsFields = [
     fields: [Country, InfoElement],
     miniIcon: Some(icon("open_banking", ~size=19)),
   },
+  {
+    paymentMethodName: "evoucher",
+    icon: Some(icon("cashtocode", ~size=50)),
+    displayName: "E-Voucher",
+    fields: [InfoElement],
+    miniIcon: Some(icon("cashtocode", ~size=19)),
+  },
 ]
 
 type required_fields = {
