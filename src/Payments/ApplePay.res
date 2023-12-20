@@ -8,6 +8,7 @@ let make = (
 ) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
@@ -268,11 +269,7 @@ let make = (
 
       try {
         let dict = json->Utils.getDictFromJson
-        if dict->Js.Dict.get("applePayCanMakePayments")->Belt.Option.isSome {
-          if isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL {
-            setShowApplePay(_ => true)
-          }
-        } else if dict->Js.Dict.get("applePayProcessPayment")->Belt.Option.isSome {
+        if dict->Js.Dict.get("applePayProcessPayment")->Belt.Option.isSome {
           let token =
             dict
             ->Js.Dict.get("applePayProcessPayment")
@@ -296,6 +293,16 @@ let make = (
       },
     )
   }, [isInvokeSDKFlow])
+
+  React.useEffect1(() => {
+    if (
+      (isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
+        isApplePayReady
+    ) {
+      setShowApplePay(_ => true)
+    }
+    None
+  }, [isApplePayReady])
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     if !isWallet {

@@ -112,7 +112,7 @@ let paymentMethodsFields = [
   {
     paymentMethodName: "apple_pay",
     fields: [],
-    icon: Some(icon("google_pay", ~size=19, ~width=25)),
+    icon: Some(icon("apple_pay", ~size=19, ~width=25)),
     displayName: "Apple Pay",
     miniIcon: None,
   },
