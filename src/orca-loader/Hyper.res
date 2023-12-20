@@ -318,6 +318,14 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           addSmartEventListener("message", handleMessage, "onSubmit")
         })
       }
+
+      let oneClickConfirmPayment = (result: bool) =>
+        iframeRef.contents->Js.Array2.forEach(iframe => {
+          iframe->Window.iframePostMessage(
+            [("onOneClickPaymentConfirm", result->Js.Json.boolean)]->Js.Dict.fromArray,
+          )
+        })
+
       let elements = elementsOptions => {
         logger.setLogInfo(~value="orca.elements called", ~eventName=ORCA_ELEMENTS_CALLED, ())
         let clientSecretId =
@@ -457,7 +465,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           ->Js.Json.object_
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
+
       let returnObject = {
+        oneClickConfirmPayment,
         confirmPayment,
         elements,
         widgets: elements,
