@@ -304,6 +304,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         if dict->Js.Dict.get("applePayCanMakePayments")->Belt.Option.isSome {
           setIsApplePayReady(._ => true)
         }
+        if dict->Js.Dict.get("applePaySessionObjNotPresent")->Belt.Option.isSome {
+          setIsApplePayReady(.prev => prev && false)
+        }
       } catch {
       | _ => setIntegrateErrorError(_ => true)
       }
