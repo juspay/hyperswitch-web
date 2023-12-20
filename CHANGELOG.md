@@ -1,3 +1,10 @@
+## [0.16.1](https://github.com/juspay/hyperswitch-web/compare/v0.16.0...v0.16.1) (2023-12-20)
+
+
+### Bug Fixes
+
+* HS:132: reverting changes for cardholder name ([#74](https://github.com/juspay/hyperswitch-web/issues/74)) ([c11b32b](https://github.com/juspay/hyperswitch-web/commit/c11b32b03ae6d7bcc4aeb8dabbc9eb456bfbb4b3))
+
 # [0.16.0](https://github.com/juspay/hyperswitch-web/compare/v0.15.10...v0.16.0) (2023-12-19)
 
 
