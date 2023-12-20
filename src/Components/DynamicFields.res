@@ -117,7 +117,17 @@ let make = (
   React.useEffect0(() => {
     let clientTimeZone = Utils.dateTimeFormat(.).resolvedOptions(.).timeZone
     let clientCountry = Utils.getClientCountry(clientTimeZone)
-    setCountry(_ => clientCountry.countryName)
+    let initialCountry =
+      requiredFields
+      ->Utils.getDictFromJson
+      ->Utils.getDictFromObj("billing.address.country")
+      ->Utils.getString("value", clientCountry.countryName)
+    let defaultCountry =
+      Country.getCountry(paymentMethodType)
+      ->Js.Array2.filter(item => item.isoAlpha2 === initialCountry)
+      ->Belt.Array.get(0)
+      ->Belt.Option.getWithDefault(Country.defaultTimeZone)
+    setCountry(_ => defaultCountry.countryName)
     let bank = bankNames->Belt.Array.get(0)->Belt.Option.getWithDefault("")
     setSelectedBank(_ => bank)
     None
