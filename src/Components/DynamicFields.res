@@ -428,21 +428,22 @@ let make = (
           acc->Js.Dict.set("billing.address.zip", postalCode.value->Js.Json.string)
         | _ => ()
         }
-        if (
-          isSavedCardFlow &&
-          (item.field_type === BillingName || item.field_type === FullName) &&
-          item.display_name === "card_holder_name" &&
-          item.required_field === "payment_method_data.card.card_holder_name"
-        ) {
-          if !isAllStoredCardsHaveName {
-            acc->Js.Dict.set(
-              "payment_method_data.card_token.card_holder_name",
-              value->Js.Json.string,
-            )
-          }
-        } else {
-          acc->Js.Dict.set(item.required_field, value->Js.Json.string)
-        }
+        // if (
+        //   isSavedCardFlow &&
+        //   (item.field_type === BillingName || item.field_type === FullName) &&
+        //   item.display_name === "card_holder_name" &&
+        //   item.required_field === "payment_method_data.card.card_holder_name"
+        // ) {
+        //   if !isAllStoredCardsHaveName {
+        //     acc->Js.Dict.set(
+        //       "payment_method_data.card_token.card_holder_name",
+        //       value->Js.Json.string,
+        //     )
+        //   }
+        // } else {
+        //   acc->Js.Dict.set(item.required_field, value->Js.Json.string)
+        // }
+        acc->Js.Dict.set(item.required_field, value->Js.Json.string)
         acc
       }, Js.Dict.empty())
 
