@@ -313,7 +313,7 @@ let make = (
           setFields(setEmail, email, requiredField, false)
           if emailValue === "" {
             let newEmail: RecoilAtomTypes.field = {
-              value: value,
+              value,
               isValid: None,
               errorString: "",
             }
@@ -437,7 +437,7 @@ let make = (
           if !isAllStoredCardsHaveName {
             acc->Js.Dict.set(
               "payment_method_data.card_token.card_holder_name",
-              value === "" ? Js.Json.null : value->Js.Json.string,
+              value->Js.Json.string,
             )
           }
         } else {
@@ -676,7 +676,8 @@ let make = (
                     options=bankNames
                   />
                 | SpecialField(element) => element
-                | InfoElement => <>
+                | InfoElement =>
+                  <>
                     <Surcharge list paymentMethod paymentMethodType />
                     {if fieldsArr->Js.Array2.length > 1 {
                       bottomElement

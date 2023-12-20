@@ -11,10 +11,7 @@ let cardPaymentBody = (~cardNumber, ~month, ~year, ~cardHolderName, ~cvcNumber, 
           ("card_number", cardNumber->CardUtils.clearSpaces->Js.Json.string),
           ("card_exp_month", month->Js.Json.string),
           ("card_exp_year", year->Js.Json.string),
-          (
-            "card_holder_name",
-            cardHolderName === "" ? Js.Json.null : cardHolderName->Js.Json.string,
-          ),
+          ("card_holder_name", cardHolderName->Js.Json.string),
           ("card_cvc", cvcNumber->Js.Json.string),
           ("card_issuer", ""->Js.Json.string),
         ]
@@ -43,10 +40,7 @@ let bancontactBody = (~cardNumber, ~month, ~year, ~cardHolderName) => [
               ("card_number", cardNumber->CardUtils.clearSpaces->Js.Json.string),
               ("card_exp_month", month->Js.Json.string),
               ("card_exp_year", year->Js.Json.string),
-              (
-                "card_holder_name",
-                cardHolderName === "" ? Js.Json.null : cardHolderName->Js.Json.string,
-              ),
+              ("card_holder_name", cardHolderName->Js.Json.string),
             ]
             ->Js.Dict.fromArray
             ->Js.Json.object_,
