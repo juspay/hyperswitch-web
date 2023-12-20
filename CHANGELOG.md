@@ -1,3 +1,10 @@
+## [0.16.2](https://github.com/juspay/hyperswitch-web/compare/v0.16.1...v0.16.2) (2023-12-20)
+
+
+### Bug Fixes
+
+* HS:132: Removed card token object from confirm for saved cards ([#76](https://github.com/juspay/hyperswitch-web/issues/76)) ([22c7f3f](https://github.com/juspay/hyperswitch-web/commit/22c7f3f47fdc304a4a77cec1b347355ed80d0205))
+
 ## [0.16.1](https://github.com/juspay/hyperswitch-web/compare/v0.16.0...v0.16.1) (2023-12-20)
 
 
