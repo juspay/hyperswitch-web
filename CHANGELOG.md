@@ -1,3 +1,10 @@
+## [0.16.3](https://github.com/juspay/hyperswitch-web/compare/v0.16.2...v0.16.3) (2023-12-21)
+
+
+### Bug Fixes
+
+* HS-183: ApplePay Payment Request to take client's country in case session sends null ([#78](https://github.com/juspay/hyperswitch-web/issues/78)) ([2ee7afc](https://github.com/juspay/hyperswitch-web/commit/2ee7afcf9aff6da3d6a92a6ff7624c07d7785814))
+
 ## [0.16.2](https://github.com/juspay/hyperswitch-web/compare/v0.16.1...v0.16.2) (2023-12-20)
 
 
