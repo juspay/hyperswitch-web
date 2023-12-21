@@ -13,6 +13,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setSwitchToCustomPod = Recoil.useSetRecoilState(switchToCustomPod)
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
+  let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
 
@@ -33,6 +34,42 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let setUserAddressCountry = Recoil.useLoggedSetRecoilState(userAddressCountry, "country", logger)
   let (_country, setCountry) = Recoil.useRecoilState(userCountry)
 
+  let optionsCallback = (optionsPayment: PaymentType.options) => {
+    [
+      (optionsPayment.defaultValues.billingDetails.name, setUserFullName),
+      (optionsPayment.defaultValues.billingDetails.email, setUserEmail),
+      (optionsPayment.defaultValues.billingDetails.address.line1, setUserAddressline1),
+      (optionsPayment.defaultValues.billingDetails.address.line2, setUserAddressline2),
+      (optionsPayment.defaultValues.billingDetails.address.city, setUserAddressCity),
+      (optionsPayment.defaultValues.billingDetails.address.postal_code, setUserAddressPincode),
+      (optionsPayment.defaultValues.billingDetails.address.state, setUserAddressState),
+      (optionsPayment.defaultValues.billingDetails.address.country, setUserAddressCountry),
+    ]->Js.Array2.forEach(val => {
+      let (value, setValue) = val
+      if value != "" {
+        setValue(.prev => {
+          ...prev,
+          value,
+        })
+      }
+    })
+    if optionsPayment.defaultValues.billingDetails.address.country === "" {
+      let clientTimeZone = CardUtils.dateTimeFormat(.).resolvedOptions(.).timeZone
+      let clientCountry = Utils.getClientCountry(clientTimeZone)
+      setUserAddressCountry(.prev => {
+        ...prev,
+        value: clientCountry.countryName,
+      })
+      setCountry(._ => clientCountry.countryName)
+    } else {
+      setUserAddressCountry(.prev => {
+        ...prev,
+        value: optionsPayment.defaultValues.billingDetails.address.country,
+      })
+      setCountry(._ => optionsPayment.defaultValues.billingDetails.address.country)
+    }
+  }
+
   let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
     switch paymentMode->CardTheme.getPaymentMode {
@@ -41,7 +78,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     | CardCVCElement
     | Card =>
       setOptions(._ => ElementType.itemToObjMapper(optionsDict, logger))
-    | Payment => setOptionsPayment(._ => PaymentType.itemToObjMapper(optionsDict, logger))
+    | Payment => {
+        let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
+        setOptionsPayment(._ => paymentOptions)
+        optionsCallback(paymentOptions)
+      }
     | _ => ()
     }
   }
@@ -66,7 +107,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
 
     setConfig(._ => {
       config: {
-        appearance: appearance,
+        appearance,
         locale: config.locale,
         fonts: config.fonts,
         clientSecret: config.clientSecret,
@@ -82,6 +123,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
 
   React.useEffect0(() => {
     handlePostMessage([("iframeMounted", true->Js.Json.boolean)])
+    handlePostMessage([("applePayMounted", true->Js.Json.boolean)])
     logger.setLogInitiated()
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
@@ -296,8 +338,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           let customerPaymentMethods = dict->PaymentType.createCustomerObjArr
           setOptionsPayment(.prev => {
             ...prev,
-            customerPaymentMethods: customerPaymentMethods,
+            customerPaymentMethods,
           })
+        }
+        if dict->Js.Dict.get("applePayCanMakePayments")->Belt.Option.isSome {
+          setIsApplePayReady(._ => true)
+        }
+        if dict->Js.Dict.get("applePaySessionObjNotPresent")->Belt.Option.isSome {
+          setIsApplePayReady(.prev => prev && false)
         }
       } catch {
       | _ => setIntegrateErrorError(_ => true)
@@ -305,43 +353,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     }
     handleMessage(handleFun, "Error in parsing sent Data")
   }, (showCardFormByDefault, paymentMethodOrder))
-
-  React.useEffect1(() => {
-    [
-      (optionsPayment.defaultValues.billingDetails.name, setUserFullName),
-      (optionsPayment.defaultValues.billingDetails.email, setUserEmail),
-      (optionsPayment.defaultValues.billingDetails.address.line1, setUserAddressline1),
-      (optionsPayment.defaultValues.billingDetails.address.line2, setUserAddressline2),
-      (optionsPayment.defaultValues.billingDetails.address.city, setUserAddressCity),
-      (optionsPayment.defaultValues.billingDetails.address.postal_code, setUserAddressPincode),
-      (optionsPayment.defaultValues.billingDetails.address.state, setUserAddressState),
-      (optionsPayment.defaultValues.billingDetails.address.country, setUserAddressCountry),
-    ]->Js.Array2.forEach(val => {
-      let (value, setValue) = val
-      if value != "" {
-        setValue(.prev => {
-          ...prev,
-          value: value,
-        })
-      }
-    })
-    if optionsPayment.defaultValues.billingDetails.address.country === "" {
-      let clientTimeZone = CardUtils.dateTimeFormat(.).resolvedOptions(.).timeZone
-      let clientCountry = Utils.getClientCountry(clientTimeZone)
-      setUserAddressCountry(.prev => {
-        ...prev,
-        value: clientCountry.countryName,
-      })
-      setCountry(._ => clientCountry.countryName)
-    } else {
-      setUserAddressCountry(.prev => {
-        ...prev,
-        value: optionsPayment.defaultValues.billingDetails.address.country,
-      })
-      setCountry(._ => optionsPayment.defaultValues.billingDetails.address.country)
-    }
-    None
-  }, [optionsPayment])
 
   React.useEffect1(() => {
     switch paymentlist {

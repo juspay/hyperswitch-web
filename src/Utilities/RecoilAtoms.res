@@ -36,6 +36,7 @@ let userPhoneNumber = Recoil.atom(.
   },
 )
 let isGooglePayReady = Recoil.atom(. "isGooglePayReady", false)
+let isApplePayReady = Recoil.atom(. "isApplePayReady", false)
 let userCountry = Recoil.atom(. "userCountry", "")
 let userBank = Recoil.atom(. "userBank", "")
 let userAddressline1 = Recoil.atom(. "userAddressline1", defaultFieldValues)

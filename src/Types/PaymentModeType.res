@@ -17,6 +17,7 @@ type payment =
   | BecsBankDebit
   | BanContactCard
   | GooglePay
+  | ApplePay
   | NONE
 
 let paymentMode = str => {
@@ -39,6 +40,7 @@ let paymentMode = str => {
   | "bacs_transfer" => BacsTransfer
   | "bancontact_card" => BanContactCard
   | "google_pay" => GooglePay
+  | "apple_pay" => ApplePay
   | _ => NONE
   }
 }

@@ -115,9 +115,6 @@ let make = (
   }
 
   React.useEffect0(() => {
-    let clientTimeZone = Utils.dateTimeFormat(.).resolvedOptions(.).timeZone
-    let clientCountry = Utils.getClientCountry(clientTimeZone)
-    setCountry(_ => clientCountry.countryName)
     let bank = bankNames->Belt.Array.get(0)->Belt.Option.getWithDefault("")
     setSelectedBank(_ => bank)
     None
@@ -346,13 +343,13 @@ let make = (
       | BillingName => setFields(setBillingName, billingName, requiredField, true)
       | Country
       | AddressCountry(_) =>
-        if value !== "" && country === "" {
-          let countryCode =
+        if value !== "" {
+          let defaultCountry =
             Country.getCountry(paymentMethodType)
             ->Js.Array2.filter(item => item.isoAlpha2 === value)
             ->Belt.Array.get(0)
             ->Belt.Option.getWithDefault(Country.defaultTimeZone)
-          setCountry(_ => countryCode.countryName)
+          setCountry(_ => defaultCountry.countryName)
         }
       | Currency(_) =>
         if value !== "" && currency === "" {
@@ -428,22 +425,21 @@ let make = (
           acc->Js.Dict.set("billing.address.zip", postalCode.value->Js.Json.string)
         | _ => ()
         }
-        // if (
-        //   isSavedCardFlow &&
-        //   (item.field_type === BillingName || item.field_type === FullName) &&
-        //   item.display_name === "card_holder_name" &&
-        //   item.required_field === "payment_method_data.card.card_holder_name"
-        // ) {
-        //   if !isAllStoredCardsHaveName {
-        //     acc->Js.Dict.set(
-        //       "payment_method_data.card_token.card_holder_name",
-        //       value->Js.Json.string,
-        //     )
-        //   }
-        // } else {
-        //   acc->Js.Dict.set(item.required_field, value->Js.Json.string)
-        // }
-        acc->Js.Dict.set(item.required_field, value->Js.Json.string)
+        if (
+          isSavedCardFlow &&
+          (item.field_type === BillingName || item.field_type === FullName) &&
+          item.display_name === "card_holder_name" &&
+          item.required_field === "payment_method_data.card.card_holder_name"
+        ) {
+          if !isAllStoredCardsHaveName {
+            acc->Js.Dict.set(
+              "payment_method_data.card_token.card_holder_name",
+              value->Js.Json.string,
+            )
+          }
+        } else {
+          acc->Js.Dict.set(item.required_field, value->Js.Json.string)
+        }
         acc
       }, Js.Dict.empty())
 

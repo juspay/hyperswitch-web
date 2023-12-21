@@ -110,6 +110,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "apple_pay",
+    fields: [],
+    icon: Some(icon("apple_pay", ~size=19, ~width=25)),
+    displayName: "Apple Pay",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "mb_way",
     fields: [SpecialField(<PhoneNumberPaymentInput />), InfoElement],
     icon: Some(icon("mbway", ~size=19)),
@@ -540,7 +547,31 @@ let dynamicFieldsEnabledPaymentMethods = [
   "credit",
   "blik",
   "google_pay",
+  "apple_pay",
 ]
+
+let getIsBillingField = requiredFieldType => {
+  switch requiredFieldType {
+  | AddressLine1
+  | AddressLine2
+  | AddressCity
+  | AddressPincode
+  | AddressState
+  | AddressCountry(_) => true
+  | _ => false
+  }
+}
+
+let getIsAnyBillingDetailEmpty = (requiredFieldsValues: array<Js.Json.t>) => {
+  requiredFieldsValues->Js.Array2.reduce((acc, item) => {
+    let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson
+    if getIsBillingField(requiredField.field_type) {
+      requiredField.value === "" || acc
+    } else {
+      acc
+    }
+  }, false)
+}
 
 let getPaymentMethodFields = (
   paymentMethod,
@@ -549,26 +580,26 @@ let getPaymentMethodFields = (
   ~isAllStoredCardsHaveName=false,
   (),
 ) => {
-  let requiredFieldsArr =
-    requiredFields
-    ->Utils.getDictFromJson
-    ->Js.Dict.values
-    ->Js.Array2.map(item => {
-      let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson
-      if requiredField.value === "" {
-        if (
-          isSavedCardFlow &&
-          requiredField.display_name === "card_holder_name" &&
-          isAllStoredCardsHaveName
-        ) {
-          None
-        } else {
-          requiredField.field_type
-        }
-      } else {
+  let requiredFieldsValues = requiredFields->Utils.getDictFromJson->Js.Dict.values
+  let isAnyBillingDetailEmpty = requiredFieldsValues->getIsAnyBillingDetailEmpty
+  let requiredFieldsArr = requiredFieldsValues->Js.Array2.map(item => {
+    let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson
+    let isShowBillingField = getIsBillingField(requiredField.field_type) && isAnyBillingDetailEmpty
+
+    if requiredField.value === "" || isShowBillingField {
+      if (
+        isSavedCardFlow &&
+        requiredField.display_name === "card_holder_name" &&
+        isAllStoredCardsHaveName
+      ) {
         None
+      } else {
+        requiredField.field_type
       }
-    })
+    } else {
+      None
+    }
+  })
   requiredFieldsArr->Js.Array2.concat(
     (
       paymentMethodsFields
@@ -742,7 +773,7 @@ let getSurchargeDetails = dict => {
 
   if displayTotalSurchargeAmount !== 0.0 {
     Some({
-      displayTotalSurchargeAmount,
+      displayTotalSurchargeAmount: displayTotalSurchargeAmount,
     })
   } else {
     None
@@ -864,21 +895,22 @@ let buildFromPaymentList = (plist: list) => {
       paymentMethodObject.payment_method_types->Js.Array2.map(individualPaymentMethod => {
         let paymentMethodName = individualPaymentMethod.payment_method_type
         let bankNames = individualPaymentMethod.bank_names
-        let paymentExperience =
-          individualPaymentMethod.payment_experience->Js.Array2.map(experience => {
+        let paymentExperience = individualPaymentMethod.payment_experience->Js.Array2.map(
+          experience => {
             (experience.payment_experience_type, experience.eligible_connectors)
-          })
+          },
+        )
         {
-          paymentMethodName: paymentMethodName,
+          paymentMethodName,
           fields: getPaymentMethodFields(
             paymentMethodName,
             individualPaymentMethod.required_fields,
             (),
           ),
           paymentFlow: paymentExperience,
-          handleUserError: handleUserError,
-          methodType: methodType,
-          bankNames: bankNames,
+          handleUserError,
+          methodType,
+          bankNames,
         }
       })
     })
