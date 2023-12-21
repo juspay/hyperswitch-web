@@ -259,7 +259,7 @@ let make = (
     }
   }
 
-  React.useEffect1(() => {
+  React.useEffect2(() => {
     let handleApplePayMessages = (ev: Window.event) => {
       let json = try {
         ev.data->Js.Json.parseExn
@@ -292,7 +292,7 @@ let make = (
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
-  }, [isInvokeSDKFlow])
+  }, (isInvokeSDKFlow, requiredFieldsBody))
 
   React.useEffect1(() => {
     if (
