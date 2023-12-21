@@ -1,0 +1,8 @@
+server {
+    listen 80;
+
+    location ${NGINX_LOCATION_PATH} {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ =404;
+    }
+}
