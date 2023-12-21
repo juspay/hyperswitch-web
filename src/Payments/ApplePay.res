@@ -1,7 +1,14 @@
+open Utils
 @react.component
-let make = (~sessionObj: option<Js.Json.t>, ~list: PaymentMethodsRecord.list) => {
+let make = (
+  ~sessionObj: option<Js.Json.t>,
+  ~list: PaymentMethodsRecord.list,
+  ~paymentType: option<CardThemeType.mode>,
+  ~walletOptions: array<string>,
+) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
@@ -10,6 +17,11 @@ let make = (~sessionObj: option<Js.Json.t>, ~list: PaymentMethodsRecord.list) =>
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
   let isApplePaySDKFlow = sessionObj->Belt.Option.isSome
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let isWallet = walletOptions->Js.Array2.includes("apple_pay")
 
   let applePayPaymentMethodType = React.useMemo1(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -37,15 +49,34 @@ let make = (~sessionObj: option<Js.Json.t>, ~list: PaymentMethodsRecord.list) =>
     : list->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
 
   let processPayment = bodyArr => {
-    intent(
-      ~bodyArr,
-      ~confirmParam={
-        return_url: options.wallets.walletReturnUrl,
-        publishableKey,
-      },
-      ~handleUserError=true,
-      (),
-    )
+    if isWallet {
+      intent(
+        ~bodyArr,
+        ~confirmParam={
+          return_url: options.wallets.walletReturnUrl,
+          publishableKey,
+        },
+        ~handleUserError=true,
+        (),
+      )
+    } else {
+      let requiredFieldsBodyArr =
+        bodyArr
+        ->Js.Dict.fromArray
+        ->Js.Json.object_
+        ->OrcaUtils.flattenObject(true)
+        ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+        ->OrcaUtils.getArrayOfTupleFromDict
+      intent(
+        ~bodyArr=requiredFieldsBodyArr,
+        ~confirmParam={
+          return_url: options.wallets.walletReturnUrl,
+          publishableKey,
+        },
+        ~handleUserError=true,
+        (),
+      )
+    }
   }
 
   let syncPayment = () => {
@@ -229,7 +260,6 @@ let make = (~sessionObj: option<Js.Json.t>, ~list: PaymentMethodsRecord.list) =>
   }
 
   React.useEffect1(() => {
-    Utils.handlePostMessage([("applePayMounted", true->Js.Json.boolean)])
     let handleApplePayMessages = (ev: Window.event) => {
       let json = try {
         ev.data->Js.Json.parseExn
@@ -239,11 +269,7 @@ let make = (~sessionObj: option<Js.Json.t>, ~list: PaymentMethodsRecord.list) =>
 
       try {
         let dict = json->Utils.getDictFromJson
-        if dict->Js.Dict.get("applePayCanMakePayments")->Belt.Option.isSome {
-          if isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL {
-            setShowApplePay(_ => true)
-          }
-        } else if dict->Js.Dict.get("applePayProcessPayment")->Belt.Option.isSome {
+        if dict->Js.Dict.get("applePayProcessPayment")->Belt.Option.isSome {
           let token =
             dict
             ->Js.Dict.get("applePayProcessPayment")
@@ -268,26 +294,72 @@ let make = (~sessionObj: option<Js.Json.t>, ~list: PaymentMethodsRecord.list) =>
     )
   }, [isInvokeSDKFlow])
 
-  <div>
-    <style> {React.string(css)} </style>
-    {if showApplePay {
-      if showApplePayLoader {
-        <div className="apple-pay-loader-div">
-          <div className="apple-pay-loader" />
-        </div>
-      } else {
-        <button
-          disabled=applePayClicked
-          className="apple-pay-button-with-text apple-pay-button-black-with-text"
-          onClick={_ => onApplePayButtonClicked()}>
-          <span className="text"> {React.string("Pay with")} </span>
-          <span className="logo" />
-        </button>
+  React.useEffect1(() => {
+    if (
+      (isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
+        isApplePayReady
+    ) {
+      setShowApplePay(_ => true)
+    }
+    None
+  }, [isApplePayReady])
+
+  let submitCallback = React.useCallback((ev: Window.event) => {
+    if !isWallet {
+      let json = ev.data->Js.Json.parseExn
+      let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+      if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
+        options.readOnly
+          ? ()
+          : handlePostMessage([("applePayButtonClicked", true->Js.Json.boolean)])
+      } else if areRequiredFieldsEmpty {
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterFieldsText,
+        )
+      } else if !areRequiredFieldsValid {
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterValidDetailsText,
+        )
       }
-    } else {
-      React.null
-    }}
-  </div>
+    }
+  })
+  submitPaymentData(submitCallback)
+
+  {
+    isWallet
+      ? <div>
+          <style> {React.string(css)} </style>
+          {if showApplePay {
+            if showApplePayLoader {
+              <div className="apple-pay-loader-div">
+                <div className="apple-pay-loader" />
+              </div>
+            } else {
+              <button
+                disabled=applePayClicked
+                className="apple-pay-button-with-text apple-pay-button-black-with-text"
+                onClick={_ => onApplePayButtonClicked()}>
+                <span className="text"> {React.string("Pay with")} </span>
+                <span className="logo" />
+              </button>
+            }
+          } else {
+            React.null
+          }}
+        </div>
+      : <DynamicFields
+          paymentType={switch paymentType {
+          | Some(val) => val
+          | _ => NONE
+          }}
+          list
+          paymentMethod="wallet"
+          paymentMethodType="apple_pay"
+          setRequiredFieldsBody
+        />
+  }
 }
 
 let default = make

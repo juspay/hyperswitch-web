@@ -18,6 +18,8 @@ let make = (
   let {showCardFormByDefault, paymentMethodOrder, layout} = Recoil.useRecoilValueFromAtom(
     optionAtom,
   )
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
+  let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let pmList = Recoil.useRecoilValueFromAtom(list)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
   let paymentOrder = paymentMethodOrder->Utils.getOptionalArr->Utils.removeDuplicate
@@ -35,12 +37,17 @@ let make = (
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(isShowOrPayUsing)
 
-  let (walletList, paymentOptionsList, actualList) = React.useMemo2(() => {
+  let (walletList, paymentOptionsList, actualList) = React.useMemo4(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
       let paymentOrder = paymentOrder->Js.Array2.length > 0 ? paymentOrder : defaultOrder
       let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
-      let (wallets, otherOptions) = plist->PaymentUtils.paymentListLookupNew(~order=paymentOrder)
+      let (wallets, otherOptions) =
+        plist->PaymentUtils.paymentListLookupNew(
+          ~order=paymentOrder,
+          ~showApplePay=isApplePayReady,
+          ~showGooglePay=isGooglePayReady,
+        )
       (
         wallets->Utils.removeDuplicate,
         paymentOptions->Js.Array2.concat(otherOptions)->Utils.removeDuplicate,
@@ -52,7 +59,7 @@ let make = (
         : ([], [], [])
     | _ => ([], [], [])
     }
-  }, (methodslist, paymentMethodOrder))
+  }, (methodslist, paymentMethodOrder, isApplePayReady, isGooglePayReady))
 
   React.useEffect4(() => {
     switch methodslist {
@@ -175,6 +182,8 @@ let make = (
   }
   let dict = sessions->Utils.getDictFromJson
   let sessionObj = SessionsType.itemToObjMapper(dict, Others)
+  let applePaySessionObj = SessionsType.itemToObjMapper(dict, ApplePayObject)
+  let applePayToken = SessionsType.getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
   let klarnaTokenObj = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
   let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
   let googlePayThirdPartySessionObj = SessionsType.itemToObjMapper(dict, GooglePayThirdPartyObject)
@@ -267,6 +276,12 @@ let make = (
               />
             </React.Suspense>
           }
+        | _ => React.null
+        }
+      | ApplePay =>
+        switch applePayToken {
+        | ApplePayTokenOptional(optToken) =>
+          <ApplePayLazy sessionObj=optToken list walletOptions paymentType />
         | _ => React.null
         }
       | _ =>

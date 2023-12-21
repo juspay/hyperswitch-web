@@ -13,6 +13,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setSwitchToCustomPod = Recoil.useSetRecoilState(switchToCustomPod)
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
+  let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
 
@@ -122,6 +123,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
 
   React.useEffect0(() => {
     handlePostMessage([("iframeMounted", true->Js.Json.boolean)])
+    handlePostMessage([("applePayMounted", true->Js.Json.boolean)])
     logger.setLogInitiated()
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
@@ -338,6 +340,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
             ...prev,
             customerPaymentMethods,
           })
+        }
+        if dict->Js.Dict.get("applePayCanMakePayments")->Belt.Option.isSome {
+          setIsApplePayReady(._ => true)
+        }
+        if dict->Js.Dict.get("applePaySessionObjNotPresent")->Belt.Option.isSome {
+          setIsApplePayReady(.prev => prev && false)
         }
       } catch {
       | _ => setIntegrateErrorError(_ => true)

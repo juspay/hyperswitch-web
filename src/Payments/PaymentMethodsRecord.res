@@ -110,6 +110,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "apple_pay",
+    fields: [],
+    icon: Some(icon("apple_pay", ~size=19, ~width=25)),
+    displayName: "Apple Pay",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "mb_way",
     fields: [SpecialField(<PhoneNumberPaymentInput />), InfoElement],
     icon: Some(icon("mbway", ~size=19)),
@@ -540,6 +547,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "credit",
   "blik",
   "google_pay",
+  "apple_pay",
 ]
 
 let getPaymentMethodFields = (
@@ -742,7 +750,7 @@ let getSurchargeDetails = dict => {
 
   if displayTotalSurchargeAmount !== 0.0 {
     Some({
-      displayTotalSurchargeAmount,
+      displayTotalSurchargeAmount: displayTotalSurchargeAmount,
     })
   } else {
     None
@@ -864,21 +872,22 @@ let buildFromPaymentList = (plist: list) => {
       paymentMethodObject.payment_method_types->Js.Array2.map(individualPaymentMethod => {
         let paymentMethodName = individualPaymentMethod.payment_method_type
         let bankNames = individualPaymentMethod.bank_names
-        let paymentExperience =
-          individualPaymentMethod.payment_experience->Js.Array2.map(experience => {
+        let paymentExperience = individualPaymentMethod.payment_experience->Js.Array2.map(
+          experience => {
             (experience.payment_experience_type, experience.eligible_connectors)
-          })
+          },
+        )
         {
-          paymentMethodName: paymentMethodName,
+          paymentMethodName,
           fields: getPaymentMethodFields(
             paymentMethodName,
             individualPaymentMethod.required_fields,
             (),
           ),
           paymentFlow: paymentExperience,
-          handleUserError: handleUserError,
-          methodType: methodType,
-          bankNames: bankNames,
+          handleUserError,
+          methodType,
+          bankNames,
         }
       })
     })
