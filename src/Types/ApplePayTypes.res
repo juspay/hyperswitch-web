@@ -63,8 +63,8 @@ let jsonToPaymentRequestDataType: Js.Dict.t<Js.Json.t> => paymentRequestData = j
 
   if Utils.getString(jsonDict, "merchant_identifier", "") == "" {
     paymentRequestData(
-      ~countryCode=Utils.getString(jsonDict, "country_code", ""),
-      ~currencyCode=Utils.getString(jsonDict, "currency_code", defaultCountryCode),
+      ~countryCode=Utils.getString(jsonDict, "country_code", defaultCountryCode),
+      ~currencyCode=Utils.getString(jsonDict, "currency_code", ""),
       ~merchantCapabilities=Utils.getStrArray(jsonDict, "merchant_capabilities"),
       ~supportedNetworks=Utils.getStrArray(jsonDict, "supported_networks"),
       ~total=getTotal(jsonDict->Utils.getDictFromObj("total")),
