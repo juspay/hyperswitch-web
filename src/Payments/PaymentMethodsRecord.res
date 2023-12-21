@@ -550,6 +550,29 @@ let dynamicFieldsEnabledPaymentMethods = [
   "apple_pay",
 ]
 
+let getIsBillingField = requiredFieldType => {
+  switch requiredFieldType {
+  | AddressLine1
+  | AddressLine2
+  | AddressCity
+  | AddressPincode
+  | AddressState
+  | AddressCountry(_) => true
+  | _ => false
+  }
+}
+
+let getIsAnyBillingDetailEmpty = (requiredFieldsValues: array<Js.Json.t>) => {
+  requiredFieldsValues->Js.Array2.reduce((acc, item) => {
+    let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson
+    if getIsBillingField(requiredField.field_type) {
+      requiredField.value === "" || acc
+    } else {
+      acc
+    }
+  }, false)
+}
+
 let getPaymentMethodFields = (
   paymentMethod,
   requiredFields,
@@ -557,26 +580,26 @@ let getPaymentMethodFields = (
   ~isAllStoredCardsHaveName=false,
   (),
 ) => {
-  let requiredFieldsArr =
-    requiredFields
-    ->Utils.getDictFromJson
-    ->Js.Dict.values
-    ->Js.Array2.map(item => {
-      let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson
-      if requiredField.value === "" {
-        if (
-          isSavedCardFlow &&
-          requiredField.display_name === "card_holder_name" &&
-          isAllStoredCardsHaveName
-        ) {
-          None
-        } else {
-          requiredField.field_type
-        }
-      } else {
+  let requiredFieldsValues = requiredFields->Utils.getDictFromJson->Js.Dict.values
+  let isAnyBillingDetailEmpty = requiredFieldsValues->getIsAnyBillingDetailEmpty
+  let requiredFieldsArr = requiredFieldsValues->Js.Array2.map(item => {
+    let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson
+    let isShowBillingField = getIsBillingField(requiredField.field_type) && isAnyBillingDetailEmpty
+
+    if requiredField.value === "" || isShowBillingField {
+      if (
+        isSavedCardFlow &&
+        requiredField.display_name === "card_holder_name" &&
+        isAllStoredCardsHaveName
+      ) {
         None
+      } else {
+        requiredField.field_type
       }
-    })
+    } else {
+      None
+    }
+  })
   requiredFieldsArr->Js.Array2.concat(
     (
       paymentMethodsFields
