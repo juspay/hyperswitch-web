@@ -1,3 +1,10 @@
+## [0.16.4](https://github.com/juspay/hyperswitch-web/compare/v0.16.3...v0.16.4) (2023-12-21)
+
+
+### Bug Fixes
+
+* HS-132: Added all billing details if any is empty ([#80](https://github.com/juspay/hyperswitch-web/issues/80)) ([f7ce161](https://github.com/juspay/hyperswitch-web/commit/f7ce1618777f09fe8831a948712bc445df43f933))
+
 ## [0.16.3](https://github.com/juspay/hyperswitch-web/compare/v0.16.2...v0.16.3) (2023-12-21)
 
 
