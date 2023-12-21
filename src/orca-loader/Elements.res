@@ -341,20 +341,28 @@ let make = (
             let x =
               item
               ->Js.Json.decodeObject
-              ->Belt.Option.flatMap(x => {
-                x->Js.Dict.get("wallet_name")
-              })
+              ->Belt.Option.flatMap(
+                x => {
+                  x->Js.Dict.get("wallet_name")
+                },
+              )
               ->Belt.Option.flatMap(Js.Json.decodeString)
               ->Belt.Option.getWithDefault("")
             x === "apple_pay" || x === "applepay"
           })
+          if !(applePayPresent->Belt.Option.isSome) {
+            let msg = [("applePaySessionObjNotPresent", true->Js.Json.boolean)]->Js.Dict.fromArray
+            mountedIframeRef->Window.iframePostMessage(msg)
+          }
           let googlePayPresent = sessionsArr->Js.Array2.find(item => {
             let x =
               item
               ->Js.Json.decodeObject
-              ->Belt.Option.flatMap(x => {
-                x->Js.Dict.get("wallet_name")
-              })
+              ->Belt.Option.flatMap(
+                x => {
+                  x->Js.Dict.get("wallet_name")
+                },
+              )
               ->Belt.Option.flatMap(Js.Json.decodeString)
               ->Belt.Option.getWithDefault("")
             x === "google_pay" || x === "googlepay"
@@ -366,7 +374,6 @@ let make = (
           let (json, applePayPresent, googlePayPresent) = res
           if componentType === "payment" && applePayPresent->Belt.Option.isSome {
             //do operations here
-
             let processPayment = (token: Js.Json.t) => {
               //let body = PaymentBody.applePayBody(~token)
               let msg = [("applePayProcessPayment", token)]->Js.Dict.fromArray
@@ -378,7 +385,6 @@ let make = (
                 (event: Types.event) => {
                   let json = event.data->eventToJson
                   let dict = json->getDictFromJson
-
                   switch dict->Js.Dict.get("applePayButtonClicked") {
                   | Some(val) =>
                     if val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) {
@@ -627,31 +633,35 @@ let make = (
                 if gpayClicked {
                   Js.Global.setTimeout(() => {
                     gPayClient.loadPaymentData(. paymentDataRequest->toJson)
-                    ->then(json => {
-                      logger.setLogInfo(
-                        ~value=json->toJson->Js.Json.stringify,
-                        ~eventName=GOOGLE_PAY_FLOW,
-                        ~paymentMethod="GOOGLE_PAY",
-                        ~logType=DEBUG,
-                        (),
-                      )
-                      let msg = [("gpayResponse", json->toJson)]->Js.Dict.fromArray
-                      mountedIframeRef->Window.iframePostMessage(msg)
-                      resolve()
-                    })
-                    ->catch(err => {
-                      logger.setLogInfo(
-                        ~value=err->toJson->Js.Json.stringify,
-                        ~eventName=GOOGLE_PAY_FLOW,
-                        ~paymentMethod="GOOGLE_PAY",
-                        ~logType=DEBUG,
-                        (),
-                      )
+                    ->then(
+                      json => {
+                        logger.setLogInfo(
+                          ~value=json->toJson->Js.Json.stringify,
+                          ~eventName=GOOGLE_PAY_FLOW,
+                          ~paymentMethod="GOOGLE_PAY",
+                          ~logType=DEBUG,
+                          (),
+                        )
+                        let msg = [("gpayResponse", json->toJson)]->Js.Dict.fromArray
+                        mountedIframeRef->Window.iframePostMessage(msg)
+                        resolve()
+                      },
+                    )
+                    ->catch(
+                      err => {
+                        logger.setLogInfo(
+                          ~value=err->toJson->Js.Json.stringify,
+                          ~eventName=GOOGLE_PAY_FLOW,
+                          ~paymentMethod="GOOGLE_PAY",
+                          ~logType=DEBUG,
+                          (),
+                        )
 
-                      let msg = [("gpayError", err->toJson)]->Js.Dict.fromArray
-                      mountedIframeRef->Window.iframePostMessage(msg)
-                      resolve()
-                    })
+                        let msg = [("gpayError", err->toJson)]->Js.Dict.fromArray
+                        mountedIframeRef->Window.iframePostMessage(msg)
+                        resolve()
+                      },
+                    )
                     ->ignore
                   }, 0)->ignore
                 }
@@ -686,10 +696,10 @@ let make = (
       paymentElement
     }
     {
-      getElement: getElement,
-      update: update,
-      fetchUpdates: fetchUpdates,
-      create: create,
+      getElement,
+      update,
+      fetchUpdates,
+      create,
     }
   } catch {
   | e => {

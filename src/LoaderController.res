@@ -13,6 +13,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setSwitchToCustomPod = Recoil.useSetRecoilState(switchToCustomPod)
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
+  let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
 
@@ -66,7 +67,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
 
     setConfig(._ => {
       config: {
-        appearance: appearance,
+        appearance,
         locale: config.locale,
         fonts: config.fonts,
         clientSecret: config.clientSecret,
@@ -82,6 +83,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
 
   React.useEffect0(() => {
     handlePostMessage([("iframeMounted", true->Js.Json.boolean)])
+    handlePostMessage([("applePayMounted", true->Js.Json.boolean)])
     logger.setLogInitiated()
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
@@ -296,8 +298,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           let customerPaymentMethods = dict->PaymentType.createCustomerObjArr
           setOptionsPayment(.prev => {
             ...prev,
-            customerPaymentMethods: customerPaymentMethods,
+            customerPaymentMethods,
           })
+        }
+        if dict->Js.Dict.get("applePayCanMakePayments")->Belt.Option.isSome {
+          setIsApplePayReady(._ => true)
+        }
+        if dict->Js.Dict.get("applePaySessionObjNotPresent")->Belt.Option.isSome {
+          setIsApplePayReady(.prev => prev && false)
         }
       } catch {
       | _ => setIntegrateErrorError(_ => true)
@@ -319,10 +327,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     ]->Js.Array2.forEach(val => {
       let (value, setValue) = val
       if value != "" {
-        setValue(.prev => {
-          ...prev,
-          value: value,
-        })
+        setValue(.
+          prev => {
+            ...prev,
+            value,
+          },
+        )
       }
     })
     if optionsPayment.defaultValues.billingDetails.address.country === "" {
