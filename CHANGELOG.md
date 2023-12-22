@@ -1,3 +1,10 @@
+## [0.16.5](https://github.com/juspay/hyperswitch-web/compare/v0.16.4...v0.16.5) (2023-12-21)
+
+
+### Bug Fixes
+
+* HS-132: Added RequiredFieldsBody in useEffect for eventListener ([#82](https://github.com/juspay/hyperswitch-web/issues/82)) ([5b107f9](https://github.com/juspay/hyperswitch-web/commit/5b107f9d12c704fdbe599d24614bb90f554b2a64))
+
 ## [0.16.4](https://github.com/juspay/hyperswitch-web/compare/v0.16.3...v0.16.4) (2023-12-21)
 
 
