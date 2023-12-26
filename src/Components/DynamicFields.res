@@ -197,9 +197,12 @@ let make = (
       | PhoneNumber => Some(phone.value !== "")
       | StateAndCity => Some(state.value !== "" && city.value !== "")
       | CountryAndPincode(countryArr) =>
-        Some((country !== "" || countryArr->Belt.Array.length === 0) && postalCode.value !== "")
+        Some(
+          (country !== "" || countryArr->Belt.Array.length === 0) &&
+            postalCode.isValid->Belt.Option.getWithDefault(false),
+        )
       | AddressCity => Some(city.value !== "")
-      | AddressPincode => Some(postalCode.value !== "")
+      | AddressPincode => postalCode.isValid
       | AddressState => Some(state.value !== "")
       | BlikCode => Some(blikCode.value !== "")
       | Currency(currencyArr) => Some(currency !== "" || currencyArr->Belt.Array.length === 0)
