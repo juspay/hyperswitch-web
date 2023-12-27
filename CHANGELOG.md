@@ -1,3 +1,10 @@
+## [0.16.7](https://github.com/juspay/hyperswitch-web/compare/v0.16.6...v0.16.7) (2023-12-27)
+
+
+### Bug Fixes
+
+* HS-185: Or Pay using fix for GooglePay and ApplePay ([#85](https://github.com/juspay/hyperswitch-web/issues/85)) ([938793b](https://github.com/juspay/hyperswitch-web/commit/938793b2a9e8e4d0958df7bdc888ba901df94e05))
+
 ## [0.16.6](https://github.com/juspay/hyperswitch-web/compare/v0.16.5...v0.16.6) (2023-12-26)
 
 
