@@ -294,16 +294,17 @@ let make = (
     )
   }, (isInvokeSDKFlow, requiredFieldsBody))
 
-  React.useEffect3(() => {
+  React.useEffect4(() => {
     if (
       (isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
-        isApplePayReady
+      isApplePayReady &&
+      isWallet
     ) {
       setShowApplePay(_ => true)
       setIsShowOrPayUsing(._ => true)
     }
     None
-  }, (isApplePayReady, isInvokeSDKFlow, paymentExperience))
+  }, (isApplePayReady, isInvokeSDKFlow, paymentExperience, isWallet))
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     if !isWallet {
