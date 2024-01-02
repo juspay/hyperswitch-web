@@ -21,6 +21,7 @@ let make = (
   ~sdkSessionId,
   ~publishableKey,
   ~logger: option<OrcaLogger.loggerMake>,
+  ~analyticsMetadata,
 ) => {
   let handleApplePayMessages = ref(_ => ())
   let applePaySessionRef = ref(Js.Nullable.null)
@@ -225,6 +226,7 @@ let make = (
             ("sdkSessionId", sdkSessionId->Js.Json.string),
             ("sdkHandleConfirmPayment", sdkHandleConfirmPayment->Js.Json.boolean),
             ("parentURL", "*"->Js.Json.string),
+            ("analyticsMetadata", analyticsMetadata),
           ]->Js.Dict.fromArray
 
         let handleApplePayMounted = (event: Types.event) => {
