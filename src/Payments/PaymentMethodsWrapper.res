@@ -17,7 +17,13 @@ let make = (
   let optionPaymentMethodDetails =
     list
     ->PaymentMethodsRecord.buildFromPaymentList
-    ->Js.Array2.find(x => x.paymentMethodName === paymentMethodName)
+    ->Js.Array2.find(x =>
+      x.paymentMethodName ===
+        PaymentUtils.getPaymentMethodName(
+          ~paymentMethodType=x.methodType,
+          ~paymentMethodName=paymentMethodName,
+        )
+    )
   let paymentMethodDetails =
     optionPaymentMethodDetails->Belt.Option.getWithDefault(
       PaymentMethodsRecord.defaultPaymentMethodContent,
@@ -121,7 +127,7 @@ let make = (
         paymentType
         list
         paymentMethod=paymentMethodDetails.methodType
-        paymentMethodType=paymentMethodDetails.paymentMethodName
+        paymentMethodType=paymentMethodName
         setRequiredFieldsBody
       />
     </RenderIf>
