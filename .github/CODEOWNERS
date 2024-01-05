@@ -1,0 +1,30 @@
+* @prafulkoppalkar @arun-mi
+
+docs/ @akash-kamble-juspay
+LICENSE @akash-kamble-juspay
+README.md @akash-kamble-juspay
+SECURITY.md @akash-kamble-juspay
+.gitignore @arun-mi @prafulkoppalkar
+
+Hyperswitch-React-Demo-App/ @prafulkoppalkar @JeevaRamu0104
+Hyperswitch-React-Demo-App/Dockerfile @JeevaRamu0104 @prafulkoppalkar
+Hyperswitch-React-Demo-App/Makefile @JeevaRamu0104 @prafulkoppalkar
+Hyperswitch-React-Demo-App/promptScript.js @prafulkoppalkar
+Hyperswitch-React-Demo-App/webpack.common.js @arun-mi @prafulkoppalkar
+Hyperswitch-React-Demo-App/webpack.dev.js @arun-mi @prafulkoppalkar
+
+.husky/ @harsh-Juspay @prafulkoppalkar
+.github/ @harsh-Juspay @prafulkoppalkar
+
+aws/ @arun-mi @prafulkoppalkar
+
+webpack.dev.js @arun-mi @prafulkoppalkar
+webpack.common.js @arun-mi @prafulkoppalkar
+
+src/orca-log-catcher @vsrivatsa-juspay @arun-mi
+src/orca-loader @arun-mi @prafulkoppalkar
+src/LoaderConroller.res @arun-mi @prafulkoppalkar
+src/Utilities @arun-mi @prafulkoppalkar
+src/libraries @arun-mi @prafulkoppalkar
+src/Hooks @arun-mi @prafulkoppalkar
+src/Payment.res @arun-mi @prafulkoppalkar
