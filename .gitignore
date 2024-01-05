@@ -10,6 +10,7 @@ public/app.css
 .DS_Store
 /dist/
 **/*.bs.js
+.github/CODEOWNERS
 
 # yarn
 .pnp.*
