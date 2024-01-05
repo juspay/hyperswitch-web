@@ -14,6 +14,16 @@ then
 fi
 echo "***** ReScript Code Compiled! *****"
 
+# JS Code Build
+echo "*****~~~~~ Checking ReScript Build ~~~~~~*****"
+if (! npm run build)
+then
+    echo
+    echo "*****~~~~~ ReScript Build Completition Failed! ~~~~~*****"
+    exit 1
+fi
+echo "***** ReScript Build Completed! *****"
+
 #Trailing Space Check
 echo "Evaluating for trailing spaces"
 
