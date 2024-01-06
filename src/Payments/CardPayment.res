@@ -65,7 +65,6 @@ let make = (
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFeildsAtom)
   let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
   let (token, _) = paymentToken
-  let cardHolderName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let (
     loadSavedCards: PaymentType.savedCardsLoadState,
@@ -186,21 +185,16 @@ let make = (
       ~cvcNumber,
       ~cardBrand=cardNetwork,
     )
-    let banContactBody = PaymentBody.bancontactBody(
-      ~cardNumber,
-      ~month,
-      ~year,
-      ~cardHolderName=cardHolderName.value,
-    )
+    let banContactBody = PaymentBody.bancontactBody()
     let cardBody = isSaveCardsChecked
       ? deafultCardBody->Js.Array2.concat(onSessionBody)
       : deafultCardBody
     if confirm.doSubmit {
       let validFormat =
+        (isBancontact ||
+        (isCVCValid->Belt.Option.getWithDefault(false) &&
         isCardValid->Belt.Option.getWithDefault(false) &&
-        isExpiryValid->Belt.Option.getWithDefault(false) &&
-        (isBancontact || isCVCValid->Belt.Option.getWithDefault(false)) &&
-        areRequiredFieldsValid
+        isExpiryValid->Belt.Option.getWithDefault(false))) && areRequiredFieldsValid
       if validFormat && (showFields || isBancontact) {
         intent(
           ~bodyArr={
@@ -269,51 +263,48 @@ let make = (
         className="flex flex-col"
         style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
         <div className="w-full">
-          <PaymentInputField
-            fieldName=localeString.cardNumberLabel
-            isValid=isCardValid
-            setIsValid=setIsCardValid
-            value=cardNumber
-            onChange=changeCardNumber
-            onBlur=handleCardBlur
-            rightIcon={icon}
-            errorString=cardError
-            paymentType
-            type_="tel"
-            appearance=config.appearance
-            maxLength=maxCardLength
-            pattern="[\d| ]{16,22}"
-            inputRef=cardRef
-            placeholder="1234 1234 1234 1234"
-          />
-          <div
-            className="flex flex-row w-full place-content-between"
-            style={ReactDOMStyle.make(
-              ~marginTop=themeObj.spacingGridColumn,
-              ~gridColumnGap=themeObj.spacingGridRow,
-              (),
-            )}>
-            <div className="w-[45%]">
-              <PaymentInputField
-                fieldName=localeString.validThruText
-                isValid=isExpiryValid
-                setIsValid=setIsExpiryValid
-                value=cardExpiry
-                onChange=changeCardExpiry
-                onBlur=handleExpiryBlur
-                errorString=expiryError
-                paymentType
-                type_="tel"
-                appearance=config.appearance
-                maxLength=7
-                inputRef=expiryRef
-                placeholder="MM / YY"
-              />
-            </div>
-            <RenderIf condition={isBancontact}>
-              <div className="w-[45%]"> <FullNamePaymentInput paymentType={paymentType} /> </div>
-            </RenderIf>
-            <RenderIf condition={!isBancontact}>
+          <RenderIf condition={!isBancontact}>
+            <PaymentInputField
+              fieldName=localeString.cardNumberLabel
+              isValid=isCardValid
+              setIsValid=setIsCardValid
+              value=cardNumber
+              onChange=changeCardNumber
+              onBlur=handleCardBlur
+              rightIcon={icon}
+              errorString=cardError
+              paymentType
+              type_="tel"
+              appearance=config.appearance
+              maxLength=maxCardLength
+              pattern="[\d| ]{16,22}"
+              inputRef=cardRef
+              placeholder="1234 1234 1234 1234"
+            />
+            <div
+              className="flex flex-row w-full place-content-between"
+              style={ReactDOMStyle.make(
+                ~marginTop=themeObj.spacingGridColumn,
+                ~gridColumnGap=themeObj.spacingGridRow,
+                (),
+              )}>
+              <div className="w-[45%]">
+                <PaymentInputField
+                  fieldName=localeString.validThruText
+                  isValid=isExpiryValid
+                  setIsValid=setIsExpiryValid
+                  value=cardExpiry
+                  onChange=changeCardExpiry
+                  onBlur=handleExpiryBlur
+                  errorString=expiryError
+                  paymentType
+                  type_="tel"
+                  appearance=config.appearance
+                  maxLength=7
+                  inputRef=expiryRef
+                  placeholder="MM / YY"
+                />
+              </div>
               <div className="w-[45%]">
                 <PaymentInputField
                   fieldName=localeString.cvcTextLabel
@@ -333,11 +324,19 @@ let make = (
                   placeholder="123"
                 />
               </div>
-            </RenderIf>
-          </div>
+            </div>
+          </RenderIf>
           <RenderIf condition={list.payment_methods->Js.Array.length !== 0}>
             <DynamicFields
-              paymentType list paymentMethod="card" paymentMethodType="debit" setRequiredFieldsBody
+              paymentType
+              list
+              paymentMethod
+              paymentMethodType
+              setRequiredFieldsBody
+              cardProps={Some(cardProps)}
+              expiryProps={Some(expiryProps)}
+              cvcProps={Some(cvcProps)}
+              isBancontact
             />
           </RenderIf>
           <RenderIf condition={!isBancontact && !options.disableSaveCards}>
