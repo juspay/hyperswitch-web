@@ -187,6 +187,7 @@ let make = (
       paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
       isWallet
     ) {
+      setIsShowOrPayUsing(._ => true)
       addGooglePayButton()
     }
     None
@@ -220,8 +221,6 @@ let make = (
     (isGPayReady ||
     paymentExperience == PaymentMethodsRecord.RedirectToURL ||
     isDelayedSessionToken) && isWallet
-
-  setIsShowOrPayUsing(.prev => prev || isRenderGooglePayButton)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     if !isWallet {

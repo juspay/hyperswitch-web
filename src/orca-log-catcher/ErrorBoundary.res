@@ -135,6 +135,7 @@ module ErrorCard = {
           latency: "",
           paymentMethod: "",
           firstEvent: false,
+          metadata: Js.Json.null,
         }
         beaconApiCall([errorLog])
       }

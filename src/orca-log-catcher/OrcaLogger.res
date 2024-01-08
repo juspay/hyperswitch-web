@@ -138,6 +138,7 @@ type logFile = {
   latency: string,
   firstEvent: bool,
   paymentMethod: string,
+  metadata: Js.Json.t,
 }
 
 type setlogApiValueType =
@@ -175,6 +176,7 @@ type loggerMake = {
   setSessionId: string => unit,
   setClientSecret: string => unit,
   setMerchantId: string => unit,
+  setMetadata: Js.Json.t => unit,
 }
 
 let defaultLoggerConfig = {
@@ -215,6 +217,7 @@ let defaultLoggerConfig = {
   setLogInitiated: () => (),
   setMerchantId: _x => (),
   setSessionId: _x => (),
+  setMetadata: _x => (),
 }
 
 let logFileToObj = logFile => {
@@ -374,7 +377,14 @@ let browserDetect = content => {
 
 let arrayOfNameAndVersion = Js.String2.split(Window.userAgent->browserDetect, "-")
 
-let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantId=?, ()) => {
+let make = (
+  ~sessionId=?,
+  ~source: option<source>=?,
+  ~clientSecret=?,
+  ~merchantId=?,
+  ~metadata=?,
+  (),
+) => {
   let loggingLevel = switch GlobalVars.loggingLevelStr {
   | "DEBUG" => DEBUG
   | "INFO" => INFO
@@ -399,6 +409,12 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
   let merchantId = getRefFromOption(merchantId)
   let setMerchantId = value => {
     merchantId := value
+  }
+
+  let metadata = ref(metadata->Belt.Option.getWithDefault(Js.Json.null))
+
+  let setMetadata = value => {
+    metadata := value
   }
 
   let conditionalLogPush = (log: logFile) => {
@@ -532,13 +548,13 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     let localTimestampFloat =
       localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
     {
-      logType: logType,
+      logType,
       timestamp: localTimestamp,
       sessionId: sessionId.contents,
       source: sourceString,
       version: GlobalVars.repoVersion,
-      value: value,
-      internalMetadata: internalMetadata,
+      value,
+      internalMetadata,
       category: logCategory,
       paymentId: Js.String2.split(clientSecret.contents, "_secret_")
       ->Belt.Array.get(0)
@@ -550,9 +566,10 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
       userAgent: Window.userAgent,
       appId: "",
       eventName: eventNameStr,
-      latency: latency,
-      paymentMethod: paymentMethod,
-      firstEvent: firstEvent,
+      latency,
+      paymentMethod,
+      firstEvent,
+      metadata: metadata.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -584,7 +601,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     let localTimestampFloat =
       localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
     {
-      logType: logType,
+      logType,
       timestamp: localTimestamp,
       sessionId: sessionId.contents,
       source: sourceString,
@@ -608,9 +625,10 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
       userAgent: Window.userAgent,
       appId: "",
       eventName: eventNameStr,
-      latency: latency,
-      paymentMethod: paymentMethod,
-      firstEvent: firstEvent,
+      latency,
+      paymentMethod,
+      firstEvent,
+      metadata: metadata.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -635,13 +653,13 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     let localTimestampFloat =
       localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
     {
-      logType: logType,
+      logType,
       timestamp: localTimestamp,
       sessionId: sessionId.contents,
       source: sourceString,
       version: GlobalVars.repoVersion,
-      value: value,
-      internalMetadata: internalMetadata,
+      value,
+      internalMetadata,
       category: logCategory,
       paymentId: Js.String2.split(clientSecret.contents, "_secret_")
       ->Belt.Array.get(0)
@@ -653,9 +671,10 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
       userAgent: Window.userAgent,
       appId: "",
       eventName: eventNameStr,
-      latency: latency,
-      paymentMethod: paymentMethod,
-      firstEvent: firstEvent,
+      latency,
+      paymentMethod,
+      firstEvent,
+      metadata: metadata.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -669,7 +688,7 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
     let latency = calculateLatencyHook(~eventName, ())
     {
       logType: INFO,
-      eventName: eventName,
+      eventName,
       timestamp: Js.Date.now()->Belt.Float.toString,
       sessionId: sessionId.contents,
       source: sourceString,
@@ -686,9 +705,10 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
-      latency: latency,
+      latency,
       paymentMethod: "",
-      firstEvent: firstEvent,
+      firstEvent,
+      metadata: metadata.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -707,14 +727,15 @@ let make = (~sessionId=?, ~source: option<source>=?, ~clientSecret=?, ~merchantI
   Window.addEventListener("beforeunload", handleBeforeUnload)
 
   {
-    setLogInfo: setLogInfo,
-    setLogInitiated: setLogInitiated,
-    setConfirmPaymentValue: setConfirmPaymentValue,
-    sendLogs: sendLogs,
-    setSessionId: setSessionId,
-    setClientSecret: setClientSecret,
-    setMerchantId: setMerchantId,
-    setLogApi: setLogApi,
-    setLogError: setLogError,
+    setLogInfo,
+    setLogInitiated,
+    setConfirmPaymentValue,
+    sendLogs,
+    setSessionId,
+    setClientSecret,
+    setMerchantId,
+    setMetadata,
+    setLogApi,
+    setLogError,
   }
 }
