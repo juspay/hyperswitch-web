@@ -1,0 +1,91 @@
+# https://taskfile.dev
+
+version: '3'
+
+dotenv:
+  - .env
+    # use .env file or load from bashrc / zshrc
+    # AWS_ACCESS_KEY_ID:
+    # AWS_SECRET_ACCESS_KEY:
+
+tasks:
+  default:
+    cmds:
+      - task --list-all
+    silent: true
+
+  build-hyperloader-and-publish-to-aws-bucket:
+    desc: build hyperloader.js statics server and publish to AWS S3
+    #language=sh
+    cmds:
+      - >
+        sudo docker build  
+        -t {{.DOCKER_IMAGE_NAME}}
+        -f build/sdk-to-aws.dockerfile         
+        --build-arg HYPERSWITCH_REPO={{.HYPERSWITCH_REPO}} 
+        --build-arg HYPERSWITCH_VERSION={{.HYPERSWITCH_VERSION}} 
+        --build-arg SDK_NODE_VERSION={{.SDK_NODE_VERSION}}
+        --build-arg SDK_URL={{.SDK_URL}} 
+        --build-arg SDK_BACKEND_URL={{.SDK_BACKEND_URL}} 
+        --build-arg SDK_BUILD_ENV={{.SDK_BUILD_ENV}} 
+        --build-arg AWS_CREATE_BUCKET={{.AWS_CREATE_BUCKET}}
+        --build-arg AWS_DEFAULT_REGION={{.AWS_DEFAULT_REGION}} 
+        --build-arg AWS_DIST_S3_BUCKET={{.AWS_DIST_S3_BUCKET}} 
+        --build-arg AWS_S3_EXTRA_PREFIX={{.AWS_S3_EXTRA_PREFIX}}
+        --build-arg AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+        --build-arg AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+        --progress plain
+        --no-cache
+        {{.DOCKER_BUILD_CONTEXT}}
+    vars:
+      # git clone parameter
+      HYPERSWITCH_REPO: https://github.com/juspay/hyperswitch-web
+      HYPERSWITCH_VERSION: 0.15.8
+      # node build parameters
+      SDK_NODE_VERSION: 18
+      SDK_URL: https://<bucket name>.s3.eu-west-1.amazonaws.com
+      SDK_BACKEND_URL: https://<hyperswitch host>
+      SDK_BUILD_ENV: integ
+      # AWS S3 distribution parameters
+      AWS_CREATE_BUCKET: true
+      AWS_DEFAULT_REGION: eu-west-1
+      AWS_DIST_S3_BUCKET: <bucket name>
+      AWS_S3_EXTRA_PREFIX: v0 # include extra prefix
+      # general parameters
+      DOCKER_BUILD_CONTEXT: build
+      DOCKER_IMAGE_NAME: hyperswitch-sdk-aws-deploy-job
+    env: {}
+    aliases:
+      - bh
+
+  build-nginx:
+    desc: build HyperLoader.js statics server based on Nnginx
+    #language=sh
+    cmds:
+      - >
+        sudo docker build  
+        -t {{.DOCKER_REGISTRY_HOST}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        -f build/sdk-nginx.dockerfile 
+        --build-arg SDK_URL={{.SDK_URL}} 
+        --build-arg BACKEND_URL={{.SDK_BACKEND_URL}} 
+        --build-arg ENV={{.SDK_ENV}} 
+        --build-arg HYPERSWITCH_VERSION={{.HYPERSWITCH_VERSION}} 
+        --build-arg EXTRA_PATH={{.NGINX_EXTRA_PATH}}
+        {{.DOCKER_BUILD_CONTEXT}}
+      - >
+        {{if eq .DOCKER_PUSH "true"}}
+        sudo docker push  {{.DOCKER_REGISTRY_HOST}}/{{.DOCKER_IMAGE_NAME}}:{{.DOCKER_IMAGE_TAG}}
+        {{end}}
+    vars:
+      SDK_URL: https://<sdk host>
+      SDK_BACKEND_URL: https://<hyperswitch host>
+      HYPERSWITCH_VERSION: 0.15.8
+      NGINX_EXTRA_PATH: v0 # nginx extra path
+      SDK_ENV: integ
+      DOCKER_REGISTRY_HOST: <registry host>
+      DOCKER_IMAGE_NAME: hyperswitch/statics-server
+      DOCKER_IMAGE_TAG: latest
+      DOCKER_BUILD_CONTEXT: build
+      DOCKER_PUSH: true
+    aliases:
+      - bn
