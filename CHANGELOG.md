@@ -1,3 +1,10 @@
+# [0.17.0](https://github.com/juspay/hyperswitch-web/compare/v0.16.8...v0.17.0) (2024-01-11)
+
+
+### Features
+
+* HS-188: Building before committing and added release rules ([#90](https://github.com/juspay/hyperswitch-web/issues/90)) ([7e8b23a](https://github.com/juspay/hyperswitch-web/commit/7e8b23a9246cbadf85283793cfc8b58f616e6e9f))
+
 ## [0.16.8](https://github.com/juspay/hyperswitch-web/compare/v0.16.7...v0.16.8) (2024-01-11)
 
 
