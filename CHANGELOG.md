@@ -1,3 +1,10 @@
+## [0.16.8](https://github.com/juspay/hyperswitch-web/compare/v0.16.7...v0.16.8) (2024-01-11)
+
+
+### Bug Fixes
+
+* HS-132: Fixed areRequiredFieldsValid for postal code ([#83](https://github.com/juspay/hyperswitch-web/issues/83)) ([bccd88c](https://github.com/juspay/hyperswitch-web/commit/bccd88cb98e53ac856764420478b578df5a3d5bf))
+
 ## [0.16.7](https://github.com/juspay/hyperswitch-web/compare/v0.16.6...v0.16.7) (2023-12-27)
 
 
