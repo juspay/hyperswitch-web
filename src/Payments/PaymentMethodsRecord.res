@@ -21,19 +21,31 @@ type paymentMethodsFields =
   | AddressCountry(array<string>)
   | BlikCode
   | Currency(array<string>)
+  | CardNumber
+  | CardExpiryMonth
+  | CardExpiryYear
+  | CardExpiryMonthAndYear
+  | CardCvc
+  | CardExpiryAndCvc
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
-  | AddressLine1 => 1
-  | AddressLine2 => 2
-  | AddressCity => 3
-  | AddressState => 4
-  | AddressCountry(_) => 5
-  | AddressPincode => 6
-  | StateAndCity => 4
-  | CountryAndPincode(_) => 5
+  | CardNumber => 0
+  | CardExpiryMonth => 1
+  | CardExpiryYear => 1
+  | CardExpiryMonthAndYear => 1
+  | CardCvc => 2
+  | CardExpiryAndCvc => 2
+  | AddressLine1 => 4
+  | AddressLine2 => 5
+  | AddressCity => 6
+  | AddressState => 7
+  | AddressCountry(_) => 8
+  | AddressPincode => 9
+  | StateAndCity => 7
+  | CountryAndPincode(_) => 8
   | InfoElement => 99
-  | _ => 0
+  | _ => 3
   }
 }
 
@@ -475,20 +487,24 @@ type required_fields = {
   value: string,
 }
 
-let getPaymentMethodsFieldTypeFromString = str => {
-  switch str {
-  | "user_email_address" => Email
-  | "user_full_name" => FullName
-  | "user_country" => Country
-  | "user_bank" => Bank
-  | "user_phone_number" => PhoneNumber
-  | "user_address_line1" => AddressLine1
-  | "user_address_line2" => AddressLine2
-  | "user_address_city" => AddressCity
-  | "user_address_pincode" => AddressPincode
-  | "user_address_state" => AddressState
-  | "user_blik_code" => BlikCode
-  | "user_billing_name" => BillingName
+let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
+  switch (str, isBancontact) {
+  | ("user_email_address", _) => Email
+  | ("user_full_name", _) => FullName
+  | ("user_country", _) => Country
+  | ("user_bank", _) => Bank
+  | ("user_phone_number", _) => PhoneNumber
+  | ("user_address_line1", _) => AddressLine1
+  | ("user_address_line2", _) => AddressLine2
+  | ("user_address_city", _) => AddressCity
+  | ("user_address_pincode", _) => AddressPincode
+  | ("user_address_state", _) => AddressState
+  | ("user_blik_code", _) => BlikCode
+  | ("user_billing_name", _) => BillingName
+  | ("user_card_number", true) => CardNumber
+  | ("user_card_expiry_month", true) => CardExpiryMonth
+  | ("user_card_expiry_year", true) => CardExpiryYear
+  | ("user_card_cvc", true) => CardCvc
   | _ => None
   }
 }
@@ -513,7 +529,7 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
   }
 }
 
-let getFieldType = dict => {
+let getFieldType = (dict, isBancontact) => {
   let fieldClass =
     dict
     ->Js.Dict.get("field_type")
@@ -526,17 +542,17 @@ let getFieldType = dict => {
     None
   | JSONNumber(_val) => None
   | JSONArray(_arr) => None
-  | JSONString(val) => val->getPaymentMethodsFieldTypeFromString
+  | JSONString(val) => val->getPaymentMethodsFieldTypeFromString(isBancontact)
 
   | JSONObject(dict) => dict->getPaymentMethodsFieldTypeFromDict
   }
 }
 
-let getRequiredFieldsFromJson = dict => {
+let getRequiredFieldsFromJson = (dict, isBancontact) => {
   {
     required_field: Utils.getString(dict, "required_field", ""),
     display_name: Utils.getString(dict, "display_name", ""),
-    field_type: dict->getFieldType,
+    field_type: dict->getFieldType(isBancontact),
     value: Utils.getString(dict, "value", ""),
   }
 }
@@ -548,6 +564,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "blik",
   "google_pay",
   "apple_pay",
+  "bancontact_card",
 ]
 
 let getIsBillingField = requiredFieldType => {
@@ -562,9 +579,9 @@ let getIsBillingField = requiredFieldType => {
   }
 }
 
-let getIsAnyBillingDetailEmpty = (requiredFieldsValues: array<Js.Json.t>) => {
+let getIsAnyBillingDetailEmpty = (requiredFieldsValues: array<Js.Json.t>, isBancontact) => {
   requiredFieldsValues->Js.Array2.reduce((acc, item) => {
-    let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson
+    let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson(isBancontact)
     if getIsBillingField(requiredField.field_type) {
       requiredField.value === "" || acc
     } else {
@@ -578,14 +595,14 @@ let getPaymentMethodFields = (
   requiredFields,
   ~isSavedCardFlow=false,
   ~isAllStoredCardsHaveName=false,
+  ~isBancontact=false,
   (),
 ) => {
   let requiredFieldsValues = requiredFields->Utils.getDictFromJson->Js.Dict.values
-  let isAnyBillingDetailEmpty = requiredFieldsValues->getIsAnyBillingDetailEmpty
+  let isAnyBillingDetailEmpty = requiredFieldsValues->getIsAnyBillingDetailEmpty(isBancontact)
   let requiredFieldsArr = requiredFieldsValues->Js.Array2.map(item => {
-    let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson
+    let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson(isBancontact)
     let isShowBillingField = getIsBillingField(requiredField.field_type) && isAnyBillingDetailEmpty
-
     if requiredField.value === "" || isShowBillingField {
       if (
         isSavedCardFlow &&
@@ -905,6 +922,7 @@ let buildFromPaymentList = (plist: list) => {
           fields: getPaymentMethodFields(
             paymentMethodName,
             individualPaymentMethod.required_fields,
+            ~isBancontact=individualPaymentMethod.payment_method_type === "bancontact_card",
             (),
           ),
           paymentFlow: paymentExperience,
@@ -936,3 +954,12 @@ let getPaymentMethodTypeFromList = (~list: list, ~paymentMethod, ~paymentMethodT
     item.payment_method_type == paymentMethodType
   })
 }
+
+let dynamicFieldsToRenderOutsideBilling = [
+  CardNumber,
+  CardExpiryMonth,
+  CardExpiryYear,
+  CardExpiryMonthAndYear,
+  CardCvc,
+  CardExpiryAndCvc,
+]

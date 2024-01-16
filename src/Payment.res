@@ -13,7 +13,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let cardScheme = Recoil.useRecoilValueFromAtom(RecoilAtoms.cardBrand)
-  let showFeilds = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFeildsAtom)
+  let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
+  let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentTokenAtom)
   let (token, _) = paymentToken
 
@@ -47,8 +48,11 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let (cardBrand, maxCardLength) = React.useMemo3(() => {
     let brand = getCardBrand(cardNumber)
     let maxLength = getMaxLength(cardNumber)
-    (brand == "" && !showFeilds) || !showFeilds ? (cardScheme, maxLength) : (brand, maxLength)
-  }, (cardNumber, cardScheme, showFeilds))
+    let isNotBancontact = selectedOption !== "bancontact_card" && brand == ""
+    ((brand == "" && !showFields) || !showFields) && isNotBancontact
+      ? (cardScheme, maxLength)
+      : (brand, maxLength)
+  }, (cardNumber, cardScheme, showFields))
 
   let clientTimeZone = dateTimeFormat(.).resolvedOptions(.).timeZone
   let clientCountry = Utils.getClientCountry(clientTimeZone)
@@ -209,7 +213,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     setCardError(_ => "")
     setExpiryError(_ => "")
     None
-  }, (token, showFeilds))
+  }, (token, showFields))
 
   let submitValue = (_ev, confirmParam) => {
     let validFormat = switch paymentMode->getPaymentMode {

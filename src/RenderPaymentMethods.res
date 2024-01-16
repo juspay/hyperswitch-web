@@ -94,7 +94,6 @@ let make = (
             type_="tel"
             maxLength=maxCardLength
             paymentType
-            pattern="[\d| ]{16,22}"
             inputRef=cardRef
             placeholder="1234 1234 1234 1234"
             id="card-number"
