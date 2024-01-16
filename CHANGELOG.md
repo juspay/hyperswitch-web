@@ -1,3 +1,10 @@
+# [0.18.0](https://github.com/juspay/hyperswitch-web/compare/v0.17.0...v0.18.0) (2024-01-16)
+
+
+### Features
+
+* HS-181: Added support of Dynamic Fields For Bancontact ([#72](https://github.com/juspay/hyperswitch-web/issues/72)) ([0d13e7a](https://github.com/juspay/hyperswitch-web/commit/0d13e7ae5406f3ef555d49fc7509f77b023dfc5b))
+
 # [0.17.0](https://github.com/juspay/hyperswitch-web/compare/v0.16.8...v0.17.0) (2024-01-11)
 
 
