@@ -13,7 +13,7 @@ let isConfirmBlocked = Recoil.atom(. "isConfirmBlocked", false)
 let switchToCustomPod = Recoil.atom(. "switchToCustomPod", false)
 let selectedOptionAtom = Recoil.atom(. "selectedOption", "")
 let paymentTokenAtom = Recoil.atom(. "paymentToken", ("", ""))
-let showCardFeildsAtom = Recoil.atom(. "showCardFeilds", false)
+let showCardFieldsAtom = Recoil.atom(. "showCardFields", false)
 let phoneJson = Recoil.atom(. "phoneJson", Loading)
 let cardBrand = Recoil.atom(. "cardBrand", "")
 

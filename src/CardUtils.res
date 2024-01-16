@@ -642,20 +642,20 @@ let getCvcDetailsFromCvcProps = cvcProps => {
 }
 
 let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
-    if cardEmpty {
-      <Icon size=28 name="cvc-empty" />
-    } else if cardInvalid {
-      <div style={ReactDOMStyle.make(~color, ())}>
-        <Icon size=28 name="cvc-invalid" />
-      </div>
-    } else if cardComplete {
-      <Icon size=28 name="cvc-complete" />
-    } else {
-      <Icon size=28 name="cvc-empty" />
-    }
+  if cardEmpty {
+    <Icon size=28 name="cvc-empty" />
+  } else if cardInvalid {
+    <div style={ReactDOMStyle.make(~color, ())}>
+      <Icon size=28 name="cvc-invalid" />
+    </div>
+  } else if cardComplete {
+    <Icon size=28 name="cvc-complete" />
+  } else {
+    <Icon size=28 name="cvc-empty" />
   }
+}
 
-let getCardDetailsHook = (~cvcNumber, ~isCvcValidValue, ~isCVCValid) => {
+let useCardDetails = (~cvcNumber, ~isCvcValidValue, ~isCVCValid) => {
   React.useMemo3(() => {
     let isCardDetailsEmpty = Js.String2.length(cvcNumber) == 0
     let isCardDetailsValid = isCvcValidValue == "valid"

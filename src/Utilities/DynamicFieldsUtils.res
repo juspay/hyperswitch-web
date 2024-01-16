@@ -1,29 +1,30 @@
-let requiredFieldsEmptyAndValidHook = (
+let useRequiredFieldsEmptyAndValid = (
   ~fieldsArr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsFields>,
-  ~country,
   ~countryNames,
-  ~selectedBank,
   ~bankNames,
-  ~currency,
-  ~email: RecoilAtomTypes.field,
-  ~fullName: RecoilAtomTypes.field,
-  ~billingName: RecoilAtomTypes.field,
-  ~line1: RecoilAtomTypes.field,
-  ~line2: RecoilAtomTypes.field,
-  ~phone: RecoilAtomTypes.field,
-  ~state: RecoilAtomTypes.field,
-  ~city: RecoilAtomTypes.field,
-  ~postalCode: RecoilAtomTypes.field,
-  ~blikCode: RecoilAtomTypes.field,
   ~isCardValid,
   ~isExpiryValid,
   ~isCVCValid,
   ~cardNumber,
   ~cardExpiry,
   ~cvcNumber,
-  ~setAreRequiredFieldsValid,
-  ~setAreRequiredFieldsEmpty,
 ) => {
+  let email = Recoil.useRecoilValueFromAtom(RecoilAtoms.userEmailAddress)
+  let fullName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
+  let billingName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBillingName)
+  let line1 = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressline1)
+  let line2 = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressline2)
+  let phone = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
+  let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState)
+  let city = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressCity)
+  let postalCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode)
+  let blikCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBlikCode)
+  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let selectedBank = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBank)
+  let currency = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
+  let setAreRequiredFieldsValid = Recoil.useSetRecoilState(RecoilAtoms.areRequiredFieldsValid)
+  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(RecoilAtoms.areRequiredFieldsEmpty)
+
   React.useEffect7(() => {
     let areRequiredFieldsValid = fieldsArr->Js.Array2.reduce((acc, paymentMethodFields) => {
       acc &&
@@ -128,36 +129,53 @@ let requiredFieldsEmptyAndValidHook = (
   ))
 }
 
-let setInitialRequiredFieldsHook = (
+let useSetInitialRequiredFields = (
   ~requiredFieldsType: Js.Array2.t<PaymentMethodsRecord.required_fields>,
-  ~email: RecoilAtomTypes.field,
-  ~setEmail,
-  ~fullName,
-  ~setFullName,
-  ~line1,
-  ~setLine1,
-  ~line2,
-  ~setLine2,
-  ~state,
-  ~setState,
-  ~city,
-  ~setCity,
-  ~postalCode,
-  ~setPostalCode,
-  ~country,
-  ~setCountry,
   ~paymentMethodType,
-  ~phone,
-  ~setPhone,
-  ~blikCode,
-  ~setBlikCode,
-  ~billingName,
-  ~setBillingName,
-  ~currency,
-  ~setCurrency,
-  ~selectedBank,
-  ~setSelectedBank
 ) => {
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let (email, setEmail) = Recoil.useLoggedRecoilState(RecoilAtoms.userEmailAddress, "email", logger)
+  let (fullName, setFullName) = Recoil.useLoggedRecoilState(
+    RecoilAtoms.userFullName,
+    "fullName",
+    logger,
+  )
+  let (billingName, setBillingName) = Recoil.useLoggedRecoilState(
+    RecoilAtoms.userBillingName,
+    "billingName",
+    logger,
+  )
+  let (line1, setLine1) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline1, "line1", logger)
+  let (line2, setLine2) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline2, "line2", logger)
+  let (phone, setPhone) = Recoil.useLoggedRecoilState(RecoilAtoms.userPhoneNumber, "phone", logger)
+  let (state, setState) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressState, "state", logger)
+  let (city, setCity) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressCity, "city", logger)
+  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
+    RecoilAtoms.userAddressPincode,
+    "postal_code",
+    logger,
+  )
+  let (blikCode, setBlikCode) = Recoil.useLoggedRecoilState(
+    RecoilAtoms.userBlikCode,
+    "blikCode",
+    logger,
+  )
+  let (country, setCountry) = Recoil.useLoggedRecoilState(
+    RecoilAtoms.userCountry,
+    "country",
+    logger,
+  )
+  let (selectedBank, setSelectedBank) = Recoil.useLoggedRecoilState(
+    RecoilAtoms.userBank,
+    "selectedBank",
+    logger,
+  )
+  let (currency, setCurrency) = Recoil.useLoggedRecoilState(
+    RecoilAtoms.userCurrency,
+    "currency",
+    logger,
+  )
+
   React.useEffect0(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
       requiredFieldsType
@@ -224,7 +242,7 @@ let setInitialRequiredFieldsHook = (
               ->Js.Array2.filter(item => item.isoAlpha2 === value)
               ->Belt.Array.get(0)
               ->Belt.Option.getWithDefault(Country.defaultTimeZone)
-            setCountry(_ => countryCode.countryName)
+            setCountry(. _ => countryCode.countryName)
           }
         }
       | AddressState => setFields(setState, state, requiredField, false)
@@ -241,15 +259,15 @@ let setInitialRequiredFieldsHook = (
             ->Js.Array2.filter(item => item.isoAlpha2 === value)
             ->Belt.Array.get(0)
             ->Belt.Option.getWithDefault(Country.defaultTimeZone)
-          setCountry(_ => defaultCountry.countryName)
+          setCountry(. _ => defaultCountry.countryName)
         }
       | Currency(_) =>
         if value !== "" && currency === "" {
-          setCurrency(_ => value)
+          setCurrency(. _ => value)
         }
       | Bank =>
         if value !== "" && selectedBank === "" {
-          setSelectedBank(_ => value)
+          setSelectedBank(. _ => value)
         }
       | StateAndCity
       | CountryAndPincode(_)
@@ -268,21 +286,8 @@ let setInitialRequiredFieldsHook = (
   })
 }
 
-let requiredFieldsBodyHook = (
+let useRequiredFieldsBody = (
   ~requiredFieldsType: Js.Array2.t<PaymentMethodsRecord.required_fields>,
-  ~email: RecoilAtomTypes.field,
-  ~fullName: RecoilAtomTypes.field,
-  ~billingName: RecoilAtomTypes.field,
-  ~line1: RecoilAtomTypes.field,
-  ~line2: RecoilAtomTypes.field,
-  ~phone: RecoilAtomTypes.field,
-  ~state: RecoilAtomTypes.field,
-  ~city: RecoilAtomTypes.field,
-  ~postalCode: RecoilAtomTypes.field,
-  ~blikCode: RecoilAtomTypes.field,
-  ~currency,
-  ~country,
-  ~selectedBank,
   ~paymentMethodType,
   ~cardNumber,
   ~cardExpiry,
@@ -291,6 +296,20 @@ let requiredFieldsBodyHook = (
   ~isAllStoredCardsHaveName,
   ~setRequiredFieldsBody,
 ) => {
+  let email = Recoil.useRecoilValueFromAtom(RecoilAtoms.userEmailAddress)
+  let fullName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
+  let billingName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBillingName)
+  let line1 = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressline1)
+  let line2 = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressline2)
+  let phone = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
+  let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState)
+  let city = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressCity)
+  let postalCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode)
+  let blikCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBlikCode)
+  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
+  let selectedBank = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBank)
+  let currency = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
+
   React.useEffect1(() => {
     let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
       let fieldNameArr = field.value->Js.String2.split(" ")

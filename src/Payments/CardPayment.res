@@ -62,7 +62,7 @@ let make = (
   )
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
-  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFeildsAtom)
+  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
   let (token, _) = paymentToken
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
@@ -141,7 +141,7 @@ let make = (
   }, (empty, complete))
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
-  let (cardEmpty, cardComplete, cardInvalid) = CardUtils.getCardDetailsHook(
+  let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
     ~cvcNumber,
     ~isCVCValid,
     ~isCvcValidValue,

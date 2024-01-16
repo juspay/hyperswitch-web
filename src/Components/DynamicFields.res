@@ -76,7 +76,6 @@ let make = (
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
 
-  let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", logger)
   let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
   let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
   let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
@@ -87,15 +86,7 @@ let make = (
     logger,
   )
   let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
-  let (fullName, setFullName) = Recoil.useLoggedRecoilState(userFullName, "fullName", logger)
-  let (blikCode, setBlikCode) = Recoil.useLoggedRecoilState(userBlikCode, "blikCode", logger)
-  let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", logger)
   let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
-  let (billingName, setBillingName) = Recoil.useLoggedRecoilState(
-    userBillingName,
-    "billingName",
-    logger,
-  )
   let line1Ref = React.useRef(Js.Nullable.null)
   let line2Ref = React.useRef(Js.Nullable.null)
   let cityRef = React.useRef(Js.Nullable.null)
@@ -161,7 +152,7 @@ let make = (
     cvcProps->CardUtils.getCvcDetailsFromCvcProps
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
-  let (cardEmpty, cardComplete, cardInvalid) = CardUtils.getCardDetailsHook(
+  let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
     ~cvcNumber,
     ~isCVCValid,
     ~isCvcValidValue,
@@ -236,31 +227,16 @@ let make = (
     }
   }
 
-  DynamicFieldsUtils.requiredFieldsEmptyAndValidHook(
+  DynamicFieldsUtils.useRequiredFieldsEmptyAndValid(
     ~fieldsArr,
-    ~country,
     ~countryNames,
-    ~selectedBank,
     ~bankNames,
-    ~currency,
-    ~email,
-    ~fullName,
-    ~billingName,
-    ~line1,
-    ~line2,
-    ~phone,
-    ~state,
-    ~city,
-    ~postalCode,
-    ~blikCode,
     ~isCardValid,
     ~isExpiryValid,
     ~isCVCValid,
     ~cardNumber,
     ~cardExpiry,
     ~cvcNumber,
-    ~setAreRequiredFieldsValid,
-    ~setAreRequiredFieldsEmpty,
   )
 
   let requiredFieldsType =
@@ -271,52 +247,10 @@ let make = (
       item->Utils.getDictFromJson->PaymentMethodsRecord.getRequiredFieldsFromJson(isBancontact)
     )
 
-  DynamicFieldsUtils.setInitialRequiredFieldsHook(
-    ~requiredFieldsType,
-    ~email,
-    ~setEmail,
-    ~fullName,
-    ~setFullName,
-    ~line1,
-    ~setLine1,
-    ~line2,
-    ~setLine2,
-    ~state,
-    ~setState,
-    ~city,
-    ~setCity,
-    ~postalCode,
-    ~setPostalCode,
-    ~country,
-    ~setCountry,
-    ~paymentMethodType,
-    ~phone,
-    ~setPhone,
-    ~blikCode,
-    ~setBlikCode,
-    ~billingName,
-    ~setBillingName,
-    ~currency,
-    ~setCurrency,
-    ~selectedBank,
-    ~setSelectedBank,
-  )
+  DynamicFieldsUtils.useSetInitialRequiredFields(~requiredFieldsType, ~paymentMethodType)
 
-  DynamicFieldsUtils.requiredFieldsBodyHook(
+  DynamicFieldsUtils.useRequiredFieldsBody(
     ~requiredFieldsType,
-    ~email,
-    ~fullName,
-    ~billingName,
-    ~line1,
-    ~line2,
-    ~phone,
-    ~state,
-    ~city,
-    ~postalCode,
-    ~blikCode,
-    ~currency,
-    ~country,
-    ~selectedBank,
     ~paymentMethodType,
     ~cardNumber,
     ~cardExpiry,
@@ -358,7 +292,8 @@ let make = (
       dynamicFieldsToRenderInsideBilling->Belt.Array.get(0) === Some(InfoElement)
 
   let isRenderDynamicFieldsInsideBilling =
-    dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent
+    dynamicFieldsToRenderInsideBilling->Js.Array2.length > 0 &&
+    (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
 
   {
     fieldsArr->Js.Array2.length > 0
@@ -499,7 +434,7 @@ let make = (
           ->React.array}
           <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
             <div
-              className="dynamic__fields p-2"
+              className="p-2"
               style={ReactDOMStyle.make(
                 ~border=`1px solid ${themeObj.borderColor}`,
                 ~borderRadius=themeObj.borderRadius,
@@ -525,7 +460,7 @@ let make = (
                     | Email => <EmailPaymentInput paymentType />
                     | PhoneNumber => <PhoneNumberPaymentInput />
                     | StateAndCity =>
-                      <div className="state__city flex gap-1">
+                      <div className="flex gap-1">
                         <PaymentField
                           fieldName=localeString.cityLabel
                           setValue={setCity}
@@ -558,7 +493,7 @@ let make = (
                         }}
                       </div>
                     | CountryAndPincode(countryArr) =>
-                      <div className="country__pincode flex gap-1">
+                      <div className="flex gap-1">
                         <DropdownField
                           appearance=config.appearance
                           fieldName=localeString.countryLabel
