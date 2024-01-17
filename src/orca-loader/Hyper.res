@@ -325,6 +325,75 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           addSmartEventListener("message", handleMessage, "onSubmit")
         })
       }
+
+      let oneClickConfirmPayment = (payload, result: bool) => {
+        let confirmParams =
+          payload
+          ->Js.Json.decodeObject
+          ->Belt.Option.flatMap(x => x->Js.Dict.get("confirmParams"))
+          ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+        let redirect =
+          payload
+          ->Js.Json.decodeObject
+          ->Belt.Option.flatMap(x => x->Js.Dict.get("redirect"))
+          ->Belt.Option.flatMap(Js.Json.decodeString)
+          ->Belt.Option.getWithDefault("if_required")
+        let url =
+          confirmParams
+          ->Js.Json.decodeObject
+          ->Belt.Option.flatMap(x => x->Js.Dict.get("return_url"))
+          ->Belt.Option.flatMap(Js.Json.decodeString)
+          ->Belt.Option.getWithDefault("")
+        Js.Promise.make((~resolve, ~reject as _) => {
+          iframeRef.contents->Js.Array2.forEach(ifR => {
+            ifR->Window.iframePostMessage(
+              [
+                ("oneClickDoSubmit", result->Js.Json.boolean),
+                ("clientSecret", clientSecret.contents->Js.Json.string),
+              ]->Js.Dict.fromArray,
+            )
+          })
+
+          let handleMessage = (event: Types.event) => {
+            let json = event.data->eventToJson
+            let dict = json->getDictFromJson
+
+            switch dict->Js.Dict.get("submitSuccessful") {
+            | Some(val) =>
+              logApi(
+                ~type_="method",
+                ~optLogger=Some(logger),
+                ~result=val,
+                ~paymentMethod="confirmPayment",
+                ~eventName=CONFIRM_PAYMENT,
+                (),
+              )
+              let data =
+                dict
+                ->Js.Dict.get("data")
+                ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+              let returnUrl =
+                dict
+                ->Js.Dict.get("url")
+                ->Belt.Option.flatMap(Js.Json.decodeString)
+                ->Belt.Option.getWithDefault(url)
+              if (
+                val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) &&
+                  redirect === "always"
+              ) {
+                Window.replace(returnUrl)
+              } else if !(val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)) {
+                resolve(. json)
+              } else {
+                resolve(. data)
+              }
+            | None => ()
+            }
+          }
+          addSmartEventListener("message", handleMessage, "onSubmit")
+        })
+      }
+
       let elements = elementsOptions => {
         logger.setLogInfo(~value="orca.elements called", ~eventName=ORCA_ELEMENTS_CALLED, ())
         let clientSecretId =
@@ -466,7 +535,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           ->Js.Json.object_
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
+
       let returnObject = {
+        oneClickConfirmPayment,
         confirmPayment,
         elements,
         widgets: elements,

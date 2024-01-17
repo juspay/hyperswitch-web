@@ -219,6 +219,7 @@ let make = (
         mountedIframeRef,
         selectorString,
         sdkHandleConfirmPayment,
+        sdkHandleOneClickConfirmPayment,
         disableSaveCards,
       ) => {
         open Promise
@@ -248,6 +249,7 @@ let make = (
             ("blockConfirm", blockConfirm->Js.Json.boolean),
             ("switchToCustomPod", switchToCustomPod->Js.Json.boolean),
             ("endpoint", endpoint->Js.Json.string),
+            ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->Js.Json.boolean),
             ("parentURL", "*"->Js.Json.string),
             ("analyticsMetadata", analyticsMetadata),
           ]->Js.Dict.fromArray

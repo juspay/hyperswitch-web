@@ -128,6 +128,8 @@ let getVariables = (str, dict, default, logger) => {
       "spacingGridColumn",
       "spacingGridRow",
       "spacingAccordionItem",
+      "sdkHandleConfirmPayment",
+      "sdkHandleOneClickConfirmPayment",
     ]
     unknownKeysWarning(validKeys, json, "appearance.variables", ~logger)
     {

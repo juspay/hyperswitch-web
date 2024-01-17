@@ -14,6 +14,7 @@ type keys = {
   iframeId: string,
   parentURL: string,
   sdkHandleConfirmPayment: bool,
+  sdkHandleOneClickConfirmPayment: bool,
 }
 @val @scope("document") external querySelector: string => Js.Nullable.t<element> = "querySelector"
 
@@ -67,7 +68,7 @@ let useScript = (src: string) => {
 let updateKeys = (dict, keyPair, setKeys) => {
   let (key, value) = keyPair
   let valueStr = value->Js.Json.decodeString->Belt.Option.getWithDefault("")
-  let valueBool = value->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)
+  let valueBool = default => value->Js.Json.decodeBoolean->Belt.Option.getWithDefault(default)
   if dict->Utils.getDictIsSome(key) {
     switch key {
     | "iframeId" =>
@@ -88,7 +89,12 @@ let updateKeys = (dict, keyPair, setKeys) => {
     | "sdkHandleConfirmPayment" =>
       setKeys(.prev => {
         ...prev,
-        sdkHandleConfirmPayment: dict->Utils.getBool(key, valueBool),
+        sdkHandleConfirmPayment: dict->Utils.getBool(key, valueBool(false)),
+      })
+    | "sdkHandleOneClickConfirmPayment" =>
+      setKeys(.prev => {
+        ...prev,
+        sdkHandleOneClickConfirmPayment: dict->Utils.getBool(key, valueBool(true)),
       })
     | _ => ()
     }
@@ -100,4 +106,5 @@ let defaultkeys = {
   iframeId: "",
   parentURL: "*",
   sdkHandleConfirmPayment: false,
+  sdkHandleOneClickConfirmPayment: true,
 }
