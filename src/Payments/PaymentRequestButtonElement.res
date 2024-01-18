@@ -93,5 +93,6 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
       </ErrorBoundary>
     })
     ->React.array}
+    <Surcharge list paymentMethod="wallet" paymentMethodType="google_pay" isForWallets=true />
   </div>
 }

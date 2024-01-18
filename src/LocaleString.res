@@ -44,9 +44,12 @@ type localeStrings = {
   card: string,
   surchargeMsgAmount: string => string,
   surchargeMsgAmountForCard: string => string,
+  surchargeMsgAmountForOneClickWallets: string,
   billingNameLabel: string,
   billingNamePlaceholder: string,
   cardHolderName: string,
+  on: string,
+  \"and": string,
 }
 
 let defaultLocale = {
@@ -99,9 +102,12 @@ let defaultLocale = {
   surchargeMsgAmount: str => `A surcharge amount of ${str} will be applied for this transaction`,
   surchargeMsgAmountForCard: str =>
     `A surcharge amount of upto ${str} will be applied for this transaction`,
+  surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
   billingNameLabel: "Billing name",
   billingNamePlaceholder: "First and last name",
   cardHolderName: "Card Holder Name",
+  on: "on",
+  \"and": "and",
 }
 
 type locale = {localeStrings: array<localeStrings>}
@@ -156,9 +162,12 @@ let localeStrings = [
     surchargeMsgAmount: str => `A surcharge amount of ${str} will be applied for this transaction`,
     surchargeMsgAmountForCard: str =>
       `A surcharge amount of upto ${str} will be applied for this transaction`,
+    surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
     billingNameLabel: "Billing name",
     billingNamePlaceholder: "First and last name",
     cardHolderName: "Card Holder Name",
+    on: "on",
+    \"and": "and",
   },
   {
     locale: "he",
@@ -210,9 +219,12 @@ let localeStrings = [
     surchargeMsgAmount: str => `סכום היטל של ${str} יוחל עבור עסקה זו`,
     surchargeMsgAmountForCard: str =>
       `סכום היטל של עד ${str} יחול עבור עסקה זו`,
+    surchargeMsgAmountForOneClickWallets: `תשלום נוסף חל`,
     billingNameLabel: `שם החיוב`,
     billingNamePlaceholder: `שם פרטי ושם משפחה`,
     cardHolderName: `שם בעל הכרטיס`,
+    on: `עַל`,
+    \"and": `ו`,
   },
   {
     locale: `fr`,
@@ -265,9 +277,12 @@ let localeStrings = [
       `Un montant supplémentaire d'${str} sera appliqué pour cette transaction`,
     surchargeMsgAmountForCard: str =>
       `Un montant supplémentaire allant jusqu'à ${str} sera appliqué pour cette transaction.`,
+    surchargeMsgAmountForOneClickWallets: `Frais supplémentaires applicables`,
     billingNameLabel: `Nom de facturation`,
     billingNamePlaceholder: `Prénom et nom de famille`,
     cardHolderName: `Nom du titulaire`,
+    on: `sur`,
+    \"and": `et`,
   },
   {
     locale: "en-GB",
@@ -319,9 +334,12 @@ let localeStrings = [
     surchargeMsgAmount: str => `A surcharge amount of ${str} will be applied for this transaction`,
     surchargeMsgAmountForCard: str =>
       `A surcharge amount of upto ${str} will be applied for this transaction`,
+    surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
     billingNameLabel: "Billing name",
     billingNamePlaceholder: "First and last name",
     cardHolderName: "Card Holder Name",
+    on: "on",
+    \"and": "and",
   },
   {
     locale: "ar",
@@ -374,9 +392,12 @@ let localeStrings = [
       `سيتم تطبيق مبلغ إضافي من ${str} على هذه المعاملة`,
     surchargeMsgAmountForCard: str =>
       `سيتم تطبيق مبلغ إضافي يصل إلى ${str} على هذه المعاملة`,
+    surchargeMsgAmountForOneClickWallets: `رسوم إضافية قابلة للتطبيق`,
     billingNameLabel: `اسم الفواتير`,
     billingNamePlaceholder: `الاسم الأول والاسم الأخير`,
     cardHolderName: `إسم صاحب البطاقة`,
+    on: `على`,
+    \"and": `و`,
   },
   {
     locale: "ja",
@@ -428,9 +449,12 @@ let localeStrings = [
     surchargeMsgAmount: str => `この取引には ${str} の追加料金が適用されます`,
     surchargeMsgAmountForCard: str =>
       `この取引には ${str} までの追加料金が適用されます`,
+    surchargeMsgAmountForOneClickWallets: `追加料金が適用されます`,
     billingNameLabel: `課金名`,
     billingNamePlaceholder: `名前と苗字`,
     cardHolderName: `クレジットカード名義人氏名`,
+    on: `の上`,
+    \"and": `そして`,
   },
   {
     locale: "de",
@@ -483,8 +507,11 @@ let localeStrings = [
       `Für diese Transaktion wird ein Zuschlag in Höhe von ${str} erhoben`,
     surchargeMsgAmountForCard: str =>
       `Für diese Transaktion wird ein Zuschlagsbetrag von bis zu ${str} erhoben`,
+    surchargeMsgAmountForOneClickWallets: `Es fällt eine zusätzliche Gebühr an`,
     billingNameLabel: `Abrechnungsname`,
     billingNamePlaceholder: `Vor-und Nachname`,
     cardHolderName: `Name des Karteninhabers`,
+    on: `An`,
+    \"and": `Und`,
   },
 ]

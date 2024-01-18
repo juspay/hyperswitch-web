@@ -287,13 +287,14 @@ let make = (
       !(PaymentMethodsRecord.dynamicFieldsToRenderOutsideBilling->Js.Array2.includes(field))
     )
 
+  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Js.Array2.includes(InfoElement)
+
   let isOnlyInfoElementPresent =
-    dynamicFieldsToRenderInsideBilling->Js.Array2.length === 1 &&
-      dynamicFieldsToRenderInsideBilling->Belt.Array.get(0) === Some(InfoElement)
+    dynamicFieldsToRenderInsideBilling->Js.Array2.length === 1 && isInfoElementPresent
 
   let isRenderDynamicFieldsInsideBilling =
     dynamicFieldsToRenderInsideBilling->Js.Array2.length > 0 &&
-    (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
+      (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
 
   {
     fieldsArr->Js.Array2.length > 0
@@ -664,6 +665,9 @@ let make = (
                 <Block bottomElement />
               }}
             </>}
+          </RenderIf>
+          <RenderIf condition={!isInfoElementPresent}>
+            <Surcharge list paymentMethod paymentMethodType />
           </RenderIf>
         </>
       : React.null

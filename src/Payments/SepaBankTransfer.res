@@ -78,6 +78,7 @@ let make = (
         options=countryNames
       />
     </RenderIf>
+    <Surcharge list paymentMethod="bank_transfer" paymentMethodType="sepa" />
     <InfoElement />
   </div>
 }

@@ -963,3 +963,10 @@ let dynamicFieldsToRenderOutsideBilling = [
   CardCvc,
   CardExpiryAndCvc,
 ]
+
+let getCardNetwork = (~paymentMethodType, ~cardBrand) => {
+  paymentMethodType.card_networks
+  ->Js.Array2.filter(cardNetwork => cardNetwork.card_network === cardBrand)
+  ->Belt.Array.get(0)
+  ->Belt.Option.getWithDefault(defaultCardNetworks)
+}

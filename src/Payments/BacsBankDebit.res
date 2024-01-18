@@ -149,7 +149,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     <EmailPaymentInput paymentType />
     <FullNamePaymentInput paymentType={paymentType} customFieldName=Some("Bank Holder Name") />
     <AddressPaymentInput paymentType />
-    <Surcharge list paymentMethod="bank_debit" paymentMethodType="becs" />
+    <Surcharge list paymentMethod="bank_debit" paymentMethodType="bacs" />
   </div>
 }
 

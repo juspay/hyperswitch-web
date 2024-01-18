@@ -2,6 +2,7 @@
 let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) => {
   let {iframeId, publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(RecoilAtoms.loggerAtom)
+  let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
   let token = sessionObj.token
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
@@ -102,6 +103,12 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
                 handleCloseLoader()
               },
             }).render(. "#paypal-button")
+            areOneClickWalletsRendered(.
+              prev => {
+                ...prev,
+                isPaypal: true,
+              },
+            )
           },
         )
       })

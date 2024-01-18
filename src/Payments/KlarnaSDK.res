@@ -91,6 +91,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
   let bottomElement = <InfoElement />
   <div className="p-1 animate-slowShow">
     <div id="klarna-payments" className="m-3 hidden" />
+    <Surcharge list paymentMethod="pay_later" paymentMethodType="klarna" />
     <Block bottomElement />
   </div>
 }

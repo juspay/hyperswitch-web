@@ -75,6 +75,7 @@ let make = (~paymentType, ~countryProps, ~list: PaymentMethodsRecord.list) => {
         options=countryNames
       />
     </RenderIf>
+    <Surcharge list paymentMethod="pay_later" paymentMethodType="klarna" />
     <InfoElement />
   </div>
 }
