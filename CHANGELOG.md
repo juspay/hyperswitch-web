@@ -1,3 +1,10 @@
+## [0.18.1](https://github.com/juspay/hyperswitch-web/compare/v0.18.0...v0.18.1) (2024-01-18)
+
+
+### Bug Fixes
+
+* HS-111: FIxed the displayname of open banking uk ([#108](https://github.com/juspay/hyperswitch-web/issues/108)) ([07508a2](https://github.com/juspay/hyperswitch-web/commit/07508a252ce98e1b9aa0a9a50481047b4bba81f7))
+
 # [0.18.0](https://github.com/juspay/hyperswitch-web/compare/v0.17.0...v0.18.0) (2024-01-16)
 
 
