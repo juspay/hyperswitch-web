@@ -467,7 +467,7 @@ let paymentMethodsFields = [
   {
     paymentMethodName: "open_banking_uk",
     icon: Some(icon("open_banking", ~size=19, ~width=50)),
-    displayName: "Open Banking UK",
+    displayName: "Open Banking",
     fields: [Country, InfoElement],
     miniIcon: Some(icon("open_banking", ~size=19)),
   },
