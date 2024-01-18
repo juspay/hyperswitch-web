@@ -1,3 +1,64 @@
+let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
+  let fieldNameArr = field.value->Js.String2.split(" ")
+  let requiredFieldsArr = item.required_field->Js.String2.split(".")
+  switch requiredFieldsArr
+  ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
+  ->Belt.Option.getWithDefault("") {
+  | "first_name" => fieldNameArr->Belt.Array.get(0)->Belt.Option.getWithDefault(field.value)
+  | "last_name" => fieldNameArr->Belt.Array.sliceToEnd(1)->Js.Array2.reduce((acc, item) => {
+      acc ++ item
+    }, "")
+  | _ => field.value
+  }
+}
+
+let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
+  AddressLine1,
+  AddressLine2,
+  AddressCity,
+  AddressState,
+  AddressCountry([]),
+  AddressPincode,
+]
+
+let isBillingAddressFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
+  switch fieldType {
+  | AddressLine1
+  | AddressLine2
+  | AddressCity
+  | AddressState
+  | AddressCountry(_)
+  | AddressPincode => true
+  | _ => false
+  }
+}
+
+let getBillingAddressPathFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
+  switch fieldType {
+  | AddressLine1 => "billing.address.line1"
+  | AddressLine2 => "billing.address.line2"
+  | AddressCity => "billing.address.city"
+  | AddressState => "billing.address.state"
+  | AddressCountry(_) => "billing.address.country"
+  | AddressPincode => "billing.address.zip"
+  | _ => ""
+  }
+}
+
+let removeBillingDetailsIfUseBillingAddress = (
+  requiredFields: Js.Array2.t<PaymentMethodsRecord.required_fields>,
+) => {
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+
+  if billingAddress.isUseBillingAddress {
+    requiredFields->Js.Array2.filter(requiredField => {
+      !(requiredField.field_type->isBillingAddressFieldType)
+    })
+  } else {
+    requiredFields
+  }
+}
+
 let useRequiredFieldsEmptyAndValid = (
   ~fieldsArr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsFields>,
   ~countryNames,
@@ -24,113 +85,105 @@ let useRequiredFieldsEmptyAndValid = (
   let currency = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(RecoilAtoms.areRequiredFieldsValid)
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(RecoilAtoms.areRequiredFieldsEmpty)
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
-  React.useEffect7(() => {
-    let areRequiredFieldsValid = fieldsArr->Js.Array2.reduce((acc, paymentMethodFields) => {
-      acc &&
-      switch paymentMethodFields {
-      | Email => email.isValid
-      | FullName => Some(fullName.value !== "")
-      | Country => Some(country !== "" || countryNames->Belt.Array.length === 0)
-      | AddressCountry(countryArr) => Some(country !== "" || countryArr->Belt.Array.length === 0)
-      | BillingName => Some(billingName.value !== "")
-      | AddressLine1 => Some(line1.value !== "")
-      | AddressLine2 => Some(line2.value !== "")
-      | Bank => Some(selectedBank !== "" || bankNames->Belt.Array.length === 0)
-      | PhoneNumber => Some(phone.value !== "")
-      | StateAndCity => Some(state.value !== "" && city.value !== "")
-      | CountryAndPincode(countryArr) =>
-        Some(
-          (country !== "" || countryArr->Belt.Array.length === 0) &&
-            postalCode.isValid->Belt.Option.getWithDefault(false),
-        )
-      | AddressCity => Some(city.value !== "")
-      | AddressPincode => postalCode.isValid
-      | AddressState => Some(state.value !== "")
-      | BlikCode => Some(blikCode.value !== "")
-      | Currency(currencyArr) => Some(currency !== "" || currencyArr->Belt.Array.length === 0)
-      | CardNumber => isCardValid
-      | CardExpiryMonth
-      | CardExpiryYear
-      | CardExpiryMonthAndYear => isExpiryValid
-      | CardCvc => isCVCValid
-      | CardExpiryAndCvc =>
-        Some(
-          isExpiryValid->Belt.Option.getWithDefault(false) &&
-            isCVCValid->Belt.Option.getWithDefault(false),
-        )
-      | _ => Some(true)
-      }->Belt.Option.getWithDefault(false)
-    }, true)
+  let fieldsArrWithBillingAddress = if billingAddress.isUseBillingAddress {
+    fieldsArr->Js.Array2.concat(billingAddressFields)
+  } else {
+    fieldsArr
+  }
+
+  React.useEffect5(() => {
+    let areRequiredFieldsValid =
+      fieldsArrWithBillingAddress->Js.Array2.reduce((acc, paymentMethodFields) => {
+        acc &&
+        switch paymentMethodFields {
+        | Email => email.isValid
+        | FullName => Some(fullName.value !== "")
+        | Country => Some(country !== "" || countryNames->Belt.Array.length === 0)
+        | AddressCountry(countryArr) => Some(country !== "" || countryArr->Belt.Array.length === 0)
+        | BillingName => Some(billingName.value !== "")
+        | AddressLine1 => Some(line1.value !== "")
+        | AddressLine2 => Some(line2.value !== "")
+        | Bank => Some(selectedBank !== "" || bankNames->Belt.Array.length === 0)
+        | PhoneNumber => Some(phone.value !== "")
+        | StateAndCity => Some(state.value !== "" && city.value !== "")
+        | CountryAndPincode(countryArr) =>
+          Some(
+            (country !== "" || countryArr->Belt.Array.length === 0) &&
+              postalCode.isValid->Belt.Option.getWithDefault(false),
+          )
+        | AddressCity => Some(city.value !== "")
+        | AddressPincode => postalCode.isValid
+        | AddressState => Some(state.value !== "")
+        | BlikCode => Some(blikCode.value !== "")
+        | Currency(currencyArr) => Some(currency !== "" || currencyArr->Belt.Array.length === 0)
+        | CardNumber => isCardValid
+        | CardExpiryMonth
+        | CardExpiryYear
+        | CardExpiryMonthAndYear => isExpiryValid
+        | CardCvc => isCVCValid
+        | CardExpiryAndCvc =>
+          Some(
+            isExpiryValid->Belt.Option.getWithDefault(false) &&
+              isCVCValid->Belt.Option.getWithDefault(false),
+          )
+        | _ => Some(true)
+        }->Belt.Option.getWithDefault(false)
+      }, true)
     setAreRequiredFieldsValid(._ => areRequiredFieldsValid)
 
-    let areRequiredFieldsEmpty = fieldsArr->Js.Array2.reduce((acc, paymentMethodFields) => {
-      acc ||
-      switch paymentMethodFields {
-      | Email => email.value === ""
-      | FullName => fullName.value === ""
-      | Country => country === "" && countryNames->Belt.Array.length > 0
-      | AddressCountry(countryArr) => country === "" && countryArr->Belt.Array.length > 0
-      | BillingName => billingName.value === ""
-      | AddressLine1 => line1.value === ""
-      | AddressLine2 => line2.value === ""
-      | Bank => selectedBank === "" && bankNames->Belt.Array.length > 0
-      | StateAndCity => city.value === "" || state.value === ""
-      | CountryAndPincode(countryArr) =>
-        (country === "" && countryArr->Belt.Array.length > 0) || postalCode.value === ""
-      | PhoneNumber => phone.value === ""
-      | AddressCity => city.value === ""
-      | AddressPincode => postalCode.value === ""
-      | AddressState => state.value === ""
-      | BlikCode => blikCode.value === ""
-      | Currency(currencyArr) => currency === "" && currencyArr->Belt.Array.length > 0
-      | CardNumber => cardNumber === ""
-      | CardExpiryMonth =>
-        let (month, _) = CardUtils.getExpiryDates(cardExpiry)
-        month === ""
-      | CardExpiryYear =>
-        let (_, year) = CardUtils.getExpiryDates(cardExpiry)
-        year === ""
-      | CardExpiryMonthAndYear =>
-        let (month, year) = CardUtils.getExpiryDates(cardExpiry)
-        month === "" || year === ""
-      | CardCvc => cvcNumber === ""
-      | CardExpiryAndCvc =>
-        let (month, year) = CardUtils.getExpiryDates(cardExpiry)
-        month === "" || year === "" || cvcNumber === ""
-      | _ => false
-      }
-    }, false)
+    let areRequiredFieldsEmpty =
+      fieldsArrWithBillingAddress->Js.Array2.reduce((acc, paymentMethodFields) => {
+        acc ||
+        switch paymentMethodFields {
+        | Email => email.value === ""
+        | FullName => fullName.value === ""
+        | Country => country === "" && countryNames->Belt.Array.length > 0
+        | AddressCountry(countryArr) => country === "" && countryArr->Belt.Array.length > 0
+        | BillingName => billingName.value === ""
+        | AddressLine1 => line1.value === ""
+        | AddressLine2 => line2.value === ""
+        | Bank => selectedBank === "" && bankNames->Belt.Array.length > 0
+        | StateAndCity => city.value === "" || state.value === ""
+        | CountryAndPincode(countryArr) =>
+          (country === "" && countryArr->Belt.Array.length > 0) || postalCode.value === ""
+        | PhoneNumber => phone.value === ""
+        | AddressCity => city.value === ""
+        | AddressPincode => postalCode.value === ""
+        | AddressState => state.value === ""
+        | BlikCode => blikCode.value === ""
+        | Currency(currencyArr) => currency === "" && currencyArr->Belt.Array.length > 0
+        | CardNumber => cardNumber === ""
+        | CardExpiryMonth =>
+          let (month, _) = CardUtils.getExpiryDates(cardExpiry)
+          month === ""
+        | CardExpiryYear =>
+          let (_, year) = CardUtils.getExpiryDates(cardExpiry)
+          year === ""
+        | CardExpiryMonthAndYear =>
+          let (month, year) = CardUtils.getExpiryDates(cardExpiry)
+          month === "" || year === ""
+        | CardCvc => cvcNumber === ""
+        | CardExpiryAndCvc =>
+          let (month, year) = CardUtils.getExpiryDates(cardExpiry)
+          month === "" || year === "" || cvcNumber === ""
+        | _ => false
+        }
+      }, false)
     setAreRequiredFieldsEmpty(._ => areRequiredFieldsEmpty)
     None
   }, (
     fieldsArr,
-    currency,
-    fullName.value,
-    country,
-    billingName.value,
-    line1.value,
-    (
-      email,
-      line2.value,
-      selectedBank,
-      phone.value,
-      city.value,
-      postalCode.value,
-      state.value,
-      blikCode.value,
-      isCardValid,
-      isExpiryValid,
-      isCVCValid,
-      cardNumber,
-      cardExpiry,
-      cvcNumber,
-    ),
+    [currency, country, selectedBank, cardNumber, cardExpiry, cvcNumber],
+    [fullName, billingName, line1, email, line2, phone, city, postalCode, state, blikCode],
+    [isCardValid, isExpiryValid, isCVCValid],
+    billingAddress,
   ))
 }
 
 let useSetInitialRequiredFields = (
-  ~requiredFieldsType: Js.Array2.t<PaymentMethodsRecord.required_fields>,
+  ~requiredFields: Js.Array2.t<PaymentMethodsRecord.required_fields>,
   ~paymentMethodType,
 ) => {
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
@@ -178,7 +231,7 @@ let useSetInitialRequiredFields = (
 
   React.useEffect0(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
-      requiredFieldsType
+      requiredFields
       ->Js.Array2.filter(requiredFields => requiredFields.field_type === item.field_type)
       ->Js.Array2.reduce((acc, item) => {
         let requiredFieldsArr = item.required_field->Js.String2.split(".")
@@ -212,7 +265,7 @@ let useSetInitialRequiredFields = (
       }
     }
 
-    requiredFieldsType->Js.Array2.forEach(requiredField => {
+    requiredFields->Js.Array2.forEach(requiredField => {
       let value = requiredField.value
       switch requiredField.field_type {
       | Email => {
@@ -287,7 +340,7 @@ let useSetInitialRequiredFields = (
 }
 
 let useRequiredFieldsBody = (
-  ~requiredFieldsType: Js.Array2.t<PaymentMethodsRecord.required_fields>,
+  ~requiredFields: Js.Array2.t<PaymentMethodsRecord.required_fields>,
   ~paymentMethodType,
   ~cardNumber,
   ~cardExpiry,
@@ -309,72 +362,71 @@ let useRequiredFieldsBody = (
   let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBank)
   let currency = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
-  React.useEffect1(() => {
-    let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
-      let fieldNameArr = field.value->Js.String2.split(" ")
-      let requiredFieldsArr = item.required_field->Js.String2.split(".")
-      switch requiredFieldsArr
-      ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
-      ->Belt.Option.getWithDefault("") {
-      | "first_name" => fieldNameArr->Belt.Array.get(0)->Belt.Option.getWithDefault(field.value)
-      | "last_name" => fieldNameArr->Belt.Array.sliceToEnd(1)->Js.Array2.reduce((acc, item) => {
-          acc ++ item
-        }, "")
-      | _ => field.value
+  let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
+    switch fieldType {
+    | Email => email.value
+    | AddressLine1 => line1.value
+    | AddressLine2 => line2.value
+    | AddressCity => city.value
+    | AddressPincode => postalCode.value
+    | AddressState => state.value
+    | BlikCode => blikCode.value
+    | PhoneNumber => phone.value
+    | Currency(_) => currency
+    | Country => country
+    | Bank => selectedBank
+    | AddressCountry(_) => {
+        let countryCode =
+          Country.getCountry(paymentMethodType)
+          ->Js.Array2.filter(item => item.countryName === country)
+          ->Belt.Array.get(0)
+          ->Belt.Option.getWithDefault(Country.defaultTimeZone)
+        countryCode.isoAlpha2
       }
+    | CardNumber => cardNumber->CardUtils.clearSpaces
+    | CardExpiryMonth =>
+      let (month, _) = CardUtils.getExpiryDates(cardExpiry)
+      month
+    | CardExpiryYear =>
+      let (_, year) = CardUtils.getExpiryDates(cardExpiry)
+      year
+    | CardCvc => cvcNumber
+    | StateAndCity
+    | CountryAndPincode(_)
+    | SpecialField(_)
+    | InfoElement
+    | CardExpiryMonthAndYear
+    | CardExpiryAndCvc
+    | FullName
+    | BillingName
+    | None => ""
     }
+  }
 
+  let addBillingDetailsIfUseBillingAddress = requiredFieldsBody => {
+    if billingAddress.isUseBillingAddress {
+      billingAddressFields->Js.Array2.reduce((acc, item) => {
+        let value = item->getFieldValueFromFieldType
+        let path = item->getBillingAddressPathFromFieldType
+        acc->Js.Dict.set(path, value->Js.Json.string)
+        acc
+      }, requiredFieldsBody)
+    } else {
+      requiredFieldsBody
+    }
+  }
+
+  React.useEffect3(() => {
     let requiredFieldsBody =
-      requiredFieldsType
+      requiredFields
       ->Js.Array2.filter(item => item.field_type !== None)
       ->Js.Array2.reduce((acc, item) => {
         let value = switch item.field_type {
-        | Email => email.value
-        | FullName => getName(item, fullName)
-        | AddressLine1 => line1.value
-        | AddressLine2 => line2.value
-        | AddressCity => city.value
-        | AddressPincode => postalCode.value
-        | AddressState => state.value
-        | BlikCode => blikCode.value
-        | PhoneNumber => phone.value
-        | Currency(_) => currency
-        | Country => country
-        | Bank => selectedBank
         | BillingName => getName(item, billingName)
-        | AddressCountry(_) => {
-            let countryCode =
-              Country.getCountry(paymentMethodType)
-              ->Js.Array2.filter(item => item.countryName === country)
-              ->Belt.Array.get(0)
-              ->Belt.Option.getWithDefault(Country.defaultTimeZone)
-            countryCode.isoAlpha2
-          }
-        | CardNumber => cardNumber->CardUtils.clearSpaces
-        | CardExpiryMonth =>
-          let (month, _) = CardUtils.getExpiryDates(cardExpiry)
-          month
-        | CardExpiryYear =>
-          let (_, year) = CardUtils.getExpiryDates(cardExpiry)
-          year
-        | CardCvc => cvcNumber
-        | StateAndCity
-        | CountryAndPincode(_)
-        | SpecialField(_)
-        | InfoElement
-        | CardExpiryMonthAndYear
-        | CardExpiryAndCvc
-        | None => ""
-        }
-        switch item.field_type {
-        | StateAndCity =>
-          acc->Js.Dict.set("billing.address.city", city.value->Js.Json.string)
-          acc->Js.Dict.set("billing.address.state", state.value->Js.Json.string)
-        | CountryAndPincode(_) =>
-          acc->Js.Dict.set("billing.address.country", city.value->Js.Json.string)
-          acc->Js.Dict.set("billing.address.zip", postalCode.value->Js.Json.string)
-        | _ => ()
+        | FullName => getName(item, fullName)
+        | _ => item.field_type->getFieldValueFromFieldType
         }
         if (
           isSavedCardFlow &&
@@ -393,24 +445,26 @@ let useRequiredFieldsBody = (
         }
         acc
       }, Js.Dict.empty())
+      ->addBillingDetailsIfUseBillingAddress
 
     setRequiredFieldsBody(_ => requiredFieldsBody)
     None
-  }, [
-    fullName.value,
-    email.value,
-    line1.value,
-    line2.value,
-    city.value,
-    postalCode.value,
-    state.value,
-    blikCode.value,
-    phone.value,
-    currency,
-    billingName.value,
-    country,
-    cardNumber,
-    cardExpiry,
-    cvcNumber,
-  ])
+  }, (
+    [currency, country, cardNumber, cardExpiry, cvcNumber],
+    [fullName, email, line1, line2, city, postalCode, state, blikCode, phone, billingName],
+    billingAddress,
+  ))
+}
+
+let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
+  switch fieldType {
+  | CardNumber
+  | CardExpiryMonth
+  | CardExpiryYear
+  | CardExpiryMonthAndYear
+  | CardCvc
+  | CardExpiryAndCvc
+  | Currency(_) => true
+  | _ => false
+  }
 }

@@ -123,6 +123,12 @@ type customerMethods = {
   card: customerCard,
 }
 type savedCardsLoadState = LoadingSavedCards | LoadedSavedCards(array<customerMethods>) | NoResult
+
+type billingAddress = {
+  isUseBillingAddress: bool,
+  usePrefilledValues: showType,
+}
+
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
@@ -138,6 +144,7 @@ type options = {
   branding: showType,
   payButtonStyle: style,
   showCardFormByDefault: bool,
+  billingAddress: billingAddress,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -233,6 +240,10 @@ let defaultWallets = {
   googlePay: Auto,
   style: defaultStyle,
 }
+let defaultBillingAddress = {
+  isUseBillingAddress: false,
+  usePrefilledValues: Auto,
+}
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
@@ -248,6 +259,7 @@ let defaultOptions = {
   payButtonStyle: defaultStyle,
   customMethodNames: [],
   showCardFormByDefault: true,
+  billingAddress: defaultBillingAddress,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -815,6 +827,31 @@ let getCustomMethodNames = (dict, str) => {
   })
 }
 
+let getBillingAddress = (dict, str, logger) => {
+  dict
+  ->Js.Dict.get(str)
+  ->Belt.Option.flatMap(Js.Json.decodeObject)
+  ->Belt.Option.map(json => {
+    unknownKeysWarning(
+      ["isUseBillingAddress", "usePrefilledValues"],
+      json,
+      "options.billingAddress",
+      ~logger,
+    )
+
+    {
+      isUseBillingAddress: getBoolWithWarning(json, "isUseBillingAddress", false, ~logger),
+      usePrefilledValues: getWarningString(
+        json,
+        "usePrefilledValues",
+        "auto",
+        ~logger,
+      )->getShowType("options.billingAddress.usePrefilledValues", logger),
+    }
+  })
+  ->Belt.Option.getWithDefault(defaultBillingAddress)
+}
+
 let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(
     [
@@ -852,6 +889,7 @@ let itemToObjMapper = (dict, logger) => {
     customMethodNames: getCustomMethodNames(dict, "customMethodNames"),
     payButtonStyle: getStyle(dict, "payButtonStyle", logger),
     showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
+    billingAddress: getBillingAddress(dict, "billingAddress", logger),
   }
 }
 
