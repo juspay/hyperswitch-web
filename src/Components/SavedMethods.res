@@ -11,7 +11,7 @@ let make = (
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (showFeilds, setShowFeilds) = Recoil.useRecoilState(RecoilAtoms.showCardFeildsAtom)
+  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let (token, _) = paymentToken
   let savedCardlength = savedMethods->Js.Array2.length
   let bottomElement = {
@@ -46,7 +46,7 @@ let make = (
       className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow"
       style={ReactDOMStyle.make(~padding="5px", ())}>
       {if (
-        savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFeilds)
+        savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields)
       ) {
         <div
           className="Label flex flex-row gap-3 items-end cursor-pointer"
@@ -67,16 +67,22 @@ let make = (
           </PaymentElementShimmer.Shimmer>
         </div>
       } else {
-        <RenderIf condition={!showFeilds}>
+        <RenderIf condition={!showFields}>
           <Block bottomElement padding="px-4 py-1" className="max-h-[309px] overflow-auto" />
         </RenderIf>
       }}
       <RenderIf condition={list.payment_methods->Js.Array.length !== 0}>
         <DynamicFields
-          paymentType list paymentMethod="card" paymentMethodType="debit" setRequiredFieldsBody isSavedCardFlow=true savedCards=savedMethods
+          paymentType
+          list
+          paymentMethod="card"
+          paymentMethodType="debit"
+          setRequiredFieldsBody
+          isSavedCardFlow=true
+          savedCards=savedMethods
         />
       </RenderIf>
-      <RenderIf condition={!showFeilds}>
+      <RenderIf condition={!showFields}>
         <div
           className="Label flex flex-row gap-3 items-end cursor-pointer"
           style={ReactDOMStyle.make(
@@ -89,9 +95,10 @@ let make = (
             (),
           )}
           onClick={_ => {
-            setShowFeilds(._ => true)
+            setShowFields(._ => true)
           }}>
-          <Icon name="circle-plus" size=22 /> {React.string(localeString.addNewCard)}
+          <Icon name="circle-plus" size=22 />
+          {React.string(localeString.addNewCard)}
         </div>
       </RenderIf>
     </div>

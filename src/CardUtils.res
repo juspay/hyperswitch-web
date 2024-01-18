@@ -581,3 +581,85 @@ let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?, (
   let countryPostal = Utils.getCountryPostal(country, postalCodes)
   countryPostal.regex == "" ? "" : countryPostal.regex
 }
+
+let getCardDetailsFromCardProps = cardProps => {
+  let defaultCardProps = (
+    None,
+    _ => (),
+    "",
+    _ => (),
+    _ => (),
+    React.useRef(Js.Nullable.null),
+    <> </>,
+    "",
+    _ => (),
+    0,
+  )
+
+  switch cardProps {
+  | Some(cardProps) => cardProps
+  | None => defaultCardProps
+  }
+}
+
+let getExpiryDetailsFromExpiryProps = expiryProps => {
+  let defaultExpiryProps = (
+    None,
+    _ => (),
+    "",
+    _ => (),
+    _ => (),
+    React.useRef(Js.Nullable.null),
+    _ => (),
+    "",
+    _ => (),
+  )
+
+  switch expiryProps {
+  | Some(expiryProps) => expiryProps
+  | None => defaultExpiryProps
+  }
+}
+
+let getCvcDetailsFromCvcProps = cvcProps => {
+  let defaultCvcProps = (
+    None,
+    _ => (),
+    "",
+    _ => (),
+    _ => (),
+    _ => (),
+    React.useRef(Js.Nullable.null),
+    _ => (),
+    "",
+    _ => (),
+  )
+
+  switch cvcProps {
+  | Some(cvcProps) => cvcProps
+  | None => defaultCvcProps
+  }
+}
+
+let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
+  if cardEmpty {
+    <Icon size=28 name="cvc-empty" />
+  } else if cardInvalid {
+    <div style={ReactDOMStyle.make(~color, ())}>
+      <Icon size=28 name="cvc-invalid" />
+    </div>
+  } else if cardComplete {
+    <Icon size=28 name="cvc-complete" />
+  } else {
+    <Icon size=28 name="cvc-empty" />
+  }
+}
+
+let useCardDetails = (~cvcNumber, ~isCvcValidValue, ~isCVCValid) => {
+  React.useMemo3(() => {
+    let isCardDetailsEmpty = Js.String2.length(cvcNumber) == 0
+    let isCardDetailsValid = isCvcValidValue == "valid"
+    let isCardDetailsInvalid = isCvcValidValue == "invalid"
+    (isCardDetailsEmpty, isCardDetailsValid, isCardDetailsInvalid)
+  }, (cvcNumber, isCvcValidValue, isCVCValid))
+}

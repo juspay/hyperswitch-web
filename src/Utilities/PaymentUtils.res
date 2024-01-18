@@ -231,10 +231,26 @@ let getDisplayNameAndIcon = (
   }
 }
 
-let updateDynamicFields = (arr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsFields>, ()) => {
+let combineStateAndCity = arr => {
   open PaymentMethodsRecord
   let hasStateAndCity =
     arr->Js.Array2.includes(AddressState) && arr->Js.Array2.includes(AddressCity)
+  if hasStateAndCity {
+    arr->Js.Array2.push(StateAndCity)->ignore
+    arr->Js.Array2.filter(item =>
+      switch item {
+      | AddressCity
+      | AddressState => false
+      | _ => true
+      }
+    )
+  } else {
+    arr
+  }
+}
+
+let combineCountryAndPostal = arr => {
+  open PaymentMethodsRecord
   let hasCountryAndPostal =
     arr
     ->Js.Array2.filter(item =>
@@ -255,43 +271,60 @@ let updateDynamicFields = (arr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsF
     )
   }, [""])
 
-  let newArr = {
-    switch (hasStateAndCity, hasCountryAndPostal) {
-    | (true, true) => {
-        arr->Js.Array2.push(StateAndCity)->ignore
-        arr->Js.Array2.push(CountryAndPincode(options))->ignore
-        arr->Js.Array2.filter(item =>
-          switch item {
-          | AddressCity
-          | AddressPincode
-          | AddressState
-          | AddressCountry(_) => false
-          | _ => true
-          }
-        )
+  if hasCountryAndPostal {
+    arr->Js.Array2.push(CountryAndPincode(options))->ignore
+    arr->Js.Array2.filter(item =>
+      switch item {
+      | AddressPincode
+      | AddressCountry(_) => false
+      | _ => true
       }
-    | (true, false) => {
-        arr->Js.Array2.push(StateAndCity)->ignore
-        arr->Js.Array2.filter(item =>
-          switch item {
-          | AddressCity
-          | AddressState => false
-          | _ => true
-          }
-        )
-      }
-    | (false, true) => {
-        arr->Js.Array2.push(CountryAndPincode(options))->ignore
-        arr->Js.Array2.filter(item =>
-          switch item {
-          | AddressPincode
-          | AddressCountry(_) => false
-          | _ => true
-          }
-        )
-      }
-    | (_, _) => arr
-    }
+    )
+  } else {
+    arr
   }
-  newArr
+}
+
+let combineCardExpiryMonthAndYear = arr => {
+  open PaymentMethodsRecord
+  let hasCardExpiryMonthAndYear =
+    arr->Js.Array2.includes(CardExpiryMonth) && arr->Js.Array2.includes(CardExpiryYear)
+  if hasCardExpiryMonthAndYear {
+    arr->Js.Array2.push(CardExpiryMonthAndYear)->ignore
+    arr->Js.Array2.filter(item =>
+      switch item {
+      | CardExpiryMonth
+      | CardExpiryYear => false
+      | _ => true
+      }
+    )
+  } else {
+    arr
+  }
+}
+
+let combineCardExpiryAndCvc = arr => {
+  open PaymentMethodsRecord
+  let hasCardExpiryAndCvc =
+    arr->Js.Array2.includes(CardExpiryMonthAndYear) && arr->Js.Array2.includes(CardCvc)
+  if hasCardExpiryAndCvc {
+    arr->Js.Array2.push(CardExpiryAndCvc)->ignore
+    arr->Js.Array2.filter(item =>
+      switch item {
+      | CardExpiryMonthAndYear
+      | CardCvc => false
+      | _ => true
+      }
+    )
+  } else {
+    arr
+  }
+}
+
+let updateDynamicFields = (arr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsFields>, ()) => {
+  arr
+  ->combineStateAndCity
+  ->combineCountryAndPostal
+  ->combineCardExpiryMonthAndYear
+  ->combineCardExpiryAndCvc
 }

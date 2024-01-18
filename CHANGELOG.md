@@ -1,3 +1,31 @@
+## [0.18.1](https://github.com/juspay/hyperswitch-web/compare/v0.18.0...v0.18.1) (2024-01-18)
+
+
+### Bug Fixes
+
+* HS-111: FIxed the displayname of open banking uk ([#108](https://github.com/juspay/hyperswitch-web/issues/108)) ([07508a2](https://github.com/juspay/hyperswitch-web/commit/07508a252ce98e1b9aa0a9a50481047b4bba81f7))
+
+# [0.18.0](https://github.com/juspay/hyperswitch-web/compare/v0.17.0...v0.18.0) (2024-01-16)
+
+
+### Features
+
+* HS-181: Added support of Dynamic Fields For Bancontact ([#72](https://github.com/juspay/hyperswitch-web/issues/72)) ([0d13e7a](https://github.com/juspay/hyperswitch-web/commit/0d13e7ae5406f3ef555d49fc7509f77b023dfc5b))
+
+# [0.17.0](https://github.com/juspay/hyperswitch-web/compare/v0.16.8...v0.17.0) (2024-01-11)
+
+
+### Features
+
+* HS-188: Building before committing and added release rules ([#90](https://github.com/juspay/hyperswitch-web/issues/90)) ([7e8b23a](https://github.com/juspay/hyperswitch-web/commit/7e8b23a9246cbadf85283793cfc8b58f616e6e9f))
+
+## [0.16.8](https://github.com/juspay/hyperswitch-web/compare/v0.16.7...v0.16.8) (2024-01-11)
+
+
+### Bug Fixes
+
+* HS-132: Fixed areRequiredFieldsValid for postal code ([#83](https://github.com/juspay/hyperswitch-web/issues/83)) ([bccd88c](https://github.com/juspay/hyperswitch-web/commit/bccd88cb98e53ac856764420478b578df5a3d5bf))
+
 ## [0.16.7](https://github.com/juspay/hyperswitch-web/compare/v0.16.6...v0.16.7) (2023-12-27)
 
 
