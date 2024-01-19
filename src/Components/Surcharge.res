@@ -59,9 +59,9 @@ let make = (
 
   switch getSurchargeMessage() {
   | Some(surchargeMessage) =>
-    <div className="flex items-center text-xs mt-2">
+    <div className="flex items-baseline text-xs mt-2">
       <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
-      <span className="text-left"> {React.string(surchargeMessage)} </span>
+      <em className="text-left text-gray-400"> {surchargeMessage} </em>
     </div>
   | None => React.null
   }

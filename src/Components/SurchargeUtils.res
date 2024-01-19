@@ -72,17 +72,35 @@ let getOneClickWalletsMessage = (~list) => {
   if oneClickWalletsArr->Js.Array2.length !== 0 {
     let msg = oneClickWalletsArr->Js.Array2.reducei((acc, wallet, index) => {
       let amount = wallet.surchargeDetails.displayTotalSurchargeAmount->Js.Float.toString
-      let walletMsg = `${amount} ${localeString.on} ${wallet.name}`
+      let myMsg =
+        <>
+          <strong> {React.string(amount)} </strong>
+          {React.string(`${Utils.nbsp}${localeString.on} ${wallet.name}`)}
+        </>
       let msgToConcat = if index === 0 {
-        walletMsg
+        myMsg
       } else if index === oneClickWalletsArr->Belt.Array.length - 1 {
-        ` ${localeString.\"and"} ${walletMsg}`
+        <>
+          {React.string(`${Utils.nbsp}${localeString.\"and"}${Utils.nbsp}`)}
+          {myMsg}
+        </>
       } else {
-        `, ${walletMsg}`
+        <>
+          {React.string(`,${Utils.nbsp}`)}
+          {myMsg}
+        </>
       }
-      acc->Js.String2.concat(msgToConcat)
-    }, "")
-    Some(`${localeString.surchargeMsgAmountForOneClickWallets}: ${msg}`)
+      <>
+        {acc}
+        {msgToConcat}
+      </>
+    }, React.null)
+    let finalElement =
+      <>
+        {React.string(`${localeString.surchargeMsgAmountForOneClickWallets}:${Utils.nbsp}`)}
+        {msg}
+      </>
+    Some(finalElement)
   } else {
     None
   }

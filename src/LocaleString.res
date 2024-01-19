@@ -42,8 +42,8 @@ type localeStrings = {
   enterFieldsText: string,
   enterValidDetailsText: string,
   card: string,
-  surchargeMsgAmount: string => string,
-  surchargeMsgAmountForCard: string => string,
+  surchargeMsgAmount: string => React.element,
+  surchargeMsgAmountForCard: string => React.element,
   surchargeMsgAmountForOneClickWallets: string,
   billingNameLabel: string,
   billingNamePlaceholder: string,
@@ -99,9 +99,16 @@ let defaultLocale = {
   enterFieldsText: "Please enter all fields",
   enterValidDetailsText: "Please enter valid details",
   card: "Card",
-  surchargeMsgAmount: str => `A surcharge amount of ${str} will be applied for this transaction`,
-  surchargeMsgAmountForCard: str =>
-    `A surcharge amount of upto ${str} will be applied for this transaction`,
+  surchargeMsgAmount: str => <>
+    {React.string(`A surcharge amount of${Utils.nbsp}`)}
+    <strong> {React.string(str)} </strong>
+    {React.string({`${Utils.nbsp}will be applied for this transaction`})}
+  </>,
+  surchargeMsgAmountForCard: str => <>
+    {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
+    <strong> {React.string(str)} </strong>
+    {React.string(`${Utils.nbsp}will be applied for this transaction`)}
+  </>,
   surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
   billingNameLabel: "Billing name",
   billingNamePlaceholder: "First and last name",
@@ -159,9 +166,16 @@ let localeStrings = [
     enterFieldsText: "Please enter all fields",
     enterValidDetailsText: "Please enter valid details",
     card: "Card",
-    surchargeMsgAmount: str => `A surcharge amount of ${str} will be applied for this transaction`,
-    surchargeMsgAmountForCard: str =>
-      `A surcharge amount of upto ${str} will be applied for this transaction`,
+    surchargeMsgAmount: str => <>
+      {React.string(`A surcharge amount of${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string({`${Utils.nbsp}will be applied for this transaction`})}
+    </>,
+    surchargeMsgAmountForCard: str => <>
+      {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}will be applied for this transaction`)}
+    </>,
     surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
     billingNameLabel: "Billing name",
     billingNamePlaceholder: "First and last name",
@@ -216,9 +230,16 @@ let localeStrings = [
     enterFieldsText: `יש להזין את כל השדות`,
     enterValidDetailsText: `יש להזין פרטים תקינים`,
     card: `כרטיס`,
-    surchargeMsgAmount: str => `סכום היטל של ${str} יוחל עבור עסקה זו`,
-    surchargeMsgAmountForCard: str =>
-      `סכום היטל של עד ${str} יחול עבור עסקה זו`,
+    surchargeMsgAmount: str => <>
+      {React.string(`סכום היטל של${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}יוחל עבור עסקה זו`)}
+    </>,
+    surchargeMsgAmountForCard: str => <>
+      {React.string(`סכום היטל של עד${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}יחול עבור עסקה זו`)}
+    </>,
     surchargeMsgAmountForOneClickWallets: `תשלום נוסף חל`,
     billingNameLabel: `שם החיוב`,
     billingNamePlaceholder: `שם פרטי ושם משפחה`,
@@ -273,10 +294,16 @@ let localeStrings = [
     enterFieldsText: `Veuillez saisir tous les champs`,
     enterValidDetailsText: `Veuillez saisir des informations valides`,
     card: `Carte`,
-    surchargeMsgAmount: str =>
-      `Un montant supplémentaire d'${str} sera appliqué pour cette transaction`,
-    surchargeMsgAmountForCard: str =>
-      `Un montant supplémentaire allant jusqu'à ${str} sera appliqué pour cette transaction.`,
+    surchargeMsgAmount: str => <>
+      {React.string(`Un montant supplémentaire d'${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}sera appliqué pour cette transaction`)}
+    </>,
+    surchargeMsgAmountForCard: str => <>
+      {React.string(`Un montant supplémentaire allant jusqu'à${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}sera appliqué pour cette transaction.`)}
+    </>,
     surchargeMsgAmountForOneClickWallets: `Frais supplémentaires applicables`,
     billingNameLabel: `Nom de facturation`,
     billingNamePlaceholder: `Prénom et nom de famille`,
@@ -331,9 +358,16 @@ let localeStrings = [
     enterFieldsText: "Please enter all fields",
     enterValidDetailsText: "Please enter valid details",
     card: "Card",
-    surchargeMsgAmount: str => `A surcharge amount of ${str} will be applied for this transaction`,
-    surchargeMsgAmountForCard: str =>
-      `A surcharge amount of upto ${str} will be applied for this transaction`,
+    surchargeMsgAmount: str => <>
+      {React.string(`A surcharge amount of${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}will be applied for this transaction`)}
+    </>,
+    surchargeMsgAmountForCard: str => <>
+      {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}will be applied for this transaction`)}
+    </>,
     surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
     billingNameLabel: "Billing name",
     billingNamePlaceholder: "First and last name",
@@ -388,10 +422,16 @@ let localeStrings = [
     enterFieldsText: `الرجاء إدخال كافة الحقول`,
     enterValidDetailsText: `الرجاء إدخال تفاصيل صالحة`,
     card: `بطاقة`,
-    surchargeMsgAmount: str =>
-      `سيتم تطبيق مبلغ إضافي من ${str} على هذه المعاملة`,
-    surchargeMsgAmountForCard: str =>
-      `سيتم تطبيق مبلغ إضافي يصل إلى ${str} على هذه المعاملة`,
+    surchargeMsgAmount: str => <>
+      {React.string(`سيتم تطبيق مبلغ إضافي من${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}على هذه المعاملة`)}
+    </>,
+    surchargeMsgAmountForCard: str => <>
+      {React.string(`سيتم تطبيق مبلغ إضافي يصل إلى${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}على هذه المعاملة`)}
+    </>,
     surchargeMsgAmountForOneClickWallets: `رسوم إضافية قابلة للتطبيق`,
     billingNameLabel: `اسم الفواتير`,
     billingNamePlaceholder: `الاسم الأول والاسم الأخير`,
@@ -446,9 +486,16 @@ let localeStrings = [
     enterFieldsText: `すべてのフィールドに入力してください`,
     enterValidDetailsText: `有効な詳細を入力してください`,
     card: `カード`,
-    surchargeMsgAmount: str => `この取引には ${str} の追加料金が適用されます`,
-    surchargeMsgAmountForCard: str =>
-      `この取引には ${str} までの追加料金が適用されます`,
+    surchargeMsgAmount: str => <>
+      {React.string(`この取引には${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}の追加料金が適用されます`)}
+    </>,
+    surchargeMsgAmountForCard: str => <>
+      {React.string(`この取引には${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}までの追加料金が適用されます`)}
+    </>,
     surchargeMsgAmountForOneClickWallets: `追加料金が適用されます`,
     billingNameLabel: `課金名`,
     billingNamePlaceholder: `名前と苗字`,
@@ -503,10 +550,16 @@ let localeStrings = [
     enterFieldsText: `Bitte füllen Sie alle Felder aus`,
     enterValidDetailsText: `Bitte geben Sie gültige Daten ein`,
     card: `Karte`,
-    surchargeMsgAmount: str =>
-      `Für diese Transaktion wird ein Zuschlag in Höhe von ${str} erhoben`,
-    surchargeMsgAmountForCard: str =>
-      `Für diese Transaktion wird ein Zuschlagsbetrag von bis zu ${str} erhoben`,
+    surchargeMsgAmount: str => <>
+      {React.string(`Für diese Transaktion wird ein Zuschlag in Höhe von${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}erhoben`)}
+    </>,
+    surchargeMsgAmountForCard: str => <>
+      {React.string(`Für diese Transaktion wird ein Zuschlagsbetrag von bis zu${Utils.nbsp}`)}
+      <strong> {React.string(str)} </strong>
+      {React.string(`${Utils.nbsp}erhoben`)}
+    </>,
     surchargeMsgAmountForOneClickWallets: `Es fällt eine zusätzliche Gebühr an`,
     billingNameLabel: `Abrechnungsname`,
     billingNamePlaceholder: `Vor-und Nachname`,
