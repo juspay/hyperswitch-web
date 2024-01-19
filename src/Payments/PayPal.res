@@ -16,6 +16,7 @@ let make = (~list: PaymentMethodsRecord.list) => {
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
+  let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let (_, _, labelType) = options.wallets.style.type_
   let _label = switch labelType {
   | Paypal(val) => val->PaypalSDKTypes.getLabel
@@ -49,6 +50,15 @@ let make = (~list: PaymentMethodsRecord.list) => {
       (),
     )
   }
+
+  React.useEffect0(() => {
+    areOneClickWalletsRendered(.prev => {
+      ...prev,
+      isPaypal: true,
+    })
+    None
+  })
+
   <button
     style={ReactDOMStyle.make(
       ~display="inline-block",

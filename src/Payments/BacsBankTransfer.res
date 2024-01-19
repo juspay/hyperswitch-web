@@ -58,6 +58,7 @@ let default = (props: props) => {
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingTab, ())}>
     <EmailPaymentInput paymentType=props.paymentType />
     <FullNamePaymentInput paymentType={props.paymentType} />
+    <Surcharge list=props.list paymentMethod="bank_transfer" paymentMethodType="bacs" />
     <InfoElement />
   </div>
 }

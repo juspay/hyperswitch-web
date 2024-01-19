@@ -47,6 +47,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingTab, ())}>
     <EmailPaymentInput paymentType />
+    <Surcharge list paymentMethod="bank_transfer" paymentMethodType="ach" />
     <InfoElement />
   </div>
 }

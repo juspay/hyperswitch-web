@@ -22,6 +22,7 @@ let make = (
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let isWallet = walletOptions->Js.Array2.includes("apple_pay")
+  let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
   let applePayPaymentMethodType = React.useMemo1(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -301,6 +302,10 @@ let make = (
       isWallet
     ) {
       setShowApplePay(_ => true)
+      areOneClickWalletsRendered(.prev => {
+        ...prev,
+        isApplePay: true,
+      })
       setIsShowOrPayUsing(._ => true)
     }
     None

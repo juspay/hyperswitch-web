@@ -53,3 +53,20 @@ let isShowOrPayUsing = Recoil.atom(. "isShowOrPayUsing", false)
 let areRequiredFieldsValid = Recoil.atom(. "areRequiredFieldsValid", true)
 let areRequiredFieldsEmpty = Recoil.atom(. "areRequiredFieldsEmpty", false)
 let userBillingName = Recoil.atom(. "userBillingName", defaultFieldValues)
+
+type areOneClickWalletsRendered = {
+  isGooglePay: bool,
+  isApplePay: bool,
+  isPaypal: bool,
+}
+
+let defaultAreOneClickWalletsRendered = {
+  isGooglePay: false,
+  isApplePay: false,
+  isPaypal: false,
+}
+
+let areOneClickWalletsRendered = Recoil.atom(.
+  "areOneClickWalletsBtnRendered",
+  defaultAreOneClickWalletsRendered,
+)

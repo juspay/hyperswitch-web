@@ -1,5 +1,11 @@
 @react.component
-let make = (~list, ~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTFOUND) => {
+let make = (
+  ~list,
+  ~paymentMethod,
+  ~paymentMethodType,
+  ~cardBrand=CardUtils.NOTFOUND,
+  ~isForWallets=false,
+) => {
   let getPaymentMethodTypes = paymentMethodType => {
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~list,
@@ -10,66 +16,52 @@ let make = (~list, ~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTF
 
   let paymentMethodTypes = paymentMethodType->getPaymentMethodTypes
 
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-
-  let getMessage = (surchargeDetails: PaymentMethodsRecord.surchargeDetails) => {
-    let surchargeValue = surchargeDetails.displayTotalSurchargeAmount->Js.Float.toString
-
-    let getLocaleStrForSurcharge = (cardLocale, altPaymentLocale) => {
-      paymentMethod === "card" ? cardLocale(surchargeValue) : altPaymentLocale(surchargeValue)
-    }
-
-    Some(
-      getLocaleStrForSurcharge(
-        localeString.surchargeMsgAmountForCard,
-        localeString.surchargeMsgAmount,
-      ),
-    )
-  }
-
-  let getCardNetwork = (paymentMethodType: PaymentMethodsRecord.paymentMethodTypes) => {
-    paymentMethodType.card_networks
-    ->Js.Array2.filter(cardNetwork => cardNetwork.card_network === cardBrand)
-    ->Belt.Array.get(0)
-    ->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultCardNetworks)
-  }
-
   let getSurchargeMessage = () => {
-    switch paymentMethodTypes.surcharge_details {
-    | Some(surchargeDetails) => surchargeDetails->getMessage
-    | None =>
-      if paymentMethod === "card" {
-        let creditPaymentMethodTypes = getPaymentMethodTypes("credit")
+    if isForWallets {
+      SurchargeUtils.getOneClickWalletsMessage(~list)
+    } else {
+      switch paymentMethodTypes.surcharge_details {
+      | Some(surchargeDetails) => SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails)
+      | None =>
+        if paymentMethod === "card" {
+          let creditPaymentMethodTypes = getPaymentMethodTypes("credit")
 
-        let debitCardNetwork = paymentMethodTypes->getCardNetwork
-        let creditCardNetwork = creditPaymentMethodTypes->getCardNetwork
+          let debitCardNetwork = PaymentMethodsRecord.getCardNetwork(
+            ~paymentMethodType=paymentMethodTypes,
+            ~cardBrand,
+          )
+          let creditCardNetwork = PaymentMethodsRecord.getCardNetwork(
+            ~paymentMethodType=creditPaymentMethodTypes,
+            ~cardBrand,
+          )
 
-        switch (debitCardNetwork.surcharge_details, creditCardNetwork.surcharge_details) {
-        | (Some(debitSurchargeDetails), Some(creditSurchargeDetails)) =>
-          let creditCardSurcharge = creditSurchargeDetails.displayTotalSurchargeAmount
-          let debitCardSurcharge = debitSurchargeDetails.displayTotalSurchargeAmount
+          switch (debitCardNetwork.surcharge_details, creditCardNetwork.surcharge_details) {
+          | (Some(debitSurchargeDetails), Some(creditSurchargeDetails)) =>
+            let creditCardSurcharge = creditSurchargeDetails.displayTotalSurchargeAmount
+            let debitCardSurcharge = debitSurchargeDetails.displayTotalSurchargeAmount
 
-          if creditCardSurcharge >= debitCardSurcharge {
-            creditSurchargeDetails->getMessage
-          } else {
-            debitSurchargeDetails->getMessage
+            if creditCardSurcharge >= debitCardSurcharge {
+              SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails={creditSurchargeDetails})
+            } else {
+              SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails={debitSurchargeDetails})
+            }
+          | (None, Some(surchargeDetails))
+          | (Some(surchargeDetails), None) =>
+            SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails)
+          | (None, None) => None
           }
-        | (None, Some(surchargeDetails))
-        | (Some(surchargeDetails), None) =>
-          surchargeDetails->getMessage
-        | (None, None) => None
+        } else {
+          None
         }
-      } else {
-        None
       }
     }
   }
 
   switch getSurchargeMessage() {
   | Some(surchargeMessage) =>
-    <div className="flex items-center text-xs mt-2">
+    <div className="flex items-baseline text-xs mt-2">
       <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
-      <span className="text-left"> {React.string(surchargeMessage)} </span>
+      <em className="text-left text-gray-400"> {surchargeMessage} </em>
     </div>
   | None => React.null
   }
