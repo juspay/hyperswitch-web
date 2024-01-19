@@ -1,3 +1,10 @@
+# [0.19.0](https://github.com/juspay/hyperswitch-web/compare/v0.18.1...v0.19.0) (2024-01-19)
+
+
+### Features
+
+* HS-148: Added Surcharge for One Click Wallets ([#110](https://github.com/juspay/hyperswitch-web/issues/110)) ([ee72b3f](https://github.com/juspay/hyperswitch-web/commit/ee72b3f687d8c1778b602ee02072c600d3ed31ae))
+
 ## [0.18.1](https://github.com/juspay/hyperswitch-web/compare/v0.18.0...v0.18.1) (2024-01-18)
 
 
