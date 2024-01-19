@@ -128,6 +128,16 @@ module.exports = (publicPath = "auto") => {
         inject: false,
         template: "./public/build.html",
       }),
+      new HtmlWebpackPlugin({
+        inject: false,
+        template: "./public/build.html",
+      }),
+      new HtmlWebpackPlugin({
+        // Also generate a test.html
+        inject: false,
+        filename: "fullscreenIndex.html",
+        template: "./public/fullscreenIndexTemplate.html",
+      }),
       new BundleAnalyzerPlugin({
         analyzerMode: "static",
         reportFilename: "bundle-report.html",

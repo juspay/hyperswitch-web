@@ -243,8 +243,8 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             )
             let iframeURL =
               fullscreenParam.contents != ""
-                ? `${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${fullscreenParam.contents}`
-                : `${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=fullscreen`
+                ? `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=${fullscreenParam.contents}`
+                : `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=fullscreen`
             fullscreen.contents
               ? {
                   if iframeID == localSelectorString {
@@ -333,15 +333,15 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
     }
 
     {
-      on: on,
-      collapse: collapse,
-      blur: blur,
-      focus: focus,
-      clear: clear,
-      unmount: unmount,
-      destroy: destroy,
-      update: update,
-      mount: mount,
+      on,
+      collapse,
+      blur,
+      focus,
+      clear,
+      unmount,
+      destroy,
+      update,
+      mount,
     }
   } catch {
   | e => {
