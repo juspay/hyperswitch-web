@@ -12,7 +12,6 @@ let make = (
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (token, _) = paymentToken
   let savedCardlength = savedMethods->Js.Array2.length
   let bottomElement = {
@@ -72,9 +71,6 @@ let make = (
           <Block bottomElement padding="px-4 py-1" className="max-h-[309px] overflow-auto" />
         </RenderIf>
       }}
-      <RenderIf condition={billingAddress.isUseBillingAddress}>
-        <BillingAddress paymentType />
-      </RenderIf>
       <DynamicFields
         paymentType
         list

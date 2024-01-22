@@ -60,9 +60,7 @@ let make = (
       ~isAllStoredCardsHaveName,
       (),
     )
-    ->Utils.removeDuplicate
-    ->Js.Array2.filter(item => item !== None)
-    ->PaymentUtils.updateDynamicFields()
+    ->DynamicFieldsUtils.updateDynamicFields()
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
   //<...>//
 

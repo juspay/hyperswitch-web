@@ -13,7 +13,6 @@ let make = (
   let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
   let phoneNumber = Recoil.useRecoilValueFromAtom(userPhoneNumber)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let optionPaymentMethodDetails =
     list
@@ -117,9 +116,6 @@ let make = (
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
-    <RenderIf condition={billingAddress.isUseBillingAddress}>
-      <BillingAddress paymentType />
-    </RenderIf>
     <DynamicFields
       paymentType
       list

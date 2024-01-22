@@ -315,9 +315,6 @@ let make = (
               </div>
             </div>
           </RenderIf>
-          <RenderIf condition={options.billingAddress.isUseBillingAddress}>
-            <BillingAddress paymentType />
-          </RenderIf>
           <DynamicFields
             paymentType
             list
