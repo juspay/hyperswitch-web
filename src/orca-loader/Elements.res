@@ -18,6 +18,7 @@ type trustPayFunctions = {
 let make = (
   options,
   setIframeRef,
+  ~clientSecret,
   ~sdkSessionId,
   ~publishableKey,
   ~logger: option<OrcaLogger.loggerMake>,
@@ -31,7 +32,6 @@ let make = (
     let logger = logger->Belt.Option.getWithDefault(OrcaLogger.defaultLoggerConfig)
     let savedPaymentElement = Js.Dict.empty()
     let localOptions = options->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
-    let clientSecretId = localOptions->getRequiredString("clientSecret", "", ~logger)
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
     let appearance =
       localOptions
@@ -45,15 +45,30 @@ let make = (
       ->Belt.Option.getWithDefault([])
       ->Js.Json.array
 
+    let blockConfirm =
+      GlobalVars.isInteg &&
+      options
+      ->Js.Json.decodeObject
+      ->Belt.Option.flatMap(x => x->Js.Dict.get("blockConfirm"))
+      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
+      ->Belt.Option.getWithDefault(false)
+    let switchToCustomPod =
+      GlobalVars.isInteg &&
+      options
+      ->Js.Json.decodeObject
+      ->Belt.Option.flatMap(x => x->Js.Dict.get("switchToCustomPod"))
+      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
+      ->Belt.Option.getWithDefault(false)
+
     let paymentMethodListPromise = PaymentHelpers.usePaymentMethodList(
-      ~clientSecret=clientSecretId,
+      ~clientSecret,
       ~publishableKey,
       ~endpoint,
       ~logger,
     )
 
     let sessionsPromise = PaymentHelpers.useSessions(
-      ~clientSecret=clientSecretId,
+      ~clientSecret,
       ~publishableKey,
       ~endpoint,
       ~optLogger=Some(logger),
@@ -111,7 +126,7 @@ let make = (
     }
     let fetchCustomerDetails = mountedIframeRef => {
       let customerDetailsPromise = PaymentHelpers.useCustomerDetails(
-        ~clientSecret=clientSecretId,
+        ~clientSecret,
         ~publishableKey,
         ~endpoint,
         ~optLogger=Some(logger),
@@ -225,6 +240,9 @@ let make = (
             ("endpoint", endpoint->Js.Json.string),
             ("sdkSessionId", sdkSessionId->Js.Json.string),
             ("sdkHandleConfirmPayment", sdkHandleConfirmPayment->Js.Json.boolean),
+            ("blockConfirm", blockConfirm->Js.Json.boolean),
+            ("switchToCustomPod", switchToCustomPod->Js.Json.boolean),
+            ("endpoint", endpoint->Js.Json.string),
             ("parentURL", "*"->Js.Json.string),
             ("analyticsMetadata", analyticsMetadata),
           ]->Js.Dict.fromArray
@@ -240,7 +258,13 @@ let make = (
                 let msg = [("applePayCanMakePayments", true->Js.Json.boolean)]->Js.Dict.fromArray
                 mountedIframeRef->Window.iframePostMessage(msg)
               } else {
-                Utils.logInfo(Js.log("CANNOT MAKE PAYMENT USING APPLE PAY"))
+                logger.setLogInfo(
+                  ~value="CANNOT MAKE PAYMENT USING APPLE PAY",
+                  ~eventName=APPLE_PAY_FLOW,
+                  ~paymentMethod="APPLE_PAY",
+                  ~logType=ERROR,
+                  (),
+                )
               }
 
             | None => ()
@@ -330,7 +354,7 @@ let make = (
 
         addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
-        Window.removeEventListener("message", handleApplePayMessages.contents)
+
         sessionsPromise
         ->then(json => {
           let sessionsArr =

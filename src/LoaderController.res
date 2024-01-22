@@ -200,8 +200,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
               let sdkSessionId = dict->getString("sdkSessionId", "no-element")
               logger.setSessionId(sdkSessionId)
               if Window.isInteg {
-                setBlockConfirm(._ => dict->getBool("AOrcaBBlockPConfirm", false))
-                setSwitchToCustomPod(._ => dict->getBool("switchToCustomPodABP", false))
+                setBlockConfirm(._ => dict->getBool("blockConfirm", false))
+                setSwitchToCustomPod(._ => dict->getBool("switchToCustomPod", false))
               }
               updateOptions(dict)
               setSessionId(._ => {
