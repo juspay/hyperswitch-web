@@ -220,6 +220,7 @@ let make = (
   }
 
   DynamicFieldsUtils.useRequiredFieldsEmptyAndValid(
+    ~requiredFields,
     ~fieldsArr,
     ~countryNames,
     ~bankNames,
@@ -449,11 +450,15 @@ let make = (
                     {switch item {
                     | FullName =>
                       <FullNamePaymentInput
-                        paymentType customFieldName={item->getCustomFieldName}
+                        paymentType
+                        customFieldName={item->getCustomFieldName}
+                        optionalRequiredFields={Some(requiredFields)}
                       />
                     | BillingName =>
                       <BillingNamePaymentInput
-                        paymentType customFieldName={item->getCustomFieldName}
+                        paymentType
+                        customFieldName={item->getCustomFieldName}
+                        optionalRequiredFields={Some(requiredFields)}
                       />
                     | Email => <EmailPaymentInput paymentType />
                     | PhoneNumber => <PhoneNumberPaymentInput />

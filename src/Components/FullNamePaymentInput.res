@@ -3,7 +3,7 @@ open PaymentType
 open Utils
 
 @react.component
-let make = (~paymentType, ~customFieldName=None) => {
+let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -35,6 +35,17 @@ let make = (~paymentType, ~customFieldName=None) => {
           ...prev,
           errorString: `Please provide your ${fieldName}`,
         })
+      } else {
+        switch optionalRequiredFields {
+        | Some(requiredFields) =>
+          if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, FullName, fullName) {
+            setFullName(.prev => {
+              ...prev,
+              errorString: `Please provide your complete ${fieldName}`,
+            })
+          }
+        | None => ()
+        }
       }
     }
   }, [fullName])
