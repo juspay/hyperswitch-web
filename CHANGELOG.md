@@ -1,3 +1,10 @@
+## [0.20.3](https://github.com/juspay/hyperswitch-web/compare/v0.20.2...v0.20.3) (2024-01-22)
+
+
+### Bug Fixes
+
+* HS-168: Updated Payment Helpers ([#33](https://github.com/juspay/hyperswitch-web/issues/33)) ([d867859](https://github.com/juspay/hyperswitch-web/commit/d867859074a5b97f6eff04b2f0bf0c54eee67e8c))
+
 ## [0.20.2](https://github.com/juspay/hyperswitch-web/compare/v0.20.1...v0.20.2) (2024-01-22)
 
 
