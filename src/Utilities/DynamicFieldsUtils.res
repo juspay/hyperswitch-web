@@ -71,7 +71,29 @@ let addBillingAddressIfUseBillingAddress = fieldsArr => {
   }
 }
 
+let checkIfNameIsValid = (
+  requiredFieldsType: array<PaymentMethodsRecord.required_fields>,
+  paymentMethodFields,
+  field: RecoilAtomTypes.field,
+) => {
+  requiredFieldsType
+  ->Js.Array2.filter(required_field => required_field.field_type === paymentMethodFields)
+  ->Js.Array2.reduce((acc, item) => {
+    let fieldNameArr = field.value->Js.String2.split(" ")
+    let requiredFieldsArr = item.required_field->Js.String2.split(".")
+    let fieldValue = switch requiredFieldsArr
+    ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
+    ->Belt.Option.getWithDefault("") {
+    | "first_name" => fieldNameArr->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+    | "last_name" => fieldNameArr->Belt.Array.get(1)->Belt.Option.getWithDefault("")
+    | _ => field.value
+    }
+    acc && fieldValue !== ""
+  }, true)
+}
+
 let useRequiredFieldsEmptyAndValid = (
+  ~requiredFields,
   ~fieldsArr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsFields>,
   ~countryNames,
   ~bankNames,
@@ -101,43 +123,40 @@ let useRequiredFieldsEmptyAndValid = (
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress
 
   React.useEffect7(() => {
-    let areRequiredFieldsValid =
-      fieldsArrWithBillingAddress->Js.Array2.reduce((acc, paymentMethodFields) => {
-        acc &&
-        switch paymentMethodFields {
-        | Email => email.isValid
-        | FullName => Some(fullName.value !== "")
-        | Country => Some(country !== "" || countryNames->Belt.Array.length === 0)
-        | AddressCountry(countryArr) => Some(country !== "" || countryArr->Belt.Array.length === 0)
-        | BillingName => Some(billingName.value !== "")
-        | AddressLine1 => Some(line1.value !== "")
-        | AddressLine2 => Some(line2.value !== "")
-        | Bank => Some(selectedBank !== "" || bankNames->Belt.Array.length === 0)
-        | PhoneNumber => Some(phone.value !== "")
-        | StateAndCity => Some(state.value !== "" && city.value !== "")
-        | CountryAndPincode(countryArr) =>
-          Some(
-            (country !== "" || countryArr->Belt.Array.length === 0) &&
-              postalCode.isValid->Belt.Option.getWithDefault(false),
-          )
-        | AddressCity => Some(city.value !== "")
-        | AddressPincode => postalCode.isValid
-        | AddressState => Some(state.value !== "")
-        | BlikCode => Some(blikCode.value !== "")
-        | Currency(currencyArr) => Some(currency !== "" || currencyArr->Belt.Array.length === 0)
-        | CardNumber => isCardValid
-        | CardExpiryMonth
-        | CardExpiryYear
-        | CardExpiryMonthAndYear => isExpiryValid
-        | CardCvc => isCVCValid
-        | CardExpiryAndCvc =>
-          Some(
-            isExpiryValid->Belt.Option.getWithDefault(false) &&
-              isCVCValid->Belt.Option.getWithDefault(false),
-          )
-        | _ => Some(true)
-        }->Belt.Option.getWithDefault(false)
-      }, true)
+    let areRequiredFieldsValid = fieldsArr->Js.Array2.reduce((acc, paymentMethodFields) => {
+      acc &&
+      switch paymentMethodFields {
+      | Email => email.isValid->Belt.Option.getWithDefault(false)
+      | FullName => checkIfNameIsValid(requiredFields, paymentMethodFields, fullName)
+      | Country => country !== "" || countryNames->Belt.Array.length === 0
+      | AddressCountry(countryArr) => country !== "" || countryArr->Belt.Array.length === 0
+      | BillingName => checkIfNameIsValid(requiredFields, paymentMethodFields, billingName)
+      | AddressLine1 => line1.value !== ""
+      | AddressLine2 => line2.value !== ""
+      | Bank => selectedBank !== "" || bankNames->Belt.Array.length === 0
+      | PhoneNumber => phone.value !== ""
+      | StateAndCity => state.value !== "" && city.value !== ""
+      | CountryAndPincode(countryArr) =>
+        (country !== "" || countryArr->Belt.Array.length === 0) &&
+          postalCode.isValid->Belt.Option.getWithDefault(false)
+
+      | AddressCity => city.value !== ""
+      | AddressPincode => postalCode.isValid->Belt.Option.getWithDefault(false)
+      | AddressState => state.value !== ""
+      | BlikCode => blikCode.value !== ""
+      | Currency(currencyArr) => currency !== "" || currencyArr->Belt.Array.length === 0
+      | CardNumber => isCardValid->Belt.Option.getWithDefault(false)
+      | CardExpiryMonth
+      | CardExpiryYear
+      | CardExpiryMonthAndYear =>
+        isExpiryValid->Belt.Option.getWithDefault(false)
+      | CardCvc => isCVCValid->Belt.Option.getWithDefault(false)
+      | CardExpiryAndCvc =>
+        isExpiryValid->Belt.Option.getWithDefault(false) &&
+          isCVCValid->Belt.Option.getWithDefault(false)
+      | _ => true
+      }
+    }, true)
     setAreRequiredFieldsValid(._ => areRequiredFieldsValid)
 
     let areRequiredFieldsEmpty =
