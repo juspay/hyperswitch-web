@@ -1,3 +1,10 @@
+## [0.20.1](https://github.com/juspay/hyperswitch-web/compare/v0.20.0...v0.20.1) (2024-01-22)
+
+
+### Bug Fixes
+
+* HS-180: Added check on last name for Dynamic Fields ([#71](https://github.com/juspay/hyperswitch-web/issues/71)) ([4fee41f](https://github.com/juspay/hyperswitch-web/commit/4fee41f821fd06a63c577d34fe925b21de7de9d5))
+
 # [0.20.0](https://github.com/juspay/hyperswitch-web/compare/v0.19.0...v0.20.0) (2024-01-22)
 
 
