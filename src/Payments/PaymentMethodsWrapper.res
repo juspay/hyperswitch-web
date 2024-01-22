@@ -116,15 +116,13 @@ let make = (
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
-    <RenderIf condition={list.payment_methods->Js.Array.length !== 0}>
-      <DynamicFields
-        paymentType
-        list
-        paymentMethod=paymentMethodDetails.methodType
-        paymentMethodType=paymentMethodDetails.paymentMethodName
-        setRequiredFieldsBody
-      />
-    </RenderIf>
+    <DynamicFields
+      paymentType
+      list
+      paymentMethod=paymentMethodDetails.methodType
+      paymentMethodType=paymentMethodDetails.paymentMethodName
+      setRequiredFieldsBody
+    />
   </div>
 }
 

@@ -84,6 +84,7 @@ let make = (
           ~fontWeight=themeObj.fontWeightNormal,
           ~fontSize=themeObj.fontSizeLg,
           ~marginBottom="5px",
+          ~opacity="0.6",
           (),
         )}>
         {React.string(fieldName)}
@@ -124,6 +125,7 @@ let make = (
               ~fontSize={
                 inputFocused || value.value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
               },
+              ~opacity="0.6",
               (),
             )}>
             {React.string(fieldName)}

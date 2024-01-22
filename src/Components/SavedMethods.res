@@ -71,17 +71,15 @@ let make = (
           <Block bottomElement padding="px-4 py-1" className="max-h-[309px] overflow-auto" />
         </RenderIf>
       }}
-      <RenderIf condition={list.payment_methods->Js.Array.length !== 0}>
-        <DynamicFields
-          paymentType
-          list
-          paymentMethod="card"
-          paymentMethodType="debit"
-          setRequiredFieldsBody
-          isSavedCardFlow=true
-          savedCards=savedMethods
-        />
-      </RenderIf>
+      <DynamicFields
+        paymentType
+        list
+        paymentMethod="card"
+        paymentMethodType="debit"
+        setRequiredFieldsBody
+        isSavedCardFlow=true
+        savedCards=savedMethods
+      />
       <RenderIf condition={!showFields}>
         <div
           className="Label flex flex-row gap-3 items-end cursor-pointer"

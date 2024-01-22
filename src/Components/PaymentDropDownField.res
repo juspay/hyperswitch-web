@@ -77,6 +77,7 @@ let make = (
             ~fontWeight=themeObj.fontWeightNormal,
             ~fontSize=themeObj.fontSizeLg,
             ~marginBottom="5px",
+            ~opacity="0.6",
             (),
           )}>
           {React.string(fieldName)}
@@ -114,21 +115,7 @@ let make = (
               ~fontSize={
                 inputFocused || value.value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
               },
-              (),
-            )}>
-            {React.string(fieldName)}
-          </div>
-        </RenderIf>
-        <RenderIf condition={config.appearance.labels == Floating}>
-          <div
-            className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass}`}
-            style={ReactDOMStyle.make(
-              ~marginBottom={
-                inputFocused || value.value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
-              },
-              ~fontSize={
-                inputFocused || value.value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
-              },
+              ~opacity="0.6",
               (),
             )}>
             {React.string(fieldName)}

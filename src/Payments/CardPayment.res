@@ -315,19 +315,17 @@ let make = (
               </div>
             </div>
           </RenderIf>
-          <RenderIf condition={list.payment_methods->Js.Array.length !== 0}>
-            <DynamicFields
-              paymentType
-              list
-              paymentMethod
-              paymentMethodType
-              setRequiredFieldsBody
-              cardProps={Some(cardProps)}
-              expiryProps={Some(expiryProps)}
-              cvcProps={Some(cvcProps)}
-              isBancontact
-            />
-          </RenderIf>
+          <DynamicFields
+            paymentType
+            list
+            paymentMethod
+            paymentMethodType
+            setRequiredFieldsBody
+            cardProps={Some(cardProps)}
+            expiryProps={Some(expiryProps)}
+            cvcProps={Some(cvcProps)}
+            isBancontact
+          />
           <RenderIf condition={!isBancontact && !options.disableSaveCards}>
             <div className="pt-4 pb-2 flex items-center justify-start">
               <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />

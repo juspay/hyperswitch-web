@@ -548,15 +548,6 @@ let getFieldType = (dict, isBancontact) => {
   }
 }
 
-let getRequiredFieldsFromJson = (dict, isBancontact) => {
-  {
-    required_field: Utils.getString(dict, "required_field", ""),
-    display_name: Utils.getString(dict, "display_name", ""),
-    field_type: dict->getFieldType(isBancontact),
-    value: Utils.getString(dict, "value", ""),
-  }
-}
-
 let dynamicFieldsEnabledPaymentMethods = [
   "crypto_currency",
   "debit",
@@ -579,9 +570,8 @@ let getIsBillingField = requiredFieldType => {
   }
 }
 
-let getIsAnyBillingDetailEmpty = (requiredFieldsValues: array<Js.Json.t>, isBancontact) => {
-  requiredFieldsValues->Js.Array2.reduce((acc, item) => {
-    let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson(isBancontact)
+let getIsAnyBillingDetailEmpty = (requiredFields: array<required_fields>) => {
+  requiredFields->Js.Array2.reduce((acc, requiredField) => {
     if getIsBillingField(requiredField.field_type) {
       requiredField.value === "" || acc
     } else {
@@ -592,16 +582,13 @@ let getIsAnyBillingDetailEmpty = (requiredFieldsValues: array<Js.Json.t>, isBanc
 
 let getPaymentMethodFields = (
   paymentMethod,
-  requiredFields,
+  requiredFields: array<required_fields>,
   ~isSavedCardFlow=false,
   ~isAllStoredCardsHaveName=false,
-  ~isBancontact=false,
   (),
 ) => {
-  let requiredFieldsValues = requiredFields->Utils.getDictFromJson->Js.Dict.values
-  let isAnyBillingDetailEmpty = requiredFieldsValues->getIsAnyBillingDetailEmpty(isBancontact)
-  let requiredFieldsArr = requiredFieldsValues->Js.Array2.map(item => {
-    let requiredField = item->Utils.getDictFromJson->getRequiredFieldsFromJson(isBancontact)
+  let isAnyBillingDetailEmpty = requiredFields->getIsAnyBillingDetailEmpty
+  let requiredFieldsArr = requiredFields->Js.Array2.map(requiredField => {
     let isShowBillingField = getIsBillingField(requiredField.field_type) && isAnyBillingDetailEmpty
     if requiredField.value === "" || isShowBillingField {
       if (
@@ -677,7 +664,7 @@ type paymentMethodTypes = {
   bank_names: array<string>,
   bank_debits_connectors: array<string>,
   bank_transfers_connectors: array<string>,
-  required_fields: Js.Json.t,
+  required_fields: array<required_fields>,
   surcharge_details: option<surchargeDetails>,
 }
 
@@ -712,7 +699,7 @@ let defaultPaymentMethodType = {
   bank_names: [],
   bank_debits_connectors: [],
   bank_transfers_connectors: [],
-  required_fields: Js.Json.null,
+  required_fields: [],
   surcharge_details: None,
 }
 
@@ -835,22 +822,42 @@ let getAchConnectors = (dict, str) => {
   ->getStrArray("elligible_connectors")
 }
 
+let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
+  let requiredFields =
+    Utils.getJsonFromDict(dict, "required_fields", Js.Json.null)
+    ->Utils.getDictFromJson
+    ->Js.Dict.values
+
+  requiredFields->Js.Array2.map(requiredField => {
+    let requiredFieldsDict = requiredField->Utils.getDictFromJson
+    {
+      required_field: requiredFieldsDict->Utils.getString("required_field", ""),
+      display_name: requiredFieldsDict->Utils.getString("display_name", ""),
+      field_type: requiredFieldsDict->getFieldType(isBancontact),
+      value: requiredFieldsDict->Utils.getString("value", ""),
+    }
+  })
+}
+
 let getPaymentMethodTypes = (dict, str) => {
   dict
   ->Js.Dict.get(str)
   ->Belt.Option.flatMap(Js.Json.decodeArray)
   ->Belt.Option.getWithDefault([])
   ->Belt.Array.keepMap(Js.Json.decodeObject)
-  ->Js.Array2.map(json => {
+  ->Js.Array2.map(jsonDict => {
+    let paymentMethodType = getString(jsonDict, "payment_method_type", "")
     {
-      payment_method_type: getString(json, "payment_method_type", ""),
-      payment_experience: getPaymentExperience(json, "payment_experience"),
-      card_networks: getCardNetworks(json, "card_networks"),
-      bank_names: getBankNames(json, "bank_names"),
-      bank_debits_connectors: getAchConnectors(json, "bank_debit"),
-      bank_transfers_connectors: getAchConnectors(json, "bank_transfer"),
-      required_fields: Utils.getJsonFromDict(json, "required_fields", Js.Json.null),
-      surcharge_details: json->getSurchargeDetails,
+      payment_method_type: paymentMethodType,
+      payment_experience: getPaymentExperience(jsonDict, "payment_experience"),
+      card_networks: getCardNetworks(jsonDict, "card_networks"),
+      bank_names: getBankNames(jsonDict, "bank_names"),
+      bank_debits_connectors: getAchConnectors(jsonDict, "bank_debit"),
+      bank_transfers_connectors: getAchConnectors(jsonDict, "bank_transfer"),
+      required_fields: jsonDict->getDynamicFieldsFromJsonDict(
+        paymentMethodType === "bancontact_card",
+      ),
+      surcharge_details: jsonDict->getSurchargeDetails,
     }
   })
 }
@@ -922,7 +929,6 @@ let buildFromPaymentList = (plist: list) => {
           fields: getPaymentMethodFields(
             paymentMethodName,
             individualPaymentMethod.required_fields,
-            ~isBancontact=individualPaymentMethod.payment_method_type === "bancontact_card",
             (),
           ),
           paymentFlow: paymentExperience,
@@ -954,15 +960,6 @@ let getPaymentMethodTypeFromList = (~list: list, ~paymentMethod, ~paymentMethodT
     item.payment_method_type == paymentMethodType
   })
 }
-
-let dynamicFieldsToRenderOutsideBilling = [
-  CardNumber,
-  CardExpiryMonth,
-  CardExpiryYear,
-  CardExpiryMonthAndYear,
-  CardCvc,
-  CardExpiryAndCvc,
-]
 
 let getCardNetwork = (~paymentMethodType, ~cardBrand) => {
   paymentMethodType.card_networks

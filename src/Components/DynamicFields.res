@@ -18,6 +18,8 @@ let make = (
     None
   }, [paymentMethodType])
 
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
+
   //<...>//
   let paymentMethodTypes =
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -26,28 +28,24 @@ let make = (
       ~paymentMethodType,
     )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
 
-  let requiredFields = if paymentMethod === "card" {
+  let requiredFieldsWithBillingDetails = if paymentMethod === "card" {
     let creditPaymentMethodsRecord =
       PaymentMethodsRecord.getPaymentMethodTypeFromList(
         ~list,
         ~paymentMethod,
         ~paymentMethodType="credit",
       )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
-    paymentMethodTypes.required_fields
-    ->Utils.getDictFromJson
-    ->Js.Dict.entries
-    ->Js.Array2.concat(
-      creditPaymentMethodsRecord.required_fields->Utils.getDictFromJson->Js.Dict.entries,
-    )
-    ->Js.Dict.fromArray
-    ->Js.Json.object_
+    paymentMethodTypes.required_fields->Js.Array2.concat(creditPaymentMethodsRecord.required_fields)
   } else if (
     PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethodType)
   ) {
     paymentMethodTypes.required_fields
   } else {
-    Js.Json.null
+    []
   }
+
+  let requiredFields =
+    requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress
 
   let isAllStoredCardsHaveName = React.useMemo1(() => {
     PaymentType.getIsAllStoredCardsHaveName(savedCards)
@@ -60,21 +58,15 @@ let make = (
       requiredFields,
       ~isSavedCardFlow,
       ~isAllStoredCardsHaveName,
-      ~isBancontact,
       (),
     )
-    ->Utils.removeDuplicate
-    ->Js.Array2.filter(item => item !== None)
-    ->PaymentUtils.updateDynamicFields()
+    ->DynamicFieldsUtils.updateDynamicFields()
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
   //<...>//
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
-
-  let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
-  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
 
   let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
   let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
@@ -239,18 +231,15 @@ let make = (
     ~cvcNumber,
   )
 
-  let requiredFieldsType =
-    requiredFields
-    ->Utils.getDictFromJson
-    ->Js.Dict.values
-    ->Js.Array2.map(item =>
-      item->Utils.getDictFromJson->PaymentMethodsRecord.getRequiredFieldsFromJson(isBancontact)
-    )
-
-  DynamicFieldsUtils.useSetInitialRequiredFields(~requiredFieldsType, ~paymentMethodType)
+  DynamicFieldsUtils.useSetInitialRequiredFields(
+    ~requiredFields={
+      billingAddress.usePrefilledValues === Auto ? requiredFieldsWithBillingDetails : requiredFields
+    },
+    ~paymentMethodType,
+  )
 
   DynamicFieldsUtils.useRequiredFieldsBody(
-    ~requiredFieldsType,
+    ~requiredFields,
     ~paymentMethodType,
     ~cardNumber,
     ~cardExpiry,
@@ -264,7 +253,7 @@ let make = (
 
   let getCustomFieldName = (item: PaymentMethodsRecord.paymentMethodsFields) => {
     if (
-      requiredFieldsType
+      requiredFields
       ->Js.Array2.filter(requiredFieldType =>
         requiredFieldType.field_type === item &&
           requiredFieldType.display_name === "card_holder_name"
@@ -279,12 +268,12 @@ let make = (
 
   let dynamicFieldsToRenderOutsideBilling =
     fieldsArr->Js.Array2.filter(field =>
-      PaymentMethodsRecord.dynamicFieldsToRenderOutsideBilling->Js.Array2.includes(field)
+      field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling
     )
 
   let dynamicFieldsToRenderInsideBilling =
     fieldsArr->Js.Array2.filter(field =>
-      !(PaymentMethodsRecord.dynamicFieldsToRenderOutsideBilling->Js.Array2.includes(field))
+      !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
     )
 
   let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Js.Array2.includes(InfoElement)
@@ -410,6 +399,15 @@ let make = (
                     placeholder="123"
                   />
                 </div>
+              | Currency(currencyArr) =>
+                <DropdownField
+                  appearance=config.appearance
+                  fieldName=localeString.currencyLabel
+                  value=currency
+                  setValue=setCurrency
+                  disabled=false
+                  options=currencyArr
+                />
               | Email
               | FullName
               | InfoElement
@@ -427,8 +425,7 @@ let make = (
               | BlikCode
               | SpecialField(_)
               | CountryAndPincode(_)
-              | AddressCountry(_)
-              | Currency(_) => React.null
+              | AddressCountry(_) => React.null
               }}
             </div>
           })
@@ -596,15 +593,6 @@ let make = (
                         placeholder=localeString.postalCodeLabel
                       />
                     | BlikCode => <BlikCodePaymentInput />
-                    | Currency(currencyArr) =>
-                      <DropdownField
-                        appearance=config.appearance
-                        fieldName=localeString.currencyLabel
-                        value=currency
-                        setValue=setCurrency
-                        disabled=false
-                        options=currencyArr
-                      />
                     | Country =>
                       <DropdownField
                         appearance=config.appearance
@@ -648,6 +636,7 @@ let make = (
                     | CardExpiryMonthAndYear
                     | CardCvc
                     | CardExpiryAndCvc
+                    | Currency(_)
                     | None => React.null
                     }}
                   </div>
