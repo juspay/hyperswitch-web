@@ -18,7 +18,7 @@ type trustPayFunctions = {
 let make = (
   options,
   setIframeRef,
-  ~clientSecretId,
+  ~clientSecret,
   ~sdkSessionId,
   ~publishableKey,
   ~logger: option<OrcaLogger.loggerMake>,
@@ -44,30 +44,30 @@ let make = (
       ->Belt.Option.getWithDefault([])
       ->Js.Json.array
 
-    let blockConfirm = GlobalVars.isInteg
-      ? options
-        ->Js.Json.decodeObject
-        ->Belt.Option.flatMap(x => x->Js.Dict.get("orcaBlockConfirmABP"))
-        ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-        ->Belt.Option.getWithDefault(false)
-      : false
-    let switchToCustomPod = GlobalVars.isInteg
-      ? options
-        ->Js.Json.decodeObject
-        ->Belt.Option.flatMap(x => x->Js.Dict.get("switchToCustomPodABP"))
-        ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-        ->Belt.Option.getWithDefault(false)
-      : false
+    let blockConfirm =
+      GlobalVars.isInteg &&
+      options
+      ->Js.Json.decodeObject
+      ->Belt.Option.flatMap(x => x->Js.Dict.get("blockConfirm"))
+      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
+      ->Belt.Option.getWithDefault(false)
+    let switchToCustomPod =
+      GlobalVars.isInteg &&
+      options
+      ->Js.Json.decodeObject
+      ->Belt.Option.flatMap(x => x->Js.Dict.get("switchToCustomPod"))
+      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
+      ->Belt.Option.getWithDefault(false)
 
     let paymentMethodListPromise = PaymentHelpers.usePaymentMethodList(
-      ~clientSecret=clientSecretId,
+      ~clientSecret,
       ~publishableKey,
       ~endpoint,
       ~logger,
     )
 
     let sessionsPromise = PaymentHelpers.useSessions(
-      ~clientSecret=clientSecretId,
+      ~clientSecret,
       ~publishableKey,
       ~endpoint,
       ~optLogger=Some(logger),
@@ -125,7 +125,7 @@ let make = (
     }
     let fetchCustomerDetails = mountedIframeRef => {
       let customerDetailsPromise = PaymentHelpers.useCustomerDetails(
-        ~clientSecret=clientSecretId,
+        ~clientSecret,
         ~publishableKey,
         ~endpoint,
         ~optLogger=Some(logger),
@@ -238,8 +238,8 @@ let make = (
             ("publishableKey", publishableKey->Js.Json.string),
             ("sdkSessionId", sdkSessionId->Js.Json.string),
             ("sdkHandleConfirmPayment", sdkHandleConfirmPayment->Js.Json.boolean),
-            ("AOrcaBBlockPConfirm", blockConfirm->Js.Json.boolean),
-            ("switchToCustomPodABP", switchToCustomPod->Js.Json.boolean),
+            ("blockConfirm", blockConfirm->Js.Json.boolean),
+            ("switchToCustomPod", switchToCustomPod->Js.Json.boolean),
             ("endpoint", endpoint->Js.Json.string),
             ("parentURL", "*"->Js.Json.string),
           ]->Js.Dict.fromArray

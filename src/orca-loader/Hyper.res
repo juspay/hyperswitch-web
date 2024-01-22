@@ -336,7 +336,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
-          ~clientSecretId,
+          ~clientSecret={clientSecretId},
           ~logger=Some(logger),
         )
       }
