@@ -1,3 +1,10 @@
+## [0.20.2](https://github.com/juspay/hyperswitch-web/compare/v0.20.1...v0.20.2) (2024-01-22)
+
+
+### Bug Fixes
+
+* HS-166: New Elements fle without PreMountLoader ([#29](https://github.com/juspay/hyperswitch-web/issues/29)) ([8bd12bd](https://github.com/juspay/hyperswitch-web/commit/8bd12bd8ef976ad070c25d7509ff11c60a72e7da))
+
 ## [0.20.1](https://github.com/juspay/hyperswitch-web/compare/v0.20.0...v0.20.1) (2024-01-22)
 
 
