@@ -347,10 +347,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         Js.Promise.make((~resolve, ~reject as _) => {
           iframeRef.contents->Js.Array2.forEach(ifR => {
             ifR->Window.iframePostMessage(
-              [
-                ("oneClickDoSubmit", result->Js.Json.boolean),
-                ("clientSecret", clientSecret.contents->Js.Json.string),
-              ]->Js.Dict.fromArray,
+              [("oneClickDoSubmit", result->Js.Json.boolean)]->Js.Dict.fromArray,
             )
           })
 
@@ -377,6 +374,14 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
                 ->Js.Dict.get("url")
                 ->Belt.Option.flatMap(Js.Json.decodeString)
                 ->Belt.Option.getWithDefault(url)
+
+              iframeRef.contents->Js.Array2.forEach(ifR => {
+                // to unset loader
+                ifR->Window.iframePostMessage(
+                  [("oneClickDoSubmit", false->Js.Json.boolean)]->Js.Dict.fromArray,
+                )
+              })
+
               if (
                 val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) &&
                   redirect === "always"
