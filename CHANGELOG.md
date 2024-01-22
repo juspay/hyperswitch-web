@@ -1,3 +1,15 @@
+# [0.20.0](https://github.com/juspay/hyperswitch-web/compare/v0.19.0...v0.20.0) (2024-01-22)
+
+
+### Bug Fixes
+
+* HS-123: created separate iframe for full screen ([#111](https://github.com/juspay/hyperswitch-web/issues/111)) ([303ba00](https://github.com/juspay/hyperswitch-web/commit/303ba00dac09496850e5173f86048a6e46be0b34))
+
+
+### Features
+
+* HS-197: Added Address Element ([#109](https://github.com/juspay/hyperswitch-web/issues/109)) ([dd4a18a](https://github.com/juspay/hyperswitch-web/commit/dd4a18aa19a4490d95f070066f92ad35759733e1))
+
 # [0.19.0](https://github.com/juspay/hyperswitch-web/compare/v0.18.1...v0.19.0) (2024-01-19)
 
 
