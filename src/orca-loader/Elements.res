@@ -64,6 +64,7 @@ let make = (
       ~clientSecret,
       ~publishableKey,
       ~endpoint,
+      ~switchToCustomPod,
       ~logger,
     )
 
@@ -71,6 +72,7 @@ let make = (
       ~clientSecret,
       ~publishableKey,
       ~endpoint,
+      ~switchToCustomPod,
       ~optLogger=Some(logger),
       (),
     )
@@ -129,6 +131,7 @@ let make = (
         ~clientSecret,
         ~publishableKey,
         ~endpoint,
+        ~switchToCustomPod,
         ~optLogger=Some(logger),
       )
       open Promise
