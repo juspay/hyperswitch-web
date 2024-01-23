@@ -1,3 +1,10 @@
+## [0.20.4](https://github.com/juspay/hyperswitch-web/compare/v0.20.3...v0.20.4) (2024-01-23)
+
+
+### Bug Fixes
+
+* HS-167: Added Dynamic Fields for Open Banking Uk ([#117](https://github.com/juspay/hyperswitch-web/issues/117)) ([318272f](https://github.com/juspay/hyperswitch-web/commit/318272f4df31fe678f88c76610c71181fcdfeeaa))
+
 ## [0.20.3](https://github.com/juspay/hyperswitch-web/compare/v0.20.2...v0.20.3) (2024-01-22)
 
 
