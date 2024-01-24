@@ -29,13 +29,7 @@ let make = (
     )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
 
   let requiredFieldsWithBillingDetails = if paymentMethod === "card" {
-    let creditPaymentMethodsRecord =
-      PaymentMethodsRecord.getPaymentMethodTypeFromList(
-        ~list,
-        ~paymentMethod,
-        ~paymentMethodType="credit",
-      )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
-    paymentMethodTypes.required_fields->Js.Array2.concat(creditPaymentMethodsRecord.required_fields)
+    paymentMethodTypes.required_fields
   } else if (
     PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethodType)
   ) {
