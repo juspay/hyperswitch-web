@@ -1,3 +1,10 @@
+## [0.20.5](https://github.com/juspay/hyperswitch-web/compare/v0.20.4...v0.20.5) (2024-01-24)
+
+
+### Bug Fixes
+
+* HS-111: Bugfix: multiple country dropdown ([#119](https://github.com/juspay/hyperswitch-web/issues/119)) ([4af6d7b](https://github.com/juspay/hyperswitch-web/commit/4af6d7bdfe0e6171d17b275549d29246e9fff683))
+
 ## [0.20.4](https://github.com/juspay/hyperswitch-web/compare/v0.20.3...v0.20.4) (2024-01-23)
 
 
