@@ -147,7 +147,7 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let submitCallback = React.useCallback2((ev: Window.event) => {
     let json = ev.data->Js.Json.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (month, year) = CardUtils.getExpiryDates(cardExpiry)
@@ -224,7 +224,7 @@ let make = (
         }
       }
     }
-  })
+  }, (areRequiredFieldsValid, requiredFieldsBody))
   submitPaymentData(submitCallback)
 
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
