@@ -25,7 +25,10 @@ let make = (
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~list,
       ~paymentMethod,
-      ~paymentMethodType,
+      ~paymentMethodType=PaymentUtils.getPaymentMethodName(
+        ~paymentMethodType=paymentMethod,
+        ~paymentMethodName=paymentMethodType,
+      ),
     )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
 
   let requiredFieldsWithBillingDetails = if paymentMethod === "card" {

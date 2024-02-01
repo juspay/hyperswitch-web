@@ -230,3 +230,13 @@ let getDisplayNameAndIcon = (
   | None => (defaultName, defaultIcon)
   }
 }
+
+let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
+  if paymentMethodType == "bank_debit" {
+    paymentMethodName->Js.String2.replace("_debit", "")
+  } else if paymentMethodType == "bank_transfer" {
+    paymentMethodName->Js.String2.replace("_transfer", "")
+  } else {
+    paymentMethodName
+  }
+}

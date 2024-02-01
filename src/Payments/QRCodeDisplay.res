@@ -44,7 +44,14 @@ let make = () => {
           let (x, val) = entries
           Js.Dict.set(headers, x, val->Js.Json.decodeString->Belt.Option.getWithDefault(""))
         })
-        let _timeExpiry = metaDataDict->getString("expiryTime", "")
+        let timeExpiry =
+          metaDataDict
+          ->getString("expiryTime", "")
+          ->Belt.Float.fromString
+          ->Belt.Option.getWithDefault(0.0)
+        if timeExpiry > 0.0 && timeExpiry < 900000.0 {
+          setExpiryTime(_ => timeExpiry)
+        }
         open Promise
         setHeaders(_ => headers->Js.Dict.entries)
         PaymentHelpers.pollRetrievePaymentIntent(

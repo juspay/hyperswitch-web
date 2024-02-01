@@ -478,6 +478,13 @@ let paymentMethodsFields = [
     fields: [InfoElement],
     miniIcon: Some(icon("cashtocode", ~size=19)),
   },
+  {
+    paymentMethodName: "pix_transfer",
+    fields: [InfoElement],
+    icon: Some(icon("pix", ~size=26, ~width=40)),
+    displayName: "Pix",
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
@@ -560,6 +567,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "eps",
   "ideal",
   "sofort",
+  "pix_transfer",
 ]
 
 let getIsBillingField = requiredFieldType => {

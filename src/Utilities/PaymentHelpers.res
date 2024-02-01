@@ -253,6 +253,7 @@ let intentCall = (
             ])
           } else if intent.nextAction.type_ === "qr_code_information" {
             let qrData = intent.nextAction.image_data_url->Belt.Option.getWithDefault("")
+            let expiryTime = intent.nextAction.display_to_timestamp->Belt.Option.getWithDefault("")
             let headerObj = Js.Dict.empty()
             headers->Js.Array2.forEach(entries => {
               let (x, val) = entries
@@ -263,7 +264,7 @@ let intentCall = (
                 ("qrData", qrData->Js.Json.string),
                 ("paymentIntentId", clientSecret->Js.Json.string),
                 ("headers", headerObj->Js.Json.object_),
-                ("expiryTime", Js.Json.null),
+                ("expiryTime", expiryTime->Js.Json.string),
                 ("url", url.href->Js.Json.string),
               ]->Js.Dict.fromArray
             handleLogging(
