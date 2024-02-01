@@ -187,7 +187,7 @@ let paymentMethodsFields = [
   {
     paymentMethodName: "sofort",
     icon: Some(icon("sofort", ~size=19)),
-    fields: [FullName, Email, Country, InfoElement],
+    fields: [InfoElement],
     displayName: "Sofort",
     miniIcon: None,
   },
@@ -230,7 +230,7 @@ let paymentMethodsFields = [
     paymentMethodName: "eps",
     icon: Some(icon("eps", ~size=19, ~width=25)),
     displayName: "EPS",
-    fields: [Bank, FullName, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -321,7 +321,7 @@ let paymentMethodsFields = [
     paymentMethodName: "ideal",
     icon: Some(icon("ideal", ~size=19, ~width=25)),
     displayName: "iDEAL",
-    fields: [Bank, FullName, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -557,6 +557,9 @@ let dynamicFieldsEnabledPaymentMethods = [
   "apple_pay",
   "bancontact_card",
   "open_banking_uk",
+  "eps",
+  "ideal",
+  "sofort",
 ]
 
 let getIsBillingField = requiredFieldType => {
