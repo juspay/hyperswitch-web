@@ -1,3 +1,15 @@
+# [0.21.0](https://github.com/juspay/hyperswitch-web/compare/v0.20.5...v0.21.0) (2024-02-01)
+
+
+### Bug Fixes
+
+* HS-12344: Email fields empty for saved cards flow ([#127](https://github.com/juspay/hyperswitch-web/issues/127)) ([710f705](https://github.com/juspay/hyperswitch-web/commit/710f705f738a0c805847a3b596e83d449486d704))
+
+
+### Features
+
+* HS-2222: Dynamic fields support for IDeal, Sofort and Eps ([#125](https://github.com/juspay/hyperswitch-web/issues/125)) ([789ecb9](https://github.com/juspay/hyperswitch-web/commit/789ecb99ffff4c9ee9ffe55af501ba8953c667b7))
+
 ## [0.20.5](https://github.com/juspay/hyperswitch-web/compare/v0.20.4...v0.20.5) (2024-01-24)
 
 
