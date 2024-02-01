@@ -1,3 +1,10 @@
+# [0.22.0](https://github.com/juspay/hyperswitch-web/compare/v0.21.0...v0.22.0) (2024-02-01)
+
+
+### Features
+
+* HS-187: Added Pix Bank Transfer ([#129](https://github.com/juspay/hyperswitch-web/issues/129)) ([3ea2e03](https://github.com/juspay/hyperswitch-web/commit/3ea2e0387fd34029308368ea8f068cf9d336a716))
+
 # [0.21.0](https://github.com/juspay/hyperswitch-web/compare/v0.20.5...v0.21.0) (2024-02-01)
 
 
