@@ -1,3 +1,10 @@
+## [0.22.1](https://github.com/juspay/hyperswitch-web/compare/v0.22.0...v0.22.1) (2024-02-01)
+
+
+### Bug Fixes
+
+* HS-187: Added pix svg icon ([#134](https://github.com/juspay/hyperswitch-web/issues/134)) ([7b2e4c5](https://github.com/juspay/hyperswitch-web/commit/7b2e4c511ba831c9a15fa76092b7a431274d0bec))
+
 # [0.22.0](https://github.com/juspay/hyperswitch-web/compare/v0.21.0...v0.22.0) (2024-02-01)
 
 
