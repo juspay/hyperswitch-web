@@ -1,3 +1,10 @@
+## [0.22.2](https://github.com/juspay/hyperswitch-web/compare/v0.22.1...v0.22.2) (2024-02-02)
+
+
+### Bug Fixes
+
+* HS-111: Fix: Card cvc for saved cards empty (blocking confirm) ([#135](https://github.com/juspay/hyperswitch-web/issues/135)) ([d710cd7](https://github.com/juspay/hyperswitch-web/commit/d710cd787bc33b3233d7dcdae29cef32b8cba47f))
+
 ## [0.22.1](https://github.com/juspay/hyperswitch-web/compare/v0.22.0...v0.22.1) (2024-02-01)
 
 
