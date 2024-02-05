@@ -1,3 +1,10 @@
+## [0.22.4](https://github.com/juspay/hyperswitch-web/compare/v0.22.3...v0.22.4) (2024-02-05)
+
+
+### Bug Fixes
+
+* HS-1111: invalid country options ([#141](https://github.com/juspay/hyperswitch-web/issues/141)) ([4198ace](https://github.com/juspay/hyperswitch-web/commit/4198ace098b32bfecb810e99db966f62833b2428))
+
 ## [0.22.3](https://github.com/juspay/hyperswitch-web/compare/v0.22.2...v0.22.3) (2024-02-05)
 
 
