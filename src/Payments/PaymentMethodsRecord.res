@@ -529,7 +529,11 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
       switch options->Belt.Array.get(0)->Belt.Option.getWithDefault("") {
       | "" => None
       | "ALL" => AddressCountry(Country.country->Js.Array2.map(item => item.countryName))
-      | _ => AddressCountry(options)
+      | _ => AddressCountry(
+          Country.country
+          ->Js.Array2.filter(item => options->Js.Array2.includes(item.isoAlpha2))
+          ->Js.Array2.map(item => item.countryName),
+        )
       }
     }
   | _ => None

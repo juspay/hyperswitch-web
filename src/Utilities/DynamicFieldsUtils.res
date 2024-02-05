@@ -547,10 +547,10 @@ let combineCountryAndPostal = arr => {
     acc->Js.Array2.concat(
       switch item {
       | AddressCountry(val) => val
-      | _ => [""]
+      | _ => []
       },
     )
-  }, [""])
+  }, [])
 
   if hasCountryAndPostal {
     arr->Js.Array2.push(CountryAndPincode(options))->ignore
