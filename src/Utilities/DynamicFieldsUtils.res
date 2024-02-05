@@ -272,7 +272,7 @@ let useSetInitialRequiredFields = (
     logger,
   )
 
-  React.useEffect0(() => {
+  React.useEffect1(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
       requiredFields
       ->Js.Array2.filter(requiredFields => requiredFields.field_type === item.field_type)
@@ -379,7 +379,7 @@ let useSetInitialRequiredFields = (
       }
     })
     None
-  })
+  }, [requiredFields])
 }
 
 let useRequiredFieldsBody = (
@@ -461,7 +461,7 @@ let useRequiredFieldsBody = (
     }
   }
 
-  React.useEffect1(() => {
+  React.useEffect3(() => {
     let requiredFieldsBody =
       requiredFields
       ->Js.Array2.filter(item => item.field_type !== None)
@@ -492,23 +492,11 @@ let useRequiredFieldsBody = (
 
     setRequiredFieldsBody(_ => requiredFieldsBody)
     None
-  }, [
-    fullName.value,
-    email.value,
-    line1.value,
-    line2.value,
-    city.value,
-    postalCode.value,
-    state.value,
-    blikCode.value,
-    phone.value,
-    currency,
-    billingName.value,
-    country,
-    cardNumber,
-    cardExpiry,
-    cvcNumber,
-  ])
+  }, (
+    requiredFields,
+    [fullName, email, line1, line2, city, postalCode, state, blikCode, phone, billingName],
+    [currency, country, cardNumber, cardExpiry, cvcNumber],
+  ))
 }
 
 let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
