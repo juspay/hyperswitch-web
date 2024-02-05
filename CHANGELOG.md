@@ -1,3 +1,11 @@
+## [0.22.3](https://github.com/juspay/hyperswitch-web/compare/v0.22.2...v0.22.3) (2024-02-05)
+
+
+### Bug Fixes
+
+* HS-111: Fix: Empty/Invalid Country Varient /confirm call ([#137](https://github.com/juspay/hyperswitch-web/issues/137)) ([ad0ef72](https://github.com/juspay/hyperswitch-web/commit/ad0ef72f3652375d1e255f44427e317ad1ea84e4))
+* HS-132: Dynamic Fields fix for email ([#139](https://github.com/juspay/hyperswitch-web/issues/139)) ([10dc77a](https://github.com/juspay/hyperswitch-web/commit/10dc77a8eb72c437703ccfbdf60c8e99ec0c8df1))
+
 ## [0.22.2](https://github.com/juspay/hyperswitch-web/compare/v0.22.1...v0.22.2) (2024-02-02)
 
 
