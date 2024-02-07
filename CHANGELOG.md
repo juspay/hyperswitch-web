@@ -1,3 +1,10 @@
+## [0.22.5](https://github.com/juspay/hyperswitch-web/compare/v0.22.4...v0.22.5) (2024-02-07)
+
+
+### Bug Fixes
+
+* HS-132: Fixed multiple re render ([#144](https://github.com/juspay/hyperswitch-web/issues/144)) ([8ffa095](https://github.com/juspay/hyperswitch-web/commit/8ffa095b52e45fd3804b4b416f58e4706746cb45))
+
 ## [0.22.4](https://github.com/juspay/hyperswitch-web/compare/v0.22.3...v0.22.4) (2024-02-05)
 
 
