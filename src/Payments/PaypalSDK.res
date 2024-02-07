@@ -113,6 +113,12 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
                       handleCloseLoader()
                     },
                   }).render(. "#paypal-button")
+                  areOneClickWalletsRendered(.
+                    prev => {
+                      ...prev,
+                      isPaypal: true,
+                    },
+                  )
                 },
               )
             },
