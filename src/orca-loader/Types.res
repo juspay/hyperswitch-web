@@ -47,7 +47,7 @@ type confirmPaymentParams = {
 }
 
 type hyperInstance = {
-  oneClickConfirmPayment: (Js.Json.t, bool) => Js.Promise.t<Js.Json.t>,
+  confirmOneClickPayment: (Js.Json.t, bool) => Js.Promise.t<Js.Json.t>,
   confirmPayment: Js.Json.t => Js.Promise.t<Js.Json.t>,
   elements: Js.Json.t => element,
   confirmCardPayment: Js_OO.Callback.arity4<
@@ -116,7 +116,7 @@ let defaultElement = {
 }
 
 let defaultHyperInstance = {
-  oneClickConfirmPayment: oneClickConfirmPaymentFn,
+  confirmOneClickPayment: oneClickConfirmPaymentFn,
   confirmPayment: confirmPaymentFn,
   confirmCardPayment: confirmCardPaymentFn,
   retrievePaymentIntent: retrievePaymentIntentFn,
