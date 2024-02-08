@@ -245,7 +245,8 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           [("paymentIntent", data)]->Js.Dict.fromArray->Js.Json.object_->Promise.resolve
         })
       }
-      let confirmPayment = payload => {
+
+      let confirmPaymentWrapper = (payload, isOneClick, result) => {
         let confirmParams =
           payload
           ->Js.Json.decodeObject
@@ -267,9 +268,55 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           ->Belt.Option.getWithDefault("")
 
         Js.Promise.make((~resolve, ~reject as _) => {
-          iframeRef.contents->Js.Array2.forEach(ifR => {
-            ifR->Window.iframePostMessage(
-              [
+          let handleMessage = (event: Types.event) => {
+            let json = event.data->eventToJson
+            let dict = json->getDictFromJson
+
+            switch dict->Js.Dict.get("submitSuccessful") {
+            | Some(val) =>
+              logApi(
+                ~type_="method",
+                ~optLogger=Some(logger),
+                ~result=val,
+                ~paymentMethod="confirmPayment",
+                ~eventName=CONFIRM_PAYMENT,
+                (),
+              )
+              let data =
+                dict
+                ->Js.Dict.get("data")
+                ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+              let returnUrl =
+                dict
+                ->Js.Dict.get("url")
+                ->Belt.Option.flatMap(Js.Json.decodeString)
+                ->Belt.Option.getWithDefault(url)
+
+              if isOneClick {
+                iframeRef.contents->Js.Array2.forEach(ifR => {
+                  // to unset one click button loader
+                  ifR->Window.iframePostMessage(
+                    [("oneClickDoSubmit", false->Js.Json.boolean)]->Js.Dict.fromArray,
+                  )
+                })
+              }
+
+              if (
+                val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) &&
+                  redirect === "always"
+              ) {
+                Window.replace(returnUrl)
+              } else if !(val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)) {
+                resolve(. json)
+              } else {
+                resolve(. data)
+              }
+            | None => ()
+            }
+          }
+          let message = isOneClick
+            ? [("oneClickDoSubmit", result->Js.Json.boolean)]->Js.Dict.fromArray
+            : [
                 ("doSubmit", true->Js.Json.boolean),
                 ("clientSecret", clientSecret.contents->Js.Json.string),
                 (
@@ -281,121 +328,20 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
                   ->Js.Dict.fromArray
                   ->Js.Json.object_,
                 ),
-              ]->Js.Dict.fromArray,
-            )
-          })
-
-          let handleMessage = (event: Types.event) => {
-            let json = event.data->eventToJson
-            let dict = json->getDictFromJson
-
-            switch dict->Js.Dict.get("submitSuccessful") {
-            | Some(val) =>
-              logApi(
-                ~type_="method",
-                ~optLogger=Some(logger),
-                ~result=val,
-                ~paymentMethod="confirmPayment",
-                ~eventName=CONFIRM_PAYMENT,
-                (),
-              )
-              let data =
-                dict
-                ->Js.Dict.get("data")
-                ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-              let returnUrl =
-                dict
-                ->Js.Dict.get("url")
-                ->Belt.Option.flatMap(Js.Json.decodeString)
-                ->Belt.Option.getWithDefault(url)
-              if (
-                val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) &&
-                  redirect === "always"
-              ) {
-                Window.replace(returnUrl)
-              } else if !(val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)) {
-                resolve(. json)
-              } else {
-                resolve(. data)
-              }
-            | None => ()
-            }
-          }
-
+              ]->Js.Dict.fromArray
           addSmartEventListener("message", handleMessage, "onSubmit")
+          iframeRef.contents->Js.Array2.forEach(ifR => {
+            ifR->Window.iframePostMessage(message)
+          })
         })
       }
 
+      let confirmPayment = payload => {
+        confirmPaymentWrapper(payload, false, true)
+      }
+
       let confirmOneClickPayment = (payload, result: bool) => {
-        let confirmParams =
-          payload
-          ->Js.Json.decodeObject
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("confirmParams"))
-          ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-        let redirect =
-          payload
-          ->Js.Json.decodeObject
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("redirect"))
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getWithDefault("if_required")
-        let url =
-          confirmParams
-          ->Js.Json.decodeObject
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("return_url"))
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getWithDefault("")
-        Js.Promise.make((~resolve, ~reject as _) => {
-          let handleMessage = (event: Types.event) => {
-            let json = event.data->eventToJson
-            let dict = json->getDictFromJson
-
-            switch dict->Js.Dict.get("submitSuccessful") {
-            | Some(val) =>
-              logApi(
-                ~type_="method",
-                ~optLogger=Some(logger),
-                ~result=val,
-                ~paymentMethod="confirmPayment",
-                ~eventName=CONFIRM_PAYMENT,
-                (),
-              )
-              let data =
-                dict
-                ->Js.Dict.get("data")
-                ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-              let returnUrl =
-                dict
-                ->Js.Dict.get("url")
-                ->Belt.Option.flatMap(Js.Json.decodeString)
-                ->Belt.Option.getWithDefault(url)
-
-              iframeRef.contents->Js.Array2.forEach(ifR => {
-                // to unset loader
-                ifR->Window.iframePostMessage(
-                  [("oneClickDoSubmit", false->Js.Json.boolean)]->Js.Dict.fromArray,
-                )
-              })
-
-              if (
-                val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) &&
-                  redirect === "always"
-              ) {
-                Window.replace(returnUrl)
-              } else if !(val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)) {
-                resolve(. json)
-              } else {
-                resolve(. data)
-              }
-            | None => ()
-            }
-          }
-          iframeRef.contents->Js.Array2.forEach(ifR => {
-            ifR->Window.iframePostMessage(
-              [("oneClickDoSubmit", result->Js.Json.boolean)]->Js.Dict.fromArray,
-            )
-          })
-          addSmartEventListener("message", handleMessage, "onSubmit")
-        })
+        confirmPaymentWrapper(payload, true, result)
       }
 
       let elements = elementsOptions => {
