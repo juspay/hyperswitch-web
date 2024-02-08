@@ -406,8 +406,13 @@ let make = (
                   disabled=false
                   options=currencyArr
                 />
+              | FullName =>
+                <FullNamePaymentInput
+                  paymentType
+                  customFieldName={item->getCustomFieldName}
+                  optionalRequiredFields={Some(requiredFields)}
+                />
               | Email
-              | FullName
               | InfoElement
               | Country
               | Bank
@@ -445,12 +450,6 @@ let make = (
                     key={`inside-billing-${index->Js.Int.toString}`}
                     className="flex flex-col w-full place-content-between">
                     {switch item {
-                    | FullName =>
-                      <FullNamePaymentInput
-                        paymentType
-                        customFieldName={item->getCustomFieldName}
-                        optionalRequiredFields={Some(requiredFields)}
-                      />
                     | BillingName =>
                       <BillingNamePaymentInput
                         paymentType
@@ -639,6 +638,7 @@ let make = (
                     | CardCvc
                     | CardExpiryAndCvc
                     | Currency(_)
+                    | FullName
                     | None => React.null
                     }}
                   </div>
