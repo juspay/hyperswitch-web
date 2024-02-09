@@ -701,6 +701,7 @@ type mandate = {
 
 type list = {
   redirect_url: string,
+  currency: string,
   payment_methods: array<methods>,
   mandate_payment: option<mandate>,
   payment_type: string,
@@ -721,6 +722,7 @@ let defaultPaymentMethodType = {
 
 let defaultList = {
   redirect_url: "",
+  currency: "",
   payment_methods: [],
   mandate_payment: None,
   payment_type: "",
@@ -919,6 +921,7 @@ let getMandate = (dict, str) => {
 let itemToObjMapper = dict => {
   {
     redirect_url: getString(dict, "redirect_url", ""),
+    currency: getString(dict, "currency", ""),
     payment_methods: getMethodsArr(dict, "payment_methods"),
     mandate_payment: getMandate(dict, "mandate_payment"),
     payment_type: getString(dict, "payment_type", ""),
