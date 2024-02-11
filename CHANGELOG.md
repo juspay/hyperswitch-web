@@ -1,3 +1,10 @@
+# [0.23.0](https://github.com/juspay/hyperswitch-web/compare/v0.22.5...v0.23.0) (2024-02-11)
+
+
+### Features
+
+* Added masked payload for confirm calls ([#148](https://github.com/juspay/hyperswitch-web/issues/148)) ([e3fe10d](https://github.com/juspay/hyperswitch-web/commit/e3fe10d1d8b63d1b1ce2f4cdc8901384ba6cdb91))
+
 ## [0.22.5](https://github.com/juspay/hyperswitch-web/compare/v0.22.4...v0.22.5) (2024-02-07)
 
 
