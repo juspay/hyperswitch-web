@@ -255,10 +255,12 @@ let intentCall = (
             let qrData = intent.nextAction.image_data_url->Belt.Option.getWithDefault("")
             let expiryTime = intent.nextAction.display_to_timestamp->Belt.Option.getWithDefault("")
             let headerObj = Js.Dict.empty()
-            headers->Js.Array2.forEach(entries => {
-              let (x, val) = entries
-              Js.Dict.set(headerObj, x, val->Js.Json.string)
-            })
+            headers->Js.Array2.forEach(
+              entries => {
+                let (x, val) = entries
+                Js.Dict.set(headerObj, x, val->Js.Json.string)
+              },
+            )
             let metaData =
               [
                 ("qrData", qrData->Js.Json.string),
@@ -357,7 +359,7 @@ let intentCall = (
             )
           }
           if intent.status === "failed" {
-            setIsManualRetryEnabled(._ => intent.manualRetryAllowed)
+            setIsManualRetryEnabled(. _ => intent.manualRetryAllowed)
           }
           switch paymentType {
           | Card => postSubmitResponse(~jsonData=data, ~url=url.href)
@@ -451,7 +453,15 @@ let rec maskPayload = payloadDict => {
   keys
   ->Js.Array2.map(key => {
     let value = payloadDict->Js.Dict.get(key)->Belt.Option.getWithDefault(Js.Json.null)
-    if value->Js.Json.decodeObject->Belt.Option.isSome {
+    if value->Js.Json.decodeArray->Belt.Option.isSome {
+      let arr = value->Js.Json.decodeArray->Belt.Option.getWithDefault([])
+      arr->Js.Array2.forEachi((element, index) => {
+        maskedPayload->Js.Dict.set(
+          key ++ "[" ++ index->Belt.Int.toString ++ "]",
+          element->Utils.getDictFromJson->maskPayload->Js.Json.string,
+        )
+      })
+    } else if value->Js.Json.decodeObject->Belt.Option.isSome {
       let valueDict = value->Utils.getDictFromJson
       maskedPayload->Js.Dict.set(key, valueDict->maskPayload->Js.Json.string)
     } else {
@@ -504,9 +514,31 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
       )
       let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
       let fetchMethod = Fetch.Post
-      let loggerPayload = body->Js.Dict.fromArray->maskPayload
 
       let callIntent = body => {
+        let maskedPayload =
+          body
+          ->OrcaUtils.safeParseOpt
+          ->Belt.Option.getWithDefault(Js.Json.null)
+          ->Utils.getDictFromJson
+          ->maskPayload
+        let loggerPayload =
+          [
+            ("payload", maskedPayload->Js.Json.string),
+            (
+              "headers",
+              headers
+              ->Js.Array2.map(header => {
+                let (key, value) = header
+                (key, value->Js.Json.string)
+              })
+              ->Js.Dict.fromArray
+              ->Js.Json.object_,
+            ),
+          ]
+          ->Js.Dict.fromArray
+          ->Js.Json.object_
+          ->Js.Json.stringify
         switch paymentType {
         | Card =>
           handleLogging(

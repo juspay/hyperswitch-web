@@ -529,7 +529,8 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
       switch options->Belt.Array.get(0)->Belt.Option.getWithDefault("") {
       | "" => None
       | "ALL" => AddressCountry(Country.country->Js.Array2.map(item => item.countryName))
-      | _ => AddressCountry(
+      | _ =>
+        AddressCountry(
           Country.country
           ->Js.Array2.filter(item => options->Js.Array2.includes(item.isoAlpha2))
           ->Js.Array2.map(item => item.countryName),
@@ -982,4 +983,34 @@ let getCardNetwork = (~paymentMethodType, ~cardBrand) => {
   ->Js.Array2.filter(cardNetwork => cardNetwork.card_network === cardBrand)
   ->Belt.Array.get(0)
   ->Belt.Option.getWithDefault(defaultCardNetworks)
+}
+
+let paymentMethodFieldToStrMapper = (field: paymentMethodsFields) => {
+  switch field {
+  | Email => "Email"
+  | FullName => "FullName"
+  | InfoElement => "InfoElement"
+  | Country => "Country"
+  | Bank => "Bank"
+  | SpecialField(_) => "SpecialField"
+  | None => "None"
+  | BillingName => "BillingName"
+  | PhoneNumber => "PhoneNumber"
+  | AddressLine1 => "AddressLine1"
+  | AddressLine2 => "AddressLine2"
+  | AddressCity => "AddressCity"
+  | StateAndCity => "StateAndCity"
+  | CountryAndPincode(_) => "CountryAndPincode"
+  | AddressPincode => "AddressPincode"
+  | AddressState => "AddressState"
+  | AddressCountry(_) => "AddressCountry"
+  | BlikCode => "BlikCode"
+  | Currency(_) => "Currency"
+  | CardNumber => "CardNumber"
+  | CardExpiryMonth => "CardExpiryMonth"
+  | CardExpiryYear => "CardExpiryYear"
+  | CardExpiryMonthAndYear => "CardExpiryMonthAndYear"
+  | CardCvc => "CardCvc"
+  | CardExpiryAndCvc => "CardExpiryAndCvc"
+  }
 }

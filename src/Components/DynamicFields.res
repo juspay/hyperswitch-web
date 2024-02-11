@@ -283,6 +283,44 @@ let make = (
     dynamicFieldsToRenderInsideBilling->Js.Array2.length > 0 &&
       (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
 
+  React.useEffect1(() => {
+    let fieldsArrStr = fieldsArr->Js.Array2.map(field => {
+      field->PaymentMethodsRecord.paymentMethodFieldToStrMapper->Js.Json.string
+    })
+    let dynamicFieldsToRenderOutsideBillingStr =
+      dynamicFieldsToRenderOutsideBilling->Js.Array2.map(field => {
+        field->PaymentMethodsRecord.paymentMethodFieldToStrMapper->Js.Json.string
+      })
+    let dynamicFieldsToRenderInsideBillingStr =
+      dynamicFieldsToRenderInsideBilling->Js.Array2.map(field => {
+        field->PaymentMethodsRecord.paymentMethodFieldToStrMapper->Js.Json.string
+      })
+    let requiredFieldsStr = requiredFields->Js.Array2.map(field => {
+      field.required_field->Js.Json.string
+    })
+
+    let loggerPayload =
+      [
+        ("requiredFields", requiredFieldsStr->Js.Json.array),
+        ("fieldsArr", fieldsArrStr->Js.Json.array),
+        (
+          "dynamicFieldsToRenderOutsideBilling",
+          dynamicFieldsToRenderOutsideBillingStr->Js.Json.array,
+        ),
+        (
+          "dynamicFieldsToRenderInsideBilling",
+          dynamicFieldsToRenderInsideBillingStr->Js.Json.array,
+        ),
+        ("isRenderDynamicFieldsInsideBilling", isRenderDynamicFieldsInsideBilling->Js.Json.boolean),
+        ("isOnlyInfoElementPresent", isOnlyInfoElementPresent->Js.Json.boolean),
+        ("isInfoElementPresent", isInfoElementPresent->Js.Json.boolean),
+      ]
+      ->Js.Dict.fromArray
+      ->Js.Json.object_
+    logger.setLogInfo(~value=loggerPayload->Js.Json.stringify, ~eventName=DYNAMIC_FIELDS_RENDER, ())
+    None
+  }, fieldsArr)
+
   {
     fieldsArr->Js.Array2.length > 0
       ? <>

@@ -121,6 +121,8 @@ let make = (
         // Js.Global.setTimeout(() => {
         let msg = [("paymentMethodList", json)]->Js.Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
+        let maskedPayload = json->getDictFromJson->PaymentHelpers.maskPayload
+        logger.setLogInfo(~value=maskedPayload, ~eventName=PAYMENT_METHODS_RESPONSE, ())
         // }, 5000)->ignore
         json->resolve
       })
