@@ -291,9 +291,14 @@ let make = (
       dynamicFieldsToRenderOutsideBilling->Js.Array2.map(field => {
         field->PaymentMethodsRecord.paymentMethodFieldToStrMapper->Js.Json.string
       })
+    let dynamicFieldsToRenderInsideBillingStr =
+      dynamicFieldsToRenderInsideBilling->Js.Array2.map(field => {
+        field->PaymentMethodsRecord.paymentMethodFieldToStrMapper->Js.Json.string
+      })
     let requiredFieldsStr = requiredFields->Js.Array2.map(field => {
       field.required_field->Js.Json.string
     })
+
     let loggerPayload =
       [
         ("requiredFields", requiredFieldsStr->Js.Json.array),
@@ -301,6 +306,10 @@ let make = (
         (
           "dynamicFieldsToRenderOutsideBilling",
           dynamicFieldsToRenderOutsideBillingStr->Js.Json.array,
+        ),
+        (
+          "dynamicFieldsToRenderInsideBilling",
+          dynamicFieldsToRenderInsideBillingStr->Js.Json.array,
         ),
         ("isRenderDynamicFieldsInsideBilling", isRenderDynamicFieldsInsideBilling->Js.Json.boolean),
         ("isOnlyInfoElementPresent", isOnlyInfoElementPresent->Js.Json.boolean),
