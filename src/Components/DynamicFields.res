@@ -284,21 +284,24 @@ let make = (
       (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
 
   React.useEffect1(() => {
-    let fieldsArr = fieldsArr->Js.Array2.map(field => {
+    let fieldsArrStr = fieldsArr->Js.Array2.map(field => {
       field->PaymentMethodsRecord.paymentMethodFieldToStrMapper->Js.Json.string
     })
-    let dynamicFieldsToRenderOutsideBilling =
+    let dynamicFieldsToRenderOutsideBillingStr =
       dynamicFieldsToRenderOutsideBilling->Js.Array2.map(field => {
         field->PaymentMethodsRecord.paymentMethodFieldToStrMapper->Js.Json.string
       })
-    let requiredFields = requiredFields->Js.Array2.map(field => {
+    let requiredFieldsStr = requiredFields->Js.Array2.map(field => {
       field.required_field->Js.Json.string
     })
     let loggerPayload =
       [
-        ("requiredFields", requiredFields->Js.Json.array),
-        ("fieldsArr", fieldsArr->Js.Json.array),
-        ("dynamicFieldsToRenderOutsideBilling", dynamicFieldsToRenderOutsideBilling->Js.Json.array),
+        ("requiredFields", requiredFieldsStr->Js.Json.array),
+        ("fieldsArr", fieldsArrStr->Js.Json.array),
+        (
+          "dynamicFieldsToRenderOutsideBilling",
+          dynamicFieldsToRenderOutsideBillingStr->Js.Json.array,
+        ),
         ("isRenderDynamicFieldsInsideBilling", isRenderDynamicFieldsInsideBilling->Js.Json.boolean),
         ("isOnlyInfoElementPresent", isOnlyInfoElementPresent->Js.Json.boolean),
         ("isInfoElementPresent", isInfoElementPresent->Js.Json.boolean),
