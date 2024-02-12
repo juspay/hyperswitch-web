@@ -1,3 +1,10 @@
+## [0.23.2](https://github.com/juspay/hyperswitch-web/compare/v0.23.1...v0.23.2) (2024-02-12)
+
+
+### Bug Fixes
+
+* HS-1111: fixed addres state ([#151](https://github.com/juspay/hyperswitch-web/issues/151)) ([a91cfd9](https://github.com/juspay/hyperswitch-web/commit/a91cfd9ab2331760032221d732e92b02a4b40750))
+
 ## [0.23.1](https://github.com/juspay/hyperswitch-web/compare/v0.23.0...v0.23.1) (2024-02-12)
 
 
