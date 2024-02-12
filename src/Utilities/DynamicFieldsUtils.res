@@ -61,9 +61,10 @@ let removeBillingDetailsIfUseBillingAddress = (
   }
 }
 
-let addBillingAddressIfUseBillingAddress = fieldsArr => {
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-
+let addBillingAddressIfUseBillingAddress = (
+  fieldsArr,
+  billingAddress: PaymentType.billingAddress,
+) => {
   if billingAddress.isUseBillingAddress {
     fieldsArr->Js.Array2.concat(billingAddressFields)
   } else {
@@ -119,8 +120,9 @@ let useRequiredFieldsEmptyAndValid = (
   let currency = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(RecoilAtoms.areRequiredFieldsValid)
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(RecoilAtoms.areRequiredFieldsEmpty)
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
-  let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress
+  let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
   React.useEffect7(() => {
     let areRequiredFieldsValid = fieldsArr->Js.Array2.reduce((acc, paymentMethodFields) => {
@@ -614,11 +616,15 @@ let combineCardExpiryAndCvc = arr => {
   }
 }
 
-let updateDynamicFields = (arr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsFields>, ()) => {
+let updateDynamicFields = (
+  arr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsFields>,
+  billingAddress,
+  (),
+) => {
   arr
   ->Utils.removeDuplicate
   ->Js.Array2.filter(item => item !== None)
-  ->addBillingAddressIfUseBillingAddress
+  ->addBillingAddressIfUseBillingAddress(billingAddress)
   ->combineStateAndCity
   ->combineCountryAndPostal
   ->combineCardExpiryMonthAndYear
