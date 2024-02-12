@@ -49,7 +49,7 @@ let make = (
   }, [savedCards])
 
   //<...>//
-  let fieldsArr =
+  let fieldsArr = React.useMemo3(() => {
     PaymentMethodsRecord.getPaymentMethodFields(
       paymentMethodType,
       requiredFields,
@@ -59,7 +59,8 @@ let make = (
     )
     ->DynamicFieldsUtils.updateDynamicFields()
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
-  //<...>//
+    //<...>//
+  }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
