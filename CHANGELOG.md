@@ -1,3 +1,10 @@
+## [0.23.1](https://github.com/juspay/hyperswitch-web/compare/v0.23.0...v0.23.1) (2024-02-12)
+
+
+### Bug Fixes
+
+* HS-2222: Missing Address state ([#150](https://github.com/juspay/hyperswitch-web/issues/150)) ([fd10795](https://github.com/juspay/hyperswitch-web/commit/fd107951beedc82d83a0688a1ae7df86c4bf7c12))
+
 # [0.23.0](https://github.com/juspay/hyperswitch-web/compare/v0.22.5...v0.23.0) (2024-02-11)
 
 
