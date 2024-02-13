@@ -1,30 +1,30 @@
-* @prafulkoppalkar
+* @prafulkoppalkar @akash-kamble-juspay @ArushKapoorJuspay
 
 docs/ @akash-kamble-juspay
 LICENSE @akash-kamble-juspay
 README.md @akash-kamble-juspay
 SECURITY.md @akash-kamble-juspay
-.gitignore @prafulkoppalkar
+.gitignore @prafulkoppalkar @ArushKapoorJuspay
 
 Hyperswitch-React-Demo-App/ @prafulkoppalkar @JeevaRamu0104
 Hyperswitch-React-Demo-App/Dockerfile @JeevaRamu0104 @prafulkoppalkar
 Hyperswitch-React-Demo-App/Makefile @JeevaRamu0104 @prafulkoppalkar
-Hyperswitch-React-Demo-App/promptScript.js @prafulkoppalkar
-Hyperswitch-React-Demo-App/webpack.common.js @prafulkoppalkar
-Hyperswitch-React-Demo-App/webpack.dev.js @prafulkoppalkar
+Hyperswitch-React-Demo-App/promptScript.js @prafulkoppalkar @ArushKapoorJuspay
+Hyperswitch-React-Demo-App/webpack.common.js @prafulkoppalkar @ArushKapoorJuspay
+Hyperswitch-React-Demo-App/webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay
 
 .husky/ @harsh-Juspay @prafulkoppalkar
 .github/ @harsh-Juspay @prafulkoppalkar
 
 aws/ @prafulkoppalkar
 
-webpack.dev.js @prafulkoppalkar
-webpack.common.js @prafulkoppalkar
+webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay
+webpack.common.js @prafulkoppalkar @ArushKapoorJuspay
 
-src/orca-log-catcher @vsrivatsa-juspay
+src/orca-log-catcher @vsrivatsa-juspay @prafulkoppalkar
 src/orca-loader @prafulkoppalkar
 src/LoaderConroller.res @prafulkoppalkar
-src/Utilities @prafulkoppalkar
+src/Utilities @prafulkoppalkar 
 src/libraries @prafulkoppalkar
 src/Hooks @prafulkoppalkar
 src/Payment.res @prafulkoppalkar
