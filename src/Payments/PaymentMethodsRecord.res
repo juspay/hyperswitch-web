@@ -466,10 +466,10 @@ let paymentMethodsFields = [
   },
   {
     paymentMethodName: "open_banking_uk",
-    icon: Some(icon("open_banking", ~size=19, ~width=50)),
-    displayName: "Open Banking",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Pay by Bank",
     fields: [InfoElement],
-    miniIcon: Some(icon("open_banking", ~size=19)),
+    miniIcon: Some(icon("bank", ~size=19)),
   },
   {
     paymentMethodName: "evoucher",
