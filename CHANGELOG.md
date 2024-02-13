@@ -1,3 +1,25 @@
+## [0.23.6](https://github.com/juspay/hyperswitch-web/compare/v0.23.5...v0.23.6) (2024-02-13)
+
+
+### Bug Fixes
+
+* HS-2222: Validation failing for Billing details ([#165](https://github.com/juspay/hyperswitch-web/issues/165)) ([2c1754d](https://github.com/juspay/hyperswitch-web/commit/2c1754df5cf90b37c897bf03de11b79d6eb3bb32))
+
+## [0.23.5](https://github.com/juspay/hyperswitch-web/compare/v0.23.4...v0.23.5) (2024-02-13)
+
+
+### Bug Fixes
+
+* HS-202: ApplePay Dynamic Fields Error Handling ([#159](https://github.com/juspay/hyperswitch-web/issues/159)) ([ad97f2d](https://github.com/juspay/hyperswitch-web/commit/ad97f2da1bd83132f1a97590154f650a283f8aea))
+
+## [0.23.4](https://github.com/juspay/hyperswitch-web/compare/v0.23.3...v0.23.4) (2024-02-13)
+
+
+### Bug Fixes
+
+* HS-1223: updated codeowners ([#142](https://github.com/juspay/hyperswitch-web/issues/142)) ([ff29a20](https://github.com/juspay/hyperswitch-web/commit/ff29a209958df1c27f4384652500c4e52cefb97c))
+* HS-234: Added support for few more countries ([#160](https://github.com/juspay/hyperswitch-web/issues/160)) ([4bac3aa](https://github.com/juspay/hyperswitch-web/commit/4bac3aa238f5d986b730801cc117e8980c42e66f))
+
 ## [0.23.3](https://github.com/juspay/hyperswitch-web/compare/v0.23.2...v0.23.3) (2024-02-13)
 
 
