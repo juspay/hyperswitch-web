@@ -125,6 +125,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     handlePostMessage([("iframeMounted", true->Js.Json.boolean)])
     handlePostMessage([("applePayMounted", true->Js.Json.boolean)])
     logger.setLogInitiated()
+    switch paymentlist {
+    | Loaded(_)
+    | LoadError(_) => ()
+    | _ =>
+      setList(._ =>
+        showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
+      )
+    }
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
     )
@@ -357,18 +365,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     }
     handleMessage(handleFun, "Error in parsing sent Data")
   }, (showCardFormByDefault, paymentMethodOrder))
-
-  React.useEffect1(() => {
-    switch paymentlist {
-    | Loaded(_)
-    | LoadError(_) => ()
-    | _ =>
-      setList(._ =>
-        showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
-      )
-    }
-    None
-  }, [paymentlist])
 
   let observer = ResizeObserver.newResizerObserver(entries => {
     entries

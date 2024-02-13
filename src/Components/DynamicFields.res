@@ -21,7 +21,7 @@ let make = (
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   //<...>//
-  let paymentMethodTypes =
+  let paymentMethodTypes = React.useMemo3(() => {
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~list,
       ~paymentMethod,
@@ -30,19 +30,25 @@ let make = (
         ~paymentMethodName=paymentMethodType,
       ),
     )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
+  }, (list, paymentMethod, paymentMethodType))
 
-  let requiredFieldsWithBillingDetails = if paymentMethod === "card" {
-    paymentMethodTypes.required_fields
-  } else if (
-    PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethodType)
-  ) {
-    paymentMethodTypes.required_fields
-  } else {
-    []
-  }
+  let requiredFieldsWithBillingDetails = React.useMemo3(() => {
+    if paymentMethod === "card" {
+      paymentMethodTypes.required_fields
+    } else if (
+      PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethodType)
+    ) {
+      paymentMethodTypes.required_fields
+    } else {
+      []
+    }
+  }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType))
 
-  let requiredFields =
-    requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress
+  let requiredFields = React.useMemo1(() => {
+    requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress(
+      billingAddress,
+    )
+  }, [requiredFieldsWithBillingDetails])
 
   let isAllStoredCardsHaveName = React.useMemo1(() => {
     PaymentType.getIsAllStoredCardsHaveName(savedCards)
@@ -265,24 +271,30 @@ let make = (
     }
   }
 
-  let dynamicFieldsToRenderOutsideBilling =
+  let dynamicFieldsToRenderOutsideBilling = React.useMemo1(() => {
     fieldsArr->Js.Array2.filter(field =>
       field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling
     )
+  }, [fieldsArr])
 
-  let dynamicFieldsToRenderInsideBilling =
+  let dynamicFieldsToRenderInsideBilling = React.useMemo1(() => {
     fieldsArr->Js.Array2.filter(field =>
       !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
     )
+  }, [fieldsArr])
 
-  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Js.Array2.includes(InfoElement)
+  let isInfoElementPresent = React.useMemo1(() => {
+    dynamicFieldsToRenderInsideBilling->Js.Array2.includes(InfoElement)
+  }, [dynamicFieldsToRenderInsideBilling])
 
-  let isOnlyInfoElementPresent =
+  let isOnlyInfoElementPresent = React.useMemo2(() => {
     dynamicFieldsToRenderInsideBilling->Js.Array2.length === 1 && isInfoElementPresent
+  }, (dynamicFieldsToRenderInsideBilling, isInfoElementPresent))
 
-  let isRenderDynamicFieldsInsideBilling =
+  let isRenderDynamicFieldsInsideBilling = React.useMemo2(() => {
     dynamicFieldsToRenderInsideBilling->Js.Array2.length > 0 &&
       (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
+  }, (dynamicFieldsToRenderInsideBilling, isOnlyInfoElementPresent))
 
   React.useEffect1(() => {
     let fieldsArrStr = fieldsArr->Js.Array2.map(field => {

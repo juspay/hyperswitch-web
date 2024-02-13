@@ -49,9 +49,8 @@ let getBillingAddressPathFromFieldType = (fieldType: PaymentMethodsRecord.paymen
 
 let removeBillingDetailsIfUseBillingAddress = (
   requiredFields: Js.Array2.t<PaymentMethodsRecord.required_fields>,
+  billingAddress: PaymentType.billingAddress,
 ) => {
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-
   if billingAddress.isUseBillingAddress {
     requiredFields->Js.Array2.filter(requiredField => {
       !(requiredField.field_type->isBillingAddressFieldType)
