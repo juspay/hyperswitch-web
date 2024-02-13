@@ -196,31 +196,60 @@ let make = (
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
 
-    setPostalCode(.prev => {
-      ...prev,
-      value: val,
-      errorString: "",
-    })
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) {
-      CardUtils.blurRef(postalRef)
+    if val !== "" {
+      setPostalCode(._ => {
+        isValid: Some(true),
+        value: val,
+        errorString: "",
+      })
+    } else {
+      setPostalCode(._ => {
+        isValid: Some(false),
+        value: val,
+        errorString: "",
+      })
     }
   }
 
   let onPostalBlur = ev => {
-    let val = ReactEvent.Focus.target(ev)["value"]
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
-      setPostalCode(.prev => {
-        ...prev,
-        isValid: Some(true),
-        errorString: "",
-      })
-    } else if regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
+    // let val = ReactEvent.Focus.target(ev)["value"]
+    // if !postalCode.isValid {
+    //   setPostalCode(.prev => {
+    //     ...prev,
+    //     isValid: Some(false),
+    //     errorString: "Invalid postal code",
+    //   })
+    // }
+
+    switch postalCode.isValid {
+    | Some(val) =>
+      if !val {
+        setPostalCode(.prev => {
+          ...prev,
+          isValid: Some(false),
+          errorString: "Invalid postal code",
+        })
+      }
+    | None =>
       setPostalCode(.prev => {
         ...prev,
         isValid: Some(false),
         errorString: "Invalid postal code",
       })
     }
+    // if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
+    //   setPostalCode(.prev => {
+    //     ...prev,
+    //     isValid: Some(true),
+    //     errorString: "",
+    //   })
+    // } else if regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
+    //   setPostalCode(.prev => {
+    //     ...prev,
+    //     isValid: Some(false),
+    //     errorString: "Invalid postal code",
+    //   })
+    // }
   }
 
   DynamicFieldsUtils.useRequiredFieldsEmptyAndValid(
@@ -514,11 +543,14 @@ let make = (
                       <div className="flex gap-1">
                         <PaymentField
                           fieldName=localeString.cityLabel
-                          setValue={setCity}
+                          // setValue={setCity}
                           value=city
                           onChange={ev => {
                             setCity(.prev => {
                               ...prev,
+                              isValid: ReactEvent.Form.target(ev)["value"] !== ""
+                                ? Some(true)
+                                : Some(false),
                               value: ReactEvent.Form.target(ev)["value"],
                             })
                           }}
@@ -569,11 +601,14 @@ let make = (
                     | AddressLine1 =>
                       <PaymentField
                         fieldName=localeString.line1Label
-                        setValue={setLine1}
+                        // setValue={setLine1}
                         value=line1
                         onChange={ev => {
                           setLine1(.prev => {
                             ...prev,
+                            isValid: ReactEvent.Form.target(ev)["value"] !== ""
+                              ? Some(true)
+                              : Some(false),
                             value: ReactEvent.Form.target(ev)["value"],
                           })
                         }}
@@ -586,11 +621,14 @@ let make = (
                     | AddressLine2 =>
                       <PaymentField
                         fieldName=localeString.line2Label
-                        setValue={setLine2}
+                        // setValue={setLine2}
                         value=line2
                         onChange={ev => {
                           setLine2(.prev => {
                             ...prev,
+                            isValid: ReactEvent.Form.target(ev)["value"] !== ""
+                              ? Some(true)
+                              : Some(false),
                             value: ReactEvent.Form.target(ev)["value"],
                           })
                         }}
@@ -635,7 +673,7 @@ let make = (
                     | AddressPincode =>
                       <PaymentField
                         fieldName=localeString.postalCodeLabel
-                        setValue={setPostalCode}
+                        // setValue={setPostalCode}
                         value=postalCode
                         onBlur=onPostalBlur
                         onChange=onPostalChange
