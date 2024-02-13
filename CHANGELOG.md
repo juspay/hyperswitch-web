@@ -1,3 +1,10 @@
+## [0.23.5](https://github.com/juspay/hyperswitch-web/compare/v0.23.4...v0.23.5) (2024-02-13)
+
+
+### Bug Fixes
+
+* HS-202: ApplePay Dynamic Fields Error Handling ([#159](https://github.com/juspay/hyperswitch-web/issues/159)) ([ad97f2d](https://github.com/juspay/hyperswitch-web/commit/ad97f2da1bd83132f1a97590154f650a283f8aea))
+
 ## [0.23.4](https://github.com/juspay/hyperswitch-web/compare/v0.23.3...v0.23.4) (2024-02-13)
 
 
