@@ -298,7 +298,7 @@ let getAddress = (dict, str, logger) => {
       line2: getWarningString(json, "line2", "", ~logger),
       city: getWarningString(json, "city", "", ~logger),
       state: getWarningString(json, "state", "", ~logger),
-      country: country,
+      country,
       postal_code: getWarningString(json, "postal_code", "", ~logger),
     }
   })
@@ -893,7 +893,7 @@ let itemToObjMapper = (dict, logger) => {
   }
 }
 
-type loadType = Loading | Loaded(Js.Json.t) | SemiLoaded | LoadError(Js.Json.t)
+type loadType = Loading | Loaded(Js.Json.t) | SemiLoaded | LoadError
 
 let getIsAllStoredCardsHaveName = (savedCards: array<customerMethods>) => {
   savedCards
