@@ -260,7 +260,7 @@ let make = (
     }
   }
 
-  React.useEffect2(() => {
+  React.useEffect3(() => {
     let handleApplePayMessages = (ev: Window.event) => {
       let json = try {
         ev.data->Js.Json.parseExn
@@ -279,6 +279,9 @@ let make = (
           processPayment(bodyDict)
         } else if dict->Js.Dict.get("showApplePayButton")->Belt.Option.isSome {
           setApplePayClicked(_ => false)
+          if !isWallet {
+            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+          }
         } else if dict->Js.Dict.get("applePaySyncPayment")->Belt.Option.isSome {
           syncPayment()
         }
@@ -293,7 +296,7 @@ let make = (
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
-  }, (isInvokeSDKFlow, requiredFieldsBody))
+  }, (isInvokeSDKFlow, requiredFieldsBody, isWallet))
 
   React.useEffect4(() => {
     if (
