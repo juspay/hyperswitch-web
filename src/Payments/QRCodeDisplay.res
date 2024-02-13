@@ -44,11 +44,12 @@ let make = () => {
           let (x, val) = entries
           Js.Dict.set(headers, x, val->Js.Json.decodeString->Belt.Option.getWithDefault(""))
         })
-        let timeExpiry =
+        let expiryTime =
           metaDataDict
           ->getString("expiryTime", "")
           ->Belt.Float.fromString
           ->Belt.Option.getWithDefault(0.0)
+        let timeExpiry = expiryTime -. Js.Date.now()
         if timeExpiry > 0.0 && timeExpiry < 900000.0 {
           setExpiryTime(_ => timeExpiry)
         }
@@ -99,10 +100,15 @@ let make = () => {
 
       if status === "succeeded" {
         postSubmitResponse(~jsonData=json, ~url=return_url)
-      } else {
+      } else if status === "failed" {
         postFailedSubmitResponse(
           ~errortype="confirm_payment_failed",
           ~message="Payment failed. Try again!",
+        )
+      } else {
+        postFailedSubmitResponse(
+          ~errortype="sync_payment_failed",
+          ~message="Payment is processing. Try again later!",
         )
       }
       resolve(json)
@@ -132,7 +138,7 @@ let make = () => {
         className=" flex flex-row w-full justify-center items-start mb-8 font-medium text-2xl font-semibold text-[#151A1F] opacity-50">
         {expiryString->React.string}
       </div>
-      <img style={ReactDOMStyle.make(~height="8rem", ())} src=qrCode />
+      <img style={ReactDOMStyle.make(~height="13rem", ())} src=qrCode />
       <div className=" flex flex-col max-w-md justify-between items-center">
         <div className="Disclaimer w-full mt-16 font-medium text-xs text-[#151A1F] opacity-50">
           {React.string(

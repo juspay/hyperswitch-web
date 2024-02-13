@@ -253,7 +253,7 @@ let intentCall = (
             ])
           } else if intent.nextAction.type_ === "qr_code_information" {
             let qrData = intent.nextAction.image_data_url->Belt.Option.getWithDefault("")
-            let expiryTime = intent.nextAction.display_to_timestamp->Belt.Option.getWithDefault("")
+            let expiryTime = intent.nextAction.display_to_timestamp->Belt.Option.getWithDefault(0.0)
             let headerObj = Js.Dict.empty()
             headers->Js.Array2.forEach(
               entries => {
@@ -266,7 +266,7 @@ let intentCall = (
                 ("qrData", qrData->Js.Json.string),
                 ("paymentIntentId", clientSecret->Js.Json.string),
                 ("headers", headerObj->Js.Json.object_),
-                ("expiryTime", expiryTime->Js.Json.string),
+                ("expiryTime", expiryTime->Belt.Float.toString->Js.Json.string),
                 ("url", url.href->Js.Json.string),
               ]->Js.Dict.fromArray
             handleLogging(
@@ -440,7 +440,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
       }
     | None =>
       postFailedSubmitResponse(
-        ~errortype="SYNC_PAYMENT_FAILED",
+        ~errortype="sync_payment_failed",
         ~message="Sync Payment Failed. Try Again!",
       )
     }
