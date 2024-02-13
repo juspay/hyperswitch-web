@@ -1,3 +1,10 @@
+## [0.23.7](https://github.com/juspay/hyperswitch-web/compare/v0.23.6...v0.23.7) (2024-02-13)
+
+
+### Bug Fixes
+
+* Payment Dropdown multiple render fix ([#166](https://github.com/juspay/hyperswitch-web/issues/166)) ([56e8cb3](https://github.com/juspay/hyperswitch-web/commit/56e8cb311301fb26d415e87af639b58cfa090080))
+
 ## [0.23.6](https://github.com/juspay/hyperswitch-web/compare/v0.23.5...v0.23.6) (2024-02-13)
 
 
