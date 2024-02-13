@@ -1,3 +1,11 @@
+## [0.23.3](https://github.com/juspay/hyperswitch-web/compare/v0.23.2...v0.23.3) (2024-02-13)
+
+
+### Bug Fixes
+
+* HS-167: Changed name and icon for Open Banking Uk ([#156](https://github.com/juspay/hyperswitch-web/issues/156)) ([4b33231](https://github.com/juspay/hyperswitch-web/commit/4b33231c0ee1689f77da0c5e5e20f88f0ade5c37))
+* HS-187: Improve UI qr code display for PIX ([#149](https://github.com/juspay/hyperswitch-web/issues/149)) ([1cf448b](https://github.com/juspay/hyperswitch-web/commit/1cf448b5e0e4d0124ff34aed818f44dfb75e9cf5))
+
 ## [0.23.2](https://github.com/juspay/hyperswitch-web/compare/v0.23.1...v0.23.2) (2024-02-12)
 
 
