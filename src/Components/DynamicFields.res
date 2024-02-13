@@ -294,7 +294,7 @@ let make = (
   let isRenderDynamicFieldsInsideBilling = React.useMemo2(() => {
     dynamicFieldsToRenderInsideBilling->Js.Array2.length > 0 &&
       (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
-  }, (dynamicFieldsToRenderInsideBilling, isInfoElementPresent))
+  }, (dynamicFieldsToRenderInsideBilling, isOnlyInfoElementPresent))
 
   React.useEffect1(() => {
     let fieldsArrStr = fieldsArr->Js.Array2.map(field => {
