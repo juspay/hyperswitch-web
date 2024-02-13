@@ -1,3 +1,10 @@
+## [0.23.6](https://github.com/juspay/hyperswitch-web/compare/v0.23.5...v0.23.6) (2024-02-13)
+
+
+### Bug Fixes
+
+* HS-2222: Validation failing for Billing details ([#165](https://github.com/juspay/hyperswitch-web/issues/165)) ([2c1754d](https://github.com/juspay/hyperswitch-web/commit/2c1754df5cf90b37c897bf03de11b79d6eb3bb32))
+
 ## [0.23.5](https://github.com/juspay/hyperswitch-web/compare/v0.23.4...v0.23.5) (2024-02-13)
 
 
