@@ -65,8 +65,8 @@ if (envBackendUrl === undefined) {
 
 let logEndpoint =
   sdkEnv === "prod"
-    ? "https://api.hyperswitch.io/sdk-logs"
-    : "https://sandbox.juspay.io/godel/analytics";
+    ? "https://api.hyperswitch.io/logs/sdk"
+    : "https://sandbox.hyperswitch.io/logs/sdk";
 
 // Set this to true to enable logging
 let enableLogging = true;

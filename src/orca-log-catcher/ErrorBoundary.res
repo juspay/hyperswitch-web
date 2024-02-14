@@ -98,11 +98,7 @@ module ErrorCard = {
   let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level) => {
     let beaconApiCall = data => {
       if data->Js.Array2.length > 0 {
-        let logData =
-          [("data", data->Js.Array2.map(OrcaLogger.logFileToObj)->Js.Json.array)]
-          ->Js.Dict.fromArray
-          ->Js.Json.object_
-          ->Js.Json.stringify
+        let logData = data->Js.Array2.map(OrcaLogger.logFileToObj)->Js.Json.array->Js.Json.stringify
         Window.sendBeacon(GlobalVars.logEndpoint, logData)
       }
     }
@@ -131,7 +127,7 @@ module ErrorCard = {
           platform: Window.platform,
           userAgent: Window.userAgent,
           appId: "",
-          eventName: "SDK_CRASH",
+          eventName: SDK_CRASH,
           latency: "",
           paymentMethod: "",
           firstEvent: false,

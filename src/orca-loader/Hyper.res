@@ -113,12 +113,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
       () => {
         logger.setMerchantId(publishableKey)
         logger.setSessionId(sessionID)
-        logger.setLogInfo(
-          ~value="orca-sdk initiated",
-          ~eventName=APP_INITIATED,
-          ~timestamp=sdkTimestamp,
-          (),
-        )
+        logger.setLogInfo(~value=Window.href, ~eventName=APP_INITIATED, ~timestamp=sdkTimestamp, ())
       }
     }->Sentry.sentryLogger
     switch Window.getHyper->Js.Nullable.toOption {
