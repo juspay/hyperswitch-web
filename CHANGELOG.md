@@ -1,3 +1,10 @@
+## [0.23.8](https://github.com/juspay/hyperswitch-web/compare/v0.23.7...v0.23.8) (2024-02-15)
+
+
+### Bug Fixes
+
+* HS-111: Added billing name to address element ([#145](https://github.com/juspay/hyperswitch-web/issues/145)) ([426415a](https://github.com/juspay/hyperswitch-web/commit/426415a8c88e56bd0e6b84da56982c1e40082c67))
+
 ## [0.23.7](https://github.com/juspay/hyperswitch-web/compare/v0.23.6...v0.23.7) (2024-02-13)
 
 
