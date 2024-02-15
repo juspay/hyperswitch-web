@@ -15,6 +15,7 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
 let countryNames = Utils.getCountryNames(Country.country)
 
 let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
+  BillingName,
   AddressLine1,
   AddressLine2,
   AddressCity,
@@ -25,6 +26,7 @@ let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
 
 let isBillingAddressFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
   switch fieldType {
+  | BillingName
   | AddressLine1
   | AddressLine2
   | AddressCity
@@ -429,6 +431,7 @@ let useRequiredFieldsBody = (
           ->Belt.Option.getWithDefault(Country.defaultTimeZone)
         countryCode.isoAlpha2
       }
+    | BillingName => billingName.value
     | CardNumber => cardNumber->CardUtils.clearSpaces
     | CardExpiryMonth =>
       let (month, _) = CardUtils.getExpiryDates(cardExpiry)
@@ -444,7 +447,6 @@ let useRequiredFieldsBody = (
     | CardExpiryMonthAndYear
     | CardExpiryAndCvc
     | FullName
-    | BillingName
     | None => ""
     }
   }
@@ -453,8 +455,20 @@ let useRequiredFieldsBody = (
     if billingAddress.isUseBillingAddress {
       billingAddressFields->Js.Array2.reduce((acc, item) => {
         let value = item->getFieldValueFromFieldType
-        let path = item->getBillingAddressPathFromFieldType
-        acc->Js.Dict.set(path, value->Js.Json.string)
+        if item === BillingName {
+          let arr = value->Js.String2.split(" ")
+          acc->Js.Dict.set(
+            "billing.address.first_name",
+            arr->Belt.Array.get(0)->Belt.Option.getWithDefault("")->Js.Json.string,
+          )
+          acc->Js.Dict.set(
+            "billing.address.last_name",
+            arr->Belt.Array.get(1)->Belt.Option.getWithDefault("")->Js.Json.string,
+          )
+        } else {
+          let path = item->getBillingAddressPathFromFieldType
+          acc->Js.Dict.set(path, value->Js.Json.string)
+        }
         acc
       }, requiredFieldsBody)
     } else {
@@ -514,6 +528,7 @@ let useRequiredFieldsBody = (
 
 let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
   switch fieldType {
+  | FullName
   | CardNumber
   | CardExpiryMonth
   | CardExpiryYear
