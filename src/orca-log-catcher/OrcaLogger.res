@@ -425,25 +425,22 @@ let make = (
   }
 
   let calculateAndUpdateCounterHook = eventName => {
-    let updatedCounter =
-      1 +
-      switch eventsCounter.contents->Js.Dict.get(eventName) {
-      | Some(num) => num
-      | None => 0
-      }
+    let updatedCounter = switch eventsCounter.contents->Js.Dict.get(eventName) {
+    | Some(num) => num + 1
+    | None => 1
+    }
     eventsCounter.contents->Js.Dict.set(eventName, updatedCounter)
-    Js.log((eventName, updatedCounter, "counter"))
     updatedCounter
   }
 
   let conditionalLogPush = (log: logFile) => {
-    let maxLogsPushedPerEventName = 100
-    let eventName =
-      log.eventName->eventNameToStrMapper ++
-        switch log.eventName {
-        | INPUT_FIELD_CHANGED => log.value // to enforce rate limiting for each input field independently
-        | _ => ""
-        }
+    let maxLogsPushedPerEventName = GlobalVars.maxLogsPushedPerEventName
+    let conditionalEventName = switch log.eventName {
+    | INPUT_FIELD_CHANGED => log.value // to enforce rate limiting for each input field independently
+    | _ => ""
+    }
+    let eventName = log.eventName->eventNameToStrMapper ++ conditionalEventName
+
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
       switch loggingLevel {

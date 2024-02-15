@@ -74,6 +74,9 @@ let enableLogging = true;
 // Choose from DEBUG, INFO, WARNING, ERROR, SILENT
 let loggingLevel = "DEBUG";
 
+// Maximum logs emitted for a particular event, to rate limit logs
+let maxLogsPushedPerEventName = 100;
+
 module.exports = (publicPath = "auto") => {
   let entries = {
     app: "./index.js",
@@ -123,6 +126,7 @@ module.exports = (publicPath = "auto") => {
         sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
         enableLogging: JSON.stringify(enableLogging),
         loggingLevel: JSON.stringify(loggingLevel),
+        maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
       }),
       new HtmlWebpackPlugin({
         inject: false,
