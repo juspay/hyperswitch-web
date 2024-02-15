@@ -452,9 +452,7 @@ let make = (
                     {switch item {
                     | BillingName =>
                       <BillingNamePaymentInput
-                        paymentType
-                        customFieldName={item->getCustomFieldName}
-                        optionalRequiredFields={Some(requiredFields)}
+                        paymentType optionalRequiredFields={Some(requiredFields)}
                       />
                     | Email => <EmailPaymentInput paymentType />
                     | PhoneNumber => <PhoneNumberPaymentInput />
