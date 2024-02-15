@@ -344,8 +344,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
             : switch list->Utils.getDictFromJson->Js.Dict.get("error") {
               | Some(_) => setList(._ => LoadError)
               | None =>
-                let payment_methods = list->Utils.getDictFromJson->Utils.getArray("payment_methods")
-                setList(._ => payment_methods->Js.Array2.length > 0 ? Loaded(list) : LoadError)
+                let isNonEmptyPaymentMethodList =
+                  list
+                  ->Utils.getDictFromJson
+                  ->Utils.getArray("payment_methods")
+                  ->Js.Array2.length > 0
+                setList(._ => isNonEmptyPaymentMethodList ? Loaded(list) : LoadError)
               }
         }
         if dict->getDictIsSome("customerPaymentMethods") {
