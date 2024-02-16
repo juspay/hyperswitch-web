@@ -15,16 +15,17 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
     setFullName(.prev => {
-      ...prev,
       value: val,
-      errorString: "",
+      isValid: Some(val !== ""),
+      errorString: val !== "" ? "" : prev.errorString,
     })
   }
 
-  let onBlur = _ => {
+  let onBlur = ev => {
+    let val: string = ReactEvent.Focus.target(ev)["value"]
     setFullName(.prev => {
       ...prev,
-      isValid: Some(fullName.value !== ""),
+      isValid: Some(val !== ""),
     })
   }
 

@@ -549,18 +549,18 @@ let make = (
                           setValue={setCity}
                           value=city
                           onChange={ev => {
+                            let value = ReactEvent.Form.target(ev)["value"]
                             setCity(.prev => {
-                              ...prev,
-                              isValid: ReactEvent.Form.target(ev)["value"] !== ""
-                                ? Some(true)
-                                : Some(false),
-                              value: ReactEvent.Form.target(ev)["value"],
+                              isValid: value !== "" ? Some(true) : Some(false),
+                              value,
+                              errorString: value !== "" ? "" : prev.errorString,
                             })
                           }}
-                          onBlur={_ => {
+                          onBlur={ev => {
+                            let value = ReactEvent.Focus.target(ev)["value"]
                             setCity(.prev => {
                               ...prev,
-                              isValid: Some(city.value !== ""),
+                              isValid: Some(value !== ""),
                             })
                           }}
                           paymentType
@@ -613,18 +613,18 @@ let make = (
                         setValue={setLine1}
                         value=line1
                         onChange={ev => {
+                          let value = ReactEvent.Form.target(ev)["value"]
                           setLine1(.prev => {
-                            ...prev,
-                            isValid: ReactEvent.Form.target(ev)["value"] !== ""
-                              ? Some(true)
-                              : Some(false),
-                            value: ReactEvent.Form.target(ev)["value"],
+                            isValid: value !== "" ? Some(true) : Some(false),
+                            value,
+                            errorString: value !== "" ? "" : prev.errorString,
                           })
                         }}
-                        onBlur={_ => {
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
                           setLine1(.prev => {
                             ...prev,
-                            isValid: Some(line1.value !== ""),
+                            isValid: Some(value !== ""),
                           })
                         }}
                         paymentType
@@ -639,18 +639,18 @@ let make = (
                         setValue={setLine2}
                         value=line2
                         onChange={ev => {
+                          let value = ReactEvent.Form.target(ev)["value"]
                           setLine2(.prev => {
-                            ...prev,
-                            isValid: ReactEvent.Form.target(ev)["value"] !== ""
-                              ? Some(true)
-                              : Some(false),
-                            value: ReactEvent.Form.target(ev)["value"],
+                            isValid: value !== "" ? Some(true) : Some(false),
+                            value,
+                            errorString: value !== "" ? "" : prev.errorString,
                           })
                         }}
-                        onBlur={_ => {
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
                           setLine2(.prev => {
                             ...prev,
-                            isValid: Some(line2.value !== ""),
+                            isValid: Some(value !== ""),
                           })
                         }}
                         paymentType
@@ -665,18 +665,18 @@ let make = (
                         setValue={setCity}
                         value=city
                         onChange={ev => {
+                          let value = ReactEvent.Form.target(ev)["value"]
                           setCity(.prev => {
-                            ...prev,
-                            isValid: ReactEvent.Form.target(ev)["value"] !== ""
-                              ? Some(true)
-                              : Some(false),
-                            value: ReactEvent.Form.target(ev)["value"],
+                            isValid: value !== "" ? Some(true) : Some(false),
+                            value,
+                            errorString: value !== "" ? "" : prev.errorString,
                           })
                         }}
-                        onBlur={_ => {
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
                           setCity(.prev => {
                             ...prev,
-                            isValid: Some(city.value !== ""),
+                            isValid: Some(value !== ""),
                           })
                         }}
                         paymentType
