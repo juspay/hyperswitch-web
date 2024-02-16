@@ -1,3 +1,10 @@
+## [0.23.10](https://github.com/juspay/hyperswitch-web/compare/v0.23.9...v0.23.10) (2024-02-16)
+
+
+### Bug Fixes
+
+* HS-148: Added Currency with surcharge amount ([#146](https://github.com/juspay/hyperswitch-web/issues/146)) ([ceadf3e](https://github.com/juspay/hyperswitch-web/commit/ceadf3e8bb1845058504884940c5d5573bda2dbf))
+
 ## [0.23.9](https://github.com/juspay/hyperswitch-web/compare/v0.23.8...v0.23.9) (2024-02-16)
 
 
