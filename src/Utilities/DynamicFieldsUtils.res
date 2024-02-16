@@ -644,3 +644,53 @@ let updateDynamicFields = (
   ->combineCardExpiryMonthAndYear
   ->combineCardExpiryAndCvc
 }
+
+let useSubmitCallback = () => {
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let (line1, setLine1) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline1, "line1", logger)
+  let (line2, setLine2) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline2, "line2", logger)
+  let (state, setState) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressState, "state", logger)
+  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
+    RecoilAtoms.userAddressPincode,
+    "postal_code",
+    logger,
+  )
+  let (city, setCity) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressCity, "city", logger)
+
+  React.useCallback5((ev: Window.event) => {
+    let json = ev.data->Js.Json.parseExn
+    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    if confirm.doSubmit {
+      if line1.value == "" {
+        setLine1(.prev => {
+          ...prev,
+          errorString: "Address line 1 cannot be empty",
+        })
+      }
+      if line2.value == "" {
+        setLine2(.prev => {
+          ...prev,
+          errorString: "Address line 2 cannot be empty",
+        })
+      }
+      if state.value == "" {
+        setState(.prev => {
+          ...prev,
+          errorString: "State cannot be empty",
+        })
+      }
+      if postalCode.value == "" {
+        setPostalCode(.prev => {
+          ...prev,
+          errorString: "Postal code cannot be empty",
+        })
+      }
+      if city.value == "" {
+        setCity(.prev => {
+          ...prev,
+          errorString: "City cannot be empty",
+        })
+      }
+    }
+  }, (line1, line2, state, city, postalCode))
+}
