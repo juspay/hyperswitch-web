@@ -211,37 +211,6 @@ let make = (
     }
   }
 
-  let onPostalBlur = ev => {
-    let val: string = ReactEvent.Focus.target(ev)["value"]
-    switch postalCode.isValid {
-    | Some(bool) =>
-      if !bool {
-        setPostalCode(.prev => {
-          ...prev,
-          isValid: Some(false),
-        })
-      }
-    | None =>
-      setPostalCode(.prev => {
-        ...prev,
-        isValid: Some(val !== ""),
-      })
-    }
-    // if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
-    //   setPostalCode(.prev => {
-    //     ...prev,
-    //     isValid: Some(true),
-    //     errorString: "",
-    //   })
-    // } else if regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
-    //   setPostalCode(.prev => {
-    //     ...prev,
-    //     isValid: Some(false),
-    //     errorString: "Invalid postal code",
-    //   })
-    // }
-  }
-
   DynamicFieldsUtils.useRequiredFieldsEmptyAndValid(
     ~requiredFields,
     ~fieldsArr,
@@ -585,7 +554,13 @@ let make = (
                           fieldName=localeString.postalCodeLabel
                           setValue={setPostalCode}
                           value=postalCode
-                          onBlur=onPostalBlur
+                          onBlur={ev => {
+                            let value = ReactEvent.Focus.target(ev)["value"]
+                            setPostalCode(.prev => {
+                              ...prev,
+                              isValid: Some(value !== ""),
+                            })
+                          }}
                           onChange=onPostalChange
                           paymentType
                           type_="tel"
@@ -692,7 +667,13 @@ let make = (
                         fieldName=localeString.postalCodeLabel
                         setValue={setPostalCode}
                         value=postalCode
-                        onBlur=onPostalBlur
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
+                          setPostalCode(.prev => {
+                            ...prev,
+                            isValid: Some(value !== ""),
+                          })
+                        }}
                         onChange=onPostalChange
                         paymentType
                         type_="tel"
