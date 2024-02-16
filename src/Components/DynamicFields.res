@@ -283,6 +283,9 @@ let make = (
     ~setRequiredFieldsBody,
   )
 
+  let submitCallback = DynamicFieldsUtils.useSubmitCallback()
+  Utils.submitPaymentData(submitCallback)
+
   let bottomElement = <InfoElement />
 
   let getCustomFieldName = (item: PaymentMethodsRecord.paymentMethodsFields) => {
@@ -543,7 +546,7 @@ let make = (
                       <div className="flex gap-1">
                         <PaymentField
                           fieldName=localeString.cityLabel
-                          // setValue={setCity}
+                          setValue={setCity}
                           value=city
                           onChange={ev => {
                             setCity(.prev => {
@@ -552,6 +555,12 @@ let make = (
                                 ? Some(true)
                                 : Some(false),
                               value: ReactEvent.Form.target(ev)["value"],
+                            })
+                          }}
+                          onBlur={_ => {
+                            setCity(.prev => {
+                              ...prev,
+                              isValid: Some(city.value !== ""),
                             })
                           }}
                           paymentType
@@ -601,7 +610,7 @@ let make = (
                     | AddressLine1 =>
                       <PaymentField
                         fieldName=localeString.line1Label
-                        // setValue={setLine1}
+                        setValue={setLine1}
                         value=line1
                         onChange={ev => {
                           setLine1(.prev => {
@@ -610,6 +619,12 @@ let make = (
                               ? Some(true)
                               : Some(false),
                             value: ReactEvent.Form.target(ev)["value"],
+                          })
+                        }}
+                        onBlur={_ => {
+                          setLine1(.prev => {
+                            ...prev,
+                            isValid: Some(line1.value !== ""),
                           })
                         }}
                         paymentType
@@ -621,7 +636,7 @@ let make = (
                     | AddressLine2 =>
                       <PaymentField
                         fieldName=localeString.line2Label
-                        // setValue={setLine2}
+                        setValue={setLine2}
                         value=line2
                         onChange={ev => {
                           setLine2(.prev => {
@@ -630,6 +645,12 @@ let make = (
                               ? Some(true)
                               : Some(false),
                             value: ReactEvent.Form.target(ev)["value"],
+                          })
+                        }}
+                        onBlur={_ => {
+                          setLine2(.prev => {
+                            ...prev,
+                            isValid: Some(line2.value !== ""),
                           })
                         }}
                         paymentType
@@ -646,7 +667,16 @@ let make = (
                         onChange={ev => {
                           setCity(.prev => {
                             ...prev,
+                            isValid: ReactEvent.Form.target(ev)["value"] !== ""
+                              ? Some(true)
+                              : Some(false),
                             value: ReactEvent.Form.target(ev)["value"],
+                          })
+                        }}
+                        onBlur={_ => {
+                          setCity(.prev => {
+                            ...prev,
+                            isValid: Some(city.value !== ""),
                           })
                         }}
                         paymentType
@@ -673,7 +703,7 @@ let make = (
                     | AddressPincode =>
                       <PaymentField
                         fieldName=localeString.postalCodeLabel
-                        // setValue={setPostalCode}
+                        setValue={setPostalCode}
                         value=postalCode
                         onBlur=onPostalBlur
                         onChange=onPostalChange

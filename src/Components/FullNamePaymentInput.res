@@ -20,6 +20,14 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
       errorString: "",
     })
   }
+
+  let onBlur = _ => {
+    setFullName(.prev => {
+      ...prev,
+      isValid: Some(fullName.value !== ""),
+    })
+  }
+
   let (placeholder, fieldName) = switch customFieldName {
   | Some(val) => (val, val)
   | None => (localeString.fullNamePlaceholder, localeString.fullNameLabel)
@@ -54,9 +62,11 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField
       fieldName
+      setValue=setFullName
       value=fullName
       onChange=changeName
       paymentType
+      onBlur
       type_="text"
       name="name"
       inputRef=nameRef

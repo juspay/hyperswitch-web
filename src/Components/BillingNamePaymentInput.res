@@ -24,6 +24,12 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None, (
       errorString: "",
     })
   }
+  let onBlur = _ => {
+    setBillingName(.prev => {
+      ...prev,
+      isValid: Some(billingName.value !== ""),
+    })
+  }
   let (placeholder, fieldName) = switch customFieldName {
   | Some(val) => (val, val)
   | None => (localeString.billingNamePlaceholder, localeString.billingNameLabel)
@@ -58,9 +64,11 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None, (
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField
       fieldName
+      setValue=setBillingName
       value=billingName
       onChange=changeName
       paymentType
+      onBlur
       type_="text"
       name="name"
       inputRef=nameRef
