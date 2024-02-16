@@ -1,3 +1,24 @@
+## [0.23.10](https://github.com/juspay/hyperswitch-web/compare/v0.23.9...v0.23.10) (2024-02-16)
+
+
+### Bug Fixes
+
+* HS-148: Added Currency with surcharge amount ([#146](https://github.com/juspay/hyperswitch-web/issues/146)) ([ceadf3e](https://github.com/juspay/hyperswitch-web/commit/ceadf3e8bb1845058504884940c5d5573bda2dbf))
+
+## [0.23.9](https://github.com/juspay/hyperswitch-web/compare/v0.23.8...v0.23.9) (2024-02-16)
+
+
+### Bug Fixes
+
+* HS-132: Error handling for Address Fields ([#171](https://github.com/juspay/hyperswitch-web/issues/171)) ([38f3a79](https://github.com/juspay/hyperswitch-web/commit/38f3a79552f10e6712d2402475d44a70aba46e41))
+
+## [0.23.8](https://github.com/juspay/hyperswitch-web/compare/v0.23.7...v0.23.8) (2024-02-15)
+
+
+### Bug Fixes
+
+* HS-111: Added billing name to address element ([#145](https://github.com/juspay/hyperswitch-web/issues/145)) ([426415a](https://github.com/juspay/hyperswitch-web/commit/426415a8c88e56bd0e6b84da56982c1e40082c67))
+
 ## [0.23.7](https://github.com/juspay/hyperswitch-web/compare/v0.23.6...v0.23.7) (2024-02-13)
 
 
