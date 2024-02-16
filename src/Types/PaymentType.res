@@ -298,7 +298,7 @@ let getAddress = (dict, str, logger) => {
       line2: getWarningString(json, "line2", "", ~logger),
       city: getWarningString(json, "city", "", ~logger),
       state: getWarningString(json, "state", "", ~logger),
-      country: country,
+      country,
       postal_code: getWarningString(json, "postal_code", "", ~logger),
     }
   })
@@ -866,6 +866,8 @@ let itemToObjMapper = (dict, logger) => {
       "wallets",
       "showCardFormByDefault",
       "disableSaveCards",
+      "sdkHandleOneClickConfirmPayment",
+      "showCardFormByDefault",
     ],
     dict,
     "options",
