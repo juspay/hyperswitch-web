@@ -211,19 +211,10 @@ let make = (
     }
   }
 
-  let onPostalBlur = ev => {
-    // let val = ReactEvent.Focus.target(ev)["value"]
-    // if !postalCode.isValid {
-    //   setPostalCode(.prev => {
-    //     ...prev,
-    //     isValid: Some(false),
-    //     errorString: "Invalid postal code",
-    //   })
-    // }
-
+  let onPostalBlur = _ev => {
     switch postalCode.isValid {
-    | Some(val) =>
-      if !val {
+    | Some(bool) =>
+      if !bool {
         setPostalCode(.prev => {
           ...prev,
           isValid: Some(false),
@@ -233,8 +224,8 @@ let make = (
     | None =>
       setPostalCode(.prev => {
         ...prev,
-        isValid: Some(false),
-        errorString: "Invalid postal code",
+        isValid: Some(postalCode.value !== ""),
+        errorString: postalCode.value !== "" ? "" : "Invalid postal code",
       })
     }
     // if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
