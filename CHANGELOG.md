@@ -1,3 +1,10 @@
+## [0.23.9](https://github.com/juspay/hyperswitch-web/compare/v0.23.8...v0.23.9) (2024-02-16)
+
+
+### Bug Fixes
+
+* HS-132: Error handling for Address Fields ([#171](https://github.com/juspay/hyperswitch-web/issues/171)) ([38f3a79](https://github.com/juspay/hyperswitch-web/commit/38f3a79552f10e6712d2402475d44a70aba46e41))
+
 ## [0.23.8](https://github.com/juspay/hyperswitch-web/compare/v0.23.7...v0.23.8) (2024-02-15)
 
 
