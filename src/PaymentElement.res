@@ -20,7 +20,6 @@ let make = (
   )
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
-  let pmList = Recoil.useRecoilValueFromAtom(list)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
   let paymentOrder = paymentMethodOrder->Utils.getOptionalArr->Utils.removeDuplicate
   let (sessions, setSessions) = React.useState(_ => Js.Dict.empty()->Js.Json.object_)
@@ -319,7 +318,7 @@ let make = (
       </RenderIf>
       <PoweredBy />
     </RenderIf>
-    {switch pmList {
+    {switch methodslist {
     | LoadError(_) => React.null
     | _ =>
       <RenderIf
