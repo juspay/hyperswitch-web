@@ -211,47 +211,6 @@ let make = (
     }
   }
 
-  let onPostalBlur = ev => {
-    // let val = ReactEvent.Focus.target(ev)["value"]
-    // if !postalCode.isValid {
-    //   setPostalCode(.prev => {
-    //     ...prev,
-    //     isValid: Some(false),
-    //     errorString: "Invalid postal code",
-    //   })
-    // }
-
-    switch postalCode.isValid {
-    | Some(val) =>
-      if !val {
-        setPostalCode(.prev => {
-          ...prev,
-          isValid: Some(false),
-          errorString: "Invalid postal code",
-        })
-      }
-    | None =>
-      setPostalCode(.prev => {
-        ...prev,
-        isValid: Some(false),
-        errorString: "Invalid postal code",
-      })
-    }
-    // if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
-    //   setPostalCode(.prev => {
-    //     ...prev,
-    //     isValid: Some(true),
-    //     errorString: "",
-    //   })
-    // } else if regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
-    //   setPostalCode(.prev => {
-    //     ...prev,
-    //     isValid: Some(false),
-    //     errorString: "Invalid postal code",
-    //   })
-    // }
-  }
-
   DynamicFieldsUtils.useRequiredFieldsEmptyAndValid(
     ~requiredFields,
     ~fieldsArr,
@@ -282,6 +241,9 @@ let make = (
     ~isAllStoredCardsHaveName,
     ~setRequiredFieldsBody,
   )
+
+  let submitCallback = DynamicFieldsUtils.useSubmitCallback()
+  Utils.submitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
 
@@ -448,8 +410,13 @@ let make = (
                   disabled=false
                   options=currencyArr
                 />
+              | FullName =>
+                <FullNamePaymentInput
+                  paymentType
+                  customFieldName={item->getCustomFieldName}
+                  optionalRequiredFields={Some(requiredFields)}
+                />
               | Email
-              | FullName
               | InfoElement
               | Country
               | Bank
@@ -487,17 +454,9 @@ let make = (
                     key={`inside-billing-${index->Js.Int.toString}`}
                     className="flex flex-col w-full place-content-between">
                     {switch item {
-                    | FullName =>
-                      <FullNamePaymentInput
-                        paymentType
-                        customFieldName={item->getCustomFieldName}
-                        optionalRequiredFields={Some(requiredFields)}
-                      />
                     | BillingName =>
                       <BillingNamePaymentInput
-                        paymentType
-                        customFieldName={item->getCustomFieldName}
-                        optionalRequiredFields={Some(requiredFields)}
+                        paymentType optionalRequiredFields={Some(requiredFields)}
                       />
                     | Email => <EmailPaymentInput paymentType />
                     | PhoneNumber => <PhoneNumberPaymentInput />
@@ -505,15 +464,21 @@ let make = (
                       <div className="flex gap-1">
                         <PaymentField
                           fieldName=localeString.cityLabel
-                          // setValue={setCity}
+                          setValue={setCity}
                           value=city
                           onChange={ev => {
+                            let value = ReactEvent.Form.target(ev)["value"]
+                            setCity(.prev => {
+                              isValid: value !== "" ? Some(true) : Some(false),
+                              value,
+                              errorString: value !== "" ? "" : prev.errorString,
+                            })
+                          }}
+                          onBlur={ev => {
+                            let value = ReactEvent.Focus.target(ev)["value"]
                             setCity(.prev => {
                               ...prev,
-                              isValid: ReactEvent.Form.target(ev)["value"] !== ""
-                                ? Some(true)
-                                : Some(false),
-                              value: ReactEvent.Form.target(ev)["value"],
+                              isValid: Some(value !== ""),
                             })
                           }}
                           paymentType
@@ -551,7 +516,13 @@ let make = (
                           fieldName=localeString.postalCodeLabel
                           setValue={setPostalCode}
                           value=postalCode
-                          onBlur=onPostalBlur
+                          onBlur={ev => {
+                            let value = ReactEvent.Focus.target(ev)["value"]
+                            setPostalCode(.prev => {
+                              ...prev,
+                              isValid: Some(value !== ""),
+                            })
+                          }}
                           onChange=onPostalChange
                           paymentType
                           type_="tel"
@@ -563,15 +534,21 @@ let make = (
                     | AddressLine1 =>
                       <PaymentField
                         fieldName=localeString.line1Label
-                        // setValue={setLine1}
+                        setValue={setLine1}
                         value=line1
                         onChange={ev => {
+                          let value = ReactEvent.Form.target(ev)["value"]
+                          setLine1(.prev => {
+                            isValid: value !== "" ? Some(true) : Some(false),
+                            value,
+                            errorString: value !== "" ? "" : prev.errorString,
+                          })
+                        }}
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
                           setLine1(.prev => {
                             ...prev,
-                            isValid: ReactEvent.Form.target(ev)["value"] !== ""
-                              ? Some(true)
-                              : Some(false),
-                            value: ReactEvent.Form.target(ev)["value"],
+                            isValid: Some(value !== ""),
                           })
                         }}
                         paymentType
@@ -583,15 +560,21 @@ let make = (
                     | AddressLine2 =>
                       <PaymentField
                         fieldName=localeString.line2Label
-                        // setValue={setLine2}
+                        setValue={setLine2}
                         value=line2
                         onChange={ev => {
+                          let value = ReactEvent.Form.target(ev)["value"]
+                          setLine2(.prev => {
+                            isValid: value !== "" ? Some(true) : Some(false),
+                            value,
+                            errorString: value !== "" ? "" : prev.errorString,
+                          })
+                        }}
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
                           setLine2(.prev => {
                             ...prev,
-                            isValid: ReactEvent.Form.target(ev)["value"] !== ""
-                              ? Some(true)
-                              : Some(false),
-                            value: ReactEvent.Form.target(ev)["value"],
+                            isValid: Some(value !== ""),
                           })
                         }}
                         paymentType
@@ -606,9 +589,18 @@ let make = (
                         setValue={setCity}
                         value=city
                         onChange={ev => {
+                          let value = ReactEvent.Form.target(ev)["value"]
+                          setCity(.prev => {
+                            isValid: value !== "" ? Some(true) : Some(false),
+                            value,
+                            errorString: value !== "" ? "" : prev.errorString,
+                          })
+                        }}
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
                           setCity(.prev => {
                             ...prev,
-                            value: ReactEvent.Form.target(ev)["value"],
+                            isValid: Some(value !== ""),
                           })
                         }}
                         paymentType
@@ -635,9 +627,15 @@ let make = (
                     | AddressPincode =>
                       <PaymentField
                         fieldName=localeString.postalCodeLabel
-                        // setValue={setPostalCode}
+                        setValue={setPostalCode}
                         value=postalCode
-                        onBlur=onPostalBlur
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
+                          setPostalCode(.prev => {
+                            ...prev,
+                            isValid: Some(value !== ""),
+                          })
+                        }}
                         onChange=onPostalChange
                         paymentType
                         type_="tel"
@@ -690,6 +688,7 @@ let make = (
                     | CardCvc
                     | CardExpiryAndCvc
                     | Currency(_)
+                    | FullName
                     | None => React.null
                     }}
                   </div>
