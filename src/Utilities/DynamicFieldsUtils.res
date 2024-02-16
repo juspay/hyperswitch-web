@@ -135,7 +135,7 @@ let useRequiredFieldsEmptyAndValid = (
       | AddressCountry(countryArr) => country !== "" || countryArr->Belt.Array.length === 0
       | BillingName => checkIfNameIsValid(requiredFields, paymentMethodFields, billingName)
       | AddressLine1 => line1.value !== ""
-      | AddressLine2 => line2.value !== ""
+      | AddressLine2 => billingAddress.isUseBillingAddress ? true : line2.value !== ""
       | Bank => selectedBank !== "" || bankNames->Belt.Array.length === 0
       | PhoneNumber => phone.value !== ""
       | StateAndCity => state.value !== "" && city.value !== ""
@@ -172,7 +172,7 @@ let useRequiredFieldsEmptyAndValid = (
         | AddressCountry(countryArr) => country === "" && countryArr->Belt.Array.length > 0
         | BillingName => billingName.value === ""
         | AddressLine1 => line1.value === ""
-        | AddressLine2 => line2.value === ""
+        | AddressLine2 => billingAddress.isUseBillingAddress ? false : line2.value === ""
         | Bank => selectedBank === "" && bankNames->Belt.Array.length > 0
         | StateAndCity => city.value === "" || state.value === ""
         | CountryAndPincode(countryArr) =>
@@ -656,7 +656,7 @@ let useSubmitCallback = () => {
     logger,
   )
   let (city, setCity) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressCity, "city", logger)
-
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   React.useCallback5((ev: Window.event) => {
     let json = ev.data->Js.Json.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
@@ -670,7 +670,7 @@ let useSubmitCallback = () => {
       if line2.value == "" {
         setLine2(.prev => {
           ...prev,
-          errorString: "Address line 2 cannot be empty",
+          errorString: billingAddress.isUseBillingAddress ? "" : "Address line 2 cannot be empty",
         })
       }
       if state.value == "" {
