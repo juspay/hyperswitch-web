@@ -42,8 +42,8 @@ type localeStrings = {
   enterFieldsText: string,
   enterValidDetailsText: string,
   card: string,
-  surchargeMsgAmount: string => React.element,
-  surchargeMsgAmountForCard: string => React.element,
+  surchargeMsgAmount: (string, string) => React.element,
+  surchargeMsgAmountForCard: (string, string) => React.element,
   surchargeMsgAmountForOneClickWallets: string,
   billingNameLabel: string,
   billingNamePlaceholder: string,
@@ -99,14 +99,14 @@ let defaultLocale = {
   enterFieldsText: "Please enter all fields",
   enterValidDetailsText: "Please enter valid details",
   card: "Card",
-  surchargeMsgAmount: str => <>
+  surchargeMsgAmount: (currency, str) => <>
     {React.string(`A surcharge amount of${Utils.nbsp}`)}
-    <strong> {React.string(str)} </strong>
+    <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}will be applied for this transaction`})}
   </>,
-  surchargeMsgAmountForCard: str => <>
+  surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
-    <strong> {React.string(str)} </strong>
+    <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string(`${Utils.nbsp}will be applied for this transaction`)}
   </>,
   surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
@@ -166,14 +166,14 @@ let localeStrings = [
     enterFieldsText: "Please enter all fields",
     enterValidDetailsText: "Please enter valid details",
     card: "Card",
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`A surcharge amount of${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string({`${Utils.nbsp}will be applied for this transaction`})}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}will be applied for this transaction`)}
     </>,
     surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
@@ -230,14 +230,14 @@ let localeStrings = [
     enterFieldsText: `יש להזין את כל השדות`,
     enterValidDetailsText: `יש להזין פרטים תקינים`,
     card: `כרטיס`,
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`סכום היטל של${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}יוחל עבור עסקה זו`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`סכום היטל של עד${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}יחול עבור עסקה זו`)}
     </>,
     surchargeMsgAmountForOneClickWallets: `תשלום נוסף חל`,
@@ -294,14 +294,14 @@ let localeStrings = [
     enterFieldsText: `Veuillez saisir tous les champs`,
     enterValidDetailsText: `Veuillez saisir des informations valides`,
     card: `Carte`,
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`Un montant supplémentaire d'${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}sera appliqué pour cette transaction`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`Un montant supplémentaire allant jusqu'à${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}sera appliqué pour cette transaction.`)}
     </>,
     surchargeMsgAmountForOneClickWallets: `Frais supplémentaires applicables`,
@@ -358,14 +358,14 @@ let localeStrings = [
     enterFieldsText: "Please enter all fields",
     enterValidDetailsText: "Please enter valid details",
     card: "Card",
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`A surcharge amount of${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}will be applied for this transaction`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}will be applied for this transaction`)}
     </>,
     surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
@@ -422,14 +422,14 @@ let localeStrings = [
     enterFieldsText: `الرجاء إدخال كافة الحقول`,
     enterValidDetailsText: `الرجاء إدخال تفاصيل صالحة`,
     card: `بطاقة`,
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`سيتم تطبيق مبلغ إضافي من${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}على هذه المعاملة`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`سيتم تطبيق مبلغ إضافي يصل إلى${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}على هذه المعاملة`)}
     </>,
     surchargeMsgAmountForOneClickWallets: `رسوم إضافية قابلة للتطبيق`,
@@ -486,14 +486,14 @@ let localeStrings = [
     enterFieldsText: `すべてのフィールドに入力してください`,
     enterValidDetailsText: `有効な詳細を入力してください`,
     card: `カード`,
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`この取引には${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}の追加料金が適用されます`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`この取引には${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}までの追加料金が適用されます`)}
     </>,
     surchargeMsgAmountForOneClickWallets: `追加料金が適用されます`,
@@ -550,14 +550,14 @@ let localeStrings = [
     enterFieldsText: `Bitte füllen Sie alle Felder aus`,
     enterValidDetailsText: `Bitte geben Sie gültige Daten ein`,
     card: `Karte`,
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`Für diese Transaktion wird ein Zuschlag in Höhe von${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}erhoben`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`Für diese Transaktion wird ein Zuschlagsbetrag von bis zu${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}erhoben`)}
     </>,
     surchargeMsgAmountForOneClickWallets: `Es fällt eine zusätzliche Gebühr an`,
