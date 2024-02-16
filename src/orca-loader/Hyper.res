@@ -334,7 +334,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           resolve(. Js.Json.null)
         })
         ->then(_ => {
-          logger.setLogInfo(~value="orca.elements called", ~eventName=ORCA_ELEMENTS_CALLED, ())
+          logger.setLogInfo(~value=Window.href, ~eventName=ORCA_ELEMENTS_CALLED, ())
           resolve()
         })
         ->ignore
