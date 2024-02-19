@@ -446,7 +446,7 @@ let make = (
                 ~margin=`10px 0`,
                 (),
               )}>
-              {React.string("Billing Details")}
+              {React.string(localeString.billingDetailsText)}
               <div className="p-2 flex flex-col gap-2">
                 {dynamicFieldsToRenderInsideBilling
                 ->Js.Array2.mapi((item, index) => {

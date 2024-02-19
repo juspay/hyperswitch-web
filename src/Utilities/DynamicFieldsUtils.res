@@ -657,6 +657,9 @@ let useSubmitCallback = () => {
   )
   let (city, setCity) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressCity, "city", logger)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+
   React.useCallback5((ev: Window.event) => {
     let json = ev.data->Js.Json.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
@@ -664,31 +667,31 @@ let useSubmitCallback = () => {
       if line1.value == "" {
         setLine1(.prev => {
           ...prev,
-          errorString: "Address line 1 cannot be empty",
+          errorString: localeString.line1EmptyText,
         })
       }
       if line2.value == "" {
         setLine2(.prev => {
           ...prev,
-          errorString: billingAddress.isUseBillingAddress ? "" : "Address line 2 cannot be empty",
+          errorString: billingAddress.isUseBillingAddress ? "" : localeString.line2EmptyText,
         })
       }
       if state.value == "" {
         setState(.prev => {
           ...prev,
-          errorString: "State cannot be empty",
+          errorString: localeString.stateEmptyText,
         })
       }
       if postalCode.value == "" {
         setPostalCode(.prev => {
           ...prev,
-          errorString: "Postal code cannot be empty",
+          errorString: localeString.postalCodeEmptyText,
         })
       }
       if city.value == "" {
         setCity(.prev => {
           ...prev,
-          errorString: "City cannot be empty",
+          errorString: localeString.cityEmptyText,
         })
       }
     }
