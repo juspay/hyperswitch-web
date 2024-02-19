@@ -1,3 +1,10 @@
+## [0.23.11](https://github.com/juspay/hyperswitch-web/compare/v0.23.10...v0.23.11) (2024-02-16)
+
+
+### Bug Fixes
+
+* HS-222: Address line2 optional in case of isUseBillingAddress ([#174](https://github.com/juspay/hyperswitch-web/issues/174)) ([d2fa10e](https://github.com/juspay/hyperswitch-web/commit/d2fa10e3c9e48bb8c9488cc3fcf044b7c05dd301))
+
 ## [0.23.10](https://github.com/juspay/hyperswitch-web/compare/v0.23.9...v0.23.10) (2024-02-16)
 
 
