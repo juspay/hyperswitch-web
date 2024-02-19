@@ -127,7 +127,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     logger.setLogInitiated()
     switch paymentlist {
     | Loaded(_)
-    | LoadError(_) => ()
+    | LoadError => ()
     | _ =>
       setList(._ =>
         showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
@@ -340,10 +340,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
           list == Js.Dict.empty()->Js.Json.object_
-            ? setList(._ => LoadError(Js.Dict.empty()->Js.Json.object_))
+            ? setList(._ => LoadError)
             : switch list->Utils.getDictFromJson->Js.Dict.get("error") {
-              | Some(err) => setList(._ => LoadError(err))
-              | None => setList(._ => Loaded(list))
+              | Some(_) => setList(._ => LoadError)
+              | None =>
+                let isNonEmptyPaymentMethodList =
+                  list
+                  ->Utils.getDictFromJson
+                  ->Utils.getArray("payment_methods")
+                  ->Js.Array2.length > 0
+                setList(._ => isNonEmptyPaymentMethodList ? Loaded(list) : LoadError)
               }
         }
         if dict->getDictIsSome("customerPaymentMethods") {
