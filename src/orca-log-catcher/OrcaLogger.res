@@ -27,6 +27,7 @@ type eventName =
   | PAYPAL_SDK_FLOW
   | APP_INITIATED
   | APP_REINITIATED
+  | LOG_INITIATED
   | LOADER_CALLED
   | ORCA_ELEMENTS_CALLED
   | PAYMENT_OPTIONS_PROVIDED
@@ -52,7 +53,6 @@ type eventName =
   | REDIRECTING_USER
   | DISPLAY_BANK_TRANSFER_INFO_PAGE
   | DISPLAY_QR_CODE_INFO_PAGE
-  | DYNAMIC_FIELDS_RENDER
   | PAYMENT_METHODS_RESPONSE
 
 let eventNameToStrMapper = eventName => {
@@ -82,6 +82,7 @@ let eventNameToStrMapper = eventName => {
   | PAYPAL_SDK_FLOW => "PAYPAL_SDK_FLOW"
   | APP_INITIATED => "APP_INITIATED"
   | APP_REINITIATED => "APP_REINITIATED"
+  | LOG_INITIATED => "LOG_INITIATED"
   | LOADER_CALLED => "LOADER_CALLED"
   | ORCA_ELEMENTS_CALLED => "ORCA_ELEMENTS_CALLED"
   | PAYMENT_OPTIONS_PROVIDED => "PAYMENT_OPTIONS_PROVIDED"
@@ -107,7 +108,6 @@ let eventNameToStrMapper = eventName => {
   | REDIRECTING_USER => "REDIRECTING_USER"
   | DISPLAY_BANK_TRANSFER_INFO_PAGE => "DISPLAY_BANK_TRANSFER_INFO_PAGE"
   | DISPLAY_QR_CODE_INFO_PAGE => "DISPLAY_QR_CODE_INFO_PAGE"
-  | DYNAMIC_FIELDS_RENDER => "DYNAMIC_FIELDS_RENDER"
   | PAYMENT_METHODS_RESPONSE => "PAYMENT_METHODS_RESPONSE"
   }
 }
@@ -138,7 +138,7 @@ type logFile = {
   browserName: string,
   browserVersion: string,
   userAgent: string,
-  eventName: string,
+  eventName: eventName,
   latency: string,
   firstEvent: bool,
   paymentMethod: string,
@@ -257,7 +257,7 @@ let logFileToObj = logFile => {
     ("app_id", logFile.appId->Js.Json.string),
     ("platform", logFile.platform->convertToScreamingSnakeCase->Js.Json.string),
     ("user_agent", logFile.userAgent->Js.Json.string),
-    ("event_name", logFile.eventName->Js.Json.string),
+    ("event_name", logFile.eventName->eventNameToStrMapper->Js.Json.string),
     ("browser_name", logFile.browserName->convertToScreamingSnakeCase->Js.Json.string),
     ("browser_version", logFile.browserVersion->Js.Json.string),
     ("latency", logFile.latency->Js.Json.string),
@@ -408,6 +408,9 @@ let make = (
   | None => GlobalVars.repoName
   }
 
+  let events = ref(Js.Dict.empty())
+  let eventsCounter = ref(Js.Dict.empty())
+
   let timeOut = ref(None)
 
   let merchantId = getRefFromOption(merchantId)
@@ -421,8 +424,25 @@ let make = (
     metadata := value
   }
 
+  let calculateAndUpdateCounterHook = eventName => {
+    let updatedCounter = switch eventsCounter.contents->Js.Dict.get(eventName) {
+    | Some(num) => num + 1
+    | None => 1
+    }
+    eventsCounter.contents->Js.Dict.set(eventName, updatedCounter)
+    updatedCounter
+  }
+
   let conditionalLogPush = (log: logFile) => {
-    if GlobalVars.enableLogging {
+    let maxLogsPushedPerEventName = GlobalVars.maxLogsPushedPerEventName
+    let conditionalEventName = switch log.eventName {
+    | INPUT_FIELD_CHANGED => log.value // to enforce rate limiting for each input field independently
+    | _ => ""
+    }
+    let eventName = log.eventName->eventNameToStrMapper ++ conditionalEventName
+
+    let counter = eventName->calculateAndUpdateCounterHook
+    if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
       switch loggingLevel {
       | DEBUG => log->Js.Array2.push(mainLogFile, _)->ignore
       | INFO =>
@@ -442,11 +462,7 @@ let make = (
 
   let beaconApiCall = data => {
     if data->Js.Array2.length > 0 {
-      let logData =
-        [("data", data->Js.Array2.map(logFileToObj)->Js.Json.array)]
-        ->Js.Dict.fromArray
-        ->Js.Json.object_
-        ->Js.Json.stringify
+      let logData = data->Js.Array2.map(logFileToObj)->Js.Json.array->Js.Json.stringify
       Window.sendBeacon(GlobalVars.logEndpoint, logData)
     }
   }
@@ -455,8 +471,6 @@ let make = (
   let setClientSecret = value => {
     clientSecret := value
   }
-
-  let events = ref(Js.Dict.empty())
 
   let rec sendLogs = () => {
     switch timeOut.contents {
@@ -475,16 +489,16 @@ let make = (
 
   let checkForPriorityEvents = (arrayOfLogs: array<logFile>) => {
     let priorityEventNames = [
-      "APP_RENDERED",
-      "ORCA_ELEMENTS_CALLED",
-      "PAYMENT_DATA_FILLED",
-      "PAYMENT_ATTEMPT",
-      "CONFIRM_CALL",
-      "SDK_CRASH",
-      "REDIRECTING_USER",
-      "DISPLAY_BANK_TRANSFER_INFO_PAGE",
-      "DISPLAY_QR_CODE_INFO_PAGE",
-      "SESSIONS_CALL",
+      APP_RENDERED,
+      ORCA_ELEMENTS_CALLED,
+      PAYMENT_DATA_FILLED,
+      PAYMENT_ATTEMPT,
+      CONFIRM_CALL,
+      SDK_CRASH,
+      REDIRECTING_USER,
+      DISPLAY_BANK_TRANSFER_INFO_PAGE,
+      DISPLAY_QR_CODE_INFO_PAGE,
+      SESSIONS_CALL,
     ]
     arrayOfLogs
     ->Js.Array2.find(log => {
@@ -511,19 +525,20 @@ let make = (
   let calculateLatencyHook = (~eventName, ~type_="", ()) => {
     let currentTimestamp = Js.Date.now()
     let latency = switch eventName {
-    | "PAYMENT_ATTEMPT" => {
-        let appRenderedTimestamp = events.contents->Js.Dict.get("APP_RENDERED")
+    | PAYMENT_ATTEMPT => {
+        let appRenderedTimestamp = events.contents->Js.Dict.get(APP_RENDERED->eventNameToStrMapper)
         switch appRenderedTimestamp {
         | Some(float) => currentTimestamp -. float
         | _ => -1.
         }
       }
-    | "RETRIEVE_CALL"
-    | "CONFIRM_CALL"
-    | "SESSIONS_CALL"
-    | "PAYMENT_METHODS_CALL"
-    | "CUSTOMER_PAYMENT_METHODS_CALL" => {
-        let logRequestTimestamp = events.contents->Js.Dict.get(eventName ++ "_INIT")
+    | RETRIEVE_CALL
+    | CONFIRM_CALL
+    | SESSIONS_CALL
+    | PAYMENT_METHODS_CALL
+    | CUSTOMER_PAYMENT_METHODS_CALL => {
+        let logRequestTimestamp =
+          events.contents->Js.Dict.get(eventName->eventNameToStrMapper ++ "_INIT")
         switch (logRequestTimestamp, type_) {
         | (Some(_), "request") => 0.
         | (Some(float), _) => currentTimestamp -. float
@@ -547,7 +562,7 @@ let make = (
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
-    let latency = calculateLatencyHook(~eventName=eventNameStr, ())
+    let latency = calculateLatencyHook(~eventName, ())
     let localTimestamp = timestamp->Belt.Option.getWithDefault(Js.Date.now()->Belt.Float.toString)
     let localTimestampFloat =
       localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
@@ -569,7 +584,7 @@ let make = (
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
-      eventName: eventNameStr,
+      eventName,
       latency,
       paymentMethod,
       firstEvent,
@@ -600,7 +615,7 @@ let make = (
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
-    let latency = calculateLatencyHook(~eventName=eventNameStr, ~type_, ())
+    let latency = calculateLatencyHook(~eventName, ~type_, ())
     let localTimestamp = timestamp->Belt.Option.getWithDefault(Js.Date.now()->Belt.Float.toString)
     let localTimestampFloat =
       localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
@@ -628,7 +643,7 @@ let make = (
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
-      eventName: eventNameStr,
+      eventName,
       latency,
       paymentMethod,
       firstEvent,
@@ -652,7 +667,7 @@ let make = (
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
-    let latency = calculateLatencyHook(~eventName=eventNameStr, ())
+    let latency = calculateLatencyHook(~eventName, ())
     let localTimestamp = timestamp->Belt.Option.getWithDefault(Js.Date.now()->Belt.Float.toString)
     let localTimestampFloat =
       localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
@@ -674,7 +689,7 @@ let make = (
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
-      eventName: eventNameStr,
+      eventName,
       latency,
       paymentMethod,
       firstEvent,
@@ -687,8 +702,9 @@ let make = (
   }
 
   let setLogInitiated = () => {
-    let eventName = "LOG_INITIATED"
-    let firstEvent = events.contents->Js.Dict.get(eventName)->Belt.Option.isNone
+    let eventName: eventName = LOG_INITIATED
+    let eventNameStr = eventName->eventNameToStrMapper
+    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
     {
       logType: INFO,
@@ -717,7 +733,7 @@ let make = (
     ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
-    events.contents->Js.Dict.set(eventName, Js.Date.now())
+    events.contents->Js.Dict.set(eventNameStr, Js.Date.now())
   }
 
   let handleBeforeUnload = _event => {

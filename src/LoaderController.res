@@ -254,7 +254,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                 }
               }
 
-              logger.setLogInfo(~value="paymentElementCreate", ~eventName=APP_RENDERED, ())
+              logger.setLogInfo(~value=Window.href, ~eventName=APP_RENDERED, ())
               [
                 ("iframeId", "no-element"->Js.Json.string),
                 ("publishableKey", ""->Js.Json.string),

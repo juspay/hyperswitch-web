@@ -113,12 +113,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
       () => {
         logger.setMerchantId(publishableKey)
         logger.setSessionId(sessionID)
-        logger.setLogInfo(
-          ~value="orca-sdk initiated",
-          ~eventName=APP_INITIATED,
-          ~timestamp=sdkTimestamp,
-          (),
-        )
+        logger.setLogInfo(~value=Window.href, ~eventName=APP_INITIATED, ~timestamp=sdkTimestamp, ())
       }
     }->Sentry.sentryLogger
     switch Window.getHyper->Js.Nullable.toOption {
@@ -326,7 +321,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         })
       }
       let elements = elementsOptions => {
-        logger.setLogInfo(~value="orca.elements called", ~eventName=ORCA_ELEMENTS_CALLED, ())
+        open Promise
         let clientSecretId =
           elementsOptions
           ->Js.Json.decodeObject
@@ -334,8 +329,15 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           ->Belt.Option.flatMap(Js.Json.decodeString)
           ->Belt.Option.getWithDefault("")
         clientSecret := clientSecretId
-
-        logger.setClientSecret(clientSecretId)
+        Js.Promise.make((~resolve, ~reject as _) => {
+          logger.setClientSecret(clientSecretId)
+          resolve(. Js.Json.null)
+        })
+        ->then(_ => {
+          logger.setLogInfo(~value=Window.href, ~eventName=ORCA_ELEMENTS_CALLED, ())
+          resolve()
+        })
+        ->ignore
 
         Elements.make(
           elementsOptions,
