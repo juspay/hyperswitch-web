@@ -1,3 +1,10 @@
+## [0.23.12](https://github.com/juspay/hyperswitch-web/compare/v0.23.11...v0.23.12) (2024-02-19)
+
+
+### Bug Fixes
+
+* Handling error cases for payment methods list ([#164](https://github.com/juspay/hyperswitch-web/issues/164)) ([8df24df](https://github.com/juspay/hyperswitch-web/commit/8df24df92e9fa488ad81fb27709cbffe12a6bef6))
+
 ## [0.23.11](https://github.com/juspay/hyperswitch-web/compare/v0.23.10...v0.23.11) (2024-02-16)
 
 
