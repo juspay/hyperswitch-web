@@ -1,3 +1,10 @@
+# [0.24.0](https://github.com/juspay/hyperswitch-web/compare/v0.23.12...v0.24.0) (2024-02-19)
+
+
+### Features
+
+* Logging framework revamped ([#167](https://github.com/juspay/hyperswitch-web/issues/167)) ([6ecbadd](https://github.com/juspay/hyperswitch-web/commit/6ecbaddad644b50d6225516f4dd5df5403e5d9ba))
+
 ## [0.23.12](https://github.com/juspay/hyperswitch-web/compare/v0.23.11...v0.23.12) (2024-02-19)
 
 
