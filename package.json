@@ -61,15 +61,12 @@
   "devDependencies": {
     "@commitlint/cli": "^17.0.3",
     "@commitlint/config-conventional": "^17.0.3",
-    "@digitalroute/cz-conventional-changelog-for-jira": "^7.4.2",
     "@semantic-release/changelog": "^6.0.1",
     "@semantic-release/commit-analyzer": "^9.0.2",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/npm": "^9.0.1",
     "@semantic-release/release-notes-generator": "^10.0.3",
     "autoprefixer": "^10.4.8",
-    "commitlint-config-jira": "^1.6.4",
-    "commitlint-plugin-jira-rules": "^1.6.4",
     "concurrently": "4.1.2",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
@@ -90,42 +87,39 @@
   },
   "config": {
     "commitizen": {
-      "path": "./node_modules/@digitalroute/cz-conventional-changelog-for-jira",
-      "jiraPrefix": "HS",
-      "jiraLocation": "post-type",
-      "jiraAppend": ":"
+      "path": "./node_modules/cz-conventional-changelog",
+      "types": {
+        "feat": {
+          "description": "A new feature",
+          "title": "Features"
+        },
+        "fix": {
+          "description": "A bug fix",
+          "title": "Bug Fixes"
+        },
+        "refactor": {
+          "description": "A code change that neither fixes a bug nor adds a feature",
+          "title": "Code Refactoring"
+        },
+        "chore": {
+          "description": "Other changes that don't modify src or test files",
+          "title": "Chores"
+        },
+        "docs": {
+          "description": "Documentation only changes",
+          "title": "Documentation"
+        },
+        "revert": {
+          "description": "Reverts a previous commit",
+          "title": "Reverts"
+        }
+      }
     }
   },
   "commitlint": {
-    "plugins": [
-      "commitlint-plugin-jira-rules"
-    ],
     "extends": [
-      "jira"
-    ],
-    "rules": {
-      "jira-task-id-max-length": [
-        0
-      ],
-      "jira-commit-message-separator": [
-        0
-      ],
-      "jira-commit-status-case": [
-        0
-      ],
-      "jira-task-id-project-key": [
-        0
-      ],
-      "jira-task-id-separator": [
-        0
-      ],
-      "jira-task-id-case": [
-        0
-      ],
-      "jira-task-id-min-length": [
-        0
-      ]
-    }
+      "@commitlint/config-conventional"
+    ]
   },
   "release": {
     "branches": [
