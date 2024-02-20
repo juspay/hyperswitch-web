@@ -137,14 +137,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         setList(._ => updatedState)
         logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ())
       }
-    | LoadError(x) => {
-        setList(._ => updatedState)
-        logger.setLogError(
-          ~value="LoadError: " ++ x->Js.Json.stringify,
-          ~eventName=LOADER_CHANGED,
-          (),
-        )
-      }
+    | LoadError(x) => logger.setLogError(
+        ~value="LoadError: " ++ x->Js.Json.stringify,
+        ~eventName=LOADER_CHANGED,
+        (),
+      )
     }
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
