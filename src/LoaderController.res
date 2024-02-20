@@ -260,6 +260,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                 ("publishableKey", ""->Js.Json.string),
                 ("parentURL", "*"->Js.Json.string),
                 ("sdkHandleConfirmPayment", false->Js.Json.boolean),
+                ("sdkHandleOneClickConfirmPayment", true->Js.Json.boolean),
               ]->Js.Array2.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)
               })

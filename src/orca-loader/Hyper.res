@@ -240,7 +240,8 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           [("paymentIntent", data)]->Js.Dict.fromArray->Js.Json.object_->Promise.resolve
         })
       }
-      let confirmPayment = payload => {
+
+      let confirmPaymentWrapper = (payload, isOneClick, result) => {
         let confirmParams =
           payload
           ->Js.Json.decodeObject
@@ -262,24 +263,6 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           ->Belt.Option.getWithDefault("")
 
         Js.Promise.make((~resolve, ~reject as _) => {
-          iframeRef.contents->Js.Array2.forEach(ifR => {
-            ifR->Window.iframePostMessage(
-              [
-                ("doSubmit", true->Js.Json.boolean),
-                ("clientSecret", clientSecret.contents->Js.Json.string),
-                (
-                  "confirmParams",
-                  [
-                    ("return_url", url->Js.Json.string),
-                    ("publishableKey", publishableKey->Js.Json.string),
-                  ]
-                  ->Js.Dict.fromArray
-                  ->Js.Json.object_,
-                ),
-              ]->Js.Dict.fromArray,
-            )
-          })
-
           let handleMessage = (event: Types.event) => {
             let json = event.data->eventToJson
             let dict = json->getDictFromJson
@@ -303,6 +286,16 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
                 ->Js.Dict.get("url")
                 ->Belt.Option.flatMap(Js.Json.decodeString)
                 ->Belt.Option.getWithDefault(url)
+
+              if isOneClick {
+                iframeRef.contents->Js.Array2.forEach(ifR => {
+                  // to unset one click button loader
+                  ifR->Window.iframePostMessage(
+                    [("oneClickDoSubmit", false->Js.Json.boolean)]->Js.Dict.fromArray,
+                  )
+                })
+              }
+
               if (
                 val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) &&
                   redirect === "always"
@@ -316,10 +309,36 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
             | None => ()
             }
           }
-
+          let message = isOneClick
+            ? [("oneClickDoSubmit", result->Js.Json.boolean)]->Js.Dict.fromArray
+            : [
+                ("doSubmit", true->Js.Json.boolean),
+                ("clientSecret", clientSecret.contents->Js.Json.string),
+                (
+                  "confirmParams",
+                  [
+                    ("return_url", url->Js.Json.string),
+                    ("publishableKey", publishableKey->Js.Json.string),
+                  ]
+                  ->Js.Dict.fromArray
+                  ->Js.Json.object_,
+                ),
+              ]->Js.Dict.fromArray
           addSmartEventListener("message", handleMessage, "onSubmit")
+          iframeRef.contents->Js.Array2.forEach(ifR => {
+            ifR->Window.iframePostMessage(message)
+          })
         })
       }
+
+      let confirmPayment = payload => {
+        confirmPaymentWrapper(payload, false, true)
+      }
+
+      let confirmOneClickPayment = (payload, result: bool) => {
+        confirmPaymentWrapper(payload, true, result)
+      }
+
       let elements = elementsOptions => {
         open Promise
         let clientSecretId =
@@ -468,7 +487,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           ->Js.Json.object_
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
+
       let returnObject = {
+        confirmOneClickPayment,
         confirmPayment,
         elements,
         widgets: elements,

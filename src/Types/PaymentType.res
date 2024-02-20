@@ -866,6 +866,8 @@ let itemToObjMapper = (dict, logger) => {
       "wallets",
       "showCardFormByDefault",
       "disableSaveCards",
+      "sdkHandleOneClickConfirmPayment",
+      "showCardFormByDefault",
     ],
     dict,
     "options",

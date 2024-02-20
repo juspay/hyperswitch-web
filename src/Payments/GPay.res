@@ -14,7 +14,7 @@ let make = (
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
+  let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Gpay)
@@ -137,28 +137,35 @@ let make = (
       ~paymentMethod="GOOGLE_PAY",
       (),
     )
-    if isInvokeSDKFlow {
-      if isDelayedSessionToken {
-        let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
-        processPayment(bodyDict)
-      } else {
-        handlePostMessage([
-          ("fullscreen", true->Js.Json.boolean),
-          ("param", "paymentloader"->Js.Json.string),
-          ("iframeId", iframeId->Js.Json.string),
-        ])
-        options.readOnly ? () : handlePostMessage([("GpayClicked", true->Js.Json.boolean)])
+    open Promise
+    OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
+      let result = result->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)
+      if result {
+        if isInvokeSDKFlow {
+          if isDelayedSessionToken {
+            let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
+            processPayment(bodyDict)
+          } else {
+            handlePostMessage([
+              ("fullscreen", true->Js.Json.boolean),
+              ("param", "paymentloader"->Js.Json.string),
+              ("iframeId", iframeId->Js.Json.string),
+            ])
+            options.readOnly ? () : handlePostMessage([("GpayClicked", true->Js.Json.boolean)])
+          }
+        } else {
+          let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
+          processPayment(bodyDict)
+        }
+        loggerState.setLogInfo(
+          ~value="",
+          ~eventName=PAYMENT_DATA_FILLED,
+          ~paymentMethod="GOOGLE_PAY",
+          (),
+        )
       }
-    } else {
-      let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
-      processPayment(bodyDict)
-    }
-    loggerState.setLogInfo(
-      ~value="",
-      ~eventName=PAYMENT_DATA_FILLED,
-      ~paymentMethod="GOOGLE_PAY",
-      (),
-    )
+      resolve()
+    })
   }
 
   let buttonStyle = {

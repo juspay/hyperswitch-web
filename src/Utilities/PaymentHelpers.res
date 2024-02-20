@@ -336,7 +336,11 @@ let intentCall = (
             handlePostMessage(message)
           } else {
             switch paymentType {
-            | Card => postSubmitResponse(~jsonData=data, ~url=url.href)
+            | Card
+            | Gpay
+            | Applepay
+            | Paypal =>
+              postSubmitResponse(~jsonData=data, ~url=url.href)
             | _ => openUrl(url.href)
             }
           }
@@ -362,7 +366,11 @@ let intentCall = (
             setIsManualRetryEnabled(. _ => intent.manualRetryAllowed)
           }
           switch paymentType {
-          | Card => postSubmitResponse(~jsonData=data, ~url=url.href)
+          | Card
+          | Gpay
+          | Applepay
+          | Paypal =>
+            postSubmitResponse(~jsonData=data, ~url=url.href)
           | _ => openUrl(url.href)
           }
         } else {

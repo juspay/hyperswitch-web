@@ -37,8 +37,9 @@ let handleOnClickPostMessage = (~targetOrigin="*", ev) => {
     ~targetOrigin,
   )
 }
-let handleOnConfirmPostMessage = (~targetOrigin="*", ()) => {
-  handlePostMessage([("confirmTriggered", true->Js.Json.boolean)], ~targetOrigin)
+let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false, ()) => {
+  let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
+  handlePostMessage([(message, true->Js.Json.boolean)], ~targetOrigin)
 }
 let getOptionString = (dict, key) => {
   dict->Js.Dict.get(key)->Belt.Option.flatMap(Js.Json.decodeString)

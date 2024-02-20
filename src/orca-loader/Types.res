@@ -8,6 +8,7 @@ type eventData = {
   classChange: bool,
   newClassType: string,
   confirmTriggered: bool,
+  oneClickConfirmTriggered: bool,
 }
 type event = {key: string, data: eventData}
 type eventParam = Event(event) | EventData(eventData) | Empty
@@ -46,6 +47,7 @@ type confirmPaymentParams = {
 }
 
 type hyperInstance = {
+  confirmOneClickPayment: (Js.Json.t, bool) => Js.Promise.t<Js.Json.t>,
   confirmPayment: Js.Json.t => Js.Promise.t<Js.Json.t>,
   elements: Js.Json.t => element,
   confirmCardPayment: Js_OO.Callback.arity4<
@@ -54,6 +56,10 @@ type hyperInstance = {
   retrievePaymentIntent: string => Js.Promise.t<Js.Json.t>,
   widgets: Js.Json.t => element,
   paymentRequest: Js.Json.t => Js.Json.t,
+}
+
+let oneClickConfirmPaymentFn = (_, _) => {
+  Js.Promise.resolve(Js.Dict.empty()->Js.Json.object_)
 }
 
 let confirmPaymentFn = (_elements: Js.Json.t) => {
@@ -103,13 +109,14 @@ let create = (_componentType, _options) => {
 }
 
 let defaultElement = {
-  getElement: getElement,
-  update: update,
-  fetchUpdates: fetchUpdates,
-  create: create,
+  getElement,
+  update,
+  fetchUpdates,
+  create,
 }
 
 let defaultHyperInstance = {
+  confirmOneClickPayment: oneClickConfirmPaymentFn,
   confirmPayment: confirmPaymentFn,
   confirmCardPayment: confirmCardPaymentFn,
   retrievePaymentIntent: retrievePaymentIntentFn,
@@ -118,7 +125,8 @@ let defaultHyperInstance = {
   paymentRequest: _ev => Js.Json.null,
 }
 
-type eventType = Escape | Change | Click | Ready | Focus | Blur | ConfirmPayment | None
+type eventType =
+  Escape | Change | Click | Ready | Focus | Blur | ConfirmPayment | OneClickConfirmPayment | None
 
 let eventTypeMapper = event => {
   switch event {
@@ -129,6 +137,7 @@ let eventTypeMapper = event => {
   | "focus" => Focus
   | "blur" => Blur
   | "confirmTriggered" => ConfirmPayment
+  | "oneClickConfirmTriggered" => OneClickConfirmPayment
   | _ => None
   }
 }
