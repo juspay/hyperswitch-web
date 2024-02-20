@@ -44,7 +44,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None, (
       if billingName.value == "" {
         setBillingName(.prev => {
           ...prev,
-          errorString: `Please provide your ${fieldName}`,
+          errorString: fieldName->localeString.nameEmptyText,
         })
       } else {
         switch optionalRequiredFields {
@@ -52,7 +52,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None, (
           if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, BillingName, billingName) {
             setBillingName(.prev => {
               ...prev,
-              errorString: `Please provide your complete ${fieldName}`,
+              errorString: fieldName->localeString.completeNameEmptyText,
             })
           }
         | None => ()

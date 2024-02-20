@@ -1,3 +1,25 @@
+# [0.25.0](https://github.com/juspay/hyperswitch-web/compare/v0.24.0...v0.25.0) (2024-02-19)
+
+
+### Features
+
+* HS-132: Language Support for Error Messages ([#173](https://github.com/juspay/hyperswitch-web/issues/173)) ([281279c](https://github.com/juspay/hyperswitch-web/commit/281279c773f757e3c361f8e068b4d24a24028e42))
+* moved Issues from Jira to Github ([#138](https://github.com/juspay/hyperswitch-web/issues/138)) ([5b42603](https://github.com/juspay/hyperswitch-web/commit/5b426034ca13a75eafb282e4de09a402b5c91636))
+
+# [0.24.0](https://github.com/juspay/hyperswitch-web/compare/v0.23.12...v0.24.0) (2024-02-19)
+
+
+### Features
+
+* Logging framework revamped ([#167](https://github.com/juspay/hyperswitch-web/issues/167)) ([6ecbadd](https://github.com/juspay/hyperswitch-web/commit/6ecbaddad644b50d6225516f4dd5df5403e5d9ba))
+
+## [0.23.12](https://github.com/juspay/hyperswitch-web/compare/v0.23.11...v0.23.12) (2024-02-19)
+
+
+### Bug Fixes
+
+* Handling error cases for payment methods list ([#164](https://github.com/juspay/hyperswitch-web/issues/164)) ([8df24df](https://github.com/juspay/hyperswitch-web/commit/8df24df92e9fa488ad81fb27709cbffe12a6bef6))
+
 ## [0.23.11](https://github.com/juspay/hyperswitch-web/compare/v0.23.10...v0.23.11) (2024-02-16)
 
 

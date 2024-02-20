@@ -895,7 +895,7 @@ let itemToObjMapper = (dict, logger) => {
   }
 }
 
-type loadType = Loading | Loaded(Js.Json.t) | SemiLoaded | LoadError(Js.Json.t)
+type loadType = Loading | Loaded(Js.Json.t) | SemiLoaded | LoadError
 
 let getIsAllStoredCardsHaveName = (savedCards: array<customerMethods>) => {
   savedCards

@@ -65,14 +65,17 @@ if (envBackendUrl === undefined) {
 
 let logEndpoint =
   sdkEnv === "prod"
-    ? "https://api.hyperswitch.io/sdk-logs"
-    : "https://sandbox.juspay.io/godel/analytics";
+    ? "https://api.hyperswitch.io/logs/sdk"
+    : "https://sandbox.hyperswitch.io/logs/sdk";
 
 // Set this to true to enable logging
 let enableLogging = true;
 
 // Choose from DEBUG, INFO, WARNING, ERROR, SILENT
 let loggingLevel = "DEBUG";
+
+// Maximum logs emitted for a particular event, to rate limit logs
+let maxLogsPushedPerEventName = 100;
 
 module.exports = (publicPath = "auto") => {
   let entries = {
@@ -123,6 +126,7 @@ module.exports = (publicPath = "auto") => {
         sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
         enableLogging: JSON.stringify(enableLogging),
         loggingLevel: JSON.stringify(loggingLevel),
+        maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
       }),
       new HtmlWebpackPlugin({
         inject: false,

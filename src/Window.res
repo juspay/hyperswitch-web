@@ -114,7 +114,11 @@ external userAgent: string = "userAgent"
 @val @scope("navigator")
 external sendBeacon: (string, string) => unit = "sendBeacon"
 
-@val @scope(("window", "location")) external hostname: string = "hostname"
+@val @scope(("window", "location"))
+external hostname: string = "hostname"
+
+@val @scope(("window", "location"))
+external href: string = "href"
 
 let isSandbox = hostname === "beta.hyperswitch.io"
 

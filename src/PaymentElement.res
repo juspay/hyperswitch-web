@@ -90,6 +90,7 @@ let make = (
             )
           }
         : ()
+    | LoadError
     | SemiLoaded =>
       setPaymentOptions(_ =>
         showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? ["card"] : []
@@ -142,7 +143,7 @@ let make = (
         ? ""
         : switch methodslist {
           | SemiLoaded
-          | LoadError(_) =>
+          | LoadError =>
             showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? "card" : ""
           | Loaded(_) =>
             paymentOptions->Js.Array2.includes(selectedOption) && showCardFormByDefault
@@ -319,7 +320,7 @@ let make = (
       <PoweredBy />
     </RenderIf>
     {switch methodslist {
-    | LoadError(_) => React.null
+    | LoadError => React.null
     | _ =>
       <RenderIf
         condition={paymentOptions->Js.Array2.length == 0 && walletOptions->Js.Array2.length == 0}>

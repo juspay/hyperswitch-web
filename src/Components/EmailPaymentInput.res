@@ -35,7 +35,7 @@ let make = (~paymentType) => {
     setEmail(.prev => {
       ...prev,
       errorString: switch prev.isValid {
-      | Some(val) => val ? "" : "Invalid email address"
+      | Some(val) => val ? "" : localeString.emailInvalidText
       | None => ""
       },
     })
@@ -49,7 +49,7 @@ let make = (~paymentType) => {
       if email.value == "" {
         setEmail(.prev => {
           ...prev,
-          errorString: "Email cannot be empty",
+          errorString: localeString.emailEmptyText,
         })
       }
     }
