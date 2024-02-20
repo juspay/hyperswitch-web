@@ -434,9 +434,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
       }
       switch list {
       | Loaded(_) => paymentSync()
-      | SemiLoaded
-      | Loading
-      | LoadError => ()
+      | _ => ()
       }
     | None =>
       postFailedSubmitResponse(
@@ -628,8 +626,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
         | None => intentWithoutMandate()
         }
       | SemiLoaded => intentWithoutMandate()
-      | Loading
-      | LoadError => ()
+      | _ => ()
       }
     | None =>
       postFailedSubmitResponse(
