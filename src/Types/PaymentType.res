@@ -122,7 +122,8 @@ type customerMethods = {
   paymentMethodIssuer: option<string>,
   card: customerCard,
 }
-type savedCardsLoadState = LoadingSavedCards | LoadedSavedCards(array<customerMethods>) | NoResult
+type savedCardsLoadState =
+  LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
 
 type billingAddress = {
   isUseBillingAddress: bool,
@@ -247,7 +248,7 @@ let defaultBillingAddress = {
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
-  customerPaymentMethods: NoResult,
+  customerPaymentMethods: NoResult(true),
   layout: ObjectLayout(defaultLayout),
   paymentMethodOrder: None,
   fields: defaultFields,
@@ -777,6 +778,12 @@ let createCustomerObjArr = dict => {
     ->Belt.Option.flatMap(Js.Json.decodeArray)
     ->Belt.Option.getWithDefault([])
 
+  let isGuestCustomer =
+    customerDict
+    ->Js.Dict.get("is_guest_customer")
+    ->Belt.Option.flatMap(Js.Json.decodeBoolean)
+    ->Belt.Option.getWithDefault(false)
+
   let customerPaymentMethods =
     customerArr
     ->Belt.Array.keepMap(Js.Json.decodeObject)
@@ -789,7 +796,7 @@ let createCustomerObjArr = dict => {
         card: getCardDetails(json, "card"),
       }
     })
-  LoadedSavedCards(customerPaymentMethods)
+  LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
 }
 
 let getCustomerMethods = (dict, str) => {
@@ -809,7 +816,7 @@ let getCustomerMethods = (dict, str) => {
           card: getCardDetails(json, "card"),
         }
       })
-    LoadedSavedCards(customerPaymentMethods)
+    LoadedSavedCards(customerPaymentMethods, false)
   } else {
     LoadingSavedCards
   }
