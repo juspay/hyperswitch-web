@@ -15,7 +15,7 @@ let checkIsSafari = () => {
   let userAgentString = navigator.userAgent
   let chromeAgent = userAgentString->Js.String2.indexOf("Chrome") > -1
   let safariAgent = userAgentString->Js.String2.indexOf("Safari") > -1
-  chromeAgent && safariAgent ? false : safariAgent ? true : false
+  !chromeAgent && safariAgent
 }
 
 let date = date()

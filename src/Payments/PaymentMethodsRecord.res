@@ -811,7 +811,7 @@ let getCardNetworks = (dict, str) => {
   ->Belt.Array.keepMap(Js.Json.decodeObject)
   ->Js.Array2.map(json => {
     {
-      card_network: getString(json, "card_network", "")->CardUtils.cardType,
+      card_network: getString(json, "card_network", "")->CardUtils.getCardType,
       eligible_connectors: getStrArray(json, "eligible_connectors"),
       surcharge_details: json->getSurchargeDetails,
     }

@@ -443,7 +443,8 @@ let isAllValid = (
 ) => {
   card->getBoolValue &&
   cvc->getBoolValue &&
-  expiry->getBoolValue && {paymentMode == "payment" ? true : zip}
+  expiry->getBoolValue &&
+  (paymentMode == "payment" || zip)
 }
 
 let getCountryPostal = (countryCode, postalCodes: array<PostalCodeType.postalCodes>) => {

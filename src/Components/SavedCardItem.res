@@ -94,7 +94,7 @@ let make = (
             </div>
           </div>
           <div
-            className=`flex flex-row items-center justify-end gap-3 -mt-1`
+            className={`flex flex-row items-center justify-end gap-3 -mt-1`}
             style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
             <div className="flex">
               {React.string(
@@ -107,7 +107,7 @@ let make = (
           <RenderIf condition={isActive}>
             <div className="flex flex-col items-start mx-8">
               <div
-                className=`flex flex-row items-start justify-start gap-2`
+                className={`flex flex-row items-start justify-start gap-2`}
                 style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
                 <div className="w-12 mt-6"> {React.string("CVC: ")} </div>
                 <div
@@ -137,7 +137,7 @@ let make = (
                 list
                 paymentMethod="card"
                 paymentMethodType="debit"
-                cardBrand={cardBrand->CardUtils.cardType}
+                cardBrand={cardBrand->CardUtils.getCardType}
               />
             </div>
           </RenderIf>

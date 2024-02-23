@@ -135,7 +135,7 @@ let useRequiredFieldsEmptyAndValid = (
       | AddressCountry(countryArr) => country !== "" || countryArr->Belt.Array.length === 0
       | BillingName => checkIfNameIsValid(requiredFields, paymentMethodFields, billingName)
       | AddressLine1 => line1.value !== ""
-      | AddressLine2 => billingAddress.isUseBillingAddress ? true : line2.value !== ""
+      | AddressLine2 => billingAddress.isUseBillingAddress || line2.value !== ""
       | Bank => selectedBank !== "" || bankNames->Belt.Array.length === 0
       | PhoneNumber => phone.value !== ""
       | StateAndCity => state.value !== "" && city.value !== ""
@@ -172,7 +172,7 @@ let useRequiredFieldsEmptyAndValid = (
         | AddressCountry(countryArr) => country === "" && countryArr->Belt.Array.length > 0
         | BillingName => billingName.value === ""
         | AddressLine1 => line1.value === ""
-        | AddressLine2 => billingAddress.isUseBillingAddress ? false : line2.value === ""
+        | AddressLine2 => !billingAddress.isUseBillingAddress && line2.value === ""
         | Bank => selectedBank === "" && bankNames->Belt.Array.length > 0
         | StateAndCity => city.value === "" || state.value === ""
         | CountryAndPincode(countryArr) =>
