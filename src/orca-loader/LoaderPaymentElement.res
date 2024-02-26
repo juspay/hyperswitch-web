@@ -245,8 +245,10 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
               fullscreenParam.contents != ""
                 ? `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=${fullscreenParam.contents}`
                 : `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=fullscreen`
+            Js.log3("IFRAME STUFF", iframeURL, fullscreen.contents)
             fullscreen.contents
               ? {
+                  Js.log3("FULLSCREEN", localSelectorString, iframeID)
                   if iframeID == localSelectorString {
                     let handleFullScreenCallback = (ev: Types.event) => {
                       let json = ev.data->eventToJson

@@ -132,10 +132,12 @@ let rec flatten = (obj, addIndicatorForObject) => {
                   let flattenedSubObj = flatten(item, addIndicatorForObject)
                   flattenedSubObj
                   ->Js.Dict.entries
-                  ->Js.Array2.forEach(subEntry => {
-                    let (subKey, subValue) = subEntry
-                    Js.Dict.set(newDict, `${key}[${index->string_of_int}].${subKey}`, subValue)
-                  })
+                  ->Js.Array2.forEach(
+                    subEntry => {
+                      let (subKey, subValue) = subEntry
+                      Js.Dict.set(newDict, `${key}[${index->string_of_int}].${subKey}`, subValue)
+                    },
+                  )
                 }
 
               | _ =>
@@ -268,6 +270,22 @@ let makeIframe = (element, url) => {
     }
     element->appendChild(iframe)
   })
+}
+let makeForm = (element, url) => {
+  open Types
+
+  let form = createElement("form")
+
+  form.id = "orca-3ds-form"
+  form.name = "orca-3ds-form"
+  form.action = url
+  form.method = "POST"
+
+  // form.target = formTarget;
+  form.enctype = "application/x-www-form-urlencoded;charset=UTF-8"
+  form.style = "display: hidden; "
+  element->appendChild(form)
+  form
 }
 
 let getOptionalJson = (ev, str) => {

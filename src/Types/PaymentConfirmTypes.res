@@ -34,6 +34,7 @@ type nextAction = {
   bank_transfer_steps_and_charges_details: option<Js.Json.t>,
   session_token: option<Js.Json.t>,
   image_data_url: option<string>,
+  three_ds_data: option<Js.Json.t>,
 }
 type intent = {
   nextAction: nextAction,
@@ -56,6 +57,7 @@ let defaultNextAction = {
   bank_transfer_steps_and_charges_details: None,
   session_token: None,
   image_data_url: None,
+  three_ds_data: None,
 }
 let defaultIntent = {
   nextAction: defaultNextAction,
@@ -123,6 +125,11 @@ let getNextAction = (dict, str) => {
         getJsonObjFromDict(json, "session_token", Js.Dict.empty())->Js.Json.object_,
       ),
       image_data_url: Some(json->getString("image_data_url", "")),
+      three_ds_data: Some(
+        json
+        ->Js.Dict.get("three_ds_data")
+        ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_),
+      ),
     }
   })
   ->Belt.Option.getWithDefault(defaultNextAction)

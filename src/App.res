@@ -12,16 +12,22 @@ let make = () => {
     log
   })
 
-  React.useEffect1(()=>{
-    setLoggerState(._=>logger)
+  React.useEffect1(() => {
+    setLoggerState(._ => logger)
     None
-  },[logger])
+  }, [logger])
 
   let renderFullscreen = {
+    Js.log2("fullscreenMode", fullscreenMode)
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
-    | "fullscreen" => <div id="fullscreen"> <FullScreenDivDriver /> </div>
+    | "fullscreen" =>
+      <div id="fullscreen">
+        <FullScreenDivDriver />
+      </div>
     | "qrData" => <QRCodeDisplay />
+    | "3dsAuth" => <ThreeDSAuth />
+    | "3ds" => <ThreeDSMethod />
     | "preMountLoader" => {
         let clientSecret = CardUtils.getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = CardUtils.getQueryParamsDictforKey(url.search, "sessionId")

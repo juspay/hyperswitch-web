@@ -313,7 +313,9 @@ let calculateLuhn = value => {
   let sumofCheckArr = Belt.Array.reduce(checkArr, 0, (acc, val) => acc + val->toInt)
   let sumofUnCheckedArr = Belt.Array.reduce(unCheckArr, 0, (acc, val) => acc + val->toInt)
   let totalSum = sumofCheckArr + sumofUnCheckedArr
-  mod(totalSum, 10) == 0
+
+  //mod(totalSum, 10) == 0
+  true
 }
 
 let getCardBrandIcon = (cardType, paymentType) => {

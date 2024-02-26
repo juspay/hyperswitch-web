@@ -72,6 +72,59 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
   })
 }
 
+let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
+  open Promise
+  logApi(
+    ~optLogger,
+    ~url,
+    ~type_="request",
+    ~eventName=RETRIEVE_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  let threeDsMethodStr = threeDsMethodData->Js.Json.decodeString->Belt.Option.getWithDefault("")
+  let body = `${Js.Global.encodeURIComponent("threeDSMethodData")}=${Js.Global.encodeURIComponent(
+      threeDsMethodStr,
+    )}`
+  //let body = [("threeDSMethodData", threeDsMethodData)]->Js.Dict.fromArray->Js.Json.object_
+  fetchApi(url, ~method_=Fetch.Post, ~bodyStr=body, ())
+  ->then(res => {
+    res->Fetch.Response.text
+  })
+  ->catch(e => {
+    Js.log2("Unable to call 3ds method ", e)
+    reject(e)
+  })
+}
+
+let threeDsAuth = (~clientSecret, ~optLogger, ~headers) => {
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]
+  let url = `${endpoint}/payments/${paymentIntentID}/3ds/authentication`
+  let body = [("client_secret", clientSecret->Js.Json.string)]->Js.Dict.fromArray->Js.Json.object_
+  let headersFinal = [("x-feature", "router-custom")]->Js.Array2.concat(headers)->Js.Dict.fromArray
+
+  open Promise
+  logApi(
+    ~optLogger,
+    ~url,
+    ~type_="request",
+    ~eventName=RETRIEVE_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  fetchApi(url, ~method_=Fetch.Post, ~bodyStr=body->Js.Json.stringify, ~headers=headersFinal, ())
+  ->then(res => {
+    res->Fetch.Response.json
+  })
+  ->catch(e => {
+    Js.log2("Unable to call 3ds auth ", e)
+    reject(e)
+  })
+}
+
 let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
   open Promise
   retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
@@ -254,10 +307,12 @@ let intentCall = (
           } else if intent.nextAction.type_ === "qr_code_information" {
             let qrData = intent.nextAction.image_data_url->Belt.Option.getWithDefault("")
             let headerObj = Js.Dict.empty()
-            headers->Js.Array2.forEach(entries => {
-              let (x, val) = entries
-              Js.Dict.set(headerObj, x, val->Js.Json.string)
-            })
+            headers->Js.Array2.forEach(
+              entries => {
+                let (x, val) = entries
+                Js.Dict.set(headerObj, x, val->Js.Json.string)
+              },
+            )
             let metaData =
               [
                 ("qrData", qrData->Js.Json.string),
@@ -277,6 +332,42 @@ let intentCall = (
             handlePostMessage([
               ("fullscreen", true->Js.Json.boolean),
               ("param", `qrData`->Js.Json.string),
+              ("iframeId", iframeId->Js.Json.string),
+              ("metadata", metaData->Js.Json.object_),
+            ])
+          } else if intent.nextAction.type_ === "three_ds_invoke" {
+            let threeDsData =
+              intent.nextAction.three_ds_data
+              ->Belt.Option.flatMap(Js.Json.decodeObject)
+              ->Belt.Option.getWithDefault(Js.Dict.empty())
+            let headerObj = Js.Dict.empty()
+            headers->Js.Array2.forEach(
+              entries => {
+                let (x, val) = entries
+                Js.Dict.set(headerObj, x, val->Js.Json.string)
+              },
+            )
+            Js.log2("HERE IS DATA", threeDsData)
+            let metaData =
+              [
+                ("threeDSData", threeDsData->Js.Json.object_),
+                ("paymentIntentId", clientSecret->Js.Json.string),
+                ("headers", headerObj->Js.Json.object_),
+                ("url", url.href->Js.Json.string),
+                ("iframeId", iframeId->Js.Json.string),
+              ]->Js.Dict.fromArray
+            // handleLogging(
+            //   ~optLogger,
+            //   ~value="",
+            //   ~internalMetadata=metaData->Js.Json.object_->Js.Json.stringify,
+            //   ~eventName=DISPLAY_3DS_PAGE,
+            //   ~paymentMethod,
+            //   (),
+            // )
+            Js.log2("IFRAME ID", iframeId)
+            handlePostMessage([
+              ("fullscreen", true->Js.Json.boolean),
+              ("param", `3ds`->Js.Json.string),
               ("iframeId", iframeId->Js.Json.string),
               ("metadata", metaData->Js.Json.object_),
             ])
@@ -356,7 +447,7 @@ let intentCall = (
             )
           }
           if intent.status === "failed" {
-            setIsManualRetryEnabled(._ => intent.manualRetryAllowed)
+            setIsManualRetryEnabled(. _ => intent.manualRetryAllowed)
           }
           switch paymentType {
           | Card => postSubmitResponse(~jsonData=data, ~url=url.href)
@@ -473,6 +564,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
   let list = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+
   let (isManualRetryEnabled, setIsManualRetryEnabled) = Recoil.useRecoilState(
     RecoilAtoms.isManualRetryEnabled,
   )
@@ -480,7 +572,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
     ~handleUserError=false,
     ~bodyArr: array<(string, Js.Json.t)>,
     ~confirmParam: ConfirmType.confirmParams,
-    ~iframeId="",
+    ~iframeId=keys.iframeId,
     (),
   ) => {
     switch keys.clientSecret {

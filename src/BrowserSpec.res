@@ -29,7 +29,7 @@ let broswerInfo = () => [
         "text\/html,application\/xhtml+xml,application\/xml;q=0.9,image\/webp,image\/apng,*\/*;q=0.8"->Js.Json.string,
       ),
       ("language", navigator.language->Js.Json.string),
-      ("color_depth", screen.colorDepth->Belt.Int.toFloat->Js.Json.number),
+      ("color_depth", 24->Belt.Int.toFloat->Js.Json.number),
       ("screen_height", screen.height->Belt.Int.toFloat->Js.Json.number),
       ("screen_width", screen.width->Belt.Int.toFloat->Js.Json.number),
       ("time_zone", date.getTimezoneOffset(.)->Js.Json.number),
