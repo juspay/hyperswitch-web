@@ -368,8 +368,8 @@ let useSetInitialRequiredFields = (
         if value !== "" && selectedBank === "" {
           setSelectedBank(. _ => value)
         }
-      | StateAndCity
-      | CountryAndPincode(_)
+      // | StateAndCity
+      // | CountryAndPincode(_)
       | SpecialField(_)
       | InfoElement
       | CardNumber

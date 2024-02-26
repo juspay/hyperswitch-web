@@ -29,7 +29,7 @@ if (
       Window.body->Window.appendChild(script)
     })
   } catch {
-  | e => Js.log("Sentry load exited")
+  | _ => Js.log("Sentry load exited")
   }
 }
 
