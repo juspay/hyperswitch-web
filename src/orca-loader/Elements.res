@@ -57,8 +57,13 @@ let make = (
 
     let localSelectorString = "hyper-preMountLoader-iframe"
     let mountPreMountLoaderIframe = () => {
-      let componentType = "preMountLoader"
-      let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
+      if (
+        Window.querySelector(
+          `#orca-payment-element-iframeRef-${localSelectorString}`,
+        )->Js.Nullable.isNullable
+      ) {
+        let componentType = "preMountLoader"
+        let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
@@ -68,9 +73,10 @@ let make = (
           name="orca-payment"
         ></iframe>
         </div>`
-      let iframeDiv = Window.createElement("div")
-      iframeDiv->Window.innerHTML(iframeDivHtml)
-      Window.body->Window.appendChild(iframeDiv)
+        let iframeDiv = Window.createElement("div")
+        iframeDiv->Window.innerHTML(iframeDivHtml)
+        Window.body->Window.appendChild(iframeDiv)
+      }
 
       let elem = Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`)
       elem
@@ -81,13 +87,23 @@ let make = (
     let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
     let clientSecretReMatch = Js.Re.test_(`.+_secret_[A-Za-z0-9]+`->Js.Re.fromString, clientSecret)
 
+    let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
+
+    let unMountPreMountLoaderIframe = () => {
+      switch preMountLoaderIframeDiv->Js.Nullable.toOption {
+      | Some(iframe) => iframe->remove
+      | None => ()
+      }
+    }
+
     let preMountLoaderMountedPromise = Js.Promise.make((~resolve, ~reject as _) => {
       let preMountLoaderIframeCallback = (ev: Types.event) => {
         let json = ev.data->Identity.anyTypeToJson
         let dict = json->Utils.getDictFromJson
         if dict->Js.Dict.get("preMountLoaderIframeMountedCallback")->Belt.Option.isSome {
-          Js.log("preMountLoaderIframeMountedCallback")
           resolve(true->Js.Json.boolean)
+        } else if dict->Js.Dict.get("preMountLoaderIframeUnMount")->Belt.Option.isSome {
+          unMountPreMountLoaderIframe()
         }
       }
       addSmartEventListener(
@@ -96,8 +112,6 @@ let make = (
         "onPreMountLoaderIframeCallback",
       )
     })
-
-    let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
 
     let fetchPaymentsList = mountedIframeRef => {
       let handlePaymentMethodsLoaded = (event: Types.event) => {
@@ -463,7 +477,6 @@ let make = (
                 let (json, applePayPresent, googlePayPresent) = res
                 if componentType === "payment" && applePayPresent->Belt.Option.isSome {
                   //do operations here
-
                   let processPayment = (token: Js.Json.t) => {
                     //let body = PaymentBody.applePayBody(~token)
                     let msg = [("applePayProcessPayment", token)]->Js.Dict.fromArray
@@ -475,7 +488,6 @@ let make = (
                       (event: Types.event) => {
                         let json = event.data->Identity.anyTypeToJson
                         let dict = json->getDictFromJson
-
                         switch dict->Js.Dict.get("applePayButtonClicked") {
                         | Some(val) =>
                           if val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) {
@@ -795,7 +807,6 @@ let make = (
         }
         preMountLoaderMountedPromise
         ->then(_ => {
-          Js.log("preMountLoaderIframeMountedCallback then")
           fetchPaymentsList(mountedIframeRef)
           if (
             newOptions

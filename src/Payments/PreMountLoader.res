@@ -51,6 +51,12 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
     promise
     ->then(res => {
       handlePostMessage([("response", res), ("data", key->Js.Json.string)])
+      switch key {
+      | "payment_methods" => setPaymentMethodsResponseSent(_ => true)
+      | "session_tokens" => setSessionTokensResponseSent(_ => true)
+      | "customer_payment_methods" => setCustomerPaymentMethodsResponseSent(_ => true)
+      | _ => ()
+      }
       resolve()
     })
     ->catch(_err => {
@@ -66,19 +72,13 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
     } catch {
     | _ => Js.Json.null
     }
-    Js.log("preMountHandlerEventHandler")
     let dict = json->Utils.getDictFromJson
     if dict->Js.Dict.get("sendPaymentMethodsResponse")->Belt.Option.isSome {
       paymentMethodsResponse->sendPromiseData("payment_methods")
-      setPaymentMethodsResponseSent(_ => true)
     } else if dict->Js.Dict.get("sendCustomerPaymentMethodsResponse")->Belt.Option.isSome {
-      if dict->Utils.getBool("sendCustomerPaymentMethodsResponse", false) {
-        customerPaymentMethodsResponse->sendPromiseData("customer_payment_methods")
-      }
-      setCustomerPaymentMethodsResponseSent(_ => true)
+      customerPaymentMethodsResponse->sendPromiseData("customer_payment_methods")
     } else if dict->Js.Dict.get("sendSessionTokensResponse")->Belt.Option.isSome {
       sessionTokensResponse->sendPromiseData("session_tokens")
-      setSessionTokensResponseSent(_ => true)
     }
   }
 
@@ -96,7 +96,7 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
     if (
       paymentMethodsResponseSent && customerPaymentMethodsResponseSent && sessionTokensResponseSent
     ) {
-      Js.log("Removing event listener")
+      handlePostMessage([("preMountLoaderIframeUnMount", true->Js.Json.boolean)])
       Window.removeEventListener("message", handle)
     }
     None
