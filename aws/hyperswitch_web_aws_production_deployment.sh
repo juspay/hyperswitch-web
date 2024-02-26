@@ -76,12 +76,12 @@ echo $( (aws s3api put-bucket-policy --bucket $MY_AWS_S3_BUCKET_NAME --policy "$
 
 echo "Bucket configuration updated"
 
-echo "Enter the backend endpoint your Hyperswitch Client will hit (hosted Hyperswitch Backend, https://sandbox.hyperswitch.io is taken by default):"
+echo "Enter the backend endpoint your Hyperswitch Client will hit (hosted Hyperswitch Backend, https://beta.hyperswitch.io/api is taken by default):"
 read AWS_BACKEND_URL </dev/tty
 
 if [ -z $AWS_BACKEND_URL ]; then
-    echo "Setting backend URL value to https://sandbox.hyperswitch.io by default"
-    AWS_BACKEND_URL="https://sandbox.hyperswitch.io"
+    echo "Setting backend URL value to https://beta.hyperswitch.io/api by default"
+    AWS_BACKEND_URL="https://beta.hyperswitch.io/api"
 
 fi
 
