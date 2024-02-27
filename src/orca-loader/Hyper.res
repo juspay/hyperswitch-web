@@ -253,7 +253,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           ->Js.Json.decodeObject
           ->Belt.Option.flatMap(x => x->Js.Dict.get("redirect"))
           ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getWithDefault("if_required")
+          ->Belt.Option.getWithDefault(isOneClick ? "always" : "if_required")
 
         let url =
           confirmParams
