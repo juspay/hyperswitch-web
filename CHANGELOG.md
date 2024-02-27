@@ -1,3 +1,10 @@
+# [0.26.0](https://github.com/juspay/hyperswitch-web/compare/v0.25.0...v0.26.0) (2024-02-27)
+
+
+### Features
+
+* added LOADER_CHANGED event on loader state update ([#178](https://github.com/juspay/hyperswitch-web/issues/178)) ([42abaf0](https://github.com/juspay/hyperswitch-web/commit/42abaf05baccc27141098410ecb1746c73b43e6a))
+
 # [0.25.0](https://github.com/juspay/hyperswitch-web/compare/v0.24.0...v0.25.0) (2024-02-19)
 
 
