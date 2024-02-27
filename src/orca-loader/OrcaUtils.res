@@ -1,5 +1,6 @@
 open Utils
 external toNullable: Js.Json.t => Js.Nullable.t<Js.Json.t> = "%identity"
+external eventToJson: Types.eventData => Js.Json.t = "%identity"
 let safeParseOpt = st => {
   try {
     Js.Json.parseExn(st)->Some
@@ -132,10 +133,12 @@ let rec flatten = (obj, addIndicatorForObject) => {
                   let flattenedSubObj = flatten(item, addIndicatorForObject)
                   flattenedSubObj
                   ->Js.Dict.entries
-                  ->Js.Array2.forEach(subEntry => {
-                    let (subKey, subValue) = subEntry
-                    Js.Dict.set(newDict, `${key}[${index->string_of_int}].${subKey}`, subValue)
-                  })
+                  ->Js.Array2.forEach(
+                    subEntry => {
+                      let (subKey, subValue) = subEntry
+                      Js.Dict.set(newDict, `${key}[${index->string_of_int}].${subKey}`, subValue)
+                    },
+                  )
                 }
 
               | _ =>
@@ -243,6 +246,7 @@ let eventHandlerFunc = (
       | Ready
       | Focus
       | ConfirmPayment
+      | OneClickConfirmPayment
       | Blur =>
         switch eventHandler {
         | Some(eH) => eH(Some(ev.data))
@@ -329,4 +333,28 @@ let getArrayOfTupleFromDict = dict => {
   dict
   ->Js.Dict.keys
   ->Belt.Array.map(key => (key, Js.Dict.get(dict, key)->Belt.Option.getWithDefault(Js.Json.null)))
+}
+
+let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
+  open EventListenerManager
+  Js.Promise.make((~resolve, ~reject as _) => {
+    if sdkHandleOneClickConfirmPayment {
+      resolve(. Js.Json.boolean(true))
+    } else {
+      let handleMessage = (event: Types.event) => {
+        let json = event.data->eventToJson->getStringfromjson("")->safeParse
+
+        let dict = json->Utils.getDictFromJson
+        if dict->Js.Dict.get("oneClickDoSubmit")->Belt.Option.isSome {
+          resolve(.
+            dict
+            ->Js.Dict.get("oneClickDoSubmit")
+            ->Belt.Option.getWithDefault(true->Js.Json.boolean),
+          )
+        }
+      }
+      addSmartEventListener("message", handleMessage, "onOneClickHandlerPaymentConfirm")
+      Utils.handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true, ())
+    }
+  })
 }

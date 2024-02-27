@@ -37,8 +37,9 @@ let handleOnClickPostMessage = (~targetOrigin="*", ev) => {
     ~targetOrigin,
   )
 }
-let handleOnConfirmPostMessage = (~targetOrigin="*", ()) => {
-  handlePostMessage([("confirmTriggered", true->Js.Json.boolean)], ~targetOrigin)
+let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false, ()) => {
+  let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
+  handlePostMessage([(message, true->Js.Json.boolean)], ~targetOrigin)
 }
 let getOptionString = (dict, key) => {
   dict->Js.Dict.get(key)->Belt.Option.flatMap(Js.Json.decodeString)
@@ -351,6 +352,17 @@ let removeDuplicate = arr => {
   arr->Js.Array2.filteri((item, i) => {
     arr->Js.Array2.indexOf(item) === i
   })
+}
+
+let isEmailValid = email => {
+  switch email->Js.String2.match_(
+    %re(
+      "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/"
+    ),
+  ) {
+  | Some(_match) => Some(true)
+  | None => email->Js.String2.length > 0 ? Some(false) : None
+  }
 }
 
 let checkEmailValid = (

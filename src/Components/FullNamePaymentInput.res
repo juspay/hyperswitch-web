@@ -15,11 +15,20 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
     setFullName(.prev => {
-      ...prev,
       value: val,
-      errorString: "",
+      isValid: Some(val !== ""),
+      errorString: val !== "" ? "" : prev.errorString,
     })
   }
+
+  let onBlur = ev => {
+    let val: string = ReactEvent.Focus.target(ev)["value"]
+    setFullName(.prev => {
+      ...prev,
+      isValid: Some(val !== ""),
+    })
+  }
+
   let (placeholder, fieldName) = switch customFieldName {
   | Some(val) => (val, val)
   | None => (localeString.fullNamePlaceholder, localeString.fullNameLabel)
@@ -33,7 +42,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
       if fullName.value == "" {
         setFullName(.prev => {
           ...prev,
-          errorString: `Please provide your ${fieldName}`,
+          errorString: fieldName->localeString.nameEmptyText,
         })
       } else {
         switch optionalRequiredFields {
@@ -41,7 +50,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
           if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, FullName, fullName) {
             setFullName(.prev => {
               ...prev,
-              errorString: `Please provide your complete ${fieldName}`,
+              errorString: fieldName->localeString.completeNameEmptyText,
             })
           }
         | None => ()
@@ -54,9 +63,11 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField
       fieldName
+      setValue=setFullName
       value=fullName
       onChange=changeName
       paymentType
+      onBlur
       type_="text"
       name="name"
       inputRef=nameRef

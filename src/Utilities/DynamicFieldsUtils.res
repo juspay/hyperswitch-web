@@ -15,6 +15,7 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
 let countryNames = Utils.getCountryNames(Country.country)
 
 let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
+  BillingName,
   AddressLine1,
   AddressLine2,
   AddressCity,
@@ -25,6 +26,7 @@ let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
 
 let isBillingAddressFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
   switch fieldType {
+  | BillingName
   | AddressLine1
   | AddressLine2
   | AddressCity
@@ -49,9 +51,8 @@ let getBillingAddressPathFromFieldType = (fieldType: PaymentMethodsRecord.paymen
 
 let removeBillingDetailsIfUseBillingAddress = (
   requiredFields: Js.Array2.t<PaymentMethodsRecord.required_fields>,
+  billingAddress: PaymentType.billingAddress,
 ) => {
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-
   if billingAddress.isUseBillingAddress {
     requiredFields->Js.Array2.filter(requiredField => {
       !(requiredField.field_type->isBillingAddressFieldType)
@@ -61,9 +62,10 @@ let removeBillingDetailsIfUseBillingAddress = (
   }
 }
 
-let addBillingAddressIfUseBillingAddress = fieldsArr => {
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-
+let addBillingAddressIfUseBillingAddress = (
+  fieldsArr,
+  billingAddress: PaymentType.billingAddress,
+) => {
   if billingAddress.isUseBillingAddress {
     fieldsArr->Js.Array2.concat(billingAddressFields)
   } else {
@@ -119,8 +121,9 @@ let useRequiredFieldsEmptyAndValid = (
   let currency = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(RecoilAtoms.areRequiredFieldsValid)
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(RecoilAtoms.areRequiredFieldsEmpty)
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
-  let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress
+  let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
   React.useEffect7(() => {
     let areRequiredFieldsValid = fieldsArr->Js.Array2.reduce((acc, paymentMethodFields) => {
@@ -132,7 +135,7 @@ let useRequiredFieldsEmptyAndValid = (
       | AddressCountry(countryArr) => country !== "" || countryArr->Belt.Array.length === 0
       | BillingName => checkIfNameIsValid(requiredFields, paymentMethodFields, billingName)
       | AddressLine1 => line1.value !== ""
-      | AddressLine2 => line2.value !== ""
+      | AddressLine2 => billingAddress.isUseBillingAddress ? true : line2.value !== ""
       | Bank => selectedBank !== "" || bankNames->Belt.Array.length === 0
       | PhoneNumber => phone.value !== ""
       | StateAndCity => state.value !== "" && city.value !== ""
@@ -169,7 +172,7 @@ let useRequiredFieldsEmptyAndValid = (
         | AddressCountry(countryArr) => country === "" && countryArr->Belt.Array.length > 0
         | BillingName => billingName.value === ""
         | AddressLine1 => line1.value === ""
-        | AddressLine2 => line2.value === ""
+        | AddressLine2 => billingAddress.isUseBillingAddress ? false : line2.value === ""
         | Bank => selectedBank === "" && bankNames->Belt.Array.length > 0
         | StateAndCity => city.value === "" || state.value === ""
         | CountryAndPincode(countryArr) =>
@@ -365,8 +368,6 @@ let useSetInitialRequiredFields = (
         if value !== "" && selectedBank === "" {
           setSelectedBank(. _ => value)
         }
-      | StateAndCity
-      | CountryAndPincode(_)
       | SpecialField(_)
       | InfoElement
       | CardNumber
@@ -428,6 +429,7 @@ let useRequiredFieldsBody = (
           ->Belt.Option.getWithDefault(Country.defaultTimeZone)
         countryCode.isoAlpha2
       }
+    | BillingName => billingName.value
     | CardNumber => cardNumber->CardUtils.clearSpaces
     | CardExpiryMonth =>
       let (month, _) = CardUtils.getExpiryDates(cardExpiry)
@@ -443,7 +445,6 @@ let useRequiredFieldsBody = (
     | CardExpiryMonthAndYear
     | CardExpiryAndCvc
     | FullName
-    | BillingName
     | None => ""
     }
   }
@@ -452,8 +453,20 @@ let useRequiredFieldsBody = (
     if billingAddress.isUseBillingAddress {
       billingAddressFields->Js.Array2.reduce((acc, item) => {
         let value = item->getFieldValueFromFieldType
-        let path = item->getBillingAddressPathFromFieldType
-        acc->Js.Dict.set(path, value->Js.Json.string)
+        if item === BillingName {
+          let arr = value->Js.String2.split(" ")
+          acc->Js.Dict.set(
+            "billing.address.first_name",
+            arr->Belt.Array.get(0)->Belt.Option.getWithDefault("")->Js.Json.string,
+          )
+          acc->Js.Dict.set(
+            "billing.address.last_name",
+            arr->Belt.Array.get(1)->Belt.Option.getWithDefault("")->Js.Json.string,
+          )
+        } else {
+          let path = item->getBillingAddressPathFromFieldType
+          acc->Js.Dict.set(path, value->Js.Json.string)
+        }
         acc
       }, requiredFieldsBody)
     } else {
@@ -513,6 +526,7 @@ let useRequiredFieldsBody = (
 
 let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
   switch fieldType {
+  | FullName
   | CardNumber
   | CardExpiryMonth
   | CardExpiryYear
@@ -614,13 +628,70 @@ let combineCardExpiryAndCvc = arr => {
   }
 }
 
-let updateDynamicFields = (arr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsFields>, ()) => {
+let updateDynamicFields = (
+  arr: Js.Array2.t<PaymentMethodsRecord.paymentMethodsFields>,
+  billingAddress,
+  (),
+) => {
   arr
   ->Utils.removeDuplicate
   ->Js.Array2.filter(item => item !== None)
-  ->addBillingAddressIfUseBillingAddress
+  ->addBillingAddressIfUseBillingAddress(billingAddress)
   ->combineStateAndCity
   ->combineCountryAndPostal
   ->combineCardExpiryMonthAndYear
   ->combineCardExpiryAndCvc
+}
+
+let useSubmitCallback = () => {
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let (line1, setLine1) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline1, "line1", logger)
+  let (line2, setLine2) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline2, "line2", logger)
+  let (state, setState) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressState, "state", logger)
+  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
+    RecoilAtoms.userAddressPincode,
+    "postal_code",
+    logger,
+  )
+  let (city, setCity) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressCity, "city", logger)
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+
+  React.useCallback5((ev: Window.event) => {
+    let json = ev.data->Js.Json.parseExn
+    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    if confirm.doSubmit {
+      if line1.value == "" {
+        setLine1(.prev => {
+          ...prev,
+          errorString: localeString.line1EmptyText,
+        })
+      }
+      if line2.value == "" {
+        setLine2(.prev => {
+          ...prev,
+          errorString: billingAddress.isUseBillingAddress ? "" : localeString.line2EmptyText,
+        })
+      }
+      if state.value == "" {
+        setState(.prev => {
+          ...prev,
+          errorString: localeString.stateEmptyText,
+        })
+      }
+      if postalCode.value == "" {
+        setPostalCode(.prev => {
+          ...prev,
+          errorString: localeString.postalCodeEmptyText,
+        })
+      }
+      if city.value == "" {
+        setCity(.prev => {
+          ...prev,
+          errorString: localeString.cityEmptyText,
+        })
+      }
+    }
+  }, (line1, line2, state, city, postalCode))
 }

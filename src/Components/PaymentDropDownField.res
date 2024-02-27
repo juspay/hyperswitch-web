@@ -27,22 +27,28 @@ let make = (
       }
     }
   }
-  React.useEffect0(() => {
-    if value.value === "" {
+  React.useEffect1(() => {
+    let initialValue = options->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+    if (
+      value.value === "" ||
+      value.value === initialValue ||
+      options->Js.Array2.includes(value.value)->not
+    ) {
       setValue(.prev => {
         ...prev,
-        value: options->Belt.Array.get(0)->Belt.Option.getWithDefault(""),
+        isValid: Some(true),
+        value: initialValue,
       })
     }
     None
-  })
+  }, [options->Belt.Array.get(0)->Belt.Option.getWithDefault("")])
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    setValue(.prev => {
-      ...prev,
-      isValid: None,
-      errorString: "",
-    })
+    // setValue(.prev => {
+    //   ...prev,
+    //   isValid: None,
+    //   errorString: "",
+    // })
     Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
   }
   let focusClass = if inputFocused || value.value->Js.String2.length > 0 {
@@ -58,9 +64,9 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
-    setValue(.prev => {
-      ...prev,
-      value: value,
+    setValue(._ => {
+      isValid: Some(true),
+      value,
       errorString: "",
     })
   }

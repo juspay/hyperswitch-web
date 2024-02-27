@@ -1,6 +1,6 @@
 open PaymentType
 open RecoilAtoms
-open PaymentModeType
+
 let cardsToRender = (width: int) => {
   let minWidth = 130
   let noOfCards = (width - 40) / minWidth
@@ -20,7 +20,6 @@ let make = (
   )
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
-  let pmList = Recoil.useRecoilValueFromAtom(list)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
   let paymentOrder = paymentMethodOrder->Utils.getOptionalArr->Utils.removeDuplicate
   let (sessions, setSessions) = React.useState(_ => Js.Dict.empty()->Js.Json.object_)
@@ -40,7 +39,8 @@ let make = (
   let (walletList, paymentOptionsList, actualList) = React.useMemo4(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
-      let paymentOrder = paymentOrder->Js.Array2.length > 0 ? paymentOrder : defaultOrder
+      let paymentOrder =
+        paymentOrder->Js.Array2.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
       let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
       let (wallets, otherOptions) =
         plist->PaymentUtils.paymentListLookupNew(
@@ -91,6 +91,7 @@ let make = (
             )
           }
         : ()
+    | LoadError(_)
     | SemiLoaded =>
       setPaymentOptions(_ =>
         showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? ["card"] : []
@@ -203,7 +204,7 @@ let make = (
   }
   let checkoutEle = {
     <ErrorBoundary key={selectedOption}>
-      {switch selectedOption->paymentMode {
+      {switch selectedOption->PaymentModeType.paymentMode {
       | Card => <CardPayment cardProps expiryProps cvcProps paymentType list />
       | Klarna =>
         <SessionPaymentWrapper type_=Others>
@@ -319,7 +320,7 @@ let make = (
       </RenderIf>
       <PoweredBy />
     </RenderIf>
-    {switch pmList {
+    {switch methodslist {
     | LoadError(_) => React.null
     | _ =>
       <RenderIf

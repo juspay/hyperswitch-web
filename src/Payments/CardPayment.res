@@ -83,18 +83,20 @@ let make = (
   React.useEffect1(() => {
     switch customerPaymentMethods {
     | LoadingSavedCards => ()
-    | LoadedSavedCards(arr) => {
+    | LoadedSavedCards(arr, isGuestCustomer) => {
         let savedCards = arr->Js.Array2.filter((item: PaymentType.customerMethods) => {
           item.paymentMethod == "card"
         })
         setSavedMethods(_ => savedCards)
         setLoadSavedCards(_ =>
-          savedCards->Js.Array2.length == 0 ? NoResult : LoadedSavedCards(savedCards)
+          savedCards->Js.Array2.length == 0
+            ? NoResult(isGuestCustomer)
+            : LoadedSavedCards(savedCards, isGuestCustomer)
         )
         setShowFields(.prev => savedCards->Js.Array2.length == 0 || prev)
       }
-    | NoResult => {
-        setLoadSavedCards(_ => NoResult)
+    | NoResult(isGuestCustomer) => {
+        setLoadSavedCards(_ => NoResult(isGuestCustomer))
         setShowFields(._ => true)
       }
     }
@@ -105,7 +107,7 @@ let make = (
   React.useEffect1(() => {
     if disableSaveCards {
       setShowFields(._ => true)
-      setLoadSavedCards(_ => LoadedSavedCards([]))
+      setLoadSavedCards(_ => LoadedSavedCards([], true))
     }
     None
   }, [disableSaveCards])
@@ -139,6 +141,14 @@ let make = (
     handlePostMessageEvents(~complete, ~empty, ~paymentType="card", ~loggerState)
     None
   }, (empty, complete))
+
+  let isGuestCustomer = React.useMemo1(() => {
+    switch customerPaymentMethods {
+    | LoadedSavedCards(_, false)
+    | NoResult(false) => false
+    | _ => true
+    }
+  }, [customerPaymentMethods])
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
@@ -326,7 +336,7 @@ let make = (
             cvcProps={Some(cvcProps)}
             isBancontact
           />
-          <RenderIf condition={!isBancontact && !options.disableSaveCards}>
+          <RenderIf condition={!isBancontact && !options.disableSaveCards && !isGuestCustomer}>
             <div className="pt-4 pb-2 flex items-center justify-start">
               <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
             </div>

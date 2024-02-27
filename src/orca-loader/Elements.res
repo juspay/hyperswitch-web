@@ -121,6 +121,8 @@ let make = (
         // Js.Global.setTimeout(() => {
         let msg = [("paymentMethodList", json)]->Js.Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
+        let maskedPayload = json->getDictFromJson->PaymentHelpers.maskPayload
+        logger.setLogInfo(~value=maskedPayload, ~eventName=PAYMENT_METHODS_RESPONSE, ())
         // }, 5000)->ignore
         json->resolve
       })
@@ -217,6 +219,7 @@ let make = (
         mountedIframeRef,
         selectorString,
         sdkHandleConfirmPayment,
+        sdkHandleOneClickConfirmPayment,
         disableSaveCards,
       ) => {
         open Promise
@@ -246,6 +249,7 @@ let make = (
             ("blockConfirm", blockConfirm->Js.Json.boolean),
             ("switchToCustomPod", switchToCustomPod->Js.Json.boolean),
             ("endpoint", endpoint->Js.Json.string),
+            ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->Js.Json.boolean),
             ("parentURL", "*"->Js.Json.string),
             ("analyticsMetadata", analyticsMetadata),
           ]->Js.Dict.fromArray

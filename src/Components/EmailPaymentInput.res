@@ -16,19 +16,26 @@ let make = (~paymentType) => {
   let changeEmail = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
     setEmail(.prev => {
-      ...prev,
       value: val,
+      isValid: val->Utils.isEmailValid,
+      errorString: val->Utils.isEmailValid->Belt.Option.getWithDefault(false)
+        ? ""
+        : prev.errorString,
     })
   }
-  let onBlur = _ => {
-    Utils.checkEmailValid(email, setEmail)
+  let onBlur = ev => {
+    let val = ReactEvent.Focus.target(ev)["value"]
+    setEmail(.prev => {
+      ...prev,
+      isValid: val->Utils.isEmailValid,
+    })
   }
 
   React.useEffect1(() => {
     setEmail(.prev => {
       ...prev,
       errorString: switch prev.isValid {
-      | Some(val) => val ? "" : "Invalid email address"
+      | Some(val) => val ? "" : localeString.emailInvalidText
       | None => ""
       },
     })
@@ -42,7 +49,7 @@ let make = (~paymentType) => {
       if email.value == "" {
         setEmail(.prev => {
           ...prev,
-          errorString: "Email cannot be empty",
+          errorString: localeString.emailEmptyText,
         })
       }
     }

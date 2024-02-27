@@ -32,30 +32,6 @@ let showField = (val: PaymentType.addressType, type_: addressType) => {
   }
 }
 
-let checkPostalValidity = (
-  postal: RecoilAtomTypes.field,
-  setPostal: (
-    . OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field,
-  ) => unit,
-  regex,
-) => {
-  if Js.Re.test_(regex->Js.Re.fromString, postal.value) && postal.value !== "" && regex !== "" {
-    setPostal(.prev => {
-      ...prev,
-      isValid: Some(true),
-      errorString: "",
-    })
-  } else if (
-    regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, postal.value) && postal.value !== ""
-  ) {
-    setPostal(.prev => {
-      ...prev,
-      isValid: Some(false),
-      errorString: "Invalid postal code",
-    })
-  }
-}
-
 @react.component
 let make = (~paymentType, ~className="") => {
   let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -88,6 +64,30 @@ let make = (~paymentType, ~className="") => {
   let (showOtherFileds, setShowOtherFields) = React.useState(_ => false)
 
   let countryNames = getCountryNames(Country.country)
+
+  let checkPostalValidity = (
+    postal: RecoilAtomTypes.field,
+    setPostal: (
+      . OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field,
+    ) => unit,
+    regex,
+  ) => {
+    if Js.Re.test_(regex->Js.Re.fromString, postal.value) && postal.value !== "" && regex !== "" {
+      setPostal(.prev => {
+        ...prev,
+        isValid: Some(true),
+        errorString: "",
+      })
+    } else if (
+      regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, postal.value) && postal.value !== ""
+    ) {
+      setPostal(.prev => {
+        ...prev,
+        isValid: Some(false),
+        errorString: localeString.postalCodeInvalidText,
+      })
+    }
+  }
 
   React.useEffect0(() => {
     open Promise
@@ -147,7 +147,7 @@ let make = (~paymentType, ~className="") => {
       setPostalCode(.prev => {
         ...prev,
         isValid: Some(false),
-        errorString: "Invalid postal code",
+        errorString: localeString.postalCodeInvalidText,
       })
     }
   }
@@ -173,31 +173,31 @@ let make = (~paymentType, ~className="") => {
       if line1.value == "" {
         setLine1(.prev => {
           ...prev,
-          errorString: "Address line 1 cannot be empty",
+          errorString: localeString.line1EmptyText,
         })
       }
       if line2.value == "" {
         setLine2(.prev => {
           ...prev,
-          errorString: "Address line 2 cannot be empty",
+          errorString: localeString.line2EmptyText,
         })
       }
       if state.value == "" {
         setState(.prev => {
           ...prev,
-          errorString: "State cannot be empty",
+          errorString: localeString.stateEmptyText,
         })
       }
       if postalCode.value == "" {
         setPostalCode(.prev => {
           ...prev,
-          errorString: "Postal code cannot be empty",
+          errorString: localeString.postalCodeEmptyText,
         })
       }
       if city.value == "" {
         setCity(.prev => {
           ...prev,
-          errorString: "City cannot be empty",
+          errorString: localeString.cityEmptyText,
         })
       }
     }

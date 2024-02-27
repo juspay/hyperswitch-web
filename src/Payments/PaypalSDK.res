@@ -1,6 +1,8 @@
 @react.component
 let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) => {
-  let {iframeId, publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {iframeId, publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.keys,
+  )
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(RecoilAtoms.loggerAtom)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
@@ -42,77 +44,90 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
       ~paymentMethod="PAYPAL",
       (),
     )
-    braintree.client.create(.{authorization: token}, (clientErr, clientInstance) => {
-      if clientErr {
-        Js.Console.error2("Error creating client", clientErr)
+    open Promise
+    OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
+    ->then(result => {
+      let result = result->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)
+      if result {
+        braintree.client.create(.{authorization: token}, (clientErr, clientInstance) => {
+          if clientErr {
+            Js.Console.error2("Error creating client", clientErr)
+          }
+          braintree.paypalCheckout.create(.
+            {client: clientInstance},
+            (paypalCheckoutErr, paypalCheckoutInstance) => {
+              switch paypalCheckoutErr->Js.Nullable.toOption {
+              | Some(val) => Js.Console.warn(`INTEGRATION ERROR: ${val.message}`)
+              | None => ()
+              }
+              paypalCheckoutInstance.loadPayPalSDK(.
+                {vault: true},
+                () => {
+                  let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
+                  paypalWrapper.innerHTML = ""
+                  paypal["Buttons"](. {
+                    style: buttonStyle,
+                    fundingSource: paypal["FUNDING"]["PAYPAL"],
+                    createBillingAgreement: () => {
+                      //Paypal Clicked
+                      Utils.handlePostMessage([
+                        ("fullscreen", true->Js.Json.boolean),
+                        ("param", "paymentloader"->Js.Json.string),
+                        ("iframeId", iframeId->Js.Json.string),
+                      ])
+                      options.readOnly
+                        ? ()
+                        : paypalCheckoutInstance.createPayment(. {
+                            ...defaultOrderDetails,
+                            flow: "vault",
+                          })
+                    },
+                    onApprove: (. data, _actions) => {
+                      options.readOnly
+                        ? ()
+                        : paypalCheckoutInstance.tokenizePayment(.
+                            data,
+                            (. _err, payload) => {
+                              let (connectors, _) =
+                                list->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
+                              let body = PaymentBody.paypalSdkBody(
+                                ~token=payload.nonce,
+                                ~connectors,
+                              )
+                              intent(
+                                ~bodyArr=body,
+                                ~confirmParam={
+                                  return_url: options.wallets.walletReturnUrl,
+                                  publishableKey,
+                                },
+                                ~handleUserError=true,
+                                (),
+                              )
+                            },
+                          )
+                    },
+                    onCancel: (. _data) => {
+                      handleCloseLoader()
+                    },
+                    onError: (. _err) => {
+                      handleCloseLoader()
+                    },
+                  }).render(. "#paypal-button")
+                  areOneClickWalletsRendered(.
+                    prev => {
+                      ...prev,
+                      isPaypal: true,
+                    },
+                  )
+                },
+              )
+            },
+          )
+        })->ignore
       }
-      braintree.paypalCheckout.create(.{client: clientInstance}, (
-        paypalCheckoutErr,
-        paypalCheckoutInstance,
-      ) => {
-        switch paypalCheckoutErr->Js.Nullable.toOption {
-        | Some(val) => Js.Console.warn(`INTEGRATION ERROR: ${val.message}`)
-        | None => ()
-        }
-        paypalCheckoutInstance.loadPayPalSDK(.
-          {vault: true},
-          () => {
-            let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
-            paypalWrapper.innerHTML = ""
-            paypal["Buttons"](. {
-              style: buttonStyle,
-              fundingSource: paypal["FUNDING"]["PAYPAL"],
-              createBillingAgreement: () => {
-                //Paypal Clicked
-                Utils.handlePostMessage([
-                  ("fullscreen", true->Js.Json.boolean),
-                  ("param", "paymentloader"->Js.Json.string),
-                  ("iframeId", iframeId->Js.Json.string),
-                ])
-                options.readOnly
-                  ? ()
-                  : paypalCheckoutInstance.createPayment(. {
-                      ...defaultOrderDetails,
-                      flow: "vault",
-                    })
-              },
-              onApprove: (. data, _actions) => {
-                options.readOnly
-                  ? ()
-                  : paypalCheckoutInstance.tokenizePayment(.
-                      data,
-                      (. _err, payload) => {
-                        let (connectors, _) = list->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
-                        let body = PaymentBody.paypalSdkBody(~token=payload.nonce, ~connectors)
-                        intent(
-                          ~bodyArr=body,
-                          ~confirmParam={
-                            return_url: options.wallets.walletReturnUrl,
-                            publishableKey,
-                          },
-                          ~handleUserError=true,
-                          (),
-                        )
-                      },
-                    )
-              },
-              onCancel: (. _data) => {
-                handleCloseLoader()
-              },
-              onError: (. _err) => {
-                handleCloseLoader()
-              },
-            }).render(. "#paypal-button")
-            areOneClickWalletsRendered(.
-              prev => {
-                ...prev,
-                isPaypal: true,
-              },
-            )
-          },
-        )
-      })
-    })->ignore
+      resolve()
+    })
+    ->ignore
   }
   React.useEffect0(() => {
     if true {

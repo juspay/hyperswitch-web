@@ -24,7 +24,7 @@ let make = (
       SurchargeUtils.getOneClickWalletsMessage(~list)
     } else {
       switch paymentMethodTypes.surcharge_details {
-      | Some(surchargeDetails) => SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails)
+      | Some(surchargeDetails) => SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails, ~list)
       | None =>
         if paymentMethod === "card" {
           let creditPaymentMethodTypes = getPaymentMethodTypes("credit")
@@ -44,13 +44,13 @@ let make = (
             let debitCardSurcharge = debitSurchargeDetails.displayTotalSurchargeAmount
 
             if creditCardSurcharge >= debitCardSurcharge {
-              SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails={creditSurchargeDetails})
+              SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails={creditSurchargeDetails}, ~list)
             } else {
-              SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails={debitSurchargeDetails})
+              SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails={debitSurchargeDetails}, ~list)
             }
           | (None, Some(surchargeDetails))
           | (Some(surchargeDetails), None) =>
-            SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails)
+            SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails, ~list)
           | (None, None) => None
           }
         } else {

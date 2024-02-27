@@ -21,7 +21,7 @@ let make = (
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   //<...>//
-  let paymentMethodTypes =
+  let paymentMethodTypes = React.useMemo3(() => {
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~list,
       ~paymentMethod,
@@ -30,26 +30,32 @@ let make = (
         ~paymentMethodName=paymentMethodType,
       ),
     )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
+  }, (list, paymentMethod, paymentMethodType))
 
-  let requiredFieldsWithBillingDetails = if paymentMethod === "card" {
-    paymentMethodTypes.required_fields
-  } else if (
-    PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethodType)
-  ) {
-    paymentMethodTypes.required_fields
-  } else {
-    []
-  }
+  let requiredFieldsWithBillingDetails = React.useMemo3(() => {
+    if paymentMethod === "card" {
+      paymentMethodTypes.required_fields
+    } else if (
+      PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethodType)
+    ) {
+      paymentMethodTypes.required_fields
+    } else {
+      []
+    }
+  }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType))
 
-  let requiredFields =
-    requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress
+  let requiredFields = React.useMemo1(() => {
+    requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress(
+      billingAddress,
+    )
+  }, [requiredFieldsWithBillingDetails])
 
   let isAllStoredCardsHaveName = React.useMemo1(() => {
     PaymentType.getIsAllStoredCardsHaveName(savedCards)
   }, [savedCards])
 
   //<...>//
-  let fieldsArr =
+  let fieldsArr = React.useMemo3(() => {
     PaymentMethodsRecord.getPaymentMethodFields(
       paymentMethodType,
       requiredFields,
@@ -57,9 +63,10 @@ let make = (
       ~isAllStoredCardsHaveName,
       (),
     )
-    ->DynamicFieldsUtils.updateDynamicFields()
+    ->DynamicFieldsUtils.updateDynamicFields(billingAddress, ())
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
-  //<...>//
+    //<...>//
+  }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
@@ -180,7 +187,7 @@ let make = (
     None
   })
 
-  let regex = CardUtils.postalRegex(
+  let _regex = CardUtils.postalRegex(
     postalCodes,
     ~country={Utils.getCountryCode(country).isoAlpha2},
     (),
@@ -189,29 +196,17 @@ let make = (
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
 
-    setPostalCode(.prev => {
-      ...prev,
-      value: val,
-      errorString: "",
-    })
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) {
-      CardUtils.blurRef(postalRef)
-    }
-  }
-
-  let onPostalBlur = ev => {
-    let val = ReactEvent.Focus.target(ev)["value"]
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
-      setPostalCode(.prev => {
-        ...prev,
+    if val !== "" {
+      setPostalCode(._ => {
         isValid: Some(true),
+        value: val,
         errorString: "",
       })
-    } else if regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
-      setPostalCode(.prev => {
-        ...prev,
+    } else {
+      setPostalCode(._ => {
         isValid: Some(false),
-        errorString: "Invalid postal code",
+        value: val,
+        errorString: "",
       })
     }
   }
@@ -247,6 +242,9 @@ let make = (
     ~setRequiredFieldsBody,
   )
 
+  let submitCallback = DynamicFieldsUtils.useSubmitCallback()
+  Utils.submitPaymentData(submitCallback)
+
   let bottomElement = <InfoElement />
 
   let getCustomFieldName = (item: PaymentMethodsRecord.paymentMethodsFields) => {
@@ -264,24 +262,30 @@ let make = (
     }
   }
 
-  let dynamicFieldsToRenderOutsideBilling =
+  let dynamicFieldsToRenderOutsideBilling = React.useMemo1(() => {
     fieldsArr->Js.Array2.filter(field =>
       field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling
     )
+  }, [fieldsArr])
 
-  let dynamicFieldsToRenderInsideBilling =
+  let dynamicFieldsToRenderInsideBilling = React.useMemo1(() => {
     fieldsArr->Js.Array2.filter(field =>
       !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
     )
+  }, [fieldsArr])
 
-  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Js.Array2.includes(InfoElement)
+  let isInfoElementPresent = React.useMemo1(() => {
+    dynamicFieldsToRenderInsideBilling->Js.Array2.includes(InfoElement)
+  }, [dynamicFieldsToRenderInsideBilling])
 
-  let isOnlyInfoElementPresent =
+  let isOnlyInfoElementPresent = React.useMemo2(() => {
     dynamicFieldsToRenderInsideBilling->Js.Array2.length === 1 && isInfoElementPresent
+  }, (dynamicFieldsToRenderInsideBilling, isInfoElementPresent))
 
-  let isRenderDynamicFieldsInsideBilling =
+  let isRenderDynamicFieldsInsideBilling = React.useMemo2(() => {
     dynamicFieldsToRenderInsideBilling->Js.Array2.length > 0 &&
       (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
+  }, (dynamicFieldsToRenderInsideBilling, isOnlyInfoElementPresent))
 
   {
     fieldsArr->Js.Array2.length > 0
@@ -406,8 +410,13 @@ let make = (
                   disabled=false
                   options=currencyArr
                 />
+              | FullName =>
+                <FullNamePaymentInput
+                  paymentType
+                  customFieldName={item->getCustomFieldName}
+                  optionalRequiredFields={Some(requiredFields)}
+                />
               | Email
-              | FullName
               | InfoElement
               | Country
               | Bank
@@ -437,7 +446,7 @@ let make = (
                 ~margin=`10px 0`,
                 (),
               )}>
-              {React.string("Billing Details")}
+              {React.string(localeString.billingDetailsText)}
               <div className="p-2 flex flex-col gap-2">
                 {dynamicFieldsToRenderInsideBilling
                 ->Js.Array2.mapi((item, index) => {
@@ -445,17 +454,9 @@ let make = (
                     key={`inside-billing-${index->Js.Int.toString}`}
                     className="flex flex-col w-full place-content-between">
                     {switch item {
-                    | FullName =>
-                      <FullNamePaymentInput
-                        paymentType
-                        customFieldName={item->getCustomFieldName}
-                        optionalRequiredFields={Some(requiredFields)}
-                      />
                     | BillingName =>
                       <BillingNamePaymentInput
-                        paymentType
-                        customFieldName={item->getCustomFieldName}
-                        optionalRequiredFields={Some(requiredFields)}
+                        paymentType optionalRequiredFields={Some(requiredFields)}
                       />
                     | Email => <EmailPaymentInput paymentType />
                     | PhoneNumber => <PhoneNumberPaymentInput />
@@ -466,9 +467,18 @@ let make = (
                           setValue={setCity}
                           value=city
                           onChange={ev => {
+                            let value = ReactEvent.Form.target(ev)["value"]
+                            setCity(.prev => {
+                              isValid: value !== "" ? Some(true) : Some(false),
+                              value,
+                              errorString: value !== "" ? "" : prev.errorString,
+                            })
+                          }}
+                          onBlur={ev => {
+                            let value = ReactEvent.Focus.target(ev)["value"]
                             setCity(.prev => {
                               ...prev,
-                              value: ReactEvent.Form.target(ev)["value"],
+                              isValid: Some(value !== ""),
                             })
                           }}
                           paymentType
@@ -506,7 +516,13 @@ let make = (
                           fieldName=localeString.postalCodeLabel
                           setValue={setPostalCode}
                           value=postalCode
-                          onBlur=onPostalBlur
+                          onBlur={ev => {
+                            let value = ReactEvent.Focus.target(ev)["value"]
+                            setPostalCode(.prev => {
+                              ...prev,
+                              isValid: Some(value !== ""),
+                            })
+                          }}
                           onChange=onPostalChange
                           paymentType
                           type_="tel"
@@ -521,9 +537,18 @@ let make = (
                         setValue={setLine1}
                         value=line1
                         onChange={ev => {
+                          let value = ReactEvent.Form.target(ev)["value"]
+                          setLine1(.prev => {
+                            isValid: value !== "" ? Some(true) : Some(false),
+                            value,
+                            errorString: value !== "" ? "" : prev.errorString,
+                          })
+                        }}
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
                           setLine1(.prev => {
                             ...prev,
-                            value: ReactEvent.Form.target(ev)["value"],
+                            isValid: Some(value !== ""),
                           })
                         }}
                         paymentType
@@ -538,9 +563,18 @@ let make = (
                         setValue={setLine2}
                         value=line2
                         onChange={ev => {
+                          let value = ReactEvent.Form.target(ev)["value"]
+                          setLine2(.prev => {
+                            isValid: value !== "" ? Some(true) : Some(false),
+                            value,
+                            errorString: value !== "" ? "" : prev.errorString,
+                          })
+                        }}
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
                           setLine2(.prev => {
                             ...prev,
-                            value: ReactEvent.Form.target(ev)["value"],
+                            isValid: Some(value !== ""),
                           })
                         }}
                         paymentType
@@ -555,9 +589,18 @@ let make = (
                         setValue={setCity}
                         value=city
                         onChange={ev => {
+                          let value = ReactEvent.Form.target(ev)["value"]
+                          setCity(.prev => {
+                            isValid: value !== "" ? Some(true) : Some(false),
+                            value,
+                            errorString: value !== "" ? "" : prev.errorString,
+                          })
+                        }}
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
                           setCity(.prev => {
                             ...prev,
-                            value: ReactEvent.Form.target(ev)["value"],
+                            isValid: Some(value !== ""),
                           })
                         }}
                         paymentType
@@ -586,7 +629,13 @@ let make = (
                         fieldName=localeString.postalCodeLabel
                         setValue={setPostalCode}
                         value=postalCode
-                        onBlur=onPostalBlur
+                        onBlur={ev => {
+                          let value = ReactEvent.Focus.target(ev)["value"]
+                          setPostalCode(.prev => {
+                            ...prev,
+                            isValid: Some(value !== ""),
+                          })
+                        }}
                         onChange=onPostalChange
                         paymentType
                         type_="tel"
@@ -639,6 +688,7 @@ let make = (
                     | CardCvc
                     | CardExpiryAndCvc
                     | Currency(_)
+                    | FullName
                     | None => React.null
                     }}
                   </div>
