@@ -187,7 +187,7 @@ let make = (
     None
   })
 
-  let regex = CardUtils.postalRegex(
+  let _regex = CardUtils.postalRegex(
     postalCodes,
     ~country={Utils.getCountryCode(country).isoAlpha2},
     (),

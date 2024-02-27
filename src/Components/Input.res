@@ -21,7 +21,7 @@ let make = (
 ) => {
   let options = Recoil.useRecoilValueFromAtom(elementOptions)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (inputFocused, setInputFocused) = React.useState(_ => false)
+  let (_inputFocused, setInputFocused) = React.useState(_ => false)
   let {parentURL} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
   let setFocus = (val: bool) => {
