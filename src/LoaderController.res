@@ -125,12 +125,22 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     handlePostMessage([("iframeMounted", true->Js.Json.boolean)])
     handlePostMessage([("applePayMounted", true->Js.Json.boolean)])
     logger.setLogInitiated()
-    switch paymentlist {
-    | Loaded(_)
-    | LoadError => ()
-    | _ =>
-      setList(._ =>
-        showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
+    let updatedState: PaymentType.loadType = switch paymentlist {
+    | Loading =>
+      showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
+    | x => x
+    }
+    switch updatedState {
+    | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ())
+    | Loading => logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ())
+    | SemiLoaded => {
+        setList(._ => updatedState)
+        logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ())
+      }
+    | LoadError(x) => logger.setLogError(
+        ~value="LoadError: " ++ x->Js.Json.stringify,
+        ~eventName=LOADER_CHANGED,
+        (),
       )
     }
     Window.addEventListener("click", ev =>
@@ -340,18 +350,30 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         }
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
-          list == Js.Dict.empty()->Js.Json.object_
-            ? setList(._ => LoadError)
-            : switch list->Utils.getDictFromJson->Js.Dict.get("error") {
-              | Some(_) => setList(._ => LoadError)
-              | None =>
-                let isNonEmptyPaymentMethodList =
-                  list
-                  ->Utils.getDictFromJson
-                  ->Utils.getArray("payment_methods")
-                  ->Js.Array2.length > 0
-                setList(._ => isNonEmptyPaymentMethodList ? Loaded(list) : LoadError)
-              }
+          let updatedState: PaymentType.loadType =
+            list == Js.Dict.empty()->Js.Json.object_
+              ? LoadError(list)
+              : switch list->Utils.getDictFromJson->Js.Dict.get("error") {
+                | Some(_) => LoadError(list)
+                | None =>
+                  let isNonEmptyPaymentMethodList =
+                    list
+                    ->Utils.getDictFromJson
+                    ->Utils.getArray("payment_methods")
+                    ->Js.Array2.length > 0
+                  isNonEmptyPaymentMethodList ? Loaded(list) : LoadError(list)
+                }
+          switch updatedState {
+          | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ())
+          | LoadError(x) =>
+            logger.setLogError(
+              ~value="LoadError: " ++ x->Js.Json.stringify,
+              ~eventName=LOADER_CHANGED,
+              (),
+            )
+          | _ => ()
+          }
+          setList(._ => updatedState)
         }
         if dict->getDictIsSome("customerPaymentMethods") {
           let customerPaymentMethods = dict->PaymentType.createCustomerObjArr
