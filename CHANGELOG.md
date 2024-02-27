@@ -1,3 +1,10 @@
+## [0.26.2](https://github.com/juspay/hyperswitch-web/compare/v0.26.1...v0.26.2) (2024-02-27)
+
+
+### Bug Fixes
+
+* **animatedcheckbox:** Save Card Details checkbox changes ([#184](https://github.com/juspay/hyperswitch-web/issues/184)) ([8cf979c](https://github.com/juspay/hyperswitch-web/commit/8cf979c1a7943ffdb8c791286abec5e4465d5bfa))
+
 ## [0.26.1](https://github.com/juspay/hyperswitch-web/compare/v0.26.0...v0.26.1) (2024-02-27)
 
 
