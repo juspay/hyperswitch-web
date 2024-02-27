@@ -1,5 +1,5 @@
 @react.component
-let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
+let make = (~sessionId as _, ~publishableKey as _, ~clientSecret as _, ~endpoint as _) => {
   // open Utils
   // let logger = OrcaLogger.make(
   //   ~sessionId,

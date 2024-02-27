@@ -182,7 +182,7 @@ let localeStrings = [
     useExisitingSavedCards: "Use saved debit/credit cards",
     saveCardDetails: "Save card details",
     addBankAccount: "Add bank account",
-    achBankDebitTerms: str =>
+    achBankDebitTerms: _ =>
       `Your ACH Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.`,
     sepaDebitTerms: str =>
       `By providing your payment information and confirming this payment, you authorise (A) ${str} and Hyperswitch, our payment service provider and/or PPRO, its local service provider, to send instructions to your bank to debit your account and (B) your bank to debit your account in accordance with those instructions. As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. A refund must be claimed within 8 weeks starting from the date on which your account was debited. Your rights are explained in a statement that you can obtain from your bank. You agree to receive notifications for future debits up to 2 days before they occur.`,
@@ -407,7 +407,7 @@ let localeStrings = [
     useExisitingSavedCards: "Use saved debit/credit cards",
     saveCardDetails: "Save card details",
     addBankAccount: "Add bank account",
-    achBankDebitTerms: str =>
+    achBankDebitTerms: _ =>
       `Your ACH Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.`,
     sepaDebitTerms: str =>
       `By providing your payment information and confirming this payment, you authorise (A) ${str} and Hyperswitch, our payment service provider and/or PPRO, its local service provider, to send instructions to your bank to debit your account and (B) your bank to debit your account in accordance with those instructions. As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. A refund must be claimed within 8 weeks starting from the date on which your account was debited. Your rights are explained in a statement that you can obtain from your bank. You agree to receive notifications for future debits up to 2 days before they occur.`,

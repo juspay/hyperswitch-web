@@ -16,7 +16,6 @@ type style
 @get external value: Dom.element => 'a = "value"
 @val @scope(("window", "location"))
 external replace: string => unit = "replace"
-@val @scope(("window", "parent", "location")) external href: string = "href"
 
 @val @scope("document") external createElement: string => Dom.element = "createElement"
 @set external windowOnload: (window, unit => unit) => unit = "onload"

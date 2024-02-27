@@ -1,3 +1,24 @@
+## [0.26.2](https://github.com/juspay/hyperswitch-web/compare/v0.26.1...v0.26.2) (2024-02-27)
+
+
+### Bug Fixes
+
+* **animatedcheckbox:** Save Card Details checkbox changes ([#184](https://github.com/juspay/hyperswitch-web/issues/184)) ([8cf979c](https://github.com/juspay/hyperswitch-web/commit/8cf979c1a7943ffdb8c791286abec5e4465d5bfa))
+
+## [0.26.1](https://github.com/juspay/hyperswitch-web/compare/v0.26.0...v0.26.1) (2024-02-27)
+
+
+### Bug Fixes
+
+* warnings removed ([#185](https://github.com/juspay/hyperswitch-web/issues/185)) ([7cf5603](https://github.com/juspay/hyperswitch-web/commit/7cf560357261c529380781928cbcabe9cfaca16c))
+
+# [0.26.0](https://github.com/juspay/hyperswitch-web/compare/v0.25.0...v0.26.0) (2024-02-27)
+
+
+### Features
+
+* added LOADER_CHANGED event on loader state update ([#178](https://github.com/juspay/hyperswitch-web/issues/178)) ([42abaf0](https://github.com/juspay/hyperswitch-web/commit/42abaf05baccc27141098410ecb1746c73b43e6a))
+
 # [0.25.0](https://github.com/juspay/hyperswitch-web/compare/v0.24.0...v0.25.0) (2024-02-19)
 
 
