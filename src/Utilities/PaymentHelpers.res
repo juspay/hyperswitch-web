@@ -115,6 +115,7 @@ let intentCall = (
   ~switchToCustomPod,
 ) => {
   open Promise
+  let {sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isConfirm = uri->Js.String2.includes("/confirm")
   let (eventName: OrcaLogger.eventName, initEventName: OrcaLogger.eventName) = isConfirm
     ? (CONFIRM_CALL, CONFIRM_CALL_INIT)
@@ -335,11 +336,11 @@ let intentCall = (
 
             handlePostMessage(message)
           } else {
-            switch paymentType {
-            | Card
-            | Gpay
-            | Applepay
-            | Paypal =>
+            switch (paymentType, sdkHandleOneClickConfirmPayment) {
+            | (Card, _)
+            | (Gpay, false)
+            | (Applepay, false)
+            | (Paypal, false) =>
               postSubmitResponse(~jsonData=data, ~url=url.href)
             | _ => openUrl(url.href)
             }
@@ -365,11 +366,11 @@ let intentCall = (
           if intent.status === "failed" {
             setIsManualRetryEnabled(. _ => intent.manualRetryAllowed)
           }
-          switch paymentType {
-          | Card
-          | Gpay
-          | Applepay
-          | Paypal =>
+          switch (paymentType, sdkHandleOneClickConfirmPayment) {
+          | (Card, _)
+          | (Gpay, false)
+          | (Applepay, false)
+          | (Paypal, false) =>
             postSubmitResponse(~jsonData=data, ~url=url.href)
           | _ => openUrl(url.href)
           }
