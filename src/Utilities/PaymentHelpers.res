@@ -113,9 +113,9 @@ let intentCall = (
   ~fetchMethod,
   ~setIsManualRetryEnabled,
   ~switchToCustomPod,
+  ~sdkHandleOneClickConfirmPayment,
 ) => {
   open Promise
-  let {sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isConfirm = uri->Js.String2.includes("/confirm")
   let (eventName: OrcaLogger.eventName, initEventName: OrcaLogger.eventName) = isConfirm
     ? (CONFIRM_CALL, CONFIRM_CALL_INIT)
@@ -439,6 +439,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           ~fetchMethod=Fetch.Get,
           ~setIsManualRetryEnabled,
           ~switchToCustomPod,
+          ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
         )
       }
       switch list {
@@ -588,6 +589,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
             ~fetchMethod,
             ~setIsManualRetryEnabled,
             ~switchToCustomPod,
+            ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           )
         }
       }
