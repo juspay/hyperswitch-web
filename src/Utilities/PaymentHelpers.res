@@ -113,6 +113,7 @@ let intentCall = (
   ~fetchMethod,
   ~setIsManualRetryEnabled,
   ~switchToCustomPod,
+  ~sdkHandleOneClickConfirmPayment,
 ) => {
   open Promise
   let isConfirm = uri->Js.String2.includes("/confirm")
@@ -335,11 +336,11 @@ let intentCall = (
 
             handlePostMessage(message)
           } else {
-            switch paymentType {
-            | Card
-            | Gpay
-            | Applepay
-            | Paypal =>
+            switch (paymentType, sdkHandleOneClickConfirmPayment) {
+            | (Card, _)
+            | (Gpay, false)
+            | (Applepay, false)
+            | (Paypal, false) =>
               postSubmitResponse(~jsonData=data, ~url=url.href)
             | _ => openUrl(url.href)
             }
@@ -365,11 +366,11 @@ let intentCall = (
           if intent.status === "failed" {
             setIsManualRetryEnabled(. _ => intent.manualRetryAllowed)
           }
-          switch paymentType {
-          | Card
-          | Gpay
-          | Applepay
-          | Paypal =>
+          switch (paymentType, sdkHandleOneClickConfirmPayment) {
+          | (Card, _)
+          | (Gpay, false)
+          | (Applepay, false)
+          | (Paypal, false) =>
             postSubmitResponse(~jsonData=data, ~url=url.href)
           | _ => openUrl(url.href)
           }
@@ -438,6 +439,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           ~fetchMethod=Fetch.Get,
           ~setIsManualRetryEnabled,
           ~switchToCustomPod,
+          ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
         )
       }
       switch list {
@@ -587,6 +589,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
             ~fetchMethod,
             ~setIsManualRetryEnabled,
             ~switchToCustomPod,
+            ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           )
         }
       }
