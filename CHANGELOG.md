@@ -1,3 +1,10 @@
+## [0.26.4](https://github.com/juspay/hyperswitch-web/compare/v0.26.3...v0.26.4) (2024-02-28)
+
+
+### Bug Fixes
+
+* **sdkHandleOneClickConfirmPayment:** properly handling redirection for one click payment methods ([#192](https://github.com/juspay/hyperswitch-web/issues/192)) ([0e70b4f](https://github.com/juspay/hyperswitch-web/commit/0e70b4f4fc3998ac3616adc124aa0ccf2c08ae2b))
+
 ## [0.26.3](https://github.com/juspay/hyperswitch-web/compare/v0.26.2...v0.26.3) (2024-02-28)
 
 
