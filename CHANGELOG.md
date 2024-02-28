@@ -1,3 +1,10 @@
+## [0.26.3](https://github.com/juspay/hyperswitch-web/compare/v0.26.2...v0.26.3) (2024-02-28)
+
+
+### Bug Fixes
+
+* fixed ordering and removed duplicates from Country and States ([#188](https://github.com/juspay/hyperswitch-web/issues/188)) ([8f3c9de](https://github.com/juspay/hyperswitch-web/commit/8f3c9debd627ca7a4025e1fb1a5f3f12df2d7b0b))
+
 ## [0.26.2](https://github.com/juspay/hyperswitch-web/compare/v0.26.1...v0.26.2) (2024-02-27)
 
 
