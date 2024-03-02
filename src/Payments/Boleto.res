@@ -27,6 +27,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
@@ -36,12 +37,17 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
 
   let socialSecurityNumberRef = React.useRef(Js.Nullable.null)
 
-  let complete = socialSecurityNumber->cleanSocialSecurityNumber->Js.String2.length == 11
+  let (complete, empty) = React.useMemo1(() => {
+    (
+      socialSecurityNumber->cleanSocialSecurityNumber->Js.String2.length == 11,
+      socialSecurityNumber->Js.String2.length == 0,
+    )
+  }, [socialSecurityNumber])
 
-  React.useEffect1(() => {
-    handlePostMessageEvents(~complete, ~empty=!complete, ~paymentType="boleto", ~loggerState)
+  React.useEffect2(() => {
+    handlePostMessageEvents(~complete, ~empty, ~paymentType="boleto", ~loggerState)
     None
-  }, [complete])
+  }, (complete, empty))
 
   React.useEffect1(() => {
     setComplete(._ => complete)
@@ -57,7 +63,13 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
         let body = PaymentBody.boletoBody(
           ~socialSecurityNumber=socialSecurityNumber->Js.String2.replaceByRe(%re("/\D+/g"), ""),
         )
-        intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
+        intent(
+          ~bodyArr=body,
+          ~confirmParam=confirm.confirmParams,
+          ~handleUserError=false,
+          ~iframeId,
+          (),
+        )
         ()
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
