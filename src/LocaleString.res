@@ -369,7 +369,7 @@ let localeStrings = [
     nameEmptyText: str => `Veuillez fournir votre ${str}`,
     completeNameEmptyText: str => `Veuillez fournir votre complet ${str}`,
     billingDetailsText: `Détails de la facturation`,
-    socialSecurityNumberLabel: `numéro de sécurité sociale`,
+    socialSecurityNumberLabel: `Numéro de sécurité sociale`,
   },
   {
     locale: "en-GB",
