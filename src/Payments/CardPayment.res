@@ -269,7 +269,7 @@ let make = (
               <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
             </div>
           </RenderIf>
-          <RenderIf condition={showFields && !isBancontact}>
+          <RenderIf condition={savedMethods->Js.Array2.length > 0 && !isBancontact}>
             <div
               className="Label flex flex-row gap-3 items-end cursor-pointer"
               style={ReactDOMStyle.make(
