@@ -82,14 +82,13 @@ let make = (
     None
   }, (empty, complete))
 
-  let isGuestCustomer = React.useMemo1(() => {
+  let (savedMethods, isGuestCustomer) = React.useMemo1(() => {
     switch options.customerPaymentMethods {
-    | LoadedSavedCards(_, false)
-    | NoResult(false) => false
-    | _ => true
+    | LoadedSavedCards(savedMethods, isGuest) => (savedMethods, isGuest)
+    | NoResult(isGuest) => ([], isGuest)
+    | _ => ([], true)
     }
   }, [options.customerPaymentMethods])
-
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
     ~cvcNumber,
@@ -254,7 +253,7 @@ let make = (
               <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
             </div>
           </RenderIf>
-          <RenderIf condition={showFields && !isBancontact}>
+          <RenderIf condition={savedMethods->Js.Array2.length > 0 && !isBancontact}>
             <div
               className="Label flex flex-row gap-3 items-end cursor-pointer"
               style={ReactDOMStyle.make(
