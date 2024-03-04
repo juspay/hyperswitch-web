@@ -293,7 +293,7 @@ let localeStrings = [
     nameEmptyText: str => `אנא ספק את שלך ${str}`,
     completeNameEmptyText: str => `אנא ספק את המלא שלך ${str}`,
     billingDetailsText: `פרטי תשלום`,
-    socialSecurityNumberLabel: "מספר ביטוח לאומי",
+    socialSecurityNumberLabel: `מספר ביטוח לאומי`,
   },
   {
     locale: `fr`,
@@ -368,8 +368,8 @@ let localeStrings = [
     \"and": `et`,
     nameEmptyText: str => `Veuillez fournir votre ${str}`,
     completeNameEmptyText: str => `Veuillez fournir votre complet ${str}`,
-    billingDetailsText: "Détails de la facturation",
-    socialSecurityNumberLabel: "numéro de sécurité sociale",
+    billingDetailsText: `Détails de la facturation`,
+    socialSecurityNumberLabel: `numéro de sécurité sociale`,
   },
   {
     locale: "en-GB",
@@ -521,7 +521,7 @@ let localeStrings = [
     nameEmptyText: str => `يرجى تقديم الخاص بك ${str}`,
     completeNameEmptyText: str => `يرجى تقديم كامل الخاص بك ${str}`,
     billingDetailsText: `تفاصيل الفاتورة`,
-    socialSecurityNumberLabel: "رقم الضمان الاجتماعي",
+    socialSecurityNumberLabel: `رقم الضمان الاجتماعي`,
   },
   {
     locale: "ja",
@@ -597,7 +597,7 @@ let localeStrings = [
     nameEmptyText: str => `あなたの情報を提供してください ${str}`,
     completeNameEmptyText: str => `完全な情報を提供してください ${str}`,
     billingDetailsText: `支払明細`,
-    socialSecurityNumberLabel: "社会保障番号",
+    socialSecurityNumberLabel: `社会保障番号`,
   },
   {
     locale: "de",
@@ -673,6 +673,6 @@ let localeStrings = [
     nameEmptyText: str => `Bitte geben Sie Ihre an ${str}`,
     completeNameEmptyText: str => `Bitte geben Sie Ihr vollständiges Formular an ${str}`,
     billingDetailsText: `Rechnungsdetails`,
-    socialSecurityNumberLabel: "Sozialversicherungsnummer",
+    socialSecurityNumberLabel: `Sozialversicherungsnummer`,
   },
 ]
