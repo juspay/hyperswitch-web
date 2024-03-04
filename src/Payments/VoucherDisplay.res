@@ -1,5 +1,4 @@
 open Utils
-@send external click: Dom.element => unit = "click"
 @react.component
 let make = () => {
   let (openModal, setOpenModal) = React.useState(_ => false)
@@ -15,7 +14,7 @@ let make = () => {
 
   React.useEffect1(() => {
     switch linkRef.current->Js.Nullable.toOption {
-    | Some(link) => link->click
+    | Some(link) => link->Window.click
     | None => ()
     }
     None
@@ -49,7 +48,7 @@ let make = () => {
 
   <Modal showClose=false openModal setOpenModal loader>
     <div className="flex flex-col h-full justify-between items-center">
-      <div className=" flex flex-col max-w-md justify-between items-center">
+      <div className="flex flex-col max-w-md justify-between items-center">
         <div className="flex flex-row w-full">
           <p className="Disclaimer font-medium text-sm text-[#151A1F] opacity-70">
             {React.string(
@@ -84,7 +83,7 @@ let make = () => {
         </div>
         <div className="Disclaimer w-full mt-16 font-medium text-xs text-[#151A1F] opacity-50">
           {React.string(
-            " Please do not close until you have successfully downloaded the voucher, after which you will be automatically redirected. ",
+            "Please do not close until you have successfully downloaded the voucher, after which you will be automatically redirected.",
           )}
         </div>
         <div className="button w-full">

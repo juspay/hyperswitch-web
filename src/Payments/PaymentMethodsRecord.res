@@ -490,7 +490,7 @@ let paymentMethodsFields = [
     icon: Some(icon("boleto", ~size=19, ~width=25)),
     displayName: "Boleto",
     fields: [InfoElement],
-    miniIcon: Some(icon("boleto", ~size=19, ~width=25)),
+    miniIcon: None,
   },
 ]
 

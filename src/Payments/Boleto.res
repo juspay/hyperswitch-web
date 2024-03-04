@@ -29,7 +29,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
 
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let (socialSecurityNumber, setSocialSecurityNumber) = React.useState(_ => "")
 
@@ -54,7 +54,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     None
   }, [complete])
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let submitCallback = React.useCallback1((ev: Window.event) => {
     let json = ev.data->Js.Json.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
@@ -75,7 +75,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  })
+  }, [socialSecurityNumber])
   submitPaymentData(submitCallback)
 
   let changeSocialSecurityNumber = ev => {
