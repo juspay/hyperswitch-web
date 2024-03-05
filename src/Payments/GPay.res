@@ -43,10 +43,10 @@ let make = (
   }
 
   let isWallet = walletOptions->Js.Array2.includes("google_pay")
-  let paymentExperience =
-    googlePayPaymentMethodType.payment_experience->Js.Array2.length == 0
-      ? PaymentMethodsRecord.RedirectToURL
-      : googlePayPaymentMethodType.payment_experience[0].payment_experience_type
+  let paymentExperience = switch googlePayPaymentMethodType.payment_experience[0] {
+  | Some(paymentExperience) => paymentExperience.payment_experience_type
+  | None => PaymentMethodsRecord.RedirectToURL
+  }
 
   let isInvokeSDKFlow = React.useMemo1(() => {
     (isGooglePaySDKFlow || isGooglePayThirdPartyFlow) &&

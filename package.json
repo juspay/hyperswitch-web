@@ -7,6 +7,7 @@
     "@aws-sdk/client-cloudfront": "^3.414.0",
     "@aws-sdk/client-s3": "^3.417.0",
     "@kount/kount-web-client-sdk": "^1.1.6",
+    "@rescript/core": "^0.7.0",
     "@rescript/react": "^0.11.0",
     "@ryyppy/rescript-promise": "^2.1.0",
     "@sentry/react": "^7.64.0",
