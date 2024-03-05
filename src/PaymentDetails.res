@@ -97,4 +97,9 @@ let details = [
     icon: Some(icon("bank", ~size=21)),
     displayName: "BECS Debit",
   },
+  {
+    type_: "boleto",
+    icon: Some(icon("boleto", ~size=19)),
+    displayName: "Boleto",
+  },
 ]

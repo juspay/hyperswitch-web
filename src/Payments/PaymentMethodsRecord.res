@@ -485,6 +485,13 @@ let paymentMethodsFields = [
     displayName: "Pix",
     miniIcon: None,
   },
+  {
+    paymentMethodName: "boleto",
+    icon: Some(icon("boleto", ~size=19, ~width=25)),
+    displayName: "Boleto",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
@@ -651,7 +658,7 @@ let getPaymentDetails = (arr: array<string>) => {
 }
 
 type paymentMethod =
-  Cards | Wallets | PayLater | BankRedirect | BankTransfer | BankDebit | Crypto | NONE
+  Cards | Wallets | PayLater | BankRedirect | BankTransfer | BankDebit | Crypto | Voucher | NONE
 
 type cardType = Credit | Debit
 type paymentMethodType =
@@ -737,6 +744,7 @@ let getMethod = str => {
   | "bank_transfer" => BankTransfer
   | "bank_debit" => BankDebit
   | "crypto" => Crypto
+  | "voucher" => Voucher
   | _ => NONE
   }
 }

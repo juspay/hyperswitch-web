@@ -284,6 +284,40 @@ let intentCall = (
               ("iframeId", iframeId->Js.Json.string),
               ("metadata", metaData->Js.Json.object_),
             ])
+          } else if intent.nextAction.type_ === "display_voucher_information" {
+            let voucherData = intent.nextAction.voucher_details->Belt.Option.getWithDefault({
+              download_url: "",
+              reference: "",
+            })
+            let headerObj = Js.Dict.empty()
+            headers->Js.Array2.forEach(
+              entries => {
+                let (x, val) = entries
+                Js.Dict.set(headerObj, x, val->Js.Json.string)
+              },
+            )
+            let metaData =
+              [
+                ("voucherUrl", voucherData.download_url->Js.Json.string),
+                ("reference", voucherData.reference->Js.Json.string),
+                ("returnUrl", url.href->Js.Json.string),
+                ("paymentMethod", paymentMethod->Js.Json.string),
+                ("payment_intent_data", data),
+              ]->Js.Dict.fromArray
+            handleLogging(
+              ~optLogger,
+              ~value="",
+              ~internalMetadata=metaData->Js.Json.object_->Js.Json.stringify,
+              ~eventName=DISPLAY_VOUCHER,
+              ~paymentMethod,
+              (),
+            )
+            handlePostMessage([
+              ("fullscreen", true->Js.Json.boolean),
+              ("param", `voucherData`->Js.Json.string),
+              ("iframeId", iframeId->Js.Json.string),
+              ("metadata", metaData->Js.Json.object_),
+            ])
           } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
             let session_token = switch intent.nextAction.session_token {
             | Some(token) => token->Utils.getDictFromJson

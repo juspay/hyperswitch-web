@@ -182,19 +182,6 @@ let getConnectors = (list: PaymentMethodsRecord.list, method: connectorType) => 
   | None => ([], [])
   }
 }
-let getPaymentDetails = (arr: array<string>) => {
-  let finalArr = []
-  arr
-  ->Js.Array2.map(item => {
-    let optionalVal = PaymentDetails.details->Js.Array2.find(i => i.type_ == item)
-    switch optionalVal {
-    | Some(val) => finalArr->Js.Array2.push(val)->ignore
-    | None => ()
-    }
-  })
-  ->ignore
-  finalArr
-}
 let getDisplayNameAndIcon = (
   customNames: PaymentType.customMethodNames,
   paymentMethodName,
