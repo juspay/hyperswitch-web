@@ -37,7 +37,8 @@
     "build:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js && npm run build",
     "prepare": "husky install",
     "deploy-to-s3": "node ./scripts/pushToS3.js",
-    "postinstall": "cd Hyperswitch-React-Demo-App && npm i"
+    "postinstall": "cd Hyperswitch-React-Demo-App && npm i",
+    "test:hooks": "npx eslint src/"
   },
   "eslintConfig": {
     "extends": [
@@ -70,6 +71,8 @@
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
     "cz-conventional-changelog": "^3.3.0",
+    "eslint": "latest",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "husky": "^8.0.3",
     "mini-css-extract-plugin": "^1.3.1",
     "postcss": "^8.4.16",
