@@ -263,9 +263,7 @@ let make = (
   }
 
   let dynamicFieldsToRenderOutsideBilling = React.useMemo1(() => {
-    fieldsArr->Js.Array2.filter(field =>
-      field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling
-    )
+    fieldsArr->Js.Array2.filter(DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
   }, [fieldsArr])
 
   let dynamicFieldsToRenderInsideBilling = React.useMemo1(() => {
@@ -274,18 +272,14 @@ let make = (
     )
   }, [fieldsArr])
 
-  let isInfoElementPresent = React.useMemo1(() => {
-    dynamicFieldsToRenderInsideBilling->Js.Array2.includes(InfoElement)
-  }, [dynamicFieldsToRenderInsideBilling])
+  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Js.Array2.includes(InfoElement)
 
-  let isOnlyInfoElementPresent = React.useMemo2(() => {
+  let isOnlyInfoElementPresent =
     dynamicFieldsToRenderInsideBilling->Js.Array2.length === 1 && isInfoElementPresent
-  }, (dynamicFieldsToRenderInsideBilling, isInfoElementPresent))
 
-  let isRenderDynamicFieldsInsideBilling = React.useMemo2(() => {
+  let isRenderDynamicFieldsInsideBilling =
     dynamicFieldsToRenderInsideBilling->Js.Array2.length > 0 &&
       (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
-  }, (dynamicFieldsToRenderInsideBilling, isOnlyInfoElementPresent))
 
   {
     fieldsArr->Js.Array2.length > 0
@@ -454,10 +448,7 @@ let make = (
                     key={`inside-billing-${index->Js.Int.toString}`}
                     className="flex flex-col w-full place-content-between">
                     {switch item {
-                    | BillingName =>
-                      <BillingNamePaymentInput
-                        paymentType optionalRequiredFields={Some(requiredFields)}
-                      />
+                    | BillingName => <BillingNamePaymentInput paymentType requiredFields />
                     | Email => <EmailPaymentInput paymentType />
                     | PhoneNumber => <PhoneNumberPaymentInput />
                     | StateAndCity =>
