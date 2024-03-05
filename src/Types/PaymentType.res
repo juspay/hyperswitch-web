@@ -137,10 +137,8 @@ type sdkHandleConfirmPaymentProps = {
   buttonBackgroundColor: string,
   buttonHeight: string,
   buttonWidth: string,
-  opacity: float,
   borderRadius: string,
   borderColor: string,
-  confirmParams: ConfirmType.confirmParams,
 }
 
 type options = {
@@ -161,7 +159,7 @@ type options = {
   showCardFormByDefault: bool,
   billingAddress: billingAddress,
   sdkHandleConfirmPayment: bool,
-  // sdkHandleConfirmPaymentProps: sdkHandleConfirmPaymentProps,
+  sdkHandleConfirmPaymentProps: sdkHandleConfirmPaymentProps,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -268,11 +266,9 @@ let defaultValueSdkHandleConfirmPaymentProps = {
   buttonText: "Pay Now",
   buttonBackgroundColor: "",
   buttonHeight: "",
-  buttonWidth: "",
-  opacity: 0.4,
+  buttonWidth: "thin",
   borderRadius: "",
   borderColor: "",
-  confirmParams: ConfirmType.defaultConfirm,
 }
 
 let defaultOptions = {
@@ -293,7 +289,7 @@ let defaultOptions = {
   showCardFormByDefault: true,
   billingAddress: defaultBillingAddress,
   sdkHandleConfirmPayment: false,
-  // sdkHandleConfirmPaymentProps: defaultValueSdkHandleConfirmPaymentProps,
+  sdkHandleConfirmPaymentProps: defaultValueSdkHandleConfirmPaymentProps,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -909,14 +905,12 @@ let getConfirmParams = dict => {
 }
 
 let getSdkHandleConfirmPaymentProps = dict => {
-  buttonText: dict->getString("buttonText", ""),
+  buttonText: dict->getString("buttonText", "Pay Now"),
   buttonBackgroundColor: dict->getString("buttonBackgroundColor", ""),
   buttonHeight: dict->getString("buttonHeight", ""),
-  buttonWidth: dict->getString("buttonWidth", ""),
-  opacity: dict->getFloat("opacity", 1.0),
+  buttonWidth: dict->getString("buttonWidth", "thin"),
   borderRadius: dict->getString("borderRadius", ""),
   borderColor: dict->getString("borderColor", ""),
-  confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
 }
 
 let itemToObjMapper = (dict, logger) => {
@@ -974,9 +968,9 @@ let itemToObjMapper = (dict, logger) => {
     showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
     billingAddress: getBillingAddress(dict, "billingAddress", logger),
     sdkHandleConfirmPayment: getBool(dict, "sdkHandleConfirmPayment", false),
-    // sdkHandleConfirmPaymentProps: dict
-    // ->getDictfromDict("sdkHandleConfirmPaymentProps")
-    // ->getSdkHandleConfirmPaymentProps,
+    sdkHandleConfirmPaymentProps: dict
+    ->getDictfromDict("sdkHandleConfirmPaymentProps")
+    ->getSdkHandleConfirmPaymentProps,
   }
 }
 

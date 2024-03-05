@@ -20,6 +20,14 @@ let make = () => {
   let (isDisabled, setIsDisabled) = React.useState(() => false)
   let (showLoader, setShowLoader) = React.useState(() => false)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let sdkHandleConfirmPaymentProps = Recoil.useRecoilValueFromAtom(
+    optionAtom,
+  ).sdkHandleConfirmPaymentProps
+  let buttonText =
+    sdkHandleConfirmPaymentProps.buttonText->Js.String2.length > 0
+      ? sdkHandleConfirmPaymentProps.buttonText
+      : localeString.payNowButton
+  Js.log2("sdkHandleConfirmPaymentProps", sdkHandleConfirmPaymentProps)
 
   let handleOnClick = _ => {
     setIsDisabled(_ => true)
@@ -37,19 +45,31 @@ let make = () => {
       onClick=handleOnClick
       className={`w-full flex flex-row justify-center items-center rounded-md`}
       style={ReactDOMStyle.make(
-        ~backgroundColor=themeObj.colorBackground,
-        ~height="48px",
+        ~backgroundColor={
+          sdkHandleConfirmPaymentProps.buttonBackgroundColor->Js.String2.length > 0
+            ? sdkHandleConfirmPaymentProps.buttonBackgroundColor
+            : themeObj.colorBackground
+        },
+        ~height={
+          sdkHandleConfirmPaymentProps.buttonHeight->Js.String2.length > 0
+            ? sdkHandleConfirmPaymentProps.buttonHeight
+            : "48px"
+        },
         ~cursor={isDisabled ? "not-allowed" : "pointer"},
         ~opacity={isDisabled ? "0.6" : "1"},
-        ~borderWidth="thin",
-        ~borderColor=themeObj.colorPrimary,
+        ~borderWidth=sdkHandleConfirmPaymentProps.buttonWidth,
+        ~borderColor={
+          sdkHandleConfirmPaymentProps.borderColor->Js.String2.length > 0
+            ? sdkHandleConfirmPaymentProps.borderColor
+            : themeObj.colorPrimary
+        },
         (),
       )}>
       <span id="button-text" style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}>
         {if showLoader {
           <Loader />
         } else {
-          {React.string(localeString.payNowButton)}
+          buttonText->React.string
         }}
       </span>
     </button>
