@@ -132,6 +132,18 @@ type billingAddress = {
   usePrefilledValues: showType,
 }
 
+type sdkHandleConfirmPaymentProps = {
+  buttonText: string,
+  buttonBackgroundColor: string,
+  buttonHeight: string,
+  buttonWidth: string,
+  opacity: float,
+  borderRadius: string,
+  borderColor: string,
+  confirmParams: ConfirmType.confirmParams,
+  postConfirmHandler: string,
+}
+
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
@@ -149,6 +161,8 @@ type options = {
   payButtonStyle: style,
   showCardFormByDefault: bool,
   billingAddress: billingAddress,
+  sdkHandleConfirmPayment: bool,
+  // sdkHandleConfirmPaymentProps: sdkHandleConfirmPaymentProps,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -250,6 +264,19 @@ let defaultBillingAddress = {
   isUseBillingAddress: false,
   usePrefilledValues: Auto,
 }
+
+let defaultValueSdkHandleConfirmPaymentProps = {
+  buttonText: "Pay Now",
+  buttonBackgroundColor: "",
+  buttonHeight: "",
+  buttonWidth: "",
+  opacity: 0.4,
+  borderRadius: "",
+  borderColor: "",
+  confirmParams: ConfirmType.defaultConfirm,
+  postConfirmHandler: "",
+}
+
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
@@ -267,6 +294,8 @@ let defaultOptions = {
   customMethodNames: [],
   showCardFormByDefault: true,
   billingAddress: defaultBillingAddress,
+  sdkHandleConfirmPayment: false,
+  // sdkHandleConfirmPaymentProps: defaultValueSdkHandleConfirmPaymentProps,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -873,6 +902,26 @@ let getBillingAddress = (dict, str, logger) => {
   ->Belt.Option.getWithDefault(defaultBillingAddress)
 }
 
+let getConfirmParams = dict => {
+  open ConfirmType
+  {
+    return_url: dict->getString("return_url", ""),
+    publishableKey: dict->getString("publishableKey", ""),
+  }
+}
+
+let getSdkHandleConfirmPaymentProps = dict => {
+  buttonText: dict->getString("buttonText", ""),
+  buttonBackgroundColor: dict->getString("buttonBackgroundColor", ""),
+  buttonHeight: dict->getString("buttonHeight", ""),
+  buttonWidth: dict->getString("buttonWidth", ""),
+  opacity: dict->getFloat("opacity", 1.0),
+  borderRadius: dict->getString("borderRadius", ""),
+  borderColor: dict->getString("borderColor", ""),
+  confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
+  postConfirmHandler: dict->getString("postConfirmHandler", ""),
+}
+
 let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(
     [
@@ -890,6 +939,8 @@ let itemToObjMapper = (dict, logger) => {
       "displaySavedPaymentMethods",
       "sdkHandleOneClickConfirmPayment",
       "showCardFormByDefault",
+      "sdkHandleConfirmPayment",
+      "sdkHandleConfirmPaymentProps",
     ],
     dict,
     "options",
@@ -925,6 +976,10 @@ let itemToObjMapper = (dict, logger) => {
     payButtonStyle: getStyle(dict, "payButtonStyle", logger),
     showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
     billingAddress: getBillingAddress(dict, "billingAddress", logger),
+    sdkHandleConfirmPayment: getBool(dict, "sdkHandleConfirmPayment", false),
+    // sdkHandleConfirmPaymentProps: dict
+    // ->getDictfromDict("sdkHandleConfirmPaymentProps")
+    // ->getSdkHandleConfirmPaymentProps,
   }
 }
 

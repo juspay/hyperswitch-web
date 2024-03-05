@@ -137,7 +137,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         setList(._ => updatedState)
         logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ())
       }
-    | LoadError(x) => logger.setLogError(
+    | LoadError(x) =>
+      logger.setLogError(
         ~value="LoadError: " ++ x->Js.Json.stringify,
         ~eventName=LOADER_CHANGED,
         (),

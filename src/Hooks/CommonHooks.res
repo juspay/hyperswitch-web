@@ -13,7 +13,6 @@ type keys = {
   publishableKey: string,
   iframeId: string,
   parentURL: string,
-  sdkHandleConfirmPayment: bool,
   sdkHandleOneClickConfirmPayment: bool,
 }
 @val @scope("document") external querySelector: string => Js.Nullable.t<element> = "querySelector"
@@ -86,11 +85,6 @@ let updateKeys = (dict, keyPair, setKeys) => {
         ...prev,
         parentURL: dict->Utils.getString(key, valueStr),
       })
-    | "sdkHandleConfirmPayment" =>
-      setKeys(.prev => {
-        ...prev,
-        sdkHandleConfirmPayment: dict->Utils.getBool(key, valueBool(false)),
-      })
     | "sdkHandleOneClickConfirmPayment" =>
       setKeys(.prev => {
         ...prev,
@@ -105,6 +99,5 @@ let defaultkeys = {
   publishableKey: "",
   iframeId: "",
   parentURL: "*",
-  sdkHandleConfirmPayment: false,
   sdkHandleOneClickConfirmPayment: true,
 }

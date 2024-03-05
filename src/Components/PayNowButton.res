@@ -15,20 +15,21 @@ module Loader = {
 }
 @react.component
 let make = () => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  open RecoilAtoms
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (isDisabled, setIsDisabled) = React.useState(() => false)
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let complete = Recoil.useRecoilValueFromAtom(RecoilAtoms.fieldsComplete)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
 
-  let handleOnClick = _ev => {
+  let handleOnClick = _ => {
     setIsDisabled(_ => true)
     setShowLoader(_ => true)
     Utils.handleOnConfirmPostMessage(~targetOrigin="*", ())
   }
   React.useEffect1(() => {
-    setIsDisabled(_ => !complete)
+    setIsDisabled(_ => !areRequiredFieldsValid)
     None
-  }, [complete])
+  }, [areRequiredFieldsValid])
 
   <div className="flex flex-col gap-1 h-auto w-full">
     <button
