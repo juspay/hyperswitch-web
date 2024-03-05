@@ -208,11 +208,7 @@ let handleMessage = (fun, _errorMessage) => {
     }
   }
   Window.addEventListener("message", handle)
-  Some(
-    () => {
-      Window.removeEventListener("message", handle)
-    },
-  )
+  Some(() => Window.removeEventListener("message", handle))
 }
 let submitPaymentData = callback => {
   React.useEffect1(() => {handleMessage(callback, "")}, [callback])
