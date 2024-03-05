@@ -57,9 +57,7 @@ type hyperInstance = {
   confirmOneClickPayment: (JSON.t, bool) => Promise.t<JSON.t>,
   confirmPayment: JSON.t => Promise.t<JSON.t>,
   elements: JSON.t => element,
-  confirmCardPayment: Js_OO.Callback.arity4<
-    (This.t, string, option<JSON.t>, option<JSON.t>) => Promise.t<JSON.t>,
-  >,
+  confirmCardPayment: (string, option<JSON.t>, option<JSON.t>) => Promise.t<JSON.t>,
   retrievePaymentIntent: string => Js.Promise.t<JSON.t>,
   widgets: JSON.t => element,
   paymentRequest: JSON.t => JSON.t,
@@ -73,11 +71,13 @@ let oneClickConfirmPaymentFn = (_, _) => {
 let confirmPaymentFn = (_elements: JSON.t) => {
   Promise.resolve(Dict.make()->JSON.Encode.object)
 }
-let confirmCardPaymentFn =
-  @this
-  (_this: This.t, _clientSecretId: string, _data: option<JSON.t>, _options: option<JSON.t>) => {
-    Promise.resolve(Dict.make()->JSON.Encode.object)
-  }
+let confirmCardPaymentFn = (
+  _clientSecretId: string,
+  _data: option<JSON.t>,
+  _options: option<JSON.t>,
+) => {
+  Promise.resolve(Dict.make()->JSON.Encode.object)
+}
 
 let retrievePaymentIntentFn = _paymentIntentId => {
   Promise.resolve(Dict.make()->JSON.Encode.object)
@@ -92,7 +92,7 @@ let getElement = _componentName => {
 
 let fetchUpdates = () => {
   Js.Promise.make((~resolve, ~reject as _) => {
-    setTimeout(() => resolve(. Dict.make()->JSON.Encode.object), 1000)->ignore
+    setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
   })
 }
 let defaultPaymentElement = {

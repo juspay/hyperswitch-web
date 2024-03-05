@@ -324,16 +324,16 @@ let make = (
       isWallet
     ) {
       setShowApplePay(_ => true)
-      areOneClickWalletsRendered(.prev => {
+      areOneClickWalletsRendered(prev => {
         ...prev,
         isApplePay: true,
       })
-      setIsShowOrPayUsing(._ => true)
+      setIsShowOrPayUsing(_ => true)
     }
     None
   }, (isApplePayReady, isInvokeSDKFlow, paymentExperience, isWallet))
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let submitCallback = (ev: Window.event) => {
     if !isWallet {
       let json = ev.data->JSON.parseExn
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
@@ -353,7 +353,7 @@ let make = (
         )
       }
     }
-  })
+  }
   useSubmitPaymentData(submitCallback)
 
   {

@@ -13,7 +13,7 @@ let make = () => {
   })
 
   React.useEffect1(() => {
-    setLoggerState(._ => logger)
+    setLoggerState(_ => logger)
     None
   }, [logger])
 
@@ -45,5 +45,5 @@ let make = () => {
     }
   }
 
-  <> {renderFullscreen} </>
+  renderFullscreen
 }

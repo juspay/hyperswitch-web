@@ -70,11 +70,11 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   }, (empty, complete))
 
   React.useEffect1(() => {
-    setComplete(._ => complete)
+    setComplete(_ => complete)
     None
   }, [complete])
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let submitCallback = (ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
@@ -98,7 +98,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  })
+  }
   useSubmitPaymentData(submitCallback)
 
   let changeSortCode = ev => {

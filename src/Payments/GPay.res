@@ -191,10 +191,10 @@ let make = (
   let addGooglePayButton = () => {
     let paymentClient = getGooglePaymentsClient()
 
-    let button = paymentClient.createButton(. buttonStyle)
+    let button = paymentClient.createButton(buttonStyle)
     let gpayWrapper = getElementById(Utils.document, "google-pay-button")
     gpayWrapper.innerHTML = ""
-    gpayWrapper.appendChild(. button)
+    gpayWrapper.appendChild(button)
   }
   React.useEffect5(() => {
     if (
@@ -204,7 +204,7 @@ let make = (
       paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
       isWallet
     ) {
-      setIsShowOrPayUsing(._ => true)
+      setIsShowOrPayUsing(_ => true)
       addGooglePayButton()
     }
     None
@@ -240,14 +240,14 @@ let make = (
     isDelayedSessionToken) && isWallet
 
   React.useEffect1(() => {
-    areOneClickWalletsRendered(.prev => {
+    areOneClickWalletsRendered(prev => {
       ...prev,
       isGooglePay: isRenderGooglePayButton,
     })
     None
   }, [isRenderGooglePayButton])
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let submitCallback = (ev: Window.event) => {
     if !isWallet {
       let json = ev.data->JSON.parseExn
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
@@ -270,7 +270,7 @@ let make = (
         )
       }
     }
-  })
+  }
   useSubmitPaymentData(submitCallback)
 
   {

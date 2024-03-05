@@ -67,8 +67,8 @@ type zipProps = (
 @send external blur: Dom.element => unit = "blur"
 
 type options = {timeZone: string}
-type dateTimeFormat = {resolvedOptions: (. unit) => options}
-@val @scope("Intl") external dateTimeFormat: (. unit) => dateTimeFormat = "DateTimeFormat"
+type dateTimeFormat = {resolvedOptions: unit => options}
+@val @scope("Intl") external dateTimeFormat: unit => dateTimeFormat = "DateTimeFormat"
 
 let toInt = val => val->Belt.Int.fromString->Option.getOr(0)
 let toString = val => val->Belt.Int.toString
@@ -400,14 +400,14 @@ let genreateFontsLink = (fonts: array<CardThemeType.fonts>) => {
     fonts
     ->Array.map(item =>
       if item.cssSrc != "" {
-        let link = document["createElement"](. "link")
+        let link = document["createElement"]("link")
         link["href"] = item.cssSrc
         link["rel"] = "stylesheet"
-        document["body"]["appendChild"](. link)
+        document["body"]["appendChild"](link)
       } else if item.family != "" && item.src != "" {
-        let newStyle = document["createElement"](. "style")
-        newStyle["appendChild"](.
-          document["createTextNode"](.
+        let newStyle = document["createElement"]("style")
+        newStyle["appendChild"](
+          document["createTextNode"](
             `\
 @font-face {\
     font-family: "${item.family}";\
@@ -417,7 +417,7 @@ let genreateFontsLink = (fonts: array<CardThemeType.fonts>) => {
 `,
           ),
         )->ignore
-        document["body"]["appendChild"](. newStyle)
+        document["body"]["appendChild"](newStyle)
       }
     )
     ->ignore
@@ -566,7 +566,7 @@ let getAllBanknames = obj => {
   })
 }
 
-let clientTimeZone = dateTimeFormat(.).resolvedOptions(.).timeZone
+let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
 let clientCountry = Utils.getClientCountry(clientTimeZone)
 
 let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?, ()) => {
@@ -586,7 +586,7 @@ let getCardDetailsFromCardProps = cardProps => {
     _ => (),
     _ => (),
     React.useRef(Nullable.null),
-    <> </>,
+    React.null,
     "",
     _ => (),
     0,
