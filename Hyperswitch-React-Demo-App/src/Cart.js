@@ -9,8 +9,8 @@ function Cart() {
         <div className="titleContainer">
           <div class="title">
             {" "}
-            <img className="logoImg" width="28px" src={logo} /> Hyperswicth
-            Playground App
+            <img className="logoImg" width="28px" src={logo} alt="" />{" "}
+            Hyperswitch Playground App
           </div>
           <div class="testMode">Test Mode</div>
         </div>
@@ -19,7 +19,7 @@ function Cart() {
           <div className="Item">
             <div className="ItemContainer">
               <div className="itemImg">
-                <img src={shirt} />
+                <img src={shirt} alt="" />
               </div>
               <div className="itemDetails">
                 <div className="name">HS Tshirt</div>
@@ -37,7 +37,7 @@ function Cart() {
           <div className="Item">
             <div className="ItemContainer">
               <div className="itemImg">
-                <img src={cap} />
+                <img src={cap} alt="" />
               </div>
               <div className="itemDetails">
                 <div className="name">HS Cap</div>
