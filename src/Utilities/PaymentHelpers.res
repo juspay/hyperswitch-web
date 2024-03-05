@@ -93,7 +93,7 @@ let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchT
   })
 }
 
-let intentCall = (
+let rec intentCall = (
   ~fetchApi: (
     string,
     ~bodyStr: string=?,
@@ -114,6 +114,7 @@ let intentCall = (
   ~setIsManualRetryEnabled,
   ~switchToCustomPod,
   ~sdkHandleOneClickConfirmPayment,
+  ~counter,
 ) => {
   open Promise
   let isConfirm = uri->Js.String2.includes("/confirm")
@@ -197,10 +198,33 @@ let intentCall = (
           ~logCategory=API,
           (),
         )
-        closePaymentLoaderIfAny()
-        postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-        if handleUserError {
-          openUrl(url.href)
+        if counter >= 5 {
+          closePaymentLoaderIfAny()
+          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+          if handleUserError {
+            openUrl(url.href)
+          }
+        } else {
+          let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]
+          let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
+          let retrieveUri = `${endpoint}/payments/${paymentIntentID}?force_sync=true&client_secret=${clientSecret}`
+          intentCall(
+            ~fetchApi,
+            ~uri=retrieveUri,
+            ~headers,
+            ~bodyStr,
+            ~confirmParam: ConfirmType.confirmParams,
+            ~clientSecret,
+            ~optLogger,
+            ~handleUserError,
+            ~paymentType,
+            ~iframeId,
+            ~fetchMethod=Get,
+            ~setIsManualRetryEnabled,
+            ~switchToCustomPod,
+            ~sdkHandleOneClickConfirmPayment,
+            ~counter=counter + 1,
+          )
         }
         resolve()
       })
@@ -421,9 +445,6 @@ let intentCall = (
     resolve()
   })
   ->catch(err => {
-    let url = urlSearch(confirmParam.return_url)
-    url.searchParams.set(. "payment_intent_client_secret", clientSecret)
-    url.searchParams.set(. "status", "failed")
     let exceptionMessage = err->Utils.formatException
     logApi(
       ~optLogger,
@@ -435,10 +456,36 @@ let intentCall = (
       ~logCategory=API,
       (),
     )
-    closePaymentLoaderIfAny()
-    postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-    if handleUserError {
-      openUrl(url.href)
+    if counter >= 5 {
+      let url = urlSearch(confirmParam.return_url)
+      url.searchParams.set(. "payment_intent_client_secret", clientSecret)
+      url.searchParams.set(. "status", "failed")
+      closePaymentLoaderIfAny()
+      postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+      if handleUserError {
+        openUrl(url.href)
+      }
+    } else {
+      let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]
+      let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
+      let retrieveUri = `${endpoint}/payments/${paymentIntentID}?force_sync=true&client_secret=${clientSecret}`
+      intentCall(
+        ~fetchApi,
+        ~uri=retrieveUri,
+        ~headers,
+        ~bodyStr,
+        ~confirmParam: ConfirmType.confirmParams,
+        ~clientSecret,
+        ~optLogger,
+        ~handleUserError,
+        ~paymentType,
+        ~iframeId,
+        ~fetchMethod=Get,
+        ~setIsManualRetryEnabled,
+        ~switchToCustomPod,
+        ~sdkHandleOneClickConfirmPayment,
+        ~counter=counter + 1,
+      )
     }
     resolve()
   })
@@ -470,10 +517,11 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           ~handleUserError,
           ~paymentType,
           ~iframeId,
-          ~fetchMethod=Fetch.Get,
+          ~fetchMethod=Get,
           ~setIsManualRetryEnabled,
           ~switchToCustomPod,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
+          ~counter=0,
         )
       }
       switch list {
@@ -624,6 +672,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
             ~setIsManualRetryEnabled,
             ~switchToCustomPod,
             ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
+            ~counter=0,
           )
         }
       }
