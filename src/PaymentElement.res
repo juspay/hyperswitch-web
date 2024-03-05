@@ -25,7 +25,7 @@ let make = (
   let (sessions, setSessions) = React.useState(_ => Js.Dict.empty()->Js.Json.object_)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
-  let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
+  let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let (list, setList) = React.useState(_ => PaymentMethodsRecord.defaultList)
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
