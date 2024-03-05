@@ -38,6 +38,8 @@ let midnight = {
   colorIconCardError: "#fd1717",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
+  buttonBackgroundColor: "#85d996",
+  buttonTextColor: "#000000",
 }
 
 let midnightRules = theme =>

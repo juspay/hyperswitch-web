@@ -38,6 +38,8 @@ let brutal = {
   colorIconCardError: "#ff1a1a",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
+  buttonBackgroundColor: "#f5fb1f",
+  buttonTextColor: "#000000",
 }
 let brutalRules = (theme: CardThemeType.themeClass) =>
   {

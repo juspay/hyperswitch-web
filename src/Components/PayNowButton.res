@@ -20,9 +20,8 @@ let make = () => {
   let (isDisabled, setIsDisabled) = React.useState(() => false)
   let (showLoader, setShowLoader) = React.useState(() => false)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let sdkHandleConfirmPaymentProps = Recoil.useRecoilValueFromAtom(
-    optionAtom,
-  ).sdkHandleConfirmPaymentProps
+  let {sdkHandleConfirmPaymentProps} = Recoil.useRecoilValueFromAtom(optionAtom)
+
   let buttonText =
     sdkHandleConfirmPaymentProps.buttonText->Js.String2.length > 0
       ? sdkHandleConfirmPaymentProps.buttonText
@@ -60,7 +59,7 @@ let make = () => {
         ~backgroundColor={
           sdkHandleConfirmPaymentProps.buttonBackgroundColor->Js.String2.length > 0
             ? sdkHandleConfirmPaymentProps.buttonBackgroundColor
-            : themeObj.colorBackground
+            : themeObj.buttonBackgroundColor
         },
         ~height={
           sdkHandleConfirmPaymentProps.buttonHeight->Js.String2.length > 0
@@ -77,7 +76,26 @@ let make = () => {
         },
         (),
       )}>
-      <span id="button-text" style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}>
+      <span
+        id="button-text"
+        style={ReactDOMStyle.make(
+          ~color={
+            sdkHandleConfirmPaymentProps.textColor->Js.String2.length > 0
+              ? sdkHandleConfirmPaymentProps.textColor
+              : themeObj.buttonTextColor
+          },
+          ~fontSize={
+            sdkHandleConfirmPaymentProps.textFontSize->Js.String2.length > 0
+              ? sdkHandleConfirmPaymentProps.textFontSize
+              : themeObj.fontSizeLg
+          },
+          ~fontWeight={
+            sdkHandleConfirmPaymentProps.textFontWeight->Js.String2.length > 0
+              ? sdkHandleConfirmPaymentProps.textFontWeight
+              : themeObj.fontWeightMedium
+          },
+          (),
+        )}>
         {if showLoader {
           <Loader />
         } else {

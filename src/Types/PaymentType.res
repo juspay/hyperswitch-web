@@ -139,6 +139,9 @@ type sdkHandleConfirmPaymentProps = {
   buttonWidth: string,
   borderRadius: string,
   borderColor: string,
+  textColor: string,
+  textFontSize: string,
+  textFontWeight: string,
   confirmParams: ConfirmType.confirmParams,
 }
 
@@ -270,6 +273,9 @@ let defaultValueSdkHandleConfirmPaymentProps = {
   buttonWidth: "thin",
   borderRadius: "",
   borderColor: "",
+  textColor: "",
+  textFontSize: "",
+  textFontWeight: "",
   confirmParams: ConfirmType.defaultConfirm,
 }
 
@@ -913,6 +919,9 @@ let getSdkHandleConfirmPaymentProps = dict => {
   buttonWidth: dict->getString("buttonWidth", "thin"),
   borderRadius: dict->getString("borderRadius", ""),
   borderColor: dict->getString("borderColor", ""),
+  textColor: dict->getString("textColor", ""),
+  textFontSize: dict->getString("textFontSize", ""),
+  textFontWeight: dict->getString("textFontWeight", ""),
   confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
 }
 

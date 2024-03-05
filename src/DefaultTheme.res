@@ -38,6 +38,8 @@ let default = {
   colorIconCardError: "#fd1717",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
+  buttonBackgroundColor: "#006df9",
+  buttonTextColor: "#ffffff",
 }
 let defaultRules = theme =>
   {

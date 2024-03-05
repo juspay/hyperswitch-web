@@ -39,6 +39,8 @@ let soft = {
   colorIconCardError: "#fe87a1",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
+  buttonBackgroundColor: "transparent",
+  buttonTextColor: "#7d8fff",
 }
 
 let softRules = theme =>
