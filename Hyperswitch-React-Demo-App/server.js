@@ -54,7 +54,6 @@ app.get("/create-payment-intent", async (req, res) => {
           amount: 2999,
         },
       ],
-      currency: "USD",
       confirm: false,
       capture_method: "automatic",
       authentication_type: "three_ds",
