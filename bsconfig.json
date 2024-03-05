@@ -5,7 +5,7 @@
     "version": 4,
     "mode": "classic"
   },
-  "bsc-flags": ["-bs-super-errors"],
+  "bsc-flags": ["-bs-super-errors", "-open RescriptCore"],
   "sources": {
     "dir": "src",
     "subdirs": true
@@ -21,6 +21,7 @@
     "@rescript/react",
     "bs-fetch",
     "@ryyppy/rescript-promise",
-    "rescript-webapi"
+    "rescript-webapi",
+    "@rescript/core"
   ]
 }

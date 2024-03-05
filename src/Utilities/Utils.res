@@ -404,16 +404,15 @@ let validatePhoneNumber = (countryCode, number) => {
     ->Belt.Option.flatMap(Js.Json.decodeString)
     ->Belt.Option.getWithDefault("") == countryCode
   })
-  if filteredArr->Js.Array2.length > 0 {
-    let obj = filteredArr[0]
+  switch filteredArr[0] {
+  | Some(obj) =>
     let regex =
       obj
       ->Js.Dict.get("validation_regex")
       ->Belt.Option.flatMap(Js.Json.decodeString)
       ->Belt.Option.getWithDefault("")
     Js.Re.test_(regex->Js.Re.fromString, number)
-  } else {
-    false
+  | None => false
   }
 }
 
@@ -615,11 +614,12 @@ let validateRountingNumber = str => {
   if str->Js.String2.length != 9 {
     false
   } else {
-    let weights = [3, 7, 1, 3, 7, 1, 3, 7, 1]
+    let firstWeight = 3
+    let weights = [firstWeight, 7, 1, 3, 7, 1, 3, 7, 1]
     let sum =
       str
       ->Js.String2.split("")
-      ->Js.Array2.mapi((item, i) => item->toInt * weights[i])
+      ->Js.Array2.mapi((item, i) => item->toInt * weights[i]->Option.getOr(firstWeight))
       ->Js.Array2.reduce((acc, val) => {
         acc + val
       }, 0)

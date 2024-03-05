@@ -38,9 +38,10 @@ let make = (
   }, [list])
 
   let paymentExperience = React.useMemo1(() => {
-    applePayPaymentMethodType.payment_experience->Js.Array2.length == 0
-      ? PaymentMethodsRecord.RedirectToURL
-      : applePayPaymentMethodType.payment_experience[0].payment_experience_type
+    switch applePayPaymentMethodType.payment_experience[0] {
+    | Some(paymentExperience) => paymentExperience.payment_experience_type
+    | None => PaymentMethodsRecord.RedirectToURL
+    }
   }, [applePayPaymentMethodType])
 
   let isInvokeSDKFlow = React.useMemo1(() => {
