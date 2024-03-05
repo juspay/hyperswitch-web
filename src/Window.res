@@ -58,6 +58,7 @@ external style: Dom.element => style = "style"
 @set external setTransition: (style, string) => unit = "transition"
 @set external setHeight: (style, string) => unit = "height"
 @send external paymentRequest: (Js.Json.t, Js.Json.t, Js.Json.t) => Js.Json.t = "PaymentRequest"
+@send external click: Dom.element => unit = "click"
 
 let iframePostMessage = (iframeRef: Js.nullable<Dom.element>, message) => {
   switch iframeRef->Js.Nullable.toOption {

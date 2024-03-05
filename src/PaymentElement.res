@@ -285,6 +285,10 @@ let make = (
           <ApplePayLazy sessionObj=optToken list walletOptions paymentType />
         | _ => React.null
         }
+      | Boleto =>
+        <React.Suspense fallback={loader()}>
+          <BoletoLazy paymentType list />
+        </React.Suspense>
       | _ =>
         <React.Suspense fallback={loader()}>
           <PaymentMethodsWrapperLazy paymentType list paymentMethodName=selectedOption />

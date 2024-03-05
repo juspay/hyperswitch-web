@@ -18,6 +18,7 @@ type payment =
   | BanContactCard
   | GooglePay
   | ApplePay
+  | Boleto
   | NONE
 
 let paymentMode = str => {
@@ -41,6 +42,7 @@ let paymentMode = str => {
   | "bancontact_card" => BanContactCard
   | "google_pay" => GooglePay
   | "apple_pay" => ApplePay
+  | "boleto" => Boleto
   | _ => NONE
   }
 }
@@ -66,4 +68,5 @@ let defaultOrder = [
   "paypal",
   "crypto",
   "bancontact_card",
+  "boleto",
 ]
