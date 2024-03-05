@@ -385,8 +385,8 @@ let make = (
           <PayNowButton />
         </div>
       </RenderIf>
-      <PoweredBy />
     </RenderIf>
+    <PoweredBy />
     {switch methodslist {
     | LoadError(_) => React.null
     | _ =>
