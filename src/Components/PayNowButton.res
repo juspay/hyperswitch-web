@@ -27,12 +27,24 @@ let make = () => {
     sdkHandleConfirmPaymentProps.buttonText->Js.String2.length > 0
       ? sdkHandleConfirmPaymentProps.buttonText
       : localeString.payNowButton
-  Js.log2("sdkHandleConfirmPaymentProps", sdkHandleConfirmPaymentProps)
+
+  let confirmPayload =
+    [
+      ("redirect", "always"->Js.Json.string),
+      (
+        "confirmParams",
+        [("return_url", sdkHandleConfirmPaymentProps.confirmParams.return_url->Js.Json.string)]
+        ->Js.Dict.fromArray
+        ->Js.Json.object_,
+      ),
+    ]
+    ->Js.Dict.fromArray
+    ->Js.Json.object_
 
   let handleOnClick = _ => {
     setIsDisabled(_ => true)
     setShowLoader(_ => true)
-    Utils.handleOnConfirmPostMessage(~targetOrigin="*", ())
+    Utils.handlePostMessage([("handleSdkConfirm", confirmPayload)])
   }
   React.useEffect1(() => {
     setIsDisabled(_ => !areRequiredFieldsValid)
