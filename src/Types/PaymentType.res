@@ -141,7 +141,6 @@ type sdkHandleConfirmPaymentProps = {
   borderRadius: string,
   borderColor: string,
   confirmParams: ConfirmType.confirmParams,
-  postConfirmHandler: string,
 }
 
 type options = {
@@ -274,7 +273,6 @@ let defaultValueSdkHandleConfirmPaymentProps = {
   borderRadius: "",
   borderColor: "",
   confirmParams: ConfirmType.defaultConfirm,
-  postConfirmHandler: "",
 }
 
 let defaultOptions = {
@@ -919,7 +917,6 @@ let getSdkHandleConfirmPaymentProps = dict => {
   borderRadius: dict->getString("borderRadius", ""),
   borderColor: dict->getString("borderColor", ""),
   confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
-  postConfirmHandler: dict->getString("postConfirmHandler", ""),
 }
 
 let itemToObjMapper = (dict, logger) => {
