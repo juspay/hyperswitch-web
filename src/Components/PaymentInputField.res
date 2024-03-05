@@ -115,7 +115,7 @@ let make = (
         />
         <RenderIf condition={appearance.labels == Floating}>
           <div
-            className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} text-opacity-20`}
+            className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} text-opacity-20 pointer-events-none`}
             style={ReactDOMStyle.make(
               ~marginBottom={
                 inputFocused || value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
