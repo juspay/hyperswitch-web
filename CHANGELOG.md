@@ -1,3 +1,24 @@
+# [0.27.0](https://github.com/juspay/hyperswitch-web/compare/v0.26.4...v0.27.0) (2024-03-05)
+
+
+### Features
+
+* **paymentmethods:** boleto Payment Method Integration ([#195](https://github.com/juspay/hyperswitch-web/issues/195)) ([f4fc04d](https://github.com/juspay/hyperswitch-web/commit/f4fc04d3e1d93b9c13260d61279f6af57619f393))
+
+## [0.26.4](https://github.com/juspay/hyperswitch-web/compare/v0.26.3...v0.26.4) (2024-02-28)
+
+
+### Bug Fixes
+
+* **sdkHandleOneClickConfirmPayment:** properly handling redirection for one click payment methods ([#192](https://github.com/juspay/hyperswitch-web/issues/192)) ([0e70b4f](https://github.com/juspay/hyperswitch-web/commit/0e70b4f4fc3998ac3616adc124aa0ccf2c08ae2b))
+
+## [0.26.3](https://github.com/juspay/hyperswitch-web/compare/v0.26.2...v0.26.3) (2024-02-28)
+
+
+### Bug Fixes
+
+* fixed ordering and removed duplicates from Country and States ([#188](https://github.com/juspay/hyperswitch-web/issues/188)) ([8f3c9de](https://github.com/juspay/hyperswitch-web/commit/8f3c9debd627ca7a4025e1fb1a5f3f12df2d7b0b))
+
 ## [0.26.2](https://github.com/juspay/hyperswitch-web/compare/v0.26.1...v0.26.2) (2024-02-27)
 
 

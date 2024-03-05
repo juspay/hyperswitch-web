@@ -30,6 +30,31 @@ let bancontactBody = () => [
   ("payment_method_type", "bancontact_card"->Js.Json.string),
 ]
 
+let boletoBody = (~socialSecurityNumber) => [
+  ("payment_method", "voucher"->Js.Json.string),
+  ("payment_method_type", "boleto"->Js.Json.string),
+  (
+    "payment_method_data",
+    [
+      (
+        "voucher",
+        [
+          (
+            "boleto",
+            [("social_security_number", socialSecurityNumber->Js.Json.string)]
+            ->Js.Dict.fromArray
+            ->Js.Json.object_,
+          ),
+        ]
+        ->Js.Dict.fromArray
+        ->Js.Json.object_,
+      ),
+    ]
+    ->Js.Dict.fromArray
+    ->Js.Json.object_,
+  ),
+]
+
 let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber) => [
   ("payment_method", "card"->Js.Json.string),
   ("payment_token", paymentToken->Js.Json.string),

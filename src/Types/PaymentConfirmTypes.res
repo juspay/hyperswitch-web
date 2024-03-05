@@ -28,12 +28,18 @@ type redirectToUrl = {
   url: string,
 }
 
+type voucherDetails = {
+  download_url: string,
+  reference: string,
+}
+
 type nextAction = {
   redirectToUrl: string,
   type_: string,
   bank_transfer_steps_and_charges_details: option<Js.Json.t>,
   session_token: option<Js.Json.t>,
   image_data_url: option<string>,
+  voucher_details: option<voucherDetails>,
   display_to_timestamp: option<float>,
 }
 type intent = {
@@ -57,6 +63,7 @@ let defaultNextAction = {
   bank_transfer_steps_and_charges_details: None,
   session_token: None,
   image_data_url: None,
+  voucher_details: None,
   display_to_timestamp: None,
 }
 let defaultIntent = {
@@ -106,6 +113,14 @@ let getBankTransferDetails = (dict, str) => {
     }
   })
 }
+
+let getVoucherDetails = json => {
+  {
+    download_url: getString(json, "download_url", ""),
+    reference: getString(json, "reference", ""),
+  }
+}
+
 let getNextAction = (dict, str) => {
   dict
   ->Js.Dict.get(str)
@@ -131,6 +146,12 @@ let getNextAction = (dict, str) => {
         ->Belt.Option.flatMap(Js.Json.decodeNumber)
         ->Belt.Option.getWithDefault(0.0),
       ),
+      voucher_details: {
+        json
+        ->Js.Dict.get("voucher_details")
+        ->Belt.Option.flatMap(Js.Json.decodeObject)
+        ->Belt.Option.map(json => json->getVoucherDetails)
+      },
     }
   })
   ->Belt.Option.getWithDefault(defaultNextAction)

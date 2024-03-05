@@ -12,16 +12,20 @@ let make = () => {
     log
   })
 
-  React.useEffect1(()=>{
-    setLoggerState(._=>logger)
+  React.useEffect1(() => {
+    setLoggerState(._ => logger)
     None
-  },[logger])
+  }, [logger])
 
   let renderFullscreen = {
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
-    | "fullscreen" => <div id="fullscreen"> <FullScreenDivDriver /> </div>
+    | "fullscreen" =>
+      <div id="fullscreen">
+        <FullScreenDivDriver />
+      </div>
     | "qrData" => <QRCodeDisplay />
+    | "voucherData" => <VoucherDisplay />
     | "preMountLoader" => {
         let clientSecret = CardUtils.getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = CardUtils.getQueryParamsDictforKey(url.search, "sessionId")
