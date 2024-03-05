@@ -39,11 +39,11 @@ let nakedValues = {
   colorIconCardError: "#fd1717",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
-  buttonBackgroundColor: "",
-  buttonTextColor: "",
 }
 
 let nakedValuesRules = _ => Js.Dict.empty()->Js.Json.object_
 
 let default = nakedValues
 let defaultRules = nakedValuesRules
+
+let defaultButtonRules = PaymentType.defaultValueSdkHandleConfirmPaymentProps

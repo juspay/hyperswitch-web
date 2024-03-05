@@ -244,13 +244,6 @@ let getVariables = (str, dict, default, logger) => {
         ~logger,
       ),
       spacingGridRow: getWarningString(json, "spacingGridRow", default.spacingGridRow, ~logger),
-      buttonBackgroundColor: getWarningString(
-        json,
-        "buttonBackgroundColor",
-        default.buttonBackgroundColor,
-        ~logger,
-      ),
-      buttonTextColor: getWarningString(json, "buttonTextColor", default.buttonTextColor, ~logger),
     }
   })
   ->Belt.Option.getWithDefault(default)

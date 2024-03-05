@@ -38,8 +38,6 @@ let charcoal = {
   colorIconCardError: "#fd1717",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
-  buttonBackgroundColor: "#000000",
-  buttonTextColor: "#ffffff",
 }
 
 let charcoalRules = theme =>
@@ -171,3 +169,10 @@ let charcoalRules = theme =>
 
 let default = charcoal
 let defaultRules = charcoalRules
+
+let defaultButtonRules = {
+  ...PaymentType.defaultValueSdkHandleConfirmPaymentProps,
+  backgroundColor: default.colorPrimary,
+  borderColor: default.colorPrimary,
+  textColor: default.colorBackgroundText,
+}

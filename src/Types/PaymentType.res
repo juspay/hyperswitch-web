@@ -134,7 +134,7 @@ type billingAddress = {
 
 type sdkHandleConfirmPaymentProps = {
   buttonText: string,
-  buttonBackgroundColor: string,
+  backgroundColor: string,
   buttonHeight: string,
   buttonWidth: string,
   borderRadius: string,
@@ -268,14 +268,14 @@ let defaultBillingAddress = {
 
 let defaultValueSdkHandleConfirmPaymentProps = {
   buttonText: "Pay Now",
-  buttonBackgroundColor: "",
-  buttonHeight: "",
+  backgroundColor: "",
+  buttonHeight: "48px",
   buttonWidth: "thin",
-  borderRadius: "",
+  borderRadius: "6px",
   borderColor: "",
   textColor: "",
-  textFontSize: "",
-  textFontWeight: "",
+  textFontSize: "16px",
+  textFontWeight: "500",
   confirmParams: ConfirmType.defaultConfirm,
 }
 
@@ -914,7 +914,7 @@ let getConfirmParams = dict => {
 
 let getSdkHandleConfirmPaymentProps = dict => {
   buttonText: dict->getString("buttonText", "Pay Now"),
-  buttonBackgroundColor: dict->getString("buttonBackgroundColor", ""),
+  backgroundColor: dict->getString("backgroundColor", ""),
   buttonHeight: dict->getString("buttonHeight", ""),
   buttonWidth: dict->getString("buttonWidth", "thin"),
   borderRadius: dict->getString("borderRadius", ""),

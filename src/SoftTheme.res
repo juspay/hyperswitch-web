@@ -39,8 +39,6 @@ let soft = {
   colorIconCardError: "#fe87a1",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
-  buttonBackgroundColor: "transparent",
-  buttonTextColor: "#7d8fff",
 }
 
 let softRules = theme =>
@@ -178,3 +176,10 @@ let softRules = theme =>
 
 let default = soft
 let defaultRules = softRules
+
+let defaultButtonRules = {
+  ...PaymentType.defaultValueSdkHandleConfirmPaymentProps,
+  backgroundColor: default.colorBackground,
+  borderColor: default.colorPrimary,
+  textColor: default.colorPrimary,
+}

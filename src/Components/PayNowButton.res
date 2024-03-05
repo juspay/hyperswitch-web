@@ -16,7 +16,7 @@ module Loader = {
 @react.component
 let make = () => {
   open RecoilAtoms
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (isDisabled, setIsDisabled) = React.useState(() => false)
   let (showLoader, setShowLoader) = React.useState(() => false)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
@@ -50,50 +50,27 @@ let make = () => {
     None
   }, [areRequiredFieldsValid])
 
-  <div className="flex flex-col gap-1 h-auto w-full">
+  <div className="flex flex-col gap-1 h-auto w-full items-center">
     <button
       disabled=isDisabled
       onClick=handleOnClick
-      className={`w-full flex flex-row justify-center items-center rounded-md`}
+      className={`w-full flex flex-row justify-center items-center`}
       style={ReactDOMStyle.make(
-        ~backgroundColor={
-          sdkHandleConfirmPaymentProps.buttonBackgroundColor->Js.String2.length > 0
-            ? sdkHandleConfirmPaymentProps.buttonBackgroundColor
-            : themeObj.buttonBackgroundColor
-        },
-        ~height={
-          sdkHandleConfirmPaymentProps.buttonHeight->Js.String2.length > 0
-            ? sdkHandleConfirmPaymentProps.buttonHeight
-            : "48px"
-        },
+        ~borderRadius=sdkHandleConfirmPaymentProps.borderRadius,
+        ~backgroundColor=sdkHandleConfirmPaymentProps.backgroundColor,
+        ~height=sdkHandleConfirmPaymentProps.buttonHeight,
         ~cursor={isDisabled ? "not-allowed" : "pointer"},
         ~opacity={isDisabled ? "0.6" : "1"},
-        ~borderWidth=sdkHandleConfirmPaymentProps.buttonWidth,
-        ~borderColor={
-          sdkHandleConfirmPaymentProps.borderColor->Js.String2.length > 0
-            ? sdkHandleConfirmPaymentProps.borderColor
-            : themeObj.colorPrimary
-        },
+        ~width=sdkHandleConfirmPaymentProps.buttonWidth,
+        ~borderColor=sdkHandleConfirmPaymentProps.borderColor,
         (),
       )}>
       <span
         id="button-text"
         style={ReactDOMStyle.make(
-          ~color={
-            sdkHandleConfirmPaymentProps.textColor->Js.String2.length > 0
-              ? sdkHandleConfirmPaymentProps.textColor
-              : themeObj.buttonTextColor
-          },
-          ~fontSize={
-            sdkHandleConfirmPaymentProps.textFontSize->Js.String2.length > 0
-              ? sdkHandleConfirmPaymentProps.textFontSize
-              : themeObj.fontSizeLg
-          },
-          ~fontWeight={
-            sdkHandleConfirmPaymentProps.textFontWeight->Js.String2.length > 0
-              ? sdkHandleConfirmPaymentProps.textFontWeight
-              : themeObj.fontWeightMedium
-          },
+          ~color=sdkHandleConfirmPaymentProps.textColor,
+          ~fontSize=sdkHandleConfirmPaymentProps.textFontSize,
+          ~fontWeight=sdkHandleConfirmPaymentProps.textFontWeight,
           (),
         )}>
         {if showLoader {

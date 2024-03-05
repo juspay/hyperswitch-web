@@ -51,8 +51,6 @@ type themeClass = {
   colorIconCardError: string,
   spacingGridColumn: string,
   spacingGridRow: string,
-  buttonBackgroundColor: string,
-  buttonTextColor: string,
 }
 type appearance = {
   theme: theme,

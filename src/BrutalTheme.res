@@ -38,8 +38,6 @@ let brutal = {
   colorIconCardError: "#ff1a1a",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
-  buttonBackgroundColor: "#f5fb1f",
-  buttonTextColor: "#000000",
 }
 let brutalRules = (theme: CardThemeType.themeClass) =>
   {
@@ -171,3 +169,10 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
 
 let default = brutal
 let defaultRules = brutalRules
+
+let defaultButtonRules = {
+  ...PaymentType.defaultValueSdkHandleConfirmPaymentProps,
+  backgroundColor: default.colorPrimary,
+  borderColor: default.borderColor,
+  textColor: default.colorBackgroundText,
+}
