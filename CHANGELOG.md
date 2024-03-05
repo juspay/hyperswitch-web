@@ -1,3 +1,10 @@
+# [0.27.0](https://github.com/juspay/hyperswitch-web/compare/v0.26.4...v0.27.0) (2024-03-05)
+
+
+### Features
+
+* **paymentmethods:** boleto Payment Method Integration ([#195](https://github.com/juspay/hyperswitch-web/issues/195)) ([f4fc04d](https://github.com/juspay/hyperswitch-web/commit/f4fc04d3e1d93b9c13260d61279f6af57619f393))
+
 ## [0.26.4](https://github.com/juspay/hyperswitch-web/compare/v0.26.3...v0.26.4) (2024-02-28)
 
 
