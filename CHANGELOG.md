@@ -1,3 +1,10 @@
+## [0.27.1](https://github.com/juspay/hyperswitch-web/compare/v0.27.0...v0.27.1) (2024-03-05)
+
+
+### Bug Fixes
+
+* **idealBanks:** updated ideal banks ([#201](https://github.com/juspay/hyperswitch-web/issues/201)) ([0101181](https://github.com/juspay/hyperswitch-web/commit/0101181e1675ccb1db0d1e961259657d12f524a3))
+
 # [0.27.0](https://github.com/juspay/hyperswitch-web/compare/v0.26.4...v0.27.0) (2024-03-05)
 
 
