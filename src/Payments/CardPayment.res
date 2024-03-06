@@ -166,10 +166,7 @@ let make = (
 
     let onSessionBody = [
       ("setup_future_usage", "on_session"->Js.Json.string),
-      (
-        "customer_acceptance",
-        {displaySavedPaymentMethodsCheckbox ? isSaveCardsChecked : true}->Js.Json.boolean,
-      ),
+      ("customer_acceptance", PaymentBody.customerAcceptanceBody),
     ]
     let cardNetwork = {
       if cardBrand != "" {
