@@ -72,8 +72,6 @@ let make = (
   ) = React.useState(_ => PaymentType.LoadingSavedCards)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
 
-  Js.log2("isSaveCardsChecked", isSaveCardsChecked)
-
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
