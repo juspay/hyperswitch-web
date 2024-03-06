@@ -1,3 +1,10 @@
+## [0.27.2](https://github.com/juspay/hyperswitch-web/compare/v0.27.1...v0.27.2) (2024-03-06)
+
+
+### Bug Fixes
+
+* **intentCall:** handling no response on confirm ([#203](https://github.com/juspay/hyperswitch-web/issues/203)) ([ba50f1c](https://github.com/juspay/hyperswitch-web/commit/ba50f1c5d998701a4fe89caf2576746fe0bb8ae8))
+
 ## [0.27.1](https://github.com/juspay/hyperswitch-web/compare/v0.27.0...v0.27.1) (2024-03-05)
 
 
