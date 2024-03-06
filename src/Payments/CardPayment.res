@@ -164,10 +164,7 @@ let make = (
     let (token, customerId) = paymentToken
     let savedCardBody = PaymentBody.savedCardBody(~paymentToken=token, ~customerId, ~cvcNumber)
 
-    let onSessionBody = [
-      ("setup_future_usage", "on_session"->Js.Json.string),
-      ("customer_acceptance", PaymentBody.customerAcceptanceBody),
-    ]
+    let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
     let cardNetwork = {
       if cardBrand != "" {
         [("card_network", cardBrand->Js.Json.string)]
