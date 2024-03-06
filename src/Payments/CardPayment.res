@@ -181,9 +181,10 @@ let make = (
       ~cardBrand=cardNetwork,
     )
     let banContactBody = PaymentBody.bancontactBody()
-    let cardBody = isSaveCardsChecked
-      ? deafultCardBody->Js.Array2.concat(onSessionBody)
-      : deafultCardBody
+    let cardBody =
+      isSaveCardsChecked || displaySavedPaymentMethodsCheckbox
+        ? deafultCardBody->Js.Array2.concat(onSessionBody)
+        : deafultCardBody
     if confirm.doSubmit {
       let validFormat =
         (isBancontact ||
