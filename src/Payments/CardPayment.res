@@ -57,7 +57,7 @@ let make = (
     cvcError,
     setCvcError,
   ) = cvcProps
-  let {customerPaymentMethods, disableSaveCards} = Recoil.useRecoilValueFromAtom(
+  let {customerPaymentMethods, displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.optionAtom,
   )
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
@@ -71,6 +71,8 @@ let make = (
     setLoadSavedCards: (PaymentType.savedCardsLoadState => PaymentType.savedCardsLoadState) => unit,
   ) = React.useState(_ => PaymentType.LoadingSavedCards)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
+
+  Js.log2("isSaveCardsChecked", isSaveCardsChecked)
 
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
@@ -105,12 +107,12 @@ let make = (
   }, [customerPaymentMethods])
 
   React.useEffect1(() => {
-    if disableSaveCards {
+    if displaySavedPaymentMethodsCheckbox {
       setShowFields(._ => true)
       setLoadSavedCards(_ => LoadedSavedCards([], true))
     }
     None
-  }, [disableSaveCards])
+  }, [displaySavedPaymentMethodsCheckbox])
 
   React.useEffect1(() => {
     let tokenobj =
@@ -164,7 +166,13 @@ let make = (
     let (token, customerId) = paymentToken
     let savedCardBody = PaymentBody.savedCardBody(~paymentToken=token, ~customerId, ~cvcNumber)
 
-    let onSessionBody = [("setup_future_usage", "on_session"->Js.Json.string)]
+    let onSessionBody = [
+      ("setup_future_usage", "on_session"->Js.Json.string),
+      (
+        "customer_acceptance",
+        {displaySavedPaymentMethodsCheckbox ? isSaveCardsChecked : true}->Js.Json.boolean,
+      ),
+    ]
     let cardNetwork = {
       if cardBrand != "" {
         [("card_network", cardBrand->Js.Json.string)]
@@ -336,7 +344,10 @@ let make = (
             cvcProps={Some(cvcProps)}
             isBancontact
           />
-          <RenderIf condition={!isBancontact && !options.disableSaveCards && !isGuestCustomer}>
+          <RenderIf
+            condition={!isBancontact &&
+            options.displaySavedPaymentMethodsCheckbox &&
+            !isGuestCustomer}>
             <div className="pt-4 pb-2 flex items-center justify-start">
               <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
             </div>

@@ -220,7 +220,7 @@ let make = (
         selectorString,
         sdkHandleConfirmPayment,
         sdkHandleOneClickConfirmPayment,
-        disableSaveCards,
+        displaySavedPaymentMethods,
       ) => {
         open Promise
 
@@ -714,7 +714,7 @@ let make = (
         })
         ->ignore
         fetchPaymentsList(mountedIframeRef)
-        disableSaveCards ? () : fetchCustomerDetails(mountedIframeRef)
+        displaySavedPaymentMethods ? fetchCustomerDetails(mountedIframeRef) : ()
         mountedIframeRef->Window.iframePostMessage(message)
       }
 
