@@ -64,18 +64,11 @@ let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber) => [
 
 let customerAcceptanceBody =
   [
+    ("acceptance_type", "online"->Js.Json.string),
+    ("accepted_at", Js.Date.now()->Js.Date.fromFloat->Js.Date.toISOString->Js.Json.string),
     (
-      "customer_acceptance",
-      [
-        ("acceptance_type", "online"->Js.Json.string),
-        ("accepted_at", Js.Date.now()->Js.Date.fromFloat->Js.Date.toISOString->Js.Json.string),
-        (
-          "online",
-          [("user_agent", BrowserSpec.navigator.userAgent->Js.Json.string)]
-          ->Js.Dict.fromArray
-          ->Js.Json.object_,
-        ),
-      ]
+      "online",
+      [("user_agent", BrowserSpec.navigator.userAgent->Js.Json.string)]
       ->Js.Dict.fromArray
       ->Js.Json.object_,
     ),
@@ -85,7 +78,10 @@ let customerAcceptanceBody =
 
 let mandateBody = paymentType => {
   [
-    ("mandate_data", customerAcceptanceBody),
+    (
+      "mandate_data",
+      [("customer_acceptance", customerAcceptanceBody)]->Js.Dict.fromArray->Js.Json.object_,
+    ),
     ("setup_future_usage", "off_session"->Js.Json.string),
     ("payment_type", {paymentType === "" ? Js.Json.null : paymentType->Js.Json.string}),
   ]
