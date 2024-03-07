@@ -524,7 +524,7 @@ let make = (
   }
 
   let calculateLatencyHook = (~eventName, ~type_="", ()) => {
-    let currentTimestamp = Js.Date.now()
+    let currentTimestamp = Date.now()
     let latency = switch eventName {
     | PAYMENT_ATTEMPT => {
         let appRenderedTimestamp = events.contents->Dict.get(APP_RENDERED->eventNameToStrMapper)
@@ -564,8 +564,8 @@ let make = (
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
-    let localTimestamp = timestamp->Option.getOr(Js.Date.now()->Belt.Float.toString)
-    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Js.Date.now())
+    let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
+    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -616,8 +616,8 @@ let make = (
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ~type_, ())
-    let localTimestamp = timestamp->Option.getOr(Js.Date.now()->Belt.Float.toString)
-    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Js.Date.now())
+    let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
+    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -667,8 +667,8 @@ let make = (
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
-    let localTimestamp = timestamp->Option.getOr(Js.Date.now()->Belt.Float.toString)
-    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Js.Date.now())
+    let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
+    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -707,7 +707,7 @@ let make = (
     {
       logType: INFO,
       eventName,
-      timestamp: Js.Date.now()->Belt.Float.toString,
+      timestamp: Date.now()->Belt.Float.toString,
       sessionId: sessionId.contents,
       source: sourceString,
       version: GlobalVars.repoVersion,
@@ -731,7 +731,7 @@ let make = (
     ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
-    events.contents->Dict.set(eventNameStr, Js.Date.now())
+    events.contents->Dict.set(eventNameStr, Date.now())
   }
 
   let handleBeforeUnload = _event => {

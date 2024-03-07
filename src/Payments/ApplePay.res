@@ -297,7 +297,7 @@ let make = (
           syncPayment()
         }
       } catch {
-      | _ => Utils.logInfo(Js.log("Error in parsing Apple Pay Data"))
+      | _ => Utils.logInfo(Console.log("Error in parsing Apple Pay Data"))
       }
     }
     Window.addEventListener("message", handleApplePayMessages)

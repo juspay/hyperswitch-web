@@ -27,7 +27,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     email.isValid->Option.getOr(false) &&
     switch modalData {
     | Some(data: ACHTypes.data) =>
-      Js.log2(
+      Console.log2(
         data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6,
         "complete",
       )

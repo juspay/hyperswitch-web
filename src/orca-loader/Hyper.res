@@ -20,7 +20,7 @@ if (
     let script = Window.createElement("script")
     script->Window.elementSrc(GlobalVars.sentryScriptUrl)
     script->Window.elementOnerror(err => {
-      Js.log2("ERROR DURING LOADING Sentry on HyperLoader", err)
+      Console.log2("ERROR DURING LOADING Sentry on HyperLoader", err)
     })
     script->Window.elementOnload(() => {
       Sentry.initiateSentryJs(~dsn=GlobalVars.sentryDSN)
@@ -29,7 +29,7 @@ if (
       Window.body->Window.appendChild(script)
     })
   } catch {
-  | e => Js.log2("Sentry load exited", e)
+  | e => Console.log2("Sentry load exited", e)
   }
 }
 
@@ -87,7 +87,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     let analyticsInfoDict =
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
     let sessionID = analyticsInfoDict->getString("sessionID", "")
-    let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Js.Date.now()->Belt.Float.toString)
+    let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Belt.Float.toString)
     let logger = OrcaLogger.make(
       ~sessionId=sessionID,
       ~source=Loader,
@@ -125,7 +125,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         hyperMethod
       }
     | None =>
-      let loaderTimestamp = Js.Date.now()->Belt.Float.toString
+      let loaderTimestamp = Date.now()->Belt.Float.toString
 
       {
         () => {
@@ -152,7 +152,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             let script = Window.createElement("script")
             script->Window.elementSrc(scriptURL)
             script->Window.elementOnerror(err => {
-              Js.log2("ERROR DURING LOADING APPLE PAY", err)
+              Console.log2("ERROR DURING LOADING APPLE PAY", err)
             })
             Window.body->Window.appendChild(script)
           }
@@ -166,7 +166,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let googlePayScript = Window.createElement("script")
         googlePayScript->Window.elementSrc(googlePayScriptURL)
         googlePayScript->Window.elementOnerror(err => {
-          Utils.logInfo(Js.log2("ERROR DURING LOADING GOOGLE PAY SCRIPT", err))
+          Utils.logInfo(Console.log2("ERROR DURING LOADING GOOGLE PAY SCRIPT", err))
         })
         Window.body->Window.appendChild(googlePayScript)
         logger.setLogInfo(~value="GooglePay Script Loaded", ~eventName=GOOGLE_PAY_SCRIPT, ())

@@ -67,7 +67,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
     }
   })
   ->catch(e => {
-    Js.log2("Unable to retrieve payment details because of ", e)
+    Console.log2("Unable to retrieve payment details because of ", e)
     JSON.Encode.null->resolve
   })
 }
@@ -88,7 +88,7 @@ let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchT
     }
   })
   ->catch(e => {
-    Js.log2("Unable to retrieve payment due to following error", e)
+    Console.log2("Unable to retrieve payment due to following error", e)
     pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
   })
 }
@@ -657,7 +657,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
           })
         }
         if blockConfirm && Window.isInteg {
-          Js.log3("CONFIRM IS BLOCKED", body->JSON.parseExn, headers)
+          Console.log3("CONFIRM IS BLOCKED", body->JSON.parseExn, headers)
         } else {
           intentCall(
             ~fetchApi,

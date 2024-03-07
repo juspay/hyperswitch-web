@@ -109,7 +109,7 @@ let make = (
             let trustPayScript = Window.createElement("script")
             trustPayScript->Window.elementSrc(trustPayScriptURL)
             trustPayScript->Window.elementOnerror(err => {
-              Utils.logInfo(Js.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
+              Utils.logInfo(Console.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
             })
             Window.body->Window.appendChild(trustPayScript)
             logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT, ())
@@ -546,7 +546,7 @@ let make = (
                           try {
                             session.abort(.)
                           } catch {
-                          | error => Js.log2("Abort fail", error)
+                          | error => Console.log2("Abort fail", error)
                           }
                         | None => ()
                         }
@@ -574,7 +574,7 @@ let make = (
                           let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
                           mountedIframeRef->Window.iframePostMessage(msg)
                           applePaySessionRef := Nullable.null
-                          Utils.logInfo(Js.log("Apple Pay payment cancelled"))
+                          Utils.logInfo(Console.log("Apple Pay payment cancelled"))
                         }
                       }
                     } else {
@@ -696,7 +696,7 @@ let make = (
               }
               addSmartEventListener("message", handleGooglePayMessages, "onGooglePayMessages")
             } catch {
-            | _ => Js.log("Error loading Gpay")
+            | _ => Console.log("Error loading Gpay")
             }
           }
 

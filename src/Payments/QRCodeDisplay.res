@@ -45,7 +45,7 @@ let make = () => {
         })
         let expiryTime =
           metaDataDict->getString("expiryTime", "")->Belt.Float.fromString->Option.getOr(0.0)
-        let timeExpiry = expiryTime -. Js.Date.now()
+        let timeExpiry = expiryTime -. Date.now()
         if timeExpiry > 0.0 && timeExpiry < 900000.0 {
           setExpiryTime(_ => timeExpiry)
         }
@@ -114,7 +114,7 @@ let make = () => {
       resolve(Nullable.null)
     })
     ->catch(e => {
-      Js.log2("Retrieve Failed", e)
+      Console.log2("Retrieve Failed", e)
       resolve(Nullable.null)
     })
     ->ignore

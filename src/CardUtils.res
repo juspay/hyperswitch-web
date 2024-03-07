@@ -183,7 +183,7 @@ let splitExpiryDates = val => {
   (month, year)
 }
 let getExpiryDates = val => {
-  let date = Js.Date.make()->Js.Date.toISOString
+  let date = Date.make()->Date.toISOString
   let (month, year) = splitExpiryDates(val)
   let (_, currentYear) = getCurrentMonthAndYear(date)
   let prefix = currentYear->Belt.Int.toString->String.slice(~start=0, ~end=2)
@@ -343,7 +343,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
 }
 
 let getExpiryValidity = cardExpiry => {
-  let date = Js.Date.make()->Js.Date.toISOString
+  let date = Date.make()->Date.toISOString
   let (month, year) = getExpiryDates(cardExpiry)
   let (currentMonth, currentYear) = getCurrentMonthAndYear(date)
   let valid = if currentYear == year->toInt && month->toInt >= currentMonth && month->toInt <= 12 {

@@ -132,10 +132,10 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
       try {
         switch (checkoutScript, clientScript) {
         | (Some(_), Some(_)) => loadPaypalSdk()
-        | (_, _) => Utils.logInfo(Js.log("Error loading Paypal"))
+        | (_, _) => Utils.logInfo(Console.log("Error loading Paypal"))
         }
       } catch {
-      | _err => Utils.logInfo(Js.log("Error loading Paypal"))
+      | _err => Utils.logInfo(Console.log("Error loading Paypal"))
       }
     }
     None

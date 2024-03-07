@@ -215,7 +215,7 @@ let make = (
           syncPayment()
         }
       } catch {
-      | _ => Utils.logInfo(Js.log("Error in syncing GooglePay Payment"))
+      | _ => Utils.logInfo(Console.log("Error in syncing GooglePay Payment"))
       }
     }
     Window.addEventListener("message", handleGooglePayMessages)
