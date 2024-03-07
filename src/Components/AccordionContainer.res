@@ -70,11 +70,11 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
   let cardOptionDetails =
     paymentOptions
     ->PaymentMethodsRecord.getPaymentDetails
-    ->Js.Array2.slice(~start=0, ~end_=layoutClass.maxAccordionItems)
+    ->Array.slice(~start=0, ~end=layoutClass.maxAccordionItems)
   let dropDownOptionsDetails =
     paymentOptions
     ->PaymentMethodsRecord.getPaymentDetails
-    ->Js.Array2.sliceFrom(layoutClass.maxAccordionItems)
+    ->Array.sliceToEnd(~start=layoutClass.maxAccordionItems)
 
   let getBorderRadiusStyleForCardOptionDetails = index => {
     if (

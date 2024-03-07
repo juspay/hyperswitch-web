@@ -161,7 +161,7 @@ let rec flatten = (obj, addIndicatorForObject) => {
 let rec setNested = (dict, keys, value) => {
   switch keys[0] {
   | Some(firstKey) =>
-    if keys->Js.Array.length === 1 {
+    if keys->Array.length === 1 {
       Js.Dict.set(dict, firstKey, value)
     } else {
       let subDict = switch Js.Dict.get(dict, firstKey) {
@@ -175,7 +175,7 @@ let rec setNested = (dict, keys, value) => {
         dict->Dict.set(firstKey, subDict->JSON.Encode.object)
         subDict
       }
-      let remainingKeys = keys->Js.Array2.sliceFrom(1)
+      let remainingKeys = keys->Array.sliceToEnd(~start=1)
       setNested(subDict, remainingKeys, value)
     }
   | None => ()

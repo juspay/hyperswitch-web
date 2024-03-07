@@ -41,7 +41,7 @@ let useOutsideClick = (
           })
         | RefArray(refs) =>
           refs.current
-          ->Js.Array2.slice(~start=0, ~end_=-1)
+          ->Array.slice(~start=0, ~end=-1)
           ->Array.reduce(false, (acc, ref: Js.Nullable.t<Dom.element>) => {
             let isClickInsideRef = switch ffToWebDom(ref)->Js.Nullable.toOption {
             | Some(element) => element->Webapi.Dom.Element.contains(~child=ffToDomType(targ))

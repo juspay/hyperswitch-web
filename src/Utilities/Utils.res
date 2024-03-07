@@ -228,7 +228,7 @@ let mergeJsons = (json1, json2) => {
       ->Array.map(key => {
         let overrideProp = obj2->getJsonObjectFromDict(key)
         let defaultProp = obj1->getJsonObjectFromDict(key)
-        if defaultProp->getDictFromJson->Js.Dict.keys->Js.Array.length == 0 {
+        if defaultProp->getDictFromJson->Js.Dict.keys->Array.length == 0 {
           obj1->Js.Dict.set(key, overrideProp)
         } else if (
           overrideProp->JSON.Decode.object->Option.isSome &&
@@ -587,7 +587,7 @@ let addSize = (str: string, value: float, unit: sizeunit) => {
     let arr = str->Js.String2.split("")
     let val =
       arr
-      ->Js.Array2.slice(~start=0, ~end_={arr->Array.length - unitInString->Js.String2.length})
+      ->Array.slice(~start=0, ~end={arr->Array.length - unitInString->Js.String2.length})
       ->Array.joinWith("")
       ->Belt.Float.fromString
       ->Option.getOr(0.0)

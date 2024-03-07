@@ -103,7 +103,7 @@ let make = (
     (isCardDetailsEmpty, isCardDetailsValid, isCardDetailsInvalid, isCardDetailsFocused)
   }, (isValid, setIsValid, value, onChange, onBlur))
 
-  let concatString = Js.Array.joinWith("", [cardEmpty, cardComplete, cardInvalid, cardFocused])
+  let concatString = Array.joinWith([cardEmpty, cardComplete, cardInvalid, cardFocused], "")
 
   React.useEffect5(() => {
     Utils.handlePostMessage([

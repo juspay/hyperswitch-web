@@ -285,7 +285,7 @@ let getCardBrand = cardNumber => {
 let calculateLuhn = value => {
   let card = value->clearSpaces
 
-  let splitArr = card->Js.String2.split("")->Js.Array2.reverseInPlace
+  let splitArr = card->Js.String2.split("")->Array.toReversed
   let unCheckArr = splitArr->Array.filterWithIndex((_, i) => {
     mod(i, 2) == 0
   })

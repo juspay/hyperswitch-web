@@ -109,8 +109,8 @@ let make = (
   }, [sessionsObj])
   React.useEffect2(() => {
     let cardsCount: int = cardsToRender(cardsContainerWidth)
-    let cardOpts = Js.Array.slice(~start=0, ~end_=cardsCount, paymentOptions)
-    let dropOpts = Js.Array.sliceFrom(cardsCount, paymentOptions)
+    let cardOpts = Array.slice(~start=0, ~end=cardsCount, paymentOptions)
+    let dropOpts = paymentOptions->Array.sliceToEnd(~start=cardsCount)
     let isCard: bool = cardOpts->Array.includes(selectedOption)
     if !isCard && selectedOption !== "" && paymentOptions->Array.includes(selectedOption) {
       let (cardArr, dropdownArr) = CardUtils.swapCardOption(cardOpts, dropOpts, selectedOption)
