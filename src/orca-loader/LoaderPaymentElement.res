@@ -6,9 +6,6 @@ open OrcaUtils
 
 external eventToJson: Types.eventData => Js.Json.t = "%identity"
 
-type location = {replace: (. string) => unit}
-@val @scope("window") external location: location = "location"
-
 @val @scope(("navigator", "clipboard"))
 external writeText: string => Js.Promise.t<'a> = "writeText"
 
@@ -196,7 +193,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
             let url = val->getStringfromjson("")
-            location.replace(. url)
+            Window.location.replace(. url)
           }
         | None => ()
         }

@@ -39,6 +39,11 @@ type element = {
   create: (Js.Dict.key, Js.Json.t) => paymentElement,
 }
 
+type initPaymentSession = {
+  getDefaultPaymentMethod: unit => Promise.t<Js.Json.t>,
+  confirmWithDefault: Js.Json.t => Promise.t<Js.Json.t>,
+}
+
 type confirmParams = {return_url: string}
 
 type confirmPaymentParams = {
@@ -56,6 +61,7 @@ type hyperInstance = {
   retrievePaymentIntent: string => Js.Promise.t<Js.Json.t>,
   widgets: Js.Json.t => element,
   paymentRequest: Js.Json.t => Js.Json.t,
+  initPaymentSession: Js.Json.t => initPaymentSession,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -115,6 +121,19 @@ let defaultElement = {
   create,
 }
 
+let getDefaultPaymentMethod = () => {
+  Js.Promise.resolve(Js.Dict.empty()->Js.Json.object_)
+}
+
+let confirmWithDefault = _confirmParams => {
+  Js.Promise.resolve(Js.Dict.empty()->Js.Json.object_)
+}
+
+let defaultInitPaymentSession: initPaymentSession = {
+  getDefaultPaymentMethod,
+  confirmWithDefault,
+}
+
 let defaultHyperInstance = {
   confirmOneClickPayment: oneClickConfirmPaymentFn,
   confirmPayment: confirmPaymentFn,
@@ -123,6 +142,7 @@ let defaultHyperInstance = {
   elements: _ev => defaultElement,
   widgets: _ev => defaultElement,
   paymentRequest: _ev => Js.Json.null,
+  initPaymentSession: _ev => defaultInitPaymentSession,
 }
 
 type eventType =
