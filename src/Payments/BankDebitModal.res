@@ -123,11 +123,11 @@ let make = (~setModalData) => {
 
   let (_, setInputFocus) = React.useState(_ => NONE)
 
-  let routeref = React.useRef(Js.Nullable.null)
-  let accountRef = React.useRef(Js.Nullable.null)
-  let nameRef = React.useRef(Js.Nullable.null)
-  let ibanRef = React.useRef(Js.Nullable.null)
-  let sortCodeRef = React.useRef(Js.Nullable.null)
+  let routeref = React.useRef(Nullable.null)
+  let accountRef = React.useRef(Nullable.null)
+  let nameRef = React.useRef(Nullable.null)
+  let ibanRef = React.useRef(Nullable.null)
+  let sortCodeRef = React.useRef(Nullable.null)
 
   let resetReoutingError = () => {
     setIsRoutingValid(_ => None)
@@ -155,7 +155,7 @@ let make = (~setModalData) => {
     ) {
       setIsRoutingValid(_ => Some(true))
       setRoutingError(_ => "")
-      accountRef.current->Js.Nullable.toOption->Option.forEach(input => input->focus)->ignore
+      accountRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
     } else {
       resetReoutingError()
     }

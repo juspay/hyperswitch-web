@@ -111,11 +111,11 @@ let make = () => {
     })
     ->then(_json => {
       Modal.close(setOpenModal)
-      resolve(Js.Nullable.null)
+      resolve(Nullable.null)
     })
     ->catch(e => {
       Js.log2("Retrieve Failed", e)
-      resolve(Js.Nullable.null)
+      resolve(Nullable.null)
     })
     ->ignore
   }

@@ -35,10 +35,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let intent = PaymentHelpers.usePaymentIntent(Some(logger), Card)
 
-  let cardRef = React.useRef(Js.Nullable.null)
-  let expiryRef = React.useRef(Js.Nullable.null)
-  let cvcRef = React.useRef(Js.Nullable.null)
-  let zipRef = React.useRef(Js.Nullable.null)
+  let cardRef = React.useRef(Nullable.null)
+  let expiryRef = React.useRef(Nullable.null)
+  let cvcRef = React.useRef(Nullable.null)
+  let zipRef = React.useRef(Nullable.null)
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
   let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
@@ -125,7 +125,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let cvc = val->formatCVCNumber(cardBrand)
     setCvcNumber(_ => cvc)
     if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
-      zipRef.current->Js.Nullable.toOption->Option.forEach(input => input->focus)->ignore
+      zipRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
     }
   }
 
@@ -300,7 +300,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
         setBlurState(_ => true)
       } else if dict->Dict.get("doFocus")->Option.isSome {
         logger.setLogInfo(~value="doFocus Triggered", ~eventName=FOCUS, ())
-        cardRef.current->Js.Nullable.toOption->Option.forEach(input => input->focus)->ignore
+        cardRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
       } else if dict->Dict.get("doClearValues")->Option.isSome {
         logger.setLogInfo(~value="doClearValues Triggered", ~eventName=CLEAR, ())
         //clear all values

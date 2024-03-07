@@ -10,10 +10,10 @@ let make = () => {
   let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
   let (paymentIntent, setPaymentIntent) = React.useState(_ => JSON.Encode.null)
   let (loader, setLoader) = React.useState(_ => true)
-  let linkRef = React.useRef(Js.Nullable.null)
+  let linkRef = React.useRef(Nullable.null)
 
   React.useEffect1(() => {
-    switch linkRef.current->Js.Nullable.toOption {
+    switch linkRef.current->Nullable.toOption {
     | Some(link) => link->Window.click
     | None => ()
     }

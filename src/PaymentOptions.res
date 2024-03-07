@@ -51,14 +51,14 @@ let make = (
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let payOptionsRef = React.useRef(Js.Nullable.null)
-  let selectRef = React.useRef(Js.Nullable.null)
+  let payOptionsRef = React.useRef(Nullable.null)
+  let selectRef = React.useRef(Nullable.null)
   let (winW, winH) = Utils.useWindowSize()
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
   React.useEffect2(() => {
-    let width = switch payOptionsRef.current->Js.Nullable.toOption {
+    let width = switch payOptionsRef.current->Nullable.toOption {
     | Some(ref) => Webapi.Dom.Element.clientWidth(ref)
     | None => 0
     }

@@ -1,12 +1,12 @@
 external ffToDomType: Dom.eventTarget => Dom.node_like<'a> = "%identity"
-external ffToWebDom: Js.Nullable.t<Dom.element> => Js.Nullable.t<Webapi.Dom.Element.t> = "%identity"
+external ffToWebDom: Nullable.t<Dom.element> => Nullable.t<Webapi.Dom.Element.t> = "%identity"
 type ref =
-  | ArrayOfRef(array<React.ref<Js.Nullable.t<Dom.element>>>)
-  | RefArray(React.ref<array<Js.Nullable.t<Dom.element>>>)
+  | ArrayOfRef(array<React.ref<Nullable.t<Dom.element>>>)
+  | RefArray(React.ref<array<Nullable.t<Dom.element>>>)
 
 let useOutsideClick = (
   ~refs: ref,
-  ~containerRefs: option<React.ref<Js.Nullable.t<Dom.element>>>=?,
+  ~containerRefs: option<React.ref<Nullable.t<Dom.element>>>=?,
   ~isActive,
   ~events=["click"],
   ~callback,
@@ -32,8 +32,8 @@ let useOutsideClick = (
 
         let isInsideClick = switch refs {
         | ArrayOfRef(refs) =>
-          refs->Array.reduce(false, (acc, ref: React.ref<Js.Nullable.t<Dom.element>>) => {
-            let isClickInsideRef = switch ffToWebDom(ref.current)->Js.Nullable.toOption {
+          refs->Array.reduce(false, (acc, ref: React.ref<Nullable.t<Dom.element>>) => {
+            let isClickInsideRef = switch ffToWebDom(ref.current)->Nullable.toOption {
             | Some(element) => element->Webapi.Dom.Element.contains(~child=ffToDomType(targ))
             | None => false
             }
@@ -42,8 +42,8 @@ let useOutsideClick = (
         | RefArray(refs) =>
           refs.current
           ->Array.slice(~start=0, ~end=-1)
-          ->Array.reduce(false, (acc, ref: Js.Nullable.t<Dom.element>) => {
-            let isClickInsideRef = switch ffToWebDom(ref)->Js.Nullable.toOption {
+          ->Array.reduce(false, (acc, ref: Nullable.t<Dom.element>) => {
+            let isClickInsideRef = switch ffToWebDom(ref)->Nullable.toOption {
             | Some(element) => element->Webapi.Dom.Element.contains(~child=ffToDomType(targ))
             | None => false
             }
@@ -53,7 +53,7 @@ let useOutsideClick = (
 
         let isClickInsideOfContainer = switch containerRefs {
         | Some(ref) =>
-          switch ffToWebDom(ref.current)->Js.Nullable.toOption {
+          switch ffToWebDom(ref.current)->Nullable.toOption {
           | Some(element) => element->Webapi.Dom.Element.contains(~child=ffToDomType(targ))
           | None => false
           }

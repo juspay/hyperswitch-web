@@ -33,7 +33,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
   | Some(val) => (val, val)
   | None => (localeString.fullNamePlaceholder, localeString.fullNameLabel)
   }
-  let nameRef = React.useRef(Js.Nullable.null)
+  let nameRef = React.useRef(Nullable.null)
 
   let submitCallback = React.useCallback1((ev: Window.event) => {
     let json = ev.data->JSON.parseExn

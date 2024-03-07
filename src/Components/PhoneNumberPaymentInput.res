@@ -31,7 +31,7 @@ let make = () => {
     })
   }
 
-  let phoneRef = React.useRef(Js.Nullable.null)
+  let phoneRef = React.useRef(Nullable.null)
 
   <RenderIf condition={showDetails.phone == Auto}>
     <PaymentField

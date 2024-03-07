@@ -53,7 +53,7 @@ type client = {create: (. authType, (clientErr, clientInstance) => unit) => unit
 type paypalCheckout = {
   create: (
     . checkoutClient,
-    (Js.Nullable.t<paypalCheckoutErr>, paypalCheckoutInstance) => unit,
+    (Nullable.t<paypalCheckoutErr>, paypalCheckoutInstance) => unit,
   ) => unit,
 }
 type braintree = {

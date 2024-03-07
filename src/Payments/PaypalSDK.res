@@ -9,11 +9,9 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
   let token = sessionObj.token
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   let checkoutScript =
-    Window.document(Window.window)
-    ->Window.getElementById("braintree-checkout")
-    ->Js.Nullable.toOption
+    Window.document(Window.window)->Window.getElementById("braintree-checkout")->Nullable.toOption
   let clientScript =
-    Window.document(Window.window)->Window.getElementById("braintree-client")->Js.Nullable.toOption
+    Window.document(Window.window)->Window.getElementById("braintree-client")->Nullable.toOption
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (_, _, buttonType) = options.wallets.style.type_
@@ -56,7 +54,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
           braintree.paypalCheckout.create(.
             {client: clientInstance},
             (paypalCheckoutErr, paypalCheckoutInstance) => {
-              switch paypalCheckoutErr->Js.Nullable.toOption {
+              switch paypalCheckoutErr->Nullable.toOption {
               | Some(val) => Js.Console.warn(`INTEGRATION ERROR: ${val.message}`)
               | None => ()
               }

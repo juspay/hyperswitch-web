@@ -43,7 +43,7 @@ type confirmParams = {return_url: string}
 
 type confirmPaymentParams = {
   elements: JSON.t,
-  confirmParams: Js.Nullable.t<confirmParams>,
+  confirmParams: Nullable.t<confirmParams>,
 }
 
 type hyperInstance = {

@@ -54,10 +54,10 @@ let make = (~paymentType, ~className="") => {
   )
   let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
 
-  let line1Ref = React.useRef(Js.Nullable.null)
-  let line2Ref = React.useRef(Js.Nullable.null)
-  let cityRef = React.useRef(Js.Nullable.null)
-  let postalRef = React.useRef(Js.Nullable.null)
+  let line1Ref = React.useRef(Nullable.null)
+  let line2Ref = React.useRef(Nullable.null)
+  let cityRef = React.useRef(Nullable.null)
+  let postalRef = React.useRef(Nullable.null)
 
   let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
   let (stateJson, setStatesJson) = React.useState(_ => None)

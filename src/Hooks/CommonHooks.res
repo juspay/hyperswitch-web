@@ -16,7 +16,7 @@ type keys = {
   sdkHandleConfirmPayment: bool,
   sdkHandleOneClickConfirmPayment: bool,
 }
-@val @scope("document") external querySelector: string => Js.Nullable.t<element> = "querySelector"
+@val @scope("document") external querySelector: string => Nullable.t<element> = "querySelector"
 
 type event = {\"type": string}
 @val @scope("document") external createElement: string => element = "createElement"
@@ -38,7 +38,7 @@ let useScript = (src: string) => {
       setStatus(_ => "idle")
     }
     let script = querySelector(`script[src="${src}"]`)
-    switch script->Js.Nullable.toOption {
+    switch script->Nullable.toOption {
     | Some(dom) =>
       setStatus(_ => dom.getAttribute(. "data-status"))
       None

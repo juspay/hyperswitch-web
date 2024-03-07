@@ -25,7 +25,7 @@ external replace: string => unit = "replace"
 @get external document: window => document = "document"
 @get external parentNode: Dom.element => Dom.element = "parentNode"
 @val @scope("document")
-external querySelector: string => Js.Nullable.t<Dom.element> = "querySelector"
+external querySelector: string => Nullable.t<Dom.element> = "querySelector"
 @val @scope("document")
 external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
 
@@ -47,7 +47,7 @@ external addEventListener: (string, _ => unit) => unit = "addEventListener"
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
 @send external postMessage: (Dom.element, string, string) => unit = "postMessage"
 @send
-external getElementById: (document, string) => Js.Nullable.t<Dom.element> = "getElementById"
+external getElementById: (document, string) => Nullable.t<Dom.element> = "getElementById"
 @get
 external frames: window => {..} = "frames"
 @get external name: window => string = "name"
@@ -61,7 +61,7 @@ external style: Dom.element => style = "style"
 @send external click: Dom.element => unit = "click"
 
 let iframePostMessage = (iframeRef: Js.nullable<Dom.element>, message) => {
-  switch iframeRef->Js.Nullable.toOption {
+  switch iframeRef->Nullable.toOption {
   | Some(ref) =>
     try {
       ref
@@ -92,7 +92,7 @@ external body: body = "body"
 @set external elementOnload: (Dom.element, unit => unit) => unit = "onload"
 @set external elementOnerror: (Dom.element, exn => unit) => unit = "onerror"
 @val @scope("window")
-external getHyper: Js.Nullable.t<Types.hyperInstance> = "HyperMethod"
+external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @set
 external setHyper: (window, Types.hyperInstance) => unit = "HyperMethod"
 

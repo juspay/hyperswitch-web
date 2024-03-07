@@ -7,7 +7,7 @@ open EventListenerManager
 external eventToJson: Types.eventData => JSON.t = "%identity"
 
 let checkAndAppend = (selector, child) => {
-  if Js.Nullable.toOption(CommonHooks.querySelector(selector)) == None {
+  if Nullable.toOption(CommonHooks.querySelector(selector)) == None {
     CommonHooks.appendChild(child)
   }
 }
@@ -114,7 +114,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         logger.setLogInfo(~value=Window.href, ~eventName=APP_INITIATED, ~timestamp=sdkTimestamp, ())
       }
     }->Sentry.sentryLogger
-    switch Window.getHyper->Js.Nullable.toOption {
+    switch Window.getHyper->Nullable.toOption {
     | Some(hyperMethod) => {
         logger.setLogInfo(
           ~value="orca-sdk initiated",

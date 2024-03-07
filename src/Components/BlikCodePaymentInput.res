@@ -6,7 +6,7 @@ let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (blikCode, setblikCode) = Recoil.useLoggedRecoilState(userBlikCode, "blikCode", loggerState)
 
-  let blikCodeRef = React.useRef(Js.Nullable.null)
+  let blikCodeRef = React.useRef(Nullable.null)
   let formatBSB = bsb => {
     let formatted = bsb->String.replaceRegExp(%re("/\D+/g"), "")
     let firstPart = formatted->CardUtils.slice(0, 3)

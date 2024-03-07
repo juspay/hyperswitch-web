@@ -34,7 +34,7 @@ let make = (~modalData, ~setModalData) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let (openToolTip, setOpenToolTip) = React.useState(_ => false)
-  let toolTipRef = React.useRef(Js.Nullable.null)
+  let toolTipRef = React.useRef(Nullable.null)
 
   let openModal = () => {
     handlePostMessage([

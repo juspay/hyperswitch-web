@@ -109,7 +109,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let id = mountId.contents
 
       let oElement = Window.querySelector(id)
-      switch oElement->Js.Nullable.toOption {
+      switch oElement->Nullable.toOption {
       | Some(elem) => elem->Window.innerHTML("")
       | None =>
         Js.Console.warn(
@@ -177,7 +177,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             let elem = Window.querySelector(
               `#orca-payment-element-iframeRef-${localSelectorString}`,
             )
-            switch elem->Js.Nullable.toOption {
+            switch elem->Nullable.toOption {
             | Some(ele) =>
               ele
               ->Window.style
@@ -223,7 +223,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           }
           if id == localSelectorString {
             let elem = Window.querySelector(`#orca-element-${localSelectorString}`)
-            switch elem->Js.Nullable.toOption {
+            switch elem->Nullable.toOption {
             | Some(ele) => ele->Window.className(currentClass.contents)
             | None => ()
             }
@@ -249,7 +249,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             `#orca-fullscreen-iframeRef-${localSelectorString}`,
           )
 
-          switch fullscreenElem->Js.Nullable.toOption {
+          switch fullscreenElem->Nullable.toOption {
           | Some(ele) =>
             ele->Window.innerHTML("")
             let mainElement = Window.querySelector(
@@ -316,7 +316,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->OrcaUtils.getClasses("base")
       let additionalIframeStyle = componentType->Utils.isOtherElements ? "height: 2rem;" : ""
-      switch oElement->Js.Nullable.toOption {
+      switch oElement->Nullable.toOption {
       | Some(elem) => {
           let iframeDiv = `<div id="orca-element-${localSelectorString}" style= "height: auto;"  class="${componentType} ${currentClass.contents} ${classesBase} ">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
@@ -336,7 +336,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           )
 
           let elem = Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`)
-          switch elem->Js.Nullable.toOption {
+          switch elem->Nullable.toOption {
           | Some(ele) =>
             ele->Window.style->Window.setTransition("height 0.35s ease 0s, opacity 0.4s ease 0.1s")
           | None => ()

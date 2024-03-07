@@ -317,8 +317,8 @@ let browserDetect = content => {
     let re = %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
-    ->Option.getOr(Js.Nullable.null)
-    ->Js.Nullable.toOption {
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
     | Some(a) => a
     | None => ""
     }
@@ -327,8 +327,8 @@ let browserDetect = content => {
     let re = %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
-    ->Option.getOr(Js.Nullable.null)
-    ->Js.Nullable.toOption {
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
     | Some(a) => a
     | None => ""
     }
@@ -337,8 +337,8 @@ let browserDetect = content => {
     let re = %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
-    ->Option.getOr(Js.Nullable.null)
-    ->Js.Nullable.toOption {
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
     | Some(a) => a
     | None => ""
     }
@@ -347,8 +347,8 @@ let browserDetect = content => {
     let re = %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
-    ->Option.getOr(Js.Nullable.null)
-    ->Js.Nullable.toOption {
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
     | Some(a) => a
     | None => ""
     }
@@ -361,8 +361,8 @@ let browserDetect = content => {
       let re = %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig")
       let version = switch findVersion(re, content)
       ->Belt.Array.get(1)
-      ->Option.getOr(Js.Nullable.null)
-      ->Js.Nullable.toOption {
+      ->Option.getOr(Nullable.null)
+      ->Nullable.toOption {
       | Some(a) => a
       | None => ""
       }
@@ -371,8 +371,8 @@ let browserDetect = content => {
       let re = %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig")
       let version = switch findVersion(re, content)
       ->Belt.Array.get(1)
-      ->Option.getOr(Js.Nullable.null)
-      ->Js.Nullable.toOption {
+      ->Option.getOr(Nullable.null)
+      ->Nullable.toOption {
       | Some(a) => a
       | None => ""
       }

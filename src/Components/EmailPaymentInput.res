@@ -11,7 +11,7 @@ let make = (~paymentType) => {
 
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
 
-  let emailRef = React.useRef(Js.Nullable.null)
+  let emailRef = React.useRef(Nullable.null)
 
   let changeEmail = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]

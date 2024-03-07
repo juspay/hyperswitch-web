@@ -41,8 +41,8 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
 
   let (sortCodeError, setSortCodeError) = React.useState(_ => "")
 
-  let sortCodeRef = React.useRef(Js.Nullable.null)
-  let accNumRef = React.useRef(Js.Nullable.null)
+  let sortCodeRef = React.useRef(Nullable.null)
+  let accNumRef = React.useRef(Nullable.null)
 
   let complete =
     email.value != "" &&

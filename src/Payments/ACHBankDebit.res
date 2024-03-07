@@ -19,7 +19,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
 
   let (modalData, setModalData) = React.useState(_ => None)
 
-  let toolTipRef = React.useRef(Js.Nullable.null)
+  let toolTipRef = React.useRef(Nullable.null)
   let (line1, _) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
   let (line2, _) = Recoil.useLoggedRecoilState(userAddressline2, "line2", loggerState)
   let (country, _) = Recoil.useLoggedRecoilState(userAddressCountry, "country", loggerState)

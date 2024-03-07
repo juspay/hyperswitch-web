@@ -1,5 +1,5 @@
 open Utils
-external toNullable: JSON.t => Js.Nullable.t<JSON.t> = "%identity"
+external toNullable: JSON.t => Nullable.t<JSON.t> = "%identity"
 external eventToJson: Types.eventData => JSON.t = "%identity"
 let safeParseOpt = st => {
   try {

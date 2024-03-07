@@ -23,7 +23,7 @@ external exnToJsExn: exn => option<Js.Exn.t> = "%identity"
 external useEffect: (. unit => option<unit => unit>) => unit = "useEffect"
 type sentry
 @val @scope("window")
-external isSentryPresent: Js.Nullable.t<sentry> = "Sentry"
+external isSentryPresent: Nullable.t<sentry> = "Sentry"
 
 @module("@sentry/react")
 external initSentry: sentryInitArg => unit = "init"
@@ -69,7 +69,7 @@ module ErrorBoundary = {
 let initiateSentry = (~dsn) => {
   try {
     initSentry({
-      dsn: dsn,
+      dsn,
       integrations: [
         newBrowserTracing({
           routingInstrumentation: reactRouterV6Instrumentation(useEffect),
@@ -97,7 +97,7 @@ let initiateSentry = (~dsn) => {
 let initiateSentryJs = (~dsn) => {
   try {
     initSentryJs({
-      dsn: dsn,
+      dsn,
       integrations: [newBrowserTracingJs(), newSentryReplayJs()],
       tracesSampleRate: 1.0,
       tracePropagationTargets: ["localhost"],
@@ -113,7 +113,7 @@ let initiateSentryJs = (~dsn) => {
 }
 
 let captureException = (err: exn) => {
-  switch isSentryPresent->Js.Nullable.toOption {
+  switch isSentryPresent->Nullable.toOption {
   | Some(_val) =>
     let error = err->exnToJsExn
     switch error {

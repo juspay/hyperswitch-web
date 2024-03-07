@@ -25,7 +25,7 @@ let make = (
   ~analyticsMetadata,
 ) => {
   let handleApplePayMessages = ref(_ => ())
-  let applePaySessionRef = ref(Js.Nullable.null)
+  let applePaySessionRef = ref(Nullable.null)
 
   try {
     let iframeRef = []
@@ -257,7 +257,7 @@ let make = (
           let dict = json->getDictFromJson
 
           if dict->Dict.get("applePayMounted")->Option.isSome {
-            switch sessionForApplePay->Js.Nullable.toOption {
+            switch sessionForApplePay->Nullable.toOption {
             | Some(session) =>
               if session.canMakePayments(.) {
                 let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
@@ -541,7 +541,7 @@ let make = (
                           ->Utils.transformKeys(Utils.CamelCase)
 
                         let ssn = applePaySession(3, paymentRequest)
-                        switch applePaySessionRef.contents->Js.Nullable.toOption {
+                        switch applePaySessionRef.contents->Nullable.toOption {
                         | Some(session) =>
                           try {
                             session.abort(.)
@@ -552,7 +552,7 @@ let make = (
                         }
 
                         ssn.begin(.)
-                        applePaySessionRef := ssn->Js.Nullable.return
+                        applePaySessionRef := ssn->Nullable.make
 
                         ssn.onvalidatemerchant = _event => {
                           let merchantSession =
@@ -567,13 +567,13 @@ let make = (
 
                         ssn.onpaymentauthorized = event => {
                           ssn.completePayment(. {"status": ssn.\"STATUS_SUCCESS"}->objToJson)
-                          applePaySessionRef := Js.Nullable.null
+                          applePaySessionRef := Nullable.null
                           processPayment(event.payment.token)
                         }
                         ssn.oncancel = _ev => {
                           let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
                           mountedIframeRef->Window.iframePostMessage(msg)
-                          applePaySessionRef := Js.Nullable.null
+                          applePaySessionRef := Nullable.null
                           Utils.logInfo(Js.log("Apple Pay payment cancelled"))
                         }
                       }

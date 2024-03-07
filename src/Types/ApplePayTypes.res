@@ -19,7 +19,7 @@ type window = {\"ApplePaySession": applePaySession}
 
 @val external window: window = "window"
 
-@scope("window") @val external sessionForApplePay: Js.Nullable.t<session> = "ApplePaySession"
+@scope("window") @val external sessionForApplePay: Nullable.t<session> = "ApplePaySession"
 
 @new external applePaySession: (int, JSON.t) => session = "ApplePaySession"
 

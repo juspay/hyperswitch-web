@@ -533,7 +533,7 @@ let generateStyleSheet = (classname, dict, id) => {
     style["appendChild"](. document["createTextNode"](. constructClass(~classname, ~dict)))->ignore
     document["body"]["appendChild"](. style)->ignore
   }
-  switch Window.window->Window.document->Window.getElementById(id)->Js.Nullable.toOption {
+  switch Window.window->Window.document->Window.getElementById(id)->Nullable.toOption {
   | Some(val) => {
       val->remove
       createStyle()

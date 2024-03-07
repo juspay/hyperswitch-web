@@ -17,7 +17,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let (divH, setDivH) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
 
-  let divRef = React.useRef(Js.Nullable.null)
+  let divRef = React.useRef(Nullable.null)
 
   let {config} = configAtom
   let {iframeId} = keys
@@ -390,7 +390,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     })
     ->ignore
   })
-  switch divRef.current->Js.Nullable.toOption {
+  switch divRef.current->Nullable.toOption {
   | Some(r) => observer.observe(. r)
   | None => ()
   }

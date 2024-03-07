@@ -20,7 +20,7 @@ type cardProps = (
   string,
   JsxEvent.Form.t => unit,
   JsxEvent.Focus.t => unit,
-  React.ref<Js.Nullable.t<Dom.element>>,
+  React.ref<Nullable.t<Dom.element>>,
   React.element,
   string,
   (string => string) => unit,
@@ -33,7 +33,7 @@ type expiryProps = (
   string,
   JsxEvent.Form.t => unit,
   JsxEvent.Focus.t => unit,
-  React.ref<Js.Nullable.t<Dom.element>>,
+  React.ref<Nullable.t<Dom.element>>,
   ReactEvent.Keyboard.t => unit,
   string,
   (string => string) => unit,
@@ -46,7 +46,7 @@ type cvcProps = (
   (string => string) => unit,
   JsxEvent.Form.t => unit,
   JsxEvent.Focus.t => unit,
-  React.ref<Js.Nullable.t<Dom.element>>,
+  React.ref<Nullable.t<Dom.element>>,
   ReactEvent.Keyboard.t => unit,
   string,
   (string => string) => unit,
@@ -57,7 +57,7 @@ type zipProps = (
   string,
   ReactEvent.Form.t => unit,
   ReactEvent.Focus.t => unit,
-  React.ref<Js.Nullable.t<Dom.element>>,
+  React.ref<Nullable.t<Dom.element>>,
   ReactEvent.Keyboard.t => unit,
   bool,
 )
@@ -433,14 +433,14 @@ let cardValid = (cardNumber, cardBrand) => {
   (clearValueLength == maxCardLength(cardBrand) ||
     (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)
 }
-let blurRef = (ref: React.ref<Js.Nullable.t<Dom.element>>) => {
-  ref.current->Js.Nullable.toOption->Option.forEach(input => input->blur)->ignore
+let blurRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
+  ref.current->Nullable.toOption->Option.forEach(input => input->blur)->ignore
 }
 let handleInputFocus = (
-  ~currentRef: React.ref<Js.Nullable.t<Dom.element>>,
-  ~destinationRef: React.ref<Js.Nullable.t<Dom.element>>,
+  ~currentRef: React.ref<Nullable.t<Dom.element>>,
+  ~destinationRef: React.ref<Nullable.t<Dom.element>>,
 ) => {
-  let optionalRef = destinationRef.current->Js.Nullable.toOption
+  let optionalRef = destinationRef.current->Nullable.toOption
   switch optionalRef {
   | Some(_) => optionalRef->Option.forEach(input => input->focus)->ignore
   | None => blurRef(currentRef)
@@ -452,7 +452,7 @@ let getCardElementValue = (iframeId, key) => {
     switch (Window.parent->Window.frames)["0"]
     ->Window.document
     ->Window.getElementById(key)
-    ->Js.Nullable.toOption {
+    ->Nullable.toOption {
     | Some(dom) => dom->Window.value
     | None => ""
     }
@@ -463,7 +463,7 @@ let getCardElementValue = (iframeId, key) => {
     switch (Window.parent->Window.frames)["1"]
     ->Window.document
     ->Window.getElementById(key)
-    ->Js.Nullable.toOption {
+    ->Nullable.toOption {
     | Some(dom) => dom->Window.value
     | None => ""
     }
@@ -475,7 +475,7 @@ let getCardElementValue = (iframeId, key) => {
     switch (Window.parent->Window.frames)["2"]
     ->Window.document
     ->Window.getElementById(key)
-    ->Js.Nullable.toOption {
+    ->Nullable.toOption {
     | Some(dom) => dom->Window.value
     | None => ""
     }
@@ -585,7 +585,7 @@ let getCardDetailsFromCardProps = cardProps => {
     "",
     _ => (),
     _ => (),
-    React.useRef(Js.Nullable.null),
+    React.useRef(Nullable.null),
     <> </>,
     "",
     _ => (),
@@ -605,7 +605,7 @@ let getExpiryDetailsFromExpiryProps = expiryProps => {
     "",
     _ => (),
     _ => (),
-    React.useRef(Js.Nullable.null),
+    React.useRef(Nullable.null),
     _ => (),
     "",
     _ => (),
@@ -625,7 +625,7 @@ let getCvcDetailsFromCvcProps = cvcProps => {
     _ => (),
     _ => (),
     _ => (),
-    React.useRef(Js.Nullable.null),
+    React.useRef(Nullable.null),
     _ => (),
     "",
     _ => (),

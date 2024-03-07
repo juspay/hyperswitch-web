@@ -138,7 +138,7 @@ module ErrorCard = {
     let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let (keys, _setKeys) = Recoil.useRecoilState(RecoilAtoms.keys)
     let {iframeId} = keys
-    let divRef = React.useRef(Js.Nullable.null)
+    let divRef = React.useRef(Nullable.null)
 
     let observer = ResizeObserver.newResizerObserver(entries => {
       entries
@@ -148,7 +148,7 @@ module ErrorCard = {
       ->ignore
     })
 
-    switch divRef.current->Js.Nullable.toOption {
+    switch divRef.current->Nullable.toOption {
     | Some(r) => observer.observe(. r)
     | None => ()
     }

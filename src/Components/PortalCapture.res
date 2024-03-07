@@ -1,7 +1,7 @@
 @react.component
 let make = React.memo((~name: string) => {
   let (_, setPortalNodes) = Recoil.useRecoilState(RecoilAtoms.portalNodes)
-  let setDiv = React.useCallback2((elem: Js.Nullable.t<Dom.element>) => {
+  let setDiv = React.useCallback2((elem: Nullable.t<Dom.element>) => {
     setPortalNodes(.
       prevDict => {
         let clonedDict =
@@ -15,7 +15,7 @@ let make = React.memo((~name: string) => {
           )
           ->Dict.fromArray
 
-        switch elem->Js.Nullable.toOption {
+        switch elem->Nullable.toOption {
         | Some(elem) => Dict.set(clonedDict, name, elem)
         | None => ()
         }
