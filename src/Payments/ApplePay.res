@@ -51,10 +51,24 @@ let make = (
     ? list->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
     : list->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
 
+  let isGuestCustomer = React.useMemo1(() => {
+    switch options.customerPaymentMethods {
+    | LoadedSavedCards(_, false)
+    | NoResult(false) => false
+    | _ => true
+    }
+  }, [options.customerPaymentMethods])
+
   let processPayment = bodyArr => {
+    let modifiedBody =
+      !isGuestCustomer &&
+      (list.payment_type === "new_mandate" || list.payment_type === "setup_mandate")
+        ? bodyArr->Js.Array2.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
+        : bodyArr
+
     if isWallet {
       intent(
-        ~bodyArr,
+        ~bodyArr=modifiedBody,
         ~confirmParam={
           return_url: options.wallets.walletReturnUrl,
           publishableKey,

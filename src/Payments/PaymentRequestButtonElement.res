@@ -11,6 +11,20 @@ let paymentMode = str => {
   | _ => NONE
   }
 }
+
+module WalletsSaveDetailsText = {
+  @react.component
+  let make = () => {
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    <div className="flex items-center text-xs mt-2">
+      <Icon name="lock" size=10 className="mr-1" />
+      <em className="text-left text-gray-400">
+        {localeString.messageForWalletsDetailsSave->React.string}
+      </em>
+    </div>
+  }
+}
+
 @react.component
 let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
   open SessionsType
@@ -30,6 +44,18 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
     googlePayThirdPartySessionObj.sessionsToken,
     Gpay,
   )
+  let {isGooglePay, isApplePay, isPaypal} = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.areOneClickWalletsRendered,
+  )
+  let {customerPaymentMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+
+  let isGuestCustomer = React.useMemo1(() => {
+    switch customerPaymentMethods {
+    | LoadedSavedCards(_, false)
+    | NoResult(false) => false
+    | _ => true
+    }
+  }, [customerPaymentMethods])
 
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
@@ -94,5 +120,11 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
     })
     ->React.array}
     <Surcharge list paymentMethod="wallet" paymentMethodType="google_pay" isForWallets=true />
+    <RenderIf
+      condition={!isGuestCustomer &&
+      (list.payment_type === "new_mandate" || list.payment_type === "setup_mandate") &&
+      (isGooglePay || isApplePay || isPaypal)}>
+      <WalletsSaveDetailsText />
+    </RenderIf>
   </div>
 }

@@ -37,6 +37,13 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
     },
   }
   let handleCloseLoader = () => Utils.handlePostMessage([("fullscreen", false->Js.Json.boolean)])
+  let isGuestCustomer = React.useMemo1(() => {
+    switch options.customerPaymentMethods {
+    | LoadedSavedCards(_, false)
+    | NoResult(false) => false
+    | _ => true
+    }
+  }, [options.customerPaymentMethods])
   let loadPaypalSdk = () => {
     loggerState.setLogInfo(
       ~value="Paypal SDK Button Clicked",
@@ -94,8 +101,16 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
                                 ~token=payload.nonce,
                                 ~connectors,
                               )
+                              let modifiedPaymentBody =
+                                !isGuestCustomer &&
+                                (list.payment_type === "new_mandate" ||
+                                  list.payment_type === "setup_mandate")
+                                  ? body->Js.Array2.concat([
+                                      ("customer_acceptance", PaymentBody.customerAcceptanceBody),
+                                    ])
+                                  : body
                               intent(
-                                ~bodyArr=body,
+                                ~bodyArr=modifiedPaymentBody,
                                 ~confirmParam={
                                   return_url: options.wallets.walletReturnUrl,
                                   publishableKey,

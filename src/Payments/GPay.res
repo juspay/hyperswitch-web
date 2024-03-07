@@ -33,6 +33,14 @@ let make = (
 
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
+  let isGuestCustomer = React.useMemo1(() => {
+    switch options.customerPaymentMethods {
+    | LoadedSavedCards(_, false)
+    | NoResult(false) => false
+    | _ => true
+    }
+  }, [options.customerPaymentMethods])
+
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
     ~list,
     ~paymentMethod="wallet",
@@ -87,8 +95,15 @@ let make = (
       if dict->Js.Dict.get("gpayResponse")->Belt.Option.isSome {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
         let obj = metadata->getDictFromJson->itemToObjMapper
+        let modifiedPaymentBodyForGpay = {
+          let body = PaymentBody.gpayBody(~payObj=obj, ~connectors)
+          !isGuestCustomer &&
+          (list.payment_type === "new_mandate" || list.payment_type === "setup_mandate")
+            ? body->Js.Array2.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
+            : body
+        }
         let body = {
-          PaymentBody.gpayBody(~payObj=obj, ~connectors)
+          modifiedPaymentBodyForGpay
           ->Js.Dict.fromArray
           ->Js.Json.object_
           ->OrcaUtils.flattenObject(true)
