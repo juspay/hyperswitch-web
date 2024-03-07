@@ -1,8 +1,8 @@
 open Utils
 let getKeyValue = (json, str) => {
   json
-  ->Js.Dict.get(str)
-  ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+  ->Dict.get(str)
+  ->Option.getOr(Dict.make()->JSON.Encode.object)
   ->JSON.Decode.string
   ->Option.getOr("")
 }
@@ -23,9 +23,9 @@ let make = () => {
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("fullScreenIframeMounted")->Option.isSome {
+      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Js.Dict.empty())
+        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         let qrData = metaDataDict->getString("qrData", "")
         setQrCode(_ => qrData)
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
@@ -34,14 +34,14 @@ let make = () => {
           metaDataDict
           ->getJsonObjectFromDict("headers")
           ->JSON.Decode.object
-          ->Option.getOr(Js.Dict.empty())
-        let headers = Js.Dict.empty()
+          ->Option.getOr(Dict.make())
+        let headers = Dict.make()
         setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))
         headersDict
-        ->Js.Dict.entries
+        ->Dict.toArray
         ->Array.forEach(entries => {
           let (x, val) = entries
-          Js.Dict.set(headers, x, val->JSON.Decode.string->Option.getOr(""))
+          Dict.set(headers, x, val->JSON.Decode.string->Option.getOr(""))
         })
         let expiryTime =
           metaDataDict->getString("expiryTime", "")->Belt.Float.fromString->Option.getOr(0.0)
@@ -50,10 +50,10 @@ let make = () => {
           setExpiryTime(_ => timeExpiry)
         }
         open Promise
-        setHeaders(_ => headers->Js.Dict.entries)
+        setHeaders(_ => headers->Dict.toArray)
         PaymentHelpers.pollRetrievePaymentIntent(
           paymentIntentId,
-          headers->Js.Dict.entries,
+          headers->Dict.toArray,
           ~optLogger=Some(logger),
           ~switchToCustomPod,
         )
@@ -91,7 +91,7 @@ let make = () => {
       ~switchToCustomPod,
     )
     ->then(json => {
-      let dict = json->JSON.Decode.object->Option.getOr(Js.Dict.empty())
+      let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
       let status = dict->getString("status", "")
 
       if status === "succeeded" {

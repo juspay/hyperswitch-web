@@ -190,7 +190,7 @@ type loggerMake = {
 let defaultLoggerConfig = {
   sendLogs: () => (),
   setClientSecret: _x => (),
-  setConfirmPaymentValue: (~paymentType as _) => {Js.Dict.empty()->JSON.Encode.object},
+  setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
   setLogError: (
     ~value as _,
     ~internalMetadata as _=?,
@@ -268,7 +268,7 @@ let logFileToObj = logFile => {
     ("first_event", (logFile.firstEvent ? "true" : "false")->JSON.Encode.string),
     ("payment_method", logFile.paymentMethod->convertToScreamingSnakeCase->JSON.Encode.string),
   ]
-  ->Js.Dict.fromArray
+  ->Dict.fromArray
   ->JSON.Encode.object
 }
 
@@ -412,8 +412,8 @@ let make = (
   | None => GlobalVars.repoName
   }
 
-  let events = ref(Js.Dict.empty())
-  let eventsCounter = ref(Js.Dict.empty())
+  let events = ref(Dict.make())
+  let eventsCounter = ref(Dict.make())
 
   let timeOut = ref(None)
 
@@ -429,11 +429,11 @@ let make = (
   }
 
   let calculateAndUpdateCounterHook = eventName => {
-    let updatedCounter = switch eventsCounter.contents->Js.Dict.get(eventName) {
+    let updatedCounter = switch eventsCounter.contents->Dict.get(eventName) {
     | Some(num) => num + 1
     | None => 1
     }
-    eventsCounter.contents->Js.Dict.set(eventName, updatedCounter)
+    eventsCounter.contents->Dict.set(eventName, updatedCounter)
     updatedCounter
   }
 
@@ -527,7 +527,7 @@ let make = (
     let currentTimestamp = Js.Date.now()
     let latency = switch eventName {
     | PAYMENT_ATTEMPT => {
-        let appRenderedTimestamp = events.contents->Js.Dict.get(APP_RENDERED->eventNameToStrMapper)
+        let appRenderedTimestamp = events.contents->Dict.get(APP_RENDERED->eventNameToStrMapper)
         switch appRenderedTimestamp {
         | Some(float) => currentTimestamp -. float
         | _ => -1.
@@ -539,7 +539,7 @@ let make = (
     | PAYMENT_METHODS_CALL
     | CUSTOMER_PAYMENT_METHODS_CALL => {
         let logRequestTimestamp =
-          events.contents->Js.Dict.get(eventName->eventNameToStrMapper ++ "_INIT")
+          events.contents->Dict.get(eventName->eventNameToStrMapper ++ "_INIT")
         switch (logRequestTimestamp, type_) {
         | (Some(_), "request") => 0.
         | (Some(float), _) => currentTimestamp -. float
@@ -562,7 +562,7 @@ let make = (
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Option.isNone
+    let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
     let localTimestamp = timestamp->Option.getOr(Js.Date.now()->Belt.Float.toString)
     let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Js.Date.now())
@@ -593,12 +593,12 @@ let make = (
     ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
-    events.contents->Js.Dict.set(eventNameStr, localTimestampFloat)
+    events.contents->Dict.set(eventNameStr, localTimestampFloat)
   }
 
   let setConfirmPaymentValue = (~paymentType) => {
     [("method", "confirmPayment"->JSON.Encode.string), ("type", paymentType->JSON.Encode.string)]
-    ->Js.Dict.fromArray
+    ->Dict.fromArray
     ->JSON.Encode.object
   }
 
@@ -614,7 +614,7 @@ let make = (
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Option.isNone
+    let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ~type_, ())
     let localTimestamp = timestamp->Option.getOr(Js.Date.now()->Belt.Float.toString)
     let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Js.Date.now())
@@ -625,11 +625,11 @@ let make = (
       source: sourceString,
       version: GlobalVars.repoVersion,
       value: switch value {
-      | ArrayType(a) => a->Js.Dict.fromArray->JSON.Encode.object->JSON.stringify
+      | ArrayType(a) => a->Dict.fromArray->JSON.Encode.object->JSON.stringify
       | StringValue(a) => a
       },
       internalMetadata: switch internalMetadata {
-      | ArrayType(a) => a->Js.Dict.fromArray->JSON.Encode.object->JSON.stringify
+      | ArrayType(a) => a->Dict.fromArray->JSON.Encode.object->JSON.stringify
       | StringValue(a) => a
       },
       category: logCategory,
@@ -651,7 +651,7 @@ let make = (
     ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
-    events.contents->Js.Dict.set(eventNameStr, localTimestampFloat)
+    events.contents->Dict.set(eventNameStr, localTimestampFloat)
   }
 
   let setLogError = (
@@ -665,7 +665,7 @@ let make = (
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Option.isNone
+    let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
     let localTimestamp = timestamp->Option.getOr(Js.Date.now()->Belt.Float.toString)
     let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Js.Date.now())
@@ -696,13 +696,13 @@ let make = (
     ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
-    events.contents->Js.Dict.set(eventNameStr, localTimestampFloat)
+    events.contents->Dict.set(eventNameStr, localTimestampFloat)
   }
 
   let setLogInitiated = () => {
     let eventName: eventName = LOG_INITIATED
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Option.isNone
+    let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
     {
       logType: INFO,
@@ -731,7 +731,7 @@ let make = (
     ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
-    events.contents->Js.Dict.set(eventNameStr, Js.Date.now())
+    events.contents->Dict.set(eventNameStr, Js.Date.now())
   }
 
   let handleBeforeUnload = _event => {

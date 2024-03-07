@@ -78,7 +78,7 @@ let defaultIntent = {
 
 let getAchCreditTransfer = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
@@ -92,7 +92,7 @@ let getAchCreditTransfer = (dict, str) => {
 }
 let getBacsBankInstructions = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
@@ -105,7 +105,7 @@ let getBacsBankInstructions = (dict, str) => {
 }
 let getBankTransferDetails = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
@@ -123,7 +123,7 @@ let getVoucherDetails = json => {
 
 let getNextAction = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
@@ -133,22 +133,22 @@ let getNextAction = (dict, str) => {
         getJsonObjFromDict(
           json,
           "bank_transfer_steps_and_charges_details",
-          Js.Dict.empty(),
+          Dict.make(),
         )->JSON.Encode.object,
       ),
       session_token: Some(
-        getJsonObjFromDict(json, "session_token", Js.Dict.empty())->JSON.Encode.object,
+        getJsonObjFromDict(json, "session_token", Dict.make())->JSON.Encode.object,
       ),
       image_data_url: Some(json->getString("image_data_url", "")),
       display_to_timestamp: Some(
         json
-        ->Js.Dict.get("display_to_timestamp")
+        ->Dict.get("display_to_timestamp")
         ->Option.flatMap(JSON.Decode.float)
         ->Option.getOr(0.0),
       ),
       voucher_details: {
         json
-        ->Js.Dict.get("voucher_details")
+        ->Dict.get("voucher_details")
         ->Option.flatMap(JSON.Decode.object)
         ->Option.map(json => json->getVoucherDetails)
       },

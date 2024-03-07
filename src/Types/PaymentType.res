@@ -274,7 +274,7 @@ let getLayout = (str, logger) => {
 }
 let getAddress = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     let countryNames = []
@@ -307,7 +307,7 @@ let getAddress = (dict, str, logger) => {
 }
 let getBillingDetails = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
@@ -328,7 +328,7 @@ let getBillingDetails = (dict, str, logger) => {
 
 let getDefaultValues = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(["billingDetails"], json, "options.defaultValues", ~logger)
@@ -341,7 +341,7 @@ let getDefaultValues = (dict, str, logger) => {
 }
 let getBusiness = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(["name"], json, "options.business", ~logger)
@@ -488,7 +488,7 @@ let getShowTerms: (string, string, 'a) => showTerms = (str, key, logger) => {
 
 let getShowAddress = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     let x: showAddress = {
@@ -545,13 +545,13 @@ let getDeatils = (val, logger) => {
 }
 let getBilling = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.map(json => json->getDeatils(logger))
   ->Option.getOr(defaultFields.billingDetails)
 }
-let getFields: (Js.Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
+let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     let defaultFields: fields = {
@@ -586,7 +586,7 @@ let getLayoutValues = (val, logger) => {
 }
 let getTerms = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
@@ -698,7 +698,7 @@ let getHeightArray = (val, logger) => {
 }
 let getStyle = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(["type", "theme", "height"], json, "options.wallets.style", ~logger)
@@ -713,7 +713,7 @@ let getStyle = (dict, str, logger) => {
 }
 let getWallets = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
@@ -741,7 +741,7 @@ let getWallets = (dict, str, logger) => {
 
 let getLayout = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.map(json => {
     json->getLayoutValues(logger)
   })
@@ -750,7 +750,7 @@ let getLayout = (dict, str, logger) => {
 
 let getCardDetails = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
@@ -768,19 +768,19 @@ let getCardDetails = (dict, str) => {
 let createCustomerObjArr = dict => {
   let customerDict =
     dict
-    ->Js.Dict.get("customerPaymentMethods")
+    ->Dict.get("customerPaymentMethods")
     ->Option.flatMap(JSON.Decode.object)
-    ->Option.getOr(Js.Dict.empty())
+    ->Option.getOr(Dict.make())
 
   let customerArr =
     customerDict
-    ->Js.Dict.get("customer_payment_methods")
+    ->Dict.get("customer_payment_methods")
     ->Option.flatMap(JSON.Decode.array)
     ->Option.getOr([])
 
   let isGuestCustomer =
     customerDict
-    ->Js.Dict.get("is_guest_customer")
+    ->Dict.get("is_guest_customer")
     ->Option.flatMap(JSON.Decode.bool)
     ->Option.getOr(false)
 
@@ -800,7 +800,7 @@ let createCustomerObjArr = dict => {
 }
 
 let getCustomerMethods = (dict, str) => {
-  let customerArr = dict->Js.Dict.get(str)->Option.flatMap(JSON.Decode.array)->Option.getOr([])
+  let customerArr = dict->Dict.get(str)->Option.flatMap(JSON.Decode.array)->Option.getOr([])
 
   if customerArr->Array.length !== 0 {
     let customerPaymentMethods =
@@ -823,7 +823,7 @@ let getCustomerMethods = (dict, str) => {
 
 let getCustomMethodNames = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
@@ -835,7 +835,7 @@ let getCustomMethodNames = (dict, str) => {
 
 let getBillingAddress = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(

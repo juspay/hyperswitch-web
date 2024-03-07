@@ -12,11 +12,11 @@ let getLogtype = val => {
 let logApi = (
   ~eventName,
   ~statusCode="",
-  ~data: JSON.t=Js.Dict.empty()->JSON.Encode.object,
+  ~data: JSON.t=Dict.make()->JSON.Encode.object,
   ~type_,
   ~url="",
   ~paymentMethod="",
-  ~result: JSON.t=Js.Dict.empty()->JSON.Encode.object,
+  ~result: JSON.t=Dict.make()->JSON.Encode.object,
   ~optLogger: option<OrcaLogger.loggerMake>,
   ~logType: OrcaLogger.logType=INFO,
   ~logCategory: OrcaLogger.logCategory=API,
@@ -65,7 +65,7 @@ let logApi = (
 let logInputChangeInfo = (text, logger: OrcaLogger.loggerMake) => {
   logger.setLogInfo(
     ~value=[("inputChange", text->JSON.Encode.string)]
-    ->Js.Dict.fromArray
+    ->Dict.fromArray
     ->JSON.Encode.object
     ->JSON.stringify,
     ~eventName=INPUT_FIELD_CHANGED,

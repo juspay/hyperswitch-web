@@ -31,8 +31,8 @@ let defaultToken = {
   token: "",
   sessionId: "",
   allowed_payment_methods: [],
-  transaction_info: Js.Dict.empty()->JSON.Encode.object,
-  merchant_info: Js.Dict.empty()->JSON.Encode.object,
+  transaction_info: Dict.make()->JSON.Encode.object,
+  merchant_info: Dict.make()->JSON.Encode.object,
 }
 let getWallet = str => {
   switch str {
@@ -47,7 +47,7 @@ open Utils
 
 let getSessionsToken = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.map(arr => {
     arr->Array.map(json => {
@@ -65,7 +65,7 @@ let getSessionsToken = (dict, str) => {
   ->Option.getOr([defaultToken])
 }
 let getSessionsTokenJson = (dict, str) => {
-  dict->Js.Dict.get(str)->Option.flatMap(JSON.Decode.array)->Option.getOr([])
+  dict->Dict.get(str)->Option.flatMap(JSON.Decode.array)->Option.getOr([])
 }
 
 let itemToObjMapper = (dict, returnType) => {
@@ -95,7 +95,7 @@ let getWalletFromTokenType = (arr, val: wallet) => {
     item
     ->JSON.Decode.object
     ->Option.flatMap(x => {
-      x->Js.Dict.get("wallet_name")
+      x->Dict.get("wallet_name")
     })
     ->Option.flatMap(JSON.Decode.string)
     ->Option.getOr("")

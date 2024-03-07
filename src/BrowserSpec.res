@@ -36,7 +36,7 @@ let broswerInfo = () => [
       ("java_enabled", true->JSON.Encode.bool),
       ("java_script_enabled", true->JSON.Encode.bool),
     ]
-    ->Js.Dict.fromArray
+    ->Dict.fromArray
     ->JSON.Encode.object,
   ),
 ]

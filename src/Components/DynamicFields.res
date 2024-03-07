@@ -14,7 +14,7 @@ let make = (
   ~isBancontact=false,
 ) => {
   React.useEffect1(() => {
-    setRequiredFieldsBody(_ => Js.Dict.empty())
+    setRequiredFieldsBody(_ => Dict.make())
     None
   }, [paymentMethodType])
 

@@ -41,7 +41,7 @@ type paymentRequestData = {
   @optional merchantIdentifier: string,
 }
 
-let jsonToPaymentRequestDataType: Js.Dict.t<JSON.t> => paymentRequestData = jsonDict => {
+let jsonToPaymentRequestDataType: Dict.t<JSON.t> => paymentRequestData = jsonDict => {
   let clientTimeZone = CardUtils.dateTimeFormat(.).resolvedOptions(.).timeZone
   let clientCountry = Utils.getClientCountry(clientTimeZone)
   let defaultCountryCode = clientCountry.isoAlpha2

@@ -71,14 +71,14 @@ let defaultTokenizationData = {
 }
 let defaultPaymentMethodData = {
   description: "",
-  info: Js.Dict.empty()->JSON.Encode.object,
-  tokenizationData: Js.Dict.empty()->JSON.Encode.object,
+  info: Dict.make()->JSON.Encode.object,
+  tokenizationData: Dict.make()->JSON.Encode.object,
   \"type": "",
 }
 
 let getTokenizationData = (str, dict) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
@@ -89,17 +89,13 @@ let getTokenizationData = (str, dict) => {
 }
 let getPaymentMethodData = (str, dict) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       description: getString(json, "description", ""),
-      tokenizationData: getJsonFromDict(
-        json,
-        "tokenizationData",
-        Js.Dict.empty()->JSON.Encode.object,
-      ),
-      info: getJsonFromDict(json, "info", Js.Dict.empty()->JSON.Encode.object),
+      tokenizationData: getJsonFromDict(json, "tokenizationData", Dict.make()->JSON.Encode.object),
+      info: getJsonFromDict(json, "info", Dict.make()->JSON.Encode.object),
       \"type": getString(json, "type", ""),
     }
   })
@@ -111,7 +107,7 @@ let itemToObjMapper = dict => {
   }
 }
 
-let jsonToPaymentRequestDataType: (paymentDataRequest, Js.Dict.t<JSON.t>) => paymentDataRequest = (
+let jsonToPaymentRequestDataType: (paymentDataRequest, Dict.t<JSON.t>) => paymentDataRequest = (
   paymentRequest,
   jsonDict,
 ) => {

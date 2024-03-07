@@ -11,7 +11,7 @@ let make = (
   ~paymentType: option<CardThemeType.mode>,
   ~walletOptions: array<string>,
 ) => {
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
@@ -59,7 +59,7 @@ let make = (
   let isDelayedSessionToken = React.useMemo1(() => {
     thirdPartySessionObj
     ->Option.flatMap(JSON.Decode.object)
-    ->Option.flatMap(x => x->Js.Dict.get("delayed_session_token"))
+    ->Option.flatMap(x => x->Dict.get("delayed_session_token"))
     ->Option.flatMap(JSON.Decode.bool)
     ->Option.getOr(false)
   }, [thirdPartySessionObj])
@@ -81,15 +81,15 @@ let make = (
       let json = try {
         ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->JSON.Encode.object
+      | _ => Dict.make()->JSON.Encode.object
       }
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("gpayResponse")->Option.isSome {
+      if dict->Dict.get("gpayResponse")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
         let obj = metadata->getDictFromJson->itemToObjMapper
         let body = {
           PaymentBody.gpayBody(~payObj=obj, ~connectors)
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
           ->JSON.Encode.object
           ->OrcaUtils.flattenObject(true)
           ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
@@ -97,7 +97,7 @@ let make = (
         }
         processPayment(body)
       }
-      if dict->Js.Dict.get("gpayError")->Option.isSome {
+      if dict->Dict.get("gpayError")->Option.isSome {
         Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
         if !isWallet {
           postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
@@ -207,11 +207,11 @@ let make = (
       let json = try {
         ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->JSON.Encode.object
+      | _ => Dict.make()->JSON.Encode.object
       }
       let dict = json->Utils.getDictFromJson
       try {
-        if dict->Js.Dict.get("googlePaySyncPayment")->Option.isSome {
+        if dict->Dict.get("googlePaySyncPayment")->Option.isSome {
           syncPayment()
         }
       } catch {

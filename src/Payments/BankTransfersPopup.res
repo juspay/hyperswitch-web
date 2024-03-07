@@ -1,8 +1,8 @@
 open Utils
 let getKeyValue = (json, str) => {
   json
-  ->Js.Dict.get(str)
-  ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+  ->Dict.get(str)
+  ->Option.getOr(Dict.make()->JSON.Encode.object)
   ->JSON.Decode.string
   ->Option.getOr("")
 }
@@ -10,8 +10,8 @@ let getKeyValue = (json, str) => {
 @react.component
 let make = (~transferType) => {
   let (keys, setKeys) = React.useState(_ => [])
-  let (json, setJson) = React.useState(_ => Js.Dict.empty())
-  let (postData, setPostData) = React.useState(_ => Js.Dict.empty()->JSON.Encode.object)
+  let (json, setJson) = React.useState(_ => Dict.make())
+  let (postData, setPostData) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (return_url, setReturnUrl) = React.useState(_ => "")
   let (responseType, title) = switch transferType {
   | "achBankTransfer" => ("ach_credit_transfer", "ACH")
@@ -52,16 +52,16 @@ let make = (~transferType) => {
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("fullScreenIframeMounted")->Option.isSome {
+      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let dictMetadata =
           dict
           ->getJsonObjectFromDict("metadata")
           ->getDictFromJson
-          ->Js.Dict.get(responseType)
-          ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+          ->Dict.get(responseType)
+          ->Option.getOr(Dict.make()->JSON.Encode.object)
           ->getDictFromJson
-        setKeys(_ => dictMetadata->Js.Dict.keys)
+        setKeys(_ => dictMetadata->Dict.keysToArray)
         setJson(_ => dictMetadata)
         setPostData(_ => metadata->getDictFromJson->getJsonObjectFromDict("data"))
         setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))

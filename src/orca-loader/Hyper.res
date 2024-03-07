@@ -85,7 +85,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       preloader()
     }
     let analyticsInfoDict =
-      analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Js.Dict.empty())
+      analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
     let sessionID = analyticsInfoDict->getString("sessionID", "")
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Js.Date.now()->Belt.Float.toString)
     let logger = OrcaLogger.make(
@@ -100,7 +100,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       let customBackendUrl =
         userOptions
         ->JSON.Decode.object
-        ->Option.flatMap(x => x->Js.Dict.get("customBackendUrl"))
+        ->Option.flatMap(x => x->Dict.get("customBackendUrl"))
         ->Option.flatMap(JSON.Decode.string)
         ->Option.getOr("")
       customBackendUrl === "" ? () : ApiEndpoint.setApiEndPoint(customBackendUrl)
@@ -235,7 +235,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           Fetch.Response.json(resp)
         })
         ->then(data => {
-          [("paymentIntent", data)]->Js.Dict.fromArray->JSON.Encode.object->Promise.resolve
+          [("paymentIntent", data)]->Dict.fromArray->JSON.Encode.object->Promise.resolve
         })
       }
 
@@ -243,20 +243,20 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let confirmParams =
           payload
           ->JSON.Decode.object
-          ->Option.flatMap(x => x->Js.Dict.get("confirmParams"))
-          ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+          ->Option.flatMap(x => x->Dict.get("confirmParams"))
+          ->Option.getOr(Dict.make()->JSON.Encode.object)
 
         let redirect =
           payload
           ->JSON.Decode.object
-          ->Option.flatMap(x => x->Js.Dict.get("redirect"))
+          ->Option.flatMap(x => x->Dict.get("redirect"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("if_required")
 
         let url =
           confirmParams
           ->JSON.Decode.object
-          ->Option.flatMap(x => x->Js.Dict.get("return_url"))
+          ->Option.flatMap(x => x->Dict.get("return_url"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 
@@ -265,7 +265,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             let json = event.data->eventToJson
             let dict = json->getDictFromJson
 
-            switch dict->Js.Dict.get("submitSuccessful") {
+            switch dict->Dict.get("submitSuccessful") {
             | Some(val) =>
               logApi(
                 ~type_="method",
@@ -275,16 +275,15 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 ~eventName=CONFIRM_PAYMENT,
                 (),
               )
-              let data =
-                dict->Js.Dict.get("data")->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+              let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
               let returnUrl =
-                dict->Js.Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
+                dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
 
               if isOneClick {
                 iframeRef.contents->Array.forEach(ifR => {
                   // to unset one click button loader
                   ifR->Window.iframePostMessage(
-                    [("oneClickDoSubmit", false->JSON.Encode.bool)]->Js.Dict.fromArray,
+                    [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
                   )
                 })
               }
@@ -300,7 +299,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             }
           }
           let message = isOneClick
-            ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Js.Dict.fromArray
+            ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
             : [
                 ("doSubmit", true->JSON.Encode.bool),
                 ("clientSecret", clientSecret.contents->JSON.Encode.string),
@@ -310,10 +309,10 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                     ("return_url", url->JSON.Encode.string),
                     ("publishableKey", publishableKey->JSON.Encode.string),
                   ]
-                  ->Js.Dict.fromArray
+                  ->Dict.fromArray
                   ->JSON.Encode.object,
                 ),
-              ]->Js.Dict.fromArray
+              ]->Dict.fromArray
           addSmartEventListener("message", handleMessage, "onSubmit")
           iframeRef.contents->Array.forEach(ifR => {
             ifR->Window.iframePostMessage(message)
@@ -334,7 +333,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let clientSecretId =
           elementsOptions
           ->JSON.Decode.object
-          ->Option.flatMap(x => x->Js.Dict.get("clientSecret"))
+          ->Option.flatMap(x => x->Dict.get("clientSecret"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
         clientSecret := clientSecretId
@@ -361,7 +360,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       let confirmCardPaymentFn =
         @this
         (_this: This.t, clientSecretId: string, data: option<JSON.t>, _options: option<JSON.t>) => {
-          let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Js.Dict.empty())
+          let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
           Js.Promise.make((~resolve, ~reject as _) => {
             iframeRef.contents
             ->Array.map(iframe => {
@@ -372,16 +371,16 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                   (
                     "confirmParams",
                     [("publishableKey", publishableKey->JSON.Encode.string)]
-                    ->Js.Dict.fromArray
+                    ->Dict.fromArray
                     ->JSON.Encode.object,
                   ),
-                ]->Js.Dict.fromArray,
+                ]->Dict.fromArray,
               )
 
               let handleMessage = (event: Types.event) => {
                 let json = event.data->eventToJson
                 let dict = json->getDictFromJson
-                switch dict->Js.Dict.get("submitSuccessful") {
+                switch dict->Dict.get("submitSuccessful") {
                 | Some(val) =>
                   logApi(
                     ~type_="method",
@@ -407,13 +406,13 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         }
 
       let addAmountToDict = (dict, currency) => {
-        if dict->Js.Dict.get("amount")->Option.isNone {
+        if dict->Dict.get("amount")->Option.isNone {
           Js.Console.error("Amount is not specified, please input an amount")
         }
-        let amount = dict->Js.Dict.get("amount")->Option.getOr(0.0->JSON.Encode.float)
-        dict->Js.Dict.set(
+        let amount = dict->Dict.get("amount")->Option.getOr(0.0->JSON.Encode.float)
+        dict->Dict.set(
           "amount",
-          [("currency", currency), ("value", amount)]->Js.Dict.fromArray->JSON.Encode.object,
+          [("currency", currency), ("value", amount)]->Dict.fromArray->JSON.Encode.object,
         )
         Some(dict->JSON.Encode.object)
       }
@@ -422,10 +421,10 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let currency = optionsDict->getJsonStringFromDict("currency", "")
         let optionsTotal =
           optionsDict
-          ->Js.Dict.get("total")
+          ->Dict.get("total")
           ->Option.flatMap(JSON.Decode.object)
           ->Option.flatMap(x => addAmountToDict(x, currency))
-          ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+          ->Option.getOr(Dict.make()->JSON.Encode.object)
         let displayItems = optionsDict->getJsonArrayFromDict("displayItems", [])
         let requestPayerName = optionsDict->getJsonStringFromDict("requestPayerName", "")
         let requestPayerEmail = optionsDict->getJsonBoolValue("requestPayerEmail", false)
@@ -434,20 +433,17 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
         let shippingOptions =
           optionsDict
-          ->Js.Dict.get("shippingOptions")
+          ->Dict.get("shippingOptions")
           ->Option.flatMap(JSON.Decode.object)
           ->Option.flatMap(x => addAmountToDict(x, currency))
-          ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+          ->Option.getOr(Dict.make()->JSON.Encode.object)
 
         let applePayPaymentMethodData =
           [
             ("supportedMethods", "https://apple.com/apple-pay"->JSON.Encode.string),
-            (
-              "data",
-              [("version", 12.00->JSON.Encode.float)]->Js.Dict.fromArray->JSON.Encode.object,
-            ),
+            ("data", [("version", 12.00->JSON.Encode.float)]->Dict.fromArray->JSON.Encode.object),
           ]
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
           ->JSON.Encode.object
         let methodData = [applePayPaymentMethodData]->JSON.Encode.array
         let details =
@@ -457,7 +453,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             ("total", optionsTotal),
             ("shippingOptions", shippingOptions),
           ]
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
           ->JSON.Encode.object
 
         let optionsForPaymentRequest =
@@ -468,7 +464,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             ("requestShipping", requestShipping),
             ("shippingType", "shipping"->JSON.Encode.string),
           ]
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
           ->JSON.Encode.object
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }

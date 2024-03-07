@@ -39,7 +39,7 @@ let make = (
   let cleanBlik = str => str->Js.String2.replaceByRe(%re("/-/g"), "")
   let cleanPhoneNumber = str => str->Js.String2.replaceByRe(%re("/\s/g"), "")
 
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
 
@@ -90,7 +90,7 @@ let make = (
             ~paymentExperience=paymentFlow,
             ~currency,
           )
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
           ->JSON.Encode.object
           ->OrcaUtils.flattenObject(true)
           ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)

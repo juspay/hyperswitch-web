@@ -458,17 +458,17 @@ let useRequiredFieldsBody = (
         let value = item->getFieldValueFromFieldType
         if item === BillingName {
           let arr = value->Js.String2.split(" ")
-          acc->Js.Dict.set(
+          acc->Dict.set(
             "billing.address.first_name",
             arr->Belt.Array.get(0)->Option.getOr("")->JSON.Encode.string,
           )
-          acc->Js.Dict.set(
+          acc->Dict.set(
             "billing.address.last_name",
             arr->Belt.Array.get(1)->Option.getOr("")->JSON.Encode.string,
           )
         } else {
           let path = item->getBillingAddressPathFromFieldType
-          acc->Js.Dict.set(path, value->JSON.Encode.string)
+          acc->Dict.set(path, value->JSON.Encode.string)
         }
         acc
       })
@@ -481,7 +481,7 @@ let useRequiredFieldsBody = (
     let requiredFieldsBody =
       requiredFields
       ->Array.filter(item => item.field_type !== None)
-      ->Array.reduce(Js.Dict.empty(), (acc, item) => {
+      ->Array.reduce(Dict.make(), (acc, item) => {
         let value = switch item.field_type {
         | BillingName => getName(item, billingName)
         | FullName => getName(item, fullName)
@@ -494,13 +494,13 @@ let useRequiredFieldsBody = (
           item.required_field === "payment_method_data.card.card_holder_name"
         ) {
           if !isAllStoredCardsHaveName {
-            acc->Js.Dict.set(
+            acc->Dict.set(
               "payment_method_data.card_token.card_holder_name",
               value->JSON.Encode.string,
             )
           }
         } else {
-          acc->Js.Dict.set(item.required_field, value->JSON.Encode.string)
+          acc->Dict.set(item.required_field, value->JSON.Encode.string)
         }
         acc
       })

@@ -33,10 +33,10 @@ type paymentElement = {
 }
 
 type element = {
-  getElement: Js.Dict.key => option<paymentElement>,
+  getElement: string => option<paymentElement>,
   update: JSON.t => unit,
   fetchUpdates: unit => Js.Promise.t<JSON.t>,
-  create: (Js.Dict.key, JSON.t) => paymentElement,
+  create: (string, JSON.t) => paymentElement,
 }
 
 type confirmParams = {return_url: string}
@@ -59,20 +59,20 @@ type hyperInstance = {
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
-  Js.Promise.resolve(Js.Dict.empty()->JSON.Encode.object)
+  Js.Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 
 let confirmPaymentFn = (_elements: JSON.t) => {
-  Js.Promise.resolve(Js.Dict.empty()->JSON.Encode.object)
+  Js.Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 let confirmCardPaymentFn =
   @this
   (_this: This.t, _clientSecretId: string, _data: option<JSON.t>, _options: option<JSON.t>) => {
-    Js.Promise.resolve(Js.Dict.empty()->JSON.Encode.object)
+    Js.Promise.resolve(Dict.make()->JSON.Encode.object)
   }
 
 let retrievePaymentIntentFn = _paymentIntentId => {
-  Js.Promise.resolve(Js.Dict.empty()->JSON.Encode.object)
+  Js.Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 let update = _options => {
   ()
@@ -84,7 +84,7 @@ let getElement = _componentName => {
 
 let fetchUpdates = () => {
   Js.Promise.make((~resolve, ~reject as _) => {
-    setTimeout(() => resolve(. Js.Dict.empty()->JSON.Encode.object), 1000)->ignore
+    setTimeout(() => resolve(. Dict.make()->JSON.Encode.object), 1000)->ignore
   })
 }
 let defaultPaymentElement = {

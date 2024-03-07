@@ -106,10 +106,10 @@ let defaultPaymentRequestButton = {
   height: "",
 }
 let defaultStyle = {
-  base: Js.Dict.empty()->JSON.Encode.object,
-  complete: Js.Dict.empty()->JSON.Encode.object,
-  empty: Js.Dict.empty()->JSON.Encode.object,
-  invalid: Js.Dict.empty()->JSON.Encode.object,
+  base: Dict.make()->JSON.Encode.object,
+  complete: Dict.make()->JSON.Encode.object,
+  empty: Dict.make()->JSON.Encode.object,
+  invalid: Dict.make()->JSON.Encode.object,
   paymentRequestButton: defaultPaymentRequestButton,
 }
 let defaultOptions = {
@@ -124,7 +124,7 @@ let defaultOptions = {
 }
 let getClasses = (str, dict, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
@@ -146,7 +146,7 @@ let getClasses = (str, dict, logger) => {
 
 let rec getStyleObj = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
@@ -190,7 +190,7 @@ let getTheme = (str, key, logger) => {
 }
 let getPaymentRequestButton = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
@@ -207,7 +207,7 @@ let getPaymentRequestButton = (dict, str, logger) => {
 
 let getStyle = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {

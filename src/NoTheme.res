@@ -41,7 +41,7 @@ let nakedValues = {
   spacingGridRow: "20px",
 }
 
-let nakedValuesRules = _ => Js.Dict.empty()->JSON.Encode.object
+let nakedValuesRules = _ => Dict.make()->JSON.Encode.object
 
 let default = nakedValues
 let defaultRules = nakedValuesRules

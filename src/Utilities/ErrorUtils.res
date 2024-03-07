@@ -163,9 +163,9 @@ let manageErrorWarning = (
   }
 }
 
-let unknownKeysWarning = (validKeysArr, dict: Js.Dict.t<JSON.t>, dictType: string, ~logger) => {
+let unknownKeysWarning = (validKeysArr, dict: Dict.t<JSON.t>, dictType: string, ~logger) => {
   dict
-  ->Js.Dict.entries
+  ->Dict.toArray
   ->Array.forEach(((key, _)) => {
     if validKeysArr->Array.includes(key) {
       ()

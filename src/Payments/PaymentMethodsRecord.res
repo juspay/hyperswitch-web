@@ -524,7 +524,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
 }
 
 let getPaymentMethodsFieldTypeFromDict = dict => {
-  let keysArr = dict->Js.Dict.keys
+  let keysArr = dict->Dict.keysToArray
   let key = keysArr->Belt.Array.get(0)->Option.getOr("")
   switch key {
   | "user_currency" => {
@@ -551,8 +551,8 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
 let getFieldType = (dict, isBancontact) => {
   let fieldClass =
     dict
-    ->Js.Dict.get("field_type")
-    ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+    ->Dict.get("field_type")
+    ->Option.getOr(Dict.make()->JSON.Encode.object)
     ->JSON.Classify.classify
   switch fieldClass {
   | Bool(_)
@@ -771,7 +771,7 @@ let getPaymentExperienceType = str => {
 
 let getPaymentExperience = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
@@ -790,13 +790,13 @@ let getPaymentExperience = (dict, str) => {
 let getSurchargeDetails = dict => {
   let surchargDetails =
     dict
-    ->Js.Dict.get("surcharge_details")
+    ->Dict.get("surcharge_details")
     ->Option.flatMap(JSON.Decode.object)
-    ->Option.getOr(Js.Dict.empty())
+    ->Option.getOr(Dict.make())
 
   let displayTotalSurchargeAmount =
     surchargDetails
-    ->Js.Dict.get("display_total_surcharge_amount")
+    ->Dict.get("display_total_surcharge_amount")
     ->Option.flatMap(JSON.Decode.float)
     ->Option.getOr(0.0)
 
@@ -811,7 +811,7 @@ let getSurchargeDetails = dict => {
 
 let getCardNetworks = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
@@ -826,7 +826,7 @@ let getCardNetworks = (dict, str) => {
 
 let getBankNames = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
@@ -841,9 +841,9 @@ let getBankNames = (dict, str) => {
 
 let getAchConnectors = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
-  ->Option.getOr(Js.Dict.empty())
+  ->Option.getOr(Dict.make())
   ->getStrArray("elligible_connectors")
 }
 
@@ -851,7 +851,7 @@ let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
   let requiredFields =
     Utils.getJsonFromDict(dict, "required_fields", JSON.Encode.null)
     ->Utils.getDictFromJson
-    ->Js.Dict.values
+    ->Dict.valuesToArray
 
   requiredFields->Array.map(requiredField => {
     let requiredFieldsDict = requiredField->Utils.getDictFromJson
@@ -866,7 +866,7 @@ let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
 
 let getPaymentMethodTypes = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
@@ -889,7 +889,7 @@ let getPaymentMethodTypes = (dict, str) => {
 
 let getMethodsArr = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
@@ -903,7 +903,7 @@ let getMethodsArr = (dict, str) => {
 
 let getOptionalMandateType = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
@@ -915,7 +915,7 @@ let getOptionalMandateType = (dict, str) => {
 
 let getMandate = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {

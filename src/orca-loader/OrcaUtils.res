@@ -13,34 +13,34 @@ let safeParse = st => {
 }
 
 let rec flattenObject = (obj, addIndicatorForObject) => {
-  let newDict = Js.Dict.empty()
+  let newDict = Dict.make()
   switch obj->JSON.Decode.object {
   | Some(obj) =>
     obj
-    ->Js.Dict.entries
+    ->Dict.toArray
     ->Array.forEach(entry => {
       let (key, value) = entry
 
       if value->toNullable->Js.Nullable.isNullable {
-        Js.Dict.set(newDict, key, value)
+        Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Decode.object {
         | Some(_valueObj) => {
             if addIndicatorForObject {
-              Js.Dict.set(newDict, key, JSON.Encode.object(Js.Dict.empty()))
+              Dict.set(newDict, key, JSON.Encode.object(Dict.make()))
             }
 
             let flattenedSubObj = flattenObject(value, addIndicatorForObject)
 
             flattenedSubObj
-            ->Js.Dict.entries
+            ->Dict.toArray
             ->Array.forEach(subEntry => {
               let (subKey, subValue) = subEntry
-              Js.Dict.set(newDict, `${key}.${subKey}`, subValue)
+              Dict.set(newDict, `${key}.${subKey}`, subValue)
             })
           }
 
-        | None => Js.Dict.set(newDict, key, value)
+        | None => Dict.set(newDict, key, value)
         }
       }
     })
@@ -50,21 +50,21 @@ let rec flattenObject = (obj, addIndicatorForObject) => {
 }
 
 let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepParent) => {
-  let newDict = Js.Dict.empty()
+  let newDict = Dict.make()
   switch obj->JSON.Decode.object {
   | Some(obj) =>
     obj
-    ->Js.Dict.entries
+    ->Dict.toArray
     ->Array.forEach(entry => {
       let (key, value) = entry
 
       if value->toNullable->Js.Nullable.isNullable {
-        Js.Dict.set(newDict, key, value)
+        Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Decode.string->Option.getOr("")->safeParse->JSON.Decode.object {
         | Some(_valueObj) => {
             if addIndicatorForObject {
-              Js.Dict.set(newDict, key, JSON.Encode.object(Js.Dict.empty()))
+              Dict.set(newDict, key, JSON.Encode.object(Dict.make()))
             }
 
             let flattenedSubObj = flattenObjectWithStringifiedJson(
@@ -74,15 +74,15 @@ let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepPare
             )
 
             flattenedSubObj
-            ->Js.Dict.entries
+            ->Dict.toArray
             ->Array.forEach(subEntry => {
               let (subKey, subValue) = subEntry
               let keyN = keepParent ? `${key}.${subKey}` : subKey
-              Js.Dict.set(newDict, keyN, subValue)
+              Dict.set(newDict, keyN, subValue)
             })
           }
 
-        | None => Js.Dict.set(newDict, key, value)
+        | None => Dict.set(newDict, key, value)
         }
       }
     })
@@ -91,30 +91,30 @@ let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepPare
   newDict
 }
 let rec flatten = (obj, addIndicatorForObject) => {
-  let newDict = Js.Dict.empty()
+  let newDict = Dict.make()
   switch obj->JSON.Classify.classify {
   | Object(obj) =>
     obj
-    ->Js.Dict.entries
+    ->Dict.toArray
     ->Array.forEach(entry => {
       let (key, value) = entry
 
       if value->toNullable->Js.Nullable.isNullable {
-        Js.Dict.set(newDict, key, value)
+        Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Classify.classify {
         | Object(_valueObjDict) => {
             if addIndicatorForObject {
-              Js.Dict.set(newDict, key, JSON.Encode.object(Js.Dict.empty()))
+              Dict.set(newDict, key, JSON.Encode.object(Dict.make()))
             }
 
             let flattenedSubObj = flatten(value, addIndicatorForObject)
 
             flattenedSubObj
-            ->Js.Dict.entries
+            ->Dict.toArray
             ->Array.forEach(subEntry => {
               let (subKey, subValue) = subEntry
-              Js.Dict.set(newDict, `${key}.${subKey}`, subValue)
+              Dict.set(newDict, `${key}.${subKey}`, subValue)
             })
           }
 
@@ -128,11 +128,11 @@ let rec flatten = (obj, addIndicatorForObject) => {
               | Object(_obj) => {
                   let flattenedSubObj = flatten(item, addIndicatorForObject)
                   flattenedSubObj
-                  ->Js.Dict.entries
+                  ->Dict.toArray
                   ->Array.forEach(
                     subEntry => {
                       let (subKey, subValue) = subEntry
-                      Js.Dict.set(newDict, `${key}[${index->string_of_int}].${subKey}`, subValue)
+                      Dict.set(newDict, `${key}[${index->string_of_int}].${subKey}`, subValue)
                     },
                   )
                 }
@@ -142,14 +142,14 @@ let rec flatten = (obj, addIndicatorForObject) => {
               }
             })
             if stringArray->Array.length > 0 {
-              Js.Dict.set(newDict, key, stringArray->JSON.Encode.array)
+              Dict.set(newDict, key, stringArray->JSON.Encode.array)
             }
             if arrayArray->Array.length > 0 {
-              Js.Dict.set(newDict, key, arrayArray->JSON.Encode.array)
+              Dict.set(newDict, key, arrayArray->JSON.Encode.array)
             }
           }
 
-        | _ => Js.Dict.set(newDict, key, value)
+        | _ => Dict.set(newDict, key, value)
         }
       }
     })
@@ -162,16 +162,16 @@ let rec setNested = (dict, keys, value) => {
   switch keys[0] {
   | Some(firstKey) =>
     if keys->Array.length === 1 {
-      Js.Dict.set(dict, firstKey, value)
+      Dict.set(dict, firstKey, value)
     } else {
-      let subDict = switch Js.Dict.get(dict, firstKey) {
+      let subDict = switch Dict.get(dict, firstKey) {
       | Some(json) =>
         switch json->JSON.Decode.object {
         | Some(obj) => obj
         | None => dict
         }
       | None =>
-        let subDict = Js.Dict.empty()
+        let subDict = Dict.make()
         dict->Dict.set(firstKey, subDict->JSON.Encode.object)
         subDict
       }
@@ -183,12 +183,12 @@ let rec setNested = (dict, keys, value) => {
 }
 
 let unflattenObject = obj => {
-  let newDict = Js.Dict.empty()
+  let newDict = Dict.make()
 
   switch obj->JSON.Decode.object {
   | Some(dict) =>
     dict
-    ->Js.Dict.entries
+    ->Dict.toArray
     ->Array.forEach(entry => {
       let (key, value) = entry
       setNested(newDict, key->Js.String2.split("."), value)
@@ -201,15 +201,15 @@ let unflattenObject = obj => {
 let getEventDataObj = ev => {
   ev
   ->JSON.Decode.object
-  ->Option.flatMap(x => x->Js.Dict.get("data"))
-  ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+  ->Option.flatMap(x => x->Dict.get("data"))
+  ->Option.getOr(Dict.make()->JSON.Encode.object)
 }
 
 let getStrValueFromEventDataObj = (ev, key) => {
   let obj = ev->getEventDataObj
   obj
   ->JSON.Decode.object
-  ->Option.flatMap(x => x->Js.Dict.get(key))
+  ->Option.flatMap(x => x->Dict.get(key))
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr("")
 }
@@ -218,7 +218,7 @@ let getBoolValueFromEventDataObj = (ev, key) => {
   let obj = ev->getEventDataObj
   obj
   ->JSON.Decode.object
-  ->Option.flatMap(x => x->Js.Dict.get(key))
+  ->Option.flatMap(x => x->Dict.get(key))
   ->Option.flatMap(JSON.Decode.bool)
   ->Option.getOr(false)
 }
@@ -264,18 +264,18 @@ let makeIframe = (element, url) => {
     iframe.name = "fullscreen"
     iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
     iframe.onload = () => {
-      resolve(. Js.Dict.empty())
+      resolve(. Dict.make())
     }
     element->appendChild(iframe)
   })
 }
 
 let getOptionalJson = (ev, str) => {
-  ev->getEventDataObj->JSON.Decode.object->Option.getOr(Js.Dict.empty())->Js.Dict.get(str)
+  ev->getEventDataObj->JSON.Decode.object->Option.getOr(Dict.make())->Dict.get(str)
 }
 
 let getOptionalJsonFromJson = (ev, str) => {
-  ev->JSON.Decode.object->Option.getOr(Js.Dict.empty())->Js.Dict.get(str)
+  ev->JSON.Decode.object->Option.getOr(Dict.make())->Dict.get(str)
 }
 
 let getStringfromOptionaljson = (json: option<JSON.t>, default: string) => {
@@ -314,17 +314,17 @@ let getThemePromise = dict => {
 
 let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
   dict1
-  ->Js.Dict.entries
-  ->Array.concat(dict2->Js.Dict.entries)
-  ->Js.Dict.fromArray
+  ->Dict.toArray
+  ->Array.concat(dict2->Dict.toArray)
+  ->Dict.fromArray
   ->JSON.Encode.object
   ->unflattenObject
 }
 
 let getArrayOfTupleFromDict = dict => {
   dict
-  ->Js.Dict.keys
-  ->Belt.Array.map(key => (key, Js.Dict.get(dict, key)->Option.getOr(JSON.Encode.null)))
+  ->Dict.keysToArray
+  ->Belt.Array.map(key => (key, Dict.get(dict, key)->Option.getOr(JSON.Encode.null)))
 }
 
 let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
@@ -337,8 +337,8 @@ let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
         let json = event.data->eventToJson->getStringfromjson("")->safeParse
 
         let dict = json->Utils.getDictFromJson
-        if dict->Js.Dict.get("oneClickDoSubmit")->Option.isSome {
-          resolve(. dict->Js.Dict.get("oneClickDoSubmit")->Option.getOr(true->JSON.Encode.bool))
+        if dict->Dict.get("oneClickDoSubmit")->Option.isSome {
+          resolve(. dict->Dict.get("oneClickDoSubmit")->Option.getOr(true->JSON.Encode.bool))
         }
       }
       addSmartEventListener("message", handleMessage, "onOneClickHandlerPaymentConfirm")

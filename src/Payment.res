@@ -293,16 +293,16 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       let json = try {
         ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->JSON.Encode.object
+      | _ => Dict.make()->JSON.Encode.object
       }
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("doBlur")->Option.isSome {
+      if dict->Dict.get("doBlur")->Option.isSome {
         logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR, ())
         setBlurState(_ => true)
-      } else if dict->Js.Dict.get("doFocus")->Option.isSome {
+      } else if dict->Dict.get("doFocus")->Option.isSome {
         logger.setLogInfo(~value="doFocus Triggered", ~eventName=FOCUS, ())
         cardRef.current->Js.Nullable.toOption->Option.forEach(input => input->focus)->ignore
-      } else if dict->Js.Dict.get("doClearValues")->Option.isSome {
+      } else if dict->Dict.get("doClearValues")->Option.isSome {
         logger.setLogInfo(~value="doClearValues Triggered", ~eventName=CLEAR, ())
         //clear all values
         setCardNumber(_ => "")

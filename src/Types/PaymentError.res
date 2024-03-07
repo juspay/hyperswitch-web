@@ -12,7 +12,7 @@ let defaultError = {
 }
 let getError = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {

@@ -76,7 +76,7 @@ let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchT
   open Promise
   retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
   ->then(json => {
-    let dict = json->JSON.Decode.object->Option.getOr(Js.Dict.empty())
+    let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
     let status = dict->getString("status", "")
 
     if status === "succeeded" || status === "failed" {
@@ -97,7 +97,7 @@ let rec intentCall = (
   ~fetchApi: (
     string,
     ~bodyStr: string=?,
-    ~headers: Js.Dict.t<string>=?,
+    ~headers: Dict.t<string>=?,
     ~method_: Fetch.requestMethod,
     unit,
   ) => OrcaPaymentPage.Promise.t<Fetch.response>,
@@ -258,11 +258,11 @@ let rec intentCall = (
           } else if intent.nextAction.type_ == "display_bank_transfer_information" {
             let metadata = switch intent.nextAction.bank_transfer_steps_and_charges_details {
             | Some(obj) => obj->Utils.getDictFromJson
-            | None => Js.Dict.empty()
+            | None => Dict.make()
             }
             let dict = deepCopyDict(metadata)
-            dict->Js.Dict.set("data", data)
-            dict->Js.Dict.set("url", url.href->JSON.Encode.string)
+            dict->Dict.set("data", data)
+            dict->Dict.set("url", url.href->JSON.Encode.string)
             handleLogging(
               ~optLogger,
               ~value="",
@@ -280,11 +280,11 @@ let rec intentCall = (
           } else if intent.nextAction.type_ === "qr_code_information" {
             let qrData = intent.nextAction.image_data_url->Option.getOr("")
             let expiryTime = intent.nextAction.display_to_timestamp->Option.getOr(0.0)
-            let headerObj = Js.Dict.empty()
+            let headerObj = Dict.make()
             headers->Array.forEach(
               entries => {
                 let (x, val) = entries
-                Js.Dict.set(headerObj, x, val->JSON.Encode.string)
+                Dict.set(headerObj, x, val->JSON.Encode.string)
               },
             )
             let metaData =
@@ -294,7 +294,7 @@ let rec intentCall = (
                 ("headers", headerObj->JSON.Encode.object),
                 ("expiryTime", expiryTime->Belt.Float.toString->JSON.Encode.string),
                 ("url", url.href->JSON.Encode.string),
-              ]->Js.Dict.fromArray
+              ]->Dict.fromArray
             handleLogging(
               ~optLogger,
               ~value="",
@@ -314,11 +314,11 @@ let rec intentCall = (
               download_url: "",
               reference: "",
             })
-            let headerObj = Js.Dict.empty()
+            let headerObj = Dict.make()
             headers->Array.forEach(
               entries => {
                 let (x, val) = entries
-                Js.Dict.set(headerObj, x, val->JSON.Encode.string)
+                Dict.set(headerObj, x, val->JSON.Encode.string)
               },
             )
             let metaData =
@@ -328,7 +328,7 @@ let rec intentCall = (
                 ("returnUrl", url.href->JSON.Encode.string),
                 ("paymentMethod", paymentMethod->JSON.Encode.string),
                 ("payment_intent_data", data),
-              ]->Js.Dict.fromArray
+              ]->Dict.fromArray
             handleLogging(
               ~optLogger,
               ~value="",
@@ -346,7 +346,7 @@ let rec intentCall = (
           } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
             let session_token = switch intent.nextAction.session_token {
             | Some(token) => token->Utils.getDictFromJson
-            | None => Js.Dict.empty()
+            | None => Dict.make()
             }
             let walletName = session_token->Utils.getString("wallet_name", "")
             let message = switch walletName {
@@ -381,7 +381,7 @@ let rec intentCall = (
           if intent.nextAction.type_ == "third_party_sdk_session_token" {
             let session_token = switch intent.nextAction.session_token {
             | Some(token) => token->Utils.getDictFromJson
-            | None => Js.Dict.empty()
+            | None => Dict.make()
             }
             let walletName = session_token->Utils.getString("wallet_name", "")
             let message = switch walletName {
@@ -540,24 +540,24 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
 }
 
 let rec maskPayload = payloadDict => {
-  let keys = payloadDict->Js.Dict.keys
-  let maskedPayload = Js.Dict.empty()
+  let keys = payloadDict->Dict.keysToArray
+  let maskedPayload = Dict.make()
   keys
   ->Array.map(key => {
-    let value = payloadDict->Js.Dict.get(key)->Option.getOr(JSON.Encode.null)
+    let value = payloadDict->Dict.get(key)->Option.getOr(JSON.Encode.null)
     if value->JSON.Decode.array->Option.isSome {
       let arr = value->JSON.Decode.array->Option.getOr([])
       arr->Array.forEachWithIndex((element, index) => {
-        maskedPayload->Js.Dict.set(
+        maskedPayload->Dict.set(
           key ++ "[" ++ index->Belt.Int.toString ++ "]",
           element->Utils.getDictFromJson->maskPayload->JSON.Encode.string,
         )
       })
     } else if value->JSON.Decode.object->Option.isSome {
       let valueDict = value->Utils.getDictFromJson
-      maskedPayload->Js.Dict.set(key, valueDict->maskPayload->JSON.Encode.string)
+      maskedPayload->Dict.set(key, valueDict->maskPayload->JSON.Encode.string)
     } else {
-      maskedPayload->Js.Dict.set(
+      maskedPayload->Dict.set(
         key,
         value
         ->JSON.Decode.string
@@ -624,11 +624,11 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
                 let (key, value) = header
                 (key, value->JSON.Encode.string)
               })
-              ->Js.Dict.fromArray
+              ->Dict.fromArray
               ->JSON.Encode.object,
             ),
           ]
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
           ->JSON.Encode.object
           ->JSON.stringify
         switch paymentType {
@@ -684,7 +684,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
         let bodyStr =
           body
           ->Array.concat(bodyArr->Array.concat(broswerInfo()))
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
           ->JSON.Encode.object
           ->JSON.stringify
         callIntent(bodyStr)
@@ -695,7 +695,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
           ->Array.concat(
             bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
           )
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
           ->JSON.Encode.object
           ->JSON.stringify
         callIntent(bodyStr)
@@ -751,7 +751,7 @@ let useSessions = (
       ("wallets", wallets->JSON.Encode.array),
       ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
     ]
-    ->Js.Dict.fromArray
+    ->Dict.fromArray
     ->JSON.Encode.object
   let uri = `${endpoint}/payments/session_tokens`
   logApi(

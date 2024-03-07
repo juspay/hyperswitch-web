@@ -48,7 +48,7 @@ let defaultAppearance = {
   variables: DefaultTheme.default,
   componentType: "payment",
   labels: Above,
-  rules: Js.Dict.empty()->JSON.Encode.object,
+  rules: Dict.make()->JSON.Encode.object,
 }
 let defaultFonts = {
   cssSrc: "",
@@ -89,7 +89,7 @@ let defaultRecoilConfig: recoilConfig = {
 
 let getVariables = (str, dict, default, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     let validKeys = [
@@ -257,7 +257,7 @@ let getAppearance = (
   logger,
 ) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(["theme", "variables", "rules", "labels"], json, "appearance", ~logger)
@@ -284,7 +284,7 @@ let getAppearance = (
 }
 let getFonts = (str, dict, logger) => {
   dict
-  ->Js.Dict.get(str)
+  ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)

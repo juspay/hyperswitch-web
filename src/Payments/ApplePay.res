@@ -20,7 +20,7 @@ let make = (
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
   let isApplePaySDKFlow = sessionObj->Option.isSome
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let isWallet = walletOptions->Array.includes("apple_pay")
@@ -66,7 +66,7 @@ let make = (
     } else {
       let requiredFieldsBodyArr =
         bodyArr
-        ->Js.Dict.fromArray
+        ->Dict.fromArray
         ->JSON.Encode.object
         ->OrcaUtils.flattenObject(true)
         ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
@@ -247,8 +247,8 @@ let make = (
             sessionObj
             ->Option.getOr(JSON.Encode.null)
             ->JSON.Decode.object
-            ->Option.getOr(Js.Dict.empty())
-            ->Js.Dict.get("delayed_session_token")
+            ->Option.getOr(Dict.make())
+            ->Dict.get("delayed_session_token")
             ->Option.getOr(JSON.Encode.null)
             ->JSON.Decode.bool
             ->Option.getOr(false)
@@ -278,24 +278,22 @@ let make = (
       let json = try {
         ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->JSON.Encode.object
+      | _ => Dict.make()->JSON.Encode.object
       }
 
       try {
         let dict = json->Utils.getDictFromJson
-        if dict->Js.Dict.get("applePayProcessPayment")->Option.isSome {
+        if dict->Dict.get("applePayProcessPayment")->Option.isSome {
           let token =
-            dict
-            ->Js.Dict.get("applePayProcessPayment")
-            ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+            dict->Dict.get("applePayProcessPayment")->Option.getOr(Dict.make()->JSON.Encode.object)
           let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
           processPayment(bodyDict)
-        } else if dict->Js.Dict.get("showApplePayButton")->Option.isSome {
+        } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
           if !isWallet {
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
           }
-        } else if dict->Js.Dict.get("applePaySyncPayment")->Option.isSome {
+        } else if dict->Dict.get("applePaySyncPayment")->Option.isSome {
           syncPayment()
         }
       } catch {

@@ -74,7 +74,7 @@ let toInt = val => val->Belt.Int.fromString->Option.getOr(0)
 let toString = val => val->Belt.Int.toString
 
 let getQueryParamsDictforKey = (searchParams, keyName) => {
-  let dict = Js.Dict.empty()
+  let dict = Dict.make()
 
   searchParams
   ->Js.String2.split("&")
@@ -86,10 +86,10 @@ let getQueryParamsDictforKey = (searchParams, keyName) => {
     } else {
       ""
     }
-    Js.Dict.set(dict, key, value)
+    Dict.set(dict, key, value)
   })
 
-  dict->Js.Dict.get(keyName)->Option.getOr("")
+  dict->Dict.get(keyName)->Option.getOr("")
 }
 let cardType = val => {
   switch val {

@@ -53,7 +53,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
           color_text: None,
           payment_method_category: Some("klarna"),
         },
-        Js.Dict.empty()->JSON.Encode.object,
+        Dict.make()->JSON.Encode.object,
         (res: res) => {
           let (connectors, _) = list->PaymentUtils.getConnectors(PayLater(Klarna(SDK)))
           let body = PaymentBody.klarnaSDKbody(~token=res.authorization_token, ~connectors)

@@ -6,17 +6,17 @@ let make = React.memo((~name: string) => {
       prevDict => {
         let clonedDict =
           prevDict
-          ->Js.Dict.entries
+          ->Dict.toArray
           ->Array.filter(
             entry => {
               let (key, _val) = entry
               key !== name
             },
           )
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
 
         switch elem->Js.Nullable.toOption {
-        | Some(elem) => Js.Dict.set(clonedDict, name, elem)
+        | Some(elem) => Dict.set(clonedDict, name, elem)
         | None => ()
         }
 

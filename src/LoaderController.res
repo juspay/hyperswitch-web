@@ -163,7 +163,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   React.useEffect1(() => {
     CardUtils.genreateFontsLink(config.fonts)
     let dict = config.appearance.rules->getDictFromJson
-    if dict->Js.Dict.entries->Array.length > 0 {
+    if dict->Dict.toArray->Array.length > 0 {
       Utils.generateStyleSheet("", dict, "themestyle")
     }
     switch paymentMode->CardTheme.getPaymentMode {
@@ -178,7 +178,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
       styleClass
       ->Array.map(item => {
         let (class, dict) = item
-        if dict->Js.Dict.entries->Array.length > 0 {
+        if dict->Dict.toArray->Array.length > 0 {
           Utils.generateStyleSheet(class, dict, "widgetstyle")->ignore
         }
       })
@@ -193,22 +193,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
       let json = try {
         ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->JSON.Encode.object
+      | _ => Dict.make()->JSON.Encode.object
       }
       try {
         let dict = json->getDictFromJson
         if dict->getDictIsSome("paymentElementCreate") {
           if (
             dict
-            ->Js.Dict.get("paymentElementCreate")
+            ->Dict.get("paymentElementCreate")
             ->Option.flatMap(JSON.Decode.bool)
             ->Option.getOr(false)
           ) {
             if (
-              dict
-              ->Js.Dict.get("otherElements")
-              ->Option.flatMap(JSON.Decode.bool)
-              ->Option.getOr(false)
+              dict->Dict.get("otherElements")->Option.flatMap(JSON.Decode.bool)->Option.getOr(false)
             ) {
               updateOptions(dict)
             } else {
@@ -303,7 +300,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           updateOptions(dict)
         } else if dict->getDictIsSome("ElementsUpdate") {
           let optionsDict = dict->getDictFromObj("options")
-          let clientSecret = dict->Js.Dict.get("clientSecret")
+          let clientSecret = dict->Dict.get("clientSecret")
           switch clientSecret {
           | Some(val) =>
             setKeys(.prev => {
@@ -345,9 +342,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
           let updatedState: PaymentType.loadType =
-            list == Js.Dict.empty()->JSON.Encode.object
+            list == Dict.make()->JSON.Encode.object
               ? LoadError(list)
-              : switch list->Utils.getDictFromJson->Js.Dict.get("error") {
+              : switch list->Utils.getDictFromJson->Dict.get("error") {
                 | Some(_) => LoadError(list)
                 | None =>
                   let isNonEmptyPaymentMethodList =
@@ -373,10 +370,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
             customerPaymentMethods,
           })
         }
-        if dict->Js.Dict.get("applePayCanMakePayments")->Option.isSome {
+        if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
           setIsApplePayReady(._ => true)
         }
-        if dict->Js.Dict.get("applePaySessionObjNotPresent")->Option.isSome {
+        if dict->Dict.get("applePaySessionObjNotPresent")->Option.isSome {
           setIsApplePayReady(.prev => prev && false)
         }
       } catch {

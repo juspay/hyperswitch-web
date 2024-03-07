@@ -76,7 +76,7 @@ let make = (
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
 
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
@@ -194,7 +194,7 @@ let make = (
         intent(
           ~bodyArr={
             (isBancontact ? banContactBody : cardBody)
-            ->Js.Dict.fromArray
+            ->Dict.fromArray
             ->JSON.Encode.object
             ->OrcaUtils.flattenObject(true)
             ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
@@ -207,7 +207,7 @@ let make = (
       } else if areRequiredFieldsValid && complete && !empty {
         intent(
           ~bodyArr=savedCardBody
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
           ->JSON.Encode.object
           ->OrcaUtils.flattenObject(true)
           ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)

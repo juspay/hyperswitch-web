@@ -30,15 +30,15 @@ let make = (
   try {
     let iframeRef = []
     let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
-    let savedPaymentElement = Js.Dict.empty()
-    let localOptions = options->JSON.Decode.object->Option.getOr(Js.Dict.empty())
+    let savedPaymentElement = Dict.make()
+    let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
     let appearance =
-      localOptions->Js.Dict.get("appearance")->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+      localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
 
     let fonts =
       localOptions
-      ->Js.Dict.get("fonts")
+      ->Dict.get("fonts")
       ->Option.flatMap(JSON.Decode.array)
       ->Option.getOr([])
       ->JSON.Encode.array
@@ -47,14 +47,14 @@ let make = (
       GlobalVars.isInteg &&
       options
       ->JSON.Decode.object
-      ->Option.flatMap(x => x->Js.Dict.get("blockConfirm"))
+      ->Option.flatMap(x => x->Dict.get("blockConfirm"))
       ->Option.flatMap(JSON.Decode.bool)
       ->Option.getOr(false)
     let switchToCustomPod =
       GlobalVars.isInteg &&
       options
       ->JSON.Decode.object
-      ->Option.flatMap(x => x->Js.Dict.get("switchToCustomPod"))
+      ->Option.flatMap(x => x->Dict.get("switchToCustomPod"))
       ->Option.flatMap(JSON.Decode.bool)
       ->Option.getOr(false)
 
@@ -117,7 +117,7 @@ let make = (
         }
 
         // setTimeout(() => {
-        let msg = [("paymentMethodList", json)]->Js.Dict.fromArray
+        let msg = [("paymentMethodList", json)]->Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
         let maskedPayload = json->getDictFromJson->PaymentHelpers.maskPayload
         logger.setLogInfo(~value=maskedPayload, ~eventName=PAYMENT_METHODS_RESPONSE, ())
@@ -138,17 +138,15 @@ let make = (
       customerDetailsPromise
       ->then(json => {
         // setTimeout(() => {
-        let msg = [("customerPaymentMethods", json)]->Js.Dict.fromArray
+        let msg = [("customerPaymentMethods", json)]->Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
         // }, 5000)->ignore
         json->resolve
       })
       ->catch(_err => {
         let dict =
-          [("customer_payment_methods", []->JSON.Encode.array)]
-          ->Js.Dict.fromArray
-          ->JSON.Encode.object
-        let msg = [("customerPaymentMethods", dict)]->Js.Dict.fromArray
+          [("customer_payment_methods", []->JSON.Encode.array)]->Dict.fromArray->JSON.Encode.object
+        let msg = [("customerPaymentMethods", dict)]->Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
         resolve(msg->JSON.Encode.object)
       })
@@ -169,20 +167,20 @@ let make = (
       setIframeRef(ref)
     }
     let getElement = componentName => {
-      savedPaymentElement->Js.Dict.get(componentName)
+      savedPaymentElement->Dict.get(componentName)
     }
     let update = newOptions => {
       let newOptionsDict = newOptions->getDictFromJson
-      switch newOptionsDict->Js.Dict.get("locale") {
-      | Some(val) => localOptions->Js.Dict.set("locale", val)
+      switch newOptionsDict->Dict.get("locale") {
+      | Some(val) => localOptions->Dict.set("locale", val)
       | None => ()
       }
-      switch newOptionsDict->Js.Dict.get("appearance") {
-      | Some(val) => localOptions->Js.Dict.set("appearance", val)
+      switch newOptionsDict->Dict.get("appearance") {
+      | Some(val) => localOptions->Dict.set("appearance", val)
       | None => ()
       }
-      switch newOptionsDict->Js.Dict.get("clientSecret") {
-      | Some(val) => localOptions->Js.Dict.set("clientSecret", val)
+      switch newOptionsDict->Dict.get("clientSecret") {
+      | Some(val) => localOptions->Dict.set("clientSecret", val)
       | None => ()
       }
 
@@ -191,13 +189,13 @@ let make = (
           [
             ("ElementsUpdate", true->JSON.Encode.bool),
             ("options", newOptionsDict->JSON.Encode.object),
-          ]->Js.Dict.fromArray
+          ]->Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
     }
     let fetchUpdates = () => {
       Js.Promise.make((~resolve, ~reject as _) => {
-        setTimeout(() => resolve(. Js.Dict.empty()->JSON.Encode.object), 1000)->ignore
+        setTimeout(() => resolve(. Dict.make()->JSON.Encode.object), 1000)->ignore
       })
     }
 
@@ -232,7 +230,7 @@ let make = (
             ("loader", loader),
             ("fonts", fonts),
           ]
-          ->Js.Dict.fromArray
+          ->Dict.fromArray
           ->JSON.Encode.object
         let message =
           [
@@ -252,17 +250,17 @@ let make = (
             ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
-          ]->Js.Dict.fromArray
+          ]->Dict.fromArray
 
         let handleApplePayMounted = (event: Types.event) => {
           let json = event.data->eventToJson
           let dict = json->getDictFromJson
 
-          if dict->Js.Dict.get("applePayMounted")->Option.isSome {
+          if dict->Dict.get("applePayMounted")->Option.isSome {
             switch sessionForApplePay->Js.Nullable.toOption {
             | Some(session) =>
               if session.canMakePayments(.) {
-                let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Js.Dict.fromArray
+                let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
                 mountedIframeRef->Window.iframePostMessage(msg)
               } else {
                 logger.setLogInfo(
@@ -283,7 +281,7 @@ let make = (
           let json = event.data->eventToJson
           let dict = json->getDictFromJson
 
-          switch dict->Js.Dict.get("googlePayThirdPartyFlow") {
+          switch dict->Dict.get("googlePayThirdPartyFlow") {
           | Some(googlePayThirdPartyOptSession) => {
               let googlePayThirdPartySession = googlePayThirdPartyOptSession->Utils.getDictFromJson
 
@@ -296,7 +294,7 @@ let make = (
               }
 
               let paymentDataRequest = GooglePayType.assign2(
-                Js.Dict.empty()->JSON.Encode.object,
+                Dict.make()->JSON.Encode.object,
                 baseDetails->objToJson,
               )
 
@@ -320,7 +318,7 @@ let make = (
                     ~paymentMethod="GOOGLE_PAY",
                     (),
                   )
-                  let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Js.Dict.fromArray
+                  let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                   mountedIframeRef->Window.iframePostMessage(msg)
                   resolve()
                 })
@@ -334,7 +332,7 @@ let make = (
                     ~logCategory=USER_ERROR,
                     (),
                   )
-                  let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Js.Dict.fromArray
+                  let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                   mountedIframeRef->Window.iframePostMessage(msg)
                   resolve()
                 })
@@ -350,7 +348,7 @@ let make = (
                     ~logCategory=USER_ERROR,
                     (),
                   )
-                  let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Js.Dict.fromArray
+                  let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                   mountedIframeRef->Window.iframePostMessage(msg)
                 }
               }
@@ -367,7 +365,7 @@ let make = (
           let sessionsArr =
             json
             ->JSON.Decode.object
-            ->Option.getOr(Js.Dict.empty())
+            ->Option.getOr(Dict.make())
             ->SessionsType.getSessionsTokenJson("session_token")
 
           let applePayPresent = sessionsArr->Array.find(item => {
@@ -376,7 +374,7 @@ let make = (
               ->JSON.Decode.object
               ->Option.flatMap(
                 x => {
-                  x->Js.Dict.get("wallet_name")
+                  x->Dict.get("wallet_name")
                 },
               )
               ->Option.flatMap(JSON.Decode.string)
@@ -384,7 +382,7 @@ let make = (
             x === "apple_pay" || x === "applepay"
           })
           if !(applePayPresent->Option.isSome) {
-            let msg = [("applePaySessionObjNotPresent", true->JSON.Encode.bool)]->Js.Dict.fromArray
+            let msg = [("applePaySessionObjNotPresent", true->JSON.Encode.bool)]->Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
           }
           let googlePayPresent = sessionsArr->Array.find(item => {
@@ -393,7 +391,7 @@ let make = (
               ->JSON.Decode.object
               ->Option.flatMap(
                 x => {
-                  x->Js.Dict.get("wallet_name")
+                  x->Dict.get("wallet_name")
                 },
               )
               ->Option.flatMap(JSON.Decode.string)
@@ -409,7 +407,7 @@ let make = (
             //do operations here
             let processPayment = (token: JSON.t) => {
               //let body = PaymentBody.applePayBody(~token)
-              let msg = [("applePayProcessPayment", token)]->Js.Dict.fromArray
+              let msg = [("applePayProcessPayment", token)]->Dict.fromArray
               mountedIframeRef->Window.iframePostMessage(msg)
             }
 
@@ -418,14 +416,14 @@ let make = (
                 (event: Types.event) => {
                   let json = event.data->eventToJson
                   let dict = json->getDictFromJson
-                  switch dict->Js.Dict.get("applePayButtonClicked") {
+                  switch dict->Dict.get("applePayButtonClicked") {
                   | Some(val) =>
                     if val->JSON.Decode.bool->Option.getOr(false) {
                       let isDelayedSessionToken =
                         applePayPresent
                         ->Option.flatMap(JSON.Decode.object)
-                        ->Option.getOr(Js.Dict.empty())
-                        ->Js.Dict.get("delayed_session_token")
+                        ->Option.getOr(Dict.make())
+                        ->Dict.get("delayed_session_token")
                         ->Option.getOr(JSON.Encode.null)
                         ->JSON.Decode.bool
                         ->Option.getOr(false)
@@ -440,13 +438,13 @@ let make = (
 
                         let applePayPresent =
                           dict
-                          ->Js.Dict.get("applePayPresent")
+                          ->Dict.get("applePayPresent")
                           ->Option.flatMap(JSON.Decode.object)
-                          ->Option.getOr(Js.Dict.empty())
+                          ->Option.getOr(Dict.make())
 
                         let connector =
                           applePayPresent
-                          ->Js.Dict.get("connector")
+                          ->Dict.get("connector")
                           ->Option.getOr(JSON.Encode.null)
                           ->JSON.Decode.string
                           ->Option.getOr("")
@@ -461,25 +459,25 @@ let make = (
                           )
                           let secrets =
                             applePayPresent
-                            ->Js.Dict.get("session_token_data")
+                            ->Dict.get("session_token_data")
                             ->Option.getOr(JSON.Encode.null)
                             ->JSON.Decode.object
-                            ->Option.getOr(Js.Dict.empty())
-                            ->Js.Dict.get("secrets")
+                            ->Option.getOr(Dict.make())
+                            ->Dict.get("secrets")
                             ->Option.getOr(JSON.Encode.null)
 
                           let paymentRequest =
                             applePayPresent
-                            ->Js.Dict.get("payment_request_data")
+                            ->Dict.get("payment_request_data")
                             ->Option.flatMap(JSON.Decode.object)
-                            ->Option.getOr(Js.Dict.empty())
+                            ->Option.getOr(Dict.make())
                             ->ApplePayTypes.jsonToPaymentRequestDataType
 
                           let payment =
                             secrets
                             ->JSON.Decode.object
-                            ->Option.getOr(Js.Dict.empty())
-                            ->Js.Dict.get("payment")
+                            ->Option.getOr(Dict.make())
+                            ->Dict.get("payment")
                             ->Option.getOr(JSON.Encode.null)
                             ->JSON.Decode.string
                             ->Option.getOr("")
@@ -496,7 +494,7 @@ let make = (
                                 (),
                               )
                               let msg =
-                                [("applePaySyncPayment", true->JSON.Encode.bool)]->Js.Dict.fromArray
+                                [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                               mountedIframeRef->Window.iframePostMessage(msg)
                               logger.setLogInfo(
                                 ~value="",
@@ -515,7 +513,7 @@ let make = (
                                 (),
                               )
                               let msg =
-                                [("applePaySyncPayment", true->JSON.Encode.bool)]->Js.Dict.fromArray
+                                [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                               mountedIframeRef->Window.iframePostMessage(msg)
                               resolve()
                             })
@@ -529,7 +527,7 @@ let make = (
                                 (),
                               )
                               let msg =
-                                [("applePaySyncPayment", true->JSON.Encode.bool)]->Js.Dict.fromArray
+                                [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                               mountedIframeRef->Window.iframePostMessage(msg)
                             }
                           }
@@ -539,9 +537,9 @@ let make = (
                         let paymentRequest =
                           applePayPresent
                           ->Option.flatMap(JSON.Decode.object)
-                          ->Option.getOr(Js.Dict.empty())
-                          ->Js.Dict.get("payment_request_data")
-                          ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+                          ->Option.getOr(Dict.make())
+                          ->Dict.get("payment_request_data")
+                          ->Option.getOr(Dict.make()->JSON.Encode.object)
                           ->Utils.transformKeys(Utils.CamelCase)
 
                         let ssn = applePaySession(3, paymentRequest)
@@ -562,9 +560,9 @@ let make = (
                           let merchantSession =
                             applePayPresent
                             ->Option.flatMap(JSON.Decode.object)
-                            ->Option.getOr(Js.Dict.empty())
-                            ->Js.Dict.get("session_token_data")
-                            ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+                            ->Option.getOr(Dict.make())
+                            ->Dict.get("session_token_data")
+                            ->Option.getOr(Dict.make()->JSON.Encode.object)
                             ->Utils.transformKeys(Utils.CamelCase)
                           ssn.completeMerchantValidation(. merchantSession)
                         }
@@ -575,8 +573,7 @@ let make = (
                           processPayment(event.payment.token)
                         }
                         ssn.oncancel = _ev => {
-                          let msg =
-                            [("showApplePayButton", true->JSON.Encode.bool)]->Js.Dict.fromArray
+                          let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
                           mountedIframeRef->Window.iframePostMessage(msg)
                           applePaySessionRef := Js.Nullable.null
                           Utils.logInfo(Js.log("Apple Pay payment cancelled"))
@@ -612,12 +609,12 @@ let make = (
               "apiVersionMinor": 0,
             }
             let paymentDataRequest = GooglePayType.assign2(
-              Js.Dict.empty()->JSON.Encode.object,
+              Dict.make()->JSON.Encode.object,
               baseRequest->toJson,
             )
 
             let payRequest = GooglePayType.assign(
-              Js.Dict.empty()->JSON.Encode.object,
+              Dict.make()->JSON.Encode.object,
               baseRequest->toJson,
               {
                 "allowedPaymentMethods": gpayobj.allowed_payment_methods->arrayJsonToCamelCase,
@@ -640,7 +637,7 @@ let make = (
               ->then(res => {
                 let dict = res->getDictFromJson
                 let isReadyToPay = getBool(dict, "result", false)
-                let msg = [("isReadyToPay", isReadyToPay->JSON.Encode.bool)]->Js.Dict.fromArray
+                let msg = [("isReadyToPay", isReadyToPay->JSON.Encode.bool)]->Dict.fromArray
                 mountedIframeRef->Window.iframePostMessage(msg)
                 resolve()
               })
@@ -675,7 +672,7 @@ let make = (
                           ~logType=DEBUG,
                           (),
                         )
-                        let msg = [("gpayResponse", json->toJson)]->Js.Dict.fromArray
+                        let msg = [("gpayResponse", json->toJson)]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg)
                         resolve()
                       },
@@ -690,7 +687,7 @@ let make = (
                           (),
                         )
 
-                        let msg = [("gpayError", err->toJson)]->Js.Dict.fromArray
+                        let msg = [("gpayError", err->toJson)]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg)
                         resolve()
                       },
@@ -708,7 +705,7 @@ let make = (
           json->resolve
         })
         ->then(json => {
-          let msg = [("sessions", json)]->Js.Dict.fromArray
+          let msg = [("sessions", json)]->Dict.fromArray
           mountedIframeRef->Window.iframePostMessage(msg)
           json->resolve
         })
@@ -725,7 +722,7 @@ let make = (
         iframeRef,
         mountPostMessage,
       )
-      savedPaymentElement->Js.Dict.set(componentType, paymentElement)
+      savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
     }
     {
