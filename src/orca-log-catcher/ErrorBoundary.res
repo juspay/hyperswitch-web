@@ -97,9 +97,8 @@ module ErrorCard = {
   @react.component
   let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level) => {
     let beaconApiCall = data => {
-      if data->Js.Array2.length > 0 {
-        let logData =
-          data->Js.Array2.map(OrcaLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
+      if data->Array.length > 0 {
+        let logData = data->Array.map(OrcaLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
         Window.sendBeacon(GlobalVars.logEndpoint, logData)
       }
     }
@@ -107,7 +106,7 @@ module ErrorCard = {
     React.useEffect0(() => {
       let loggingLevel = GlobalVars.loggingLevelStr
       let enableLogging = GlobalVars.enableLogging
-      if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Js.Array2.includes(loggingLevel) {
+      if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Array.includes(loggingLevel) {
         let errorLog: OrcaLogger.logFile = {
           logType: ERROR,
           timestamp: Js.Date.now()->Belt.Float.toString,
@@ -143,7 +142,7 @@ module ErrorCard = {
 
     let observer = ResizeObserver.newResizerObserver(entries => {
       entries
-      ->Js.Array2.map(item => {
+      ->Array.map(item => {
         setDivH(_ => item.contentRect.height)
       })
       ->ignore

@@ -42,8 +42,8 @@ let make = (~transferType) => {
   let handleClick = keys => {
     let text =
       keys
-      ->Js.Array2.map(item => `${item->snakeToTitleCase} : ${getKeyValue(json, item)}`)
-      ->Js.Array2.joinWith(`\n`)
+      ->Array.map(item => `${item->snakeToTitleCase} : ${getKeyValue(json, item)}`)
+      ->Array.joinWith(`\n`)
     handlePostMessage([("copy", true->JSON.Encode.bool), ("copyDetails", text->JSON.Encode.string)])
     setIsCopied(_ => true)
   }
@@ -103,7 +103,7 @@ let make = (~transferType) => {
           </div>
           <div className="Details pt-5">
             {keys
-            ->Js.Array2.map(item =>
+            ->Array.map(item =>
               <div className="flex px-5 pb-5 justify-between text-sm">
                 <div>
                   <span className="text-[#151A1F] font-medium opacity-60">

@@ -28,7 +28,7 @@ let addCustomPodHeader = (arr: array<(string, string)>, ~switchToCustomPod=?, ()
   | None => false
   }
   if customPod {
-    arr->Js.Array2.concat([("x-feature", "router-custom-dbd")])->Js.Dict.fromArray
+    arr->Array.concat([("x-feature", "router-custom-dbd")])->Js.Dict.fromArray
   } else {
     arr->Js.Dict.fromArray
   }

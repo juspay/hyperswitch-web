@@ -535,12 +535,12 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
       let options = dict->Utils.getArrayValFromJsonDict("user_address_country", "options")
       switch options->Belt.Array.get(0)->Option.getOr("") {
       | "" => None
-      | "ALL" => AddressCountry(Country.country->Js.Array2.map(item => item.countryName))
+      | "ALL" => AddressCountry(Country.country->Array.map(item => item.countryName))
       | _ =>
         AddressCountry(
           Country.country
-          ->Js.Array2.filter(item => options->Js.Array2.includes(item.isoAlpha2))
-          ->Js.Array2.map(item => item.countryName),
+          ->Array.filter(item => options->Array.includes(item.isoAlpha2))
+          ->Array.map(item => item.countryName),
         )
       }
     }
@@ -593,13 +593,13 @@ let getIsBillingField = requiredFieldType => {
 }
 
 let getIsAnyBillingDetailEmpty = (requiredFields: array<required_fields>) => {
-  requiredFields->Js.Array2.reduce((acc, requiredField) => {
+  requiredFields->Array.reduce(false, (acc, requiredField) => {
     if getIsBillingField(requiredField.field_type) {
       requiredField.value === "" || acc
     } else {
       acc
     }
-  }, false)
+  })
 }
 
 let getPaymentMethodFields = (
@@ -610,7 +610,7 @@ let getPaymentMethodFields = (
   (),
 ) => {
   let isAnyBillingDetailEmpty = requiredFields->getIsAnyBillingDetailEmpty
-  let requiredFieldsArr = requiredFields->Js.Array2.map(requiredField => {
+  let requiredFieldsArr = requiredFields->Array.map(requiredField => {
     let isShowBillingField = getIsBillingField(requiredField.field_type) && isAnyBillingDetailEmpty
     if requiredField.value === "" || isShowBillingField {
       if (
@@ -626,10 +626,10 @@ let getPaymentMethodFields = (
       None
     }
   })
-  requiredFieldsArr->Js.Array2.concat(
+  requiredFieldsArr->Array.concat(
     (
       paymentMethodsFields
-      ->Js.Array2.find(x => x.paymentMethodName === paymentMethod)
+      ->Array.find(x => x.paymentMethodName === paymentMethod)
       ->Option.getOr({
         paymentMethodName: "",
         fields: [],
@@ -644,10 +644,10 @@ let getPaymentMethodFields = (
 let getPaymentDetails = (arr: array<string>) => {
   let finalArr = []
   arr
-  ->Js.Array2.map(item => {
-    let optionalVal = paymentMethodsFields->Js.Array2.find(i => i.paymentMethodName == item)
+  ->Array.map(item => {
+    let optionalVal = paymentMethodsFields->Array.find(i => i.paymentMethodName == item)
     switch optionalVal {
-    | Some(val) => finalArr->Js.Array2.push(val)->ignore
+    | Some(val) => finalArr->Array.push(val)->ignore
     | None => ()
     }
   })
@@ -775,7 +775,7 @@ let getPaymentExperience = (dict, str) => {
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Js.Array2.map(json => {
+  ->Array.map(json => {
     {
       payment_experience_type: getString(
         json,
@@ -815,7 +815,7 @@ let getCardNetworks = (dict, str) => {
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Js.Array2.map(json => {
+  ->Array.map(json => {
     {
       card_network: getString(json, "card_network", "")->CardUtils.cardType,
       eligible_connectors: getStrArray(json, "eligible_connectors"),
@@ -830,13 +830,13 @@ let getBankNames = (dict, str) => {
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Js.Array2.map(json => {
+  ->Array.map(json => {
     getStrArray(json, "bank_name")
   })
-  ->Js.Array2.reduce((acc, item) => {
-    item->Js.Array2.forEach(obj => acc->Js.Array2.push(obj)->ignore)
+  ->Array.reduce([], (acc, item) => {
+    item->Array.forEach(obj => acc->Array.push(obj)->ignore)
     acc
-  }, [])
+  })
 }
 
 let getAchConnectors = (dict, str) => {
@@ -853,7 +853,7 @@ let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
     ->Utils.getDictFromJson
     ->Js.Dict.values
 
-  requiredFields->Js.Array2.map(requiredField => {
+  requiredFields->Array.map(requiredField => {
     let requiredFieldsDict = requiredField->Utils.getDictFromJson
     {
       required_field: requiredFieldsDict->Utils.getString("required_field", ""),
@@ -870,7 +870,7 @@ let getPaymentMethodTypes = (dict, str) => {
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Js.Array2.map(jsonDict => {
+  ->Array.map(jsonDict => {
     let paymentMethodType = getString(jsonDict, "payment_method_type", "")
     {
       payment_method_type: paymentMethodType,
@@ -893,7 +893,7 @@ let getMethodsArr = (dict, str) => {
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Js.Array2.map(json => {
+  ->Array.map(json => {
     {
       payment_method: getString(json, "payment_method", ""),
       payment_method_types: getPaymentMethodTypes(json, "payment_method_types"),
@@ -937,59 +937,57 @@ let itemToObjMapper = dict => {
 
 let buildFromPaymentList = (plist: list) => {
   let paymentMethodArr = plist.payment_methods
-  let x =
-    paymentMethodArr
-    ->Js.Array2.map(paymentMethodObject => {
-      let methodType = paymentMethodObject.payment_method
-      let handleUserError = methodType === "wallet"
-      paymentMethodObject.payment_method_types->Js.Array2.map(individualPaymentMethod => {
-        let paymentMethodName = individualPaymentMethod.payment_method_type
-        let bankNames = individualPaymentMethod.bank_names
-        let paymentExperience = individualPaymentMethod.payment_experience->Js.Array2.map(
-          experience => {
-            (experience.payment_experience_type, experience.eligible_connectors)
-          },
-        )
-        {
-          paymentMethodName,
-          fields: getPaymentMethodFields(
-            paymentMethodName,
-            individualPaymentMethod.required_fields,
-            (),
-          ),
-          paymentFlow: paymentExperience,
-          handleUserError,
-          methodType,
-          bankNames,
-        }
-      })
-    })
-    ->Js.Array2.reduce((acc, item) => {
-      item->Js.Array2.forEach(obj => acc->Js.Array2.push(obj)->ignore)
-      acc
-    }, [])
 
-  x
+  paymentMethodArr
+  ->Array.map(paymentMethodObject => {
+    let methodType = paymentMethodObject.payment_method
+    let handleUserError = methodType === "wallet"
+    paymentMethodObject.payment_method_types->Array.map(individualPaymentMethod => {
+      let paymentMethodName = individualPaymentMethod.payment_method_type
+      let bankNames = individualPaymentMethod.bank_names
+      let paymentExperience = individualPaymentMethod.payment_experience->Array.map(
+        experience => {
+          (experience.payment_experience_type, experience.eligible_connectors)
+        },
+      )
+      {
+        paymentMethodName,
+        fields: getPaymentMethodFields(
+          paymentMethodName,
+          individualPaymentMethod.required_fields,
+          (),
+        ),
+        paymentFlow: paymentExperience,
+        handleUserError,
+        methodType,
+        bankNames,
+      }
+    })
+  })
+  ->Array.reduce([], (acc, item) => {
+    item->Array.forEach(obj => acc->Array.push(obj)->ignore)
+    acc
+  })
 }
 
 let getPaymentMethodTypeFromList = (~list: list, ~paymentMethod, ~paymentMethodType) => {
   (
     list.payment_methods
-    ->Js.Array2.find(item => {
+    ->Array.find(item => {
       item.payment_method == paymentMethod
     })
     ->Option.getOr({
       payment_method: "card",
       payment_method_types: [],
     })
-  ).payment_method_types->Js.Array2.find(item => {
+  ).payment_method_types->Array.find(item => {
     item.payment_method_type == paymentMethodType
   })
 }
 
 let getCardNetwork = (~paymentMethodType, ~cardBrand) => {
   paymentMethodType.card_networks
-  ->Js.Array2.filter(cardNetwork => cardNetwork.card_network === cardBrand)
+  ->Array.filter(cardNetwork => cardNetwork.card_network === cardBrand)
   ->Belt.Array.get(0)
   ->Option.getOr(defaultCardNetworks)
 }

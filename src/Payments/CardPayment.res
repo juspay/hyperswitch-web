@@ -84,16 +84,16 @@ let make = (
     switch customerPaymentMethods {
     | LoadingSavedCards => ()
     | LoadedSavedCards(arr, isGuestCustomer) => {
-        let savedCards = arr->Js.Array2.filter((item: PaymentType.customerMethods) => {
+        let savedCards = arr->Array.filter((item: PaymentType.customerMethods) => {
           item.paymentMethod == "card"
         })
         setSavedMethods(_ => savedCards)
         setLoadSavedCards(_ =>
-          savedCards->Js.Array2.length == 0
+          savedCards->Array.length == 0
             ? NoResult(isGuestCustomer)
             : LoadedSavedCards(savedCards, isGuestCustomer)
         )
-        setShowFields(.prev => savedCards->Js.Array2.length == 0 || prev)
+        setShowFields(.prev => savedCards->Array.length == 0 || prev)
       }
     | NoResult(isGuestCustomer) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
@@ -114,7 +114,7 @@ let make = (
 
   React.useEffect1(() => {
     let tokenobj =
-      savedMethods->Js.Array2.length > 0
+      savedMethods->Array.length > 0
         ? Some(savedMethods->Belt.Array.get(0)->Option.getOr(defaultCustomerMethods))
         : None
 
@@ -182,7 +182,7 @@ let make = (
     )
     let banContactBody = PaymentBody.bancontactBody()
     let cardBody = isSaveCardsChecked
-      ? deafultCardBody->Js.Array2.concat(onSessionBody)
+      ? deafultCardBody->Array.concat(onSessionBody)
       : deafultCardBody
     if confirm.doSubmit {
       let validFormat =
@@ -341,7 +341,7 @@ let make = (
               <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
             </div>
           </RenderIf>
-          <RenderIf condition={savedMethods->Js.Array2.length > 0 && !isBancontact}>
+          <RenderIf condition={savedMethods->Array.length > 0 && !isBancontact}>
             <div
               className="Label flex flex-row gap-3 items-end cursor-pointer"
               style={ReactDOMStyle.make(

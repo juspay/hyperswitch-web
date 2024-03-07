@@ -32,7 +32,7 @@ let make = (
     if (
       value.value === "" ||
       value.value === initialValue ||
-      options->Js.Array2.includes(value.value)->not
+      options->Array.includes(value.value)->not
     ) {
       setValue(.prev => {
         ...prev,
@@ -74,7 +74,7 @@ let make = (
     themeObj.colorBackground
   }, [themeObj])
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
-  <RenderIf condition={options->Js.Array2.length > 0}>
+  <RenderIf condition={options->Array.length > 0}>
     <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
       <RenderIf condition={fieldName->Js.String2.length > 0 && config.appearance.labels == Above}>
         <div
@@ -106,7 +106,7 @@ let make = (
           onChange=handleChange
           className={`Input ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
-          ->Js.Array2.mapi((item: string, i) => {
+          ->Array.mapWithIndex((item: string, i) => {
             <option key={string_of_int(i)} value=item> {React.string(item)} </option>
           })
           ->React.array}

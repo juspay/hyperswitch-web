@@ -76,7 +76,7 @@ let getLocaleObject = string => {
     string
   }
   LocaleString.localeStrings
-  ->Js.Array2.filter(item => item.locale == val)
+  ->Array.filter(item => item.locale == val)
   ->Belt.Array.get(0)
   ->Option.getOr(LocaleString.defaultLocale)
 }
@@ -288,7 +288,7 @@ let getFonts = (str, dict, logger) => {
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Js.Array2.map(json => {
+  ->Array.map(json => {
     unknownKeysWarning(["cssSrc", "family", "src", "weight"], json, "fonts", ~logger)
     {
       cssSrc: getWarningString(json, "cssSrc", "", ~logger),

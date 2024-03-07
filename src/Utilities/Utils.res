@@ -169,7 +169,7 @@ let getStrArray = (dict, key) => {
 let getOptionalStrArray: (Js.Dict.t<JSON.t>, string) => option<array<string>> = (dict, key) => {
   switch dict->getOptionalArrayFromDict(key) {
   | Some(val) =>
-    val->Js.Array2.length === 0
+    val->Array.length === 0
       ? None
       : Some(val->Belt.Array.map(json => json->JSON.Decode.string->Option.getOr("")))
   | None => None
@@ -181,14 +181,14 @@ let getBoolValue = val => val->Option.getOr(false)
 let toKebabCase = str => {
   str
   ->Js.String2.split("")
-  ->Js.Array2.mapi((item, i) => {
+  ->Array.mapWithIndex((item, i) => {
     if item->Js.String2.toUpperCase === item {
       `${i != 0 ? "-" : ""}${item->Js.String2.toLowerCase}`
     } else {
       item
     }
   })
-  ->Js.Array2.joinWith("")
+  ->Array.joinWith("")
 }
 
 let handleMessage = (fun, _errorMessage) => {
@@ -225,7 +225,7 @@ let mergeJsons = (json1, json2) => {
     if obj1 != obj2 {
       obj2
       ->Js.Dict.keys
-      ->Js.Array2.map(key => {
+      ->Array.map(key => {
         let overrideProp = obj2->getJsonObjectFromDict(key)
         let defaultProp = obj1->getJsonObjectFromDict(key)
         if defaultProp->getDictFromJson->Js.Dict.keys->Js.Array.length == 0 {
@@ -295,14 +295,14 @@ let rec transformKeys = (json: JSON.t, to: case) => {
   let dict = json->getDictFromJson
   dict
   ->Js.Dict.entries
-  ->Js.Array2.map(((key, value)) => {
+  ->Array.map(((key, value)) => {
     let x = switch JSON.Classify.classify(value) {
     | Object(obj) => (key->toCase, obj->JSON.Encode.object->transformKeys(to))
     | Array(arr) => (
         key->toCase,
         {
           arr
-          ->Js.Array2.map(item =>
+          ->Array.map(item =>
             if item->JSON.Decode.object->Option.isSome {
               item->transformKeys(to)
             } else {
@@ -333,13 +333,13 @@ let rec transformKeys = (json: JSON.t, to: case) => {
 
 let getClientCountry = clientTimeZone => {
   Country.country
-  ->Js.Array2.find(item => item.timeZones->Js.Array2.find(i => i == clientTimeZone)->Option.isSome)
+  ->Array.find(item => item.timeZones->Array.find(i => i == clientTimeZone)->Option.isSome)
   ->Option.getOr(Country.defaultTimeZone)
 }
 
 let removeDuplicate = arr => {
-  arr->Js.Array2.filteri((item, i) => {
-    arr->Js.Array2.indexOf(item) === i
+  arr->Array.filterWithIndex((item, i) => {
+    arr->Array.indexOf(item) === i
   })
 }
 
@@ -390,7 +390,7 @@ let validatePhoneNumber = (countryCode, number) => {
     ->Option.getOr([])
     ->Belt.Array.keepMap(JSON.Decode.object)
 
-  let filteredArr = countriesArr->Js.Array2.filter(countryObj => {
+  let filteredArr = countriesArr->Array.filter(countryObj => {
     countryObj
     ->Js.Dict.get("phone_number_code")
     ->Option.flatMap(JSON.Decode.string)
@@ -406,13 +406,13 @@ let validatePhoneNumber = (countryCode, number) => {
 }
 
 let sortBasedOnPriority = (sortArr: array<string>, priorityArr: array<string>) => {
-  let finalPriorityArr = priorityArr->Js.Array2.filter(val => sortArr->Js.Array2.includes(val))
+  let finalPriorityArr = priorityArr->Array.filter(val => sortArr->Array.includes(val))
   sortArr
-  ->Js.Array2.map(item => {
-    if finalPriorityArr->Js.Array2.includes(item) {
+  ->Array.map(item => {
+    if finalPriorityArr->Array.includes(item) {
       ()
     } else {
-      finalPriorityArr->Js.Array2.push(item)->ignore
+      finalPriorityArr->Array.push(item)->ignore
     }
   })
   ->ignore
@@ -433,28 +433,28 @@ let isAllValid = (
 
 let getCountryPostal = (countryCode, postalCodes: array<PostalCodeType.postalCodes>) => {
   postalCodes
-  ->Js.Array2.find(item => item.iso == countryCode)
+  ->Array.find(item => item.iso == countryCode)
   ->Option.getOr(PostalCodeType.defaultPostalCode)
 }
 
 let getCountryNames = (list: array<Country.timezoneType>) => {
-  list->Js.Array2.reduce((arr, item) => {
-    arr->Js.Array2.push(item.countryName)->ignore
+  list->Array.reduce([], (arr, item) => {
+    arr->Array.push(item.countryName)->ignore
     arr
-  }, [])
+  })
 }
 
 let getBankNames = (list: Bank.bankList, allBanks: array<string>) => {
-  list->Js.Array2.reduce((arr, item) => {
-    if allBanks->Js.Array2.includes(item.hyperSwitch) {
-      arr->Js.Array2.push(item.displayName)->ignore
+  list->Array.reduce([], (arr, item) => {
+    if allBanks->Array.includes(item.hyperSwitch) {
+      arr->Array.push(item.displayName)->ignore
     }
     arr
-  }, [])
+  })
 }
 
 let getBankKeys = (str, banks: Bank.bankList, default) => {
-  let bank = banks->Js.Array2.find(item => item.displayName == str)->Option.getOr(default)
+  let bank = banks->Array.find(item => item.displayName == str)->Option.getOr(default)
   bank.hyperSwitch
 }
 
@@ -464,7 +464,7 @@ let constructClass = (~classname, ~dict) => {
 
   dict
   ->Js.Dict.entries
-  ->Js.Array2.map(entry => {
+  ->Array.map(entry => {
     let (key, value) = entry
 
     let class = if !(key->Js.String2.startsWith(":")) && !(key->Js.String2.startsWith(".")) {
@@ -478,14 +478,14 @@ let constructClass = (~classname, ~dict) => {
         let style =
           obj
           ->Js.Dict.entries
-          ->Js.Array2.map(entry => {
+          ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
             | Some(str) => `${key->toKebabCase}:${str}`
             | None => ""
             }
           })
-        `.${classname}${key} {${style->Js.Array2.joinWith(";")}}`
+        `.${classname}${key} {${style->Array.joinWith(";")}}`
 
       | None => ""
       }
@@ -495,14 +495,14 @@ let constructClass = (~classname, ~dict) => {
         let style =
           obj
           ->Js.Dict.entries
-          ->Js.Array2.map(entry => {
+          ->Array.map(entry => {
             let (key, value) = entry
             switch value->JSON.Decode.string {
             | Some(str) => `${key->toKebabCase}:${str}`
             | None => ""
             }
           })
-        `${key} {${style->Js.Array2.joinWith(";")}} `
+        `${key} {${style->Array.joinWith(";")}} `
 
       | None => ""
       }
@@ -511,17 +511,17 @@ let constructClass = (~classname, ~dict) => {
     }
 
     if !(key->Js.String2.startsWith(":")) && !(key->Js.String2.startsWith(".")) {
-      modifiedArr->Js.Array2.push(class)->ignore
+      modifiedArr->Array.push(class)->ignore
     } else if key->Js.String2.startsWith(":") || key->Js.String2.startsWith(".") {
-      puseduoArr->Js.Array2.push(class)->ignore
+      puseduoArr->Array.push(class)->ignore
     }
   })
   ->ignore
 
   if classname->Js.String2.length == 0 {
-    `${modifiedArr->Js.Array2.joinWith(";")} ${puseduoArr->Js.Array2.joinWith(" ")}`
+    `${modifiedArr->Array.joinWith(";")} ${puseduoArr->Array.joinWith(" ")}`
   } else {
-    `.${classname} {${modifiedArr->Js.Array2.joinWith(";")}} ${puseduoArr->Js.Array2.joinWith(" ")}`
+    `.${classname} {${modifiedArr->Array.joinWith(";")}} ${puseduoArr->Array.joinWith(" ")}`
   }
 }
 
@@ -546,16 +546,16 @@ let openUrl = url => {
 }
 
 let getArrofJsonString = (arr: array<string>) => {
-  arr->Js.Array2.map(item => item->JSON.Encode.string)
+  arr->Array.map(item => item->JSON.Encode.string)
 }
 
 let getPaymentDetails = (arr: array<string>) => {
   let finalArr = []
   arr
-  ->Js.Array2.map(item => {
-    let optionalVal = PaymentDetails.details->Js.Array2.find(i => i.type_ == item)
+  ->Array.map(item => {
+    let optionalVal = PaymentDetails.details->Array.find(i => i.type_ == item)
     switch optionalVal {
-    | Some(val) => finalArr->Js.Array2.push(val)->ignore
+    | Some(val) => finalArr->Array.push(val)->ignore
     | None => ()
     }
   })
@@ -587,8 +587,8 @@ let addSize = (str: string, value: float, unit: sizeunit) => {
     let arr = str->Js.String2.split("")
     let val =
       arr
-      ->Js.Array2.slice(~start=0, ~end_={arr->Js.Array2.length - unitInString->Js.String2.length})
-      ->Js.Array2.joinWith("")
+      ->Js.Array2.slice(~start=0, ~end_={arr->Array.length - unitInString->Js.String2.length})
+      ->Array.joinWith("")
       ->Belt.Float.fromString
       ->Option.getOr(0.0)
     (val +. value)->Belt.Float.toString ++ unitInString
@@ -607,10 +607,10 @@ let validateRountingNumber = str => {
     let sum =
       str
       ->Js.String2.split("")
-      ->Js.Array2.mapi((item, i) => item->toInt * weights[i]->Option.getOr(firstWeight))
-      ->Js.Array2.reduce((acc, val) => {
+      ->Array.mapWithIndex((item, i) => item->toInt * weights[i]->Option.getOr(firstWeight))
+      ->Array.reduce(0, (acc, val) => {
         acc + val
-      }, 0)
+      })
     mod(sum, 10) == 0
   }
 }
@@ -641,7 +641,7 @@ let onlyDigits = str => str->Js.String2.replaceByRe(%re(`/\D/g`), "")
 
 let getCountryCode = country => {
   Country.country
-  ->Js.Array2.find(item => item.countryName == country)
+  ->Array.find(item => item.countryName == country)
   ->Option.getOr(Country.defaultTimeZone)
 }
 
@@ -652,9 +652,9 @@ let getStateNames = (list: JSON.t, country: RecoilAtomTypes.field) => {
     ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
     ->Option.getOr([])
 
-  options->Js.Array2.reduce((arr, item) => {
+  options->Array.reduce([], (arr, item) => {
     arr
-    ->Js.Array2.push(
+    ->Array.push(
       item
       ->getDictFromJson
       ->Js.Dict.get("name")
@@ -663,7 +663,7 @@ let getStateNames = (list: JSON.t, country: RecoilAtomTypes.field) => {
     )
     ->ignore
     arr
-  }, [])
+  })
 }
 
 let isAddressComplete = (
@@ -683,7 +683,7 @@ let deepCopyDict = dict => {
   let emptyDict = Js.Dict.empty()
   dict
   ->Js.Dict.entries
-  ->Js.Array2.map(item => {
+  ->Array.map(item => {
     let (key, value) = item
     emptyDict->Js.Dict.set(key, value)
   })
@@ -694,10 +694,10 @@ let deepCopyDict = dict => {
 let snakeToTitleCase = str => {
   let words = str->Js.String2.split("_")
   words
-  ->Js.Array2.map(item => {
+  ->Array.map(item => {
     item->Js.String2.charAt(0)->Js.String2.toUpperCase ++ item->Js.String2.sliceToEnd(~from=1)
   })
-  ->Js.Array2.joinWith(" ")
+  ->Array.joinWith(" ")
 }
 
 let logInfo = log => {
@@ -743,7 +743,7 @@ let rgbaTorgb = bgColor => {
 
     let colorArr =
       cleanBgColor->Js.String2.substring(~from=start + 1, ~to_=end)->Js.String2.split(",")
-    if colorArr->Js.Array2.length === 3 {
+    if colorArr->Array.length === 3 {
       cleanBgColor
     } else {
       let red = colorArr->Belt.Array.get(0)->Option.getOr("0")
@@ -772,7 +772,7 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Js.Dict.empty(), ()) => {
   | _ => ()
   }
 
-  Js.Dict.entries(headers)->Js.Array2.forEach(entries => {
+  Js.Dict.entries(headers)->Array.forEach(entries => {
     let (x, val) = entries
     Js.Dict.set(headerObj, x, val)
   })
@@ -806,7 +806,7 @@ let fetchApi = (
 }
 
 let arrayJsonToCamelCase = arr => {
-  arr->Js.Array2.map(item => {
+  arr->Array.map(item => {
     item->transformKeys(CamelCase)
   })
 }

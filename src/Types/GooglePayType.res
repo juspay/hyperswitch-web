@@ -118,7 +118,7 @@ let jsonToPaymentRequestDataType: (paymentDataRequest, Js.Dict.t<JSON.t>) => pay
   paymentRequest.allowedPaymentMethods =
     jsonDict
     ->Utils.getArray("allowed_payment_methods")
-    ->Js.Array2.map(json => Utils.transformKeys(json, Utils.CamelCase))
+    ->Array.map(json => Utils.transformKeys(json, Utils.CamelCase))
   paymentRequest.transactionInfo =
     jsonDict
     ->Utils.getJsonFromDict("transaction_info", JSON.Encode.null)

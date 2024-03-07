@@ -18,7 +18,7 @@ let getSurchargeDetailsForOneClickWallets = (~list) => {
     RecoilAtoms.areOneClickWalletsRendered,
   )
 
-  oneClickWallets->Js.Array2.reduce((acc, wallet) => {
+  oneClickWallets->Array.reduce([], (acc, wallet) => {
     let isWalletBtnRendered = switch wallet.paymentMethodType {
     | "apple_pay" => areOneClickWalletsRendered.isApplePay
     | "paypal" => areOneClickWalletsRendered.isPaypal
@@ -34,7 +34,7 @@ let getSurchargeDetailsForOneClickWallets = (~list) => {
         )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
       switch paymentMethodType.surcharge_details {
       | Some(surchargDetails) =>
-        acc->Js.Array2.concat([
+        acc->Array.concat([
           {
             name: wallet.displayName,
             surchargeDetails: surchargDetails,
@@ -45,7 +45,7 @@ let getSurchargeDetailsForOneClickWallets = (~list) => {
     } else {
       acc
     }
-  }, [])
+  })
 }
 
 let getMessage = (
@@ -75,8 +75,8 @@ let getOneClickWalletsMessage = (~list) => {
 
   let oneClickWalletsArr = getSurchargeDetailsForOneClickWallets(~list)
 
-  if oneClickWalletsArr->Js.Array2.length !== 0 {
-    let msg = oneClickWalletsArr->Js.Array2.reducei((acc, wallet, index) => {
+  if oneClickWalletsArr->Array.length !== 0 {
+    let msg = oneClickWalletsArr->Array.reduceWithIndex(React.null, (acc, wallet, index) => {
       let amount = wallet.surchargeDetails.displayTotalSurchargeAmount->Js.Float.toString
       let myMsg =
         <>
@@ -100,7 +100,7 @@ let getOneClickWalletsMessage = (~list) => {
         {acc}
         {msgToConcat}
       </>
-    }, React.null)
+    })
     let finalElement =
       <>
         {React.string(`${localeString.surchargeMsgAmountForOneClickWallets}:${Utils.nbsp}`)}

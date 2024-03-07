@@ -39,7 +39,7 @@ let make = () => {
         setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))
         headersDict
         ->Js.Dict.entries
-        ->Js.Array2.forEach(entries => {
+        ->Array.forEach(entries => {
           let (x, val) = entries
           Js.Dict.set(headers, x, val->JSON.Decode.string->Option.getOr(""))
         })

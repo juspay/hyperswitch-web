@@ -448,25 +448,22 @@ let make = (
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
       switch loggingLevel {
-      | DEBUG => log->Js.Array2.push(mainLogFile, _)->ignore
+      | DEBUG => log->Array.push(mainLogFile, _)->ignore
       | INFO =>
-        [INFO, WARNING, ERROR]->Js.Array2.includes(log.logType)
-          ? log->Js.Array2.push(mainLogFile, _)->ignore
+        [INFO, WARNING, ERROR]->Array.includes(log.logType)
+          ? log->Array.push(mainLogFile, _)->ignore
           : ()
       | WARNING =>
-        [WARNING, ERROR]->Js.Array2.includes(log.logType)
-          ? log->Js.Array2.push(mainLogFile, _)->ignore
-          : ()
-      | ERROR =>
-        [ERROR]->Js.Array2.includes(log.logType) ? log->Js.Array2.push(mainLogFile, _)->ignore : ()
+        [WARNING, ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
+      | ERROR => [ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
       | SILENT => ()
       }
     }
   }
 
   let beaconApiCall = data => {
-    if data->Js.Array2.length > 0 {
-      let logData = data->Js.Array2.map(logFileToObj)->JSON.Encode.array->JSON.stringify
+    if data->Array.length > 0 {
+      let logData = data->Array.map(logFileToObj)->JSON.Encode.array->JSON.stringify
       Window.sendBeacon(GlobalVars.logEndpoint, logData)
     }
   }
@@ -485,9 +482,9 @@ let make = (
     | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
     }
     beaconApiCall(mainLogFile)
-    let len = mainLogFile->Js.Array2.length
+    let len = mainLogFile->Array.length
     for _ in 0 to len - 1 {
-      mainLogFile->Js.Array2.pop->ignore
+      mainLogFile->Array.pop->ignore
     }
   }
 
@@ -505,11 +502,11 @@ let make = (
       SESSIONS_CALL,
     ]
     arrayOfLogs
-    ->Js.Array2.find(log => {
-      [ERROR, DEBUG]->Js.Array2.includes(log.logType) ||
-        (priorityEventNames->Js.Array2.includes(log.eventName) && log.firstEvent)
+    ->Array.find(log => {
+      [ERROR, DEBUG]->Array.includes(log.logType) ||
+        (priorityEventNames->Array.includes(log.eventName) && log.firstEvent)
     })
-    ->Option.isSome || arrayOfLogs->Js.Array2.length > 8
+    ->Option.isSome || arrayOfLogs->Array.length > 8
   }
 
   let checkLogSizeAndSendData = () => {

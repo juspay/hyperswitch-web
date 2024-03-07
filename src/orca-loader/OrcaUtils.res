@@ -18,7 +18,7 @@ let rec flattenObject = (obj, addIndicatorForObject) => {
   | Some(obj) =>
     obj
     ->Js.Dict.entries
-    ->Js.Array2.forEach(entry => {
+    ->Array.forEach(entry => {
       let (key, value) = entry
 
       if value->toNullable->Js.Nullable.isNullable {
@@ -34,7 +34,7 @@ let rec flattenObject = (obj, addIndicatorForObject) => {
 
             flattenedSubObj
             ->Js.Dict.entries
-            ->Js.Array2.forEach(subEntry => {
+            ->Array.forEach(subEntry => {
               let (subKey, subValue) = subEntry
               Js.Dict.set(newDict, `${key}.${subKey}`, subValue)
             })
@@ -55,7 +55,7 @@ let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepPare
   | Some(obj) =>
     obj
     ->Js.Dict.entries
-    ->Js.Array2.forEach(entry => {
+    ->Array.forEach(entry => {
       let (key, value) = entry
 
       if value->toNullable->Js.Nullable.isNullable {
@@ -75,7 +75,7 @@ let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepPare
 
             flattenedSubObj
             ->Js.Dict.entries
-            ->Js.Array2.forEach(subEntry => {
+            ->Array.forEach(subEntry => {
               let (subKey, subValue) = subEntry
               let keyN = keepParent ? `${key}.${subKey}` : subKey
               Js.Dict.set(newDict, keyN, subValue)
@@ -96,7 +96,7 @@ let rec flatten = (obj, addIndicatorForObject) => {
   | Object(obj) =>
     obj
     ->Js.Dict.entries
-    ->Js.Array2.forEach(entry => {
+    ->Array.forEach(entry => {
       let (key, value) = entry
 
       if value->toNullable->Js.Nullable.isNullable {
@@ -112,7 +112,7 @@ let rec flatten = (obj, addIndicatorForObject) => {
 
             flattenedSubObj
             ->Js.Dict.entries
-            ->Js.Array2.forEach(subEntry => {
+            ->Array.forEach(subEntry => {
               let (subKey, subValue) = subEntry
               Js.Dict.set(newDict, `${key}.${subKey}`, subValue)
             })
@@ -121,15 +121,15 @@ let rec flatten = (obj, addIndicatorForObject) => {
         | Array(dictArray) => {
             let stringArray = []
             let arrayArray = []
-            dictArray->Js.Array2.forEachi((item, index) => {
+            dictArray->Array.forEachWithIndex((item, index) => {
               switch item->JSON.Classify.classify {
               | String(_str) =>
-                let _ = stringArray->Js.Array2.push(item)
+                let _ = stringArray->Array.push(item)
               | Object(_obj) => {
                   let flattenedSubObj = flatten(item, addIndicatorForObject)
                   flattenedSubObj
                   ->Js.Dict.entries
-                  ->Js.Array2.forEach(
+                  ->Array.forEach(
                     subEntry => {
                       let (subKey, subValue) = subEntry
                       Js.Dict.set(newDict, `${key}[${index->string_of_int}].${subKey}`, subValue)
@@ -138,13 +138,13 @@ let rec flatten = (obj, addIndicatorForObject) => {
                 }
 
               | _ =>
-                let _ = arrayArray->Js.Array2.push(item)
+                let _ = arrayArray->Array.push(item)
               }
             })
-            if stringArray->Js.Array2.length > 0 {
+            if stringArray->Array.length > 0 {
               Js.Dict.set(newDict, key, stringArray->JSON.Encode.array)
             }
-            if arrayArray->Js.Array2.length > 0 {
+            if arrayArray->Array.length > 0 {
               Js.Dict.set(newDict, key, arrayArray->JSON.Encode.array)
             }
           }
@@ -189,7 +189,7 @@ let unflattenObject = obj => {
   | Some(dict) =>
     dict
     ->Js.Dict.entries
-    ->Js.Array2.forEach(entry => {
+    ->Array.forEach(entry => {
       let (key, value) = entry
       setNested(newDict, key->Js.String2.split("."), value)
     })
@@ -315,7 +315,7 @@ let getThemePromise = dict => {
 let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
   dict1
   ->Js.Dict.entries
-  ->Js.Array2.concat(dict2->Js.Dict.entries)
+  ->Array.concat(dict2->Js.Dict.entries)
   ->Js.Dict.fromArray
   ->JSON.Encode.object
   ->unflattenObject

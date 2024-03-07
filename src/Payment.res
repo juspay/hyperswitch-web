@@ -66,7 +66,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let obj = getobjFromCardPattern(cardBrand)
     let cvcLength = obj.maxCVCLenth
     if (
-      cvcNumberInRange(cvcNumber, cardBrand)->Js.Array2.includes(true) &&
+      cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true) &&
         cvcNumber->Js.String2.length == cvcLength
     ) {
       blurRef(cvcRef)
@@ -124,7 +124,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     logInputChangeInfo("cardCVC", logger)
     let cvc = val->formatCVCNumber(cardBrand)
     setCvcNumber(_ => cvc)
-    if cvc->Js.String2.length > 0 && cvcNumberInRange(cvc, cardBrand)->Js.Array2.includes(true) {
+    if cvc->Js.String2.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
       zipRef.current->Js.Nullable.toOption->Option.forEach(input => input->focus)->ignore
     }
   }
@@ -151,7 +151,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
-    if cardNumberInRange(cardNumber)->Js.Array2.includes(true) && calculateLuhn(cardNumber) {
+    if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
       setIsCardValid(_ => Some(true))
     } else if cardNumber->Js.String2.length == 0 {
       setIsCardValid(_ => None)
@@ -181,7 +181,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let cvcNumber = ReactEvent.Focus.target(ev)["value"]
     if (
       cvcNumber->Js.String2.length > 0 &&
-        cvcNumberInRange(cvcNumber, cardBrand)->Js.Array2.includes(true)
+        cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
     ) {
       setIsCVCValid(_ => Some(true))
     } else if cvcNumber->Js.String2.length == 0 {

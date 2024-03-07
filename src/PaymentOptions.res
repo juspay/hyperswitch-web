@@ -9,7 +9,7 @@ module TabLoader = {
     switch list {
     | SemiLoaded =>
       Belt.Array.make(cardShimmerCount - 1, "")
-      ->Js.Array2.mapi((_, i) => {
+      ->Array.mapWithIndex((_, i) => {
         <div
           className={`Tab flex flex-col gap-3 animate-pulse cursor-default`}
           key={i->Belt.Int.toString}
@@ -78,7 +78,7 @@ let make = (
   let dropDownOptionsDetails = dropDownOptions->PaymentMethodsRecord.getPaymentDetails
   let selectedPaymentOption =
     PaymentMethodsRecord.paymentMethodsFields
-    ->Js.Array2.find(item => item.paymentMethodName == selectedOption)
+    ->Array.find(item => item.paymentMethodName == selectedOption)
     ->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodFields)
 
   React.useEffect1(() => {
@@ -119,13 +119,13 @@ let make = (
         (),
       )}>
       {cardOptionDetails
-      ->Js.Array2.mapi((payOption, i) => {
+      ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
         <TabCard key={i->Belt.Int.toString} paymentOption=payOption isActive />
       })
       ->React.array}
       <TabLoader cardShimmerCount />
-      <RenderIf condition={dropDownOptionsDetails->Js.Array2.length > 0}>
+      <RenderIf condition={dropDownOptionsDetails->Array.length > 0}>
         <div className="flex relative h-auto justify-center">
           <div className="flex flex-col items-center absolute mt-3 pointer-events-none gap-y-1.5">
             {switch dropDownOptionsDetails->Belt.Array.get(moreIconIndex) {
@@ -175,7 +175,7 @@ let make = (
               )}
             </option>
             {dropDownOptionsDetails
-            ->Js.Array2.mapi((item, i) => {
+            ->Array.mapWithIndex((item, i) => {
               <option
                 key={string_of_int(i)}
                 value=item.paymentMethodName

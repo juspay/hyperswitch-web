@@ -15,7 +15,7 @@ let cardPaymentBody = (~cardNumber, ~month, ~year, ~cardHolderName, ~cvcNumber, 
           ("card_cvc", cvcNumber->JSON.Encode.string),
           ("card_issuer", ""->JSON.Encode.string),
         ]
-        ->Js.Array2.concat(cardBrand)
+        ->Array.concat(cardBrand)
         ->Js.Dict.fromArray
         ->JSON.Encode.object,
       ),
@@ -157,7 +157,7 @@ let achBankDebitBody = (
       ->Js.Dict.fromArray
       ->JSON.Encode.object,
     ),
-  ]->Js.Array2.concat(mandateBody(paymentType))
+  ]->Array.concat(mandateBody(paymentType))
 
 let sepaBankDebitBody = (
   ~fullName,

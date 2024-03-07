@@ -17,7 +17,7 @@ let make = (
   let optionPaymentMethodDetails =
     list
     ->PaymentMethodsRecord.buildFromPaymentList
-    ->Js.Array2.find(x =>
+    ->Array.find(x =>
       x.paymentMethodName ===
         PaymentUtils.getPaymentMethodName(~paymentMethodType=x.methodType, ~paymentMethodName)
     )
@@ -69,13 +69,13 @@ let make = (
       if complete {
         let countryCode =
           Country.getCountry(paymentMethodName)
-          ->Js.Array2.filter(item => item.countryName == country)
+          ->Array.filter(item => item.countryName == country)
           ->Belt.Array.get(0)
           ->Option.getOr(Country.defaultTimeZone)
 
         let bank =
           Bank.getBanks(paymentMethodName)
-          ->Js.Array2.filter(item => item.displayName == selectedBank)
+          ->Array.filter(item => item.displayName == selectedBank)
           ->Belt.Array.get(0)
           ->Option.getOr(Bank.defaultBank)
         intent(

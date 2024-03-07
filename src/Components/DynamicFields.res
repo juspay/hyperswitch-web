@@ -36,7 +36,7 @@ let make = (
     if paymentMethod === "card" {
       paymentMethodTypes.required_fields
     } else if (
-      PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethodType)
+      PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType)
     ) {
       paymentMethodTypes.required_fields
     } else {
@@ -250,7 +250,7 @@ let make = (
   let getCustomFieldName = (item: PaymentMethodsRecord.paymentMethodsFields) => {
     if (
       requiredFields
-      ->Js.Array2.filter(requiredFieldType =>
+      ->Array.filter(requiredFieldType =>
         requiredFieldType.field_type === item &&
           requiredFieldType.display_name === "card_holder_name"
       )
@@ -263,29 +263,27 @@ let make = (
   }
 
   let dynamicFieldsToRenderOutsideBilling = React.useMemo1(() => {
-    fieldsArr->Js.Array2.filter(DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
+    fieldsArr->Array.filter(DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
   }, [fieldsArr])
 
   let dynamicFieldsToRenderInsideBilling = React.useMemo1(() => {
-    fieldsArr->Js.Array2.filter(field =>
-      !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
-    )
+    fieldsArr->Array.filter(field => !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling))
   }, [fieldsArr])
 
-  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Js.Array2.includes(InfoElement)
+  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Array.includes(InfoElement)
 
   let isOnlyInfoElementPresent =
-    dynamicFieldsToRenderInsideBilling->Js.Array2.length === 1 && isInfoElementPresent
+    dynamicFieldsToRenderInsideBilling->Array.length === 1 && isInfoElementPresent
 
   let isRenderDynamicFieldsInsideBilling =
-    dynamicFieldsToRenderInsideBilling->Js.Array2.length > 0 &&
-      (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
+    dynamicFieldsToRenderInsideBilling->Array.length > 0 &&
+      (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
 
   {
-    fieldsArr->Js.Array2.length > 0
+    fieldsArr->Array.length > 0
       ? <>
           {dynamicFieldsToRenderOutsideBilling
-          ->Js.Array2.mapi((item, index) => {
+          ->Array.mapWithIndex((item, index) => {
             <div
               key={`outside-billing-${index->Js.Int.toString}`}
               className="flex flex-col w-full place-content-between"
@@ -443,7 +441,7 @@ let make = (
               {React.string(localeString.billingDetailsText)}
               <div className="p-2 flex flex-col gap-2">
                 {dynamicFieldsToRenderInsideBilling
-                ->Js.Array2.mapi((item, index) => {
+                ->Array.mapWithIndex((item, index) => {
                   <div
                     key={`inside-billing-${index->Js.Int.toString}`}
                     className="flex flex-col w-full place-content-between">
@@ -666,7 +664,7 @@ let make = (
                     | InfoElement =>
                       <>
                         <Surcharge list paymentMethod paymentMethodType />
-                        {if fieldsArr->Js.Array2.length > 1 {
+                        {if fieldsArr->Array.length > 1 {
                           bottomElement
                         } else {
                           <Block bottomElement />
@@ -691,7 +689,7 @@ let make = (
           <RenderIf condition={isOnlyInfoElementPresent}>
             {<>
               <Surcharge list paymentMethod paymentMethodType />
-              {if fieldsArr->Js.Array2.length > 1 {
+              {if fieldsArr->Array.length > 1 {
                 bottomElement
               } else {
                 <Block bottomElement />

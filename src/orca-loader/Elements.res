@@ -99,8 +99,8 @@ let make = (
 
         if isApplePayPresent || isGooglePayPresent {
           if (
-            Window.querySelectorAll(`script[src="https://tpgw.trustpay.eu/js/v1.js"]`)->Js.Array2.length === 0 &&
-              Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Js.Array2.length === 0
+            Window.querySelectorAll(`script[src="https://tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0 &&
+              Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0
           ) {
             let trustPayScriptURL =
               publishableKey->Js.String2.startsWith("pk_prd_")
@@ -165,7 +165,7 @@ let make = (
       : ()
 
     let setElementIframeRef = ref => {
-      iframeRef->Js.Array2.push(ref)->ignore
+      iframeRef->Array.push(ref)->ignore
       setIframeRef(ref)
     }
     let getElement = componentName => {
@@ -186,7 +186,7 @@ let make = (
       | None => ()
       }
 
-      iframeRef->Js.Array2.forEach(iframe => {
+      iframeRef->Array.forEach(iframe => {
         let message =
           [
             ("ElementsUpdate", true->JSON.Encode.bool),
@@ -370,7 +370,7 @@ let make = (
             ->Option.getOr(Js.Dict.empty())
             ->SessionsType.getSessionsTokenJson("session_token")
 
-          let applePayPresent = sessionsArr->Js.Array2.find(item => {
+          let applePayPresent = sessionsArr->Array.find(item => {
             let x =
               item
               ->JSON.Decode.object
@@ -387,7 +387,7 @@ let make = (
             let msg = [("applePaySessionObjNotPresent", true->JSON.Encode.bool)]->Js.Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
           }
-          let googlePayPresent = sessionsArr->Js.Array2.find(item => {
+          let googlePayPresent = sessionsArr->Array.find(item => {
             let x =
               item
               ->JSON.Decode.object

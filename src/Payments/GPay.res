@@ -42,7 +42,7 @@ let make = (
   | None => PaymentMethodsRecord.defaultPaymentMethodType
   }
 
-  let isWallet = walletOptions->Js.Array2.includes("google_pay")
+  let isWallet = walletOptions->Array.includes("google_pay")
   let paymentExperience = switch googlePayPaymentMethodType.payment_experience[0] {
   | Some(paymentExperience) => paymentExperience.payment_experience_type
   | None => PaymentMethodsRecord.RedirectToURL

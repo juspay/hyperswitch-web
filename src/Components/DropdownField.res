@@ -44,7 +44,7 @@ let make = (
   let floatinglabelClass = inputFocused ? "Label--floating" : "Label--resting"
 
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
-  <RenderIf condition={options->Js.Array2.length > 0}>
+  <RenderIf condition={options->Array.length > 0}>
     <div className="flex flex-col w-full">
       <RenderIf condition={fieldName->Js.String2.length > 0 && appearance.labels == Above}>
         <div
@@ -76,7 +76,7 @@ let make = (
           onFocus=handleFocus
           className={`Input ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
-          ->Js.Array2.mapi((item: string, i) => {
+          ->Array.mapWithIndex((item: string, i) => {
             <option key={string_of_int(i)} value=item> {React.string(item)} </option>
           })
           ->React.array}

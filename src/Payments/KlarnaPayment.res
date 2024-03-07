@@ -25,7 +25,7 @@ let make = (~paymentType, ~countryProps, ~list: PaymentMethodsRecord.list) => {
   open Utils
   let clientCountryCode =
     Country.country
-    ->Js.Array2.find(item => item.countryName == country)
+    ->Array.find(item => item.countryName == country)
     ->Option.getOr(Country.defaultTimeZone)
 
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)

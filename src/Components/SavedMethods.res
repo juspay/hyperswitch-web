@@ -13,10 +13,10 @@ let make = (
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let (token, _) = paymentToken
-  let savedCardlength = savedMethods->Js.Array2.length
+  let savedCardlength = savedMethods->Array.length
   let bottomElement = {
     savedMethods
-    ->Js.Array2.mapi((obj, i) => {
+    ->Array.mapWithIndex((obj, i) => {
       let brandIcon = getCardBrandIcon(
         switch obj.card.scheme {
         | Some(ele) => ele

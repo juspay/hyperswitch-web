@@ -13,7 +13,7 @@ let checkAndAppend = (selector, child) => {
 }
 
 if (
-  Window.querySelectorAll(`script[src="${GlobalVars.sentryScriptUrl}"]`)->Js.Array2.length === 0 &&
+  Window.querySelectorAll(`script[src="${GlobalVars.sentryScriptUrl}"]`)->Array.length === 0 &&
     Js.typeof(GlobalVars.sentryScriptUrl) !== "undefined"
 ) {
   try {
@@ -146,7 +146,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           }
 
           if (
-            Window.querySelectorAll(`script[src="https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"]`)->Js.Array2.length === 0
+            Window.querySelectorAll(`script[src="https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"]`)->Array.length === 0
           ) {
             let scriptURL = "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"
             let script = Window.createElement("script")
@@ -160,7 +160,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       }->Sentry.sentryLogger
 
       if (
-        Window.querySelectorAll(`script[src="https://pay.google.com/gp/p/js/pay.js"]`)->Js.Array2.length === 0
+        Window.querySelectorAll(`script[src="https://pay.google.com/gp/p/js/pay.js"]`)->Array.length === 0
       ) {
         let googlePayScriptURL = "https://pay.google.com/gp/p/js/pay.js"
         let googlePayScript = Window.createElement("script")
@@ -175,7 +175,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       let iframeRef = ref([])
       let clientSecret = ref("")
       let setIframeRef = ref => {
-        iframeRef.contents->Js.Array2.push(ref)->ignore
+        iframeRef.contents->Array.push(ref)->ignore
       }
 
       let retrievePaymentIntentFn = clientSecret => {
@@ -281,7 +281,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 dict->Js.Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
 
               if isOneClick {
-                iframeRef.contents->Js.Array2.forEach(ifR => {
+                iframeRef.contents->Array.forEach(ifR => {
                   // to unset one click button loader
                   ifR->Window.iframePostMessage(
                     [("oneClickDoSubmit", false->JSON.Encode.bool)]->Js.Dict.fromArray,
@@ -315,7 +315,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 ),
               ]->Js.Dict.fromArray
           addSmartEventListener("message", handleMessage, "onSubmit")
-          iframeRef.contents->Js.Array2.forEach(ifR => {
+          iframeRef.contents->Array.forEach(ifR => {
             ifR->Window.iframePostMessage(message)
           })
         })
@@ -364,7 +364,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Js.Dict.empty())
           Js.Promise.make((~resolve, ~reject as _) => {
             iframeRef.contents
-            ->Js.Array2.map(iframe => {
+            ->Array.map(iframe => {
               iframe->Window.iframePostMessage(
                 [
                   ("doSubmit", true->JSON.Encode.bool),

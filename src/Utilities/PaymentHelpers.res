@@ -281,7 +281,7 @@ let rec intentCall = (
             let qrData = intent.nextAction.image_data_url->Option.getOr("")
             let expiryTime = intent.nextAction.display_to_timestamp->Option.getOr(0.0)
             let headerObj = Js.Dict.empty()
-            headers->Js.Array2.forEach(
+            headers->Array.forEach(
               entries => {
                 let (x, val) = entries
                 Js.Dict.set(headerObj, x, val->JSON.Encode.string)
@@ -315,7 +315,7 @@ let rec intentCall = (
               reference: "",
             })
             let headerObj = Js.Dict.empty()
-            headers->Js.Array2.forEach(
+            headers->Array.forEach(
               entries => {
                 let (x, val) = entries
                 Js.Dict.set(headerObj, x, val->JSON.Encode.string)
@@ -543,11 +543,11 @@ let rec maskPayload = payloadDict => {
   let keys = payloadDict->Js.Dict.keys
   let maskedPayload = Js.Dict.empty()
   keys
-  ->Js.Array2.map(key => {
+  ->Array.map(key => {
     let value = payloadDict->Js.Dict.get(key)->Option.getOr(JSON.Encode.null)
     if value->JSON.Decode.array->Option.isSome {
       let arr = value->JSON.Decode.array->Option.getOr([])
-      arr->Js.Array2.forEachi((element, index) => {
+      arr->Array.forEachWithIndex((element, index) => {
         maskedPayload->Js.Dict.set(
           key ++ "[" ++ index->Belt.Int.toString ++ "]",
           element->Utils.getDictFromJson->maskPayload->JSON.Encode.string,
@@ -595,7 +595,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
         ? [("retry_action", "manual_retry"->JSON.Encode.string)]
         : []
       let body =
-        [("client_secret", clientSecret->JSON.Encode.string)]->Js.Array2.concatMany([
+        [("client_secret", clientSecret->JSON.Encode.string)]->Array.concatMany([
           returnUrlArr,
           manual_retry,
         ])
@@ -620,7 +620,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
             (
               "headers",
               headers
-              ->Js.Array2.map(header => {
+              ->Array.map(header => {
                 let (key, value) = header
                 (key, value->JSON.Encode.string)
               })
@@ -642,7 +642,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
             (),
           )
         | _ =>
-          let _ = bodyArr->Js.Array2.map(((str, json)) => {
+          let _ = bodyArr->Array.map(((str, json)) => {
             if str === "payment_method_type" {
               handleLogging(
                 ~optLogger,
@@ -683,7 +683,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
       let intentWithoutMandate = () => {
         let bodyStr =
           body
-          ->Js.Array2.concat(bodyArr->Js.Array2.concat(broswerInfo()))
+          ->Array.concat(bodyArr->Array.concat(broswerInfo()))
           ->Js.Dict.fromArray
           ->JSON.Encode.object
           ->JSON.stringify
@@ -692,11 +692,8 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
       let intentWithMandate = mandatePaymentType => {
         let bodyStr =
           body
-          ->Js.Array2.concat(
-            bodyArr->Js.Array2.concatMany([
-              PaymentBody.mandateBody(mandatePaymentType),
-              broswerInfo(),
-            ]),
+          ->Array.concat(
+            bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
           )
           ->Js.Dict.fromArray
           ->JSON.Encode.object

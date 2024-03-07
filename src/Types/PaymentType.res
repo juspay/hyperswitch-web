@@ -278,7 +278,7 @@ let getAddress = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     let countryNames = []
-    Country.country->Js.Array2.map(item => countryNames->Js.Array2.push(item.countryName))->ignore
+    Country.country->Array.map(item => countryNames->Array.push(item.countryName))->ignore
     unknownKeysWarning(
       ["line1", "line2", "city", "state", "country", "postal_code"],
       json,
@@ -442,7 +442,7 @@ let getTypeArray = (str, logger) => {
     "tip",
     "contribute",
   ]
-  if !Js.Array2.includes(goodVals, str) {
+  if !Array.includes(goodVals, str) {
     str->unknownPropValueWarning(goodVals, "options.wallets.style.type", ~logger)
   }
   (str->getApplePayType, str->getGooglePayType, str->getPayPalType)
@@ -787,7 +787,7 @@ let createCustomerObjArr = dict => {
   let customerPaymentMethods =
     customerArr
     ->Belt.Array.keepMap(JSON.Decode.object)
-    ->Js.Array2.map(json => {
+    ->Array.map(json => {
       {
         paymentToken: getString(json, "payment_token", ""),
         customerId: getString(json, "customer_id", ""),
@@ -802,11 +802,11 @@ let createCustomerObjArr = dict => {
 let getCustomerMethods = (dict, str) => {
   let customerArr = dict->Js.Dict.get(str)->Option.flatMap(JSON.Decode.array)->Option.getOr([])
 
-  if customerArr->Js.Array2.length !== 0 {
+  if customerArr->Array.length !== 0 {
     let customerPaymentMethods =
       customerArr
       ->Belt.Array.keepMap(JSON.Decode.object)
-      ->Js.Array2.map(json => {
+      ->Array.map(json => {
         {
           paymentToken: getString(json, "payment_token", ""),
           customerId: getString(json, "customer_id", ""),
@@ -827,7 +827,7 @@ let getCustomMethodNames = (dict, str) => {
   ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
-  ->Js.Array2.map(json => {
+  ->Array.map(json => {
     paymentMethodName: getString(json, "paymentMethodName", ""),
     aliasName: getString(json, "aliasName", ""),
   })
@@ -905,7 +905,7 @@ type loadType = Loading | Loaded(JSON.t) | SemiLoaded | LoadError(JSON.t)
 
 let getIsAllStoredCardsHaveName = (savedCards: array<customerMethods>) => {
   savedCards
-  ->Js.Array2.filter(savedCard => {
+  ->Array.filter(savedCard => {
     switch savedCard.card.cardHolderName {
     | None
     | Some("") => false

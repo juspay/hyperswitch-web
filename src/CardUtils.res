@@ -78,10 +78,10 @@ let getQueryParamsDictforKey = (searchParams, keyName) => {
 
   searchParams
   ->Js.String2.split("&")
-  ->Js.Array2.forEach(paramStr => {
+  ->Array.forEach(paramStr => {
     let keyValArr = Js.String2.split(paramStr, "=")
     let key = keyValArr->Belt.Array.get(0)->Option.getOr("")
-    let value = if keyValArr->Js.Array2.length > 0 {
+    let value = if keyValArr->Array.length > 0 {
       keyValArr->Belt.Array.get(1)->Option.getOr("")
     } else {
       ""
@@ -113,7 +113,7 @@ let cardType = val => {
 let getobjFromCardPattern = cardBrand => {
   let patternsDict = CardPattern.cardPatterns
   patternsDict
-  ->Js.Array2.filter(item => {
+  ->Array.filter(item => {
     cardBrand === item.issuer
   })
   ->Belt.Array.get(0)
@@ -177,7 +177,7 @@ let formatCardNumber = (val, cardType) => {
 }
 let splitExpiryDates = val => {
   let split = val->Js.String2.split("/")
-  let value = split->Js.Array2.map(item => item->Js.String2.trim)
+  let value = split->Array.map(item => item->Js.String2.trim)
   let month = value->Belt.Array.get(0)->Option.getOr("")
   let year = value->Belt.Array.get(1)->Option.getOr("")
   (month, year)
@@ -252,12 +252,12 @@ let getCardBrand = cardNumber => {
         ->Belt.Int.fromString
         ->Option.getOr(0)
 
-      let range = cardRanges->Js.Array2.map(cardRange => {
+      let range = cardRanges->Array.map(cardRange => {
         let (min, max) = cardRange
 
         intIsin >= min && intIsin <= max
       })
-      range->Js.Array2.includes(true)
+      range->Array.includes(true)
     }
     let patternsDict = CardPattern.cardPatterns
     if doesFallInRange(rupayRanges, card) {
@@ -266,14 +266,14 @@ let getCardBrand = cardNumber => {
       "Mastercard"
     } else {
       patternsDict
-      ->Js.Array2.map(item => {
+      ->Array.map(item => {
         if Js.String2.match_(card, item.pattern)->Option.isSome {
           item.issuer
         } else {
           ""
         }
       })
-      ->Js.Array2.filter(item => item !== "")
+      ->Array.filter(item => item !== "")
       ->Belt.Array.get(0)
       ->Option.getOr("")
     }
@@ -286,15 +286,15 @@ let calculateLuhn = value => {
   let card = value->clearSpaces
 
   let splitArr = card->Js.String2.split("")->Js.Array2.reverseInPlace
-  let unCheckArr = splitArr->Js.Array2.filteri((_, i) => {
+  let unCheckArr = splitArr->Array.filterWithIndex((_, i) => {
     mod(i, 2) == 0
   })
   let checkArr =
     splitArr
-    ->Js.Array2.filteri((_, i) => {
+    ->Array.filterWithIndex((_, i) => {
       mod(i + 1, 2) == 0
     })
-    ->Js.Array2.map(item => {
+    ->Array.map(item => {
       let val = item->toInt
       let double = val * 2
       let str = double->Belt.Int.toString
@@ -364,7 +364,7 @@ let isExipryValid = val => {
 let cardNumberInRange = val => {
   let clearValue = val->clearSpaces
   let obj = getobjFromCardPattern(val->getCardBrand)
-  let cardLengthInRange = obj.length->Js.Array2.map(item => {
+  let cardLengthInRange = obj.length->Array.map(item => {
     clearValue->Js.String2.length == item
   })
   cardLengthInRange
@@ -390,15 +390,15 @@ let getMaxLength = val => {
 let cvcNumberInRange = (val, cardBrand) => {
   let clearValue = val->clearSpaces
   let obj = getobjFromCardPattern(cardBrand)
-  let cvcLengthInRange = obj.cvcLength->Js.Array2.map(item => {
+  let cvcLengthInRange = obj.cvcLength->Array.map(item => {
     clearValue->Js.String2.length == item
   })
   cvcLengthInRange
 }
 let genreateFontsLink = (fonts: array<CardThemeType.fonts>) => {
-  if fonts->Js.Array2.length > 0 {
+  if fonts->Array.length > 0 {
     fonts
-    ->Js.Array2.map(item =>
+    ->Array.map(item =>
       if item.cssSrc != "" {
         let link = document["createElement"](. "link")
         link["href"] = item.cssSrc
@@ -486,8 +486,7 @@ let getCardElementValue = (iframeId, key) => {
 }
 
 let checkCardCVC = (cvcNumber, cardBrand) => {
-  cvcNumber->Js.String2.length > 0 &&
-    cvcNumberInRange(cvcNumber, cardBrand)->Js.Array2.includes(true)
+  cvcNumber->Js.String2.length > 0 && cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
 }
 let checkCardExpiry = expiry => {
   expiry->Js.String2.length > 0 && getExpiryValidity(expiry)
@@ -513,17 +512,17 @@ let pincodeVisibility = cardNumber => {
   let brand = getCardBrand(cardNumber)
   let brandPattern =
     CardPattern.cardPatterns
-    ->Js.Array2.filter(obj => obj.issuer == brand)
+    ->Array.filter(obj => obj.issuer == brand)
     ->Belt.Array.get(0)
     ->Option.getOr(CardPattern.defaultCardPattern)
   brandPattern.pincodeRequired
 }
 
 let swapCardOption = (cardOpts: array<string>, dropOpts: array<string>, selectedOption: string) => {
-  let popEle = Js.Array2.pop(cardOpts)
-  dropOpts->Js.Array2.push(popEle->Option.getOr(""))->ignore
-  cardOpts->Js.Array2.push(selectedOption)->ignore
-  let temp: array<string> = dropOpts->Js.Array2.filter(item => item != selectedOption)
+  let popEle = Array.pop(cardOpts)
+  dropOpts->Array.push(popEle->Option.getOr(""))->ignore
+  cardOpts->Array.push(selectedOption)->ignore
+  let temp: array<string> = dropOpts->Array.filter(item => item != selectedOption)
   (cardOpts, temp)
 }
 
@@ -561,10 +560,10 @@ let getLayoutClass = layout => {
 }
 
 let getAllBanknames = obj => {
-  obj->Js.Array2.reduce((acc, item) => {
-    item->Js.Array2.map(val => acc->Js.Array2.push(val))->ignore
+  obj->Array.reduce([], (acc, item) => {
+    item->Array.map(val => acc->Array.push(val))->ignore
     acc
-  }, [])
+  })
 }
 
 let clientTimeZone = dateTimeFormat(.).resolvedOptions(.).timeZone

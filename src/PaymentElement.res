@@ -40,7 +40,7 @@ let make = (
     switch methodslist {
     | Loaded(paymentlist) =>
       let paymentOrder =
-        paymentOrder->Js.Array2.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
+        paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
       let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
       let (wallets, otherOptions) =
         plist->PaymentUtils.paymentListLookupNew(
@@ -50,7 +50,7 @@ let make = (
         )
       (
         wallets->Utils.removeDuplicate,
-        paymentOptions->Js.Array2.concat(otherOptions)->Utils.removeDuplicate,
+        paymentOptions->Array.concat(otherOptions)->Utils.removeDuplicate,
         otherOptions,
       )
     | SemiLoaded =>
@@ -72,7 +72,7 @@ let make = (
       setWalletOptions(_ => walletList)
       setList(_ => plist)
       showCardFormByDefault
-        ? if !(actualList->Js.Array2.includes(selectedOption)) && selectedOption !== "" {
+        ? if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
             ErrorUtils.manageErrorWarning(
               SDK_CONNECTOR_WARNING,
               ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
@@ -82,7 +82,7 @@ let make = (
           } else if !Utils.checkPriorityList(paymentMethodOrder) {
             ErrorUtils.manageErrorWarning(
               SDK_CONNECTOR_WARNING,
-              ~dynamicStr=`'paymentMethodOrder' is ${Js.Array2.joinWith(
+              ~dynamicStr=`'paymentMethodOrder' is ${Array.joinWith(
                   paymentMethodOrder->Utils.getOptionalArr,
                   ", ",
                 )} . Please enable Card Payment as 1st priority to show it as default.`,
@@ -111,8 +111,8 @@ let make = (
     let cardsCount: int = cardsToRender(cardsContainerWidth)
     let cardOpts = Js.Array.slice(~start=0, ~end_=cardsCount, paymentOptions)
     let dropOpts = Js.Array.sliceFrom(cardsCount, paymentOptions)
-    let isCard: bool = cardOpts->Js.Array2.includes(selectedOption)
-    if !isCard && selectedOption !== "" && paymentOptions->Js.Array2.includes(selectedOption) {
+    let isCard: bool = cardOpts->Array.includes(selectedOption)
+    if !isCard && selectedOption !== "" && paymentOptions->Array.includes(selectedOption) {
       let (cardArr, dropdownArr) = CardUtils.swapCardOption(cardOpts, dropOpts, selectedOption)
       setCardOptions(_ => cardArr)
       setDropDownOptions(_ => dropdownArr)
@@ -147,7 +147,7 @@ let make = (
           | LoadError(_) =>
             showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? "card" : ""
           | Loaded(_) =>
-            paymentOptions->Js.Array2.includes(selectedOption) && showCardFormByDefault
+            paymentOptions->Array.includes(selectedOption) && showCardFormByDefault
               ? selectedOption
               : paymentOptions->Belt.Array.get(0)->Option.getOr("")
           | _ => paymentOptions->Belt.Array.get(0)->Option.getOr("")
@@ -157,7 +157,7 @@ let make = (
   }, (layoutClass.defaultCollapsed, paymentOptions, methodslist, selectedOption))
   React.useEffect1(() => {
     if layoutClass.\"type" == Tabs {
-      let isCard: bool = cardOptions->Js.Array2.includes(selectedOption)
+      let isCard: bool = cardOptions->Array.includes(selectedOption)
       if !isCard {
         let (cardArr, dropdownArr) = CardUtils.swapCardOption(
           cardOptions,
@@ -179,7 +179,7 @@ let make = (
     None
   }, [selectedOption])
   let checkRenderOrComp = () => {
-    walletOptions->Js.Array2.includes("paypal") || isShowOrPayUsing
+    walletOptions->Array.includes("paypal") || isShowOrPayUsing
   }
   let dict = sessions->Utils.getDictFromJson
   let sessionObj = SessionsType.itemToObjMapper(dict, Others)
@@ -297,15 +297,14 @@ let make = (
     </ErrorBoundary>
   }
   <>
-    <RenderIf
-      condition={paymentOptions->Js.Array2.length > 0 || walletOptions->Js.Array2.length > 0}>
+    <RenderIf condition={paymentOptions->Array.length > 0 || walletOptions->Array.length > 0}>
       <div className="flex flex-col place-items-center">
         <ErrorBoundary key="payment_request_buttons_all" level={ErrorBoundary.RequestButton}>
           <PaymentRequestButtonElement sessions walletOptions list />
         </ErrorBoundary>
         <RenderIf
-          condition={paymentOptions->Js.Array2.length > 0 &&
-          walletOptions->Js.Array2.length > 0 &&
+          condition={paymentOptions->Array.length > 0 &&
+          walletOptions->Array.length > 0 &&
           checkRenderOrComp()}>
           <Or />
         </RenderIf>
@@ -327,8 +326,7 @@ let make = (
     {switch methodslist {
     | LoadError(_) => React.null
     | _ =>
-      <RenderIf
-        condition={paymentOptions->Js.Array2.length == 0 && walletOptions->Js.Array2.length == 0}>
+      <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
         <PaymentElementShimmer />
       </RenderIf>
     }}

@@ -75,21 +75,21 @@ let make = (
   let checkValueIsInvalid = item => item == "invalid"
 
   let (cardEmpty, cardComplete, cardInvalid, cardFocused) = React.useMemo4(() => {
-    let isCardDetailsEmpty = Js.Array2.every(
+    let isCardDetailsEmpty = Array.every(
       [cardNumber, cardExpiry, cvcNumber, zipCode],
       checkLengthIsZero,
     )
       ? `${options.classes.base} ${options.classes.empty} `
       : options.classes.base
 
-    let isCardDetailsValid = Js.Array2.every(
+    let isCardDetailsValid = Array.every(
       [isCardValidValue, isExpiryValidValue, isCVCValidValue, isZipValidValue],
       checkValueIsValid,
     )
       ? ` ${options.classes.complete} `
       : ``
 
-    let isCardDetailsInvalid = Js.Array2.some(
+    let isCardDetailsInvalid = Array.some(
       [isCardValidValue, isExpiryValidValue, isCVCValidValue, isZipValidValue],
       checkValueIsInvalid,
     )

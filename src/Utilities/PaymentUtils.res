@@ -22,38 +22,38 @@ let paymentListLookupNew = (
     "samsung_pay",
   ]
   let otherPaymentList = []
-  let googlePayFields = pmList->Js.Array2.find(item => item.paymentMethodName === "google_pay")
-  let applePayFields = pmList->Js.Array2.find(item => item.paymentMethodName === "apple_pay")
+  let googlePayFields = pmList->Array.find(item => item.paymentMethodName === "google_pay")
+  let applePayFields = pmList->Array.find(item => item.paymentMethodName === "apple_pay")
   switch googlePayFields {
   | Some(val) =>
-    if val.fields->Js.Array2.length > 0 && showGooglePay {
-      walletToBeDisplayedInTabs->Js.Array2.push("google_pay")->ignore
+    if val.fields->Array.length > 0 && showGooglePay {
+      walletToBeDisplayedInTabs->Array.push("google_pay")->ignore
     }
   | None => ()
   }
   switch applePayFields {
   | Some(val) =>
-    if val.fields->Js.Array2.length > 0 && showApplePay {
-      walletToBeDisplayedInTabs->Js.Array2.push("apple_pay")->ignore
+    if val.fields->Array.length > 0 && showApplePay {
+      walletToBeDisplayedInTabs->Array.push("apple_pay")->ignore
     }
   | None => ()
   }
 
-  pmList->Js.Array2.forEach(item => {
-    if walletToBeDisplayedInTabs->Js.Array2.includes(item.paymentMethodName) {
-      otherPaymentList->Js.Array2.push(item.paymentMethodName)->ignore
+  pmList->Array.forEach(item => {
+    if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodName) {
+      otherPaymentList->Array.push(item.paymentMethodName)->ignore
     } else if item.methodType == "wallet" {
-      walletsList->Js.Array2.push(item.paymentMethodName)->ignore
+      walletsList->Array.push(item.paymentMethodName)->ignore
     } else if item.methodType == "bank_debit" {
-      otherPaymentList->Js.Array2.push(item.paymentMethodName ++ "_debit")->ignore
+      otherPaymentList->Array.push(item.paymentMethodName ++ "_debit")->ignore
     } else if item.methodType == "bank_transfer" {
-      otherPaymentList->Js.Array2.push(item.paymentMethodName ++ "_transfer")->ignore
+      otherPaymentList->Array.push(item.paymentMethodName ++ "_transfer")->ignore
     } else if item.methodType == "card" {
-      otherPaymentList->Js.Array2.push("card")->ignore
+      otherPaymentList->Array.push("card")->ignore
     } else if item.methodType == "reward" {
-      otherPaymentList->Js.Array2.push(item.paymentMethodName)->ignore
+      otherPaymentList->Array.push(item.paymentMethodName)->ignore
     } else {
-      otherPaymentList->Js.Array2.push(item.paymentMethodName)->ignore
+      otherPaymentList->Array.push(item.paymentMethodName)->ignore
     }
   })
   (
@@ -155,16 +155,16 @@ let getExperienceType = method => {
 
 let getConnectors = (list: PaymentMethodsRecord.list, method: connectorType) => {
   let paymentMethod =
-    list.payment_methods->Js.Array2.find(item => item.payment_method == method->getMethod)
+    list.payment_methods->Array.find(item => item.payment_method == method->getMethod)
   switch paymentMethod {
   | Some(val) =>
     let paymentMethodType =
-      val.payment_method_types->Js.Array2.find(item =>
+      val.payment_method_types->Array.find(item =>
         item.payment_method_type == method->getMethodType
       )
     switch paymentMethodType {
     | Some(val) =>
-      let experienceType = val.payment_experience->Js.Array2.find(item => {
+      let experienceType = val.payment_experience->Array.find(item => {
         item.payment_experience_type->getPaymentExperienceType == method->getExperienceType
       })
       let eligibleConnectors = switch experienceType {
@@ -190,7 +190,7 @@ let getDisplayNameAndIcon = (
 ) => {
   let customNameObj =
     customNames
-    ->Js.Array2.filter((item: PaymentType.alias) => {
+    ->Array.filter((item: PaymentType.alias) => {
       item.paymentMethodName === paymentMethodName
     })
     ->Belt.Array.get(0)

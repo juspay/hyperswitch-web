@@ -85,21 +85,21 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
     }
     let collapse = () => ()
     let blur = () => {
-      iframeRef->Js.Array2.forEach(iframe => {
+      iframeRef->Array.forEach(iframe => {
         let message = [("doBlur", true->JSON.Encode.bool)]->Js.Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
     }
 
     let focus = () => {
-      iframeRef->Js.Array2.forEach(iframe => {
+      iframeRef->Array.forEach(iframe => {
         let message = [("doFocus", true->JSON.Encode.bool)]->Js.Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
     }
 
     let clear = () => {
-      iframeRef->Js.Array2.forEach(iframe => {
+      iframeRef->Array.forEach(iframe => {
         let message = [("doClearValues", true->JSON.Encode.bool)]->Js.Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
@@ -128,7 +128,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let newFlatOption = newOptions->flattenObject(true)
 
       let keys = flatOption->Js.Dict.keys
-      keys->Js.Array2.forEach(key => {
+      keys->Array.forEach(key => {
         switch newFlatOption->Js.Dict.get(key) {
         | Some(op) => flatOption->Js.Dict.set(key, op)
         | None => ()
@@ -136,14 +136,14 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       })
 
       let newEntries = newFlatOption->Js.Dict.entries
-      newEntries->Js.Array2.forEach(entries => {
+      newEntries->Array.forEach(entries => {
         let (key, value) = entries
         if flatOption->Js.Dict.get(key)->Option.isNone {
           flatOption->Js.Dict.set(key, value)
         }
       })
 
-      iframeRef->Js.Array2.forEach(iframe => {
+      iframeRef->Array.forEach(iframe => {
         let message =
           [
             ("paymentElementsUpdate", true->JSON.Encode.bool),
