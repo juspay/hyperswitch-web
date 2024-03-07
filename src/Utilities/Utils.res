@@ -400,7 +400,7 @@ let validatePhoneNumber = (countryCode, number) => {
   | Some(obj) =>
     let regex =
       obj->Dict.get("validation_regex")->Option.flatMap(JSON.Decode.string)->Option.getOr("")
-    Js.Re.test_(regex->Js.Re.fromString, number)
+    RegExp.test(regex->RegExp.fromString, number)
   | None => false
   }
 }

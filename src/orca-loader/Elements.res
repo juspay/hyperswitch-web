@@ -78,7 +78,7 @@ let make = (
     let locale = localOptions->getJsonStringFromDict("locale", "")
     let loader = localOptions->getJsonStringFromDict("loader", "")
     let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
-    let clientSecretReMatch = Js.Re.test_(`.+_secret_[A-Za-z0-9]+`->Js.Re.fromString, clientSecret)
+    let clientSecretReMatch = RegExp.test(`.+_secret_[A-Za-z0-9]+`->RegExp.fromString, clientSecret)
     let fetchPaymentsList = mountedIframeRef => {
       open Promise
       paymentMethodListPromise

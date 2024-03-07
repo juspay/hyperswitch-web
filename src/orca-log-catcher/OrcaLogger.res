@@ -313,7 +313,7 @@ let findVersion = (re, content) => {
 }
 
 let browserDetect = content => {
-  if Js.Re.test_("Edg"->Js.Re.fromString, content) {
+  if RegExp.test("Edg"->RegExp.fromString, content) {
     let re = %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
@@ -323,7 +323,7 @@ let browserDetect = content => {
     | None => ""
     }
     `Microsoft Edge-${version}`
-  } else if Js.Re.test_("Chrome"->Js.Re.fromString, content) {
+  } else if RegExp.test("Chrome"->RegExp.fromString, content) {
     let re = %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
@@ -333,7 +333,7 @@ let browserDetect = content => {
     | None => ""
     }
     `Chrome-${version}`
-  } else if Js.Re.test_("Safari"->Js.Re.fromString, content) {
+  } else if RegExp.test("Safari"->RegExp.fromString, content) {
     let re = %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
@@ -343,7 +343,7 @@ let browserDetect = content => {
     | None => ""
     }
     `Safari-${version}`
-  } else if Js.Re.test_("opera"->Js.Re.fromString, content) {
+  } else if RegExp.test("opera"->RegExp.fromString, content) {
     let re = %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
@@ -354,10 +354,10 @@ let browserDetect = content => {
     }
     `Opera-${version}`
   } else if (
-    Js.Re.test_("Firefox"->Js.Re.fromString, content) ||
-    Js.Re.test_("fxios"->Js.Re.fromString, content)
+    RegExp.test("Firefox"->RegExp.fromString, content) ||
+    RegExp.test("fxios"->RegExp.fromString, content)
   ) {
-    if Js.Re.test_("Firefox"->Js.Re.fromString, content) {
+    if RegExp.test("Firefox"->RegExp.fromString, content) {
       let re = %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig")
       let version = switch findVersion(re, content)
       ->Belt.Array.get(1)

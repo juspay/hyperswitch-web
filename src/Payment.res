@@ -133,7 +133,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("zipCode", logger)
     let regex = postalRegex(postalCodes, ())
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) {
+    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) {
       blurRef(zipRef)
     }
     setZipCode(_ => val)
@@ -193,7 +193,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let handleZipBlur = ev => {
     let zipCode = ReactEvent.Focus.target(ev)["value"]
     let regex = postalRegex(postalCodes, ())
-    if Js.Re.test_(regex->Js.Re.fromString, zipCode) || regex == "" {
+    if RegExp.test(regex->RegExp.fromString, zipCode) || regex == "" {
       setIsZipValid(_ => Some(true))
     } else if zipCode->String.length == 0 {
       setIsZipValid(_ => None)

@@ -128,7 +128,7 @@ let manageErrorWarning = (
           (),
         )
         Js.Console.error(string)
-        Js.Exn.raiseError(string)
+        Exn.raiseError(string)
       | (Warning, Static(string)) =>
         logger.setLogError(
           ~value=string,
@@ -147,7 +147,7 @@ let manageErrorWarning = (
           (),
         )
         Js.Console.error(fn(dynamicStr))
-        Js.Exn.raiseError(fn(dynamicStr))
+        Exn.raiseError(fn(dynamicStr))
       | (Warning, Dynamic(fn)) =>
         logger.setLogError(
           ~value=fn(dynamicStr),

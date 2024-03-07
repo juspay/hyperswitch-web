@@ -72,14 +72,14 @@ let make = (~paymentType, ~className="") => {
     ) => unit,
     regex,
   ) => {
-    if Js.Re.test_(regex->Js.Re.fromString, postal.value) && postal.value !== "" && regex !== "" {
+    if RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== "" && regex !== "" {
       setPostal(.prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
     } else if (
-      regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, postal.value) && postal.value !== ""
+      regex !== "" && !RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== ""
     ) {
       setPostal(.prev => {
         ...prev,
@@ -130,20 +130,20 @@ let make = (~paymentType, ~className="") => {
       value: val,
       errorString: "",
     })
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) {
+    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) {
       CardUtils.blurRef(postalRef)
     }
   }
 
   let onPostalBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
+    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) && val !== "" {
       setPostalCode(.prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
-    } else if regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
+    } else if regex !== "" && !RegExp.test(regex->RegExp.fromString, val) && val !== "" {
       setPostalCode(.prev => {
         ...prev,
         isValid: Some(false),
