@@ -72,12 +72,12 @@ let make = () => {
     if expiryTime < 1000.0 {
       Modal.close(setOpenModal)
     }
-    let intervalID = Js.Global.setInterval(() => {
+    let intervalID = setInterval(() => {
       setExpiryTime(prev => prev -. 1000.0)
     }, 1000)
     Some(
       () => {
-        Js.Global.clearInterval(intervalID)
+        clearInterval(intervalID)
       },
     )
   }, [expiryTime])

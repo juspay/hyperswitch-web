@@ -82,12 +82,12 @@ let make = (
     ->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodFields)
 
   React.useEffect1(() => {
-    let intervalId = Js.Global.setInterval(() => {
+    let intervalId = setInterval(() => {
       if dropDownOptionsDetails->Belt.Array.length > 1 {
         setMoreIconIndex(prev => mod(prev + 1, dropDownOptionsDetails->Belt.Array.length))
 
         setToggleIconElement(_ => true)
-        Js.Global.setTimeout(
+        setTimeout(
           () => {
             setToggleIconElement(_ => false)
           },
@@ -98,7 +98,7 @@ let make = (
 
     Some(
       () => {
-        Js.Global.clearInterval(intervalId)
+        clearInterval(intervalId)
       },
     )
   }, [dropDownOptionsDetails])

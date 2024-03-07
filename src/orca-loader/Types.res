@@ -84,7 +84,7 @@ let getElement = _componentName => {
 
 let fetchUpdates = () => {
   Js.Promise.make((~resolve, ~reject as _) => {
-    Js.Global.setTimeout(() => resolve(. Js.Dict.empty()->JSON.Encode.object), 1000)->ignore
+    setTimeout(() => resolve(. Js.Dict.empty()->JSON.Encode.object), 1000)->ignore
   })
 }
 let defaultPaymentElement = {

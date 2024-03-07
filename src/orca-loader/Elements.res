@@ -116,7 +116,7 @@ let make = (
           }
         }
 
-        // Js.Global.setTimeout(() => {
+        // setTimeout(() => {
         let msg = [("paymentMethodList", json)]->Js.Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
         let maskedPayload = json->getDictFromJson->PaymentHelpers.maskPayload
@@ -137,7 +137,7 @@ let make = (
       open Promise
       customerDetailsPromise
       ->then(json => {
-        // Js.Global.setTimeout(() => {
+        // setTimeout(() => {
         let msg = [("customerPaymentMethods", json)]->Js.Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
         // }, 5000)->ignore
@@ -197,7 +197,7 @@ let make = (
     }
     let fetchUpdates = () => {
       Js.Promise.make((~resolve, ~reject as _) => {
-        Js.Global.setTimeout(() => resolve(. Js.Dict.empty()->JSON.Encode.object), 1000)->ignore
+        setTimeout(() => resolve(. Js.Dict.empty()->JSON.Encode.object), 1000)->ignore
       })
     }
 
@@ -664,7 +664,7 @@ let make = (
                   ->OrcaUtils.getBoolfromjson(false)
 
                 if gpayClicked {
-                  Js.Global.setTimeout(() => {
+                  setTimeout(() => {
                     gPayClient.loadPaymentData(. paymentDataRequest->toJson)
                     ->then(
                       json => {

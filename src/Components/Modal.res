@@ -1,6 +1,6 @@
 let close = setOpenModal => {
   setOpenModal(_ => false)
-  Js.Global.setTimeout(() => {
+  setTimeout(() => {
     Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
   }, 450)->ignore
 }
@@ -18,7 +18,7 @@ let make = (
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let closeModal = () => {
     setOpenModal(_ => false)
-    Js.Global.setTimeout(() => {
+    setTimeout(() => {
       switch closeCallback {
       | Some(fn) => fn()
       | None => ()

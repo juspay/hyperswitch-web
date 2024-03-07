@@ -476,10 +476,10 @@ let make = (
   let rec sendLogs = () => {
     switch timeOut.contents {
     | Some(val) => {
-        Js.Global.clearTimeout(val)
-        timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
+        clearTimeout(val)
+        timeOut := Some(setTimeout(() => sendLogs(), 120000))
       }
-    | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
+    | None => timeOut := Some(setTimeout(() => sendLogs(), 120000))
     }
     beaconApiCall(mainLogFile)
     let len = mainLogFile->Array.length
@@ -512,10 +512,10 @@ let make = (
   let checkLogSizeAndSendData = () => {
     switch timeOut.contents {
     | Some(val) => {
-        Js.Global.clearTimeout(val)
-        timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 20000))
+        clearTimeout(val)
+        timeOut := Some(setTimeout(() => sendLogs(), 20000))
       }
-    | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 20000))
+    | None => timeOut := Some(setTimeout(() => sendLogs(), 20000))
     }
 
     if mainLogFile->checkForPriorityEvents {
@@ -738,7 +738,7 @@ let make = (
     //event->Window.preventDefault()
     sendLogs()
     switch timeOut.contents {
-    | Some(val) => Js.Global.clearTimeout(val)
+    | Some(val) => clearTimeout(val)
     | None => ()
     }
   }

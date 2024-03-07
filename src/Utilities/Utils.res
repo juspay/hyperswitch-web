@@ -758,7 +758,7 @@ let rgbaTorgb = bgColor => {
 
 let delay = timeOut => {
   Promise.make((resolve, _reject) => {
-    Js.Global.setTimeout(() => {
+    setTimeout(() => {
       resolve(. Js.Dict.empty())
     }, timeOut)->ignore
   })
