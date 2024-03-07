@@ -77,9 +77,9 @@ let getQueryParamsDictforKey = (searchParams, keyName) => {
   let dict = Dict.make()
 
   searchParams
-  ->Js.String2.split("&")
+  ->String.split("&")
   ->Array.forEach(paramStr => {
-    let keyValArr = Js.String2.split(paramStr, "=")
+    let keyValArr = String.split(paramStr, "=")
     let key = keyValArr->Belt.Array.get(0)->Option.getOr("")
     let value = if keyValArr->Array.length > 0 {
       keyValArr->Belt.Array.get(1)->Option.getOr("")
@@ -121,11 +121,11 @@ let getobjFromCardPattern = cardBrand => {
 }
 
 let clearSpaces = value => {
-  value->Js.String2.replaceByRe(%re("/\D+/g"), "")
+  value->String.replaceRegExp(%re("/\D+/g"), "")
 }
 
-let slice = (val, from: int, to_: int) => {
-  val->Js.String2.slice(~from, ~to_)
+let slice = (val, start: int, end: int) => {
+  val->String.slice(~start, ~end)
 }
 
 let getStrFromIndex = (arr: array<string>, index) => {
@@ -139,11 +139,11 @@ let formatCVCNumber = (val, cardType) => {
 }
 
 let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
-  let tempTimeDateString = dateTimeIsoString->Js.String2.replace("Z", "")
-  let tempTimeDate = tempTimeDateString->Js.String2.split("T")
+  let tempTimeDateString = dateTimeIsoString->String.replace("Z", "")
+  let tempTimeDate = tempTimeDateString->String.split("T")
 
   let date = tempTimeDate[0]->Option.getOr("")
-  let dateComponents = date->Js.String2.split("-")
+  let dateComponents = date->String.split("-")
 
   let currentMonth = dateComponents->Belt.Array.get(1)->Option.getOr("")
   let currentYear = dateComponents->Belt.Array.get(0)->Option.getOr("")
@@ -173,11 +173,11 @@ let formatCardNumber = (val, cardType) => {
       )} ${clearValue->slice(12, 19)}`
   }
 
-  formatedCard->Js.String2.trim
+  formatedCard->String.trim
 }
 let splitExpiryDates = val => {
-  let split = val->Js.String2.split("/")
-  let value = split->Array.map(item => item->Js.String2.trim)
+  let split = val->String.split("/")
+  let value = split->Array.map(item => item->String.trim)
   let month = value->Belt.Array.get(0)->Option.getOr("")
   let year = value->Belt.Array.get(1)->Option.getOr("")
   (month, year)
@@ -186,35 +186,35 @@ let getExpiryDates = val => {
   let date = Js.Date.make()->Js.Date.toISOString
   let (month, year) = splitExpiryDates(val)
   let (_, currentYear) = getCurrentMonthAndYear(date)
-  let prefix = currentYear->Belt.Int.toString->Js.String2.slice(~from=0, ~to_=2)
+  let prefix = currentYear->Belt.Int.toString->String.slice(~start=0, ~end=2)
   (month, `${prefix}${year}`)
 }
 let formatExpiryToTwoDigit = expiry => {
-  if expiry->Js.String2.length == 2 {
+  if expiry->String.length == 2 {
     expiry
   } else {
-    expiry->Js.String2.slice(~from=2, ~to_=4)
+    expiry->String.slice(~start=2, ~end=4)
   }
 }
 
 let isExipryComplete = val => {
   let (month, year) = splitExpiryDates(val)
-  month->Js.String2.length == 2 && year->Js.String2.length == 2
+  month->String.length == 2 && year->String.length == 2
 }
 
 let formatCardExpiryNumber = val => {
   let clearValue = val->clearSpaces
   let expiryVal = clearValue->toInt
-  let formatted = if expiryVal >= 2 && expiryVal <= 9 && clearValue->Js.String2.length == 1 {
+  let formatted = if expiryVal >= 2 && expiryVal <= 9 && clearValue->String.length == 1 {
     `0${clearValue} / `
-  } else if clearValue->Js.String2.length == 2 && expiryVal > 12 {
-    let val = clearValue->Js.String2.split("")
+  } else if clearValue->String.length == 2 && expiryVal > 12 {
+    let val = clearValue->String.split("")
     `0${val->getStrFromIndex(0)} / ${val->getStrFromIndex(1)}`
   } else {
     clearValue
   }
 
-  if clearValue->Js.String2.length >= 3 {
+  if clearValue->String.length >= 3 {
     `${formatted->slice(0, 2)} / ${formatted->slice(2, 4)}`
   } else {
     formatted
@@ -223,7 +223,7 @@ let formatCardExpiryNumber = val => {
 
 let getCardBrand = cardNumber => {
   try {
-    let card = cardNumber->Js.String2.replaceByRe(%re("/[^\d]/g"), "")
+    let card = cardNumber->String.replaceRegExp(%re("/[^\d]/g"), "")
     let rupayRanges = [
       (508227, 508227),
       (508500, 508999),
@@ -247,8 +247,8 @@ let getCardBrand = cardNumber => {
     let doesFallInRange = (cardRanges, isin) => {
       let intIsin =
         isin
-        ->Js.String2.replaceByRe(%re("/[^\d]/g"), "")
-        ->Js.String2.substring(~from=0, ~to_=6)
+        ->String.replaceRegExp(%re("/[^\d]/g"), "")
+        ->String.substring(~start=0, ~end=6)
         ->Belt.Int.fromString
         ->Option.getOr(0)
 
@@ -267,7 +267,7 @@ let getCardBrand = cardNumber => {
     } else {
       patternsDict
       ->Array.map(item => {
-        if Js.String2.match_(card, item.pattern)->Option.isSome {
+        if String.match(card, item.pattern)->Option.isSome {
           item.issuer
         } else {
           ""
@@ -285,7 +285,7 @@ let getCardBrand = cardNumber => {
 let calculateLuhn = value => {
   let card = value->clearSpaces
 
-  let splitArr = card->Js.String2.split("")->Array.toReversed
+  let splitArr = card->String.split("")->Array.toReversed
   let unCheckArr = splitArr->Array.filterWithIndex((_, i) => {
     mod(i, 2) == 0
   })
@@ -298,7 +298,7 @@ let calculateLuhn = value => {
       let val = item->toInt
       let double = val * 2
       let str = double->Belt.Int.toString
-      let arr = str->Js.String2.split("")
+      let arr = str->String.split("")
 
       switch (arr[0], arr[1]) {
       | (Some(first), Some(second)) if double > 9 =>
@@ -358,14 +358,14 @@ let getExpiryValidity = cardExpiry => {
   valid
 }
 let isExipryValid = val => {
-  val->Js.String2.length > 0 && getExpiryValidity(val) && isExipryComplete(val)
+  val->String.length > 0 && getExpiryValidity(val) && isExipryComplete(val)
 }
 
 let cardNumberInRange = val => {
   let clearValue = val->clearSpaces
   let obj = getobjFromCardPattern(val->getCardBrand)
   let cardLengthInRange = obj.length->Array.map(item => {
-    clearValue->Js.String2.length == item
+    clearValue->String.length == item
   })
   cardLengthInRange
 }
@@ -391,7 +391,7 @@ let cvcNumberInRange = (val, cardBrand) => {
   let clearValue = val->clearSpaces
   let obj = getobjFromCardPattern(cardBrand)
   let cvcLengthInRange = obj.cvcLength->Array.map(item => {
-    clearValue->Js.String2.length == item
+    clearValue->String.length == item
   })
   cvcLengthInRange
 }
@@ -429,7 +429,7 @@ let maxCardLength = cardBrand => {
 }
 
 let cardValid = (cardNumber, cardBrand) => {
-  let clearValueLength = cardNumber->clearSpaces->Js.String2.length
+  let clearValueLength = cardNumber->clearSpaces->String.length
   (clearValueLength == maxCardLength(cardBrand) ||
     (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)
 }
@@ -486,10 +486,10 @@ let getCardElementValue = (iframeId, key) => {
 }
 
 let checkCardCVC = (cvcNumber, cardBrand) => {
-  cvcNumber->Js.String2.length > 0 && cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
+  cvcNumber->String.length > 0 && cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
 }
 let checkCardExpiry = expiry => {
-  expiry->Js.String2.length > 0 && getExpiryValidity(expiry)
+  expiry->String.length > 0 && getExpiryValidity(expiry)
 }
 
 let getBoolOptionVal = boolOptionVal => {
@@ -531,10 +531,10 @@ let setCardValid = (cardnumber, setIsCardValid) => {
   if cardValid(cardnumber, cardBrand) {
     setIsCardValid(_ => Some(true))
   } else if (
-    !cardValid(cardnumber, cardBrand) && cardnumber->Js.String2.length == maxCardLength(cardBrand)
+    !cardValid(cardnumber, cardBrand) && cardnumber->String.length == maxCardLength(cardBrand)
   ) {
     setIsCardValid(_ => Some(false))
-  } else if !(cardnumber->Js.String2.length == maxCardLength(cardBrand)) {
+  } else if !(cardnumber->String.length == maxCardLength(cardBrand)) {
     setIsCardValid(_ => None)
   }
 }
@@ -653,7 +653,7 @@ let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
 
 let useCardDetails = (~cvcNumber, ~isCvcValidValue, ~isCVCValid) => {
   React.useMemo3(() => {
-    let isCardDetailsEmpty = Js.String2.length(cvcNumber) == 0
+    let isCardDetailsEmpty = String.length(cvcNumber) == 0
     let isCardDetailsValid = isCvcValidValue == "valid"
     let isCardDetailsInvalid = isCvcValidValue == "invalid"
     (isCardDetailsEmpty, isCardDetailsValid, isCardDetailsInvalid)

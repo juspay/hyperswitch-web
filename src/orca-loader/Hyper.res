@@ -138,8 +138,8 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           if (
             publishableKey == "" ||
               !(
-                publishableKey->Js.String2.startsWith("pk_snd_") ||
-                  publishableKey->Js.String2.startsWith("pk_prd_")
+                publishableKey->String.startsWith("pk_snd_") ||
+                  publishableKey->String.startsWith("pk_prd_")
               )
           ) {
             manageErrorWarning(INVALID_PK, (), ~logger)
@@ -184,7 +184,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           "api-key": publishableKey,
         }
         let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
-        let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]->Option.getOr("")
+        let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
         let retrievePaymentUrl = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
         open Promise
         logApi(

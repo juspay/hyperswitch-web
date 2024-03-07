@@ -3,22 +3,22 @@ open RecoilAtomTypes
 open Utils
 
 let formatSortCode = sortcode => {
-  let formatted = sortcode->Js.String2.replaceByRe(%re("/\D+/g"), "")
+  let formatted = sortcode->String.replaceRegExp(%re("/\D+/g"), "")
   let firstPart = formatted->CardUtils.slice(0, 2)
   let secondPart = formatted->CardUtils.slice(2, 4)
   let thirdpart = formatted->CardUtils.slice(4, 6)
 
-  if formatted->Js.String2.length <= 2 {
+  if formatted->String.length <= 2 {
     firstPart
-  } else if formatted->Js.String2.length > 2 && formatted->Js.String2.length <= 4 {
+  } else if formatted->String.length > 2 && formatted->String.length <= 4 {
     `${firstPart}-${secondPart}`
-  } else if formatted->Js.String2.length > 4 && formatted->Js.String2.length <= 6 {
+  } else if formatted->String.length > 4 && formatted->String.length <= 6 {
     `${firstPart}-${secondPart}-${thirdpart}`
   } else {
     formatted
   }
 }
-let cleanSortCode = str => str->Js.String2.replaceByRe(%re("/-/g"), "")
+let cleanSortCode = str => str->String.replaceRegExp(%re("/-/g"), "")
 
 @react.component
 let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
@@ -47,7 +47,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let complete =
     email.value != "" &&
     email.isValid->Option.getOr(false) &&
-    sortcode->cleanSortCode->Js.String2.length == 6 &&
+    sortcode->cleanSortCode->String.length == 6 &&
     accountNumber != "" &&
     fullName.value != "" &&
     isAddressComplete(line1, state, city, country, postalCode) &&
@@ -112,7 +112,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   }
   let sortcodeBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]->cleanSortCode
-    if val->Js.String2.length != 6 && val->Js.String2.length > 0 {
+    if val->String.length != 6 && val->String.length > 0 {
       setSortCodeError(_ => "Your sort code is invalid.")
     }
   }

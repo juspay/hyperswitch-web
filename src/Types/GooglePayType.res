@@ -24,9 +24,9 @@ type document
 @val external document: document = "document"
 @send external getElementById: (document, string) => element = "getElementById"
 type client = {
-  isReadyToPay: (. JSON.t) => Js.Promise.t<JSON.t>,
+  isReadyToPay: (. JSON.t) => Promise.t<JSON.t>,
   createButton: (. JSON.t) => Dom.element,
-  loadPaymentData: (. JSON.t) => Js.Promise.t<Fetch.Response.t>,
+  loadPaymentData: (. JSON.t) => Promise.t<Fetch.Response.t>,
 }
 @new external google: JSON.t => client = "google.payments.api.PaymentsClient"
 let getLabel = (var: PaymentType.googlePayStyleType) => {

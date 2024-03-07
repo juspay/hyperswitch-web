@@ -14,7 +14,7 @@ let closePaymentLoaderIfAny = () =>
 
 let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
   open Promise
-  let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]->Option.getOr("")
+  let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
   let endpoint = ApiEndpoint.getApiEndPoint()
   let uri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
 
@@ -35,7 +35,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
   )
   ->then(res => {
     let statusCode = res->Fetch.Response.status->string_of_int
-    if statusCode->Js.String2.charAt(0) !== "2" {
+    if statusCode->String.charAt(0) !== "2" {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -117,7 +117,7 @@ let rec intentCall = (
   ~counter,
 ) => {
   open Promise
-  let isConfirm = uri->Js.String2.includes("/confirm")
+  let isConfirm = uri->String.includes("/confirm")
   let (eventName: OrcaLogger.eventName, initEventName: OrcaLogger.eventName) = isConfirm
     ? (CONFIRM_CALL, CONFIRM_CALL_INIT)
     : (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
@@ -143,7 +143,7 @@ let rec intentCall = (
     url.searchParams.set(. "payment_intent_client_secret", clientSecret)
     url.searchParams.set(. "status", "failed")
 
-    if statusCode->Js.String2.charAt(0) !== "2" {
+    if statusCode->String.charAt(0) !== "2" {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -206,7 +206,7 @@ let rec intentCall = (
           }
         } else {
           let paymentIntentID =
-            Js.String2.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
+            String.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
           let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
           let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
           intentCall(
@@ -364,7 +364,7 @@ let rec intentCall = (
               ~errortype="confirm_payment_failed",
               ~message="Payment failed. Try again!",
             )
-            if uri->Js.String2.includes("force_sync=true") {
+            if uri->String.includes("force_sync=true") {
               handleLogging(
                 ~optLogger,
                 ~value=intent.nextAction.type_,
@@ -468,7 +468,7 @@ let rec intentCall = (
       }
     } else {
       let paymentIntentID =
-        Js.String2.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
+        String.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
       let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
       intentCall(
@@ -502,7 +502,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="", ()) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]->Option.getOr("")
+      let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
       let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
       let uri = `${endpoint}/payments/${paymentIntentID}?force_sync=true&client_secret=${clientSecret}`
@@ -562,7 +562,7 @@ let rec maskPayload = payloadDict => {
         value
         ->JSON.Decode.string
         ->Option.getOr("")
-        ->Js.String2.replaceByRe(%re(`/\S/g`), "x")
+        ->String.replaceRegExp(%re(`/\S/g`), "x")
         ->JSON.Encode.string,
       )
     }
@@ -588,7 +588,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]->Option.getOr("")
+      let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
       let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = isManualRetryEnabled
@@ -742,8 +742,7 @@ let useSessions = (
 ) => {
   open Promise
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-  let paymentIntentID =
-    Js.String2.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
+  let paymentIntentID = String.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
   let body =
     [
       ("payment_id", paymentIntentID->JSON.Encode.string),
@@ -772,7 +771,7 @@ let useSessions = (
   )
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status->string_of_int
-    if statusCode->Js.String2.charAt(0) !== "2" {
+    if statusCode->String.charAt(0) !== "2" {
       resp
       ->Fetch.Response.json
       ->then(data => {
@@ -846,7 +845,7 @@ let usePaymentMethodList = (
   )
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status->string_of_int
-    if statusCode->Js.String2.charAt(0) !== "2" {
+    if statusCode->String.charAt(0) !== "2" {
       resp
       ->Fetch.Response.json
       ->then(data => {
@@ -920,7 +919,7 @@ let useCustomerDetails = (
   )
   ->then(res => {
     let statusCode = res->Fetch.Response.status->string_of_int
-    if statusCode->Js.String2.charAt(0) !== "2" {
+    if statusCode->String.charAt(0) !== "2" {
       res
       ->Fetch.Response.json
       ->then(data => {

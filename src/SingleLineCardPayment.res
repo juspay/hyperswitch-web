@@ -70,7 +70,7 @@ let make = (
     () => displayPincode ? ("block", "animate-slideLeft") : ("none", "animate-slideRight "),
     [displayPincode],
   )
-  let checkLengthIsZero = item => Js.String2.length(item) == 0
+  let checkLengthIsZero = item => String.length(item) == 0
   let checkValueIsValid = item => item == "valid"
   let checkValueIsInvalid = item => item == "invalid"
 

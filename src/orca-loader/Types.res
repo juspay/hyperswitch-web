@@ -13,7 +13,7 @@ type eventData = {
 type event = {key: string, data: eventData}
 type eventParam = Event(event) | EventData(eventData) | Empty
 type eventHandler = option<JSON.t> => unit
-@send external onload: (Dom.element, unit => Js.Promise.t<'a>) => Js.Promise.t<'a> = "onload"
+@send external onload: (Dom.element, unit => Promise.t<'a>) => Promise.t<'a> = "onload"
 module This = {
   type t
   @get
@@ -35,7 +35,7 @@ type paymentElement = {
 type element = {
   getElement: string => option<paymentElement>,
   update: JSON.t => unit,
-  fetchUpdates: unit => Js.Promise.t<JSON.t>,
+  fetchUpdates: unit => Promise.t<JSON.t>,
   create: (string, JSON.t) => paymentElement,
 }
 
@@ -47,32 +47,32 @@ type confirmPaymentParams = {
 }
 
 type hyperInstance = {
-  confirmOneClickPayment: (JSON.t, bool) => Js.Promise.t<JSON.t>,
-  confirmPayment: JSON.t => Js.Promise.t<JSON.t>,
+  confirmOneClickPayment: (JSON.t, bool) => Promise.t<JSON.t>,
+  confirmPayment: JSON.t => Promise.t<JSON.t>,
   elements: JSON.t => element,
   confirmCardPayment: Js_OO.Callback.arity4<
-    (This.t, string, option<JSON.t>, option<JSON.t>) => Js.Promise.t<JSON.t>,
+    (This.t, string, option<JSON.t>, option<JSON.t>) => Promise.t<JSON.t>,
   >,
-  retrievePaymentIntent: string => Js.Promise.t<JSON.t>,
+  retrievePaymentIntent: string => Promise.t<JSON.t>,
   widgets: JSON.t => element,
   paymentRequest: JSON.t => JSON.t,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
-  Js.Promise.resolve(Dict.make()->JSON.Encode.object)
+  Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 
 let confirmPaymentFn = (_elements: JSON.t) => {
-  Js.Promise.resolve(Dict.make()->JSON.Encode.object)
+  Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 let confirmCardPaymentFn =
   @this
   (_this: This.t, _clientSecretId: string, _data: option<JSON.t>, _options: option<JSON.t>) => {
-    Js.Promise.resolve(Dict.make()->JSON.Encode.object)
+    Promise.resolve(Dict.make()->JSON.Encode.object)
   }
 
 let retrievePaymentIntentFn = _paymentIntentId => {
-  Js.Promise.resolve(Dict.make()->JSON.Encode.object)
+  Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 let update = _options => {
   ()

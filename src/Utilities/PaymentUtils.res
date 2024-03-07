@@ -201,7 +201,7 @@ let getDisplayNameAndIcon = (
           switch val.aliasName {
           | "" => (defaultName, defaultIcon)
           | aliasName =>
-            let id = aliasName->Js.String2.split(" ")
+            let id = aliasName->String.split(" ")
             (
               aliasName,
               Some(PaymentMethodsRecord.icon(id->Belt.Array.get(0)->Option.getOr(""), ~size=19)),
@@ -215,9 +215,9 @@ let getDisplayNameAndIcon = (
 
 let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
   if paymentMethodType == "bank_debit" {
-    paymentMethodName->Js.String2.replace("_debit", "")
+    paymentMethodName->String.replace("_debit", "")
   } else if paymentMethodType == "bank_transfer" {
-    paymentMethodName->Js.String2.replace("_transfer", "")
+    paymentMethodName->String.replace("_transfer", "")
   } else {
     paymentMethodName
   }

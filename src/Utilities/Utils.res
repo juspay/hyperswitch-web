@@ -180,10 +180,10 @@ let getBoolValue = val => val->Option.getOr(false)
 
 let toKebabCase = str => {
   str
-  ->Js.String2.split("")
+  ->String.split("")
   ->Array.mapWithIndex((item, i) => {
-    if item->Js.String2.toUpperCase === item {
-      `${i != 0 ? "-" : ""}${item->Js.String2.toLowerCase}`
+    if item->String.toUpperCase === item {
+      `${i != 0 ? "-" : ""}${item->String.toLowerCase}`
     } else {
       item
     }
@@ -269,20 +269,20 @@ let postSubmitResponse = (~jsonData, ~url) => {
 }
 
 let toCamelCase = str => {
-  if str->Js.String2.includes(":") {
+  if str->String.includes(":") {
     str
   } else {
     str
-    ->Js.String2.toLowerCase
+    ->String.toLowerCase
     ->Js.String2.unsafeReplaceBy0(%re(`/([-_][a-z])/g`), (letter, _, _) => {
-      letter->Js.String2.toUpperCase
+      letter->String.toUpperCase
     })
-    ->Js.String2.replaceByRe(%re(`/[^a-zA-Z]/g`), "")
+    ->String.replaceRegExp(%re(`/[^a-zA-Z]/g`), "")
   }
 }
 let toSnakeCase = str => {
   str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
-    `_${letter->Js.String2.toLowerCase}`
+    `_${letter->String.toLowerCase}`
   )
 }
 type case = CamelCase | SnakeCase | KebabCase
@@ -344,13 +344,13 @@ let removeDuplicate = arr => {
 }
 
 let isEmailValid = email => {
-  switch email->Js.String2.match_(
+  switch email->String.match(
     %re(
       "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/"
     ),
   ) {
   | Some(_match) => Some(true)
-  | None => email->Js.String2.length > 0 ? Some(false) : None
+  | None => email->String.length > 0 ? Some(false) : None
   }
 }
 
@@ -358,7 +358,7 @@ let checkEmailValid = (
   email: RecoilAtomTypes.field,
   fn: (. RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
 ) => {
-  switch email.value->Js.String2.match_(
+  switch email.value->String.match(
     %re(
       "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/"
     ),
@@ -369,7 +369,7 @@ let checkEmailValid = (
       isValid: Some(true),
     })
   | None =>
-    email.value->Js.String2.length > 0
+    email.value->String.length > 0
       ? fn(.prev => {
           ...prev,
           isValid: Some(false),
@@ -467,12 +467,12 @@ let constructClass = (~classname, ~dict) => {
   ->Array.map(entry => {
     let (key, value) = entry
 
-    let class = if !(key->Js.String2.startsWith(":")) && !(key->Js.String2.startsWith(".")) {
+    let class = if !(key->String.startsWith(":")) && !(key->String.startsWith(".")) {
       switch value->JSON.Decode.string {
       | Some(str) => `${key->toKebabCase}:${str}`
       | None => ""
       }
-    } else if key->Js.String2.startsWith(":") {
+    } else if key->String.startsWith(":") {
       switch value->JSON.Decode.object {
       | Some(obj) =>
         let style =
@@ -489,7 +489,7 @@ let constructClass = (~classname, ~dict) => {
 
       | None => ""
       }
-    } else if key->Js.String2.startsWith(".") {
+    } else if key->String.startsWith(".") {
       switch value->JSON.Decode.object {
       | Some(obj) =>
         let style =
@@ -510,15 +510,15 @@ let constructClass = (~classname, ~dict) => {
       ""
     }
 
-    if !(key->Js.String2.startsWith(":")) && !(key->Js.String2.startsWith(".")) {
+    if !(key->String.startsWith(":")) && !(key->String.startsWith(".")) {
       modifiedArr->Array.push(class)->ignore
-    } else if key->Js.String2.startsWith(":") || key->Js.String2.startsWith(".") {
+    } else if key->String.startsWith(":") || key->String.startsWith(".") {
       puseduoArr->Array.push(class)->ignore
     }
   })
   ->ignore
 
-  if classname->Js.String2.length == 0 {
+  if classname->String.length == 0 {
     `${modifiedArr->Array.joinWith(";")} ${puseduoArr->Array.joinWith(" ")}`
   } else {
     `.${classname} {${modifiedArr->Array.joinWith(";")}} ${puseduoArr->Array.joinWith(" ")}`
@@ -583,11 +583,11 @@ let addSize = (str: string, value: float, unit: sizeunit) => {
     }
   }
   let unitInString = getUnit(unit)
-  if str->Js.String2.endsWith(unitInString) {
-    let arr = str->Js.String2.split("")
+  if str->String.endsWith(unitInString) {
+    let arr = str->String.split("")
     let val =
       arr
-      ->Array.slice(~start=0, ~end={arr->Array.length - unitInString->Js.String2.length})
+      ->Array.slice(~start=0, ~end={arr->Array.length - unitInString->String.length})
       ->Array.joinWith("")
       ->Belt.Float.fromString
       ->Option.getOr(0.0)
@@ -599,14 +599,14 @@ let addSize = (str: string, value: float, unit: sizeunit) => {
 let toInt = val => val->Belt.Int.fromString->Option.getOr(0)
 
 let validateRountingNumber = str => {
-  if str->Js.String2.length != 9 {
+  if str->String.length != 9 {
     false
   } else {
     let firstWeight = 3
     let weights = [firstWeight, 7, 1, 3, 7, 1, 3, 7, 1]
     let sum =
       str
-      ->Js.String2.split("")
+      ->String.split("")
       ->Array.mapWithIndex((item, i) => item->toInt * weights[i]->Option.getOr(firstWeight))
       ->Array.reduce(0, (acc, val) => {
         acc + val
@@ -637,7 +637,7 @@ let handlePostMessageEvents = (
   ])
 }
 
-let onlyDigits = str => str->Js.String2.replaceByRe(%re(`/\D/g`), "")
+let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
 
 let getCountryCode = country => {
   Country.country
@@ -688,10 +688,10 @@ let deepCopyDict = dict => {
 }
 
 let snakeToTitleCase = str => {
-  let words = str->Js.String2.split("_")
+  let words = str->String.split("_")
   words
   ->Array.map(item => {
-    item->Js.String2.charAt(0)->Js.String2.toUpperCase ++ item->Js.String2.sliceToEnd(~from=1)
+    item->String.charAt(0)->String.toUpperCase ++ item->String.sliceToEnd(~start=1)
   })
   ->Array.joinWith(" ")
 }
@@ -701,26 +701,26 @@ let logInfo = log => {
 }
 
 let formatIBAN = iban => {
-  let formatted = iban->Js.String2.replaceByRe(%re(`/[^a-zA-Z0-9]/g`), "")
-  let countryCode = formatted->Js.String2.substring(~from=0, ~to_=2)->Js.String2.toUpperCase
-  let codeLastTwo = formatted->Js.String2.substring(~from=2, ~to_=4)
-  let remaining = formatted->Js.String2.substr(~from=4)
+  let formatted = iban->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
+  let countryCode = formatted->String.substring(~start=0, ~end=2)->String.toUpperCase
+  let codeLastTwo = formatted->String.substring(~start=2, ~end=4)
+  let remaining = formatted->String.substringToEnd(~start=4)
 
-  let chunks = switch remaining->Js.String2.match_(%re(`/(.{1,4})/g`)) {
+  let chunks = switch remaining->String.match(%re(`/(.{1,4})/g`)) {
   | Some(matches) => matches
   | None => []
   }
-  `${countryCode}${codeLastTwo} ${chunks->Js.Array2.joinWith(" ")}`->Js.String2.trim
+  `${countryCode}${codeLastTwo} ${chunks->Js.Array2.joinWith(" ")}`->String.trim
 }
 
 let formatBSB = bsb => {
-  let formatted = bsb->Js.String2.replaceByRe(%re("/\D+/g"), "")
-  let firstPart = formatted->Js.String2.substring(~from=0, ~to_=3)
-  let secondPart = formatted->Js.String2.substring(~from=3, ~to_=6)
+  let formatted = bsb->String.replaceRegExp(%re("/\D+/g"), "")
+  let firstPart = formatted->String.substring(~start=0, ~end=3)
+  let secondPart = formatted->String.substring(~start=3, ~end=6)
 
-  if formatted->Js.String2.length <= 3 {
+  if formatted->String.length <= 3 {
     firstPart
-  } else if formatted->Js.String2.length > 3 && formatted->Js.String2.length <= 6 {
+  } else if formatted->String.length > 3 && formatted->String.length <= 6 {
     `${firstPart}-${secondPart}`
   } else {
     formatted
@@ -732,13 +732,12 @@ let getDictIsSome = (dict, key) => {
 }
 
 let rgbaTorgb = bgColor => {
-  let cleanBgColor = bgColor->Js.String2.trim
-  if cleanBgColor->Js.String2.startsWith("rgba") || cleanBgColor->Js.String2.startsWith("rgb") {
-    let start = cleanBgColor->Js.String2.indexOf("(")
-    let end = cleanBgColor->Js.String2.indexOf(")")
+  let cleanBgColor = bgColor->String.trim
+  if cleanBgColor->String.startsWith("rgba") || cleanBgColor->String.startsWith("rgb") {
+    let start = cleanBgColor->String.indexOf("(")
+    let end = cleanBgColor->String.indexOf(")")
 
-    let colorArr =
-      cleanBgColor->Js.String2.substring(~from=start + 1, ~to_=end)->Js.String2.split(",")
+    let colorArr = cleanBgColor->String.substring(~start=start + 1, ~end)->String.split(",")
     if colorArr->Array.length === 3 {
       cleanBgColor
     } else {

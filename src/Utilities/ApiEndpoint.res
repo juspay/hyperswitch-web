@@ -9,7 +9,7 @@ let setApiEndPoint = str => {
 }
 
 let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false, ()) => {
-  let testMode = publishableKey->Js.String2.startsWith("pk_snd_")
+  let testMode = publishableKey->String.startsWith("pk_snd_")
   switch apiEndPoint.contents {
   | Some(str) => str
   | None =>

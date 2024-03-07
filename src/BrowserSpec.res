@@ -13,8 +13,8 @@ type screen = {colorDepth: int, height: int, width: int}
 
 let checkIsSafari = () => {
   let userAgentString = navigator.userAgent
-  let chromeAgent = userAgentString->Js.String2.indexOf("Chrome") > -1
-  let safariAgent = userAgentString->Js.String2.indexOf("Safari") > -1
+  let chromeAgent = userAgentString->String.indexOf("Chrome") > -1
+  let safariAgent = userAgentString->String.indexOf("Safari") > -1
   chromeAgent && safariAgent ? false : safariAgent ? true : false
 }
 

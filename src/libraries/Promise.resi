@@ -6,7 +6,7 @@
 //
 // More details about polymorphism / invariance / covariance,... can be found here:
 // https://caml.inria.fr/pub/docs/manual-ocaml/polymorphism.html#ss:variance:abstract-data-types
-type t<+'a> = Js.Promise.t<'a>
+type t<+'a> = Promise.t<'a>
 
 // JsError is currently a shim exception and will be deprecated for
 // ReScript version >= 9.0.

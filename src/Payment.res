@@ -67,7 +67,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let cvcLength = obj.maxCVCLenth
     if (
       cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true) &&
-        cvcNumber->Js.String2.length == cvcLength
+        cvcNumber->String.length == cvcLength
     ) {
       blurRef(cvcRef)
     }
@@ -100,9 +100,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     if cardValid(clearValue, cardBrand) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
-    if card->Js.String2.length > 6 && cardNumber->pincodeVisibility {
+    if card->String.length > 6 && cardNumber->pincodeVisibility {
       setDisplayPincode(_ => true)
-    } else if card->Js.String2.length < 8 {
+    } else if card->String.length < 8 {
       setDisplayPincode(_ => false)
     }
     setCardNumber(_ => card)
@@ -124,7 +124,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     logInputChangeInfo("cardCVC", logger)
     let cvc = val->formatCVCNumber(cardBrand)
     setCvcNumber(_ => cvc)
-    if cvc->Js.String2.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
+    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
       zipRef.current->Js.Nullable.toOption->Option.forEach(input => input->focus)->ignore
     }
   }
@@ -153,7 +153,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
     if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
       setIsCardValid(_ => Some(true))
-    } else if cardNumber->Js.String2.length == 0 {
+    } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => None)
     } else {
       setIsCardValid(_ => Some(false))
@@ -168,9 +168,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let handleExpiryBlur = ev => {
     let cardExpiry = ReactEvent.Focus.target(ev)["value"]
-    if cardExpiry->Js.String2.length > 0 && getExpiryValidity(cardExpiry) {
+    if cardExpiry->String.length > 0 && getExpiryValidity(cardExpiry) {
       setIsExpiryValid(_ => Some(true))
-    } else if cardExpiry->Js.String2.length == 0 {
+    } else if cardExpiry->String.length == 0 {
       setIsExpiryValid(_ => None)
     } else {
       setIsExpiryValid(_ => Some(false))
@@ -180,11 +180,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let handleCVCBlur = ev => {
     let cvcNumber = ReactEvent.Focus.target(ev)["value"]
     if (
-      cvcNumber->Js.String2.length > 0 &&
-        cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
+      cvcNumber->String.length > 0 && cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
     ) {
       setIsCVCValid(_ => Some(true))
-    } else if cvcNumber->Js.String2.length == 0 {
+    } else if cvcNumber->String.length == 0 {
       setIsCVCValid(_ => None)
     } else {
       setIsCVCValid(_ => Some(false))
@@ -196,7 +195,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let regex = postalRegex(postalCodes, ())
     if Js.Re.test_(regex->Js.Re.fromString, zipCode) || regex == "" {
       setIsZipValid(_ => Some(true))
-    } else if zipCode->Js.String2.length == 0 {
+    } else if zipCode->String.length == 0 {
       setIsZipValid(_ => None)
     } else {
       setIsZipValid(_ => Some(false))

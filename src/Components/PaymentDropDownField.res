@@ -18,7 +18,7 @@ let make = (
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
 
   let getClassName = initialLabel => {
-    if value.value->Js.String2.length == 0 {
+    if value.value->String.length == 0 {
       `${initialLabel}--empty`
     } else {
       switch value.isValid {
@@ -51,7 +51,7 @@ let make = (
     // })
     Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
   }
-  let focusClass = if inputFocused || value.value->Js.String2.length > 0 {
+  let focusClass = if inputFocused || value.value->String.length > 0 {
     `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`
   } else {
     "transition-all ease-in duration-75"
@@ -76,7 +76,7 @@ let make = (
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
   <RenderIf condition={options->Array.length > 0}>
     <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
-      <RenderIf condition={fieldName->Js.String2.length > 0 && config.appearance.labels == Above}>
+      <RenderIf condition={fieldName->String.length > 0 && config.appearance.labels == Above}>
         <div
           className={`Label ${labelClass} `}
           style={ReactDOMStyle.make(
@@ -116,10 +116,10 @@ let make = (
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
             style={ReactDOMStyle.make(
               ~marginBottom={
-                inputFocused || value.value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
+                inputFocused || value.value->String.length > 0 ? "" : themeObj.spacingUnit
               },
               ~fontSize={
-                inputFocused || value.value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
+                inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
               ~opacity="0.6",
               (),
@@ -139,7 +139,7 @@ let make = (
           )}>
           <Icon size=10 name={"arrow-down"} />
         </div>
-        <RenderIf condition={value.errorString->Js.String2.length > 0}>
+        <RenderIf condition={value.errorString->String.length > 0}>
           <div
             className="Error pt-1"
             style={ReactDOMStyle.make(

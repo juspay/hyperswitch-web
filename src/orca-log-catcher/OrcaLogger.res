@@ -117,7 +117,7 @@ let eventNameToStrMapper = eventName => {
 }
 
 let convertToScreamingSnakeCase = text => {
-  text->Js.String2.trim->Js.String2.replaceByRe(%re("/ /g"), "_")->Js.String2.toUpperCase
+  text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
 }
 
 type maskableDetails = Email | CardDetails
@@ -383,7 +383,7 @@ let browserDetect = content => {
   }
 }
 
-let arrayOfNameAndVersion = Js.String2.split(Window.userAgent->browserDetect, "-")
+let arrayOfNameAndVersion = String.split(Window.userAgent->browserDetect, "-")
 
 let make = (
   ~sessionId=?,
@@ -575,7 +575,7 @@ let make = (
       value,
       internalMetadata,
       category: logCategory,
-      paymentId: Js.String2.split(clientSecret.contents, "_secret_")
+      paymentId: String.split(clientSecret.contents, "_secret_")
       ->Belt.Array.get(0)
       ->Option.getOr(""),
       merchantId: merchantId.contents,
@@ -633,7 +633,7 @@ let make = (
       | StringValue(a) => a
       },
       category: logCategory,
-      paymentId: Js.String2.split(clientSecret.contents, "_secret_")
+      paymentId: String.split(clientSecret.contents, "_secret_")
       ->Belt.Array.get(0)
       ->Option.getOr(""),
       merchantId: merchantId.contents,
@@ -678,7 +678,7 @@ let make = (
       value,
       internalMetadata,
       category: logCategory,
-      paymentId: Js.String2.split(clientSecret.contents, "_secret_")
+      paymentId: String.split(clientSecret.contents, "_secret_")
       ->Belt.Array.get(0)
       ->Option.getOr(""),
       merchantId: merchantId.contents,
@@ -714,7 +714,7 @@ let make = (
       category: USER_EVENT,
       value: "log initiated",
       internalMetadata: "",
-      paymentId: Js.String2.split(clientSecret.contents, "_secret_")
+      paymentId: String.split(clientSecret.contents, "_secret_")
       ->Belt.Array.get(0)
       ->Option.getOr(""),
       merchantId: merchantId.contents,

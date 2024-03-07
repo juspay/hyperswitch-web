@@ -4,7 +4,7 @@ open Utils
 
 @react.component
 let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
-  let cleanBSB = str => str->Js.String2.replaceByRe(%re("/-/g"), "")
+  let cleanBSB = str => str->String.replaceRegExp(%re("/-/g"), "")
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
@@ -28,11 +28,10 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     switch modalData {
     | Some(data: ACHTypes.data) =>
       Js.log2(
-        data.accountNumber->Js.String2.length == 9 &&
-          data.sortCode->cleanBSB->Js.String2.length == 6,
+        data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6,
         "complete",
       )
-      data.accountNumber->Js.String2.length == 9 && data.sortCode->cleanBSB->Js.String2.length == 6
+      data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6
     | None => false
     }
 

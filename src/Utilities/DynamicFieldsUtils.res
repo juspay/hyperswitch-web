@@ -1,6 +1,6 @@
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
-  let fieldNameArr = field.value->Js.String2.split(" ")
-  let requiredFieldsArr = item.required_field->Js.String2.split(".")
+  let fieldNameArr = field.value->String.split(" ")
+  let requiredFieldsArr = item.required_field->String.split(".")
   switch requiredFieldsArr
   ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
   ->Option.getOr("") {
@@ -84,8 +84,8 @@ let checkIfNameIsValid = (
   requiredFieldsType
   ->Array.filter(required_field => required_field.field_type === paymentMethodFields)
   ->Array.reduce(true, (acc, item) => {
-    let fieldNameArr = field.value->Js.String2.split(" ")
-    let requiredFieldsArr = item.required_field->Js.String2.split(".")
+    let fieldNameArr = field.value->String.split(" ")
+    let requiredFieldsArr = item.required_field->String.split(".")
     let fieldValue = switch requiredFieldsArr
     ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
     ->Option.getOr("") {
@@ -283,16 +283,16 @@ let useSetInitialRequiredFields = (
       requiredFields
       ->Array.filter(requiredFields => requiredFields.field_type === item.field_type)
       ->Array.reduce("", (acc, item) => {
-        let requiredFieldsArr = item.required_field->Js.String2.split(".")
+        let requiredFieldsArr = item.required_field->String.split(".")
         switch requiredFieldsArr
         ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
         ->Option.getOr("") {
-        | "first_name" => item.value->Js.String2.concat(acc)
-        | "last_name" => acc->Js.String2.concatMany([" ", item.value])
+        | "first_name" => item.value->String.concat(acc)
+        | "last_name" => acc->String.concatMany([" ", item.value])
         | _ => acc
         }
       })
-      ->Js.String2.trim
+      ->String.trim
     }
 
     let setFields = (
@@ -457,7 +457,7 @@ let useRequiredFieldsBody = (
       billingAddressFields->Array.reduce(requiredFieldsBody, (acc, item) => {
         let value = item->getFieldValueFromFieldType
         if item === BillingName {
-          let arr = value->Js.String2.split(" ")
+          let arr = value->String.split(" ")
           acc->Dict.set(
             "billing.address.first_name",
             arr->Belt.Array.get(0)->Option.getOr("")->JSON.Encode.string,

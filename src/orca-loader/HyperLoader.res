@@ -1,5 +1,5 @@
 let loadHyper = (str, option) => {
-  Js.Promise.resolve(Hyper.make(str, option))
+  Promise.resolve(Hyper.make(str, option))
 }
 
 let loadStripe = (str, option) => {

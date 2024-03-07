@@ -103,7 +103,7 @@ let make = (
               Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0
           ) {
             let trustPayScriptURL =
-              publishableKey->Js.String2.startsWith("pk_prd_")
+              publishableKey->String.startsWith("pk_prd_")
                 ? "https://tpgw.trustpay.eu/js/v1.js"
                 : "https://test-tpgw.trustpay.eu/js/v1.js"
             let trustPayScript = Window.createElement("script")
@@ -288,9 +288,7 @@ let make = (
               let baseDetails = {
                 "apiVersion": 2,
                 "apiVersionMinor": 0,
-                "environment": publishableKey->Js.String2.startsWith("pk_prd_")
-                  ? "PRODUCTION"
-                  : "TEST",
+                "environment": publishableKey->String.startsWith("pk_prd_") ? "PRODUCTION" : "TEST",
               }
 
               let paymentDataRequest = GooglePayType.assign2(
@@ -627,7 +625,7 @@ let make = (
             try {
               let gPayClient = GooglePayType.google(
                 {
-                  "environment": publishableKey->Js.String2.startsWith("pk_prd_")
+                  "environment": publishableKey->String.startsWith("pk_prd_")
                     ? "PRODUCTION"
                     : "TEST",
                 }->toJson,

@@ -1,4 +1,4 @@
-type t<+'a> = Js.Promise.t<'a>
+type t<+'a> = Promise.t<'a>
 
 exception JsError(Js.Exn.t)
 external unsafeToJsExn: exn => Js.Exn.t = "%identity"

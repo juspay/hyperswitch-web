@@ -35,7 +35,7 @@ let make = (
     None
   })
 
-  let focusClass = if inputFocused || value->Js.String2.length > 0 {
+  let focusClass = if inputFocused || value->String.length > 0 {
     `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`
   } else {
     "transition-all ease-in duration-75"
@@ -46,7 +46,7 @@ let make = (
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
   <RenderIf condition={options->Array.length > 0}>
     <div className="flex flex-col w-full">
-      <RenderIf condition={fieldName->Js.String2.length > 0 && appearance.labels == Above}>
+      <RenderIf condition={fieldName->String.length > 0 && appearance.labels == Above}>
         <div
           className={`Label `}
           style={ReactDOMStyle.make(
@@ -86,10 +86,10 @@ let make = (
             className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass}`}
             style={ReactDOMStyle.make(
               ~marginBottom={
-                inputFocused || value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
+                inputFocused || value->String.length > 0 ? "" : themeObj.spacingUnit
               },
               ~fontSize={
-                inputFocused || value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
+                inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
               ~opacity="0.6",
               (),

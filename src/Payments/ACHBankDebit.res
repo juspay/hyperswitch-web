@@ -96,7 +96,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     <EmailPaymentInput paymentType />
     <div className="flex flex-col">
       <AddBankAccount modalData setModalData />
-      <RenderIf condition={bankError->Js.String2.length > 0}>
+      <RenderIf condition={bankError->String.length > 0}>
         <div
           className="Error pt-1"
           style={ReactDOMStyle.make(

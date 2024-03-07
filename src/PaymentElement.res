@@ -172,7 +172,7 @@ let make = (
       loggerState.setLogInfo(
         ~value="",
         ~eventName=PAYMENT_METHOD_CHANGED,
-        ~paymentMethod=selectedOption->Js.String2.toUpperCase,
+        ~paymentMethod=selectedOption->String.toUpperCase,
         (),
       )
     }
