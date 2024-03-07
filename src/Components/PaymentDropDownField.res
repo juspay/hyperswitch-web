@@ -28,7 +28,7 @@ let make = (
     }
   }
   React.useEffect1(() => {
-    let initialValue = options->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+    let initialValue = options->Belt.Array.get(0)->Option.getOr("")
     if (
       value.value === "" ||
       value.value === initialValue ||
@@ -41,7 +41,7 @@ let make = (
       })
     }
     None
-  }, [options->Belt.Array.get(0)->Belt.Option.getWithDefault("")])
+  }, [options->Belt.Array.get(0)->Option.getOr("")])
   let handleFocus = _ => {
     setInputFocused(_ => true)
     // setValue(.prev => {

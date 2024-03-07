@@ -62,11 +62,11 @@ let make = (~sessionId as _, ~publishableKey as _, ~clientSecret as _, ~endpoint
   // //     | _ => Js.Json.null
   // //     }
   // //     let dict = json->Utils.getDictFromJson
-  // //     if dict->Js.Dict.get("sendPaymentMethodsResponse")->Belt.Option.isSome {
+  // //     if dict->Js.Dict.get("sendPaymentMethodsResponse")->Option.isSome {
   // //       paymentMethodsResponse->sendPromiseData("payment_methods")
-  // //     } else if dict->Js.Dict.get("sendCustomerPaymentMethodsResponse")->Belt.Option.isSome {
+  // //     } else if dict->Js.Dict.get("sendCustomerPaymentMethodsResponse")->Option.isSome {
   // //       customerPaymentMethodsResponse->sendPromiseData("customer_payment_methods")
-  // //     } else if dict->Js.Dict.get("sendSessionTokensResponse")->Belt.Option.isSome {
+  // //     } else if dict->Js.Dict.get("sendSessionTokensResponse")->Option.isSome {
   // //       sessionTokensResponse->sendPromiseData("session_tokens")
   // //     }
   // //   }

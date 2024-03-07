@@ -76,7 +76,7 @@ let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchT
   open Promise
   retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
   ->then(json => {
-    let dict = json->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+    let dict = json->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())
     let status = dict->getString("status", "")
 
     if status === "succeeded" || status === "failed" {
@@ -206,9 +206,7 @@ let rec intentCall = (
           }
         } else {
           let paymentIntentID =
-            Js.String2.split(clientSecret, "_secret_")
-            ->Belt.Array.get(0)
-            ->Belt.Option.getWithDefault("")
+            Js.String2.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
           let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
           let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
           intentCall(
@@ -280,8 +278,8 @@ let rec intentCall = (
               ("metadata", dict->Js.Json.object_),
             ])
           } else if intent.nextAction.type_ === "qr_code_information" {
-            let qrData = intent.nextAction.image_data_url->Belt.Option.getWithDefault("")
-            let expiryTime = intent.nextAction.display_to_timestamp->Belt.Option.getWithDefault(0.0)
+            let qrData = intent.nextAction.image_data_url->Option.getOr("")
+            let expiryTime = intent.nextAction.display_to_timestamp->Option.getOr(0.0)
             let headerObj = Js.Dict.empty()
             headers->Js.Array2.forEach(
               entries => {
@@ -312,7 +310,7 @@ let rec intentCall = (
               ("metadata", metaData->Js.Json.object_),
             ])
           } else if intent.nextAction.type_ === "display_voucher_information" {
-            let voucherData = intent.nextAction.voucher_details->Belt.Option.getWithDefault({
+            let voucherData = intent.nextAction.voucher_details->Option.getOr({
               download_url: "",
               reference: "",
             })
@@ -470,9 +468,7 @@ let rec intentCall = (
       }
     } else {
       let paymentIntentID =
-        Js.String2.split(clientSecret, "_secret_")
-        ->Belt.Array.get(0)
-        ->Belt.Option.getWithDefault("")
+        Js.String2.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
       let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
       intentCall(
@@ -548,16 +544,16 @@ let rec maskPayload = payloadDict => {
   let maskedPayload = Js.Dict.empty()
   keys
   ->Js.Array2.map(key => {
-    let value = payloadDict->Js.Dict.get(key)->Belt.Option.getWithDefault(Js.Json.null)
-    if value->Js.Json.decodeArray->Belt.Option.isSome {
-      let arr = value->Js.Json.decodeArray->Belt.Option.getWithDefault([])
+    let value = payloadDict->Js.Dict.get(key)->Option.getOr(Js.Json.null)
+    if value->Js.Json.decodeArray->Option.isSome {
+      let arr = value->Js.Json.decodeArray->Option.getOr([])
       arr->Js.Array2.forEachi((element, index) => {
         maskedPayload->Js.Dict.set(
           key ++ "[" ++ index->Belt.Int.toString ++ "]",
           element->Utils.getDictFromJson->maskPayload->Js.Json.string,
         )
       })
-    } else if value->Js.Json.decodeObject->Belt.Option.isSome {
+    } else if value->Js.Json.decodeObject->Option.isSome {
       let valueDict = value->Utils.getDictFromJson
       maskedPayload->Js.Dict.set(key, valueDict->maskPayload->Js.Json.string)
     } else {
@@ -565,7 +561,7 @@ let rec maskPayload = payloadDict => {
         key,
         value
         ->Js.Json.decodeString
-        ->Belt.Option.getWithDefault("")
+        ->Option.getOr("")
         ->Js.String2.replaceByRe(%re(`/\S/g`), "x")
         ->Js.Json.string,
       )
@@ -615,7 +611,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
         let maskedPayload =
           body
           ->OrcaUtils.safeParseOpt
-          ->Belt.Option.getWithDefault(Js.Json.null)
+          ->Option.getOr(Js.Json.null)
           ->Utils.getDictFromJson
           ->maskPayload
         let loggerPayload =
@@ -653,7 +649,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
                 ~value="",
                 ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
-                ~paymentMethod=json->Js.Json.decodeString->Belt.Option.getWithDefault(""),
+                ~paymentMethod=json->Js.Json.decodeString->Option.getOr(""),
                 (),
               )
             }
@@ -750,7 +746,7 @@ let useSessions = (
   open Promise
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
   let paymentIntentID =
-    Js.String2.split(clientSecret, "_secret_")->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+    Js.String2.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
   let body =
     [
       ("payment_id", paymentIntentID->Js.Json.string),

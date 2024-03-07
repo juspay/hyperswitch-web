@@ -70,7 +70,7 @@ type options = {timeZone: string}
 type dateTimeFormat = {resolvedOptions: (. unit) => options}
 @val @scope("Intl") external dateTimeFormat: (. unit) => dateTimeFormat = "DateTimeFormat"
 
-let toInt = val => val->Belt.Int.fromString->Belt.Option.getWithDefault(0)
+let toInt = val => val->Belt.Int.fromString->Option.getOr(0)
 let toString = val => val->Belt.Int.toString
 
 let getQueryParamsDictforKey = (searchParams, keyName) => {
@@ -80,16 +80,16 @@ let getQueryParamsDictforKey = (searchParams, keyName) => {
   ->Js.String2.split("&")
   ->Js.Array2.forEach(paramStr => {
     let keyValArr = Js.String2.split(paramStr, "=")
-    let key = keyValArr->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+    let key = keyValArr->Belt.Array.get(0)->Option.getOr("")
     let value = if keyValArr->Js.Array2.length > 0 {
-      keyValArr->Belt.Array.get(1)->Belt.Option.getWithDefault("")
+      keyValArr->Belt.Array.get(1)->Option.getOr("")
     } else {
       ""
     }
     Js.Dict.set(dict, key, value)
   })
 
-  dict->Js.Dict.get(keyName)->Belt.Option.getWithDefault("")
+  dict->Js.Dict.get(keyName)->Option.getOr("")
 }
 let cardType = val => {
   switch val {
@@ -117,7 +117,7 @@ let getobjFromCardPattern = cardBrand => {
     cardBrand === item.issuer
   })
   ->Belt.Array.get(0)
-  ->Belt.Option.getWithDefault(CardPattern.defaultCardPattern)
+  ->Option.getOr(CardPattern.defaultCardPattern)
 }
 
 let clearSpaces = value => {
@@ -129,7 +129,7 @@ let slice = (val, from: int, to_: int) => {
 }
 
 let getStrFromIndex = (arr: array<string>, index) => {
-  arr->Belt.Array.get(index)->Belt.Option.getWithDefault("")
+  arr->Belt.Array.get(index)->Option.getOr("")
 }
 
 let formatCVCNumber = (val, cardType) => {
@@ -145,8 +145,8 @@ let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
   let date = tempTimeDate[0]->Option.getOr("")
   let dateComponents = date->Js.String2.split("-")
 
-  let currentMonth = dateComponents->Belt.Array.get(1)->Belt.Option.getWithDefault("")
-  let currentYear = dateComponents->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+  let currentMonth = dateComponents->Belt.Array.get(1)->Option.getOr("")
+  let currentYear = dateComponents->Belt.Array.get(0)->Option.getOr("")
 
   (currentMonth->toInt, currentYear->toInt)
 }
@@ -178,8 +178,8 @@ let formatCardNumber = (val, cardType) => {
 let splitExpiryDates = val => {
   let split = val->Js.String2.split("/")
   let value = split->Js.Array2.map(item => item->Js.String2.trim)
-  let month = value->Belt.Array.get(0)->Belt.Option.getWithDefault("")
-  let year = value->Belt.Array.get(1)->Belt.Option.getWithDefault("")
+  let month = value->Belt.Array.get(0)->Option.getOr("")
+  let year = value->Belt.Array.get(1)->Option.getOr("")
   (month, year)
 }
 let getExpiryDates = val => {
@@ -250,7 +250,7 @@ let getCardBrand = cardNumber => {
         ->Js.String2.replaceByRe(%re("/[^\d]/g"), "")
         ->Js.String2.substring(~from=0, ~to_=6)
         ->Belt.Int.fromString
-        ->Belt.Option.getWithDefault(0)
+        ->Option.getOr(0)
 
       let range = cardRanges->Js.Array2.map(cardRange => {
         let (min, max) = cardRange
@@ -267,7 +267,7 @@ let getCardBrand = cardNumber => {
     } else {
       patternsDict
       ->Js.Array2.map(item => {
-        if Js.String2.match_(card, item.pattern)->Belt.Option.isSome {
+        if Js.String2.match_(card, item.pattern)->Option.isSome {
           item.issuer
         } else {
           ""
@@ -275,7 +275,7 @@ let getCardBrand = cardNumber => {
       })
       ->Js.Array2.filter(item => item !== "")
       ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault("")
+      ->Option.getOr("")
     }
   } catch {
   | _error => ""
@@ -434,7 +434,7 @@ let cardValid = (cardNumber, cardBrand) => {
     (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)
 }
 let blurRef = (ref: React.ref<Js.Nullable.t<Dom.element>>) => {
-  ref.current->Js.Nullable.toOption->Belt.Option.forEach(input => input->blur)->ignore
+  ref.current->Js.Nullable.toOption->Option.forEach(input => input->blur)->ignore
 }
 let handleInputFocus = (
   ~currentRef: React.ref<Js.Nullable.t<Dom.element>>,
@@ -442,7 +442,7 @@ let handleInputFocus = (
 ) => {
   let optionalRef = destinationRef.current->Js.Nullable.toOption
   switch optionalRef {
-  | Some(_) => optionalRef->Belt.Option.forEach(input => input->focus)->ignore
+  | Some(_) => optionalRef->Option.forEach(input => input->focus)->ignore
   | None => blurRef(currentRef)
   }
 }
@@ -515,13 +515,13 @@ let pincodeVisibility = cardNumber => {
     CardPattern.cardPatterns
     ->Js.Array2.filter(obj => obj.issuer == brand)
     ->Belt.Array.get(0)
-    ->Belt.Option.getWithDefault(CardPattern.defaultCardPattern)
+    ->Option.getOr(CardPattern.defaultCardPattern)
   brandPattern.pincodeRequired
 }
 
 let swapCardOption = (cardOpts: array<string>, dropOpts: array<string>, selectedOption: string) => {
   let popEle = Js.Array2.pop(cardOpts)
-  dropOpts->Js.Array2.push(popEle->Belt.Option.getWithDefault(""))->ignore
+  dropOpts->Js.Array2.push(popEle->Option.getOr(""))->ignore
   cardOpts->Js.Array2.push(selectedOption)->ignore
   let temp: array<string> = dropOpts->Js.Array2.filter(item => item != selectedOption)
   (cardOpts, temp)

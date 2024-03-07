@@ -2,9 +2,9 @@ open Utils
 let getKeyValue = (json, str) => {
   json
   ->Js.Dict.get(str)
-  ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+  ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
   ->Js.Json.decodeString
-  ->Belt.Option.getWithDefault("")
+  ->Option.getOr("")
 }
 
 @react.component
@@ -24,9 +24,18 @@ let make = (~transferType) => {
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (buttonElement, text) = React.useMemo1(() => {
     !isCopied
-      ? (<> <Icon name="copyIcon" size=22 /> {React.string("Copy")} </>, "text-[#006DF9]")
+      ? (
+          <>
+            <Icon name="copyIcon" size=22 />
+            {React.string("Copy")}
+          </>,
+          "text-[#006DF9]",
+        )
       : (
-          <> <Icon name="ticMark" size=22 /> {React.string("Copied")} </>,
+          <>
+            <Icon name="ticMark" size=22 />
+            {React.string("Copied")}
+          </>,
           "text-[#c0c0c0] font-medium ",
         )
   }, [isCopied])
@@ -43,14 +52,14 @@ let make = (~transferType) => {
     let handle = (ev: Window.event) => {
       let json = ev.data->Js.Json.parseExn
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("fullScreenIframeMounted")->Belt.Option.isSome {
+      if dict->Js.Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let dictMetadata =
           dict
           ->getJsonObjectFromDict("metadata")
           ->getDictFromJson
           ->Js.Dict.get(responseType)
-          ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+          ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
           ->getDictFromJson
         setKeys(_ => dictMetadata->Js.Dict.keys)
         setJson(_ => dictMetadata)
@@ -64,7 +73,9 @@ let make = (~transferType) => {
   <Modal showClose=false openModal setOpenModal>
     <div className="flex flex-col h-full justify-between items-center">
       <div className="flex flex-col w-full mt-4 max-w-md justify-between items-center">
-        <div className="PopupIcon m-1 p-2"> <Icon name="ach-transfer" size=45 /> </div>
+        <div className="PopupIcon m-1 p-2">
+          <Icon name="ach-transfer" size=45 />
+        </div>
         <div className="Popuptitle flex w-[90%] justify-center">
           <span className="font-bold text-lg"> {React.string(`${title} bank transfer`)} </span>
         </div>

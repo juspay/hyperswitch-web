@@ -118,12 +118,8 @@ module ErrorCard = {
           category: USER_ERROR,
           paymentId: "",
           merchantId: "",
-          browserName: OrcaLogger.arrayOfNameAndVersion
-          ->Belt.Array.get(0)
-          ->Belt.Option.getWithDefault("Others"),
-          browserVersion: OrcaLogger.arrayOfNameAndVersion
-          ->Belt.Array.get(1)
-          ->Belt.Option.getWithDefault("0"),
+          browserName: OrcaLogger.arrayOfNameAndVersion->Belt.Array.get(0)->Option.getOr("Others"),
+          browserVersion: OrcaLogger.arrayOfNameAndVersion->Belt.Array.get(1)->Option.getOr("0"),
           platform: Window.platform,
           userAgent: Window.userAgent,
           appId: "",

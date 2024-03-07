@@ -12,7 +12,7 @@ let make = (~children) => {
         let json = ev.data->Js.Json.parseExn
         let dict = json->getDictFromJson
 
-        if dict->Js.Dict.get("fullScreenIframeMounted")->Belt.Option.isSome {
+        if dict->Js.Dict.get("fullScreenIframeMounted")->Option.isSome {
           if dict->getBool("fullScreenIframeMounted", false) {
             setFullScreenIframeNode(_ =>
               switch Window.windowParent->Window.fullscreen {

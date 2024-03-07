@@ -36,7 +36,7 @@ let make = (
     )
     let optionalRef = cvcRef.current->Js.Nullable.toOption
     switch optionalRef {
-    | Some(_) => optionalRef->Belt.Option.forEach(input => input->CardUtils.focus)->ignore
+    | Some(_) => optionalRef->Option.forEach(input => input->CardUtils.focus)->ignore
     | None => ()
     }
   }

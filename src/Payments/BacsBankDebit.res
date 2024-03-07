@@ -46,12 +46,12 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
 
   let complete =
     email.value != "" &&
-    email.isValid->Belt.Option.getWithDefault(false) &&
+    email.isValid->Option.getOr(false) &&
     sortcode->cleanSortCode->Js.String2.length == 6 &&
     accountNumber != "" &&
     fullName.value != "" &&
     isAddressComplete(line1, state, city, country, postalCode) &&
-    postalCode.isValid->Belt.Option.getWithDefault(false)
+    postalCode.isValid->Option.getOr(false)
 
   let empty =
     email.value == "" ||

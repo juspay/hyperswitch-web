@@ -18,9 +18,7 @@ let make = (~paymentType) => {
     setEmail(.prev => {
       value: val,
       isValid: val->Utils.isEmailValid,
-      errorString: val->Utils.isEmailValid->Belt.Option.getWithDefault(false)
-        ? ""
-        : prev.errorString,
+      errorString: val->Utils.isEmailValid->Option.getOr(false) ? "" : prev.errorString,
     })
   }
   let onBlur = ev => {

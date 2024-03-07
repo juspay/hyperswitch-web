@@ -25,10 +25,9 @@ let make = () => {
     let handle = (ev: Window.event) => {
       let json = ev.data->Js.Json.parseExn
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("fullScreenIframeMounted")->Belt.Option.isSome {
+      if dict->Js.Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict =
-          metadata->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+        let metaDataDict = metadata->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())
         setReturnUrl(_ => metaDataDict->getString("returnUrl", ""))
         setDownloadUrl(_ => metaDataDict->getString("voucherUrl", ""))
         setReference(_ => metaDataDict->getString("reference", ""))

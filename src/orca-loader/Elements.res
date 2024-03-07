@@ -29,36 +29,34 @@ let make = (
 
   try {
     let iframeRef = []
-    let logger = logger->Belt.Option.getWithDefault(OrcaLogger.defaultLoggerConfig)
+    let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
     let savedPaymentElement = Js.Dict.empty()
-    let localOptions = options->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+    let localOptions = options->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
     let appearance =
-      localOptions
-      ->Js.Dict.get("appearance")
-      ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+      localOptions->Js.Dict.get("appearance")->Option.getOr(Js.Dict.empty()->Js.Json.object_)
 
     let fonts =
       localOptions
       ->Js.Dict.get("fonts")
-      ->Belt.Option.flatMap(Js.Json.decodeArray)
-      ->Belt.Option.getWithDefault([])
+      ->Option.flatMap(Js.Json.decodeArray)
+      ->Option.getOr([])
       ->Js.Json.array
 
     let blockConfirm =
       GlobalVars.isInteg &&
       options
       ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("blockConfirm"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(false)
+      ->Option.flatMap(x => x->Js.Dict.get("blockConfirm"))
+      ->Option.flatMap(Js.Json.decodeBoolean)
+      ->Option.getOr(false)
     let switchToCustomPod =
       GlobalVars.isInteg &&
       options
       ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("switchToCustomPod"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(false)
+      ->Option.flatMap(x => x->Js.Dict.get("switchToCustomPod"))
+      ->Option.flatMap(Js.Json.decodeBoolean)
+      ->Option.getOr(false)
 
     let paymentMethodListPromise = PaymentHelpers.usePaymentMethodList(
       ~clientSecret,
@@ -90,14 +88,14 @@ let make = (
             ~list=json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper,
             ~paymentMethod="wallet",
             ~paymentMethodType="apple_pay",
-          )->Belt.Option.isSome
+          )->Option.isSome
 
         let isGooglePayPresent =
           PaymentMethodsRecord.getPaymentMethodTypeFromList(
             ~list=json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper,
             ~paymentMethod="wallet",
             ~paymentMethodType="google_pay",
-          )->Belt.Option.isSome
+          )->Option.isSome
 
         if isApplePayPresent || isGooglePayPresent {
           if (
@@ -258,7 +256,7 @@ let make = (
           let json = event.data->eventToJson
           let dict = json->getDictFromJson
 
-          if dict->Js.Dict.get("applePayMounted")->Belt.Option.isSome {
+          if dict->Js.Dict.get("applePayMounted")->Option.isSome {
             switch sessionForApplePay->Js.Nullable.toOption {
             | Some(session) =>
               if session.canMakePayments(.) {
@@ -367,23 +365,23 @@ let make = (
           let sessionsArr =
             json
             ->Js.Json.decodeObject
-            ->Belt.Option.getWithDefault(Js.Dict.empty())
+            ->Option.getOr(Js.Dict.empty())
             ->SessionsType.getSessionsTokenJson("session_token")
 
           let applePayPresent = sessionsArr->Js.Array2.find(item => {
             let x =
               item
               ->Js.Json.decodeObject
-              ->Belt.Option.flatMap(
+              ->Option.flatMap(
                 x => {
                   x->Js.Dict.get("wallet_name")
                 },
               )
-              ->Belt.Option.flatMap(Js.Json.decodeString)
-              ->Belt.Option.getWithDefault("")
+              ->Option.flatMap(Js.Json.decodeString)
+              ->Option.getOr("")
             x === "apple_pay" || x === "applepay"
           })
-          if !(applePayPresent->Belt.Option.isSome) {
+          if !(applePayPresent->Option.isSome) {
             let msg = [("applePaySessionObjNotPresent", true->Js.Json.boolean)]->Js.Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
           }
@@ -391,13 +389,13 @@ let make = (
             let x =
               item
               ->Js.Json.decodeObject
-              ->Belt.Option.flatMap(
+              ->Option.flatMap(
                 x => {
                   x->Js.Dict.get("wallet_name")
                 },
               )
-              ->Belt.Option.flatMap(Js.Json.decodeString)
-              ->Belt.Option.getWithDefault("")
+              ->Option.flatMap(Js.Json.decodeString)
+              ->Option.getOr("")
             x === "google_pay" || x === "googlepay"
           })
 
@@ -405,7 +403,7 @@ let make = (
         })
         ->then(res => {
           let (json, applePayPresent, googlePayPresent) = res
-          if componentType === "payment" && applePayPresent->Belt.Option.isSome {
+          if componentType === "payment" && applePayPresent->Option.isSome {
             //do operations here
             let processPayment = (token: Js.Json.t) => {
               //let body = PaymentBody.applePayBody(~token)
@@ -420,15 +418,15 @@ let make = (
                   let dict = json->getDictFromJson
                   switch dict->Js.Dict.get("applePayButtonClicked") {
                   | Some(val) =>
-                    if val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) {
+                    if val->Js.Json.decodeBoolean->Option.getOr(false) {
                       let isDelayedSessionToken =
                         applePayPresent
-                        ->Belt.Option.flatMap(Js.Json.decodeObject)
-                        ->Belt.Option.getWithDefault(Js.Dict.empty())
+                        ->Option.flatMap(Js.Json.decodeObject)
+                        ->Option.getOr(Js.Dict.empty())
                         ->Js.Dict.get("delayed_session_token")
-                        ->Belt.Option.getWithDefault(Js.Json.null)
+                        ->Option.getOr(Js.Json.null)
                         ->Js.Json.decodeBoolean
-                        ->Belt.Option.getWithDefault(false)
+                        ->Option.getOr(false)
 
                       if isDelayedSessionToken {
                         logger.setLogInfo(
@@ -441,15 +439,15 @@ let make = (
                         let applePayPresent =
                           dict
                           ->Js.Dict.get("applePayPresent")
-                          ->Belt.Option.flatMap(Js.Json.decodeObject)
-                          ->Belt.Option.getWithDefault(Js.Dict.empty())
+                          ->Option.flatMap(Js.Json.decodeObject)
+                          ->Option.getOr(Js.Dict.empty())
 
                         let connector =
                           applePayPresent
                           ->Js.Dict.get("connector")
-                          ->Belt.Option.getWithDefault(Js.Json.null)
+                          ->Option.getOr(Js.Json.null)
                           ->Js.Json.decodeString
-                          ->Belt.Option.getWithDefault("")
+                          ->Option.getOr("")
 
                         switch connector {
                         | "trustpay" =>
@@ -462,27 +460,27 @@ let make = (
                           let secrets =
                             applePayPresent
                             ->Js.Dict.get("session_token_data")
-                            ->Belt.Option.getWithDefault(Js.Json.null)
+                            ->Option.getOr(Js.Json.null)
                             ->Js.Json.decodeObject
-                            ->Belt.Option.getWithDefault(Js.Dict.empty())
+                            ->Option.getOr(Js.Dict.empty())
                             ->Js.Dict.get("secrets")
-                            ->Belt.Option.getWithDefault(Js.Json.null)
+                            ->Option.getOr(Js.Json.null)
 
                           let paymentRequest =
                             applePayPresent
                             ->Js.Dict.get("payment_request_data")
-                            ->Belt.Option.flatMap(Js.Json.decodeObject)
-                            ->Belt.Option.getWithDefault(Js.Dict.empty())
+                            ->Option.flatMap(Js.Json.decodeObject)
+                            ->Option.getOr(Js.Dict.empty())
                             ->ApplePayTypes.jsonToPaymentRequestDataType
 
                           let payment =
                             secrets
                             ->Js.Json.decodeObject
-                            ->Belt.Option.getWithDefault(Js.Dict.empty())
+                            ->Option.getOr(Js.Dict.empty())
                             ->Js.Dict.get("payment")
-                            ->Belt.Option.getWithDefault(Js.Json.null)
+                            ->Option.getOr(Js.Json.null)
                             ->Js.Json.decodeString
-                            ->Belt.Option.getWithDefault("")
+                            ->Option.getOr("")
 
                           try {
                             let trustpay = trustPayApi(secrets)
@@ -538,10 +536,10 @@ let make = (
                       } else {
                         let paymentRequest =
                           applePayPresent
-                          ->Belt.Option.flatMap(Js.Json.decodeObject)
-                          ->Belt.Option.getWithDefault(Js.Dict.empty())
+                          ->Option.flatMap(Js.Json.decodeObject)
+                          ->Option.getOr(Js.Dict.empty())
                           ->Js.Dict.get("payment_request_data")
-                          ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+                          ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
                           ->Utils.transformKeys(Utils.CamelCase)
 
                         let ssn = applePaySession(3, paymentRequest)
@@ -561,10 +559,10 @@ let make = (
                         ssn.onvalidatemerchant = _event => {
                           let merchantSession =
                             applePayPresent
-                            ->Belt.Option.flatMap(Js.Json.decodeObject)
-                            ->Belt.Option.getWithDefault(Js.Dict.empty())
+                            ->Option.flatMap(Js.Json.decodeObject)
+                            ->Option.getOr(Js.Dict.empty())
                             ->Js.Dict.get("session_token_data")
-                            ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+                            ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
                             ->Utils.transformKeys(Utils.CamelCase)
                           ssn.completeMerchantValidation(. merchantSession)
                         }
@@ -592,7 +590,7 @@ let make = (
 
             addSmartEventListener("message", handleApplePayMessages.contents, "onApplePayMessages")
           }
-          if componentType === "payment" && googlePayPresent->Belt.Option.isSome {
+          if componentType === "payment" && googlePayPresent->Option.isSome {
             let dict = json->getDictFromJson
             let sessionObj = SessionsType.itemToObjMapper(dict, Others)
             let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)

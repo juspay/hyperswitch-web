@@ -29,7 +29,7 @@ let make = (
         ~paymentMethodType=paymentMethod,
         ~paymentMethodName=paymentMethodType,
       ),
-    )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
+    )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
   }, (list, paymentMethod, paymentMethodType))
 
   let requiredFieldsWithBillingDetails = React.useMemo3(() => {
@@ -155,7 +155,7 @@ let make = (
   )
 
   React.useEffect0(() => {
-    let bank = bankNames->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+    let bank = bankNames->Belt.Array.get(0)->Option.getOr("")
     setSelectedBank(_ => bank)
     None
   })

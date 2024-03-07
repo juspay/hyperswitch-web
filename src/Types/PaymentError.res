@@ -13,15 +13,15 @@ let defaultError = {
 let getError = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.map(json => {
     {
       type_: getString(json, "type", ""),
       code: getString(json, "code", ""),
       message: getString(json, "message", ""),
     }
   })
-  ->Belt.Option.getWithDefault(defaultError)
+  ->Option.getOr(defaultError)
 }
 let itemToObjMapper = dict => {
   {error: getError(dict, "error")}

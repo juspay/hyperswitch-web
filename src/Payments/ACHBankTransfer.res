@@ -10,7 +10,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
 
-  let complete = email.value != "" && email.isValid->Belt.Option.getWithDefault(false)
+  let complete = email.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == ""
 
   React.useEffect2(() => {

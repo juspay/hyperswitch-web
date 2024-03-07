@@ -204,12 +204,7 @@ let getDisplayNameAndIcon = (
             let id = aliasName->Js.String2.split(" ")
             (
               aliasName,
-              Some(
-                PaymentMethodsRecord.icon(
-                  id->Belt.Array.get(0)->Belt.Option.getWithDefault(""),
-                  ~size=19,
-                ),
-              ),
+              Some(PaymentMethodsRecord.icon(id->Belt.Array.get(0)->Option.getOr(""), ~size=19)),
             )
           }
         }

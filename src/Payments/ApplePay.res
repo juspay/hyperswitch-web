@@ -18,7 +18,7 @@ let make = (
   let sync = PaymentHelpers.usePaymentSync(None, Applepay)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
-  let isApplePaySDKFlow = sessionObj->Belt.Option.isSome
+  let isApplePaySDKFlow = sessionObj->Option.isSome
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
@@ -240,18 +240,18 @@ let make = (
     open Promise
     OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
-      let result = result->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)
+      let result = result->Js.Json.decodeBoolean->Option.getOr(false)
       if result {
         if isInvokeSDKFlow {
           let isDelayedSessionToken =
             sessionObj
-            ->Belt.Option.getWithDefault(Js.Json.null)
+            ->Option.getOr(Js.Json.null)
             ->Js.Json.decodeObject
-            ->Belt.Option.getWithDefault(Js.Dict.empty())
+            ->Option.getOr(Js.Dict.empty())
             ->Js.Dict.get("delayed_session_token")
-            ->Belt.Option.getWithDefault(Js.Json.null)
+            ->Option.getOr(Js.Json.null)
             ->Js.Json.decodeBoolean
-            ->Belt.Option.getWithDefault(false)
+            ->Option.getOr(false)
 
           if isDelayedSessionToken {
             setShowApplePayLoader(_ => true)
@@ -283,19 +283,19 @@ let make = (
 
       try {
         let dict = json->Utils.getDictFromJson
-        if dict->Js.Dict.get("applePayProcessPayment")->Belt.Option.isSome {
+        if dict->Js.Dict.get("applePayProcessPayment")->Option.isSome {
           let token =
             dict
             ->Js.Dict.get("applePayProcessPayment")
-            ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+            ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
           let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
           processPayment(bodyDict)
-        } else if dict->Js.Dict.get("showApplePayButton")->Belt.Option.isSome {
+        } else if dict->Js.Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
           if !isWallet {
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
           }
-        } else if dict->Js.Dict.get("applePaySyncPayment")->Belt.Option.isSome {
+        } else if dict->Js.Dict.get("applePaySyncPayment")->Option.isSome {
           syncPayment()
         }
       } catch {

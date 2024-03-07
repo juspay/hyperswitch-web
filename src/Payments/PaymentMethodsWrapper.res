@@ -22,16 +22,14 @@ let make = (
         PaymentUtils.getPaymentMethodName(~paymentMethodType=x.methodType, ~paymentMethodName)
     )
   let paymentMethodDetails =
-    optionPaymentMethodDetails->Belt.Option.getWithDefault(
-      PaymentMethodsRecord.defaultPaymentMethodContent,
-    )
+    optionPaymentMethodDetails->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
   let paymentFlow =
     paymentMethodDetails.paymentFlow
     ->Belt.Array.get(0)
-    ->Belt.Option.flatMap(((flow, _connector)) => {
+    ->Option.flatMap(((flow, _connector)) => {
       Some(flow)
     })
-    ->Belt.Option.getWithDefault(RedirectToURL)
+    ->Option.getOr(RedirectToURL)
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let (currency, _) = Recoil.useLoggedRecoilState(userCurrency, "currency", loggerState)
@@ -73,13 +71,13 @@ let make = (
           Country.getCountry(paymentMethodName)
           ->Js.Array2.filter(item => item.countryName == country)
           ->Belt.Array.get(0)
-          ->Belt.Option.getWithDefault(Country.defaultTimeZone)
+          ->Option.getOr(Country.defaultTimeZone)
 
         let bank =
           Bank.getBanks(paymentMethodName)
           ->Js.Array2.filter(item => item.displayName == selectedBank)
           ->Belt.Array.get(0)
-          ->Belt.Option.getWithDefault(Bank.defaultBank)
+          ->Option.getOr(Bank.defaultBank)
         intent(
           ~bodyArr=PaymentBody.getPaymentBody(
             ~paymentMethod=paymentMethodName,

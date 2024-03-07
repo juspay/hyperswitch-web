@@ -24,9 +24,8 @@ let make = (
   let clientCountryCode =
     Country.country
     ->Js.Array2.find(item => item.countryName == country)
-    ->Belt.Option.getWithDefault(Country.defaultTimeZone)
-  let complete =
-    email.value != "" && fullName.value != "" && email.isValid->Belt.Option.getWithDefault(false)
+    ->Option.getOr(Country.defaultTimeZone)
+  let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
 
   React.useEffect2(() => {

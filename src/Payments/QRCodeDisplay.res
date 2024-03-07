@@ -2,9 +2,9 @@ open Utils
 let getKeyValue = (json, str) => {
   json
   ->Js.Dict.get(str)
-  ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+  ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
   ->Js.Json.decodeString
-  ->Belt.Option.getWithDefault("")
+  ->Option.getOr("")
 }
 
 @react.component
@@ -23,10 +23,9 @@ let make = () => {
     let handle = (ev: Window.event) => {
       let json = ev.data->Js.Json.parseExn
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("fullScreenIframeMounted")->Belt.Option.isSome {
+      if dict->Js.Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict =
-          metadata->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+        let metaDataDict = metadata->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())
         let qrData = metaDataDict->getString("qrData", "")
         setQrCode(_ => qrData)
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
@@ -35,20 +34,17 @@ let make = () => {
           metaDataDict
           ->getJsonObjectFromDict("headers")
           ->Js.Json.decodeObject
-          ->Belt.Option.getWithDefault(Js.Dict.empty())
+          ->Option.getOr(Js.Dict.empty())
         let headers = Js.Dict.empty()
         setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))
         headersDict
         ->Js.Dict.entries
         ->Js.Array2.forEach(entries => {
           let (x, val) = entries
-          Js.Dict.set(headers, x, val->Js.Json.decodeString->Belt.Option.getWithDefault(""))
+          Js.Dict.set(headers, x, val->Js.Json.decodeString->Option.getOr(""))
         })
         let expiryTime =
-          metaDataDict
-          ->getString("expiryTime", "")
-          ->Belt.Float.fromString
-          ->Belt.Option.getWithDefault(0.0)
+          metaDataDict->getString("expiryTime", "")->Belt.Float.fromString->Option.getOr(0.0)
         let timeExpiry = expiryTime -. Js.Date.now()
         if timeExpiry > 0.0 && timeExpiry < 900000.0 {
           setExpiryTime(_ => timeExpiry)
@@ -95,7 +91,7 @@ let make = () => {
       ~switchToCustomPod,
     )
     ->then(json => {
-      let dict = json->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+      let dict = json->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())
       let status = dict->getString("status", "")
 
       if status === "succeeded" {

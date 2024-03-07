@@ -502,11 +502,11 @@ let gPayThirdPartySdkBody = (~connectors) => {
 }
 
 let applePayBody = (~token, ~connectors) => {
-  let dict = token->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+  let dict = token->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())
   let paymentDataString =
     dict
     ->Js.Dict.get("paymentData")
-    ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+    ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
     ->Js.Json.stringify
     ->btoa
   dict->Js.Dict.set("paymentData", paymentDataString->Js.Json.string)

@@ -9,7 +9,7 @@ let safeParseOpt = st => {
   }
 }
 let safeParse = st => {
-  safeParseOpt(st)->Belt.Option.getWithDefault(Js.Json.null)
+  safeParseOpt(st)->Option.getOr(Js.Json.null)
 }
 
 let rec flattenObject = (obj, addIndicatorForObject) => {
@@ -61,18 +61,14 @@ let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepPare
       if value->toNullable->Js.Nullable.isNullable {
         Js.Dict.set(newDict, key, value)
       } else {
-        switch value
-        ->Js.Json.decodeString
-        ->Belt.Option.getWithDefault("")
-        ->safeParse
-        ->Js.Json.decodeObject {
+        switch value->Js.Json.decodeString->Option.getOr("")->safeParse->Js.Json.decodeObject {
         | Some(_valueObj) => {
             if addIndicatorForObject {
               Js.Dict.set(newDict, key, Js.Json.object_(Js.Dict.empty()))
             }
 
             let flattenedSubObj = flattenObjectWithStringifiedJson(
-              value->Js.Json.decodeString->Belt.Option.getWithDefault("")->safeParse,
+              value->Js.Json.decodeString->Option.getOr("")->safeParse,
               addIndicatorForObject,
               keepParent,
             )
@@ -205,26 +201,26 @@ let unflattenObject = obj => {
 let getEventDataObj = ev => {
   ev
   ->Js.Json.decodeObject
-  ->Belt.Option.flatMap(x => x->Js.Dict.get("data"))
-  ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+  ->Option.flatMap(x => x->Js.Dict.get("data"))
+  ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
 }
 
 let getStrValueFromEventDataObj = (ev, key) => {
   let obj = ev->getEventDataObj
   obj
   ->Js.Json.decodeObject
-  ->Belt.Option.flatMap(x => x->Js.Dict.get(key))
-  ->Belt.Option.flatMap(Js.Json.decodeString)
-  ->Belt.Option.getWithDefault("")
+  ->Option.flatMap(x => x->Js.Dict.get(key))
+  ->Option.flatMap(Js.Json.decodeString)
+  ->Option.getOr("")
 }
 
 let getBoolValueFromEventDataObj = (ev, key) => {
   let obj = ev->getEventDataObj
   obj
   ->Js.Json.decodeObject
-  ->Belt.Option.flatMap(x => x->Js.Dict.get(key))
-  ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-  ->Belt.Option.getWithDefault(false)
+  ->Option.flatMap(x => x->Js.Dict.get(key))
+  ->Option.flatMap(Js.Json.decodeBoolean)
+  ->Option.getOr(false)
 }
 
 let getClasses = (options, key) => {
@@ -275,31 +271,27 @@ let makeIframe = (element, url) => {
 }
 
 let getOptionalJson = (ev, str) => {
-  ev
-  ->getEventDataObj
-  ->Js.Json.decodeObject
-  ->Belt.Option.getWithDefault(Js.Dict.empty())
-  ->Js.Dict.get(str)
+  ev->getEventDataObj->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())->Js.Dict.get(str)
 }
 
 let getOptionalJsonFromJson = (ev, str) => {
-  ev->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())->Js.Dict.get(str)
+  ev->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())->Js.Dict.get(str)
 }
 
 let getStringfromOptionaljson = (json: option<Js.Json.t>, default: string) => {
-  json->Belt.Option.flatMap(Js.Json.decodeString)->Belt.Option.getWithDefault(default)
+  json->Option.flatMap(Js.Json.decodeString)->Option.getOr(default)
 }
 
 let getBoolfromjson = (json: option<Js.Json.t>, default: bool) => {
-  json->Belt.Option.flatMap(Js.Json.decodeBoolean)->Belt.Option.getWithDefault(default)
+  json->Option.flatMap(Js.Json.decodeBoolean)->Option.getOr(default)
 }
 
 let getFloatfromjson = (json: option<Js.Json.t>, default: float) => {
-  json->Belt.Option.flatMap(Js.Json.decodeNumber)->Belt.Option.getWithDefault(default)
+  json->Option.flatMap(Js.Json.decodeNumber)->Option.getOr(default)
 }
 
 let getStringfromjson = (json: Js.Json.t, default: string) => {
-  json->Js.Json.decodeString->Belt.Option.getWithDefault(default)
+  json->Js.Json.decodeString->Option.getOr(default)
 }
 
 let getThemePromise = dict => {
@@ -332,7 +324,7 @@ let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
 let getArrayOfTupleFromDict = dict => {
   dict
   ->Js.Dict.keys
-  ->Belt.Array.map(key => (key, Js.Dict.get(dict, key)->Belt.Option.getWithDefault(Js.Json.null)))
+  ->Belt.Array.map(key => (key, Js.Dict.get(dict, key)->Option.getOr(Js.Json.null)))
 }
 
 let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
@@ -345,12 +337,8 @@ let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
         let json = event.data->eventToJson->getStringfromjson("")->safeParse
 
         let dict = json->Utils.getDictFromJson
-        if dict->Js.Dict.get("oneClickDoSubmit")->Belt.Option.isSome {
-          resolve(.
-            dict
-            ->Js.Dict.get("oneClickDoSubmit")
-            ->Belt.Option.getWithDefault(true->Js.Json.boolean),
-          )
+        if dict->Js.Dict.get("oneClickDoSubmit")->Option.isSome {
+          resolve(. dict->Js.Dict.get("oneClickDoSubmit")->Option.getOr(true->Js.Json.boolean))
         }
       }
       addSmartEventListener("message", handleMessage, "onOneClickHandlerPaymentConfirm")

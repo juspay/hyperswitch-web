@@ -24,7 +24,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let complete =
     email.value != "" &&
     fullName.value != "" &&
-    email.isValid->Belt.Option.getWithDefault(false) &&
+    email.isValid->Option.getOr(false) &&
     switch modalData {
     | Some(data: ACHTypes.data) =>
       Js.log2(

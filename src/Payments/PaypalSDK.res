@@ -47,7 +47,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
     open Promise
     OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
-      let result = result->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)
+      let result = result->Js.Json.decodeBoolean->Option.getOr(false)
       if result {
         braintree.client.create(.{authorization: token}, (clientErr, clientInstance) => {
           if clientErr {

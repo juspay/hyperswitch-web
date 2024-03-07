@@ -72,12 +72,12 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
   try {
     let isPreloadEnabled =
       options
-      ->Belt.Option.getWithDefault(Js.Json.null)
+      ->Option.getOr(Js.Json.null)
       ->Utils.getDictFromJson
       ->Utils.getBool("isPreloadEnabled", true)
     let analyticsMetadata =
       options
-      ->Belt.Option.getWithDefault(Js.Json.null)
+      ->Option.getOr(Js.Json.null)
       ->Utils.getDictFromJson
       ->Utils.getDictFromObj("analytics")
       ->Utils.getJsonObjectFromDict("metadata")
@@ -85,9 +85,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
       preloader()
     }
     let analyticsInfoDict =
-      analyticsInfo
-      ->Belt.Option.flatMap(Js.Json.decodeObject)
-      ->Belt.Option.getWithDefault(Js.Dict.empty())
+      analyticsInfo->Option.flatMap(Js.Json.decodeObject)->Option.getOr(Js.Dict.empty())
     let sessionID = analyticsInfoDict->getString("sessionID", "")
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Js.Date.now()->Belt.Float.toString)
     let logger = OrcaLogger.make(
@@ -102,9 +100,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
       let customBackendUrl =
         userOptions
         ->Js.Json.decodeObject
-        ->Belt.Option.flatMap(x => x->Js.Dict.get("customBackendUrl"))
-        ->Belt.Option.flatMap(Js.Json.decodeString)
-        ->Belt.Option.getWithDefault("")
+        ->Option.flatMap(x => x->Js.Dict.get("customBackendUrl"))
+        ->Option.flatMap(Js.Json.decodeString)
+        ->Option.getOr("")
       customBackendUrl === "" ? () : ApiEndpoint.setApiEndPoint(customBackendUrl)
     | None => ()
     }
@@ -245,22 +243,22 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         let confirmParams =
           payload
           ->Js.Json.decodeObject
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("confirmParams"))
-          ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+          ->Option.flatMap(x => x->Js.Dict.get("confirmParams"))
+          ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
 
         let redirect =
           payload
           ->Js.Json.decodeObject
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("redirect"))
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getWithDefault("if_required")
+          ->Option.flatMap(x => x->Js.Dict.get("redirect"))
+          ->Option.flatMap(Js.Json.decodeString)
+          ->Option.getOr("if_required")
 
         let url =
           confirmParams
           ->Js.Json.decodeObject
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("return_url"))
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getWithDefault("")
+          ->Option.flatMap(x => x->Js.Dict.get("return_url"))
+          ->Option.flatMap(Js.Json.decodeString)
+          ->Option.getOr("")
 
         Js.Promise.make((~resolve, ~reject as _) => {
           let handleMessage = (event: Types.event) => {
@@ -277,15 +275,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
                 ~eventName=CONFIRM_PAYMENT,
                 (),
               )
-              let data =
-                dict
-                ->Js.Dict.get("data")
-                ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+              let data = dict->Js.Dict.get("data")->Option.getOr(Js.Dict.empty()->Js.Json.object_)
               let returnUrl =
-                dict
-                ->Js.Dict.get("url")
-                ->Belt.Option.flatMap(Js.Json.decodeString)
-                ->Belt.Option.getWithDefault(url)
+                dict->Js.Dict.get("url")->Option.flatMap(Js.Json.decodeString)->Option.getOr(url)
 
               if isOneClick {
                 iframeRef.contents->Js.Array2.forEach(ifR => {
@@ -296,12 +288,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
                 })
               }
 
-              if (
-                val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) &&
-                  redirect === "always"
-              ) {
+              if val->Js.Json.decodeBoolean->Option.getOr(false) && redirect === "always" {
                 Window.replace(returnUrl)
-              } else if !(val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)) {
+              } else if !(val->Js.Json.decodeBoolean->Option.getOr(false)) {
                 resolve(. json)
               } else {
                 resolve(. data)
@@ -344,9 +333,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         let clientSecretId =
           elementsOptions
           ->Js.Json.decodeObject
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("clientSecret"))
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getWithDefault("")
+          ->Option.flatMap(x => x->Js.Dict.get("clientSecret"))
+          ->Option.flatMap(Js.Json.decodeString)
+          ->Option.getOr("")
         clientSecret := clientSecretId
         Js.Promise.make((~resolve, ~reject as _) => {
           logger.setClientSecret(clientSecretId)
@@ -377,9 +366,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           _options: option<Js.Json.t>,
         ) => {
           let decodedData =
-            data
-            ->Belt.Option.flatMap(Js.Json.decodeObject)
-            ->Belt.Option.getWithDefault(Js.Dict.empty())
+            data->Option.flatMap(Js.Json.decodeObject)->Option.getOr(Js.Dict.empty())
           Js.Promise.make((~resolve, ~reject as _) => {
             iframeRef.contents
             ->Js.Array2.map(iframe => {
@@ -410,7 +397,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
                     (),
                   )
                   let url = decodedData->getString("return_url", "/")
-                  if val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) && url !== "/" {
+                  if val->Js.Json.decodeBoolean->Option.getOr(false) && url !== "/" {
                     Window.replace(url)
                   } else {
                     resolve(. json)
@@ -425,10 +412,10 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         }
 
       let addAmountToDict = (dict, currency) => {
-        if dict->Js.Dict.get("amount")->Belt.Option.isNone {
+        if dict->Js.Dict.get("amount")->Option.isNone {
           Js.Console.error("Amount is not specified, please input an amount")
         }
-        let amount = dict->Js.Dict.get("amount")->Belt.Option.getWithDefault(0.0->Js.Json.number)
+        let amount = dict->Js.Dict.get("amount")->Option.getOr(0.0->Js.Json.number)
         dict->Js.Dict.set(
           "amount",
           [("currency", currency), ("value", amount)]->Js.Dict.fromArray->Js.Json.object_,
@@ -441,9 +428,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         let optionsTotal =
           optionsDict
           ->Js.Dict.get("total")
-          ->Belt.Option.flatMap(Js.Json.decodeObject)
-          ->Belt.Option.flatMap(x => addAmountToDict(x, currency))
-          ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+          ->Option.flatMap(Js.Json.decodeObject)
+          ->Option.flatMap(x => addAmountToDict(x, currency))
+          ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
         let displayItems = optionsDict->getJsonArrayFromDict("displayItems", [])
         let requestPayerName = optionsDict->getJsonStringFromDict("requestPayerName", "")
         let requestPayerEmail = optionsDict->getJsonBoolValue("requestPayerEmail", false)
@@ -453,9 +440,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         let shippingOptions =
           optionsDict
           ->Js.Dict.get("shippingOptions")
-          ->Belt.Option.flatMap(Js.Json.decodeObject)
-          ->Belt.Option.flatMap(x => addAmountToDict(x, currency))
-          ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+          ->Option.flatMap(Js.Json.decodeObject)
+          ->Option.flatMap(x => addAmountToDict(x, currency))
+          ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
 
         let applePayPaymentMethodData =
           [

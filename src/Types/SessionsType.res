@@ -48,8 +48,8 @@ open Utils
 let getSessionsToken = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.map(arr => {
+  ->Option.flatMap(Js.Json.decodeArray)
+  ->Option.map(arr => {
     arr->Js.Array2.map(json => {
       let dict = json->getDictFromJson
       {
@@ -62,10 +62,10 @@ let getSessionsToken = (dict, str) => {
       }
     })
   })
-  ->Belt.Option.getWithDefault([defaultToken])
+  ->Option.getOr([defaultToken])
 }
 let getSessionsTokenJson = (dict, str) => {
-  dict->Js.Dict.get(str)->Belt.Option.flatMap(Js.Json.decodeArray)->Belt.Option.getWithDefault([])
+  dict->Js.Dict.get(str)->Option.flatMap(Js.Json.decodeArray)->Option.getOr([])
 }
 
 let itemToObjMapper = (dict, returnType) => {
@@ -94,11 +94,11 @@ let getWalletFromTokenType = (arr, val: wallet) => {
   let x = arr->Js.Array2.find(item =>
     item
     ->Js.Json.decodeObject
-    ->Belt.Option.flatMap(x => {
+    ->Option.flatMap(x => {
       x->Js.Dict.get("wallet_name")
     })
-    ->Belt.Option.flatMap(Js.Json.decodeString)
-    ->Belt.Option.getWithDefault("")
+    ->Option.flatMap(Js.Json.decodeString)
+    ->Option.getOr("")
     ->getWallet === val
   )
   x

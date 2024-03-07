@@ -293,7 +293,7 @@ let logFileToObj = logFile => {
 */
 
 let getRefFromOption = val => {
-  let innerValue = val->Belt.Option.getWithDefault("")
+  let innerValue = val->Option.getOr("")
   ref(innerValue)
 }
 let getSourceString = source => {
@@ -317,7 +317,7 @@ let browserDetect = content => {
     let re = %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
-    ->Belt.Option.getWithDefault(Js.Nullable.null)
+    ->Option.getOr(Js.Nullable.null)
     ->Js.Nullable.toOption {
     | Some(a) => a
     | None => ""
@@ -327,7 +327,7 @@ let browserDetect = content => {
     let re = %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
-    ->Belt.Option.getWithDefault(Js.Nullable.null)
+    ->Option.getOr(Js.Nullable.null)
     ->Js.Nullable.toOption {
     | Some(a) => a
     | None => ""
@@ -337,7 +337,7 @@ let browserDetect = content => {
     let re = %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
-    ->Belt.Option.getWithDefault(Js.Nullable.null)
+    ->Option.getOr(Js.Nullable.null)
     ->Js.Nullable.toOption {
     | Some(a) => a
     | None => ""
@@ -347,7 +347,7 @@ let browserDetect = content => {
     let re = %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Belt.Array.get(1)
-    ->Belt.Option.getWithDefault(Js.Nullable.null)
+    ->Option.getOr(Js.Nullable.null)
     ->Js.Nullable.toOption {
     | Some(a) => a
     | None => ""
@@ -361,7 +361,7 @@ let browserDetect = content => {
       let re = %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig")
       let version = switch findVersion(re, content)
       ->Belt.Array.get(1)
-      ->Belt.Option.getWithDefault(Js.Nullable.null)
+      ->Option.getOr(Js.Nullable.null)
       ->Js.Nullable.toOption {
       | Some(a) => a
       | None => ""
@@ -371,7 +371,7 @@ let browserDetect = content => {
       let re = %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig")
       let version = switch findVersion(re, content)
       ->Belt.Array.get(1)
-      ->Belt.Option.getWithDefault(Js.Nullable.null)
+      ->Option.getOr(Js.Nullable.null)
       ->Js.Nullable.toOption {
       | Some(a) => a
       | None => ""
@@ -422,7 +422,7 @@ let make = (
     merchantId := value
   }
 
-  let metadata = ref(metadata->Belt.Option.getWithDefault(Js.Json.null))
+  let metadata = ref(metadata->Option.getOr(Js.Json.null))
 
   let setMetadata = value => {
     metadata := value
@@ -509,7 +509,7 @@ let make = (
       [ERROR, DEBUG]->Js.Array2.includes(log.logType) ||
         (priorityEventNames->Js.Array2.includes(log.eventName) && log.firstEvent)
     })
-    ->Belt.Option.isSome || arrayOfLogs->Js.Array2.length > 8
+    ->Option.isSome || arrayOfLogs->Js.Array2.length > 8
   }
 
   let checkLogSizeAndSendData = () => {
@@ -565,11 +565,10 @@ let make = (
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
+    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
-    let localTimestamp = timestamp->Belt.Option.getWithDefault(Js.Date.now()->Belt.Float.toString)
-    let localTimestampFloat =
-      localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
+    let localTimestamp = timestamp->Option.getOr(Js.Date.now()->Belt.Float.toString)
+    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Js.Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -581,10 +580,10 @@ let make = (
       category: logCategory,
       paymentId: Js.String2.split(clientSecret.contents, "_secret_")
       ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault(""),
+      ->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Belt.Option.getWithDefault("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Belt.Option.getWithDefault("0"),
+      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
@@ -618,11 +617,10 @@ let make = (
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
+    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ~type_, ())
-    let localTimestamp = timestamp->Belt.Option.getWithDefault(Js.Date.now()->Belt.Float.toString)
-    let localTimestampFloat =
-      localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
+    let localTimestamp = timestamp->Option.getOr(Js.Date.now()->Belt.Float.toString)
+    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Js.Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -640,10 +638,10 @@ let make = (
       category: logCategory,
       paymentId: Js.String2.split(clientSecret.contents, "_secret_")
       ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault(""),
+      ->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Belt.Option.getWithDefault("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Belt.Option.getWithDefault("0"),
+      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
@@ -670,11 +668,10 @@ let make = (
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
+    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
-    let localTimestamp = timestamp->Belt.Option.getWithDefault(Js.Date.now()->Belt.Float.toString)
-    let localTimestampFloat =
-      localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
+    let localTimestamp = timestamp->Option.getOr(Js.Date.now()->Belt.Float.toString)
+    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Js.Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -686,10 +683,10 @@ let make = (
       category: logCategory,
       paymentId: Js.String2.split(clientSecret.contents, "_secret_")
       ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault(""),
+      ->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Belt.Option.getWithDefault("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Belt.Option.getWithDefault("0"),
+      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
@@ -708,7 +705,7 @@ let make = (
   let setLogInitiated = () => {
     let eventName: eventName = LOG_INITIATED
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
+    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
     {
       logType: INFO,
@@ -722,10 +719,10 @@ let make = (
       internalMetadata: "",
       paymentId: Js.String2.split(clientSecret.contents, "_secret_")
       ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault(""),
+      ->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Belt.Option.getWithDefault("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Belt.Option.getWithDefault("0"),
+      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",

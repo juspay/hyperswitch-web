@@ -79,19 +79,19 @@ let defaultPaymentMethodData = {
 let getTokenizationData = (str, dict) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.map(json => {
     {
       token: getString(json, "token", ""),
     }
   })
-  ->Belt.Option.getWithDefault(defaultTokenizationData)
+  ->Option.getOr(defaultTokenizationData)
 }
 let getPaymentMethodData = (str, dict) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.map(json => {
     {
       description: getString(json, "description", ""),
       tokenizationData: getJsonFromDict(json, "tokenizationData", Js.Dict.empty()->Js.Json.object_),
@@ -99,7 +99,7 @@ let getPaymentMethodData = (str, dict) => {
       \"type": getString(json, "type", ""),
     }
   })
-  ->Belt.Option.getWithDefault(defaultPaymentMethodData)
+  ->Option.getOr(defaultPaymentMethodData)
 }
 let itemToObjMapper = dict => {
   {

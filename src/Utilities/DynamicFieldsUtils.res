@@ -3,8 +3,8 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
   let requiredFieldsArr = item.required_field->Js.String2.split(".")
   switch requiredFieldsArr
   ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
-  ->Belt.Option.getWithDefault("") {
-  | "first_name" => fieldNameArr->Belt.Array.get(0)->Belt.Option.getWithDefault(field.value)
+  ->Option.getOr("") {
+  | "first_name" => fieldNameArr->Belt.Array.get(0)->Option.getOr(field.value)
   | "last_name" => fieldNameArr->Belt.Array.sliceToEnd(1)->Js.Array2.reduce((acc, item) => {
       acc ++ item
     }, "")
@@ -85,9 +85,9 @@ let checkIfNameIsValid = (
     let requiredFieldsArr = item.required_field->Js.String2.split(".")
     let fieldValue = switch requiredFieldsArr
     ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
-    ->Belt.Option.getWithDefault("") {
-    | "first_name" => fieldNameArr->Belt.Array.get(0)->Belt.Option.getWithDefault("")
-    | "last_name" => fieldNameArr->Belt.Array.get(1)->Belt.Option.getWithDefault("")
+    ->Option.getOr("") {
+    | "first_name" => fieldNameArr->Belt.Array.get(0)->Option.getOr("")
+    | "last_name" => fieldNameArr->Belt.Array.get(1)->Option.getOr("")
     | _ => field.value
     }
     acc && fieldValue !== ""
@@ -129,7 +129,7 @@ let useRequiredFieldsEmptyAndValid = (
     let areRequiredFieldsValid = fieldsArr->Js.Array2.reduce((acc, paymentMethodFields) => {
       acc &&
       switch paymentMethodFields {
-      | Email => email.isValid->Belt.Option.getWithDefault(false)
+      | Email => email.isValid->Option.getOr(false)
       | FullName => checkIfNameIsValid(requiredFields, paymentMethodFields, fullName)
       | Country => country !== "" || countryNames->Belt.Array.length === 0
       | AddressCountry(countryArr) => country !== "" || countryArr->Belt.Array.length === 0
@@ -141,22 +141,20 @@ let useRequiredFieldsEmptyAndValid = (
       | StateAndCity => state.value !== "" && city.value !== ""
       | CountryAndPincode(countryArr) =>
         (country !== "" || countryArr->Belt.Array.length === 0) &&
-          postalCode.isValid->Belt.Option.getWithDefault(false)
+          postalCode.isValid->Option.getOr(false)
 
       | AddressCity => city.value !== ""
-      | AddressPincode => postalCode.isValid->Belt.Option.getWithDefault(false)
+      | AddressPincode => postalCode.isValid->Option.getOr(false)
       | AddressState => state.value !== ""
       | BlikCode => blikCode.value !== ""
       | Currency(currencyArr) => currency !== "" || currencyArr->Belt.Array.length === 0
-      | CardNumber => isCardValid->Belt.Option.getWithDefault(false)
+      | CardNumber => isCardValid->Option.getOr(false)
       | CardExpiryMonth
       | CardExpiryYear
       | CardExpiryMonthAndYear =>
-        isExpiryValid->Belt.Option.getWithDefault(false)
-      | CardCvc => isCVCValid->Belt.Option.getWithDefault(false)
-      | CardExpiryAndCvc =>
-        isExpiryValid->Belt.Option.getWithDefault(false) &&
-          isCVCValid->Belt.Option.getWithDefault(false)
+        isExpiryValid->Option.getOr(false)
+      | CardCvc => isCVCValid->Option.getOr(false)
+      | CardExpiryAndCvc => isExpiryValid->Option.getOr(false) && isCVCValid->Option.getOr(false)
       | _ => true
       }
     }, true)
@@ -283,7 +281,7 @@ let useSetInitialRequiredFields = (
         let requiredFieldsArr = item.required_field->Js.String2.split(".")
         switch requiredFieldsArr
         ->Belt.Array.get(requiredFieldsArr->Belt.Array.length - 1)
-        ->Belt.Option.getWithDefault("") {
+        ->Option.getOr("") {
         | "first_name" => item.value->Js.String2.concat(acc)
         | "last_name" => acc->Js.String2.concatMany([" ", item.value])
         | _ => acc
@@ -340,7 +338,7 @@ let useSetInitialRequiredFields = (
               Country.getCountry(paymentMethodType)
               ->Js.Array2.filter(item => item.isoAlpha2 === value)
               ->Belt.Array.get(0)
-              ->Belt.Option.getWithDefault(Country.defaultTimeZone)
+              ->Option.getOr(Country.defaultTimeZone)
             setCountry(. _ => countryCode.countryName)
           }
         }
@@ -357,7 +355,7 @@ let useSetInitialRequiredFields = (
             Country.getCountry(paymentMethodType)
             ->Js.Array2.filter(item => item.isoAlpha2 === value)
             ->Belt.Array.get(0)
-            ->Belt.Option.getWithDefault(Country.defaultTimeZone)
+            ->Option.getOr(Country.defaultTimeZone)
           setCountry(. _ => defaultCountry.countryName)
         }
       | Currency(_) =>
@@ -426,7 +424,7 @@ let useRequiredFieldsBody = (
           Country.getCountry(paymentMethodType)
           ->Js.Array2.filter(item => item.countryName === country)
           ->Belt.Array.get(0)
-          ->Belt.Option.getWithDefault(Country.defaultTimeZone)
+          ->Option.getOr(Country.defaultTimeZone)
         countryCode.isoAlpha2
       }
     | BillingName => billingName.value
@@ -457,11 +455,11 @@ let useRequiredFieldsBody = (
           let arr = value->Js.String2.split(" ")
           acc->Js.Dict.set(
             "billing.address.first_name",
-            arr->Belt.Array.get(0)->Belt.Option.getWithDefault("")->Js.Json.string,
+            arr->Belt.Array.get(0)->Option.getOr("")->Js.Json.string,
           )
           acc->Js.Dict.set(
             "billing.address.last_name",
-            arr->Belt.Array.get(1)->Belt.Option.getWithDefault("")->Js.Json.string,
+            arr->Belt.Array.get(1)->Option.getOr("")->Js.Json.string,
           )
         } else {
           let path = item->getBillingAddressPathFromFieldType

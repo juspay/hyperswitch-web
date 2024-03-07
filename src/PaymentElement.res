@@ -149,8 +149,8 @@ let make = (
           | Loaded(_) =>
             paymentOptions->Js.Array2.includes(selectedOption) && showCardFormByDefault
               ? selectedOption
-              : paymentOptions->Belt.Array.get(0)->Belt.Option.getWithDefault("")
-          | _ => paymentOptions->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+              : paymentOptions->Belt.Array.get(0)->Option.getOr("")
+          | _ => paymentOptions->Belt.Array.get(0)->Option.getOr("")
           }
     )
     None

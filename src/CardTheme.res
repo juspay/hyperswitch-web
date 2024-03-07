@@ -78,7 +78,7 @@ let getLocaleObject = string => {
   LocaleString.localeStrings
   ->Js.Array2.filter(item => item.locale == val)
   ->Belt.Array.get(0)
-  ->Belt.Option.getWithDefault(LocaleString.defaultLocale)
+  ->Option.getOr(LocaleString.defaultLocale)
 }
 let defaultRecoilConfig: recoilConfig = {
   config: defaultConfig,
@@ -90,8 +90,8 @@ let defaultRecoilConfig: recoilConfig = {
 let getVariables = (str, dict, default, logger) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.map(json => {
     let validKeys = [
       "fontFamily",
       "fontSizeBase",
@@ -246,7 +246,7 @@ let getVariables = (str, dict, default, logger) => {
       spacingGridRow: getWarningString(json, "spacingGridRow", default.spacingGridRow, ~logger),
     }
   })
-  ->Belt.Option.getWithDefault(default)
+  ->Option.getOr(default)
 }
 
 let getAppearance = (
@@ -258,8 +258,8 @@ let getAppearance = (
 ) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.map(json => {
     unknownKeysWarning(["theme", "variables", "rules", "labels"], json, "appearance", ~logger)
 
     let rulesJson = defaultRules(getVariables("variables", json, default, logger))
@@ -280,13 +280,13 @@ let getAppearance = (
       },
     }
   })
-  ->Belt.Option.getWithDefault(defaultAppearance)
+  ->Option.getOr(defaultAppearance)
 }
 let getFonts = (str, dict, logger) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.getWithDefault([])
+  ->Option.flatMap(Js.Json.decodeArray)
+  ->Option.getOr([])
   ->Belt.Array.keepMap(Js.Json.decodeObject)
   ->Js.Array2.map(json => {
     unknownKeysWarning(["cssSrc", "family", "src", "weight"], json, "fonts", ~logger)

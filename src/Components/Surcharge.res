@@ -14,7 +14,7 @@ let make = (
         ~paymentMethodType=paymentMethod,
         ~paymentMethodName=paymentMethodType,
       ),
-    )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
+    )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
   }
 
   let paymentMethodTypes = paymentMethodType->getPaymentMethodTypes
@@ -24,7 +24,8 @@ let make = (
       SurchargeUtils.getOneClickWalletsMessage(~list)
     } else {
       switch paymentMethodTypes.surcharge_details {
-      | Some(surchargeDetails) => SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails, ~list)
+      | Some(surchargeDetails) =>
+        SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails, ~list)
       | None =>
         if paymentMethod === "card" {
           let creditPaymentMethodTypes = getPaymentMethodTypes("credit")
@@ -44,9 +45,17 @@ let make = (
             let debitCardSurcharge = debitSurchargeDetails.displayTotalSurchargeAmount
 
             if creditCardSurcharge >= debitCardSurcharge {
-              SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails={creditSurchargeDetails}, ~list)
+              SurchargeUtils.getMessage(
+                ~paymentMethod,
+                ~surchargeDetails={creditSurchargeDetails},
+                ~list,
+              )
             } else {
-              SurchargeUtils.getMessage(~paymentMethod, ~surchargeDetails={debitSurchargeDetails}, ~list)
+              SurchargeUtils.getMessage(
+                ~paymentMethod,
+                ~surchargeDetails={debitSurchargeDetails},
+                ~list,
+              )
             }
           | (None, Some(surchargeDetails))
           | (Some(surchargeDetails), None) =>

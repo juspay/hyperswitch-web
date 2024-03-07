@@ -137,7 +137,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         setList(._ => updatedState)
         logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ())
       }
-    | LoadError(x) => logger.setLogError(
+    | LoadError(x) =>
+      logger.setLogError(
         ~value="LoadError: " ++ x->Js.Json.stringify,
         ~eventName=LOADER_CHANGED,
         (),
@@ -204,14 +205,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           if (
             dict
             ->Js.Dict.get("paymentElementCreate")
-            ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-            ->Belt.Option.getWithDefault(false)
+            ->Option.flatMap(Js.Json.decodeBoolean)
+            ->Option.getOr(false)
           ) {
             if (
               dict
               ->Js.Dict.get("otherElements")
-              ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-              ->Belt.Option.getWithDefault(false)
+              ->Option.flatMap(Js.Json.decodeBoolean)
+              ->Option.getOr(false)
             ) {
               updateOptions(dict)
             } else {
@@ -311,13 +312,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           | Some(val) =>
             setKeys(.prev => {
               ...prev,
-              clientSecret: Some(val->Js.Json.decodeString->Belt.Option.getWithDefault("")),
+              clientSecret: Some(val->Js.Json.decodeString->Option.getOr("")),
             })
             setConfig(.prev => {
               ...prev,
               config: {
                 ...prev.config,
-                clientSecret: val->Js.Json.decodeString->Belt.Option.getWithDefault(""),
+                clientSecret: val->Js.Json.decodeString->Option.getOr(""),
               },
             })
           | None => ()
@@ -342,10 +343,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         }
         if dict->getDictIsSome("isReadyToPay") {
           setIsGooglePayReady(._ =>
-            dict
-            ->getJsonObjectFromDict("isReadyToPay")
-            ->Js.Json.decodeBoolean
-            ->Belt.Option.getWithDefault(false)
+            dict->getJsonObjectFromDict("isReadyToPay")->Js.Json.decodeBoolean->Option.getOr(false)
           )
         }
         if dict->getDictIsSome("paymentMethodList") {
@@ -382,10 +380,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
             customerPaymentMethods,
           })
         }
-        if dict->Js.Dict.get("applePayCanMakePayments")->Belt.Option.isSome {
+        if dict->Js.Dict.get("applePayCanMakePayments")->Option.isSome {
           setIsApplePayReady(._ => true)
         }
-        if dict->Js.Dict.get("applePaySessionObjNotPresent")->Belt.Option.isSome {
+        if dict->Js.Dict.get("applePaySessionObjNotPresent")->Option.isSome {
           setIsApplePayReady(.prev => prev && false)
         }
       } catch {

@@ -30,7 +30,7 @@ module ToolTip = {
 
 @react.component
 let make = (~modalData, ~setModalData) => {
-  let isDataAvailable = modalData->Belt.Option.isSome
+  let isDataAvailable = modalData->Option.isSome
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let (openToolTip, setOpenToolTip) = React.useState(_ => false)
@@ -64,7 +64,9 @@ let make = (~modalData, ~setModalData) => {
 
       <div className="flex flex-row justify-between w-full relative animate-slowShow">
         <div className="flex flex-row gap-4">
-          <div> <Icon size=22 name="bank" /> </div>
+          <div>
+            <Icon size=22 name="bank" />
+          </div>
           <div className="tracking-wider"> {React.string(`Bank  **** ${last4digts}`)} </div>
         </div>
         <ToolTip
@@ -76,12 +78,17 @@ let make = (~modalData, ~setModalData) => {
           <Icon size=22 name="three-dots" />
         </div>
       </div>
-    | None => <>
+    | None =>
+      <>
         <div className="flex flex-row gap-4 animate-slowShow">
-          <div> <Icon size=22 name="bank" /> </div>
+          <div>
+            <Icon size=22 name="bank" />
+          </div>
           <div> {React.string(localeString.addBankAccount)} </div>
         </div>
-        <div className="PickerAction self-center"> <Icon size=22 name="caret-right" /> </div>
+        <div className="PickerAction self-center">
+          <Icon size=22 name="caret-right" />
+        </div>
       </>
     }}
   </div>

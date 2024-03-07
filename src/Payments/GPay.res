@@ -25,10 +25,10 @@ let make = (
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
   let isGooglePaySDKFlow = React.useMemo1(() => {
-    sessionObj->Belt.Option.isSome
+    sessionObj->Option.isSome
   }, [sessionObj])
   let isGooglePayThirdPartyFlow = React.useMemo1(() => {
-    thirdPartySessionObj->Belt.Option.isSome
+    thirdPartySessionObj->Option.isSome
   }, [sessionObj])
 
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
@@ -58,10 +58,10 @@ let make = (
 
   let isDelayedSessionToken = React.useMemo1(() => {
     thirdPartySessionObj
-    ->Belt.Option.flatMap(Js.Json.decodeObject)
-    ->Belt.Option.flatMap(x => x->Js.Dict.get("delayed_session_token"))
-    ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-    ->Belt.Option.getWithDefault(false)
+    ->Option.flatMap(Js.Json.decodeObject)
+    ->Option.flatMap(x => x->Js.Dict.get("delayed_session_token"))
+    ->Option.flatMap(Js.Json.decodeBoolean)
+    ->Option.getOr(false)
   }, [thirdPartySessionObj])
 
   let processPayment = (body: array<(string, Js.Json.t)>) => {
@@ -84,7 +84,7 @@ let make = (
       | _ => Js.Dict.empty()->Js.Json.object_
       }
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("gpayResponse")->Belt.Option.isSome {
+      if dict->Js.Dict.get("gpayResponse")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
         let obj = metadata->getDictFromJson->itemToObjMapper
         let body = {
@@ -97,7 +97,7 @@ let make = (
         }
         processPayment(body)
       }
-      if dict->Js.Dict.get("gpayError")->Belt.Option.isSome {
+      if dict->Js.Dict.get("gpayError")->Option.isSome {
         Utils.handlePostMessage([("fullscreen", false->Js.Json.boolean)])
         if !isWallet {
           postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
@@ -139,7 +139,7 @@ let make = (
     )
     open Promise
     OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
-      let result = result->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)
+      let result = result->Js.Json.decodeBoolean->Option.getOr(false)
       if result {
         if isInvokeSDKFlow {
           if isDelayedSessionToken {
@@ -211,7 +211,7 @@ let make = (
       }
       let dict = json->Utils.getDictFromJson
       try {
-        if dict->Js.Dict.get("googlePaySyncPayment")->Belt.Option.isSome {
+        if dict->Js.Dict.get("googlePaySyncPayment")->Option.isSome {
           syncPayment()
         }
       } catch {

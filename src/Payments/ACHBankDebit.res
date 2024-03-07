@@ -37,7 +37,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   )
 
   React.useEffect1(() => {
-    if modalData->Belt.Option.isSome {
+    if modalData->Option.isSome {
       setBankError(_ => "")
     }
     None
@@ -46,8 +46,8 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let complete =
     email.value != "" &&
     fullName.value != "" &&
-    email.isValid->Belt.Option.getWithDefault(false) &&
-    modalData->Belt.Option.isSome
+    email.isValid->Option.getOr(false) &&
+    modalData->Option.isSome
   let empty = email.value == "" || fullName.value != ""
 
   React.useEffect2(() => {
@@ -60,7 +60,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      if modalData->Belt.Option.isNone {
+      if modalData->Option.isNone {
         setBankError(_ => "Enter bank details and then confirm payment")
       }
       if complete {

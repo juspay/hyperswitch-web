@@ -125,7 +125,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let cvc = val->formatCVCNumber(cardBrand)
     setCvcNumber(_ => cvc)
     if cvc->Js.String2.length > 0 && cvcNumberInRange(cvc, cardBrand)->Js.Array2.includes(true) {
-      zipRef.current->Js.Nullable.toOption->Belt.Option.forEach(input => input->focus)->ignore
+      zipRef.current->Js.Nullable.toOption->Option.forEach(input => input->focus)->ignore
     }
   }
 
@@ -218,11 +218,11 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let submitValue = (_ev, confirmParam) => {
     let validFormat = switch paymentMode->getPaymentMode {
     | Card =>
-      isCardValid->Belt.Option.getWithDefault(false) &&
-      isExpiryValid->Belt.Option.getWithDefault(false) &&
-      isCVCValid->Belt.Option.getWithDefault(false)
+      isCardValid->Option.getOr(false) &&
+      isExpiryValid->Option.getOr(false) &&
+      isCVCValid->Option.getOr(false)
     | CardNumberElement =>
-      isCardValid->Belt.Option.getWithDefault(false) &&
+      isCardValid->Option.getOr(false) &&
       checkCardCVC(getCardElementValue(iframeId, "card-cvc"), cardBrand) &&
       checkCardExpiry(getCardElementValue(iframeId, "card-expiry"))
     | _ => true
@@ -296,13 +296,13 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       | _ => Js.Dict.empty()->Js.Json.object_
       }
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("doBlur")->Belt.Option.isSome {
+      if dict->Js.Dict.get("doBlur")->Option.isSome {
         logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR, ())
         setBlurState(_ => true)
-      } else if dict->Js.Dict.get("doFocus")->Belt.Option.isSome {
+      } else if dict->Js.Dict.get("doFocus")->Option.isSome {
         logger.setLogInfo(~value="doFocus Triggered", ~eventName=FOCUS, ())
-        cardRef.current->Js.Nullable.toOption->Belt.Option.forEach(input => input->focus)->ignore
-      } else if dict->Js.Dict.get("doClearValues")->Belt.Option.isSome {
+        cardRef.current->Js.Nullable.toOption->Option.forEach(input => input->focus)->ignore
+      } else if dict->Js.Dict.get("doClearValues")->Option.isSome {
         logger.setLogInfo(~value="doClearValues Triggered", ~eventName=CLEAR, ())
         //clear all values
         setCardNumber(_ => "")

@@ -22,23 +22,23 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
     let sdkHandleConfirmPayment =
       options
       ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("sdkHandleConfirmPayment"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(false)
+      ->Option.flatMap(x => x->Js.Dict.get("sdkHandleConfirmPayment"))
+      ->Option.flatMap(Js.Json.decodeBoolean)
+      ->Option.getOr(false)
 
     let sdkHandleOneClickConfirmPayment =
       options
       ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("sdkHandleOneClickConfirmPayment"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(true)
+      ->Option.flatMap(x => x->Js.Dict.get("sdkHandleOneClickConfirmPayment"))
+      ->Option.flatMap(Js.Json.decodeBoolean)
+      ->Option.getOr(true)
 
     let disableSaveCards =
       options
       ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("disableSaveCards"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(false)
+      ->Option.flatMap(x => x->Js.Dict.get("disableSaveCards"))
+      ->Option.flatMap(Js.Json.decodeBoolean)
+      ->Option.getOr(false)
 
     let on = (eventType, eventHandler) => {
       switch eventType->eventTypeMapper {
@@ -138,7 +138,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let newEntries = newFlatOption->Js.Dict.entries
       newEntries->Js.Array2.forEach(entries => {
         let (key, value) = entries
-        if flatOption->Js.Dict.get(key)->Belt.Option.isNone {
+        if flatOption->Js.Dict.get(key)->Option.isNone {
           flatOption->Js.Dict.set(key, value)
         }
       })
@@ -156,8 +156,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
     let mount = selector => {
       mountId := selector
       let localSelectorArr = selector->Js.String2.split("#")
-      let localSelectorString =
-        localSelectorArr->Belt.Array.get(1)->Belt.Option.getWithDefault("someString")
+      let localSelectorString = localSelectorArr->Belt.Array.get(1)->Option.getOr("someString")
       let iframeHeightRef = ref(25.0)
       let currentClass = ref("base")
       let fullscreen = ref(false)
@@ -168,7 +167,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         let eventDataObject = ev.data->eventToJson
 
         let iframeHeight = eventDataObject->getOptionalJsonFromJson("iframeHeight")
-        if iframeHeight->Belt.Option.isSome {
+        if iframeHeight->Option.isSome {
           let iframeId =
             eventDataObject
             ->getOptionalJsonFromJson("iframeId")
@@ -214,10 +213,10 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         }
 
         let combinedHyperClasses = eventDataObject->getOptionalJsonFromJson("concatedString")
-        if combinedHyperClasses->Belt.Option.isSome {
+        if combinedHyperClasses->Option.isSome {
           let id = eventDataObject->getOptionalJsonFromJson("id")->getStringfromOptionaljson("")
 
-          let decodeStringTest = combinedHyperClasses->Belt.Option.flatMap(Js.Json.decodeString)
+          let decodeStringTest = combinedHyperClasses->Option.flatMap(Js.Json.decodeString)
           switch decodeStringTest {
           | Some(val) => currentClass := val
           | None => ()
@@ -238,13 +237,13 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         let iframeID =
           eventDataObject->getOptionalJsonFromJson("iframeId")->getStringfromOptionaljson("")
 
-        if fullscreenIframe->Belt.Option.isSome {
+        if fullscreenIframe->Option.isSome {
           fullscreen := fullscreenIframe->getBoolfromjson(false)
           fullscreenParam := param->getStringfromOptionaljson("")
           fullscreenMetadata :=
             metadata
-            ->Belt.Option.flatMap(Js.Json.decodeObject)
-            ->Belt.Option.getWithDefault(Js.Dict.empty())
+            ->Option.flatMap(Js.Json.decodeObject)
+            ->Option.getOr(Js.Dict.empty())
             ->Js.Json.object_
           let fullscreenElem = Window.querySelector(
             `#orca-fullscreen-iframeRef-${localSelectorString}`,
@@ -266,7 +265,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
                     let handleFullScreenCallback = (ev: Types.event) => {
                       let json = ev.data->eventToJson
                       let dict = json->Utils.getDictFromJson
-                      if dict->Js.Dict.get("iframeMountedCallback")->Belt.Option.isSome {
+                      if dict->Js.Dict.get("iframeMountedCallback")->Option.isSome {
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                         fullScreenEle->Window.iframePostMessage(
                           [
@@ -275,7 +274,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
                           ]->Js.Dict.fromArray,
                         )
                       }
-                      if dict->Js.Dict.get("driverMounted")->Belt.Option.isSome {
+                      if dict->Js.Dict.get("driverMounted")->Option.isSome {
                         mainElement->Window.iframePostMessage(
                           [
                             ("fullScreenIframeMounted", true->Js.Json.boolean),
@@ -302,7 +301,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           }
         }
 
-        if iframeMounted->Belt.Option.isSome {
+        if iframeMounted->Option.isSome {
           mountPostMessage(
             Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`),
             localSelectorString,

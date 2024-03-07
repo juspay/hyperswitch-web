@@ -115,7 +115,7 @@ let make = (
   React.useEffect1(() => {
     let tokenobj =
       savedMethods->Js.Array2.length > 0
-        ? Some(savedMethods->Belt.Array.get(0)->Belt.Option.getWithDefault(defaultCustomerMethods))
+        ? Some(savedMethods->Belt.Array.get(0)->Option.getOr(defaultCustomerMethods))
         : None
 
     switch tokenobj {
@@ -187,9 +187,9 @@ let make = (
     if confirm.doSubmit {
       let validFormat =
         (isBancontact ||
-        (isCVCValid->Belt.Option.getWithDefault(false) &&
-        isCardValid->Belt.Option.getWithDefault(false) &&
-        isExpiryValid->Belt.Option.getWithDefault(false))) && areRequiredFieldsValid
+        (isCVCValid->Option.getOr(false) &&
+        isCardValid->Option.getOr(false) &&
+        isExpiryValid->Option.getOr(false))) && areRequiredFieldsValid
       if validFormat && (showFields || isBancontact) {
         intent(
           ~bodyArr={

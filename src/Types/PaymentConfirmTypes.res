@@ -79,8 +79,8 @@ let defaultIntent = {
 let getAchCreditTransfer = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.map(json => {
     {
       account_number: getString(json, "account_number", ""),
       bank_name: getString(json, "bank_name", ""),
@@ -88,26 +88,26 @@ let getAchCreditTransfer = (dict, str) => {
       swift_code: getString(json, "swift_code", ""),
     }
   })
-  ->Belt.Option.getWithDefault(defaultACHCreditTransfer)
+  ->Option.getOr(defaultACHCreditTransfer)
 }
 let getBacsBankInstructions = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.map(json => {
     {
       account_holder_name: getString(json, "account_holder_name", ""),
       account_number: getString(json, "account_number", ""),
       sort_code: getString(json, "sort_code", ""),
     }
   })
-  ->Belt.Option.getWithDefault(defaultBacsBankInstruction)
+  ->Option.getOr(defaultBacsBankInstruction)
 }
 let getBankTransferDetails = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.map(json => {
     {
       ach_credit_transfer: getAchCreditTransfer(json, "ach_credit_transfer"),
     }
@@ -124,8 +124,8 @@ let getVoucherDetails = json => {
 let getNextAction = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.map(json => {
     {
       redirectToUrl: getString(json, "redirect_to_url", ""),
       type_: getString(json, "type", ""),
@@ -143,18 +143,18 @@ let getNextAction = (dict, str) => {
       display_to_timestamp: Some(
         json
         ->Js.Dict.get("display_to_timestamp")
-        ->Belt.Option.flatMap(Js.Json.decodeNumber)
-        ->Belt.Option.getWithDefault(0.0),
+        ->Option.flatMap(Js.Json.decodeNumber)
+        ->Option.getOr(0.0),
       ),
       voucher_details: {
         json
         ->Js.Dict.get("voucher_details")
-        ->Belt.Option.flatMap(Js.Json.decodeObject)
-        ->Belt.Option.map(json => json->getVoucherDetails)
+        ->Option.flatMap(Js.Json.decodeObject)
+        ->Option.map(json => json->getVoucherDetails)
       },
     }
   })
-  ->Belt.Option.getWithDefault(defaultNextAction)
+  ->Option.getOr(defaultNextAction)
 }
 let itemToObjMapper = dict => {
   {

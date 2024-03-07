@@ -155,7 +155,7 @@ let make = (~setModalData) => {
     ) {
       setIsRoutingValid(_ => Some(true))
       setRoutingError(_ => "")
-      accountRef.current->Js.Nullable.toOption->Belt.Option.forEach(input => input->focus)->ignore
+      accountRef.current->Js.Nullable.toOption->Option.forEach(input => input->focus)->ignore
     } else {
       resetReoutingError()
     }
