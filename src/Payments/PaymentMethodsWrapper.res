@@ -63,7 +63,7 @@ let make = (
   }, (empty, complete))
 
   let submitCallback = React.useCallback7((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if complete {
@@ -91,7 +91,7 @@ let make = (
             ~currency,
           )
           ->Js.Dict.fromArray
-          ->Js.Json.object_
+          ->JSON.Encode.object
           ->OrcaUtils.flattenObject(true)
           ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
           ->OrcaUtils.getArrayOfTupleFromDict,

@@ -4,7 +4,7 @@ open LoggerUtils
 open Utils
 open EventListenerManager
 
-external eventToJson: Types.eventData => Js.Json.t = "%identity"
+external eventToJson: Types.eventData => JSON.t = "%identity"
 
 let checkAndAppend = (selector, child) => {
   if Js.Nullable.toOption(CommonHooks.querySelector(selector)) == None {
@@ -68,16 +68,16 @@ let preloader = () => {
   )
 }
 
-let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js.Json.t>) => {
+let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
     let isPreloadEnabled =
       options
-      ->Option.getOr(Js.Json.null)
+      ->Option.getOr(JSON.Encode.null)
       ->Utils.getDictFromJson
       ->Utils.getBool("isPreloadEnabled", true)
     let analyticsMetadata =
       options
-      ->Option.getOr(Js.Json.null)
+      ->Option.getOr(JSON.Encode.null)
       ->Utils.getDictFromJson
       ->Utils.getDictFromObj("analytics")
       ->Utils.getJsonObjectFromDict("metadata")
@@ -85,7 +85,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
       preloader()
     }
     let analyticsInfoDict =
-      analyticsInfo->Option.flatMap(Js.Json.decodeObject)->Option.getOr(Js.Dict.empty())
+      analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Js.Dict.empty())
     let sessionID = analyticsInfoDict->getString("sessionID", "")
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Js.Date.now()->Belt.Float.toString)
     let logger = OrcaLogger.make(
@@ -99,9 +99,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
     | Some(userOptions) =>
       let customBackendUrl =
         userOptions
-        ->Js.Json.decodeObject
+        ->JSON.Decode.object
         ->Option.flatMap(x => x->Js.Dict.get("customBackendUrl"))
-        ->Option.flatMap(Js.Json.decodeString)
+        ->Option.flatMap(JSON.Decode.string)
         ->Option.getOr("")
       customBackendUrl === "" ? () : ApiEndpoint.setApiEndPoint(customBackendUrl)
     | None => ()
@@ -235,29 +235,29 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           Fetch.Response.json(resp)
         })
         ->then(data => {
-          [("paymentIntent", data)]->Js.Dict.fromArray->Js.Json.object_->Promise.resolve
+          [("paymentIntent", data)]->Js.Dict.fromArray->JSON.Encode.object->Promise.resolve
         })
       }
 
       let confirmPaymentWrapper = (payload, isOneClick, result) => {
         let confirmParams =
           payload
-          ->Js.Json.decodeObject
+          ->JSON.Decode.object
           ->Option.flatMap(x => x->Js.Dict.get("confirmParams"))
-          ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
+          ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
 
         let redirect =
           payload
-          ->Js.Json.decodeObject
+          ->JSON.Decode.object
           ->Option.flatMap(x => x->Js.Dict.get("redirect"))
-          ->Option.flatMap(Js.Json.decodeString)
+          ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("if_required")
 
         let url =
           confirmParams
-          ->Js.Json.decodeObject
+          ->JSON.Decode.object
           ->Option.flatMap(x => x->Js.Dict.get("return_url"))
-          ->Option.flatMap(Js.Json.decodeString)
+          ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 
         Js.Promise.make((~resolve, ~reject as _) => {
@@ -275,22 +275,23 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
                 ~eventName=CONFIRM_PAYMENT,
                 (),
               )
-              let data = dict->Js.Dict.get("data")->Option.getOr(Js.Dict.empty()->Js.Json.object_)
+              let data =
+                dict->Js.Dict.get("data")->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
               let returnUrl =
-                dict->Js.Dict.get("url")->Option.flatMap(Js.Json.decodeString)->Option.getOr(url)
+                dict->Js.Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
 
               if isOneClick {
                 iframeRef.contents->Js.Array2.forEach(ifR => {
                   // to unset one click button loader
                   ifR->Window.iframePostMessage(
-                    [("oneClickDoSubmit", false->Js.Json.boolean)]->Js.Dict.fromArray,
+                    [("oneClickDoSubmit", false->JSON.Encode.bool)]->Js.Dict.fromArray,
                   )
                 })
               }
 
-              if val->Js.Json.decodeBoolean->Option.getOr(false) && redirect === "always" {
+              if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
                 Window.replace(returnUrl)
-              } else if !(val->Js.Json.decodeBoolean->Option.getOr(false)) {
+              } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
                 resolve(. json)
               } else {
                 resolve(. data)
@@ -299,18 +300,18 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
             }
           }
           let message = isOneClick
-            ? [("oneClickDoSubmit", result->Js.Json.boolean)]->Js.Dict.fromArray
+            ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Js.Dict.fromArray
             : [
-                ("doSubmit", true->Js.Json.boolean),
-                ("clientSecret", clientSecret.contents->Js.Json.string),
+                ("doSubmit", true->JSON.Encode.bool),
+                ("clientSecret", clientSecret.contents->JSON.Encode.string),
                 (
                   "confirmParams",
                   [
-                    ("return_url", url->Js.Json.string),
-                    ("publishableKey", publishableKey->Js.Json.string),
+                    ("return_url", url->JSON.Encode.string),
+                    ("publishableKey", publishableKey->JSON.Encode.string),
                   ]
                   ->Js.Dict.fromArray
-                  ->Js.Json.object_,
+                  ->JSON.Encode.object,
                 ),
               ]->Js.Dict.fromArray
           addSmartEventListener("message", handleMessage, "onSubmit")
@@ -332,14 +333,14 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         open Promise
         let clientSecretId =
           elementsOptions
-          ->Js.Json.decodeObject
+          ->JSON.Decode.object
           ->Option.flatMap(x => x->Js.Dict.get("clientSecret"))
-          ->Option.flatMap(Js.Json.decodeString)
+          ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
         clientSecret := clientSecretId
         Js.Promise.make((~resolve, ~reject as _) => {
           logger.setClientSecret(clientSecretId)
-          resolve(. Js.Json.null)
+          resolve(. JSON.Encode.null)
         })
         ->then(_ => {
           logger.setLogInfo(~value=Window.href, ~eventName=ORCA_ELEMENTS_CALLED, ())
@@ -359,26 +360,20 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
       }
       let confirmCardPaymentFn =
         @this
-        (
-          _this: This.t,
-          clientSecretId: string,
-          data: option<Js.Json.t>,
-          _options: option<Js.Json.t>,
-        ) => {
-          let decodedData =
-            data->Option.flatMap(Js.Json.decodeObject)->Option.getOr(Js.Dict.empty())
+        (_this: This.t, clientSecretId: string, data: option<JSON.t>, _options: option<JSON.t>) => {
+          let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Js.Dict.empty())
           Js.Promise.make((~resolve, ~reject as _) => {
             iframeRef.contents
             ->Js.Array2.map(iframe => {
               iframe->Window.iframePostMessage(
                 [
-                  ("doSubmit", true->Js.Json.boolean),
-                  ("clientSecret", clientSecretId->Js.Json.string),
+                  ("doSubmit", true->JSON.Encode.bool),
+                  ("clientSecret", clientSecretId->JSON.Encode.string),
                   (
                     "confirmParams",
-                    [("publishableKey", publishableKey->Js.Json.string)]
+                    [("publishableKey", publishableKey->JSON.Encode.string)]
                     ->Js.Dict.fromArray
-                    ->Js.Json.object_,
+                    ->JSON.Encode.object,
                   ),
                 ]->Js.Dict.fromArray,
               )
@@ -397,7 +392,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
                     (),
                   )
                   let url = decodedData->getString("return_url", "/")
-                  if val->Js.Json.decodeBoolean->Option.getOr(false) && url !== "/" {
+                  if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
                     Window.replace(url)
                   } else {
                     resolve(. json)
@@ -415,12 +410,12 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         if dict->Js.Dict.get("amount")->Option.isNone {
           Js.Console.error("Amount is not specified, please input an amount")
         }
-        let amount = dict->Js.Dict.get("amount")->Option.getOr(0.0->Js.Json.number)
+        let amount = dict->Js.Dict.get("amount")->Option.getOr(0.0->JSON.Encode.float)
         dict->Js.Dict.set(
           "amount",
-          [("currency", currency), ("value", amount)]->Js.Dict.fromArray->Js.Json.object_,
+          [("currency", currency), ("value", amount)]->Js.Dict.fromArray->JSON.Encode.object,
         )
-        Some(dict->Js.Json.object_)
+        Some(dict->JSON.Encode.object)
       }
       let paymentRequest = options => {
         let optionsDict = options->getDictFromJson
@@ -428,9 +423,9 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         let optionsTotal =
           optionsDict
           ->Js.Dict.get("total")
-          ->Option.flatMap(Js.Json.decodeObject)
+          ->Option.flatMap(JSON.Decode.object)
           ->Option.flatMap(x => addAmountToDict(x, currency))
-          ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
+          ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
         let displayItems = optionsDict->getJsonArrayFromDict("displayItems", [])
         let requestPayerName = optionsDict->getJsonStringFromDict("requestPayerName", "")
         let requestPayerEmail = optionsDict->getJsonBoolValue("requestPayerEmail", false)
@@ -440,27 +435,30 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         let shippingOptions =
           optionsDict
           ->Js.Dict.get("shippingOptions")
-          ->Option.flatMap(Js.Json.decodeObject)
+          ->Option.flatMap(JSON.Decode.object)
           ->Option.flatMap(x => addAmountToDict(x, currency))
-          ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
+          ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
 
         let applePayPaymentMethodData =
           [
-            ("supportedMethods", "https://apple.com/apple-pay"->Js.Json.string),
-            ("data", [("version", 12.00->Js.Json.number)]->Js.Dict.fromArray->Js.Json.object_),
+            ("supportedMethods", "https://apple.com/apple-pay"->JSON.Encode.string),
+            (
+              "data",
+              [("version", 12.00->JSON.Encode.float)]->Js.Dict.fromArray->JSON.Encode.object,
+            ),
           ]
           ->Js.Dict.fromArray
-          ->Js.Json.object_
-        let methodData = [applePayPaymentMethodData]->Js.Json.array
+          ->JSON.Encode.object
+        let methodData = [applePayPaymentMethodData]->JSON.Encode.array
         let details =
           [
-            ("id", publishableKey->Js.Json.string),
+            ("id", publishableKey->JSON.Encode.string),
             ("displayItems", displayItems),
             ("total", optionsTotal),
             ("shippingOptions", shippingOptions),
           ]
           ->Js.Dict.fromArray
-          ->Js.Json.object_
+          ->JSON.Encode.object
 
         let optionsForPaymentRequest =
           [
@@ -468,10 +466,10 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
             ("requestPayerEmail", requestPayerEmail),
             ("requestPayerPhone", requestPayerPhone),
             ("requestShipping", requestShipping),
-            ("shippingType", "shipping"->Js.Json.string),
+            ("shippingType", "shipping"->JSON.Encode.string),
           ]
           ->Js.Dict.fromArray
-          ->Js.Json.object_
+          ->JSON.Encode.object
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
 

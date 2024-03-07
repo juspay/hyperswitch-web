@@ -9,7 +9,7 @@ let make = (~children) => {
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
       try {
-        let json = ev.data->Js.Json.parseExn
+        let json = ev.data->JSON.parseExn
         let dict = json->getDictFromJson
 
         if dict->Js.Dict.get("fullScreenIframeMounted")->Option.isSome {

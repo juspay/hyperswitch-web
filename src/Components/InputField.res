@@ -107,8 +107,8 @@ let make = (
 
   React.useEffect5(() => {
     Utils.handlePostMessage([
-      ("id", iframeId->Js.Json.string),
-      ("concatedString", concatString->Js.Json.string),
+      ("id", iframeId->JSON.Encode.string),
+      ("concatedString", concatString->JSON.Encode.string),
     ])
     None
   }, (isValid, setIsValid, value, onChange, onBlur))

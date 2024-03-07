@@ -2,8 +2,8 @@ open Utils
 let getKeyValue = (json, str) => {
   json
   ->Js.Dict.get(str)
-  ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
-  ->Js.Json.decodeString
+  ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+  ->JSON.Decode.string
   ->Option.getOr("")
 }
 
@@ -19,13 +19,13 @@ let make = () => {
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->Js.Json.boolean)])
+    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let dict = json->Utils.getDictFromJson
       if dict->Js.Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict = metadata->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())
+        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Js.Dict.empty())
         let qrData = metaDataDict->getString("qrData", "")
         setQrCode(_ => qrData)
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
@@ -33,7 +33,7 @@ let make = () => {
         let headersDict =
           metaDataDict
           ->getJsonObjectFromDict("headers")
-          ->Js.Json.decodeObject
+          ->JSON.Decode.object
           ->Option.getOr(Js.Dict.empty())
         let headers = Js.Dict.empty()
         setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))
@@ -41,7 +41,7 @@ let make = () => {
         ->Js.Dict.entries
         ->Js.Array2.forEach(entries => {
           let (x, val) = entries
-          Js.Dict.set(headers, x, val->Js.Json.decodeString->Option.getOr(""))
+          Js.Dict.set(headers, x, val->JSON.Decode.string->Option.getOr(""))
         })
         let expiryTime =
           metaDataDict->getString("expiryTime", "")->Belt.Float.fromString->Option.getOr(0.0)
@@ -91,7 +91,7 @@ let make = () => {
       ~switchToCustomPod,
     )
     ->then(json => {
-      let dict = json->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())
+      let dict = json->JSON.Decode.object->Option.getOr(Js.Dict.empty())
       let status = dict->getString("status", "")
 
       if status === "succeeded" {

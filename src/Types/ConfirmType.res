@@ -16,7 +16,7 @@ let defaultConfirm = {
 let getConfirmParams = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       return_url: getString(json, "return_url", ""),

@@ -1,6 +1,6 @@
 type themeDataModule = {
   default: CardThemeType.themeClass,
-  defaultRules: CardThemeType.themeClass => Js.Json.t,
+  defaultRules: CardThemeType.themeClass => JSON.t,
 }
 
 @val

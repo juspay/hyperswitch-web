@@ -10,7 +10,7 @@ let loadStripe = (str, option) => {
 @val external window: {..} = "window"
 window["Hyper"] = Hyper.make
 
-let isWordpress = window["wp"] !== Js.Json.null
+let isWordpress = window["wp"] !== JSON.Encode.null
 if !isWordpress {
   window["Stripe"] = Hyper.make
 }

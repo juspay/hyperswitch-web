@@ -455,15 +455,15 @@ let useRequiredFieldsBody = (
           let arr = value->Js.String2.split(" ")
           acc->Js.Dict.set(
             "billing.address.first_name",
-            arr->Belt.Array.get(0)->Option.getOr("")->Js.Json.string,
+            arr->Belt.Array.get(0)->Option.getOr("")->JSON.Encode.string,
           )
           acc->Js.Dict.set(
             "billing.address.last_name",
-            arr->Belt.Array.get(1)->Option.getOr("")->Js.Json.string,
+            arr->Belt.Array.get(1)->Option.getOr("")->JSON.Encode.string,
           )
         } else {
           let path = item->getBillingAddressPathFromFieldType
-          acc->Js.Dict.set(path, value->Js.Json.string)
+          acc->Js.Dict.set(path, value->JSON.Encode.string)
         }
         acc
       }, requiredFieldsBody)
@@ -491,11 +491,11 @@ let useRequiredFieldsBody = (
           if !isAllStoredCardsHaveName {
             acc->Js.Dict.set(
               "payment_method_data.card_token.card_holder_name",
-              value->Js.Json.string,
+              value->JSON.Encode.string,
             )
           }
         } else {
-          acc->Js.Dict.set(item.required_field, value->Js.Json.string)
+          acc->Js.Dict.set(item.required_field, value->JSON.Encode.string)
         }
         acc
       }, Js.Dict.empty())
@@ -657,7 +657,7 @@ let useSubmitCallback = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   React.useCallback5((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if line1.value == "" {

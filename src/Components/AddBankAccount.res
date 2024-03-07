@@ -38,8 +38,8 @@ let make = (~modalData, ~setModalData) => {
 
   let openModal = () => {
     handlePostMessage([
-      ("fullscreen", true->Js.Json.boolean),
-      ("iframeId", iframeId->Js.Json.string),
+      ("fullscreen", true->JSON.Encode.bool),
+      ("iframeId", iframeId->JSON.Encode.string),
     ])
   }
   <div

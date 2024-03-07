@@ -13,7 +13,7 @@ let defaultError = {
 let getError = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       type_: getString(json, "type", ""),

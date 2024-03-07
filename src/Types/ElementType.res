@@ -40,10 +40,10 @@ type paymentRequestButtonStyle = {
   height: string,
 }
 type style = {
-  base: Js.Json.t,
-  complete: Js.Json.t,
-  empty: Js.Json.t,
-  invalid: Js.Json.t,
+  base: JSON.t,
+  complete: JSON.t,
+  empty: JSON.t,
+  invalid: JSON.t,
   paymentRequestButton: paymentRequestButtonStyle,
 }
 type options = {
@@ -106,10 +106,10 @@ let defaultPaymentRequestButton = {
   height: "",
 }
 let defaultStyle = {
-  base: Js.Dict.empty()->Js.Json.object_,
-  complete: Js.Dict.empty()->Js.Json.object_,
-  empty: Js.Dict.empty()->Js.Json.object_,
-  invalid: Js.Dict.empty()->Js.Json.object_,
+  base: Js.Dict.empty()->JSON.Encode.object,
+  complete: Js.Dict.empty()->JSON.Encode.object,
+  empty: Js.Dict.empty()->JSON.Encode.object,
+  invalid: Js.Dict.empty()->JSON.Encode.object,
   paymentRequestButton: defaultPaymentRequestButton,
 }
 let defaultOptions = {
@@ -125,7 +125,7 @@ let defaultOptions = {
 let getClasses = (str, dict, logger) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       base: getWarningString(json, "base", "OrcaElement", ~logger),
@@ -147,7 +147,7 @@ let getClasses = (str, dict, logger) => {
 let rec getStyleObj = (dict, str, logger) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       backgroundColor: getWarningString(json, "backgroundColor", "", ~logger),
@@ -191,7 +191,7 @@ let getTheme = (str, key, logger) => {
 let getPaymentRequestButton = (dict, str, logger) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       type_: getWarningString(json, "type", "", ~logger),
@@ -208,7 +208,7 @@ let getPaymentRequestButton = (dict, str, logger) => {
 let getStyle = (dict, str, logger) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       base: getJsonObjectFromDict(json, "base"),

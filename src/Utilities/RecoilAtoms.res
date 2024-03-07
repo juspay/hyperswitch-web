@@ -1,4 +1,4 @@
-type load = Loading | Loaded(Js.Json.t) | LoadError
+type load = Loading | Loaded(JSON.t) | LoadError
 
 let keys = Recoil.atom(. "keys", CommonHooks.defaultkeys)
 let configAtom = Recoil.atom(. "defaultRecoilConfig", CardTheme.defaultRecoilConfig)

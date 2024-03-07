@@ -7,18 +7,18 @@ type token = {
   walletName: wallet,
   token: string,
   sessionId: string,
-  allowed_payment_methods: array<Js.Json.t>,
-  transaction_info: Js.Json.t,
-  merchant_info: Js.Json.t,
+  allowed_payment_methods: array<JSON.t>,
+  transaction_info: JSON.t,
+  merchant_info: JSON.t,
 }
 
 type tokenType =
-  | ApplePayToken(array<Js.Json.t>)
-  | GooglePayThirdPartyToken(array<Js.Json.t>)
+  | ApplePayToken(array<JSON.t>)
+  | GooglePayThirdPartyToken(array<JSON.t>)
   | OtherToken(array<token>)
 type optionalTokenType =
-  | ApplePayTokenOptional(option<Js.Json.t>)
-  | GooglePayThirdPartyTokenOptional(option<Js.Json.t>)
+  | ApplePayTokenOptional(option<JSON.t>)
+  | GooglePayThirdPartyTokenOptional(option<JSON.t>)
   | OtherTokenOptional(option<token>)
 
 type sessions = {
@@ -31,8 +31,8 @@ let defaultToken = {
   token: "",
   sessionId: "",
   allowed_payment_methods: [],
-  transaction_info: Js.Dict.empty()->Js.Json.object_,
-  merchant_info: Js.Dict.empty()->Js.Json.object_,
+  transaction_info: Js.Dict.empty()->JSON.Encode.object,
+  merchant_info: Js.Dict.empty()->JSON.Encode.object,
 }
 let getWallet = str => {
   switch str {
@@ -48,7 +48,7 @@ open Utils
 let getSessionsToken = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeArray)
+  ->Option.flatMap(JSON.Decode.array)
   ->Option.map(arr => {
     arr->Js.Array2.map(json => {
       let dict = json->getDictFromJson
@@ -65,7 +65,7 @@ let getSessionsToken = (dict, str) => {
   ->Option.getOr([defaultToken])
 }
 let getSessionsTokenJson = (dict, str) => {
-  dict->Js.Dict.get(str)->Option.flatMap(Js.Json.decodeArray)->Option.getOr([])
+  dict->Js.Dict.get(str)->Option.flatMap(JSON.Decode.array)->Option.getOr([])
 }
 
 let itemToObjMapper = (dict, returnType) => {
@@ -93,11 +93,11 @@ let itemToObjMapper = (dict, returnType) => {
 let getWalletFromTokenType = (arr, val: wallet) => {
   let x = arr->Js.Array2.find(item =>
     item
-    ->Js.Json.decodeObject
+    ->JSON.Decode.object
     ->Option.flatMap(x => {
       x->Js.Dict.get("wallet_name")
     })
-    ->Option.flatMap(Js.Json.decodeString)
+    ->Option.flatMap(JSON.Decode.string)
     ->Option.getOr("")
     ->getWallet === val
   )

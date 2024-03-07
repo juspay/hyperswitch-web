@@ -40,7 +40,7 @@ let make = (~paymentType, ~countryProps, ~list: PaymentMethodsRecord.list) => {
   }, [complete])
 
   let submitCallback = React.useCallback3((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     let (connectors, _) = list->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
     let body = PaymentBody.klarnaRedirectionBody(

@@ -122,8 +122,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   }
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMounted", true->Js.Json.boolean)])
-    handlePostMessage([("applePayMounted", true->Js.Json.boolean)])
+    handlePostMessage([("iframeMounted", true->JSON.Encode.bool)])
+    handlePostMessage([("applePayMounted", true->JSON.Encode.bool)])
     logger.setLogInitiated()
     let updatedState: PaymentType.loadType = switch paymentlist {
     | Loading =>
@@ -138,11 +138,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ())
       }
     | LoadError(x) =>
-      logger.setLogError(
-        ~value="LoadError: " ++ x->Js.Json.stringify,
-        ~eventName=LOADER_CHANGED,
-        (),
-      )
+      logger.setLogError(~value="LoadError: " ++ x->JSON.stringify, ~eventName=LOADER_CHANGED, ())
     }
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
@@ -158,8 +154,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   React.useEffect1(() => {
     switch paymentlist {
     | SemiLoaded => ()
-    | Loaded(_val) => handlePostMessage([("ready", true->Js.Json.boolean)])
-    | _ => handlePostMessage([("ready", false->Js.Json.boolean)])
+    | Loaded(_val) => handlePostMessage([("ready", true->JSON.Encode.bool)])
+    | _ => handlePostMessage([("ready", false->JSON.Encode.bool)])
     }
     None
   }, [paymentlist])
@@ -195,9 +191,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     open Promise
     let handleFun = (ev: Window.event) => {
       let json = try {
-        ev.data->Js.Json.parseExn
+        ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->Js.Json.object_
+      | _ => Js.Dict.empty()->JSON.Encode.object
       }
       try {
         let dict = json->getDictFromJson
@@ -205,13 +201,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           if (
             dict
             ->Js.Dict.get("paymentElementCreate")
-            ->Option.flatMap(Js.Json.decodeBoolean)
+            ->Option.flatMap(JSON.Decode.bool)
             ->Option.getOr(false)
           ) {
             if (
               dict
               ->Js.Dict.get("otherElements")
-              ->Option.flatMap(Js.Json.decodeBoolean)
+              ->Option.flatMap(JSON.Decode.bool)
               ->Option.getOr(false)
             ) {
               updateOptions(dict)
@@ -267,11 +263,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
 
               logger.setLogInfo(~value=Window.href, ~eventName=APP_RENDERED, ())
               [
-                ("iframeId", "no-element"->Js.Json.string),
-                ("publishableKey", ""->Js.Json.string),
-                ("parentURL", "*"->Js.Json.string),
-                ("sdkHandleConfirmPayment", false->Js.Json.boolean),
-                ("sdkHandleOneClickConfirmPayment", true->Js.Json.boolean),
+                ("iframeId", "no-element"->JSON.Encode.string),
+                ("publishableKey", ""->JSON.Encode.string),
+                ("parentURL", "*"->JSON.Encode.string),
+                ("sdkHandleConfirmPayment", false->JSON.Encode.bool),
+                ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
               ]->Js.Array2.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)
               })
@@ -312,13 +308,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           | Some(val) =>
             setKeys(.prev => {
               ...prev,
-              clientSecret: Some(val->Js.Json.decodeString->Option.getOr("")),
+              clientSecret: Some(val->JSON.Decode.string->Option.getOr("")),
             })
             setConfig(.prev => {
               ...prev,
               config: {
                 ...prev.config,
-                clientSecret: val->Js.Json.decodeString->Option.getOr(""),
+                clientSecret: val->JSON.Decode.string->Option.getOr(""),
               },
             })
           | None => ()
@@ -343,13 +339,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         }
         if dict->getDictIsSome("isReadyToPay") {
           setIsGooglePayReady(._ =>
-            dict->getJsonObjectFromDict("isReadyToPay")->Js.Json.decodeBoolean->Option.getOr(false)
+            dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
         }
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
           let updatedState: PaymentType.loadType =
-            list == Js.Dict.empty()->Js.Json.object_
+            list == Js.Dict.empty()->JSON.Encode.object
               ? LoadError(list)
               : switch list->Utils.getDictFromJson->Js.Dict.get("error") {
                 | Some(_) => LoadError(list)
@@ -365,7 +361,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ())
           | LoadError(x) =>
             logger.setLogError(
-              ~value="LoadError: " ++ x->Js.Json.stringify,
+              ~value="LoadError: " ++ x->JSON.stringify,
               ~eventName=LOADER_CHANGED,
               (),
             )
@@ -407,8 +403,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
 
   React.useEffect2(() => {
     Utils.handlePostMessage([
-      ("iframeHeight", (divH +. 1.0)->Js.Json.number),
-      ("iframeId", iframeId->Js.Json.string),
+      ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
+      ("iframeId", iframeId->JSON.Encode.string),
     ])
     None
   }, (divH, iframeId))

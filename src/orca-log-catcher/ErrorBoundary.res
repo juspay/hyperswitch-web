@@ -1,4 +1,4 @@
-external errorToJson: Sentry.ErrorBoundary.fallbackArg => Js.Json.t = "%identity"
+external errorToJson: Sentry.ErrorBoundary.fallbackArg => JSON.t = "%identity"
 type errorLevel = Top | RequestButton | PaymentMethod
 
 let errorIcon = {
@@ -98,7 +98,8 @@ module ErrorCard = {
   let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level) => {
     let beaconApiCall = data => {
       if data->Js.Array2.length > 0 {
-        let logData = data->Js.Array2.map(OrcaLogger.logFileToObj)->Js.Json.array->Js.Json.stringify
+        let logData =
+          data->Js.Array2.map(OrcaLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
         Window.sendBeacon(GlobalVars.logEndpoint, logData)
       }
     }
@@ -113,7 +114,7 @@ module ErrorCard = {
           sessionId: "",
           source: "orca-elements",
           version: GlobalVars.repoVersion,
-          value: error->errorToJson->Js.Json.stringify,
+          value: error->errorToJson->JSON.stringify,
           internalMetadata: "",
           category: USER_ERROR,
           paymentId: "",
@@ -127,7 +128,7 @@ module ErrorCard = {
           latency: "",
           paymentMethod: "",
           firstEvent: false,
-          metadata: Js.Json.null,
+          metadata: JSON.Encode.null,
         }
         beaconApiCall([errorLog])
       }
@@ -157,8 +158,8 @@ module ErrorCard = {
       switch level {
       | Top =>
         Utils.handlePostMessage([
-          ("iframeHeight", (divH +. 1.0)->Js.Json.number),
-          ("iframeId", iframeId->Js.Json.string),
+          ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
+          ("iframeId", iframeId->JSON.Encode.string),
         ])
       | _ => ()
       }

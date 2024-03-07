@@ -7,7 +7,7 @@ open GooglePayType
 let make = (
   ~sessionObj: option<SessionsType.token>,
   ~list: PaymentMethodsRecord.list,
-  ~thirdPartySessionObj: option<Js.Json.t>,
+  ~thirdPartySessionObj: option<JSON.t>,
   ~paymentType: option<CardThemeType.mode>,
   ~walletOptions: array<string>,
 ) => {
@@ -58,13 +58,13 @@ let make = (
 
   let isDelayedSessionToken = React.useMemo1(() => {
     thirdPartySessionObj
-    ->Option.flatMap(Js.Json.decodeObject)
+    ->Option.flatMap(JSON.Decode.object)
     ->Option.flatMap(x => x->Js.Dict.get("delayed_session_token"))
-    ->Option.flatMap(Js.Json.decodeBoolean)
+    ->Option.flatMap(JSON.Decode.bool)
     ->Option.getOr(false)
   }, [thirdPartySessionObj])
 
-  let processPayment = (body: array<(string, Js.Json.t)>) => {
+  let processPayment = (body: array<(string, JSON.t)>) => {
     intent(
       ~bodyArr=body,
       ~confirmParam={
@@ -79,9 +79,9 @@ let make = (
   React.useEffect1(() => {
     let handle = (ev: Window.event) => {
       let json = try {
-        ev.data->Js.Json.parseExn
+        ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->Js.Json.object_
+      | _ => Js.Dict.empty()->JSON.Encode.object
       }
       let dict = json->Utils.getDictFromJson
       if dict->Js.Dict.get("gpayResponse")->Option.isSome {
@@ -90,7 +90,7 @@ let make = (
         let body = {
           PaymentBody.gpayBody(~payObj=obj, ~connectors)
           ->Js.Dict.fromArray
-          ->Js.Json.object_
+          ->JSON.Encode.object
           ->OrcaUtils.flattenObject(true)
           ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
           ->OrcaUtils.getArrayOfTupleFromDict
@@ -98,7 +98,7 @@ let make = (
         processPayment(body)
       }
       if dict->Js.Dict.get("gpayError")->Option.isSome {
-        Utils.handlePostMessage([("fullscreen", false->Js.Json.boolean)])
+        Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
         if !isWallet {
           postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
         }
@@ -139,7 +139,7 @@ let make = (
     )
     open Promise
     OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
-      let result = result->Js.Json.decodeBoolean->Option.getOr(false)
+      let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         if isInvokeSDKFlow {
           if isDelayedSessionToken {
@@ -147,11 +147,11 @@ let make = (
             processPayment(bodyDict)
           } else {
             handlePostMessage([
-              ("fullscreen", true->Js.Json.boolean),
-              ("param", "paymentloader"->Js.Json.string),
-              ("iframeId", iframeId->Js.Json.string),
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", "paymentloader"->JSON.Encode.string),
+              ("iframeId", iframeId->JSON.Encode.string),
             ])
-            options.readOnly ? () : handlePostMessage([("GpayClicked", true->Js.Json.boolean)])
+            options.readOnly ? () : handlePostMessage([("GpayClicked", true->JSON.Encode.bool)])
           }
         } else {
           let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
@@ -205,9 +205,9 @@ let make = (
   React.useEffect0(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
       let json = try {
-        ev.data->Js.Json.parseExn
+        ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->Js.Json.object_
+      | _ => Js.Dict.empty()->JSON.Encode.object
       }
       let dict = json->Utils.getDictFromJson
       try {
@@ -241,15 +241,15 @@ let make = (
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     if !isWallet {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
         handlePostMessage([
-          ("fullscreen", true->Js.Json.boolean),
-          ("param", "paymentloader"->Js.Json.string),
-          ("iframeId", iframeId->Js.Json.string),
+          ("fullscreen", true->JSON.Encode.bool),
+          ("param", "paymentloader"->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
         ])
-        options.readOnly ? () : handlePostMessage([("GpayClicked", true->Js.Json.boolean)])
+        options.readOnly ? () : handlePostMessage([("GpayClicked", true->JSON.Encode.bool)])
       } else if areRequiredFieldsEmpty {
         postFailedSubmitResponse(
           ~errortype="validation_error",

@@ -4,7 +4,7 @@ open Utils
 
 type addressType = Line1 | Line2 | City | Postal | State | Country
 
-type dataModule = {states: Js.Json.t}
+type dataModule = {states: JSON.t}
 
 @val
 external importStates: string => Js.Promise.t<dataModule> = "import"
@@ -167,7 +167,7 @@ let make = (~paymentType, ~className="") => {
   }, [country.value])
 
   let submitCallback = React.useCallback6((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if line1.value == "" {

@@ -163,7 +163,7 @@ let manageErrorWarning = (
   }
 }
 
-let unknownKeysWarning = (validKeysArr, dict: Js.Dict.t<Js.Json.t>, dictType: string, ~logger) => {
+let unknownKeysWarning = (validKeysArr, dict: Js.Dict.t<JSON.t>, dictType: string, ~logger) => {
   dict
   ->Js.Dict.entries
   ->Js.Array2.forEach(((key, _)) => {

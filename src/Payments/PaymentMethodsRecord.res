@@ -552,18 +552,16 @@ let getFieldType = (dict, isBancontact) => {
   let fieldClass =
     dict
     ->Js.Dict.get("field_type")
-    ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
-    ->Js.Json.classify
+    ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+    ->JSON.Classify.classify
   switch fieldClass {
-  | JSONFalse
-  | JSONTrue
-  | JSONNull =>
+  | Bool(_)
+  | Null =>
     None
-  | JSONNumber(_val) => None
-  | JSONArray(_arr) => None
-  | JSONString(val) => val->getPaymentMethodsFieldTypeFromString(isBancontact)
-
-  | JSONObject(dict) => dict->getPaymentMethodsFieldTypeFromDict
+  | Number(_val) => None
+  | Array(_arr) => None
+  | String(val) => val->getPaymentMethodsFieldTypeFromString(isBancontact)
+  | Object(dict) => dict->getPaymentMethodsFieldTypeFromDict
   }
 }
 
@@ -774,9 +772,9 @@ let getPaymentExperienceType = str => {
 let getPaymentExperience = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeArray)
+  ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
+  ->Belt.Array.keepMap(JSON.Decode.object)
   ->Js.Array2.map(json => {
     {
       payment_experience_type: getString(
@@ -793,13 +791,13 @@ let getSurchargeDetails = dict => {
   let surchargDetails =
     dict
     ->Js.Dict.get("surcharge_details")
-    ->Option.flatMap(Js.Json.decodeObject)
+    ->Option.flatMap(JSON.Decode.object)
     ->Option.getOr(Js.Dict.empty())
 
   let displayTotalSurchargeAmount =
     surchargDetails
     ->Js.Dict.get("display_total_surcharge_amount")
-    ->Option.flatMap(Js.Json.decodeNumber)
+    ->Option.flatMap(JSON.Decode.float)
     ->Option.getOr(0.0)
 
   if displayTotalSurchargeAmount !== 0.0 {
@@ -814,9 +812,9 @@ let getSurchargeDetails = dict => {
 let getCardNetworks = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeArray)
+  ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
+  ->Belt.Array.keepMap(JSON.Decode.object)
   ->Js.Array2.map(json => {
     {
       card_network: getString(json, "card_network", "")->CardUtils.cardType,
@@ -829,9 +827,9 @@ let getCardNetworks = (dict, str) => {
 let getBankNames = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeArray)
+  ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
+  ->Belt.Array.keepMap(JSON.Decode.object)
   ->Js.Array2.map(json => {
     getStrArray(json, "bank_name")
   })
@@ -844,14 +842,14 @@ let getBankNames = (dict, str) => {
 let getAchConnectors = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.getOr(Js.Dict.empty())
   ->getStrArray("elligible_connectors")
 }
 
 let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
   let requiredFields =
-    Utils.getJsonFromDict(dict, "required_fields", Js.Json.null)
+    Utils.getJsonFromDict(dict, "required_fields", JSON.Encode.null)
     ->Utils.getDictFromJson
     ->Js.Dict.values
 
@@ -869,9 +867,9 @@ let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
 let getPaymentMethodTypes = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeArray)
+  ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
+  ->Belt.Array.keepMap(JSON.Decode.object)
   ->Js.Array2.map(jsonDict => {
     let paymentMethodType = getString(jsonDict, "payment_method_type", "")
     {
@@ -892,9 +890,9 @@ let getPaymentMethodTypes = (dict, str) => {
 let getMethodsArr = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeArray)
+  ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
+  ->Belt.Array.keepMap(JSON.Decode.object)
   ->Js.Array2.map(json => {
     {
       payment_method: getString(json, "payment_method", ""),
@@ -906,7 +904,7 @@ let getMethodsArr = (dict, str) => {
 let getOptionalMandateType = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       amount: getInt(json, "amount", 0),
@@ -918,7 +916,7 @@ let getOptionalMandateType = (dict, str) => {
 let getMandate = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       single_use: getOptionalMandateType(json, "single_use"),

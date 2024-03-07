@@ -48,7 +48,7 @@ let defaultAppearance = {
   variables: DefaultTheme.default,
   componentType: "payment",
   labels: Above,
-  rules: Js.Dict.empty()->Js.Json.object_,
+  rules: Js.Dict.empty()->JSON.Encode.object,
 }
 let defaultFonts = {
   cssSrc: "",
@@ -90,7 +90,7 @@ let defaultRecoilConfig: recoilConfig = {
 let getVariables = (str, dict, default, logger) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     let validKeys = [
       "fontFamily",
@@ -253,12 +253,12 @@ let getAppearance = (
   str,
   dict,
   default: OrcaPaymentPage.CardThemeType.themeClass,
-  defaultRules: OrcaPaymentPage.CardThemeType.themeClass => Js.Json.t,
+  defaultRules: OrcaPaymentPage.CardThemeType.themeClass => JSON.t,
   logger,
 ) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(["theme", "variables", "rules", "labels"], json, "appearance", ~logger)
 
@@ -285,9 +285,9 @@ let getAppearance = (
 let getFonts = (str, dict, logger) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeArray)
+  ->Option.flatMap(JSON.Decode.array)
   ->Option.getOr([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
+  ->Belt.Array.keepMap(JSON.Decode.object)
   ->Js.Array2.map(json => {
     unknownKeysWarning(["cssSrc", "family", "src", "weight"], json, "fonts", ~logger)
     {
@@ -301,7 +301,7 @@ let getFonts = (str, dict, logger) => {
 let itemToObjMapper = (
   dict,
   default: OrcaPaymentPage.CardThemeType.themeClass,
-  defaultRules: OrcaPaymentPage.CardThemeType.themeClass => Js.Json.t,
+  defaultRules: OrcaPaymentPage.CardThemeType.themeClass => JSON.t,
   logger,
 ) => {
   unknownKeysWarning(

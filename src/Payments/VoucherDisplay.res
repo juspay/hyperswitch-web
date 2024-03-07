@@ -8,7 +8,7 @@ let make = () => {
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let (downloadCounter, setDownloadCounter) = React.useState(_ => 0)
   let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
-  let (paymentIntent, setPaymentIntent) = React.useState(_ => Js.Json.null)
+  let (paymentIntent, setPaymentIntent) = React.useState(_ => JSON.Encode.null)
   let (loader, setLoader) = React.useState(_ => true)
   let linkRef = React.useRef(Js.Nullable.null)
 
@@ -21,13 +21,13 @@ let make = () => {
   }, [loader])
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->Js.Json.boolean)])
+    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let dict = json->Utils.getDictFromJson
       if dict->Js.Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict = metadata->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())
+        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Js.Dict.empty())
         setReturnUrl(_ => metaDataDict->getString("returnUrl", ""))
         setDownloadUrl(_ => metaDataDict->getString("voucherUrl", ""))
         setReference(_ => metaDataDict->getString("reference", ""))

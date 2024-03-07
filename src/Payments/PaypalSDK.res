@@ -36,7 +36,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
     | _ => 48
     },
   }
-  let handleCloseLoader = () => Utils.handlePostMessage([("fullscreen", false->Js.Json.boolean)])
+  let handleCloseLoader = () => Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
   let loadPaypalSdk = () => {
     loggerState.setLogInfo(
       ~value="Paypal SDK Button Clicked",
@@ -47,7 +47,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
     open Promise
     OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
-      let result = result->Js.Json.decodeBoolean->Option.getOr(false)
+      let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         braintree.client.create(.{authorization: token}, (clientErr, clientInstance) => {
           if clientErr {
@@ -71,9 +71,9 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
                     createBillingAgreement: () => {
                       //Paypal Clicked
                       Utils.handlePostMessage([
-                        ("fullscreen", true->Js.Json.boolean),
-                        ("param", "paymentloader"->Js.Json.string),
-                        ("iframeId", iframeId->Js.Json.string),
+                        ("fullscreen", true->JSON.Encode.bool),
+                        ("param", "paymentloader"->JSON.Encode.string),
+                        ("iframeId", iframeId->JSON.Encode.string),
                       ])
                       options.readOnly
                         ? ()

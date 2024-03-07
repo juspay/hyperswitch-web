@@ -1,6 +1,6 @@
-@send external postMessage: (Window.window, Js.Json.t, string) => unit = "postMessage"
+@send external postMessage: (Window.window, JSON.t, string) => unit = "postMessage"
 
-external eventToJson: ReactEvent.Mouse.t => Js.Json.t = "%identity"
+external eventToJson: ReactEvent.Mouse.t => JSON.t = "%identity"
 
 module Loader = {
   @react.component

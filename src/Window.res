@@ -57,7 +57,7 @@ external contentWindow: Dom.element => Dom.element = "contentWindow"
 external style: Dom.element => style = "style"
 @set external setTransition: (style, string) => unit = "transition"
 @set external setHeight: (style, string) => unit = "height"
-@send external paymentRequest: (Js.Json.t, Js.Json.t, Js.Json.t) => Js.Json.t = "PaymentRequest"
+@send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
 @send external click: Dom.element => unit = "click"
 
 let iframePostMessage = (iframeRef: Js.nullable<Dom.element>, message) => {
@@ -66,7 +66,7 @@ let iframePostMessage = (iframeRef: Js.nullable<Dom.element>, message) => {
     try {
       ref
       ->contentWindow
-      ->postMessage(message->Js.Json.object_->Js.Json.stringify, GlobalVars.targetOrigin)
+      ->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
     } catch {
     | _ => ()
     }

@@ -22,7 +22,7 @@ let make = (
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
   let paymentOrder = paymentMethodOrder->Utils.getOptionalArr->Utils.removeDuplicate
-  let (sessions, setSessions) = React.useState(_ => Js.Dict.empty()->Js.Json.object_)
+  let (sessions, setSessions) = React.useState(_ => Js.Dict.empty()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
@@ -126,7 +126,7 @@ let make = (
     cardsToRender(cardsContainerWidth)
   }, [cardsContainerWidth])
   let submitCallback = React.useCallback1((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
       Utils.postFailedSubmitResponse(

@@ -4,7 +4,7 @@ open EventListenerManager
 
 open OrcaUtils
 
-external eventToJson: Types.eventData => Js.Json.t = "%identity"
+external eventToJson: Types.eventData => JSON.t = "%identity"
 
 type location = {replace: (. string) => unit}
 @val @scope("window") external location: location = "location"
@@ -21,23 +21,23 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
 
     let sdkHandleConfirmPayment =
       options
-      ->Js.Json.decodeObject
+      ->JSON.Decode.object
       ->Option.flatMap(x => x->Js.Dict.get("sdkHandleConfirmPayment"))
-      ->Option.flatMap(Js.Json.decodeBoolean)
+      ->Option.flatMap(JSON.Decode.bool)
       ->Option.getOr(false)
 
     let sdkHandleOneClickConfirmPayment =
       options
-      ->Js.Json.decodeObject
+      ->JSON.Decode.object
       ->Option.flatMap(x => x->Js.Dict.get("sdkHandleOneClickConfirmPayment"))
-      ->Option.flatMap(Js.Json.decodeBoolean)
+      ->Option.flatMap(JSON.Decode.bool)
       ->Option.getOr(true)
 
     let disableSaveCards =
       options
-      ->Js.Json.decodeObject
+      ->JSON.Decode.object
       ->Option.flatMap(x => x->Js.Dict.get("disableSaveCards"))
-      ->Option.flatMap(Js.Json.decodeBoolean)
+      ->Option.flatMap(JSON.Decode.bool)
       ->Option.getOr(false)
 
     let on = (eventType, eventHandler) => {
@@ -86,21 +86,21 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
     let collapse = () => ()
     let blur = () => {
       iframeRef->Js.Array2.forEach(iframe => {
-        let message = [("doBlur", true->Js.Json.boolean)]->Js.Dict.fromArray
+        let message = [("doBlur", true->JSON.Encode.bool)]->Js.Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
     }
 
     let focus = () => {
       iframeRef->Js.Array2.forEach(iframe => {
-        let message = [("doFocus", true->Js.Json.boolean)]->Js.Dict.fromArray
+        let message = [("doFocus", true->JSON.Encode.bool)]->Js.Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
     }
 
     let clear = () => {
       iframeRef->Js.Array2.forEach(iframe => {
-        let message = [("doClearValues", true->Js.Json.boolean)]->Js.Dict.fromArray
+        let message = [("doClearValues", true->JSON.Encode.bool)]->Js.Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
     }
@@ -146,8 +146,8 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       iframeRef->Js.Array2.forEach(iframe => {
         let message =
           [
-            ("paymentElementsUpdate", true->Js.Json.boolean),
-            ("options", flatOption->Js.Json.object_->unflattenObject->Js.Json.object_),
+            ("paymentElementsUpdate", true->JSON.Encode.bool),
+            ("options", flatOption->JSON.Encode.object->unflattenObject->JSON.Encode.object),
           ]->Js.Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
@@ -161,7 +161,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let currentClass = ref("base")
       let fullscreen = ref(false)
       let fullscreenParam = ref("")
-      let fullscreenMetadata = ref(Js.Dict.empty()->Js.Json.object_)
+      let fullscreenMetadata = ref(Js.Dict.empty()->JSON.Encode.object)
       let optionsDict = options->getDictFromJson
       let handle = (ev: Types.event) => {
         let eventDataObject = ev.data->eventToJson
@@ -216,7 +216,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         if combinedHyperClasses->Option.isSome {
           let id = eventDataObject->getOptionalJsonFromJson("id")->getStringfromOptionaljson("")
 
-          let decodeStringTest = combinedHyperClasses->Option.flatMap(Js.Json.decodeString)
+          let decodeStringTest = combinedHyperClasses->Option.flatMap(JSON.Decode.string)
           switch decodeStringTest {
           | Some(val) => currentClass := val
           | None => ()
@@ -242,9 +242,9 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           fullscreenParam := param->getStringfromOptionaljson("")
           fullscreenMetadata :=
             metadata
-            ->Option.flatMap(Js.Json.decodeObject)
+            ->Option.flatMap(JSON.Decode.object)
             ->Option.getOr(Js.Dict.empty())
-            ->Js.Json.object_
+            ->JSON.Encode.object
           let fullscreenElem = Window.querySelector(
             `#orca-fullscreen-iframeRef-${localSelectorString}`,
           )
@@ -269,7 +269,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                         fullScreenEle->Window.iframePostMessage(
                           [
-                            ("fullScreenIframeMounted", true->Js.Json.boolean),
+                            ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
                           ]->Js.Dict.fromArray,
                         )
@@ -277,7 +277,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
                       if dict->Js.Dict.get("driverMounted")->Option.isSome {
                         mainElement->Window.iframePostMessage(
                           [
-                            ("fullScreenIframeMounted", true->Js.Json.boolean),
+                            ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
                           ]->Js.Dict.fromArray,
                         )
@@ -294,7 +294,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
               : {
                   ele->Window.innerHTML("")
                   mainElement->Window.iframePostMessage(
-                    [("fullScreenIframeMounted", false->Js.Json.boolean)]->Js.Dict.fromArray,
+                    [("fullScreenIframeMounted", false->JSON.Encode.bool)]->Js.Dict.fromArray,
                   )
                 }
           | None => ()

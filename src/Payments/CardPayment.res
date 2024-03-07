@@ -158,16 +158,16 @@ let make = (
   )
 
   let submitCallback = React.useCallback5((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (month, year) = CardUtils.getExpiryDates(cardExpiry)
     let (token, customerId) = paymentToken
     let savedCardBody = PaymentBody.savedCardBody(~paymentToken=token, ~customerId, ~cvcNumber)
 
-    let onSessionBody = [("setup_future_usage", "on_session"->Js.Json.string)]
+    let onSessionBody = [("setup_future_usage", "on_session"->JSON.Encode.string)]
     let cardNetwork = {
       if cardBrand != "" {
-        [("card_network", cardBrand->Js.Json.string)]
+        [("card_network", cardBrand->JSON.Encode.string)]
       } else {
         []
       }
@@ -195,7 +195,7 @@ let make = (
           ~bodyArr={
             (isBancontact ? banContactBody : cardBody)
             ->Js.Dict.fromArray
-            ->Js.Json.object_
+            ->JSON.Encode.object
             ->OrcaUtils.flattenObject(true)
             ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
             ->OrcaUtils.getArrayOfTupleFromDict
@@ -208,7 +208,7 @@ let make = (
         intent(
           ~bodyArr=savedCardBody
           ->Js.Dict.fromArray
-          ->Js.Json.object_
+          ->JSON.Encode.object
           ->OrcaUtils.flattenObject(true)
           ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
           ->OrcaUtils.getArrayOfTupleFromDict,

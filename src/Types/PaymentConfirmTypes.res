@@ -36,8 +36,8 @@ type voucherDetails = {
 type nextAction = {
   redirectToUrl: string,
   type_: string,
-  bank_transfer_steps_and_charges_details: option<Js.Json.t>,
-  session_token: option<Js.Json.t>,
+  bank_transfer_steps_and_charges_details: option<JSON.t>,
+  session_token: option<JSON.t>,
   image_data_url: option<string>,
   voucher_details: option<voucherDetails>,
   display_to_timestamp: option<float>,
@@ -79,7 +79,7 @@ let defaultIntent = {
 let getAchCreditTransfer = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       account_number: getString(json, "account_number", ""),
@@ -93,7 +93,7 @@ let getAchCreditTransfer = (dict, str) => {
 let getBacsBankInstructions = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       account_holder_name: getString(json, "account_holder_name", ""),
@@ -106,7 +106,7 @@ let getBacsBankInstructions = (dict, str) => {
 let getBankTransferDetails = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       ach_credit_transfer: getAchCreditTransfer(json, "ach_credit_transfer"),
@@ -124,7 +124,7 @@ let getVoucherDetails = json => {
 let getNextAction = (dict, str) => {
   dict
   ->Js.Dict.get(str)
-  ->Option.flatMap(Js.Json.decodeObject)
+  ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     {
       redirectToUrl: getString(json, "redirect_to_url", ""),
@@ -134,22 +134,22 @@ let getNextAction = (dict, str) => {
           json,
           "bank_transfer_steps_and_charges_details",
           Js.Dict.empty(),
-        )->Js.Json.object_,
+        )->JSON.Encode.object,
       ),
       session_token: Some(
-        getJsonObjFromDict(json, "session_token", Js.Dict.empty())->Js.Json.object_,
+        getJsonObjFromDict(json, "session_token", Js.Dict.empty())->JSON.Encode.object,
       ),
       image_data_url: Some(json->getString("image_data_url", "")),
       display_to_timestamp: Some(
         json
         ->Js.Dict.get("display_to_timestamp")
-        ->Option.flatMap(Js.Json.decodeNumber)
+        ->Option.flatMap(JSON.Decode.float)
         ->Option.getOr(0.0),
       ),
       voucher_details: {
         json
         ->Js.Dict.get("voucher_details")
-        ->Option.flatMap(Js.Json.decodeObject)
+        ->Option.flatMap(JSON.Decode.object)
         ->Option.map(json => json->getVoucherDetails)
       },
     }

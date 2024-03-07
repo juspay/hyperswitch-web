@@ -146,11 +146,11 @@ type logFile = {
   latency: string,
   firstEvent: bool,
   paymentMethod: string,
-  metadata: Js.Json.t,
+  metadata: JSON.t,
 }
 
 type setlogApiValueType =
-  | ArrayType(array<(string, Js.Json.t)>)
+  | ArrayType(array<(string, JSON.t)>)
   | StringValue(string)
 
 type setLogInfo = (
@@ -179,18 +179,18 @@ type loggerMake = {
     unit,
   ) => unit,
   setLogInitiated: unit => unit,
-  setConfirmPaymentValue: (~paymentType: string) => Js.Json.t,
+  setConfirmPaymentValue: (~paymentType: string) => JSON.t,
   sendLogs: unit => unit,
   setSessionId: string => unit,
   setClientSecret: string => unit,
   setMerchantId: string => unit,
-  setMetadata: Js.Json.t => unit,
+  setMetadata: JSON.t => unit,
 }
 
 let defaultLoggerConfig = {
   sendLogs: () => (),
   setClientSecret: _x => (),
-  setConfirmPaymentValue: (~paymentType as _) => {Js.Dict.empty()->Js.Json.object_},
+  setConfirmPaymentValue: (~paymentType as _) => {Js.Dict.empty()->JSON.Encode.object},
   setLogError: (
     ~value as _,
     ~internalMetadata as _=?,
@@ -230,7 +230,7 @@ let defaultLoggerConfig = {
 
 let logFileToObj = logFile => {
   [
-    ("timestamp", logFile.timestamp->Js.Json.string),
+    ("timestamp", logFile.timestamp->JSON.Encode.string),
     (
       "log_type",
       switch logFile.logType {
@@ -239,9 +239,9 @@ let logFileToObj = logFile => {
       | ERROR => "ERROR"
       | WARNING => "WARNING"
       | SILENT => "SILENT"
-      }->Js.Json.string,
+      }->JSON.Encode.string,
     ),
-    ("component", "WEB"->Js.Json.string),
+    ("component", "WEB"->JSON.Encode.string),
     (
       "category",
       switch logFile.category {
@@ -249,27 +249,27 @@ let logFileToObj = logFile => {
       | USER_ERROR => "USER_ERROR"
       | USER_EVENT => "USER_EVENT"
       | MERCHANT_EVENT => "MERCHANT_EVENT"
-      }->Js.Json.string,
+      }->JSON.Encode.string,
     ),
-    ("source", logFile.source->convertToScreamingSnakeCase->Js.Json.string),
-    ("version", logFile.version->Js.Json.string), // repoversion of orca-android
-    ("value", logFile.value->Js.Json.string),
-    ("internal_metadata", logFile.internalMetadata->Js.Json.string),
-    ("session_id", logFile.sessionId->Js.Json.string),
-    ("merchant_id", logFile.merchantId->Js.Json.string),
-    ("payment_id", logFile.paymentId->Js.Json.string),
-    ("app_id", logFile.appId->Js.Json.string),
-    ("platform", logFile.platform->convertToScreamingSnakeCase->Js.Json.string),
-    ("user_agent", logFile.userAgent->Js.Json.string),
-    ("event_name", logFile.eventName->eventNameToStrMapper->Js.Json.string),
-    ("browser_name", logFile.browserName->convertToScreamingSnakeCase->Js.Json.string),
-    ("browser_version", logFile.browserVersion->Js.Json.string),
-    ("latency", logFile.latency->Js.Json.string),
-    ("first_event", (logFile.firstEvent ? "true" : "false")->Js.Json.string),
-    ("payment_method", logFile.paymentMethod->convertToScreamingSnakeCase->Js.Json.string),
+    ("source", logFile.source->convertToScreamingSnakeCase->JSON.Encode.string),
+    ("version", logFile.version->JSON.Encode.string), // repoversion of orca-android
+    ("value", logFile.value->JSON.Encode.string),
+    ("internal_metadata", logFile.internalMetadata->JSON.Encode.string),
+    ("session_id", logFile.sessionId->JSON.Encode.string),
+    ("merchant_id", logFile.merchantId->JSON.Encode.string),
+    ("payment_id", logFile.paymentId->JSON.Encode.string),
+    ("app_id", logFile.appId->JSON.Encode.string),
+    ("platform", logFile.platform->convertToScreamingSnakeCase->JSON.Encode.string),
+    ("user_agent", logFile.userAgent->JSON.Encode.string),
+    ("event_name", logFile.eventName->eventNameToStrMapper->JSON.Encode.string),
+    ("browser_name", logFile.browserName->convertToScreamingSnakeCase->JSON.Encode.string),
+    ("browser_version", logFile.browserVersion->JSON.Encode.string),
+    ("latency", logFile.latency->JSON.Encode.string),
+    ("first_event", (logFile.firstEvent ? "true" : "false")->JSON.Encode.string),
+    ("payment_method", logFile.paymentMethod->convertToScreamingSnakeCase->JSON.Encode.string),
   ]
   ->Js.Dict.fromArray
-  ->Js.Json.object_
+  ->JSON.Encode.object
 }
 
 /* SAMPLE LOG FILE
@@ -422,7 +422,7 @@ let make = (
     merchantId := value
   }
 
-  let metadata = ref(metadata->Option.getOr(Js.Json.null))
+  let metadata = ref(metadata->Option.getOr(JSON.Encode.null))
 
   let setMetadata = value => {
     metadata := value
@@ -466,7 +466,7 @@ let make = (
 
   let beaconApiCall = data => {
     if data->Js.Array2.length > 0 {
-      let logData = data->Js.Array2.map(logFileToObj)->Js.Json.array->Js.Json.stringify
+      let logData = data->Js.Array2.map(logFileToObj)->JSON.Encode.array->JSON.stringify
       Window.sendBeacon(GlobalVars.logEndpoint, logData)
     }
   }
@@ -600,9 +600,9 @@ let make = (
   }
 
   let setConfirmPaymentValue = (~paymentType) => {
-    [("method", "confirmPayment"->Js.Json.string), ("type", paymentType->Js.Json.string)]
+    [("method", "confirmPayment"->JSON.Encode.string), ("type", paymentType->JSON.Encode.string)]
     ->Js.Dict.fromArray
-    ->Js.Json.object_
+    ->JSON.Encode.object
   }
 
   let setLogApi = (
@@ -628,11 +628,11 @@ let make = (
       source: sourceString,
       version: GlobalVars.repoVersion,
       value: switch value {
-      | ArrayType(a) => a->Js.Dict.fromArray->Js.Json.object_->Js.Json.stringify
+      | ArrayType(a) => a->Js.Dict.fromArray->JSON.Encode.object->JSON.stringify
       | StringValue(a) => a
       },
       internalMetadata: switch internalMetadata {
-      | ArrayType(a) => a->Js.Dict.fromArray->Js.Json.object_->Js.Json.stringify
+      | ArrayType(a) => a->Js.Dict.fromArray->JSON.Encode.object->JSON.stringify
       | StringValue(a) => a
       },
       category: logCategory,

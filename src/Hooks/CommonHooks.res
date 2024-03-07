@@ -67,8 +67,8 @@ let useScript = (src: string) => {
 
 let updateKeys = (dict, keyPair, setKeys) => {
   let (key, value) = keyPair
-  let valueStr = value->Js.Json.decodeString->Option.getOr("")
-  let valueBool = default => value->Js.Json.decodeBoolean->Option.getOr(default)
+  let valueStr = value->JSON.Decode.string->Option.getOr("")
+  let valueBool = default => value->JSON.Decode.bool->Option.getOr(default)
   if dict->Utils.getDictIsSome(key) {
     switch key {
     | "iframeId" =>

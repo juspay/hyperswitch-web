@@ -229,7 +229,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     }
     let cardNetwork = {
       if cardBrand != "" {
-        [("card_network", cardNumber->CardUtils.getCardBrand->Js.Json.string)]
+        [("card_network", cardNumber->CardUtils.getCardBrand->JSON.Encode.string)]
       } else {
         []
       }
@@ -291,9 +291,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   React.useEffect0(() => {
     let handleFun = (ev: Window.event) => {
       let json = try {
-        ev.data->Js.Json.parseExn
+        ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->Js.Json.object_
+      | _ => Js.Dict.empty()->JSON.Encode.object
       }
       let dict = json->Utils.getDictFromJson
       if dict->Js.Dict.get("doBlur")->Option.isSome {
@@ -321,7 +321,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   React.useEffect6(() => {
     let handleDoSubmit = (ev: Window.event) => {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let jsonDict = json->Utils.getDictFromJson
       let confirm = jsonDict->ConfirmType.itemToObjMapper
       if confirm.doSubmit {

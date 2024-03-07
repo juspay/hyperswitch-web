@@ -10,7 +10,7 @@ open LoggerUtils
 type payment = Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Other
 
 let closePaymentLoaderIfAny = () =>
-  Utils.handlePostMessage([("fullscreen", false->Js.Json.boolean)])
+  Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
 
 let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
   open Promise
@@ -50,7 +50,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
           ~logCategory=API,
           (),
         )
-        Js.Json.null->resolve
+        JSON.Encode.null->resolve
       })
     } else {
       logApi(
@@ -68,7 +68,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
   })
   ->catch(e => {
     Js.log2("Unable to retrieve payment details because of ", e)
-    Js.Json.null->resolve
+    JSON.Encode.null->resolve
   })
 }
 
@@ -76,7 +76,7 @@ let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchT
   open Promise
   retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
   ->then(json => {
-    let dict = json->Js.Json.decodeObject->Option.getOr(Js.Dict.empty())
+    let dict = json->JSON.Decode.object->Option.getOr(Js.Dict.empty())
     let status = dict->getString("status", "")
 
     if status === "succeeded" || status === "failed" {
@@ -152,13 +152,13 @@ let rec intentCall = (
           | Card => "CARD"
           | _ =>
             bodyStr
-            ->Js.Json.parseExn
+            ->JSON.parseExn
             ->Utils.getDictFromJson
             ->Utils.getString("payment_method_type", "")
           }
           handleLogging(
             ~optLogger,
-            ~value=data->Js.Json.stringify,
+            ~value=data->JSON.stringify,
             ~eventName=PAYMENT_FAILED,
             ~paymentMethod,
             (),
@@ -262,20 +262,20 @@ let rec intentCall = (
             }
             let dict = deepCopyDict(metadata)
             dict->Js.Dict.set("data", data)
-            dict->Js.Dict.set("url", url.href->Js.Json.string)
+            dict->Js.Dict.set("url", url.href->JSON.Encode.string)
             handleLogging(
               ~optLogger,
               ~value="",
-              ~internalMetadata=dict->Js.Json.object_->Js.Json.stringify,
+              ~internalMetadata=dict->JSON.Encode.object->JSON.stringify,
               ~eventName=DISPLAY_BANK_TRANSFER_INFO_PAGE,
               ~paymentMethod,
               (),
             )
             handlePostMessage([
-              ("fullscreen", true->Js.Json.boolean),
-              ("param", `${intent.payment_method_type}BankTransfer`->Js.Json.string),
-              ("iframeId", iframeId->Js.Json.string),
-              ("metadata", dict->Js.Json.object_),
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", `${intent.payment_method_type}BankTransfer`->JSON.Encode.string),
+              ("iframeId", iframeId->JSON.Encode.string),
+              ("metadata", dict->JSON.Encode.object),
             ])
           } else if intent.nextAction.type_ === "qr_code_information" {
             let qrData = intent.nextAction.image_data_url->Option.getOr("")
@@ -284,30 +284,30 @@ let rec intentCall = (
             headers->Js.Array2.forEach(
               entries => {
                 let (x, val) = entries
-                Js.Dict.set(headerObj, x, val->Js.Json.string)
+                Js.Dict.set(headerObj, x, val->JSON.Encode.string)
               },
             )
             let metaData =
               [
-                ("qrData", qrData->Js.Json.string),
-                ("paymentIntentId", clientSecret->Js.Json.string),
-                ("headers", headerObj->Js.Json.object_),
-                ("expiryTime", expiryTime->Belt.Float.toString->Js.Json.string),
-                ("url", url.href->Js.Json.string),
+                ("qrData", qrData->JSON.Encode.string),
+                ("paymentIntentId", clientSecret->JSON.Encode.string),
+                ("headers", headerObj->JSON.Encode.object),
+                ("expiryTime", expiryTime->Belt.Float.toString->JSON.Encode.string),
+                ("url", url.href->JSON.Encode.string),
               ]->Js.Dict.fromArray
             handleLogging(
               ~optLogger,
               ~value="",
-              ~internalMetadata=metaData->Js.Json.object_->Js.Json.stringify,
+              ~internalMetadata=metaData->JSON.Encode.object->JSON.stringify,
               ~eventName=DISPLAY_QR_CODE_INFO_PAGE,
               ~paymentMethod,
               (),
             )
             handlePostMessage([
-              ("fullscreen", true->Js.Json.boolean),
-              ("param", `qrData`->Js.Json.string),
-              ("iframeId", iframeId->Js.Json.string),
-              ("metadata", metaData->Js.Json.object_),
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", `qrData`->JSON.Encode.string),
+              ("iframeId", iframeId->JSON.Encode.string),
+              ("metadata", metaData->JSON.Encode.object),
             ])
           } else if intent.nextAction.type_ === "display_voucher_information" {
             let voucherData = intent.nextAction.voucher_details->Option.getOr({
@@ -318,30 +318,30 @@ let rec intentCall = (
             headers->Js.Array2.forEach(
               entries => {
                 let (x, val) = entries
-                Js.Dict.set(headerObj, x, val->Js.Json.string)
+                Js.Dict.set(headerObj, x, val->JSON.Encode.string)
               },
             )
             let metaData =
               [
-                ("voucherUrl", voucherData.download_url->Js.Json.string),
-                ("reference", voucherData.reference->Js.Json.string),
-                ("returnUrl", url.href->Js.Json.string),
-                ("paymentMethod", paymentMethod->Js.Json.string),
+                ("voucherUrl", voucherData.download_url->JSON.Encode.string),
+                ("reference", voucherData.reference->JSON.Encode.string),
+                ("returnUrl", url.href->JSON.Encode.string),
+                ("paymentMethod", paymentMethod->JSON.Encode.string),
                 ("payment_intent_data", data),
               ]->Js.Dict.fromArray
             handleLogging(
               ~optLogger,
               ~value="",
-              ~internalMetadata=metaData->Js.Json.object_->Js.Json.stringify,
+              ~internalMetadata=metaData->JSON.Encode.object->JSON.stringify,
               ~eventName=DISPLAY_VOUCHER,
               ~paymentMethod,
               (),
             )
             handlePostMessage([
-              ("fullscreen", true->Js.Json.boolean),
-              ("param", `voucherData`->Js.Json.string),
-              ("iframeId", iframeId->Js.Json.string),
-              ("metadata", metaData->Js.Json.object_),
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", `voucherData`->JSON.Encode.string),
+              ("iframeId", iframeId->JSON.Encode.string),
+              ("metadata", metaData->JSON.Encode.object),
             ])
           } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
             let session_token = switch intent.nextAction.session_token {
@@ -351,7 +351,7 @@ let rec intentCall = (
             let walletName = session_token->Utils.getString("wallet_name", "")
             let message = switch walletName {
             | "apple_pay" => [
-                ("applePayButtonClicked", true->Js.Json.boolean),
+                ("applePayButtonClicked", true->JSON.Encode.bool),
                 ("applePayPresent", session_token->toJson),
               ]
             | "google_pay" => [("googlePayThirdPartyFlow", session_token->toJson)]
@@ -386,7 +386,7 @@ let rec intentCall = (
             let walletName = session_token->Utils.getString("wallet_name", "")
             let message = switch walletName {
             | "apple_pay" => [
-                ("applePayButtonClicked", true->Js.Json.boolean),
+                ("applePayButtonClicked", true->JSON.Encode.bool),
                 ("applePayPresent", session_token->toJson),
               ]
             | "google_pay" => [("googlePayThirdPartyFlow", session_token->toJson)]
@@ -544,31 +544,31 @@ let rec maskPayload = payloadDict => {
   let maskedPayload = Js.Dict.empty()
   keys
   ->Js.Array2.map(key => {
-    let value = payloadDict->Js.Dict.get(key)->Option.getOr(Js.Json.null)
-    if value->Js.Json.decodeArray->Option.isSome {
-      let arr = value->Js.Json.decodeArray->Option.getOr([])
+    let value = payloadDict->Js.Dict.get(key)->Option.getOr(JSON.Encode.null)
+    if value->JSON.Decode.array->Option.isSome {
+      let arr = value->JSON.Decode.array->Option.getOr([])
       arr->Js.Array2.forEachi((element, index) => {
         maskedPayload->Js.Dict.set(
           key ++ "[" ++ index->Belt.Int.toString ++ "]",
-          element->Utils.getDictFromJson->maskPayload->Js.Json.string,
+          element->Utils.getDictFromJson->maskPayload->JSON.Encode.string,
         )
       })
-    } else if value->Js.Json.decodeObject->Option.isSome {
+    } else if value->JSON.Decode.object->Option.isSome {
       let valueDict = value->Utils.getDictFromJson
-      maskedPayload->Js.Dict.set(key, valueDict->maskPayload->Js.Json.string)
+      maskedPayload->Js.Dict.set(key, valueDict->maskPayload->JSON.Encode.string)
     } else {
       maskedPayload->Js.Dict.set(
         key,
         value
-        ->Js.Json.decodeString
+        ->JSON.Decode.string
         ->Option.getOr("")
         ->Js.String2.replaceByRe(%re(`/\S/g`), "x")
-        ->Js.Json.string,
+        ->JSON.Encode.string,
       )
     }
   })
   ->ignore
-  maskedPayload->Js.Json.object_->Js.Json.stringify
+  maskedPayload->JSON.Encode.object->JSON.stringify
 }
 
 let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
@@ -581,7 +581,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
   )
   (
     ~handleUserError=false,
-    ~bodyArr: array<(string, Js.Json.t)>,
+    ~bodyArr: array<(string, JSON.t)>,
     ~confirmParam: ConfirmType.confirmParams,
     ~iframeId="",
     (),
@@ -590,12 +590,12 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
     | Some(clientSecret) =>
       let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]->Option.getOr("")
       let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
-      let returnUrlArr = [("return_url", confirmParam.return_url->Js.Json.string)]
+      let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = isManualRetryEnabled
-        ? [("retry_action", "manual_retry"->Js.Json.string)]
+        ? [("retry_action", "manual_retry"->JSON.Encode.string)]
         : []
       let body =
-        [("client_secret", clientSecret->Js.Json.string)]->Js.Array2.concatMany([
+        [("client_secret", clientSecret->JSON.Encode.string)]->Js.Array2.concatMany([
           returnUrlArr,
           manual_retry,
         ])
@@ -611,26 +611,26 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
         let maskedPayload =
           body
           ->OrcaUtils.safeParseOpt
-          ->Option.getOr(Js.Json.null)
+          ->Option.getOr(JSON.Encode.null)
           ->Utils.getDictFromJson
           ->maskPayload
         let loggerPayload =
           [
-            ("payload", maskedPayload->Js.Json.string),
+            ("payload", maskedPayload->JSON.Encode.string),
             (
               "headers",
               headers
               ->Js.Array2.map(header => {
                 let (key, value) = header
-                (key, value->Js.Json.string)
+                (key, value->JSON.Encode.string)
               })
               ->Js.Dict.fromArray
-              ->Js.Json.object_,
+              ->JSON.Encode.object,
             ),
           ]
           ->Js.Dict.fromArray
-          ->Js.Json.object_
-          ->Js.Json.stringify
+          ->JSON.Encode.object
+          ->JSON.stringify
         switch paymentType {
         | Card =>
           handleLogging(
@@ -649,7 +649,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
                 ~value="",
                 ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
-                ~paymentMethod=json->Js.Json.decodeString->Option.getOr(""),
+                ~paymentMethod=json->JSON.Decode.string->Option.getOr(""),
                 (),
               )
             }
@@ -657,7 +657,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
           })
         }
         if blockConfirm && Window.isInteg {
-          Js.log3("CONFIRM IS BLOCKED", body->Js.Json.parseExn, headers)
+          Js.log3("CONFIRM IS BLOCKED", body->JSON.parseExn, headers)
         } else {
           intentCall(
             ~fetchApi,
@@ -685,8 +685,8 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
           body
           ->Js.Array2.concat(bodyArr->Js.Array2.concat(broswerInfo()))
           ->Js.Dict.fromArray
-          ->Js.Json.object_
-          ->Js.Json.stringify
+          ->JSON.Encode.object
+          ->JSON.stringify
         callIntent(bodyStr)
       }
       let intentWithMandate = mandatePaymentType => {
@@ -699,8 +699,8 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
             ]),
           )
           ->Js.Dict.fromArray
-          ->Js.Json.object_
-          ->Js.Json.stringify
+          ->JSON.Encode.object
+          ->JSON.stringify
         callIntent(bodyStr)
       }
 
@@ -749,13 +749,13 @@ let useSessions = (
     Js.String2.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
   let body =
     [
-      ("payment_id", paymentIntentID->Js.Json.string),
-      ("client_secret", clientSecret->Js.Json.string),
-      ("wallets", wallets->Js.Json.array),
-      ("delayed_session_token", isDelayedSessionToken->Js.Json.boolean),
+      ("payment_id", paymentIntentID->JSON.Encode.string),
+      ("client_secret", clientSecret->JSON.Encode.string),
+      ("wallets", wallets->JSON.Encode.array),
+      ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
     ]
     ->Js.Dict.fromArray
-    ->Js.Json.object_
+    ->JSON.Encode.object
   let uri = `${endpoint}/payments/session_tokens`
   logApi(
     ~optLogger,
@@ -769,7 +769,7 @@ let useSessions = (
   fetchApi(
     uri,
     ~method_=Fetch.Post,
-    ~bodyStr=body->Js.Json.stringify,
+    ~bodyStr=body->JSON.stringify,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     (),
   )
@@ -790,7 +790,7 @@ let useSessions = (
           ~logCategory=API,
           (),
         )
-        Js.Json.null->resolve
+        JSON.Encode.null->resolve
       })
     } else {
       logApi(
@@ -818,7 +818,7 @@ let useSessions = (
       ~data=exceptionMessage,
       (),
     )
-    Js.Json.null->resolve
+    JSON.Encode.null->resolve
   })
 }
 
@@ -864,7 +864,7 @@ let usePaymentMethodList = (
           ~logCategory=API,
           (),
         )
-        Js.Json.null->resolve
+        JSON.Encode.null->resolve
       })
     } else {
       logApi(
@@ -892,7 +892,7 @@ let usePaymentMethodList = (
       ~data=exceptionMessage,
       (),
     )
-    Js.Json.null->resolve
+    JSON.Encode.null->resolve
   })
 }
 
@@ -938,7 +938,7 @@ let useCustomerDetails = (
           ~logCategory=API,
           (),
         )
-        Js.Json.null->resolve
+        JSON.Encode.null->resolve
       })
     } else {
       logApi(
@@ -966,6 +966,6 @@ let useCustomerDetails = (
       ~data=exceptionMessage,
       (),
     )
-    Js.Json.null->resolve
+    JSON.Encode.null->resolve
   })
 }

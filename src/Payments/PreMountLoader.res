@@ -44,11 +44,11 @@ let make = (~sessionId as _, ~publishableKey as _, ~clientSecret as _, ~endpoint
   // //   open Promise
   // //   promise
   // //   ->then(res => {
-  // //     handlePostMessage([("response", res), ("data", key->Js.Json.string)])
+  // //     handlePostMessage([("response", res), ("data", key->JSON.Encode.string)])
   // //     resolve()
   // //   })
   // //   ->catch(_err => {
-  // //     handlePostMessage([("response", Js.Json.null), ("data", key->Js.Json.string)])
+  // //     handlePostMessage([("response", JSON.Encode.null), ("data", key->JSON.Encode.string)])
   // //     resolve()
   // //   })
   // //   ->ignore
@@ -57,9 +57,9 @@ let make = (~sessionId as _, ~publishableKey as _, ~clientSecret as _, ~endpoint
   // // React.useEffect0(() => {
   // //   let handle = (ev: Window.event) => {
   // //     let json = try {
-  // //       ev.data->Js.Json.parseExn
+  // //       ev.data->JSON.parseExn
   // //     } catch {
-  // //     | _ => Js.Json.null
+  // //     | _ => JSON.Encode.null
   // //     }
   // //     let dict = json->Utils.getDictFromJson
   // //     if dict->Js.Dict.get("sendPaymentMethodsResponse")->Option.isSome {
@@ -71,7 +71,7 @@ let make = (~sessionId as _, ~publishableKey as _, ~clientSecret as _, ~endpoint
   // //     }
   // //   }
   // //   Window.addEventListener("message", handle)
-  // //   handlePostMessage([("preMountLoaderInitCallback", true->Js.Json.boolean)])
+  // //   handlePostMessage([("preMountLoaderInitCallback", true->JSON.Encode.bool)])
   // //   Some(
   // //     () => {
   // //       Window.removeEventListener("message", handle)

@@ -2,8 +2,8 @@ open Utils
 let getKeyValue = (json, str) => {
   json
   ->Js.Dict.get(str)
-  ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
-  ->Js.Json.decodeString
+  ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
+  ->JSON.Decode.string
   ->Option.getOr("")
 }
 
@@ -11,7 +11,7 @@ let getKeyValue = (json, str) => {
 let make = (~transferType) => {
   let (keys, setKeys) = React.useState(_ => [])
   let (json, setJson) = React.useState(_ => Js.Dict.empty())
-  let (postData, setPostData) = React.useState(_ => Js.Dict.empty()->Js.Json.object_)
+  let (postData, setPostData) = React.useState(_ => Js.Dict.empty()->JSON.Encode.object)
   let (return_url, setReturnUrl) = React.useState(_ => "")
   let (responseType, title) = switch transferType {
   | "achBankTransfer" => ("ach_credit_transfer", "ACH")
@@ -44,13 +44,13 @@ let make = (~transferType) => {
       keys
       ->Js.Array2.map(item => `${item->snakeToTitleCase} : ${getKeyValue(json, item)}`)
       ->Js.Array2.joinWith(`\n`)
-    handlePostMessage([("copy", true->Js.Json.boolean), ("copyDetails", text->Js.Json.string)])
+    handlePostMessage([("copy", true->JSON.Encode.bool), ("copyDetails", text->JSON.Encode.string)])
     setIsCopied(_ => true)
   }
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->Js.Json.boolean)])
+    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let dict = json->Utils.getDictFromJson
       if dict->Js.Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
@@ -59,7 +59,7 @@ let make = (~transferType) => {
           ->getJsonObjectFromDict("metadata")
           ->getDictFromJson
           ->Js.Dict.get(responseType)
-          ->Option.getOr(Js.Dict.empty()->Js.Json.object_)
+          ->Option.getOr(Js.Dict.empty()->JSON.Encode.object)
           ->getDictFromJson
         setKeys(_ => dictMetadata->Js.Dict.keys)
         setJson(_ => dictMetadata)
