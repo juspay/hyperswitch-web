@@ -61,11 +61,9 @@ let make = (
   }, [options.customerPaymentMethods])
 
   let processPayment = bodyArr => {
-    let requestBody =
-      !isGuestCustomer &&
-      (list.payment_type === "new_mandate" || list.payment_type === "setup_mandate")
-        ? bodyArr->Js.Array2.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
-        : bodyArr
+    let requestBody = PaymentUtils.isAppendingCustomerAcceptance(isGuestCustomer, list.payment_type)
+      ? bodyArr->Array.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
+      : bodyArr
 
     if isWallet {
       intent(

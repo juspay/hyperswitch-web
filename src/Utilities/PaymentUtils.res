@@ -227,3 +227,7 @@ let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
     paymentMethodName
   }
 }
+
+let isAppendingCustomerAcceptance = (isGuestCustomer, paymentType) => {
+  !isGuestCustomer && (paymentType === "new_mandate" || paymentType === "setup_mandate")
+}

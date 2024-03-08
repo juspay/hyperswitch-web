@@ -97,9 +97,8 @@ let make = (
         let obj = metadata->getDictFromJson->itemToObjMapper
         let gPayBody = {
           let body = PaymentBody.gpayBody(~payObj=obj, ~connectors)
-          !isGuestCustomer &&
-          (list.payment_type === "new_mandate" || list.payment_type === "setup_mandate")
-            ? body->Js.Array2.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
+          PaymentUtils.isAppendingCustomerAcceptance(isGuestCustomer, list.payment_type)
+            ? body->Array.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
             : body
         }
         let body = {

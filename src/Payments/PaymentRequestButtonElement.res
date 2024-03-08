@@ -119,8 +119,7 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
     ->React.array}
     <Surcharge list paymentMethod="wallet" paymentMethodType="google_pay" isForWallets=true />
     <RenderIf
-      condition={!isGuestCustomer &&
-      (list.payment_type === "new_mandate" || list.payment_type === "setup_mandate") &&
+      condition={PaymentUtils.isAppendingCustomerAcceptance(isGuestCustomer, list.payment_type) &&
       (isGooglePay || isApplePay || isPaypal)}>
       <WalletsSaveDetailsText />
     </RenderIf>
