@@ -1,3 +1,10 @@
+# [0.28.0](https://github.com/juspay/hyperswitch-web/compare/v0.27.5...v0.28.0) (2024-03-08)
+
+
+### Features
+
+* **PaymentElement:** moved SavedCards component outside card form ([#197](https://github.com/juspay/hyperswitch-web/issues/197)) ([8e11c40](https://github.com/juspay/hyperswitch-web/commit/8e11c4087773a0c36d82f3b63358c3e9f6a9917f))
+
 ## [0.27.5](https://github.com/juspay/hyperswitch-web/compare/v0.27.4...v0.27.5) (2024-03-08)
 
 ## [0.27.4](https://github.com/juspay/hyperswitch-web/compare/v0.27.3...v0.27.4) (2024-03-08)
