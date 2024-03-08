@@ -1,3 +1,10 @@
+## [0.27.3](https://github.com/juspay/hyperswitch-web/compare/v0.27.2...v0.27.3) (2024-03-08)
+
+
+### Bug Fixes
+
+* **boleto:** boleto Icon fill color and size fix ([#210](https://github.com/juspay/hyperswitch-web/issues/210)) ([73ba2d8](https://github.com/juspay/hyperswitch-web/commit/73ba2d8a39edd9a9dc5cd09c62ef9c985fb252c5))
+
 ## [0.27.2](https://github.com/juspay/hyperswitch-web/compare/v0.27.1...v0.27.2) (2024-03-06)
 
 
