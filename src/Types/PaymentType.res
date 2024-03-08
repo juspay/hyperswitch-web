@@ -903,7 +903,7 @@ let itemToObjMapper = (dict, logger) => {
     displaySavedPaymentMethods: getBoolWithWarning(
       dict,
       "displaySavedPaymentMethods",
-      false,
+      true,
       ~logger,
     ),
     readOnly: getBoolWithWarning(dict, "readOnly", false, ~logger),
