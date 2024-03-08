@@ -14,7 +14,7 @@ let closePaymentLoaderIfAny = () =>
 
 let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
   open Promise
-  let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
+  let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
   let endpoint = ApiEndpoint.getApiEndPoint()
   let uri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
 
@@ -502,7 +502,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="", ()) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
+      let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
       let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
       let uri = `${endpoint}/payments/${paymentIntentID}?force_sync=true&client_secret=${clientSecret}`
@@ -588,7 +588,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
+      let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
       let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = isManualRetryEnabled
