@@ -897,7 +897,7 @@ let itemToObjMapper = (dict, logger) => {
     displaySavedPaymentMethodsCheckbox: getBoolWithWarning(
       dict,
       "displaySavedPaymentMethodsCheckbox",
-      false,
+      true,
       ~logger,
     ),
     displaySavedPaymentMethods: getBoolWithWarning(
