@@ -62,7 +62,7 @@ type localeStrings = {
   completeNameEmptyText: string => string,
   billingDetailsText: string,
   socialSecurityNumberLabel: string,
-  messageForWalletsDetailsSave: string,
+  saveWalletDetails: string,
 }
 
 let defaultLocale = {
@@ -140,7 +140,7 @@ let defaultLocale = {
   completeNameEmptyText: str => `Please provide your complete ${str}`,
   billingDetailsText: "Billing Details",
   socialSecurityNumberLabel: "Social Security Number",
-  messageForWalletsDetailsSave: "Wallets details will be saved upon selection",
+  saveWalletDetails: "Wallets details will be saved upon selection",
 }
 
 type locale = {localeStrings: array<localeStrings>}
@@ -220,7 +220,7 @@ let localeStrings = [
     completeNameEmptyText: str => `Please provide your complete ${str}`,
     billingDetailsText: "Billing Details",
     socialSecurityNumberLabel: "Social Security Number",
-    messageForWalletsDetailsSave: "Wallets details will be saved upon selection",
+    saveWalletDetails: "Wallets details will be saved upon selection",
   },
   {
     locale: "he",
@@ -297,7 +297,7 @@ let localeStrings = [
     completeNameEmptyText: str => `אנא ספק את המלא שלך ${str}`,
     billingDetailsText: `פרטי תשלום`,
     socialSecurityNumberLabel: `מספר ביטוח לאומי`,
-    messageForWalletsDetailsSave: "פרטי הארנק יישמרו בעת בחירה",
+    saveWalletDetails: "פרטי הארנק יישמרו בעת בחירה",
   },
   {
     locale: `fr`,
@@ -374,7 +374,7 @@ let localeStrings = [
     completeNameEmptyText: str => `Veuillez fournir votre complet ${str}`,
     billingDetailsText: `Détails de la facturation`,
     socialSecurityNumberLabel: `Numéro de sécurité sociale`,
-    messageForWalletsDetailsSave: "Les détails du portefeuille seront enregistrés lors de la sélection",
+    saveWalletDetails: "Les détails du portefeuille seront enregistrés lors de la sélection",
   },
   {
     locale: "en-GB",
@@ -451,7 +451,7 @@ let localeStrings = [
     completeNameEmptyText: str => `Please provide your complete ${str}`,
     billingDetailsText: "Billing Details",
     socialSecurityNumberLabel: "Social Security Number",
-    messageForWalletsDetailsSave: "Wallets details will be saved upon selection",
+    saveWalletDetails: "Wallets details will be saved upon selection",
   },
   {
     locale: "ar",
@@ -528,7 +528,7 @@ let localeStrings = [
     completeNameEmptyText: str => `يرجى تقديم كامل الخاص بك ${str}`,
     billingDetailsText: `تفاصيل الفاتورة`,
     socialSecurityNumberLabel: `رقم الضمان الاجتماعي`,
-    messageForWalletsDetailsSave: "سيتم حفظ تفاصيل المحفظة عند الاختيار",
+    saveWalletDetails: "سيتم حفظ تفاصيل المحفظة عند الاختيار",
   },
   {
     locale: "ja",
@@ -605,7 +605,7 @@ let localeStrings = [
     completeNameEmptyText: str => `完全な情報を提供してください ${str}`,
     billingDetailsText: `支払明細`,
     socialSecurityNumberLabel: `社会保障番号`,
-    messageForWalletsDetailsSave: "選択時にウォレットの詳細が保存されます",
+    saveWalletDetails: "選択時にウォレットの詳細が保存されます",
   },
   {
     locale: "de",
@@ -682,6 +682,6 @@ let localeStrings = [
     completeNameEmptyText: str => `Bitte geben Sie Ihr vollständiges Formular an ${str}`,
     billingDetailsText: `Rechnungsdetails`,
     socialSecurityNumberLabel: `Sozialversicherungsnummer`,
-    messageForWalletsDetailsSave: "Wallet-Details werden beim Auswählen gespeichert",
+    saveWalletDetails: "Wallet-Details werden beim Auswählen gespeichert",
   },
 ]

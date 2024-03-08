@@ -18,9 +18,7 @@ module WalletsSaveDetailsText = {
     let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     <div className="flex items-center text-xs mt-2">
       <Icon name="lock" size=10 className="mr-1" />
-      <em className="text-left text-gray-400">
-        {localeString.messageForWalletsDetailsSave->React.string}
-      </em>
+      <em className="text-left text-gray-400"> {localeString.saveWalletDetails->React.string} </em>
     </div>
   }
 }

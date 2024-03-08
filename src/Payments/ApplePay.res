@@ -60,7 +60,7 @@ let make = (
   }, [options.customerPaymentMethods])
 
   let processPayment = bodyArr => {
-    let modifiedBody =
+    let requestBody =
       !isGuestCustomer &&
       (list.payment_type === "new_mandate" || list.payment_type === "setup_mandate")
         ? bodyArr->Js.Array2.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
@@ -68,7 +68,7 @@ let make = (
 
     if isWallet {
       intent(
-        ~bodyArr=modifiedBody,
+        ~bodyArr=requestBody,
         ~confirmParam={
           return_url: options.wallets.walletReturnUrl,
           publishableKey,

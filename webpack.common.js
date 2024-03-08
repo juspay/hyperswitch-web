@@ -9,16 +9,17 @@ const BundleAnalyzerPlugin =
   require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 
+const sdkEnv = process.env.sdkEnv;
+const envSdkUrl = process.env.envSdkUrl;
+const envBackendUrl = process.env.envBackendUrl;
+
 //git rev-parse --abbrev-ref HEAD
 let repoVersion = require("./package.json").version;
 let majorVersion = "v" + repoVersion.split(".")[0];
 
 let repoName = require("./package.json").name;
-let repoPublicPath = `/${repoVersion}/${majorVersion}`;
-
-const sdkEnv = process.env.sdkEnv;
-const envSdkUrl = process.env.envSdkUrl;
-const envBackendUrl = process.env.envBackendUrl;
+let repoPublicPath =
+  sdkEnv === "local" ? "" : `/${repoVersion}/${majorVersion}`;
 
 let sdkUrl;
 
