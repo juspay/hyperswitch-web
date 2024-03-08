@@ -95,7 +95,7 @@ let make = (
       if dict->Js.Dict.get("gpayResponse")->Belt.Option.isSome {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
         let obj = metadata->getDictFromJson->itemToObjMapper
-        let modifiedPaymentBodyForGpay = {
+        let gPayBody = {
           let body = PaymentBody.gpayBody(~payObj=obj, ~connectors)
           !isGuestCustomer &&
           (list.payment_type === "new_mandate" || list.payment_type === "setup_mandate")
@@ -103,7 +103,7 @@ let make = (
             : body
         }
         let body = {
-          modifiedPaymentBodyForGpay
+          gPayBody
           ->Js.Dict.fromArray
           ->Js.Json.object_
           ->OrcaUtils.flattenObject(true)
