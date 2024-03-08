@@ -170,7 +170,8 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             eventDataObject
             ->getOptionalJsonFromJson("iframeId")
             ->getStringfromOptionaljson("no-element")
-          iframeHeightRef := iframeHeight->getFloatfromjson(200.0)
+          iframeHeightRef :=
+            iframeHeight->Option.getOr(JSON.Encode.null)->Utils.getFloatFromJson(200.0)
           if iframeId === localSelectorString {
             let elem = Window.querySelector(
               `#orca-payment-element-iframeRef-${localSelectorString}`,
