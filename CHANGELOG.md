@@ -1,3 +1,10 @@
+## [0.27.4](https://github.com/juspay/hyperswitch-web/compare/v0.27.3...v0.27.4) (2024-03-08)
+
+
+### Bug Fixes
+
+* workflow addition & commit time code compile removal ([#208](https://github.com/juspay/hyperswitch-web/issues/208)) ([66bb5a4](https://github.com/juspay/hyperswitch-web/commit/66bb5a48a49c96e2b5212d632ed7634698622144))
+
 ## [0.27.3](https://github.com/juspay/hyperswitch-web/compare/v0.27.2...v0.27.3) (2024-03-08)
 
 
