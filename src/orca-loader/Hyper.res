@@ -186,7 +186,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
           "api-key": publishableKey,
         }
         let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
-        let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]
+        let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]->Option.getOr("")
         let retrievePaymentUrl = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
         open Promise
         logApi(
