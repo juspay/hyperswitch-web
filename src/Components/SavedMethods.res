@@ -1,4 +1,5 @@
 open CardUtils
+open Utils
 @react.component
 let make = (
   ~paymentToken,
@@ -8,10 +9,16 @@ let make = (
   ~cvcProps,
   ~paymentType,
   ~list,
-  ~setRequiredFieldsBody,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let setUserError = message => {
+    postFailedSubmitResponse(~errortype="validation_error", ~message)
+  }
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (token, _) = paymentToken
   let savedCardlength = savedMethods->Js.Array2.length
   let bottomElement = {
@@ -40,6 +47,44 @@ let make = (
     })
     ->React.array
   }
+
+  let (isCVCValid, _, cvcNumber, _, _, _, _, _, _, setCvcError) = cvcProps
+  let complete = switch isCVCValid {
+  | Some(val) => token !== "" && val
+  | _ => false
+  }
+  let empty = cvcNumber == ""
+
+  let submitCallback = React.useCallback4((ev: Window.event) => {
+    let json = ev.data->Js.Json.parseExn
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+    let (token, customerId) = paymentToken
+    let savedCardBody = PaymentBody.savedCardBody(~paymentToken=token, ~customerId, ~cvcNumber)
+    if confirm.doSubmit {
+      if areRequiredFieldsValid && complete && !empty {
+        intent(
+          ~bodyArr=savedCardBody
+          ->Js.Dict.fromArray
+          ->Js.Json.object_
+          ->OrcaUtils.flattenObject(true)
+          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->OrcaUtils.getArrayOfTupleFromDict,
+          ~confirmParam=confirm.confirmParams,
+          ~handleUserError=false,
+          (),
+        )
+      } else {
+        if cvcNumber === "" {
+          setCvcError(_ => localeString.cvcNumberEmptyText)
+          setUserError(localeString.enterFieldsText)
+        }
+        if !(isCVCValid->Belt.Option.getWithDefault(false)) {
+          setUserError(localeString.enterValidDetailsText)
+        }
+      }
+    }
+  }, (areRequiredFieldsValid, requiredFieldsBody, empty, complete))
+  submitPaymentData(submitCallback)
 
   <>
     <div
