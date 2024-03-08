@@ -14,12 +14,31 @@ let paymentMode = str => {
 
 module WalletsSaveDetailsText = {
   @react.component
-  let make = () => {
-    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-    <div className="flex items-center text-xs mt-2">
-      <Icon name="lock" size=10 className="mr-1" />
-      <em className="text-left text-gray-400"> {localeString.saveWalletDetails->React.string} </em>
-    </div>
+  let make = (~paymentType) => {
+    open RecoilAtoms
+    let {isGooglePay, isApplePay, isPaypal} = Recoil.useRecoilValueFromAtom(
+      areOneClickWalletsRendered,
+    )
+    let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+    let {customerPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
+    let isGuestCustomer = React.useMemo1(() => {
+      switch customerPaymentMethods {
+      | LoadedSavedCards(_, false)
+      | NoResult(false) => false
+      | _ => true
+      }
+    }, [customerPaymentMethods])
+
+    <RenderIf
+      condition={PaymentUtils.isAppendingCustomerAcceptance(isGuestCustomer, paymentType) &&
+      (isGooglePay || isApplePay || isPaypal)}>
+      <div className="flex items-center text-xs mt-2">
+        <Icon name="lock" size=10 className="mr-1" />
+        <em className="text-left text-gray-400">
+          {localeString.saveWalletDetails->React.string}
+        </em>
+      </div>
+    </RenderIf>
   }
 }
 
@@ -42,18 +61,6 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
     googlePayThirdPartySessionObj.sessionsToken,
     Gpay,
   )
-  let {isGooglePay, isApplePay, isPaypal} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.areOneClickWalletsRendered,
-  )
-  let {customerPaymentMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-
-  let isGuestCustomer = React.useMemo1(() => {
-    switch customerPaymentMethods {
-    | LoadedSavedCards(_, false)
-    | NoResult(false) => false
-    | _ => true
-    }
-  }, [customerPaymentMethods])
 
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
@@ -118,10 +125,6 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
     })
     ->React.array}
     <Surcharge list paymentMethod="wallet" paymentMethodType="google_pay" isForWallets=true />
-    <RenderIf
-      condition={PaymentUtils.isAppendingCustomerAcceptance(isGuestCustomer, list.payment_type) &&
-      (isGooglePay || isApplePay || isPaypal)}>
-      <WalletsSaveDetailsText />
-    </RenderIf>
+    <WalletsSaveDetailsText paymentType=list.payment_type />
   </div>
 }
