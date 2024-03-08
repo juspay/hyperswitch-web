@@ -714,7 +714,9 @@ let make = (
         })
         ->ignore
         fetchPaymentsList(mountedIframeRef)
-        displaySavedPaymentMethods ? fetchCustomerDetails(mountedIframeRef) : ()
+        if displaySavedPaymentMethods {
+          fetchCustomerDetails(mountedIframeRef)
+        }
         mountedIframeRef->Window.iframePostMessage(message)
       }
 
