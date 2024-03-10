@@ -392,11 +392,11 @@ let make = (
         | Accordion => <AccordionContainer paymentOptions checkoutEle />
         }}
       </div>
-      <RenderIf condition={sdkHandleConfirmPayment}>
-        <div className="mt-4">
-          <PayNowButton />
-        </div>
-      </RenderIf>
+    </RenderIf>
+    <RenderIf condition={sdkHandleConfirmPayment}>
+      <div className="mt-4">
+        <PayNowButton />
+      </div>
     </RenderIf>
     <PoweredBy />
     {switch methodslist {
