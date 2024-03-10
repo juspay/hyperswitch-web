@@ -25,11 +25,8 @@ let make = (
     _,
   ) = cvcProps
   let cvcRef = React.useRef(Js.Nullable.null)
-  let (pickerItemClass, pickerItemLabelClass, pickerItemIconClass) = React.useMemo1(() => {
-    isActive
-      ? ("PickerItem--selected", "PickerItemLabel--selected", "PickerItemIcon--selected")
-      : ("", "", "")
-  }, [isActive])
+  let pickerItemClass = isActive ? "PickerItem--selected" : ""
+
   let focusCVC = () => {
     setCardBrand(._ =>
       switch paymentItem.card.scheme {
@@ -84,17 +81,14 @@ let make = (
                 border="1px solid currentColor"
               />
             </div>
-            <div className={`PickerItemIcon ${pickerItemIconClass} mx-3 flex  items-center `}>
-              brandIcon
-            </div>
-            <div
-              className={`PickerItemLabel ${pickerItemLabelClass} flex flex-row gap-3  items-center w-full`}>
+            <div className="PickerItemIcon mx-3 flex  items-center"> brandIcon </div>
+            <div className="PickerItemLabel flex flex-row gap-3  items-center w-full">
               <div className="tracking-widest"> {React.string(`****`)} </div>
               <div> {React.string({paymentItem.card.last4Digits})} </div>
             </div>
           </div>
           <div
-            className=`flex flex-row items-center justify-end gap-3 -mt-1`
+            className={`flex flex-row items-center justify-end gap-3 -mt-1`}
             style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
             <div className="flex">
               {React.string(
@@ -107,13 +101,10 @@ let make = (
           <RenderIf condition={isActive}>
             <div className="flex flex-col items-start mx-8">
               <div
-                className=`flex flex-row items-start justify-start gap-2`
+                className={`flex flex-row items-start justify-start gap-2`}
                 style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
                 <div className="w-12 mt-6"> {React.string("CVC: ")} </div>
-                <div
-                  className={`flex h mx-4 justify-start w-16 ${isActive
-                      ? "opacity-1 mt-4"
-                      : "opacity-0"}`}>
+                <div className="flex h mx-4 justify-start w-16 opacity-1 mt-4">
                   <PaymentInputField
                     isValid=isCVCValid
                     setIsValid=setIsCVCValid

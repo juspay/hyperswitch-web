@@ -57,19 +57,9 @@ let make = (
     cvcError,
     setCvcError,
   ) = cvcProps
-  let {customerPaymentMethods, disableSaveCards} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.optionAtom,
-  )
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
-  let (savedMethods, setSavedMethods) = React.useState(_ => [])
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
-  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
-  let (token, _) = paymentToken
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
-  let (
-    loadSavedCards: PaymentType.savedCardsLoadState,
-    setLoadSavedCards: (PaymentType.savedCardsLoadState => PaymentType.savedCardsLoadState) => unit,
-  ) = React.useState(_ => PaymentType.LoadingSavedCards)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
 
   let setUserError = message => {
@@ -80,58 +70,8 @@ let make = (
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
-  React.useEffect1(() => {
-    switch customerPaymentMethods {
-    | LoadingSavedCards => ()
-    | LoadedSavedCards(arr, isGuestCustomer) => {
-        let savedCards = arr->Js.Array2.filter((item: PaymentType.customerMethods) => {
-          item.paymentMethod == "card"
-        })
-        setSavedMethods(_ => savedCards)
-        setLoadSavedCards(_ =>
-          savedCards->Js.Array2.length == 0
-            ? NoResult(isGuestCustomer)
-            : LoadedSavedCards(savedCards, isGuestCustomer)
-        )
-        setShowFields(.prev => savedCards->Js.Array2.length == 0 || prev)
-      }
-    | NoResult(isGuestCustomer) => {
-        setLoadSavedCards(_ => NoResult(isGuestCustomer))
-        setShowFields(._ => true)
-      }
-    }
-
-    None
-  }, [customerPaymentMethods])
-
-  React.useEffect1(() => {
-    if disableSaveCards {
-      setShowFields(._ => true)
-      setLoadSavedCards(_ => LoadedSavedCards([], true))
-    }
-    None
-  }, [disableSaveCards])
-
-  React.useEffect1(() => {
-    let tokenobj =
-      savedMethods->Js.Array2.length > 0
-        ? Some(savedMethods->Belt.Array.get(0)->Belt.Option.getWithDefault(defaultCustomerMethods))
-        : None
-
-    switch tokenobj {
-    | Some(obj) => setPaymentToken(._ => (obj.paymentToken, obj.customerId))
-    | None => ()
-    }
-    None
-  }, [savedMethods])
-
-  let complete = showFields
-    ? isAllValid(isCardValid, isCVCValid, isExpiryValid, true, "payment")
-    : switch isCVCValid {
-      | Some(val) => token !== "" && !isBancontact && val
-      | _ => false
-      }
-  let empty = showFields ? cardNumber == "" || cardExpiry == "" || cvcNumber == "" : cvcNumber == ""
+  let complete = isAllValid(isCardValid, isCVCValid, isExpiryValid, true, "payment")
+  let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect1(() => {
     setComplete(._ => complete)
     None
@@ -142,14 +82,13 @@ let make = (
     None
   }, (empty, complete))
 
-  let isGuestCustomer = React.useMemo1(() => {
-    switch customerPaymentMethods {
-    | LoadedSavedCards(_, false)
-    | NoResult(false) => false
-    | _ => true
+  let (savedMethods, isGuestCustomer) = React.useMemo1(() => {
+    switch options.customerPaymentMethods {
+    | LoadedSavedCards(savedMethods, isGuest) => (savedMethods, isGuest)
+    | NoResult(isGuest) => ([], isGuest)
+    | _ => ([], true)
     }
-  }, [customerPaymentMethods])
-
+  }, [options.customerPaymentMethods])
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
     ~cvcNumber,
@@ -161,9 +100,6 @@ let make = (
     let json = ev.data->Js.Json.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (month, year) = CardUtils.getExpiryDates(cardExpiry)
-    let (token, customerId) = paymentToken
-    let savedCardBody = PaymentBody.savedCardBody(~paymentToken=token, ~customerId, ~cvcNumber)
-
     let onSessionBody = [("setup_future_usage", "on_session"->Js.Json.string)]
     let cardNetwork = {
       if cardBrand != "" {
@@ -204,18 +140,6 @@ let make = (
           ~handleUserError=false,
           (),
         )
-      } else if areRequiredFieldsValid && complete && !empty {
-        intent(
-          ~bodyArr=savedCardBody
-          ->Js.Dict.fromArray
-          ->Js.Json.object_
-          ->OrcaUtils.flattenObject(true)
-          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->OrcaUtils.getArrayOfTupleFromDict,
-          ~confirmParam=confirm.confirmParams,
-          ~handleUserError=false,
-          (),
-        )
       } else {
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
@@ -241,18 +165,6 @@ let make = (
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
 
   <div className="animate-slowShow">
-    <RenderIf condition={!showFields && !isBancontact}>
-      <SavedMethods
-        paymentToken
-        setPaymentToken
-        savedMethods
-        loadSavedCards
-        cvcProps
-        paymentType
-        list
-        setRequiredFieldsBody
-      />
-    </RenderIf>
     <RenderIf condition={showFields || isBancontact}>
       <div
         className="flex flex-col"

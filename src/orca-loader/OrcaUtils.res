@@ -163,26 +163,26 @@ let rec flatten = (obj, addIndicatorForObject) => {
 }
 
 let rec setNested = (dict, keys, value) => {
-  if keys->Js.Array.length === 0 {
-    ()
-  } else if keys->Js.Array.length === 1 {
-    Js.Dict.set(dict, keys[0], value)
-  } else {
-    let key = keys[0]
-    let subDict = switch Js.Dict.get(dict, key) {
-    | Some(json) =>
-      switch json->Js.Json.decodeObject {
-      | Some(obj) => obj
-      | None => dict
-      }
-    | None => {
+  switch keys[0] {
+  | Some(firstKey) =>
+    if keys->Js.Array.length === 1 {
+      Js.Dict.set(dict, firstKey, value)
+    } else {
+      let subDict = switch Js.Dict.get(dict, firstKey) {
+      | Some(json) =>
+        switch json->Js.Json.decodeObject {
+        | Some(obj) => obj
+        | None => dict
+        }
+      | None =>
         let subDict = Js.Dict.empty()
-        Js.Dict.set(dict, key, subDict->Js.Json.object_)
+        dict->Dict.set(firstKey, subDict->Js.Json.object_)
         subDict
       }
+      let remainingKeys = keys->Js.Array2.sliceFrom(1)
+      setNested(subDict, remainingKeys, value)
     }
-    let remainingKeys = keys->Js.Array2.sliceFrom(1)
-    setNested(subDict, remainingKeys, value)
+  | None => ()
   }
 }
 

@@ -1,3 +1,40 @@
+# [0.28.0](https://github.com/juspay/hyperswitch-web/compare/v0.27.5...v0.28.0) (2024-03-08)
+
+
+### Features
+
+* **PaymentElement:** moved SavedCards component outside card form ([#197](https://github.com/juspay/hyperswitch-web/issues/197)) ([8e11c40](https://github.com/juspay/hyperswitch-web/commit/8e11c4087773a0c36d82f3b63358c3e9f6a9917f))
+
+## [0.27.5](https://github.com/juspay/hyperswitch-web/compare/v0.27.4...v0.27.5) (2024-03-08)
+
+## [0.27.4](https://github.com/juspay/hyperswitch-web/compare/v0.27.3...v0.27.4) (2024-03-08)
+
+
+### Bug Fixes
+
+* workflow addition & commit time code compile removal ([#208](https://github.com/juspay/hyperswitch-web/issues/208)) ([66bb5a4](https://github.com/juspay/hyperswitch-web/commit/66bb5a48a49c96e2b5212d632ed7634698622144))
+
+## [0.27.3](https://github.com/juspay/hyperswitch-web/compare/v0.27.2...v0.27.3) (2024-03-08)
+
+
+### Bug Fixes
+
+* **boleto:** boleto Icon fill color and size fix ([#210](https://github.com/juspay/hyperswitch-web/issues/210)) ([73ba2d8](https://github.com/juspay/hyperswitch-web/commit/73ba2d8a39edd9a9dc5cd09c62ef9c985fb252c5))
+
+## [0.27.2](https://github.com/juspay/hyperswitch-web/compare/v0.27.1...v0.27.2) (2024-03-06)
+
+
+### Bug Fixes
+
+* **intentCall:** handling no response on confirm ([#203](https://github.com/juspay/hyperswitch-web/issues/203)) ([ba50f1c](https://github.com/juspay/hyperswitch-web/commit/ba50f1c5d998701a4fe89caf2576746fe0bb8ae8))
+
+## [0.27.1](https://github.com/juspay/hyperswitch-web/compare/v0.27.0...v0.27.1) (2024-03-05)
+
+
+### Bug Fixes
+
+* **idealBanks:** updated ideal banks ([#201](https://github.com/juspay/hyperswitch-web/issues/201)) ([0101181](https://github.com/juspay/hyperswitch-web/commit/0101181e1675ccb1db0d1e961259657d12f524a3))
+
 # [0.27.0](https://github.com/juspay/hyperswitch-web/compare/v0.26.4...v0.27.0) (2024-03-05)
 
 

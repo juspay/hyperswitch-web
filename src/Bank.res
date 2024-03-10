@@ -101,6 +101,14 @@ let idealBanks = [
     hyperSwitch: "moneyou",
   },
   {
+    displayName: "N26",
+    hyperSwitch: "n26",
+  },
+  {
+    displayName: "Nationale-Nederlanden (NN Group)",
+    hyperSwitch: "nationale_nederlanden",
+  },
+  {
     displayName: "Rabobank",
     hyperSwitch: "rabobank",
   },

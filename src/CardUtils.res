@@ -142,7 +142,7 @@ let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
   let tempTimeDateString = dateTimeIsoString->Js.String2.replace("Z", "")
   let tempTimeDate = tempTimeDateString->Js.String2.split("T")
 
-  let date = tempTimeDate[0]
+  let date = tempTimeDate[0]->Option.getOr("")
   let dateComponents = date->Js.String2.split("-")
 
   let currentMonth = dateComponents->Belt.Array.get(1)->Belt.Option.getWithDefault("")
@@ -225,24 +225,24 @@ let getCardBrand = cardNumber => {
   try {
     let card = cardNumber->Js.String2.replaceByRe(%re("/[^\d]/g"), "")
     let rupayRanges = [
-      [508227, 508227],
-      [508500, 508999],
-      [603741, 603741],
-      [606985, 607384],
-      [607385, 607484],
-      [607485, 607984],
-      [608001, 608100],
-      [608101, 608200],
-      [608201, 608300],
-      [608301, 608350],
-      [608351, 608500],
-      [652150, 652849],
-      [652850, 653049],
-      [653050, 653149],
-      [817290, 817290],
+      (508227, 508227),
+      (508500, 508999),
+      (603741, 603741),
+      (606985, 607384),
+      (607385, 607484),
+      (607485, 607984),
+      (608001, 608100),
+      (608101, 608200),
+      (608201, 608300),
+      (608301, 608350),
+      (608351, 608500),
+      (652150, 652849),
+      (652850, 653049),
+      (653050, 653149),
+      (817290, 817290),
     ]
 
-    let masterCardRanges = [[222100, 272099], [510000, 559999]]
+    let masterCardRanges = [(222100, 272099), (510000, 559999)]
 
     let doesFallInRange = (cardRanges, isin) => {
       let intIsin =
@@ -252,14 +252,10 @@ let getCardBrand = cardNumber => {
         ->Belt.Int.fromString
         ->Belt.Option.getWithDefault(0)
 
-      let range = cardRanges->Js.Array2.mapi((_, i) => {
-        let min = cardRanges[i][0]
-        let max = cardRanges[i][1]
-        if intIsin >= min && intIsin <= max {
-          true
-        } else {
-          false
-        }
+      let range = cardRanges->Js.Array2.map(cardRange => {
+        let (min, max) = cardRange
+
+        intIsin >= min && intIsin <= max
       })
       range->Js.Array2.includes(true)
     }
@@ -301,12 +297,13 @@ let calculateLuhn = value => {
     ->Js.Array2.map(item => {
       let val = item->toInt
       let double = val * 2
-      if double > 9 {
-        let str = double->Belt.Int.toString
-        let arr = str->Js.String2.split("")
-        (arr[0]->toInt + arr[1]->toInt)->Belt.Int.toString
-      } else {
-        double->Belt.Int.toString
+      let str = double->Belt.Int.toString
+      let arr = str->Js.String2.split("")
+
+      switch (arr[0], arr[1]) {
+      | (Some(first), Some(second)) if double > 9 =>
+        (first->toInt + second->toInt)->Belt.Int.toString
+      | _ => str
       }
     })
 
