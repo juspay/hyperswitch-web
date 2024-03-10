@@ -28,7 +28,7 @@ let make = (
   }
 
   React.useEffect1(() => {
-    loader ? setOpenModal(_ => false) : setOpenModal(_ => true)
+    setOpenModal(_ => !loader)
     None
   }, [loader])
 
