@@ -59,7 +59,7 @@ let make = (
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
   React.useEffect2(() => {
     let width = switch payOptionsRef.current->Js.Nullable.toOption {
-    | Some(ref) => Webapi.Dom.Element.clientWidth(ref)
+    | Some(ref) => ref->Window.Element.clientWidth
     | None => 0
     }
     setCardsContainerWidth(_ => width)
@@ -87,9 +87,12 @@ let make = (
         setMoreIconIndex(prev => mod(prev + 1, dropDownOptionsDetails->Belt.Array.length))
 
         setToggleIconElement(_ => true)
-        Js.Global.setTimeout(() => {
-          setToggleIconElement(_ => false)
-        }, 10)->ignore
+        Js.Global.setTimeout(
+          () => {
+            setToggleIconElement(_ => false)
+          },
+          10,
+        )->ignore
       }
     }, 5000)
 

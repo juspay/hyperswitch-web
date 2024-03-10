@@ -135,7 +135,7 @@ let rec intentCall = (
   )
   let handleOpenUrl = url => {
     if isPaymentSession {
-      Window.location.replace(. url)
+      Window.Location.replace(. url)
     } else {
       openUrl(url)
     }

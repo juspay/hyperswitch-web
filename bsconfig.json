@@ -20,7 +20,6 @@
   "bs-dependencies": [
     "@rescript/react",
     "@ryyppy/rescript-promise",
-    "rescript-webapi",
     "@rescript/core",
     "@glennsl/rescript-fetch"
   ]

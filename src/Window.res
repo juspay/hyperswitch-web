@@ -126,5 +126,10 @@ let isInteg = hostname === "dev.hyperswitch.io"
 
 let isProd = hostname === "checkout.hyperswitch.io"
 
-type location = {replace: (. string) => unit}
-@val @scope("window") external location: location = "location"
+module Location = {
+  @val @scope(("window", "location")) external replace: (. string) => unit = "replace"
+}
+
+module Element = {
+  @get external clientWidth: Dom.element => int = "clientWidth"
+}
