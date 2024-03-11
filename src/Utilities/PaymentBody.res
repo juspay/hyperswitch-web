@@ -95,6 +95,19 @@ let mandateBody = paymentType => {
   ]
 }
 
+let confirmPayloadForSDKButton = (sdkHandleConfirmPayment: PaymentType.sdkHandleConfirmPayment) =>
+  [
+    ("redirect", "always"->JSON.Encode.string),
+    (
+      "confirmParams",
+      [("return_url", sdkHandleConfirmPayment.confirmParams.return_url->JSON.Encode.string)]
+      ->Dict.fromArray
+      ->JSON.Encode.object,
+    ),
+  ]
+  ->Dict.fromArray
+  ->JSON.Encode.object
+
 let achBankDebitBody = (
   ~email,
   ~bank: ACHTypes.data,

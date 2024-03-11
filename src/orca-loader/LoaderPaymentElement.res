@@ -19,12 +19,6 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       setIframeRef(ref)
     }
 
-    let sdkHandleConfirmPayment =
-      options->getDecodedBoolFromJson(
-        callbackFuncForExtractingValFromDict("sdkHandleConfirmPayment"),
-        false,
-      )
-
     let sdkHandleOneClickConfirmPayment =
       options->getDecodedBoolFromJson(
         callbackFuncForExtractingValFromDict("sdkHandleOneClickConfirmPayment"),
@@ -170,7 +164,8 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             eventDataObject
             ->getOptionalJsonFromJson("iframeId")
             ->getStringfromOptionaljson("no-element")
-          iframeHeightRef := iframeHeight->getFloatfromjson(200.0)
+          iframeHeightRef :=
+            iframeHeight->Option.getOr(JSON.Encode.null)->Utils.getFloatFromJson(200.0)
           if iframeId === localSelectorString {
             let elem = Window.querySelector(
               `#orca-payment-element-iframeRef-${localSelectorString}`,
@@ -303,7 +298,6 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           mountPostMessage(
             Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`),
             localSelectorString,
-            sdkHandleConfirmPayment,
             sdkHandleOneClickConfirmPayment,
             displaySavedPaymentMethods,
           )

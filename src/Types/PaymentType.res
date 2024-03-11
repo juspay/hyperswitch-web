@@ -132,6 +132,11 @@ type billingAddress = {
   usePrefilledValues: showType,
 }
 
+type sdkHandleConfirmPayment = {
+  handleConfirm: bool,
+  confirmParams: ConfirmType.confirmParams,
+}
+
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
@@ -149,6 +154,7 @@ type options = {
   payButtonStyle: style,
   showCardFormByDefault: bool,
   billingAddress: billingAddress,
+  sdkHandleConfirmPayment: sdkHandleConfirmPayment,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -250,6 +256,12 @@ let defaultBillingAddress = {
   isUseBillingAddress: false,
   usePrefilledValues: Auto,
 }
+
+let defaultSdkHandleConfirmPayment = {
+  handleConfirm: false,
+  confirmParams: ConfirmType.defaultConfirm,
+}
+
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
@@ -267,6 +279,7 @@ let defaultOptions = {
   customMethodNames: [],
   showCardFormByDefault: true,
   billingAddress: defaultBillingAddress,
+  sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -873,6 +886,19 @@ let getBillingAddress = (dict, str, logger) => {
   ->Belt.Option.getWithDefault(defaultBillingAddress)
 }
 
+let getConfirmParams = dict => {
+  open ConfirmType
+  {
+    return_url: dict->getString("return_url", ""),
+    publishableKey: dict->getString("publishableKey", ""),
+  }
+}
+
+let getSdkHandleConfirmPaymentProps = dict => {
+  handleConfirm: dict->getBool("handleConfirm", false),
+  confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
+}
+
 let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(
     [
@@ -890,6 +916,7 @@ let itemToObjMapper = (dict, logger) => {
       "displaySavedPaymentMethods",
       "sdkHandleOneClickConfirmPayment",
       "showCardFormByDefault",
+      "sdkHandleConfirmPayment",
     ],
     dict,
     "options",
@@ -925,6 +952,9 @@ let itemToObjMapper = (dict, logger) => {
     payButtonStyle: getStyle(dict, "payButtonStyle", logger),
     showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
     billingAddress: getBillingAddress(dict, "billingAddress", logger),
+    sdkHandleConfirmPayment: dict
+    ->getDictfromDict("sdkHandleConfirmPayment")
+    ->getSdkHandleConfirmPaymentProps,
   }
 }
 

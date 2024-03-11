@@ -30,7 +30,7 @@ let make = (
   let (sessions, setSessions) = React.useState(_ => Js.Dict.empty()->Js.Json.object_)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
-  let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
+  let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let (list, setList) = React.useState(_ => PaymentMethodsRecord.defaultList)
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
@@ -392,11 +392,16 @@ let make = (
         | Accordion => <AccordionContainer paymentOptions checkoutEle />
         }}
       </div>
-      <RenderIf condition={sdkHandleConfirmPayment}>
-        <div className="mt-4">
-          <PayNowButton />
-        </div>
-      </RenderIf>
+    </RenderIf>
+    <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
+      <div className="mt-4">
+        <PayNowButton
+          cvcProps
+          cardProps
+          expiryProps
+          selectedOption={selectedOption->PaymentModeType.paymentMode}
+        />
+      </div>
     </RenderIf>
     <PoweredBy />
     {switch methodslist {
