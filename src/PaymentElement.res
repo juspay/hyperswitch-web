@@ -14,6 +14,7 @@ let make = (
   ~countryProps,
   ~paymentType: CardThemeType.mode,
 ) => {
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let sessionsObj = Recoil.useRecoilValueFromAtom(sessions)
   let {
     showCardFormByDefault,
@@ -51,10 +52,7 @@ let make = (
   React.useEffect1(() => {
     switch customerPaymentMethods {
     | LoadingSavedCards => ()
-    | LoadedSavedCards(arr, isGuestCustomer) => {
-        let savedCards = arr->Js.Array2.filter((item: PaymentType.customerMethods) => {
-          item.paymentMethod == "card"
-        })
+    | LoadedSavedCards(savedCards, isGuestCustomer) => {
         setSavedMethods(_ => savedCards)
         setLoadSavedCards(_ =>
           savedCards->Js.Array2.length == 0
@@ -81,12 +79,20 @@ let make = (
   }, [displaySavedPaymentMethodsCheckbox])
 
   React.useEffect1(() => {
-    let tokenobj =
-      savedMethods->Js.Array2.length > 0
-        ? Some(savedMethods->Belt.Array.get(0)->Belt.Option.getWithDefault(defaultCustomerMethods))
-        : None
+    let defaultPaymentMethod =
+      savedMethods
+      ->Js.Array2.find(savedMethod => savedMethod.defaultPaymentMethodSet)
 
-    switch tokenobj {
+    let isSavedMethodsEmpty = savedMethods->Js.Array2.length === 0
+
+    let tokenObj = switch (isSavedMethodsEmpty, defaultPaymentMethod) {
+    | (false, Some(defaultPaymentMethod)) => Some(defaultPaymentMethod)
+    | (false, None) =>
+      Some(savedMethods->Belt.Array.get(0)->Belt.Option.getWithDefault(defaultCustomerMethods))
+    | _ => None
+    }
+
+    switch tokenObj {
     | Some(obj) => setPaymentToken(._ => (obj.paymentToken, obj.customerId))
     | None => ()
     }
@@ -353,7 +359,13 @@ let make = (
       }}
     </ErrorBoundary>
   }
+
+  let paymentLabel = showFields
+    ? localeString.selectPaymentMethodLabel
+    : localeString.savedPaymentMethodsLabel
+
   <>
+    <div className="text-2xl font-semibold text-[#151619] mb-6"> {React.string(paymentLabel)} </div>
     <RenderIf condition={!showFields}>
       <SavedMethods
         paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType list
