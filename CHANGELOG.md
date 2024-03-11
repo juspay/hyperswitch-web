@@ -1,3 +1,10 @@
+# [0.31.0](https://github.com/juspay/hyperswitch-web/compare/v0.30.0...v0.31.0) (2024-03-11)
+
+
+### Features
+
+* Added Payment Session Headless ([#209](https://github.com/juspay/hyperswitch-web/issues/209)) ([67be317](https://github.com/juspay/hyperswitch-web/commit/67be317957ff4d267f20cf5b376277116b7e4861))
+
 # [0.30.0](https://github.com/juspay/hyperswitch-web/compare/v0.29.1...v0.30.0) (2024-03-11)
 
 
