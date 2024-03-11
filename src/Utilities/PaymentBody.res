@@ -82,6 +82,7 @@ let mandateBody = paymentType => {
       "mandate_data",
       [("customer_acceptance", customerAcceptanceBody)]->Js.Dict.fromArray->Js.Json.object_,
     ),
+    ("customer_acceptance", customerAcceptanceBody),
     ("setup_future_usage", "off_session"->Js.Json.string),
     ("payment_type", {paymentType === "" ? Js.Json.null : paymentType->Js.Json.string}),
   ]
