@@ -1,3 +1,10 @@
+# [0.29.0](https://github.com/juspay/hyperswitch-web/compare/v0.28.0...v0.29.0) (2024-03-11)
+
+
+### Features
+
+* props divide disableSave cards to checkbox and api ([#206](https://github.com/juspay/hyperswitch-web/issues/206)) ([83426ab](https://github.com/juspay/hyperswitch-web/commit/83426ab9a11210ed1e7edb2341ef25ba4c8a4500))
+
 # [0.28.0](https://github.com/juspay/hyperswitch-web/compare/v0.27.5...v0.28.0) (2024-03-08)
 
 
