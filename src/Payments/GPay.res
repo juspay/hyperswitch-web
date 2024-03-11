@@ -33,13 +33,7 @@ let make = (
 
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
-  let isGuestCustomer = React.useMemo1(() => {
-    switch options.customerPaymentMethods {
-    | LoadedSavedCards(_, false)
-    | NoResult(false) => false
-    | _ => true
-    }
-  }, [options.customerPaymentMethods])
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
     ~list,

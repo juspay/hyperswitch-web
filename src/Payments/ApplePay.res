@@ -52,13 +52,7 @@ let make = (
     ? list->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
     : list->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
 
-  let isGuestCustomer = React.useMemo1(() => {
-    switch options.customerPaymentMethods {
-    | LoadedSavedCards(_, false)
-    | NoResult(false) => false
-    | _ => true
-    }
-  }, [options.customerPaymentMethods])
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let processPayment = bodyArr => {
     let requestBody = PaymentUtils.isAppendingCustomerAcceptance(isGuestCustomer, list.payment_type)

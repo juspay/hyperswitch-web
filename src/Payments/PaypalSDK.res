@@ -37,13 +37,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
     },
   }
   let handleCloseLoader = () => Utils.handlePostMessage([("fullscreen", false->Js.Json.boolean)])
-  let isGuestCustomer = React.useMemo1(() => {
-    switch options.customerPaymentMethods {
-    | LoadedSavedCards(_, false)
-    | NoResult(false) => false
-    | _ => true
-    }
-  }, [options.customerPaymentMethods])
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let loadPaypalSdk = () => {
     loggerState.setLogInfo(
       ~value="Paypal SDK Button Clicked",

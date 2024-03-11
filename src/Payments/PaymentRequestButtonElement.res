@@ -20,14 +20,7 @@ module WalletsSaveDetailsText = {
       areOneClickWalletsRendered,
     )
     let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-    let {customerPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
-    let isGuestCustomer = React.useMemo1(() => {
-      switch customerPaymentMethods {
-      | LoadedSavedCards(_, false)
-      | NoResult(false) => false
-      | _ => true
-      }
-    }, [customerPaymentMethods])
+    let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
     <RenderIf
       condition={PaymentUtils.isAppendingCustomerAcceptance(isGuestCustomer, paymentType) &&

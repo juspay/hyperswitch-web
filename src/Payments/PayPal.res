@@ -29,14 +29,7 @@ let make = (~list: PaymentMethodsRecord.list) => {
   }
   let (buttonColor, textColor) =
     options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
-
-  let isGuestCustomer = React.useMemo1(() => {
-    switch options.customerPaymentMethods {
-    | LoadedSavedCards(_, false)
-    | NoResult(false) => false
-    | _ => true
-    }
-  }, [options.customerPaymentMethods])
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   let onPaypalClick = _ev => {
