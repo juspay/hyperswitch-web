@@ -86,6 +86,14 @@ let getDecodedStringFromJson = (json, callbackFunc, defaultValue) => {
   ->Belt.Option.getWithDefault(defaultValue)
 }
 
+let getDecodedBoolFromJson = (json, callbackFunc, defaultValue) => {
+  json
+  ->Js.Json.decodeObject
+  ->Belt.Option.flatMap(callbackFunc)
+  ->Belt.Option.flatMap(Js.Json.decodeBoolean)
+  ->Belt.Option.getWithDefault(defaultValue)
+}
+
 let getRequiredString = (dict, key, default, ~logger) => {
   let optionalStr = getOptionString(dict, key)
   switch optionalStr {
@@ -845,3 +853,7 @@ let isOtherElements = componentType => {
 }
 
 let nbsp = `\u00A0`
+
+let callbackFuncForExtractingValFromDict = key => {
+  x => x->Js.Dict.get(key)
+}

@@ -57,6 +57,9 @@ let make = (
     cvcError,
     setCvcError,
   ) = cvcProps
+  let {customerPaymentMethods, displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.optionAtom,
+  )
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
@@ -83,12 +86,13 @@ let make = (
   }, (empty, complete))
 
   let (savedMethods, isGuestCustomer) = React.useMemo1(() => {
-    switch options.customerPaymentMethods {
+    switch customerPaymentMethods {
     | LoadedSavedCards(savedMethods, isGuest) => (savedMethods, isGuest)
     | NoResult(isGuest) => ([], isGuest)
     | _ => ([], true)
     }
-  }, [options.customerPaymentMethods])
+  }, [customerPaymentMethods])
+
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
     ~cvcNumber,
@@ -100,7 +104,8 @@ let make = (
     let json = ev.data->Js.Json.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (month, year) = CardUtils.getExpiryDates(cardExpiry)
-    let onSessionBody = [("setup_future_usage", "on_session"->Js.Json.string)]
+
+    let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
     let cardNetwork = {
       if cardBrand != "" {
         [("card_network", cardBrand->Js.Json.string)]
@@ -108,7 +113,7 @@ let make = (
         []
       }
     }
-    let deafultCardBody = PaymentBody.cardPaymentBody(
+    let defaultCardBody = PaymentBody.cardPaymentBody(
       ~cardNumber,
       ~month,
       ~year,
@@ -117,9 +122,15 @@ let make = (
       ~cardBrand=cardNetwork,
     )
     let banContactBody = PaymentBody.bancontactBody()
-    let cardBody = isSaveCardsChecked
-      ? deafultCardBody->Js.Array2.concat(onSessionBody)
-      : deafultCardBody
+    let cardBody = if displaySavedPaymentMethodsCheckbox {
+      if isSaveCardsChecked || list.payment_type === "setup_mandate" {
+        defaultCardBody->Js.Array2.concat(onSessionBody)
+      } else {
+        defaultCardBody
+      }
+    } else {
+      defaultCardBody->Js.Array2.concat(onSessionBody)
+    }
     if confirm.doSubmit {
       let validFormat =
         (isBancontact ||
@@ -163,6 +174,11 @@ let make = (
 
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
+  let conditionsForShowingSaveCardCheckbox =
+    !isGuestCustomer &&
+    list.payment_type !== "setup_mandate" &&
+    options.displaySavedPaymentMethodsCheckbox &&
+    !isBancontact
 
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
@@ -248,7 +264,7 @@ let make = (
             cvcProps={Some(cvcProps)}
             isBancontact
           />
-          <RenderIf condition={!isBancontact && !options.disableSaveCards && !isGuestCustomer}>
+          <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="pt-4 pb-2 flex items-center justify-start">
               <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
             </div>

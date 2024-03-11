@@ -37,6 +37,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
     },
   }
   let handleCloseLoader = () => Utils.handlePostMessage([("fullscreen", false->Js.Json.boolean)])
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let loadPaypalSdk = () => {
     loggerState.setLogInfo(
       ~value="Paypal SDK Button Clicked",
@@ -94,8 +95,14 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
                                 ~token=payload.nonce,
                                 ~connectors,
                               )
+                              let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
+                                ~isGuestCustomer,
+                                ~paymentType=list.payment_type,
+                                ~body,
+                              )
+
                               intent(
-                                ~bodyArr=body,
+                                ~bodyArr=modifiedPaymentBody,
                                 ~confirmParam={
                                   return_url: options.wallets.walletReturnUrl,
                                   publishableKey,

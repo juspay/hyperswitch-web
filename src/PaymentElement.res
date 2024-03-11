@@ -20,7 +20,7 @@ let make = (
     paymentMethodOrder,
     layout,
     customerPaymentMethods,
-    disableSaveCards,
+    displaySavedPaymentMethodsCheckbox,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
@@ -73,12 +73,12 @@ let make = (
   }, [customerPaymentMethods])
 
   React.useEffect1(() => {
-    if disableSaveCards {
+    if displaySavedPaymentMethodsCheckbox {
       setShowFields(._ => true)
       setLoadSavedCards(_ => LoadedSavedCards([], true))
     }
     None
-  }, [disableSaveCards])
+  }, [displaySavedPaymentMethodsCheckbox])
 
   React.useEffect1(() => {
     let tokenobj =

@@ -20,25 +20,22 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
     }
 
     let sdkHandleConfirmPayment =
-      options
-      ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("sdkHandleConfirmPayment"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(false)
+      options->getDecodedBoolFromJson(
+        callbackFuncForExtractingValFromDict("sdkHandleConfirmPayment"),
+        false,
+      )
 
     let sdkHandleOneClickConfirmPayment =
-      options
-      ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("sdkHandleOneClickConfirmPayment"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(true)
+      options->getDecodedBoolFromJson(
+        callbackFuncForExtractingValFromDict("sdkHandleOneClickConfirmPayment"),
+        true,
+      )
 
-    let disableSaveCards =
-      options
-      ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("disableSaveCards"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(false)
+    let displaySavedPaymentMethods =
+      options->getDecodedBoolFromJson(
+        callbackFuncForExtractingValFromDict("displaySavedPaymentMethods"),
+        true,
+      )
 
     let on = (eventType, eventHandler) => {
       switch eventType->eventTypeMapper {
@@ -308,7 +305,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             localSelectorString,
             sdkHandleConfirmPayment,
             sdkHandleOneClickConfirmPayment,
-            disableSaveCards,
+            displaySavedPaymentMethods,
           )
         }
       }
