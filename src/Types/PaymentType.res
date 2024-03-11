@@ -121,6 +121,8 @@ type customerMethods = {
   paymentMethod: string,
   paymentMethodIssuer: option<string>,
   card: customerCard,
+  paymentMethodType: option<string>,
+  defaultPaymentMethodSet: bool,
 }
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
@@ -162,6 +164,8 @@ let defaultCustomerMethods = {
   paymentMethod: "",
   paymentMethodIssuer: None,
   card: defaultCardDetails,
+  paymentMethodType: None,
+  defaultPaymentMethodSet: false,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -767,6 +771,10 @@ let getCardDetails = (dict, str) => {
   ->Belt.Option.getWithDefault(defaultCardDetails)
 }
 
+let getPaymentMethodType = dict => {
+  dict->Js.Dict.get("payment_method_type")->Belt.Option.flatMap(Js.Json.decodeString)
+}
+
 let createCustomerObjArr = dict => {
   let customerDict =
     dict
@@ -789,13 +797,15 @@ let createCustomerObjArr = dict => {
   let customerPaymentMethods =
     customerArr
     ->Belt.Array.keepMap(Js.Json.decodeObject)
-    ->Js.Array2.map(json => {
+    ->Js.Array2.map(dict => {
       {
-        paymentToken: getString(json, "payment_token", ""),
-        customerId: getString(json, "customer_id", ""),
-        paymentMethod: getString(json, "payment_method", ""),
-        paymentMethodIssuer: Some(getString(json, "payment_method_issuer", "")),
-        card: getCardDetails(json, "card"),
+        paymentToken: getString(dict, "payment_token", ""),
+        customerId: getString(dict, "customer_id", ""),
+        paymentMethod: getString(dict, "payment_method", ""),
+        paymentMethodIssuer: Some(getString(dict, "payment_method_issuer", "")),
+        card: getCardDetails(dict, "card"),
+        paymentMethodType: getPaymentMethodType(dict),
+        defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
       }
     })
   LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
@@ -816,6 +826,8 @@ let getCustomerMethods = (dict, str) => {
           paymentMethod: getString(json, "payment_method", ""),
           paymentMethodIssuer: Some(getString(json, "payment_method_issuer", "")),
           card: getCardDetails(json, "card"),
+          paymentMethodType: getPaymentMethodType(dict),
+          defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)

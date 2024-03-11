@@ -274,16 +274,18 @@ let make = (
               className="Label flex flex-row gap-3 items-end cursor-pointer"
               style={ReactDOMStyle.make(
                 ~fontSize="14px",
-                ~color=themeObj.colorPrimary,
-                ~fontWeight="400",
+                ~float="left",
                 ~marginTop="14px",
+                ~fontWeight=themeObj.fontWeightNormal,
+                ~width="fit-content",
+                ~color=themeObj.colorPrimary,
                 (),
               )}
               onClick={_ => {
                 setShowFields(._ => false)
               }}>
-              <Icon name="card-2" size=22 width=24 />
-              {React.string(localeString.useExisitingSavedCards)}
+              <Icon name="circle_dots" size=20 width=19 />
+              {React.string(localeString.useExistingPaymentMethods)}
             </div>
           </RenderIf>
         </div>

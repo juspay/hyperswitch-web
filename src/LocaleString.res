@@ -63,6 +63,10 @@ type localeStrings = {
   billingDetailsText: string,
   socialSecurityNumberLabel: string,
   saveWalletDetails: string,
+  morePaymentMethods: string,
+  useExistingPaymentMethods: string,
+  selectPaymentMethodLabel: string,
+  savedPaymentMethodsLabel: string,
 }
 
 let defaultLocale = {
@@ -141,6 +145,10 @@ let defaultLocale = {
   billingDetailsText: "Billing Details",
   socialSecurityNumberLabel: "Social Security Number",
   saveWalletDetails: "Wallets details will be saved upon selection",
+  morePaymentMethods: "More payment methods",
+  useExistingPaymentMethods: "Use saved payment methods",
+  selectPaymentMethodLabel: "Select Payment Method",
+  savedPaymentMethodsLabel: "Saved Payment Methods",
 }
 
 type locale = {localeStrings: array<localeStrings>}
@@ -221,6 +229,10 @@ let localeStrings = [
     billingDetailsText: "Billing Details",
     socialSecurityNumberLabel: "Social Security Number",
     saveWalletDetails: "Wallets details will be saved upon selection",
+    morePaymentMethods: "More payment methods",
+    useExistingPaymentMethods: "Use saved payment methods",
+    selectPaymentMethodLabel: "Select Payment Method",
+    savedPaymentMethodsLabel: "Saved Payment Methods",
   },
   {
     locale: "he",
@@ -298,6 +310,10 @@ let localeStrings = [
     billingDetailsText: `פרטי תשלום`,
     socialSecurityNumberLabel: `מספר ביטוח לאומי`,
     saveWalletDetails: "פרטי הארנק יישמרו בעת בחירה",
+    morePaymentMethods: `אמצעי תשלום נוספים`,
+    useExistingPaymentMethods: `השתמש באמצעי תשלום שמורים`,
+    selectPaymentMethodLabel: `בחר שיטת תשלום`,
+    savedPaymentMethodsLabel: `אמצעי תשלום שמורים`,
   },
   {
     locale: `fr`,
@@ -375,6 +391,10 @@ let localeStrings = [
     billingDetailsText: `Détails de la facturation`,
     socialSecurityNumberLabel: `Numéro de sécurité sociale`,
     saveWalletDetails: "Les détails du portefeuille seront enregistrés lors de la sélection",
+    morePaymentMethods: `Plus de méthodes de paiement`,
+    useExistingPaymentMethods: `Utiliser les modes de paiement enregistrés`,
+    selectPaymentMethodLabel: `Sélectionnez le mode de paiement`,
+    savedPaymentMethodsLabel: `Modes de paiement enregistrés`,
   },
   {
     locale: "en-GB",
@@ -452,6 +472,10 @@ let localeStrings = [
     billingDetailsText: "Billing Details",
     socialSecurityNumberLabel: "Social Security Number",
     saveWalletDetails: "Wallets details will be saved upon selection",
+    morePaymentMethods: "More payment methods",
+    useExistingPaymentMethods: "Use saved payment methods",
+    selectPaymentMethodLabel: "Select Payment Method",
+    savedPaymentMethodsLabel: "Saved Payment Methods",
   },
   {
     locale: "ar",
@@ -529,6 +553,10 @@ let localeStrings = [
     billingDetailsText: `تفاصيل الفاتورة`,
     socialSecurityNumberLabel: `رقم الضمان الاجتماعي`,
     saveWalletDetails: "سيتم حفظ تفاصيل المحفظة عند الاختيار",
+    morePaymentMethods: `المزيد من طرق الدفع`,
+    useExistingPaymentMethods: `استخدم طرق الدفع المحفوظة`,
+    selectPaymentMethodLabel: `اختار طريقة الدفع`,
+    savedPaymentMethodsLabel: `طرق الدفع المحفوظة`,
   },
   {
     locale: "ja",
@@ -606,6 +634,10 @@ let localeStrings = [
     billingDetailsText: `支払明細`,
     socialSecurityNumberLabel: `社会保障番号`,
     saveWalletDetails: "選択時にウォレットの詳細が保存されます",
+    morePaymentMethods: `その他の支払い方法`,
+    useExistingPaymentMethods: `保存した支払い方法を使用する`,
+    selectPaymentMethodLabel: `支払い方法を選択してください`,
+    savedPaymentMethodsLabel: `保存された支払い方法`,
   },
   {
     locale: "de",
@@ -683,5 +715,9 @@ let localeStrings = [
     billingDetailsText: `Rechnungsdetails`,
     socialSecurityNumberLabel: `Sozialversicherungsnummer`,
     saveWalletDetails: "Wallet-Details werden beim Auswählen gespeichert",
+    morePaymentMethods: `Mehr Zahlungsmethoden`,
+    useExistingPaymentMethods: `Gespeicherte Zahlungsarten nutzen`,
+    selectPaymentMethodLabel: `Wählen Sie die Zahlungsmethode`,
+    savedPaymentMethodsLabel: `Gespeicherte Zahlungsarten`,
   },
 ]

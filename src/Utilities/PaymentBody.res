@@ -76,6 +76,13 @@ let customerAcceptanceBody =
   ->Js.Dict.fromArray
   ->Js.Json.object_
 
+let savedPaymentMethodBody = (~paymentToken, ~customerId, ~paymentMethod, ~paymentMethodType) => [
+  ("payment_method", paymentMethod->Js.Json.string),
+  ("payment_token", paymentToken->Js.Json.string),
+  ("customer_id", customerId->Js.Json.string),
+  ("payment_method_type", paymentMethodType),
+]
+
 let mandateBody = paymentType => {
   [
     (
