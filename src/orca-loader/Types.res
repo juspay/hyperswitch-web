@@ -39,6 +39,13 @@ type element = {
   create: (Js.Dict.key, Js.Json.t) => paymentElement,
 }
 
+type getCustomerSavedPaymentMethods = {
+  getCustomerDefaultSavedPaymentMethodData: unit => Js.Json.t,
+  confirmWithCustomerDefaultPaymentMethod: Js.Json.t => Promise.t<Js.Json.t>,
+}
+
+type initPaymentSession = {getCustomerSavedPaymentMethods: unit => Promise.t<Js.Json.t>}
+
 type confirmParams = {return_url: string}
 
 type confirmPaymentParams = {
@@ -56,6 +63,7 @@ type hyperInstance = {
   retrievePaymentIntent: string => Js.Promise.t<Js.Json.t>,
   widgets: Js.Json.t => element,
   paymentRequest: Js.Json.t => Js.Json.t,
+  initPaymentSession: Js.Json.t => initPaymentSession,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -115,6 +123,27 @@ let defaultElement = {
   create,
 }
 
+let getCustomerDefaultSavedPaymentMethodData = () => {
+  Js.Json.null
+}
+
+let confirmWithCustomerDefaultPaymentMethod = _confirmParams => {
+  Js.Promise.resolve(Js.Dict.empty()->Js.Json.object_)
+}
+
+let defaultGetCustomerSavedPaymentMethods = () => {
+  // TODO: After rescript migration to v11, add this without TAG using enums
+  // Js.Promise.resolve({
+  //   getCustomerDefaultSavedPaymentMethodData,
+  //   confirmWithCustomerDefaultPaymentMethod,
+  // })
+  Js.Promise.resolve(Js.Json.null)
+}
+
+let defaultInitPaymentSession: initPaymentSession = {
+  getCustomerSavedPaymentMethods: defaultGetCustomerSavedPaymentMethods,
+}
+
 let defaultHyperInstance = {
   confirmOneClickPayment: oneClickConfirmPaymentFn,
   confirmPayment: confirmPaymentFn,
@@ -123,6 +152,7 @@ let defaultHyperInstance = {
   elements: _ev => defaultElement,
   widgets: _ev => defaultElement,
   paymentRequest: _ev => Js.Json.null,
+  initPaymentSession: _ev => defaultInitPaymentSession,
 }
 
 type eventType =

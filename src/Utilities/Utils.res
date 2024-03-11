@@ -305,6 +305,19 @@ let postSubmitResponse = (~jsonData, ~url) => {
   ])
 }
 
+let getFailedSubmitResponse = (~errorType, ~message) => {
+  [
+    (
+      "error",
+      [("type", errorType->Js.Json.string), ("message", message->Js.Json.string)]
+      ->Js.Dict.fromArray
+      ->Js.Json.object_,
+    ),
+  ]
+  ->Js.Dict.fromArray
+  ->Js.Json.object_
+}
+
 let toCamelCase = str => {
   if str->Js.String2.includes(":") {
     str

@@ -499,6 +499,34 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
 
+      let initPaymentSession = paymentSessionOptions => {
+        open Promise
+
+        let clientSecretId =
+          paymentSessionOptions
+          ->Js.Json.decodeObject
+          ->Belt.Option.flatMap(x => x->Js.Dict.get("clientSecret"))
+          ->Belt.Option.flatMap(Js.Json.decodeString)
+          ->Belt.Option.getWithDefault("")
+        clientSecret := clientSecretId
+        Js.Promise.make((~resolve, ~reject as _) => {
+          logger.setClientSecret(clientSecretId)
+          resolve(. Js.Json.null)
+        })
+        ->then(_ => {
+          logger.setLogInfo(~value=Window.href, ~eventName=PAYMENT_SESSION_INITIATED, ())
+          resolve()
+        })
+        ->ignore
+
+        PaymentSession.make(
+          paymentSessionOptions,
+          ~clientSecret={clientSecretId},
+          ~publishableKey,
+          ~logger=Some(logger),
+        )
+      }
+
       let returnObject = {
         confirmOneClickPayment,
         confirmPayment,
@@ -507,6 +535,7 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         confirmCardPayment: confirmCardPaymentFn,
         retrievePaymentIntent: retrievePaymentIntentFn,
         paymentRequest,
+        initPaymentSession,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject
