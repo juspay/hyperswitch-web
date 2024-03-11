@@ -116,6 +116,7 @@ let rec intentCall = (
   ~sdkHandleOneClickConfirmPayment,
   ~counter,
   ~isPaymentSession=false,
+  ~paymentSessionRedirect="if_redirect",
   (),
 ) => {
   open Promise
@@ -199,7 +200,11 @@ let rec intentCall = (
             if handleUserError {
               handleOpenUrl(url.href)
             } else {
-              resolve(. data)
+              let failedSubmitResponse = getFailedSubmitResponse(
+                ~errorType=errorObj.error.type_,
+                ~message=errorObj.error.message,
+              )
+              resolve(. failedSubmitResponse)
             }
           },
         )->then(resolve)
@@ -227,7 +232,11 @@ let rec intentCall = (
               if handleUserError {
                 handleOpenUrl(url.href)
               } else {
-                resolve(. exceptionMessage)
+                let failedSubmitResponse = getFailedSubmitResponse(
+                  ~errorType="server_error",
+                  ~message="Something went wrong",
+                )
+                resolve(. failedSubmitResponse)
               }
             } else {
               let paymentIntentID =
@@ -293,8 +302,10 @@ let rec intentCall = (
               | (Paypal, false) =>
                 if !isPaymentSession {
                   postSubmitResponse(~jsonData=data, ~url=url.href)
-                } else {
+                } else if paymentSessionRedirect === "always" {
                   handleOpenUrl(url.href)
+                } else {
+                  resolve(. data)
                 }
               | _ => handleOpenUrl(url.href)
               }
@@ -410,7 +421,11 @@ let rec intentCall = (
                   )
                   handleOpenUrl(url.href)
                 } else {
-                  resolve(. data)
+                  let failedSubmitResponse = getFailedSubmitResponse(
+                    ~errorType="confirm_payment_failed",
+                    ~message="Payment failed. Try again!",
+                  )
+                  resolve(. failedSubmitResponse)
                 }
               }
             } else if intent.status == "processing" {
@@ -464,7 +479,11 @@ let rec intentCall = (
                 ~message="Payment failed. Try again!",
               )
             } else {
-              resolve(. data)
+              let failedSubmitResponse = getFailedSubmitResponse(
+                ~errorType="confirm_payment_failed",
+                ~message="Payment failed. Try again!",
+              )
+              resolve(. failedSubmitResponse)
             }
           },
         )->then(resolve)
@@ -495,7 +514,11 @@ let rec intentCall = (
         if handleUserError {
           handleOpenUrl(url.href)
         } else {
-          resolve(. exceptionMessage)
+          let failedSubmitResponse = getFailedSubmitResponse(
+            ~errorType="server_error",
+            ~message="Something went wrong",
+          )
+          resolve(. failedSubmitResponse)
         }
       } else {
         let paymentIntentID =
