@@ -37,11 +37,6 @@ let make = (
     isExpiryValid->Option.getOr(false) &&
     areRequiredFieldsValidValue
 
-  let buttonText =
-    sdkHandleConfirmPayment.buttonText->String.length > 0
-      ? sdkHandleConfirmPayment.buttonText
-      : localeString.payNowButton
-
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
 
   let handleOnClick = _ => {
@@ -84,7 +79,7 @@ let make = (
         {if showLoader {
           <Loader />
         } else {
-          buttonText->React.string
+          localeString.payNowButton->React.string
         }}
       </span>
     </button>

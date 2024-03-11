@@ -1,6 +1,4 @@
 open Utils
-external toJson: 'a => Js.Json.t = "%identity"
-
 @react.component
 let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   open RecoilAtoms
