@@ -123,7 +123,7 @@ let make = (
     )
     let banContactBody = PaymentBody.bancontactBody()
     let cardBody = if displaySavedPaymentMethodsCheckbox {
-      if isSaveCardsChecked {
+      if isSaveCardsChecked || list.payment_type === "setup_mandate" {
         defaultCardBody->Js.Array2.concat(onSessionBody)
       } else {
         defaultCardBody
@@ -174,6 +174,11 @@ let make = (
 
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
+  let conditionsForShowingSaveCardCheckbox =
+    !isGuestCustomer &&
+    list.payment_type !== "setup_mandate" &&
+    options.displaySavedPaymentMethodsCheckbox &&
+    !isBancontact
 
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
@@ -259,10 +264,7 @@ let make = (
             cvcProps={Some(cvcProps)}
             isBancontact
           />
-          <RenderIf
-            condition={!isBancontact &&
-            options.displaySavedPaymentMethodsCheckbox &&
-            !isGuestCustomer}>
+          <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="pt-4 pb-2 flex items-center justify-start">
               <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
             </div>
