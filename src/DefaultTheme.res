@@ -38,6 +38,14 @@ let default = {
   colorIconCardError: "#fd1717",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
+  buttonBackgroundColor: "#006df9",
+  buttonHeight: "48px",
+  buttonWidth: "thin",
+  buttonBorderRadius: "6px",
+  buttonBorderColor: "#ffffff",
+  buttonTextColor: "#ffffff",
+  buttonTextFontSize: "16px",
+  buttonTextFontWeight: "500",
 }
 let defaultRules = theme =>
   {
@@ -181,10 +189,3 @@ let defaultRules = theme =>
 
 let default = default
 let defaultRules = defaultRules
-
-let defaultButtonRules = {
-  ...PaymentType.defaultSdkHandleConfirmPayment,
-  backgroundColor: default.colorPrimary,
-  borderColor: default.colorBackground,
-  textColor: default.colorBackground,
-}

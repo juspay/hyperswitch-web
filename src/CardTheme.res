@@ -128,6 +128,14 @@ let getVariables = (str, dict, default, logger) => {
       "spacingGridColumn",
       "spacingGridRow",
       "spacingAccordionItem",
+      "buttonBackgroundColor",
+      "buttonHeight",
+      "buttonWidth",
+      "buttonBorderRadius",
+      "buttonBorderColor",
+      "buttonTextColor",
+      "buttonTextFontSize",
+      "buttonTextFontWeight",
     ]
     unknownKeysWarning(validKeys, json, "appearance.variables", ~logger)
     {
@@ -244,6 +252,39 @@ let getVariables = (str, dict, default, logger) => {
         ~logger,
       ),
       spacingGridRow: getWarningString(json, "spacingGridRow", default.spacingGridRow, ~logger),
+      buttonBackgroundColor: getWarningString(
+        json,
+        "buttonBackgroundColor",
+        default.spacingGridRow,
+        ~logger,
+      ),
+      buttonHeight: getWarningString(json, "buttonHeight", default.spacingGridRow, ~logger),
+      buttonWidth: getWarningString(json, "buttonWidth", default.spacingGridRow, ~logger),
+      buttonBorderRadius: getWarningString(
+        json,
+        "buttonBorderRadius",
+        default.spacingGridRow,
+        ~logger,
+      ),
+      buttonBorderColor: getWarningString(
+        json,
+        "buttonBorderColor",
+        default.spacingGridRow,
+        ~logger,
+      ),
+      buttonTextColor: getWarningString(json, "buttonTextColor", default.spacingGridRow, ~logger),
+      buttonTextFontSize: getWarningString(
+        json,
+        "buttonTextFontSize",
+        default.spacingGridRow,
+        ~logger,
+      ),
+      buttonTextFontWeight: getWarningString(
+        json,
+        "buttonTextFontWeight",
+        default.spacingGridRow,
+        ~logger,
+      ),
     }
   })
   ->Belt.Option.getWithDefault(default)

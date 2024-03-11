@@ -135,14 +135,6 @@ type billingAddress = {
 type sdkHandleConfirmPayment = {
   handleConfirm: bool,
   buttonText: string,
-  backgroundColor: string,
-  buttonHeight: string,
-  buttonWidth: string,
-  borderRadius: string,
-  borderColor: string,
-  textColor: string,
-  textFontSize: string,
-  textFontWeight: string,
   confirmParams: ConfirmType.confirmParams,
 }
 
@@ -269,14 +261,6 @@ let defaultBillingAddress = {
 let defaultSdkHandleConfirmPayment = {
   handleConfirm: false,
   buttonText: "Pay Now",
-  backgroundColor: "",
-  buttonHeight: "48px",
-  buttonWidth: "thin",
-  borderRadius: "6px",
-  borderColor: "",
-  textColor: "",
-  textFontSize: "16px",
-  textFontWeight: "500",
   confirmParams: ConfirmType.defaultConfirm,
 }
 
@@ -915,14 +899,6 @@ let getConfirmParams = dict => {
 let getSdkHandleConfirmPaymentProps = dict => {
   handleConfirm: dict->getBool("handleConfirm", false),
   buttonText: dict->getString("buttonText", "Pay Now"),
-  backgroundColor: dict->getString("backgroundColor", ""),
-  buttonHeight: dict->getString("buttonHeight", ""),
-  buttonWidth: dict->getString("buttonWidth", "thin"),
-  borderRadius: dict->getString("borderRadius", ""),
-  borderColor: dict->getString("borderColor", ""),
-  textColor: dict->getString("textColor", ""),
-  textFontSize: dict->getString("textFontSize", ""),
-  textFontWeight: dict->getString("textFontWeight", ""),
   confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
 }
 
@@ -979,7 +955,6 @@ let itemToObjMapper = (dict, logger) => {
     payButtonStyle: getStyle(dict, "payButtonStyle", logger),
     showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
     billingAddress: getBillingAddress(dict, "billingAddress", logger),
-    // sdkHandleConfirmPayment: getBool(dict, "sdkHandleConfirmPayment", false),
     sdkHandleConfirmPayment: dict
     ->getDictfromDict("sdkHandleConfirmPayment")
     ->getSdkHandleConfirmPaymentProps,

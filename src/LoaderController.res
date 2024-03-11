@@ -92,11 +92,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let setConfigs = (dict, themeValues: ThemeImporter.themeDataModule) => {
     let paymentOptions = dict->getDictFromObj("paymentOptions")
     let optionsDict = dict->getDictFromObj("options")
-    let (default, defaultRules, defaultButtonRules) = (
-      themeValues.default,
-      themeValues.defaultRules,
-      themeValues.defaultButtonRules,
-    )
+    let (default, defaultRules) = (themeValues.default, themeValues.defaultRules)
     let config = CardTheme.itemToObjMapper(paymentOptions, default, defaultRules, logger)
 
     let localeString = Utils.getWarningString(optionsDict, "locale", "", ~logger)
@@ -110,18 +106,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     )
     let appearance =
       optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-
-    let sdkHandleConfirmPayment = mergeJsons(
-      defaultButtonRules->toJson,
-      optionsDict->Dict.get("sdkHandleConfirmPayment")->Option.getOr(JSON.Encode.null),
-    )
-
-    setOptionsPayment(.prev => {
-      ...prev,
-      sdkHandleConfirmPayment: sdkHandleConfirmPayment
-      ->Utils.getDictFromJson
-      ->PaymentType.getSdkHandleConfirmPaymentProps,
-    })
 
     setConfig(._ => {
       config: {
@@ -279,7 +263,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                   dict->setConfigs({
                     default: DefaultTheme.default,
                     defaultRules: DefaultTheme.defaultRules,
-                    defaultButtonRules: DefaultTheme.defaultButtonRules,
                   })
                 }
               }
@@ -318,7 +301,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
               dict->setConfigs({
                 default: DefaultTheme.default,
                 defaultRules: DefaultTheme.defaultRules,
-                defaultButtonRules: DefaultTheme.defaultButtonRules,
               })
             }
           }
@@ -354,7 +336,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
             dict->setConfigs({
               default: DefaultTheme.default,
               defaultRules: DefaultTheme.defaultRules,
-              defaultButtonRules: DefaultTheme.defaultButtonRules,
             })
           }
         }

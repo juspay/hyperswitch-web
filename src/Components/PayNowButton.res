@@ -21,7 +21,7 @@ let make = (
   ~selectedOption: PaymentModeType.payment,
 ) => {
   open RecoilAtoms
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (isDisabled, setIsDisabled) = React.useState(() => false)
   let (showLoader, setShowLoader) = React.useState(() => false)
   let areRequiredFieldsValidValue = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
@@ -42,18 +42,7 @@ let make = (
       ? sdkHandleConfirmPayment.buttonText
       : localeString.payNowButton
 
-  let confirmPayload =
-    [
-      ("redirect", "always"->JSON.Encode.string),
-      (
-        "confirmParams",
-        [("return_url", sdkHandleConfirmPayment.confirmParams.return_url->JSON.Encode.string)]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
-      ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object
+  let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
 
   let handleOnClick = _ => {
     setIsDisabled(_ => true)
@@ -75,21 +64,21 @@ let make = (
       onClick=handleOnClick
       className={`w-full flex flex-row justify-center items-center`}
       style={ReactDOMStyle.make(
-        ~borderRadius=sdkHandleConfirmPayment.borderRadius,
-        ~backgroundColor=sdkHandleConfirmPayment.backgroundColor,
-        ~height=sdkHandleConfirmPayment.buttonHeight,
+        ~borderRadius=themeObj.buttonBorderRadius,
+        ~backgroundColor=themeObj.buttonBackgroundColor,
+        ~height=themeObj.buttonHeight,
         ~cursor={isDisabled ? "not-allowed" : "pointer"},
         ~opacity={isDisabled ? "0.6" : "1"},
-        ~width=sdkHandleConfirmPayment.buttonWidth,
-        ~borderColor=sdkHandleConfirmPayment.borderColor,
+        ~width=themeObj.buttonWidth,
+        ~borderColor=themeObj.buttonBorderColor,
         (),
       )}>
       <span
         id="button-text"
         style={ReactDOMStyle.make(
-          ~color=sdkHandleConfirmPayment.textColor,
-          ~fontSize=sdkHandleConfirmPayment.textFontSize,
-          ~fontWeight=sdkHandleConfirmPayment.textFontWeight,
+          ~color=themeObj.buttonTextColor,
+          ~fontSize=themeObj.buttonTextFontSize,
+          ~fontWeight=themeObj.buttonTextFontWeight,
           (),
         )}>
         {if showLoader {
