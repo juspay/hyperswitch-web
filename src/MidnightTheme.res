@@ -192,7 +192,7 @@ let default = midnight
 let defaultRules = midnightRules
 
 let defaultButtonRules = {
-  ...PaymentType.defaultValueSdkHandleConfirmPaymentProps,
+  ...PaymentType.defaultSdkHandleConfirmPayment,
   backgroundColor: default.colorPrimary,
   borderColor: default.colorPrimary,
   textColor: default.colorPrimaryText,

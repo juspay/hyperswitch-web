@@ -218,7 +218,6 @@ let make = (
       let mountPostMessage = (
         mountedIframeRef,
         selectorString,
-        sdkHandleConfirmPayment,
         sdkHandleOneClickConfirmPayment,
         displaySavedPaymentMethods,
       ) => {
@@ -245,7 +244,6 @@ let make = (
             ("publishableKey", publishableKey->Js.Json.string),
             ("endpoint", endpoint->Js.Json.string),
             ("sdkSessionId", sdkSessionId->Js.Json.string),
-            ("sdkHandleConfirmPayment", sdkHandleConfirmPayment->Js.Json.boolean),
             ("blockConfirm", blockConfirm->Js.Json.boolean),
             ("switchToCustomPod", switchToCustomPod->Js.Json.boolean),
             ("endpoint", endpoint->Js.Json.string),

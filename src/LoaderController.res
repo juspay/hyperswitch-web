@@ -111,16 +111,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     let appearance =
       optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
 
-    let sdkHandleConfirmPaymentProps = mergeJsons(
+    let sdkHandleConfirmPayment = mergeJsons(
       defaultButtonRules->toJson,
-      optionsDict
-      ->Js.Dict.get("sdkHandleConfirmPaymentProps")
-      ->Belt.Option.getWithDefault(Js.Json.null),
+      optionsDict->Dict.get("sdkHandleConfirmPayment")->Option.getOr(JSON.Encode.null),
     )
 
     setOptionsPayment(.prev => {
       ...prev,
-      sdkHandleConfirmPaymentProps: sdkHandleConfirmPaymentProps
+      sdkHandleConfirmPayment: sdkHandleConfirmPayment
       ->Utils.getDictFromJson
       ->PaymentType.getSdkHandleConfirmPaymentProps,
     })
@@ -291,7 +289,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                 ("iframeId", "no-element"->Js.Json.string),
                 ("publishableKey", ""->Js.Json.string),
                 ("parentURL", "*"->Js.Json.string),
-                ("sdkHandleConfirmPayment", false->Js.Json.boolean),
                 ("sdkHandleOneClickConfirmPayment", true->Js.Json.boolean),
               ]->Js.Array2.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)

@@ -178,7 +178,7 @@ let default = soft
 let defaultRules = softRules
 
 let defaultButtonRules = {
-  ...PaymentType.defaultValueSdkHandleConfirmPaymentProps,
+  ...PaymentType.defaultSdkHandleConfirmPayment,
   backgroundColor: default.colorBackground,
   borderColor: default.colorPrimary,
   textColor: default.colorPrimary,

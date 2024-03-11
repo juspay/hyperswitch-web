@@ -132,7 +132,8 @@ type billingAddress = {
   usePrefilledValues: showType,
 }
 
-type sdkHandleConfirmPaymentProps = {
+type sdkHandleConfirmPayment = {
+  handleConfirm: bool,
   buttonText: string,
   backgroundColor: string,
   buttonHeight: string,
@@ -162,8 +163,7 @@ type options = {
   payButtonStyle: style,
   showCardFormByDefault: bool,
   billingAddress: billingAddress,
-  sdkHandleConfirmPayment: bool,
-  sdkHandleConfirmPaymentProps: sdkHandleConfirmPaymentProps,
+  sdkHandleConfirmPayment: sdkHandleConfirmPayment,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -266,7 +266,8 @@ let defaultBillingAddress = {
   usePrefilledValues: Auto,
 }
 
-let defaultValueSdkHandleConfirmPaymentProps = {
+let defaultSdkHandleConfirmPayment = {
+  handleConfirm: false,
   buttonText: "Pay Now",
   backgroundColor: "",
   buttonHeight: "48px",
@@ -296,8 +297,7 @@ let defaultOptions = {
   customMethodNames: [],
   showCardFormByDefault: true,
   billingAddress: defaultBillingAddress,
-  sdkHandleConfirmPayment: false,
-  sdkHandleConfirmPaymentProps: defaultValueSdkHandleConfirmPaymentProps,
+  sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -913,6 +913,7 @@ let getConfirmParams = dict => {
 }
 
 let getSdkHandleConfirmPaymentProps = dict => {
+  handleConfirm: dict->getBool("handleConfirm", false),
   buttonText: dict->getString("buttonText", "Pay Now"),
   backgroundColor: dict->getString("backgroundColor", ""),
   buttonHeight: dict->getString("buttonHeight", ""),
@@ -943,7 +944,6 @@ let itemToObjMapper = (dict, logger) => {
       "sdkHandleOneClickConfirmPayment",
       "showCardFormByDefault",
       "sdkHandleConfirmPayment",
-      "sdkHandleConfirmPaymentProps",
     ],
     dict,
     "options",
@@ -979,9 +979,9 @@ let itemToObjMapper = (dict, logger) => {
     payButtonStyle: getStyle(dict, "payButtonStyle", logger),
     showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
     billingAddress: getBillingAddress(dict, "billingAddress", logger),
-    sdkHandleConfirmPayment: getBool(dict, "sdkHandleConfirmPayment", false),
-    sdkHandleConfirmPaymentProps: dict
-    ->getDictfromDict("sdkHandleConfirmPaymentProps")
+    // sdkHandleConfirmPayment: getBool(dict, "sdkHandleConfirmPayment", false),
+    sdkHandleConfirmPayment: dict
+    ->getDictfromDict("sdkHandleConfirmPayment")
     ->getSdkHandleConfirmPaymentProps,
   }
 }

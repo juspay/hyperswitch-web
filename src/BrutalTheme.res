@@ -171,7 +171,7 @@ let default = brutal
 let defaultRules = brutalRules
 
 let defaultButtonRules = {
-  ...PaymentType.defaultValueSdkHandleConfirmPaymentProps,
+  ...PaymentType.defaultSdkHandleConfirmPayment,
   backgroundColor: default.colorPrimary,
   borderColor: default.borderColor,
   textColor: default.colorBackgroundText,

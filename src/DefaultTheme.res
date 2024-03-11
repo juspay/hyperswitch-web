@@ -183,7 +183,7 @@ let default = default
 let defaultRules = defaultRules
 
 let defaultButtonRules = {
-  ...PaymentType.defaultValueSdkHandleConfirmPaymentProps,
+  ...PaymentType.defaultSdkHandleConfirmPayment,
   backgroundColor: default.colorPrimary,
   borderColor: default.colorBackground,
   textColor: default.colorBackground,

@@ -171,7 +171,7 @@ let default = charcoal
 let defaultRules = charcoalRules
 
 let defaultButtonRules = {
-  ...PaymentType.defaultValueSdkHandleConfirmPaymentProps,
+  ...PaymentType.defaultSdkHandleConfirmPayment,
   backgroundColor: default.colorPrimary,
   borderColor: default.colorPrimary,
   textColor: default.colorBackgroundText,

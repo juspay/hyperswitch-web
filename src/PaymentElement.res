@@ -393,9 +393,9 @@ let make = (
         }}
       </div>
     </RenderIf>
-    <RenderIf condition={sdkHandleConfirmPayment}>
+    <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
       <div className="mt-4">
-        <PayNowButton />
+        <PayNowButton cvcProps cardProps expiryProps />
       </div>
     </RenderIf>
     <PoweredBy />
