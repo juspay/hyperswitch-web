@@ -1,3 +1,10 @@
+## [0.29.1](https://github.com/juspay/hyperswitch-web/compare/v0.29.0...v0.29.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* added Wallets to Saved Payment Methods ([#213](https://github.com/juspay/hyperswitch-web/issues/213)) ([dc6a194](https://github.com/juspay/hyperswitch-web/commit/dc6a194512ac010cec55ae52451c98a017da5d7c))
+
 # [0.29.0](https://github.com/juspay/hyperswitch-web/compare/v0.28.0...v0.29.0) (2024-03-11)
 
 
