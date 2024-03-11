@@ -1,3 +1,10 @@
+# [0.30.0](https://github.com/juspay/hyperswitch-web/compare/v0.29.1...v0.30.0) (2024-03-11)
+
+
+### Features
+
+* Support to handle confirm button (E2E) ([#198](https://github.com/juspay/hyperswitch-web/issues/198)) ([a4ffecf](https://github.com/juspay/hyperswitch-web/commit/a4ffecf0cc31a3d094eb0f8c57d9d8260d06204b))
+
 ## [0.29.1](https://github.com/juspay/hyperswitch-web/compare/v0.29.0...v0.29.1) (2024-03-11)
 
 
