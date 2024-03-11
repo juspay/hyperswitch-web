@@ -14,7 +14,12 @@ module Loader = {
   }
 }
 @react.component
-let make = (~cvcProps, ~cardProps, ~expiryProps) => {
+let make = (
+  ~cvcProps: CardUtils.cvcProps,
+  ~cardProps: CardUtils.cardProps,
+  ~expiryProps: CardUtils.expiryProps,
+  ~selectedOption: PaymentModeType.payment,
+) => {
   open RecoilAtoms
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (isDisabled, setIsDisabled) = React.useState(() => false)
@@ -55,10 +60,14 @@ let make = (~cvcProps, ~cardProps, ~expiryProps) => {
     setShowLoader(_ => true)
     Utils.handlePostMessage([("handleSdkConfirm", confirmPayload)])
   }
-  React.useEffect1(() => {
-    setIsDisabled(_ => !validFormat)
+  React.useEffect3(() => {
+    if selectedOption === Card {
+      setIsDisabled(_ => !validFormat)
+    } else {
+      setIsDisabled(_ => !areRequiredFieldsValidValue)
+    }
     None
-  }, [validFormat])
+  }, (validFormat, areRequiredFieldsValidValue, selectedOption))
 
   <div className="flex flex-col gap-1 h-auto w-full items-center">
     <button

@@ -395,7 +395,12 @@ let make = (
     </RenderIf>
     <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
       <div className="mt-4">
-        <PayNowButton cvcProps cardProps expiryProps />
+        <PayNowButton
+          cvcProps
+          cardProps
+          expiryProps
+          selectedOption={selectedOption->PaymentModeType.paymentMode}
+        />
       </div>
     </RenderIf>
     <PoweredBy />
