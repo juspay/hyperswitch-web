@@ -853,3 +853,7 @@ let isOtherElements = componentType => {
 }
 
 let nbsp = `\u00A0`
+
+let callbackFuncForExtractingValFromDict = key => {
+  x => x->Js.Dict.get(key)
+}

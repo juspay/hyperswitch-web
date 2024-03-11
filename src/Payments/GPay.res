@@ -89,12 +89,12 @@ let make = (
       if dict->Js.Dict.get("gpayResponse")->Belt.Option.isSome {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
         let obj = metadata->getDictFromJson->itemToObjMapper
-        let gPayBody = {
-          let body = PaymentBody.gpayBody(~payObj=obj, ~connectors)
-          PaymentUtils.isAppendingCustomerAcceptance(isGuestCustomer, list.payment_type)
-            ? body->Array.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
-            : body
-        }
+        let gPayBody = PaymentUtils.appendedCustomerAcceptance(
+          ~isGuestCustomer,
+          ~paymentType=list.payment_type,
+          ~body=PaymentBody.gpayBody(~payObj=obj, ~connectors),
+        )
+
         let body = {
           gPayBody
           ->Js.Dict.fromArray

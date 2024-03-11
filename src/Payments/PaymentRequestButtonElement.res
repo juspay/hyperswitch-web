@@ -23,7 +23,7 @@ module WalletsSaveDetailsText = {
     let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
     <RenderIf
-      condition={PaymentUtils.isAppendingCustomerAcceptance(isGuestCustomer, paymentType) &&
+      condition={PaymentUtils.isAppendingCustomerAcceptance(~isGuestCustomer, ~paymentType) &&
       (isGooglePay || isApplePay || isPaypal)}>
       <div className="flex items-center text-xs mt-2">
         <Icon name="lock" size=10 className="mr-1" />

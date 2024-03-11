@@ -19,25 +19,21 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       setIframeRef(ref)
     }
 
-    let callbackFuncForExtractValFromDict = key => {
-      x => x->Js.Dict.get(key)
-    }
-
     let sdkHandleConfirmPayment =
       options->getDecodedBoolFromJson(
-        callbackFuncForExtractValFromDict("sdkHandleConfirmPayment"),
+        callbackFuncForExtractingValFromDict("sdkHandleConfirmPayment"),
         false,
       )
 
     let sdkHandleOneClickConfirmPayment =
       options->getDecodedBoolFromJson(
-        callbackFuncForExtractValFromDict("sdkHandleOneClickConfirmPayment"),
+        callbackFuncForExtractingValFromDict("sdkHandleOneClickConfirmPayment"),
         true,
       )
 
     let displaySavedPaymentMethods =
       options->getDecodedBoolFromJson(
-        callbackFuncForExtractValFromDict("displaySavedPaymentMethods"),
+        callbackFuncForExtractingValFromDict("displaySavedPaymentMethods"),
         true,
       )
 

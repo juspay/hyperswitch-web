@@ -55,9 +55,11 @@ let make = (
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let processPayment = bodyArr => {
-    let requestBody = PaymentUtils.isAppendingCustomerAcceptance(isGuestCustomer, list.payment_type)
-      ? bodyArr->Array.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
-      : bodyArr
+    let requestBody = PaymentUtils.appendedCustomerAcceptance(
+      ~isGuestCustomer,
+      ~paymentType=list.payment_type,
+      ~body=bodyArr,
+    )
 
     if isWallet {
       intent(

@@ -95,14 +95,12 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
                                 ~token=payload.nonce,
                                 ~connectors,
                               )
-                              let modifiedPaymentBody = PaymentUtils.isAppendingCustomerAcceptance(
-                                isGuestCustomer,
-                                list.payment_type,
+                              let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
+                                ~isGuestCustomer,
+                                ~paymentType=list.payment_type,
+                                ~body,
                               )
-                                ? body->Array.concat([
-                                    ("customer_acceptance", PaymentBody.customerAcceptanceBody),
-                                  ])
-                                : body
+
                               intent(
                                 ~bodyArr=modifiedPaymentBody,
                                 ~confirmParam={
