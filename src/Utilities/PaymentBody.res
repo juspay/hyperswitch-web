@@ -62,34 +62,51 @@ let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber) => [
   ("card_cvc", cvcNumber->Js.Json.string),
 ]
 
+let customerAcceptanceBody =
+  [
+    ("acceptance_type", "online"->Js.Json.string),
+    ("accepted_at", Js.Date.now()->Js.Date.fromFloat->Js.Date.toISOString->Js.Json.string),
+    (
+      "online",
+      [("user_agent", BrowserSpec.navigator.userAgent->Js.Json.string)]
+      ->Js.Dict.fromArray
+      ->Js.Json.object_,
+    ),
+  ]
+  ->Js.Dict.fromArray
+  ->Js.Json.object_
+
+let savedPaymentMethodBody = (~paymentToken, ~customerId, ~paymentMethod, ~paymentMethodType) => [
+  ("payment_method", paymentMethod->Js.Json.string),
+  ("payment_token", paymentToken->Js.Json.string),
+  ("customer_id", customerId->Js.Json.string),
+  ("payment_method_type", paymentMethodType),
+]
+
 let mandateBody = paymentType => {
   [
     (
       "mandate_data",
-      [
-        (
-          "customer_acceptance",
-          [
-            ("acceptance_type", "online"->Js.Json.string),
-            ("accepted_at", Js.Date.now()->Js.Date.fromFloat->Js.Date.toISOString->Js.Json.string),
-            (
-              "online",
-              [("user_agent", BrowserSpec.navigator.userAgent->Js.Json.string)]
-              ->Js.Dict.fromArray
-              ->Js.Json.object_,
-            ),
-          ]
-          ->Js.Dict.fromArray
-          ->Js.Json.object_,
-        ),
-      ]
-      ->Js.Dict.fromArray
-      ->Js.Json.object_,
+      [("customer_acceptance", customerAcceptanceBody)]->Js.Dict.fromArray->Js.Json.object_,
     ),
+    ("customer_acceptance", customerAcceptanceBody),
     ("setup_future_usage", "off_session"->Js.Json.string),
     ("payment_type", {paymentType === "" ? Js.Json.null : paymentType->Js.Json.string}),
   ]
 }
+
+let confirmPayloadForSDKButton = (sdkHandleConfirmPayment: PaymentType.sdkHandleConfirmPayment) =>
+  [
+    ("redirect", "always"->JSON.Encode.string),
+    (
+      "confirmParams",
+      [("return_url", sdkHandleConfirmPayment.confirmParams.return_url->JSON.Encode.string)]
+      ->Dict.fromArray
+      ->JSON.Encode.object,
+    ),
+  ]
+  ->Dict.fromArray
+  ->JSON.Encode.object
 
 let achBankDebitBody = (
   ~email,

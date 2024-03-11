@@ -137,7 +137,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         setList(._ => updatedState)
         logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ())
       }
-    | LoadError(x) => logger.setLogError(
+    | LoadError(x) =>
+      logger.setLogError(
         ~value="LoadError: " ++ x->Js.Json.stringify,
         ~eventName=LOADER_CHANGED,
         (),
@@ -269,7 +270,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                 ("iframeId", "no-element"->Js.Json.string),
                 ("publishableKey", ""->Js.Json.string),
                 ("parentURL", "*"->Js.Json.string),
-                ("sdkHandleConfirmPayment", false->Js.Json.boolean),
                 ("sdkHandleOneClickConfirmPayment", true->Js.Json.boolean),
               ]->Js.Array2.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)

@@ -39,6 +39,14 @@ let soft = {
   colorIconCardError: "#fe87a1",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
+  buttonBackgroundColor: "#3c3d3e",
+  buttonHeight: "48px",
+  buttonWidth: "thin",
+  buttonBorderRadius: "6px",
+  buttonBorderColor: "#7d8fff",
+  buttonTextColor: "#7d8fff",
+  buttonTextFontSize: "16px",
+  buttonTextFontWeight: "500",
 }
 
 let softRules = theme =>

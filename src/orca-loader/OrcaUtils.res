@@ -294,10 +294,6 @@ let getBoolfromjson = (json: option<Js.Json.t>, default: bool) => {
   json->Belt.Option.flatMap(Js.Json.decodeBoolean)->Belt.Option.getWithDefault(default)
 }
 
-let getFloatfromjson = (json: option<Js.Json.t>, default: float) => {
-  json->Belt.Option.flatMap(Js.Json.decodeNumber)->Belt.Option.getWithDefault(default)
-}
-
 let getStringfromjson = (json: Js.Json.t, default: string) => {
   json->Js.Json.decodeString->Belt.Option.getWithDefault(default)
 }

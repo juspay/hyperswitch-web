@@ -16,26 +16,17 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       setIframeRef(ref)
     }
 
-    let sdkHandleConfirmPayment =
-      options
-      ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("sdkHandleConfirmPayment"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(false)
-
     let sdkHandleOneClickConfirmPayment =
-      options
-      ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("sdkHandleOneClickConfirmPayment"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(true)
+      options->getDecodedBoolFromJson(
+        callbackFuncForExtractingValFromDict("sdkHandleOneClickConfirmPayment"),
+        true,
+      )
 
-    let disableSaveCards =
-      options
-      ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("disableSaveCards"))
-      ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-      ->Belt.Option.getWithDefault(false)
+    let displaySavedPaymentMethods =
+      options->getDecodedBoolFromJson(
+        callbackFuncForExtractingValFromDict("displaySavedPaymentMethods"),
+        true,
+      )
 
     let on = (eventType, eventHandler) => {
       switch eventType->eventTypeMapper {
@@ -170,7 +161,8 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             eventDataObject
             ->getOptionalJsonFromJson("iframeId")
             ->getStringfromOptionaljson("no-element")
-          iframeHeightRef := iframeHeight->getFloatfromjson(200.0)
+          iframeHeightRef :=
+            iframeHeight->Option.getOr(JSON.Encode.null)->Utils.getFloatFromJson(200.0)
           if iframeId === localSelectorString {
             let elem = Window.querySelector(
               `#orca-payment-element-iframeRef-${localSelectorString}`,
@@ -303,9 +295,8 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           mountPostMessage(
             Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`),
             localSelectorString,
-            sdkHandleConfirmPayment,
             sdkHandleOneClickConfirmPayment,
-            disableSaveCards,
+            displaySavedPaymentMethods,
           )
         }
       }

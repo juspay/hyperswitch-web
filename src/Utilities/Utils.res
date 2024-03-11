@@ -57,6 +57,26 @@ let getInt = (dict, key, default: int) => {
   ->Belt.Float.toInt
 }
 
+let getFloatFromString = (str, default) => {
+  let val = str->Js.Float.fromString
+  val->Js.Float.isNaN ? default : val
+}
+
+let getFloatFromJson = (json, default) => {
+  switch json->Js.Json.classify {
+  | JSONString(str) => getFloatFromString(str, default)
+  | JSONNumber(floatValue) => floatValue
+  | _ => default
+  }
+}
+
+let getFloat = (dict, key, default) => {
+  dict
+  ->Js.Dict.get(key)
+  ->Belt.Option.map(json => getFloatFromJson(json, default))
+  ->Belt.Option.getWithDefault(default)
+}
+
 let getJsonBoolValue = (dict, key, default) => {
   dict->Js.Dict.get(key)->Belt.Option.getWithDefault(default->Js.Json.boolean)
 }
@@ -83,6 +103,14 @@ let getDecodedStringFromJson = (json, callbackFunc, defaultValue) => {
   ->Js.Json.decodeObject
   ->Belt.Option.flatMap(callbackFunc)
   ->Belt.Option.flatMap(Js.Json.decodeString)
+  ->Belt.Option.getWithDefault(defaultValue)
+}
+
+let getDecodedBoolFromJson = (json, callbackFunc, defaultValue) => {
+  json
+  ->Js.Json.decodeObject
+  ->Belt.Option.flatMap(callbackFunc)
+  ->Belt.Option.flatMap(Js.Json.decodeBoolean)
   ->Belt.Option.getWithDefault(defaultValue)
 }
 
@@ -128,6 +156,10 @@ let getOptionBool = (dict, key) => {
 }
 let getDictFromJson = (json: Js.Json.t) => {
   json->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+}
+
+let getDictfromDict = (dict, key) => {
+  dict->getJsonObjectFromDict(key)->getDictFromJson
 }
 
 let getBool = (dict, key, default) => {
@@ -858,3 +890,9 @@ let isOtherElements = componentType => {
 }
 
 let nbsp = `\u00A0`
+
+let callbackFuncForExtractingValFromDict = key => {
+  x => x->Js.Dict.get(key)
+}
+
+let brandIconSize = 28

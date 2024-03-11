@@ -339,6 +339,17 @@ let make = (publishableKey, options: option<Js.Json.t>, analyticsInfo: option<Js
         confirmPaymentWrapper(payload, true, result)
       }
 
+      let handleSdkConfirm = (event: Types.event) => {
+        let json = event.data->eventToJson
+        let dict = json->getDictFromJson
+        switch dict->Js.Dict.get("handleSdkConfirm") {
+        | Some(payload) => confirmPayment(payload)->ignore
+        | None => ()
+        }
+      }
+
+      addSmartEventListener("message", handleSdkConfirm, "handleSdkConfirm")
+
       let elements = elementsOptions => {
         open Promise
         let clientSecretId =

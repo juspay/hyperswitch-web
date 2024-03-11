@@ -433,7 +433,7 @@ let make = (
           ->React.array}
           <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
             <div
-              className="p-2"
+              className="p-2 w-full text-left"
               style={ReactDOMStyle.make(
                 ~border=`1px solid ${themeObj.borderColor}`,
                 ~borderRadius=themeObj.borderRadius,
