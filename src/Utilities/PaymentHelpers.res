@@ -206,7 +206,7 @@ let rec intentCall = (
           }
         } else {
           let paymentIntentID =
-            String.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
+            String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
           let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
           let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
           intentCall(
@@ -467,8 +467,7 @@ let rec intentCall = (
         openUrl(url.href)
       }
     } else {
-      let paymentIntentID =
-        String.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
+      let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
       let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
       intentCall(
@@ -742,7 +741,7 @@ let useSessions = (
 ) => {
   open Promise
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-  let paymentIntentID = String.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
+  let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
   let body =
     [
       ("payment_id", paymentIntentID->JSON.Encode.string),

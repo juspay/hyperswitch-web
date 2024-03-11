@@ -156,7 +156,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
     let mount = selector => {
       mountId := selector
       let localSelectorArr = selector->String.split("#")
-      let localSelectorString = localSelectorArr->Belt.Array.get(1)->Option.getOr("someString")
+      let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
       let iframeHeightRef = ref(25.0)
       let currentClass = ref("base")
       let fullscreen = ref(false)

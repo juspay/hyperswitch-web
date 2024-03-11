@@ -80,9 +80,9 @@ let getQueryParamsDictforKey = (searchParams, keyName) => {
   ->String.split("&")
   ->Array.forEach(paramStr => {
     let keyValArr = String.split(paramStr, "=")
-    let key = keyValArr->Belt.Array.get(0)->Option.getOr("")
+    let key = keyValArr->Array.get(0)->Option.getOr("")
     let value = if keyValArr->Array.length > 0 {
-      keyValArr->Belt.Array.get(1)->Option.getOr("")
+      keyValArr->Array.get(1)->Option.getOr("")
     } else {
       ""
     }
@@ -116,7 +116,7 @@ let getobjFromCardPattern = cardBrand => {
   ->Array.filter(item => {
     cardBrand === item.issuer
   })
-  ->Belt.Array.get(0)
+  ->Array.get(0)
   ->Option.getOr(CardPattern.defaultCardPattern)
 }
 
@@ -129,7 +129,7 @@ let slice = (val, start: int, end: int) => {
 }
 
 let getStrFromIndex = (arr: array<string>, index) => {
-  arr->Belt.Array.get(index)->Option.getOr("")
+  arr->Array.get(index)->Option.getOr("")
 }
 
 let formatCVCNumber = (val, cardType) => {
@@ -145,8 +145,8 @@ let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
   let date = tempTimeDate[0]->Option.getOr("")
   let dateComponents = date->String.split("-")
 
-  let currentMonth = dateComponents->Belt.Array.get(1)->Option.getOr("")
-  let currentYear = dateComponents->Belt.Array.get(0)->Option.getOr("")
+  let currentMonth = dateComponents->Array.get(1)->Option.getOr("")
+  let currentYear = dateComponents->Array.get(0)->Option.getOr("")
 
   (currentMonth->toInt, currentYear->toInt)
 }
@@ -178,8 +178,8 @@ let formatCardNumber = (val, cardType) => {
 let splitExpiryDates = val => {
   let split = val->String.split("/")
   let value = split->Array.map(item => item->String.trim)
-  let month = value->Belt.Array.get(0)->Option.getOr("")
-  let year = value->Belt.Array.get(1)->Option.getOr("")
+  let month = value->Array.get(0)->Option.getOr("")
+  let year = value->Array.get(1)->Option.getOr("")
   (month, year)
 }
 let getExpiryDates = val => {
@@ -274,7 +274,7 @@ let getCardBrand = cardNumber => {
         }
       })
       ->Array.filter(item => item !== "")
-      ->Belt.Array.get(0)
+      ->Array.get(0)
       ->Option.getOr("")
     }
   } catch {
@@ -307,8 +307,8 @@ let calculateLuhn = value => {
       }
     })
 
-  let sumofCheckArr = Belt.Array.reduce(checkArr, 0, (acc, val) => acc + val->toInt)
-  let sumofUnCheckedArr = Belt.Array.reduce(unCheckArr, 0, (acc, val) => acc + val->toInt)
+  let sumofCheckArr = Array.reduce(checkArr, 0, (acc, val) => acc + val->toInt)
+  let sumofUnCheckedArr = Array.reduce(unCheckArr, 0, (acc, val) => acc + val->toInt)
   let totalSum = sumofCheckArr + sumofUnCheckedArr
   mod(totalSum, 10) == 0
 }
@@ -425,7 +425,7 @@ let genreateFontsLink = (fonts: array<CardThemeType.fonts>) => {
 }
 let maxCardLength = cardBrand => {
   let obj = getobjFromCardPattern(cardBrand)
-  Belt.Array.reduce(obj.length, 0, (acc, val) => acc > val ? acc : val)
+  Array.reduce(obj.length, 0, (acc, val) => acc > val ? acc : val)
 }
 
 let cardValid = (cardNumber, cardBrand) => {
@@ -513,7 +513,7 @@ let pincodeVisibility = cardNumber => {
   let brandPattern =
     CardPattern.cardPatterns
     ->Array.filter(obj => obj.issuer == brand)
-    ->Belt.Array.get(0)
+    ->Array.get(0)
     ->Option.getOr(CardPattern.defaultCardPattern)
   brandPattern.pincodeRequired
 }

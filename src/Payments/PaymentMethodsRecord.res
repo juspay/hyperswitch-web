@@ -525,7 +525,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
 
 let getPaymentMethodsFieldTypeFromDict = dict => {
   let keysArr = dict->Dict.keysToArray
-  let key = keysArr->Belt.Array.get(0)->Option.getOr("")
+  let key = keysArr->Array.get(0)->Option.getOr("")
   switch key {
   | "user_currency" => {
       let options = dict->Utils.getArrayValFromJsonDict("user_currency", "options")
@@ -533,7 +533,7 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
     }
   | "user_address_country" => {
       let options = dict->Utils.getArrayValFromJsonDict("user_address_country", "options")
-      switch options->Belt.Array.get(0)->Option.getOr("") {
+      switch options->Array.get(0)->Option.getOr("") {
       | "" => None
       | "ALL" => AddressCountry(Country.country->Array.map(item => item.countryName))
       | _ =>
@@ -988,7 +988,7 @@ let getPaymentMethodTypeFromList = (~list: list, ~paymentMethod, ~paymentMethodT
 let getCardNetwork = (~paymentMethodType, ~cardBrand) => {
   paymentMethodType.card_networks
   ->Array.filter(cardNetwork => cardNetwork.card_network === cardBrand)
-  ->Belt.Array.get(0)
+  ->Array.get(0)
   ->Option.getOr(defaultCardNetworks)
 }
 

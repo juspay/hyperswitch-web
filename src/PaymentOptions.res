@@ -8,7 +8,7 @@ module TabLoader = {
     open PaymentElementShimmer
     switch list {
     | SemiLoaded =>
-      Belt.Array.make(cardShimmerCount - 1, "")
+      Array.make(~length=cardShimmerCount - 1, "")
       ->Array.mapWithIndex((_, i) => {
         <div
           className={`Tab flex flex-col gap-3 animate-pulse cursor-default`}
@@ -83,8 +83,8 @@ let make = (
 
   React.useEffect1(() => {
     let intervalId = setInterval(() => {
-      if dropDownOptionsDetails->Belt.Array.length > 1 {
-        setMoreIconIndex(prev => mod(prev + 1, dropDownOptionsDetails->Belt.Array.length))
+      if dropDownOptionsDetails->Array.length > 1 {
+        setMoreIconIndex(prev => mod(prev + 1, dropDownOptionsDetails->Array.length))
 
         setToggleIconElement(_ => true)
         setTimeout(
@@ -128,7 +128,7 @@ let make = (
       <RenderIf condition={dropDownOptionsDetails->Array.length > 0}>
         <div className="flex relative h-auto justify-center">
           <div className="flex flex-col items-center absolute mt-3 pointer-events-none gap-y-1.5">
-            {switch dropDownOptionsDetails->Belt.Array.get(moreIconIndex) {
+            {switch dropDownOptionsDetails->Array.get(moreIconIndex) {
             | Some(paymentFieldsInfo) =>
               switch paymentFieldsInfo.miniIcon {
               | Some(ele) => displayIcon(ele)

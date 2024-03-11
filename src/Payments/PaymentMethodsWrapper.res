@@ -25,7 +25,7 @@ let make = (
     optionPaymentMethodDetails->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
   let paymentFlow =
     paymentMethodDetails.paymentFlow
-    ->Belt.Array.get(0)
+    ->Array.get(0)
     ->Option.flatMap(((flow, _connector)) => {
       Some(flow)
     })
@@ -70,13 +70,13 @@ let make = (
         let countryCode =
           Country.getCountry(paymentMethodName)
           ->Array.filter(item => item.countryName == country)
-          ->Belt.Array.get(0)
+          ->Array.get(0)
           ->Option.getOr(Country.defaultTimeZone)
 
         let bank =
           Bank.getBanks(paymentMethodName)
           ->Array.filter(item => item.displayName == selectedBank)
-          ->Belt.Array.get(0)
+          ->Array.get(0)
           ->Option.getOr(Bank.defaultBank)
         intent(
           ~bodyArr=PaymentBody.getPaymentBody(

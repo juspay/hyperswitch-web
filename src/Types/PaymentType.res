@@ -912,5 +912,5 @@ let getIsAllStoredCardsHaveName = (savedCards: array<customerMethods>) => {
     | _ => true
     }
   })
-  ->Belt.Array.length === savedCards->Belt.Array.length
+  ->Array.length === savedCards->Array.length
 }

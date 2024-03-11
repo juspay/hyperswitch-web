@@ -202,7 +202,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         )
         ->then(resp => {
           let statusCode = resp->Fetch.Response.status->string_of_int
-          if statusCode->Js.String2.charAt(0) !== "2" {
+          if statusCode->String.charAt(0) !== "2" {
             resp
             ->Fetch.Response.json
             ->then(data => {

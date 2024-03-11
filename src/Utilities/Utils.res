@@ -164,14 +164,14 @@ let getStrArray = (dict, key) => {
   dict
   ->getOptionalArrayFromDict(key)
   ->Option.getOr([])
-  ->Belt.Array.map(json => json->JSON.Decode.string->Option.getOr(""))
+  ->Array.map(json => json->JSON.Decode.string->Option.getOr(""))
 }
 let getOptionalStrArray: (Dict.t<JSON.t>, string) => option<array<string>> = (dict, key) => {
   switch dict->getOptionalArrayFromDict(key) {
   | Some(val) =>
     val->Array.length === 0
       ? None
-      : Some(val->Belt.Array.map(json => json->JSON.Decode.string->Option.getOr("")))
+      : Some(val->Array.map(json => json->JSON.Decode.string->Option.getOr("")))
   | None => None
   }
 }
@@ -570,7 +570,7 @@ let getOptionalArr = arr => {
 }
 
 let checkPriorityList = paymentMethodOrder => {
-  paymentMethodOrder->getOptionalArr->Belt.Array.get(0)->Option.getOr("") == "card" ||
+  paymentMethodOrder->getOptionalArr->Array.get(0)->Option.getOr("") == "card" ||
     paymentMethodOrder->Option.isNone
 }
 type sizeunit = Pixel | Rem | Em
@@ -710,7 +710,7 @@ let formatIBAN = iban => {
   | Some(matches) => matches
   | None => []
   }
-  `${countryCode}${codeLastTwo} ${chunks->Js.Array2.joinWith(" ")}`->String.trim
+  `${countryCode}${codeLastTwo} ${chunks->Array.joinWith(" ")}`->String.trim
 }
 
 let formatBSB = bsb => {
@@ -741,9 +741,9 @@ let rgbaTorgb = bgColor => {
     if colorArr->Array.length === 3 {
       cleanBgColor
     } else {
-      let red = colorArr->Belt.Array.get(0)->Option.getOr("0")
-      let green = colorArr->Belt.Array.get(1)->Option.getOr("0")
-      let blue = colorArr->Belt.Array.get(2)->Option.getOr("0")
+      let red = colorArr->Array.get(0)->Option.getOr("0")
+      let green = colorArr->Array.get(1)->Option.getOr("0")
+      let blue = colorArr->Array.get(2)->Option.getOr("0")
       `rgba(${red}, ${green}, ${blue})`
     }
   } else {

@@ -155,7 +155,7 @@ let make = (
   )
 
   React.useEffect0(() => {
-    let bank = bankNames->Belt.Array.get(0)->Option.getOr("")
+    let bank = bankNames->Array.get(0)->Option.getOr("")
     setSelectedBank(_ => bank)
     None
   })
@@ -254,7 +254,7 @@ let make = (
         requiredFieldType.field_type === item &&
           requiredFieldType.display_name === "card_holder_name"
       )
-      ->Belt.Array.length > 0
+      ->Array.length > 0
     ) {
       Some(localeString.cardHolderName)
     } else {

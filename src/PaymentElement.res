@@ -15,9 +15,13 @@ let make = (
   ~paymentType: CardThemeType.mode,
 ) => {
   let sessionsObj = Recoil.useRecoilValueFromAtom(sessions)
-  let {showCardFormByDefault, paymentMethodOrder, layout} = Recoil.useRecoilValueFromAtom(
-    optionAtom,
-  )
+  let {
+    showCardFormByDefault,
+    paymentMethodOrder,
+    layout,
+    customerPaymentMethods,
+    disableSaveCards,
+  } = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
@@ -35,6 +39,59 @@ let make = (
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(isShowOrPayUsing)
+
+  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
+  let (savedMethods, setSavedMethods) = React.useState(_ => [])
+  let (
+    loadSavedCards: PaymentType.savedCardsLoadState,
+    setLoadSavedCards: (PaymentType.savedCardsLoadState => PaymentType.savedCardsLoadState) => unit,
+  ) = React.useState(_ => PaymentType.LoadingSavedCards)
+
+  React.useEffect1(() => {
+    switch customerPaymentMethods {
+    | LoadingSavedCards => ()
+    | LoadedSavedCards(arr, isGuestCustomer) => {
+        let savedCards = arr->Array.filter((item: PaymentType.customerMethods) => {
+          item.paymentMethod == "card"
+        })
+        setSavedMethods(_ => savedCards)
+        setLoadSavedCards(_ =>
+          savedCards->Array.length == 0
+            ? NoResult(isGuestCustomer)
+            : LoadedSavedCards(savedCards, isGuestCustomer)
+        )
+        setShowFields(.prev => savedCards->Array.length == 0 || prev)
+      }
+    | NoResult(isGuestCustomer) => {
+        setLoadSavedCards(_ => NoResult(isGuestCustomer))
+        setShowFields(._ => true)
+      }
+    }
+
+    None
+  }, [customerPaymentMethods])
+
+  React.useEffect1(() => {
+    if disableSaveCards {
+      setShowFields(._ => true)
+      setLoadSavedCards(_ => LoadedSavedCards([], true))
+    }
+    None
+  }, [disableSaveCards])
+
+  React.useEffect1(() => {
+    let tokenobj =
+      savedMethods->Array.length > 0
+        ? Some(savedMethods->Array.get(0)->Option.getOr(defaultCustomerMethods))
+        : None
+
+    switch tokenobj {
+    | Some(obj) => setPaymentToken(._ => (obj.paymentToken, obj.customerId))
+    | None => ()
+    }
+    None
+  }, [savedMethods])
 
   let (walletList, paymentOptionsList, actualList) = React.useMemo4(() => {
     switch methodslist {
@@ -149,8 +206,8 @@ let make = (
           | Loaded(_) =>
             paymentOptions->Array.includes(selectedOption) && showCardFormByDefault
               ? selectedOption
-              : paymentOptions->Belt.Array.get(0)->Option.getOr("")
-          | _ => paymentOptions->Belt.Array.get(0)->Option.getOr("")
+              : paymentOptions->Array.get(0)->Option.getOr("")
+          | _ => paymentOptions->Array.get(0)->Option.getOr("")
           }
     )
     None
@@ -297,7 +354,14 @@ let make = (
     </ErrorBoundary>
   }
   <>
-    <RenderIf condition={paymentOptions->Array.length > 0 || walletOptions->Array.length > 0}>
+    <RenderIf condition={!showFields}>
+      <SavedMethods
+        paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType list
+      />
+    </RenderIf>
+    <RenderIf
+      condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
+        showFields}>
       <div className="flex flex-col place-items-center">
         <ErrorBoundary key="payment_request_buttons_all" level={ErrorBoundary.RequestButton}>
           <PaymentRequestButtonElement sessions walletOptions list />
@@ -321,8 +385,8 @@ let make = (
           <PayNowButton />
         </div>
       </RenderIf>
-      <PoweredBy />
     </RenderIf>
+    <PoweredBy />
     {switch methodslist {
     | LoadError(_) => React.null
     | _ =>

@@ -193,7 +193,7 @@ let getDisplayNameAndIcon = (
     ->Array.filter((item: PaymentType.alias) => {
       item.paymentMethodName === paymentMethodName
     })
-    ->Belt.Array.get(0)
+    ->Array.get(0)
   switch customNameObj {
   | Some(val) =>
     val.paymentMethodName === "classic" || val.paymentMethodName === "evoucher"
@@ -204,7 +204,7 @@ let getDisplayNameAndIcon = (
             let id = aliasName->String.split(" ")
             (
               aliasName,
-              Some(PaymentMethodsRecord.icon(id->Belt.Array.get(0)->Option.getOr(""), ~size=19)),
+              Some(PaymentMethodsRecord.icon(id->Array.get(0)->Option.getOr(""), ~size=19)),
             )
           }
         }

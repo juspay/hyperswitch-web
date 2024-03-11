@@ -316,7 +316,7 @@ let browserDetect = content => {
   if RegExp.test("Edg"->RegExp.fromString, content) {
     let re = %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
-    ->Belt.Array.get(1)
+    ->Array.get(1)
     ->Option.getOr(Nullable.null)
     ->Nullable.toOption {
     | Some(a) => a
@@ -326,7 +326,7 @@ let browserDetect = content => {
   } else if RegExp.test("Chrome"->RegExp.fromString, content) {
     let re = %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
-    ->Belt.Array.get(1)
+    ->Array.get(1)
     ->Option.getOr(Nullable.null)
     ->Nullable.toOption {
     | Some(a) => a
@@ -336,7 +336,7 @@ let browserDetect = content => {
   } else if RegExp.test("Safari"->RegExp.fromString, content) {
     let re = %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
-    ->Belt.Array.get(1)
+    ->Array.get(1)
     ->Option.getOr(Nullable.null)
     ->Nullable.toOption {
     | Some(a) => a
@@ -346,7 +346,7 @@ let browserDetect = content => {
   } else if RegExp.test("opera"->RegExp.fromString, content) {
     let re = %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
-    ->Belt.Array.get(1)
+    ->Array.get(1)
     ->Option.getOr(Nullable.null)
     ->Nullable.toOption {
     | Some(a) => a
@@ -360,7 +360,7 @@ let browserDetect = content => {
     if RegExp.test("Firefox"->RegExp.fromString, content) {
       let re = %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig")
       let version = switch findVersion(re, content)
-      ->Belt.Array.get(1)
+      ->Array.get(1)
       ->Option.getOr(Nullable.null)
       ->Nullable.toOption {
       | Some(a) => a
@@ -370,7 +370,7 @@ let browserDetect = content => {
     } else {
       let re = %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig")
       let version = switch findVersion(re, content)
-      ->Belt.Array.get(1)
+      ->Array.get(1)
       ->Option.getOr(Nullable.null)
       ->Nullable.toOption {
       | Some(a) => a
@@ -575,12 +575,10 @@ let make = (
       value,
       internalMetadata,
       category: logCategory,
-      paymentId: String.split(clientSecret.contents, "_secret_")
-      ->Belt.Array.get(0)
-      ->Option.getOr(""),
+      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Option.getOr("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Option.getOr("0"),
+      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
@@ -633,12 +631,10 @@ let make = (
       | StringValue(a) => a
       },
       category: logCategory,
-      paymentId: String.split(clientSecret.contents, "_secret_")
-      ->Belt.Array.get(0)
-      ->Option.getOr(""),
+      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Option.getOr("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Option.getOr("0"),
+      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
@@ -678,12 +674,10 @@ let make = (
       value,
       internalMetadata,
       category: logCategory,
-      paymentId: String.split(clientSecret.contents, "_secret_")
-      ->Belt.Array.get(0)
-      ->Option.getOr(""),
+      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Option.getOr("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Option.getOr("0"),
+      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
@@ -714,12 +708,10 @@ let make = (
       category: USER_EVENT,
       value: "log initiated",
       internalMetadata: "",
-      paymentId: String.split(clientSecret.contents, "_secret_")
-      ->Belt.Array.get(0)
-      ->Option.getOr(""),
+      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Option.getOr("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Option.getOr("0"),
+      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",

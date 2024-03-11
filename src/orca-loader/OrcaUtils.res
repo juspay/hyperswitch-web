@@ -191,7 +191,7 @@ let unflattenObject = obj => {
     ->Dict.toArray
     ->Array.forEach(entry => {
       let (key, value) = entry
-      setNested(newDict, key->Js.String2.split("."), value)
+      setNested(newDict, key->String.split("."), value)
     })
   | None => ()
   }
@@ -324,7 +324,7 @@ let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
 let getArrayOfTupleFromDict = dict => {
   dict
   ->Dict.keysToArray
-  ->Belt.Array.map(key => (key, Dict.get(dict, key)->Option.getOr(JSON.Encode.null)))
+  ->Array.map(key => (key, Dict.get(dict, key)->Option.getOr(JSON.Encode.null)))
 }
 
 let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {

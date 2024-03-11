@@ -30,7 +30,7 @@ let make = (
   }, [themeObj])
   React.useEffect0(() => {
     if value === "" {
-      setValue(_ => options->Belt.Array.get(0)->Option.getOr(""))
+      setValue(_ => options->Array.get(0)->Option.getOr(""))
     }
     None
   })

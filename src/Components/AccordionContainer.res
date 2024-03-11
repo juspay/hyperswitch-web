@@ -10,7 +10,7 @@ module Loader = {
     open PaymentElementShimmer
     switch list {
     | SemiLoaded =>
-      Belt.Array.make(cardShimmerCount - 1, "")
+      Array.make(~length=cardShimmerCount - 1, "")
       ->Array.mapWithIndex((_, i) => {
         let borderStyle = layoutClass.spacedAccordionItems
           ? themeObj.borderRadius

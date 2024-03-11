@@ -77,7 +77,7 @@ let getLocaleObject = string => {
   }
   LocaleString.localeStrings
   ->Array.filter(item => item.locale == val)
-  ->Belt.Array.get(0)
+  ->Array.get(0)
   ->Option.getOr(LocaleString.defaultLocale)
 }
 let defaultRecoilConfig: recoilConfig = {
