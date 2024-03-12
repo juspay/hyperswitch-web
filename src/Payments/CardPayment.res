@@ -128,6 +128,8 @@ let make = (
       } else {
         defaultCardBody
       }
+    } else if isGuestCustomer || list.payment_type === "normal" {
+      defaultCardBody
     } else {
       defaultCardBody->Js.Array2.concat(onSessionBody)
     }
