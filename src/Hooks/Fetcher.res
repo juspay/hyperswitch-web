@@ -9,7 +9,7 @@ let useFetcher = fileName => {
   let (optionalJson, setJson) = React.useState(() => None)
   React.useEffect1(() => {
     open Promise
-    Fetch.fetch(`${hostname}/json/${fileName}.json`)
+    Fetch.get(`${hostname}/json/${fileName}.json`)
     ->then(Fetch.Response.json)
     ->thenResolve(json => {
       setJson(_ => Some(json))

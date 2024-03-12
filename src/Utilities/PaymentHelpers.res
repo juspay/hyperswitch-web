@@ -29,7 +29,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
   )
   fetchApi(
     uri,
-    ~method_=Fetch.Get,
+    ~method=#GET,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     (),
   )
@@ -98,9 +98,9 @@ let rec intentCall = (
     string,
     ~bodyStr: string=?,
     ~headers: Js.Dict.t<string>=?,
-    ~method_: Fetch.requestMethod,
+    ~method: Fetch.method,
     unit,
-  ) => OrcaPaymentPage.Promise.t<Fetch.response>,
+  ) => OrcaPaymentPage.Promise.t<Fetch.Response.t>,
   ~uri,
   ~headers,
   ~bodyStr,
@@ -135,14 +135,14 @@ let rec intentCall = (
   )
   let handleOpenUrl = url => {
     if isPaymentSession {
-      Window.location.replace(. url)
+      Window.Location.replace(. url)
     } else {
       openUrl(url)
     }
   }
   fetchApi(
     uri,
-    ~method_=fetchMethod,
+    ~method=fetchMethod,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     ~bodyStr,
     (),
@@ -259,7 +259,7 @@ let rec intentCall = (
                 ~handleUserError,
                 ~paymentType,
                 ~iframeId,
-                ~fetchMethod=Get,
+                ~fetchMethod=#GET,
                 ~setIsManualRetryEnabled,
                 ~switchToCustomPod,
                 ~sdkHandleOneClickConfirmPayment,
@@ -538,7 +538,7 @@ let rec intentCall = (
           ~handleUserError,
           ~paymentType,
           ~iframeId,
-          ~fetchMethod=Get,
+          ~fetchMethod=#GET,
           ~setIsManualRetryEnabled,
           ~switchToCustomPod,
           ~sdkHandleOneClickConfirmPayment,
@@ -583,7 +583,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           ~handleUserError,
           ~paymentType,
           ~iframeId,
-          ~fetchMethod=Get,
+          ~fetchMethod=#GET,
           ~setIsManualRetryEnabled,
           ~switchToCustomPod,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
@@ -660,7 +660,6 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
         (),
       )
       let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
-      let fetchMethod = Fetch.Post
 
       let callIntent = body => {
         let maskedPayload =
@@ -725,7 +724,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
             ~handleUserError,
             ~paymentType,
             ~iframeId,
-            ~fetchMethod,
+            ~fetchMethod=#POST,
             ~setIsManualRetryEnabled,
             ~switchToCustomPod,
             ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
@@ -824,7 +823,7 @@ let useSessions = (
   )
   fetchApi(
     uri,
-    ~method_=Fetch.Post,
+    ~method=#POST,
     ~bodyStr=body->Js.Json.stringify,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     (),
@@ -899,7 +898,7 @@ let usePaymentMethodList = (
   )
   fetchApi(
     uri,
-    ~method_=Fetch.Get,
+    ~method=#GET,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     (),
   )
@@ -973,7 +972,7 @@ let useCustomerDetails = (
   )
   fetchApi(
     uri,
-    ~method_=Fetch.Get,
+    ~method=#GET,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     (),
   )

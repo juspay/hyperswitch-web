@@ -1,5 +1,6 @@
-external ffToDomType: Dom.eventTarget => Dom.node_like<'a> = "%identity"
-external ffToWebDom: Js.Nullable.t<Dom.element> => Js.Nullable.t<Webapi.Dom.Element.t> = "%identity"
+external ffToDomType: {..} => Dom.node_like<'a> = "%identity"
+@send external contains: (Dom.element, {..}) => bool = "contains"
+
 type ref =
   | ArrayOfRef(array<React.ref<Js.Nullable.t<Dom.element>>>)
   | RefArray(React.ref<array<Js.Nullable.t<Dom.element>>>)
@@ -27,14 +28,14 @@ let useOutsideClick = (
   let eventCallback = useEvent0(callback)
   React.useEffect1(() => {
     if isActive {
-      let handleClick = (e: Dom.event) => {
-        let targ = Webapi.Dom.Event.target(e)
+      let handleClick = (e: ReactEvent.Mouse.t) => {
+        let targ = e->ReactEvent.Mouse.target
 
         let isInsideClick = switch refs {
         | ArrayOfRef(refs) =>
           refs->Js.Array2.reduce((acc, ref: React.ref<Js.Nullable.t<Dom.element>>) => {
-            let isClickInsideRef = switch ffToWebDom(ref.current)->Js.Nullable.toOption {
-            | Some(element) => element->Webapi.Dom.Element.contains(~child=ffToDomType(targ))
+            let isClickInsideRef = switch ref.current->Js.Nullable.toOption {
+            | Some(element) => element->contains(targ)
             | None => false
             }
             acc || isClickInsideRef
@@ -43,8 +44,8 @@ let useOutsideClick = (
           refs.current
           ->Js.Array2.slice(~start=0, ~end_=-1)
           ->Js.Array2.reduce((acc, ref: Js.Nullable.t<Dom.element>) => {
-            let isClickInsideRef = switch ffToWebDom(ref)->Js.Nullable.toOption {
-            | Some(element) => element->Webapi.Dom.Element.contains(~child=ffToDomType(targ))
+            let isClickInsideRef = switch ref->Js.Nullable.toOption {
+            | Some(element) => element->contains(targ)
             | None => false
             }
             acc || isClickInsideRef
@@ -53,8 +54,8 @@ let useOutsideClick = (
 
         let isClickInsideOfContainer = switch containerRefs {
         | Some(ref) =>
-          switch ffToWebDom(ref.current)->Js.Nullable.toOption {
-          | Some(element) => element->Webapi.Dom.Element.contains(~child=ffToDomType(targ))
+          switch ref.current->Js.Nullable.toOption {
+          | Some(element) => element->contains(targ)
           | None => false
           }
         | None => true
@@ -66,18 +67,18 @@ let useOutsideClick = (
       }
 
       Js.Global.setTimeout(() => {
-        events->Js.Array2.forEach(
+        events->Array.forEach(
           event => {
-            Webapi.Dom.window->Webapi.Dom.Window.addEventListener(event, handleClick)
+            Window.addEventListener(event, handleClick)
           },
         )
       }, 50)->ignore
 
       Some(
         () => {
-          events->Js.Array2.forEach(event =>
-            Webapi.Dom.window->Webapi.Dom.Window.removeEventListener(event, handleClick)
-          )
+          events->Array.forEach(event => {
+            Window.removeEventListener(event, handleClick)
+          })
         },
       )
     } else {
