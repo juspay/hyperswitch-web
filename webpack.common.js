@@ -40,12 +40,12 @@ let backendEndPoint;
 if (envBackendUrl === undefined) {
   backendEndPoint =
     sdkEnv === "prod"
-      ? "https://api.hyperswitch.io"
+      ? "https://checkout.hyperswitch.io/api"
       : sdkEnv === "sandbox"
-      ? "https://sandbox.hyperswitch.io"
+      ? "https://beta.hyperswitch.io/api"
       : sdkEnv === "integ"
       ? "https://integ-api.hyperswitch.io"
-      : "https://sandbox.hyperswitch.io";
+      : "https://beta.hyperswitch.io/api";
 } else {
   backendEndPoint = envBackendUrl;
 }
@@ -54,12 +54,12 @@ let confirmEndPoint;
 if (envBackendUrl === undefined) {
   confirmEndPoint =
     sdkEnv === "prod"
-      ? "https://api.hyperswitch.io"
+      ? "https://checkout.hyperswitch.io/api"
       : sdkEnv === "sandbox"
-      ? "https://sandbox.hyperswitch.io"
+      ? "https://beta.hyperswitch.io/api"
       : sdkEnv === "integ"
       ? "https://integ-api.hyperswitch.io"
-      : "https://sandbox.hyperswitch.io";
+      : "https://beta.hyperswitch.io/api";
 } else {
   confirmEndPoint = envBackendUrl;
 }
@@ -151,18 +151,18 @@ module.exports = (publicPath = "auto") => {
       // new webpack.HTMLInjectPlugin({
       //   publicPath: JSON.stringify(repoVersion),
       // }),
-      sentryWebpackPlugin({
-        org: "sentry",
-        project: "hyperswitch-react-sdk",
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-        url: process.env.SENTRY_URL,
-        release: {
-          name: "0.2",
-          uploadLegacySourcemaps: {
-            paths: ["dist"],
-          },
-        },
-      }),
+      // sentryWebpackPlugin({
+      //   org: "sentry",
+      //   project: "hyperswitch-react-sdk",
+      //   authToken: process.env.SENTRY_AUTH_TOKEN,
+      //   url: process.env.SENTRY_URL,
+      //   release: {
+      //     name: "0.2",
+      //     uploadLegacySourcemaps: {
+      //       paths: ["dist"],
+      //     },
+      //   },
+      // }),
     ],
     module: {
       rules: [

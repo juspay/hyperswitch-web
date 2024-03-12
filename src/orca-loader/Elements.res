@@ -60,99 +60,135 @@ let make = (
       ->Belt.Option.flatMap(Js.Json.decodeBoolean)
       ->Belt.Option.getWithDefault(false)
 
-    let paymentMethodListPromise = PaymentHelpers.usePaymentMethodList(
-      ~clientSecret,
-      ~publishableKey,
-      ~endpoint,
-      ~switchToCustomPod,
-      ~logger,
-    )
+    let localSelectorString = "hyper-preMountLoader-iframe"
+    let mountPreMountLoaderIframe = () => {
+      if (
+        Window.querySelector(
+          `#orca-payment-element-iframeRef-${localSelectorString}`,
+        )->Js.Nullable.isNullable
+      ) {
+        let componentType = "preMountLoader"
+        let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
+          <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
+           <iframe
+           id ="orca-payment-element-iframeRef-${localSelectorString}"
+           name="orca-payment-element-iframeRef-${localSelectorString}"
+          src="${ApiEndpoint.sdkDomainUrl}/?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}"
+          allow="*"
+          name="orca-payment"
+        ></iframe>
+        </div>`
+        let iframeDiv = Window.createElement("div")
+        iframeDiv->Window.innerHTML(iframeDivHtml)
+        Window.body->Window.appendChild(iframeDiv)
+      }
 
-    let sessionsPromise = PaymentHelpers.useSessions(
-      ~clientSecret,
-      ~publishableKey,
-      ~endpoint,
-      ~switchToCustomPod,
-      ~optLogger=Some(logger),
-      (),
-    )
+      let elem = Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`)
+      elem
+    }
 
     let locale = localOptions->getJsonStringFromDict("locale", "")
     let loader = localOptions->getJsonStringFromDict("loader", "")
     let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
     let clientSecretReMatch = Js.Re.test_(`.+_secret_[A-Za-z0-9]+`->Js.Re.fromString, clientSecret)
+
+    let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
+
+    let unMountPreMountLoaderIframe = () => {
+      switch preMountLoaderIframeDiv->Js.Nullable.toOption {
+      | Some(iframe) => iframe->remove
+      | None => ()
+      }
+    }
+
+    let preMountLoaderMountedPromise = Js.Promise.make((~resolve, ~reject as _) => {
+      let preMountLoaderIframeCallback = (ev: Types.event) => {
+        let json = ev.data->eventToJson
+        let dict = json->Utils.getDictFromJson
+        if dict->Js.Dict.get("preMountLoaderIframeMountedCallback")->Belt.Option.isSome {
+          resolve(. true->Js.Json.boolean)
+        } else if dict->Js.Dict.get("preMountLoaderIframeUnMount")->Belt.Option.isSome {
+          unMountPreMountLoaderIframe()
+        }
+      }
+      addSmartEventListener(
+        "message",
+        preMountLoaderIframeCallback,
+        "onPreMountLoaderIframeCallback",
+      )
+    })
+
     let fetchPaymentsList = mountedIframeRef => {
-      open Promise
-      paymentMethodListPromise
-      ->then(json => {
-        let isApplePayPresent =
-          PaymentMethodsRecord.getPaymentMethodTypeFromList(
-            ~list=json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper,
-            ~paymentMethod="wallet",
-            ~paymentMethodType="apple_pay",
-          )->Belt.Option.isSome
+      let handlePaymentMethodsLoaded = (event: Types.event) => {
+        let json = event.data->eventToJson
+        let dict = json->getDictFromJson
+        let isPaymentMethodsData = dict->Utils.getString("data", "") === "payment_methods"
+        if isPaymentMethodsData {
+          let json = dict->Utils.getJsonFromDict("response", Js.Json.null)
+          let isApplePayPresent =
+            PaymentMethodsRecord.getPaymentMethodTypeFromList(
+              ~list=json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper,
+              ~paymentMethod="wallet",
+              ~paymentMethodType="apple_pay",
+            )->Belt.Option.isSome
 
-        let isGooglePayPresent =
-          PaymentMethodsRecord.getPaymentMethodTypeFromList(
-            ~list=json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper,
-            ~paymentMethod="wallet",
-            ~paymentMethodType="google_pay",
-          )->Belt.Option.isSome
+          let isGooglePayPresent =
+            PaymentMethodsRecord.getPaymentMethodTypeFromList(
+              ~list=json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper,
+              ~paymentMethod="wallet",
+              ~paymentMethodType="google_pay",
+            )->Belt.Option.isSome
 
-        if isApplePayPresent || isGooglePayPresent {
-          if (
-            Window.querySelectorAll(`script[src="https://tpgw.trustpay.eu/js/v1.js"]`)->Js.Array2.length === 0 &&
-              Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Js.Array2.length === 0
-          ) {
-            let trustPayScriptURL =
-              publishableKey->Js.String2.startsWith("pk_prd_")
-                ? "https://tpgw.trustpay.eu/js/v1.js"
-                : "https://test-tpgw.trustpay.eu/js/v1.js"
-            let trustPayScript = Window.createElement("script")
-            trustPayScript->Window.elementSrc(trustPayScriptURL)
-            trustPayScript->Window.elementOnerror(err => {
-              Utils.logInfo(Js.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
-            })
-            Window.body->Window.appendChild(trustPayScript)
-            logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT, ())
+          if isApplePayPresent || isGooglePayPresent {
+            if (
+              Window.querySelectorAll(`script[src="https://tpgw.trustpay.eu/js/v1.js"]`)->Js.Array2.length === 0 &&
+                Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Js.Array2.length === 0
+            ) {
+              let trustPayScriptURL =
+                publishableKey->Js.String2.startsWith("pk_prd_")
+                  ? "https://tpgw.trustpay.eu/js/v1.js"
+                  : "https://test-tpgw.trustpay.eu/js/v1.js"
+              let trustPayScript = Window.createElement("script")
+              trustPayScript->Window.elementSrc(trustPayScriptURL)
+              trustPayScript->Window.elementOnerror(err => {
+                Utils.logInfo(Js.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
+              })
+              Window.body->Window.appendChild(trustPayScript)
+              logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT, ())
+            }
+          }
+          let msg = [("paymentMethodList", json)]->Js.Dict.fromArray
+          mountedIframeRef->Window.iframePostMessage(msg)
+        }
+      }
+      let msg = [("sendPaymentMethodsResponse", true->Js.Json.boolean)]->Js.Dict.fromArray
+      addSmartEventListener("message", handlePaymentMethodsLoaded, "onPaymentMethodsLoaded")
+      preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+    }
+    let fetchCustomerPaymentMethods = (mountedIframeRef, disableSaveCards) => {
+      if !disableSaveCards {
+        let handleCustomerPaymentMethodsLoaded = (event: Types.event) => {
+          let json = event.data->eventToJson
+          let dict = json->getDictFromJson
+          let isCustomerPaymentMethodsData =
+            dict->Utils.getString("data", "") === "customer_payment_methods"
+          if isCustomerPaymentMethodsData {
+            let json = dict->Utils.getJsonFromDict("response", Js.Json.null)
+            let msg = [("customerPaymentMethods", json)]->Js.Dict.fromArray
+            mountedIframeRef->Window.iframePostMessage(msg)
           }
         }
-
-        // Js.Global.setTimeout(() => {
-        let msg = [("paymentMethodList", json)]->Js.Dict.fromArray
-        mountedIframeRef->Window.iframePostMessage(msg)
-        let maskedPayload = json->PaymentHelpers.maskPayload->JSON.stringify
-        logger.setLogInfo(~value=maskedPayload, ~eventName=PAYMENT_METHODS_RESPONSE, ())
-        // }, 5000)->ignore
-        json->resolve
-      })
-      ->ignore
-    }
-    let fetchCustomerDetails = mountedIframeRef => {
-      let customerDetailsPromise = PaymentHelpers.useCustomerDetails(
-        ~clientSecret,
-        ~publishableKey,
-        ~endpoint,
-        ~switchToCustomPod,
-        ~optLogger=Some(logger),
-      )
-      open Promise
-      customerDetailsPromise
-      ->then(json => {
-        // Js.Global.setTimeout(() => {
-        let msg = [("customerPaymentMethods", json)]->Js.Dict.fromArray
-        mountedIframeRef->Window.iframePostMessage(msg)
-        // }, 5000)->ignore
-        json->resolve
-      })
-      ->catch(_err => {
-        let dict =
-          [("customer_payment_methods", []->Js.Json.array)]->Js.Dict.fromArray->Js.Json.object_
-        let msg = [("customerPaymentMethods", dict)]->Js.Dict.fromArray
-        mountedIframeRef->Window.iframePostMessage(msg)
-        resolve(msg->Js.Json.object_)
-      })
-      ->ignore
+        addSmartEventListener(
+          "message",
+          handleCustomerPaymentMethodsLoaded,
+          "onCustomerPaymentMethodsLoaded",
+        )
+      }
+      let msg =
+        [
+          ("sendCustomerPaymentMethodsResponse", !disableSaveCards->Js.Json.boolean),
+        ]->Js.Dict.fromArray
+      preMountLoaderIframeDiv->Window.iframePostMessage(msg)
     }
 
     !clientSecretReMatch
@@ -359,363 +395,392 @@ let make = (
 
         addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
+        Window.removeEventListener("message", handleApplePayMessages.contents)
 
-        sessionsPromise
-        ->then(json => {
-          let sessionsArr =
-            json
-            ->Js.Json.decodeObject
-            ->Belt.Option.getWithDefault(Js.Dict.empty())
-            ->SessionsType.getSessionsTokenJson("session_token")
+        let fetchSessionTokens = mountedIframeRef => {
+          let handleSessionTokensLoaded = (event: Types.event) => {
+            let json = event.data->eventToJson
+            let dict = json->getDictFromJson
+            let sessionTokensData = dict->Utils.getString("data", "") === "session_tokens"
+            if sessionTokensData {
+              let json = dict->Utils.getJsonFromDict("response", Js.Json.null)
 
-          let applePayPresent = sessionsArr->Js.Array2.find(item => {
-            let x =
-              item
-              ->Js.Json.decodeObject
-              ->Belt.Option.flatMap(
-                x => {
-                  x->Js.Dict.get("wallet_name")
-                },
-              )
-              ->Belt.Option.flatMap(Js.Json.decodeString)
-              ->Belt.Option.getWithDefault("")
-            x === "apple_pay" || x === "applepay"
-          })
-          if !(applePayPresent->Belt.Option.isSome) {
-            let msg = [("applePaySessionObjNotPresent", true->Js.Json.boolean)]->Js.Dict.fromArray
-            mountedIframeRef->Window.iframePostMessage(msg)
-          }
-          let googlePayPresent = sessionsArr->Js.Array2.find(item => {
-            let x =
-              item
-              ->Js.Json.decodeObject
-              ->Belt.Option.flatMap(
-                x => {
-                  x->Js.Dict.get("wallet_name")
-                },
-              )
-              ->Belt.Option.flatMap(Js.Json.decodeString)
-              ->Belt.Option.getWithDefault("")
-            x === "google_pay" || x === "googlepay"
-          })
+              {
+                let sessionsArr =
+                  json
+                  ->Js.Json.decodeObject
+                  ->Belt.Option.getWithDefault(Js.Dict.empty())
+                  ->SessionsType.getSessionsTokenJson("session_token")
 
-          (json, applePayPresent, googlePayPresent)->resolve
-        })
-        ->then(res => {
-          let (json, applePayPresent, googlePayPresent) = res
-          if componentType === "payment" && applePayPresent->Belt.Option.isSome {
-            //do operations here
-            let processPayment = (token: Js.Json.t) => {
-              //let body = PaymentBody.applePayBody(~token)
-              let msg = [("applePayProcessPayment", token)]->Js.Dict.fromArray
-              mountedIframeRef->Window.iframePostMessage(msg)
-            }
+                let applePayPresent = sessionsArr->Js.Array2.find(item => {
+                  let x =
+                    item
+                    ->Js.Json.decodeObject
+                    ->Belt.Option.flatMap(x => {
+                      x->Js.Dict.get("wallet_name")
+                    })
+                    ->Belt.Option.flatMap(Js.Json.decodeString)
+                    ->Belt.Option.getWithDefault("")
+                  x === "apple_pay" || x === "applepay"
+                })
+                if !(applePayPresent->Belt.Option.isSome) {
+                  let msg =
+                    [("applePaySessionObjNotPresent", true->Js.Json.boolean)]->Js.Dict.fromArray
+                  mountedIframeRef->Window.iframePostMessage(msg)
+                }
+                let googlePayPresent = sessionsArr->Js.Array2.find(item => {
+                  let x =
+                    item
+                    ->Js.Json.decodeObject
+                    ->Belt.Option.flatMap(x => {
+                      x->Js.Dict.get("wallet_name")
+                    })
+                    ->Belt.Option.flatMap(Js.Json.decodeString)
+                    ->Belt.Option.getWithDefault("")
+                  x === "google_pay" || x === "googlepay"
+                })
 
-            handleApplePayMessages :=
-              (
-                (event: Types.event) => {
-                  let json = event.data->eventToJson
-                  let dict = json->getDictFromJson
-                  switch dict->Js.Dict.get("applePayButtonClicked") {
-                  | Some(val) =>
-                    if val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) {
-                      let isDelayedSessionToken =
-                        applePayPresent
-                        ->Belt.Option.flatMap(Js.Json.decodeObject)
-                        ->Belt.Option.getWithDefault(Js.Dict.empty())
-                        ->Js.Dict.get("delayed_session_token")
-                        ->Belt.Option.getWithDefault(Js.Json.null)
-                        ->Js.Json.decodeBoolean
-                        ->Belt.Option.getWithDefault(false)
+                (json, applePayPresent, googlePayPresent)->resolve
+              }
+              ->then(res => {
+                let (json, applePayPresent, googlePayPresent) = res
+                if componentType === "payment" && applePayPresent->Belt.Option.isSome {
+                  //do operations here
+                  let processPayment = (token: Js.Json.t) => {
+                    //let body = PaymentBody.applePayBody(~token)
+                    let msg = [("applePayProcessPayment", token)]->Js.Dict.fromArray
+                    mountedIframeRef->Window.iframePostMessage(msg)
+                  }
 
-                      if isDelayedSessionToken {
-                        logger.setLogInfo(
-                          ~value="Delayed Session Token Flow",
-                          ~eventName=APPLE_PAY_FLOW,
-                          ~paymentMethod="APPLE_PAY",
-                          (),
-                        )
+                  handleApplePayMessages :=
+                    (
+                      (event: Types.event) => {
+                        let json = event.data->eventToJson
+                        let dict = json->getDictFromJson
+                        switch dict->Js.Dict.get("applePayButtonClicked") {
+                        | Some(val) =>
+                          if val->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false) {
+                            let isDelayedSessionToken =
+                              applePayPresent
+                              ->Belt.Option.flatMap(Js.Json.decodeObject)
+                              ->Belt.Option.getWithDefault(Js.Dict.empty())
+                              ->Js.Dict.get("delayed_session_token")
+                              ->Belt.Option.getWithDefault(Js.Json.null)
+                              ->Js.Json.decodeBoolean
+                              ->Belt.Option.getWithDefault(false)
 
-                        let applePayPresent =
-                          dict
-                          ->Js.Dict.get("applePayPresent")
-                          ->Belt.Option.flatMap(Js.Json.decodeObject)
-                          ->Belt.Option.getWithDefault(Js.Dict.empty())
-
-                        let connector =
-                          applePayPresent
-                          ->Js.Dict.get("connector")
-                          ->Belt.Option.getWithDefault(Js.Json.null)
-                          ->Js.Json.decodeString
-                          ->Belt.Option.getWithDefault("")
-
-                        switch connector {
-                        | "trustpay" =>
-                          logger.setLogInfo(
-                            ~value="TrustPay Connector Flow",
-                            ~eventName=APPLE_PAY_FLOW,
-                            ~paymentMethod="APPLE_PAY",
-                            (),
-                          )
-                          let secrets =
-                            applePayPresent
-                            ->Js.Dict.get("session_token_data")
-                            ->Belt.Option.getWithDefault(Js.Json.null)
-                            ->Js.Json.decodeObject
-                            ->Belt.Option.getWithDefault(Js.Dict.empty())
-                            ->Js.Dict.get("secrets")
-                            ->Belt.Option.getWithDefault(Js.Json.null)
-
-                          let paymentRequest =
-                            applePayPresent
-                            ->Js.Dict.get("payment_request_data")
-                            ->Belt.Option.flatMap(Js.Json.decodeObject)
-                            ->Belt.Option.getWithDefault(Js.Dict.empty())
-                            ->ApplePayTypes.jsonToPaymentRequestDataType
-
-                          let payment =
-                            secrets
-                            ->Js.Json.decodeObject
-                            ->Belt.Option.getWithDefault(Js.Dict.empty())
-                            ->Js.Dict.get("payment")
-                            ->Belt.Option.getWithDefault(Js.Json.null)
-                            ->Js.Json.decodeString
-                            ->Belt.Option.getWithDefault("")
-
-                          try {
-                            let trustpay = trustPayApi(secrets)
-                            trustpay.finishApplePaymentV2(. payment, paymentRequest)
-                            ->then(res => {
+                            if isDelayedSessionToken {
                               logger.setLogInfo(
-                                ~value="TrustPay ApplePay Success Response",
-                                ~internalMetadata=res->Js.Json.stringify,
+                                ~value="Delayed Session Token Flow",
                                 ~eventName=APPLE_PAY_FLOW,
                                 ~paymentMethod="APPLE_PAY",
                                 (),
                               )
-                              let msg =
-                                [("applePaySyncPayment", true->Js.Json.boolean)]->Js.Dict.fromArray
-                              mountedIframeRef->Window.iframePostMessage(msg)
-                              logger.setLogInfo(
-                                ~value="",
-                                ~eventName=PAYMENT_DATA_FILLED,
-                                ~paymentMethod="APPLE_PAY",
-                                (),
-                              )
-                              resolve()
-                            })
-                            ->catch(err => {
-                              let exceptionMessage = err->Utils.formatException->Js.Json.stringify
-                              logger.setLogInfo(
-                                ~eventName=APPLE_PAY_FLOW,
-                                ~paymentMethod="APPLE_PAY",
-                                ~value=exceptionMessage,
-                                (),
-                              )
-                              let msg =
-                                [("applePaySyncPayment", true->Js.Json.boolean)]->Js.Dict.fromArray
-                              mountedIframeRef->Window.iframePostMessage(msg)
-                              resolve()
-                            })
-                            ->ignore
-                          } catch {
-                          | exn => {
-                              logger.setLogInfo(
-                                ~value=exn->Utils.formatException->Js.Json.stringify,
-                                ~eventName=APPLE_PAY_FLOW,
-                                ~paymentMethod="APPLE_PAY",
-                                (),
-                              )
-                              let msg =
-                                [("applePaySyncPayment", true->Js.Json.boolean)]->Js.Dict.fromArray
-                              mountedIframeRef->Window.iframePostMessage(msg)
+
+                              let applePayPresent =
+                                dict
+                                ->Js.Dict.get("applePayPresent")
+                                ->Belt.Option.flatMap(Js.Json.decodeObject)
+                                ->Belt.Option.getWithDefault(Js.Dict.empty())
+
+                              let connector =
+                                applePayPresent
+                                ->Js.Dict.get("connector")
+                                ->Belt.Option.getWithDefault(Js.Json.null)
+                                ->Js.Json.decodeString
+                                ->Belt.Option.getWithDefault("")
+
+                              switch connector {
+                              | "trustpay" =>
+                                logger.setLogInfo(
+                                  ~value="TrustPay Connector Flow",
+                                  ~eventName=APPLE_PAY_FLOW,
+                                  ~paymentMethod="APPLE_PAY",
+                                  (),
+                                )
+                                let secrets =
+                                  applePayPresent
+                                  ->Js.Dict.get("session_token_data")
+                                  ->Belt.Option.getWithDefault(Js.Json.null)
+                                  ->Js.Json.decodeObject
+                                  ->Belt.Option.getWithDefault(Js.Dict.empty())
+                                  ->Js.Dict.get("secrets")
+                                  ->Belt.Option.getWithDefault(Js.Json.null)
+
+                                let paymentRequest =
+                                  applePayPresent
+                                  ->Js.Dict.get("payment_request_data")
+                                  ->Belt.Option.flatMap(Js.Json.decodeObject)
+                                  ->Belt.Option.getWithDefault(Js.Dict.empty())
+                                  ->ApplePayTypes.jsonToPaymentRequestDataType
+
+                                let payment =
+                                  secrets
+                                  ->Js.Json.decodeObject
+                                  ->Belt.Option.getWithDefault(Js.Dict.empty())
+                                  ->Js.Dict.get("payment")
+                                  ->Belt.Option.getWithDefault(Js.Json.null)
+                                  ->Js.Json.decodeString
+                                  ->Belt.Option.getWithDefault("")
+
+                                try {
+                                  let trustpay = trustPayApi(secrets)
+                                  trustpay.finishApplePaymentV2(. payment, paymentRequest)
+                                  ->then(res => {
+                                    logger.setLogInfo(
+                                      ~value="TrustPay ApplePay Success Response",
+                                      ~internalMetadata=res->Js.Json.stringify,
+                                      ~eventName=APPLE_PAY_FLOW,
+                                      ~paymentMethod="APPLE_PAY",
+                                      (),
+                                    )
+                                    let msg =
+                                      [
+                                        ("applePaySyncPayment", true->Js.Json.boolean),
+                                      ]->Js.Dict.fromArray
+                                    mountedIframeRef->Window.iframePostMessage(msg)
+                                    logger.setLogInfo(
+                                      ~value="",
+                                      ~eventName=PAYMENT_DATA_FILLED,
+                                      ~paymentMethod="APPLE_PAY",
+                                      (),
+                                    )
+                                    resolve()
+                                  })
+                                  ->catch(err => {
+                                    let exceptionMessage =
+                                      err->Utils.formatException->Js.Json.stringify
+                                    logger.setLogInfo(
+                                      ~eventName=APPLE_PAY_FLOW,
+                                      ~paymentMethod="APPLE_PAY",
+                                      ~value=exceptionMessage,
+                                      (),
+                                    )
+                                    let msg =
+                                      [
+                                        ("applePaySyncPayment", true->Js.Json.boolean),
+                                      ]->Js.Dict.fromArray
+                                    mountedIframeRef->Window.iframePostMessage(msg)
+                                    resolve()
+                                  })
+                                  ->ignore
+                                } catch {
+                                | exn => {
+                                    logger.setLogInfo(
+                                      ~value=exn->Utils.formatException->Js.Json.stringify,
+                                      ~eventName=APPLE_PAY_FLOW,
+                                      ~paymentMethod="APPLE_PAY",
+                                      (),
+                                    )
+                                    let msg =
+                                      [
+                                        ("applePaySyncPayment", true->Js.Json.boolean),
+                                      ]->Js.Dict.fromArray
+                                    mountedIframeRef->Window.iframePostMessage(msg)
+                                  }
+                                }
+                              | _ => ()
+                              }
+                            } else {
+                              let paymentRequest =
+                                applePayPresent
+                                ->Belt.Option.flatMap(Js.Json.decodeObject)
+                                ->Belt.Option.getWithDefault(Js.Dict.empty())
+                                ->Js.Dict.get("payment_request_data")
+                                ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+                                ->Utils.transformKeys(Utils.CamelCase)
+
+                              let ssn = applePaySession(3, paymentRequest)
+                              switch applePaySessionRef.contents->Js.Nullable.toOption {
+                              | Some(session) =>
+                                try {
+                                  session.abort(.)
+                                } catch {
+                                | error => Js.log2("Abort fail", error)
+                                }
+                              | None => ()
+                              }
+
+                              ssn.begin(.)
+                              applePaySessionRef := ssn->Js.Nullable.return
+
+                              ssn.onvalidatemerchant = _event => {
+                                let merchantSession =
+                                  applePayPresent
+                                  ->Belt.Option.flatMap(Js.Json.decodeObject)
+                                  ->Belt.Option.getWithDefault(Js.Dict.empty())
+                                  ->Js.Dict.get("session_token_data")
+                                  ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+                                  ->Utils.transformKeys(Utils.CamelCase)
+                                ssn.completeMerchantValidation(. merchantSession)
+                              }
+
+                              ssn.onpaymentauthorized = event => {
+                                ssn.completePayment(. {"status": ssn.\"STATUS_SUCCESS"}->objToJson)
+                                applePaySessionRef := Js.Nullable.null
+                                processPayment(event.payment.token)
+                              }
+                              ssn.oncancel = _ev => {
+                                let msg =
+                                  [("showApplePayButton", true->Js.Json.boolean)]->Js.Dict.fromArray
+                                mountedIframeRef->Window.iframePostMessage(msg)
+                                applePaySessionRef := Js.Nullable.null
+                                Utils.logInfo(Js.log("Apple Pay payment cancelled"))
+                              }
                             }
-                          }
-                        | _ => ()
-                        }
-                      } else {
-                        let paymentRequest =
-                          applePayPresent
-                          ->Belt.Option.flatMap(Js.Json.decodeObject)
-                          ->Belt.Option.getWithDefault(Js.Dict.empty())
-                          ->Js.Dict.get("payment_request_data")
-                          ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-                          ->Utils.transformKeys(Utils.CamelCase)
-
-                        let ssn = applePaySession(3, paymentRequest)
-                        switch applePaySessionRef.contents->Js.Nullable.toOption {
-                        | Some(session) =>
-                          try {
-                            session.abort(.)
-                          } catch {
-                          | error => Js.log2("Abort fail", error)
+                          } else {
+                            ()
                           }
                         | None => ()
                         }
-
-                        ssn.begin(.)
-                        applePaySessionRef := ssn->Js.Nullable.return
-
-                        ssn.onvalidatemerchant = _event => {
-                          let merchantSession =
-                            applePayPresent
-                            ->Belt.Option.flatMap(Js.Json.decodeObject)
-                            ->Belt.Option.getWithDefault(Js.Dict.empty())
-                            ->Js.Dict.get("session_token_data")
-                            ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-                            ->Utils.transformKeys(Utils.CamelCase)
-                          ssn.completeMerchantValidation(. merchantSession)
-                        }
-
-                        ssn.onpaymentauthorized = event => {
-                          ssn.completePayment(. {"status": ssn.\"STATUS_SUCCESS"}->objToJson)
-                          applePaySessionRef := Js.Nullable.null
-                          processPayment(event.payment.token)
-                        }
-                        ssn.oncancel = _ev => {
-                          let msg =
-                            [("showApplePayButton", true->Js.Json.boolean)]->Js.Dict.fromArray
-                          mountedIframeRef->Window.iframePostMessage(msg)
-                          applePaySessionRef := Js.Nullable.null
-                          Utils.logInfo(Js.log("Apple Pay payment cancelled"))
-                        }
                       }
-                    } else {
-                      ()
+                    )
+
+                  addSmartEventListener(
+                    "message",
+                    handleApplePayMessages.contents,
+                    "onApplePayMessages",
+                  )
+                }
+                if componentType === "payment" && googlePayPresent->Belt.Option.isSome {
+                  let dict = json->getDictFromJson
+                  let sessionObj = SessionsType.itemToObjMapper(dict, Others)
+                  let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
+
+                  let tokenObj = switch gPayToken {
+                  | OtherTokenOptional(optToken) => optToken
+                  | _ => Some(SessionsType.defaultToken)
+                  }
+
+                  let gpayobj = switch tokenObj {
+                  | Some(val) => val
+                  | _ => SessionsType.defaultToken
+                  }
+
+                  let baseRequest = {
+                    "apiVersion": 2,
+                    "apiVersionMinor": 0,
+                  }
+                  let paymentDataRequest = GooglePayType.assign2(
+                    Js.Dict.empty()->Js.Json.object_,
+                    baseRequest->toJson,
+                  )
+
+                  let payRequest = GooglePayType.assign(
+                    Js.Dict.empty()->Js.Json.object_,
+                    baseRequest->toJson,
+                    {
+                      "allowedPaymentMethods": gpayobj.allowed_payment_methods->arrayJsonToCamelCase,
+                    }->toJson,
+                  )
+                  paymentDataRequest.allowedPaymentMethods =
+                    gpayobj.allowed_payment_methods->arrayJsonToCamelCase
+                  paymentDataRequest.transactionInfo =
+                    gpayobj.transaction_info->transformKeys(CamelCase)
+                  paymentDataRequest.merchantInfo = gpayobj.merchant_info->transformKeys(CamelCase)
+                  try {
+                    let gPayClient = GooglePayType.google(
+                      {
+                        "environment": publishableKey->Js.String2.startsWith("pk_prd_")
+                          ? "PRODUCTION"
+                          : "TEST",
+                      }->toJson,
+                    )
+
+                    gPayClient.isReadyToPay(. payRequest)
+                    ->then(res => {
+                      let dict = res->getDictFromJson
+                      let isReadyToPay = getBool(dict, "result", false)
+                      let msg = [("isReadyToPay", isReadyToPay->Js.Json.boolean)]->Js.Dict.fromArray
+                      mountedIframeRef->Window.iframePostMessage(msg)
+                      resolve()
+                    })
+                    ->catch(err => {
+                      logger.setLogInfo(
+                        ~value=err->toJson->Js.Json.stringify,
+                        ~eventName=GOOGLE_PAY_FLOW,
+                        ~paymentMethod="GOOGLE_PAY",
+                        ~logType=DEBUG,
+                        (),
+                      )
+                      resolve()
+                    })
+                    ->ignore
+
+                    let handleGooglePayMessages = (event: Types.event) => {
+                      let evJson = event.data->eventToJson
+                      let gpayClicked =
+                        evJson
+                        ->OrcaUtils.getOptionalJsonFromJson("GpayClicked")
+                        ->OrcaUtils.getBoolfromjson(false)
+
+                      if gpayClicked {
+                        Js.Global.setTimeout(() => {
+                          gPayClient.loadPaymentData(. paymentDataRequest->toJson)
+                          ->then(
+                            json => {
+                              logger.setLogInfo(
+                                ~value=json->toJson->Js.Json.stringify,
+                                ~eventName=GOOGLE_PAY_FLOW,
+                                ~paymentMethod="GOOGLE_PAY",
+                                ~logType=DEBUG,
+                                (),
+                              )
+                              let msg = [("gpayResponse", json->toJson)]->Js.Dict.fromArray
+                              mountedIframeRef->Window.iframePostMessage(msg)
+                              resolve()
+                            },
+                          )
+                          ->catch(
+                            err => {
+                              logger.setLogInfo(
+                                ~value=err->toJson->Js.Json.stringify,
+                                ~eventName=GOOGLE_PAY_FLOW,
+                                ~paymentMethod="GOOGLE_PAY",
+                                ~logType=DEBUG,
+                                (),
+                              )
+
+                              let msg = [("gpayError", err->toJson)]->Js.Dict.fromArray
+                              mountedIframeRef->Window.iframePostMessage(msg)
+                              resolve()
+                            },
+                          )
+                          ->ignore
+                        }, 0)->ignore
+                      }
                     }
-                  | None => ()
+                    addSmartEventListener("message", handleGooglePayMessages, "onGooglePayMessages")
+                  } catch {
+                  | _ => Js.log("Error loading Gpay")
                   }
                 }
-              )
 
-            addSmartEventListener("message", handleApplePayMessages.contents, "onApplePayMessages")
-          }
-          if componentType === "payment" && googlePayPresent->Belt.Option.isSome {
-            let dict = json->getDictFromJson
-            let sessionObj = SessionsType.itemToObjMapper(dict, Others)
-            let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
-
-            let tokenObj = switch gPayToken {
-            | OtherTokenOptional(optToken) => optToken
-            | _ => Some(SessionsType.defaultToken)
-            }
-
-            let gpayobj = switch tokenObj {
-            | Some(val) => val
-            | _ => SessionsType.defaultToken
-            }
-
-            let baseRequest = {
-              "apiVersion": 2,
-              "apiVersionMinor": 0,
-            }
-            let paymentDataRequest = GooglePayType.assign2(
-              Js.Dict.empty()->Js.Json.object_,
-              baseRequest->toJson,
-            )
-
-            let payRequest = GooglePayType.assign(
-              Js.Dict.empty()->Js.Json.object_,
-              baseRequest->toJson,
-              {
-                "allowedPaymentMethods": gpayobj.allowed_payment_methods->arrayJsonToCamelCase,
-              }->toJson,
-            )
-            paymentDataRequest.allowedPaymentMethods =
-              gpayobj.allowed_payment_methods->arrayJsonToCamelCase
-            paymentDataRequest.transactionInfo = gpayobj.transaction_info->transformKeys(CamelCase)
-            paymentDataRequest.merchantInfo = gpayobj.merchant_info->transformKeys(CamelCase)
-            try {
-              let gPayClient = GooglePayType.google(
-                {
-                  "environment": publishableKey->Js.String2.startsWith("pk_prd_")
-                    ? "PRODUCTION"
-                    : "TEST",
-                }->toJson,
-              )
-
-              gPayClient.isReadyToPay(. payRequest)
-              ->then(res => {
-                let dict = res->getDictFromJson
-                let isReadyToPay = getBool(dict, "result", false)
-                let msg = [("isReadyToPay", isReadyToPay->Js.Json.boolean)]->Js.Dict.fromArray
-                mountedIframeRef->Window.iframePostMessage(msg)
-                resolve()
+                json->resolve
               })
-              ->catch(err => {
-                logger.setLogInfo(
-                  ~value=err->toJson->Js.Json.stringify,
-                  ~eventName=GOOGLE_PAY_FLOW,
-                  ~paymentMethod="GOOGLE_PAY",
-                  ~logType=DEBUG,
-                  (),
-                )
-                resolve()
+              ->then(json => {
+                let msg = [("sessions", json)]->Js.Dict.fromArray
+                mountedIframeRef->Window.iframePostMessage(msg)
+                json->resolve
               })
               ->ignore
-
-              let handleGooglePayMessages = (event: Types.event) => {
-                let evJson = event.data->eventToJson
-                let gpayClicked =
-                  evJson
-                  ->OrcaUtils.getOptionalJsonFromJson("GpayClicked")
-                  ->OrcaUtils.getBoolfromjson(false)
-
-                if gpayClicked {
-                  Js.Global.setTimeout(() => {
-                    gPayClient.loadPaymentData(. paymentDataRequest->toJson)
-                    ->then(
-                      json => {
-                        logger.setLogInfo(
-                          ~value=json->toJson->Js.Json.stringify,
-                          ~eventName=GOOGLE_PAY_FLOW,
-                          ~paymentMethod="GOOGLE_PAY",
-                          ~logType=DEBUG,
-                          (),
-                        )
-                        let msg = [("gpayResponse", json->toJson)]->Js.Dict.fromArray
-                        mountedIframeRef->Window.iframePostMessage(msg)
-                        resolve()
-                      },
-                    )
-                    ->catch(
-                      err => {
-                        logger.setLogInfo(
-                          ~value=err->toJson->Js.Json.stringify,
-                          ~eventName=GOOGLE_PAY_FLOW,
-                          ~paymentMethod="GOOGLE_PAY",
-                          ~logType=DEBUG,
-                          (),
-                        )
-
-                        let msg = [("gpayError", err->toJson)]->Js.Dict.fromArray
-                        mountedIframeRef->Window.iframePostMessage(msg)
-                        resolve()
-                      },
-                    )
-                    ->ignore
-                  }, 0)->ignore
-                }
-              }
-              addSmartEventListener("message", handleGooglePayMessages, "onGooglePayMessages")
-            } catch {
-            | _ => Js.log("Error loading Gpay")
             }
           }
-
-          json->resolve
-        })
-        ->then(json => {
-          let msg = [("sessions", json)]->Js.Dict.fromArray
-          mountedIframeRef->Window.iframePostMessage(msg)
-          json->resolve
+          let msg = [("sendSessionTokensResponse", true->Js.Json.boolean)]->Js.Dict.fromArray
+          addSmartEventListener("message", handleSessionTokensLoaded, "onSessionTokensLoaded")
+          preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+        }
+        preMountLoaderMountedPromise
+        ->then(_ => {
+          fetchPaymentsList(mountedIframeRef)
+          if displaySavedPaymentMethods {
+            fetchCustomerPaymentMethods(mountedIframeRef, !displaySavedPaymentMethods)
+          }
+          fetchSessionTokens(mountedIframeRef)
+          mountedIframeRef->Window.iframePostMessage(message)
+          resolve()
         })
         ->ignore
-        fetchPaymentsList(mountedIframeRef)
-        if displaySavedPaymentMethods {
-          fetchCustomerDetails(mountedIframeRef)
-        }
-        mountedIframeRef->Window.iframePostMessage(message)
       }
 
       let paymentElement = LoaderPaymentElement.make(
