@@ -49,39 +49,48 @@ let make = (
     setLoadSavedCards: (PaymentType.savedCardsLoadState => PaymentType.savedCardsLoadState) => unit,
   ) = React.useState(_ => PaymentType.LoadingSavedCards)
 
-  React.useEffect1(() => {
-    switch customerPaymentMethods {
-    | LoadingSavedCards => ()
-    | LoadedSavedCards(savedCards, isGuestCustomer) => {
-        setSavedMethods(_ => savedCards)
-        setLoadSavedCards(_ =>
-          savedCards->Js.Array2.length == 0
-            ? NoResult(isGuestCustomer)
-            : LoadedSavedCards(savedCards, isGuestCustomer)
-        )
-        setShowFields(.prev => savedCards->Js.Array2.length == 0 || prev)
+  React.useEffect2(() => {
+    switch (displaySavedPaymentMethodsCheckbox, customerPaymentMethods) {
+    | (false, _) => {
+        setShowFields(._ => true)
+        setLoadSavedCards(_ => LoadedSavedCards([], true))
       }
-    | NoResult(isGuestCustomer) => {
+    | (_, LoadingSavedCards) => ()
+    | (_, LoadedSavedCards(savedPaymentMethods, isGuestCustomer)) => {
+        let defaultPaymentMethod =
+          savedPaymentMethods->Js.Array2.find(savedCard => savedCard.defaultPaymentMethodSet)
+
+        let savedCardsWithoutDefaultPaymentMethod =
+          savedPaymentMethods->Js.Array2.filter(savedCard => {
+            !savedCard.defaultPaymentMethodSet
+          })
+
+        let finalSavedPaymentMethods = switch defaultPaymentMethod {
+        | Some(defaultPaymentMethod) =>
+          [defaultPaymentMethod]->Js.Array2.concat(savedCardsWithoutDefaultPaymentMethod)
+        | None => savedCardsWithoutDefaultPaymentMethod
+        }
+
+        setSavedMethods(_ => finalSavedPaymentMethods)
+        setLoadSavedCards(_ =>
+          finalSavedPaymentMethods->Js.Array2.length == 0
+            ? NoResult(isGuestCustomer)
+            : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
+        )
+        setShowFields(.prev => finalSavedPaymentMethods->Js.Array2.length == 0 || prev)
+      }
+    | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
         setShowFields(._ => true)
       }
     }
 
     None
-  }, [customerPaymentMethods])
-
-  React.useEffect1(() => {
-    if displaySavedPaymentMethodsCheckbox {
-      setShowFields(._ => true)
-      setLoadSavedCards(_ => LoadedSavedCards([], true))
-    }
-    None
-  }, [displaySavedPaymentMethodsCheckbox])
+  }, (customerPaymentMethods, displaySavedPaymentMethodsCheckbox))
 
   React.useEffect1(() => {
     let defaultPaymentMethod =
-      savedMethods
-      ->Js.Array2.find(savedMethod => savedMethod.defaultPaymentMethodSet)
+      savedMethods->Js.Array2.find(savedMethod => savedMethod.defaultPaymentMethodSet)
 
     let isSavedMethodsEmpty = savedMethods->Js.Array2.length === 0
 
