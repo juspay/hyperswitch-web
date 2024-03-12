@@ -1,3 +1,10 @@
+## [0.31.4](https://github.com/juspay/hyperswitch-web/compare/v0.31.3...v0.31.4) (2024-03-12)
+
+
+### Bug Fixes
+
+* added ordering for saved payment methods ([#222](https://github.com/juspay/hyperswitch-web/issues/222)) ([a7e9f6d](https://github.com/juspay/hyperswitch-web/commit/a7e9f6d48e83ae96395ac19365abf4d757229c9b))
+
 ## [0.31.3](https://github.com/juspay/hyperswitch-web/compare/v0.31.2...v0.31.3) (2024-03-12)
 
 ## [0.31.2](https://github.com/juspay/hyperswitch-web/compare/v0.31.1...v0.31.2) (2024-03-12)
