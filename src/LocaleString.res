@@ -67,6 +67,8 @@ type localeStrings = {
   useExistingPaymentMethods: string,
   selectPaymentMethodLabel: string,
   savedPaymentMethodsLabel: string,
+  nicknameLabel: string,
+  nicknamePlaceholder: string,
 }
 
 let defaultLocale = {
@@ -149,6 +151,8 @@ let defaultLocale = {
   useExistingPaymentMethods: "Use saved payment methods",
   selectPaymentMethodLabel: "Select Payment Method",
   savedPaymentMethodsLabel: "Saved Payment Methods",
+  nicknameLabel: "Card Nickname",
+  nicknamePlaceholder: "Card Nickname (Optional)",
 }
 
 type locale = {localeStrings: array<localeStrings>}
@@ -233,6 +237,8 @@ let localeStrings = [
     useExistingPaymentMethods: "Use saved payment methods",
     selectPaymentMethodLabel: "Select Payment Method",
     savedPaymentMethodsLabel: "Saved Payment Methods",
+    nicknameLabel: "Card Nickname",
+    nicknamePlaceholder: "Card Nickname (Optional)",
   },
   {
     locale: "he",
@@ -314,6 +320,8 @@ let localeStrings = [
     useExistingPaymentMethods: `השתמש באמצעי תשלום שמורים`,
     selectPaymentMethodLabel: `בחר שיטת תשלום`,
     savedPaymentMethodsLabel: `אמצעי תשלום שמורים`,
+    nicknameLabel: `כינוי לכרטיס`,
+    nicknamePlaceholder: `כינוי לכרטיס (אופציונלי)`,
   },
   {
     locale: `fr`,
@@ -395,6 +403,8 @@ let localeStrings = [
     useExistingPaymentMethods: `Utiliser les modes de paiement enregistrés`,
     selectPaymentMethodLabel: `Sélectionnez le mode de paiement`,
     savedPaymentMethodsLabel: `Modes de paiement enregistrés`,
+    nicknameLabel: `Pseudonyme de la carte`,
+    nicknamePlaceholder: `Surnom de la carte (facultatif)`,
   },
   {
     locale: "en-GB",
@@ -476,6 +486,8 @@ let localeStrings = [
     useExistingPaymentMethods: "Use saved payment methods",
     selectPaymentMethodLabel: "Select Payment Method",
     savedPaymentMethodsLabel: "Saved Payment Methods",
+    nicknameLabel: "Card Nickname",
+    nicknamePlaceholder: "Card Nickname (Optional)",
   },
   {
     locale: "ar",
@@ -557,6 +569,8 @@ let localeStrings = [
     useExistingPaymentMethods: `استخدم طرق الدفع المحفوظة`,
     selectPaymentMethodLabel: `اختار طريقة الدفع`,
     savedPaymentMethodsLabel: `طرق الدفع المحفوظة`,
+    nicknameLabel: `الاسم علي الكارت`,
+    nicknamePlaceholder: `اسم البطاقة (اختياري)`,
   },
   {
     locale: "ja",
@@ -638,6 +652,8 @@ let localeStrings = [
     useExistingPaymentMethods: `保存した支払い方法を使用する`,
     selectPaymentMethodLabel: `支払い方法を選択してください`,
     savedPaymentMethodsLabel: `保存された支払い方法`,
+    nicknameLabel: `カードのニックネーム`,
+    nicknamePlaceholder: `カードニックネーム（任意）`,
   },
   {
     locale: "de",
@@ -719,5 +735,7 @@ let localeStrings = [
     useExistingPaymentMethods: `Gespeicherte Zahlungsarten nutzen`,
     selectPaymentMethodLabel: `Wählen Sie die Zahlungsmethode`,
     savedPaymentMethodsLabel: `Gespeicherte Zahlungsarten`,
+    nicknameLabel: `Spitzname der Karte`,
+    nicknamePlaceholder: `Kartenname (optional)`,
   },
 ]

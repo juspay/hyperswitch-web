@@ -114,6 +114,7 @@ type customerCard = {
   expiryYear: string,
   cardToken: string,
   cardHolderName: option<string>,
+  nickname: string,
 }
 type customerMethods = {
   paymentToken: string,
@@ -164,6 +165,7 @@ let defaultCardDetails = {
   expiryYear: "",
   cardToken: "",
   cardHolderName: None,
+  nickname: "",
 }
 let defaultCustomerMethods = {
   paymentToken: "",
@@ -781,6 +783,7 @@ let getCardDetails = (dict, str) => {
       expiryYear: getString(json, "expiry_year", ""),
       cardToken: getString(json, "card_token", ""),
       cardHolderName: Some(getString(json, "card_holder_name", "")),
+      nickname: getString(json, "nick_name", ""),
     }
   })
   ->Belt.Option.getWithDefault(defaultCardDetails)

@@ -91,15 +91,15 @@ let make = (
                 border="1px solid currentColor"
               />
             </div>
-            <div className={`PickerItemIcon mx-3 flex  items-center `}>
-              brandIcon
-            </div>
-            <div className="flex items-center gap-2">
+            <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
+            <div className="flex items-center gap-4">
               {isCard
-                ? <div
-                    className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-                    <div className="tracking-widest"> {React.string(`****`)} </div>
-                    <div> {React.string({paymentItem.card.last4Digits})} </div>
+                ? <div className="flex flex-col items-start">
+                    <div> {React.string(paymentItem.card.nickname)} </div>
+                    <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
+                      <div className="tracking-widest"> {React.string(`****`)} </div>
+                      <div> {React.string(paymentItem.card.last4Digits)} </div>
+                    </div>
                   </div>
                 : <div> {React.string(paymentMethodType)} </div>}
               <RenderIf condition={paymentItem.defaultPaymentMethodSet}>
