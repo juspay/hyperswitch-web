@@ -273,7 +273,7 @@ let make = (
           </RenderIf>
           <RenderIf
             condition={options.displaySavedPaymentMethods &&
-            savedMethods->Js.Array2.length > 0 &&
+            savedMethods->Array.length > 0 &&
             !isBancontact}>
             <div
               className="Label flex flex-row gap-3 items-end cursor-pointer"

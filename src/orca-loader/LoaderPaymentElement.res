@@ -22,12 +22,6 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         true,
       )
 
-    let displaySavedPaymentMethods =
-      options->getDecodedBoolFromJson(
-        callbackFuncForExtractingValFromDict("displaySavedPaymentMethods"),
-        true,
-      )
-
     let on = (eventType, eventHandler) => {
       switch eventType->eventTypeMapper {
       | Escape =>
@@ -296,7 +290,6 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`),
             localSelectorString,
             sdkHandleOneClickConfirmPayment,
-            displaySavedPaymentMethods,
           )
         }
       }

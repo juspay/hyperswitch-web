@@ -40,7 +40,7 @@ let brutal = {
   spacingGridRow: "20px",
   buttonBackgroundColor: "#f5fb1f",
   buttonHeight: "48px",
-  buttonWidth: "thin",
+  buttonWidth: "100%",
   buttonBorderRadius: "6px",
   buttonBorderColor: "#566186",
   buttonTextColor: "#000000",
