@@ -1,3 +1,10 @@
+## [0.31.1](https://github.com/juspay/hyperswitch-web/compare/v0.31.0...v0.31.1) (2024-03-12)
+
+
+### Bug Fixes
+
+* card payment customer_acceptance ([#220](https://github.com/juspay/hyperswitch-web/issues/220)) ([c2067e9](https://github.com/juspay/hyperswitch-web/commit/c2067e9c274727eda03686d5986c5071f2da17b2))
+
 # [0.31.0](https://github.com/juspay/hyperswitch-web/compare/v0.30.0...v0.31.0) (2024-03-11)
 
 
