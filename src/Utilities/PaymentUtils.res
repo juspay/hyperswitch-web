@@ -3,6 +3,8 @@ let paymentListLookupNew = (
   ~order,
   ~showApplePay,
   ~showGooglePay,
+  ~areAllGooglePayRequiredFieldsPrefilled,
+  ~areAllApplePayRequiredFieldsPrefilled,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
@@ -26,14 +28,16 @@ let paymentListLookupNew = (
   let applePayFields = pmList->Js.Array2.find(item => item.paymentMethodName === "apple_pay")
   switch googlePayFields {
   | Some(val) =>
-    if val.fields->Js.Array2.length > 0 && showGooglePay {
+    if (
+      val.fields->Js.Array2.length > 0 && showGooglePay && !areAllGooglePayRequiredFieldsPrefilled
+    ) {
       walletToBeDisplayedInTabs->Js.Array2.push("google_pay")->ignore
     }
   | None => ()
   }
   switch applePayFields {
   | Some(val) =>
-    if val.fields->Js.Array2.length > 0 && showApplePay {
+    if val.fields->Js.Array2.length > 0 && showApplePay && !areAllApplePayRequiredFieldsPrefilled {
       walletToBeDisplayedInTabs->Js.Array2.push("apple_pay")->ignore
     }
   | None => ()
