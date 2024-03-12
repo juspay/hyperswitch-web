@@ -604,36 +604,26 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
   }
 }
 
-let rec maskPayload = payloadDict => {
-  let keys = payloadDict->Js.Dict.keys
-  let maskedPayload = Js.Dict.empty()
-  keys
-  ->Js.Array2.map(key => {
-    let value = payloadDict->Js.Dict.get(key)->Belt.Option.getWithDefault(Js.Json.null)
-    if value->Js.Json.decodeArray->Belt.Option.isSome {
-      let arr = value->Js.Json.decodeArray->Belt.Option.getWithDefault([])
-      arr->Js.Array2.forEachi((element, index) => {
-        maskedPayload->Js.Dict.set(
-          key ++ "[" ++ index->Belt.Int.toString ++ "]",
-          element->Utils.getDictFromJson->maskPayload->Js.Json.string,
-        )
-      })
-    } else if value->Js.Json.decodeObject->Belt.Option.isSome {
-      let valueDict = value->Utils.getDictFromJson
-      maskedPayload->Js.Dict.set(key, valueDict->maskPayload->Js.Json.string)
-    } else {
-      maskedPayload->Js.Dict.set(
-        key,
-        value
-        ->Js.Json.decodeString
-        ->Belt.Option.getWithDefault("")
-        ->Js.String2.replaceByRe(%re(`/\S/g`), "x")
-        ->Js.Json.string,
-      )
-    }
-  })
-  ->ignore
-  maskedPayload->Js.Json.object_->Js.Json.stringify
+let maskStr = str => str->Js.String2.replaceByRe(%re(`/\S/g`), "x")
+
+let rec maskPayload = payloadJson => {
+  switch payloadJson->JSON.Classify.classify {
+  | Object(valueDict) =>
+    valueDict
+    ->Dict.toArray
+    ->Array.map(entry => {
+      let (key, value) = entry
+      (key, maskPayload(value))
+    })
+    ->Dict.fromArray
+    ->JSON.Encode.object
+
+  | Array(arr) => arr->Array.map(maskPayload)->JSON.Encode.array
+  | String(valueStr) => valueStr->maskStr->JSON.Encode.string
+  | Number(float) => Float.toString(float)->maskStr->JSON.Encode.string
+  | Bool(bool) => (bool ? "true" : "false")->JSON.Encode.string
+  | Null => JSON.Encode.string("null")
+  }
 }
 
 let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
@@ -677,8 +667,8 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
           body
           ->OrcaUtils.safeParseOpt
           ->Belt.Option.getWithDefault(Js.Json.null)
-          ->Utils.getDictFromJson
           ->maskPayload
+          ->JSON.stringify
         let loggerPayload =
           [
             ("payload", maskedPayload->Js.Json.string),
