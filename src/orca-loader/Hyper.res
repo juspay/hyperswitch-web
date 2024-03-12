@@ -201,7 +201,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           Fetch.RequestInit.make(~method_=Fetch.Get, ~headers=Fetch.HeadersInit.make(headers), ()),
         )
         ->then(resp => {
-          let statusCode = resp->Fetch.Response.status->string_of_int
+          let statusCode = resp->Fetch.Response.status->Int.toString
           if statusCode->String.charAt(0) !== "2" {
             resp
             ->Fetch.Response.json
@@ -418,7 +418,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
       let addAmountToDict = (dict, currency) => {
         if dict->Dict.get("amount")->Option.isNone {
-          Js.Console.error("Amount is not specified, please input an amount")
+          Console.error("Amount is not specified, please input an amount")
         }
         let amount = dict->Dict.get("amount")->Option.getOr(0.0->JSON.Encode.float)
         dict->Dict.set(

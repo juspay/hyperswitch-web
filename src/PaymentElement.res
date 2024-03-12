@@ -86,7 +86,7 @@ let make = (
 
     let tokenObj = switch (isSavedMethodsEmpty, defaultPaymentMethod) {
     | (false, Some(defaultPaymentMethod)) => Some(defaultPaymentMethod)
-    | (false, None) => Some(savedMethods->Belt.Array.get(0)->Option.getOr(defaultCustomerMethods))
+    | (false, None) => Some(savedMethods->Array.get(0)->Option.getOr(defaultCustomerMethods))
     | _ => None
     }
 

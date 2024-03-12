@@ -127,7 +127,7 @@ let manageErrorWarning = (
           ~logCategory=USER_ERROR,
           (),
         )
-        Js.Console.error(string)
+        Console.error(string)
         Exn.raiseError(string)
       | (Warning, Static(string)) =>
         logger.setLogError(
@@ -146,7 +146,7 @@ let manageErrorWarning = (
           ~logCategory=USER_ERROR,
           (),
         )
-        Js.Console.error(fn(dynamicStr))
+        Console.error(fn(dynamicStr))
         Exn.raiseError(fn(dynamicStr))
       | (Warning, Dynamic(fn)) =>
         logger.setLogError(

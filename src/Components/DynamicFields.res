@@ -285,7 +285,7 @@ let make = (
           {dynamicFieldsToRenderOutsideBilling
           ->Array.mapWithIndex((item, index) => {
             <div
-              key={`outside-billing-${index->Js.Int.toString}`}
+              key={`outside-billing-${index->Int.toString}`}
               className="flex flex-col w-full place-content-between"
               style={ReactDOMStyle.make(
                 ~marginTop=index !== 0 || paymentMethod === "card"
@@ -443,7 +443,7 @@ let make = (
                 {dynamicFieldsToRenderInsideBilling
                 ->Array.mapWithIndex((item, index) => {
                   <div
-                    key={`inside-billing-${index->Js.Int.toString}`}
+                    key={`inside-billing-${index->Int.toString}`}
                     className="flex flex-col w-full place-content-between">
                     {switch item {
                     | BillingName => <BillingNamePaymentInput paymentType requiredFields />

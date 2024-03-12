@@ -80,7 +80,7 @@ let make = (
       ->Array.filter(savedMethod => {
         savedMethod.paymentToken === token
       })
-      ->Belt.Array.get(0)
+      ->Array.get(0)
       ->Option.getOr(PaymentType.defaultCustomerMethods)
     let isCardPaymentMethod = customerMethod.paymentMethod === "card"
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {

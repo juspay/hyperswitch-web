@@ -34,7 +34,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
     (),
   )
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->string_of_int
+    let statusCode = res->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
       res
       ->Fetch.Response.json
@@ -148,7 +148,7 @@ let rec intentCall = (
     (),
   )
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->string_of_int
+    let statusCode = res->Fetch.Response.status->Int.toString
     let url = urlSearch(confirmParam.return_url)
     url.searchParams.set(. "payment_intent_client_secret", clientSecret)
     url.searchParams.set(. "status", "failed")
@@ -240,7 +240,7 @@ let rec intentCall = (
               }
             } else {
               let paymentIntentID =
-                String.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
+                String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
               let endpoint = ApiEndpoint.getApiEndPoint(
                 ~publishableKey=confirmParam.publishableKey,
                 (),
@@ -518,8 +518,7 @@ let rec intentCall = (
           resolve(. failedSubmitResponse)
         }
       } else {
-        let paymentIntentID =
-          String.split(clientSecret, "_secret_")->Belt.Array.get(0)->Option.getOr("")
+        let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
         let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
         let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
         intentCall(
@@ -831,7 +830,7 @@ let useSessions = (
     (),
   )
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->string_of_int
+    let statusCode = resp->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
       resp
       ->Fetch.Response.json
@@ -905,7 +904,7 @@ let usePaymentMethodList = (
     (),
   )
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->string_of_int
+    let statusCode = resp->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
       resp
       ->Fetch.Response.json
@@ -979,7 +978,7 @@ let useCustomerDetails = (
     (),
   )
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->string_of_int
+    let statusCode = res->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
       res
       ->Fetch.Response.json

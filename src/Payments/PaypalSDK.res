@@ -50,7 +50,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
       if result {
         braintree.client.create(.{authorization: token}, (clientErr, clientInstance) => {
           if clientErr {
-            Js.Console.error2("Error creating client", clientErr)
+            Console.error2("Error creating client", clientErr)
           }
           braintree.paypalCheckout.create(.
             {client: clientInstance},

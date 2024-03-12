@@ -132,7 +132,7 @@ let rec flatten = (obj, addIndicatorForObject) => {
                   ->Array.forEach(
                     subEntry => {
                       let (subKey, subValue) = subEntry
-                      Dict.set(newDict, `${key}[${index->string_of_int}].${subKey}`, subValue)
+                      Dict.set(newDict, `${key}[${index->Int.toString}].${subKey}`, subValue)
                     },
                   )
                 }

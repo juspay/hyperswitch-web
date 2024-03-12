@@ -107,7 +107,7 @@ let make = (
           className={`Input ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
-            <option key={string_of_int(i)} value=item> {React.string(item)} </option>
+            <option key={Int.toString(i)} value=item> {React.string(item)} </option>
           })
           ->React.array}
         </select>

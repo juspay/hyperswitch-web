@@ -177,7 +177,7 @@ let make = (
             {dropDownOptionsDetails
             ->Array.mapWithIndex((item, i) => {
               <option
-                key={string_of_int(i)}
+                key={Int.toString(i)}
                 value=item.paymentMethodName
                 style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}>
                 {React.string(

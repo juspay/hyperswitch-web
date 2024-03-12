@@ -18,8 +18,8 @@ let make = (
     ?onClick
     style
     className={`fill-current ${otherClasses}`}
-    width={string_of_int(width) ++ "px"}
-    height={string_of_int(size) ++ "px"}
+    width={Int.toString(width) ++ "px"}
+    height={Int.toString(size) ++ "px"}
     transform={shouldMirrorIcon ? "scale(-1,1)" : ""}>
     <use xlinkHref={`${GlobalVars.repoPublicPath}/icons/${iconType}.svg#${name}`} />
   </svg>

@@ -61,7 +61,7 @@ let make = () => {
                 setDownloadCounter(c => c + 1)
                 LoggerUtils.handleLogging(
                   ~optLogger=Some(logger),
-                  ~value=downloadCounter->Js.Int.toString,
+                  ~value=downloadCounter->Int.toString,
                   ~eventName=DISPLAY_VOUCHER,
                   ~paymentMethod,
                   (),

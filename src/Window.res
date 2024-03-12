@@ -70,7 +70,7 @@ let iframePostMessage = (iframeRef: Js.nullable<Dom.element>, message) => {
     } catch {
     | _ => ()
     }
-  | None => Js.Console.error("This element does not exist or is not mounted yet.")
+  | None => Console.error("This element does not exist or is not mounted yet.")
   }
 }
 

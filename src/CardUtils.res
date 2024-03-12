@@ -375,7 +375,7 @@ let max = (a, b) => {
 
 let getMaxLength = val => {
   let obj = getobjFromCardPattern(val->getCardBrand)
-  let maxValue = Js.Array.reduce(max, 0, obj.length)
+  let maxValue = obj.length->Array.reduce(0, max)
   if maxValue <= 12 {
     maxValue + 2
   } else if maxValue <= 16 {

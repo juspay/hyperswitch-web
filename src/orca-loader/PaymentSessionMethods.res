@@ -32,7 +32,7 @@ let getCustomerSavedPaymentMethods = (
         ->Option.getOr(false)
       })
 
-    switch customerPaymentMethods->Belt.Array.get(0) {
+    switch customerPaymentMethods->Array.get(0) {
     | Some(customerDefaultPaymentMethod) =>
       let getCustomerDefaultSavedPaymentMethodData = () => {
         customerDefaultPaymentMethod
