@@ -123,6 +123,7 @@ type customerMethods = {
   card: customerCard,
   paymentMethodType: option<string>,
   defaultPaymentMethodSet: bool,
+  requiresCvv: bool,
 }
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
@@ -172,6 +173,7 @@ let defaultCustomerMethods = {
   card: defaultCardDetails,
   paymentMethodType: None,
   defaultPaymentMethodSet: false,
+  requiresCvv: true,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -819,6 +821,7 @@ let createCustomerObjArr = dict => {
         card: getCardDetails(dict, "card"),
         paymentMethodType: getPaymentMethodType(dict),
         defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
+        requiresCvv: getBool(dict, "requires_cvv", true),
       }
     })
   LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
@@ -841,6 +844,7 @@ let getCustomerMethods = (dict, str) => {
           card: getCardDetails(json, "card"),
           paymentMethodType: getPaymentMethodType(dict),
           defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
+          requiresCvv: getBool(dict, "requires_cvv", true),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)

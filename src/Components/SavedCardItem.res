@@ -48,6 +48,7 @@ let make = (
   }, [isActive])
 
   let isCard = paymentItem.paymentMethod === "card"
+  let isRenderCvv = isCard && paymentItem.requiresCvv
 
   let paymentMethodType = switch paymentItem.paymentMethodType {
   | Some(paymentMethodType) => paymentMethodType->Utils.snakeToTitleCase
@@ -125,7 +126,7 @@ let make = (
         <div className="w-full ">
           <RenderIf condition={isActive}>
             <div className="flex flex-col items-start mx-8">
-              <RenderIf condition={isCard}>
+              <RenderIf condition={isRenderCvv}>
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
                   style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>

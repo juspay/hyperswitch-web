@@ -55,12 +55,19 @@ let boletoBody = (~socialSecurityNumber) => [
   ),
 ]
 
-let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber) => [
-  ("payment_method", "card"->Js.Json.string),
-  ("payment_token", paymentToken->Js.Json.string),
-  ("customer_id", customerId->Js.Json.string),
-  ("card_cvc", cvcNumber->Js.Json.string),
-]
+let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber, ~requiresCvv) => {
+  let savedCardBody = [
+    ("payment_method", "card"->Js.Json.string),
+    ("payment_token", paymentToken->Js.Json.string),
+    ("customer_id", customerId->Js.Json.string),
+  ]
+
+  if requiresCvv {
+    savedCardBody->Js.Array2.push(("card_cvc", cvcNumber->Js.Json.string))->ignore
+  }
+
+  savedCardBody
+}
 
 let customerAcceptanceBody =
   [
