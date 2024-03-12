@@ -60,7 +60,7 @@ external style: Dom.element => style = "style"
 @send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
 @send external click: Dom.element => unit = "click"
 
-let iframePostMessage = (iframeRef: Js.nullable<Dom.element>, message) => {
+let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
   switch iframeRef->Nullable.toOption {
   | Some(ref) =>
     try {

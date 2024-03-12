@@ -65,7 +65,7 @@ let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber) => [
 let customerAcceptanceBody =
   [
     ("acceptance_type", "online"->JSON.Encode.string),
-    ("accepted_at", Js.Date.now()->Js.Date.fromFloat->Js.Date.toISOString->JSON.Encode.string),
+    ("accepted_at", Date.now()->Js.Date.fromFloat->Date.toISOString->JSON.Encode.string),
     (
       "online",
       [("user_agent", BrowserSpec.navigator.userAgent->JSON.Encode.string)]

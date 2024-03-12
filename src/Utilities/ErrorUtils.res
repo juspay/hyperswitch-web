@@ -137,7 +137,7 @@ let manageErrorWarning = (
           ~logCategory=USER_ERROR,
           (),
         )
-        Js.Console.warn(string)
+        Console.warn(string)
       | (Error, Dynamic(fn)) =>
         logger.setLogError(
           ~value=fn(dynamicStr),
@@ -156,7 +156,7 @@ let manageErrorWarning = (
           ~logCategory=USER_ERROR,
           (),
         )
-        Js.Console.warn(fn(dynamicStr))
+        Console.warn(fn(dynamicStr))
       }
     }
   | None => ()

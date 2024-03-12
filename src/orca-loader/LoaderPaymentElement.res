@@ -100,7 +100,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       switch oElement->Nullable.toOption {
       | Some(elem) => elem->Window.innerHTML("")
       | None =>
-        Js.Console.warn(
+        Console.warn(
           "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
         )
       }

@@ -57,10 +57,7 @@ let getInt = (dict, key, default: int) => {
   ->Belt.Float.toInt
 }
 
-let getFloatFromString = (str, default) => {
-  let val = str->Js.Float.fromString
-  val->Js.Float.isNaN ? default : val
-}
+let getFloatFromString = (str, default) => str->Float.fromString->Option.getOr(default)
 
 let getFloatFromJson = (json, default) => {
   switch json->JSON.Classify.classify {

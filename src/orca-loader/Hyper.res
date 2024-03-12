@@ -14,7 +14,7 @@ let checkAndAppend = (selector, child) => {
 
 if (
   Window.querySelectorAll(`script[src="${GlobalVars.sentryScriptUrl}"]`)->Array.length === 0 &&
-    Js.typeof(GlobalVars.sentryScriptUrl) !== "undefined"
+    GlobalVars.sentryScriptUrl->typeof !== #undefined
 ) {
   try {
     let script = Window.createElement("script")

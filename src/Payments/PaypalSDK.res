@@ -56,7 +56,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
             {client: clientInstance},
             (paypalCheckoutErr, paypalCheckoutInstance) => {
               switch paypalCheckoutErr->Nullable.toOption {
-              | Some(val) => Js.Console.warn(`INTEGRATION ERROR: ${val.message}`)
+              | Some(val) => Console.warn(`INTEGRATION ERROR: ${val.message}`)
               | None => ()
               }
               paypalCheckoutInstance.loadPayPalSDK(.

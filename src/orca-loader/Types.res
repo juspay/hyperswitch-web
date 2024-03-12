@@ -17,7 +17,7 @@ type eventHandler = option<JSON.t> => unit
 module This = {
   type t
   @get
-  external iframeElem: t => option<Js.nullable<Dom.element>> = "iframeElem"
+  external iframeElem: t => option<nullable<Dom.element>> = "iframeElem"
 }
 
 type paymentElement = {
