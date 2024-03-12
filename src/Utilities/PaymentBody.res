@@ -171,7 +171,7 @@ let achBankDebitBody = (
       ->Js.Dict.fromArray
       ->Js.Json.object_,
     ),
-  ]->Js.Array2.concat(mandateBody(paymentType))
+  ]->Array.concat(mandateBody(paymentType->PaymentMethodsRecord.paymentTypeToStringMapper))
 
 let sepaBankDebitBody = (
   ~fullName,

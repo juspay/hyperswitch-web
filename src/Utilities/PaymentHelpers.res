@@ -749,7 +749,9 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
           body
           ->Js.Array2.concat(
             bodyArr->Js.Array2.concatMany([
-              PaymentBody.mandateBody(mandatePaymentType),
+              PaymentBody.mandateBody(
+                mandatePaymentType->PaymentMethodsRecord.paymentTypeToStringMapper,
+              ),
               broswerInfo(),
             ]),
           )

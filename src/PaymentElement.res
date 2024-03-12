@@ -409,6 +409,8 @@ let make = (
           cardProps
           expiryProps
           selectedOption={selectedOption->PaymentModeType.paymentMode}
+          savedMethods
+          paymentToken
         />
       </div>
     </RenderIf>

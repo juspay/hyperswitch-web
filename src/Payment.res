@@ -127,6 +127,12 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     if cvc->Js.String2.length > 0 && cvcNumberInRange(cvc, cardBrand)->Js.Array2.includes(true) {
       zipRef.current->Js.Nullable.toOption->Belt.Option.forEach(input => input->focus)->ignore
     }
+
+    if cvc->Js.String2.length > 0 && cvcNumberInRange(cvc, cardBrand)->Js.Array2.includes(true) {
+      setIsCVCValid(_ => Some(true))
+    } else {
+      setIsCVCValid(_ => None)
+    }
   }
 
   let changeZipCode = ev => {

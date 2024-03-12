@@ -73,7 +73,7 @@ let make = (
       )
     } else {
       let requiredFieldsBodyArr =
-        bodyArr
+        requestBody
         ->Js.Dict.fromArray
         ->Js.Json.object_
         ->OrcaUtils.flattenObject(true)
@@ -281,7 +281,7 @@ let make = (
     ->ignore
   }
 
-  React.useEffect3(() => {
+  React.useEffect4(() => {
     let handleApplePayMessages = (ev: Window.event) => {
       let json = try {
         ev.data->Js.Json.parseExn
@@ -317,7 +317,7 @@ let make = (
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
-  }, (isInvokeSDKFlow, requiredFieldsBody, isWallet))
+  }, (isInvokeSDKFlow, requiredFieldsBody, isWallet, processPayment))
 
   React.useEffect4(() => {
     if (

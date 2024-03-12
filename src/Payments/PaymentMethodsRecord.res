@@ -706,13 +706,14 @@ type mandate = {
   single_use: option<mandateType>,
   multi_use: option<mandateType>,
 }
+type payment_type = NORMAL | NEW_MANDATE | SETUP_MANDATE | NONE
 
 type list = {
   redirect_url: string,
   currency: string,
   payment_methods: array<methods>,
   mandate_payment: option<mandate>,
-  payment_type: string,
+  payment_type: payment_type,
 }
 
 open Utils
@@ -733,7 +734,7 @@ let defaultList = {
   currency: "",
   payment_methods: [],
   mandate_payment: None,
-  payment_type: "",
+  payment_type: NONE,
 }
 let getMethod = str => {
   switch str {
@@ -927,13 +928,31 @@ let getMandate = (dict, str) => {
   })
 }
 
+let paymentTypeMapper = payment_type => {
+  switch payment_type {
+  | "normal" => NORMAL
+  | "new_mandate" => NEW_MANDATE
+  | "setup_mandate" => SETUP_MANDATE
+  | _ => NONE
+  }
+}
+
+let paymentTypeToStringMapper = payment_type => {
+  switch payment_type {
+  | NORMAL => "normal"
+  | NEW_MANDATE => "new_mandate"
+  | SETUP_MANDATE => "setup_mandate"
+  | NONE => ""
+  }
+}
+
 let itemToObjMapper = dict => {
   {
     redirect_url: getString(dict, "redirect_url", ""),
     currency: getString(dict, "currency", ""),
     payment_methods: getMethodsArr(dict, "payment_methods"),
     mandate_payment: getMandate(dict, "mandate_payment"),
-    payment_type: getString(dict, "payment_type", ""),
+    payment_type: getString(dict, "payment_type", "")->paymentTypeMapper,
   }
 }
 
