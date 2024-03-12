@@ -263,7 +263,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
                 ("parentURL", "*"->JSON.Encode.string),
-                ("sdkHandleConfirmPayment", false->JSON.Encode.bool),
                 ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
               ]->Array.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)

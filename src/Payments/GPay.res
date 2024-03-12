@@ -33,6 +33,8 @@ let make = (
 
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
     ~list,
     ~paymentMethod="wallet",
@@ -87,8 +89,14 @@ let make = (
       if dict->Dict.get("gpayResponse")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
         let obj = metadata->getDictFromJson->itemToObjMapper
+        let gPayBody = PaymentUtils.appendedCustomerAcceptance(
+          ~isGuestCustomer,
+          ~paymentType=list.payment_type,
+          ~body=PaymentBody.gpayBody(~payObj=obj, ~connectors),
+        )
+
         let body = {
-          PaymentBody.gpayBody(~payObj=obj, ~connectors)
+          gPayBody
           ->Dict.fromArray
           ->JSON.Encode.object
           ->OrcaUtils.flattenObject(true)

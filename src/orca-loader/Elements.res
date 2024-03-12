@@ -10,8 +10,8 @@ external objToJson: {..} => JSON.t = "%identity"
 external eventToJson: Types.eventData => JSON.t = "%identity"
 
 type trustPayFunctions = {
-  finishApplePaymentV2: (. string, ApplePayTypes.paymentRequestData) => Js.Promise.t<JSON.t>,
-  executeGooglePayment: (. string, GooglePayType.paymentDataRequest) => Js.Promise.t<JSON.t>,
+  finishApplePaymentV2: (. string, ApplePayTypes.paymentRequestData) => Promise.t<JSON.t>,
+  executeGooglePayment: (. string, GooglePayType.paymentDataRequest) => Promise.t<JSON.t>,
 }
 @new external trustPayApi: JSON.t => trustPayFunctions = "TrustPayApi"
 
@@ -216,9 +216,8 @@ let make = (
       let mountPostMessage = (
         mountedIframeRef,
         selectorString,
-        sdkHandleConfirmPayment,
         sdkHandleOneClickConfirmPayment,
-        disableSaveCards,
+        displaySavedPaymentMethods,
       ) => {
         open Promise
 
@@ -243,7 +242,6 @@ let make = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-            ("sdkHandleConfirmPayment", sdkHandleConfirmPayment->JSON.Encode.bool),
             ("blockConfirm", blockConfirm->JSON.Encode.bool),
             ("switchToCustomPod", switchToCustomPod->JSON.Encode.bool),
             ("endpoint", endpoint->JSON.Encode.string),
@@ -709,7 +707,9 @@ let make = (
         })
         ->ignore
         fetchPaymentsList(mountedIframeRef)
-        disableSaveCards ? () : fetchCustomerDetails(mountedIframeRef)
+        if displaySavedPaymentMethods {
+          fetchCustomerDetails(mountedIframeRef)
+        }
         mountedIframeRef->Window.iframePostMessage(message)
       }
 

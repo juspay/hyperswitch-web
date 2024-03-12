@@ -6,9 +6,6 @@ open OrcaUtils
 
 external eventToJson: Types.eventData => JSON.t = "%identity"
 
-type location = {replace: (. string) => unit}
-@val @scope("window") external location: location = "location"
-
 @val @scope(("navigator", "clipboard"))
 external writeText: string => Promise.t<'a> = "writeText"
 
@@ -19,26 +16,17 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       setIframeRef(ref)
     }
 
-    let sdkHandleConfirmPayment =
-      options
-      ->JSON.Decode.object
-      ->Option.flatMap(x => x->Dict.get("sdkHandleConfirmPayment"))
-      ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(false)
-
     let sdkHandleOneClickConfirmPayment =
-      options
-      ->JSON.Decode.object
-      ->Option.flatMap(x => x->Dict.get("sdkHandleOneClickConfirmPayment"))
-      ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(true)
+      options->getDecodedBoolFromJson(
+        callbackFuncForExtractingValFromDict("sdkHandleOneClickConfirmPayment"),
+        true,
+      )
 
-    let disableSaveCards =
-      options
-      ->JSON.Decode.object
-      ->Option.flatMap(x => x->Dict.get("disableSaveCards"))
-      ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(false)
+    let displaySavedPaymentMethods =
+      options->getDecodedBoolFromJson(
+        callbackFuncForExtractingValFromDict("displaySavedPaymentMethods"),
+        true,
+      )
 
     let on = (eventType, eventHandler) => {
       switch eventType->eventTypeMapper {
@@ -172,7 +160,8 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             eventDataObject
             ->getOptionalJsonFromJson("iframeId")
             ->getStringfromOptionaljson("no-element")
-          iframeHeightRef := iframeHeight->getFloatfromjson(200.0)
+          iframeHeightRef :=
+            iframeHeight->Option.getOr(JSON.Encode.null)->Utils.getFloatFromJson(200.0)
           if iframeId === localSelectorString {
             let elem = Window.querySelector(
               `#orca-payment-element-iframeRef-${localSelectorString}`,
@@ -195,7 +184,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
             let url = val->getStringfromjson("")
-            location.replace(. url)
+            Window.location.replace(. url)
           }
         | None => ()
         }
@@ -305,9 +294,8 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           mountPostMessage(
             Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`),
             localSelectorString,
-            sdkHandleConfirmPayment,
             sdkHandleOneClickConfirmPayment,
-            disableSaveCards,
+            displaySavedPaymentMethods,
           )
         }
       }

@@ -286,10 +286,6 @@ let getBoolfromjson = (json: option<JSON.t>, default: bool) => {
   json->Option.flatMap(JSON.Decode.bool)->Option.getOr(default)
 }
 
-let getFloatfromjson = (json: option<JSON.t>, default: float) => {
-  json->Option.flatMap(JSON.Decode.float)->Option.getOr(default)
-}
-
 let getStringfromjson = (json: JSON.t, default: string) => {
   json->JSON.Decode.string->Option.getOr(default)
 }

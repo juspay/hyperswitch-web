@@ -121,6 +121,8 @@ type customerMethods = {
   paymentMethod: string,
   paymentMethodIssuer: option<string>,
   card: customerCard,
+  paymentMethodType: option<string>,
+  defaultPaymentMethodSet: bool,
 }
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
@@ -130,13 +132,19 @@ type billingAddress = {
   usePrefilledValues: showType,
 }
 
+type sdkHandleConfirmPayment = {
+  handleConfirm: bool,
+  confirmParams: ConfirmType.confirmParams,
+}
+
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
   business: business,
   customerPaymentMethods: savedCardsLoadState,
   paymentMethodOrder: option<array<string>>,
-  disableSaveCards: bool,
+  displaySavedPaymentMethodsCheckbox: bool,
+  displaySavedPaymentMethods: bool,
   fields: fields,
   readOnly: bool,
   terms: terms,
@@ -146,6 +154,7 @@ type options = {
   payButtonStyle: style,
   showCardFormByDefault: bool,
   billingAddress: billingAddress,
+  sdkHandleConfirmPayment: sdkHandleConfirmPayment,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -161,6 +170,8 @@ let defaultCustomerMethods = {
   paymentMethod: "",
   paymentMethodIssuer: None,
   card: defaultCardDetails,
+  paymentMethodType: None,
+  defaultPaymentMethodSet: false,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -245,6 +256,12 @@ let defaultBillingAddress = {
   isUseBillingAddress: false,
   usePrefilledValues: Auto,
 }
+
+let defaultSdkHandleConfirmPayment = {
+  handleConfirm: false,
+  confirmParams: ConfirmType.defaultConfirm,
+}
+
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
@@ -252,7 +269,8 @@ let defaultOptions = {
   layout: ObjectLayout(defaultLayout),
   paymentMethodOrder: None,
   fields: defaultFields,
-  disableSaveCards: false,
+  displaySavedPaymentMethodsCheckbox: true,
+  displaySavedPaymentMethods: true,
   readOnly: false,
   terms: defaultTerms,
   branding: Auto,
@@ -261,6 +279,7 @@ let defaultOptions = {
   customMethodNames: [],
   showCardFormByDefault: true,
   billingAddress: defaultBillingAddress,
+  sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -765,6 +784,10 @@ let getCardDetails = (dict, str) => {
   ->Option.getOr(defaultCardDetails)
 }
 
+let getPaymentMethodType = dict => {
+  dict->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
+}
+
 let createCustomerObjArr = dict => {
   let customerDict =
     dict
@@ -787,13 +810,15 @@ let createCustomerObjArr = dict => {
   let customerPaymentMethods =
     customerArr
     ->Belt.Array.keepMap(JSON.Decode.object)
-    ->Array.map(json => {
+    ->Array.map(dict => {
       {
-        paymentToken: getString(json, "payment_token", ""),
-        customerId: getString(json, "customer_id", ""),
-        paymentMethod: getString(json, "payment_method", ""),
-        paymentMethodIssuer: Some(getString(json, "payment_method_issuer", "")),
-        card: getCardDetails(json, "card"),
+        paymentToken: getString(dict, "payment_token", ""),
+        customerId: getString(dict, "customer_id", ""),
+        paymentMethod: getString(dict, "payment_method", ""),
+        paymentMethodIssuer: Some(getString(dict, "payment_method_issuer", "")),
+        card: getCardDetails(dict, "card"),
+        paymentMethodType: getPaymentMethodType(dict),
+        defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
       }
     })
   LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
@@ -813,6 +838,8 @@ let getCustomerMethods = (dict, str) => {
           paymentMethod: getString(json, "payment_method", ""),
           paymentMethodIssuer: Some(getString(json, "payment_method_issuer", "")),
           card: getCardDetails(json, "card"),
+          paymentMethodType: getPaymentMethodType(dict),
+          defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)
@@ -858,6 +885,19 @@ let getBillingAddress = (dict, str, logger) => {
   ->Option.getOr(defaultBillingAddress)
 }
 
+let getConfirmParams = dict => {
+  open ConfirmType
+  {
+    return_url: dict->getString("return_url", ""),
+    publishableKey: dict->getString("publishableKey", ""),
+  }
+}
+
+let getSdkHandleConfirmPaymentProps = dict => {
+  handleConfirm: dict->getBool("handleConfirm", false),
+  confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
+}
+
 let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(
     [
@@ -871,9 +911,11 @@ let itemToObjMapper = (dict, logger) => {
       "terms",
       "wallets",
       "showCardFormByDefault",
-      "disableSaveCards",
+      "displaySavedPaymentMethodsCheckbox",
+      "displaySavedPaymentMethods",
       "sdkHandleOneClickConfirmPayment",
       "showCardFormByDefault",
+      "sdkHandleConfirmPayment",
     ],
     dict,
     "options",
@@ -890,7 +932,18 @@ let itemToObjMapper = (dict, logger) => {
       "options.branding",
       logger,
     ),
-    disableSaveCards: getBoolWithWarning(dict, "disableSaveCards", false, ~logger),
+    displaySavedPaymentMethodsCheckbox: getBoolWithWarning(
+      dict,
+      "displaySavedPaymentMethodsCheckbox",
+      true,
+      ~logger,
+    ),
+    displaySavedPaymentMethods: getBoolWithWarning(
+      dict,
+      "displaySavedPaymentMethods",
+      true,
+      ~logger,
+    ),
     readOnly: getBoolWithWarning(dict, "readOnly", false, ~logger),
     terms: getTerms(dict, "terms", logger),
     wallets: getWallets(dict, "wallets", logger),
@@ -898,6 +951,9 @@ let itemToObjMapper = (dict, logger) => {
     payButtonStyle: getStyle(dict, "payButtonStyle", logger),
     showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
     billingAddress: getBillingAddress(dict, "billingAddress", logger),
+    sdkHandleConfirmPayment: dict
+    ->getDictfromDict("sdkHandleConfirmPayment")
+    ->getSdkHandleConfirmPaymentProps,
   }
 }
 

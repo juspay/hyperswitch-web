@@ -328,6 +328,17 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         confirmPaymentWrapper(payload, true, result)
       }
 
+      let handleSdkConfirm = (event: Types.event) => {
+        let json = event.data->eventToJson
+        let dict = json->getDictFromJson
+        switch dict->Dict.get("handleSdkConfirm") {
+        | Some(payload) => confirmPayment(payload)->ignore
+        | None => ()
+        }
+      }
+
+      addSmartEventListener("message", handleSdkConfirm, "handleSdkConfirm")
+
       let elements = elementsOptions => {
         open Promise
         let clientSecretId =
@@ -469,6 +480,34 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
 
+      let initPaymentSession = paymentSessionOptions => {
+        open Promise
+
+        let clientSecretId =
+          paymentSessionOptions
+          ->JSON.Decode.object
+          ->Option.flatMap(x => x->Dict.get("clientSecret"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+        clientSecret := clientSecretId
+        Js.Promise.make((~resolve, ~reject as _) => {
+          logger.setClientSecret(clientSecretId)
+          resolve(. JSON.Encode.null)
+        })
+        ->then(_ => {
+          logger.setLogInfo(~value=Window.href, ~eventName=PAYMENT_SESSION_INITIATED, ())
+          resolve()
+        })
+        ->ignore
+
+        PaymentSession.make(
+          paymentSessionOptions,
+          ~clientSecret={clientSecretId},
+          ~publishableKey,
+          ~logger=Some(logger),
+        )
+      }
+
       let returnObject = {
         confirmOneClickPayment,
         confirmPayment,
@@ -477,6 +516,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         confirmCardPayment: confirmCardPaymentFn,
         retrievePaymentIntent: retrievePaymentIntentFn,
         paymentRequest,
+        initPaymentSession,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

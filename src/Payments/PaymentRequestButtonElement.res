@@ -11,6 +11,30 @@ let paymentMode = str => {
   | _ => NONE
   }
 }
+
+module WalletsSaveDetailsText = {
+  @react.component
+  let make = (~paymentType) => {
+    open RecoilAtoms
+    let {isGooglePay, isApplePay, isPaypal} = Recoil.useRecoilValueFromAtom(
+      areOneClickWalletsRendered,
+    )
+    let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+    let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+
+    <RenderIf
+      condition={PaymentUtils.isAppendingCustomerAcceptance(~isGuestCustomer, ~paymentType) &&
+      (isGooglePay || isApplePay || isPaypal)}>
+      <div className="flex items-center text-xs mt-2">
+        <Icon name="lock" size=10 className="mr-1" />
+        <em className="text-left text-gray-400">
+          {localeString.saveWalletDetails->React.string}
+        </em>
+      </div>
+    </RenderIf>
+  }
+}
+
 @react.component
 let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
   open SessionsType
@@ -94,5 +118,6 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
     })
     ->React.array}
     <Surcharge list paymentMethod="wallet" paymentMethodType="google_pay" isForWallets=true />
+    <WalletsSaveDetailsText paymentType=list.payment_type />
   </div>
 }

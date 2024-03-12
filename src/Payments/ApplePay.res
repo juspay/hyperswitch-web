@@ -52,10 +52,18 @@ let make = (
     ? list->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
     : list->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
 
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+
   let processPayment = bodyArr => {
+    let requestBody = PaymentUtils.appendedCustomerAcceptance(
+      ~isGuestCustomer,
+      ~paymentType=list.payment_type,
+      ~body=bodyArr,
+    )
+
     if isWallet {
       intent(
-        ~bodyArr,
+        ~bodyArr=requestBody,
         ~confirmParam={
           return_url: options.wallets.walletReturnUrl,
           publishableKey,

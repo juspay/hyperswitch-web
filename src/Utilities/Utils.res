@@ -57,6 +57,23 @@ let getInt = (dict, key, default: int) => {
   ->Belt.Float.toInt
 }
 
+let getFloatFromString = (str, default) => {
+  let val = str->Js.Float.fromString
+  val->Js.Float.isNaN ? default : val
+}
+
+let getFloatFromJson = (json, default) => {
+  switch json->JSON.Classify.classify {
+  | String(str) => getFloatFromString(str, default)
+  | Number(floatValue) => floatValue
+  | _ => default
+  }
+}
+
+let getFloat = (dict, key, default) => {
+  dict->Dict.get(key)->Option.map(json => getFloatFromJson(json, default))->Option.getOr(default)
+}
+
 let getJsonBoolValue = (dict, key, default) => {
   dict->Dict.get(key)->Option.getOr(default->JSON.Encode.bool)
 }
@@ -80,6 +97,14 @@ let getDecodedStringFromJson = (json, callbackFunc, defaultValue) => {
   ->JSON.Decode.object
   ->Option.flatMap(callbackFunc)
   ->Option.flatMap(JSON.Decode.string)
+  ->Option.getOr(defaultValue)
+}
+
+let getDecodedBoolFromJson = (json, callbackFunc, defaultValue) => {
+  json
+  ->JSON.Decode.object
+  ->Option.flatMap(callbackFunc)
+  ->Option.flatMap(JSON.Decode.bool)
   ->Option.getOr(defaultValue)
 }
 
@@ -122,6 +147,10 @@ let getOptionBool = (dict, key) => {
 }
 let getDictFromJson = (json: JSON.t) => {
   json->JSON.Decode.object->Option.getOr(Dict.make())
+}
+
+let getDictfromDict = (dict, key) => {
+  dict->getJsonObjectFromDict(key)->getDictFromJson
 }
 
 let getBool = (dict, key, default) => {
@@ -266,6 +295,19 @@ let postSubmitResponse = (~jsonData, ~url) => {
     ("data", jsonData),
     ("url", url->JSON.Encode.string),
   ])
+}
+
+let getFailedSubmitResponse = (~errorType, ~message) => {
+  [
+    (
+      "error",
+      [("type", errorType->JSON.Encode.string), ("message", message->JSON.Encode.string)]
+      ->Dict.fromArray
+      ->JSON.Encode.object,
+    ),
+  ]
+  ->Dict.fromArray
+  ->JSON.Encode.object
 }
 
 let toCamelCase = str => {
@@ -828,3 +870,9 @@ let isOtherElements = componentType => {
 }
 
 let nbsp = `\u00A0`
+
+let callbackFuncForExtractingValFromDict = key => {
+  x => x->Dict.get(key)
+}
+
+let brandIconSize = 28
