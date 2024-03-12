@@ -123,12 +123,12 @@ let make = (
     )
     let banContactBody = PaymentBody.bancontactBody()
     let cardBody = if displaySavedPaymentMethodsCheckbox {
-      if isSaveCardsChecked || list.payment_type === "setup_mandate" {
+      if isSaveCardsChecked || list.payment_type === SETUP_MANDATE {
         defaultCardBody->Js.Array2.concat(onSessionBody)
       } else {
         defaultCardBody
       }
-    } else if isGuestCustomer || list.payment_type === "normal" {
+    } else if isGuestCustomer || list.payment_type === NORMAL {
       defaultCardBody
     } else {
       defaultCardBody->Js.Array2.concat(onSessionBody)
@@ -178,7 +178,7 @@ let make = (
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
   let conditionsForShowingSaveCardCheckbox =
     !isGuestCustomer &&
-    list.payment_type !== "setup_mandate" &&
+    list.payment_type !== SETUP_MANDATE &&
     options.displaySavedPaymentMethodsCheckbox &&
     !isBancontact
 

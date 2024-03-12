@@ -80,8 +80,7 @@ let make = (
 
   React.useEffect1(() => {
     let defaultPaymentMethod =
-      savedMethods
-      ->Js.Array2.find(savedMethod => savedMethod.defaultPaymentMethodSet)
+      savedMethods->Js.Array2.find(savedMethod => savedMethod.defaultPaymentMethodSet)
 
     let isSavedMethodsEmpty = savedMethods->Js.Array2.length === 0
 
@@ -400,6 +399,8 @@ let make = (
           cardProps
           expiryProps
           selectedOption={selectedOption->PaymentModeType.paymentMode}
+          savedMethods
+          paymentToken
         />
       </div>
     </RenderIf>

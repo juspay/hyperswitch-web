@@ -19,6 +19,8 @@ let make = (
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
   ~selectedOption: PaymentModeType.payment,
+  ~savedMethods: array<PaymentType.customerMethods>,
+  ~paymentToken,
 ) => {
   open RecoilAtoms
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -26,14 +28,32 @@ let make = (
   let (showLoader, setShowLoader) = React.useState(() => false)
   let areRequiredFieldsValidValue = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
 
-  let (isCVCValid, _, _, _, _, _, _, _, _, _) = cvcProps
+  let (isCVCValid, _, cvcNumber, _, _, _, _, _, _, _) = cvcProps
   let (isCardValid, _, _, _, _, _, _, _, _, _) = cardProps
   let (isExpiryValid, _, _, _, _, _, _, _, _) = expiryProps
 
+  let (token, _) = paymentToken
+  let customerMethod =
+    savedMethods
+    ->Array.filter(savedMethod => {
+      savedMethod.paymentToken === token
+    })
+    ->Array.get(0)
+    ->Option.getOr(PaymentType.defaultCustomerMethods)
+  let isCardPaymentMethod = customerMethod.paymentMethod === "card"
+  let complete = switch isCVCValid {
+  | Some(val) => token !== "" && val
+  | _ => false
+  }
+  let empty = cvcNumber == ""
+  let isSavedMethodCheck =
+    areRequiredFieldsValidValue && (!isCardPaymentMethod || (complete && !empty))
+
   let validFormat =
-    isCVCValid->Option.getOr(false) &&
     isCardValid->Option.getOr(false) &&
+    isCVCValid->Option.getOr(false) &&
     isExpiryValid->Option.getOr(false) &&
     areRequiredFieldsValidValue
 
@@ -44,14 +64,19 @@ let make = (
     setShowLoader(_ => true)
     Utils.handlePostMessage([("handleSdkConfirm", confirmPayload)])
   }
-  React.useEffect3(() => {
-    if selectedOption === Card {
-      setIsDisabled(_ => !validFormat)
+
+  React.useEffect4(() => {
+    if showFields {
+      if selectedOption === Card {
+        setIsDisabled(_ => !validFormat)
+      } else {
+        setIsDisabled(_ => !areRequiredFieldsValidValue)
+      }
     } else {
-      setIsDisabled(_ => !areRequiredFieldsValidValue)
+      setIsDisabled(_ => !isSavedMethodCheck)
     }
     None
-  }, (validFormat, areRequiredFieldsValidValue, selectedOption))
+  }, (validFormat, areRequiredFieldsValidValue, selectedOption, isSavedMethodCheck))
 
   <div className="flex flex-col gap-1 h-auto w-full items-center">
     <button
