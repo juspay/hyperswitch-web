@@ -1,3 +1,10 @@
+## [0.31.5](https://github.com/juspay/hyperswitch-web/compare/v0.31.4...v0.31.5) (2024-03-12)
+
+
+### Bug Fixes
+
+* disable and enable Pay now button ([#221](https://github.com/juspay/hyperswitch-web/issues/221)) ([3d2e497](https://github.com/juspay/hyperswitch-web/commit/3d2e4971a20b8737820743c848496e4e8bb4a57b))
+
 ## [0.31.4](https://github.com/juspay/hyperswitch-web/compare/v0.31.3...v0.31.4) (2024-03-12)
 
 
