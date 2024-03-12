@@ -10,7 +10,6 @@ let defaultPostalCode = {
 }
 
 type themeDataModule = {default: array<postalCodes>}
-open Promise
 
 @val
-external importPostalCode: string => t<themeDataModule> = "import"
+external importPostalCode: string => Promise.t<themeDataModule> = "import"

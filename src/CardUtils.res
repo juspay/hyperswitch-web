@@ -316,28 +316,28 @@ let calculateLuhn = value => {
 let getCardBrandIcon = (cardType, paymentType) => {
   open CardThemeType
   switch cardType {
-  | VISA => <Icon size=28 name="visa-light" />
-  | MASTERCARD => <Icon size=28 name="mastercard" />
-  | AMEX => <Icon size=28 name="amex-light" />
-  | MAESTRO => <Icon size=28 name="maestro" />
-  | DINERSCLUB => <Icon size=28 name="diners" />
-  | DISCOVER => <Icon size=28 name="discover" />
-  | BAJAJ => <Icon size=28 name="card" />
-  | SODEXO => <Icon size=28 name="card" />
-  | RUPAY => <Icon size=28 name="rupay-card" />
-  | JCB => <Icon size=28 name="jcb-card" />
-  | CARTESBANCAIRES => <Icon size=28 name="card" />
-  | UNIONPAY => <Icon size=28 name="card" />
-  | INTERAC => <Icon size=28 name="interac" />
+  | VISA => <Icon size=Utils.brandIconSize name="visa-light" />
+  | MASTERCARD => <Icon size=Utils.brandIconSize name="mastercard" />
+  | AMEX => <Icon size=Utils.brandIconSize name="amex-light" />
+  | MAESTRO => <Icon size=Utils.brandIconSize name="maestro" />
+  | DINERSCLUB => <Icon size=Utils.brandIconSize name="diners" />
+  | DISCOVER => <Icon size=Utils.brandIconSize name="discover" />
+  | BAJAJ => <Icon size=Utils.brandIconSize name="card" />
+  | SODEXO => <Icon size=Utils.brandIconSize name="card" />
+  | RUPAY => <Icon size=Utils.brandIconSize name="rupay-card" />
+  | JCB => <Icon size=Utils.brandIconSize name="jcb-card" />
+  | CARTESBANCAIRES => <Icon size=Utils.brandIconSize name="card" />
+  | UNIONPAY => <Icon size=Utils.brandIconSize name="card" />
+  | INTERAC => <Icon size=Utils.brandIconSize name="interac" />
   | NOTFOUND =>
     switch paymentType {
-    | Payment => <Icon size=28 name="base-card" />
+    | Payment => <Icon size=Utils.brandIconSize name="base-card" />
     | Card
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
     | NONE =>
-      <Icon size=28 name="default-card" />
+      <Icon size=Utils.brandIconSize name="default-card" />
     }
   }
 }
@@ -640,15 +640,15 @@ let getCvcDetailsFromCvcProps = cvcProps => {
 
 let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
   if cardEmpty {
-    <Icon size=28 name="cvc-empty" />
+    <Icon size=Utils.brandIconSize name="cvc-empty" />
   } else if cardInvalid {
     <div style={ReactDOMStyle.make(~color, ())}>
-      <Icon size=28 name="cvc-invalid" />
+      <Icon size=Utils.brandIconSize name="cvc-invalid" />
     </div>
   } else if cardComplete {
-    <Icon size=28 name="cvc-complete" />
+    <Icon size=Utils.brandIconSize name="cvc-complete" />
   } else {
-    <Icon size=28 name="cvc-empty" />
+    <Icon size=Utils.brandIconSize name="cvc-empty" />
   }
 }
 

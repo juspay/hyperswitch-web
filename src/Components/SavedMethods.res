@@ -21,16 +21,30 @@ let make = (
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (token, _) = paymentToken
   let savedCardlength = savedMethods->Js.Array2.length
+
+  let getWalletBrandIcon = (obj: PaymentType.customerMethods) => {
+    switch obj.paymentMethodType {
+    | Some("apple_pay") => <Icon size=brandIconSize name="apple_pay_saved" />
+    | Some("google_pay") => <Icon size=brandIconSize name="google_pay_saved" />
+    | Some("paypal") => <Icon size=brandIconSize name="paypal" />
+    | _ => <Icon size=brandIconSize name="default-card" />
+    }
+  }
+
   let bottomElement = {
     savedMethods
     ->Js.Array2.mapi((obj, i) => {
-      let brandIcon = getCardBrandIcon(
-        switch obj.card.scheme {
-        | Some(ele) => ele
-        | None => ""
-        }->cardType,
-        ""->CardTheme.getPaymentMode,
-      )
+      let brandIcon = switch obj.paymentMethod {
+      | "wallet" => getWalletBrandIcon(obj)
+      | _ =>
+        getCardBrandIcon(
+          switch obj.card.scheme {
+          | Some(ele) => ele
+          | None => ""
+          }->cardType,
+          ""->CardTheme.getPaymentMode,
+        )
+      }
       let isActive = token == obj.paymentToken
       <SavedCardItem
         key={i->Belt.Int.toString}
@@ -43,6 +57,8 @@ let make = (
         cvcProps
         paymentType
         list
+        savedMethods
+        setRequiredFieldsBody
       />
     })
     ->React.array
@@ -59,11 +75,34 @@ let make = (
     let json = ev.data->Js.Json.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (token, customerId) = paymentToken
-    let savedCardBody = PaymentBody.savedCardBody(~paymentToken=token, ~customerId, ~cvcNumber)
+    let customerMethod =
+      savedMethods
+      ->Js.Array2.filter(savedMethod => {
+        savedMethod.paymentToken === token
+      })
+      ->Belt.Array.get(0)
+      ->Belt.Option.getWithDefault(PaymentType.defaultCustomerMethods)
+    let isCardPaymentMethod = customerMethod.paymentMethod === "card"
+    let savedPaymentMethodBody = switch customerMethod.paymentMethod {
+    | "card" => PaymentBody.savedCardBody(~paymentToken=token, ~customerId, ~cvcNumber)
+    | _ => {
+        let paymentMethodType = switch customerMethod.paymentMethodType {
+        | Some("")
+        | None => Js.Json.null
+        | Some(paymentMethodType) => paymentMethodType->Js.Json.string
+        }
+        PaymentBody.savedPaymentMethodBody(
+          ~paymentToken=token,
+          ~customerId,
+          ~paymentMethod=customerMethod.paymentMethod,
+          ~paymentMethodType,
+        )
+      }
+    }
     if confirm.doSubmit {
-      if areRequiredFieldsValid && complete && !empty {
+      if areRequiredFieldsValid && (!isCardPaymentMethod || (complete && !empty)) {
         intent(
-          ~bodyArr=savedCardBody
+          ~bodyArr=savedPaymentMethodBody
           ->Js.Dict.fromArray
           ->Js.Json.object_
           ->OrcaUtils.flattenObject(true)
@@ -81,15 +120,16 @@ let make = (
         if !(isCVCValid->Belt.Option.getWithDefault(false)) {
           setUserError(localeString.enterValidDetailsText)
         }
+        if !areRequiredFieldsValid {
+          setUserError(localeString.enterValidDetailsText)
+        }
       }
     }
   }, (areRequiredFieldsValid, requiredFieldsBody, empty, complete))
   submitPaymentData(submitCallback)
 
   <>
-    <div
-      className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow"
-      style={ReactDOMStyle.make(~padding="5px", ())}>
+    <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
       {if (
         savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields)
       ) {
@@ -112,19 +152,8 @@ let make = (
           </PaymentElementShimmer.Shimmer>
         </div>
       } else {
-        <RenderIf condition={!showFields}>
-          <Block bottomElement padding="px-4 py-1" className="max-h-[309px] overflow-auto" />
-        </RenderIf>
+        <RenderIf condition={!showFields}> {bottomElement} </RenderIf>
       }}
-      <DynamicFields
-        paymentType
-        list
-        paymentMethod="card"
-        paymentMethodType="debit"
-        setRequiredFieldsBody
-        isSavedCardFlow=true
-        savedCards=savedMethods
-      />
       <RenderIf condition={!showFields}>
         <div
           className="Label flex flex-row gap-3 items-end cursor-pointer"
@@ -141,7 +170,7 @@ let make = (
             setShowFields(._ => true)
           }}>
           <Icon name="circle-plus" size=22 />
-          {React.string(localeString.addNewCard)}
+          {React.string(localeString.morePaymentMethods)}
         </div>
       </RenderIf>
     </div>

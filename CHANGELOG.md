@@ -1,3 +1,31 @@
+# [0.31.0](https://github.com/juspay/hyperswitch-web/compare/v0.30.0...v0.31.0) (2024-03-11)
+
+
+### Features
+
+* Added Payment Session Headless ([#209](https://github.com/juspay/hyperswitch-web/issues/209)) ([67be317](https://github.com/juspay/hyperswitch-web/commit/67be317957ff4d267f20cf5b376277116b7e4861))
+
+# [0.30.0](https://github.com/juspay/hyperswitch-web/compare/v0.29.1...v0.30.0) (2024-03-11)
+
+
+### Features
+
+* Support to handle confirm button (E2E) ([#198](https://github.com/juspay/hyperswitch-web/issues/198)) ([a4ffecf](https://github.com/juspay/hyperswitch-web/commit/a4ffecf0cc31a3d094eb0f8c57d9d8260d06204b))
+
+## [0.29.1](https://github.com/juspay/hyperswitch-web/compare/v0.29.0...v0.29.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* added Wallets to Saved Payment Methods ([#213](https://github.com/juspay/hyperswitch-web/issues/213)) ([dc6a194](https://github.com/juspay/hyperswitch-web/commit/dc6a194512ac010cec55ae52451c98a017da5d7c))
+
+# [0.29.0](https://github.com/juspay/hyperswitch-web/compare/v0.28.0...v0.29.0) (2024-03-11)
+
+
+### Features
+
+* props divide disableSave cards to checkbox and api ([#206](https://github.com/juspay/hyperswitch-web/issues/206)) ([83426ab](https://github.com/juspay/hyperswitch-web/commit/83426ab9a11210ed1e7edb2341ef25ba4c8a4500))
+
 # [0.28.0](https://github.com/juspay/hyperswitch-web/compare/v0.27.5...v0.28.0) (2024-03-08)
 
 
