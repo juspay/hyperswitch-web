@@ -65,6 +65,8 @@ let make = (
     Utils.handlePostMessage([("handleSdkConfirm", confirmPayload)])
   }
 
+  let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
+
   React.useEffect4(() => {
     if showFields {
       if selectedOption === Card {
@@ -104,7 +106,7 @@ let make = (
         {if showLoader {
           <Loader />
         } else {
-          localeString.payNowButton->React.string
+          buttonText->React.string
         }}
       </span>
     </button>

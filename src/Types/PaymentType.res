@@ -136,6 +136,7 @@ type billingAddress = {
 
 type sdkHandleConfirmPayment = {
   handleConfirm: bool,
+  buttonText?: string,
   confirmParams: ConfirmType.confirmParams,
 }
 
@@ -903,6 +904,7 @@ let getConfirmParams = dict => {
 
 let getSdkHandleConfirmPaymentProps = dict => {
   handleConfirm: dict->getBool("handleConfirm", false),
+  buttonText: ?dict->getOptionString("buttonText"),
   confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
 }
 
