@@ -1,3 +1,10 @@
+## [0.33.2](https://github.com/juspay/hyperswitch-web/compare/v0.33.1...v0.33.2) (2024-03-13)
+
+
+### Bug Fixes
+
+* added paymentType to be passed in the confirm body ([#228](https://github.com/juspay/hyperswitch-web/issues/228)) ([4f94264](https://github.com/juspay/hyperswitch-web/commit/4f9426480a7e23bf98268b59e957c913ce359bfc))
+
 ## [0.33.1](https://github.com/juspay/hyperswitch-web/compare/v0.33.0...v0.33.1) (2024-03-13)
 
 
