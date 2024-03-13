@@ -20,7 +20,7 @@ let cardPaymentBody = (
   ]
 
   if nickname != "" {
-    cardBody->Js.Array2.push(("nickname", nickname->Js.Json.string))->ignore
+    cardBody->Js.Array2.push(("nick_name", nickname->Js.Json.string))->ignore
   }
 
   [
