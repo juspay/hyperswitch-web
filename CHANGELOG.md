@@ -1,3 +1,10 @@
+## [0.33.1](https://github.com/juspay/hyperswitch-web/compare/v0.33.0...v0.33.1) (2024-03-13)
+
+
+### Bug Fixes
+
+* **ideal:** bank name not being populated ([#227](https://github.com/juspay/hyperswitch-web/issues/227)) ([d264f32](https://github.com/juspay/hyperswitch-web/commit/d264f32870cdf6d4e8d99e0ed79bf8e73e6129fd))
+
 # [0.33.0](https://github.com/juspay/hyperswitch-web/compare/v0.32.0...v0.33.0) (2024-03-13)
 
 
