@@ -103,13 +103,13 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = React.useMemo1(() => {
+  let isCustomerAcceptanceRequired = React.useMemo2(() => {
     if displaySavedPaymentMethodsCheckbox {
       isSaveCardsChecked || list.payment_type === SETUP_MANDATE
     } else {
       !(isGuestCustomer || list.payment_type === NORMAL)
     }
-  }, [isSaveCardsChecked])
+  }, (isSaveCardsChecked, list.payment_type))
 
   let submitCallback = React.useCallback6((ev: Window.event) => {
     let json = ev.data->Js.Json.parseExn

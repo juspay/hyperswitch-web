@@ -14,7 +14,6 @@ let make = (
   ~countryProps,
   ~paymentType: CardThemeType.mode,
 ) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let sessionsObj = Recoil.useRecoilValueFromAtom(sessions)
   let {
     showCardFormByDefault,
@@ -23,6 +22,7 @@ let make = (
     customerPaymentMethods,
     displaySavedPaymentMethods,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
+  let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
@@ -396,13 +396,19 @@ let make = (
   }, [displaySavedPaymentMethods])
 
   let paymentLabel = if displaySavedPaymentMethods {
-    showFields ? localeString.selectPaymentMethodLabel : localeString.savedPaymentMethodsLabel
+    showFields
+      ? optionAtomValue.paymentMethodsHeaderText
+      : optionAtomValue.savedPaymentMethodsHeaderText
   } else {
-    localeString.selectPaymentMethodLabel
+    optionAtomValue.paymentMethodsHeaderText
   }
 
   <>
-    <div className="text-2xl font-semibold text-[#151619] mb-6"> {React.string(paymentLabel)} </div>
+    <RenderIf condition={paymentLabel->Option.isSome}>
+      <div className="text-2xl font-semibold text-[#151619] mb-6">
+        {paymentLabel->Option.getOr("")->React.string}
+      </div>
+    </RenderIf>
     <RenderIf condition={!showFields && displaySavedPaymentMethods}>
       <SavedMethods
         paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType list

@@ -1,3 +1,10 @@
+# [0.33.0](https://github.com/juspay/hyperswitch-web/compare/v0.32.0...v0.33.0) (2024-03-13)
+
+
+### Features
+
+* added prop for PaymentHeader Text ([#226](https://github.com/juspay/hyperswitch-web/issues/226)) ([8ff8933](https://github.com/juspay/hyperswitch-web/commit/8ff89334c662bb37bdff112b693a0f72d7194017))
+
 # [0.32.0](https://github.com/juspay/hyperswitch-web/compare/v0.31.6...v0.32.0) (2024-03-13)
 
 
