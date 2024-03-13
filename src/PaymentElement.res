@@ -108,7 +108,19 @@ let make = (
     None
   }, [savedMethods])
 
-  let (walletList, paymentOptionsList, actualList) = React.useMemo4(() => {
+  let areAllGooglePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreAllRequiredFieldsPrefilled(
+    ~list,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="google_pay",
+  )
+
+  let areAllApplePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreAllRequiredFieldsPrefilled(
+    ~list,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="apple_pay",
+  )
+
+  let (walletList, paymentOptionsList, actualList) = React.useMemo6(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
       let paymentOrder =
@@ -119,6 +131,8 @@ let make = (
           ~order=paymentOrder,
           ~showApplePay=isApplePayReady,
           ~showGooglePay=isGooglePayReady,
+          ~areAllGooglePayRequiredFieldsPrefilled,
+          ~areAllApplePayRequiredFieldsPrefilled,
         )
       (
         wallets->Utils.removeDuplicate,
@@ -131,7 +145,14 @@ let make = (
         : ([], [], [])
     | _ => ([], [], [])
     }
-  }, (methodslist, paymentMethodOrder, isApplePayReady, isGooglePayReady))
+  }, (
+    methodslist,
+    paymentMethodOrder,
+    isApplePayReady,
+    isGooglePayReady,
+    areAllGooglePayRequiredFieldsPrefilled,
+    areAllApplePayRequiredFieldsPrefilled,
+  ))
 
   React.useEffect4(() => {
     switch methodslist {

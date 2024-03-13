@@ -114,6 +114,7 @@ type customerCard = {
   expiryYear: string,
   cardToken: string,
   cardHolderName: option<string>,
+  nickname: string,
 }
 type customerMethods = {
   paymentToken: string,
@@ -123,6 +124,7 @@ type customerMethods = {
   card: customerCard,
   paymentMethodType: option<string>,
   defaultPaymentMethodSet: bool,
+  requiresCvv: bool,
 }
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
@@ -164,6 +166,7 @@ let defaultCardDetails = {
   expiryYear: "",
   cardToken: "",
   cardHolderName: None,
+  nickname: "",
 }
 let defaultCustomerMethods = {
   paymentToken: "",
@@ -173,6 +176,7 @@ let defaultCustomerMethods = {
   card: defaultCardDetails,
   paymentMethodType: None,
   defaultPaymentMethodSet: false,
+  requiresCvv: true,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -780,6 +784,7 @@ let getCardDetails = (dict, str) => {
       expiryYear: getString(json, "expiry_year", ""),
       cardToken: getString(json, "card_token", ""),
       cardHolderName: Some(getString(json, "card_holder_name", "")),
+      nickname: getString(json, "nick_name", ""),
     }
   })
   ->Belt.Option.getWithDefault(defaultCardDetails)
@@ -820,6 +825,7 @@ let createCustomerObjArr = dict => {
         card: getCardDetails(dict, "card"),
         paymentMethodType: getPaymentMethodType(dict),
         defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
+        requiresCvv: getBool(dict, "requires_cvv", true),
       }
     })
   LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
@@ -842,6 +848,7 @@ let getCustomerMethods = (dict, str) => {
           card: getCardDetails(json, "card"),
           paymentMethodType: getPaymentMethodType(dict),
           defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
+          requiresCvv: getBool(dict, "requires_cvv", true),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)

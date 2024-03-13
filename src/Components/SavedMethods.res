@@ -83,8 +83,16 @@ let make = (
       ->Belt.Array.get(0)
       ->Belt.Option.getWithDefault(PaymentType.defaultCustomerMethods)
     let isCardPaymentMethod = customerMethod.paymentMethod === "card"
+    let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
+
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
-    | "card" => PaymentBody.savedCardBody(~paymentToken=token, ~customerId, ~cvcNumber)
+    | "card" =>
+      PaymentBody.savedCardBody(
+        ~paymentToken=token,
+        ~customerId,
+        ~cvcNumber,
+        ~requiresCvv=customerMethod.requiresCvv,
+      )
     | _ => {
         let paymentMethodType = switch customerMethod.paymentMethodType {
         | Some("")
@@ -99,8 +107,9 @@ let make = (
         )
       }
     }
+
     if confirm.doSubmit {
-      if areRequiredFieldsValid && (!isCardPaymentMethod || (complete && !empty)) {
+      if areRequiredFieldsValid && (!isCardPaymentMethod || isCardPaymentMethodValid) {
         intent(
           ~bodyArr=savedPaymentMethodBody
           ->Js.Dict.fromArray

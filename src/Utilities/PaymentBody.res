@@ -1,29 +1,38 @@
 @val @scope("window")
 external btoa: string => string = "btoa"
-let cardPaymentBody = (~cardNumber, ~month, ~year, ~cardHolderName, ~cvcNumber, ~cardBrand) => [
-  ("payment_method", "card"->Js.Json.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "card",
-        [
-          ("card_number", cardNumber->CardUtils.clearSpaces->Js.Json.string),
-          ("card_exp_month", month->Js.Json.string),
-          ("card_exp_year", year->Js.Json.string),
-          ("card_holder_name", cardHolderName->Js.Json.string),
-          ("card_cvc", cvcNumber->Js.Json.string),
-          ("card_issuer", ""->Js.Json.string),
-        ]
-        ->Js.Array2.concat(cardBrand)
-        ->Js.Dict.fromArray
-        ->Js.Json.object_,
-      ),
-    ]
-    ->Js.Dict.fromArray
-    ->Js.Json.object_,
-  ),
-]
+let cardPaymentBody = (
+  ~cardNumber,
+  ~month,
+  ~year,
+  ~cardHolderName,
+  ~cvcNumber,
+  ~cardBrand,
+  ~nickname="",
+  (),
+) => {
+  let cardBody = [
+    ("card_number", cardNumber->CardUtils.clearSpaces->Js.Json.string),
+    ("card_exp_month", month->Js.Json.string),
+    ("card_exp_year", year->Js.Json.string),
+    ("card_holder_name", cardHolderName->Js.Json.string),
+    ("card_cvc", cvcNumber->Js.Json.string),
+    ("card_issuer", ""->Js.Json.string),
+  ]
+
+  if nickname != "" {
+    cardBody->Js.Array2.push(("nick_name", nickname->Js.Json.string))->ignore
+  }
+
+  [
+    ("payment_method", "card"->Js.Json.string),
+    (
+      "payment_method_data",
+      [("card", cardBody->Js.Array2.concat(cardBrand)->Js.Dict.fromArray->Js.Json.object_)]
+      ->Js.Dict.fromArray
+      ->Js.Json.object_,
+    ),
+  ]
+}
 
 let bancontactBody = () => [
   ("payment_method", "bank_redirect"->Js.Json.string),
@@ -55,12 +64,19 @@ let boletoBody = (~socialSecurityNumber) => [
   ),
 ]
 
-let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber) => [
-  ("payment_method", "card"->Js.Json.string),
-  ("payment_token", paymentToken->Js.Json.string),
-  ("customer_id", customerId->Js.Json.string),
-  ("card_cvc", cvcNumber->Js.Json.string),
-]
+let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber, ~requiresCvv) => {
+  let savedCardBody = [
+    ("payment_method", "card"->Js.Json.string),
+    ("payment_token", paymentToken->Js.Json.string),
+    ("customer_id", customerId->Js.Json.string),
+  ]
+
+  if requiresCvv {
+    savedCardBody->Js.Array2.push(("card_cvc", cvcNumber->Js.Json.string))->ignore
+  }
+
+  savedCardBody
+}
 
 let customerAcceptanceBody =
   [
