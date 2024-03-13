@@ -1,6 +1,6 @@
 @send external postMessage: (Window.window, JSON.t, string) => unit = "postMessage"
 
-external eventToJson: ReactEvent.Mouse.t => JSON.t = "%identity"
+external eventToJson: 'a => JSON.t = "%identity"
 
 module Loader = {
   @react.component
@@ -59,9 +59,21 @@ let make = (
 
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
 
+  let handleMessage = (event: Types.event) => {
+    let json = event.data->eventToJson->OrcaUtils.getStringfromjson("")->OrcaUtils.safeParse
+    let dict = json->Utils.getDictFromJson
+    switch dict->Dict.get("submitSuccessful") {
+    | Some(_) =>
+      setIsDisabled(_ => false)
+      setShowLoader(_ => false)
+    | None => ()
+    }
+  }
+
   let handleOnClick = _ => {
     setIsDisabled(_ => true)
     setShowLoader(_ => true)
+    EventListenerManager.addSmartEventListener("message", handleMessage, "onSubmitSuccessful")
     Utils.handlePostMessage([("handleSdkConfirm", confirmPayload)])
   }
 
