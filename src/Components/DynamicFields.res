@@ -21,16 +21,11 @@ let make = (
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   //<...>//
-  let paymentMethodTypes = React.useMemo3(() => {
-    PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~list,
-      ~paymentMethod,
-      ~paymentMethodType=PaymentUtils.getPaymentMethodName(
-        ~paymentMethodType=paymentMethod,
-        ~paymentMethodName=paymentMethodType,
-      ),
-    )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
-  }, (list, paymentMethod, paymentMethodType))
+  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
+    ~list,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
 
   let requiredFieldsWithBillingDetails = React.useMemo3(() => {
     if paymentMethod === "card" {

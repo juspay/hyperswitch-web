@@ -1,3 +1,17 @@
+# [0.32.0](https://github.com/juspay/hyperswitch-web/compare/v0.31.6...v0.32.0) (2024-03-13)
+
+
+### Features
+
+* cvc nickname gpay ([#224](https://github.com/juspay/hyperswitch-web/issues/224)) ([f3f4047](https://github.com/juspay/hyperswitch-web/commit/f3f404733f7c13eb69589779ea2e2c8a6569259d))
+
+## [0.31.6](https://github.com/juspay/hyperswitch-web/compare/v0.31.5...v0.31.6) (2024-03-13)
+
+
+### Bug Fixes
+
+* pay now button text & theme based changes ([#223](https://github.com/juspay/hyperswitch-web/issues/223)) ([993767f](https://github.com/juspay/hyperswitch-web/commit/993767f185a3059ea5cc0652aa4053304e66ba52))
+
 ## [0.31.5](https://github.com/juspay/hyperswitch-web/compare/v0.31.4...v0.31.5) (2024-03-12)
 
 
