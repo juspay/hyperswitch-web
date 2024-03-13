@@ -13,39 +13,41 @@ type walletSurchargeDetails = {
   surchargeDetails: PaymentMethodsRecord.surchargeDetails,
 }
 
-let getSurchargeDetailsForOneClickWallets = (~list) => {
+let useSurchargeDetailsForOneClickWallets = (~list) => {
   let areOneClickWalletsRendered = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.areOneClickWalletsRendered,
   )
 
-  oneClickWallets->Js.Array2.reduce((acc, wallet) => {
-    let isWalletBtnRendered = switch wallet.paymentMethodType {
-    | "apple_pay" => areOneClickWalletsRendered.isApplePay
-    | "paypal" => areOneClickWalletsRendered.isPaypal
-    | "google_pay" => areOneClickWalletsRendered.isGooglePay
-    | _ => false
-    }
-    if isWalletBtnRendered {
-      let paymentMethodType =
-        PaymentMethodsRecord.getPaymentMethodTypeFromList(
-          ~list,
-          ~paymentMethod="wallet",
-          ~paymentMethodType=wallet.paymentMethodType,
-        )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
-      switch paymentMethodType.surcharge_details {
-      | Some(surchargDetails) =>
-        acc->Js.Array2.concat([
-          {
-            name: wallet.displayName,
-            surchargeDetails: surchargDetails,
-          },
-        ])
-      | None => acc
+  React.useMemo2(() => {
+    oneClickWallets->Js.Array2.reduce((acc, wallet) => {
+      let isWalletBtnRendered = switch wallet.paymentMethodType {
+      | "apple_pay" => areOneClickWalletsRendered.isApplePay
+      | "paypal" => areOneClickWalletsRendered.isPaypal
+      | "google_pay" => areOneClickWalletsRendered.isGooglePay
+      | _ => false
       }
-    } else {
-      acc
-    }
-  }, [])
+      if isWalletBtnRendered {
+        let paymentMethodType =
+          PaymentMethodsRecord.getPaymentMethodTypeFromList(
+            ~list,
+            ~paymentMethod="wallet",
+            ~paymentMethodType=wallet.paymentMethodType,
+          )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
+        switch paymentMethodType.surcharge_details {
+        | Some(surchargDetails) =>
+          acc->Js.Array2.concat([
+            {
+              name: wallet.displayName,
+              surchargeDetails: surchargDetails,
+            },
+          ])
+        | None => acc
+        }
+      } else {
+        acc
+      }
+    }, [])
+  }, (areOneClickWalletsRendered, list))
 }
 
 let getMessage = (
@@ -70,44 +72,48 @@ let getMessage = (
   )
 }
 
-let getOneClickWalletsMessage = (~list) => {
+let useOneClickWalletsMessageGetter = (~list) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
-  let oneClickWalletsArr = getSurchargeDetailsForOneClickWallets(~list)
+  let oneClickWalletsArr = useSurchargeDetailsForOneClickWallets(~list)
 
-  if oneClickWalletsArr->Js.Array2.length !== 0 {
-    let msg = oneClickWalletsArr->Js.Array2.reducei((acc, wallet, index) => {
-      let amount = wallet.surchargeDetails.displayTotalSurchargeAmount->Js.Float.toString
-      let myMsg =
+  let getOneClickWalletsMessage = () => {
+    if oneClickWalletsArr->Js.Array2.length !== 0 {
+      let msg = oneClickWalletsArr->Js.Array2.reducei((acc, wallet, index) => {
+        let amount = wallet.surchargeDetails.displayTotalSurchargeAmount->Js.Float.toString
+        let myMsg =
+          <>
+            <strong> {React.string(`${list.currency} ${amount}`)} </strong>
+            {React.string(`${Utils.nbsp}${localeString.on} ${wallet.name}`)}
+          </>
+        let msgToConcat = if index === 0 {
+          myMsg
+        } else if index === oneClickWalletsArr->Belt.Array.length - 1 {
+          <>
+            {React.string(`${Utils.nbsp}${localeString.\"and"}${Utils.nbsp}`)}
+            {myMsg}
+          </>
+        } else {
+          <>
+            {React.string(`,${Utils.nbsp}`)}
+            {myMsg}
+          </>
+        }
         <>
-          <strong> {React.string(`${list.currency} ${amount}`)} </strong>
-          {React.string(`${Utils.nbsp}${localeString.on} ${wallet.name}`)}
+          {acc}
+          {msgToConcat}
         </>
-      let msgToConcat = if index === 0 {
-        myMsg
-      } else if index === oneClickWalletsArr->Belt.Array.length - 1 {
+      }, React.null)
+      let finalElement =
         <>
-          {React.string(`${Utils.nbsp}${localeString.\"and"}${Utils.nbsp}`)}
-          {myMsg}
+          {React.string(`${localeString.surchargeMsgAmountForOneClickWallets}:${Utils.nbsp}`)}
+          {msg}
         </>
-      } else {
-        <>
-          {React.string(`,${Utils.nbsp}`)}
-          {myMsg}
-        </>
-      }
-      <>
-        {acc}
-        {msgToConcat}
-      </>
-    }, React.null)
-    let finalElement =
-      <>
-        {React.string(`${localeString.surchargeMsgAmountForOneClickWallets}:${Utils.nbsp}`)}
-        {msg}
-      </>
-    Some(finalElement)
-  } else {
-    None
+      Some(finalElement)
+    } else {
+      None
+    }
   }
+
+  getOneClickWalletsMessage
 }
