@@ -21,7 +21,7 @@ let make = (
     paymentMethodOrder,
     layout,
     customerPaymentMethods,
-    displaySavedPaymentMethodsCheckbox,
+    displaySavedPaymentMethods,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
@@ -50,7 +50,7 @@ let make = (
   ) = React.useState(_ => PaymentType.LoadingSavedCards)
 
   React.useEffect2(() => {
-    switch (displaySavedPaymentMethodsCheckbox, customerPaymentMethods) {
+    switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
         setShowFields(._ => true)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
@@ -86,7 +86,7 @@ let make = (
     }
 
     None
-  }, (customerPaymentMethods, displaySavedPaymentMethodsCheckbox))
+  }, (customerPaymentMethods, displaySavedPaymentMethods))
 
   React.useEffect1(() => {
     let defaultPaymentMethod =
@@ -369,13 +369,20 @@ let make = (
     </ErrorBoundary>
   }
 
-  let paymentLabel = showFields
-    ? localeString.selectPaymentMethodLabel
-    : localeString.savedPaymentMethodsLabel
+  React.useEffect1(() => {
+    setShowFields(._ => !displaySavedPaymentMethods)
+    None
+  }, [displaySavedPaymentMethods])
+
+  let paymentLabel = if displaySavedPaymentMethods {
+    showFields ? localeString.selectPaymentMethodLabel : localeString.savedPaymentMethodsLabel
+  } else {
+    localeString.selectPaymentMethodLabel
+  }
 
   <>
     <div className="text-2xl font-semibold text-[#151619] mb-6"> {React.string(paymentLabel)} </div>
-    <RenderIf condition={!showFields}>
+    <RenderIf condition={!showFields && displaySavedPaymentMethods}>
       <SavedMethods
         paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType list
       />

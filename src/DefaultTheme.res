@@ -40,7 +40,7 @@ let default = {
   spacingGridRow: "20px",
   buttonBackgroundColor: "#006df9",
   buttonHeight: "48px",
-  buttonWidth: "thin",
+  buttonWidth: "100%",
   buttonBorderRadius: "6px",
   buttonBorderColor: "#ffffff",
   buttonTextColor: "#ffffff",

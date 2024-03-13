@@ -40,7 +40,7 @@ let midnight = {
   spacingGridRow: "20px",
   buttonBackgroundColor: "#85d996",
   buttonHeight: "48px",
-  buttonWidth: "thin",
+  buttonWidth: "100%",
   buttonBorderRadius: "6px",
   buttonBorderColor: "#85d996",
   buttonTextColor: "#000000",
