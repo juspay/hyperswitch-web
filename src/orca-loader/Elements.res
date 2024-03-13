@@ -129,7 +129,7 @@ let make = (
       ->ignore
     }
     let fetchCustomerDetails = mountedIframeRef => {
-      let customerDetailsPromise = PaymentHelpers.useCustomerDetails(
+      let customerDetailsPromise = PaymentHelpers.fetchCustomerDetails(
         ~clientSecret,
         ~publishableKey,
         ~endpoint,

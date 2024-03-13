@@ -11,7 +11,7 @@ let getCustomerSavedPaymentMethods = (
   ~switchToCustomPod,
 ) => {
   open Promise
-  PaymentHelpers.useCustomerDetails(
+  PaymentHelpers.fetchCustomerDetails(
     ~clientSecret,
     ~publishableKey,
     ~endpoint,

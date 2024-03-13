@@ -22,7 +22,7 @@ let make = (~sessionId as _, ~publishableKey as _, ~clientSecret as _, ~endpoint
   // //       ~switchToCustomPod=false,
   // //       ~endpoint,
   // //     ),
-  // //     PaymentHelpers.useCustomerDetails(
+  // //     PaymentHelpers.fetchCustomerDetails(
   // //       ~clientSecret,
   // //       ~publishableKey,
   // //       ~optLogger=Some(logger),

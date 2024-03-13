@@ -953,7 +953,7 @@ let usePaymentMethodList = (
   })
 }
 
-let useCustomerDetails = (
+let fetchCustomerDetails = (
   ~clientSecret,
   ~publishableKey,
   ~endpoint,
