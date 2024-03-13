@@ -14,19 +14,12 @@ let make = (
   ~countryProps,
   ~paymentType: CardThemeType.mode,
 ) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let sessionsObj = Recoil.useRecoilValueFromAtom(sessions)
-  let {
-    showCardFormByDefault,
-    paymentMethodOrder,
-    layout,
-    customerPaymentMethods,
-    displaySavedPaymentMethods,
-  } = Recoil.useRecoilValueFromAtom(optionAtom)
+  let optionValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
-  let paymentOrder = paymentMethodOrder->Utils.getOptionalArr->Utils.removeDuplicate
+  let paymentOrder = optionValue.paymentMethodOrder->Utils.getOptionalArr->Utils.removeDuplicate
   let (sessions, setSessions) = React.useState(_ => Js.Dict.empty()->Js.Json.object_)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
@@ -34,7 +27,7 @@ let make = (
 
   let (list, setList) = React.useState(_ => PaymentMethodsRecord.defaultList)
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
-  let layoutClass = CardUtils.getLayoutClass(layout)
+  let layoutClass = CardUtils.getLayoutClass(optionValue.layout)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (dropDownOptions: array<string>, setDropDownOptions) = React.useState(_ => [])
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
@@ -50,7 +43,7 @@ let make = (
   ) = React.useState(_ => PaymentType.LoadingSavedCards)
 
   React.useEffect2(() => {
-    switch (displaySavedPaymentMethods, customerPaymentMethods) {
+    switch (optionValue.displaySavedPaymentMethods, optionValue.customerPaymentMethods) {
     | (false, _) => {
         setShowFields(._ => true)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
@@ -86,7 +79,7 @@ let make = (
     }
 
     None
-  }, (customerPaymentMethods, displaySavedPaymentMethods))
+  }, (optionValue.customerPaymentMethods, optionValue.displaySavedPaymentMethods))
 
   React.useEffect1(() => {
     let defaultPaymentMethod =
@@ -140,14 +133,14 @@ let make = (
         otherOptions,
       )
     | SemiLoaded =>
-      showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder)
+      optionValue.showCardFormByDefault && Utils.checkPriorityList(optionValue.paymentMethodOrder)
         ? ([], ["card"], [])
         : ([], [], [])
     | _ => ([], [], [])
     }
   }, (
     methodslist,
-    paymentMethodOrder,
+    optionValue.paymentMethodOrder,
     isApplePayReady,
     isGooglePayReady,
     areAllGooglePayRequiredFieldsPrefilled,
@@ -164,7 +157,7 @@ let make = (
       })
       setWalletOptions(_ => walletList)
       setList(_ => plist)
-      showCardFormByDefault
+      optionValue.showCardFormByDefault
         ? if !(actualList->Js.Array2.includes(selectedOption)) && selectedOption !== "" {
             ErrorUtils.manageErrorWarning(
               SDK_CONNECTOR_WARNING,
@@ -172,11 +165,11 @@ let make = (
               ~logger=loggerState,
               (),
             )
-          } else if !Utils.checkPriorityList(paymentMethodOrder) {
+          } else if !Utils.checkPriorityList(optionValue.paymentMethodOrder) {
             ErrorUtils.manageErrorWarning(
               SDK_CONNECTOR_WARNING,
-              ~dynamicStr=`'paymentMethodOrder' is ${Js.Array2.joinWith(
-                  paymentMethodOrder->Utils.getOptionalArr,
+              ~dynamicStr=`'optionValue.paymentMethodOrder' is ${Js.Array2.joinWith(
+                  optionValue.paymentMethodOrder->Utils.getOptionalArr,
                   ", ",
                 )} . Please enable Card Payment as 1st priority to show it as default.`,
               ~logger=loggerState,
@@ -187,7 +180,9 @@ let make = (
     | LoadError(_)
     | SemiLoaded =>
       setPaymentOptions(_ =>
-        showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? ["card"] : []
+        optionValue.showCardFormByDefault && Utils.checkPriorityList(optionValue.paymentMethodOrder)
+          ? ["card"]
+          : []
       )
     | _ => ()
     }
@@ -238,9 +233,12 @@ let make = (
         : switch methodslist {
           | SemiLoaded
           | LoadError(_) =>
-            showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? "card" : ""
+            optionValue.showCardFormByDefault &&
+            Utils.checkPriorityList(optionValue.paymentMethodOrder)
+              ? "card"
+              : ""
           | Loaded(_) =>
-            paymentOptions->Js.Array2.includes(selectedOption) && showCardFormByDefault
+            paymentOptions->Js.Array2.includes(selectedOption) && optionValue.showCardFormByDefault
               ? selectedOption
               : paymentOptions->Belt.Array.get(0)->Belt.Option.getWithDefault("")
           | _ => paymentOptions->Belt.Array.get(0)->Belt.Option.getWithDefault("")
@@ -391,19 +389,23 @@ let make = (
   }
 
   React.useEffect1(() => {
-    setShowFields(._ => !displaySavedPaymentMethods)
+    setShowFields(._ => !optionValue.displaySavedPaymentMethods)
     None
-  }, [displaySavedPaymentMethods])
+  }, [optionValue.displaySavedPaymentMethods])
 
-  let paymentLabel = if displaySavedPaymentMethods {
-    showFields ? localeString.selectPaymentMethodLabel : localeString.savedPaymentMethodsLabel
+  let paymentLabel = if optionValue.displaySavedPaymentMethods {
+    showFields ? optionValue.paymentMethodsHeaderText : optionValue.savedPaymentMethodsHeaderText
   } else {
-    localeString.selectPaymentMethodLabel
+    optionValue.paymentMethodsHeaderText
   }
 
   <>
-    <div className="text-2xl font-semibold text-[#151619] mb-6"> {React.string(paymentLabel)} </div>
-    <RenderIf condition={!showFields && displaySavedPaymentMethods}>
+    <RenderIf condition={paymentLabel->Option.isSome}>
+      <div className="text-2xl font-semibold text-[#151619] mb-6">
+        {paymentLabel->Option.getOr("")->React.string}
+      </div>
+    </RenderIf>
+    <RenderIf condition={!showFields && optionValue.displaySavedPaymentMethods}>
       <SavedMethods
         paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType list
       />
