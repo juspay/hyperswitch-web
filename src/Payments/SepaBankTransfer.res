@@ -61,7 +61,7 @@ let make = (
       }
     }
   }, (email, fullName, country))
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <div
     className="flex flex-col animate-slowShow"

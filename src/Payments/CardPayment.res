@@ -172,7 +172,7 @@ let make = (
       }
     }
   }, (areRequiredFieldsValid, requiredFieldsBody, empty, complete, isSaveCardsChecked))
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"

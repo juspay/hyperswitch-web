@@ -60,7 +60,7 @@ let make = (
       ->Belt.Option.flatMap(Js.Json.decodeBoolean)
       ->Belt.Option.getWithDefault(false)
 
-    let paymentMethodListPromise = PaymentHelpers.usePaymentMethodList(
+    let paymentMethodListPromise = PaymentHelpers.fetchPaymentMethodList(
       ~clientSecret,
       ~publishableKey,
       ~endpoint,
@@ -68,7 +68,7 @@ let make = (
       ~logger,
     )
 
-    let sessionsPromise = PaymentHelpers.useSessions(
+    let sessionsPromise = PaymentHelpers.fetchSessions(
       ~clientSecret,
       ~publishableKey,
       ~endpoint,

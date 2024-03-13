@@ -60,7 +60,7 @@ let make = (~paymentType, ~customFieldName=None, ~requiredFields as optionalRequ
       }
     }
   }, [billingName])
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField

@@ -243,7 +243,7 @@ let make = (
   )
 
   let submitCallback = DynamicFieldsUtils.useSubmitCallback()
-  Utils.submitPaymentData(submitCallback)
+  Utils.useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
 
