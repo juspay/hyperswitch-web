@@ -370,10 +370,10 @@ let make = (
     </ErrorBoundary>
   }
 
-  React.useEffect0(() => {
+  React.useEffect1(() => {
     setShowFields(._ => !displaySavedPaymentMethods)
     None
-  })
+  }, [displaySavedPaymentMethods])
 
   let paymentLabel = if displaySavedPaymentMethods {
     showFields ? localeString.selectPaymentMethodLabel : localeString.savedPaymentMethodsLabel
