@@ -420,7 +420,12 @@ let useRequiredFieldsBody = (
     | PhoneNumber => phone.value
     | Currency(_) => currency
     | Country => country
-    | Bank => selectedBank
+    | Bank =>
+      (
+        Bank.getBanks(paymentMethodType)
+        ->Js.Array2.find(item => item.displayName == selectedBank)
+        ->Belt.Option.getWithDefault(Bank.defaultBank)
+      ).hyperSwitch
     | AddressCountry(_) => {
         let countryCode =
           Country.getCountry(paymentMethodType)
@@ -521,6 +526,7 @@ let useRequiredFieldsBody = (
     cardNumber,
     cardExpiry,
     cvcNumber,
+    selectedBank,
   ])
 }
 
