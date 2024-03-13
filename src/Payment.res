@@ -128,7 +128,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       zipRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
     }
 
-    if cvc->Js.String2.length > 0 && cvcNumberInRange(cvc, cardBrand)->Js.Array2.includes(true) {
+    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
       setIsCVCValid(_ => Some(true))
     } else {
       setIsCVCValid(_ => None)

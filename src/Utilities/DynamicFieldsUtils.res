@@ -703,14 +703,14 @@ let usePaymentMethodTypeFromList = (~list, ~paymentMethod, ~paymentMethodType) =
         ~paymentMethodType=paymentMethod,
         ~paymentMethodName=paymentMethodType,
       ),
-    )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
+    )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
   }, (list, paymentMethod, paymentMethodType))
 }
 
 let useAreAllRequiredFieldsPrefilled = (~list, ~paymentMethod, ~paymentMethodType) => {
   let paymentMethodTypes = usePaymentMethodTypeFromList(~list, ~paymentMethod, ~paymentMethodType)
 
-  paymentMethodTypes.required_fields->Js.Array2.reduce((acc, requiredField) => {
+  paymentMethodTypes.required_fields->Array.reduce(true, (acc, requiredField) => {
     acc && requiredField.value != ""
-  }, true)
+  })
 }
