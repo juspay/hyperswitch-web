@@ -22,7 +22,6 @@ let make = (
     layout,
     customerPaymentMethods,
     displaySavedPaymentMethods,
-    displaySavedPaymentMethodsCheckbox,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
