@@ -108,13 +108,13 @@ let make = (
     None
   }, [savedMethods])
 
-  let areAllGooglePayRequiredFieldsPrefilled = DynamicFieldsUtils.areAllRequiredFieldsPrefilled(
+  let areAllGooglePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreAllRequiredFieldsPrefilled(
     ~list,
     ~paymentMethod="wallet",
     ~paymentMethodType="google_pay",
   )
 
-  let areAllApplePayRequiredFieldsPrefilled = DynamicFieldsUtils.areAllRequiredFieldsPrefilled(
+  let areAllApplePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreAllRequiredFieldsPrefilled(
     ~list,
     ~paymentMethod="wallet",
     ~paymentMethodType="apple_pay",

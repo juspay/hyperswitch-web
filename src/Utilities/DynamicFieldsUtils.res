@@ -709,7 +709,7 @@ let usePaymentMethodTypeFromList = (~list, ~paymentMethod, ~paymentMethodType) =
   }, (list, paymentMethod, paymentMethodType))
 }
 
-let areAllRequiredFieldsPrefilled = (~list, ~paymentMethod, ~paymentMethodType) => {
+let useAreAllRequiredFieldsPrefilled = (~list, ~paymentMethod, ~paymentMethodType) => {
   let paymentMethodTypes = usePaymentMethodTypeFromList(~list, ~paymentMethod, ~paymentMethodType)
 
   paymentMethodTypes.required_fields->Js.Array2.reduce((acc, requiredField) => {
