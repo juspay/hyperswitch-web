@@ -897,7 +897,7 @@ let getConfirmParams = dict => {
 
 let getSdkHandleConfirmPaymentProps = dict => {
   handleConfirm: dict->getBool("handleConfirm", false),
-  buttonText: dict->getString("buttonText", ""),
+  buttonText: ?dict->getOptionString("buttonText"),
   confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
 }
 
