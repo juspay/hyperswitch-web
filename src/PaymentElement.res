@@ -21,7 +21,7 @@ let make = (
     paymentMethodOrder,
     layout,
     customerPaymentMethods,
-    displaySavedPaymentMethodsCheckbox,
+    displaySavedPaymentMethods,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
@@ -49,34 +49,43 @@ let make = (
     setLoadSavedCards: (PaymentType.savedCardsLoadState => PaymentType.savedCardsLoadState) => unit,
   ) = React.useState(_ => PaymentType.LoadingSavedCards)
 
-  React.useEffect1(() => {
-    switch customerPaymentMethods {
-    | LoadingSavedCards => ()
-    | LoadedSavedCards(savedCards, isGuestCustomer) => {
-        setSavedMethods(_ => savedCards)
-        setLoadSavedCards(_ =>
-          savedCards->Array.length == 0
-            ? NoResult(isGuestCustomer)
-            : LoadedSavedCards(savedCards, isGuestCustomer)
-        )
-        setShowFields(.prev => savedCards->Array.length == 0 || prev)
+  React.useEffect2(() => {
+    switch (displaySavedPaymentMethods, customerPaymentMethods) {
+    | (false, _) => {
+        setShowFields(._ => true)
+        setLoadSavedCards(_ => LoadedSavedCards([], true))
       }
-    | NoResult(isGuestCustomer) => {
+    | (_, LoadingSavedCards) => ()
+    | (_, LoadedSavedCards(savedPaymentMethods, isGuestCustomer)) => {
+        let defaultPaymentMethod =
+          savedPaymentMethods->Array.find(savedCard => savedCard.defaultPaymentMethodSet)
+
+        let savedCardsWithoutDefaultPaymentMethod = savedPaymentMethods->Array.filter(savedCard => {
+          !savedCard.defaultPaymentMethodSet
+        })
+
+        let finalSavedPaymentMethods = switch defaultPaymentMethod {
+        | Some(defaultPaymentMethod) =>
+          [defaultPaymentMethod]->Array.concat(savedCardsWithoutDefaultPaymentMethod)
+        | None => savedCardsWithoutDefaultPaymentMethod
+        }
+
+        setSavedMethods(_ => finalSavedPaymentMethods)
+        setLoadSavedCards(_ =>
+          finalSavedPaymentMethods->Array.length == 0
+            ? NoResult(isGuestCustomer)
+            : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
+        )
+        setShowFields(.prev => finalSavedPaymentMethods->Array.length == 0 || prev)
+      }
+    | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
         setShowFields(._ => true)
       }
     }
 
     None
-  }, [customerPaymentMethods])
-
-  React.useEffect1(() => {
-    if displaySavedPaymentMethodsCheckbox {
-      setShowFields(._ => true)
-      setLoadSavedCards(_ => LoadedSavedCards([], true))
-    }
-    None
-  }, [displaySavedPaymentMethodsCheckbox])
+  }, (customerPaymentMethods, displaySavedPaymentMethods))
 
   React.useEffect1(() => {
     let defaultPaymentMethod =
@@ -97,7 +106,19 @@ let make = (
     None
   }, [savedMethods])
 
-  let (walletList, paymentOptionsList, actualList) = React.useMemo4(() => {
+  let areAllGooglePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreAllRequiredFieldsPrefilled(
+    ~list,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="google_pay",
+  )
+
+  let areAllApplePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreAllRequiredFieldsPrefilled(
+    ~list,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="apple_pay",
+  )
+
+  let (walletList, paymentOptionsList, actualList) = React.useMemo6(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
       let paymentOrder =
@@ -108,6 +129,8 @@ let make = (
           ~order=paymentOrder,
           ~showApplePay=isApplePayReady,
           ~showGooglePay=isGooglePayReady,
+          ~areAllGooglePayRequiredFieldsPrefilled,
+          ~areAllApplePayRequiredFieldsPrefilled,
         )
       (
         wallets->Utils.removeDuplicate,
@@ -120,7 +143,14 @@ let make = (
         : ([], [], [])
     | _ => ([], [], [])
     }
-  }, (methodslist, paymentMethodOrder, isApplePayReady, isGooglePayReady))
+  }, (
+    methodslist,
+    paymentMethodOrder,
+    isApplePayReady,
+    isGooglePayReady,
+    areAllGooglePayRequiredFieldsPrefilled,
+    areAllApplePayRequiredFieldsPrefilled,
+  ))
 
   React.useEffect4(() => {
     switch methodslist {
@@ -358,13 +388,20 @@ let make = (
     </ErrorBoundary>
   }
 
-  let paymentLabel = showFields
-    ? localeString.selectPaymentMethodLabel
-    : localeString.savedPaymentMethodsLabel
+  React.useEffect1(() => {
+    setShowFields(._ => !displaySavedPaymentMethods)
+    None
+  }, [displaySavedPaymentMethods])
+
+  let paymentLabel = if displaySavedPaymentMethods {
+    showFields ? localeString.selectPaymentMethodLabel : localeString.savedPaymentMethodsLabel
+  } else {
+    localeString.selectPaymentMethodLabel
+  }
 
   <>
     <div className="text-2xl font-semibold text-[#151619] mb-6"> {React.string(paymentLabel)} </div>
-    <RenderIf condition={!showFields}>
+    <RenderIf condition={!showFields && displaySavedPaymentMethods}>
       <SavedMethods
         paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType list
       />
@@ -398,6 +435,8 @@ let make = (
           cardProps
           expiryProps
           selectedOption={selectedOption->PaymentModeType.paymentMode}
+          savedMethods
+          paymentToken
         />
       </div>
     </RenderIf>

@@ -810,25 +810,23 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
     let (x, val) = entries
     Dict.set(headerObj, x, val)
   })
-  Fetch.HeadersInit.make(headerObj->dictToObj)
+  Fetch.Headers.fromObject(headerObj->dictToObj)
 }
-let fetchApi = (
-  uri,
-  ~bodyStr: string="",
-  ~headers=Dict.make(),
-  ~method_: Fetch.requestMethod,
-  (),
-) => {
+let fetchApi = (uri, ~bodyStr: string="", ~headers=Js.Dict.empty(), ~method: Fetch.method, ()) => {
   open Promise
-  let body = switch method_ {
-  | Get => resolve(None)
-  | _ => resolve(Some(Fetch.BodyInit.make(bodyStr)))
+  let body = switch method {
+  | #GET => resolve(None)
+  | _ => resolve(Some(Fetch.Body.string(bodyStr)))
   }
 
   body->then(body => {
-    Fetch.fetchWithInit(
+    Fetch.fetch(
       uri,
-      Fetch.RequestInit.make(~method_, ~body?, ~headers=getHeaders(~headers, ~uri, ()), ()),
+      {
+        method,
+        ?body,
+        headers: getHeaders(~headers, ~uri, ()),
+      },
     )
     ->catch(err => {
       reject(err)

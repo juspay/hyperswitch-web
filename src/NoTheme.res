@@ -41,7 +41,7 @@ let nakedValues = {
   spacingGridRow: "20px",
   buttonBackgroundColor: "",
   buttonHeight: "48px",
-  buttonWidth: "thin",
+  buttonWidth: "100%",
   buttonBorderRadius: "6px",
   buttonBorderColor: "",
   buttonTextColor: "",

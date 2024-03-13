@@ -1,3 +1,42 @@
+# [0.32.0](https://github.com/juspay/hyperswitch-web/compare/v0.31.6...v0.32.0) (2024-03-13)
+
+
+### Features
+
+* cvc nickname gpay ([#224](https://github.com/juspay/hyperswitch-web/issues/224)) ([f3f4047](https://github.com/juspay/hyperswitch-web/commit/f3f404733f7c13eb69589779ea2e2c8a6569259d))
+
+## [0.31.6](https://github.com/juspay/hyperswitch-web/compare/v0.31.5...v0.31.6) (2024-03-13)
+
+
+### Bug Fixes
+
+* pay now button text & theme based changes ([#223](https://github.com/juspay/hyperswitch-web/issues/223)) ([993767f](https://github.com/juspay/hyperswitch-web/commit/993767f185a3059ea5cc0652aa4053304e66ba52))
+
+## [0.31.5](https://github.com/juspay/hyperswitch-web/compare/v0.31.4...v0.31.5) (2024-03-12)
+
+
+### Bug Fixes
+
+* disable and enable Pay now button ([#221](https://github.com/juspay/hyperswitch-web/issues/221)) ([3d2e497](https://github.com/juspay/hyperswitch-web/commit/3d2e4971a20b8737820743c848496e4e8bb4a57b))
+
+## [0.31.4](https://github.com/juspay/hyperswitch-web/compare/v0.31.3...v0.31.4) (2024-03-12)
+
+
+### Bug Fixes
+
+* added ordering for saved payment methods ([#222](https://github.com/juspay/hyperswitch-web/issues/222)) ([a7e9f6d](https://github.com/juspay/hyperswitch-web/commit/a7e9f6d48e83ae96395ac19365abf4d757229c9b))
+
+## [0.31.3](https://github.com/juspay/hyperswitch-web/compare/v0.31.2...v0.31.3) (2024-03-12)
+
+## [0.31.2](https://github.com/juspay/hyperswitch-web/compare/v0.31.1...v0.31.2) (2024-03-12)
+
+## [0.31.1](https://github.com/juspay/hyperswitch-web/compare/v0.31.0...v0.31.1) (2024-03-12)
+
+
+### Bug Fixes
+
+* card payment customer_acceptance ([#220](https://github.com/juspay/hyperswitch-web/issues/220)) ([c2067e9](https://github.com/juspay/hyperswitch-web/commit/c2067e9c274727eda03686d5986c5071f2da17b2))
+
 # [0.31.0](https://github.com/juspay/hyperswitch-web/compare/v0.30.0...v0.31.0) (2024-03-11)
 
 

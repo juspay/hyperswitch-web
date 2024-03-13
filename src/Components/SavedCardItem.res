@@ -48,6 +48,7 @@ let make = (
   }, [isActive])
 
   let isCard = paymentItem.paymentMethod === "card"
+  let isRenderCvv = isCard && paymentItem.requiresCvv
 
   let paymentMethodType = switch paymentItem.paymentMethodType {
   | Some(paymentMethodType) => paymentMethodType->Utils.snakeToTitleCase
@@ -90,15 +91,15 @@ let make = (
                 border="1px solid currentColor"
               />
             </div>
-            <div className={`PickerItemIcon mx-3 flex  items-center `}>
-              brandIcon
-            </div>
-            <div className="flex items-center gap-2">
+            <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
+            <div className="flex items-center gap-4">
               {isCard
-                ? <div
-                    className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-                    <div className="tracking-widest"> {React.string(`****`)} </div>
-                    <div> {React.string({paymentItem.card.last4Digits})} </div>
+                ? <div className="flex flex-col items-start">
+                    <div> {React.string(paymentItem.card.nickname)} </div>
+                    <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
+                      <div className="tracking-widest"> {React.string(`****`)} </div>
+                      <div> {React.string(paymentItem.card.last4Digits)} </div>
+                    </div>
                   </div>
                 : <div> {React.string(paymentMethodType)} </div>}
               <RenderIf condition={paymentItem.defaultPaymentMethodSet}>
@@ -125,7 +126,7 @@ let make = (
         <div className="w-full ">
           <RenderIf condition={isActive}>
             <div className="flex flex-col items-start mx-8">
-              <RenderIf condition={isCard}>
+              <RenderIf condition={isRenderCvv}>
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
                   style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>

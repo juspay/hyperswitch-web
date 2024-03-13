@@ -59,7 +59,7 @@ let make = (
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
   React.useEffect2(() => {
     let width = switch payOptionsRef.current->Nullable.toOption {
-    | Some(ref) => Webapi.Dom.Element.clientWidth(ref)
+    | Some(ref) => ref->Window.Element.clientWidth
     | None => 0
     }
     setCardsContainerWidth(_ => width)
@@ -85,7 +85,6 @@ let make = (
     let intervalId = setInterval(() => {
       if dropDownOptionsDetails->Array.length > 1 {
         setMoreIconIndex(prev => mod(prev + 1, dropDownOptionsDetails->Array.length))
-
         setToggleIconElement(_ => true)
         setTimeout(
           () => {

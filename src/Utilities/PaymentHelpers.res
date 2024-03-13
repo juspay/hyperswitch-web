@@ -29,7 +29,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
   )
   fetchApi(
     uri,
-    ~method_=Fetch.Get,
+    ~method=#GET,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     (),
   )
@@ -98,9 +98,9 @@ let rec intentCall = (
     string,
     ~bodyStr: string=?,
     ~headers: Dict.t<string>=?,
-    ~method_: Fetch.requestMethod,
+    ~method: Fetch.method,
     unit,
-  ) => OrcaPaymentPage.Promise.t<Fetch.response>,
+  ) => OrcaPaymentPage.Promise.t<Fetch.Response.t>,
   ~uri,
   ~headers,
   ~bodyStr,
@@ -135,14 +135,14 @@ let rec intentCall = (
   )
   let handleOpenUrl = url => {
     if isPaymentSession {
-      Window.location.replace(. url)
+      Window.Location.replace(. url)
     } else {
       openUrl(url)
     }
   }
   fetchApi(
     uri,
-    ~method_=fetchMethod,
+    ~method=fetchMethod,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     ~bodyStr,
     (),
@@ -257,7 +257,7 @@ let rec intentCall = (
                 ~handleUserError,
                 ~paymentType,
                 ~iframeId,
-                ~fetchMethod=Get,
+                ~fetchMethod=#GET,
                 ~setIsManualRetryEnabled,
                 ~switchToCustomPod,
                 ~sdkHandleOneClickConfirmPayment,
@@ -532,7 +532,7 @@ let rec intentCall = (
           ~handleUserError,
           ~paymentType,
           ~iframeId,
-          ~fetchMethod=Get,
+          ~fetchMethod=#GET,
           ~setIsManualRetryEnabled,
           ~switchToCustomPod,
           ~sdkHandleOneClickConfirmPayment,
@@ -577,7 +577,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           ~handleUserError,
           ~paymentType,
           ~iframeId,
-          ~fetchMethod=Get,
+          ~fetchMethod=#GET,
           ~setIsManualRetryEnabled,
           ~switchToCustomPod,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
@@ -598,36 +598,26 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
   }
 }
 
-let rec maskPayload = payloadDict => {
-  let keys = payloadDict->Dict.keysToArray
-  let maskedPayload = Dict.make()
-  keys
-  ->Array.map(key => {
-    let value = payloadDict->Dict.get(key)->Option.getOr(JSON.Encode.null)
-    if value->JSON.Decode.array->Option.isSome {
-      let arr = value->JSON.Decode.array->Option.getOr([])
-      arr->Array.forEachWithIndex((element, index) => {
-        maskedPayload->Dict.set(
-          key ++ "[" ++ index->Belt.Int.toString ++ "]",
-          element->Utils.getDictFromJson->maskPayload->JSON.Encode.string,
-        )
-      })
-    } else if value->JSON.Decode.object->Option.isSome {
-      let valueDict = value->Utils.getDictFromJson
-      maskedPayload->Dict.set(key, valueDict->maskPayload->JSON.Encode.string)
-    } else {
-      maskedPayload->Dict.set(
-        key,
-        value
-        ->JSON.Decode.string
-        ->Option.getOr("")
-        ->String.replaceRegExp(%re(`/\S/g`), "x")
-        ->JSON.Encode.string,
-      )
-    }
-  })
-  ->ignore
-  maskedPayload->JSON.Encode.object->JSON.stringify
+let maskStr = str => str->Js.String2.replaceByRe(%re(`/\S/g`), "x")
+
+let rec maskPayload = payloadJson => {
+  switch payloadJson->JSON.Classify.classify {
+  | Object(valueDict) =>
+    valueDict
+    ->Dict.toArray
+    ->Array.map(entry => {
+      let (key, value) = entry
+      (key, maskPayload(value))
+    })
+    ->Dict.fromArray
+    ->JSON.Encode.object
+
+  | Array(arr) => arr->Array.map(maskPayload)->JSON.Encode.array
+  | String(valueStr) => valueStr->maskStr->JSON.Encode.string
+  | Number(float) => Float.toString(float)->maskStr->JSON.Encode.string
+  | Bool(bool) => (bool ? "true" : "false")->JSON.Encode.string
+  | Null => JSON.Encode.string("null")
+  }
 }
 
 let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
@@ -664,15 +654,10 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
         (),
       )
       let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
-      let fetchMethod = Fetch.Post
 
       let callIntent = body => {
         let maskedPayload =
-          body
-          ->OrcaUtils.safeParseOpt
-          ->Option.getOr(JSON.Encode.null)
-          ->Utils.getDictFromJson
-          ->maskPayload
+          body->OrcaUtils.safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
         let loggerPayload =
           [
             ("payload", maskedPayload->JSON.Encode.string),
@@ -729,7 +714,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
             ~handleUserError,
             ~paymentType,
             ~iframeId,
-            ~fetchMethod,
+            ~fetchMethod=#POST,
             ~setIsManualRetryEnabled,
             ~switchToCustomPod,
             ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
@@ -753,7 +738,12 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
         let bodyStr =
           body
           ->Array.concat(
-            bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
+            bodyArr->Array.concatMany([
+              PaymentBody.mandateBody(
+                mandatePaymentType->PaymentMethodsRecord.paymentTypeToStringMapper,
+              ),
+              broswerInfo(),
+            ]),
           )
           ->Dict.fromArray
           ->JSON.Encode.object
@@ -824,7 +814,7 @@ let useSessions = (
   )
   fetchApi(
     uri,
-    ~method_=Fetch.Post,
+    ~method=#POST,
     ~bodyStr=body->JSON.stringify,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     (),
@@ -899,7 +889,7 @@ let usePaymentMethodList = (
   )
   fetchApi(
     uri,
-    ~method_=Fetch.Get,
+    ~method=#GET,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     (),
   )
@@ -973,7 +963,7 @@ let useCustomerDetails = (
   )
   fetchApi(
     uri,
-    ~method_=Fetch.Get,
+    ~method=#GET,
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
     (),
   )

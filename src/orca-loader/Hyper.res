@@ -196,9 +196,12 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~logCategory=API,
           (),
         )
-        Fetch.fetchWithInit(
+        Fetch.fetch(
           retrievePaymentUrl,
-          Fetch.RequestInit.make(~method_=Fetch.Get, ~headers=Fetch.HeadersInit.make(headers), ()),
+          {
+            method: #GET,
+            headers: Fetch.Headers.fromObject(headers),
+          },
         )
         ->then(resp => {
           let statusCode = resp->Fetch.Response.status->Int.toString

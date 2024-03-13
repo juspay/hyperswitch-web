@@ -40,7 +40,7 @@ let charcoal = {
   spacingGridRow: "20px",
   buttonBackgroundColor: "#000000",
   buttonHeight: "48px",
-  buttonWidth: "thin",
+  buttonWidth: "100%",
   buttonBorderRadius: "6px",
   buttonBorderColor: "#000000",
   buttonTextColor: "#ffffff",

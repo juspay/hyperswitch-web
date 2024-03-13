@@ -120,7 +120,7 @@ let getCustomerSavedPaymentMethods = (
           ~handleUserError=false,
           ~paymentType,
           ~iframeId="",
-          ~fetchMethod=Fetch.Post,
+          ~fetchMethod=#POST,
           ~setIsManualRetryEnabled={(. _) => ()},
           ~switchToCustomPod=false,
           ~sdkHandleOneClickConfirmPayment=false,

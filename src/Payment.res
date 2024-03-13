@@ -127,6 +127,12 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
       zipRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
     }
+
+    if cvc->Js.String2.length > 0 && cvcNumberInRange(cvc, cardBrand)->Js.Array2.includes(true) {
+      setIsCVCValid(_ => Some(true))
+    } else {
+      setIsCVCValid(_ => None)
+    }
   }
 
   let changeZipCode = ev => {
@@ -245,6 +251,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardHolderName="",
           ~cvcNumber,
           ~cardBrand=cardNetwork,
+          (),
         )
       | CardNumberElement =>
         let (month, year) = getExpiryDates(getCardElementValue(iframeId, "card-expiry"))
@@ -256,6 +263,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardHolderName="",
           ~cvcNumber=localCvcNumber,
           ~cardBrand=cardNetwork,
+          (),
         )
       | _ => []
       }

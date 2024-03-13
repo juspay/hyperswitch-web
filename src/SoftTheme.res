@@ -41,7 +41,7 @@ let soft = {
   spacingGridRow: "20px",
   buttonBackgroundColor: "#3c3d3e",
   buttonHeight: "48px",
-  buttonWidth: "thin",
+  buttonWidth: "100%",
   buttonBorderRadius: "6px",
   buttonBorderColor: "#7d8fff",
   buttonTextColor: "#7d8fff",

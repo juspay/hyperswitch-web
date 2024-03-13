@@ -1,29 +1,38 @@
 @val @scope("window")
 external btoa: string => string = "btoa"
-let cardPaymentBody = (~cardNumber, ~month, ~year, ~cardHolderName, ~cvcNumber, ~cardBrand) => [
-  ("payment_method", "card"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "card",
-        [
-          ("card_number", cardNumber->CardUtils.clearSpaces->JSON.Encode.string),
-          ("card_exp_month", month->JSON.Encode.string),
-          ("card_exp_year", year->JSON.Encode.string),
-          ("card_holder_name", cardHolderName->JSON.Encode.string),
-          ("card_cvc", cvcNumber->JSON.Encode.string),
-          ("card_issuer", ""->JSON.Encode.string),
-        ]
-        ->Array.concat(cardBrand)
-        ->Dict.fromArray
-        ->JSON.Encode.object,
-      ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
-  ),
-]
+let cardPaymentBody = (
+  ~cardNumber,
+  ~month,
+  ~year,
+  ~cardHolderName,
+  ~cvcNumber,
+  ~cardBrand,
+  ~nickname="",
+  (),
+) => {
+  let cardBody = [
+    ("card_number", cardNumber->CardUtils.clearSpaces->JSON.Encode.string),
+    ("card_exp_month", month->JSON.Encode.string),
+    ("card_exp_year", year->JSON.Encode.string),
+    ("card_holder_name", cardHolderName->JSON.Encode.string),
+    ("card_cvc", cvcNumber->JSON.Encode.string),
+    ("card_issuer", ""->JSON.Encode.string),
+  ]
+
+  if nickname != "" {
+    cardBody->Array.push(("nick_name", nickname->JSON.Encode.string))->ignore
+  }
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [("card", cardBody->Array.concat(cardBrand)->Dict.fromArray->JSON.Encode.object)]
+      ->Dict.fromArray
+      ->JSON.Encode.object,
+    ),
+  ]
+}
 
 let bancontactBody = () => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
@@ -55,12 +64,19 @@ let boletoBody = (~socialSecurityNumber) => [
   ),
 ]
 
-let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber) => [
-  ("payment_method", "card"->JSON.Encode.string),
-  ("payment_token", paymentToken->JSON.Encode.string),
-  ("customer_id", customerId->JSON.Encode.string),
-  ("card_cvc", cvcNumber->JSON.Encode.string),
-]
+let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber, ~requiresCvv) => {
+  let savedCardBody = [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_token", paymentToken->JSON.Encode.string),
+    ("customer_id", customerId->JSON.Encode.string),
+  ]
+
+  if requiresCvv {
+    savedCardBody->Array.push(("card_cvc", cvcNumber->JSON.Encode.string))->ignore
+  }
+
+  savedCardBody
+}
 
 let customerAcceptanceBody =
   [
@@ -171,7 +187,7 @@ let achBankDebitBody = (
       ->Dict.fromArray
       ->JSON.Encode.object,
     ),
-  ]->Array.concat(mandateBody(paymentType))
+  ]->Array.concat(mandateBody(paymentType->PaymentMethodsRecord.paymentTypeToStringMapper))
 
 let sepaBankDebitBody = (
   ~fullName,
