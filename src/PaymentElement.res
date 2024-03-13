@@ -15,11 +15,18 @@ let make = (
   ~paymentType: CardThemeType.mode,
 ) => {
   let sessionsObj = Recoil.useRecoilValueFromAtom(sessions)
-  let optionValue = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {
+    showCardFormByDefault,
+    paymentMethodOrder,
+    layout,
+    customerPaymentMethods,
+    displaySavedPaymentMethods,
+  } = Recoil.useRecoilValueFromAtom(optionAtom)
+  let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
-  let paymentOrder = optionValue.paymentMethodOrder->Utils.getOptionalArr->Utils.removeDuplicate
+  let paymentOrder = paymentMethodOrder->Utils.getOptionalArr->Utils.removeDuplicate
   let (sessions, setSessions) = React.useState(_ => Js.Dict.empty()->Js.Json.object_)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
@@ -27,7 +34,7 @@ let make = (
 
   let (list, setList) = React.useState(_ => PaymentMethodsRecord.defaultList)
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
-  let layoutClass = CardUtils.getLayoutClass(optionValue.layout)
+  let layoutClass = CardUtils.getLayoutClass(layout)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (dropDownOptions: array<string>, setDropDownOptions) = React.useState(_ => [])
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
@@ -43,7 +50,7 @@ let make = (
   ) = React.useState(_ => PaymentType.LoadingSavedCards)
 
   React.useEffect2(() => {
-    switch (optionValue.displaySavedPaymentMethods, optionValue.customerPaymentMethods) {
+    switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
         setShowFields(._ => true)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
@@ -79,7 +86,7 @@ let make = (
     }
 
     None
-  }, (optionValue.customerPaymentMethods, optionValue.displaySavedPaymentMethods))
+  }, (customerPaymentMethods, displaySavedPaymentMethods))
 
   React.useEffect1(() => {
     let defaultPaymentMethod =
@@ -133,14 +140,14 @@ let make = (
         otherOptions,
       )
     | SemiLoaded =>
-      optionValue.showCardFormByDefault && Utils.checkPriorityList(optionValue.paymentMethodOrder)
+      showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder)
         ? ([], ["card"], [])
         : ([], [], [])
     | _ => ([], [], [])
     }
   }, (
     methodslist,
-    optionValue.paymentMethodOrder,
+    paymentMethodOrder,
     isApplePayReady,
     isGooglePayReady,
     areAllGooglePayRequiredFieldsPrefilled,
@@ -157,7 +164,7 @@ let make = (
       })
       setWalletOptions(_ => walletList)
       setList(_ => plist)
-      optionValue.showCardFormByDefault
+      showCardFormByDefault
         ? if !(actualList->Js.Array2.includes(selectedOption)) && selectedOption !== "" {
             ErrorUtils.manageErrorWarning(
               SDK_CONNECTOR_WARNING,
@@ -165,11 +172,11 @@ let make = (
               ~logger=loggerState,
               (),
             )
-          } else if !Utils.checkPriorityList(optionValue.paymentMethodOrder) {
+          } else if !Utils.checkPriorityList(paymentMethodOrder) {
             ErrorUtils.manageErrorWarning(
               SDK_CONNECTOR_WARNING,
-              ~dynamicStr=`'optionValue.paymentMethodOrder' is ${Js.Array2.joinWith(
-                  optionValue.paymentMethodOrder->Utils.getOptionalArr,
+              ~dynamicStr=`'paymentMethodOrder' is ${Js.Array2.joinWith(
+                  paymentMethodOrder->Utils.getOptionalArr,
                   ", ",
                 )} . Please enable Card Payment as 1st priority to show it as default.`,
               ~logger=loggerState,
@@ -180,9 +187,7 @@ let make = (
     | LoadError(_)
     | SemiLoaded =>
       setPaymentOptions(_ =>
-        optionValue.showCardFormByDefault && Utils.checkPriorityList(optionValue.paymentMethodOrder)
-          ? ["card"]
-          : []
+        showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? ["card"] : []
       )
     | _ => ()
     }
@@ -233,12 +238,9 @@ let make = (
         : switch methodslist {
           | SemiLoaded
           | LoadError(_) =>
-            optionValue.showCardFormByDefault &&
-            Utils.checkPriorityList(optionValue.paymentMethodOrder)
-              ? "card"
-              : ""
+            showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? "card" : ""
           | Loaded(_) =>
-            paymentOptions->Js.Array2.includes(selectedOption) && optionValue.showCardFormByDefault
+            paymentOptions->Js.Array2.includes(selectedOption) && showCardFormByDefault
               ? selectedOption
               : paymentOptions->Belt.Array.get(0)->Belt.Option.getWithDefault("")
           | _ => paymentOptions->Belt.Array.get(0)->Belt.Option.getWithDefault("")
@@ -389,14 +391,16 @@ let make = (
   }
 
   React.useEffect1(() => {
-    setShowFields(._ => !optionValue.displaySavedPaymentMethods)
+    setShowFields(._ => !displaySavedPaymentMethods)
     None
-  }, [optionValue.displaySavedPaymentMethods])
+  }, [displaySavedPaymentMethods])
 
-  let paymentLabel = if optionValue.displaySavedPaymentMethods {
-    showFields ? optionValue.paymentMethodsHeaderText : optionValue.savedPaymentMethodsHeaderText
+  let paymentLabel = if displaySavedPaymentMethods {
+    showFields
+      ? optionAtomValue.paymentMethodsHeaderText
+      : optionAtomValue.savedPaymentMethodsHeaderText
   } else {
-    optionValue.paymentMethodsHeaderText
+    optionAtomValue.paymentMethodsHeaderText
   }
 
   <>
@@ -405,7 +409,7 @@ let make = (
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
-    <RenderIf condition={!showFields && optionValue.displaySavedPaymentMethods}>
+    <RenderIf condition={!showFields && displaySavedPaymentMethods}>
       <SavedMethods
         paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType list
       />
