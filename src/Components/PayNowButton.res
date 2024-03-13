@@ -65,10 +65,7 @@ let make = (
     Utils.handlePostMessage([("handleSdkConfirm", confirmPayload)])
   }
 
-  let buttonText =
-    sdkHandleConfirmPayment.buttonText->String.length > 0
-      ? sdkHandleConfirmPayment.buttonText
-      : localeString.payNowButton
+  let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
 
   React.useEffect4(() => {
     if showFields {

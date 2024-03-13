@@ -134,7 +134,7 @@ type billingAddress = {
 
 type sdkHandleConfirmPayment = {
   handleConfirm: bool,
-  buttonText: string,
+  buttonText?: string,
   confirmParams: ConfirmType.confirmParams,
 }
 
@@ -260,7 +260,6 @@ let defaultBillingAddress = {
 
 let defaultSdkHandleConfirmPayment = {
   handleConfirm: false,
-  buttonText: "",
   confirmParams: ConfirmType.defaultConfirm,
 }
 
