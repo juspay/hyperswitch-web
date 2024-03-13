@@ -1,3 +1,10 @@
+## [0.33.3](https://github.com/juspay/hyperswitch-web/compare/v0.33.2...v0.33.3) (2024-03-13)
+
+
+### Bug Fixes
+
+* **PayNowButton:** update loader and disable states of pay now button after confirm ([#229](https://github.com/juspay/hyperswitch-web/issues/229)) ([83cd23d](https://github.com/juspay/hyperswitch-web/commit/83cd23db2a360b86baa580524e36b1ae4fd44ba2))
+
 ## [0.33.2](https://github.com/juspay/hyperswitch-web/compare/v0.33.1...v0.33.2) (2024-03-13)
 
 
