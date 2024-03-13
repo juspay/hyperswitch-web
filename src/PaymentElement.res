@@ -51,7 +51,7 @@ let make = (
   ) = React.useState(_ => PaymentType.LoadingSavedCards)
 
   React.useEffect2(() => {
-    switch (displaySavedPaymentMethodsCheckbox, customerPaymentMethods) {
+    switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
         setShowFields(._ => true)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
@@ -87,7 +87,7 @@ let make = (
     }
 
     None
-  }, (customerPaymentMethods, displaySavedPaymentMethodsCheckbox))
+  }, (customerPaymentMethods, displaySavedPaymentMethods))
 
   React.useEffect1(() => {
     let defaultPaymentMethod =
