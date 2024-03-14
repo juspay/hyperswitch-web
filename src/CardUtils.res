@@ -578,15 +578,15 @@ let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?, (
   countryPostal.regex == "" ? "" : countryPostal.regex
 }
 
-let getCardDetailsFromCardProps = cardProps => {
+let getCardDetailsFromCardProps = (cardProps, ~refDefaultValue) => {
   let defaultCardProps = (
     None,
     _ => (),
     "",
     _ => (),
     _ => (),
-    React.useRef(Nullable.null),
-    <> </>,
+    refDefaultValue,
+    React.null,
     "",
     _ => (),
     0,
@@ -598,14 +598,14 @@ let getCardDetailsFromCardProps = cardProps => {
   }
 }
 
-let getExpiryDetailsFromExpiryProps = expiryProps => {
+let getExpiryDetailsFromExpiryProps = (expiryProps, ~refDefaultValue) => {
   let defaultExpiryProps = (
     None,
     _ => (),
     "",
     _ => (),
     _ => (),
-    React.useRef(Nullable.null),
+    refDefaultValue,
     _ => (),
     "",
     _ => (),
@@ -617,7 +617,7 @@ let getExpiryDetailsFromExpiryProps = expiryProps => {
   }
 }
 
-let getCvcDetailsFromCvcProps = cvcProps => {
+let getCvcDetailsFromCvcProps = (cvcProps, ~refDefaultValue) => {
   let defaultCvcProps = (
     None,
     _ => (),
@@ -625,7 +625,7 @@ let getCvcDetailsFromCvcProps = cvcProps => {
     _ => (),
     _ => (),
     _ => (),
-    React.useRef(Nullable.null),
+    refDefaultValue,
     _ => (),
     "",
     _ => (),
