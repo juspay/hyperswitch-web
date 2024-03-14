@@ -79,18 +79,26 @@ let make = (
 
   let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
 
-  React.useEffect4(() => {
+  React.useEffect5(() => {
     if showFields {
       if selectedOption === Card {
         setIsDisabled(_ => !validFormat)
       } else {
         setIsDisabled(_ => !areRequiredFieldsValidValue)
       }
+    } else if !customerMethod.requiresCvv {
+      setIsDisabled(_ => customerMethod.requiresCvv)
     } else {
       setIsDisabled(_ => !isSavedMethodCheck)
     }
     None
-  }, (validFormat, areRequiredFieldsValidValue, selectedOption, isSavedMethodCheck))
+  }, (
+    validFormat,
+    areRequiredFieldsValidValue,
+    selectedOption,
+    isSavedMethodCheck,
+    customerMethod.requiresCvv,
+  ))
 
   <div className="flex flex-col gap-1 h-auto w-full items-center">
     <button
