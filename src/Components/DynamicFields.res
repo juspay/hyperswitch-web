@@ -113,7 +113,7 @@ let make = (
     _,
     maxCardLength,
   ) =
-    cardProps->CardUtils.getCardDetailsFromCardProps(~refDefaultValue=React.useRef(Nullable.null))
+    cardProps->CardUtils.useGetCardDetailsFromCardProps
 
   let (
     isExpiryValid,
@@ -126,9 +126,7 @@ let make = (
     expiryError,
     _,
   ) =
-    expiryProps->CardUtils.getExpiryDetailsFromExpiryProps(
-      ~refDefaultValue=React.useRef(Nullable.null),
-    )
+    expiryProps->CardUtils.useGetExpiryDetailsFromExpiryProps
 
   let (
     isCVCValid,
@@ -142,7 +140,7 @@ let make = (
     cvcError,
     _,
   ) =
-    cvcProps->CardUtils.getCvcDetailsFromCvcProps(~refDefaultValue=React.useRef(Nullable.null))
+    cvcProps->CardUtils.useGetCvcDetailsFromCvcProps
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
