@@ -47,11 +47,13 @@ let make = (
       ~borderBottomStyle=borderBottom ? "solid" : "hidden",
       (),
     )}
-    onClick={_ => setSelectedOption(._ => paymentOption.paymentMethodName)}>
+    onClick={_ => setSelectedOption(_ => paymentOption.paymentMethodName)}>
     <div
       className={`flex flex-row items-center ${accordionClass}`}
       style={ReactDOMStyle.make(~columnGap=themeObj.spacingUnit, ())}>
-      <RenderIf condition=layoutClass.radios> <Radio checked=radioClass /> </RenderIf>
+      <RenderIf condition=layoutClass.radios>
+        <Radio checked=radioClass />
+      </RenderIf>
       <div className={`AccordionItemIcon ${accordionItemIconClass} flex items-center`}>
         {switch icon {
         | Some(ele) => ele

@@ -14,7 +14,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setFullName(.prev => {
+    setFullName(prev => {
       value: val,
       isValid: Some(val !== ""),
       errorString: val !== "" ? "" : prev.errorString,
@@ -23,7 +23,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
 
   let onBlur = ev => {
     let val: string = ReactEvent.Focus.target(ev)["value"]
-    setFullName(.prev => {
+    setFullName(prev => {
       ...prev,
       isValid: Some(val !== ""),
     })
@@ -40,7 +40,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if fullName.value == "" {
-        setFullName(.prev => {
+        setFullName(prev => {
           ...prev,
           errorString: fieldName->localeString.nameEmptyText,
         })
@@ -48,7 +48,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
         switch optionalRequiredFields {
         | Some(requiredFields) =>
           if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, FullName, fullName) {
-            setFullName(.prev => {
+            setFullName(prev => {
               ...prev,
               errorString: fieldName->localeString.completeNameEmptyText,
             })

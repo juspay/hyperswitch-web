@@ -116,7 +116,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
   }
 
   React.useEffect0(() => {
-    layoutClass.defaultCollapsed ? setSelectedOption(._ => "") : ()
+    layoutClass.defaultCollapsed ? setSelectedOption(_ => "") : ()
     None
   })
   <div className="w-full">

@@ -48,23 +48,23 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
-        braintree.client.create(.{authorization: token}, (clientErr, clientInstance) => {
+        braintree.client.create({authorization: token}, (clientErr, clientInstance) => {
           if clientErr {
             Console.error2("Error creating client", clientErr)
           }
-          braintree.paypalCheckout.create(.
+          braintree.paypalCheckout.create(
             {client: clientInstance},
             (paypalCheckoutErr, paypalCheckoutInstance) => {
               switch paypalCheckoutErr->Nullable.toOption {
               | Some(val) => Console.warn(`INTEGRATION ERROR: ${val.message}`)
               | None => ()
               }
-              paypalCheckoutInstance.loadPayPalSDK(.
+              paypalCheckoutInstance.loadPayPalSDK(
                 {vault: true},
                 () => {
                   let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
                   paypalWrapper.innerHTML = ""
-                  paypal["Buttons"](. {
+                  paypal["Buttons"]({
                     style: buttonStyle,
                     fundingSource: paypal["FUNDING"]["PAYPAL"],
                     createBillingAgreement: () => {
@@ -76,17 +76,17 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
                       ])
                       options.readOnly
                         ? ()
-                        : paypalCheckoutInstance.createPayment(. {
+                        : paypalCheckoutInstance.createPayment({
                             ...defaultOrderDetails,
                             flow: "vault",
                           })
                     },
-                    onApprove: (. data, _actions) => {
+                    onApprove: (data, _actions) => {
                       options.readOnly
                         ? ()
-                        : paypalCheckoutInstance.tokenizePayment(.
+                        : paypalCheckoutInstance.tokenizePayment(
                             data,
-                            (. _err, payload) => {
+                            (_err, payload) => {
                               let (connectors, _) =
                                 list->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
                               let body = PaymentBody.paypalSdkBody(
@@ -111,14 +111,14 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
                             },
                           )
                     },
-                    onCancel: (. _data) => {
+                    onCancel: _data => {
                       handleCloseLoader()
                     },
-                    onError: (. _err) => {
+                    onError: _err => {
                       handleCloseLoader()
                     },
-                  }).render(. "#paypal-button")
-                  areOneClickWalletsRendered(.
+                  }).render("#paypal-button")
+                  areOneClickWalletsRendered(
                     prev => {
                       ...prev,
                       isPaypal: true,

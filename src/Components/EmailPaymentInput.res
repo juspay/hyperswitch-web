@@ -15,7 +15,7 @@ let make = (~paymentType) => {
 
   let changeEmail = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setEmail(.prev => {
+    setEmail(prev => {
       value: val,
       isValid: val->Utils.isEmailValid,
       errorString: val->Utils.isEmailValid->Option.getOr(false) ? "" : prev.errorString,
@@ -23,14 +23,14 @@ let make = (~paymentType) => {
   }
   let onBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]
-    setEmail(.prev => {
+    setEmail(prev => {
       ...prev,
       isValid: val->Utils.isEmailValid,
     })
   }
 
   React.useEffect1(() => {
-    setEmail(.prev => {
+    setEmail(prev => {
       ...prev,
       errorString: switch prev.isValid {
       | Some(val) => val ? "" : localeString.emailInvalidText
@@ -45,7 +45,7 @@ let make = (~paymentType) => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if email.value == "" {
-        setEmail(.prev => {
+        setEmail(prev => {
           ...prev,
           errorString: localeString.emailEmptyText,
         })

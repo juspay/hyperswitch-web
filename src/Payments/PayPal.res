@@ -72,7 +72,7 @@ let make = (~list: PaymentMethodsRecord.list) => {
   }
 
   React.useEffect0(() => {
-    areOneClickWalletsRendered(.prev => {
+    areOneClickWalletsRendered(prev => {
       ...prev,
       isPaypal: true,
     })

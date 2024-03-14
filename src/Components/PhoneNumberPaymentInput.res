@@ -25,7 +25,7 @@ let make = () => {
 
   let changePhone = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\+D+/g"), "")
-    setPhone(.prev => {
+    setPhone(prev => {
       ...prev,
       value: val->formatBSB,
     })

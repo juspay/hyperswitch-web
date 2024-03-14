@@ -43,7 +43,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   }, (empty, complete))
 
   React.useEffect1(() => {
-    setComplete(._ => complete)
+    setComplete(_ => complete)
     None
   }, [complete])
 

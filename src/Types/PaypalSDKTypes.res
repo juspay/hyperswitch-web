@@ -43,18 +43,15 @@ let defaultOrderDetails = {
 }
 
 type paypalCheckoutInstance = {
-  loadPayPalSDK: (. vault, unit => unit) => unit,
-  createPayment: (. orderDetails) => unit,
-  tokenizePayment: (. data, (. err, payload) => unit) => unit,
+  loadPayPalSDK: (vault, unit => unit) => unit,
+  createPayment: orderDetails => unit,
+  tokenizePayment: (data, (err, payload) => unit) => unit,
 }
 type authType = {authorization: string}
 type checkoutClient = {client: clientInstance}
-type client = {create: (. authType, (clientErr, clientInstance) => unit) => unit}
+type client = {create: (authType, (clientErr, clientInstance) => unit) => unit}
 type paypalCheckout = {
-  create: (
-    . checkoutClient,
-    (Nullable.t<paypalCheckoutErr>, paypalCheckoutInstance) => unit,
-  ) => unit,
+  create: (checkoutClient, (Nullable.t<paypalCheckoutErr>, paypalCheckoutInstance) => unit) => unit,
 }
 type braintree = {
   client: client,
@@ -72,9 +69,9 @@ type buttons = {
   style: style,
   fundingSource: string,
   createBillingAgreement: unit => unit,
-  onApprove: (. data, actions) => unit,
-  onCancel: (. data) => unit,
-  onError: (. err) => unit,
+  onApprove: (data, actions) => unit,
+  onCancel: data => unit,
+  onError: err => unit,
 }
 let getLabel = (var: PaymentType.paypalStyleType) => {
   switch var {
@@ -85,8 +82,8 @@ let getLabel = (var: PaymentType.paypalStyleType) => {
   | Installment => "installment"
   }
 }
-type some = {render: (. string) => unit}
-type paypal = {"Buttons": (. buttons) => some, "FUNDING": funding}
+type some = {render: string => unit}
+type paypal = {"Buttons": buttons => some, "FUNDING": funding}
 
 @val external braintree: braintree = "braintree"
 @val external paypal: paypal = "paypal"

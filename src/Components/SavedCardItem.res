@@ -30,7 +30,7 @@ let make = (
   let pickerItemClass = isActive ? "PickerItem--selected" : ""
 
   let focusCVC = () => {
-    setCardBrand(._ =>
+    setCardBrand(_ =>
       switch paymentItem.card.scheme {
       | Some(val) => val
       | None => ""
@@ -73,7 +73,7 @@ let make = (
       ~boxShadow="none",
       (),
     )}
-    onClick={_ => setPaymentToken(._ => (paymentItem.paymentToken, paymentItem.customerId))}>
+    onClick={_ => setPaymentToken(_ => (paymentItem.paymentToken, paymentItem.customerId))}>
     <div className="w-full">
       <div>
         <div className="flex flex-row justify-between items-center">

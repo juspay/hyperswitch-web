@@ -4,15 +4,15 @@ exception JsError(Exn.t)
 external unsafeToJsExn: exn => Exn.t = "%identity"
 
 @new
-external make: ((@uncurry (. 'a) => unit, (. 'e) => unit) => unit) => t<'a> = "Promise"
+external make: ((@uncurry 'a => unit, 'e => unit) => unit) => t<'a> = "Promise"
 
 @val @scope("Promise")
 external resolve: 'a => t<'a> = "resolve"
 
-@send external then: (t<'a>, @uncurry ('a => t<'b>)) => t<'b> = "then"
+@send external then: (t<'a>, @uncurry 'a => t<'b>) => t<'b> = "then"
 
 @send
-external thenResolve: (t<'a>, @uncurry ('a => 'b)) => t<'b> = "then"
+external thenResolve: (t<'a>, @uncurry 'a => 'b) => t<'b> = "then"
 
 @send external finally: (t<'a>, unit => unit) => t<'a> = "finally"
 
@@ -38,7 +38,7 @@ external all5: ((t<'a>, t<'b>, t<'c>, t<'d>, t<'e>)) => t<('a, 'b, 'c, 'd, 'e)> 
 external all6: ((t<'a>, t<'b>, t<'c>, t<'d>, t<'e>, t<'f>)) => t<('a, 'b, 'c, 'd, 'e, 'f)> = "all"
 
 @send
-external _catch: (t<'a>, @uncurry (exn => t<'a>)) => t<'a> = "catch"
+external _catch: (t<'a>, @uncurry exn => t<'a>) => t<'a> = "catch"
 
 let catch = (promise, callback) => {
   _catch(promise, err => {

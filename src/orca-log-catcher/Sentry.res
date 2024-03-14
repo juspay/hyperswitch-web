@@ -20,7 +20,7 @@ type sentryInitArg = {
 external exnToJsExn: exn => option<Exn.t> = "%identity"
 
 @module("react")
-external useEffect: (. unit => option<unit => unit>) => unit = "useEffect"
+external useEffect: (unit => option<unit => unit>) => unit = "useEffect"
 type sentry
 @val @scope("window")
 external isSentryPresent: Nullable.t<sentry> = "Sentry"
@@ -33,9 +33,8 @@ type newBrowserTracingArg = {routingInstrumentation: instrumentation}
 external newBrowserTracing: newBrowserTracingArg => integration = "BrowserTracing"
 
 @module("@sentry/react")
-external reactRouterV6Instrumentation: (
-  (. unit => option<unit => unit>) => unit
-) => instrumentation = "reactRouterV6Instrumentation"
+external reactRouterV6Instrumentation: ((unit => option<unit => unit>) => unit) => instrumentation =
+  "reactRouterV6Instrumentation"
 
 @new @module("@sentry/react")
 external newSentryReplay: unit => integration = "Replay"
@@ -44,7 +43,7 @@ external newSentryReplay: unit => integration = "Replay"
 external initSentryJs: sentryInitArg => unit = "init"
 
 @val @scope("Sentry")
-external capture: (. Exn.t) => unit = "captureException"
+external capture: Exn.t => unit = "captureException"
 
 @new
 external newSentryReplayJs: unit => integration = "Sentry.Replay"
@@ -120,7 +119,7 @@ let captureException = (err: exn) => {
     | Some(e) =>
       let z = e->toJson
       z.tag = "HyperTag"
-      capture(. toExn(z))
+      capture(toExn(z))
     | None => ()
     }
   | None => ()

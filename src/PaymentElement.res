@@ -52,7 +52,7 @@ let make = (
   React.useEffect2(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
-        setShowFields(._ => true)
+        setShowFields(_ => true)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
       }
     | (_, LoadingSavedCards) => ()
@@ -76,11 +76,11 @@ let make = (
             ? NoResult(isGuestCustomer)
             : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
         )
-        setShowFields(.prev => finalSavedPaymentMethods->Array.length == 0 || prev)
+        setShowFields(prev => finalSavedPaymentMethods->Array.length == 0 || prev)
       }
     | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
-        setShowFields(._ => true)
+        setShowFields(_ => true)
       }
     }
 
@@ -100,7 +100,7 @@ let make = (
     }
 
     switch tokenObj {
-    | Some(obj) => setPaymentToken(._ => (obj.paymentToken, obj.customerId))
+    | Some(obj) => setPaymentToken(_ => (obj.paymentToken, obj.customerId))
     | None => ()
     }
     None
@@ -228,7 +228,7 @@ let make = (
   }, [selectedOption])
   Utils.useSubmitPaymentData(submitCallback)
   React.useEffect4(() => {
-    setSelectedOption(.prev =>
+    setSelectedOption(prev =>
       selectedOption !== ""
         ? prev
         : layoutClass.defaultCollapsed
@@ -389,7 +389,7 @@ let make = (
   }
 
   React.useEffect1(() => {
-    setShowFields(._ => !displaySavedPaymentMethods)
+    setShowFields(_ => !displaySavedPaymentMethods)
     None
   }, [displaySavedPaymentMethods])
 

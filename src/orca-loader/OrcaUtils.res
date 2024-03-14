@@ -264,7 +264,7 @@ let makeIframe = (element, url) => {
     iframe.name = "fullscreen"
     iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
     iframe.onload = () => {
-      resolve(. Dict.make())
+      resolve(Dict.make())
     }
     element->appendChild(iframe)
   })
@@ -327,14 +327,14 @@ let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
   open EventListenerManager
   Js.Promise.make((~resolve, ~reject as _) => {
     if sdkHandleOneClickConfirmPayment {
-      resolve(. JSON.Encode.bool(true))
+      resolve(JSON.Encode.bool(true))
     } else {
       let handleMessage = (event: Types.event) => {
         let json = event.data->eventToJson->getStringfromjson("")->safeParse
 
         let dict = json->Utils.getDictFromJson
         if dict->Dict.get("oneClickDoSubmit")->Option.isSome {
-          resolve(. dict->Dict.get("oneClickDoSubmit")->Option.getOr(true->JSON.Encode.bool))
+          resolve(dict->Dict.get("oneClickDoSubmit")->Option.getOr(true->JSON.Encode.bool))
         }
       }
       addSmartEventListener("message", handleMessage, "onOneClickHandlerPaymentConfirm")

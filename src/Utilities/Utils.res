@@ -12,8 +12,8 @@ external dictToObj: Dict.t<'a> => {..} = "%identity"
 external phoneNumberJson: JSON.t = "default"
 
 type options = {timeZone: string}
-type dateTimeFormat = {resolvedOptions: (. unit) => options}
-@val @scope("Intl") external dateTimeFormat: (. unit) => dateTimeFormat = "DateTimeFormat"
+type dateTimeFormat = {resolvedOptions: unit => options}
+@val @scope("Intl") external dateTimeFormat: unit => dateTimeFormat = "DateTimeFormat"
 
 @send external remove: Dom.element => unit = "remove"
 
@@ -395,7 +395,7 @@ let isEmailValid = email => {
 
 let checkEmailValid = (
   email: RecoilAtomTypes.field,
-  fn: (. RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
+  fn: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
 ) => {
   switch email.value->String.match(
     %re(
@@ -403,17 +403,17 @@ let checkEmailValid = (
     ),
   ) {
   | Some(_match) =>
-    fn(.prev => {
+    fn(prev => {
       ...prev,
       isValid: Some(true),
     })
   | None =>
     email.value->String.length > 0
-      ? fn(.prev => {
+      ? fn(prev => {
           ...prev,
           isValid: Some(false),
         })
-      : fn(.prev => {
+      : fn(prev => {
           ...prev,
           isValid: None,
         })
@@ -566,11 +566,11 @@ let constructClass = (~classname, ~dict) => {
 
 let generateStyleSheet = (classname, dict, id) => {
   let createStyle = () => {
-    let style = document["createElement"](. "style")
+    let style = document["createElement"]("style")
     style["type"] = "text/css"
     style["id"] = id
-    style["appendChild"](. document["createTextNode"](. constructClass(~classname, ~dict)))->ignore
-    document["body"]["appendChild"](. style)->ignore
+    style["appendChild"](document["createTextNode"](constructClass(~classname, ~dict)))->ignore
+    document["body"]["appendChild"](style)->ignore
   }
   switch Window.window->Window.document->Window.getElementById(id)->Nullable.toOption {
   | Some(val) => {
@@ -793,7 +793,7 @@ let rgbaTorgb = bgColor => {
 let delay = timeOut => {
   Promise.make((resolve, _reject) => {
     setTimeout(() => {
-      resolve(. Dict.make())
+      resolve(Dict.make())
     }, timeOut)->ignore
   })
 }

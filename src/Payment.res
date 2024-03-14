@@ -54,7 +54,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       : (brand, maxLength)
   }, (cardNumber, cardScheme, showFields))
 
-  let clientTimeZone = dateTimeFormat(.).resolvedOptions(.).timeZone
+  let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = Utils.getClientCountry(clientTimeZone)
 
   let countryNames = Utils.getCountryNames(Country.country)

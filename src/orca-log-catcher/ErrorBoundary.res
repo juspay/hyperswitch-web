@@ -149,7 +149,7 @@ module ErrorCard = {
     })
 
     switch divRef.current->Nullable.toOption {
-    | Some(r) => observer.observe(. r)
+    | Some(r) => observer.observe(r)
     | None => ()
     }
 

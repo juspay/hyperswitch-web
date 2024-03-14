@@ -79,7 +79,7 @@ let make = (
   let complete = isAllValid(isCardValid, isCVCValid, isExpiryValid, true, "payment")
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect1(() => {
-    setComplete(._ => complete)
+    setComplete(_ => complete)
     None
   }, [complete])
 
@@ -308,7 +308,7 @@ let make = (
                 (),
               )}
               onClick={_ => {
-                setShowFields(._ => false)
+                setShowFields(_ => false)
               }}>
               <Icon name="circle_dots" size=20 width=19 />
               {React.string(localeString.useExistingPaymentMethods)}

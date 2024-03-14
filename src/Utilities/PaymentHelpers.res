@@ -2,7 +2,7 @@ open Utils
 
 @val @scope(("window", "parent", "location")) external href: string = "href"
 
-type searchParams = {set: (. string, string) => unit}
+type searchParams = {set: (string, string) => unit}
 type url = {searchParams: searchParams, href: string}
 @new external urlSearch: string => url = "URL"
 
@@ -135,7 +135,7 @@ let rec intentCall = (
   )
   let handleOpenUrl = url => {
     if isPaymentSession {
-      Window.Location.replace(. url)
+      Window.Location.replace(url)
     } else {
       openUrl(url)
     }
@@ -150,8 +150,8 @@ let rec intentCall = (
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString
     let url = urlSearch(confirmParam.return_url)
-    url.searchParams.set(. "payment_intent_client_secret", clientSecret)
-    url.searchParams.set(. "status", "failed")
+    url.searchParams.set("payment_intent_client_secret", clientSecret)
+    url.searchParams.set("status", "failed")
 
     if statusCode->String.charAt(0) !== "2" {
       res
@@ -204,7 +204,7 @@ let rec intentCall = (
                 ~errorType=errorObj.error.type_,
                 ~message=errorObj.error.message,
               )
-              resolve(. failedSubmitResponse)
+              resolve(failedSubmitResponse)
             }
           },
         )->then(resolve)
@@ -236,7 +236,7 @@ let rec intentCall = (
                   ~errorType="server_error",
                   ~message="Something went wrong",
                 )
-                resolve(. failedSubmitResponse)
+                resolve(failedSubmitResponse)
               }
             } else {
               let paymentIntentID =
@@ -266,7 +266,7 @@ let rec intentCall = (
               )
               ->then(
                 res => {
-                  resolve(. res)
+                  resolve(res)
                   Promise.resolve()
                 },
               )
@@ -289,8 +289,8 @@ let rec intentCall = (
             }
 
             let url = urlSearch(confirmParam.return_url)
-            url.searchParams.set(. "payment_intent_client_secret", clientSecret)
-            url.searchParams.set(. "status", intent.status)
+            url.searchParams.set("payment_intent_client_secret", clientSecret)
+            url.searchParams.set("status", intent.status)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
               switch (paymentType, sdkHandleOneClickConfirmPayment) {
@@ -303,7 +303,7 @@ let rec intentCall = (
                 } else if paymentSessionRedirect === "always" {
                   handleOpenUrl(url.href)
                 } else {
-                  resolve(. data)
+                  resolve(data)
                 }
               | _ => handleOpenUrl(url.href)
               }
@@ -344,7 +344,7 @@ let rec intentCall = (
                     ("metadata", dict->JSON.Encode.object),
                   ])
                 }
-                resolve(. data)
+                resolve(data)
               } else if intent.nextAction.type_ === "qr_code_information" {
                 let qrData = intent.nextAction.image_data_url->Option.getOr("")
                 let expiryTime = intent.nextAction.display_to_timestamp->Option.getOr(0.0)
@@ -379,7 +379,7 @@ let rec intentCall = (
                     ("metadata", metaData->JSON.Encode.object),
                   ])
                 }
-                resolve(. data)
+                resolve(data)
               } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
                 | Some(token) => token->Utils.getDictFromJson
@@ -398,7 +398,7 @@ let rec intentCall = (
                 if !isPaymentSession {
                   handlePostMessage(message)
                 }
-                resolve(. data)
+                resolve(data)
               } else {
                 if !isPaymentSession {
                   postFailedSubmitResponse(
@@ -422,7 +422,7 @@ let rec intentCall = (
                     ~errorType="confirm_payment_failed",
                     ~message="Payment failed. Try again!",
                   )
-                  resolve(. failedSubmitResponse)
+                  resolve(failedSubmitResponse)
                 }
               }
             } else if intent.status == "processing" {
@@ -447,7 +447,7 @@ let rec intentCall = (
               } else {
                 handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
               }
-              resolve(. data)
+              resolve(data)
             } else if intent.status != "" {
               if intent.status === "succeeded" {
                 handleLogging(
@@ -467,7 +467,7 @@ let rec intentCall = (
                 )
               }
               if intent.status === "failed" {
-                setIsManualRetryEnabled(. _ => intent.manualRetryAllowed)
+                setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
               }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else if !isPaymentSession {
@@ -480,7 +480,7 @@ let rec intentCall = (
                 ~errorType="confirm_payment_failed",
                 ~message="Payment failed. Try again!",
               )
-              resolve(. failedSubmitResponse)
+              resolve(failedSubmitResponse)
             }
           },
         )->then(resolve)
@@ -490,8 +490,8 @@ let rec intentCall = (
   ->catch(err => {
     Js.Promise.make((~resolve, ~reject as _) => {
       let url = urlSearch(confirmParam.return_url)
-      url.searchParams.set(. "payment_intent_client_secret", clientSecret)
-      url.searchParams.set(. "status", "failed")
+      url.searchParams.set("payment_intent_client_secret", clientSecret)
+      url.searchParams.set("status", "failed")
       let exceptionMessage = err->Utils.formatException
       logApi(
         ~optLogger,
@@ -515,7 +515,7 @@ let rec intentCall = (
             ~errorType="server_error",
             ~message="Something went wrong",
           )
-          resolve(. failedSubmitResponse)
+          resolve(failedSubmitResponse)
         }
       } else {
         let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
@@ -542,7 +542,7 @@ let rec intentCall = (
         )
         ->then(
           res => {
-            resolve(. res)
+            resolve(res)
             Promise.resolve()
           },
         )

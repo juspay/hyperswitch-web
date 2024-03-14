@@ -69,7 +69,7 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
-    setSelectedOption(._ => value)
+    setSelectedOption(_ => value)
     CardUtils.blurRef(selectRef)
   }
 

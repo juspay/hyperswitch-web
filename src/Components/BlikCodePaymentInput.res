@@ -23,14 +23,14 @@ let make = () => {
 
   let changeblikCode = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setblikCode(.prev => {
+    setblikCode(prev => {
       ...prev,
       value: val->formatBSB,
     })
   }
 
   React.useEffect1(() => {
-    setblikCode(.prev => {
+    setblikCode(prev => {
       ...prev,
       errorString: switch prev.isValid {
       | Some(val) => val ? "" : "Invalid blikCode"
@@ -45,7 +45,7 @@ let make = () => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if blikCode.value == "" {
-        setblikCode(.prev => {
+        setblikCode(prev => {
           ...prev,
           errorString: "blikCode cannot be empty",
         })

@@ -3,7 +3,7 @@ open RecoilAtoms
 let make = (
   ~value: RecoilAtomTypes.field,
   ~setValue: (
-    . OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field,
+    OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field
   ) => unit,
   ~fieldName,
   ~options,
@@ -34,7 +34,7 @@ let make = (
       value.value === initialValue ||
       options->Array.includes(value.value)->not
     ) {
-      setValue(.prev => {
+      setValue(prev => {
         ...prev,
         isValid: Some(true),
         value: initialValue,
@@ -64,7 +64,7 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
-    setValue(._ => {
+    setValue(_ => {
       isValid: Some(true),
       value,
       errorString: "",
