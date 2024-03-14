@@ -298,9 +298,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
                 Window.replace(returnUrl)
               } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
-                resolve(. json)
+                resolve(json)
               } else {
-                resolve(. data)
+                resolve(data)
               }
             | None => ()
             }
@@ -357,7 +357,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         clientSecret := clientSecretId
         Js.Promise.make((~resolve, ~reject as _) => {
           logger.setClientSecret(clientSecretId)
-          resolve(. JSON.Encode.null)
+          resolve(JSON.Encode.null)
         })
         ->then(_ => {
           logger.setLogInfo(~value=Window.href, ~eventName=ORCA_ELEMENTS_CALLED, ())
@@ -375,53 +375,55 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~analyticsMetadata,
         )
       }
-      let confirmCardPaymentFn =
-        @this
-        (_this: This.t, clientSecretId: string, data: option<JSON.t>, _options: option<JSON.t>) => {
-          let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-          Js.Promise.make((~resolve, ~reject as _) => {
-            iframeRef.contents
-            ->Array.map(iframe => {
-              iframe->Window.iframePostMessage(
-                [
-                  ("doSubmit", true->JSON.Encode.bool),
-                  ("clientSecret", clientSecretId->JSON.Encode.string),
-                  (
-                    "confirmParams",
-                    [("publishableKey", publishableKey->JSON.Encode.string)]
-                    ->Dict.fromArray
-                    ->JSON.Encode.object,
-                  ),
-                ]->Dict.fromArray,
-              )
+      let confirmCardPaymentFn = (
+        clientSecretId: string,
+        data: option<JSON.t>,
+        _options: option<JSON.t>,
+      ) => {
+        let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
+        Js.Promise.make((~resolve, ~reject as _) => {
+          iframeRef.contents
+          ->Array.map(iframe => {
+            iframe->Window.iframePostMessage(
+              [
+                ("doSubmit", true->JSON.Encode.bool),
+                ("clientSecret", clientSecretId->JSON.Encode.string),
+                (
+                  "confirmParams",
+                  [("publishableKey", publishableKey->JSON.Encode.string)]
+                  ->Dict.fromArray
+                  ->JSON.Encode.object,
+                ),
+              ]->Dict.fromArray,
+            )
 
-              let handleMessage = (event: Types.event) => {
-                let json = event.data->eventToJson
-                let dict = json->getDictFromJson
-                switch dict->Dict.get("submitSuccessful") {
-                | Some(val) =>
-                  logApi(
-                    ~type_="method",
-                    ~optLogger=Some(logger),
-                    ~result=val,
-                    ~paymentMethod="confirmCardPayment",
-                    ~eventName=CONFIRM_CARD_PAYMENT,
-                    (),
-                  )
-                  let url = decodedData->getString("return_url", "/")
-                  if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
-                    Window.replace(url)
-                  } else {
-                    resolve(. json)
-                  }
-                | None => resolve(. json)
+            let handleMessage = (event: Types.event) => {
+              let json = event.data->eventToJson
+              let dict = json->getDictFromJson
+              switch dict->Dict.get("submitSuccessful") {
+              | Some(val) =>
+                logApi(
+                  ~type_="method",
+                  ~optLogger=Some(logger),
+                  ~result=val,
+                  ~paymentMethod="confirmCardPayment",
+                  ~eventName=CONFIRM_CARD_PAYMENT,
+                  (),
+                )
+                let url = decodedData->getString("return_url", "/")
+                if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
+                  Window.replace(url)
+                } else {
+                  resolve(json)
                 }
+              | None => resolve(json)
               }
-              addSmartEventListener("message", handleMessage)
-            })
-            ->ignore
+            }
+            addSmartEventListener("message", handleMessage, "")
           })
-        }
+          ->ignore
+        })
+      }
 
       let addAmountToDict = (dict, currency) => {
         if dict->Dict.get("amount")->Option.isNone {
@@ -499,7 +501,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         clientSecret := clientSecretId
         Js.Promise.make((~resolve, ~reject as _) => {
           logger.setClientSecret(clientSecretId)
-          resolve(. JSON.Encode.null)
+          resolve(JSON.Encode.null)
         })
         ->then(_ => {
           logger.setLogInfo(~value=Window.href, ~eventName=PAYMENT_SESSION_INITIATED, ())

@@ -6,7 +6,7 @@ external getElementById: string => Dom.element = "getElementById"
 let make = (~children) => {
   let (fullScreenIframeNode, setFullScreenIframeNode) = React.useState(() => Nullable.null)
 
-  React.useEffect(() => {
+  React.useEffectOnEveryRender(() => {
     let handle = (ev: Window.event) => {
       try {
         let json = ev.data->JSON.parseExn
