@@ -68,12 +68,12 @@ let make = (~paymentType, ~className="") => {
   let checkPostalValidity = (
     postal: RecoilAtomTypes.field,
     setPostal: (
-      . OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field,
+      OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field
     ) => unit,
     regex,
   ) => {
     if RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== "" && regex !== "" {
-      setPostal(.prev => {
+      setPostal(prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
@@ -81,7 +81,7 @@ let make = (~paymentType, ~className="") => {
     } else if (
       regex !== "" && !RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== ""
     ) {
-      setPostal(.prev => {
+      setPostal(prev => {
         ...prev,
         isValid: Some(false),
         errorString: localeString.postalCodeInvalidText,
@@ -125,7 +125,7 @@ let make = (~paymentType, ~className="") => {
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
 
-    setPostalCode(.prev => {
+    setPostalCode(prev => {
       ...prev,
       value: val,
       errorString: "",
@@ -138,13 +138,13 @@ let make = (~paymentType, ~className="") => {
   let onPostalBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]
     if regex !== "" && RegExp.test(regex->RegExp.fromString, val) && val !== "" {
-      setPostalCode(.prev => {
+      setPostalCode(prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
     } else if regex !== "" && !RegExp.test(regex->RegExp.fromString, val) && val !== "" {
-      setPostalCode(.prev => {
+      setPostalCode(prev => {
         ...prev,
         isValid: Some(false),
         errorString: localeString.postalCodeInvalidText,
@@ -158,7 +158,7 @@ let make = (~paymentType, ~className="") => {
   }, (regex, country.value))
 
   React.useEffect1(() => {
-    setState(.prev => {
+    setState(prev => {
       ...prev,
       value: "",
     })
@@ -171,31 +171,31 @@ let make = (~paymentType, ~className="") => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if line1.value == "" {
-        setLine1(.prev => {
+        setLine1(prev => {
           ...prev,
           errorString: localeString.line1EmptyText,
         })
       }
       if line2.value == "" {
-        setLine2(.prev => {
+        setLine2(prev => {
           ...prev,
           errorString: localeString.line2EmptyText,
         })
       }
       if state.value == "" {
-        setState(.prev => {
+        setState(prev => {
           ...prev,
           errorString: localeString.stateEmptyText,
         })
       }
       if postalCode.value == "" {
-        setPostalCode(.prev => {
+        setPostalCode(prev => {
           ...prev,
           errorString: localeString.postalCodeEmptyText,
         })
       }
       if city.value == "" {
-        setCity(.prev => {
+        setCity(prev => {
           ...prev,
           errorString: localeString.cityEmptyText,
         })
@@ -216,7 +216,7 @@ let make = (~paymentType, ~className="") => {
         value=line1
         onChange={ev => {
           setShowOtherFields(_ => true)
-          setLine1(.prev => {
+          setLine1(prev => {
             ...prev,
             value: ReactEvent.Form.target(ev)["value"],
           })
@@ -239,7 +239,7 @@ let make = (~paymentType, ~className="") => {
             setValue={setLine2}
             value=line2
             onChange={ev => {
-              setLine2(.prev => {
+              setLine2(prev => {
                 ...prev,
                 value: ReactEvent.Form.target(ev)["value"],
               })
@@ -288,7 +288,7 @@ let make = (~paymentType, ~className="") => {
               className
               value=city
               onChange={ev => {
-                setCity(.prev => {
+                setCity(prev => {
                   ...prev,
                   value: ReactEvent.Form.target(ev)["value"],
                 })

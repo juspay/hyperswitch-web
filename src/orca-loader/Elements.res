@@ -10,8 +10,8 @@ external objToJson: {..} => JSON.t = "%identity"
 external eventToJson: Types.eventData => JSON.t = "%identity"
 
 type trustPayFunctions = {
-  finishApplePaymentV2: (. string, ApplePayTypes.paymentRequestData) => Promise.t<JSON.t>,
-  executeGooglePayment: (. string, GooglePayType.paymentDataRequest) => Promise.t<JSON.t>,
+  finishApplePaymentV2: (string, ApplePayTypes.paymentRequestData) => Promise.t<JSON.t>,
+  executeGooglePayment: (string, GooglePayType.paymentDataRequest) => Promise.t<JSON.t>,
 }
 @new external trustPayApi: JSON.t => trustPayFunctions = "TrustPayApi"
 
@@ -195,7 +195,7 @@ let make = (
     }
     let fetchUpdates = () => {
       Js.Promise.make((~resolve, ~reject as _) => {
-        setTimeout(() => resolve(. Dict.make()->JSON.Encode.object), 1000)->ignore
+        setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
       })
     }
 
@@ -256,7 +256,7 @@ let make = (
           if dict->Dict.get("applePayMounted")->Option.isSome {
             switch sessionForApplePay->Nullable.toOption {
             | Some(session) =>
-              if session.canMakePayments(.) {
+              if session.canMakePayments() {
                 let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
                 mountedIframeRef->Window.iframePostMessage(msg)
               } else {
@@ -304,7 +304,7 @@ let make = (
 
               try {
                 let trustpay = trustPayApi(secrets)
-                trustpay.executeGooglePayment(. payment, googlePayRequest)
+                trustpay.executeGooglePayment(payment, googlePayRequest)
                 ->then(res => {
                   logger.setLogInfo(
                     ~value="TrustPay GooglePay Success Response",
@@ -479,7 +479,7 @@ let make = (
 
                           try {
                             let trustpay = trustPayApi(secrets)
-                            trustpay.finishApplePaymentV2(. payment, paymentRequest)
+                            trustpay.finishApplePaymentV2(payment, paymentRequest)
                             ->then(res => {
                               logger.setLogInfo(
                                 ~value="TrustPay ApplePay Success Response",
@@ -541,14 +541,14 @@ let make = (
                         switch applePaySessionRef.contents->Nullable.toOption {
                         | Some(session) =>
                           try {
-                            session.abort(.)
+                            session.abort()
                           } catch {
                           | error => Console.log2("Abort fail", error)
                           }
                         | None => ()
                         }
 
-                        ssn.begin(.)
+                        ssn.begin()
                         applePaySessionRef := ssn->Nullable.make
 
                         ssn.onvalidatemerchant = _event => {
@@ -559,11 +559,11 @@ let make = (
                             ->Dict.get("session_token_data")
                             ->Option.getOr(Dict.make()->JSON.Encode.object)
                             ->Utils.transformKeys(Utils.CamelCase)
-                          ssn.completeMerchantValidation(. merchantSession)
+                          ssn.completeMerchantValidation(merchantSession)
                         }
 
                         ssn.onpaymentauthorized = event => {
-                          ssn.completePayment(. {"status": ssn.\"STATUS_SUCCESS"}->objToJson)
+                          ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->objToJson)
                           applePaySessionRef := Nullable.null
                           processPayment(event.payment.token)
                         }
@@ -628,7 +628,7 @@ let make = (
                 }->toJson,
               )
 
-              gPayClient.isReadyToPay(. payRequest)
+              gPayClient.isReadyToPay(payRequest)
               ->then(res => {
                 let dict = res->getDictFromJson
                 let isReadyToPay = getBool(dict, "result", false)
@@ -657,7 +657,7 @@ let make = (
 
                 if gpayClicked {
                   setTimeout(() => {
-                    gPayClient.loadPaymentData(. paymentDataRequest->toJson)
+                    gPayClient.loadPaymentData(paymentDataRequest->toJson)
                     ->then(
                       json => {
                         logger.setLogInfo(

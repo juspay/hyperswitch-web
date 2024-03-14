@@ -18,7 +18,7 @@ let make = (~paymentType, ~customFieldName=None, ~requiredFields as optionalRequ
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setBillingName(.prev => {
+    setBillingName(prev => {
       value: val,
       isValid: Some(val !== ""),
       errorString: val !== "" ? "" : prev.errorString,
@@ -26,7 +26,7 @@ let make = (~paymentType, ~customFieldName=None, ~requiredFields as optionalRequ
   }
   let onBlur = ev => {
     let val: string = ReactEvent.Focus.target(ev)["value"]
-    setBillingName(.prev => {
+    setBillingName(prev => {
       ...prev,
       isValid: Some(val !== ""),
     })
@@ -42,7 +42,7 @@ let make = (~paymentType, ~customFieldName=None, ~requiredFields as optionalRequ
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if billingName.value == "" {
-        setBillingName(.prev => {
+        setBillingName(prev => {
           ...prev,
           errorString: fieldName->localeString.nameEmptyText,
         })
@@ -50,7 +50,7 @@ let make = (~paymentType, ~customFieldName=None, ~requiredFields as optionalRequ
         switch optionalRequiredFields {
         | Some(requiredFields) =>
           if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, BillingName, billingName) {
-            setBillingName(.prev => {
+            setBillingName(prev => {
               ...prev,
               errorString: fieldName->localeString.completeNameEmptyText,
             })

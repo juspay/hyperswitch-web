@@ -32,6 +32,7 @@
     "re:build": "rescript",
     "re:clean": "rescript clean",
     "re:start": "rescript build -w",
+    "re:format": "rescript format -all",
     "start:dev": "npm run re:start & npm run start",
     "start:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js && npm run start",
     "build:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js && npm run build",

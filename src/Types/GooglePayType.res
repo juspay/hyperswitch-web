@@ -16,17 +16,17 @@ type paymentDataRequest = {
 @val @scope("Object") external assign2: (JSON.t, JSON.t) => paymentDataRequest = "assign"
 type element = {
   mutable innerHTML: string,
-  appendChild: (. Dom.element) => unit,
-  removeChild: (. Dom.element) => unit,
+  appendChild: Dom.element => unit,
+  removeChild: Dom.element => unit,
   children: array<Dom.element>,
 }
 type document
 @val external document: document = "document"
 @send external getElementById: (document, string) => element = "getElementById"
 type client = {
-  isReadyToPay: (. JSON.t) => Promise.t<JSON.t>,
-  createButton: (. JSON.t) => Dom.element,
-  loadPaymentData: (. JSON.t) => Promise.t<Fetch.Response.t>,
+  isReadyToPay: JSON.t => Promise.t<JSON.t>,
+  createButton: JSON.t => Dom.element,
+  loadPaymentData: JSON.t => Promise.t<Fetch.Response.t>,
 }
 @new external google: JSON.t => client = "google.payments.api.PaymentsClient"
 let getLabel = (var: PaymentType.googlePayStyleType) => {

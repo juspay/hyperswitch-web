@@ -2,7 +2,7 @@ type navigator = {
   userAgent: string,
   language: string,
 }
-type date = {getTimezoneOffset: (. unit) => float}
+type date = {getTimezoneOffset: unit => float}
 type screen = {colorDepth: int, height: int, width: int}
 
 @val external navigator: navigator = "navigator"
@@ -32,7 +32,7 @@ let broswerInfo = () => [
       ("color_depth", screen.colorDepth->Belt.Int.toFloat->JSON.Encode.float),
       ("screen_height", screen.height->Belt.Int.toFloat->JSON.Encode.float),
       ("screen_width", screen.width->Belt.Int.toFloat->JSON.Encode.float),
-      ("time_zone", date.getTimezoneOffset(.)->JSON.Encode.float),
+      ("time_zone", date.getTimezoneOffset()->JSON.Encode.float),
       ("java_enabled", true->JSON.Encode.bool),
       ("java_script_enabled", true->JSON.Encode.bool),
     ]

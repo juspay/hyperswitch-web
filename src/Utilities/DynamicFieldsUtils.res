@@ -159,7 +159,7 @@ let useRequiredFieldsEmptyAndValid = (
       | _ => true
       }
     })
-    setAreRequiredFieldsValid(._ => areRequiredFieldsValid)
+    setAreRequiredFieldsValid(_ => areRequiredFieldsValid)
 
     let areRequiredFieldsEmpty = fieldsArrWithBillingAddress->Array.reduce(false, (
       acc,
@@ -201,7 +201,7 @@ let useRequiredFieldsEmptyAndValid = (
       | _ => false
       }
     })
-    setAreRequiredFieldsEmpty(._ => areRequiredFieldsEmpty)
+    setAreRequiredFieldsEmpty(_ => areRequiredFieldsEmpty)
     None
   }, (
     fieldsArr,
@@ -292,18 +292,18 @@ let useSetInitialRequiredFields = (
     }
 
     let setFields = (
-      setMethod: (. RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
+      setMethod: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
       field: RecoilAtomTypes.field,
       item: PaymentMethodsRecord.required_fields,
       isNameField,
     ) => {
       if isNameField && field.value === "" {
-        setMethod(.prev => {
+        setMethod(prev => {
           ...prev,
           value: getNameValue(item),
         })
       } else if field.value === "" {
-        setMethod(.prev => {
+        setMethod(prev => {
           ...prev,
           value: item.value,
         })
@@ -340,7 +340,7 @@ let useSetInitialRequiredFields = (
               ->Array.filter(item => item.isoAlpha2 === value)
               ->Array.get(0)
               ->Option.getOr(Country.defaultTimeZone)
-            setCountry(. _ => countryCode.countryName)
+            setCountry(_ => countryCode.countryName)
           }
         }
       | AddressState => setFields(setState, state, requiredField, false)
@@ -357,15 +357,15 @@ let useSetInitialRequiredFields = (
             ->Array.filter(item => item.isoAlpha2 === value)
             ->Array.get(0)
             ->Option.getOr(Country.defaultTimeZone)
-          setCountry(. _ => defaultCountry.countryName)
+          setCountry(_ => defaultCountry.countryName)
         }
       | Currency(_) =>
         if value !== "" && currency === "" {
-          setCurrency(. _ => value)
+          setCurrency(_ => value)
         }
       | Bank =>
         if value !== "" && selectedBank === "" {
-          setSelectedBank(. _ => value)
+          setSelectedBank(_ => value)
         }
       | SpecialField(_)
       | InfoElement
@@ -667,31 +667,31 @@ let useSubmitCallback = () => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if line1.value == "" {
-        setLine1(.prev => {
+        setLine1(prev => {
           ...prev,
           errorString: localeString.line1EmptyText,
         })
       }
       if line2.value == "" {
-        setLine2(.prev => {
+        setLine2(prev => {
           ...prev,
           errorString: billingAddress.isUseBillingAddress ? "" : localeString.line2EmptyText,
         })
       }
       if state.value == "" {
-        setState(.prev => {
+        setState(prev => {
           ...prev,
           errorString: localeString.stateEmptyText,
         })
       }
       if postalCode.value == "" {
-        setPostalCode(.prev => {
+        setPostalCode(prev => {
           ...prev,
           errorString: localeString.postalCodeEmptyText,
         })
       }
       if city.value == "" {
-        setCity(.prev => {
+        setCity(prev => {
           ...prev,
           errorString: localeString.cityEmptyText,
         })

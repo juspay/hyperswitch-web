@@ -3,14 +3,14 @@ type paymentResult = {token: JSON.t}
 type event = {validationURL: string, payment: paymentResult}
 type innerSession
 type session = {
-  begin: (. unit) => unit,
-  abort: (. unit) => unit,
+  begin: unit => unit,
+  abort: unit => unit,
   mutable oncancel: unit => unit,
-  canMakePayments: (. unit) => bool,
+  canMakePayments: unit => bool,
   mutable onvalidatemerchant: event => unit,
-  completeMerchantValidation: (. JSON.t) => unit,
+  completeMerchantValidation: JSON.t => unit,
   mutable onpaymentauthorized: event => unit,
-  completePayment: (. JSON.t) => unit,
+  completePayment: JSON.t => unit,
   \"STATUS_SUCCESS": string,
   \"STATUS_FAILURE": string,
 }
@@ -42,7 +42,7 @@ type paymentRequestData = {
 }
 
 let jsonToPaymentRequestDataType: Dict.t<JSON.t> => paymentRequestData = jsonDict => {
-  let clientTimeZone = CardUtils.dateTimeFormat(.).resolvedOptions(.).timeZone
+  let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = Utils.getClientCountry(clientTimeZone)
   let defaultCountryCode = clientCountry.isoAlpha2
 

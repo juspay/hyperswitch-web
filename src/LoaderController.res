@@ -47,26 +47,26 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     ]->Array.forEach(val => {
       let (value, setValue) = val
       if value != "" {
-        setValue(.prev => {
+        setValue(prev => {
           ...prev,
           value,
         })
       }
     })
     if optionsPayment.defaultValues.billingDetails.address.country === "" {
-      let clientTimeZone = CardUtils.dateTimeFormat(.).resolvedOptions(.).timeZone
+      let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
       let clientCountry = Utils.getClientCountry(clientTimeZone)
-      setUserAddressCountry(.prev => {
+      setUserAddressCountry(prev => {
         ...prev,
         value: clientCountry.countryName,
       })
-      setCountry(._ => clientCountry.countryName)
+      setCountry(_ => clientCountry.countryName)
     } else {
-      setUserAddressCountry(.prev => {
+      setUserAddressCountry(prev => {
         ...prev,
         value: optionsPayment.defaultValues.billingDetails.address.country,
       })
-      setCountry(._ => optionsPayment.defaultValues.billingDetails.address.country)
+      setCountry(_ => optionsPayment.defaultValues.billingDetails.address.country)
     }
   }
 
@@ -77,10 +77,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     | CardExpiryElement
     | CardCVCElement
     | Card =>
-      setOptions(._ => ElementType.itemToObjMapper(optionsDict, logger))
+      setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
-        setOptionsPayment(._ => paymentOptions)
+        setOptionsPayment(_ => paymentOptions)
         optionsCallback(paymentOptions)
       }
     | _ => ()
@@ -105,7 +105,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     let appearance =
       optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
 
-    setConfig(._ => {
+    setConfig(_ => {
       config: {
         appearance,
         locale: config.locale,
@@ -134,7 +134,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ())
     | Loading => logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ())
     | SemiLoaded => {
-        setList(._ => updatedState)
+        setList(_ => updatedState)
         logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ())
       }
     | LoadError(x) =>
@@ -212,11 +212,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
               let sdkSessionId = dict->getString("sdkSessionId", "no-element")
               logger.setSessionId(sdkSessionId)
               if Window.isInteg {
-                setBlockConfirm(._ => dict->getBool("blockConfirm", false))
-                setSwitchToCustomPod(._ => dict->getBool("switchToCustomPod", false))
+                setBlockConfirm(_ => dict->getBool("blockConfirm", false))
+                setSwitchToCustomPod(_ => dict->getBool("switchToCustomPod", false))
               }
               updateOptions(dict)
-              setSessionId(._ => {
+              setSessionId(_ => {
                 sdkSessionId
               })
               if dict->getDictIsSome("publishableKey") {
@@ -236,7 +236,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                 let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-                setKeys(.prev => {
+                setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
                 })
@@ -274,7 +274,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
             let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-            setKeys(.prev => {
+            setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
             })
@@ -302,11 +302,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           let clientSecret = dict->Dict.get("clientSecret")
           switch clientSecret {
           | Some(val) =>
-            setKeys(.prev => {
+            setKeys(prev => {
               ...prev,
               clientSecret: Some(val->JSON.Decode.string->Option.getOr("")),
             })
-            setConfig(.prev => {
+            setConfig(prev => {
               ...prev,
               config: {
                 ...prev.config,
@@ -331,10 +331,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           }
         }
         if dict->getDictIsSome("sessions") {
-          setSessions(._ => Loaded(dict->getJsonObjectFromDict("sessions")))
+          setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))
         }
         if dict->getDictIsSome("isReadyToPay") {
-          setIsGooglePayReady(._ =>
+          setIsGooglePayReady(_ =>
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
         }
@@ -360,20 +360,20 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
             )
           | _ => ()
           }
-          setList(._ => updatedState)
+          setList(_ => updatedState)
         }
         if dict->getDictIsSome("customerPaymentMethods") {
           let customerPaymentMethods = dict->PaymentType.createCustomerObjArr
-          setOptionsPayment(.prev => {
+          setOptionsPayment(prev => {
             ...prev,
             customerPaymentMethods,
           })
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
-          setIsApplePayReady(._ => true)
+          setIsApplePayReady(_ => true)
         }
         if dict->Dict.get("applePaySessionObjNotPresent")->Option.isSome {
-          setIsApplePayReady(.prev => prev && false)
+          setIsApplePayReady(prev => prev && false)
         }
       } catch {
       | _ => setIntegrateErrorError(_ => true)
@@ -390,7 +390,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     ->ignore
   })
   switch divRef.current->Nullable.toOption {
-  | Some(r) => observer.observe(. r)
+  | Some(r) => observer.observe(r)
   | None => ()
   }
 

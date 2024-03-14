@@ -178,7 +178,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
             let url = val->getStringfromjson("")
-            Window.Location.replace(. url)
+            Window.Location.replace(url)
           }
         | None => ()
         }

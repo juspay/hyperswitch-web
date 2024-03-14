@@ -6,4 +6,4 @@ type props = {
   countryProps: (string, array<string>),
 }
 
-let make: props => React.element = reactLazy(.() => import_("./SepaBankTransfer.bs.js"))
+let make: props => React.element = reactLazy(() => import_("./SepaBankTransfer.bs.js"))

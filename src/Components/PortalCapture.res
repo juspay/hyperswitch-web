@@ -2,7 +2,7 @@
 let make = React.memo((~name: string) => {
   let (_, setPortalNodes) = Recoil.useRecoilState(RecoilAtoms.portalNodes)
   let setDiv = React.useCallback2((elem: Nullable.t<Dom.element>) => {
-    setPortalNodes(.
+    setPortalNodes(
       prevDict => {
         let clonedDict =
           prevDict

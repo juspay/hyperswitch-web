@@ -8,4 +8,4 @@ type props = {
   walletOptions: array<string>,
 }
 
-let make: props => React.element = reactLazy(.() => import_("./GPay.bs.js"))
+let make: props => React.element = reactLazy(() => import_("./GPay.bs.js"))
