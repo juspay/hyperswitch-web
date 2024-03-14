@@ -354,7 +354,7 @@ let make = (
       }
     }
   })
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   {
     isWallet

@@ -202,7 +202,7 @@ let make = (~paymentType, ~className="") => {
       }
     }
   }, (line1, line2, country, state, city, postalCode))
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   let hasDefaulltValues =
     line2.value !== "" || city.value !== "" || postalCode.value !== "" || state.value !== ""

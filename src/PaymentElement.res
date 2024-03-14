@@ -226,7 +226,7 @@ let make = (
       )
     }
   }, [selectedOption])
-  Utils.submitPaymentData(submitCallback)
+  Utils.useSubmitPaymentData(submitCallback)
   React.useEffect4(() => {
     setSelectedOption(.prev =>
       selectedOption !== ""

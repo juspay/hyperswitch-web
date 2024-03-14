@@ -50,7 +50,7 @@ let default = (props: props) => {
       }
     }
   }, [email, fullName])
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <div
     className="flex flex-col animate-slowShow"

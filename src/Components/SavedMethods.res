@@ -135,7 +135,7 @@ let make = (
       }
     }
   }, (areRequiredFieldsValid, requiredFieldsBody, empty, complete))
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <>
     <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">

@@ -113,7 +113,7 @@ let make = (
     phoneNumber.value,
     (selectedBank, currency, requiredFieldsBody),
   ))
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>

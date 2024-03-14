@@ -15,21 +15,21 @@ let make = (~sessionId as _, ~publishableKey as _, ~clientSecret as _, ~endpoint
   // //   sessionTokensResponse,
   // // ) = React.useMemo0(() => {
   // //   (
-  // //     PaymentHelpers.usePaymentMethodList(
+  // //     PaymentHelpers.fetchPaymentMethodList(
   // //       ~clientSecret,
   // //       ~publishableKey,
   // //       ~logger,
   // //       ~switchToCustomPod=false,
   // //       ~endpoint,
   // //     ),
-  // //     PaymentHelpers.useCustomerDetails(
+  // //     PaymentHelpers.fetchCustomerDetails(
   // //       ~clientSecret,
   // //       ~publishableKey,
   // //       ~optLogger=Some(logger),
   // //       ~switchToCustomPod=false,
   // //       ~endpoint,
   // //     ),
-  // //     PaymentHelpers.useSessions(
+  // //     PaymentHelpers.fetchSessions(
   // //       ~clientSecret,
   // //       ~publishableKey,
   // //       ~optLogger=Some(logger),

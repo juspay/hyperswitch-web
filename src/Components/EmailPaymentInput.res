@@ -52,7 +52,7 @@ let make = (~paymentType) => {
       }
     }
   }, [email])
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.email == Auto}>
     <PaymentField

@@ -99,7 +99,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
       }
     }
   })
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   let changeSortCode = ev => {
     let val = ReactEvent.Form.target(ev)["value"]

@@ -64,7 +64,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
       )
     }
   })
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   React.useEffect1(() => {
     if status == "ready" {

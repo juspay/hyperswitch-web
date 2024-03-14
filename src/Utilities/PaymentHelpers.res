@@ -781,7 +781,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
   }
 }
 
-let useSessions = (
+let fetchSessions = (
   ~clientSecret,
   ~publishableKey,
   ~wallets=[],
@@ -869,7 +869,7 @@ let useSessions = (
   })
 }
 
-let usePaymentMethodList = (
+let fetchPaymentMethodList = (
   ~clientSecret,
   ~publishableKey,
   ~logger,
@@ -943,7 +943,7 @@ let usePaymentMethodList = (
   })
 }
 
-let useCustomerDetails = (
+let fetchCustomerDetails = (
   ~clientSecret,
   ~publishableKey,
   ~endpoint,
