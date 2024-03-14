@@ -812,7 +812,7 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
   })
   Fetch.Headers.fromObject(headerObj->dictToObj)
 }
-let fetchApi = (uri, ~bodyStr: string="", ~headers=Js.Dict.empty(), ~method: Fetch.method, ()) => {
+let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method, ()) => {
   open Promise
   let body = switch method {
   | #GET => resolve(None)

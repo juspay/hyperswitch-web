@@ -422,8 +422,8 @@ let useRequiredFieldsBody = (
     | Bank =>
       (
         Bank.getBanks(paymentMethodType)
-        ->Js.Array2.find(item => item.displayName == selectedBank)
-        ->Belt.Option.getWithDefault(Bank.defaultBank)
+        ->Array.find(item => item.displayName == selectedBank)
+        ->Option.getOr(Bank.defaultBank)
       ).hyperSwitch
     | AddressCountry(_) => {
         let countryCode =

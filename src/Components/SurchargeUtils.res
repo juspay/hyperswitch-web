@@ -32,7 +32,7 @@ let useSurchargeDetailsForOneClickWallets = (~list) => {
             ~list,
             ~paymentMethod="wallet",
             ~paymentMethodType=wallet.paymentMethodType,
-          )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
+          )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
         switch paymentMethodType.surcharge_details {
         | Some(surchargDetails) =>
           acc->Array.concat([
