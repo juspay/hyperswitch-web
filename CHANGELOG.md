@@ -1,3 +1,11 @@
+## [0.33.4](https://github.com/juspay/hyperswitch-web/compare/v0.33.3...v0.33.4) (2024-03-14)
+
+
+### Bug Fixes
+
+* not require_cvc disable the pay now button ([#230](https://github.com/juspay/hyperswitch-web/issues/230)) ([c31db69](https://github.com/juspay/hyperswitch-web/commit/c31db694caca29aa78b59f284f9aba4e98aff93c))
+* react hook errors ([#225](https://github.com/juspay/hyperswitch-web/issues/225)) ([60d8fc1](https://github.com/juspay/hyperswitch-web/commit/60d8fc1a751e26fb4253d15173b8660535b805c5))
+
 ## [0.33.3](https://github.com/juspay/hyperswitch-web/compare/v0.33.2...v0.33.3) (2024-03-13)
 
 
