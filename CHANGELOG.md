@@ -1,3 +1,31 @@
+## [0.33.3](https://github.com/juspay/hyperswitch-web/compare/v0.33.2...v0.33.3) (2024-03-13)
+
+
+### Bug Fixes
+
+* **PayNowButton:** update loader and disable states of pay now button after confirm ([#229](https://github.com/juspay/hyperswitch-web/issues/229)) ([83cd23d](https://github.com/juspay/hyperswitch-web/commit/83cd23db2a360b86baa580524e36b1ae4fd44ba2))
+
+## [0.33.2](https://github.com/juspay/hyperswitch-web/compare/v0.33.1...v0.33.2) (2024-03-13)
+
+
+### Bug Fixes
+
+* added paymentType to be passed in the confirm body ([#228](https://github.com/juspay/hyperswitch-web/issues/228)) ([4f94264](https://github.com/juspay/hyperswitch-web/commit/4f9426480a7e23bf98268b59e957c913ce359bfc))
+
+## [0.33.1](https://github.com/juspay/hyperswitch-web/compare/v0.33.0...v0.33.1) (2024-03-13)
+
+
+### Bug Fixes
+
+* **ideal:** bank name not being populated ([#227](https://github.com/juspay/hyperswitch-web/issues/227)) ([d264f32](https://github.com/juspay/hyperswitch-web/commit/d264f32870cdf6d4e8d99e0ed79bf8e73e6129fd))
+
+# [0.33.0](https://github.com/juspay/hyperswitch-web/compare/v0.32.0...v0.33.0) (2024-03-13)
+
+
+### Features
+
+* added prop for PaymentHeader Text ([#226](https://github.com/juspay/hyperswitch-web/issues/226)) ([8ff8933](https://github.com/juspay/hyperswitch-web/commit/8ff89334c662bb37bdff112b693a0f72d7194017))
+
 # [0.32.0](https://github.com/juspay/hyperswitch-web/compare/v0.31.6...v0.32.0) (2024-03-13)
 
 

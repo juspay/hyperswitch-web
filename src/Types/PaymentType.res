@@ -158,6 +158,8 @@ type options = {
   showCardFormByDefault: bool,
   billingAddress: billingAddress,
   sdkHandleConfirmPayment: sdkHandleConfirmPayment,
+  paymentMethodsHeaderText?: string,
+  savedPaymentMethodsHeaderText?: string,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -925,6 +927,8 @@ let itemToObjMapper = (dict, logger) => {
       "sdkHandleOneClickConfirmPayment",
       "showCardFormByDefault",
       "sdkHandleConfirmPayment",
+      "paymentMethodsHeaderText",
+      "savedPaymentMethodsHeaderText",
     ],
     dict,
     "options",
@@ -963,6 +967,8 @@ let itemToObjMapper = (dict, logger) => {
     sdkHandleConfirmPayment: dict
     ->getDictfromDict("sdkHandleConfirmPayment")
     ->getSdkHandleConfirmPaymentProps,
+    paymentMethodsHeaderText: ?getOptionString(dict, "paymentMethodsHeaderText"),
+    savedPaymentMethodsHeaderText: ?getOptionString(dict, "savedPaymentMethodsHeaderText"),
   }
 }
 

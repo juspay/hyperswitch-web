@@ -111,6 +111,14 @@ let mandateBody = paymentType => {
   ]
 }
 
+let paymentTypeBody = paymentType => {
+  if paymentType != "" {
+    [("payment_type", paymentType->Js.Json.string)]
+  } else {
+    []
+  }
+}
+
 let confirmPayloadForSDKButton = (sdkHandleConfirmPayment: PaymentType.sdkHandleConfirmPayment) =>
   [
     ("redirect", "always"->JSON.Encode.string),

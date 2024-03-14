@@ -270,6 +270,10 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
             switch dict->Dict.get("submitSuccessful") {
             | Some(val) =>
+              let message = [("submitSuccessful", val)]->Dict.fromArray
+              iframeRef.contents->Array.forEach(ifR => {
+                ifR->Window.iframePostMessage(message)
+              })
               logApi(
                 ~type_="method",
                 ~optLogger=Some(logger),

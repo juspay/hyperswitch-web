@@ -725,25 +725,24 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
       }
 
       let broswerInfo = BrowserSpec.broswerInfo
-      let intentWithoutMandate = () => {
+      let intentWithoutMandate = mandatePaymentType => {
         let bodyStr =
           body
-          ->Array.concat(bodyArr->Array.concat(broswerInfo()))
+          ->Array.concatMany([
+            bodyArr->Array.concat(broswerInfo()),
+            mandatePaymentType->PaymentBody.paymentTypeBody,
+          ])
           ->Dict.fromArray
           ->JSON.Encode.object
           ->JSON.stringify
         callIntent(bodyStr)
       }
+
       let intentWithMandate = mandatePaymentType => {
         let bodyStr =
           body
           ->Array.concat(
-            bodyArr->Array.concatMany([
-              PaymentBody.mandateBody(
-                mandatePaymentType->PaymentMethodsRecord.paymentTypeToStringMapper,
-              ),
-              broswerInfo(),
-            ]),
+            bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
           )
           ->Dict.fromArray
           ->JSON.Encode.object
@@ -754,6 +753,8 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
       switch list {
       | Loaded(data) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+        let mandatePaymentType =
+          paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
         switch paymentList.mandate_payment {
         | Some(_) =>
           switch paymentType {
@@ -763,12 +764,12 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
           | KlarnaRedirect
           | Paypal
           | BankDebits =>
-            intentWithMandate(paymentList.payment_type)
-          | _ => intentWithoutMandate()
+            intentWithMandate(mandatePaymentType)
+          | _ => intentWithoutMandate(mandatePaymentType)
           }
-        | None => intentWithoutMandate()
+        | None => intentWithoutMandate(mandatePaymentType)
         }
-      | SemiLoaded => intentWithoutMandate()
+      | SemiLoaded => intentWithoutMandate("")
       | _ => ()
       }
     | None =>
