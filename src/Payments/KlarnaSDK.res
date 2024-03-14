@@ -13,10 +13,10 @@ type res = {
   finalize_required: bool,
 }
 type some = {
-  init: (. token) => unit,
-  load: (. loadType, res => unit) => unit,
-  authorize: (. loadType, JSON.t, res => unit) => unit,
-  loadPaymentReview: (. loadType, res => unit) => unit,
+  init: token => unit,
+  load: (loadType, res => unit) => unit,
+  authorize: (loadType, JSON.t, res => unit) => unit,
+  loadPaymentReview: (loadType, res => unit) => unit,
 }
 
 @val external klarnaInit: some = "Klarna.Payments"
@@ -37,7 +37,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
     )
   }
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
+  let submitCallback = (ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
@@ -47,7 +47,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
         ("param", "paymentloader"->JSON.Encode.string),
         ("iframeId", iframeId->JSON.Encode.string),
       ])
-      klarnaInit.authorize(.
+      klarnaInit.authorize(
         {
           container: None,
           color_text: None,
@@ -63,18 +63,18 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
         },
       )
     }
-  })
+  }
   useSubmitPaymentData(submitCallback)
 
   React.useEffect1(() => {
     if status == "ready" {
       let klarnaWrapper = GooglePayType.getElementById(Utils.document, "klarna-payments")
       klarnaWrapper.innerHTML = ""
-      klarnaInit.init(. {
+      klarnaInit.init({
         client_token: sessionObj.token,
       })
 
-      klarnaInit.load(.
+      klarnaInit.load(
         {
           container: Some("#klarna-payments"),
           color_text: Some("#E51515"),

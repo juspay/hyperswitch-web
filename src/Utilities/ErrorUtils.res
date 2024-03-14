@@ -175,7 +175,12 @@ let unknownKeysWarning = (validKeysArr, dict: Dict.t<JSON.t>, dictType: string, 
   })
 }
 
-let unknownPropValueWarning = (inValidValue, validValueArr, dictType) => {
+let unknownPropValueWarning = (
+  inValidValue,
+  validValueArr,
+  dictType,
+  ~logger: OrcaLogger.loggerMake,
+) => {
   let expectedValues =
     validValueArr
     ->Array.map(item => {
@@ -185,13 +190,15 @@ let unknownPropValueWarning = (inValidValue, validValueArr, dictType) => {
   manageErrorWarning(
     UNKNOWN_VALUE,
     ~dynamicStr=`'${inValidValue}' value in ${dictType}, Expected ${expectedValues}`,
+    ~logger,
     (),
   )
 }
-let valueOutRangeWarning = (num: int, dictType, range) => {
+let valueOutRangeWarning = (num: int, dictType, range, ~logger: OrcaLogger.loggerMake) => {
   manageErrorWarning(
     VALUE_OUT_OF_RANGE,
     ~dynamicStr=`${num->Belt.Int.toString} value in ${dictType} Expected value between ${range}`,
+    ~logger: OrcaLogger.loggerMake,
     (),
   )
 }
