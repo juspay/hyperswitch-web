@@ -1,7 +1,7 @@
-type t<+'a> = Js.Promise.t<'a>
+type t<+'a> = Promise.t<'a>
 
-exception JsError(Js.Exn.t)
-external unsafeToJsExn: exn => Js.Exn.t = "%identity"
+exception JsError(Exn.t)
+external unsafeToJsExn: exn => Exn.t = "%identity"
 
 @new
 external make: ((@uncurry (. 'a) => unit, (. 'e) => unit) => unit) => t<'a> = "Promise"
@@ -42,7 +42,7 @@ external _catch: (t<'a>, @uncurry (exn => t<'a>)) => t<'a> = "catch"
 
 let catch = (promise, callback) => {
   _catch(promise, err => {
-    let v = if Js.Exn.isCamlExceptionOrOpenVariant(err) {
+    let v = if Exn.isCamlExceptionOrOpenVariant(err) {
       err
     } else {
       JsError(unsafeToJsExn(err))

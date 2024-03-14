@@ -14,7 +14,7 @@ let make = (
         ~paymentMethodType=paymentMethod,
         ~paymentMethodName=paymentMethodType,
       ),
-    )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
+    )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
   }
 
   let paymentMethodTypes = paymentMethodType->getPaymentMethodTypes

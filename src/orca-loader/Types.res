@@ -12,19 +12,19 @@ type eventData = {
 }
 type event = {key: string, data: eventData}
 type eventParam = Event(event) | EventData(eventData) | Empty
-type eventHandler = option<Js.Json.t> => unit
-@send external onload: (Dom.element, unit => Js.Promise.t<'a>) => Js.Promise.t<'a> = "onload"
+type eventHandler = option<JSON.t> => unit
+@send external onload: (Dom.element, unit => Promise.t<'a>) => Promise.t<'a> = "onload"
 module This = {
   type t
   @get
-  external iframeElem: t => option<Js.nullable<Dom.element>> = "iframeElem"
+  external iframeElem: t => option<nullable<Dom.element>> = "iframeElem"
 }
 
 type paymentElement = {
   on: (string, option<option<eventData> => unit>) => unit,
   collapse: unit => unit,
   blur: unit => unit,
-  update: Js.Json.t => unit,
+  update: JSON.t => unit,
   destroy: unit => unit,
   unmount: unit => unit,
   mount: string => unit,
@@ -33,59 +33,54 @@ type paymentElement = {
 }
 
 type element = {
-  getElement: Js.Dict.key => option<paymentElement>,
-  update: Js.Json.t => unit,
-  fetchUpdates: unit => Js.Promise.t<Js.Json.t>,
-  create: (Js.Dict.key, Js.Json.t) => paymentElement,
+  getElement: string => option<paymentElement>,
+  update: JSON.t => unit,
+  fetchUpdates: unit => Promise.t<JSON.t>,
+  create: (string, JSON.t) => paymentElement,
 }
 
 type getCustomerSavedPaymentMethods = {
-  getCustomerDefaultSavedPaymentMethodData: unit => Js.Json.t,
-  confirmWithCustomerDefaultPaymentMethod: Js.Json.t => Promise.t<Js.Json.t>,
+  getCustomerDefaultSavedPaymentMethodData: unit => JSON.t,
+  confirmWithCustomerDefaultPaymentMethod: JSON.t => Promise.t<JSON.t>,
 }
 
-type initPaymentSession = {getCustomerSavedPaymentMethods: unit => Promise.t<Js.Json.t>}
+type initPaymentSession = {getCustomerSavedPaymentMethods: unit => Promise.t<JSON.t>}
 
 type confirmParams = {return_url: string}
 
 type confirmPaymentParams = {
-  elements: Js.Json.t,
-  confirmParams: Js.Nullable.t<confirmParams>,
+  elements: JSON.t,
+  confirmParams: Nullable.t<confirmParams>,
 }
 
 type hyperInstance = {
-  confirmOneClickPayment: (Js.Json.t, bool) => Js.Promise.t<Js.Json.t>,
-  confirmPayment: Js.Json.t => Js.Promise.t<Js.Json.t>,
-  elements: Js.Json.t => element,
+  confirmOneClickPayment: (JSON.t, bool) => Promise.t<JSON.t>,
+  confirmPayment: JSON.t => Promise.t<JSON.t>,
+  elements: JSON.t => element,
   confirmCardPayment: Js_OO.Callback.arity4<
-    (This.t, string, option<Js.Json.t>, option<Js.Json.t>) => Js.Promise.t<Js.Json.t>,
+    (This.t, string, option<JSON.t>, option<JSON.t>) => Promise.t<JSON.t>,
   >,
-  retrievePaymentIntent: string => Js.Promise.t<Js.Json.t>,
-  widgets: Js.Json.t => element,
-  paymentRequest: Js.Json.t => Js.Json.t,
-  initPaymentSession: Js.Json.t => initPaymentSession,
+  retrievePaymentIntent: string => Js.Promise.t<JSON.t>,
+  widgets: JSON.t => element,
+  paymentRequest: JSON.t => JSON.t,
+  initPaymentSession: JSON.t => initPaymentSession,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
-  Js.Promise.resolve(Js.Dict.empty()->Js.Json.object_)
+  Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 
-let confirmPaymentFn = (_elements: Js.Json.t) => {
-  Js.Promise.resolve(Js.Dict.empty()->Js.Json.object_)
+let confirmPaymentFn = (_elements: JSON.t) => {
+  Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 let confirmCardPaymentFn =
   @this
-  (
-    _this: This.t,
-    _clientSecretId: string,
-    _data: option<Js.Json.t>,
-    _options: option<Js.Json.t>,
-  ) => {
-    Js.Promise.resolve(Js.Dict.empty()->Js.Json.object_)
+  (_this: This.t, _clientSecretId: string, _data: option<JSON.t>, _options: option<JSON.t>) => {
+    Promise.resolve(Dict.make()->JSON.Encode.object)
   }
 
 let retrievePaymentIntentFn = _paymentIntentId => {
-  Js.Promise.resolve(Js.Dict.empty()->Js.Json.object_)
+  Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 let update = _options => {
   ()
@@ -97,7 +92,7 @@ let getElement = _componentName => {
 
 let fetchUpdates = () => {
   Js.Promise.make((~resolve, ~reject as _) => {
-    Js.Global.setTimeout(() => resolve(. Js.Dict.empty()->Js.Json.object_), 1000)->ignore
+    setTimeout(() => resolve(. Dict.make()->JSON.Encode.object), 1000)->ignore
   })
 }
 let defaultPaymentElement = {
@@ -124,11 +119,11 @@ let defaultElement = {
 }
 
 let getCustomerDefaultSavedPaymentMethodData = () => {
-  Js.Json.null
+  JSON.Encode.null
 }
 
 let confirmWithCustomerDefaultPaymentMethod = _confirmParams => {
-  Js.Promise.resolve(Js.Dict.empty()->Js.Json.object_)
+  Js.Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 
 let defaultGetCustomerSavedPaymentMethods = () => {
@@ -137,7 +132,7 @@ let defaultGetCustomerSavedPaymentMethods = () => {
   //   getCustomerDefaultSavedPaymentMethodData,
   //   confirmWithCustomerDefaultPaymentMethod,
   // })
-  Js.Promise.resolve(Js.Json.null)
+  Js.Promise.resolve(JSON.Encode.null)
 }
 
 let defaultInitPaymentSession: initPaymentSession = {
@@ -151,7 +146,7 @@ let defaultHyperInstance = {
   retrievePaymentIntent: retrievePaymentIntentFn,
   elements: _ev => defaultElement,
   widgets: _ev => defaultElement,
-  paymentRequest: _ev => Js.Json.null,
+  paymentRequest: _ev => JSON.Encode.null,
   initPaymentSession: _ev => defaultInitPaymentSession,
 }
 

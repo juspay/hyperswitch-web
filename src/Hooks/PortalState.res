@@ -1,1 +1,1 @@
-let defaultDict: Js.Dict.t<Dom.element> = Js.Dict.empty()
+let defaultDict: Dict.t<Dom.element> = Dict.make()

@@ -15,7 +15,7 @@ type keys = {
   parentURL: string,
   sdkHandleOneClickConfirmPayment: bool,
 }
-@val @scope("document") external querySelector: string => Js.Nullable.t<element> = "querySelector"
+@val @scope("document") external querySelector: string => Nullable.t<element> = "querySelector"
 
 type event = {\"type": string}
 @val @scope("document") external createElement: string => element = "createElement"
@@ -28,7 +28,7 @@ external addEventListener: (element, string, event => unit) => unit = "addEventL
 @send
 external removeEventListener: (element, string, event => unit) => unit = "removeEventListener"
 
-external dictToObj: Js.Dict.t<'a> => {..} = "%identity"
+external dictToObj: Dict.t<'a> => {..} = "%identity"
 
 let useScript = (src: string) => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
@@ -37,7 +37,7 @@ let useScript = (src: string) => {
       setStatus(_ => "idle")
     }
     let script = querySelector(`script[src="${src}"]`)
-    switch script->Js.Nullable.toOption {
+    switch script->Nullable.toOption {
     | Some(dom) =>
       setStatus(_ => dom.getAttribute(. "data-status"))
       None
@@ -66,8 +66,8 @@ let useScript = (src: string) => {
 
 let updateKeys = (dict, keyPair, setKeys) => {
   let (key, value) = keyPair
-  let valueStr = value->Js.Json.decodeString->Belt.Option.getWithDefault("")
-  let valueBool = default => value->Js.Json.decodeBoolean->Belt.Option.getWithDefault(default)
+  let valueStr = value->JSON.Decode.string->Option.getOr("")
+  let valueBool = default => value->JSON.Decode.bool->Option.getOr(default)
   if dict->Utils.getDictIsSome(key) {
     switch key {
     | "iframeId" =>

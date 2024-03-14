@@ -2,7 +2,7 @@ open RecoilAtoms
 open Utils
 
 let cleanSocialSecurityNumber = socialSecurityNumber =>
-  socialSecurityNumber->Js.String2.replaceByRe(%re("/\D+/g"), "")
+  socialSecurityNumber->String.replaceRegExp(%re("/\D+/g"), "")
 
 let formatSocialSecurityNumber = socialSecurityNumber => {
   let formatted = socialSecurityNumber->cleanSocialSecurityNumber
@@ -11,11 +11,11 @@ let formatSocialSecurityNumber = socialSecurityNumber => {
   let thirdPart = formatted->CardUtils.slice(6, 9)
   let fourthPart = formatted->CardUtils.slice(9, 11)
 
-  if formatted->Js.String2.length <= 3 {
+  if formatted->String.length <= 3 {
     firstPart
-  } else if formatted->Js.String2.length > 3 && formatted->Js.String2.length <= 6 {
+  } else if formatted->String.length > 3 && formatted->String.length <= 6 {
     `${firstPart}.${secondPart}`
-  } else if formatted->Js.String2.length > 6 && formatted->Js.String2.length <= 9 {
+  } else if formatted->String.length > 6 && formatted->String.length <= 9 {
     `${firstPart}.${secondPart}.${thirdPart}`
   } else {
     `${firstPart}.${secondPart}.${thirdPart}-${fourthPart}`
@@ -35,12 +35,12 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
 
   let (socialSecurityNumberError, setSocialSecurityNumberError) = React.useState(_ => "")
 
-  let socialSecurityNumberRef = React.useRef(Js.Nullable.null)
+  let socialSecurityNumberRef = React.useRef(Nullable.null)
 
   let (complete, empty) = React.useMemo1(() => {
     (
-      socialSecurityNumber->cleanSocialSecurityNumber->Js.String2.length == 11,
-      socialSecurityNumber->Js.String2.length == 0,
+      socialSecurityNumber->cleanSocialSecurityNumber->String.length == 11,
+      socialSecurityNumber->String.length == 0,
     )
   }, [socialSecurityNumber])
 
@@ -55,13 +55,13 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   }, [complete])
 
   let submitCallback = React.useCallback1((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
       if complete {
         let body = PaymentBody.boletoBody(
-          ~socialSecurityNumber=socialSecurityNumber->Js.String2.replaceByRe(%re("/\D+/g"), ""),
+          ~socialSecurityNumber=socialSecurityNumber->String.replaceRegExp(%re("/\D+/g"), ""),
         )
         intent(
           ~bodyArr=body,
@@ -85,7 +85,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   }
   let socialSecurityNumberBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]->cleanSocialSecurityNumber
-    if val->Js.String2.length != 11 && val->Js.String2.length > 0 {
+    if val->String.length != 11 && val->String.length > 0 {
       setSocialSecurityNumberError(_ => "The social security number entered is invalid.")
     }
   }

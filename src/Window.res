@@ -25,7 +25,7 @@ external replace: string => unit = "replace"
 @get external document: window => document = "document"
 @get external parentNode: Dom.element => Dom.element = "parentNode"
 @val @scope("document")
-external querySelector: string => Js.Nullable.t<Dom.element> = "querySelector"
+external querySelector: string => Nullable.t<Dom.element> = "querySelector"
 @val @scope("document")
 external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
 
@@ -47,7 +47,7 @@ external addEventListener: (string, _ => unit) => unit = "addEventListener"
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
 @send external postMessage: (Dom.element, string, string) => unit = "postMessage"
 @send
-external getElementById: (document, string) => Js.Nullable.t<Dom.element> = "getElementById"
+external getElementById: (document, string) => Nullable.t<Dom.element> = "getElementById"
 @get
 external frames: window => {..} = "frames"
 @get external name: window => string = "name"
@@ -57,20 +57,20 @@ external contentWindow: Dom.element => Dom.element = "contentWindow"
 external style: Dom.element => style = "style"
 @set external setTransition: (style, string) => unit = "transition"
 @set external setHeight: (style, string) => unit = "height"
-@send external paymentRequest: (Js.Json.t, Js.Json.t, Js.Json.t) => Js.Json.t = "PaymentRequest"
+@send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
 @send external click: Dom.element => unit = "click"
 
-let iframePostMessage = (iframeRef: Js.nullable<Dom.element>, message) => {
-  switch iframeRef->Js.Nullable.toOption {
+let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
+  switch iframeRef->Nullable.toOption {
   | Some(ref) =>
     try {
       ref
       ->contentWindow
-      ->postMessage(message->Js.Json.object_->Js.Json.stringify, GlobalVars.targetOrigin)
+      ->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
     } catch {
     | _ => ()
     }
-  | None => Js.Console.error("This element does not exist or is not mounted yet.")
+  | None => Console.error("This element does not exist or is not mounted yet.")
   }
 }
 
@@ -92,7 +92,7 @@ external body: body = "body"
 @set external elementOnload: (Dom.element, unit => unit) => unit = "onload"
 @set external elementOnerror: (Dom.element, exn => unit) => unit = "onerror"
 @val @scope("window")
-external getHyper: Js.Nullable.t<Types.hyperInstance> = "HyperMethod"
+external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @set
 external setHyper: (window, Types.hyperInstance) => unit = "HyperMethod"
 

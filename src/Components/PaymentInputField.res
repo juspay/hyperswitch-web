@@ -56,14 +56,14 @@ let make = (
   } else {
     ""
   }
-  let focusClass = if inputFocused || value->Js.String2.length > 0 {
+  let focusClass = if inputFocused || value->String.length > 0 {
     `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`
   } else {
     "transition-all ease-in duration-75"
   }
   let floatinglabelClass = inputFocused ? "Label--floating" : "Label--resting"
   let getClassName = initialLabel => {
-    if value->Js.String2.length == 0 {
+    if value->String.length == 0 {
       `${initialLabel}--empty`
     } else {
       switch isValid {
@@ -76,7 +76,7 @@ let make = (
   let inputClass = getClassName("Input")
 
   <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
-    <RenderIf condition={fieldName->Js.String2.length > 0 && appearance.labels == Above}>
+    <RenderIf condition={fieldName->String.length > 0 && appearance.labels == Above}>
       <div
         className={`Label ${labelClass}`}
         style={ReactDOMStyle.make(
@@ -118,9 +118,9 @@ let make = (
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} text-opacity-20 pointer-events-none`}
             style={ReactDOMStyle.make(
               ~marginBottom={
-                inputFocused || value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
+                inputFocused || value->String.length > 0 ? "" : themeObj.spacingUnit
               },
-              ~fontSize={inputFocused || value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""},
+              ~fontSize={inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""},
               ~opacity="0.6",
               (),
             )}>
@@ -132,7 +132,7 @@ let make = (
     </div>
     {switch errorString {
     | Some(val) =>
-      <RenderIf condition={val->Js.String2.length > 0}>
+      <RenderIf condition={val->String.length > 0}>
         <div
           className="Error pt-1"
           style={ReactDOMStyle.make(

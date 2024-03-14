@@ -1,14 +1,14 @@
 open Types
 
 let make = (options, ~clientSecret, ~publishableKey, ~logger: option<OrcaLogger.loggerMake>) => {
-  let logger = logger->Belt.Option.getWithDefault(OrcaLogger.defaultLoggerConfig)
+  let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
   let switchToCustomPod =
     GlobalVars.isInteg &&
     options
-    ->Js.Json.decodeObject
-    ->Belt.Option.flatMap(x => x->Js.Dict.get("switchToCustomPod"))
-    ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-    ->Belt.Option.getWithDefault(false)
+    ->JSON.Decode.object
+    ->Option.flatMap(x => x->Dict.get("switchToCustomPod"))
+    ->Option.flatMap(JSON.Decode.bool)
+    ->Option.getOr(false)
   let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
 
   let defaultInitPaymentSession = {

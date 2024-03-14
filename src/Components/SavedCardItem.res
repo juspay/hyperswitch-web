@@ -26,7 +26,7 @@ let make = (
     cvcError,
     _,
   ) = cvcProps
-  let cvcRef = React.useRef(Js.Nullable.null)
+  let cvcRef = React.useRef(Nullable.null)
   let pickerItemClass = isActive ? "PickerItem--selected" : ""
 
   let focusCVC = () => {
@@ -36,9 +36,9 @@ let make = (
       | None => ""
       }
     )
-    let optionalRef = cvcRef.current->Js.Nullable.toOption
+    let optionalRef = cvcRef.current->Nullable.toOption
     switch optionalRef {
-    | Some(_) => optionalRef->Belt.Option.forEach(input => input->CardUtils.focus)->ignore
+    | Some(_) => optionalRef->Option.forEach(input => input->CardUtils.focus)->ignore
     | None => ()
     }
   }

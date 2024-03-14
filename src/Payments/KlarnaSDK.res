@@ -15,7 +15,7 @@ type res = {
 type some = {
   init: (. token) => unit,
   load: (. loadType, res => unit) => unit,
-  authorize: (. loadType, Js.Json.t, res => unit) => unit,
+  authorize: (. loadType, JSON.t, res => unit) => unit,
   loadPaymentReview: (. loadType, res => unit) => unit,
 }
 
@@ -30,7 +30,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
 
   let handleCloseLoader = () => {
-    Utils.handlePostMessage([("fullscreen", false->Js.Json.boolean)])
+    Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
     Utils.postFailedSubmitResponse(
       ~errortype="confirm_payment_failed",
       ~message="An unknown error has occurred",
@@ -38,14 +38,14 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
   }
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
       Utils.handlePostMessage([
-        ("fullscreen", true->Js.Json.boolean),
-        ("param", "paymentloader"->Js.Json.string),
-        ("iframeId", iframeId->Js.Json.string),
+        ("fullscreen", true->JSON.Encode.bool),
+        ("param", "paymentloader"->JSON.Encode.string),
+        ("iframeId", iframeId->JSON.Encode.string),
       ])
       klarnaInit.authorize(.
         {
@@ -53,7 +53,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
           color_text: None,
           payment_method_category: Some("klarna"),
         },
-        Js.Dict.empty()->Js.Json.object_,
+        Dict.make()->JSON.Encode.object,
         (res: res) => {
           let (connectors, _) = list->PaymentUtils.getConnectors(PayLater(Klarna(SDK)))
           let body = PaymentBody.klarnaSDKbody(~token=res.authorization_token, ~connectors)

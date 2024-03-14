@@ -10,8 +10,8 @@ module Loader = {
     open PaymentElementShimmer
     switch list {
     | SemiLoaded =>
-      Belt.Array.make(cardShimmerCount - 1, "")
-      ->Js.Array2.mapi((_, i) => {
+      Array.make(~length=cardShimmerCount - 1, "")
+      ->Array.mapWithIndex((_, i) => {
         let borderStyle = layoutClass.spacedAccordionItems
           ? themeObj.borderRadius
           : i == cardShimmerCount - 2
@@ -70,11 +70,11 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
   let cardOptionDetails =
     paymentOptions
     ->PaymentMethodsRecord.getPaymentDetails
-    ->Js.Array2.slice(~start=0, ~end_=layoutClass.maxAccordionItems)
+    ->Array.slice(~start=0, ~end=layoutClass.maxAccordionItems)
   let dropDownOptionsDetails =
     paymentOptions
     ->PaymentMethodsRecord.getPaymentDetails
-    ->Js.Array2.sliceFrom(layoutClass.maxAccordionItems)
+    ->Array.sliceToEnd(~start=layoutClass.maxAccordionItems)
 
   let getBorderRadiusStyleForCardOptionDetails = index => {
     if (
@@ -82,20 +82,18 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
       !layoutClass.spacedAccordionItems &&
       index == 0 &&
       list == SemiLoaded &&
-      cardOptionDetails->Js.Array2.length == 1
+      cardOptionDetails->Array.length == 1
     ) {
       `${themeObj.borderRadius} ${themeObj.borderRadius} 0px 0px`
     } else if (
       !showMore &&
       !layoutClass.spacedAccordionItems &&
       index == 0 &&
-      cardOptionDetails->Js.Array2.length == 1
+      cardOptionDetails->Array.length == 1
     ) {
       themeObj.borderRadius
     } else if (
-      !showMore &&
-      !layoutClass.spacedAccordionItems &&
-      index == cardOptionDetails->Js.Array2.length - 1
+      !showMore && !layoutClass.spacedAccordionItems && index == cardOptionDetails->Array.length - 1
     ) {
       `0px 0px ${themeObj.borderRadius} ${themeObj.borderRadius}`
     } else if !layoutClass.spacedAccordionItems && index == 0 {
@@ -108,7 +106,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
   }
 
   let getBorderRadiusStyleForDropDownOptionDetails = index => {
-    if !layoutClass.spacedAccordionItems && index == dropDownOptionsDetails->Js.Array2.length - 1 {
+    if !layoutClass.spacedAccordionItems && index == dropDownOptionsDetails->Array.length - 1 {
       `0px 0px ${themeObj.borderRadius} ${themeObj.borderRadius}`
     } else if layoutClass.spacedAccordionItems {
       themeObj.borderRadius
@@ -131,7 +129,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
         (),
       )}>
       {cardOptionDetails
-      ->Js.Array2.mapi((payOption, i) => {
+      ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
         let borderRadiusStyle = getBorderRadiusStyleForCardOptionDetails(i)
         <Accordion
@@ -141,7 +139,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
           checkoutEle
           borderRadiusStyle={borderRadiusStyle}
           borderBottom={(!showMore &&
-          i == cardOptionDetails->Js.Array2.length - 1 &&
+          i == cardOptionDetails->Array.length - 1 &&
           !layoutClass.spacedAccordionItems) || layoutClass.spacedAccordionItems}
         />
       })
@@ -149,7 +147,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
       <Loader cardShimmerCount=layoutClass.maxAccordionItems />
       <RenderIf condition={showMore}>
         {dropDownOptionsDetails
-        ->Js.Array2.mapi((payOption, i) => {
+        ->Array.mapWithIndex((payOption, i) => {
           let isActive = payOption.paymentMethodName == selectedOption
           let borderRadiusStyle = getBorderRadiusStyleForDropDownOptionDetails(i)
           <Accordion
@@ -158,14 +156,14 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
             isActive
             checkoutEle
             borderRadiusStyle={borderRadiusStyle}
-            borderBottom={(i == dropDownOptionsDetails->Js.Array2.length - 1 &&
+            borderBottom={(i == dropDownOptionsDetails->Array.length - 1 &&
               !layoutClass.spacedAccordionItems) || layoutClass.spacedAccordionItems}
           />
         })
         ->React.array}
       </RenderIf>
     </div>
-    <RenderIf condition={!showMore && dropDownOptionsDetails->Js.Array2.length > 0}>
+    <RenderIf condition={!showMore && dropDownOptionsDetails->Array.length > 0}>
       <button
         className="AccordionMore flex overflow-auto no-scrollbar"
         onClick={_ => setShowMore(_ => !showMore)}
@@ -182,7 +180,9 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
         )}>
         <div
           className="flex flex-row" style={ReactDOMStyle.make(~columnGap=themeObj.spacingUnit, ())}>
-          <div className="m-2"> <Icon size=10 name="arrow-down" /> </div>
+          <div className="m-2">
+            <Icon size=10 name="arrow-down" />
+          </div>
           <div className="AccordionItemLabel"> {React.string("More")} </div>
         </div>
       </button>

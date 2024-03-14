@@ -4,20 +4,20 @@ external getElementById: string => Dom.element = "getElementById"
 
 @react.component
 let make = (~children) => {
-  let (fullScreenIframeNode, setFullScreenIframeNode) = React.useState(() => Js.Nullable.null)
+  let (fullScreenIframeNode, setFullScreenIframeNode) = React.useState(() => Nullable.null)
 
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
       try {
-        let json = ev.data->Js.Json.parseExn
+        let json = ev.data->JSON.parseExn
         let dict = json->getDictFromJson
 
-        if dict->Js.Dict.get("fullScreenIframeMounted")->Belt.Option.isSome {
+        if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
           if dict->getBool("fullScreenIframeMounted", false) {
             setFullScreenIframeNode(_ =>
               switch Window.windowParent->Window.fullscreen {
               | Some(doc) => doc->Window.document->Window.getElementById("fullscreen")
-              | None => Js.Nullable.null
+              | None => Nullable.null
               }
             )
           }
@@ -30,7 +30,7 @@ let make = (~children) => {
     Some(() => {Window.removeEventListener("message", handle)})
   })
 
-  switch fullScreenIframeNode->Js.Nullable.toOption {
+  switch fullScreenIframeNode->Nullable.toOption {
   | Some(domNode) => ReactDOM.createPortal(children, domNode)
   | None => React.null
   }

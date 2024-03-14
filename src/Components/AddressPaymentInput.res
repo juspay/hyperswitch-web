@@ -4,10 +4,10 @@ open Utils
 
 type addressType = Line1 | Line2 | City | Postal | State | Country
 
-type dataModule = {states: Js.Json.t}
+type dataModule = {states: JSON.t}
 
 @val
-external importStates: string => Js.Promise.t<dataModule> = "import"
+external importStates: string => Promise.t<dataModule> = "import"
 
 let getShowType = str => {
   switch str {
@@ -54,10 +54,10 @@ let make = (~paymentType, ~className="") => {
   )
   let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
 
-  let line1Ref = React.useRef(Js.Nullable.null)
-  let line2Ref = React.useRef(Js.Nullable.null)
-  let cityRef = React.useRef(Js.Nullable.null)
-  let postalRef = React.useRef(Js.Nullable.null)
+  let line1Ref = React.useRef(Nullable.null)
+  let line2Ref = React.useRef(Nullable.null)
+  let cityRef = React.useRef(Nullable.null)
+  let postalRef = React.useRef(Nullable.null)
 
   let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
   let (stateJson, setStatesJson) = React.useState(_ => None)
@@ -72,14 +72,14 @@ let make = (~paymentType, ~className="") => {
     ) => unit,
     regex,
   ) => {
-    if Js.Re.test_(regex->Js.Re.fromString, postal.value) && postal.value !== "" && regex !== "" {
+    if RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== "" && regex !== "" {
       setPostal(.prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
     } else if (
-      regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, postal.value) && postal.value !== ""
+      regex !== "" && !RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== ""
     ) {
       setPostal(.prev => {
         ...prev,
@@ -130,20 +130,20 @@ let make = (~paymentType, ~className="") => {
       value: val,
       errorString: "",
     })
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) {
+    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) {
       CardUtils.blurRef(postalRef)
     }
   }
 
   let onPostalBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
+    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) && val !== "" {
       setPostalCode(.prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
-    } else if regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
+    } else if regex !== "" && !RegExp.test(regex->RegExp.fromString, val) && val !== "" {
       setPostalCode(.prev => {
         ...prev,
         isValid: Some(false),
@@ -167,7 +167,7 @@ let make = (~paymentType, ~className="") => {
   }, [country.value])
 
   let submitCallback = React.useCallback6((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if line1.value == "" {

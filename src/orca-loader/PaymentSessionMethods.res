@@ -1,7 +1,6 @@
 open Types
 
-external customerSavedPaymentMethodsToJson: getCustomerSavedPaymentMethods => Js.Json.t =
-  "%identity"
+external customerSavedPaymentMethodsToJson: getCustomerSavedPaymentMethods => JSON.t = "%identity"
 
 let getCustomerSavedPaymentMethods = (
   ~clientSecret,
@@ -21,19 +20,19 @@ let getCustomerSavedPaymentMethods = (
   ->then(customerDetails => {
     let customerPaymentMethods =
       customerDetails
-      ->Js.Json.decodeObject
-      ->Belt.Option.flatMap(x => x->Js.Dict.get("customer_payment_methods"))
-      ->Belt.Option.flatMap(Js.Json.decodeArray)
-      ->Belt.Option.getWithDefault([])
-      ->Js.Array2.filter(customerPaymentMethod => {
+      ->JSON.Decode.object
+      ->Option.flatMap(x => x->Dict.get("customer_payment_methods"))
+      ->Option.flatMap(JSON.Decode.array)
+      ->Option.getOr([])
+      ->Array.filter(customerPaymentMethod => {
         customerPaymentMethod
-        ->Js.Json.decodeObject
-        ->Belt.Option.flatMap(x => x->Js.Dict.get("default_payment_method_set"))
-        ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-        ->Belt.Option.getWithDefault(false)
+        ->JSON.Decode.object
+        ->Option.flatMap(x => x->Dict.get("default_payment_method_set"))
+        ->Option.flatMap(JSON.Decode.bool)
+        ->Option.getOr(false)
       })
 
-    switch customerPaymentMethods->Belt.Array.get(0) {
+    switch customerPaymentMethods->Array.get(0) {
     | Some(customerDefaultPaymentMethod) =>
       let getCustomerDefaultSavedPaymentMethodData = () => {
         customerDefaultPaymentMethod
@@ -41,42 +40,40 @@ let getCustomerSavedPaymentMethods = (
 
       let confirmWithCustomerDefaultPaymentMethod = payload => {
         let customerPaymentMethod =
-          customerDefaultPaymentMethod
-          ->Js.Json.decodeObject
-          ->Belt.Option.getWithDefault(Js.Dict.empty())
+          customerDefaultPaymentMethod->JSON.Decode.object->Option.getOr(Dict.make())
         let paymentToken =
-          customerPaymentMethod->Utils.getJsonFromDict("payment_token", Js.Json.null)
+          customerPaymentMethod->Utils.getJsonFromDict("payment_token", JSON.Encode.null)
         let paymentMethod =
-          customerPaymentMethod->Utils.getJsonFromDict("payment_method", Js.Json.null)
+          customerPaymentMethod->Utils.getJsonFromDict("payment_method", JSON.Encode.null)
         let paymentMethodType =
-          customerPaymentMethod->Utils.getJsonFromDict("payment_method_type", Js.Json.null)
+          customerPaymentMethod->Utils.getJsonFromDict("payment_method_type", JSON.Encode.null)
 
         let confirmParams =
           payload
-          ->Js.Json.decodeObject
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("confirmParams"))
-          ->Belt.Option.getWithDefault(Js.Json.null)
+          ->JSON.Decode.object
+          ->Option.flatMap(x => x->Dict.get("confirmParams"))
+          ->Option.getOr(JSON.Encode.null)
 
         let redirect =
           payload
-          ->Js.Json.decodeObject
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("redirect"))
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getWithDefault("if_required")
+          ->JSON.Decode.object
+          ->Option.flatMap(x => x->Dict.get("redirect"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("if_required")
 
         let returnUrl =
           confirmParams
-          ->Js.Json.decodeObject
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("return_url"))
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getWithDefault("")
+          ->JSON.Decode.object
+          ->Option.flatMap(x => x->Dict.get("return_url"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
 
         let confirmParam: ConfirmType.confirmParams = {
           return_url: returnUrl,
           publishableKey,
         }
 
-        let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]->Option.getOr("")
+        let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
         let endpoint = ApiEndpoint.getApiEndPoint(
           ~publishableKey=confirmParam.publishableKey,
           ~isConfirmCall=true,
@@ -89,8 +86,8 @@ let getCustomerSavedPaymentMethods = (
         ]
 
         let paymentType: PaymentHelpers.payment = switch paymentMethodType
-        ->Js.Json.decodeString
-        ->Belt.Option.getWithDefault("") {
+        ->JSON.Decode.string
+        ->Option.getOr("") {
         | "apple_pay" => Applepay
         | "google_pay" => Gpay
         | "debit"
@@ -103,14 +100,14 @@ let getCustomerSavedPaymentMethods = (
         let broswerInfo = BrowserSpec.broswerInfo()
 
         let body = [
-          ("client_secret", clientSecret->Js.Json.string),
+          ("client_secret", clientSecret->JSON.Encode.string),
           ("payment_method", paymentMethod),
           ("payment_token", paymentToken),
           ("payment_method_type", paymentMethodType),
         ]
 
         let bodyStr =
-          body->Js.Array2.concat(broswerInfo)->Js.Dict.fromArray->Js.Json.object_->Js.Json.stringify
+          body->Array.concat(broswerInfo)->Dict.fromArray->JSON.Encode.object->JSON.stringify
 
         PaymentHelpers.intentCall(
           ~fetchApi=Utils.fetchApi,
@@ -146,35 +143,38 @@ let getCustomerSavedPaymentMethods = (
             (
               "error",
               [
-                ("type", "no_data"->Js.Json.string),
+                ("type", "no_data"->JSON.Encode.string),
                 (
                   "message",
-                  "There is no customer default saved payment method data"->Js.Json.string,
+                  "There is no customer default saved payment method data"->JSON.Encode.string,
                 ),
               ]
-              ->Js.Dict.fromArray
-              ->Js.Json.object_,
+              ->Dict.fromArray
+              ->JSON.Encode.object,
             ),
           ]
-          ->Js.Dict.fromArray
-          ->Js.Json.object_
+          ->Dict.fromArray
+          ->JSON.Encode.object
         updatedCustomerDetails->resolve
       }
     }
   })
   ->catch(err => {
-    let exceptionMessage = err->Utils.formatException->Js.Json.stringify
+    let exceptionMessage = err->Utils.formatException->JSON.stringify
     let updatedCustomerDetails =
       [
         (
           "error",
-          [("type", "server_error"->Js.Json.string), ("message", exceptionMessage->Js.Json.string)]
-          ->Js.Dict.fromArray
-          ->Js.Json.object_,
+          [
+            ("type", "server_error"->JSON.Encode.string),
+            ("message", exceptionMessage->JSON.Encode.string),
+          ]
+          ->Dict.fromArray
+          ->JSON.Encode.object,
         ),
       ]
-      ->Js.Dict.fromArray
-      ->Js.Json.object_
+      ->Dict.fromArray
+      ->JSON.Encode.object
     updatedCustomerDetails->resolve
   })
 }

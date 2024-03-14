@@ -1,9 +1,9 @@
 type lazyScreen
 
-type lazyScreenLoader = unit => Js.Promise.t<lazyScreen>
+type lazyScreenLoader = unit => Promise.t<lazyScreen>
 
 @val
-external import_: string => Js.Promise.t<lazyScreen> = "import"
+external import_: string => Promise.t<lazyScreen> = "import"
 
 type reactLazy<'component> = (. lazyScreenLoader) => 'component
 

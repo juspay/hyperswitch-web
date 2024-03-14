@@ -1,7 +1,7 @@
 open Utils
 @react.component
 let make = (
-  ~sessionObj: option<Js.Json.t>,
+  ~sessionObj: option<JSON.t>,
   ~list: PaymentMethodsRecord.list,
   ~paymentType: option<CardThemeType.mode>,
   ~walletOptions: array<string>,
@@ -18,12 +18,12 @@ let make = (
   let sync = PaymentHelpers.usePaymentSync(None, Applepay)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
-  let isApplePaySDKFlow = sessionObj->Belt.Option.isSome
+  let isApplePaySDKFlow = sessionObj->Option.isSome
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
-  let isWallet = walletOptions->Js.Array2.includes("apple_pay")
+  let isWallet = walletOptions->Array.includes("apple_pay")
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
   let applePayPaymentMethodType = React.useMemo1(() => {
@@ -74,8 +74,8 @@ let make = (
     } else {
       let requiredFieldsBodyArr =
         requestBody
-        ->Js.Dict.fromArray
-        ->Js.Json.object_
+        ->Dict.fromArray
+        ->JSON.Encode.object
         ->OrcaUtils.flattenObject(true)
         ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
         ->OrcaUtils.getArrayOfTupleFromDict
@@ -248,25 +248,25 @@ let make = (
     open Promise
     OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
-      let result = result->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)
+      let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         if isInvokeSDKFlow {
           let isDelayedSessionToken =
             sessionObj
-            ->Belt.Option.getWithDefault(Js.Json.null)
-            ->Js.Json.decodeObject
-            ->Belt.Option.getWithDefault(Js.Dict.empty())
-            ->Js.Dict.get("delayed_session_token")
-            ->Belt.Option.getWithDefault(Js.Json.null)
-            ->Js.Json.decodeBoolean
-            ->Belt.Option.getWithDefault(false)
+            ->Option.getOr(JSON.Encode.null)
+            ->JSON.Decode.object
+            ->Option.getOr(Dict.make())
+            ->Dict.get("delayed_session_token")
+            ->Option.getOr(JSON.Encode.null)
+            ->JSON.Decode.bool
+            ->Option.getOr(false)
 
           if isDelayedSessionToken {
             setShowApplePayLoader(_ => true)
             let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
             processPayment(bodyDict)
           } else {
-            let message = [("applePayButtonClicked", true->Js.Json.boolean)]
+            let message = [("applePayButtonClicked", true->JSON.Encode.bool)]
             Utils.handlePostMessage(message)
           }
         } else {
@@ -284,36 +284,34 @@ let make = (
   React.useEffect4(() => {
     let handleApplePayMessages = (ev: Window.event) => {
       let json = try {
-        ev.data->Js.Json.parseExn
+        ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->Js.Json.object_
+      | _ => Dict.make()->JSON.Encode.object
       }
 
       try {
         let dict = json->Utils.getDictFromJson
-        if dict->Js.Dict.get("applePayProcessPayment")->Belt.Option.isSome {
+        if dict->Dict.get("applePayProcessPayment")->Option.isSome {
           let token =
-            dict
-            ->Js.Dict.get("applePayProcessPayment")
-            ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+            dict->Dict.get("applePayProcessPayment")->Option.getOr(Dict.make()->JSON.Encode.object)
           let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
           processPayment(bodyDict)
-        } else if dict->Js.Dict.get("showApplePayButton")->Belt.Option.isSome {
+        } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
           if !isWallet {
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
           }
-        } else if dict->Js.Dict.get("applePaySyncPayment")->Belt.Option.isSome {
+        } else if dict->Dict.get("applePaySyncPayment")->Option.isSome {
           syncPayment()
         }
       } catch {
-      | _ => Utils.logInfo(Js.log("Error in parsing Apple Pay Data"))
+      | _ => Utils.logInfo(Console.log("Error in parsing Apple Pay Data"))
       }
     }
     Window.addEventListener("message", handleApplePayMessages)
     Some(
       () => {
-        Utils.handlePostMessage([("applePaySessionAbort", true->Js.Json.boolean)])
+        Utils.handlePostMessage([("applePaySessionAbort", true->JSON.Encode.bool)])
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
@@ -337,12 +335,12 @@ let make = (
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     if !isWallet {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
         options.readOnly
           ? ()
-          : handlePostMessage([("applePayButtonClicked", true->Js.Json.boolean)])
+          : handlePostMessage([("applePayButtonClicked", true->JSON.Encode.bool)])
       } else if areRequiredFieldsEmpty {
         postFailedSubmitResponse(
           ~errortype="validation_error",

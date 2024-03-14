@@ -53,9 +53,9 @@ let make = (
     }
   }
   let handleFocus = _ => {
-    if value->Js.String2.length == 0 {
+    if value->String.length == 0 {
       setClass("input-empty")
-    } else if value->Js.String2.length > 0 {
+    } else if value->String.length > 0 {
       setValidClasses()
     }
     setFocus(true)
@@ -64,9 +64,9 @@ let make = (
   }
 
   let handleBlur = ev => {
-    if value->Js.String2.length == 0 {
+    if value->String.length == 0 {
       setClass("input-base")
-    } else if value->Js.String2.length > 0 {
+    } else if value->String.length > 0 {
       setValidClasses()
     }
     setFocus(false)
@@ -74,7 +74,7 @@ let make = (
     Utils.handleOnBlurPostMessage(~targetOrigin=parentURL, ())
   }
   React.useEffect2(() => {
-    if value->Js.String2.length > 0 {
+    if value->String.length > 0 {
       setValidClasses()
     }
     None
@@ -90,7 +90,7 @@ let make = (
 
   let (cardEmpty, cardComplete, cardInvalid, cardFocused) = React.useMemo5(() => {
     let isCardDetailsEmpty =
-      Js.String2.length(value) == 0
+      String.length(value) == 0
         ? `${options.classes.base} ${options.classes.empty} `
         : options.classes.base
 
@@ -103,18 +103,18 @@ let make = (
     (isCardDetailsEmpty, isCardDetailsValid, isCardDetailsInvalid, isCardDetailsFocused)
   }, (isValid, setIsValid, value, onChange, onBlur))
 
-  let concatString = Js.Array.joinWith("", [cardEmpty, cardComplete, cardInvalid, cardFocused])
+  let concatString = Array.joinWith([cardEmpty, cardComplete, cardInvalid, cardFocused], "")
 
   React.useEffect5(() => {
     Utils.handlePostMessage([
-      ("id", iframeId->Js.Json.string),
-      ("concatedString", concatString->Js.Json.string),
+      ("id", iframeId->JSON.Encode.string),
+      ("concatedString", concatString->JSON.Encode.string),
     ])
     None
   }, (isValid, setIsValid, value, onChange, onBlur))
 
   <div className={` flex flex-col w-full`}>
-    <RenderIf condition={fieldName->Js.String2.length > 0}>
+    <RenderIf condition={fieldName->String.length > 0}>
       <div style={ReactDOMStyle.make()}> {React.string(fieldName)} </div>
     </RenderIf>
     <div className="flex flex-row " style={ReactDOMStyle.make(~direction, ())}>
@@ -143,7 +143,7 @@ let make = (
     </div>
     {switch errorString {
     | Some(val) =>
-      <RenderIf condition={val->Js.String2.length > 0}>
+      <RenderIf condition={val->String.length > 0}>
         <div className="py-1" style={ReactDOMStyle.make()}> {React.string(val)} </div>
       </RenderIf>
     | None => React.null

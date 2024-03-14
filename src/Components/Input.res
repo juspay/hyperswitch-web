@@ -60,7 +60,7 @@ let make = (
 
   <div
     className={` flex flex-col w-full`} style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
-    <RenderIf condition={fieldName->Js.String2.length > 0}>
+    <RenderIf condition={fieldName->String.length > 0}>
       <div style={ReactDOMStyle.make()}> {React.string(fieldName)} </div>
     </RenderIf>
     <div className="flex flex-row " style={ReactDOMStyle.make(~direction, ())}>
@@ -89,7 +89,7 @@ let make = (
     </div>
     {switch errorString {
     | Some(val) =>
-      <RenderIf condition={val->Js.String2.length > 0}>
+      <RenderIf condition={val->String.length > 0}>
         <div
           className="py-1 text-xs text-red-600 transition-colors transition-border ease-out duration-200">
           {React.string(val)}

@@ -4,4 +4,4 @@ type dimensions = {
   width: float,
 }
 type ele = {contentRect: dimensions}
-@new external newResizerObserver: (Js.Array2.t<ele> => unit) => observer = "ResizeObserver"
+@new external newResizerObserver: (array<ele> => unit) => observer = "ResizeObserver"

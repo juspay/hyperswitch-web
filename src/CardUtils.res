@@ -20,7 +20,7 @@ type cardProps = (
   string,
   JsxEvent.Form.t => unit,
   JsxEvent.Focus.t => unit,
-  React.ref<Js.Nullable.t<Dom.element>>,
+  React.ref<Nullable.t<Dom.element>>,
   React.element,
   string,
   (string => string) => unit,
@@ -33,7 +33,7 @@ type expiryProps = (
   string,
   JsxEvent.Form.t => unit,
   JsxEvent.Focus.t => unit,
-  React.ref<Js.Nullable.t<Dom.element>>,
+  React.ref<Nullable.t<Dom.element>>,
   ReactEvent.Keyboard.t => unit,
   string,
   (string => string) => unit,
@@ -46,7 +46,7 @@ type cvcProps = (
   (string => string) => unit,
   JsxEvent.Form.t => unit,
   JsxEvent.Focus.t => unit,
-  React.ref<Js.Nullable.t<Dom.element>>,
+  React.ref<Nullable.t<Dom.element>>,
   ReactEvent.Keyboard.t => unit,
   string,
   (string => string) => unit,
@@ -57,7 +57,7 @@ type zipProps = (
   string,
   ReactEvent.Form.t => unit,
   ReactEvent.Focus.t => unit,
-  React.ref<Js.Nullable.t<Dom.element>>,
+  React.ref<Nullable.t<Dom.element>>,
   ReactEvent.Keyboard.t => unit,
   bool,
 )
@@ -70,26 +70,26 @@ type options = {timeZone: string}
 type dateTimeFormat = {resolvedOptions: (. unit) => options}
 @val @scope("Intl") external dateTimeFormat: (. unit) => dateTimeFormat = "DateTimeFormat"
 
-let toInt = val => val->Belt.Int.fromString->Belt.Option.getWithDefault(0)
+let toInt = val => val->Belt.Int.fromString->Option.getOr(0)
 let toString = val => val->Belt.Int.toString
 
 let getQueryParamsDictforKey = (searchParams, keyName) => {
-  let dict = Js.Dict.empty()
+  let dict = Dict.make()
 
   searchParams
-  ->Js.String2.split("&")
-  ->Js.Array2.forEach(paramStr => {
-    let keyValArr = Js.String2.split(paramStr, "=")
-    let key = keyValArr->Belt.Array.get(0)->Belt.Option.getWithDefault("")
-    let value = if keyValArr->Js.Array2.length > 0 {
-      keyValArr->Belt.Array.get(1)->Belt.Option.getWithDefault("")
+  ->String.split("&")
+  ->Array.forEach(paramStr => {
+    let keyValArr = String.split(paramStr, "=")
+    let key = keyValArr->Array.get(0)->Option.getOr("")
+    let value = if keyValArr->Array.length > 0 {
+      keyValArr->Array.get(1)->Option.getOr("")
     } else {
       ""
     }
-    Js.Dict.set(dict, key, value)
+    Dict.set(dict, key, value)
   })
 
-  dict->Js.Dict.get(keyName)->Belt.Option.getWithDefault("")
+  dict->Dict.get(keyName)->Option.getOr("")
 }
 let cardType = val => {
   switch val {
@@ -113,23 +113,23 @@ let cardType = val => {
 let getobjFromCardPattern = cardBrand => {
   let patternsDict = CardPattern.cardPatterns
   patternsDict
-  ->Js.Array2.filter(item => {
+  ->Array.filter(item => {
     cardBrand === item.issuer
   })
-  ->Belt.Array.get(0)
-  ->Belt.Option.getWithDefault(CardPattern.defaultCardPattern)
+  ->Array.get(0)
+  ->Option.getOr(CardPattern.defaultCardPattern)
 }
 
 let clearSpaces = value => {
-  value->Js.String2.replaceByRe(%re("/\D+/g"), "")
+  value->String.replaceRegExp(%re("/\D+/g"), "")
 }
 
-let slice = (val, from: int, to_: int) => {
-  val->Js.String2.slice(~from, ~to_)
+let slice = (val, start: int, end: int) => {
+  val->String.slice(~start, ~end)
 }
 
 let getStrFromIndex = (arr: array<string>, index) => {
-  arr->Belt.Array.get(index)->Belt.Option.getWithDefault("")
+  arr->Array.get(index)->Option.getOr("")
 }
 
 let formatCVCNumber = (val, cardType) => {
@@ -139,14 +139,14 @@ let formatCVCNumber = (val, cardType) => {
 }
 
 let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
-  let tempTimeDateString = dateTimeIsoString->Js.String2.replace("Z", "")
-  let tempTimeDate = tempTimeDateString->Js.String2.split("T")
+  let tempTimeDateString = dateTimeIsoString->String.replace("Z", "")
+  let tempTimeDate = tempTimeDateString->String.split("T")
 
   let date = tempTimeDate[0]->Option.getOr("")
-  let dateComponents = date->Js.String2.split("-")
+  let dateComponents = date->String.split("-")
 
-  let currentMonth = dateComponents->Belt.Array.get(1)->Belt.Option.getWithDefault("")
-  let currentYear = dateComponents->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+  let currentMonth = dateComponents->Array.get(1)->Option.getOr("")
+  let currentYear = dateComponents->Array.get(0)->Option.getOr("")
 
   (currentMonth->toInt, currentYear->toInt)
 }
@@ -173,48 +173,48 @@ let formatCardNumber = (val, cardType) => {
       )} ${clearValue->slice(12, 19)}`
   }
 
-  formatedCard->Js.String2.trim
+  formatedCard->String.trim
 }
 let splitExpiryDates = val => {
-  let split = val->Js.String2.split("/")
-  let value = split->Js.Array2.map(item => item->Js.String2.trim)
-  let month = value->Belt.Array.get(0)->Belt.Option.getWithDefault("")
-  let year = value->Belt.Array.get(1)->Belt.Option.getWithDefault("")
+  let split = val->String.split("/")
+  let value = split->Array.map(item => item->String.trim)
+  let month = value->Array.get(0)->Option.getOr("")
+  let year = value->Array.get(1)->Option.getOr("")
   (month, year)
 }
 let getExpiryDates = val => {
-  let date = Js.Date.make()->Js.Date.toISOString
+  let date = Date.make()->Date.toISOString
   let (month, year) = splitExpiryDates(val)
   let (_, currentYear) = getCurrentMonthAndYear(date)
-  let prefix = currentYear->Belt.Int.toString->Js.String2.slice(~from=0, ~to_=2)
+  let prefix = currentYear->Belt.Int.toString->String.slice(~start=0, ~end=2)
   (month, `${prefix}${year}`)
 }
 let formatExpiryToTwoDigit = expiry => {
-  if expiry->Js.String2.length == 2 {
+  if expiry->String.length == 2 {
     expiry
   } else {
-    expiry->Js.String2.slice(~from=2, ~to_=4)
+    expiry->String.slice(~start=2, ~end=4)
   }
 }
 
 let isExipryComplete = val => {
   let (month, year) = splitExpiryDates(val)
-  month->Js.String2.length == 2 && year->Js.String2.length == 2
+  month->String.length == 2 && year->String.length == 2
 }
 
 let formatCardExpiryNumber = val => {
   let clearValue = val->clearSpaces
   let expiryVal = clearValue->toInt
-  let formatted = if expiryVal >= 2 && expiryVal <= 9 && clearValue->Js.String2.length == 1 {
+  let formatted = if expiryVal >= 2 && expiryVal <= 9 && clearValue->String.length == 1 {
     `0${clearValue} / `
-  } else if clearValue->Js.String2.length == 2 && expiryVal > 12 {
-    let val = clearValue->Js.String2.split("")
+  } else if clearValue->String.length == 2 && expiryVal > 12 {
+    let val = clearValue->String.split("")
     `0${val->getStrFromIndex(0)} / ${val->getStrFromIndex(1)}`
   } else {
     clearValue
   }
 
-  if clearValue->Js.String2.length >= 3 {
+  if clearValue->String.length >= 3 {
     `${formatted->slice(0, 2)} / ${formatted->slice(2, 4)}`
   } else {
     formatted
@@ -223,7 +223,7 @@ let formatCardExpiryNumber = val => {
 
 let getCardBrand = cardNumber => {
   try {
-    let card = cardNumber->Js.String2.replaceByRe(%re("/[^\d]/g"), "")
+    let card = cardNumber->String.replaceRegExp(%re("/[^\d]/g"), "")
     let rupayRanges = [
       (508227, 508227),
       (508500, 508999),
@@ -247,17 +247,17 @@ let getCardBrand = cardNumber => {
     let doesFallInRange = (cardRanges, isin) => {
       let intIsin =
         isin
-        ->Js.String2.replaceByRe(%re("/[^\d]/g"), "")
-        ->Js.String2.substring(~from=0, ~to_=6)
+        ->String.replaceRegExp(%re("/[^\d]/g"), "")
+        ->String.substring(~start=0, ~end=6)
         ->Belt.Int.fromString
-        ->Belt.Option.getWithDefault(0)
+        ->Option.getOr(0)
 
-      let range = cardRanges->Js.Array2.map(cardRange => {
+      let range = cardRanges->Array.map(cardRange => {
         let (min, max) = cardRange
 
         intIsin >= min && intIsin <= max
       })
-      range->Js.Array2.includes(true)
+      range->Array.includes(true)
     }
     let patternsDict = CardPattern.cardPatterns
     if doesFallInRange(rupayRanges, card) {
@@ -266,16 +266,16 @@ let getCardBrand = cardNumber => {
       "Mastercard"
     } else {
       patternsDict
-      ->Js.Array2.map(item => {
-        if Js.String2.match_(card, item.pattern)->Belt.Option.isSome {
+      ->Array.map(item => {
+        if String.match(card, item.pattern)->Option.isSome {
           item.issuer
         } else {
           ""
         }
       })
-      ->Js.Array2.filter(item => item !== "")
-      ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault("")
+      ->Array.filter(item => item !== "")
+      ->Array.get(0)
+      ->Option.getOr("")
     }
   } catch {
   | _error => ""
@@ -285,20 +285,20 @@ let getCardBrand = cardNumber => {
 let calculateLuhn = value => {
   let card = value->clearSpaces
 
-  let splitArr = card->Js.String2.split("")->Js.Array2.reverseInPlace
-  let unCheckArr = splitArr->Js.Array2.filteri((_, i) => {
+  let splitArr = card->String.split("")->Array.toReversed
+  let unCheckArr = splitArr->Array.filterWithIndex((_, i) => {
     mod(i, 2) == 0
   })
   let checkArr =
     splitArr
-    ->Js.Array2.filteri((_, i) => {
+    ->Array.filterWithIndex((_, i) => {
       mod(i + 1, 2) == 0
     })
-    ->Js.Array2.map(item => {
+    ->Array.map(item => {
       let val = item->toInt
       let double = val * 2
       let str = double->Belt.Int.toString
-      let arr = str->Js.String2.split("")
+      let arr = str->String.split("")
 
       switch (arr[0], arr[1]) {
       | (Some(first), Some(second)) if double > 9 =>
@@ -307,8 +307,8 @@ let calculateLuhn = value => {
       }
     })
 
-  let sumofCheckArr = Belt.Array.reduce(checkArr, 0, (acc, val) => acc + val->toInt)
-  let sumofUnCheckedArr = Belt.Array.reduce(unCheckArr, 0, (acc, val) => acc + val->toInt)
+  let sumofCheckArr = Array.reduce(checkArr, 0, (acc, val) => acc + val->toInt)
+  let sumofUnCheckedArr = Array.reduce(unCheckArr, 0, (acc, val) => acc + val->toInt)
   let totalSum = sumofCheckArr + sumofUnCheckedArr
   mod(totalSum, 10) == 0
 }
@@ -343,7 +343,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
 }
 
 let getExpiryValidity = cardExpiry => {
-  let date = Js.Date.make()->Js.Date.toISOString
+  let date = Date.make()->Date.toISOString
   let (month, year) = getExpiryDates(cardExpiry)
   let (currentMonth, currentYear) = getCurrentMonthAndYear(date)
   let valid = if currentYear == year->toInt && month->toInt >= currentMonth && month->toInt <= 12 {
@@ -358,14 +358,14 @@ let getExpiryValidity = cardExpiry => {
   valid
 }
 let isExipryValid = val => {
-  val->Js.String2.length > 0 && getExpiryValidity(val) && isExipryComplete(val)
+  val->String.length > 0 && getExpiryValidity(val) && isExipryComplete(val)
 }
 
 let cardNumberInRange = val => {
   let clearValue = val->clearSpaces
   let obj = getobjFromCardPattern(val->getCardBrand)
-  let cardLengthInRange = obj.length->Js.Array2.map(item => {
-    clearValue->Js.String2.length == item
+  let cardLengthInRange = obj.length->Array.map(item => {
+    clearValue->String.length == item
   })
   cardLengthInRange
 }
@@ -375,7 +375,7 @@ let max = (a, b) => {
 
 let getMaxLength = val => {
   let obj = getobjFromCardPattern(val->getCardBrand)
-  let maxValue = Js.Array.reduce(max, 0, obj.length)
+  let maxValue = obj.length->Array.reduce(0, max)
   if maxValue <= 12 {
     maxValue + 2
   } else if maxValue <= 16 {
@@ -390,15 +390,15 @@ let getMaxLength = val => {
 let cvcNumberInRange = (val, cardBrand) => {
   let clearValue = val->clearSpaces
   let obj = getobjFromCardPattern(cardBrand)
-  let cvcLengthInRange = obj.cvcLength->Js.Array2.map(item => {
-    clearValue->Js.String2.length == item
+  let cvcLengthInRange = obj.cvcLength->Array.map(item => {
+    clearValue->String.length == item
   })
   cvcLengthInRange
 }
 let genreateFontsLink = (fonts: array<CardThemeType.fonts>) => {
-  if fonts->Js.Array2.length > 0 {
+  if fonts->Array.length > 0 {
     fonts
-    ->Js.Array2.map(item =>
+    ->Array.map(item =>
       if item.cssSrc != "" {
         let link = document["createElement"](. "link")
         link["href"] = item.cssSrc
@@ -425,24 +425,24 @@ let genreateFontsLink = (fonts: array<CardThemeType.fonts>) => {
 }
 let maxCardLength = cardBrand => {
   let obj = getobjFromCardPattern(cardBrand)
-  Belt.Array.reduce(obj.length, 0, (acc, val) => acc > val ? acc : val)
+  Array.reduce(obj.length, 0, (acc, val) => acc > val ? acc : val)
 }
 
 let cardValid = (cardNumber, cardBrand) => {
-  let clearValueLength = cardNumber->clearSpaces->Js.String2.length
+  let clearValueLength = cardNumber->clearSpaces->String.length
   (clearValueLength == maxCardLength(cardBrand) ||
     (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)
 }
-let blurRef = (ref: React.ref<Js.Nullable.t<Dom.element>>) => {
-  ref.current->Js.Nullable.toOption->Belt.Option.forEach(input => input->blur)->ignore
+let blurRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
+  ref.current->Nullable.toOption->Option.forEach(input => input->blur)->ignore
 }
 let handleInputFocus = (
-  ~currentRef: React.ref<Js.Nullable.t<Dom.element>>,
-  ~destinationRef: React.ref<Js.Nullable.t<Dom.element>>,
+  ~currentRef: React.ref<Nullable.t<Dom.element>>,
+  ~destinationRef: React.ref<Nullable.t<Dom.element>>,
 ) => {
-  let optionalRef = destinationRef.current->Js.Nullable.toOption
+  let optionalRef = destinationRef.current->Nullable.toOption
   switch optionalRef {
-  | Some(_) => optionalRef->Belt.Option.forEach(input => input->focus)->ignore
+  | Some(_) => optionalRef->Option.forEach(input => input->focus)->ignore
   | None => blurRef(currentRef)
   }
 }
@@ -452,7 +452,7 @@ let getCardElementValue = (iframeId, key) => {
     switch (Window.parent->Window.frames)["0"]
     ->Window.document
     ->Window.getElementById(key)
-    ->Js.Nullable.toOption {
+    ->Nullable.toOption {
     | Some(dom) => dom->Window.value
     | None => ""
     }
@@ -463,7 +463,7 @@ let getCardElementValue = (iframeId, key) => {
     switch (Window.parent->Window.frames)["1"]
     ->Window.document
     ->Window.getElementById(key)
-    ->Js.Nullable.toOption {
+    ->Nullable.toOption {
     | Some(dom) => dom->Window.value
     | None => ""
     }
@@ -475,7 +475,7 @@ let getCardElementValue = (iframeId, key) => {
     switch (Window.parent->Window.frames)["2"]
     ->Window.document
     ->Window.getElementById(key)
-    ->Js.Nullable.toOption {
+    ->Nullable.toOption {
     | Some(dom) => dom->Window.value
     | None => ""
     }
@@ -486,11 +486,10 @@ let getCardElementValue = (iframeId, key) => {
 }
 
 let checkCardCVC = (cvcNumber, cardBrand) => {
-  cvcNumber->Js.String2.length > 0 &&
-    cvcNumberInRange(cvcNumber, cardBrand)->Js.Array2.includes(true)
+  cvcNumber->String.length > 0 && cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
 }
 let checkCardExpiry = expiry => {
-  expiry->Js.String2.length > 0 && getExpiryValidity(expiry)
+  expiry->String.length > 0 && getExpiryValidity(expiry)
 }
 
 let getBoolOptionVal = boolOptionVal => {
@@ -513,17 +512,17 @@ let pincodeVisibility = cardNumber => {
   let brand = getCardBrand(cardNumber)
   let brandPattern =
     CardPattern.cardPatterns
-    ->Js.Array2.filter(obj => obj.issuer == brand)
-    ->Belt.Array.get(0)
-    ->Belt.Option.getWithDefault(CardPattern.defaultCardPattern)
+    ->Array.filter(obj => obj.issuer == brand)
+    ->Array.get(0)
+    ->Option.getOr(CardPattern.defaultCardPattern)
   brandPattern.pincodeRequired
 }
 
 let swapCardOption = (cardOpts: array<string>, dropOpts: array<string>, selectedOption: string) => {
-  let popEle = Js.Array2.pop(cardOpts)
-  dropOpts->Js.Array2.push(popEle->Belt.Option.getWithDefault(""))->ignore
-  cardOpts->Js.Array2.push(selectedOption)->ignore
-  let temp: array<string> = dropOpts->Js.Array2.filter(item => item != selectedOption)
+  let popEle = Array.pop(cardOpts)
+  dropOpts->Array.push(popEle->Option.getOr(""))->ignore
+  cardOpts->Array.push(selectedOption)->ignore
+  let temp: array<string> = dropOpts->Array.filter(item => item != selectedOption)
   (cardOpts, temp)
 }
 
@@ -532,10 +531,10 @@ let setCardValid = (cardnumber, setIsCardValid) => {
   if cardValid(cardnumber, cardBrand) {
     setIsCardValid(_ => Some(true))
   } else if (
-    !cardValid(cardnumber, cardBrand) && cardnumber->Js.String2.length == maxCardLength(cardBrand)
+    !cardValid(cardnumber, cardBrand) && cardnumber->String.length == maxCardLength(cardBrand)
   ) {
     setIsCardValid(_ => Some(false))
-  } else if !(cardnumber->Js.String2.length == maxCardLength(cardBrand)) {
+  } else if !(cardnumber->String.length == maxCardLength(cardBrand)) {
     setIsCardValid(_ => None)
   }
 }
@@ -561,10 +560,10 @@ let getLayoutClass = layout => {
 }
 
 let getAllBanknames = obj => {
-  obj->Js.Array2.reduce((acc, item) => {
-    item->Js.Array2.map(val => acc->Js.Array2.push(val))->ignore
+  obj->Array.reduce([], (acc, item) => {
+    item->Array.map(val => acc->Array.push(val))->ignore
     acc
-  }, [])
+  })
 }
 
 let clientTimeZone = dateTimeFormat(.).resolvedOptions(.).timeZone
@@ -586,7 +585,7 @@ let getCardDetailsFromCardProps = cardProps => {
     "",
     _ => (),
     _ => (),
-    React.useRef(Js.Nullable.null),
+    React.useRef(Nullable.null),
     <> </>,
     "",
     _ => (),
@@ -606,7 +605,7 @@ let getExpiryDetailsFromExpiryProps = expiryProps => {
     "",
     _ => (),
     _ => (),
-    React.useRef(Js.Nullable.null),
+    React.useRef(Nullable.null),
     _ => (),
     "",
     _ => (),
@@ -626,7 +625,7 @@ let getCvcDetailsFromCvcProps = cvcProps => {
     _ => (),
     _ => (),
     _ => (),
-    React.useRef(Js.Nullable.null),
+    React.useRef(Nullable.null),
     _ => (),
     "",
     _ => (),
@@ -654,7 +653,7 @@ let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
 
 let useCardDetails = (~cvcNumber, ~isCvcValidValue, ~isCVCValid) => {
   React.useMemo3(() => {
-    let isCardDetailsEmpty = Js.String2.length(cvcNumber) == 0
+    let isCardDetailsEmpty = String.length(cvcNumber) == 0
     let isCardDetailsValid = isCvcValidValue == "valid"
     let isCardDetailsInvalid = isCvcValidValue == "invalid"
     (isCardDetailsEmpty, isCardDetailsValid, isCardDetailsInvalid)

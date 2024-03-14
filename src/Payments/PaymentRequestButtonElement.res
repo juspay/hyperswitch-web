@@ -59,7 +59,7 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
 
   <div className="flex flex-col gap-2 h-auto w-full">
     {walletOptions
-    ->Js.Array2.mapi((item, i) => {
+    ->Array.mapWithIndex((item, i) => {
       <ErrorBoundary
         level={ErrorBoundary.RequestButton} key={`${item}-${i->Belt.Int.toString}-request-button`}>
         <React.Suspense fallback={<WalletShimmer />} key={i->Belt.Int.toString}>

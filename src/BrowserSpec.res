@@ -13,8 +13,8 @@ type screen = {colorDepth: int, height: int, width: int}
 
 let checkIsSafari = () => {
   let userAgentString = navigator.userAgent
-  let chromeAgent = userAgentString->Js.String2.indexOf("Chrome") > -1
-  let safariAgent = userAgentString->Js.String2.indexOf("Safari") > -1
+  let chromeAgent = userAgentString->String.indexOf("Chrome") > -1
+  let safariAgent = userAgentString->String.indexOf("Safari") > -1
   chromeAgent && safariAgent ? false : safariAgent ? true : false
 }
 
@@ -23,20 +23,20 @@ let broswerInfo = () => [
   (
     "browser_info",
     [
-      ("user_agent", navigator.userAgent->Js.Json.string),
+      ("user_agent", navigator.userAgent->JSON.Encode.string),
       (
         "accept_header",
-        "text\/html,application\/xhtml+xml,application\/xml;q=0.9,image\/webp,image\/apng,*\/*;q=0.8"->Js.Json.string,
+        "text\/html,application\/xhtml+xml,application\/xml;q=0.9,image\/webp,image\/apng,*\/*;q=0.8"->JSON.Encode.string,
       ),
-      ("language", navigator.language->Js.Json.string),
-      ("color_depth", screen.colorDepth->Belt.Int.toFloat->Js.Json.number),
-      ("screen_height", screen.height->Belt.Int.toFloat->Js.Json.number),
-      ("screen_width", screen.width->Belt.Int.toFloat->Js.Json.number),
-      ("time_zone", date.getTimezoneOffset(.)->Js.Json.number),
-      ("java_enabled", true->Js.Json.boolean),
-      ("java_script_enabled", true->Js.Json.boolean),
+      ("language", navigator.language->JSON.Encode.string),
+      ("color_depth", screen.colorDepth->Belt.Int.toFloat->JSON.Encode.float),
+      ("screen_height", screen.height->Belt.Int.toFloat->JSON.Encode.float),
+      ("screen_width", screen.width->Belt.Int.toFloat->JSON.Encode.float),
+      ("time_zone", date.getTimezoneOffset(.)->JSON.Encode.float),
+      ("java_enabled", true->JSON.Encode.bool),
+      ("java_script_enabled", true->JSON.Encode.bool),
     ]
-    ->Js.Dict.fromArray
-    ->Js.Json.object_,
+    ->Dict.fromArray
+    ->JSON.Encode.object,
   ),
 ]

@@ -112,7 +112,7 @@ let manageErrorWarning = (
   ~logger: OrcaLogger.loggerMake,
   (),
 ) => {
-  let entry = errorWarning->Js.Array2.find(((value, _, _)) => {
+  let entry = errorWarning->Array.find(((value, _, _)) => {
     value == key
   })
   switch entry {
@@ -127,8 +127,8 @@ let manageErrorWarning = (
           ~logCategory=USER_ERROR,
           (),
         )
-        Js.Console.error(string)
-        Js.Exn.raiseError(string)
+        Console.error(string)
+        Exn.raiseError(string)
       | (Warning, Static(string)) =>
         logger.setLogError(
           ~value=string,
@@ -137,7 +137,7 @@ let manageErrorWarning = (
           ~logCategory=USER_ERROR,
           (),
         )
-        Js.Console.warn(string)
+        Console.warn(string)
       | (Error, Dynamic(fn)) =>
         logger.setLogError(
           ~value=fn(dynamicStr),
@@ -146,8 +146,8 @@ let manageErrorWarning = (
           ~logCategory=USER_ERROR,
           (),
         )
-        Js.Console.error(fn(dynamicStr))
-        Js.Exn.raiseError(fn(dynamicStr))
+        Console.error(fn(dynamicStr))
+        Exn.raiseError(fn(dynamicStr))
       | (Warning, Dynamic(fn)) =>
         logger.setLogError(
           ~value=fn(dynamicStr),
@@ -156,18 +156,18 @@ let manageErrorWarning = (
           ~logCategory=USER_ERROR,
           (),
         )
-        Js.Console.warn(fn(dynamicStr))
+        Console.warn(fn(dynamicStr))
       }
     }
   | None => ()
   }
 }
 
-let unknownKeysWarning = (validKeysArr, dict: Js.Dict.t<Js.Json.t>, dictType: string, ~logger) => {
+let unknownKeysWarning = (validKeysArr, dict: Dict.t<JSON.t>, dictType: string, ~logger) => {
   dict
-  ->Js.Dict.entries
-  ->Js.Array2.forEach(((key, _)) => {
-    if validKeysArr->Js.Array2.includes(key) {
+  ->Dict.toArray
+  ->Array.forEach(((key, _)) => {
+    if validKeysArr->Array.includes(key) {
       ()
     } else {
       manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`'${key}' key in ${dictType}`, ~logger, ())
@@ -178,10 +178,10 @@ let unknownKeysWarning = (validKeysArr, dict: Js.Dict.t<Js.Json.t>, dictType: st
 let unknownPropValueWarning = (inValidValue, validValueArr, dictType) => {
   let expectedValues =
     validValueArr
-    ->Js.Array2.map(item => {
+    ->Array.map(item => {
       `'${item}'`
     })
-    ->Js.Array2.joinWith(", ")
+    ->Array.joinWith(", ")
   manageErrorWarning(
     UNKNOWN_VALUE,
     ~dynamicStr=`'${inValidValue}' value in ${dictType}, Expected ${expectedValues}`,

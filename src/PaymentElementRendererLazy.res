@@ -5,7 +5,7 @@ type props = {
   cardProps: CardUtils.cardProps,
   expiryProps: CardUtils.expiryProps,
   cvcProps: CardUtils.cvcProps,
-  countryProps: (string, Js.Array2.t<string>),
+  countryProps: (string, array<string>),
 }
 
 let make: props => React.element = reactLazy(.() => import_("./PaymentElementRenderer.bs.js"))

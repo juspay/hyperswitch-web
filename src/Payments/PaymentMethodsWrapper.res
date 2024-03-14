@@ -17,31 +17,29 @@ let make = (
   let optionPaymentMethodDetails =
     list
     ->PaymentMethodsRecord.buildFromPaymentList
-    ->Js.Array2.find(x =>
+    ->Array.find(x =>
       x.paymentMethodName ===
         PaymentUtils.getPaymentMethodName(~paymentMethodType=x.methodType, ~paymentMethodName)
     )
   let paymentMethodDetails =
-    optionPaymentMethodDetails->Belt.Option.getWithDefault(
-      PaymentMethodsRecord.defaultPaymentMethodContent,
-    )
+    optionPaymentMethodDetails->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
   let paymentFlow =
     paymentMethodDetails.paymentFlow
-    ->Belt.Array.get(0)
-    ->Belt.Option.flatMap(((flow, _connector)) => {
+    ->Array.get(0)
+    ->Option.flatMap(((flow, _connector)) => {
       Some(flow)
     })
-    ->Belt.Option.getWithDefault(RedirectToURL)
+    ->Option.getOr(RedirectToURL)
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let (currency, _) = Recoil.useLoggedRecoilState(userCurrency, "currency", loggerState)
   let (country, _) = Recoil.useRecoilState(userCountry)
   let (selectedBank, _) = Recoil.useRecoilState(userBank)
   let setFieldComplete = Recoil.useSetRecoilState(fieldsComplete)
-  let cleanBlik = str => str->Js.String2.replaceByRe(%re("/-/g"), "")
-  let cleanPhoneNumber = str => str->Js.String2.replaceByRe(%re("/\s/g"), "")
+  let cleanBlik = str => str->String.replaceRegExp(%re("/-/g"), "")
+  let cleanPhoneNumber = str => str->String.replaceRegExp(%re("/\s/g"), "")
 
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
 
@@ -65,21 +63,21 @@ let make = (
   }, (empty, complete))
 
   let submitCallback = React.useCallback7((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if complete {
         let countryCode =
           Country.getCountry(paymentMethodName)
-          ->Js.Array2.filter(item => item.countryName == country)
-          ->Belt.Array.get(0)
-          ->Belt.Option.getWithDefault(Country.defaultTimeZone)
+          ->Array.filter(item => item.countryName == country)
+          ->Array.get(0)
+          ->Option.getOr(Country.defaultTimeZone)
 
         let bank =
           Bank.getBanks(paymentMethodName)
-          ->Js.Array2.filter(item => item.displayName == selectedBank)
-          ->Belt.Array.get(0)
-          ->Belt.Option.getWithDefault(Bank.defaultBank)
+          ->Array.filter(item => item.displayName == selectedBank)
+          ->Array.get(0)
+          ->Option.getOr(Bank.defaultBank)
         intent(
           ~bodyArr=PaymentBody.getPaymentBody(
             ~paymentMethod=paymentMethodName,
@@ -92,8 +90,8 @@ let make = (
             ~paymentExperience=paymentFlow,
             ~currency,
           )
-          ->Js.Dict.fromArray
-          ->Js.Json.object_
+          ->Dict.fromArray
+          ->JSON.Encode.object
           ->OrcaUtils.flattenObject(true)
           ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
           ->OrcaUtils.getArrayOfTupleFromDict,

@@ -13,12 +13,12 @@ let make = (
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let dropdownRef = React.useRef(Js.Nullable.null)
+  let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
 
   let getClassName = initialLabel => {
-    if value.value->Js.String2.length == 0 {
+    if value.value->String.length == 0 {
       `${initialLabel}--empty`
     } else {
       switch value.isValid {
@@ -28,11 +28,11 @@ let make = (
     }
   }
   React.useEffect1(() => {
-    let initialValue = options->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+    let initialValue = options->Array.get(0)->Option.getOr("")
     if (
       value.value === "" ||
       value.value === initialValue ||
-      options->Js.Array2.includes(value.value)->not
+      options->Array.includes(value.value)->not
     ) {
       setValue(.prev => {
         ...prev,
@@ -41,7 +41,7 @@ let make = (
       })
     }
     None
-  }, [options->Belt.Array.get(0)->Belt.Option.getWithDefault("")])
+  }, [options->Array.get(0)->Option.getOr("")])
   let handleFocus = _ => {
     setInputFocused(_ => true)
     // setValue(.prev => {
@@ -51,7 +51,7 @@ let make = (
     // })
     Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
   }
-  let focusClass = if inputFocused || value.value->Js.String2.length > 0 {
+  let focusClass = if inputFocused || value.value->String.length > 0 {
     `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`
   } else {
     "transition-all ease-in duration-75"
@@ -74,9 +74,9 @@ let make = (
     themeObj.colorBackground
   }, [themeObj])
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
-  <RenderIf condition={options->Js.Array2.length > 0}>
+  <RenderIf condition={options->Array.length > 0}>
     <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
-      <RenderIf condition={fieldName->Js.String2.length > 0 && config.appearance.labels == Above}>
+      <RenderIf condition={fieldName->String.length > 0 && config.appearance.labels == Above}>
         <div
           className={`Label ${labelClass} `}
           style={ReactDOMStyle.make(
@@ -106,8 +106,8 @@ let make = (
           onChange=handleChange
           className={`Input ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
-          ->Js.Array2.mapi((item: string, i) => {
-            <option key={string_of_int(i)} value=item> {React.string(item)} </option>
+          ->Array.mapWithIndex((item: string, i) => {
+            <option key={Int.toString(i)} value=item> {React.string(item)} </option>
           })
           ->React.array}
         </select>
@@ -116,10 +116,10 @@ let make = (
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
             style={ReactDOMStyle.make(
               ~marginBottom={
-                inputFocused || value.value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
+                inputFocused || value.value->String.length > 0 ? "" : themeObj.spacingUnit
               },
               ~fontSize={
-                inputFocused || value.value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
+                inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
               ~opacity="0.6",
               (),
@@ -139,7 +139,7 @@ let make = (
           )}>
           <Icon size=10 name={"arrow-down"} />
         </div>
-        <RenderIf condition={value.errorString->Js.String2.length > 0}>
+        <RenderIf condition={value.errorString->String.length > 0}>
           <div
             className="Error pt-1"
             style={ReactDOMStyle.make(

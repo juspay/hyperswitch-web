@@ -119,7 +119,7 @@ let eventNameToStrMapper = eventName => {
 }
 
 let convertToScreamingSnakeCase = text => {
-  text->Js.String2.trim->Js.String2.replaceByRe(%re("/ /g"), "_")->Js.String2.toUpperCase
+  text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
 }
 
 type maskableDetails = Email | CardDetails
@@ -148,11 +148,11 @@ type logFile = {
   latency: string,
   firstEvent: bool,
   paymentMethod: string,
-  metadata: Js.Json.t,
+  metadata: JSON.t,
 }
 
 type setlogApiValueType =
-  | ArrayType(array<(string, Js.Json.t)>)
+  | ArrayType(array<(string, JSON.t)>)
   | StringValue(string)
 
 type setLogInfo = (
@@ -181,18 +181,18 @@ type loggerMake = {
     unit,
   ) => unit,
   setLogInitiated: unit => unit,
-  setConfirmPaymentValue: (~paymentType: string) => Js.Json.t,
+  setConfirmPaymentValue: (~paymentType: string) => JSON.t,
   sendLogs: unit => unit,
   setSessionId: string => unit,
   setClientSecret: string => unit,
   setMerchantId: string => unit,
-  setMetadata: Js.Json.t => unit,
+  setMetadata: JSON.t => unit,
 }
 
 let defaultLoggerConfig = {
   sendLogs: () => (),
   setClientSecret: _x => (),
-  setConfirmPaymentValue: (~paymentType as _) => {Js.Dict.empty()->Js.Json.object_},
+  setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
   setLogError: (
     ~value as _,
     ~internalMetadata as _=?,
@@ -232,7 +232,7 @@ let defaultLoggerConfig = {
 
 let logFileToObj = logFile => {
   [
-    ("timestamp", logFile.timestamp->Js.Json.string),
+    ("timestamp", logFile.timestamp->JSON.Encode.string),
     (
       "log_type",
       switch logFile.logType {
@@ -241,9 +241,9 @@ let logFileToObj = logFile => {
       | ERROR => "ERROR"
       | WARNING => "WARNING"
       | SILENT => "SILENT"
-      }->Js.Json.string,
+      }->JSON.Encode.string,
     ),
-    ("component", "WEB"->Js.Json.string),
+    ("component", "WEB"->JSON.Encode.string),
     (
       "category",
       switch logFile.category {
@@ -251,27 +251,27 @@ let logFileToObj = logFile => {
       | USER_ERROR => "USER_ERROR"
       | USER_EVENT => "USER_EVENT"
       | MERCHANT_EVENT => "MERCHANT_EVENT"
-      }->Js.Json.string,
+      }->JSON.Encode.string,
     ),
-    ("source", logFile.source->convertToScreamingSnakeCase->Js.Json.string),
-    ("version", logFile.version->Js.Json.string), // repoversion of orca-android
-    ("value", logFile.value->Js.Json.string),
-    ("internal_metadata", logFile.internalMetadata->Js.Json.string),
-    ("session_id", logFile.sessionId->Js.Json.string),
-    ("merchant_id", logFile.merchantId->Js.Json.string),
-    ("payment_id", logFile.paymentId->Js.Json.string),
-    ("app_id", logFile.appId->Js.Json.string),
-    ("platform", logFile.platform->convertToScreamingSnakeCase->Js.Json.string),
-    ("user_agent", logFile.userAgent->Js.Json.string),
-    ("event_name", logFile.eventName->eventNameToStrMapper->Js.Json.string),
-    ("browser_name", logFile.browserName->convertToScreamingSnakeCase->Js.Json.string),
-    ("browser_version", logFile.browserVersion->Js.Json.string),
-    ("latency", logFile.latency->Js.Json.string),
-    ("first_event", (logFile.firstEvent ? "true" : "false")->Js.Json.string),
-    ("payment_method", logFile.paymentMethod->convertToScreamingSnakeCase->Js.Json.string),
+    ("source", logFile.source->convertToScreamingSnakeCase->JSON.Encode.string),
+    ("version", logFile.version->JSON.Encode.string), // repoversion of orca-android
+    ("value", logFile.value->JSON.Encode.string),
+    ("internal_metadata", logFile.internalMetadata->JSON.Encode.string),
+    ("session_id", logFile.sessionId->JSON.Encode.string),
+    ("merchant_id", logFile.merchantId->JSON.Encode.string),
+    ("payment_id", logFile.paymentId->JSON.Encode.string),
+    ("app_id", logFile.appId->JSON.Encode.string),
+    ("platform", logFile.platform->convertToScreamingSnakeCase->JSON.Encode.string),
+    ("user_agent", logFile.userAgent->JSON.Encode.string),
+    ("event_name", logFile.eventName->eventNameToStrMapper->JSON.Encode.string),
+    ("browser_name", logFile.browserName->convertToScreamingSnakeCase->JSON.Encode.string),
+    ("browser_version", logFile.browserVersion->JSON.Encode.string),
+    ("latency", logFile.latency->JSON.Encode.string),
+    ("first_event", (logFile.firstEvent ? "true" : "false")->JSON.Encode.string),
+    ("payment_method", logFile.paymentMethod->convertToScreamingSnakeCase->JSON.Encode.string),
   ]
-  ->Js.Dict.fromArray
-  ->Js.Json.object_
+  ->Dict.fromArray
+  ->JSON.Encode.object
 }
 
 /* SAMPLE LOG FILE
@@ -295,7 +295,7 @@ let logFileToObj = logFile => {
 */
 
 let getRefFromOption = val => {
-  let innerValue = val->Belt.Option.getWithDefault("")
+  let innerValue = val->Option.getOr("")
   ref(innerValue)
 }
 let getSourceString = source => {
@@ -315,56 +315,56 @@ let findVersion = (re, content) => {
 }
 
 let browserDetect = content => {
-  if Js.Re.test_("Edg"->Js.Re.fromString, content) {
+  if RegExp.test("Edg"->RegExp.fromString, content) {
     let re = %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
-    ->Belt.Array.get(1)
-    ->Belt.Option.getWithDefault(Js.Nullable.null)
-    ->Js.Nullable.toOption {
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
     | Some(a) => a
     | None => ""
     }
     `Microsoft Edge-${version}`
-  } else if Js.Re.test_("Chrome"->Js.Re.fromString, content) {
+  } else if RegExp.test("Chrome"->RegExp.fromString, content) {
     let re = %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
-    ->Belt.Array.get(1)
-    ->Belt.Option.getWithDefault(Js.Nullable.null)
-    ->Js.Nullable.toOption {
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
     | Some(a) => a
     | None => ""
     }
     `Chrome-${version}`
-  } else if Js.Re.test_("Safari"->Js.Re.fromString, content) {
+  } else if RegExp.test("Safari"->RegExp.fromString, content) {
     let re = %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
-    ->Belt.Array.get(1)
-    ->Belt.Option.getWithDefault(Js.Nullable.null)
-    ->Js.Nullable.toOption {
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
     | Some(a) => a
     | None => ""
     }
     `Safari-${version}`
-  } else if Js.Re.test_("opera"->Js.Re.fromString, content) {
+  } else if RegExp.test("opera"->RegExp.fromString, content) {
     let re = %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
-    ->Belt.Array.get(1)
-    ->Belt.Option.getWithDefault(Js.Nullable.null)
-    ->Js.Nullable.toOption {
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
     | Some(a) => a
     | None => ""
     }
     `Opera-${version}`
   } else if (
-    Js.Re.test_("Firefox"->Js.Re.fromString, content) ||
-    Js.Re.test_("fxios"->Js.Re.fromString, content)
+    RegExp.test("Firefox"->RegExp.fromString, content) ||
+    RegExp.test("fxios"->RegExp.fromString, content)
   ) {
-    if Js.Re.test_("Firefox"->Js.Re.fromString, content) {
+    if RegExp.test("Firefox"->RegExp.fromString, content) {
       let re = %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig")
       let version = switch findVersion(re, content)
-      ->Belt.Array.get(1)
-      ->Belt.Option.getWithDefault(Js.Nullable.null)
-      ->Js.Nullable.toOption {
+      ->Array.get(1)
+      ->Option.getOr(Nullable.null)
+      ->Nullable.toOption {
       | Some(a) => a
       | None => ""
       }
@@ -372,9 +372,9 @@ let browserDetect = content => {
     } else {
       let re = %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig")
       let version = switch findVersion(re, content)
-      ->Belt.Array.get(1)
-      ->Belt.Option.getWithDefault(Js.Nullable.null)
-      ->Js.Nullable.toOption {
+      ->Array.get(1)
+      ->Option.getOr(Nullable.null)
+      ->Nullable.toOption {
       | Some(a) => a
       | None => ""
       }
@@ -385,7 +385,7 @@ let browserDetect = content => {
   }
 }
 
-let arrayOfNameAndVersion = Js.String2.split(Window.userAgent->browserDetect, "-")
+let arrayOfNameAndVersion = String.split(Window.userAgent->browserDetect, "-")
 
 let make = (
   ~sessionId=?,
@@ -414,8 +414,8 @@ let make = (
   | None => GlobalVars.repoName
   }
 
-  let events = ref(Js.Dict.empty())
-  let eventsCounter = ref(Js.Dict.empty())
+  let events = ref(Dict.make())
+  let eventsCounter = ref(Dict.make())
 
   let timeOut = ref(None)
 
@@ -424,18 +424,18 @@ let make = (
     merchantId := value
   }
 
-  let metadata = ref(metadata->Belt.Option.getWithDefault(Js.Json.null))
+  let metadata = ref(metadata->Option.getOr(JSON.Encode.null))
 
   let setMetadata = value => {
     metadata := value
   }
 
   let calculateAndUpdateCounterHook = eventName => {
-    let updatedCounter = switch eventsCounter.contents->Js.Dict.get(eventName) {
+    let updatedCounter = switch eventsCounter.contents->Dict.get(eventName) {
     | Some(num) => num + 1
     | None => 1
     }
-    eventsCounter.contents->Js.Dict.set(eventName, updatedCounter)
+    eventsCounter.contents->Dict.set(eventName, updatedCounter)
     updatedCounter
   }
 
@@ -450,25 +450,22 @@ let make = (
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
       switch loggingLevel {
-      | DEBUG => log->Js.Array2.push(mainLogFile, _)->ignore
+      | DEBUG => log->Array.push(mainLogFile, _)->ignore
       | INFO =>
-        [INFO, WARNING, ERROR]->Js.Array2.includes(log.logType)
-          ? log->Js.Array2.push(mainLogFile, _)->ignore
+        [INFO, WARNING, ERROR]->Array.includes(log.logType)
+          ? log->Array.push(mainLogFile, _)->ignore
           : ()
       | WARNING =>
-        [WARNING, ERROR]->Js.Array2.includes(log.logType)
-          ? log->Js.Array2.push(mainLogFile, _)->ignore
-          : ()
-      | ERROR =>
-        [ERROR]->Js.Array2.includes(log.logType) ? log->Js.Array2.push(mainLogFile, _)->ignore : ()
+        [WARNING, ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
+      | ERROR => [ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
       | SILENT => ()
       }
     }
   }
 
   let beaconApiCall = data => {
-    if data->Js.Array2.length > 0 {
-      let logData = data->Js.Array2.map(logFileToObj)->Js.Json.array->Js.Json.stringify
+    if data->Array.length > 0 {
+      let logData = data->Array.map(logFileToObj)->JSON.Encode.array->JSON.stringify
       Window.sendBeacon(GlobalVars.logEndpoint, logData)
     }
   }
@@ -481,15 +478,15 @@ let make = (
   let rec sendLogs = () => {
     switch timeOut.contents {
     | Some(val) => {
-        Js.Global.clearTimeout(val)
-        timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
+        clearTimeout(val)
+        timeOut := Some(setTimeout(() => sendLogs(), 120000))
       }
-    | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 120000))
+    | None => timeOut := Some(setTimeout(() => sendLogs(), 120000))
     }
     beaconApiCall(mainLogFile)
-    let len = mainLogFile->Js.Array2.length
+    let len = mainLogFile->Array.length
     for _ in 0 to len - 1 {
-      mainLogFile->Js.Array2.pop->ignore
+      mainLogFile->Array.pop->ignore
     }
   }
 
@@ -507,20 +504,20 @@ let make = (
       SESSIONS_CALL,
     ]
     arrayOfLogs
-    ->Js.Array2.find(log => {
-      [ERROR, DEBUG]->Js.Array2.includes(log.logType) ||
-        (priorityEventNames->Js.Array2.includes(log.eventName) && log.firstEvent)
+    ->Array.find(log => {
+      [ERROR, DEBUG]->Array.includes(log.logType) ||
+        (priorityEventNames->Array.includes(log.eventName) && log.firstEvent)
     })
-    ->Belt.Option.isSome || arrayOfLogs->Js.Array2.length > 8
+    ->Option.isSome || arrayOfLogs->Array.length > 8
   }
 
   let checkLogSizeAndSendData = () => {
     switch timeOut.contents {
     | Some(val) => {
-        Js.Global.clearTimeout(val)
-        timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 20000))
+        clearTimeout(val)
+        timeOut := Some(setTimeout(() => sendLogs(), 20000))
       }
-    | None => timeOut := Some(Js.Global.setTimeout(() => sendLogs(), 20000))
+    | None => timeOut := Some(setTimeout(() => sendLogs(), 20000))
     }
 
     if mainLogFile->checkForPriorityEvents {
@@ -529,10 +526,10 @@ let make = (
   }
 
   let calculateLatencyHook = (~eventName, ~type_="", ()) => {
-    let currentTimestamp = Js.Date.now()
+    let currentTimestamp = Date.now()
     let latency = switch eventName {
     | PAYMENT_ATTEMPT => {
-        let appRenderedTimestamp = events.contents->Js.Dict.get(APP_RENDERED->eventNameToStrMapper)
+        let appRenderedTimestamp = events.contents->Dict.get(APP_RENDERED->eventNameToStrMapper)
         switch appRenderedTimestamp {
         | Some(float) => currentTimestamp -. float
         | _ => -1.
@@ -544,7 +541,7 @@ let make = (
     | PAYMENT_METHODS_CALL
     | CUSTOMER_PAYMENT_METHODS_CALL => {
         let logRequestTimestamp =
-          events.contents->Js.Dict.get(eventName->eventNameToStrMapper ++ "_INIT")
+          events.contents->Dict.get(eventName->eventNameToStrMapper ++ "_INIT")
         switch (logRequestTimestamp, type_) {
         | (Some(_), "request") => 0.
         | (Some(float), _) => currentTimestamp -. float
@@ -567,11 +564,10 @@ let make = (
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
+    let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
-    let localTimestamp = timestamp->Belt.Option.getWithDefault(Js.Date.now()->Belt.Float.toString)
-    let localTimestampFloat =
-      localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
+    let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
+    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -581,12 +577,10 @@ let make = (
       value,
       internalMetadata,
       category: logCategory,
-      paymentId: Js.String2.split(clientSecret.contents, "_secret_")
-      ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault(""),
+      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Belt.Option.getWithDefault("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Belt.Option.getWithDefault("0"),
+      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
@@ -599,13 +593,13 @@ let make = (
     ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
-    events.contents->Js.Dict.set(eventNameStr, localTimestampFloat)
+    events.contents->Dict.set(eventNameStr, localTimestampFloat)
   }
 
   let setConfirmPaymentValue = (~paymentType) => {
-    [("method", "confirmPayment"->Js.Json.string), ("type", paymentType->Js.Json.string)]
-    ->Js.Dict.fromArray
-    ->Js.Json.object_
+    [("method", "confirmPayment"->JSON.Encode.string), ("type", paymentType->JSON.Encode.string)]
+    ->Dict.fromArray
+    ->JSON.Encode.object
   }
 
   let setLogApi = (
@@ -620,11 +614,10 @@ let make = (
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
+    let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ~type_, ())
-    let localTimestamp = timestamp->Belt.Option.getWithDefault(Js.Date.now()->Belt.Float.toString)
-    let localTimestampFloat =
-      localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
+    let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
+    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -632,20 +625,18 @@ let make = (
       source: sourceString,
       version: GlobalVars.repoVersion,
       value: switch value {
-      | ArrayType(a) => a->Js.Dict.fromArray->Js.Json.object_->Js.Json.stringify
+      | ArrayType(a) => a->Dict.fromArray->JSON.Encode.object->JSON.stringify
       | StringValue(a) => a
       },
       internalMetadata: switch internalMetadata {
-      | ArrayType(a) => a->Js.Dict.fromArray->Js.Json.object_->Js.Json.stringify
+      | ArrayType(a) => a->Dict.fromArray->JSON.Encode.object->JSON.stringify
       | StringValue(a) => a
       },
       category: logCategory,
-      paymentId: Js.String2.split(clientSecret.contents, "_secret_")
-      ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault(""),
+      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Belt.Option.getWithDefault("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Belt.Option.getWithDefault("0"),
+      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
@@ -658,7 +649,7 @@ let make = (
     ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
-    events.contents->Js.Dict.set(eventNameStr, localTimestampFloat)
+    events.contents->Dict.set(eventNameStr, localTimestampFloat)
   }
 
   let setLogError = (
@@ -672,11 +663,10 @@ let make = (
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
+    let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
-    let localTimestamp = timestamp->Belt.Option.getWithDefault(Js.Date.now()->Belt.Float.toString)
-    let localTimestampFloat =
-      localTimestamp->Belt.Float.fromString->Belt.Option.getWithDefault(Js.Date.now())
+    let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
+    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -686,12 +676,10 @@ let make = (
       value,
       internalMetadata,
       category: logCategory,
-      paymentId: Js.String2.split(clientSecret.contents, "_secret_")
-      ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault(""),
+      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Belt.Option.getWithDefault("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Belt.Option.getWithDefault("0"),
+      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
@@ -704,30 +692,28 @@ let make = (
     ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
-    events.contents->Js.Dict.set(eventNameStr, localTimestampFloat)
+    events.contents->Dict.set(eventNameStr, localTimestampFloat)
   }
 
   let setLogInitiated = () => {
     let eventName: eventName = LOG_INITIATED
     let eventNameStr = eventName->eventNameToStrMapper
-    let firstEvent = events.contents->Js.Dict.get(eventNameStr)->Belt.Option.isNone
+    let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ())
     {
       logType: INFO,
       eventName,
-      timestamp: Js.Date.now()->Belt.Float.toString,
+      timestamp: Date.now()->Belt.Float.toString,
       sessionId: sessionId.contents,
       source: sourceString,
       version: GlobalVars.repoVersion,
       category: USER_EVENT,
       value: "log initiated",
       internalMetadata: "",
-      paymentId: Js.String2.split(clientSecret.contents, "_secret_")
-      ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault(""),
+      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
       merchantId: merchantId.contents,
-      browserName: arrayOfNameAndVersion->Belt.Array.get(0)->Belt.Option.getWithDefault("Others"),
-      browserVersion: arrayOfNameAndVersion->Belt.Array.get(1)->Belt.Option.getWithDefault("0"),
+      browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+      browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.platform,
       userAgent: Window.userAgent,
       appId: "",
@@ -739,14 +725,14 @@ let make = (
     ->conditionalLogPush
     ->ignore
     checkLogSizeAndSendData()
-    events.contents->Js.Dict.set(eventNameStr, Js.Date.now())
+    events.contents->Dict.set(eventNameStr, Date.now())
   }
 
   let handleBeforeUnload = _event => {
     //event->Window.preventDefault()
     sendLogs()
     switch timeOut.contents {
-    | Some(val) => Js.Global.clearTimeout(val)
+    | Some(val) => clearTimeout(val)
     | None => ()
     }
   }

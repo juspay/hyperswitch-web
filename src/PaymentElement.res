@@ -27,7 +27,7 @@ let make = (
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
   let paymentOrder = paymentMethodOrder->Utils.getOptionalArr->Utils.removeDuplicate
-  let (sessions, setSessions) = React.useState(_ => Js.Dict.empty()->Js.Json.object_)
+  let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -58,26 +58,25 @@ let make = (
     | (_, LoadingSavedCards) => ()
     | (_, LoadedSavedCards(savedPaymentMethods, isGuestCustomer)) => {
         let defaultPaymentMethod =
-          savedPaymentMethods->Js.Array2.find(savedCard => savedCard.defaultPaymentMethodSet)
+          savedPaymentMethods->Array.find(savedCard => savedCard.defaultPaymentMethodSet)
 
-        let savedCardsWithoutDefaultPaymentMethod =
-          savedPaymentMethods->Js.Array2.filter(savedCard => {
-            !savedCard.defaultPaymentMethodSet
-          })
+        let savedCardsWithoutDefaultPaymentMethod = savedPaymentMethods->Array.filter(savedCard => {
+          !savedCard.defaultPaymentMethodSet
+        })
 
         let finalSavedPaymentMethods = switch defaultPaymentMethod {
         | Some(defaultPaymentMethod) =>
-          [defaultPaymentMethod]->Js.Array2.concat(savedCardsWithoutDefaultPaymentMethod)
+          [defaultPaymentMethod]->Array.concat(savedCardsWithoutDefaultPaymentMethod)
         | None => savedCardsWithoutDefaultPaymentMethod
         }
 
         setSavedMethods(_ => finalSavedPaymentMethods)
         setLoadSavedCards(_ =>
-          finalSavedPaymentMethods->Js.Array2.length == 0
+          finalSavedPaymentMethods->Array.length == 0
             ? NoResult(isGuestCustomer)
             : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
         )
-        setShowFields(.prev => finalSavedPaymentMethods->Js.Array2.length == 0 || prev)
+        setShowFields(.prev => finalSavedPaymentMethods->Array.length == 0 || prev)
       }
     | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
@@ -90,14 +89,13 @@ let make = (
 
   React.useEffect1(() => {
     let defaultPaymentMethod =
-      savedMethods->Js.Array2.find(savedMethod => savedMethod.defaultPaymentMethodSet)
+      savedMethods->Array.find(savedMethod => savedMethod.defaultPaymentMethodSet)
 
-    let isSavedMethodsEmpty = savedMethods->Js.Array2.length === 0
+    let isSavedMethodsEmpty = savedMethods->Array.length === 0
 
     let tokenObj = switch (isSavedMethodsEmpty, defaultPaymentMethod) {
     | (false, Some(defaultPaymentMethod)) => Some(defaultPaymentMethod)
-    | (false, None) =>
-      Some(savedMethods->Belt.Array.get(0)->Belt.Option.getWithDefault(defaultCustomerMethods))
+    | (false, None) => Some(savedMethods->Array.get(0)->Option.getOr(defaultCustomerMethods))
     | _ => None
     }
 
@@ -124,7 +122,7 @@ let make = (
     switch methodslist {
     | Loaded(paymentlist) =>
       let paymentOrder =
-        paymentOrder->Js.Array2.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
+        paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
       let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
       let (wallets, otherOptions) =
         plist->PaymentUtils.paymentListLookupNew(
@@ -136,7 +134,7 @@ let make = (
         )
       (
         wallets->Utils.removeDuplicate,
-        paymentOptions->Js.Array2.concat(otherOptions)->Utils.removeDuplicate,
+        paymentOptions->Array.concat(otherOptions)->Utils.removeDuplicate,
         otherOptions,
       )
     | SemiLoaded =>
@@ -165,7 +163,7 @@ let make = (
       setWalletOptions(_ => walletList)
       setList(_ => plist)
       showCardFormByDefault
-        ? if !(actualList->Js.Array2.includes(selectedOption)) && selectedOption !== "" {
+        ? if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
             ErrorUtils.manageErrorWarning(
               SDK_CONNECTOR_WARNING,
               ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
@@ -175,7 +173,7 @@ let make = (
           } else if !Utils.checkPriorityList(paymentMethodOrder) {
             ErrorUtils.manageErrorWarning(
               SDK_CONNECTOR_WARNING,
-              ~dynamicStr=`'paymentMethodOrder' is ${Js.Array2.joinWith(
+              ~dynamicStr=`'paymentMethodOrder' is ${Array.joinWith(
                   paymentMethodOrder->Utils.getOptionalArr,
                   ", ",
                 )} . Please enable Card Payment as 1st priority to show it as default.`,
@@ -202,10 +200,10 @@ let make = (
   }, [sessionsObj])
   React.useEffect2(() => {
     let cardsCount: int = cardsToRender(cardsContainerWidth)
-    let cardOpts = Js.Array.slice(~start=0, ~end_=cardsCount, paymentOptions)
-    let dropOpts = Js.Array.sliceFrom(cardsCount, paymentOptions)
-    let isCard: bool = cardOpts->Js.Array2.includes(selectedOption)
-    if !isCard && selectedOption !== "" && paymentOptions->Js.Array2.includes(selectedOption) {
+    let cardOpts = Array.slice(~start=0, ~end=cardsCount, paymentOptions)
+    let dropOpts = paymentOptions->Array.sliceToEnd(~start=cardsCount)
+    let isCard: bool = cardOpts->Array.includes(selectedOption)
+    if !isCard && selectedOption !== "" && paymentOptions->Array.includes(selectedOption) {
       let (cardArr, dropdownArr) = CardUtils.swapCardOption(cardOpts, dropOpts, selectedOption)
       setCardOptions(_ => cardArr)
       setDropDownOptions(_ => dropdownArr)
@@ -219,7 +217,7 @@ let make = (
     cardsToRender(cardsContainerWidth)
   }, [cardsContainerWidth])
   let submitCallback = React.useCallback1((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
       Utils.postFailedSubmitResponse(
@@ -240,17 +238,17 @@ let make = (
           | LoadError(_) =>
             showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? "card" : ""
           | Loaded(_) =>
-            paymentOptions->Js.Array2.includes(selectedOption) && showCardFormByDefault
+            paymentOptions->Array.includes(selectedOption) && showCardFormByDefault
               ? selectedOption
-              : paymentOptions->Belt.Array.get(0)->Belt.Option.getWithDefault("")
-          | _ => paymentOptions->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+              : paymentOptions->Array.get(0)->Option.getOr("")
+          | _ => paymentOptions->Array.get(0)->Option.getOr("")
           }
     )
     None
   }, (layoutClass.defaultCollapsed, paymentOptions, methodslist, selectedOption))
   React.useEffect1(() => {
     if layoutClass.\"type" == Tabs {
-      let isCard: bool = cardOptions->Js.Array2.includes(selectedOption)
+      let isCard: bool = cardOptions->Array.includes(selectedOption)
       if !isCard {
         let (cardArr, dropdownArr) = CardUtils.swapCardOption(
           cardOptions,
@@ -265,14 +263,14 @@ let make = (
       loggerState.setLogInfo(
         ~value="",
         ~eventName=PAYMENT_METHOD_CHANGED,
-        ~paymentMethod=selectedOption->Js.String2.toUpperCase,
+        ~paymentMethod=selectedOption->String.toUpperCase,
         (),
       )
     }
     None
   }, [selectedOption])
   let checkRenderOrComp = () => {
-    walletOptions->Js.Array2.includes("paypal") || isShowOrPayUsing
+    walletOptions->Array.includes("paypal") || isShowOrPayUsing
   }
   let dict = sessions->Utils.getDictFromJson
   let sessionObj = SessionsType.itemToObjMapper(dict, Others)
@@ -415,15 +413,15 @@ let make = (
       />
     </RenderIf>
     <RenderIf
-      condition={(paymentOptions->Js.Array2.length > 0 || walletOptions->Js.Array2.length > 0) &&
+      condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
         showFields}>
       <div className="flex flex-col place-items-center">
         <ErrorBoundary key="payment_request_buttons_all" level={ErrorBoundary.RequestButton}>
           <PaymentRequestButtonElement sessions walletOptions list />
         </ErrorBoundary>
         <RenderIf
-          condition={paymentOptions->Js.Array2.length > 0 &&
-          walletOptions->Js.Array2.length > 0 &&
+          condition={paymentOptions->Array.length > 0 &&
+          walletOptions->Array.length > 0 &&
           checkRenderOrComp()}>
           <Or />
         </RenderIf>
@@ -452,8 +450,7 @@ let make = (
     {switch methodslist {
     | LoadError(_) => React.null
     | _ =>
-      <RenderIf
-        condition={paymentOptions->Js.Array2.length == 0 && walletOptions->Js.Array2.length == 0}>
+      <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
         <PaymentElementShimmer />
       </RenderIf>
     }}

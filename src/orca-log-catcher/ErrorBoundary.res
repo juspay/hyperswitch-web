@@ -1,4 +1,4 @@
-external errorToJson: Sentry.ErrorBoundary.fallbackArg => Js.Json.t = "%identity"
+external errorToJson: Sentry.ErrorBoundary.fallbackArg => JSON.t = "%identity"
 type errorLevel = Top | RequestButton | PaymentMethod
 
 let errorIcon = {
@@ -97,8 +97,8 @@ module ErrorCard = {
   @react.component
   let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level) => {
     let beaconApiCall = data => {
-      if data->Js.Array2.length > 0 {
-        let logData = data->Js.Array2.map(OrcaLogger.logFileToObj)->Js.Json.array->Js.Json.stringify
+      if data->Array.length > 0 {
+        let logData = data->Array.map(OrcaLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
         Window.sendBeacon(GlobalVars.logEndpoint, logData)
       }
     }
@@ -106,24 +106,20 @@ module ErrorCard = {
     React.useEffect0(() => {
       let loggingLevel = GlobalVars.loggingLevelStr
       let enableLogging = GlobalVars.enableLogging
-      if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Js.Array2.includes(loggingLevel) {
+      if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Array.includes(loggingLevel) {
         let errorLog: OrcaLogger.logFile = {
           logType: ERROR,
-          timestamp: Js.Date.now()->Belt.Float.toString,
+          timestamp: Date.now()->Belt.Float.toString,
           sessionId: "",
           source: "orca-elements",
           version: GlobalVars.repoVersion,
-          value: error->errorToJson->Js.Json.stringify,
+          value: error->errorToJson->JSON.stringify,
           internalMetadata: "",
           category: USER_ERROR,
           paymentId: "",
           merchantId: "",
-          browserName: OrcaLogger.arrayOfNameAndVersion
-          ->Belt.Array.get(0)
-          ->Belt.Option.getWithDefault("Others"),
-          browserVersion: OrcaLogger.arrayOfNameAndVersion
-          ->Belt.Array.get(1)
-          ->Belt.Option.getWithDefault("0"),
+          browserName: OrcaLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+          browserVersion: OrcaLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
           platform: Window.platform,
           userAgent: Window.userAgent,
           appId: "",
@@ -131,7 +127,7 @@ module ErrorCard = {
           latency: "",
           paymentMethod: "",
           firstEvent: false,
-          metadata: Js.Json.null,
+          metadata: JSON.Encode.null,
         }
         beaconApiCall([errorLog])
       }
@@ -142,17 +138,17 @@ module ErrorCard = {
     let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let (keys, _setKeys) = Recoil.useRecoilState(RecoilAtoms.keys)
     let {iframeId} = keys
-    let divRef = React.useRef(Js.Nullable.null)
+    let divRef = React.useRef(Nullable.null)
 
     let observer = ResizeObserver.newResizerObserver(entries => {
       entries
-      ->Js.Array2.map(item => {
+      ->Array.map(item => {
         setDivH(_ => item.contentRect.height)
       })
       ->ignore
     })
 
-    switch divRef.current->Js.Nullable.toOption {
+    switch divRef.current->Nullable.toOption {
     | Some(r) => observer.observe(. r)
     | None => ()
     }
@@ -161,8 +157,8 @@ module ErrorCard = {
       switch level {
       | Top =>
         Utils.handlePostMessage([
-          ("iframeHeight", (divH +. 1.0)->Js.Json.number),
-          ("iframeId", iframeId->Js.Json.string),
+          ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
+          ("iframeId", iframeId->JSON.Encode.string),
         ])
       | _ => ()
       }

@@ -43,7 +43,7 @@ let make = (~list: PaymentMethodsRecord.list) => {
     open Promise
     OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
-      let result = result->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)
+      let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         let (connectors, _) = list->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
         let body = PaymentBody.paypalRedirectionBody(~connectors)

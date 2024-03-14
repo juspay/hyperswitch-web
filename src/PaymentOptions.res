@@ -8,8 +8,8 @@ module TabLoader = {
     open PaymentElementShimmer
     switch list {
     | SemiLoaded =>
-      Belt.Array.make(cardShimmerCount - 1, "")
-      ->Js.Array2.mapi((_, i) => {
+      Array.make(~length=cardShimmerCount - 1, "")
+      ->Array.mapWithIndex((_, i) => {
         <div
           className={`Tab flex flex-col gap-3 animate-pulse cursor-default`}
           key={i->Belt.Int.toString}
@@ -51,14 +51,14 @@ let make = (
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let payOptionsRef = React.useRef(Js.Nullable.null)
-  let selectRef = React.useRef(Js.Nullable.null)
+  let payOptionsRef = React.useRef(Nullable.null)
+  let selectRef = React.useRef(Nullable.null)
   let (winW, winH) = Utils.useWindowSize()
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
   React.useEffect2(() => {
-    let width = switch payOptionsRef.current->Js.Nullable.toOption {
+    let width = switch payOptionsRef.current->Nullable.toOption {
     | Some(ref) => ref->Window.Element.clientWidth
     | None => 0
     }
@@ -78,16 +78,15 @@ let make = (
   let dropDownOptionsDetails = dropDownOptions->PaymentMethodsRecord.getPaymentDetails
   let selectedPaymentOption =
     PaymentMethodsRecord.paymentMethodsFields
-    ->Js.Array2.find(item => item.paymentMethodName == selectedOption)
-    ->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodFields)
+    ->Array.find(item => item.paymentMethodName == selectedOption)
+    ->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodFields)
 
   React.useEffect1(() => {
-    let intervalId = Js.Global.setInterval(() => {
-      if dropDownOptionsDetails->Belt.Array.length > 1 {
-        setMoreIconIndex(prev => mod(prev + 1, dropDownOptionsDetails->Belt.Array.length))
-
+    let intervalId = setInterval(() => {
+      if dropDownOptionsDetails->Array.length > 1 {
+        setMoreIconIndex(prev => mod(prev + 1, dropDownOptionsDetails->Array.length))
         setToggleIconElement(_ => true)
-        Js.Global.setTimeout(
+        setTimeout(
           () => {
             setToggleIconElement(_ => false)
           },
@@ -98,7 +97,7 @@ let make = (
 
     Some(
       () => {
-        Js.Global.clearInterval(intervalId)
+        clearInterval(intervalId)
       },
     )
   }, [dropDownOptionsDetails])
@@ -119,16 +118,16 @@ let make = (
         (),
       )}>
       {cardOptionDetails
-      ->Js.Array2.mapi((payOption, i) => {
+      ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
         <TabCard key={i->Belt.Int.toString} paymentOption=payOption isActive />
       })
       ->React.array}
       <TabLoader cardShimmerCount />
-      <RenderIf condition={dropDownOptionsDetails->Js.Array2.length > 0}>
+      <RenderIf condition={dropDownOptionsDetails->Array.length > 0}>
         <div className="flex relative h-auto justify-center">
           <div className="flex flex-col items-center absolute mt-3 pointer-events-none gap-y-1.5">
-            {switch dropDownOptionsDetails->Belt.Array.get(moreIconIndex) {
+            {switch dropDownOptionsDetails->Array.get(moreIconIndex) {
             | Some(paymentFieldsInfo) =>
               switch paymentFieldsInfo.miniIcon {
               | Some(ele) => displayIcon(ele)
@@ -175,9 +174,9 @@ let make = (
               )}
             </option>
             {dropDownOptionsDetails
-            ->Js.Array2.mapi((item, i) => {
+            ->Array.mapWithIndex((item, i) => {
               <option
-                key={string_of_int(i)}
+                key={Int.toString(i)}
                 value=item.paymentMethodName
                 style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}>
                 {React.string(

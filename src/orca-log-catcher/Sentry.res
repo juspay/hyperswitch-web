@@ -4,8 +4,8 @@ type instrumentation
 
 type tag = {mutable tag: string}
 type hint = {originalException: tag}
-external toJson: Js.Exn.t => tag = "%identity"
-external toExn: tag => Js.Exn.t = "%identity"
+external toJson: Exn.t => tag = "%identity"
+external toExn: tag => Exn.t = "%identity"
 type event
 type sentryInitArg = {
   dsn: string,
@@ -17,13 +17,13 @@ type sentryInitArg = {
   beforeSend: (event, hint) => option<event>,
 }
 
-external exnToJsExn: exn => option<Js.Exn.t> = "%identity"
+external exnToJsExn: exn => option<Exn.t> = "%identity"
 
 @module("react")
 external useEffect: (. unit => option<unit => unit>) => unit = "useEffect"
 type sentry
 @val @scope("window")
-external isSentryPresent: Js.Nullable.t<sentry> = "Sentry"
+external isSentryPresent: Nullable.t<sentry> = "Sentry"
 
 @module("@sentry/react")
 external initSentry: sentryInitArg => unit = "init"
@@ -44,7 +44,7 @@ external newSentryReplay: unit => integration = "Replay"
 external initSentryJs: sentryInitArg => unit = "init"
 
 @val @scope("Sentry")
-external capture: (. Js.Exn.t) => unit = "captureException"
+external capture: (. Exn.t) => unit = "captureException"
 
 @new
 external newSentryReplayJs: unit => integration = "Sentry.Replay"
@@ -54,7 +54,7 @@ external newBrowserTracingJs: unit => integration = "Sentry.BrowserTracing"
 
 module ErrorBoundary = {
   type fallbackArg = {
-    error: Js.Exn.t,
+    error: Exn.t,
     componentStack: array<string>,
     resetError: unit => unit,
   }
@@ -69,7 +69,7 @@ module ErrorBoundary = {
 let initiateSentry = (~dsn) => {
   try {
     initSentry({
-      dsn: dsn,
+      dsn,
       integrations: [
         newBrowserTracing({
           routingInstrumentation: reactRouterV6Instrumentation(useEffect),
@@ -90,14 +90,14 @@ let initiateSentry = (~dsn) => {
       },
     })
   } catch {
-  | err => Js.log(err)
+  | err => Console.log(err)
   }
 }
 
 let initiateSentryJs = (~dsn) => {
   try {
     initSentryJs({
-      dsn: dsn,
+      dsn,
       integrations: [newBrowserTracingJs(), newSentryReplayJs()],
       tracesSampleRate: 1.0,
       tracePropagationTargets: ["localhost"],
@@ -108,12 +108,12 @@ let initiateSentryJs = (~dsn) => {
       },
     })
   } catch {
-  | err => Js.log(err)
+  | err => Console.log(err)
   }
 }
 
 let captureException = (err: exn) => {
-  switch isSentryPresent->Js.Nullable.toOption {
+  switch isSentryPresent->Nullable.toOption {
   | Some(_val) =>
     let error = err->exnToJsExn
     switch error {

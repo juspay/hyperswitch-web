@@ -49,7 +49,7 @@ let nakedValues = {
   buttonTextFontWeight: "500",
 }
 
-let nakedValuesRules = _ => Js.Dict.empty()->Js.Json.object_
+let nakedValuesRules = _ => Dict.make()->JSON.Encode.object
 
 let default = nakedValues
 let defaultRules = nakedValuesRules

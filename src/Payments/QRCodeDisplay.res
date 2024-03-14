@@ -1,10 +1,10 @@
 open Utils
 let getKeyValue = (json, str) => {
   json
-  ->Js.Dict.get(str)
-  ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-  ->Js.Json.decodeString
-  ->Belt.Option.getWithDefault("")
+  ->Dict.get(str)
+  ->Option.getOr(Dict.make()->JSON.Encode.object)
+  ->JSON.Decode.string
+  ->Option.getOr("")
 }
 
 @react.component
@@ -19,14 +19,13 @@ let make = () => {
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->Js.Json.boolean)])
+    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("fullScreenIframeMounted")->Belt.Option.isSome {
+      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict =
-          metadata->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         let qrData = metaDataDict->getString("qrData", "")
         setQrCode(_ => qrData)
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
@@ -34,30 +33,27 @@ let make = () => {
         let headersDict =
           metaDataDict
           ->getJsonObjectFromDict("headers")
-          ->Js.Json.decodeObject
-          ->Belt.Option.getWithDefault(Js.Dict.empty())
-        let headers = Js.Dict.empty()
+          ->JSON.Decode.object
+          ->Option.getOr(Dict.make())
+        let headers = Dict.make()
         setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))
         headersDict
-        ->Js.Dict.entries
-        ->Js.Array2.forEach(entries => {
+        ->Dict.toArray
+        ->Array.forEach(entries => {
           let (x, val) = entries
-          Js.Dict.set(headers, x, val->Js.Json.decodeString->Belt.Option.getWithDefault(""))
+          Dict.set(headers, x, val->JSON.Decode.string->Option.getOr(""))
         })
         let expiryTime =
-          metaDataDict
-          ->getString("expiryTime", "")
-          ->Belt.Float.fromString
-          ->Belt.Option.getWithDefault(0.0)
-        let timeExpiry = expiryTime -. Js.Date.now()
+          metaDataDict->getString("expiryTime", "")->Belt.Float.fromString->Option.getOr(0.0)
+        let timeExpiry = expiryTime -. Date.now()
         if timeExpiry > 0.0 && timeExpiry < 900000.0 {
           setExpiryTime(_ => timeExpiry)
         }
         open Promise
-        setHeaders(_ => headers->Js.Dict.entries)
+        setHeaders(_ => headers->Dict.toArray)
         PaymentHelpers.pollRetrievePaymentIntent(
           paymentIntentId,
-          headers->Js.Dict.entries,
+          headers->Dict.toArray,
           ~optLogger=Some(logger),
           ~switchToCustomPod,
         )
@@ -76,12 +72,12 @@ let make = () => {
     if expiryTime < 1000.0 {
       Modal.close(setOpenModal)
     }
-    let intervalID = Js.Global.setInterval(() => {
+    let intervalID = setInterval(() => {
       setExpiryTime(prev => prev -. 1000.0)
     }, 1000)
     Some(
       () => {
-        Js.Global.clearInterval(intervalID)
+        clearInterval(intervalID)
       },
     )
   }, [expiryTime])
@@ -95,7 +91,7 @@ let make = () => {
       ~switchToCustomPod,
     )
     ->then(json => {
-      let dict = json->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+      let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
       let status = dict->getString("status", "")
 
       if status === "succeeded" {
@@ -115,11 +111,11 @@ let make = () => {
     })
     ->then(_json => {
       Modal.close(setOpenModal)
-      resolve(Js.Nullable.null)
+      resolve(Nullable.null)
     })
     ->catch(e => {
-      Js.log2("Retrieve Failed", e)
-      resolve(Js.Nullable.null)
+      Console.log2("Retrieve Failed", e)
+      resolve(Nullable.null)
     })
     ->ignore
   }
@@ -127,8 +123,8 @@ let make = () => {
   let expiryString = React.useMemo1(() => {
     let minutes = (expiryTime /. 60000.0)->Belt.Float.toInt->Belt.Int.toString
     let seconds =
-      mod(expiryTime->Belt.Float.toInt, 60000)->Belt.Int.toString->Js.String2.slice(~from=0, ~to_=2)
-    let seconds = seconds->Js.String2.length == 1 ? `${seconds}0` : seconds
+      mod(expiryTime->Belt.Float.toInt, 60000)->Belt.Int.toString->String.slice(~start=0, ~end=2)
+    let seconds = seconds->String.length == 1 ? `${seconds}0` : seconds
     `${minutes}:${seconds}`
   }, [expiryTime])
 

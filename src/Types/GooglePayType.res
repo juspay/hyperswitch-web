@@ -1,6 +1,6 @@
 open Utils
-@val @scope("Object") external assign: (Js.Json.t, Js.Json.t, Js.Json.t) => Js.Json.t = "assign"
-external toSome: Js.Json.t => 'a = "%identity"
+@val @scope("Object") external assign: (JSON.t, JSON.t, JSON.t) => JSON.t = "assign"
+external toSome: JSON.t => 'a = "%identity"
 type transactionInfo = {
   countryCode: string,
   currencyCode: string,
@@ -9,11 +9,11 @@ type transactionInfo = {
 }
 type merchantInfo = {merchantName: string}
 type paymentDataRequest = {
-  mutable allowedPaymentMethods: array<Js.Json.t>,
-  mutable transactionInfo: Js.Json.t,
-  mutable merchantInfo: Js.Json.t,
+  mutable allowedPaymentMethods: array<JSON.t>,
+  mutable transactionInfo: JSON.t,
+  mutable merchantInfo: JSON.t,
 }
-@val @scope("Object") external assign2: (Js.Json.t, Js.Json.t) => paymentDataRequest = "assign"
+@val @scope("Object") external assign2: (JSON.t, JSON.t) => paymentDataRequest = "assign"
 type element = {
   mutable innerHTML: string,
   appendChild: (. Dom.element) => unit,
@@ -24,11 +24,11 @@ type document
 @val external document: document = "document"
 @send external getElementById: (document, string) => element = "getElementById"
 type client = {
-  isReadyToPay: (. Js.Json.t) => Js.Promise.t<Js.Json.t>,
-  createButton: (. Js.Json.t) => Dom.element,
-  loadPaymentData: (. Js.Json.t) => Js.Promise.t<Fetch.Response.t>,
+  isReadyToPay: (. JSON.t) => Promise.t<JSON.t>,
+  createButton: (. JSON.t) => Dom.element,
+  loadPaymentData: (. JSON.t) => Promise.t<Fetch.Response.t>,
 }
-@new external google: Js.Json.t => client = "google.payments.api.PaymentsClient"
+@new external google: JSON.t => client = "google.payments.api.PaymentsClient"
 let getLabel = (var: PaymentType.googlePayStyleType) => {
   switch var {
   | Default => "plain"
@@ -60,8 +60,8 @@ type tokenizationSpecification = {
 type tokenizationData = {token: string}
 type paymentMethodData = {
   description: string,
-  info: Js.Json.t,
-  tokenizationData: Js.Json.t,
+  info: JSON.t,
+  tokenizationData: JSON.t,
   \"type": string,
 }
 
@@ -71,35 +71,35 @@ let defaultTokenizationData = {
 }
 let defaultPaymentMethodData = {
   description: "",
-  info: Js.Dict.empty()->Js.Json.object_,
-  tokenizationData: Js.Dict.empty()->Js.Json.object_,
+  info: Dict.make()->JSON.Encode.object,
+  tokenizationData: Dict.make()->JSON.Encode.object,
   \"type": "",
 }
 
 let getTokenizationData = (str, dict) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       token: getString(json, "token", ""),
     }
   })
-  ->Belt.Option.getWithDefault(defaultTokenizationData)
+  ->Option.getOr(defaultTokenizationData)
 }
 let getPaymentMethodData = (str, dict) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       description: getString(json, "description", ""),
-      tokenizationData: getJsonFromDict(json, "tokenizationData", Js.Dict.empty()->Js.Json.object_),
-      info: getJsonFromDict(json, "info", Js.Dict.empty()->Js.Json.object_),
+      tokenizationData: getJsonFromDict(json, "tokenizationData", Dict.make()->JSON.Encode.object),
+      info: getJsonFromDict(json, "info", Dict.make()->JSON.Encode.object),
       \"type": getString(json, "type", ""),
     }
   })
-  ->Belt.Option.getWithDefault(defaultPaymentMethodData)
+  ->Option.getOr(defaultPaymentMethodData)
 }
 let itemToObjMapper = dict => {
   {
@@ -107,21 +107,21 @@ let itemToObjMapper = dict => {
   }
 }
 
-let jsonToPaymentRequestDataType: (
-  paymentDataRequest,
-  Js.Dict.t<Js.Json.t>,
-) => paymentDataRequest = (paymentRequest, jsonDict) => {
+let jsonToPaymentRequestDataType: (paymentDataRequest, Dict.t<JSON.t>) => paymentDataRequest = (
+  paymentRequest,
+  jsonDict,
+) => {
   paymentRequest.allowedPaymentMethods =
     jsonDict
     ->Utils.getArray("allowed_payment_methods")
-    ->Js.Array2.map(json => Utils.transformKeys(json, Utils.CamelCase))
+    ->Array.map(json => Utils.transformKeys(json, Utils.CamelCase))
   paymentRequest.transactionInfo =
     jsonDict
-    ->Utils.getJsonFromDict("transaction_info", Js.Json.null)
+    ->Utils.getJsonFromDict("transaction_info", JSON.Encode.null)
     ->Utils.transformKeys(Utils.CamelCase)
   paymentRequest.merchantInfo =
     jsonDict
-    ->Utils.getJsonFromDict("merchant_info", Js.Json.null)
+    ->Utils.getJsonFromDict("merchant_info", JSON.Encode.null)
     ->Utils.transformKeys(Utils.CamelCase)
 
   paymentRequest

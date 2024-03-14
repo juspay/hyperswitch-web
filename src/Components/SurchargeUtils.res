@@ -19,7 +19,7 @@ let useSurchargeDetailsForOneClickWallets = (~list) => {
   )
 
   React.useMemo2(() => {
-    oneClickWallets->Js.Array2.reduce((acc, wallet) => {
+    oneClickWallets->Array.reduce([], (acc, wallet) => {
       let isWalletBtnRendered = switch wallet.paymentMethodType {
       | "apple_pay" => areOneClickWalletsRendered.isApplePay
       | "paypal" => areOneClickWalletsRendered.isPaypal
@@ -32,10 +32,10 @@ let useSurchargeDetailsForOneClickWallets = (~list) => {
             ~list,
             ~paymentMethod="wallet",
             ~paymentMethodType=wallet.paymentMethodType,
-          )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
+          )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
         switch paymentMethodType.surcharge_details {
         | Some(surchargDetails) =>
-          acc->Js.Array2.concat([
+          acc->Array.concat([
             {
               name: wallet.displayName,
               surchargeDetails: surchargDetails,
@@ -46,7 +46,7 @@ let useSurchargeDetailsForOneClickWallets = (~list) => {
       } else {
         acc
       }
-    }, [])
+    })
   }, (areOneClickWalletsRendered, list))
 }
 
@@ -58,7 +58,7 @@ let useMessageGetter = () => {
     ~paymentMethod,
     ~list: PaymentMethodsRecord.list,
   ) => {
-    let surchargeValue = surchargeDetails.displayTotalSurchargeAmount->Js.Float.toString
+    let surchargeValue = surchargeDetails.displayTotalSurchargeAmount->Float.toString
 
     let localeStrForSurcharge = if paymentMethod === "card" {
       localeString.surchargeMsgAmountForCard(list.currency, surchargeValue)
@@ -78,9 +78,9 @@ let useOneClickWalletsMessageGetter = (~list) => {
   let oneClickWalletsArr = useSurchargeDetailsForOneClickWallets(~list)
 
   let getOneClickWalletsMessage = () => {
-    if oneClickWalletsArr->Js.Array2.length !== 0 {
-      let msg = oneClickWalletsArr->Js.Array2.reducei((acc, wallet, index) => {
-        let amount = wallet.surchargeDetails.displayTotalSurchargeAmount->Js.Float.toString
+    if oneClickWalletsArr->Array.length !== 0 {
+      let msg = oneClickWalletsArr->Array.reduceWithIndex(React.null, (acc, wallet, index) => {
+        let amount = wallet.surchargeDetails.displayTotalSurchargeAmount->Float.toString
         let myMsg =
           <>
             <strong> {React.string(`${list.currency} ${amount}`)} </strong>
@@ -103,7 +103,7 @@ let useOneClickWalletsMessageGetter = (~list) => {
           {acc}
           {msgToConcat}
         </>
-      }, React.null)
+      })
       let finalElement =
         <>
           {React.string(`${localeString.surchargeMsgAmountForOneClickWallets}:${Utils.nbsp}`)}

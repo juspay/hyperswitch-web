@@ -13,14 +13,14 @@ let make = (
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (token, _) = paymentToken
-  let savedCardlength = savedMethods->Js.Array2.length
+  let savedCardlength = savedMethods->Array.length
 
   let getWalletBrandIcon = (obj: PaymentType.customerMethods) => {
     switch obj.paymentMethodType {
@@ -33,7 +33,7 @@ let make = (
 
   let bottomElement = {
     savedMethods
-    ->Js.Array2.mapi((obj, i) => {
+    ->Array.mapWithIndex((obj, i) => {
       let brandIcon = switch obj.paymentMethod {
       | "wallet" => getWalletBrandIcon(obj)
       | _ =>
@@ -72,16 +72,16 @@ let make = (
   let empty = cvcNumber == ""
 
   let submitCallback = React.useCallback4((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (token, customerId) = paymentToken
     let customerMethod =
       savedMethods
-      ->Js.Array2.filter(savedMethod => {
+      ->Array.filter(savedMethod => {
         savedMethod.paymentToken === token
       })
-      ->Belt.Array.get(0)
-      ->Belt.Option.getWithDefault(PaymentType.defaultCustomerMethods)
+      ->Array.get(0)
+      ->Option.getOr(PaymentType.defaultCustomerMethods)
     let isCardPaymentMethod = customerMethod.paymentMethod === "card"
     let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
 
@@ -96,8 +96,8 @@ let make = (
     | _ => {
         let paymentMethodType = switch customerMethod.paymentMethodType {
         | Some("")
-        | None => Js.Json.null
-        | Some(paymentMethodType) => paymentMethodType->Js.Json.string
+        | None => JSON.Encode.null
+        | Some(paymentMethodType) => paymentMethodType->JSON.Encode.string
         }
         PaymentBody.savedPaymentMethodBody(
           ~paymentToken=token,
@@ -112,8 +112,8 @@ let make = (
       if areRequiredFieldsValid && (!isCardPaymentMethod || isCardPaymentMethodValid) {
         intent(
           ~bodyArr=savedPaymentMethodBody
-          ->Js.Dict.fromArray
-          ->Js.Json.object_
+          ->Dict.fromArray
+          ->JSON.Encode.object
           ->OrcaUtils.flattenObject(true)
           ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
           ->OrcaUtils.getArrayOfTupleFromDict,
@@ -126,7 +126,7 @@ let make = (
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         }
-        if !(isCVCValid->Belt.Option.getWithDefault(false)) {
+        if !(isCVCValid->Option.getOr(false)) {
           setUserError(localeString.enterValidDetailsText)
         }
         if !areRequiredFieldsValid {

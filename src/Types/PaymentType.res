@@ -300,11 +300,11 @@ let getLayout = (str, logger) => {
 }
 let getAddress = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     let countryNames = []
-    Country.country->Js.Array2.map(item => countryNames->Js.Array2.push(item.countryName))->ignore
+    Country.country->Array.map(item => countryNames->Array.push(item.countryName))->ignore
     unknownKeysWarning(
       ["line1", "line2", "city", "state", "country", "postal_code"],
       json,
@@ -329,13 +329,13 @@ let getAddress = (dict, str, logger) => {
       postal_code: getWarningString(json, "postal_code", "", ~logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultAddress)
+  ->Option.getOr(defaultAddress)
 }
 let getBillingDetails = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(
       ["name", "email", "phone", "address"],
       json,
@@ -349,33 +349,33 @@ let getBillingDetails = (dict, str, logger) => {
       address: getAddress(json, "address", logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultBillingDetails)
+  ->Option.getOr(defaultBillingDetails)
 }
 
 let getDefaultValues = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(["billingDetails"], json, "options.defaultValues", ~logger)
     let defaultValues: defaultValues = {
       billingDetails: getBillingDetails(json, "billingDetails", logger),
     }
     defaultValues
   })
-  ->Belt.Option.getWithDefault(defaultDefaultValues)
+  ->Option.getOr(defaultDefaultValues)
 }
 let getBusiness = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(["name"], json, "options.business", ~logger)
     {
       name: getWarningString(json, "name", "", ~logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultBusiness)
+  ->Option.getOr(defaultBusiness)
 }
 let getShowType = (str, key, logger) => {
   switch str {
@@ -468,7 +468,7 @@ let getTypeArray = (str, logger) => {
     "tip",
     "contribute",
   ]
-  if !Js.Array2.includes(goodVals, str) {
+  if !Array.includes(goodVals, str) {
     str->unknownPropValueWarning(goodVals, "options.wallets.style.type", ~logger)
   }
   (str->getApplePayType, str->getGooglePayType, str->getPayPalType)
@@ -514,9 +514,9 @@ let getShowTerms: (string, string, 'a) => showTerms = (str, key, logger) => {
 
 let getShowAddress = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     let x: showAddress = {
       line1: getWarningString(json, "line1", "auto", ~logger)->getShowType(
         "options.fields.address.line1",
@@ -545,12 +545,12 @@ let getShowAddress = (dict, str, logger) => {
     }
     x
   })
-  ->Belt.Option.getWithDefault(defaultshowAddress)
+  ->Option.getOr(defaultshowAddress)
 }
 let getDeatils = (val, logger) => {
-  switch val->Js.Json.classify {
-  | JSONString(str) => JSONString(str)
-  | JSONObject(json) =>
+  switch val->JSON.Classify.classify {
+  | String(str) => JSONString(str)
+  | Object(json) =>
     JSONObject({
       name: getWarningString(json, "name", "auto", ~logger)->getShowType(
         "options.fields.name",
@@ -571,26 +571,26 @@ let getDeatils = (val, logger) => {
 }
 let getBilling = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.map(json => json->getDeatils(logger))
-  ->Belt.Option.getWithDefault(defaultFields.billingDetails)
+  ->Dict.get(str)
+  ->Option.map(json => json->getDeatils(logger))
+  ->Option.getOr(defaultFields.billingDetails)
 }
-let getFields: (Js.Dict.t<Js.Json.t>, string, 'a) => fields = (dict, str, logger) => {
+let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     let defaultFields: fields = {
       billingDetails: getBilling(json, "billingDetails", logger),
     }
     defaultFields
   })
-  ->Belt.Option.getWithDefault(defaultFields)
+  ->Option.getOr(defaultFields)
 }
 let getLayoutValues = (val, logger) => {
-  switch val->Js.Json.classify {
-  | JSONString(str) => StringLayout(str->getLayout(logger))
-  | JSONObject(json) =>
+  switch val->JSON.Classify.classify {
+  | String(str) => StringLayout(str->getLayout(logger))
+  | Object(json) =>
     ObjectLayout({
       let layoutType = getWarningString(json, "type", "tabs", ~logger)
       unknownKeysWarning(
@@ -612,9 +612,9 @@ let getLayoutValues = (val, logger) => {
 }
 let getTerms = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(
       ["auBecsDebit", "bancontact", "card", "ideal", "sepaDebit", "sofort", "usBankAccount"],
       json,
@@ -652,7 +652,7 @@ let getTerms = (dict, str, logger) => {
       ),
     }
   })
-  ->Belt.Option.getWithDefault(defaultTerms)
+  ->Option.getOr(defaultTerms)
 }
 let getApplePayHeight = (val, logger) => {
   let val: heightType =
@@ -724,9 +724,9 @@ let getHeightArray = (val, logger) => {
 }
 let getStyle = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(["type", "theme", "height"], json, "options.wallets.style", ~logger)
     let style = {
       type_: getWarningString(json, "type", "", ~logger)->getTypeArray(logger),
@@ -735,13 +735,13 @@ let getStyle = (dict, str, logger) => {
     }
     style
   })
-  ->Belt.Option.getWithDefault(defaultStyle)
+  ->Option.getOr(defaultStyle)
 }
 let getWallets = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(
       ["applePay", "googlePay", "style", "walletReturnUrl"],
       json,
@@ -762,23 +762,23 @@ let getWallets = (dict, str, logger) => {
       style: getStyle(json, "style", logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultWallets)
+  ->Option.getOr(defaultWallets)
 }
 
 let getLayout = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.map(json => {
     json->getLayoutValues(logger)
   })
-  ->Belt.Option.getWithDefault(ObjectLayout(defaultLayout))
+  ->Option.getOr(ObjectLayout(defaultLayout))
 }
 
 let getCardDetails = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       scheme: Some(getString(json, "scheme", "")),
       last4Digits: getString(json, "last4_digits", ""),
@@ -789,36 +789,36 @@ let getCardDetails = (dict, str) => {
       nickname: getString(json, "nick_name", ""),
     }
   })
-  ->Belt.Option.getWithDefault(defaultCardDetails)
+  ->Option.getOr(defaultCardDetails)
 }
 
 let getPaymentMethodType = dict => {
-  dict->Js.Dict.get("payment_method_type")->Belt.Option.flatMap(Js.Json.decodeString)
+  dict->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
 }
 
 let createCustomerObjArr = dict => {
   let customerDict =
     dict
-    ->Js.Dict.get("customerPaymentMethods")
-    ->Belt.Option.flatMap(Js.Json.decodeObject)
-    ->Belt.Option.getWithDefault(Js.Dict.empty())
+    ->Dict.get("customerPaymentMethods")
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.getOr(Dict.make())
 
   let customerArr =
     customerDict
-    ->Js.Dict.get("customer_payment_methods")
-    ->Belt.Option.flatMap(Js.Json.decodeArray)
-    ->Belt.Option.getWithDefault([])
+    ->Dict.get("customer_payment_methods")
+    ->Option.flatMap(JSON.Decode.array)
+    ->Option.getOr([])
 
   let isGuestCustomer =
     customerDict
-    ->Js.Dict.get("is_guest_customer")
-    ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-    ->Belt.Option.getWithDefault(false)
+    ->Dict.get("is_guest_customer")
+    ->Option.flatMap(JSON.Decode.bool)
+    ->Option.getOr(false)
 
   let customerPaymentMethods =
     customerArr
-    ->Belt.Array.keepMap(Js.Json.decodeObject)
-    ->Js.Array2.map(dict => {
+    ->Belt.Array.keepMap(JSON.Decode.object)
+    ->Array.map(dict => {
       {
         paymentToken: getString(dict, "payment_token", ""),
         customerId: getString(dict, "customer_id", ""),
@@ -834,14 +834,13 @@ let createCustomerObjArr = dict => {
 }
 
 let getCustomerMethods = (dict, str) => {
-  let customerArr =
-    dict->Js.Dict.get(str)->Belt.Option.flatMap(Js.Json.decodeArray)->Belt.Option.getWithDefault([])
+  let customerArr = dict->Dict.get(str)->Option.flatMap(JSON.Decode.array)->Option.getOr([])
 
-  if customerArr->Js.Array2.length !== 0 {
+  if customerArr->Array.length !== 0 {
     let customerPaymentMethods =
       customerArr
-      ->Belt.Array.keepMap(Js.Json.decodeObject)
-      ->Js.Array2.map(json => {
+      ->Belt.Array.keepMap(JSON.Decode.object)
+      ->Array.map(json => {
         {
           paymentToken: getString(json, "payment_token", ""),
           customerId: getString(json, "customer_id", ""),
@@ -861,11 +860,11 @@ let getCustomerMethods = (dict, str) => {
 
 let getCustomMethodNames = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.getWithDefault([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
-  ->Js.Array2.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.array)
+  ->Option.getOr([])
+  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.map(json => {
     paymentMethodName: getString(json, "paymentMethodName", ""),
     aliasName: getString(json, "aliasName", ""),
   })
@@ -873,9 +872,9 @@ let getCustomMethodNames = (dict, str) => {
 
 let getBillingAddress = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(
       ["isUseBillingAddress", "usePrefilledValues"],
       json,
@@ -893,7 +892,7 @@ let getBillingAddress = (dict, str, logger) => {
       )->getShowType("options.billingAddress.usePrefilledValues", logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultBillingAddress)
+  ->Option.getOr(defaultBillingAddress)
 }
 
 let getConfirmParams = dict => {
@@ -973,16 +972,16 @@ let itemToObjMapper = (dict, logger) => {
   }
 }
 
-type loadType = Loading | Loaded(Js.Json.t) | SemiLoaded | LoadError(Js.Json.t)
+type loadType = Loading | Loaded(JSON.t) | SemiLoaded | LoadError(JSON.t)
 
 let getIsAllStoredCardsHaveName = (savedCards: array<customerMethods>) => {
   savedCards
-  ->Js.Array2.filter(savedCard => {
+  ->Array.filter(savedCard => {
     switch savedCard.card.cardHolderName {
     | None
     | Some("") => false
     | _ => true
     }
   })
-  ->Belt.Array.length === savedCards->Belt.Array.length
+  ->Array.length === savedCards->Array.length
 }

@@ -24,7 +24,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let complete =
     email.value != "" &&
     fullName.value != "" &&
-    email.isValid->Belt.Option.getWithDefault(false) &&
+    email.isValid->Option.getOr(false) &&
     switch modalData {
     | Some(val: ACHTypes.data) => val.iban !== "" || val.accountHolderName !== ""
     | None => false
@@ -48,7 +48,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   }, [complete])
 
   let submitCallback = React.useCallback3((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {

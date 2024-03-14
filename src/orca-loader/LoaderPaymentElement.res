@@ -4,10 +4,10 @@ open EventListenerManager
 
 open OrcaUtils
 
-external eventToJson: Types.eventData => Js.Json.t = "%identity"
+external eventToJson: Types.eventData => JSON.t = "%identity"
 
 @val @scope(("navigator", "clipboard"))
-external writeText: string => Js.Promise.t<'a> = "writeText"
+external writeText: string => Promise.t<'a> = "writeText"
 
 let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) => {
   try {
@@ -67,22 +67,22 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
     }
     let collapse = () => ()
     let blur = () => {
-      iframeRef->Js.Array2.forEach(iframe => {
-        let message = [("doBlur", true->Js.Json.boolean)]->Js.Dict.fromArray
+      iframeRef->Array.forEach(iframe => {
+        let message = [("doBlur", true->JSON.Encode.bool)]->Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
     }
 
     let focus = () => {
-      iframeRef->Js.Array2.forEach(iframe => {
-        let message = [("doFocus", true->Js.Json.boolean)]->Js.Dict.fromArray
+      iframeRef->Array.forEach(iframe => {
+        let message = [("doFocus", true->JSON.Encode.bool)]->Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
     }
 
     let clear = () => {
-      iframeRef->Js.Array2.forEach(iframe => {
-        let message = [("doClearValues", true->Js.Json.boolean)]->Js.Dict.fromArray
+      iframeRef->Array.forEach(iframe => {
+        let message = [("doClearValues", true->JSON.Encode.bool)]->Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
     }
@@ -91,10 +91,10 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let id = mountId.contents
 
       let oElement = Window.querySelector(id)
-      switch oElement->Js.Nullable.toOption {
+      switch oElement->Nullable.toOption {
       | Some(elem) => elem->Window.innerHTML("")
       | None =>
-        Js.Console.warn(
+        Console.warn(
           "INTEGRATION ERROR: Div does not seem to exist on which payment element is to mount/unmount",
         )
       }
@@ -109,48 +109,47 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let flatOption = options->flattenObject(true)
       let newFlatOption = newOptions->flattenObject(true)
 
-      let keys = flatOption->Js.Dict.keys
-      keys->Js.Array2.forEach(key => {
-        switch newFlatOption->Js.Dict.get(key) {
-        | Some(op) => flatOption->Js.Dict.set(key, op)
+      let keys = flatOption->Dict.keysToArray
+      keys->Array.forEach(key => {
+        switch newFlatOption->Dict.get(key) {
+        | Some(op) => flatOption->Dict.set(key, op)
         | None => ()
         }
       })
 
-      let newEntries = newFlatOption->Js.Dict.entries
-      newEntries->Js.Array2.forEach(entries => {
+      let newEntries = newFlatOption->Dict.toArray
+      newEntries->Array.forEach(entries => {
         let (key, value) = entries
-        if flatOption->Js.Dict.get(key)->Belt.Option.isNone {
-          flatOption->Js.Dict.set(key, value)
+        if flatOption->Dict.get(key)->Option.isNone {
+          flatOption->Dict.set(key, value)
         }
       })
 
-      iframeRef->Js.Array2.forEach(iframe => {
+      iframeRef->Array.forEach(iframe => {
         let message =
           [
-            ("paymentElementsUpdate", true->Js.Json.boolean),
-            ("options", flatOption->Js.Json.object_->unflattenObject->Js.Json.object_),
-          ]->Js.Dict.fromArray
+            ("paymentElementsUpdate", true->JSON.Encode.bool),
+            ("options", flatOption->JSON.Encode.object->unflattenObject->JSON.Encode.object),
+          ]->Dict.fromArray
         iframe->Window.iframePostMessage(message)
       })
     }
 
     let mount = selector => {
       mountId := selector
-      let localSelectorArr = selector->Js.String2.split("#")
-      let localSelectorString =
-        localSelectorArr->Belt.Array.get(1)->Belt.Option.getWithDefault("someString")
+      let localSelectorArr = selector->String.split("#")
+      let localSelectorString = localSelectorArr->Array.get(1)->Option.getOr("someString")
       let iframeHeightRef = ref(25.0)
       let currentClass = ref("base")
       let fullscreen = ref(false)
       let fullscreenParam = ref("")
-      let fullscreenMetadata = ref(Js.Dict.empty()->Js.Json.object_)
+      let fullscreenMetadata = ref(Dict.make()->JSON.Encode.object)
       let optionsDict = options->getDictFromJson
       let handle = (ev: Types.event) => {
         let eventDataObject = ev.data->eventToJson
 
         let iframeHeight = eventDataObject->getOptionalJsonFromJson("iframeHeight")
-        if iframeHeight->Belt.Option.isSome {
+        if iframeHeight->Option.isSome {
           let iframeId =
             eventDataObject
             ->getOptionalJsonFromJson("iframeId")
@@ -161,7 +160,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             let elem = Window.querySelector(
               `#orca-payment-element-iframeRef-${localSelectorString}`,
             )
-            switch elem->Js.Nullable.toOption {
+            switch elem->Nullable.toOption {
             | Some(ele) =>
               ele
               ->Window.style
@@ -197,17 +196,17 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         }
 
         let combinedHyperClasses = eventDataObject->getOptionalJsonFromJson("concatedString")
-        if combinedHyperClasses->Belt.Option.isSome {
+        if combinedHyperClasses->Option.isSome {
           let id = eventDataObject->getOptionalJsonFromJson("id")->getStringfromOptionaljson("")
 
-          let decodeStringTest = combinedHyperClasses->Belt.Option.flatMap(Js.Json.decodeString)
+          let decodeStringTest = combinedHyperClasses->Option.flatMap(JSON.Decode.string)
           switch decodeStringTest {
           | Some(val) => currentClass := val
           | None => ()
           }
           if id == localSelectorString {
             let elem = Window.querySelector(`#orca-element-${localSelectorString}`)
-            switch elem->Js.Nullable.toOption {
+            switch elem->Nullable.toOption {
             | Some(ele) => ele->Window.className(currentClass.contents)
             | None => ()
             }
@@ -221,19 +220,19 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         let iframeID =
           eventDataObject->getOptionalJsonFromJson("iframeId")->getStringfromOptionaljson("")
 
-        if fullscreenIframe->Belt.Option.isSome {
+        if fullscreenIframe->Option.isSome {
           fullscreen := fullscreenIframe->getBoolfromjson(false)
           fullscreenParam := param->getStringfromOptionaljson("")
           fullscreenMetadata :=
             metadata
-            ->Belt.Option.flatMap(Js.Json.decodeObject)
-            ->Belt.Option.getWithDefault(Js.Dict.empty())
-            ->Js.Json.object_
+            ->Option.flatMap(JSON.Decode.object)
+            ->Option.getOr(Dict.make())
+            ->JSON.Encode.object
           let fullscreenElem = Window.querySelector(
             `#orca-fullscreen-iframeRef-${localSelectorString}`,
           )
 
-          switch fullscreenElem->Js.Nullable.toOption {
+          switch fullscreenElem->Nullable.toOption {
           | Some(ele) =>
             ele->Window.innerHTML("")
             let mainElement = Window.querySelector(
@@ -249,21 +248,21 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
                     let handleFullScreenCallback = (ev: Types.event) => {
                       let json = ev.data->eventToJson
                       let dict = json->Utils.getDictFromJson
-                      if dict->Js.Dict.get("iframeMountedCallback")->Belt.Option.isSome {
+                      if dict->Dict.get("iframeMountedCallback")->Option.isSome {
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                         fullScreenEle->Window.iframePostMessage(
                           [
-                            ("fullScreenIframeMounted", true->Js.Json.boolean),
+                            ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
-                          ]->Js.Dict.fromArray,
+                          ]->Dict.fromArray,
                         )
                       }
-                      if dict->Js.Dict.get("driverMounted")->Belt.Option.isSome {
+                      if dict->Dict.get("driverMounted")->Option.isSome {
                         mainElement->Window.iframePostMessage(
                           [
-                            ("fullScreenIframeMounted", true->Js.Json.boolean),
+                            ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
-                          ]->Js.Dict.fromArray,
+                          ]->Dict.fromArray,
                         )
                       }
                     }
@@ -278,14 +277,14 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
               : {
                   ele->Window.innerHTML("")
                   mainElement->Window.iframePostMessage(
-                    [("fullScreenIframeMounted", false->Js.Json.boolean)]->Js.Dict.fromArray,
+                    [("fullScreenIframeMounted", false->JSON.Encode.bool)]->Dict.fromArray,
                   )
                 }
           | None => ()
           }
         }
 
-        if iframeMounted->Belt.Option.isSome {
+        if iframeMounted->Option.isSome {
           mountPostMessage(
             Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`),
             localSelectorString,
@@ -298,7 +297,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->OrcaUtils.getClasses("base")
       let additionalIframeStyle = componentType->Utils.isOtherElements ? "height: 2rem;" : ""
-      switch oElement->Js.Nullable.toOption {
+      switch oElement->Nullable.toOption {
       | Some(elem) => {
           let iframeDiv = `<div id="orca-element-${localSelectorString}" style= "height: auto;"  class="${componentType} ${currentClass.contents} ${classesBase} ">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
@@ -318,7 +317,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           )
 
           let elem = Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`)
-          switch elem->Js.Nullable.toOption {
+          switch elem->Nullable.toOption {
           | Some(ele) =>
             ele->Window.style->Window.setTransition("height 0.35s ease 0s, opacity 0.4s ease 0.1s")
           | None => ()

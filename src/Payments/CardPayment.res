@@ -72,7 +72,7 @@ let make = (
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
 
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
@@ -112,14 +112,14 @@ let make = (
   }, (isSaveCardsChecked, list.payment_type))
 
   let submitCallback = React.useCallback6((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (month, year) = CardUtils.getExpiryDates(cardExpiry)
 
     let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
     let cardNetwork = {
       if cardBrand != "" {
-        [("card_network", cardBrand->Js.Json.string)]
+        [("card_network", cardBrand->JSON.Encode.string)]
       } else {
         []
       }
@@ -136,22 +136,22 @@ let make = (
     )
     let banContactBody = PaymentBody.bancontactBody()
     let cardBody = if isCustomerAcceptanceRequired {
-      defaultCardBody->Js.Array2.concat(onSessionBody)
+      defaultCardBody->Array.concat(onSessionBody)
     } else {
       defaultCardBody
     }
     if confirm.doSubmit {
       let validFormat =
         (isBancontact ||
-        (isCVCValid->Belt.Option.getWithDefault(false) &&
-        isCardValid->Belt.Option.getWithDefault(false) &&
-        isExpiryValid->Belt.Option.getWithDefault(false))) && areRequiredFieldsValid
+        (isCVCValid->Option.getOr(false) &&
+        isCardValid->Option.getOr(false) &&
+        isExpiryValid->Option.getOr(false))) && areRequiredFieldsValid
       if validFormat && (showFields || isBancontact) {
         intent(
           ~bodyArr={
             (isBancontact ? banContactBody : cardBody)
-            ->Js.Dict.fromArray
-            ->Js.Json.object_
+            ->Dict.fromArray
+            ->JSON.Encode.object
             ->OrcaUtils.flattenObject(true)
             ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
             ->OrcaUtils.getArrayOfTupleFromDict

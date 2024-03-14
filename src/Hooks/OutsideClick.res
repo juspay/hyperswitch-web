@@ -2,12 +2,12 @@ external ffToDomType: {..} => Dom.node_like<'a> = "%identity"
 @send external contains: (Dom.element, {..}) => bool = "contains"
 
 type ref =
-  | ArrayOfRef(array<React.ref<Js.Nullable.t<Dom.element>>>)
-  | RefArray(React.ref<array<Js.Nullable.t<Dom.element>>>)
+  | ArrayOfRef(array<React.ref<Nullable.t<Dom.element>>>)
+  | RefArray(React.ref<array<Nullable.t<Dom.element>>>)
 
 let useOutsideClick = (
   ~refs: ref,
-  ~containerRefs: option<React.ref<Js.Nullable.t<Dom.element>>>=?,
+  ~containerRefs: option<React.ref<Nullable.t<Dom.element>>>=?,
   ~isActive,
   ~events=["click"],
   ~callback,
@@ -33,28 +33,28 @@ let useOutsideClick = (
 
         let isInsideClick = switch refs {
         | ArrayOfRef(refs) =>
-          refs->Js.Array2.reduce((acc, ref: React.ref<Js.Nullable.t<Dom.element>>) => {
-            let isClickInsideRef = switch ref.current->Js.Nullable.toOption {
+          refs->Array.reduce(false, (acc, ref: React.ref<Nullable.t<Dom.element>>) => {
+            let isClickInsideRef = switch ref.current->Nullable.toOption {
             | Some(element) => element->contains(targ)
             | None => false
             }
             acc || isClickInsideRef
-          }, false)
+          })
         | RefArray(refs) =>
           refs.current
-          ->Js.Array2.slice(~start=0, ~end_=-1)
-          ->Js.Array2.reduce((acc, ref: Js.Nullable.t<Dom.element>) => {
-            let isClickInsideRef = switch ref->Js.Nullable.toOption {
+          ->Array.slice(~start=0, ~end=-1)
+          ->Array.reduce(false, (acc, ref: Nullable.t<Dom.element>) => {
+            let isClickInsideRef = switch ref->Nullable.toOption {
             | Some(element) => element->contains(targ)
             | None => false
             }
             acc || isClickInsideRef
-          }, false)
+          })
         }
 
         let isClickInsideOfContainer = switch containerRefs {
         | Some(ref) =>
-          switch ref.current->Js.Nullable.toOption {
+          switch ref.current->Nullable.toOption {
           | Some(element) => element->contains(targ)
           | None => false
           }
@@ -66,7 +66,7 @@ let useOutsideClick = (
         }
       }
 
-      Js.Global.setTimeout(() => {
+      setTimeout(() => {
         events->Array.forEach(
           event => {
             Window.addEventListener(event, handleClick)

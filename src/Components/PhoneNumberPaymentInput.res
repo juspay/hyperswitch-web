@@ -12,11 +12,11 @@ let make = () => {
   let formatBSB = bsb => {
     let formatted = bsb
 
-    let secondPart = formatted->Js.String2.sliceToEnd(~from=4)->Js.String2.trim
+    let secondPart = formatted->String.sliceToEnd(~start=4)->String.trim
 
-    if formatted->Js.String2.length <= 4 {
+    if formatted->String.length <= 4 {
       "+351 "
-    } else if formatted->Js.String2.length > 4 {
+    } else if formatted->String.length > 4 {
       `+351 ${secondPart}`
     } else {
       formatted
@@ -24,15 +24,14 @@ let make = () => {
   }
 
   let changePhone = ev => {
-    let val: string =
-      ReactEvent.Form.target(ev)["value"]->Js.String2.replaceByRe(%re("/\+D+/g"), "")
+    let val: string = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\+D+/g"), "")
     setPhone(.prev => {
       ...prev,
       value: val->formatBSB,
     })
   }
 
-  let phoneRef = React.useRef(Js.Nullable.null)
+  let phoneRef = React.useRef(Nullable.null)
 
   <RenderIf condition={showDetails.phone == Auto}>
     <PaymentField

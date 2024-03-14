@@ -19,7 +19,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
 
   let (modalData, setModalData) = React.useState(_ => None)
 
-  let toolTipRef = React.useRef(Js.Nullable.null)
+  let toolTipRef = React.useRef(Nullable.null)
   let (line1, _) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
   let (line2, _) = Recoil.useLoggedRecoilState(userAddressline2, "line2", loggerState)
   let (country, _) = Recoil.useLoggedRecoilState(userAddressCountry, "country", loggerState)
@@ -37,7 +37,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   )
 
   React.useEffect1(() => {
-    if modalData->Belt.Option.isSome {
+    if modalData->Option.isSome {
       setBankError(_ => "")
     }
     None
@@ -46,8 +46,8 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let complete =
     email.value != "" &&
     fullName.value != "" &&
-    email.isValid->Belt.Option.getWithDefault(false) &&
-    modalData->Belt.Option.isSome
+    email.isValid->Option.getOr(false) &&
+    modalData->Option.isSome
   let empty = email.value == "" || fullName.value != ""
 
   React.useEffect2(() => {
@@ -56,11 +56,11 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   }, (empty, complete))
 
   let submitCallback = React.useCallback3((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      if modalData->Belt.Option.isNone {
+      if modalData->Option.isNone {
         setBankError(_ => "Enter bank details and then confirm payment")
       }
       if complete {
@@ -96,7 +96,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     <EmailPaymentInput paymentType />
     <div className="flex flex-col">
       <AddBankAccount modalData setModalData />
-      <RenderIf condition={bankError->Js.String2.length > 0}>
+      <RenderIf condition={bankError->String.length > 0}>
         <div
           className="Error pt-1"
           style={ReactDOMStyle.make(

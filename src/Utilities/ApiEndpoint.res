@@ -9,7 +9,7 @@ let setApiEndPoint = str => {
 }
 
 let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false, ()) => {
-  let testMode = publishableKey->Js.String2.startsWith("pk_snd_")
+  let testMode = publishableKey->String.startsWith("pk_snd_")
   switch apiEndPoint.contents {
   | Some(str) => str
   | None =>
@@ -28,8 +28,8 @@ let addCustomPodHeader = (arr: array<(string, string)>, ~switchToCustomPod=?, ()
   | None => false
   }
   if customPod {
-    arr->Js.Array2.concat([("x-feature", "router-custom-dbd")])->Js.Dict.fromArray
+    arr->Array.concat([("x-feature", "router-custom-dbd")])->Dict.fromArray
   } else {
-    arr->Js.Dict.fromArray
+    arr->Dict.fromArray
   }
 }

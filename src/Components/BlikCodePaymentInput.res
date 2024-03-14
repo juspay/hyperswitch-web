@@ -6,15 +6,15 @@ let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (blikCode, setblikCode) = Recoil.useLoggedRecoilState(userBlikCode, "blikCode", loggerState)
 
-  let blikCodeRef = React.useRef(Js.Nullable.null)
+  let blikCodeRef = React.useRef(Nullable.null)
   let formatBSB = bsb => {
-    let formatted = bsb->Js.String2.replaceByRe(%re("/\D+/g"), "")
+    let formatted = bsb->String.replaceRegExp(%re("/\D+/g"), "")
     let firstPart = formatted->CardUtils.slice(0, 3)
     let secondPart = formatted->CardUtils.slice(3, 6)
 
-    if formatted->Js.String2.length <= 3 {
+    if formatted->String.length <= 3 {
       firstPart
-    } else if formatted->Js.String2.length > 3 && formatted->Js.String2.length <= 6 {
+    } else if formatted->String.length > 3 && formatted->String.length <= 6 {
       `${firstPart}-${secondPart}`
     } else {
       formatted
@@ -41,7 +41,7 @@ let make = () => {
   }, [blikCode.isValid])
 
   let submitCallback = React.useCallback1((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if blikCode.value == "" {
