@@ -113,7 +113,7 @@ let mandateBody = paymentType => {
 
 let paymentTypeBody = paymentType => {
   if paymentType != "" {
-    [("payment_type", paymentType->Js.Json.string)]
+    [("payment_type", paymentType->JSON.Encode.string)]
   } else {
     []
   }
