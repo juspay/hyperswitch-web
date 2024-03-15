@@ -76,7 +76,7 @@ let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
 
 @send external preventDefault: (event, unit) => unit = "preventDefault"
 
-type date = {now: (. unit) => string}
+type date = {now: unit => string}
 @new external date: date = "Date"
 @set external className: (Dom.element, string) => unit = "className"
 @set external id: (Dom.element, string) => unit = "id"
@@ -127,7 +127,7 @@ let isInteg = hostname === "dev.hyperswitch.io"
 let isProd = hostname === "checkout.hyperswitch.io"
 
 module Location = {
-  @val @scope(("window", "location")) external replace: (. string) => unit = "replace"
+  @val @scope(("window", "location")) external replace: string => unit = "replace"
 }
 
 module Element = {

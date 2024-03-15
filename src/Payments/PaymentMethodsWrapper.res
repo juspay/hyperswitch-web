@@ -46,7 +46,7 @@ let make = (
   let complete = areRequiredFieldsValid
 
   React.useEffect1(() => {
-    setFieldComplete(._ => complete)
+    setFieldComplete(_ => complete)
     None
   }, [complete])
 

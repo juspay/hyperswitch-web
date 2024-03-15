@@ -2,12 +2,12 @@ type t<'a> = RescriptCore.Promise.t<'a>
 type exn += JsError(RescriptCore.Exn.t)
 external unsafeToJsExn: exn => RescriptCore.Exn.t = "%identity"
 @new
-external make: ((@uncurry (. 'a) => unit, (. 'e) => unit) => unit) => t<'a> = "Promise"
+external make: ((@uncurry 'a => unit, 'e => unit) => unit) => t<'a> = "Promise"
 @val @scope("Promise")
 external resolve: 'a => t<'a> = "resolve"
-@send external then: (t<'a>, @uncurry ('a => t<'b>)) => t<'b> = "then"
+@send external then: (t<'a>, @uncurry 'a => t<'b>) => t<'b> = "then"
 @send
-external thenResolve: (t<'a>, @uncurry ('a => 'b)) => t<'b> = "then"
+external thenResolve: (t<'a>, @uncurry 'a => 'b) => t<'b> = "then"
 @send external finally: (t<'a>, unit => unit) => t<'a> = "finally"
 @scope("Promise") @val
 external reject: exn => t<_> = "reject"
@@ -24,7 +24,7 @@ external all5: ((t<'a>, t<'b>, t<'c>, t<'d>, t<'e>)) => t<('a, 'b, 'c, 'd, 'e)> 
 @scope("Promise") @val
 external all6: ((t<'a>, t<'b>, t<'c>, t<'d>, t<'e>, t<'f>)) => t<('a, 'b, 'c, 'd, 'e, 'f)> = "all"
 @send
-external _catch: (t<'a>, @uncurry (exn => t<'a>)) => t<'a> = "catch"
+external _catch: (t<'a>, @uncurry exn => t<'a>) => t<'a> = "catch"
 let catch: (t<'a>, exn => t<'a>) => t<'a>
 @scope("Promise") @val
 external race: array<t<'a>> => t<'a> = "race"

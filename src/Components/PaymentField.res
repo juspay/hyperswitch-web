@@ -28,7 +28,7 @@ let make = (
     setInputFocused(_ => true)
     switch setValue {
     | Some(fn) =>
-      fn(.prev => {
+      fn(prev => {
         ...prev,
         isValid: None,
         errorString: "",

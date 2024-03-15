@@ -176,7 +176,7 @@ let make = (
             (),
           )}
           onClick={_ => {
-            setShowFields(._ => true)
+            setShowFields(_ => true)
           }}>
           <Icon name="circle-plus" size=22 />
           {React.string(localeString.morePaymentMethods)}

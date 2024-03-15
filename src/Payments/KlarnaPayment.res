@@ -19,7 +19,7 @@ let make = (~paymentType, ~countryProps, ~list: PaymentMethodsRecord.list) => {
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {
-    setCountry(. val)
+    setCountry(val)
   }
 
   open Utils
@@ -35,7 +35,7 @@ let make = (~paymentType, ~countryProps, ~list: PaymentMethodsRecord.list) => {
     None
   }, (empty, complete))
   React.useEffect1(() => {
-    setComplete(._ => complete)
+    setComplete(_ => complete)
     None
   }, [complete])
 

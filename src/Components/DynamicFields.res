@@ -92,13 +92,13 @@ let make = (
   let countryNames = Utils.getCountryNames(Country.getCountry(paymentMethodType))
 
   let setCurrency = val => {
-    setCurrency(. val)
+    setCurrency(val)
   }
   let setSelectedBank = val => {
-    setSelectedBank(. val)
+    setSelectedBank(val)
   }
   let setCountry = val => {
-    setCountry(. val)
+    setCountry(val)
   }
 
   let (
@@ -192,13 +192,13 @@ let make = (
     let val = ReactEvent.Form.target(ev)["value"]
 
     if val !== "" {
-      setPostalCode(._ => {
+      setPostalCode(_ => {
         isValid: Some(true),
         value: val,
         errorString: "",
       })
     } else {
-      setPostalCode(._ => {
+      setPostalCode(_ => {
         isValid: Some(false),
         value: val,
         errorString: "",
@@ -452,7 +452,7 @@ let make = (
                           value=city
                           onChange={ev => {
                             let value = ReactEvent.Form.target(ev)["value"]
-                            setCity(.prev => {
+                            setCity(prev => {
                               isValid: value !== "" ? Some(true) : Some(false),
                               value,
                               errorString: value !== "" ? "" : prev.errorString,
@@ -460,7 +460,7 @@ let make = (
                           }}
                           onBlur={ev => {
                             let value = ReactEvent.Focus.target(ev)["value"]
-                            setCity(.prev => {
+                            setCity(prev => {
                               ...prev,
                               isValid: Some(value !== ""),
                             })
@@ -502,7 +502,7 @@ let make = (
                           value=postalCode
                           onBlur={ev => {
                             let value = ReactEvent.Focus.target(ev)["value"]
-                            setPostalCode(.prev => {
+                            setPostalCode(prev => {
                               ...prev,
                               isValid: Some(value !== ""),
                             })
@@ -522,7 +522,7 @@ let make = (
                         value=line1
                         onChange={ev => {
                           let value = ReactEvent.Form.target(ev)["value"]
-                          setLine1(.prev => {
+                          setLine1(prev => {
                             isValid: value !== "" ? Some(true) : Some(false),
                             value,
                             errorString: value !== "" ? "" : prev.errorString,
@@ -530,7 +530,7 @@ let make = (
                         }}
                         onBlur={ev => {
                           let value = ReactEvent.Focus.target(ev)["value"]
-                          setLine1(.prev => {
+                          setLine1(prev => {
                             ...prev,
                             isValid: Some(value !== ""),
                           })
@@ -548,7 +548,7 @@ let make = (
                         value=line2
                         onChange={ev => {
                           let value = ReactEvent.Form.target(ev)["value"]
-                          setLine2(.prev => {
+                          setLine2(prev => {
                             isValid: value !== "" ? Some(true) : Some(false),
                             value,
                             errorString: value !== "" ? "" : prev.errorString,
@@ -556,7 +556,7 @@ let make = (
                         }}
                         onBlur={ev => {
                           let value = ReactEvent.Focus.target(ev)["value"]
-                          setLine2(.prev => {
+                          setLine2(prev => {
                             ...prev,
                             isValid: Some(value !== ""),
                           })
@@ -574,7 +574,7 @@ let make = (
                         value=city
                         onChange={ev => {
                           let value = ReactEvent.Form.target(ev)["value"]
-                          setCity(.prev => {
+                          setCity(prev => {
                             isValid: value !== "" ? Some(true) : Some(false),
                             value,
                             errorString: value !== "" ? "" : prev.errorString,
@@ -582,7 +582,7 @@ let make = (
                         }}
                         onBlur={ev => {
                           let value = ReactEvent.Focus.target(ev)["value"]
-                          setCity(.prev => {
+                          setCity(prev => {
                             ...prev,
                             isValid: Some(value !== ""),
                           })
@@ -615,7 +615,7 @@ let make = (
                         value=postalCode
                         onBlur={ev => {
                           let value = ReactEvent.Focus.target(ev)["value"]
-                          setPostalCode(.prev => {
+                          setPostalCode(prev => {
                             ...prev,
                             isValid: Some(value !== ""),
                           })
