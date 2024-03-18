@@ -8,12 +8,12 @@ let make = () => {
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let (downloadCounter, setDownloadCounter) = React.useState(_ => 0)
   let (paymentMethod, setPaymentMethod) = React.useState(_ => "")
-  let (paymentIntent, setPaymentIntent) = React.useState(_ => Js.Json.null)
+  let (paymentIntent, setPaymentIntent) = React.useState(_ => JSON.Encode.null)
   let (loader, setLoader) = React.useState(_ => true)
-  let linkRef = React.useRef(Js.Nullable.null)
+  let linkRef = React.useRef(Nullable.null)
 
   React.useEffect1(() => {
-    switch linkRef.current->Js.Nullable.toOption {
+    switch linkRef.current->Nullable.toOption {
     | Some(link) => link->Window.click
     | None => ()
     }
@@ -21,14 +21,13 @@ let make = () => {
   }, [loader])
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->Js.Json.boolean)])
+    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("fullScreenIframeMounted")->Belt.Option.isSome {
+      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict =
-          metadata->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         setReturnUrl(_ => metaDataDict->getString("returnUrl", ""))
         setDownloadUrl(_ => metaDataDict->getString("voucherUrl", ""))
         setReference(_ => metaDataDict->getString("reference", ""))
@@ -62,7 +61,7 @@ let make = () => {
                 setDownloadCounter(c => c + 1)
                 LoggerUtils.handleLogging(
                   ~optLogger=Some(logger),
-                  ~value=downloadCounter->Js.Int.toString,
+                  ~value=downloadCounter->Int.toString,
                   ~eventName=DISPLAY_VOUCHER,
                   ~paymentMethod,
                   (),

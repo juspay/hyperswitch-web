@@ -39,9 +39,17 @@ let nakedValues = {
   colorIconCardError: "#fd1717",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
+  buttonBackgroundColor: "",
+  buttonHeight: "48px",
+  buttonWidth: "100%",
+  buttonBorderRadius: "6px",
+  buttonBorderColor: "",
+  buttonTextColor: "",
+  buttonTextFontSize: "16px",
+  buttonTextFontWeight: "500",
 }
 
-let nakedValuesRules = _ => Js.Dict.empty()->Js.Json.object_
+let nakedValuesRules = _ => Dict.make()->JSON.Encode.object
 
 let default = nakedValues
 let defaultRules = nakedValuesRules

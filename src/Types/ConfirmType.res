@@ -15,15 +15,15 @@ let defaultConfirm = {
 }
 let getConfirmParams = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       return_url: getString(json, "return_url", ""),
       publishableKey: getString(json, "publishableKey", ""),
     }
   })
-  ->Belt.Option.getWithDefault(defaultConfirm)
+  ->Option.getOr(defaultConfirm)
 }
 
 let itemToObjMapper = dict => {

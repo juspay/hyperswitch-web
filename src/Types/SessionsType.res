@@ -7,18 +7,18 @@ type token = {
   walletName: wallet,
   token: string,
   sessionId: string,
-  allowed_payment_methods: array<Js.Json.t>,
-  transaction_info: Js.Json.t,
-  merchant_info: Js.Json.t,
+  allowed_payment_methods: array<JSON.t>,
+  transaction_info: JSON.t,
+  merchant_info: JSON.t,
 }
 
 type tokenType =
-  | ApplePayToken(array<Js.Json.t>)
-  | GooglePayThirdPartyToken(array<Js.Json.t>)
+  | ApplePayToken(array<JSON.t>)
+  | GooglePayThirdPartyToken(array<JSON.t>)
   | OtherToken(array<token>)
 type optionalTokenType =
-  | ApplePayTokenOptional(option<Js.Json.t>)
-  | GooglePayThirdPartyTokenOptional(option<Js.Json.t>)
+  | ApplePayTokenOptional(option<JSON.t>)
+  | GooglePayThirdPartyTokenOptional(option<JSON.t>)
   | OtherTokenOptional(option<token>)
 
 type sessions = {
@@ -31,8 +31,8 @@ let defaultToken = {
   token: "",
   sessionId: "",
   allowed_payment_methods: [],
-  transaction_info: Js.Dict.empty()->Js.Json.object_,
-  merchant_info: Js.Dict.empty()->Js.Json.object_,
+  transaction_info: Dict.make()->JSON.Encode.object,
+  merchant_info: Dict.make()->JSON.Encode.object,
 }
 let getWallet = str => {
   switch str {
@@ -47,10 +47,10 @@ open Utils
 
 let getSessionsToken = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.map(arr => {
-    arr->Js.Array2.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.array)
+  ->Option.map(arr => {
+    arr->Array.map(json => {
       let dict = json->getDictFromJson
       {
         walletName: getString(dict, "wallet_name", "")->getWallet,
@@ -62,10 +62,10 @@ let getSessionsToken = (dict, str) => {
       }
     })
   })
-  ->Belt.Option.getWithDefault([defaultToken])
+  ->Option.getOr([defaultToken])
 }
 let getSessionsTokenJson = (dict, str) => {
-  dict->Js.Dict.get(str)->Belt.Option.flatMap(Js.Json.decodeArray)->Belt.Option.getWithDefault([])
+  dict->Dict.get(str)->Option.flatMap(JSON.Decode.array)->Option.getOr([])
 }
 
 let itemToObjMapper = (dict, returnType) => {
@@ -91,14 +91,14 @@ let itemToObjMapper = (dict, returnType) => {
 }
 
 let getWalletFromTokenType = (arr, val: wallet) => {
-  let x = arr->Js.Array2.find(item =>
+  let x = arr->Array.find(item =>
     item
-    ->Js.Json.decodeObject
-    ->Belt.Option.flatMap(x => {
-      x->Js.Dict.get("wallet_name")
+    ->JSON.Decode.object
+    ->Option.flatMap(x => {
+      x->Dict.get("wallet_name")
     })
-    ->Belt.Option.flatMap(Js.Json.decodeString)
-    ->Belt.Option.getWithDefault("")
+    ->Option.flatMap(JSON.Decode.string)
+    ->Option.getOr("")
     ->getWallet === val
   )
   x
@@ -111,6 +111,6 @@ let getPaymentSessionObj = (tokenType: tokenType, val: wallet) => {
   | GooglePayThirdPartyToken(arr) =>
     GooglePayThirdPartyTokenOptional(getWalletFromTokenType(arr, val))
 
-  | OtherToken(arr) => OtherTokenOptional(arr->Js.Array2.find(item => item.walletName == val))
+  | OtherToken(arr) => OtherTokenOptional(arr->Array.find(item => item.walletName == val))
   }
 }

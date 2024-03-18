@@ -19,29 +19,28 @@ let make = (~paymentType, ~countryProps, ~list: PaymentMethodsRecord.list) => {
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {
-    setCountry(. val)
+    setCountry(val)
   }
 
   open Utils
   let clientCountryCode =
     Country.country
-    ->Js.Array2.find(item => item.countryName == country)
-    ->Belt.Option.getWithDefault(Country.defaultTimeZone)
+    ->Array.find(item => item.countryName == country)
+    ->Option.getOr(Country.defaultTimeZone)
 
-  let complete =
-    email.value != "" && fullName.value != "" && email.isValid->Belt.Option.getWithDefault(false)
+  let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
   React.useEffect2(() => {
     handlePostMessageEvents(~complete, ~empty, ~paymentType="klarna", ~loggerState)
     None
   }, (empty, complete))
   React.useEffect1(() => {
-    setComplete(._ => complete)
+    setComplete(_ => complete)
     None
   }, [complete])
 
   let submitCallback = React.useCallback3((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     let (connectors, _) = list->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
     let body = PaymentBody.klarnaRedirectionBody(
@@ -58,7 +57,7 @@ let make = (~paymentType, ~countryProps, ~list: PaymentMethodsRecord.list) => {
       }
     }
   }, (email, fullName, country))
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <div
     className="flex flex-col animate-slowShow"

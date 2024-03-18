@@ -38,6 +38,14 @@ let charcoal = {
   colorIconCardError: "#fd1717",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
+  buttonBackgroundColor: "#000000",
+  buttonHeight: "48px",
+  buttonWidth: "100%",
+  buttonBorderRadius: "6px",
+  buttonBorderColor: "#000000",
+  buttonTextColor: "#ffffff",
+  buttonTextFontSize: "16px",
+  buttonTextFontWeight: "500",
 }
 
 let charcoalRules = theme =>

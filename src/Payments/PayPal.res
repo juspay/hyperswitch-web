@@ -29,6 +29,8 @@ let make = (~list: PaymentMethodsRecord.list) => {
   }
   let (buttonColor, textColor) =
     options.wallets.style.theme == Light ? ("#0070ba", "#ffffff") : ("#ffc439", "#000000")
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   let onPaypalClick = _ev => {
     loggerState.setLogInfo(
@@ -41,12 +43,19 @@ let make = (~list: PaymentMethodsRecord.list) => {
     open Promise
     OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
-      let result = result->Js.Json.decodeBoolean->Belt.Option.getWithDefault(false)
+      let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         let (connectors, _) = list->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
         let body = PaymentBody.paypalRedirectionBody(~connectors)
+
+        let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
+          ~isGuestCustomer,
+          ~paymentType=list.payment_type,
+          ~body,
+        )
+
         intent(
-          ~bodyArr=body,
+          ~bodyArr=modifiedPaymentBody,
           ~confirmParam={
             return_url: options.wallets.walletReturnUrl,
             publishableKey,
@@ -63,7 +72,7 @@ let make = (~list: PaymentMethodsRecord.list) => {
   }
 
   React.useEffect0(() => {
-    areOneClickWalletsRendered(.prev => {
+    areOneClickWalletsRendered(prev => {
       ...prev,
       isPaypal: true,
     })

@@ -26,7 +26,7 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
       ~cursor="pointer",
       (),
     )}
-    onClick={_ => setSelectedOption(._ => paymentOption.paymentMethodName)}>
+    onClick={_ => setSelectedOption(_ => paymentOption.paymentMethodName)}>
     <div className={`TabIcon ${tabIconClass}`}>
       {switch icon {
       | Some(ele) => ele

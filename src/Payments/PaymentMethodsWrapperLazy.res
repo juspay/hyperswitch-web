@@ -6,4 +6,4 @@ type props = {
   paymentMethodName: string,
 }
 
-let make: props => React.element = reactLazy(.() => import_("./PaymentMethodsWrapper.bs.js"))
+let make: props => React.element = reactLazy(() => import_("./PaymentMethodsWrapper.bs.js"))

@@ -99,7 +99,7 @@ let details = [
   },
   {
     type_: "boleto",
-    icon: Some(icon("boleto", ~size=19)),
+    icon: Some(icon("boleto", ~size=21)),
     displayName: "Boleto",
   },
 ]

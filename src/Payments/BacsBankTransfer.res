@@ -15,8 +15,7 @@ let default = (props: props) => {
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
 
-  let complete =
-    email.value != "" && fullName.value != "" && email.isValid->Belt.Option.getWithDefault(false)
+  let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
 
   React.useEffect2(() => {
@@ -25,12 +24,12 @@ let default = (props: props) => {
   }, (empty, complete))
 
   React.useEffect1(() => {
-    setComplete(._ => complete)
+    setComplete(_ => complete)
     None
   }, [complete])
 
   let submitCallback = React.useCallback1((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if complete {
@@ -51,7 +50,7 @@ let default = (props: props) => {
       }
     }
   }, [email, fullName])
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <div
     className="flex flex-col animate-slowShow"

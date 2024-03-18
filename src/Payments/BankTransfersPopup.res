@@ -1,17 +1,17 @@
 open Utils
 let getKeyValue = (json, str) => {
   json
-  ->Js.Dict.get(str)
-  ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-  ->Js.Json.decodeString
-  ->Belt.Option.getWithDefault("")
+  ->Dict.get(str)
+  ->Option.getOr(Dict.make()->JSON.Encode.object)
+  ->JSON.Decode.string
+  ->Option.getOr("")
 }
 
 @react.component
 let make = (~transferType) => {
   let (keys, setKeys) = React.useState(_ => [])
-  let (json, setJson) = React.useState(_ => Js.Dict.empty())
-  let (postData, setPostData) = React.useState(_ => Js.Dict.empty()->Js.Json.object_)
+  let (json, setJson) = React.useState(_ => Dict.make())
+  let (postData, setPostData) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (return_url, setReturnUrl) = React.useState(_ => "")
   let (responseType, title) = switch transferType {
   | "achBankTransfer" => ("ach_credit_transfer", "ACH")
@@ -24,35 +24,44 @@ let make = (~transferType) => {
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (buttonElement, text) = React.useMemo1(() => {
     !isCopied
-      ? (<> <Icon name="copyIcon" size=22 /> {React.string("Copy")} </>, "text-[#006DF9]")
+      ? (
+          <>
+            <Icon name="copyIcon" size=22 />
+            {React.string("Copy")}
+          </>,
+          "text-[#006DF9]",
+        )
       : (
-          <> <Icon name="ticMark" size=22 /> {React.string("Copied")} </>,
+          <>
+            <Icon name="ticMark" size=22 />
+            {React.string("Copied")}
+          </>,
           "text-[#c0c0c0] font-medium ",
         )
   }, [isCopied])
   let handleClick = keys => {
     let text =
       keys
-      ->Js.Array2.map(item => `${item->snakeToTitleCase} : ${getKeyValue(json, item)}`)
-      ->Js.Array2.joinWith(`\n`)
-    handlePostMessage([("copy", true->Js.Json.boolean), ("copyDetails", text->Js.Json.string)])
+      ->Array.map(item => `${item->snakeToTitleCase} : ${getKeyValue(json, item)}`)
+      ->Array.joinWith(`\n`)
+    handlePostMessage([("copy", true->JSON.Encode.bool), ("copyDetails", text->JSON.Encode.string)])
     setIsCopied(_ => true)
   }
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->Js.Json.boolean)])
+    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("fullScreenIframeMounted")->Belt.Option.isSome {
+      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let dictMetadata =
           dict
           ->getJsonObjectFromDict("metadata")
           ->getDictFromJson
-          ->Js.Dict.get(responseType)
-          ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+          ->Dict.get(responseType)
+          ->Option.getOr(Dict.make()->JSON.Encode.object)
           ->getDictFromJson
-        setKeys(_ => dictMetadata->Js.Dict.keys)
+        setKeys(_ => dictMetadata->Dict.keysToArray)
         setJson(_ => dictMetadata)
         setPostData(_ => metadata->getDictFromJson->getJsonObjectFromDict("data"))
         setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))
@@ -64,7 +73,9 @@ let make = (~transferType) => {
   <Modal showClose=false openModal setOpenModal>
     <div className="flex flex-col h-full justify-between items-center">
       <div className="flex flex-col w-full mt-4 max-w-md justify-between items-center">
-        <div className="PopupIcon m-1 p-2"> <Icon name="ach-transfer" size=45 /> </div>
+        <div className="PopupIcon m-1 p-2">
+          <Icon name="ach-transfer" size=45 />
+        </div>
         <div className="Popuptitle flex w-[90%] justify-center">
           <span className="font-bold text-lg"> {React.string(`${title} bank transfer`)} </span>
         </div>
@@ -92,7 +103,7 @@ let make = (~transferType) => {
           </div>
           <div className="Details pt-5">
             {keys
-            ->Js.Array2.map(item =>
+            ->Array.map(item =>
               <div className="flex px-5 pb-5 justify-between text-sm">
                 <div>
                   <span className="text-[#151A1F] font-medium opacity-60">

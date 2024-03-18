@@ -23,10 +23,9 @@ let make = (
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let clientCountryCode =
     Country.country
-    ->Js.Array2.find(item => item.countryName == country)
-    ->Belt.Option.getWithDefault(Country.defaultTimeZone)
-  let complete =
-    email.value != "" && fullName.value != "" && email.isValid->Belt.Option.getWithDefault(false)
+    ->Array.find(item => item.countryName == country)
+    ->Option.getOr(Country.defaultTimeZone)
+  let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
 
   React.useEffect2(() => {
@@ -34,12 +33,12 @@ let make = (
     None
   }, (empty, complete))
   React.useEffect1(() => {
-    setComplete(._ => complete)
+    setComplete(_ => complete)
     None
   }, [complete])
 
   let submitCallback = React.useCallback3((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if complete {
@@ -61,7 +60,7 @@ let make = (
       }
     }
   }, (email, fullName, country))
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <div
     className="flex flex-col animate-slowShow"
