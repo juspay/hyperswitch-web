@@ -157,8 +157,8 @@ let rec intentCall = (
       res
       ->Fetch.Response.json
       ->then(data => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
+        Promise.make(
+          (resolve, _) => {
             if isConfirm {
               let paymentMethod = switch paymentType {
               | Card => "CARD"
@@ -210,8 +210,8 @@ let rec intentCall = (
         )->then(resolve)
       })
       ->catch(err => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
+        Promise.make(
+          (resolve, _) => {
             let exceptionMessage = err->Utils.formatException
             logApi(
               ~optLogger,
@@ -279,8 +279,8 @@ let rec intentCall = (
       res
       ->Fetch.Response.json
       ->then(data => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
+        Promise.make(
+          (resolve, _) => {
             logApi(~optLogger, ~url=uri, ~statusCode, ~type_="response", ~eventName, ())
             let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
             let paymentMethod = switch paymentType {
@@ -488,7 +488,7 @@ let rec intentCall = (
     }
   })
   ->catch(err => {
-    Js.Promise.make((~resolve, ~reject as _) => {
+    Promise.make((resolve, _) => {
       let url = urlSearch(confirmParam.return_url)
       url.searchParams.set("payment_intent_client_secret", clientSecret)
       url.searchParams.set("status", "failed")
