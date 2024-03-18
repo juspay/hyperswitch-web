@@ -28,12 +28,12 @@ let make = (
   let disbaledBG = React.useMemo1(() => {
     themeObj.colorBackground
   }, [themeObj])
-  React.useEffect0(() => {
+  React.useEffect(() => {
     if value === "" {
       setValue(_ => options->Array.get(0)->Option.getOr(""))
     }
     None
-  })
+  }, [])
 
   let focusClass = if inputFocused || value->String.length > 0 {
     `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`

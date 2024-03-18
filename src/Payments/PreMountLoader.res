@@ -54,7 +54,7 @@ let make = (~sessionId as _, ~publishableKey as _, ~clientSecret as _, ~endpoint
   // //   ->ignore
   // // }
 
-  // // React.useEffect0(() => {
+  // // React.useEffect(() => {
   // //   let handle = (ev: Window.event) => {
   // //     let json = try {
   // //       ev.data->JSON.parseExn

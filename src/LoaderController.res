@@ -121,7 +121,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     })
   }
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     handlePostMessage([("iframeMounted", true->JSON.Encode.bool)])
     handlePostMessage([("applePayMounted", true->JSON.Encode.bool)])
     logger.setLogInitiated()
@@ -150,7 +150,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         )
       },
     )
-  })
+  }, [])
   React.useEffect1(() => {
     switch paymentlist {
     | SemiLoaded => ()

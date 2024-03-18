@@ -1,8 +1,8 @@
 @react.component
 let make = () => {
-  React.useEffect0(() => {
+  React.useEffect(() => {
     Utils.handlePostMessage([("driverMounted", true->JSON.Encode.bool)])
     None
-  })
+  }, [])
   <div />
 }

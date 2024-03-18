@@ -103,7 +103,7 @@ module ErrorCard = {
       }
     }
 
-    React.useEffect0(() => {
+    React.useEffect(() => {
       let loggingLevel = GlobalVars.loggingLevelStr
       let enableLogging = GlobalVars.enableLogging
       if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Array.includes(loggingLevel) {
@@ -132,7 +132,7 @@ module ErrorCard = {
         beaconApiCall([errorLog])
       }
       None
-    })
+    }, [])
 
     let (divH, setDivH) = React.useState(_ => 0.0)
     let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)

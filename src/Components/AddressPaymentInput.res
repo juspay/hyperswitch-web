@@ -89,7 +89,7 @@ let make = (~paymentType, ~className="") => {
     }
   }
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     open Promise
     // Dynamically import/download Postal codes and states JSON
     PostalCodeType.importPostalCode("./../PostalCodes.bs.js")
@@ -114,7 +114,7 @@ let make = (~paymentType, ~className="") => {
     ->ignore
 
     None
-  })
+  }, [])
 
   let regex = CardUtils.postalRegex(
     postalCodes,

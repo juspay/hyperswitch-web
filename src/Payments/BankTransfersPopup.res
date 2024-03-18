@@ -47,7 +47,7 @@ let make = (~transferType) => {
     handlePostMessage([("copy", true->JSON.Encode.bool), ("copyDetails", text->JSON.Encode.string)])
     setIsCopied(_ => true)
   }
-  React.useEffect0(() => {
+  React.useEffect(() => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
@@ -69,7 +69,7 @@ let make = (~transferType) => {
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  })
+  }, [])
   <Modal showClose=false openModal setOpenModal>
     <div className="flex flex-col h-full justify-between items-center">
       <div className="flex flex-col w-full mt-4 max-w-md justify-between items-center">

@@ -18,7 +18,7 @@ let make = () => {
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
@@ -67,7 +67,7 @@ let make = () => {
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  })
+  }, [])
   React.useEffect1(() => {
     if expiryTime < 1000.0 {
       Modal.close(setOpenModal)
