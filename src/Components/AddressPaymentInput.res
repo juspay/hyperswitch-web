@@ -152,12 +152,12 @@ let make = (~paymentType, ~className="") => {
     }
   }
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     checkPostalValidity(postalCode, setPostalCode, regex)
     None
   }, (regex, country.value))
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setState(prev => {
       ...prev,
       value: "",

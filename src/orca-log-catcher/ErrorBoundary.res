@@ -153,7 +153,7 @@ module ErrorCard = {
     | None => ()
     }
 
-    React.useEffect2(() => {
+    React.useEffect(() => {
       switch level {
       | Top =>
         Utils.handlePostMessage([

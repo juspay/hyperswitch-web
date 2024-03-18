@@ -13,7 +13,7 @@ let make = (
   ~cvcProps=None,
   ~isBancontact=false,
 ) => {
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
   }, [paymentMethodType])

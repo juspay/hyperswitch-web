@@ -42,7 +42,7 @@ let make = (
     | None => ()
     }
   }
-  React.useEffect1(() => {
+  React.useEffect(() => {
     isActive ? focusCVC() : ()
     None
   }, [isActive])

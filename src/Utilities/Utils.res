@@ -229,7 +229,7 @@ let handleMessage = (fun, _errorMessage) => {
   Some(() => Window.removeEventListener("message", handle))
 }
 let useSubmitPaymentData = callback => {
-  React.useEffect1(() => {handleMessage(callback, "")}, [callback])
+  React.useEffect(() => {handleMessage(callback, "")}, [callback])
 }
 
 let useWindowSize = () => {

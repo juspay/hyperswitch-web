@@ -12,7 +12,7 @@ let make = () => {
   let (loader, setLoader) = React.useState(_ => true)
   let linkRef = React.useRef(Nullable.null)
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     switch linkRef.current->Nullable.toOption {
     | Some(link) => link->Window.click
     | None => ()

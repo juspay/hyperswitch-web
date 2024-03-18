@@ -15,7 +15,7 @@ let useOutsideClick = (
 ) => {
   let useEvent0 = callback => {
     let callbackRef = React.useRef(callback)
-    React.useEffect1(() => {
+    React.useEffect(() => {
       callbackRef.current = callback
 
       None
@@ -26,7 +26,7 @@ let useOutsideClick = (
     })
   }
   let eventCallback = useEvent0(callback)
-  React.useEffect1(() => {
+  React.useEffect(() => {
     if isActive {
       let handleClick = (e: ReactEvent.Mouse.t) => {
         let targ = e->ReactEvent.Mouse.target
