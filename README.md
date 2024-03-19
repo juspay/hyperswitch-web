@@ -135,7 +135,7 @@ To integrate Hyperswitch into your project, follow these steps:
 
 The above method is for using our Sandbox Environment.
 
-If you are running locally our backend, you can use our [Postman Collection](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md#try-out-our-apis) for generating the API Key and Publishable Key.
+If you are running our backend locally, you can use our [Postman Collection](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md#try-out-our-apis) for generating the API Key and Publishable Key.
 
 - `HYPERSWITCH_PUBLISHABLE_KEY` - Publishable key of your Hyperswitch Account
 - `HYPERSWITCH_SECRET_KEY` - API key of your Hyperswitch Account
