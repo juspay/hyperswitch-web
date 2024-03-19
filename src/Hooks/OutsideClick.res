@@ -21,9 +21,9 @@ let useOutsideClick = (
       None
     }, [callback])
 
-    React.useCallback0(() => {
+    React.useCallback(() => {
       callbackRef.current()
-    })
+    }, [])
   }
   let eventCallback = useEvent0(callback)
   React.useEffect1(() => {
