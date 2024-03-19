@@ -149,13 +149,13 @@ let make = (
     ~isCvcValidValue,
   )
 
-  React.useEffect(() => {
+  React.useEffect0(() => {
     let bank = bankNames->Array.get(0)->Option.getOr("")
     setSelectedBank(_ => bank)
     None
-  }, [])
+  })
 
-  React.useEffect(() => {
+  React.useEffect0(() => {
     open Promise
     // Dynamically import/download Postal codes and states JSON
     PostalCodeType.importPostalCode("./../PostalCodes.bs.js")
@@ -180,7 +180,7 @@ let make = (
     ->ignore
 
     None
-  }, [])
+  })
 
   let _regex = CardUtils.postalRegex(
     postalCodes,

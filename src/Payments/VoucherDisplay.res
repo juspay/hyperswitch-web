@@ -20,7 +20,7 @@ let make = () => {
     None
   }, [loader])
 
-  React.useEffect(() => {
+  React.useEffect0(() => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
@@ -38,7 +38,7 @@ let make = () => {
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  }, [])
+  })
 
   let closeModal = () => {
     postSubmitResponse(~jsonData=paymentIntent, ~url=returnUrl)

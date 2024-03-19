@@ -74,7 +74,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, (cvcNumber, cardNumber))
 
-  React.useEffect(() => {
+  React.useEffect0(() => {
     open Promise
     if paymentMode->getPaymentMode == Card {
       PostalCodeType.importPostalCode("./PostalCodes.bs.js")
@@ -89,7 +89,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       ->ignore
     }
     None
-  }, [])
+  })
 
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
@@ -295,7 +295,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let paymentType = paymentMode->getPaymentMode
 
-  React.useEffect(() => {
+  React.useEffect0(() => {
     let handleFun = (ev: Window.event) => {
       let json = try {
         ev.data->JSON.parseExn
@@ -324,7 +324,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       }
     }
     Utils.handleMessage(handleFun, "Error in parsing sent Data")
-  }, [])
+  })
 
   React.useEffect(() => {
     let handleDoSubmit = (ev: Window.event) => {

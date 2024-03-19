@@ -115,10 +115,10 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
     }
   }
 
-  React.useEffect(() => {
+  React.useEffect0(() => {
     layoutClass.defaultCollapsed ? setSelectedOption(_ => "") : ()
     None
-  }, [])
+  })
   <div className="w-full">
     <div
       className="AccordionContainer flex flex-col overflow-auto no-scrollbar"

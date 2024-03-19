@@ -134,7 +134,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
     })
     ->ignore
   }
-  React.useEffect(() => {
+  React.useEffect0(() => {
     if true {
       try {
         switch (checkoutScript, clientScript) {
@@ -146,7 +146,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
       }
     }
     None
-  }, [])
+  })
 
   <div id="paypal-button" className="w-full flex flex-row justify-center rounded-md h-auto" />
 }

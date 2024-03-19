@@ -71,13 +71,13 @@ let make = (~list: PaymentMethodsRecord.list) => {
     ->ignore
   }
 
-  React.useEffect(() => {
+  React.useEffect0(() => {
     areOneClickWalletsRendered(prev => {
       ...prev,
       isPaypal: true,
     })
     None
-  }, [])
+  })
 
   <button
     style={ReactDOMStyle.make(

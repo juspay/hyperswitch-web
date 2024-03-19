@@ -210,7 +210,7 @@ let make = (
     None
   }, (status, list, sessionObj, thirdPartySessionObj, isGPayReady))
 
-  React.useEffect(() => {
+  React.useEffect0(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
       let json = try {
         ev.data->JSON.parseExn
@@ -232,7 +232,7 @@ let make = (
         Window.removeEventListener("message", handleGooglePayMessages)
       },
     )
-  }, [])
+  })
 
   let isRenderGooglePayButton =
     (isGPayReady ||
