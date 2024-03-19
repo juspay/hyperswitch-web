@@ -121,7 +121,7 @@ This step will prompt you to enter 2 details -
 
 For ease of development and deployment there are configs in /Hyperswitch-react-demo-app/.env -
 
-### How to Find Hyperswitch Publishable Key and API Key
+#### How to Find Hyperswitch Publishable Key and API Key
 
 To integrate Hyperswitch into your project, follow these steps:
 
