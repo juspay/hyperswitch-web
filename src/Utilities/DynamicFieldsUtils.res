@@ -126,7 +126,7 @@ let useRequiredFieldsEmptyAndValid = (
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
-  React.useEffect7(() => {
+  React.useEffect(() => {
     let areRequiredFieldsValid = fieldsArr->Array.reduce(true, (acc, paymentMethodFields) => {
       acc &&
       switch paymentMethodFields {
@@ -276,7 +276,7 @@ let useSetInitialRequiredFields = (
     logger,
   )
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
       requiredFields
       ->Array.filter(requiredFields => requiredFields.field_type === item.field_type)
@@ -478,7 +478,7 @@ let useRequiredFieldsBody = (
     }
   }
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     let requiredFieldsBody =
       requiredFields
       ->Array.filter(item => item.field_type !== None)

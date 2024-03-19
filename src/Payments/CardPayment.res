@@ -78,12 +78,12 @@ let make = (
 
   let complete = isAllValid(isCardValid, isCVCValid, isExpiryValid, true, "payment")
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setComplete(_ => complete)
     None
   }, [complete])
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     handlePostMessageEvents(~complete, ~empty, ~paymentType="card", ~loggerState)
     None
   }, (empty, complete))

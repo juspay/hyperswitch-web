@@ -29,7 +29,7 @@ let make = () => {
     })
   }
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setblikCode(prev => {
       ...prev,
       errorString: switch prev.isValid {

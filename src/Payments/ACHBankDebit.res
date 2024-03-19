@@ -36,7 +36,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     (),
   )
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     if modalData->Option.isSome {
       setBankError(_ => "")
     }
@@ -50,7 +50,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     modalData->Option.isSome
   let empty = email.value == "" || fullName.value != ""
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     handlePostMessageEvents(~complete, ~empty, ~paymentType="ach_bank_debit", ~loggerState)
     None
   }, (empty, complete))

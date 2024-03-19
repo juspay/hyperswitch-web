@@ -66,7 +66,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
   }
   useSubmitPaymentData(submitCallback)
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     if status == "ready" {
       let klarnaWrapper = GooglePayType.getElementById(Utils.document, "klarna-payments")
       klarnaWrapper.innerHTML = ""
