@@ -26,7 +26,7 @@ let make = (
   let isWallet = walletOptions->Array.includes("apple_pay")
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
-  let applePayPaymentMethodType = React.useMemo1(() => {
+  let applePayPaymentMethodType = React.useMemo(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~list,
       ~paymentMethod="wallet",
@@ -37,14 +37,14 @@ let make = (
     }
   }, [list])
 
-  let paymentExperience = React.useMemo1(() => {
+  let paymentExperience = React.useMemo(() => {
     switch applePayPaymentMethodType.payment_experience[0] {
     | Some(paymentExperience) => paymentExperience.payment_experience_type
     | None => PaymentMethodsRecord.RedirectToURL
     }
   }, [applePayPaymentMethodType])
 
-  let isInvokeSDKFlow = React.useMemo1(() => {
+  let isInvokeSDKFlow = React.useMemo(() => {
     paymentExperience == PaymentMethodsRecord.InvokeSDK && isApplePaySDKFlow
   }, [sessionObj])
 

@@ -701,7 +701,7 @@ let useSubmitCallback = () => {
 }
 
 let usePaymentMethodTypeFromList = (~list, ~paymentMethod, ~paymentMethodType) => {
-  React.useMemo3(() => {
+  React.useMemo(() => {
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~list,
       ~paymentMethod,

@@ -33,7 +33,7 @@ let make = (
   }, [loader])
 
   let loaderVisibility = loader ? "visible" : "hidden"
-  let contentVisibility = React.useMemo1(() => {
+  let contentVisibility = React.useMemo(() => {
     !openModal ? "hidden" : "visible"
   }, [openModal])
 

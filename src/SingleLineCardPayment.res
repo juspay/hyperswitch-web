@@ -66,7 +66,7 @@ let make = (
   let isExpiryValidValue = getBoolOptionVal(isExpiryValid)
   let isCVCValidValue = getBoolOptionVal(isCVCValid)
   let isZipValidValue = getBoolOptionVal(isZipValid)
-  let (showPincode, pincodeClass) = React.useMemo1(
+  let (showPincode, pincodeClass) = React.useMemo(
     () => displayPincode ? ("block", "animate-slideLeft") : ("none", "animate-slideRight "),
     [displayPincode],
   )
@@ -74,7 +74,7 @@ let make = (
   let checkValueIsValid = item => item == "valid"
   let checkValueIsInvalid = item => item == "invalid"
 
-  let (cardEmpty, cardComplete, cardInvalid, cardFocused) = React.useMemo4(() => {
+  let (cardEmpty, cardComplete, cardInvalid, cardFocused) = React.useMemo(() => {
     let isCardDetailsEmpty = Array.every(
       [cardNumber, cardExpiry, cvcNumber, zipCode],
       checkLengthIsZero,
