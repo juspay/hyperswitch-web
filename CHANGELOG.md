@@ -1,3 +1,10 @@
+## [0.33.8](https://github.com/juspay/hyperswitch-web/compare/v0.33.7...v0.33.8) (2024-03-18)
+
+
+### Bug Fixes
+
+* **applepay:** added logger instance for ApplePay intent calls ([#218](https://github.com/juspay/hyperswitch-web/issues/218)) ([1512f4f](https://github.com/juspay/hyperswitch-web/commit/1512f4f11790469bf2401fb01731c9c07b324aa3))
+
 ## [0.33.7](https://github.com/juspay/hyperswitch-web/compare/v0.33.6...v0.33.7) (2024-03-14)
 
 ## [0.33.6](https://github.com/juspay/hyperswitch-web/compare/v0.33.5...v0.33.6) (2024-03-14)
