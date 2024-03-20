@@ -162,9 +162,9 @@ let useRequiredFieldsEmptyAndValid = (
     setAreRequiredFieldsValid(_ => areRequiredFieldsValid)
 
     let areRequiredFieldsEmpty =
-      fieldsArrWithBillingAddress->Js.Array2.reduce((acc, paymentMethodFields) => {
+      fieldsArrWithBillingAddress->Array.reduce(false, (acc, paymentMethodFields: PaymentMethodsRecord.paymentMethodsFields) => {
         acc ||
-        switch paymentMethodFields {
+        switch (paymentMethodFields) {
         | Email => email.value === ""
         | FullName => fullName.value === ""
         | Country => country === "" && countryNames->Array.length > 0
@@ -198,7 +198,7 @@ let useRequiredFieldsEmptyAndValid = (
           month === "" || year === "" || cvcNumber === ""
         | _ => false
         }
-      }, false)
+      })
     setAreRequiredFieldsEmpty(_ => areRequiredFieldsEmpty)
     None
   }, (
