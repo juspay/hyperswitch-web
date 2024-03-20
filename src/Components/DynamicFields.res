@@ -516,7 +516,6 @@ let make = (
                           }}
                           onChange=onPostalChange
                           paymentType
-                          type_="tel"
                           name="postal"
                           inputRef=postalRef
                           placeholder=localeString.postalCodeLabel
@@ -629,7 +628,6 @@ let make = (
                         }}
                         onChange=onPostalChange
                         paymentType
-                        type_="tel"
                         name="postal"
                         inputRef=postalRef
                         placeholder=localeString.postalCodeLabel
