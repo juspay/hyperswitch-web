@@ -83,10 +83,7 @@ let make = (
     None
   }, [complete])
 
-  React.useEffect(() => {
-    handlePostMessageEvents(~complete, ~empty, ~paymentType="card", ~loggerState)
-    None
-  }, (empty, complete))
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="card")
 
   let (savedMethods, isGuestCustomer) = React.useMemo1(() => {
     switch customerPaymentMethods {

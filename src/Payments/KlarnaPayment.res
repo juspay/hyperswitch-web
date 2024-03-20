@@ -30,10 +30,9 @@ let make = (~paymentType, ~countryProps, ~list: PaymentMethodsRecord.list) => {
 
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
-  React.useEffect(() => {
-    handlePostMessageEvents(~complete, ~empty, ~paymentType="klarna", ~loggerState)
-    None
-  }, (empty, complete))
+
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="klarna")
+
   React.useEffect(() => {
     setComplete(_ => complete)
     None
