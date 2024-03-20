@@ -1,3 +1,10 @@
+## [0.33.10](https://github.com/juspay/hyperswitch-web/compare/v0.33.9...v0.33.10) (2024-03-20)
+
+
+### Bug Fixes
+
+* saved Payment Method stuck in loading state and Card Holder Name for every saved card ([#241](https://github.com/juspay/hyperswitch-web/issues/241)) ([6b1bc56](https://github.com/juspay/hyperswitch-web/commit/6b1bc565f659d163297453c6b6f5cc602bee6ff5))
+
 ## [0.33.9](https://github.com/juspay/hyperswitch-web/compare/v0.33.8...v0.33.9) (2024-03-19)
 
 ## [0.33.8](https://github.com/juspay/hyperswitch-web/compare/v0.33.7...v0.33.8) (2024-03-18)

@@ -57,7 +57,6 @@ let make = (
         cvcProps
         paymentType
         list
-        savedMethods
         setRequiredFieldsBody
       />
     })
