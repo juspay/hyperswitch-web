@@ -32,7 +32,7 @@ external dictToObj: Dict.t<'a> => {..} = "%identity"
 
 let useScript = (src: string) => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
-  React.useEffect1(() => {
+  React.useEffect(() => {
     if src == "" {
       setStatus(_ => "idle")
     }

@@ -49,7 +49,7 @@ let make = (
     setLoadSavedCards: (PaymentType.savedCardsLoadState => PaymentType.savedCardsLoadState) => unit,
   ) = React.useState(_ => PaymentType.LoadingSavedCards)
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
         setShowFields(_ => true)
@@ -87,7 +87,7 @@ let make = (
     None
   }, (customerPaymentMethods, displaySavedPaymentMethods))
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     let defaultPaymentMethod =
       savedMethods->Array.find(savedMethod => savedMethod.defaultPaymentMethodSet)
 
@@ -152,7 +152,7 @@ let make = (
     areAllApplePayRequiredFieldsPrefilled,
   ))
 
-  React.useEffect4(() => {
+  React.useEffect(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
       let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
@@ -191,14 +191,14 @@ let make = (
     }
     None
   }, (methodslist, walletList, paymentOptionsList, actualList))
-  React.useEffect1(() => {
+  React.useEffect(() => {
     switch sessionsObj {
     | Loaded(ssn) => setSessions(_ => ssn)
     | _ => ()
     }
     None
   }, [sessionsObj])
-  React.useEffect2(() => {
+  React.useEffect(() => {
     let cardsCount: int = cardsToRender(cardsContainerWidth)
     let cardOpts = Array.slice(~start=0, ~end=cardsCount, paymentOptions)
     let dropOpts = paymentOptions->Array.sliceToEnd(~start=cardsCount)
@@ -227,7 +227,7 @@ let make = (
     }
   }, [selectedOption])
   Utils.useSubmitPaymentData(submitCallback)
-  React.useEffect4(() => {
+  React.useEffect(() => {
     setSelectedOption(prev =>
       selectedOption !== ""
         ? prev
@@ -246,7 +246,7 @@ let make = (
     )
     None
   }, (layoutClass.defaultCollapsed, paymentOptions, methodslist, selectedOption))
-  React.useEffect1(() => {
+  React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
       let isCard: bool = cardOptions->Array.includes(selectedOption)
       if !isCard {
@@ -388,7 +388,7 @@ let make = (
     </ErrorBoundary>
   }
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setShowFields(_ => !displaySavedPaymentMethods)
     None
   }, [displaySavedPaymentMethods])
