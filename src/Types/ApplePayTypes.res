@@ -1,16 +1,16 @@
-type token = {paymentData: Js.Json.t}
-type paymentResult = {token: Js.Json.t}
+type token = {paymentData: JSON.t}
+type paymentResult = {token: JSON.t}
 type event = {validationURL: string, payment: paymentResult}
 type innerSession
 type session = {
-  begin: (. unit) => unit,
-  abort: (. unit) => unit,
+  begin: unit => unit,
+  abort: unit => unit,
   mutable oncancel: unit => unit,
-  canMakePayments: (. unit) => bool,
+  canMakePayments: unit => bool,
   mutable onvalidatemerchant: event => unit,
-  completeMerchantValidation: (. Js.Json.t) => unit,
+  completeMerchantValidation: JSON.t => unit,
   mutable onpaymentauthorized: event => unit,
-  completePayment: (. Js.Json.t) => unit,
+  completePayment: JSON.t => unit,
   \"STATUS_SUCCESS": string,
   \"STATUS_FAILURE": string,
 }
@@ -19,9 +19,9 @@ type window = {\"ApplePaySession": applePaySession}
 
 @val external window: window = "window"
 
-@scope("window") @val external sessionForApplePay: Js.Nullable.t<session> = "ApplePaySession"
+@scope("window") @val external sessionForApplePay: Nullable.t<session> = "ApplePaySession"
 
-@new external applePaySession: (int, Js.Json.t) => session = "ApplePaySession"
+@new external applePaySession: (int, JSON.t) => session = "ApplePaySession"
 
 @deriving(abstract)
 type total = {
@@ -41,8 +41,8 @@ type paymentRequestData = {
   @optional merchantIdentifier: string,
 }
 
-let jsonToPaymentRequestDataType: Js.Dict.t<Js.Json.t> => paymentRequestData = jsonDict => {
-  let clientTimeZone = CardUtils.dateTimeFormat(.).resolvedOptions(.).timeZone
+let jsonToPaymentRequestDataType: Dict.t<JSON.t> => paymentRequestData = jsonDict => {
+  let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = Utils.getClientCountry(clientTimeZone)
   let defaultCountryCode = clientCountry.isoAlpha2
 

@@ -10,4 +10,4 @@ type props = {
   isFocus: bool,
 }
 
-let make: props => React.element = reactLazy(.() => import_("./SingleLineCardPayment.bs.js"))
+let make: props => React.element = reactLazy(() => import_("./SingleLineCardPayment.bs.js"))

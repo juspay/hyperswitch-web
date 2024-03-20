@@ -12,11 +12,11 @@ let getLogtype = val => {
 let logApi = (
   ~eventName,
   ~statusCode="",
-  ~data: Js.Json.t=Js.Dict.empty()->Js.Json.object_,
+  ~data: JSON.t=Dict.make()->JSON.Encode.object,
   ~type_,
   ~url="",
   ~paymentMethod="",
-  ~result: Js.Json.t=Js.Dict.empty()->Js.Json.object_,
+  ~result: JSON.t=Dict.make()->JSON.Encode.object,
   ~optLogger: option<OrcaLogger.loggerMake>,
   ~logType: OrcaLogger.logType=INFO,
   ~logCategory: OrcaLogger.logCategory=API,
@@ -24,24 +24,28 @@ let logApi = (
 ) => {
   let logtype = getLogtype(type_)
   let (value, internalMetadata) = switch logtype {
-  | Request => ([("url", url->Js.Json.string)], [])
+  | Request => ([("url", url->JSON.Encode.string)], [])
   | Response => (
-      [("url", url->Js.Json.string), ("statusCode", statusCode->Js.Json.string)],
+      [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.string)],
       [("response", data)],
     )
   | NoResponse => (
-      [("url", url->Js.Json.string), ("statusCode", "504"->Js.Json.string), ("response", data)],
-      [("response", data)],
-    )
-  | Err => (
       [
-        ("url", url->Js.Json.string),
-        ("statusCode", statusCode->Js.Json.string),
+        ("url", url->JSON.Encode.string),
+        ("statusCode", "504"->JSON.Encode.string),
         ("response", data),
       ],
       [("response", data)],
     )
-  | Method => ([("method", paymentMethod->Js.Json.string)], [("result", result)])
+  | Err => (
+      [
+        ("url", url->JSON.Encode.string),
+        ("statusCode", statusCode->JSON.Encode.string),
+        ("response", data),
+      ],
+      [("response", data)],
+    )
+  | Method => ([("method", paymentMethod->JSON.Encode.string)], [("result", result)])
   }
   switch optLogger {
   | Some(logger) =>
@@ -60,10 +64,10 @@ let logApi = (
 
 let logInputChangeInfo = (text, logger: OrcaLogger.loggerMake) => {
   logger.setLogInfo(
-    ~value=[("inputChange", text->Js.Json.string)]
-    ->Js.Dict.fromArray
-    ->Js.Json.object_
-    ->Js.Json.stringify,
+    ~value=[("inputChange", text->JSON.Encode.string)]
+    ->Dict.fromArray
+    ->JSON.Encode.object
+    ->JSON.stringify,
     ~eventName=INPUT_FIELD_CHANGED,
     (),
   )

@@ -35,10 +35,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let intent = PaymentHelpers.usePaymentIntent(Some(logger), Card)
 
-  let cardRef = React.useRef(Js.Nullable.null)
-  let expiryRef = React.useRef(Js.Nullable.null)
-  let cvcRef = React.useRef(Js.Nullable.null)
-  let zipRef = React.useRef(Js.Nullable.null)
+  let cardRef = React.useRef(Nullable.null)
+  let expiryRef = React.useRef(Nullable.null)
+  let cvcRef = React.useRef(Nullable.null)
+  let zipRef = React.useRef(Nullable.null)
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
   let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
@@ -56,7 +56,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     cardBrand->getCardType
   }, [cardBrand])
 
-  let clientTimeZone = dateTimeFormat(.).resolvedOptions(.).timeZone
+  let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = Utils.getClientCountry(clientTimeZone)
 
   let countryNames = Utils.getCountryNames(Country.country)
@@ -64,12 +64,12 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     let obj = getobjFromCardPattern(cardBrand)
     let cvcLength = obj.maxCVCLenth
     if (
-      cvcNumberInRange(cvcNumber, cardBrand)->Js.Array2.includes(true) &&
-        cvcNumber->Js.String2.length == cvcLength
+      cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true) &&
+        cvcNumber->String.length == cvcLength
     ) {
       blurRef(cvcRef)
     }
@@ -102,9 +102,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     if cardValid(clearValue, cardBrand) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
-    if card->Js.String2.length > 6 && cardNumber->pincodeVisibility {
+    if card->String.length > 6 && cardNumber->pincodeVisibility {
       setDisplayPincode(_ => true)
-    } else if card->Js.String2.length < 8 {
+    } else if card->String.length < 8 {
       setDisplayPincode(_ => false)
     }
     setCardNumber(_ => card)
@@ -126,8 +126,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     logInputChangeInfo("cardCVC", logger)
     let cvc = val->formatCVCNumber(cardBrand)
     setCvcNumber(_ => cvc)
-    if cvc->Js.String2.length > 0 && cvcNumberInRange(cvc, cardBrand)->Js.Array2.includes(true) {
-      zipRef.current->Js.Nullable.toOption->Belt.Option.forEach(input => input->focus)->ignore
+    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
+      zipRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
+    }
+
+    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
+      setIsCVCValid(_ => Some(true))
+    } else {
+      setIsCVCValid(_ => None)
     }
   }
 
@@ -135,7 +141,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("zipCode", logger)
     let regex = postalRegex(postalCodes, ())
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) {
+    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) {
       blurRef(zipRef)
     }
     setZipCode(_ => val)
@@ -153,9 +159,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
-    if cardNumberInRange(cardNumber)->Js.Array2.includes(true) && calculateLuhn(cardNumber) {
+    if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
       setIsCardValid(_ => Some(true))
-    } else if cardNumber->Js.String2.length == 0 {
+    } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => None)
     } else {
       setIsCardValid(_ => Some(false))
@@ -170,9 +176,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let handleExpiryBlur = ev => {
     let cardExpiry = ReactEvent.Focus.target(ev)["value"]
-    if cardExpiry->Js.String2.length > 0 && getExpiryValidity(cardExpiry) {
+    if cardExpiry->String.length > 0 && getExpiryValidity(cardExpiry) {
       setIsExpiryValid(_ => Some(true))
-    } else if cardExpiry->Js.String2.length == 0 {
+    } else if cardExpiry->String.length == 0 {
       setIsExpiryValid(_ => None)
     } else {
       setIsExpiryValid(_ => Some(false))
@@ -182,11 +188,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let handleCVCBlur = ev => {
     let cvcNumber = ReactEvent.Focus.target(ev)["value"]
     if (
-      cvcNumber->Js.String2.length > 0 &&
-        cvcNumberInRange(cvcNumber, cardBrand)->Js.Array2.includes(true)
+      cvcNumber->String.length > 0 && cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
     ) {
       setIsCVCValid(_ => Some(true))
-    } else if cvcNumber->Js.String2.length == 0 {
+    } else if cvcNumber->String.length == 0 {
       setIsCVCValid(_ => None)
     } else {
       setIsCVCValid(_ => Some(false))
@@ -196,9 +201,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let handleZipBlur = ev => {
     let zipCode = ReactEvent.Focus.target(ev)["value"]
     let regex = postalRegex(postalCodes, ())
-    if Js.Re.test_(regex->Js.Re.fromString, zipCode) || regex == "" {
+    if RegExp.test(regex->RegExp.fromString, zipCode) || regex == "" {
       setIsZipValid(_ => Some(true))
-    } else if zipCode->Js.String2.length == 0 {
+    } else if zipCode->String.length == 0 {
       setIsZipValid(_ => None)
     } else {
       setIsZipValid(_ => Some(false))
@@ -208,7 +213,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let submitAPICall = (body, confirmParam) => {
     intent(~bodyArr=body, ~confirmParam, ~handleUserError=false, ())
   }
-  React.useEffect2(() => {
+  React.useEffect(() => {
     setCvcNumber(_ => "")
     setIsCVCValid(_ => None)
     setCvcError(_ => "")
@@ -220,18 +225,18 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let submitValue = (_ev, confirmParam) => {
     let validFormat = switch paymentMode->getPaymentMode {
     | Card =>
-      isCardValid->Belt.Option.getWithDefault(false) &&
-      isExpiryValid->Belt.Option.getWithDefault(false) &&
-      isCVCValid->Belt.Option.getWithDefault(false)
+      isCardValid->Option.getOr(false) &&
+      isExpiryValid->Option.getOr(false) &&
+      isCVCValid->Option.getOr(false)
     | CardNumberElement =>
-      isCardValid->Belt.Option.getWithDefault(false) &&
+      isCardValid->Option.getOr(false) &&
       checkCardCVC(getCardElementValue(iframeId, "card-cvc"), cardBrand) &&
       checkCardExpiry(getCardElementValue(iframeId, "card-expiry"))
     | _ => true
     }
     let cardNetwork = {
       if cardBrand != "" {
-        [("card_network", cardNumber->CardUtils.getCardBrand->Js.Json.string)]
+        [("card_network", cardNumber->CardUtils.getCardBrand->JSON.Encode.string)]
       } else {
         []
       }
@@ -248,6 +253,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardHolderName="",
           ~cvcNumber,
           ~cardBrand=cardNetwork,
+          (),
         )
       | CardNumberElement =>
         let (month, year) = getExpiryDates(getCardElementValue(iframeId, "card-expiry"))
@@ -259,6 +265,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardHolderName="",
           ~cvcNumber=localCvcNumber,
           ~cardBrand=cardNetwork,
+          (),
         )
       | _ => []
       }
@@ -295,18 +302,18 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   React.useEffect0(() => {
     let handleFun = (ev: Window.event) => {
       let json = try {
-        ev.data->Js.Json.parseExn
+        ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->Js.Json.object_
+      | _ => Dict.make()->JSON.Encode.object
       }
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("doBlur")->Belt.Option.isSome {
+      if dict->Dict.get("doBlur")->Option.isSome {
         logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR, ())
         setBlurState(_ => true)
-      } else if dict->Js.Dict.get("doFocus")->Belt.Option.isSome {
+      } else if dict->Dict.get("doFocus")->Option.isSome {
         logger.setLogInfo(~value="doFocus Triggered", ~eventName=FOCUS, ())
-        cardRef.current->Js.Nullable.toOption->Belt.Option.forEach(input => input->focus)->ignore
-      } else if dict->Js.Dict.get("doClearValues")->Belt.Option.isSome {
+        cardRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
+      } else if dict->Dict.get("doClearValues")->Option.isSome {
         logger.setLogInfo(~value="doClearValues Triggered", ~eventName=CLEAR, ())
         //clear all values
         setCardNumber(_ => "")
@@ -323,9 +330,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     Utils.handleMessage(handleFun, "Error in parsing sent Data")
   })
 
-  React.useEffect6(() => {
+  React.useEffect(() => {
     let handleDoSubmit = (ev: Window.event) => {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let jsonDict = json->Utils.getDictFromJson
       let confirm = jsonDict->ConfirmType.itemToObjMapper
       if confirm.doSubmit {
@@ -335,21 +342,21 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     Utils.handleMessage(handleDoSubmit, "")
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setCardError(_ =>
       isCardValid->Belt.Option.getWithDefault(true) ? "" : localeString.inValidCardErrorText
     )
     None
   }, [isCardValid])
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setCvcError(_ =>
       isCVCValid->Belt.Option.getWithDefault(true) ? "" : localeString.inCompleteCVCErrorText
     )
     None
   }, [isCVCValid])
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     setExpiryError(_ =>
       switch (isExpiryValid, isExpiryComplete(cardExpiry)) {
       | (Some(true), true) => ""

@@ -114,6 +114,7 @@ type customerCard = {
   expiryYear: string,
   cardToken: string,
   cardHolderName: option<string>,
+  nickname: string,
 }
 type customerMethods = {
   paymentToken: string,
@@ -121,12 +122,22 @@ type customerMethods = {
   paymentMethod: string,
   paymentMethodIssuer: option<string>,
   card: customerCard,
+  paymentMethodType: option<string>,
+  defaultPaymentMethodSet: bool,
+  requiresCvv: bool,
 }
-type savedCardsLoadState = LoadingSavedCards | LoadedSavedCards(array<customerMethods>) | NoResult
+type savedCardsLoadState =
+  LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
 
 type billingAddress = {
   isUseBillingAddress: bool,
   usePrefilledValues: showType,
+}
+
+type sdkHandleConfirmPayment = {
+  handleConfirm: bool,
+  buttonText?: string,
+  confirmParams: ConfirmType.confirmParams,
 }
 
 type options = {
@@ -135,7 +146,8 @@ type options = {
   business: business,
   customerPaymentMethods: savedCardsLoadState,
   paymentMethodOrder: option<array<string>>,
-  disableSaveCards: bool,
+  displaySavedPaymentMethodsCheckbox: bool,
+  displaySavedPaymentMethods: bool,
   fields: fields,
   readOnly: bool,
   terms: terms,
@@ -145,6 +157,9 @@ type options = {
   payButtonStyle: style,
   showCardFormByDefault: bool,
   billingAddress: billingAddress,
+  sdkHandleConfirmPayment: sdkHandleConfirmPayment,
+  paymentMethodsHeaderText?: string,
+  savedPaymentMethodsHeaderText?: string,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -153,6 +168,7 @@ let defaultCardDetails = {
   expiryYear: "",
   cardToken: "",
   cardHolderName: None,
+  nickname: "",
 }
 let defaultCustomerMethods = {
   paymentToken: "",
@@ -160,6 +176,9 @@ let defaultCustomerMethods = {
   paymentMethod: "",
   paymentMethodIssuer: None,
   card: defaultCardDetails,
+  paymentMethodType: None,
+  defaultPaymentMethodSet: false,
+  requiresCvv: true,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -244,14 +263,21 @@ let defaultBillingAddress = {
   isUseBillingAddress: false,
   usePrefilledValues: Auto,
 }
+
+let defaultSdkHandleConfirmPayment = {
+  handleConfirm: false,
+  confirmParams: ConfirmType.defaultConfirm,
+}
+
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
-  customerPaymentMethods: NoResult,
+  customerPaymentMethods: NoResult(true),
   layout: ObjectLayout(defaultLayout),
   paymentMethodOrder: None,
   fields: defaultFields,
-  disableSaveCards: false,
+  displaySavedPaymentMethodsCheckbox: true,
+  displaySavedPaymentMethods: true,
   readOnly: false,
   terms: defaultTerms,
   branding: Auto,
@@ -260,6 +286,7 @@ let defaultOptions = {
   customMethodNames: [],
   showCardFormByDefault: true,
   billingAddress: defaultBillingAddress,
+  sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -273,11 +300,11 @@ let getLayout = (str, logger) => {
 }
 let getAddress = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     let countryNames = []
-    Country.country->Js.Array2.map(item => countryNames->Js.Array2.push(item.countryName))->ignore
+    Country.country->Array.map(item => countryNames->Array.push(item.countryName))->ignore
     unknownKeysWarning(
       ["line1", "line2", "city", "state", "country", "postal_code"],
       json,
@@ -298,17 +325,17 @@ let getAddress = (dict, str, logger) => {
       line2: getWarningString(json, "line2", "", ~logger),
       city: getWarningString(json, "city", "", ~logger),
       state: getWarningString(json, "state", "", ~logger),
-      country: country,
+      country,
       postal_code: getWarningString(json, "postal_code", "", ~logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultAddress)
+  ->Option.getOr(defaultAddress)
 }
 let getBillingDetails = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(
       ["name", "email", "phone", "address"],
       json,
@@ -322,33 +349,33 @@ let getBillingDetails = (dict, str, logger) => {
       address: getAddress(json, "address", logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultBillingDetails)
+  ->Option.getOr(defaultBillingDetails)
 }
 
 let getDefaultValues = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(["billingDetails"], json, "options.defaultValues", ~logger)
     let defaultValues: defaultValues = {
       billingDetails: getBillingDetails(json, "billingDetails", logger),
     }
     defaultValues
   })
-  ->Belt.Option.getWithDefault(defaultDefaultValues)
+  ->Option.getOr(defaultDefaultValues)
 }
 let getBusiness = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(["name"], json, "options.business", ~logger)
     {
       name: getWarningString(json, "name", "", ~logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultBusiness)
+  ->Option.getOr(defaultBusiness)
 }
 let getShowType = (str, key, logger) => {
   switch str {
@@ -441,7 +468,7 @@ let getTypeArray = (str, logger) => {
     "tip",
     "contribute",
   ]
-  if !Js.Array2.includes(goodVals, str) {
+  if !Array.includes(goodVals, str) {
     str->unknownPropValueWarning(goodVals, "options.wallets.style.type", ~logger)
   }
   (str->getApplePayType, str->getGooglePayType, str->getPayPalType)
@@ -487,9 +514,9 @@ let getShowTerms: (string, string, 'a) => showTerms = (str, key, logger) => {
 
 let getShowAddress = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     let x: showAddress = {
       line1: getWarningString(json, "line1", "auto", ~logger)->getShowType(
         "options.fields.address.line1",
@@ -518,12 +545,12 @@ let getShowAddress = (dict, str, logger) => {
     }
     x
   })
-  ->Belt.Option.getWithDefault(defaultshowAddress)
+  ->Option.getOr(defaultshowAddress)
 }
 let getDeatils = (val, logger) => {
-  switch val->Js.Json.classify {
-  | JSONString(str) => JSONString(str)
-  | JSONObject(json) =>
+  switch val->JSON.Classify.classify {
+  | String(str) => JSONString(str)
+  | Object(json) =>
     JSONObject({
       name: getWarningString(json, "name", "auto", ~logger)->getShowType(
         "options.fields.name",
@@ -544,26 +571,26 @@ let getDeatils = (val, logger) => {
 }
 let getBilling = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.map(json => json->getDeatils(logger))
-  ->Belt.Option.getWithDefault(defaultFields.billingDetails)
+  ->Dict.get(str)
+  ->Option.map(json => json->getDeatils(logger))
+  ->Option.getOr(defaultFields.billingDetails)
 }
-let getFields: (Js.Dict.t<Js.Json.t>, string, 'a) => fields = (dict, str, logger) => {
+let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     let defaultFields: fields = {
       billingDetails: getBilling(json, "billingDetails", logger),
     }
     defaultFields
   })
-  ->Belt.Option.getWithDefault(defaultFields)
+  ->Option.getOr(defaultFields)
 }
 let getLayoutValues = (val, logger) => {
-  switch val->Js.Json.classify {
-  | JSONString(str) => StringLayout(str->getLayout(logger))
-  | JSONObject(json) =>
+  switch val->JSON.Classify.classify {
+  | String(str) => StringLayout(str->getLayout(logger))
+  | Object(json) =>
     ObjectLayout({
       let layoutType = getWarningString(json, "type", "tabs", ~logger)
       unknownKeysWarning(
@@ -585,9 +612,9 @@ let getLayoutValues = (val, logger) => {
 }
 let getTerms = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(
       ["auBecsDebit", "bancontact", "card", "ideal", "sepaDebit", "sofort", "usBankAccount"],
       json,
@@ -625,7 +652,7 @@ let getTerms = (dict, str, logger) => {
       ),
     }
   })
-  ->Belt.Option.getWithDefault(defaultTerms)
+  ->Option.getOr(defaultTerms)
 }
 let getApplePayHeight = (val, logger) => {
   let val: heightType =
@@ -697,9 +724,9 @@ let getHeightArray = (val, logger) => {
 }
 let getStyle = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(["type", "theme", "height"], json, "options.wallets.style", ~logger)
     let style = {
       type_: getWarningString(json, "type", "", ~logger)->getTypeArray(logger),
@@ -708,13 +735,13 @@ let getStyle = (dict, str, logger) => {
     }
     style
   })
-  ->Belt.Option.getWithDefault(defaultStyle)
+  ->Option.getOr(defaultStyle)
 }
 let getWallets = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(
       ["applePay", "googlePay", "style", "walletReturnUrl"],
       json,
@@ -735,23 +762,23 @@ let getWallets = (dict, str, logger) => {
       style: getStyle(json, "style", logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultWallets)
+  ->Option.getOr(defaultWallets)
 }
 
 let getLayout = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.map(json => {
     json->getLayoutValues(logger)
   })
-  ->Belt.Option.getWithDefault(ObjectLayout(defaultLayout))
+  ->Option.getOr(ObjectLayout(defaultLayout))
 }
 
 let getCardDetails = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       scheme: Some(getString(json, "scheme", "")),
       last4Digits: getString(json, "last4_digits", ""),
@@ -759,57 +786,73 @@ let getCardDetails = (dict, str) => {
       expiryYear: getString(json, "expiry_year", ""),
       cardToken: getString(json, "card_token", ""),
       cardHolderName: Some(getString(json, "card_holder_name", "")),
+      nickname: getString(json, "nick_name", ""),
     }
   })
-  ->Belt.Option.getWithDefault(defaultCardDetails)
+  ->Option.getOr(defaultCardDetails)
+}
+
+let getPaymentMethodType = dict => {
+  dict->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
 }
 
 let createCustomerObjArr = dict => {
   let customerDict =
     dict
-    ->Js.Dict.get("customerPaymentMethods")
-    ->Belt.Option.flatMap(Js.Json.decodeObject)
-    ->Belt.Option.getWithDefault(Js.Dict.empty())
+    ->Dict.get("customerPaymentMethods")
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.getOr(Dict.make())
 
   let customerArr =
     customerDict
-    ->Js.Dict.get("customer_payment_methods")
-    ->Belt.Option.flatMap(Js.Json.decodeArray)
-    ->Belt.Option.getWithDefault([])
+    ->Dict.get("customer_payment_methods")
+    ->Option.flatMap(JSON.Decode.array)
+    ->Option.getOr([])
+
+  let isGuestCustomer =
+    customerDict
+    ->Dict.get("is_guest_customer")
+    ->Option.flatMap(JSON.Decode.bool)
+    ->Option.getOr(false)
 
   let customerPaymentMethods =
     customerArr
-    ->Belt.Array.keepMap(Js.Json.decodeObject)
-    ->Js.Array2.map(json => {
+    ->Belt.Array.keepMap(JSON.Decode.object)
+    ->Array.map(dict => {
       {
-        paymentToken: getString(json, "payment_token", ""),
-        customerId: getString(json, "customer_id", ""),
-        paymentMethod: getString(json, "payment_method", ""),
-        paymentMethodIssuer: Some(getString(json, "payment_method_issuer", "")),
-        card: getCardDetails(json, "card"),
+        paymentToken: getString(dict, "payment_token", ""),
+        customerId: getString(dict, "customer_id", ""),
+        paymentMethod: getString(dict, "payment_method", ""),
+        paymentMethodIssuer: Some(getString(dict, "payment_method_issuer", "")),
+        card: getCardDetails(dict, "card"),
+        paymentMethodType: getPaymentMethodType(dict),
+        defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
+        requiresCvv: getBool(dict, "requires_cvv", true),
       }
     })
-  LoadedSavedCards(customerPaymentMethods)
+  LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
 }
 
 let getCustomerMethods = (dict, str) => {
-  let customerArr =
-    dict->Js.Dict.get(str)->Belt.Option.flatMap(Js.Json.decodeArray)->Belt.Option.getWithDefault([])
+  let customerArr = dict->Dict.get(str)->Option.flatMap(JSON.Decode.array)->Option.getOr([])
 
-  if customerArr->Js.Array2.length !== 0 {
+  if customerArr->Array.length !== 0 {
     let customerPaymentMethods =
       customerArr
-      ->Belt.Array.keepMap(Js.Json.decodeObject)
-      ->Js.Array2.map(json => {
+      ->Belt.Array.keepMap(JSON.Decode.object)
+      ->Array.map(json => {
         {
           paymentToken: getString(json, "payment_token", ""),
           customerId: getString(json, "customer_id", ""),
           paymentMethod: getString(json, "payment_method", ""),
           paymentMethodIssuer: Some(getString(json, "payment_method_issuer", "")),
           card: getCardDetails(json, "card"),
+          paymentMethodType: getPaymentMethodType(dict),
+          defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
+          requiresCvv: getBool(dict, "requires_cvv", true),
         }
       })
-    LoadedSavedCards(customerPaymentMethods)
+    LoadedSavedCards(customerPaymentMethods, false)
   } else {
     LoadingSavedCards
   }
@@ -817,11 +860,11 @@ let getCustomerMethods = (dict, str) => {
 
 let getCustomMethodNames = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.getWithDefault([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
-  ->Js.Array2.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.array)
+  ->Option.getOr([])
+  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.map(json => {
     paymentMethodName: getString(json, "paymentMethodName", ""),
     aliasName: getString(json, "aliasName", ""),
   })
@@ -829,9 +872,9 @@ let getCustomMethodNames = (dict, str) => {
 
 let getBillingAddress = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(
       ["isUseBillingAddress", "usePrefilledValues"],
       json,
@@ -849,7 +892,21 @@ let getBillingAddress = (dict, str, logger) => {
       )->getShowType("options.billingAddress.usePrefilledValues", logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultBillingAddress)
+  ->Option.getOr(defaultBillingAddress)
+}
+
+let getConfirmParams = dict => {
+  open ConfirmType
+  {
+    return_url: dict->getString("return_url", ""),
+    publishableKey: dict->getString("publishableKey", ""),
+  }
+}
+
+let getSdkHandleConfirmPaymentProps = dict => {
+  handleConfirm: dict->getBool("handleConfirm", false),
+  buttonText: ?dict->getOptionString("buttonText"),
+  confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
 }
 
 let itemToObjMapper = (dict, logger) => {
@@ -865,7 +922,13 @@ let itemToObjMapper = (dict, logger) => {
       "terms",
       "wallets",
       "showCardFormByDefault",
-      "disableSaveCards",
+      "displaySavedPaymentMethodsCheckbox",
+      "displaySavedPaymentMethods",
+      "sdkHandleOneClickConfirmPayment",
+      "showCardFormByDefault",
+      "sdkHandleConfirmPayment",
+      "paymentMethodsHeaderText",
+      "savedPaymentMethodsHeaderText",
     ],
     dict,
     "options",
@@ -882,7 +945,18 @@ let itemToObjMapper = (dict, logger) => {
       "options.branding",
       logger,
     ),
-    disableSaveCards: getBoolWithWarning(dict, "disableSaveCards", false, ~logger),
+    displaySavedPaymentMethodsCheckbox: getBoolWithWarning(
+      dict,
+      "displaySavedPaymentMethodsCheckbox",
+      true,
+      ~logger,
+    ),
+    displaySavedPaymentMethods: getBoolWithWarning(
+      dict,
+      "displaySavedPaymentMethods",
+      true,
+      ~logger,
+    ),
     readOnly: getBoolWithWarning(dict, "readOnly", false, ~logger),
     terms: getTerms(dict, "terms", logger),
     wallets: getWallets(dict, "wallets", logger),
@@ -890,19 +964,16 @@ let itemToObjMapper = (dict, logger) => {
     payButtonStyle: getStyle(dict, "payButtonStyle", logger),
     showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
     billingAddress: getBillingAddress(dict, "billingAddress", logger),
+    sdkHandleConfirmPayment: dict
+    ->getDictfromDict("sdkHandleConfirmPayment")
+    ->getSdkHandleConfirmPaymentProps,
+    paymentMethodsHeaderText: ?getOptionString(dict, "paymentMethodsHeaderText"),
+    savedPaymentMethodsHeaderText: ?getOptionString(dict, "savedPaymentMethodsHeaderText"),
   }
 }
 
-type loadType = Loading | Loaded(Js.Json.t) | SemiLoaded | LoadError(Js.Json.t)
+type loadType = Loading | Loaded(JSON.t) | SemiLoaded | LoadError(JSON.t)
 
-let getIsAllStoredCardsHaveName = (savedCards: array<customerMethods>) => {
-  savedCards
-  ->Js.Array2.filter(savedCard => {
-    switch savedCard.card.cardHolderName {
-    | None
-    | Some("") => false
-    | _ => true
-    }
-  })
-  ->Belt.Array.length === savedCards->Belt.Array.length
+let getIsStoredPaymentMethodHasName = (savedMethod: customerMethods) => {
+  savedMethod.card.cardHolderName->Option.getOr("")->String.length > 0
 }

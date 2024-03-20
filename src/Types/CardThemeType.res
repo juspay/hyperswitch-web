@@ -1,5 +1,5 @@
 type theme = Default | Brutal | Midnight | Soft | Charcoal | NONE
-external toJson: 'a => Js.Json.t = "%identity"
+external toJson: 'a => JSON.t = "%identity"
 
 @val external navigator: 'a = "navigator"
 type showLoader = Auto | Always | Never
@@ -51,12 +51,20 @@ type themeClass = {
   colorIconCardError: string,
   spacingGridColumn: string,
   spacingGridRow: string,
+  buttonBackgroundColor: string,
+  buttonHeight: string,
+  buttonWidth: string,
+  buttonBorderRadius: string,
+  buttonBorderColor: string,
+  buttonTextColor: string,
+  buttonTextFontSize: string,
+  buttonTextFontWeight: string,
 }
 type appearance = {
   theme: theme,
   componentType: string,
   variables: themeClass,
-  rules: Js.Json.t,
+  rules: JSON.t,
   labels: label,
 }
 type fonts = {

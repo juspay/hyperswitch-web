@@ -6,15 +6,15 @@ let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (blikCode, setblikCode) = Recoil.useLoggedRecoilState(userBlikCode, "blikCode", loggerState)
 
-  let blikCodeRef = React.useRef(Js.Nullable.null)
+  let blikCodeRef = React.useRef(Nullable.null)
   let formatBSB = bsb => {
-    let formatted = bsb->Js.String2.replaceByRe(%re("/\D+/g"), "")
+    let formatted = bsb->String.replaceRegExp(%re("/\D+/g"), "")
     let firstPart = formatted->CardUtils.slice(0, 3)
     let secondPart = formatted->CardUtils.slice(3, 6)
 
-    if formatted->Js.String2.length <= 3 {
+    if formatted->String.length <= 3 {
       firstPart
-    } else if formatted->Js.String2.length > 3 && formatted->Js.String2.length <= 6 {
+    } else if formatted->String.length > 3 && formatted->String.length <= 6 {
       `${firstPart}-${secondPart}`
     } else {
       formatted
@@ -23,14 +23,14 @@ let make = () => {
 
   let changeblikCode = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setblikCode(.prev => {
+    setblikCode(prev => {
       ...prev,
       value: val->formatBSB,
     })
   }
 
-  React.useEffect1(() => {
-    setblikCode(.prev => {
+  React.useEffect(() => {
+    setblikCode(prev => {
       ...prev,
       errorString: switch prev.isValid {
       | Some(val) => val ? "" : "Invalid blikCode"
@@ -41,18 +41,18 @@ let make = () => {
   }, [blikCode.isValid])
 
   let submitCallback = React.useCallback1((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if blikCode.value == "" {
-        setblikCode(.prev => {
+        setblikCode(prev => {
           ...prev,
           errorString: "blikCode cannot be empty",
         })
       }
     }
   }, [blikCode])
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={true}>
     <PaymentField

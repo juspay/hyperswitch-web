@@ -7,36 +7,31 @@ let make = (
   ~paymentMethodType,
   ~setRequiredFieldsBody,
   ~isSavedCardFlow=false,
-  ~savedCards=[]: array<PaymentType.customerMethods>,
+  ~savedMethod=PaymentType.defaultCustomerMethods,
   ~cardProps=None,
   ~expiryProps=None,
   ~cvcProps=None,
   ~isBancontact=false,
 ) => {
-  React.useEffect1(() => {
-    setRequiredFieldsBody(_ => Js.Dict.empty())
+  React.useEffect(() => {
+    setRequiredFieldsBody(_ => Dict.make())
     None
   }, [paymentMethodType])
 
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   //<...>//
-  let paymentMethodTypes = React.useMemo3(() => {
-    PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~list,
-      ~paymentMethod,
-      ~paymentMethodType=PaymentUtils.getPaymentMethodName(
-        ~paymentMethodType=paymentMethod,
-        ~paymentMethodName=paymentMethodType,
-      ),
-    )->Belt.Option.getWithDefault(PaymentMethodsRecord.defaultPaymentMethodType)
-  }, (list, paymentMethod, paymentMethodType))
+  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
+    ~list,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
 
   let requiredFieldsWithBillingDetails = React.useMemo3(() => {
     if paymentMethod === "card" {
       paymentMethodTypes.required_fields
     } else if (
-      PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Js.Array2.includes(paymentMethodType)
+      PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType)
     ) {
       paymentMethodTypes.required_fields
     } else {
@@ -51,8 +46,8 @@ let make = (
   }, [requiredFieldsWithBillingDetails])
 
   let isAllStoredCardsHaveName = React.useMemo1(() => {
-    PaymentType.getIsAllStoredCardsHaveName(savedCards)
-  }, [savedCards])
+    PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
+  }, [savedMethod])
 
   //<...>//
   let fieldsArr = React.useMemo3(() => {
@@ -83,10 +78,10 @@ let make = (
   )
   let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
   let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
-  let line1Ref = React.useRef(Js.Nullable.null)
-  let line2Ref = React.useRef(Js.Nullable.null)
-  let cityRef = React.useRef(Js.Nullable.null)
-  let postalRef = React.useRef(Js.Nullable.null)
+  let line1Ref = React.useRef(Nullable.null)
+  let line2Ref = React.useRef(Nullable.null)
+  let cityRef = React.useRef(Nullable.null)
+  let postalRef = React.useRef(Nullable.null)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
@@ -97,13 +92,13 @@ let make = (
   let countryNames = Utils.getCountryNames(Country.getCountry(paymentMethodType))
 
   let setCurrency = val => {
-    setCurrency(. val)
+    setCurrency(val)
   }
   let setSelectedBank = val => {
-    setSelectedBank(. val)
+    setSelectedBank(val)
   }
   let setCountry = val => {
-    setCountry(. val)
+    setCountry(val)
   }
 
   let (
@@ -155,7 +150,7 @@ let make = (
   )
 
   React.useEffect0(() => {
-    let bank = bankNames->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+    let bank = bankNames->Array.get(0)->Option.getOr("")
     setSelectedBank(_ => bank)
     None
   })
@@ -187,7 +182,7 @@ let make = (
     None
   })
 
-  let regex = CardUtils.postalRegex(
+  let _regex = CardUtils.postalRegex(
     postalCodes,
     ~country={Utils.getCountryCode(country).isoAlpha2},
     (),
@@ -197,13 +192,13 @@ let make = (
     let val = ReactEvent.Form.target(ev)["value"]
 
     if val !== "" {
-      setPostalCode(._ => {
+      setPostalCode(_ => {
         isValid: Some(true),
         value: val,
         errorString: "",
       })
     } else {
-      setPostalCode(._ => {
+      setPostalCode(_ => {
         isValid: Some(false),
         value: val,
         errorString: "",
@@ -243,18 +238,18 @@ let make = (
   )
 
   let submitCallback = DynamicFieldsUtils.useSubmitCallback()
-  Utils.submitPaymentData(submitCallback)
+  Utils.useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
 
   let getCustomFieldName = (item: PaymentMethodsRecord.paymentMethodsFields) => {
     if (
       requiredFields
-      ->Js.Array2.filter(requiredFieldType =>
+      ->Array.filter(requiredFieldType =>
         requiredFieldType.field_type === item &&
           requiredFieldType.display_name === "card_holder_name"
       )
-      ->Belt.Array.length > 0
+      ->Array.length > 0
     ) {
       Some(localeString.cardHolderName)
     } else {
@@ -263,75 +258,29 @@ let make = (
   }
 
   let dynamicFieldsToRenderOutsideBilling = React.useMemo1(() => {
-    fieldsArr->Js.Array2.filter(field =>
-      field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling
-    )
+    fieldsArr->Array.filter(DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
   }, [fieldsArr])
 
   let dynamicFieldsToRenderInsideBilling = React.useMemo1(() => {
-    fieldsArr->Js.Array2.filter(field =>
-      !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
-    )
+    fieldsArr->Array.filter(field => !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling))
   }, [fieldsArr])
 
-  let isInfoElementPresent = React.useMemo1(() => {
-    dynamicFieldsToRenderInsideBilling->Js.Array2.includes(InfoElement)
-  }, [dynamicFieldsToRenderInsideBilling])
+  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Array.includes(InfoElement)
 
-  let isOnlyInfoElementPresent = React.useMemo2(() => {
-    dynamicFieldsToRenderInsideBilling->Js.Array2.length === 1 && isInfoElementPresent
-  }, (dynamicFieldsToRenderInsideBilling, isInfoElementPresent))
+  let isOnlyInfoElementPresent =
+    dynamicFieldsToRenderInsideBilling->Array.length === 1 && isInfoElementPresent
 
-  let isRenderDynamicFieldsInsideBilling = React.useMemo2(() => {
-    dynamicFieldsToRenderInsideBilling->Js.Array2.length > 0 &&
-      (dynamicFieldsToRenderInsideBilling->Js.Array2.length > 1 || !isOnlyInfoElementPresent)
-  }, (dynamicFieldsToRenderInsideBilling, isOnlyInfoElementPresent))
-
-  React.useEffect1(() => {
-    let fieldsArrStr = fieldsArr->Js.Array2.map(field => {
-      field->PaymentMethodsRecord.paymentMethodFieldToStrMapper->Js.Json.string
-    })
-    let dynamicFieldsToRenderOutsideBillingStr =
-      dynamicFieldsToRenderOutsideBilling->Js.Array2.map(field => {
-        field->PaymentMethodsRecord.paymentMethodFieldToStrMapper->Js.Json.string
-      })
-    let dynamicFieldsToRenderInsideBillingStr =
-      dynamicFieldsToRenderInsideBilling->Js.Array2.map(field => {
-        field->PaymentMethodsRecord.paymentMethodFieldToStrMapper->Js.Json.string
-      })
-    let requiredFieldsStr = requiredFields->Js.Array2.map(field => {
-      field.required_field->Js.Json.string
-    })
-
-    let loggerPayload =
-      [
-        ("requiredFields", requiredFieldsStr->Js.Json.array),
-        ("fieldsArr", fieldsArrStr->Js.Json.array),
-        (
-          "dynamicFieldsToRenderOutsideBilling",
-          dynamicFieldsToRenderOutsideBillingStr->Js.Json.array,
-        ),
-        (
-          "dynamicFieldsToRenderInsideBilling",
-          dynamicFieldsToRenderInsideBillingStr->Js.Json.array,
-        ),
-        ("isRenderDynamicFieldsInsideBilling", isRenderDynamicFieldsInsideBilling->Js.Json.boolean),
-        ("isOnlyInfoElementPresent", isOnlyInfoElementPresent->Js.Json.boolean),
-        ("isInfoElementPresent", isInfoElementPresent->Js.Json.boolean),
-      ]
-      ->Js.Dict.fromArray
-      ->Js.Json.object_
-    logger.setLogInfo(~value=loggerPayload->Js.Json.stringify, ~eventName=DYNAMIC_FIELDS_RENDER, ())
-    None
-  }, fieldsArr)
+  let isRenderDynamicFieldsInsideBilling =
+    dynamicFieldsToRenderInsideBilling->Array.length > 0 &&
+      (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
 
   {
-    fieldsArr->Js.Array2.length > 0
+    fieldsArr->Array.length > 0
       ? <>
           {dynamicFieldsToRenderOutsideBilling
-          ->Js.Array2.mapi((item, index) => {
+          ->Array.mapWithIndex((item, index) => {
             <div
-              key={`outside-billing-${index->Js.Int.toString}`}
+              key={`outside-billing-${index->Int.toString}`}
               className="flex flex-col w-full place-content-between"
               style={ReactDOMStyle.make(
                 ~marginTop=index !== 0 || paymentMethod === "card"
@@ -477,25 +426,22 @@ let make = (
           ->React.array}
           <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
             <div
-              className="p-2"
+              className="p-2 w-full text-left"
               style={ReactDOMStyle.make(
                 ~border=`1px solid ${themeObj.borderColor}`,
                 ~borderRadius=themeObj.borderRadius,
                 ~margin=`10px 0`,
                 (),
               )}>
-              {React.string("Billing Details")}
+              {React.string(localeString.billingDetailsText)}
               <div className="p-2 flex flex-col gap-2">
                 {dynamicFieldsToRenderInsideBilling
-                ->Js.Array2.mapi((item, index) => {
+                ->Array.mapWithIndex((item, index) => {
                   <div
-                    key={`inside-billing-${index->Js.Int.toString}`}
+                    key={`inside-billing-${index->Int.toString}`}
                     className="flex flex-col w-full place-content-between">
                     {switch item {
-                    | BillingName =>
-                      <BillingNamePaymentInput
-                        paymentType optionalRequiredFields={Some(requiredFields)}
-                      />
+                    | BillingName => <BillingNamePaymentInput paymentType requiredFields />
                     | Email => <EmailPaymentInput paymentType />
                     | PhoneNumber => <PhoneNumberPaymentInput />
                     | StateAndCity =>
@@ -506,7 +452,7 @@ let make = (
                           value=city
                           onChange={ev => {
                             let value = ReactEvent.Form.target(ev)["value"]
-                            setCity(.prev => {
+                            setCity(prev => {
                               isValid: value !== "" ? Some(true) : Some(false),
                               value,
                               errorString: value !== "" ? "" : prev.errorString,
@@ -514,7 +460,7 @@ let make = (
                           }}
                           onBlur={ev => {
                             let value = ReactEvent.Focus.target(ev)["value"]
-                            setCity(.prev => {
+                            setCity(prev => {
                               ...prev,
                               isValid: Some(value !== ""),
                             })
@@ -556,7 +502,7 @@ let make = (
                           value=postalCode
                           onBlur={ev => {
                             let value = ReactEvent.Focus.target(ev)["value"]
-                            setPostalCode(.prev => {
+                            setPostalCode(prev => {
                               ...prev,
                               isValid: Some(value !== ""),
                             })
@@ -576,7 +522,7 @@ let make = (
                         value=line1
                         onChange={ev => {
                           let value = ReactEvent.Form.target(ev)["value"]
-                          setLine1(.prev => {
+                          setLine1(prev => {
                             isValid: value !== "" ? Some(true) : Some(false),
                             value,
                             errorString: value !== "" ? "" : prev.errorString,
@@ -584,7 +530,7 @@ let make = (
                         }}
                         onBlur={ev => {
                           let value = ReactEvent.Focus.target(ev)["value"]
-                          setLine1(.prev => {
+                          setLine1(prev => {
                             ...prev,
                             isValid: Some(value !== ""),
                           })
@@ -602,7 +548,7 @@ let make = (
                         value=line2
                         onChange={ev => {
                           let value = ReactEvent.Form.target(ev)["value"]
-                          setLine2(.prev => {
+                          setLine2(prev => {
                             isValid: value !== "" ? Some(true) : Some(false),
                             value,
                             errorString: value !== "" ? "" : prev.errorString,
@@ -610,7 +556,7 @@ let make = (
                         }}
                         onBlur={ev => {
                           let value = ReactEvent.Focus.target(ev)["value"]
-                          setLine2(.prev => {
+                          setLine2(prev => {
                             ...prev,
                             isValid: Some(value !== ""),
                           })
@@ -628,7 +574,7 @@ let make = (
                         value=city
                         onChange={ev => {
                           let value = ReactEvent.Form.target(ev)["value"]
-                          setCity(.prev => {
+                          setCity(prev => {
                             isValid: value !== "" ? Some(true) : Some(false),
                             value,
                             errorString: value !== "" ? "" : prev.errorString,
@@ -636,7 +582,7 @@ let make = (
                         }}
                         onBlur={ev => {
                           let value = ReactEvent.Focus.target(ev)["value"]
-                          setCity(.prev => {
+                          setCity(prev => {
                             ...prev,
                             isValid: Some(value !== ""),
                           })
@@ -669,7 +615,7 @@ let make = (
                         value=postalCode
                         onBlur={ev => {
                           let value = ReactEvent.Focus.target(ev)["value"]
-                          setPostalCode(.prev => {
+                          setPostalCode(prev => {
                             ...prev,
                             isValid: Some(value !== ""),
                           })
@@ -713,7 +659,7 @@ let make = (
                     | InfoElement =>
                       <>
                         <Surcharge list paymentMethod paymentMethodType />
-                        {if fieldsArr->Js.Array2.length > 1 {
+                        {if fieldsArr->Array.length > 1 {
                           bottomElement
                         } else {
                           <Block bottomElement />
@@ -738,7 +684,7 @@ let make = (
           <RenderIf condition={isOnlyInfoElementPresent}>
             {<>
               <Surcharge list paymentMethod paymentMethodType />
-              {if fieldsArr->Js.Array2.length > 1 {
+              {if fieldsArr->Array.length > 1 {
                 bottomElement
               } else {
                 <Block bottomElement />

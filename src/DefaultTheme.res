@@ -38,6 +38,14 @@ let default = {
   colorIconCardError: "#fd1717",
   spacingGridColumn: "20px",
   spacingGridRow: "20px",
+  buttonBackgroundColor: "#006df9",
+  buttonHeight: "48px",
+  buttonWidth: "100%",
+  buttonBorderRadius: "6px",
+  buttonBorderColor: "#ffffff",
+  buttonTextColor: "#ffffff",
+  buttonTextFontSize: "16px",
+  buttonTextFontWeight: "500",
 }
 let defaultRules = theme =>
   {

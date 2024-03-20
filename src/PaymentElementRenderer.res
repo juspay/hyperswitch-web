@@ -5,9 +5,9 @@ let make = (
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
   ~cvcProps: CardUtils.cvcProps,
-  ~countryProps: (string, Js.Array2.t<string>),
+  ~countryProps: (string, array<string>),
 ) => {
-  let cardsToRender = width => {
+  let _cardsToRender = width => {
     (width - 40) / 110
   }
   let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)

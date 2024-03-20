@@ -1,5 +1,5 @@
 let loadHyper = (str, option) => {
-  Js.Promise.resolve(Hyper.make(str, option))
+  Promise.resolve(Hyper.make(str, option, None))
 }
 
 let loadStripe = (str, option) => {
@@ -9,8 +9,9 @@ let loadStripe = (str, option) => {
 
 @val external window: {..} = "window"
 window["Hyper"] = Hyper.make
+window["Hyper"]["init"] = Hyper.make
 
-let isWordpress = window["wp"] !== Js.Json.null
+let isWordpress = window["wp"] !== JSON.Encode.null
 if !isWordpress {
   window["Stripe"] = Hyper.make
 }
