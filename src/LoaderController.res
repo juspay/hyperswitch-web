@@ -105,7 +105,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     let appearance =
       optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
     let localeString = CardTheme.getLocaleObject(localeString == "" ? config.locale : localeString)
-    setConfig(._ => {
+    setConfig(_ => {
       config: {
         appearance,
         locale: config.locale,

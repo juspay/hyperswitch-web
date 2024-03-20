@@ -344,14 +344,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   React.useEffect(() => {
     setCardError(_ =>
-      isCardValid->Belt.Option.getWithDefault(true) ? "" : localeString.inValidCardErrorText
+      isCardValid->Option.getOr(true) ? "" : localeString.inValidCardErrorText
     )
     None
   }, [isCardValid])
 
   React.useEffect(() => {
     setCvcError(_ =>
-      isCVCValid->Belt.Option.getWithDefault(true) ? "" : localeString.inCompleteCVCErrorText
+      isCVCValid->Option.getOr(true) ? "" : localeString.inCompleteCVCErrorText
     )
     None
   }, [isCVCValid])
@@ -368,7 +368,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, (isExpiryValid, isExpiryComplete(cardExpiry)))
 
-  let icon = React.useMemo2(() => {
+  let icon = React.useMemo(() => {
     let animate = cardType == NOTFOUND ? "animate-slideLeft" : "animate-slideRight"
     let cardBrandIcon = getCardBrandIcon(cardType, paymentType)
     <div className=animate> cardBrandIcon </div>

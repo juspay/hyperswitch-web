@@ -103,7 +103,7 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = React.useMemo2(() => {
+  let isCustomerAcceptanceRequired = React.useMemo(() => {
     if displaySavedPaymentMethodsCheckbox {
       isSaveCardsChecked || list.payment_type === SETUP_MANDATE
     } else {

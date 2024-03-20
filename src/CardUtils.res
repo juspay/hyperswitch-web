@@ -570,7 +570,7 @@ let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
 let clientCountry = Utils.getClientCountry(clientTimeZone)
 
 let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?, ()) => {
-  let country = country->Belt.Option.getWithDefault(clientCountry.isoAlpha2)
+  let country = country->Option.getOr(clientCountry.isoAlpha2)
   let countryPostal = Utils.getCountryPostal(country, postalCodes)
   countryPostal.regex
 }
