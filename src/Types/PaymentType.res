@@ -974,14 +974,6 @@ let itemToObjMapper = (dict, logger) => {
 
 type loadType = Loading | Loaded(JSON.t) | SemiLoaded | LoadError(JSON.t)
 
-let getIsAllStoredCardsHaveName = (savedCards: array<customerMethods>) => {
-  savedCards
-  ->Array.filter(savedCard => {
-    switch savedCard.card.cardHolderName {
-    | None
-    | Some("") => false
-    | _ => true
-    }
-  })
-  ->Array.length === savedCards->Array.length
+let getIsStoredPaymentMethodHasName = (savedMethod: customerMethods) => {
+  savedMethod.card.cardHolderName->Option.getOr("")->String.length > 0
 }
