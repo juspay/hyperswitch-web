@@ -143,6 +143,20 @@ If you are running our backend locally, you can use our [Postman Collection](htt
 - `HYPERSWITCH_CLIENT_URL` - URL of your hosted Hyperswitch SDK
 - `SELF_SERVER_URL` - URL of your node server (/Hyperswitch-react-demo-app/server.js)
 
+<br />
+
+For configuring `customBackendUrl`, when calling Hyper function you can pass the customBackendUrl in props
+
+In Payment.js file -
+
+```javascript
+window.Hyper(publishableKey, {
+  customBackendUrl: `CUSTOM_BACKEND_URL`,
+});
+```
+
+**Warning:** Please maintain API compatibility of your server and web app. If any API contracts are manually changed without the corresponding handling in the SDK, there is a possibility of the application not working as expected. Please ensure that you use the compatible versions. The latest [releases](https://github.com/juspay/hyperswitch/releases) will have the additional details of the compatible versions of the app server, web app, and the control center.
+
 ### Logging
 
 Logging from the payment checkout web client is crucial for tracking and monitoring the flow of payments. It provides a transparent record of events, errors, and user interactions, aiding developers and support teams in identifying issues, debugging, and ensuring the security and reliability of payment processes. Well-implemented logging enhances traceability and facilitates a more efficient resolution of potential problems in the payment checkout experience.
