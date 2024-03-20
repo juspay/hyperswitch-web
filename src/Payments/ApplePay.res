@@ -14,8 +14,8 @@ let make = (
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
-  let intent = PaymentHelpers.usePaymentIntent(None, Applepay)
-  let sync = PaymentHelpers.usePaymentSync(None, Applepay)
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Applepay)
+  let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Applepay)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
   let isApplePaySDKFlow = sessionObj->Option.isSome
@@ -281,7 +281,7 @@ let make = (
     ->ignore
   }
 
-  React.useEffect4(() => {
+  React.useEffect(() => {
     let handleApplePayMessages = (ev: Window.event) => {
       let json = try {
         ev.data->JSON.parseExn
@@ -317,7 +317,7 @@ let make = (
     )
   }, (isInvokeSDKFlow, requiredFieldsBody, isWallet, processPayment))
 
-  React.useEffect4(() => {
+  React.useEffect(() => {
     if (
       (isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
       isApplePayReady &&

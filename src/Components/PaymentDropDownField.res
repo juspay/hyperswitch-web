@@ -27,7 +27,7 @@ let make = (
       }
     }
   }
-  React.useEffect1(() => {
+  React.useEffect(() => {
     let initialValue = options->Array.get(0)->Option.getOr("")
     if (
       value.value === "" ||
