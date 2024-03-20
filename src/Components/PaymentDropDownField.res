@@ -2,9 +2,7 @@ open RecoilAtoms
 @react.component
 let make = (
   ~value: RecoilAtomTypes.field,
-  ~setValue: (
-    OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field
-  ) => unit,
+  ~setValue: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
   ~fieldName,
   ~options,
   ~disabled=false,

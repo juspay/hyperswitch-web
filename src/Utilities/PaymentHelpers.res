@@ -100,7 +100,7 @@ let rec intentCall = (
     ~headers: Dict.t<string>=?,
     ~method: Fetch.method,
     unit,
-  ) => OrcaPaymentPage.Promise.t<Fetch.Response.t>,
+  ) => Promise.t<Fetch.Response.t>,
   ~uri,
   ~headers,
   ~bodyStr,

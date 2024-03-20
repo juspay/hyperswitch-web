@@ -67,9 +67,7 @@ let make = (~paymentType, ~className="") => {
 
   let checkPostalValidity = (
     postal: RecoilAtomTypes.field,
-    setPostal: (
-      OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field
-    ) => unit,
+    setPostal: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
     regex,
   ) => {
     if RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== "" && regex !== "" {

@@ -659,7 +659,7 @@ let handlePostMessageEvents = (
   ~complete,
   ~empty,
   ~paymentType,
-  ~loggerState: OrcaPaymentPage.OrcaLogger.loggerMake,
+  ~loggerState: OrcaLogger.loggerMake,
 ) => {
   if complete && paymentType !== "" {
     loggerState.setLogInfo(
