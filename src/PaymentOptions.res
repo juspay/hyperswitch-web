@@ -57,7 +57,7 @@ let make = (
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
-  React.useEffect2(() => {
+  React.useEffect(() => {
     let width = switch payOptionsRef.current->Nullable.toOption {
     | Some(ref) => ref->Window.Element.clientWidth
     | None => 0
@@ -81,7 +81,7 @@ let make = (
     ->Array.find(item => item.paymentMethodName == selectedOption)
     ->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodFields)
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     let intervalId = setInterval(() => {
       if dropDownOptionsDetails->Array.length > 1 {
         setMoreIconIndex(prev => mod(prev + 1, dropDownOptionsDetails->Array.length))

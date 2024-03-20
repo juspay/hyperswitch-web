@@ -281,7 +281,7 @@ let make = (
     ->ignore
   }
 
-  React.useEffect4(() => {
+  React.useEffect(() => {
     let handleApplePayMessages = (ev: Window.event) => {
       let json = try {
         ev.data->JSON.parseExn
@@ -317,7 +317,7 @@ let make = (
     )
   }, (isInvokeSDKFlow, requiredFieldsBody, isWallet, processPayment))
 
-  React.useEffect4(() => {
+  React.useEffect(() => {
     if (
       (isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
       isApplePayReady &&

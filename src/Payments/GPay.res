@@ -78,7 +78,7 @@ let make = (
     )
   }
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     let handle = (ev: Window.event) => {
       let json = try {
         ev.data->JSON.parseExn
@@ -196,7 +196,7 @@ let make = (
     gpayWrapper.innerHTML = ""
     gpayWrapper.appendChild(button)
   }
-  React.useEffect5(() => {
+  React.useEffect(() => {
     if (
       status == "ready" &&
       (isGPayReady ||
@@ -239,7 +239,7 @@ let make = (
     paymentExperience == PaymentMethodsRecord.RedirectToURL ||
     isDelayedSessionToken) && isWallet
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     areOneClickWalletsRendered(prev => {
       ...prev,
       isGooglePay: isRenderGooglePayButton,

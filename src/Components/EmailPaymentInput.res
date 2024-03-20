@@ -29,7 +29,7 @@ let make = (~paymentType) => {
     })
   }
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setEmail(prev => {
       ...prev,
       errorString: switch prev.isValid {

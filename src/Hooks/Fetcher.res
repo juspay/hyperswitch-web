@@ -7,7 +7,7 @@ type url = {pathname: pathname}
 let useFetcher = fileName => {
   let _url = RescriptReactRouter.useUrl()
   let (optionalJson, setJson) = React.useState(() => None)
-  React.useEffect1(() => {
+  React.useEffect(() => {
     open Promise
     Fetch.get(`${hostname}/json/${fileName}.json`)
     ->then(Fetch.Response.json)

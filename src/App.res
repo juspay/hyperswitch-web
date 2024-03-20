@@ -12,7 +12,7 @@ let make = () => {
     log
   })
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setLoggerState(_ => logger)
     None
   }, [logger])
