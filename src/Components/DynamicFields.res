@@ -7,7 +7,7 @@ let make = (
   ~paymentMethodType,
   ~setRequiredFieldsBody,
   ~isSavedCardFlow=false,
-  ~savedCards=[]: array<PaymentType.customerMethods>,
+  ~savedMethod=PaymentType.defaultCustomerMethods,
   ~cardProps=None,
   ~expiryProps=None,
   ~cvcProps=None,
@@ -46,8 +46,8 @@ let make = (
   }, [requiredFieldsWithBillingDetails])
 
   let isAllStoredCardsHaveName = React.useMemo1(() => {
-    PaymentType.getIsAllStoredCardsHaveName(savedCards)
-  }, [savedCards])
+    PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
+  }, [savedMethod])
 
   //<...>//
   let fieldsArr = React.useMemo3(() => {
@@ -509,7 +509,6 @@ let make = (
                           }}
                           onChange=onPostalChange
                           paymentType
-                          type_="tel"
                           name="postal"
                           inputRef=postalRef
                           placeholder=localeString.postalCodeLabel
@@ -622,7 +621,6 @@ let make = (
                         }}
                         onChange=onPostalChange
                         paymentType
-                        type_="tel"
                         name="postal"
                         inputRef=postalRef
                         placeholder=localeString.postalCodeLabel
