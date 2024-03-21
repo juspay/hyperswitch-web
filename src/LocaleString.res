@@ -754,11 +754,11 @@ let localeStrings = [
     useExisitingSavedCards: "Utiliser les cartes de débit/crédit enregistrées",
     saveCardDetails: "Enregistrer les détails de la carte",
     addBankAccount: "Ajouter un compte bancaire",
-    achBankDebitTerms: str =>
-      `En fournissant votre numéro de compte et en confirmant ce paiement, vous autorisez ${str} et Hyperswitch, notre prestataire de services de paiement, à envoyer des instructions à votre banque pour débiter votre compte et votre banque à débiter votre compte conformément à ces instructions. Vous avez droit à un remboursement de la part de votre banque selon les termes et conditions de l'accord que vous avez conclu avec elle. Le remboursement doit être demandé dans un délai de 8 semaines à compter de la date à laquelle votre compte a été débité.`,
-    sepaDebitTerms: str =>
-      `En fournissant vos informations de paiement et en confirmant ce paiement, vous autorisez (A) ${str} et Hyperswitch, notre prestataire de services de paiement et/ou PPRO, son prestataire de services local, à envoyer des instructions à votre banque pour débiter votre compte et (B) votre banque à débiter votre compte conformément à ces instructions. Dans le cadre de vos droits, vous avez droit à un remboursement de votre banque selon les termes et conditions de votre accord avec votre banque. Le remboursement doit être demandé dans un délai de 8 semaines à compter de la date à laquelle votre compte a été débité. Vos droits sont expliqués dans une déclaration que vous pouvez obtenir auprès de votre banque. Vous acceptez de recevoir des notifications pour les débits futurs jusqu'à 2 jours avant qu'ils ne se produisent.`,
-    becsDebitTerms: "En fournissant vos coordonnées bancaires et en confirmant ce paiement, vous acceptez la présente demande de prélèvement automatique et l'accord de service de demande de prélèvement automatique et autorisez Hyperswitch Payments Australia Pty Ltd ACN 160 180 343 Numéro d'identification d'utilisateur de prélèvement automatique 507156 (« Hyperswitch ») à débiter votre compte via le système de compensation électronique en bloc (BECS) au nom de Hyperswitch Payment Widget (le « Marchand ») pour tout montant qui vous est communiqué séparément par le Marchand. Vous certifiez que vous êtes soit le titulaire du compte, soit un signataire autorisé du compte mentionné ci-dessus.",
+    achBankDebitTerms: _ =>
+      `Votre autorisation de débit ACH sera configurée maintenant, mais nous confirmerons le montant et vous informerons avant que les futurs paiements ne soient effectués.`,
+    sepaDebitTerms: _ =>
+      `Votre autorisation de débit SEPA sera configurée maintenant, mais nous confirmerons le montant et vous informerons avant que de futurs paiements ne soient effectués.`,
+    becsDebitTerms: `Votre autorisation de débit BECS sera configurée maintenant, mais nous confirmerons le montant et vous informerons avant que les futurs paiements ne soient effectués.`,
     cardTerms: str =>
       `En fournissant les informations relatives à votre carte, vous autorisez ${str} à débiter votre carte pour les paiements futurs conformément à leurs conditions.`,
     payNowButton: "Payer maintenant",
@@ -835,11 +835,11 @@ let localeStrings = [
     useExisitingSavedCards: "Utilizar las tarjetas de débito/crédito guardadas",
     saveCardDetails: "Guardar la información de la tarjeta",
     addBankAccount: "Añadir cuenta bancaria",
-    achBankDebitTerms: str =>
-      `Al proporcionar su número de cuenta y confirmar este pago, autoriza a ${str} y Hyperswitch, nuestro proveedor de servicios de pago, a enviar órdenes a su banco para que aplique cargos en su cuenta y para que realice los correspondientes adeudos en la misma de acuerdo con dichas órdenes. Tiene derecho a recibir un reembolso de su banco de acuerdo con las condiciones del contrato suscrito. El reembolso debe reclamarse en un plazo de 8 semanas desde la fecha en la que se aplicó el cargo en su cuenta.`,
-    sepaDebitTerms: str =>
-      `Al proporcionar su información de pago y confirmar este pago, autoriza a (A) ${str} y Hyperswitch, nuestro proveedor de servicios de pago o a PPRO, su proveedor de servicios local, a enviar órdenes a su banco para que aplique cargos en su cuenta y (B) para que realice los correspondientes adeudos en la misma de acuerdo con dichas órdenes. Como parte de sus derechos, tiene la potestad de que su banco le devuelva el dinero según las condiciones de su contrato. El reembolso debe reclamarse en un plazo de 8 semanas desde la fecha en la que se aplicó el cargo en su cuenta. Sus derechos aparecen explicados en una declaración que puede solicitar en su banco. Acepta recibir notificaciones de futuros cargos hasta 2 días antes de que se produzcan.`,
-    becsDebitTerms: "Al proporcionar los datos de su cuenta bancaria y confirmar este pago, acepta esta solicitud de domiciliación bancaria y el acuerdo de servicio para la misma. Además, autoriza a Hyperswitch Payments Australia Pty Ltd ACN 160 180 343, número de identificación de usuario de domiciliación bancaria 507156 («Hyperswitch»), a realizar adeudos en su cuenta a través del sistema de compensación electrónica masiva (BECS) en nombre de Hyperswitch Payment Widget (el «comercio») por cualquier importe que el comercio le comunique individualmente. Certifica que es titular de una cuenta o un firmante autorizado en la cuenta indicada anteriormente.",
+    achBankDebitTerms: _ =>
+      `Su autorización de débito ACH se configurará ahora, pero confirmaremos el monto y le informaremos antes de que se realicen pagos futuros.`,
+    sepaDebitTerms: _ =>
+      `Su autorización de débito SEPA se configurará ahora, pero confirmaremos el monto y le informaremos antes de que se realicen pagos futuros.`,
+    becsDebitTerms: `Su autorización de débito BECS se configurará ahora, pero confirmaremos el monto y le informaremos antes de que se realicen pagos futuros.`,
     cardTerms: str =>
       `Al proporcionar la información de su tarjeta, permite a ${str} que realice cargos en su tarjeta para futuros pagos de acuerdo con sus términos.`,
     payNowButton: "Pagar ahora",
