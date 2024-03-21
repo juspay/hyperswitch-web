@@ -1,3 +1,10 @@
+## [0.33.11](https://github.com/juspay/hyperswitch-web/compare/v0.33.10...v0.33.11) (2024-03-21)
+
+
+### Bug Fixes
+
+* hotfix changes for postal code ([#245](https://github.com/juspay/hyperswitch-web/issues/245)) ([4ba7350](https://github.com/juspay/hyperswitch-web/commit/4ba7350d4bbfbfcb570bd8c56a51a14df06f4dae))
+
 ## [0.33.10](https://github.com/juspay/hyperswitch-web/compare/v0.33.9...v0.33.10) (2024-03-20)
 
 
