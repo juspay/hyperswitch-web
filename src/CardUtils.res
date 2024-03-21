@@ -311,8 +311,8 @@ let calculateLuhn = value => {
   let sumofUnCheckedArr = Array.reduce(unCheckArr, 0, (acc, val) => acc + val->toInt)
   let totalSum = sumofCheckArr + sumofUnCheckedArr
 
-  //mod(totalSum, 10) == 0
-  true
+  mod(totalSum, 10) == 0
+  // true
 }
 
 let getCardBrandIcon = (cardType, paymentType) => {

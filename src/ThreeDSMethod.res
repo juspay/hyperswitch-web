@@ -1,12 +1,4 @@
 open Utils
-let getKeyValue = (json, str) => {
-  json
-  ->Js.Dict.get(str)
-  ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-  ->Js.Json.decodeString
-  ->Belt.Option.getWithDefault("")
-}
-
 @react.component
 let make = () => {
   let (expiryTime, setExpiryTime) = React.useState(_ => 900000.0)

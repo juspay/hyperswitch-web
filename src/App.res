@@ -18,7 +18,6 @@ let make = () => {
   }, [logger])
 
   let renderFullscreen = {
-    Js.log2("fullscreenMode", fullscreenMode)
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
     | "fullscreen" =>
