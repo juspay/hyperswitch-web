@@ -370,7 +370,7 @@ let cardNumberInRange = val => {
   cardLengthInRange
 }
 let max = (a, b) => {
-  Js.Math.max_int(a, b)
+  Math.Int.max(a, b)
 }
 
 let getMaxLength = val => {
