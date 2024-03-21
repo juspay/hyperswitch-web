@@ -68,7 +68,7 @@ let make = () => {
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
   })
-  React.useEffect1(() => {
+  React.useEffect(() => {
     if expiryTime < 1000.0 {
       Modal.close(setOpenModal)
     }

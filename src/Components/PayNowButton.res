@@ -79,7 +79,7 @@ let make = (
 
   let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
 
-  React.useEffect5(() => {
+  React.useEffect(() => {
     if showFields {
       if selectedOption === Card {
         setIsDisabled(_ => !validFormat)

@@ -151,7 +151,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
       },
     )
   })
-  React.useEffect1(() => {
+  React.useEffect(() => {
     switch paymentlist {
     | SemiLoaded => ()
     | Loaded(_val) => handlePostMessage([("ready", true->JSON.Encode.bool)])
@@ -160,7 +160,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     None
   }, [paymentlist])
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     CardUtils.genreateFontsLink(config.fonts)
     let dict = config.appearance.rules->getDictFromJson
     if dict->Dict.toArray->Array.length > 0 {
@@ -187,7 +187,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     None
   }, [config])
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     open Promise
     let handleFun = (ev: Window.event) => {
       let json = try {
@@ -394,7 +394,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   | None => ()
   }
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     Utils.handlePostMessage([
       ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
       ("iframeId", iframeId->JSON.Encode.string),

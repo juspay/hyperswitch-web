@@ -152,12 +152,12 @@ let make = (~paymentType, ~className="") => {
     }
   }
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     checkPostalValidity(postalCode, setPostalCode, regex)
     None
   }, (regex, country.value))
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setState(prev => {
       ...prev,
       value: "",
@@ -309,7 +309,6 @@ let make = (~paymentType, ~className="") => {
               onChange=onPostalChange
               paymentType
               className
-              type_="tel"
               name="postal"
               inputRef=postalRef
               placeholder=localeString.postalCodeLabel

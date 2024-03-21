@@ -73,7 +73,7 @@ let make = (
     onBlur(ev)
     Utils.handleOnBlurPostMessage(~targetOrigin=parentURL, ())
   }
-  React.useEffect2(() => {
+  React.useEffect(() => {
     if value->String.length > 0 {
       setValidClasses()
     }
@@ -105,7 +105,7 @@ let make = (
 
   let concatString = Array.joinWith([cardEmpty, cardComplete, cardInvalid, cardFocused], "")
 
-  React.useEffect5(() => {
+  React.useEffect(() => {
     Utils.handlePostMessage([
       ("id", iframeId->JSON.Encode.string),
       ("concatedString", concatString->JSON.Encode.string),

@@ -44,12 +44,12 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     )
   }, [socialSecurityNumber])
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     handlePostMessageEvents(~complete, ~empty, ~paymentType="boleto", ~loggerState)
     None
   }, (complete, empty))
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setComplete(_ => complete)
     None
   }, [complete])

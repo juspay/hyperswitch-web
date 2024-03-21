@@ -62,7 +62,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     let obj = getobjFromCardPattern(cardBrand)
     let cvcLength = obj.maxCVCLenth
     if (
@@ -211,7 +211,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let submitAPICall = (body, confirmParam) => {
     intent(~bodyArr=body, ~confirmParam, ~handleUserError=false, ())
   }
-  React.useEffect2(() => {
+  React.useEffect(() => {
     setCvcNumber(_ => "")
     setIsCVCValid(_ => None)
     setCvcError(_ => "")
@@ -326,7 +326,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     Utils.handleMessage(handleFun, "Error in parsing sent Data")
   })
 
-  React.useEffect6(() => {
+  React.useEffect(() => {
     let handleDoSubmit = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
       let jsonDict = json->Utils.getDictFromJson
@@ -340,7 +340,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let cardBrandIcon = getCardBrandIcon(cardBrand->cardType, paymentMode->getPaymentMode)
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setCardError(_ =>
       switch isCardValid {
       | Some(val) => val ? "" : localeString.inValidCardErrorText
@@ -350,7 +350,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, [isCardValid])
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setCvcError(_ =>
       switch isCVCValid {
       | Some(val) => val ? "" : localeString.inCompleteCVCErrorText
@@ -360,7 +360,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, [isCVCValid])
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     setExpiryError(_ =>
       switch (isExpiryValid, isExipryComplete(cardExpiry)) {
       | (Some(true), true) => ""

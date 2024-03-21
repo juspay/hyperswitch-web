@@ -103,7 +103,7 @@ let make = (
 
   let concatString = Array.joinWith([cardEmpty, cardComplete, cardInvalid, cardFocused], "")
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     Utils.handlePostMessage([
       ("id", iframeId->JSON.Encode.string),
       ("concatedString", concatString->JSON.Encode.string),

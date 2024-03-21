@@ -9,7 +9,6 @@ let make = (
   ~cvcProps,
   ~paymentType,
   ~list,
-  ~savedMethods,
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
@@ -42,7 +41,7 @@ let make = (
     | None => ()
     }
   }
-  React.useEffect1(() => {
+  React.useEffect(() => {
     isActive ? focusCVC() : ()
     None
   }, [isActive])
@@ -162,7 +161,7 @@ let make = (
                 paymentMethodType
                 setRequiredFieldsBody
                 isSavedCardFlow=true
-                savedCards=savedMethods
+                savedMethod=paymentItem
               />
               <Surcharge
                 list

@@ -27,7 +27,7 @@ let make = (
     }, 450)->ignore
   }
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     loader ? setOpenModal(_ => false) : setOpenModal(_ => true)
     None
   }, [loader])

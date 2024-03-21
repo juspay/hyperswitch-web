@@ -45,14 +45,14 @@ let make = (
 
   let complete = areRequiredFieldsValid
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setFieldComplete(_ => complete)
     None
   }, [complete])
 
   let empty = areRequiredFieldsEmpty
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     handlePostMessageEvents(
       ~complete,
       ~empty,
