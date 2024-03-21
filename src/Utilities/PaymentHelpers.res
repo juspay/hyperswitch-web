@@ -87,7 +87,6 @@ let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
   let body = `${Js.Global.encodeURIComponent("threeDSMethodData")}=${Js.Global.encodeURIComponent(
       threeDsMethodStr,
     )}`
-  //let body = [("threeDSMethodData", threeDsMethodData)]->Js.Dict.fromArray->Js.Json.object_
   fetchApi(url, ~method_=Fetch.Post, ~bodyStr=body, ())
   ->then(res => {
     res->Fetch.Response.text
@@ -98,12 +97,20 @@ let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
   })
 }
 
-let threeDsAuth = (~clientSecret, ~optLogger, ~headers) => {
+let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
   let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]
   let url = `${endpoint}/payments/${paymentIntentID}/3ds/authentication`
-  let body = [("client_secret", clientSecret->Js.Json.string)]->Js.Dict.fromArray->Js.Json.object_
-  let headersFinal = [("x-feature", "router-custom")]->Js.Array2.concat(headers)->Js.Dict.fromArray
+  let broswerInfo = BrowserSpec.broswerInfo
+  let body =
+    [
+      ("client_secret", clientSecret->Js.Json.string),
+      ("device_channel", "BRW"->Js.Json.string),
+      ("threeds_method_comp_ind", threeDsMethodComp->Js.Json.string),
+    ]
+    ->Js.Array2.concat(broswerInfo())
+    ->Js.Dict.fromArray
+    ->Js.Json.object_
 
   open Promise
   logApi(
@@ -115,7 +122,13 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~headers) => {
     ~logCategory=API,
     (),
   )
-  fetchApi(url, ~method_=Fetch.Post, ~bodyStr=body->Js.Json.stringify, ~headers=headersFinal, ())
+  fetchApi(
+    url,
+    ~method_=Fetch.Post,
+    ~bodyStr=body->Js.Json.stringify,
+    ~headers=headers->Js.Dict.fromArray,
+    (),
+  )
   ->then(res => {
     res->Fetch.Response.json
   })
@@ -340,6 +353,15 @@ let intentCall = (
               intent.nextAction.three_ds_data
               ->Belt.Option.flatMap(Js.Json.decodeObject)
               ->Belt.Option.getWithDefault(Js.Dict.empty())
+            let do3dsMethodCall =
+              threeDsData
+              ->Js.Dict.get("three_ds_method_details")
+              ->Belt.Option.flatMap(Js.Json.decodeObject)
+              ->Belt.Option.flatMap(x => x->Js.Dict.get("three_ds_method_data_submission"))
+              ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+              ->Js.Json.decodeBoolean
+              ->Utils.getBoolValue
+
             let headerObj = Js.Dict.empty()
             headers->Js.Array2.forEach(
               entries => {
@@ -356,6 +378,7 @@ let intentCall = (
                 ("url", url.href->Js.Json.string),
                 ("iframeId", iframeId->Js.Json.string),
               ]->Js.Dict.fromArray
+
             // handleLogging(
             //   ~optLogger,
             //   ~value="",
@@ -364,13 +387,22 @@ let intentCall = (
             //   ~paymentMethod,
             //   (),
             // )
-            Js.log2("IFRAME ID", iframeId)
-            handlePostMessage([
-              ("fullscreen", true->Js.Json.boolean),
-              ("param", `3ds`->Js.Json.string),
-              ("iframeId", iframeId->Js.Json.string),
-              ("metadata", metaData->Js.Json.object_),
-            ])
+            if do3dsMethodCall {
+              handlePostMessage([
+                ("fullscreen", true->Js.Json.boolean),
+                ("param", `3ds`->Js.Json.string),
+                ("iframeId", iframeId->Js.Json.string),
+                ("metadata", metaData->Js.Json.object_),
+              ])
+            } else {
+              metaData->Js.Dict.set("3dsMethodComp", "U"->Js.Json.string)
+              handlePostMessage([
+                ("fullscreen", true->Js.Json.boolean),
+                ("param", `3dsAuth`->Js.Json.string),
+                ("iframeId", iframeId->Js.Json.string),
+                ("metadata", metaData->Js.Json.object_),
+              ])
+            }
           } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
             let session_token = switch intent.nextAction.session_token {
             | Some(token) => token->Utils.getDictFromJson

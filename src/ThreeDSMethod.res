@@ -9,14 +9,9 @@ let getKeyValue = (json, str) => {
 
 @react.component
 let make = () => {
-  let (qrCode, setQrCode) = React.useState(_ => "")
   let (expiryTime, setExpiryTime) = React.useState(_ => 900000.0)
   let (openModal, setOpenModal) = React.useState(_ => false)
-  let (return_url, setReturnUrl) = React.useState(_ => "")
-  let (clientSecret, setClientSecret) = React.useState(_ => "")
-  let (headers, setHeaders) = React.useState(_ => [])
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
 
   let mountToInnerHTML = innerHTML => {
     let ele = Window.querySelector("#threeDsInvisibleIframe")
@@ -34,12 +29,10 @@ let make = () => {
     let handle = (ev: Window.event) => {
       let json = ev.data->Js.Json.parseExn
       let dict = json->Utils.getDictFromJson
-      Js.log2("DICT", dict)
       if dict->Js.Dict.get("fullScreenIframeMounted")->Belt.Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict =
           metadata->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
-        Js.log2("METADATA DICT", metaDataDict)
         let threeDsDataDict =
           metaDataDict
           ->Js.Dict.get("threeDSData")
@@ -58,17 +51,16 @@ let make = () => {
           ->Belt.Option.flatMap(Js.Json.decodeObject)
           ->Belt.Option.flatMap(x => x->Js.Dict.get("three_ds_method_data"))
           ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-        Js.log3("THREEDSURL", threeDsUrl, threeDsMethodData)
         let iframeId = metaDataDict->getString("iframeId", "")
 
         open Promise
         PaymentHelpers.threeDsMethod(threeDsUrl, threeDsMethodData, ~optLogger=Some(logger))
         ->then(res => {
-          Js.log2("PREMOUNT RES", res)
           mountToInnerHTML(res)
           resolve(res)
         })
         ->then(res => {
+          metadata->Utils.getDictFromJson->Js.Dict.set("3dsMethodComp", "Y"->Js.Json.string)
           handlePostMessage([
             ("fullscreen", true->Js.Json.boolean),
             ("param", `3dsAuth`->Js.Json.string),
@@ -78,6 +70,13 @@ let make = () => {
           resolve(res)
         })
         ->catch(e => {
+          metadata->Utils.getDictFromJson->Js.Dict.set("3dsMethodComp", "N"->Js.Json.string)
+          handlePostMessage([
+            ("fullscreen", true->Js.Json.boolean),
+            ("param", `3dsAuth`->Js.Json.string),
+            ("iframeId", iframeId->Js.Json.string),
+            ("metadata", metadata),
+          ])
           Js.log("3DS validation failed")
           reject(e)
         })

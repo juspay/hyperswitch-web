@@ -271,17 +271,13 @@ let makeIframe = (element, url) => {
     element->appendChild(iframe)
   })
 }
-let makeForm = (element, url) => {
+let makeForm = (element, url, id) => {
   open Types
-
   let form = createElement("form")
-
-  form.id = "orca-3ds-form"
-  form.name = "orca-3ds-form"
+  form.id = id
+  form.name = id
   form.action = url
   form.method = "POST"
-
-  // form.target = formTarget;
   form.enctype = "application/x-www-form-urlencoded;charset=UTF-8"
   form.style = "display: hidden; "
   element->appendChild(form)
