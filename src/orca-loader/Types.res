@@ -58,7 +58,7 @@ type hyperInstance = {
   confirmPayment: JSON.t => Promise.t<JSON.t>,
   elements: JSON.t => element,
   confirmCardPayment: (string, option<JSON.t>, option<JSON.t>) => Promise.t<JSON.t>,
-  retrievePaymentIntent: string => Js.Promise.t<JSON.t>,
+  retrievePaymentIntent: string => Promise.t<JSON.t>,
   widgets: JSON.t => element,
   paymentRequest: JSON.t => JSON.t,
   initPaymentSession: JSON.t => initPaymentSession,
@@ -91,7 +91,7 @@ let getElement = _componentName => {
 }
 
 let fetchUpdates = () => {
-  Js.Promise.make((~resolve, ~reject as _) => {
+  Promise.make((resolve, _) => {
     setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
   })
 }
@@ -123,16 +123,16 @@ let getCustomerDefaultSavedPaymentMethodData = () => {
 }
 
 let confirmWithCustomerDefaultPaymentMethod = _confirmParams => {
-  Js.Promise.resolve(Dict.make()->JSON.Encode.object)
+  Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 
 let defaultGetCustomerSavedPaymentMethods = () => {
   // TODO: After rescript migration to v11, add this without TAG using enums
-  // Js.Promise.resolve({
+  // Promise.resolve({
   //   getCustomerDefaultSavedPaymentMethodData,
   //   confirmWithCustomerDefaultPaymentMethod,
   // })
-  Js.Promise.resolve(JSON.Encode.null)
+  Promise.resolve(JSON.Encode.null)
 }
 
 let defaultInitPaymentSession: initPaymentSession = {
