@@ -1,3 +1,10 @@
+## [0.33.12](https://github.com/juspay/hyperswitch-web/compare/v0.33.11...v0.33.12) (2024-03-21)
+
+
+### Bug Fixes
+
+* **savedcarditem:** fixed Dynamic Fields not rendering for some saved… ([#246](https://github.com/juspay/hyperswitch-web/issues/246)) ([25d8f67](https://github.com/juspay/hyperswitch-web/commit/25d8f67b3f5a86aa9416b86044eb15c466ac55e5))
+
 ## [0.33.11](https://github.com/juspay/hyperswitch-web/compare/v0.33.10...v0.33.11) (2024-03-21)
 
 
