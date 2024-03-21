@@ -65,7 +65,7 @@ type localeStrings = {
   saveWalletDetails: string,
   morePaymentMethods: string,
   useExistingPaymentMethods: string,
-  nicknameLabel: string,
+  cardNickname: string,
   nicknamePlaceholder: string,
 }
 
@@ -147,7 +147,7 @@ let defaultLocale = {
   saveWalletDetails: "Wallets details will be saved upon selection",
   morePaymentMethods: "More payment methods",
   useExistingPaymentMethods: "Use saved payment methods",
-  nicknameLabel: "Card Nickname",
+  cardNickname: "Card Nickname",
   nicknamePlaceholder: "Card Nickname (Optional)",
 }
 
@@ -232,7 +232,7 @@ let localeStrings = [
     saveWalletDetails: "Wallets details will be saved upon selection",
     morePaymentMethods: "More payment methods",
     useExistingPaymentMethods: "Use saved payment methods",
-    nicknameLabel: "Card Nickname",
+    cardNickname: "Card Nickname",
     nicknamePlaceholder: "Card Nickname (Optional)",
   },
   {
@@ -313,7 +313,7 @@ let localeStrings = [
     saveWalletDetails: "פרטי הארנק יישמרו בעת בחירה",
     morePaymentMethods: `אמצעי תשלום נוספים`,
     useExistingPaymentMethods: `השתמש באמצעי תשלום שמורים`,
-    nicknameLabel: `כינוי לכרטיס`,
+    cardNickname: `כינוי לכרטיס`,
     nicknamePlaceholder: `כינוי לכרטיס (אופציונלי)`,
   },
   {
@@ -394,7 +394,7 @@ let localeStrings = [
     saveWalletDetails: "Les détails du portefeuille seront enregistrés lors de la sélection",
     morePaymentMethods: `Plus de méthodes de paiement`,
     useExistingPaymentMethods: `Utiliser les modes de paiement enregistrés`,
-    nicknameLabel: `Pseudonyme de la carte`,
+    cardNickname: `Pseudonyme de la carte`,
     nicknamePlaceholder: `Surnom de la carte (facultatif)`,
   },
   {
@@ -475,7 +475,7 @@ let localeStrings = [
     saveWalletDetails: "Wallets details will be saved upon selection",
     morePaymentMethods: "More payment methods",
     useExistingPaymentMethods: "Use saved payment methods",
-    nicknameLabel: "Card Nickname",
+    cardNickname: "Card Nickname",
     nicknamePlaceholder: "Card Nickname (Optional)",
   },
   {
@@ -556,7 +556,7 @@ let localeStrings = [
     saveWalletDetails: "سيتم حفظ تفاصيل المحفظة عند الاختيار",
     morePaymentMethods: `المزيد من طرق الدفع`,
     useExistingPaymentMethods: `استخدم طرق الدفع المحفوظة`,
-    nicknameLabel: `الاسم علي الكارت`,
+    cardNickname: `الاسم علي الكارت`,
     nicknamePlaceholder: `اسم البطاقة (اختياري)`,
   },
   {
@@ -637,7 +637,7 @@ let localeStrings = [
     saveWalletDetails: "選択時にウォレットの詳細が保存されます",
     morePaymentMethods: `その他の支払い方法`,
     useExistingPaymentMethods: `保存した支払い方法を使用する`,
-    nicknameLabel: `カードのニックネーム`,
+    cardNickname: `カードのニックネーム`,
     nicknamePlaceholder: `カードニックネーム（任意）`,
   },
   {
@@ -718,7 +718,7 @@ let localeStrings = [
     saveWalletDetails: "Wallet-Details werden beim Auswählen gespeichert",
     morePaymentMethods: `Mehr Zahlungsmethoden`,
     useExistingPaymentMethods: `Gespeicherte Zahlungsarten nutzen`,
-    nicknameLabel: `Spitzname der Karte`,
+    cardNickname: `Spitzname der Karte`,
     nicknamePlaceholder: `Kartenname (optional)`,
   },
   {
@@ -770,7 +770,7 @@ let localeStrings = [
     card: "Carte",
     billingNameLabel: "Nom de facturation",
     cardHolderName: "Nom du titulaire",
-    nicknameLabel: "Pseudonyme de la carte",
+    cardNickname: "Pseudonyme de la carte",
     billingNamePlaceholder: "Nom et prénom",
     emailEmptyText: "L'e-mail ne peut pas être vide",
     emailInvalidText: "Adresse e-mail invalide",
@@ -851,7 +851,7 @@ let localeStrings = [
     card: "Tarjeta",
     billingNameLabel: "Nombre de facturación",
     cardHolderName: "Nombre del titular de la tarjeta",
-    nicknameLabel: "Apodo de la tarjeta",
+    cardNickname: "Apodo de la tarjeta",
     billingNamePlaceholder: "Nombre y apellido",
     emailEmptyText: "El correo electrónico no puede estar vacío.",
     emailInvalidText: "Dirección de correo electrónico no válida",
@@ -932,7 +932,7 @@ let localeStrings = [
     card: "Targeta",
     billingNameLabel: "Nom de facturació",
     cardHolderName: "Nom del titular de la targeta",
-    nicknameLabel: "Sobrenom de la targeta",
+    cardNickname: "Sobrenom de la targeta",
     billingNamePlaceholder: "Nom i cognom",
     emailEmptyText: "El correu electrònic no pot estar buit",
     emailInvalidText: "adressa de correu invàlida",
