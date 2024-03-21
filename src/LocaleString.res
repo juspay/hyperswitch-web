@@ -110,9 +110,9 @@ let defaultLocale = {
   useExisitingSavedCards: "Use saved debit/credit cards",
   saveCardDetails: "Save card details",
   addBankAccount: "Add bank account",
-  achBankDebitTerms: _str =>
+  achBankDebitTerms: _ =>
     `Your ACH Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.`,
-  sepaDebitTerms: _str =>
+  sepaDebitTerms: _ =>
     `Your SEPA Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.`,
   becsDebitTerms: `Your BECS Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.`,
   cardTerms: str =>
@@ -923,9 +923,9 @@ let localeStrings = [
     useExisitingSavedCards: "Utilitzar targetes de crèdit/dèbit guardades",
     saveCardDetails: "Guardar detalls de la targeta",
     addBankAccount: "Afegir compte bancari",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `La teva autorització de dèbit ACH s'establirà ara, però confirmarem l'import i t'informarem abans de fer futurs pagaments.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `La teva autorització de dèbit SEPA s'establirà ara, però confirmarem l'import i t'informarem abans de fer futurs pagaments.`,
     becsDebitTerms: `La teva autorització de dèbit BECS s'establirà ara, però confirmarem l'import i t'informarem abans de fer futurs pagaments.`,
     cardTerms: str =>
@@ -1004,9 +1004,9 @@ let localeStrings = [
     useExisitingSavedCards: "Usar cartões de crédito/débito salvos",
     saveCardDetails: "Salvar detalhes do cartão",
     addBankAccount: "Adicionar conta bancária",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Sua Autorização de Débito ACH será configurada agora, mas confirmaremos o valor e informaremos antes de futuros pagamentos.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Sua Autorização de Débito SEPA será configurada agora, mas confirmaremos o valor e informaremos antes de futuros pagamentos.`,
     becsDebitTerms: `Sua Autorização de Débito BECS será configurada agora, mas confirmaremos o valor e informaremos antes de futuros pagamentos.`,
     cardTerms: str =>
@@ -1085,9 +1085,9 @@ let localeStrings = [
     useExisitingSavedCards: "Usa carte di credito/debito salvate",
     saveCardDetails: "Salva dettagli della carta",
     addBankAccount: "Aggiungi conto bancario",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `La tua Autorizzazione al Debito ACH verrà impostata ora, ma confermeremo l'importo e ti informeremo prima di futuri pagamenti.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `La tua Autorizzazione al Debito SEPA verrà impostata ora, ma confermeremo l'importo e ti informeremo prima di futuri pagamenti.`,
     becsDebitTerms: `La tua Autorizzazione al Debito BECS verrà impostata ora, ma confermeremo l'importo e ti informeremo prima di futuri pagamenti.`,
     cardTerms: str =>
@@ -1166,9 +1166,9 @@ let localeStrings = [
     useExisitingSavedCards: "Użyj zapisanych kart kredytowych/debetowych",
     saveCardDetails: "Zapisz szczegóły karty",
     addBankAccount: "Dodaj konto bankowe",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Twoje upoważnienie do obciążenia ACH zostanie teraz ustawione, ale potwierdzimy kwotę i poinformujemy przed przyszłymi płatnościami.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Twoje upoważnienie do obciążenia SEPA zostanie teraz ustawione, ale potwierdzimy kwotę i poinformujemy przed przyszłymi płatnościami.`,
     becsDebitTerms: `Twoje upoważnienie do obciążenia BECS zostanie teraz ustawione, ale potwierdzimy kwotę i poinformujemy przed przyszłymi płatnościami.`,
     cardTerms: str =>
@@ -1247,9 +1247,9 @@ let localeStrings = [
     useExisitingSavedCards: "Gebruik opgeslagen credit-/debitcards",
     saveCardDetails: "Kaartgegevens opslaan",
     addBankAccount: "Voeg bankrekening toe",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Uw ACH-debitmachtiging wordt nu ingesteld, maar we zullen het bedrag bevestigen en u op de hoogte stellen voordat er toekomstige betalingen worden uitgevoerd.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Uw SEPA-debitmachtiging wordt nu ingesteld, maar we zullen het bedrag bevestigen en u op de hoogte stellen voordat er toekomstige betalingen worden uitgevoerd.`,
     becsDebitTerms: `Uw BECS-debitmachtiging wordt nu ingesteld, maar we zullen het bedrag bevestigen en u op de hoogte stellen voordat er toekomstige betalingen worden uitgevoerd.`,
     cardTerms: str =>
@@ -1328,9 +1328,9 @@ let localeStrings = [
     useExisitingSavedCards: "Gebruik opgeslagen credit-/debitcards",
     saveCardDetails: "Kaartgegevens opslaan",
     addBankAccount: "Voeg bankrekening toe",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Uw ACH-debitmachtiging wordt nu ingesteld, maar we zullen het bedrag bevestigen en u op de hoogte stellen voordat er toekomstige betalingen worden uitgevoerd.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Uw SEPA-debitmachtiging wordt nu ingesteld, maar we zullen het bedrag bevestigen en u op de hoogte stellen voordat er toekomstige betalingen worden uitgevoerd.`,
     becsDebitTerms: `Uw BECS-debitmachtiging wordt nu ingesteld, maar we zullen het bedrag bevestigen en u op de hoogte stellen voordat er toekomstige betalingen worden uitgevoerd.`,
     cardTerms: str =>
@@ -1409,9 +1409,9 @@ let localeStrings = [
     useExisitingSavedCards: "Använd sparade kredit-/betalkort",
     saveCardDetails: "Spara kortuppgifter",
     addBankAccount: "Lägg till bankkonto",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Din ACH Debiteringsauktorisation kommer att ställas in nu, men vi kommer att bekräfta beloppet och meddela dig innan framtida betalningar genomförs.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Din SEPA Debiteringsauktorisation kommer att ställas in nu, men vi kommer att bekräfta beloppet och meddela dig innan framtida betalningar genomförs.`,
     becsDebitTerms: `Din BECS Debiteringsauktorisation kommer att ställas in nu, men vi kommer att bekräfta beloppet och meddela dig innan framtida betalningar genomförs.`,
     cardTerms: str =>
@@ -1490,9 +1490,9 @@ let localeStrings = [
     useExisitingSavedCards: "Использовать сохраненные кредитные/дебетовые карты",
     saveCardDetails: "Сохранить данные карты",
     addBankAccount: "Добавить банковский счет",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Ваше разрешение на ACH дебетование будет установлено сейчас, но мы подтвердим сумму и сообщим вам до будущих платежей.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Ваше разрешение на SEPA дебетование будет установлено сейчас, но мы подтвердим сумму и сообщим вам до будущих платежей.`,
     becsDebitTerms: `Ваше разрешение на BECS дебетование будет установлено сейчас, но мы подтвердим сумму и сообщим вам до будущих платежей.`,
     cardTerms: str =>
@@ -1536,6 +1536,87 @@ let localeStrings = [
     nicknamePlaceholder: "Прозвище карты (по желанию)",
   },
   {
+    locale: "lt",
+    localeDirection: "ltr",
+    cardNumberLabel: "Kortelės numeris",
+    inValidCardErrorText: "Kortelės numeris neteisingas.",
+    inCompleteCVCErrorText: "Jūsų kortelės saugos kodas yra nebaigtas.",
+    inCompleteExpiryErrorText: "Jūsų kortelės galiojimo data yra nebaigta.",
+    pastExpiryErrorText: "Jūsų kortelės galiojimo data yra neteisinga",
+    poweredBy: "Suteikia Hyperswitch",
+    validThruText: "Galioja iki",
+    sortCodeText: "Rūšiavimo kodas",
+    accountNumberText: "Sąskaitos numeris",
+    cvcTextLabel: "CVC",
+    emailLabel: "El. paštas",
+    emailEmptyText: "El. paštas negali būti tuščias",
+    emailInvalidText: "Neteisingas el. pašto adresas",
+    line1Label: "Adreso eilutė 1",
+    line1Placeholder: "Gatvės adresas",
+    line1EmptyText: "Adreso eilutė 1 negali būti tuščia",
+    line2Label: "Adreso eilutė 2",
+    line2Placeholder: "Būstas, buto numeris ir kt. (neprivaloma)",
+    line2EmptyText: "Adreso eilutė 2 negali būti tuščia",
+    cityLabel: "Miestas",
+    cityEmptyText: "Miestas negali būti tuščias",
+    postalCodeLabel: "Pašto kodas",
+    postalCodeEmptyText: "Pašto kodas negali būti tuščias",
+    postalCodeInvalidText: "Neteisingas pašto kodas",
+    stateLabel: "Valstija",
+    stateEmptyText: "Valstija negali būti tuščia",
+    fullNameLabel: "Pilnas vardas",
+    fullNamePlaceholder: "Vardas ir pavardė",
+    countryLabel: "Šalis",
+    currencyLabel: "Valiuta",
+    bankLabel: "Pasirinkti banką",
+    redirectText: "Pateikę užsakymą, jūs būsite nukreipti į saugų mokėjimą.",
+    bankDetailsText: "Pateikę šiuos duomenis, gausite banko sąskaitos informaciją mokėjimui. Įsitikinkite, kad ją užsirašėte.",
+    orPayUsing: "Arba mokėkite naudodami",
+    addNewCard: "Pridėti kreditinę/debetinę kortelę",
+    useExisitingSavedCards: "Naudoti išsaugotas debetines/kreditines korteles",
+    saveCardDetails: "Išsaugoti kortelės duomenis",
+    addBankAccount: "Pridėti banko sąskaitą",
+    achBankDebitTerms: _ =>
+      `Jūsų ACH Debito autorizacija bus nustatyta dabar, tačiau prieš būsimų mokėjimų ėmimą mes patvirtinsime sumą ir pranešime jums.`,
+    sepaDebitTerms: _ =>
+      `Jūsų SEPA Debito autorizacija bus nustatyta dabar, tačiau prieš būsimų mokėjimų ėmimą mes patvirtinsime sumą ir pranešime jums.`,
+    becsDebitTerms: `Jūsų BECS Debito autorizacija bus nustatyta dabar, tačiau prieš būsimų mokėjimų ėmimą mes patvirtinsime sumą ir pranešime jums.`,
+    cardTerms: str =>
+      `Pateikdami savo kortelės informaciją, jūs leidžiate ${str} mokėti už būsimus mokėjimus pagal jų sąlygas.`,
+    payNowButton: "Mokėti Dabar",
+    cardNumberEmptyText: "Kortelės numeris negali būti tuščias",
+    cardExpiryDateEmptyText: "Kortelės galiojimo data negali būti tuščia",
+    cvcNumberEmptyText: "CVC numeris negali būti tuščias",
+    enterFieldsText: "Prašome įvesti visus laukus",
+    enterValidDetailsText: "Prašome įvesti teisingus duomenis",
+    card: "Kortelė",
+    surchargeMsgAmount: (currency, str) => <>
+      {React.string(`Už šį sandorį bus pritaikytas papildomas mokestis ${Utils.nbsp}`)}
+      <strong> {React.string(`${currency} ${str}`)} </strong>
+      {React.string({`${Utils.nbsp}sumą`})}
+    </>,
+    surchargeMsgAmountForCard: (currency, str) => <>
+      {React.string(`Iki ${Utils.nbsp}`)}
+      <strong> {React.string(`${currency} ${str}`)} </strong>
+      {React.string(` už šį sandorį bus pritaikytas papildomas mokestis`)}
+    </>,
+    surchargeMsgAmountForOneClickWallets: "Pritaikoma papildoma mokestis",
+    billingNameLabel: "Sąskaitos mokėtojo vardas",
+    billingNamePlaceholder: "Vardas ir pavardė",
+    cardHolderName: "Kortelės turėtojo vardas",
+    on: "ant",
+    \"and": "ir",
+    nameEmptyText: str => `Prašome pateikti savo ${str}`,
+    completeNameEmptyText: str => `Prašome pateikti visą savo ${str}`,
+    billingDetailsText: "Sąskaitos informacija",
+    socialSecurityNumberLabel: "Asmens kodas",
+    saveWalletDetails: "Piniginės duomenys bus išsaugoti pasirinkus",
+    morePaymentMethods: "Daugiau mokėjimo metodų",
+    useExistingPaymentMethods: "Naudoti išsaugotus mokėjimo metodus",
+    nicknameLabel: "Kortelės slapyvardis",
+    nicknamePlaceholder: "Kortelės slapyvardis (Neprivaloma)",
+  },
+  {
     locale: "cs",
     localeDirection: "ltr",
     cardNumberLabel: "Číslo karty",
@@ -1576,9 +1657,9 @@ let localeStrings = [
     useExisitingSavedCards: "Použít uložené debetní/kreditní karty",
     saveCardDetails: "Uložit detaily karty",
     addBankAccount: "Přidat bankovní účet",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Vaše povolení k ACH Debit bude nyní nastaveno, ale před budoucími platbami potvrdíme částku a dáme vám vědět.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Vaše povolení k SEPA Debit bude nyní nastaveno, ale před budoucími platbami potvrdíme částku a dáme vám vědět.`,
     becsDebitTerms: `Vaše povolení k BECS Debit bude nyní nastaveno, ale před budoucími platbami potvrdíme částku a dáme vám vědět.`,
     cardTerms: str =>
@@ -1614,7 +1695,7 @@ let localeStrings = [
     morePaymentMethods: "Více platebních metod",
     useExistingPaymentMethods: "Použít uložené platební metody",
     nicknameLabel: "Přezdívka karty",
-    nicknamePlaceholder: "Přezdívka karty",
+    nicknamePlaceholder: "Přezdívka karty (Volitelné)",
   },
   {
     locale: "sk",
@@ -1657,9 +1738,9 @@ let localeStrings = [
     useExisitingSavedCards: "Použiť uložené debetné/kreditné karty",
     saveCardDetails: "Uložiť detaily karty",
     addBankAccount: "Pridať bankový účet",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Vaše oprávnenie k ACH debite bude teraz nastavené, ale pred budúcimi platbami overíme sumu a dáme vám vedieť.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Vaše oprávnenie k SEPA debite bude teraz nastavené, ale pred budúcimi platbami overíme sumu a dáme vám vedieť.`,
     becsDebitTerms: `Vaše oprávnenie k BECS debite bude teraz nastavené, ale pred budúcimi platbami overíme sumu a dáme vám vedieť.`,
     cardTerms: str =>
@@ -1738,9 +1819,9 @@ let localeStrings = [
     useExisitingSavedCards: "Notaðu vistaða debet/kredit kort",
     saveCardDetails: "Vista kortupplýsingar",
     addBankAccount: "Bæta við bankareikningi",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Þinn ACH Debit heimild verður uppsett núna, en við munum staðfesta upphæðina og láta þig vita fyrir framtíðar greiðslur.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Þín SEPA Debit heimild verður uppsett núna, en við munum staðfesta upphæðina og láta þig vita fyrir framtíðar greiðslur.`,
     becsDebitTerms: `Þín BECS Debit heimild verður uppsett núna, en við munum staðfesta upphæðina og láta þig vita fyrir framtíðar greiðslur.`,
     cardTerms: str =>
@@ -1819,9 +1900,9 @@ let localeStrings = [
     useExisitingSavedCards: "Defnyddiwch gerdyn credyd/debit wedi'u cadw",
     saveCardDetails: "Cadw manylion y cerdyn",
     addBankAccount: "Ychwanegu cyfrif banc",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Bydd eich ACH Debit Hysbysiad yn cael ei sefydlu nawr, ond byddwn yn cadarnhau'r swm a'ch hysbysu cyn cymryd taliadau yn y dyfodol.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Bydd eich ACH Debit Hysbysiad yn cael ei sefydlu nawr, ond byddwn yn cadarnhau'r swm a'ch hysbysu cyn cymryd taliadau yn y dyfodol.`,
     becsDebitTerms: `Bydd eich ACH Debit Hysbysiad yn cael ei sefydlu nawr, ond byddwn yn cadarnhau'r swm a'ch hysbysu cyn cymryd taliadau yn y dyfodol.`,
     cardTerms: str =>
@@ -1900,9 +1981,9 @@ let localeStrings = [
     useExisitingSavedCards: "Χρησιμοποιήστε αποθηκευμένες πιστωτικές / χρεωστικές κάρτες",
     saveCardDetails: "Αποθήκευση λεπτομερειών κάρτας",
     addBankAccount: "Προσθήκη τραπεζικού λογαριασμού",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Η Εξουσιοδότηση Χρέωσης ACH θα δημιουργηθεί τώρα, αλλά θα επιβεβαιώσουμε το ποσό και θα σας ενημερώσουμε πριν γίνουν μελλοντικές πληρωμές.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Η Εξουσιοδότηση Χρέωσης SEPA θα δημιουργηθεί τώρα, αλλά θα επιβεβαιώσουμε το ποσό και θα σας ενημερώσουμε πριν γίνουν μελλοντικές πληρωμές.`,
     becsDebitTerms: `Η Εξουσιοδότηση Χρέωσης BECS θα δημιουργηθεί τώρα, αλλά θα επιβεβαιώσουμε το ποσό και θα σας ενημερώσουμε πριν γίνουν μελλοντικές πληρωμές.`,
     cardTerms: str =>
@@ -1985,9 +2066,9 @@ let localeStrings = [
     useExisitingSavedCards: "Kasutage salvestatud deebet-/krediitkaarte",
     saveCardDetails: "Salvesta kaardi üksikasjad",
     addBankAccount: "Lisa pangakonto",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Teie ACH deebitehing loetakse nüüd loodud, kuid kinnitame summa ja anname teile teada enne tulevasi makseid.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Teie SEPA deebitehing loetakse nüüd loodud, kuid kinnitame summa ja anname teile teada enne tulevasi makseid.`,
     becsDebitTerms: `Teie BECS-i deebitehing loetakse nüüd loodud, kuid kinnitame summa ja anname teile teada enne tulevasi makseid.`,
     cardTerms: str =>
@@ -2066,9 +2147,9 @@ let localeStrings = [
     useExisitingSavedCards: "Käytä tallennettuja luotto-/pankkikortteja",
     saveCardDetails: "Tallenna korttitiedot",
     addBankAccount: "Lisää pankkitili",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `ACH Debit -valtuutesi asetetaan nyt, mutta vahvistamme summan ja ilmoitamme sinulle ennen tulevia maksuja.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `SEPA Debit -valtuutesi asetetaan nyt, mutta vahvistamme summan ja ilmoitamme sinulle ennen tulevia maksuja.`,
     becsDebitTerms: `BECS Debit -valtuutesi asetetaan nyt, mutta vahvistamme summan ja ilmoitamme sinulle ennen tulevia maksuja.`,
     cardTerms: str =>
@@ -2145,9 +2226,9 @@ let localeStrings = [
     useExisitingSavedCards: "Bruk lagrede debet-/kredittkort",
     saveCardDetails: "Lagre kortdetaljer",
     addBankAccount: "Legg til bankkonto",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Din ACH-debiteringsfullmakt vil bli satt opp nå, men vi vil bekrefte beløpet og gi deg beskjed før fremtidige betalinger blir gjort.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Din SEPA-debiteringsfullmakt vil bli satt opp nå, men vi vil bekrefte beløpet og gi deg beskjed før fremtidige betalinger blir gjort.`,
     becsDebitTerms: `Din BECS-debiteringsfullmakt vil bli satt opp nå, men vi vil bekrefte beløpet og gi deg beskjed før fremtidige betalinger blir gjort.`,
     cardTerms: str =>
@@ -2226,9 +2307,9 @@ let localeStrings = [
     useExisitingSavedCards: "Koristite spremljene debitne/kreditne kartice",
     saveCardDetails: "Spremi detalje kartice",
     addBankAccount: "Dodajte bankovni račun",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Vaša ACH Debitna autorizacija bit će postavljena sada, ali ćemo potvrditi iznos i obavijestiti vas prije nego što se obave buduće uplate.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Vaša SEPA Debitna autorizacija bit će postavljena sada, ali ćemo potvrditi iznos i obavijestiti vas prije nego što se obave buduće uplate.`,
     becsDebitTerms: `Vaša BECS Debitna autorizacija bit će postavljena sada, ali ćemo potvrditi iznos i obavijestiti vas prije nego što se obave buduće uplate.`,
     cardTerms: str =>
@@ -2307,9 +2388,9 @@ let localeStrings = [
     useExisitingSavedCards: "Brug gemte betalingskort",
     saveCardDetails: "Gem kortoplysninger",
     addBankAccount: "Tilføj bankkonto",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Din ACH-debiteringsautorisation vil blive oprettet nu, men vi vil bekræfte beløbet og give dig besked, inden fremtidige betalinger foretages.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Din SEPA-debiteringsautorisation vil blive oprettet nu, men vi vil bekræfte beløbet og give dig besked, inden fremtidige betalinger foretages.`,
     becsDebitTerms: `Din BECS-debiteringsautorisation vil blive oprettet nu, men vi vil bekræfte beløbet og give dig besked, inden fremtidige betalinger foretages.`,
     cardTerms: str =>
@@ -2388,9 +2469,9 @@ let localeStrings = [
     useExisitingSavedCards: "Guna kad kredit/debit yang disimpan",
     saveCardDetails: "Simpan butiran kad",
     addBankAccount: "Tambah akaun bank",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `Kebenaran ACH Debit anda akan ditetapkan sekarang, tetapi kami akan mengesahkan jumlahnya dan memberitahu anda sebelum pembayaran akan datang.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `Kebenaran Debit SEPA anda akan ditetapkan sekarang, tetapi kami akan mengesahkan jumlahnya dan memberitahu anda sebelum pembayaran akan datang.`,
     becsDebitTerms: `Kebenaran Debit BECS anda akan ditetapkan sekarang, tetapi kami akan mengesahkan jumlahnya dan memberitahu anda sebelum pembayaran akan datang.`,
     cardTerms: str =>
@@ -2469,9 +2550,9 @@ let localeStrings = [
     useExisitingSavedCards: "Kayıtlı Kredi/Debit Kartlarını Kullan",
     saveCardDetails: "Kart Detaylarını Kaydet",
     addBankAccount: "Banka Hesabı Ekle",
-    achBankDebitTerms: _str =>
+    achBankDebitTerms: _ =>
       `ACH Borç Yetkiniz şimdi oluşturulacak, ancak gelecekteki ödemelerden önce miktarı onaylayacağız ve size bildireceğiz.`,
-    sepaDebitTerms: _str =>
+    sepaDebitTerms: _ =>
       `SEPA Borç Yetkiniz şimdi oluşturulacak, ancak gelecekteki ödemelerden önce miktarı onaylayacağız ve size bildireceğiz.`,
     becsDebitTerms: `BECS Borç Yetkiniz şimdi oluşturulacak, ancak gelecekteki ödemelerden önce miktarı onaylayacağız ve size bildireceğiz.`,
     cardTerms: str =>
