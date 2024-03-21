@@ -152,6 +152,7 @@ let defaultLocale = {
 }
 
 type locale = {localeStrings: array<localeStrings>}
+
 let localeStrings = [
   {
     locale: "en",
