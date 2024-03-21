@@ -25,7 +25,7 @@ let make = (
     let value = target["value"]
     setValue(value)
   }
-  let disbaledBG = React.useMemo1(() => {
+  let disbaledBG = React.useMemo(() => {
     themeObj.colorBackground
   }, [themeObj])
   React.useEffect0(() => {

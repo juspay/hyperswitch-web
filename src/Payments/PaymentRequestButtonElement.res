@@ -40,8 +40,8 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
   open SessionsType
   let dict = sessions->Utils.getDictFromJson
 
-  let sessionObj = React.useMemo1(() => itemToObjMapper(dict, Others), [dict])
-  let paypalToken = React.useMemo1(
+  let sessionObj = React.useMemo(() => itemToObjMapper(dict, Others), [dict])
+  let paypalToken = React.useMemo(
     () => getPaymentSessionObj(sessionObj.sessionsToken, Paypal),
     [sessionObj],
   )

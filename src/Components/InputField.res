@@ -88,7 +88,7 @@ let make = (
 
   let isValidValue = CardUtils.getBoolOptionVal(isValid)
 
-  let (cardEmpty, cardComplete, cardInvalid, cardFocused) = React.useMemo5(() => {
+  let (cardEmpty, cardComplete, cardInvalid, cardFocused) = React.useMemo(() => {
     let isCardDetailsEmpty =
       String.length(value) == 0
         ? `${options.classes.base} ${options.classes.empty} `

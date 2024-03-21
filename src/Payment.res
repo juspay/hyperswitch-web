@@ -45,7 +45,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let (isCVCValid, setIsCVCValid) = React.useState(_ => None)
   let (isZipValid, setIsZipValid) = React.useState(_ => None)
 
-  let (cardBrand, maxCardLength) = React.useMemo3(() => {
+  let (cardBrand, maxCardLength) = React.useMemo(() => {
     let brand = getCardBrand(cardNumber)
     let maxLength = getMaxLength(cardNumber)
     let isNotBancontact = selectedOption !== "bancontact_card" && brand == ""
@@ -166,7 +166,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     }
   }
 
-  let handleElementFocus = React.useMemo4(() => {
+  let handleElementFocus = React.useMemo(() => {
     isFocus => {
       setIsFocus(_ => isFocus)
     }

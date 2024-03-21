@@ -18,7 +18,7 @@ let useSurchargeDetailsForOneClickWallets = (~list) => {
     RecoilAtoms.areOneClickWalletsRendered,
   )
 
-  React.useMemo2(() => {
+  React.useMemo(() => {
     oneClickWallets->Array.reduce([], (acc, wallet) => {
       let isWalletBtnRendered = switch wallet.paymentMethodType {
       | "apple_pay" => areOneClickWalletsRendered.isApplePay

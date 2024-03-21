@@ -24,10 +24,10 @@ let make = (
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
-  let isGooglePaySDKFlow = React.useMemo1(() => {
+  let isGooglePaySDKFlow = React.useMemo(() => {
     sessionObj->Option.isSome
   }, [sessionObj])
-  let isGooglePayThirdPartyFlow = React.useMemo1(() => {
+  let isGooglePayThirdPartyFlow = React.useMemo(() => {
     thirdPartySessionObj->Option.isSome
   }, [sessionObj])
 
@@ -50,7 +50,7 @@ let make = (
   | None => PaymentMethodsRecord.RedirectToURL
   }
 
-  let isInvokeSDKFlow = React.useMemo1(() => {
+  let isInvokeSDKFlow = React.useMemo(() => {
     (isGooglePaySDKFlow || isGooglePayThirdPartyFlow) &&
       paymentExperience == PaymentMethodsRecord.InvokeSDK
   }, [sessionObj])
@@ -58,7 +58,7 @@ let make = (
     ? list->PaymentUtils.getConnectors(Wallets(Gpay(SDK)))
     : list->PaymentUtils.getConnectors(Wallets(Gpay(Redirect)))
 
-  let isDelayedSessionToken = React.useMemo1(() => {
+  let isDelayedSessionToken = React.useMemo(() => {
     thirdPartySessionObj
     ->Option.flatMap(JSON.Decode.object)
     ->Option.flatMap(x => x->Dict.get("delayed_session_token"))

@@ -37,7 +37,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
 
   let socialSecurityNumberRef = React.useRef(Nullable.null)
 
-  let (complete, empty) = React.useMemo1(() => {
+  let (complete, empty) = React.useMemo(() => {
     (
       socialSecurityNumber->cleanSocialSecurityNumber->String.length == 11,
       socialSecurityNumber->String.length == 0,

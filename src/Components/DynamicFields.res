@@ -27,7 +27,7 @@ let make = (
     ~paymentMethodType,
   )
 
-  let requiredFieldsWithBillingDetails = React.useMemo3(() => {
+  let requiredFieldsWithBillingDetails = React.useMemo(() => {
     if paymentMethod === "card" {
       paymentMethodTypes.required_fields
     } else if (
@@ -39,18 +39,18 @@ let make = (
     }
   }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType))
 
-  let requiredFields = React.useMemo1(() => {
+  let requiredFields = React.useMemo(() => {
     requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress(
       billingAddress,
     )
   }, [requiredFieldsWithBillingDetails])
 
-  let isAllStoredCardsHaveName = React.useMemo1(() => {
+  let isAllStoredCardsHaveName = React.useMemo(() => {
     PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
   }, [savedMethod])
 
   //<...>//
-  let fieldsArr = React.useMemo3(() => {
+  let fieldsArr = React.useMemo(() => {
     PaymentMethodsRecord.getPaymentMethodFields(
       paymentMethodType,
       requiredFields,
@@ -257,11 +257,11 @@ let make = (
     }
   }
 
-  let dynamicFieldsToRenderOutsideBilling = React.useMemo1(() => {
+  let dynamicFieldsToRenderOutsideBilling = React.useMemo(() => {
     fieldsArr->Array.filter(DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
   }, [fieldsArr])
 
-  let dynamicFieldsToRenderInsideBilling = React.useMemo1(() => {
+  let dynamicFieldsToRenderInsideBilling = React.useMemo(() => {
     fieldsArr->Array.filter(field => !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling))
   }, [fieldsArr])
 
