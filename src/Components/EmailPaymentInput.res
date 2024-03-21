@@ -40,7 +40,7 @@ let make = (~paymentType) => {
     None
   }, [email.isValid])
 
-  let submitCallback = React.useCallback1((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {

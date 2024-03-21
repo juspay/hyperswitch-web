@@ -62,7 +62,7 @@ let make = (
     None
   }, (empty, complete))
 
-  let submitCallback = React.useCallback7((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
