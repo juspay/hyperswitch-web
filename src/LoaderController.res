@@ -1,6 +1,6 @@
 open Utils
 @react.component
-let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
+let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
   open RecoilAtoms
   //<...>//
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
@@ -257,8 +257,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                   })
                 }
               }
-
-              logger.setLogInfo(~value=Window.href, ~eventName=APP_RENDERED, ())
+              let latency = Js.Date.now() -. initTimestamp
+              logger.setLogInfo(~value=Window.href, ~eventName=APP_RENDERED, ~latency, ())
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
