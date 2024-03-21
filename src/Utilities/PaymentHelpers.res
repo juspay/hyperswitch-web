@@ -1,4 +1,5 @@
 open Utils
+open Identity
 
 @val @scope(("window", "parent", "location")) external href: string = "href"
 
@@ -389,9 +390,9 @@ let rec intentCall = (
                 let message = switch walletName {
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->toJson),
+                    ("applePayPresent", session_token->anyTypeToJson),
                   ]
-                | "google_pay" => [("googlePayThirdPartyFlow", session_token->toJson)]
+                | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
 
@@ -435,9 +436,9 @@ let rec intentCall = (
                 let message = switch walletName {
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->toJson),
+                    ("applePayPresent", session_token->anyTypeToJson),
                   ]
-                | "google_pay" => [("googlePayThirdPartyFlow", session_token->toJson)]
+                | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
 

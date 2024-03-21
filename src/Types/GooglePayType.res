@@ -1,6 +1,5 @@
 open Utils
 @val @scope("Object") external assign: (JSON.t, JSON.t, JSON.t) => JSON.t = "assign"
-external toSome: JSON.t => 'a = "%identity"
 type transactionInfo = {
   countryCode: string,
   currencyCode: string,

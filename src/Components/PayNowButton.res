@@ -1,7 +1,5 @@
 @send external postMessage: (Window.window, JSON.t, string) => unit = "postMessage"
 
-external eventToJson: 'a => JSON.t = "%identity"
-
 module Loader = {
   @react.component
   let make = () => {
@@ -60,7 +58,8 @@ let make = (
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
 
   let handleMessage = (event: Types.event) => {
-    let json = event.data->eventToJson->OrcaUtils.getStringfromjson("")->OrcaUtils.safeParse
+    let json =
+      event.data->Identity.anyTypeToJson->OrcaUtils.getStringfromjson("")->OrcaUtils.safeParse
     let dict = json->Utils.getDictFromJson
     switch dict->Dict.get("submitSuccessful") {
     | Some(_) =>

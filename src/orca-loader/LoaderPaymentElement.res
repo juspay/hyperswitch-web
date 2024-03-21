@@ -1,10 +1,8 @@
 open Types
 open Utils
 open EventListenerManager
-
+open Identity
 open OrcaUtils
-
-external eventToJson: Types.eventData => JSON.t = "%identity"
 
 @val @scope(("navigator", "clipboard"))
 external writeText: string => Promise.t<'a> = "writeText"
@@ -146,7 +144,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let fullscreenMetadata = ref(Dict.make()->JSON.Encode.object)
       let optionsDict = options->getDictFromJson
       let handle = (ev: Types.event) => {
-        let eventDataObject = ev.data->eventToJson
+        let eventDataObject = ev.data->anyTypeToJson
 
         let iframeHeight = eventDataObject->getOptionalJsonFromJson("iframeHeight")
         if iframeHeight->Option.isSome {
@@ -246,7 +244,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
               ? {
                   if iframeID == localSelectorString {
                     let handleFullScreenCallback = (ev: Types.event) => {
-                      let json = ev.data->eventToJson
+                      let json = ev.data->anyTypeToJson
                       let dict = json->Utils.getDictFromJson
                       if dict->Dict.get("iframeMountedCallback")->Option.isSome {
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)

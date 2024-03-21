@@ -1,6 +1,5 @@
 open Utils
-external toNullable: JSON.t => Nullable.t<JSON.t> = "%identity"
-external eventToJson: Types.eventData => JSON.t = "%identity"
+open Identity
 let safeParseOpt = st => {
   try {
     JSON.parseExn(st)->Some
@@ -21,7 +20,7 @@ let rec flattenObject = (obj, addIndicatorForObject) => {
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->toNullable->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Js.Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Decode.object {
@@ -58,7 +57,7 @@ let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepPare
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->toNullable->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Js.Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Decode.string->Option.getOr("")->safeParse->JSON.Decode.object {
@@ -99,7 +98,7 @@ let rec flatten = (obj, addIndicatorForObject) => {
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->toNullable->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Js.Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Classify.classify {
@@ -330,7 +329,7 @@ let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
       resolve(JSON.Encode.bool(true))
     } else {
       let handleMessage = (event: Types.event) => {
-        let json = event.data->eventToJson->getStringfromjson("")->safeParse
+        let json = event.data->anyTypeToJson->getStringfromjson("")->safeParse
 
         let dict = json->Utils.getDictFromJson
         if dict->Dict.get("oneClickDoSubmit")->Option.isSome {

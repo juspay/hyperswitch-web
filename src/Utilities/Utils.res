@@ -4,8 +4,6 @@ type parent
 @val external window: window = "window"
 @val @scope("window") external iframeParent: parent = "parent"
 type event = {data: string}
-external eventToJson: event => JSON.t = "%identity"
-external toJson: 'a => JSON.t = "%identity"
 external dictToObj: Dict.t<'a> => {..} = "%identity"
 
 @module("./Phone_number.json")
@@ -844,7 +842,7 @@ let arrayJsonToCamelCase = arr => {
   })
 }
 let formatException = exc => {
-  exc->toJson
+  exc->Identity.anyTypeToJson
 }
 
 let getArrayValFromJsonDict = (dict, key, arrayKey) => {

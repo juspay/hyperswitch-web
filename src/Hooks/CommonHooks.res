@@ -28,8 +28,6 @@ external addEventListener: (element, string, event => unit) => unit = "addEventL
 @send
 external removeEventListener: (element, string, event => unit) => unit = "removeEventListener"
 
-external dictToObj: Dict.t<'a> => {..} = "%identity"
-
 let useScript = (src: string) => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
   React.useEffect(() => {

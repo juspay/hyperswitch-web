@@ -185,7 +185,7 @@ let defaultRules = theme =>
       "fontWeight": theme.fontWeightLight,
       "fontSize": theme.fontSizeLg,
     },
-  }->toJson
+  }->Identity.anyTypeToJson
 
 let default = default
 let defaultRules = defaultRules
