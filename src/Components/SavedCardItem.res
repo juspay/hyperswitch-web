@@ -9,6 +9,7 @@ let make = (
   ~cvcProps,
   ~paymentType,
   ~list,
+  ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
@@ -24,29 +25,34 @@ let make = (
     cvcError,
     _,
   ) = cvcProps
-  let cvcRef = React.useRef(Js.Nullable.null)
-  let (pickerItemClass, pickerItemLabelClass, pickerItemIconClass) = React.useMemo1(() => {
-    isActive
-      ? ("PickerItem--selected", "PickerItemLabel--selected", "PickerItemIcon--selected")
-      : ("", "", "")
-  }, [isActive])
+  let cvcRef = React.useRef(Nullable.null)
+  let pickerItemClass = isActive ? "PickerItem--selected" : ""
+
   let focusCVC = () => {
-    setCardBrand(._ =>
+    setCardBrand(_ =>
       switch paymentItem.card.scheme {
       | Some(val) => val
       | None => ""
       }
     )
-    let optionalRef = cvcRef.current->Js.Nullable.toOption
+    let optionalRef = cvcRef.current->Nullable.toOption
     switch optionalRef {
-    | Some(_) => optionalRef->Belt.Option.forEach(input => input->CardUtils.focus)->ignore
+    | Some(_) => optionalRef->Option.forEach(input => input->CardUtils.focus)->ignore
     | None => ()
     }
   }
-  React.useEffect1(() => {
+  React.useEffect(() => {
     isActive ? focusCVC() : ()
     None
   }, [isActive])
+
+  let isCard = paymentItem.paymentMethod === "card"
+  let isRenderCvv = isCard && paymentItem.requiresCvv
+
+  let paymentMethodType = switch paymentItem.paymentMethodType {
+  | Some(paymentMethodType) => paymentMethodType
+  | None => "debit"
+  }
 
   <button
     className={`PickerItem ${pickerItemClass} flex flex-row items-stretch`}
@@ -66,7 +72,7 @@ let make = (
       ~boxShadow="none",
       (),
     )}
-    onClick={_ => setPaymentToken(._ => (paymentItem.paymentToken, paymentItem.customerId))}>
+    onClick={_ => setPaymentToken(_ => (paymentItem.paymentToken, paymentItem.customerId))}>
     <div className="w-full">
       <div>
         <div className="flex flex-row justify-between items-center">
@@ -84,59 +90,83 @@ let make = (
                 border="1px solid currentColor"
               />
             </div>
-            <div className={`PickerItemIcon ${pickerItemIconClass} mx-3 flex  items-center `}>
-              brandIcon
+            <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
+            <div className="flex items-center gap-4">
+              {isCard
+                ? <div className="flex flex-col items-start">
+                    <div> {React.string(paymentItem.card.nickname)} </div>
+                    <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
+                      <div className="tracking-widest"> {React.string(`****`)} </div>
+                      <div> {React.string(paymentItem.card.last4Digits)} </div>
+                    </div>
+                  </div>
+                : <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>}
+              <RenderIf condition={paymentItem.defaultPaymentMethodSet}>
+                <Icon
+                  size=18
+                  name="checkmark"
+                  style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}
+                />
+              </RenderIf>
             </div>
+          </div>
+          <RenderIf condition={isCard}>
             <div
-              className={`PickerItemLabel ${pickerItemLabelClass} flex flex-row gap-3  items-center w-full`}>
-              <div className="tracking-widest"> {React.string(`****`)} </div>
-              <div> {React.string({paymentItem.card.last4Digits})} </div>
+              className={`flex flex-row items-center justify-end gap-3 -mt-1`}
+              style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
+              <div className="flex">
+                {React.string(
+                  `${paymentItem.card.expiryMonth} / ${paymentItem.card.expiryYear->CardUtils.formatExpiryToTwoDigit}`,
+                )}
+              </div>
             </div>
-          </div>
-          <div
-            className=`flex flex-row items-center justify-end gap-3 -mt-1`
-            style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
-            <div className="flex">
-              {React.string(
-                `${paymentItem.card.expiryMonth} / ${paymentItem.card.expiryYear->CardUtils.formatExpiryToTwoDigit}`,
-              )}
-            </div>
-          </div>
+          </RenderIf>
         </div>
         <div className="w-full ">
           <RenderIf condition={isActive}>
             <div className="flex flex-col items-start mx-8">
-              <div
-                className=`flex flex-row items-start justify-start gap-2`
-                style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
-                <div className="w-12 mt-6"> {React.string("CVC: ")} </div>
+              <RenderIf condition={isRenderCvv}>
                 <div
-                  className={`flex h mx-4 justify-start w-16 ${isActive
-                      ? "opacity-1 mt-4"
-                      : "opacity-0"}`}>
-                  <PaymentInputField
-                    isValid=isCVCValid
-                    setIsValid=setIsCVCValid
-                    value=cvcNumber
-                    onChange=changeCVCNumber
-                    onBlur=handleCVCBlur
-                    errorString=cvcError
-                    inputFieldClassName="flex justify-start"
-                    paymentType
-                    appearance=config.appearance
-                    type_="tel"
-                    className={`tracking-widest justify-start w-full`}
-                    maxLength=4
-                    inputRef=cvcRef
-                    placeholder="123"
-                    height="2.2rem"
-                  />
+                  className={`flex flex-row items-start justify-start gap-2`}
+                  style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
+                  <div className="w-12 mt-6"> {React.string("CVC: ")} </div>
+                  <div
+                    className={`flex h mx-4 justify-start w-16 ${isActive
+                        ? "opacity-1 mt-4"
+                        : "opacity-0"}`}>
+                    <PaymentInputField
+                      isValid=isCVCValid
+                      setIsValid=setIsCVCValid
+                      value=cvcNumber
+                      onChange=changeCVCNumber
+                      onBlur=handleCVCBlur
+                      errorString=cvcError
+                      inputFieldClassName="flex justify-start"
+                      paymentType
+                      appearance=config.appearance
+                      type_="tel"
+                      className={`tracking-widest justify-start w-full`}
+                      maxLength=4
+                      inputRef=cvcRef
+                      placeholder="123"
+                      height="2.2rem"
+                    />
+                  </div>
                 </div>
-              </div>
+              </RenderIf>
+              <DynamicFields
+                paymentType
+                list
+                paymentMethod=paymentItem.paymentMethod
+                paymentMethodType
+                setRequiredFieldsBody
+                isSavedCardFlow=true
+                savedMethod=paymentItem
+              />
               <Surcharge
                 list
-                paymentMethod="card"
-                paymentMethodType="debit"
+                paymentMethod=paymentItem.paymentMethod
+                paymentMethodType
                 cardBrand={cardBrand->CardUtils.cardType}
               />
             </div>

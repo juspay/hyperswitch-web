@@ -11,15 +11,23 @@ type localeStrings = {
   sortCodeText: string,
   cvcTextLabel: string,
   emailLabel: string,
+  emailEmptyText: string,
+  emailInvalidText: string,
   accountNumberText: string,
   fullNameLabel: string,
   line1Label: string,
   line1Placeholder: string,
+  line1EmptyText: string,
   line2Label: string,
   line2Placeholder: string,
+  line2EmptyText: string,
   cityLabel: string,
+  cityEmptyText: string,
   postalCodeLabel: string,
+  postalCodeEmptyText: string,
+  postalCodeInvalidText: string,
   stateLabel: string,
+  stateEmptyText: string,
   fullNamePlaceholder: string,
   countryLabel: string,
   currencyLabel: string,
@@ -42,14 +50,23 @@ type localeStrings = {
   enterFieldsText: string,
   enterValidDetailsText: string,
   card: string,
-  surchargeMsgAmount: string => React.element,
-  surchargeMsgAmountForCard: string => React.element,
+  surchargeMsgAmount: (string, string) => React.element,
+  surchargeMsgAmountForCard: (string, string) => React.element,
   surchargeMsgAmountForOneClickWallets: string,
   billingNameLabel: string,
   billingNamePlaceholder: string,
   cardHolderName: string,
   on: string,
   \"and": string,
+  nameEmptyText: string => string,
+  completeNameEmptyText: string => string,
+  billingDetailsText: string,
+  socialSecurityNumberLabel: string,
+  saveWalletDetails: string,
+  morePaymentMethods: string,
+  useExistingPaymentMethods: string,
+  nicknameLabel: string,
+  nicknamePlaceholder: string,
 }
 
 let defaultLocale = {
@@ -66,13 +83,21 @@ let defaultLocale = {
   accountNumberText: "Account Number",
   cvcTextLabel: "CVC",
   emailLabel: "Email",
+  emailEmptyText: "Email cannot be empty",
+  emailInvalidText: "Invalid email address",
   line1Label: "Address line 1",
   line1Placeholder: "Street address",
+  line1EmptyText: "Address line 1 cannot be empty",
   line2Label: "Address line 2",
   line2Placeholder: "Apt., unit number, etc (optional)",
+  line2EmptyText: "Address line 2 cannot be empty",
   cityLabel: "City",
+  cityEmptyText: "City cannot be empty",
   postalCodeLabel: "Postal Code",
+  postalCodeEmptyText: "Postal code cannot be empty",
+  postalCodeInvalidText: "Invalid postal code",
   stateLabel: "State",
+  stateEmptyText: "State cannot be empty",
   fullNameLabel: "Full name",
   fullNamePlaceholder: "First and last name",
   countryLabel: "Country",
@@ -99,14 +124,14 @@ let defaultLocale = {
   enterFieldsText: "Please enter all fields",
   enterValidDetailsText: "Please enter valid details",
   card: "Card",
-  surchargeMsgAmount: str => <>
+  surchargeMsgAmount: (currency, str) => <>
     {React.string(`A surcharge amount of${Utils.nbsp}`)}
-    <strong> {React.string(str)} </strong>
+    <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}will be applied for this transaction`})}
   </>,
-  surchargeMsgAmountForCard: str => <>
+  surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
-    <strong> {React.string(str)} </strong>
+    <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string(`${Utils.nbsp}will be applied for this transaction`)}
   </>,
   surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
@@ -115,6 +140,15 @@ let defaultLocale = {
   cardHolderName: "Card Holder Name",
   on: "on",
   \"and": "and",
+  nameEmptyText: str => `Please provide your ${str}`,
+  completeNameEmptyText: str => `Please provide your complete ${str}`,
+  billingDetailsText: "Billing Details",
+  socialSecurityNumberLabel: "Social Security Number",
+  saveWalletDetails: "Wallets details will be saved upon selection",
+  morePaymentMethods: "More payment methods",
+  useExistingPaymentMethods: "Use saved payment methods",
+  nicknameLabel: "Card Nickname",
+  nicknamePlaceholder: "Card Nickname (Optional)",
 }
 
 type locale = {localeStrings: array<localeStrings>}
@@ -133,13 +167,21 @@ let localeStrings = [
     cvcTextLabel: "CVC",
     line1Label: "Address line 1",
     line1Placeholder: "Street address",
+    line1EmptyText: "Address line 1 cannot be empty",
     line2Label: "Address line 2",
     line2Placeholder: "Apt., unit number, etc (optional)",
+    line2EmptyText: "Address line 2 cannot be empty",
     cityLabel: "City",
+    cityEmptyText: "City cannot be empty",
     postalCodeLabel: "Postal Code",
+    postalCodeEmptyText: "Postal code cannot be empty",
+    postalCodeInvalidText: "Invalid postal code",
     stateLabel: "State",
+    stateEmptyText: "State cannot be empty",
     accountNumberText: "Account Number",
     emailLabel: "Email",
+    emailEmptyText: "Email cannot be empty",
+    emailInvalidText: "Invalid email address",
     fullNameLabel: "Full name",
     fullNamePlaceholder: "First and last name",
     countryLabel: "Country",
@@ -152,7 +194,7 @@ let localeStrings = [
     useExisitingSavedCards: "Use saved debit/credit cards",
     saveCardDetails: "Save card details",
     addBankAccount: "Add bank account",
-    achBankDebitTerms: str =>
+    achBankDebitTerms: _ =>
       `Your ACH Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.`,
     sepaDebitTerms: str =>
       `By providing your payment information and confirming this payment, you authorise (A) ${str} and Hyperswitch, our payment service provider and/or PPRO, its local service provider, to send instructions to your bank to debit your account and (B) your bank to debit your account in accordance with those instructions. As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. A refund must be claimed within 8 weeks starting from the date on which your account was debited. Your rights are explained in a statement that you can obtain from your bank. You agree to receive notifications for future debits up to 2 days before they occur.`,
@@ -166,14 +208,14 @@ let localeStrings = [
     enterFieldsText: "Please enter all fields",
     enterValidDetailsText: "Please enter valid details",
     card: "Card",
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`A surcharge amount of${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string({`${Utils.nbsp}will be applied for this transaction`})}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}will be applied for this transaction`)}
     </>,
     surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
@@ -182,6 +224,15 @@ let localeStrings = [
     cardHolderName: "Card Holder Name",
     on: "on",
     \"and": "and",
+    nameEmptyText: str => `Please provide your ${str}`,
+    completeNameEmptyText: str => `Please provide your complete ${str}`,
+    billingDetailsText: "Billing Details",
+    socialSecurityNumberLabel: "Social Security Number",
+    saveWalletDetails: "Wallets details will be saved upon selection",
+    morePaymentMethods: "More payment methods",
+    useExistingPaymentMethods: "Use saved payment methods",
+    nicknameLabel: "Card Nickname",
+    nicknamePlaceholder: "Card Nickname (Optional)",
   },
   {
     locale: "he",
@@ -197,13 +248,21 @@ let localeStrings = [
     cvcTextLabel: `קוד בגב הכרטיס`,
     line1Label: `כתובת - שורה 1`,
     line1Placeholder: `כתובת רחוב`,
+    line1EmptyText: `שורת כתובת 1 לא יכולה להיות ריקה`,
     line2Label: `כתובת - שורה 2`,
     line2Placeholder: `דירה, יחידה, וכדומה (אופציונלי)`,
+    line2EmptyText: `שורת כתובת 2 לא יכולה להיות ריקה`,
     cityLabel: `עיר`,
+    cityEmptyText: `עיר לא יכולה להיות ריקה`,
     postalCodeLabel: `מיקוד`,
+    postalCodeEmptyText: `מיקוד לא יכול להיות ריק`,
+    postalCodeInvalidText: `מיקוד לא חוקי`,
     stateLabel: `מדינה`,
+    stateEmptyText: `המדינה לא יכולה להיות ריקה`,
     accountNumberText: `מספר חשבון`,
     emailLabel: `אימייל`,
+    emailEmptyText: `אימייל לא יכול להיות ריק`,
+    emailInvalidText: `כתובת אימייל לא חוקית`,
     fullNameLabel: `שם מלא`,
     fullNamePlaceholder: `שם פרטי ושם משפחה`,
     countryLabel: `מדינה`,
@@ -230,14 +289,14 @@ let localeStrings = [
     enterFieldsText: `יש להזין את כל השדות`,
     enterValidDetailsText: `יש להזין פרטים תקינים`,
     card: `כרטיס`,
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`סכום היטל של${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}יוחל עבור עסקה זו`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`סכום היטל של עד${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}יחול עבור עסקה זו`)}
     </>,
     surchargeMsgAmountForOneClickWallets: `תשלום נוסף חל`,
@@ -246,6 +305,15 @@ let localeStrings = [
     cardHolderName: `שם בעל הכרטיס`,
     on: `עַל`,
     \"and": `ו`,
+    nameEmptyText: str => `אנא ספק את שלך ${str}`,
+    completeNameEmptyText: str => `אנא ספק את המלא שלך ${str}`,
+    billingDetailsText: `פרטי תשלום`,
+    socialSecurityNumberLabel: `מספר ביטוח לאומי`,
+    saveWalletDetails: "פרטי הארנק יישמרו בעת בחירה",
+    morePaymentMethods: `אמצעי תשלום נוספים`,
+    useExistingPaymentMethods: `השתמש באמצעי תשלום שמורים`,
+    nicknameLabel: `כינוי לכרטיס`,
+    nicknamePlaceholder: `כינוי לכרטיס (אופציונלי)`,
   },
   {
     locale: `fr`,
@@ -261,13 +329,21 @@ let localeStrings = [
     cvcTextLabel: `Code CVC`,
     line1Label: `Adresse - Ligne 1`,
     line1Placeholder: `Adresse de rue`,
+    line1EmptyText: `La ligne d'adresse 1 ne peut pas être vide`,
     line2Label: `Adresse - Ligne 2`,
     line2Placeholder: `Appartement, numéro d'unité, etc (facultatif)`,
+    line2EmptyText: `La ligne d'adresse 2 ne peut pas être vide`,
     cityLabel: `Ville`,
+    cityEmptyText: `La ville ne peut pas être vide`,
     postalCodeLabel: `Code postal`,
+    postalCodeEmptyText: `Le code postal ne peut pas être vide`,
+    postalCodeInvalidText: `Code postal invalide`,
     stateLabel: `État`,
+    stateEmptyText: `L'état ne peut pas être vide`,
     accountNumberText: `Numéro de compte`,
     emailLabel: `E-mail`,
+    emailEmptyText: `L'e-mail ne peut pas être vide`,
+    emailInvalidText: "Adresse e-mail invalide",
     fullNameLabel: `Nom complet`,
     fullNamePlaceholder: `Prénom et nom de famille`,
     countryLabel: `Pays`,
@@ -294,14 +370,14 @@ let localeStrings = [
     enterFieldsText: `Veuillez saisir tous les champs`,
     enterValidDetailsText: `Veuillez saisir des informations valides`,
     card: `Carte`,
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`Un montant supplémentaire d'${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}sera appliqué pour cette transaction`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`Un montant supplémentaire allant jusqu'à${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}sera appliqué pour cette transaction.`)}
     </>,
     surchargeMsgAmountForOneClickWallets: `Frais supplémentaires applicables`,
@@ -310,6 +386,15 @@ let localeStrings = [
     cardHolderName: `Nom du titulaire`,
     on: `sur`,
     \"and": `et`,
+    nameEmptyText: str => `Veuillez fournir votre ${str}`,
+    completeNameEmptyText: str => `Veuillez fournir votre complet ${str}`,
+    billingDetailsText: `Détails de la facturation`,
+    socialSecurityNumberLabel: `Numéro de sécurité sociale`,
+    saveWalletDetails: "Les détails du portefeuille seront enregistrés lors de la sélection",
+    morePaymentMethods: `Plus de méthodes de paiement`,
+    useExistingPaymentMethods: `Utiliser les modes de paiement enregistrés`,
+    nicknameLabel: `Pseudonyme de la carte`,
+    nicknamePlaceholder: `Surnom de la carte (facultatif)`,
   },
   {
     locale: "en-GB",
@@ -324,13 +409,21 @@ let localeStrings = [
     sortCodeText: "Sort Code",
     cvcTextLabel: "CVC",
     emailLabel: "Email",
+    emailEmptyText: "Email cannot be empty",
+    emailInvalidText: "Invalid email address",
     line1Label: "Address line 1",
     line1Placeholder: "Street address",
+    line1EmptyText: "Address line 1 cannot be empty",
     line2Label: "Address line 2",
     line2Placeholder: "Apt., unit number, etc (optional)",
+    line2EmptyText: "Address line 2 cannot be empty",
     cityLabel: "City",
+    cityEmptyText: "City cannot be empty",
     postalCodeLabel: "Postal Code",
+    postalCodeEmptyText: "Postal code cannot be empty",
+    postalCodeInvalidText: "Invalid postal code",
     stateLabel: "State",
+    stateEmptyText: "State cannot be empty",
     accountNumberText: "Account Number",
     fullNameLabel: "Full name",
     fullNamePlaceholder: "First and last name",
@@ -344,7 +437,7 @@ let localeStrings = [
     useExisitingSavedCards: "Use saved debit/credit cards",
     saveCardDetails: "Save card details",
     addBankAccount: "Add bank account",
-    achBankDebitTerms: str =>
+    achBankDebitTerms: _ =>
       `Your ACH Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.`,
     sepaDebitTerms: str =>
       `By providing your payment information and confirming this payment, you authorise (A) ${str} and Hyperswitch, our payment service provider and/or PPRO, its local service provider, to send instructions to your bank to debit your account and (B) your bank to debit your account in accordance with those instructions. As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. A refund must be claimed within 8 weeks starting from the date on which your account was debited. Your rights are explained in a statement that you can obtain from your bank. You agree to receive notifications for future debits up to 2 days before they occur.`,
@@ -358,14 +451,14 @@ let localeStrings = [
     enterFieldsText: "Please enter all fields",
     enterValidDetailsText: "Please enter valid details",
     card: "Card",
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`A surcharge amount of${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}will be applied for this transaction`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}will be applied for this transaction`)}
     </>,
     surchargeMsgAmountForOneClickWallets: "Additional fee applicable",
@@ -374,6 +467,15 @@ let localeStrings = [
     cardHolderName: "Card Holder Name",
     on: "on",
     \"and": "and",
+    nameEmptyText: str => `Please provide your ${str}`,
+    completeNameEmptyText: str => `Please provide your complete ${str}`,
+    billingDetailsText: "Billing Details",
+    socialSecurityNumberLabel: "Social Security Number",
+    saveWalletDetails: "Wallets details will be saved upon selection",
+    morePaymentMethods: "More payment methods",
+    useExistingPaymentMethods: "Use saved payment methods",
+    nicknameLabel: "Card Nickname",
+    nicknamePlaceholder: "Card Nickname (Optional)",
   },
   {
     locale: "ar",
@@ -389,14 +491,22 @@ let localeStrings = [
     accountNumberText: `رقم حساب`,
     cvcTextLabel: `رمز الحماية`,
     emailLabel: `البريد الإلكتروني`,
+    emailEmptyText: `لا يمكن أن يكون البريد الإلكتروني فارغًا`,
+    emailInvalidText: `عنوان البريد الإلكتروني غير صالح`,
     fullNameLabel: `الاسم الكامل`,
     line1Label: `العنوان سطر 1`,
     line1Placeholder: `.عنوان الشارع`,
+    line1EmptyText: `لا يمكن أن يكون سطر العنوان 1 فارغًا`,
     line2Label: `سطر العنوان 2`,
     line2Placeholder: `مناسب ، رقم الوحدة ، إلخ (اختياري)`,
+    line2EmptyText: `لا يمكن أن يكون سطر العنوان 2 فارغًا`,
     postalCodeLabel: `رمز بريدي`,
+    postalCodeEmptyText: `لا يمكن أن يكون الرمز البريدي فارغًا`,
+    postalCodeInvalidText: `الرمز البريدي غير صالح`,
     stateLabel: `ولاية`,
+    stateEmptyText: `لا يمكن أن تكون الحالة فارغة`,
     cityLabel: `مدينة`,
+    cityEmptyText: `لا يمكن أن تكون المدينة فارغة`,
     fullNamePlaceholder: `الاسم الأول والاسم الأخير`,
     countryLabel: `دولة`,
     currencyLabel: `عملة`,
@@ -422,14 +532,14 @@ let localeStrings = [
     enterFieldsText: `الرجاء إدخال كافة الحقول`,
     enterValidDetailsText: `الرجاء إدخال تفاصيل صالحة`,
     card: `بطاقة`,
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`سيتم تطبيق مبلغ إضافي من${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}على هذه المعاملة`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`سيتم تطبيق مبلغ إضافي يصل إلى${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}على هذه المعاملة`)}
     </>,
     surchargeMsgAmountForOneClickWallets: `رسوم إضافية قابلة للتطبيق`,
@@ -438,6 +548,15 @@ let localeStrings = [
     cardHolderName: `إسم صاحب البطاقة`,
     on: `على`,
     \"and": `و`,
+    nameEmptyText: str => `يرجى تقديم الخاص بك ${str}`,
+    completeNameEmptyText: str => `يرجى تقديم كامل الخاص بك ${str}`,
+    billingDetailsText: `تفاصيل الفاتورة`,
+    socialSecurityNumberLabel: `رقم الضمان الاجتماعي`,
+    saveWalletDetails: "سيتم حفظ تفاصيل المحفظة عند الاختيار",
+    morePaymentMethods: `المزيد من طرق الدفع`,
+    useExistingPaymentMethods: `استخدم طرق الدفع المحفوظة`,
+    nicknameLabel: `الاسم علي الكارت`,
+    nicknamePlaceholder: `اسم البطاقة (اختياري)`,
   },
   {
     locale: "ja",
@@ -453,16 +572,24 @@ let localeStrings = [
     cvcTextLabel: `セキュリティコード`,
     accountNumberText: `口座番号`,
     emailLabel: `Eメール`,
+    emailEmptyText: `電子メールを空にすることはできません`,
+    emailInvalidText: `無効なメールアドレス`,
     fullNameLabel: `フルネーム`,
     fullNamePlaceholder: `名前と苗字`,
     line1Label: `住所1`,
     line1Placeholder: `住所`,
+    line1EmptyText: `住所行 1 を空にすることはできません`,
     line2Label: `住所2`,
     postalCodeLabel: `郵便番号`,
+    postalCodeEmptyText: `郵便番号を空白にすることはできません`,
+    postalCodeInvalidText: `郵便番号が無効です`,
     stateLabel: `州`,
+    stateEmptyText: `状態を空にすることはできません`,
     cityLabel: `街`,
     line2Placeholder: `アパート、ユニット番号など（任意）`,
+    line2EmptyText: `住所行 2 を空にすることはできません`,
     countryLabel: `国`,
+    cityEmptyText: `都市を空にすることはできません`,
     currencyLabel: "通貨",
     bankLabel: `バンクを選択`,
     redirectText: `注文を送信すると、安全に購入を完了するためにリダイレクトされます。`,
@@ -486,14 +613,14 @@ let localeStrings = [
     enterFieldsText: `すべてのフィールドに入力してください`,
     enterValidDetailsText: `有効な詳細を入力してください`,
     card: `カード`,
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`この取引には${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}の追加料金が適用されます`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`この取引には${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}までの追加料金が適用されます`)}
     </>,
     surchargeMsgAmountForOneClickWallets: `追加料金が適用されます`,
@@ -502,6 +629,15 @@ let localeStrings = [
     cardHolderName: `クレジットカード名義人氏名`,
     on: `の上`,
     \"and": `そして`,
+    nameEmptyText: str => `あなたの情報を提供してください ${str}`,
+    completeNameEmptyText: str => `完全な情報を提供してください ${str}`,
+    billingDetailsText: `支払明細`,
+    socialSecurityNumberLabel: `社会保障番号`,
+    saveWalletDetails: "選択時にウォレットの詳細が保存されます",
+    morePaymentMethods: `その他の支払い方法`,
+    useExistingPaymentMethods: `保存した支払い方法を使用する`,
+    nicknameLabel: `カードのニックネーム`,
+    nicknamePlaceholder: `カードニックネーム（任意）`,
   },
   {
     locale: "de",
@@ -517,13 +653,21 @@ let localeStrings = [
     cvcTextLabel: `CVC`,
     line1Label: `Adresszeile 1`,
     line1Placeholder: `Adresse`,
+    line1EmptyText: "Adresszeile 1 darf nicht leer sein",
     line2Label: `Adresszeile 2`,
     line2Placeholder: `Wohnung, Einheitennummer usw. (optional)`,
+    line2EmptyText: `Adresszeile 2 darf nicht leer sein`,
     cityLabel: `Stadt`,
+    cityEmptyText: `Die Stadt darf nicht leer sein`,
     postalCodeLabel: `Postleitzahl`,
+    postalCodeEmptyText: `Die Postleitzahl darf nicht leer sein`,
+    postalCodeInvalidText: `Ungültige Postleitzahl`,
     stateLabel: `Zustand`,
+    stateEmptyText: `Der Status darf nicht leer sein`,
     accountNumberText: `Accountnummer`,
     emailLabel: `Email`,
+    emailEmptyText: `E-Mail darf nicht leer sein`,
+    emailInvalidText: `Ungültige E-Mail-Adresse`,
     fullNameLabel: `Vollständiger Name`,
     fullNamePlaceholder: `Vor-und Nachname`,
     countryLabel: `Land`,
@@ -550,14 +694,14 @@ let localeStrings = [
     enterFieldsText: `Bitte füllen Sie alle Felder aus`,
     enterValidDetailsText: `Bitte geben Sie gültige Daten ein`,
     card: `Karte`,
-    surchargeMsgAmount: str => <>
+    surchargeMsgAmount: (currency, str) => <>
       {React.string(`Für diese Transaktion wird ein Zuschlag in Höhe von${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}erhoben`)}
     </>,
-    surchargeMsgAmountForCard: str => <>
+    surchargeMsgAmountForCard: (currency, str) => <>
       {React.string(`Für diese Transaktion wird ein Zuschlagsbetrag von bis zu${Utils.nbsp}`)}
-      <strong> {React.string(str)} </strong>
+      <strong> {React.string(`${currency} ${str}`)} </strong>
       {React.string(`${Utils.nbsp}erhoben`)}
     </>,
     surchargeMsgAmountForOneClickWallets: `Es fällt eine zusätzliche Gebühr an`,
@@ -566,5 +710,14 @@ let localeStrings = [
     cardHolderName: `Name des Karteninhabers`,
     on: `An`,
     \"and": `Und`,
+    nameEmptyText: str => `Bitte geben Sie Ihre an ${str}`,
+    completeNameEmptyText: str => `Bitte geben Sie Ihr vollständiges Formular an ${str}`,
+    billingDetailsText: `Rechnungsdetails`,
+    socialSecurityNumberLabel: `Sozialversicherungsnummer`,
+    saveWalletDetails: "Wallet-Details werden beim Auswählen gespeichert",
+    morePaymentMethods: `Mehr Zahlungsmethoden`,
+    useExistingPaymentMethods: `Gespeicherte Zahlungsarten nutzen`,
+    nicknameLabel: `Spitzname der Karte`,
+    nicknamePlaceholder: `Kartenname (optional)`,
   },
 ]

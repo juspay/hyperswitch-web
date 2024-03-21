@@ -1,4 +1,5 @@
 open CardUtils
+open Utils
 @react.component
 let make = (
   ~paymentToken,
@@ -8,22 +9,42 @@ let make = (
   ~cvcProps,
   ~paymentType,
   ~list,
-  ~setRequiredFieldsBody,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let setUserError = message => {
+    postFailedSubmitResponse(~errortype="validation_error", ~message)
+  }
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (token, _) = paymentToken
-  let savedCardlength = savedMethods->Js.Array2.length
+  let savedCardlength = savedMethods->Array.length
+
+  let getWalletBrandIcon = (obj: PaymentType.customerMethods) => {
+    switch obj.paymentMethodType {
+    | Some("apple_pay") => <Icon size=brandIconSize name="apple_pay_saved" />
+    | Some("google_pay") => <Icon size=brandIconSize name="google_pay_saved" />
+    | Some("paypal") => <Icon size=brandIconSize name="paypal" />
+    | _ => <Icon size=brandIconSize name="default-card" />
+    }
+  }
+
   let bottomElement = {
     savedMethods
-    ->Js.Array2.mapi((obj, i) => {
-      let brandIcon = getCardBrandIcon(
-        switch obj.card.scheme {
-        | Some(ele) => ele
-        | None => ""
-        }->cardType,
-        ""->CardTheme.getPaymentMode,
-      )
+    ->Array.mapWithIndex((obj, i) => {
+      let brandIcon = switch obj.paymentMethod {
+      | "wallet" => getWalletBrandIcon(obj)
+      | _ =>
+        getCardBrandIcon(
+          switch obj.card.scheme {
+          | Some(ele) => ele
+          | None => ""
+          }->cardType,
+          ""->CardTheme.getPaymentMode,
+        )
+      }
       let isActive = token == obj.paymentToken
       <SavedCardItem
         key={i->Belt.Int.toString}
@@ -36,15 +57,87 @@ let make = (
         cvcProps
         paymentType
         list
+        setRequiredFieldsBody
       />
     })
     ->React.array
   }
 
+  let (isCVCValid, _, cvcNumber, _, _, _, _, _, _, setCvcError) = cvcProps
+  let complete = switch isCVCValid {
+  | Some(val) => token !== "" && val
+  | _ => false
+  }
+  let empty = cvcNumber == ""
+
+  let submitCallback = React.useCallback4((ev: Window.event) => {
+    let json = ev.data->JSON.parseExn
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+    let (token, customerId) = paymentToken
+    let customerMethod =
+      savedMethods
+      ->Array.filter(savedMethod => {
+        savedMethod.paymentToken === token
+      })
+      ->Array.get(0)
+      ->Option.getOr(PaymentType.defaultCustomerMethods)
+    let isCardPaymentMethod = customerMethod.paymentMethod === "card"
+    let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
+
+    let savedPaymentMethodBody = switch customerMethod.paymentMethod {
+    | "card" =>
+      PaymentBody.savedCardBody(
+        ~paymentToken=token,
+        ~customerId,
+        ~cvcNumber,
+        ~requiresCvv=customerMethod.requiresCvv,
+      )
+    | _ => {
+        let paymentMethodType = switch customerMethod.paymentMethodType {
+        | Some("")
+        | None => JSON.Encode.null
+        | Some(paymentMethodType) => paymentMethodType->JSON.Encode.string
+        }
+        PaymentBody.savedPaymentMethodBody(
+          ~paymentToken=token,
+          ~customerId,
+          ~paymentMethod=customerMethod.paymentMethod,
+          ~paymentMethodType,
+        )
+      }
+    }
+
+    if confirm.doSubmit {
+      if areRequiredFieldsValid && (!isCardPaymentMethod || isCardPaymentMethodValid) {
+        intent(
+          ~bodyArr=savedPaymentMethodBody
+          ->Dict.fromArray
+          ->JSON.Encode.object
+          ->OrcaUtils.flattenObject(true)
+          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->OrcaUtils.getArrayOfTupleFromDict,
+          ~confirmParam=confirm.confirmParams,
+          ~handleUserError=false,
+          (),
+        )
+      } else {
+        if cvcNumber === "" {
+          setCvcError(_ => localeString.cvcNumberEmptyText)
+          setUserError(localeString.enterFieldsText)
+        }
+        if !(isCVCValid->Option.getOr(false)) {
+          setUserError(localeString.enterValidDetailsText)
+        }
+        if !areRequiredFieldsValid {
+          setUserError(localeString.enterValidDetailsText)
+        }
+      }
+    }
+  }, (areRequiredFieldsValid, requiredFieldsBody, empty, complete))
+  useSubmitPaymentData(submitCallback)
+
   <>
-    <div
-      className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow"
-      style={ReactDOMStyle.make(~padding="5px", ())}>
+    <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
       {if (
         savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields)
       ) {
@@ -67,19 +160,8 @@ let make = (
           </PaymentElementShimmer.Shimmer>
         </div>
       } else {
-        <RenderIf condition={!showFields}>
-          <Block bottomElement padding="px-4 py-1" className="max-h-[309px] overflow-auto" />
-        </RenderIf>
+        <RenderIf condition={!showFields}> {bottomElement} </RenderIf>
       }}
-      <DynamicFields
-        paymentType
-        list
-        paymentMethod="card"
-        paymentMethodType="debit"
-        setRequiredFieldsBody
-        isSavedCardFlow=true
-        savedCards=savedMethods
-      />
       <RenderIf condition={!showFields}>
         <div
           className="Label flex flex-row gap-3 items-end cursor-pointer"
@@ -93,10 +175,10 @@ let make = (
             (),
           )}
           onClick={_ => {
-            setShowFields(._ => true)
+            setShowFields(_ => true)
           }}>
           <Icon name="circle-plus" size=22 />
-          {React.string(localeString.addNewCard)}
+          {React.string(localeString.morePaymentMethods)}
         </div>
       </RenderIf>
     </div>

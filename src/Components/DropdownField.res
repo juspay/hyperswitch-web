@@ -11,7 +11,7 @@ let make = (
 ) => {
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let dropdownRef = React.useRef(Js.Nullable.null)
+  let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
 
@@ -30,12 +30,12 @@ let make = (
   }, [themeObj])
   React.useEffect0(() => {
     if value === "" {
-      setValue(_ => options->Belt.Array.get(0)->Belt.Option.getWithDefault(""))
+      setValue(_ => options->Array.get(0)->Option.getOr(""))
     }
     None
   })
 
-  let focusClass = if inputFocused || value->Js.String2.length > 0 {
+  let focusClass = if inputFocused || value->String.length > 0 {
     `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`
   } else {
     "transition-all ease-in duration-75"
@@ -44,9 +44,9 @@ let make = (
   let floatinglabelClass = inputFocused ? "Label--floating" : "Label--resting"
 
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
-  <RenderIf condition={options->Js.Array2.length > 0}>
+  <RenderIf condition={options->Array.length > 0}>
     <div className="flex flex-col w-full">
-      <RenderIf condition={fieldName->Js.String2.length > 0 && appearance.labels == Above}>
+      <RenderIf condition={fieldName->String.length > 0 && appearance.labels == Above}>
         <div
           className={`Label `}
           style={ReactDOMStyle.make(
@@ -76,8 +76,8 @@ let make = (
           onFocus=handleFocus
           className={`Input ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
-          ->Js.Array2.mapi((item: string, i) => {
-            <option key={string_of_int(i)} value=item> {React.string(item)} </option>
+          ->Array.mapWithIndex((item: string, i) => {
+            <option key={Int.toString(i)} value=item> {React.string(item)} </option>
           })
           ->React.array}
         </select>
@@ -86,10 +86,10 @@ let make = (
             className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass}`}
             style={ReactDOMStyle.make(
               ~marginBottom={
-                inputFocused || value->Js.String2.length > 0 ? "" : themeObj.spacingUnit
+                inputFocused || value->String.length > 0 ? "" : themeObj.spacingUnit
               },
               ~fontSize={
-                inputFocused || value->Js.String2.length > 0 ? themeObj.fontSizeXs : ""
+                inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
               ~opacity="0.6",
               (),

@@ -24,7 +24,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let complete =
     email.value != "" &&
     fullName.value != "" &&
-    email.isValid->Belt.Option.getWithDefault(false) &&
+    email.isValid->Option.getOr(false) &&
     switch modalData {
     | Some(val: ACHTypes.data) => val.iban !== "" || val.accountHolderName !== ""
     | None => false
@@ -37,18 +37,18 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     | None => true
     }
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     handlePostMessageEvents(~complete, ~empty, ~paymentType="sepa_bank_debit", ~loggerState)
     None
   }, (empty, complete))
 
-  React.useEffect1(() => {
-    setComplete(._ => complete)
+  React.useEffect(() => {
+    setComplete(_ => complete)
     None
   }, [complete])
 
   let submitCallback = React.useCallback3((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
@@ -76,7 +76,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
       }
     }
   }, (email, fullName, modalData))
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <div
     className="flex flex-col animate-slowShow"

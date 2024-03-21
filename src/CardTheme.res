@@ -48,7 +48,7 @@ let defaultAppearance = {
   variables: DefaultTheme.default,
   componentType: "payment",
   labels: Above,
-  rules: Js.Dict.empty()->Js.Json.object_,
+  rules: Dict.make()->JSON.Encode.object,
 }
 let defaultFonts = {
   cssSrc: "",
@@ -76,9 +76,9 @@ let getLocaleObject = string => {
     string
   }
   LocaleString.localeStrings
-  ->Js.Array2.filter(item => item.locale == val)
-  ->Belt.Array.get(0)
-  ->Belt.Option.getWithDefault(LocaleString.defaultLocale)
+  ->Array.filter(item => item.locale == val)
+  ->Array.get(0)
+  ->Option.getOr(LocaleString.defaultLocale)
 }
 let defaultRecoilConfig: recoilConfig = {
   config: defaultConfig,
@@ -89,9 +89,9 @@ let defaultRecoilConfig: recoilConfig = {
 
 let getVariables = (str, dict, default, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     let validKeys = [
       "fontFamily",
       "fontSizeBase",
@@ -128,6 +128,14 @@ let getVariables = (str, dict, default, logger) => {
       "spacingGridColumn",
       "spacingGridRow",
       "spacingAccordionItem",
+      "buttonBackgroundColor",
+      "buttonHeight",
+      "buttonWidth",
+      "buttonBorderRadius",
+      "buttonBorderColor",
+      "buttonTextColor",
+      "buttonTextFontSize",
+      "buttonTextFontWeight",
     ]
     unknownKeysWarning(validKeys, json, "appearance.variables", ~logger)
     {
@@ -244,22 +252,55 @@ let getVariables = (str, dict, default, logger) => {
         ~logger,
       ),
       spacingGridRow: getWarningString(json, "spacingGridRow", default.spacingGridRow, ~logger),
+      buttonBackgroundColor: getWarningString(
+        json,
+        "buttonBackgroundColor",
+        default.buttonBackgroundColor,
+        ~logger,
+      ),
+      buttonHeight: getWarningString(json, "buttonHeight", default.buttonHeight, ~logger),
+      buttonWidth: getWarningString(json, "buttonWidth", default.buttonWidth, ~logger),
+      buttonBorderRadius: getWarningString(
+        json,
+        "buttonBorderRadius",
+        default.buttonBorderRadius,
+        ~logger,
+      ),
+      buttonBorderColor: getWarningString(
+        json,
+        "buttonBorderColor",
+        default.buttonBorderColor,
+        ~logger,
+      ),
+      buttonTextColor: getWarningString(json, "buttonTextColor", default.buttonTextColor, ~logger),
+      buttonTextFontSize: getWarningString(
+        json,
+        "buttonTextFontSize",
+        default.buttonTextFontSize,
+        ~logger,
+      ),
+      buttonTextFontWeight: getWarningString(
+        json,
+        "buttonTextFontWeight",
+        default.buttonTextFontWeight,
+        ~logger,
+      ),
     }
   })
-  ->Belt.Option.getWithDefault(default)
+  ->Option.getOr(default)
 }
 
 let getAppearance = (
   str,
   dict,
   default: OrcaPaymentPage.CardThemeType.themeClass,
-  defaultRules: OrcaPaymentPage.CardThemeType.themeClass => Js.Json.t,
+  defaultRules: OrcaPaymentPage.CardThemeType.themeClass => JSON.t,
   logger,
 ) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     unknownKeysWarning(["theme", "variables", "rules", "labels"], json, "appearance", ~logger)
 
     let rulesJson = defaultRules(getVariables("variables", json, default, logger))
@@ -280,15 +321,15 @@ let getAppearance = (
       },
     }
   })
-  ->Belt.Option.getWithDefault(defaultAppearance)
+  ->Option.getOr(defaultAppearance)
 }
 let getFonts = (str, dict, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.getWithDefault([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
-  ->Js.Array2.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.array)
+  ->Option.getOr([])
+  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.map(json => {
     unknownKeysWarning(["cssSrc", "family", "src", "weight"], json, "fonts", ~logger)
     {
       cssSrc: getWarningString(json, "cssSrc", "", ~logger),
@@ -301,7 +342,7 @@ let getFonts = (str, dict, logger) => {
 let itemToObjMapper = (
   dict,
   default: OrcaPaymentPage.CardThemeType.themeClass,
-  defaultRules: OrcaPaymentPage.CardThemeType.themeClass => Js.Json.t,
+  defaultRules: OrcaPaymentPage.CardThemeType.themeClass => JSON.t,
   logger,
 ) => {
   unknownKeysWarning(

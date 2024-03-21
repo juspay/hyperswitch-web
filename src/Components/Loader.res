@@ -5,7 +5,7 @@ let make = (~showText=true) => {
   <div className="flex flex-col gap-10 justify-center items-center">
     <div className="flex flex-row gap-10">
       {arr
-      ->Js.Array2.mapi((item, i) => {
+      ->Array.mapWithIndex((item, i) => {
         <Icon
           size=52
           style={ReactDOMStyle.make(

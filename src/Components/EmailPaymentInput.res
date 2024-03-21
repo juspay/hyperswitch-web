@@ -11,24 +11,29 @@ let make = (~paymentType) => {
 
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
 
-  let emailRef = React.useRef(Js.Nullable.null)
+  let emailRef = React.useRef(Nullable.null)
 
   let changeEmail = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setEmail(.prev => {
-      ...prev,
+    setEmail(prev => {
       value: val,
+      isValid: val->Utils.isEmailValid,
+      errorString: val->Utils.isEmailValid->Option.getOr(false) ? "" : prev.errorString,
     })
   }
-  let onBlur = _ => {
-    Utils.checkEmailValid(email, setEmail)
+  let onBlur = ev => {
+    let val = ReactEvent.Focus.target(ev)["value"]
+    setEmail(prev => {
+      ...prev,
+      isValid: val->Utils.isEmailValid,
+    })
   }
 
-  React.useEffect1(() => {
-    setEmail(.prev => {
+  React.useEffect(() => {
+    setEmail(prev => {
       ...prev,
       errorString: switch prev.isValid {
-      | Some(val) => val ? "" : "Invalid email address"
+      | Some(val) => val ? "" : localeString.emailInvalidText
       | None => ""
       },
     })
@@ -36,18 +41,18 @@ let make = (~paymentType) => {
   }, [email.isValid])
 
   let submitCallback = React.useCallback1((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if email.value == "" {
-        setEmail(.prev => {
+        setEmail(prev => {
           ...prev,
-          errorString: "Email cannot be empty",
+          errorString: localeString.emailEmptyText,
         })
       }
     }
   }, [email])
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.email == Auto}>
     <PaymentField

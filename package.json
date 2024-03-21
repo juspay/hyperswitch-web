@@ -1,29 +1,28 @@
 {
   "name": "orca-payment-page",
-  "version": "0.20.3",
+  "version": "0.33.12",
   "main": "index.js",
   "private": true,
   "dependencies": {
     "@aws-sdk/client-cloudfront": "^3.414.0",
     "@aws-sdk/client-s3": "^3.417.0",
+    "@glennsl/rescript-fetch": "^0.2.0",
     "@kount/kount-web-client-sdk": "^1.1.6",
-    "@rescript/react": "^0.11.0",
+    "@rescript/core": "^0.7.0",
+    "@rescript/react": "^0.12.1",
     "@ryyppy/rescript-promise": "^2.1.0",
     "@sentry/react": "^7.64.0",
     "@sentry/webpack-plugin": "^2.7.0",
-    "bs-fetch": "^0.6.2",
-    "bs-webapi": "^0.19.1",
     "fast-glob": "^3.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recoil": "^0.1.2",
-    "rescript-webapi": "^0.7.0",
     "webpack-merge": "^5.9.0"
   },
   "scripts": {
     "build:dev": "sdkEnv=sandbox webpack --config webpack.dev.js",
     "build:dev-integ": "sdkEnv=integ webpack --config webpack.dev.js",
-    "start": "sdkEnv=local webpack --config webpack.dev.js && webpack serve --config webpack.dev.js",
+    "start": "sdkEnv=local webpack serve --config webpack.dev.js",
     "build:prod": "sdkEnv=prod webpack --config webpack.common.js",
     "build": "webpack --config webpack.common.js",
     "build:sandbox": "sdkEnv=sandbox webpack --config webpack.common.js",
@@ -33,12 +32,14 @@
     "re:build": "rescript",
     "re:clean": "rescript clean",
     "re:start": "rescript build -w",
+    "re:format": "rescript format -all",
     "start:dev": "npm run re:start & npm run start",
     "start:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js && npm run start",
     "build:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js && npm run build",
     "prepare": "husky install",
     "deploy-to-s3": "node ./scripts/pushToS3.js",
-    "postinstall": "cd Hyperswitch-React-Demo-App && npm i"
+    "postinstall": "cd Hyperswitch-React-Demo-App && npm i",
+    "test:hooks": "npx eslint src/"
   },
   "eslintConfig": {
     "extends": [
@@ -61,25 +62,24 @@
   "devDependencies": {
     "@commitlint/cli": "^17.0.3",
     "@commitlint/config-conventional": "^17.0.3",
-    "@digitalroute/cz-conventional-changelog-for-jira": "^7.4.2",
     "@semantic-release/changelog": "^6.0.1",
     "@semantic-release/commit-analyzer": "^9.0.2",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/npm": "^9.0.1",
     "@semantic-release/release-notes-generator": "^10.0.3",
     "autoprefixer": "^10.4.8",
-    "commitlint-config-jira": "^1.6.4",
-    "commitlint-plugin-jira-rules": "^1.6.4",
     "concurrently": "4.1.2",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
     "cz-conventional-changelog": "^3.3.0",
+    "eslint": "latest",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "husky": "^8.0.3",
     "mini-css-extract-plugin": "^1.3.1",
     "postcss": "^8.4.16",
     "postcss-loader": "^7.0.1",
     "react-scripts": "5.0.1",
-    "rescript": "^10.1.4",
+    "rescript": "^11.0.1",
     "semantic-release": "^19.0.2",
     "tailwindcss": "^3.1.8",
     "terser-webpack-plugin": "^5.3.7",
@@ -90,42 +90,39 @@
   },
   "config": {
     "commitizen": {
-      "path": "./node_modules/@digitalroute/cz-conventional-changelog-for-jira",
-      "jiraPrefix": "HS",
-      "jiraLocation": "post-type",
-      "jiraAppend": ":"
+      "path": "./node_modules/cz-conventional-changelog",
+      "types": {
+        "feat": {
+          "description": "A new feature",
+          "title": "Features"
+        },
+        "fix": {
+          "description": "A bug fix",
+          "title": "Bug Fixes"
+        },
+        "refactor": {
+          "description": "A code change that neither fixes a bug nor adds a feature",
+          "title": "Code Refactoring"
+        },
+        "chore": {
+          "description": "Other changes that don't modify src or test files",
+          "title": "Chores"
+        },
+        "docs": {
+          "description": "Documentation only changes",
+          "title": "Documentation"
+        },
+        "revert": {
+          "description": "Reverts a previous commit",
+          "title": "Reverts"
+        }
+      }
     }
   },
   "commitlint": {
-    "plugins": [
-      "commitlint-plugin-jira-rules"
-    ],
     "extends": [
-      "jira"
-    ],
-    "rules": {
-      "jira-task-id-max-length": [
-        0
-      ],
-      "jira-commit-message-separator": [
-        0
-      ],
-      "jira-commit-status-case": [
-        0
-      ],
-      "jira-task-id-project-key": [
-        0
-      ],
-      "jira-task-id-separator": [
-        0
-      ],
-      "jira-task-id-case": [
-        0
-      ],
-      "jira-task-id-min-length": [
-        0
-      ]
-    }
+      "@commitlint/config-conventional"
+    ]
   },
   "release": {
     "branches": [

@@ -3,7 +3,7 @@ open PaymentType
 open Utils
 
 @react.component
-let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None, ()) => {
+let make = (~paymentType, ~customFieldName=None, ~requiredFields as optionalRequiredFields=?) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -18,34 +18,41 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None, (
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setBillingName(.prev => {
-      ...prev,
+    setBillingName(prev => {
       value: val,
-      errorString: "",
+      isValid: Some(val !== ""),
+      errorString: val !== "" ? "" : prev.errorString,
+    })
+  }
+  let onBlur = ev => {
+    let val: string = ReactEvent.Focus.target(ev)["value"]
+    setBillingName(prev => {
+      ...prev,
+      isValid: Some(val !== ""),
     })
   }
   let (placeholder, fieldName) = switch customFieldName {
   | Some(val) => (val, val)
   | None => (localeString.billingNamePlaceholder, localeString.billingNameLabel)
   }
-  let nameRef = React.useRef(Js.Nullable.null)
+  let nameRef = React.useRef(Nullable.null)
 
   let submitCallback = React.useCallback1((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if billingName.value == "" {
-        setBillingName(.prev => {
+        setBillingName(prev => {
           ...prev,
-          errorString: `Please provide your ${fieldName}`,
+          errorString: fieldName->localeString.nameEmptyText,
         })
       } else {
         switch optionalRequiredFields {
         | Some(requiredFields) =>
           if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, BillingName, billingName) {
-            setBillingName(.prev => {
+            setBillingName(prev => {
               ...prev,
-              errorString: `Please provide your complete ${fieldName}`,
+              errorString: fieldName->localeString.completeNameEmptyText,
             })
           }
         | None => ()
@@ -53,14 +60,16 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None, (
       }
     }
   }, [billingName])
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField
       fieldName
+      setValue=setBillingName
       value=billingName
       onChange=changeName
       paymentType
+      onBlur
       type_="text"
       name="name"
       inputRef=nameRef

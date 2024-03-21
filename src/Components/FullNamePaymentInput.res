@@ -14,34 +14,43 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setFullName(.prev => {
-      ...prev,
+    setFullName(prev => {
       value: val,
-      errorString: "",
+      isValid: Some(val !== ""),
+      errorString: val !== "" ? "" : prev.errorString,
     })
   }
+
+  let onBlur = ev => {
+    let val: string = ReactEvent.Focus.target(ev)["value"]
+    setFullName(prev => {
+      ...prev,
+      isValid: Some(val !== ""),
+    })
+  }
+
   let (placeholder, fieldName) = switch customFieldName {
   | Some(val) => (val, val)
   | None => (localeString.fullNamePlaceholder, localeString.fullNameLabel)
   }
-  let nameRef = React.useRef(Js.Nullable.null)
+  let nameRef = React.useRef(Nullable.null)
 
   let submitCallback = React.useCallback1((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if fullName.value == "" {
-        setFullName(.prev => {
+        setFullName(prev => {
           ...prev,
-          errorString: `Please provide your ${fieldName}`,
+          errorString: fieldName->localeString.nameEmptyText,
         })
       } else {
         switch optionalRequiredFields {
         | Some(requiredFields) =>
           if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, FullName, fullName) {
-            setFullName(.prev => {
+            setFullName(prev => {
               ...prev,
-              errorString: `Please provide your complete ${fieldName}`,
+              errorString: fieldName->localeString.completeNameEmptyText,
             })
           }
         | None => ()
@@ -49,14 +58,16 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
       }
     }
   }, [fullName])
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField
       fieldName
+      setValue=setFullName
       value=fullName
       onChange=changeName
       paymentType
+      onBlur
       type_="text"
       name="name"
       inputRef=nameRef

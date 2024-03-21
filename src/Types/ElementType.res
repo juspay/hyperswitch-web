@@ -40,10 +40,10 @@ type paymentRequestButtonStyle = {
   height: string,
 }
 type style = {
-  base: Js.Json.t,
-  complete: Js.Json.t,
-  empty: Js.Json.t,
-  invalid: Js.Json.t,
+  base: JSON.t,
+  complete: JSON.t,
+  empty: JSON.t,
+  invalid: JSON.t,
   paymentRequestButton: paymentRequestButtonStyle,
 }
 type options = {
@@ -106,10 +106,10 @@ let defaultPaymentRequestButton = {
   height: "",
 }
 let defaultStyle = {
-  base: Js.Dict.empty()->Js.Json.object_,
-  complete: Js.Dict.empty()->Js.Json.object_,
-  empty: Js.Dict.empty()->Js.Json.object_,
-  invalid: Js.Dict.empty()->Js.Json.object_,
+  base: Dict.make()->JSON.Encode.object,
+  complete: Dict.make()->JSON.Encode.object,
+  empty: Dict.make()->JSON.Encode.object,
+  invalid: Dict.make()->JSON.Encode.object,
   paymentRequestButton: defaultPaymentRequestButton,
 }
 let defaultOptions = {
@@ -124,9 +124,9 @@ let defaultOptions = {
 }
 let getClasses = (str, dict, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       base: getWarningString(json, "base", "OrcaElement", ~logger),
       complete: getWarningString(json, "complete", "OrcaElement--complete", ~logger),
@@ -141,14 +141,14 @@ let getClasses = (str, dict, logger) => {
       ),
     }
   })
-  ->Belt.Option.getWithDefault(defaultClasses)
+  ->Option.getOr(defaultClasses)
 }
 
 let rec getStyleObj = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       backgroundColor: getWarningString(json, "backgroundColor", "", ~logger),
       color: getWarningString(json, "color", "", ~logger),
@@ -175,7 +175,7 @@ let rec getStyleObj = (dict, str, logger) => {
       msClear: Some(getStyleObj(json, "::-ms-clear", logger)),
     }
   })
-  ->Belt.Option.getWithDefault(defaultStyleClass)
+  ->Option.getOr(defaultStyleClass)
 }
 let getTheme = (str, key, logger) => {
   switch str {
@@ -190,9 +190,9 @@ let getTheme = (str, key, logger) => {
 }
 let getPaymentRequestButton = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       type_: getWarningString(json, "type", "", ~logger),
       theme: getWarningString(json, "theme", "dark", ~logger)->getTheme(
@@ -202,14 +202,14 @@ let getPaymentRequestButton = (dict, str, logger) => {
       height: getWarningString(json, "height", "", ~logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultPaymentRequestButton)
+  ->Option.getOr(defaultPaymentRequestButton)
 }
 
 let getStyle = (dict, str, logger) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       base: getJsonObjectFromDict(json, "base"),
       complete: getJsonObjectFromDict(json, "complete"),
@@ -218,7 +218,7 @@ let getStyle = (dict, str, logger) => {
       paymentRequestButton: getPaymentRequestButton(json, "paymentRequestButton", logger),
     }
   })
-  ->Belt.Option.getWithDefault(defaultStyle)
+  ->Option.getOr(defaultStyle)
 }
 let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(

@@ -5,4 +5,4 @@ type props = {
   list: PaymentMethodsRecord.list,
 }
 
-let make: props => React.element = reactLazy(.() => import_("./ACHBankDebit.bs.js"))
+let make: props => React.element = reactLazy(() => import_("./ACHBankDebit.bs.js"))

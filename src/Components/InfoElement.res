@@ -20,7 +20,8 @@ let make = () => {
       {switch selectedOption {
       | ACHTransfer
       | BacsTransfer
-      | SepaTransfer =>
+      | SepaTransfer
+      | Boleto =>
         localeString.bankDetailsText
       | _ => localeString.redirectText
       }->React.string}

@@ -187,7 +187,7 @@ let paymentMethodsFields = [
   {
     paymentMethodName: "sofort",
     icon: Some(icon("sofort", ~size=19)),
-    fields: [FullName, Email, Country, InfoElement],
+    fields: [InfoElement],
     displayName: "Sofort",
     miniIcon: None,
   },
@@ -230,7 +230,7 @@ let paymentMethodsFields = [
     paymentMethodName: "eps",
     icon: Some(icon("eps", ~size=19, ~width=25)),
     displayName: "EPS",
-    fields: [Bank, FullName, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -321,7 +321,7 @@ let paymentMethodsFields = [
     paymentMethodName: "ideal",
     icon: Some(icon("ideal", ~size=19, ~width=25)),
     displayName: "iDEAL",
-    fields: [Bank, FullName, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -466,10 +466,10 @@ let paymentMethodsFields = [
   },
   {
     paymentMethodName: "open_banking_uk",
-    icon: Some(icon("open_banking", ~size=19, ~width=50)),
-    displayName: "Open Banking",
-    fields: [Country, InfoElement],
-    miniIcon: Some(icon("open_banking", ~size=19)),
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Pay by Bank",
+    fields: [InfoElement],
+    miniIcon: Some(icon("bank", ~size=19)),
   },
   {
     paymentMethodName: "evoucher",
@@ -477,6 +477,20 @@ let paymentMethodsFields = [
     displayName: "E-Voucher",
     fields: [InfoElement],
     miniIcon: Some(icon("cashtocode", ~size=19)),
+  },
+  {
+    paymentMethodName: "pix_transfer",
+    fields: [InfoElement],
+    icon: Some(icon("pix", ~size=26, ~width=40)),
+    displayName: "Pix",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "boleto",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Boleto",
+    fields: [InfoElement],
+    miniIcon: None,
   },
 ]
 
@@ -510,8 +524,8 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
 }
 
 let getPaymentMethodsFieldTypeFromDict = dict => {
-  let keysArr = dict->Js.Dict.keys
-  let key = keysArr->Belt.Array.get(0)->Belt.Option.getWithDefault("")
+  let keysArr = dict->Dict.keysToArray
+  let key = keysArr->Array.get(0)->Option.getOr("")
   switch key {
   | "user_currency" => {
       let options = dict->Utils.getArrayValFromJsonDict("user_currency", "options")
@@ -519,10 +533,15 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
     }
   | "user_address_country" => {
       let options = dict->Utils.getArrayValFromJsonDict("user_address_country", "options")
-      switch options->Belt.Array.get(0)->Belt.Option.getWithDefault("") {
+      switch options->Array.get(0)->Option.getOr("") {
       | "" => None
-      | "ALL" => AddressCountry(Country.country->Js.Array2.map(item => item.countryName))
-      | _ => AddressCountry(options)
+      | "ALL" => AddressCountry(Country.country->Array.map(item => item.countryName))
+      | _ =>
+        AddressCountry(
+          Country.country
+          ->Array.filter(item => options->Array.includes(item.isoAlpha2))
+          ->Array.map(item => item.countryName),
+        )
       }
     }
   | _ => None
@@ -532,19 +551,17 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
 let getFieldType = (dict, isBancontact) => {
   let fieldClass =
     dict
-    ->Js.Dict.get("field_type")
-    ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-    ->Js.Json.classify
+    ->Dict.get("field_type")
+    ->Option.getOr(Dict.make()->JSON.Encode.object)
+    ->JSON.Classify.classify
   switch fieldClass {
-  | JSONFalse
-  | JSONTrue
-  | JSONNull =>
+  | Bool(_)
+  | Null =>
     None
-  | JSONNumber(_val) => None
-  | JSONArray(_arr) => None
-  | JSONString(val) => val->getPaymentMethodsFieldTypeFromString(isBancontact)
-
-  | JSONObject(dict) => dict->getPaymentMethodsFieldTypeFromDict
+  | Number(_val) => None
+  | Array(_arr) => None
+  | String(val) => val->getPaymentMethodsFieldTypeFromString(isBancontact)
+  | Object(dict) => dict->getPaymentMethodsFieldTypeFromDict
   }
 }
 
@@ -556,6 +573,11 @@ let dynamicFieldsEnabledPaymentMethods = [
   "google_pay",
   "apple_pay",
   "bancontact_card",
+  "open_banking_uk",
+  "eps",
+  "ideal",
+  "sofort",
+  "pix_transfer",
 ]
 
 let getIsBillingField = requiredFieldType => {
@@ -571,13 +593,13 @@ let getIsBillingField = requiredFieldType => {
 }
 
 let getIsAnyBillingDetailEmpty = (requiredFields: array<required_fields>) => {
-  requiredFields->Js.Array2.reduce((acc, requiredField) => {
+  requiredFields->Array.reduce(false, (acc, requiredField) => {
     if getIsBillingField(requiredField.field_type) {
       requiredField.value === "" || acc
     } else {
       acc
     }
-  }, false)
+  })
 }
 
 let getPaymentMethodFields = (
@@ -588,7 +610,7 @@ let getPaymentMethodFields = (
   (),
 ) => {
   let isAnyBillingDetailEmpty = requiredFields->getIsAnyBillingDetailEmpty
-  let requiredFieldsArr = requiredFields->Js.Array2.map(requiredField => {
+  let requiredFieldsArr = requiredFields->Array.map(requiredField => {
     let isShowBillingField = getIsBillingField(requiredField.field_type) && isAnyBillingDetailEmpty
     if requiredField.value === "" || isShowBillingField {
       if (
@@ -604,11 +626,11 @@ let getPaymentMethodFields = (
       None
     }
   })
-  requiredFieldsArr->Js.Array2.concat(
+  requiredFieldsArr->Array.concat(
     (
       paymentMethodsFields
-      ->Js.Array2.find(x => x.paymentMethodName === paymentMethod)
-      ->Belt.Option.getWithDefault({
+      ->Array.find(x => x.paymentMethodName === paymentMethod)
+      ->Option.getOr({
         paymentMethodName: "",
         fields: [],
         icon: Some(icon("", ~size=19, ~width=25)),
@@ -622,10 +644,10 @@ let getPaymentMethodFields = (
 let getPaymentDetails = (arr: array<string>) => {
   let finalArr = []
   arr
-  ->Js.Array2.map(item => {
-    let optionalVal = paymentMethodsFields->Js.Array2.find(i => i.paymentMethodName == item)
+  ->Array.map(item => {
+    let optionalVal = paymentMethodsFields->Array.find(i => i.paymentMethodName == item)
     switch optionalVal {
-    | Some(val) => finalArr->Js.Array2.push(val)->ignore
+    | Some(val) => finalArr->Array.push(val)->ignore
     | None => ()
     }
   })
@@ -634,7 +656,7 @@ let getPaymentDetails = (arr: array<string>) => {
 }
 
 type paymentMethod =
-  Cards | Wallets | PayLater | BankRedirect | BankTransfer | BankDebit | Crypto | NONE
+  Cards | Wallets | PayLater | BankRedirect | BankTransfer | BankDebit | Crypto | Voucher | NONE
 
 type cardType = Credit | Debit
 type paymentMethodType =
@@ -682,12 +704,14 @@ type mandate = {
   single_use: option<mandateType>,
   multi_use: option<mandateType>,
 }
+type payment_type = NORMAL | NEW_MANDATE | SETUP_MANDATE | NONE
 
 type list = {
   redirect_url: string,
+  currency: string,
   payment_methods: array<methods>,
   mandate_payment: option<mandate>,
-  payment_type: string,
+  payment_type: payment_type,
 }
 
 open Utils
@@ -705,9 +729,10 @@ let defaultPaymentMethodType = {
 
 let defaultList = {
   redirect_url: "",
+  currency: "",
   payment_methods: [],
   mandate_payment: None,
-  payment_type: "",
+  payment_type: NONE,
 }
 let getMethod = str => {
   switch str {
@@ -718,6 +743,7 @@ let getMethod = str => {
   | "bank_transfer" => BankTransfer
   | "bank_debit" => BankDebit
   | "crypto" => Crypto
+  | "voucher" => Voucher
   | _ => NONE
   }
 }
@@ -746,11 +772,11 @@ let getPaymentExperienceType = str => {
 
 let getPaymentExperience = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.getWithDefault([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
-  ->Js.Array2.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.array)
+  ->Option.getOr([])
+  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.map(json => {
     {
       payment_experience_type: getString(
         json,
@@ -765,15 +791,15 @@ let getPaymentExperience = (dict, str) => {
 let getSurchargeDetails = dict => {
   let surchargDetails =
     dict
-    ->Js.Dict.get("surcharge_details")
-    ->Belt.Option.flatMap(Js.Json.decodeObject)
-    ->Belt.Option.getWithDefault(Js.Dict.empty())
+    ->Dict.get("surcharge_details")
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.getOr(Dict.make())
 
   let displayTotalSurchargeAmount =
     surchargDetails
-    ->Js.Dict.get("display_total_surcharge_amount")
-    ->Belt.Option.flatMap(Js.Json.decodeNumber)
-    ->Belt.Option.getWithDefault(0.0)
+    ->Dict.get("display_total_surcharge_amount")
+    ->Option.flatMap(JSON.Decode.float)
+    ->Option.getOr(0.0)
 
   if displayTotalSurchargeAmount !== 0.0 {
     Some({
@@ -786,11 +812,11 @@ let getSurchargeDetails = dict => {
 
 let getCardNetworks = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.getWithDefault([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
-  ->Js.Array2.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.array)
+  ->Option.getOr([])
+  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.map(json => {
     {
       card_network: getString(json, "card_network", "")->CardUtils.cardType,
       eligible_connectors: getStrArray(json, "eligible_connectors"),
@@ -801,34 +827,34 @@ let getCardNetworks = (dict, str) => {
 
 let getBankNames = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.getWithDefault([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
-  ->Js.Array2.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.array)
+  ->Option.getOr([])
+  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.map(json => {
     getStrArray(json, "bank_name")
   })
-  ->Js.Array2.reduce((acc, item) => {
-    item->Js.Array2.forEach(obj => acc->Js.Array2.push(obj)->ignore)
+  ->Array.reduce([], (acc, item) => {
+    item->Array.forEach(obj => acc->Array.push(obj)->ignore)
     acc
-  }, [])
+  })
 }
 
 let getAchConnectors = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.getWithDefault(Js.Dict.empty())
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.getOr(Dict.make())
   ->getStrArray("elligible_connectors")
 }
 
 let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
   let requiredFields =
-    Utils.getJsonFromDict(dict, "required_fields", Js.Json.null)
+    Utils.getJsonFromDict(dict, "required_fields", JSON.Encode.null)
     ->Utils.getDictFromJson
-    ->Js.Dict.values
+    ->Dict.valuesToArray
 
-  requiredFields->Js.Array2.map(requiredField => {
+  requiredFields->Array.map(requiredField => {
     let requiredFieldsDict = requiredField->Utils.getDictFromJson
     {
       required_field: requiredFieldsDict->Utils.getString("required_field", ""),
@@ -841,11 +867,11 @@ let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
 
 let getPaymentMethodTypes = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.getWithDefault([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
-  ->Js.Array2.map(jsonDict => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.array)
+  ->Option.getOr([])
+  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.map(jsonDict => {
     let paymentMethodType = getString(jsonDict, "payment_method_type", "")
     {
       payment_method_type: paymentMethodType,
@@ -864,11 +890,11 @@ let getPaymentMethodTypes = (dict, str) => {
 
 let getMethodsArr = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeArray)
-  ->Belt.Option.getWithDefault([])
-  ->Belt.Array.keepMap(Js.Json.decodeObject)
-  ->Js.Array2.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.array)
+  ->Option.getOr([])
+  ->Belt.Array.keepMap(JSON.Decode.object)
+  ->Array.map(json => {
     {
       payment_method: getString(json, "payment_method", ""),
       payment_method_types: getPaymentMethodTypes(json, "payment_method_types"),
@@ -878,9 +904,9 @@ let getMethodsArr = (dict, str) => {
 
 let getOptionalMandateType = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       amount: getInt(json, "amount", 0),
       currency: getString(json, "currency", ""),
@@ -890,9 +916,9 @@ let getOptionalMandateType = (dict, str) => {
 
 let getMandate = (dict, str) => {
   dict
-  ->Js.Dict.get(str)
-  ->Belt.Option.flatMap(Js.Json.decodeObject)
-  ->Belt.Option.map(json => {
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
     {
       single_use: getOptionalMandateType(json, "single_use"),
       multi_use: getOptionalMandateType(json, "multi_use"),
@@ -900,70 +926,117 @@ let getMandate = (dict, str) => {
   })
 }
 
+let paymentTypeMapper = payment_type => {
+  switch payment_type {
+  | "normal" => NORMAL
+  | "new_mandate" => NEW_MANDATE
+  | "setup_mandate" => SETUP_MANDATE
+  | _ => NONE
+  }
+}
+
+let paymentTypeToStringMapper = payment_type => {
+  switch payment_type {
+  | NORMAL => "normal"
+  | NEW_MANDATE => "new_mandate"
+  | SETUP_MANDATE => "setup_mandate"
+  | NONE => ""
+  }
+}
+
 let itemToObjMapper = dict => {
   {
     redirect_url: getString(dict, "redirect_url", ""),
+    currency: getString(dict, "currency", ""),
     payment_methods: getMethodsArr(dict, "payment_methods"),
     mandate_payment: getMandate(dict, "mandate_payment"),
-    payment_type: getString(dict, "payment_type", ""),
+    payment_type: getString(dict, "payment_type", "")->paymentTypeMapper,
   }
 }
 
 let buildFromPaymentList = (plist: list) => {
   let paymentMethodArr = plist.payment_methods
-  let x =
-    paymentMethodArr
-    ->Js.Array2.map(paymentMethodObject => {
-      let methodType = paymentMethodObject.payment_method
-      let handleUserError = methodType === "wallet"
-      paymentMethodObject.payment_method_types->Js.Array2.map(individualPaymentMethod => {
-        let paymentMethodName = individualPaymentMethod.payment_method_type
-        let bankNames = individualPaymentMethod.bank_names
-        let paymentExperience = individualPaymentMethod.payment_experience->Js.Array2.map(
-          experience => {
-            (experience.payment_experience_type, experience.eligible_connectors)
-          },
-        )
-        {
-          paymentMethodName,
-          fields: getPaymentMethodFields(
-            paymentMethodName,
-            individualPaymentMethod.required_fields,
-            (),
-          ),
-          paymentFlow: paymentExperience,
-          handleUserError,
-          methodType,
-          bankNames,
-        }
-      })
-    })
-    ->Js.Array2.reduce((acc, item) => {
-      item->Js.Array2.forEach(obj => acc->Js.Array2.push(obj)->ignore)
-      acc
-    }, [])
 
-  x
+  paymentMethodArr
+  ->Array.map(paymentMethodObject => {
+    let methodType = paymentMethodObject.payment_method
+    let handleUserError = methodType === "wallet"
+    paymentMethodObject.payment_method_types->Array.map(individualPaymentMethod => {
+      let paymentMethodName = individualPaymentMethod.payment_method_type
+      let bankNames = individualPaymentMethod.bank_names
+      let paymentExperience = individualPaymentMethod.payment_experience->Array.map(
+        experience => {
+          (experience.payment_experience_type, experience.eligible_connectors)
+        },
+      )
+      {
+        paymentMethodName,
+        fields: getPaymentMethodFields(
+          paymentMethodName,
+          individualPaymentMethod.required_fields,
+          (),
+        ),
+        paymentFlow: paymentExperience,
+        handleUserError,
+        methodType,
+        bankNames,
+      }
+    })
+  })
+  ->Array.reduce([], (acc, item) => {
+    item->Array.forEach(obj => acc->Array.push(obj)->ignore)
+    acc
+  })
 }
 
 let getPaymentMethodTypeFromList = (~list: list, ~paymentMethod, ~paymentMethodType) => {
   (
     list.payment_methods
-    ->Js.Array2.find(item => {
+    ->Array.find(item => {
       item.payment_method == paymentMethod
     })
-    ->Belt.Option.getWithDefault({
+    ->Option.getOr({
       payment_method: "card",
       payment_method_types: [],
     })
-  ).payment_method_types->Js.Array2.find(item => {
+  ).payment_method_types->Array.find(item => {
     item.payment_method_type == paymentMethodType
   })
 }
 
 let getCardNetwork = (~paymentMethodType, ~cardBrand) => {
   paymentMethodType.card_networks
-  ->Js.Array2.filter(cardNetwork => cardNetwork.card_network === cardBrand)
-  ->Belt.Array.get(0)
-  ->Belt.Option.getWithDefault(defaultCardNetworks)
+  ->Array.filter(cardNetwork => cardNetwork.card_network === cardBrand)
+  ->Array.get(0)
+  ->Option.getOr(defaultCardNetworks)
+}
+
+let paymentMethodFieldToStrMapper = (field: paymentMethodsFields) => {
+  switch field {
+  | Email => "Email"
+  | FullName => "FullName"
+  | InfoElement => "InfoElement"
+  | Country => "Country"
+  | Bank => "Bank"
+  | SpecialField(_) => "SpecialField"
+  | None => "None"
+  | BillingName => "BillingName"
+  | PhoneNumber => "PhoneNumber"
+  | AddressLine1 => "AddressLine1"
+  | AddressLine2 => "AddressLine2"
+  | AddressCity => "AddressCity"
+  | StateAndCity => "StateAndCity"
+  | CountryAndPincode(_) => "CountryAndPincode"
+  | AddressPincode => "AddressPincode"
+  | AddressState => "AddressState"
+  | AddressCountry(_) => "AddressCountry"
+  | BlikCode => "BlikCode"
+  | Currency(_) => "Currency"
+  | CardNumber => "CardNumber"
+  | CardExpiryMonth => "CardExpiryMonth"
+  | CardExpiryYear => "CardExpiryYear"
+  | CardExpiryMonthAndYear => "CardExpiryMonthAndYear"
+  | CardCvc => "CardCvc"
+  | CardExpiryAndCvc => "CardExpiryAndCvc"
+  }
 }

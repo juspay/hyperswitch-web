@@ -29,7 +29,7 @@ module CardItem = {
 module MicroDepositScreen = {
   @react.component
   let make = (~showMicroDepScreen, ~accountNum, ~onclick) => {
-    let last4digits = accountNum->Js.String2.sliceToEnd(~from=-4)
+    let last4digits = accountNum->String.sliceToEnd(~start=-4)
     <div
       className={`flex flex-col animate-slideLeft ${showMicroDepScreen
           ? "visible"
@@ -91,7 +91,8 @@ module AccountNumberCard = {
             <div className="text-xs"> {React.string("000123456789")} </div>
           </div>
           <div className="flex flex-row items-end border-b-2 border-transparent">
-            <Icon size=12 name="cheque" /> <div className="text-xs"> {React.string("1234")} </div>
+            <Icon size=12 name="cheque" />
+            <div className="text-xs"> {React.string("1234")} </div>
           </div>
         </div>
       </div>
@@ -103,7 +104,7 @@ module AccountNumberCard = {
   }
 }
 
-let clearSpaces = str => str->Js.String2.replaceByRe(%re("/\D+/g"), "")
+let clearSpaces = str => str->String.replaceRegExp(%re("/\D+/g"), "")
 @react.component
 let make = (~setModalData) => {
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
@@ -112,7 +113,7 @@ let make = (~setModalData) => {
   let (sortCode, setSortCode) = React.useState(_ => "")
   let (isRoutingValid, setIsRoutingValid) = React.useState(_ => None)
   let (routingError, setRoutingError) = React.useState(_ => "")
-  let {themeObj, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (accountType, setAccountType) = React.useState(() => "Savings")
 
   let (openModal, setOpenModal) = React.useState(_ => false)
@@ -122,11 +123,11 @@ let make = (~setModalData) => {
 
   let (_, setInputFocus) = React.useState(_ => NONE)
 
-  let routeref = React.useRef(Js.Nullable.null)
-  let accountRef = React.useRef(Js.Nullable.null)
-  let nameRef = React.useRef(Js.Nullable.null)
-  let ibanRef = React.useRef(Js.Nullable.null)
-  let sortCodeRef = React.useRef(Js.Nullable.null)
+  let routeref = React.useRef(Nullable.null)
+  let accountRef = React.useRef(Nullable.null)
+  let nameRef = React.useRef(Nullable.null)
+  let ibanRef = React.useRef(Nullable.null)
+  let sortCodeRef = React.useRef(Nullable.null)
 
   let resetReoutingError = () => {
     setIsRoutingValid(_ => None)
@@ -141,7 +142,7 @@ let make = (~setModalData) => {
     let routingNumber = ReactEvent.Focus.target(ev)["value"]
     let number = routingNumber->clearSpaces
     setInputFocus(_ => NONE)
-    if number->Js.String2.length == 0 {
+    if number->String.length == 0 {
       resetReoutingError()
     }
   }
@@ -150,11 +151,11 @@ let make = (~setModalData) => {
     let routingNumber = ReactEvent.Form.target(ev)["value"]
     if (
       Utils.validateRountingNumber(routingNumber->clearSpaces) &&
-      routingNumber->clearSpaces->Js.String2.length == 9
+      routingNumber->clearSpaces->String.length == 9
     ) {
       setIsRoutingValid(_ => Some(true))
       setRoutingError(_ => "")
-      accountRef.current->Js.Nullable.toOption->Belt.Option.forEach(input => input->focus)->ignore
+      accountRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
     } else {
       resetReoutingError()
     }
@@ -169,18 +170,18 @@ let make = (~setModalData) => {
     let val = ReactEvent.Form.target(ev)["value"]
     setIban(_ => val->Utils.formatIBAN)
   }
-  let isSepaDebit = selectedOption->Js.String2.includes("sepa_debit")
-  let isAchDebit = selectedOption->Js.String2.includes("ach_debit")
-  let isBecsDebit = selectedOption->Js.String2.includes("becs_debit")
+  let isSepaDebit = selectedOption->String.includes("sepa_debit")
+  let isAchDebit = selectedOption->String.includes("ach_debit")
+  let isBecsDebit = selectedOption->String.includes("becs_debit")
 
   let handleAccountHolderNameChange = ev => {
     let accName = ReactEvent.Form.target(ev)["value"]
     setAccountHolderName(_ => accName)
   }
   let submitActive =
-    (accountNum->Js.String2.length > 0 && routingNumber->Js.String2.length > 0) ||
+    (accountNum->String.length > 0 && routingNumber->String.length > 0) ||
     iban !== "" ||
-    (accountNum->Js.String2.length > 0 && sortCode->Js.String2.length > 0)
+    (accountNum->String.length > 0 && sortCode->String.length > 0)
 
   <Modal loader=false testMode=true openModal setOpenModal>
     <div className="flex flex-col w-full h-auto overflow-scroll">
@@ -188,7 +189,7 @@ let make = (~setModalData) => {
         <div
           style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ~marginBottom="5px", ())}
           className="self-start font-semibold text-lg text-[#151A1F]">
-          {React.string("Billing Details")}
+          {React.string(localeString.billingDetailsText)}
         </div>
         <div className="my-4">
           <AddressPaymentInput
@@ -347,12 +348,12 @@ let make = (~setModalData) => {
           active=submitActive
           onclick={_ => {
             setModalData(_ => Some({
-              routingNumber: routingNumber,
+              routingNumber,
               accountNumber: accountNum,
-              accountHolderName: accountHolderName,
-              accountType: accountType->Js.String2.toLowerCase,
-              iban: iban,
-              sortCode: sortCode,
+              accountHolderName,
+              accountType: accountType->String.toLowerCase,
+              iban,
+              sortCode,
             }))
             Modal.close(setOpenModal)
           }}

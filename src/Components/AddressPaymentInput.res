@@ -4,10 +4,10 @@ open Utils
 
 type addressType = Line1 | Line2 | City | Postal | State | Country
 
-type dataModule = {states: Js.Json.t}
+type dataModule = {states: JSON.t}
 
 @val
-external importStates: string => Js.Promise.t<dataModule> = "import"
+external importStates: string => Promise.t<dataModule> = "import"
 
 let getShowType = str => {
   switch str {
@@ -29,30 +29,6 @@ let showField = (val: PaymentType.addressType, type_: addressType) => {
     | State => address.state
     | Country => address.country
     }
-  }
-}
-
-let checkPostalValidity = (
-  postal: RecoilAtomTypes.field,
-  setPostal: (
-    . OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field,
-  ) => unit,
-  regex,
-) => {
-  if Js.Re.test_(regex->Js.Re.fromString, postal.value) && postal.value !== "" && regex !== "" {
-    setPostal(.prev => {
-      ...prev,
-      isValid: Some(true),
-      errorString: "",
-    })
-  } else if (
-    regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, postal.value) && postal.value !== ""
-  ) {
-    setPostal(.prev => {
-      ...prev,
-      isValid: Some(false),
-      errorString: "Invalid postal code",
-    })
   }
 }
 
@@ -78,16 +54,40 @@ let make = (~paymentType, ~className="") => {
   )
   let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
 
-  let line1Ref = React.useRef(Js.Nullable.null)
-  let line2Ref = React.useRef(Js.Nullable.null)
-  let cityRef = React.useRef(Js.Nullable.null)
-  let postalRef = React.useRef(Js.Nullable.null)
+  let line1Ref = React.useRef(Nullable.null)
+  let line2Ref = React.useRef(Nullable.null)
+  let cityRef = React.useRef(Nullable.null)
+  let postalRef = React.useRef(Nullable.null)
 
   let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
   let (stateJson, setStatesJson) = React.useState(_ => None)
   let (showOtherFileds, setShowOtherFields) = React.useState(_ => false)
 
   let countryNames = getCountryNames(Country.country)
+
+  let checkPostalValidity = (
+    postal: RecoilAtomTypes.field,
+    setPostal: (
+      OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field
+    ) => unit,
+    regex,
+  ) => {
+    if RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== "" && regex !== "" {
+      setPostal(prev => {
+        ...prev,
+        isValid: Some(true),
+        errorString: "",
+      })
+    } else if (
+      regex !== "" && !RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== ""
+    ) {
+      setPostal(prev => {
+        ...prev,
+        isValid: Some(false),
+        errorString: localeString.postalCodeInvalidText,
+      })
+    }
+  }
 
   React.useEffect0(() => {
     open Promise
@@ -125,40 +125,40 @@ let make = (~paymentType, ~className="") => {
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
 
-    setPostalCode(.prev => {
+    setPostalCode(prev => {
       ...prev,
       value: val,
       errorString: "",
     })
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) {
+    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) {
       CardUtils.blurRef(postalRef)
     }
   }
 
   let onPostalBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]
-    if regex !== "" && Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
-      setPostalCode(.prev => {
+    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) && val !== "" {
+      setPostalCode(prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
-    } else if regex !== "" && !Js.Re.test_(regex->Js.Re.fromString, val) && val !== "" {
-      setPostalCode(.prev => {
+    } else if regex !== "" && !RegExp.test(regex->RegExp.fromString, val) && val !== "" {
+      setPostalCode(prev => {
         ...prev,
         isValid: Some(false),
-        errorString: "Invalid postal code",
+        errorString: localeString.postalCodeInvalidText,
       })
     }
   }
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     checkPostalValidity(postalCode, setPostalCode, regex)
     None
   }, (regex, country.value))
 
-  React.useEffect1(() => {
-    setState(.prev => {
+  React.useEffect(() => {
+    setState(prev => {
       ...prev,
       value: "",
     })
@@ -167,42 +167,42 @@ let make = (~paymentType, ~className="") => {
   }, [country.value])
 
   let submitCallback = React.useCallback6((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+    let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if line1.value == "" {
-        setLine1(.prev => {
+        setLine1(prev => {
           ...prev,
-          errorString: "Address line 1 cannot be empty",
+          errorString: localeString.line1EmptyText,
         })
       }
       if line2.value == "" {
-        setLine2(.prev => {
+        setLine2(prev => {
           ...prev,
-          errorString: "Address line 2 cannot be empty",
+          errorString: localeString.line2EmptyText,
         })
       }
       if state.value == "" {
-        setState(.prev => {
+        setState(prev => {
           ...prev,
-          errorString: "State cannot be empty",
+          errorString: localeString.stateEmptyText,
         })
       }
       if postalCode.value == "" {
-        setPostalCode(.prev => {
+        setPostalCode(prev => {
           ...prev,
-          errorString: "Postal code cannot be empty",
+          errorString: localeString.postalCodeEmptyText,
         })
       }
       if city.value == "" {
-        setCity(.prev => {
+        setCity(prev => {
           ...prev,
-          errorString: "City cannot be empty",
+          errorString: localeString.cityEmptyText,
         })
       }
     }
   }, (line1, line2, country, state, city, postalCode))
-  submitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   let hasDefaulltValues =
     line2.value !== "" || city.value !== "" || postalCode.value !== "" || state.value !== ""
@@ -216,7 +216,7 @@ let make = (~paymentType, ~className="") => {
         value=line1
         onChange={ev => {
           setShowOtherFields(_ => true)
-          setLine1(.prev => {
+          setLine1(prev => {
             ...prev,
             value: ReactEvent.Form.target(ev)["value"],
           })
@@ -239,7 +239,7 @@ let make = (~paymentType, ~className="") => {
             setValue={setLine2}
             value=line2
             onChange={ev => {
-              setLine2(.prev => {
+              setLine2(prev => {
                 ...prev,
                 value: ReactEvent.Form.target(ev)["value"],
               })
@@ -288,7 +288,7 @@ let make = (~paymentType, ~className="") => {
               className
               value=city
               onChange={ev => {
-                setCity(.prev => {
+                setCity(prev => {
                   ...prev,
                   value: ReactEvent.Form.target(ev)["value"],
                 })
@@ -309,7 +309,6 @@ let make = (~paymentType, ~className="") => {
               onChange=onPostalChange
               paymentType
               className
-              type_="tel"
               name="postal"
               inputRef=postalRef
               placeholder=localeString.postalCodeLabel

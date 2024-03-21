@@ -17,7 +17,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let (divH, setDivH) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
 
-  let divRef = React.useRef(Js.Nullable.null)
+  let divRef = React.useRef(Nullable.null)
 
   let {config} = configAtom
   let {iframeId} = keys
@@ -44,29 +44,29 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
       (optionsPayment.defaultValues.billingDetails.address.postal_code, setUserAddressPincode),
       (optionsPayment.defaultValues.billingDetails.address.state, setUserAddressState),
       (optionsPayment.defaultValues.billingDetails.address.country, setUserAddressCountry),
-    ]->Js.Array2.forEach(val => {
+    ]->Array.forEach(val => {
       let (value, setValue) = val
       if value != "" {
-        setValue(.prev => {
+        setValue(prev => {
           ...prev,
           value,
         })
       }
     })
     if optionsPayment.defaultValues.billingDetails.address.country === "" {
-      let clientTimeZone = CardUtils.dateTimeFormat(.).resolvedOptions(.).timeZone
+      let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
       let clientCountry = Utils.getClientCountry(clientTimeZone)
-      setUserAddressCountry(.prev => {
+      setUserAddressCountry(prev => {
         ...prev,
         value: clientCountry.countryName,
       })
-      setCountry(._ => clientCountry.countryName)
+      setCountry(_ => clientCountry.countryName)
     } else {
-      setUserAddressCountry(.prev => {
+      setUserAddressCountry(prev => {
         ...prev,
         value: optionsPayment.defaultValues.billingDetails.address.country,
       })
-      setCountry(._ => optionsPayment.defaultValues.billingDetails.address.country)
+      setCountry(_ => optionsPayment.defaultValues.billingDetails.address.country)
     }
   }
 
@@ -77,10 +77,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     | CardExpiryElement
     | CardCVCElement
     | Card =>
-      setOptions(._ => ElementType.itemToObjMapper(optionsDict, logger))
+      setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
-        setOptionsPayment(._ => paymentOptions)
+        setOptionsPayment(_ => paymentOptions)
         optionsCallback(paymentOptions)
       }
     | _ => ()
@@ -105,7 +105,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     let appearance =
       optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
 
-    setConfig(._ => {
+    setConfig(_ => {
       config: {
         appearance,
         locale: config.locale,
@@ -122,9 +122,24 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   }
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMounted", true->Js.Json.boolean)])
-    handlePostMessage([("applePayMounted", true->Js.Json.boolean)])
+    handlePostMessage([("iframeMounted", true->JSON.Encode.bool)])
+    handlePostMessage([("applePayMounted", true->JSON.Encode.bool)])
     logger.setLogInitiated()
+    let updatedState: PaymentType.loadType = switch paymentlist {
+    | Loading =>
+      showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
+    | x => x
+    }
+    switch updatedState {
+    | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ())
+    | Loading => logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ())
+    | SemiLoaded => {
+        setList(_ => updatedState)
+        logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ())
+      }
+    | LoadError(x) =>
+      logger.setLogError(~value="LoadError: " ++ x->JSON.stringify, ~eventName=LOADER_CHANGED, ())
+    }
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
     )
@@ -136,19 +151,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
       },
     )
   })
-  React.useEffect1(() => {
+  React.useEffect(() => {
     switch paymentlist {
     | SemiLoaded => ()
-    | Loaded(_val) => handlePostMessage([("ready", true->Js.Json.boolean)])
-    | _ => handlePostMessage([("ready", false->Js.Json.boolean)])
+    | Loaded(_val) => handlePostMessage([("ready", true->JSON.Encode.bool)])
+    | _ => handlePostMessage([("ready", false->JSON.Encode.bool)])
     }
     None
   }, [paymentlist])
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     CardUtils.genreateFontsLink(config.fonts)
     let dict = config.appearance.rules->getDictFromJson
-    if dict->Js.Dict.entries->Js.Array2.length > 0 {
+    if dict->Dict.toArray->Array.length > 0 {
       Utils.generateStyleSheet("", dict, "themestyle")
     }
     switch paymentMode->CardTheme.getPaymentMode {
@@ -161,9 +176,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         ("input-empty", options.style.empty->getDictFromJson),
       ]
       styleClass
-      ->Js.Array2.map(item => {
+      ->Array.map(item => {
         let (class, dict) = item
-        if dict->Js.Dict.entries->Js.Array2.length > 0 {
+        if dict->Dict.toArray->Array.length > 0 {
           Utils.generateStyleSheet(class, dict, "widgetstyle")->ignore
         }
       })
@@ -172,39 +187,36 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     None
   }, [config])
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     open Promise
     let handleFun = (ev: Window.event) => {
       let json = try {
-        ev.data->Js.Json.parseExn
+        ev.data->JSON.parseExn
       } catch {
-      | _ => Js.Dict.empty()->Js.Json.object_
+      | _ => Dict.make()->JSON.Encode.object
       }
       try {
         let dict = json->getDictFromJson
         if dict->getDictIsSome("paymentElementCreate") {
           if (
             dict
-            ->Js.Dict.get("paymentElementCreate")
-            ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-            ->Belt.Option.getWithDefault(false)
+            ->Dict.get("paymentElementCreate")
+            ->Option.flatMap(JSON.Decode.bool)
+            ->Option.getOr(false)
           ) {
             if (
-              dict
-              ->Js.Dict.get("otherElements")
-              ->Belt.Option.flatMap(Js.Json.decodeBoolean)
-              ->Belt.Option.getWithDefault(false)
+              dict->Dict.get("otherElements")->Option.flatMap(JSON.Decode.bool)->Option.getOr(false)
             ) {
               updateOptions(dict)
             } else {
               let sdkSessionId = dict->getString("sdkSessionId", "no-element")
               logger.setSessionId(sdkSessionId)
               if Window.isInteg {
-                setBlockConfirm(._ => dict->getBool("blockConfirm", false))
-                setSwitchToCustomPod(._ => dict->getBool("switchToCustomPod", false))
+                setBlockConfirm(_ => dict->getBool("blockConfirm", false))
+                setSwitchToCustomPod(_ => dict->getBool("switchToCustomPod", false))
               }
               updateOptions(dict)
-              setSessionId(._ => {
+              setSessionId(_ => {
                 sdkSessionId
               })
               if dict->getDictIsSome("publishableKey") {
@@ -224,7 +236,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                 let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-                setKeys(.prev => {
+                setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
                 })
@@ -246,13 +258,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                 }
               }
 
-              logger.setLogInfo(~value="paymentElementCreate", ~eventName=APP_RENDERED, ())
+              logger.setLogInfo(~value=Window.href, ~eventName=APP_RENDERED, ())
               [
-                ("iframeId", "no-element"->Js.Json.string),
-                ("publishableKey", ""->Js.Json.string),
-                ("parentURL", "*"->Js.Json.string),
-                ("sdkHandleConfirmPayment", false->Js.Json.boolean),
-              ]->Js.Array2.forEach(keyPair => {
+                ("iframeId", "no-element"->JSON.Encode.string),
+                ("publishableKey", ""->JSON.Encode.string),
+                ("parentURL", "*"->JSON.Encode.string),
+                ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
+              ]->Array.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)
               })
 
@@ -262,7 +274,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
             let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-            setKeys(.prev => {
+            setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
             })
@@ -287,18 +299,18 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           updateOptions(dict)
         } else if dict->getDictIsSome("ElementsUpdate") {
           let optionsDict = dict->getDictFromObj("options")
-          let clientSecret = dict->Js.Dict.get("clientSecret")
+          let clientSecret = dict->Dict.get("clientSecret")
           switch clientSecret {
           | Some(val) =>
-            setKeys(.prev => {
+            setKeys(prev => {
               ...prev,
-              clientSecret: Some(val->Js.Json.decodeString->Belt.Option.getWithDefault("")),
+              clientSecret: Some(val->JSON.Decode.string->Option.getOr("")),
             })
-            setConfig(.prev => {
+            setConfig(prev => {
               ...prev,
               config: {
                 ...prev.config,
-                clientSecret: val->Js.Json.decodeString->Belt.Option.getWithDefault(""),
+                clientSecret: val->JSON.Decode.string->Option.getOr(""),
               },
             })
           | None => ()
@@ -319,37 +331,49 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           }
         }
         if dict->getDictIsSome("sessions") {
-          setSessions(._ => Loaded(dict->getJsonObjectFromDict("sessions")))
+          setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))
         }
         if dict->getDictIsSome("isReadyToPay") {
-          setIsGooglePayReady(._ =>
-            dict
-            ->getJsonObjectFromDict("isReadyToPay")
-            ->Js.Json.decodeBoolean
-            ->Belt.Option.getWithDefault(false)
+          setIsGooglePayReady(_ =>
+            dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
         }
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
-          list == Js.Dict.empty()->Js.Json.object_
-            ? setList(._ => LoadError(Js.Dict.empty()->Js.Json.object_))
-            : switch list->Utils.getDictFromJson->Js.Dict.get("error") {
-              | Some(err) => setList(._ => LoadError(err))
-              | None => setList(._ => Loaded(list))
-              }
+          let updatedState: PaymentType.loadType =
+            list == Dict.make()->JSON.Encode.object
+              ? LoadError(list)
+              : switch list->Utils.getDictFromJson->Dict.get("error") {
+                | Some(_) => LoadError(list)
+                | None =>
+                  let isNonEmptyPaymentMethodList =
+                    list->Utils.getDictFromJson->Utils.getArray("payment_methods")->Array.length > 0
+                  isNonEmptyPaymentMethodList ? Loaded(list) : LoadError(list)
+                }
+          switch updatedState {
+          | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ())
+          | LoadError(x) =>
+            logger.setLogError(
+              ~value="LoadError: " ++ x->JSON.stringify,
+              ~eventName=LOADER_CHANGED,
+              (),
+            )
+          | _ => ()
+          }
+          setList(_ => updatedState)
         }
         if dict->getDictIsSome("customerPaymentMethods") {
           let customerPaymentMethods = dict->PaymentType.createCustomerObjArr
-          setOptionsPayment(.prev => {
+          setOptionsPayment(prev => {
             ...prev,
             customerPaymentMethods,
           })
         }
-        if dict->Js.Dict.get("applePayCanMakePayments")->Belt.Option.isSome {
-          setIsApplePayReady(._ => true)
+        if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
+          setIsApplePayReady(_ => true)
         }
-        if dict->Js.Dict.get("applePaySessionObjNotPresent")->Belt.Option.isSome {
-          setIsApplePayReady(.prev => prev && false)
+        if dict->Dict.get("applePaySessionObjNotPresent")->Option.isSome {
+          setIsApplePayReady(prev => prev && false)
         }
       } catch {
       | _ => setIntegrateErrorError(_ => true)
@@ -358,34 +382,22 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     handleMessage(handleFun, "Error in parsing sent Data")
   }, (showCardFormByDefault, paymentMethodOrder))
 
-  React.useEffect1(() => {
-    switch paymentlist {
-    | Loaded(_)
-    | LoadError(_) => ()
-    | _ =>
-      setList(._ =>
-        showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
-      )
-    }
-    None
-  }, [paymentlist])
-
   let observer = ResizeObserver.newResizerObserver(entries => {
     entries
-    ->Js.Array2.map(item => {
+    ->Array.map(item => {
       setDivH(_ => item.contentRect.height)
     })
     ->ignore
   })
-  switch divRef.current->Js.Nullable.toOption {
-  | Some(r) => observer.observe(. r)
+  switch divRef.current->Nullable.toOption {
+  | Some(r) => observer.observe(r)
   | None => ()
   }
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     Utils.handlePostMessage([
-      ("iframeHeight", (divH +. 1.0)->Js.Json.number),
-      ("iframeId", iframeId->Js.Json.string),
+      ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
+      ("iframeId", iframeId->JSON.Encode.string),
     ])
     None
   }, (divH, iframeId))

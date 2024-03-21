@@ -16,6 +16,9 @@ let make = (
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+
+  let (nickname, setNickname) = React.useState(_ => "")
+
   let (
     isCardValid,
     setIsCardValid,
@@ -57,88 +60,41 @@ let make = (
     cvcError,
     setCvcError,
   ) = cvcProps
-  let {customerPaymentMethods, disableSaveCards} = Recoil.useRecoilValueFromAtom(
+  let {customerPaymentMethods, displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.optionAtom,
   )
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
-  let (savedMethods, setSavedMethods) = React.useState(_ => [])
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
-  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
-  let (token, _) = paymentToken
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
-  let (
-    loadSavedCards: PaymentType.savedCardsLoadState,
-    setLoadSavedCards: (PaymentType.savedCardsLoadState => PaymentType.savedCardsLoadState) => unit,
-  ) = React.useState(_ => PaymentType.LoadingSavedCards)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
 
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
 
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Js.Dict.empty())
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
-  React.useEffect1(() => {
-    switch customerPaymentMethods {
-    | LoadingSavedCards => ()
-    | LoadedSavedCards(arr) => {
-        let savedCards = arr->Js.Array2.filter((item: PaymentType.customerMethods) => {
-          item.paymentMethod == "card"
-        })
-        setSavedMethods(_ => savedCards)
-        setLoadSavedCards(_ =>
-          savedCards->Js.Array2.length == 0 ? NoResult : LoadedSavedCards(savedCards)
-        )
-        setShowFields(.prev => savedCards->Js.Array2.length == 0 || prev)
-      }
-    | NoResult => {
-        setLoadSavedCards(_ => NoResult)
-        setShowFields(._ => true)
-      }
-    }
-
-    None
-  }, [customerPaymentMethods])
-
-  React.useEffect1(() => {
-    if disableSaveCards {
-      setShowFields(._ => true)
-      setLoadSavedCards(_ => LoadedSavedCards([]))
-    }
-    None
-  }, [disableSaveCards])
-
-  React.useEffect1(() => {
-    let tokenobj =
-      savedMethods->Js.Array2.length > 0
-        ? Some(savedMethods->Belt.Array.get(0)->Belt.Option.getWithDefault(defaultCustomerMethods))
-        : None
-
-    switch tokenobj {
-    | Some(obj) => setPaymentToken(._ => (obj.paymentToken, obj.customerId))
-    | None => ()
-    }
-    None
-  }, [savedMethods])
-
-  let complete = showFields
-    ? isAllValid(isCardValid, isCVCValid, isExpiryValid, true, "payment")
-    : switch isCVCValid {
-      | Some(val) => token !== "" && !isBancontact && val
-      | _ => false
-      }
-  let empty = showFields ? cardNumber == "" || cardExpiry == "" || cvcNumber == "" : cvcNumber == ""
-  React.useEffect1(() => {
-    setComplete(._ => complete)
+  let complete = isAllValid(isCardValid, isCVCValid, isExpiryValid, true, "payment")
+  let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
+  React.useEffect(() => {
+    setComplete(_ => complete)
     None
   }, [complete])
 
-  React.useEffect2(() => {
+  React.useEffect(() => {
     handlePostMessageEvents(~complete, ~empty, ~paymentType="card", ~loggerState)
     None
   }, (empty, complete))
+
+  let (savedMethods, isGuestCustomer) = React.useMemo1(() => {
+    switch customerPaymentMethods {
+    | LoadedSavedCards(savedMethods, isGuest) => (savedMethods, isGuest)
+    | NoResult(isGuest) => ([], isGuest)
+    | _ => ([], true)
+    }
+  }, [customerPaymentMethods])
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
@@ -147,61 +103,59 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->Js.Json.parseExn
+  let isCustomerAcceptanceRequired = React.useMemo2(() => {
+    if displaySavedPaymentMethodsCheckbox {
+      isSaveCardsChecked || list.payment_type === SETUP_MANDATE
+    } else {
+      !(isGuestCustomer || list.payment_type === NORMAL)
+    }
+  }, (isSaveCardsChecked, list.payment_type))
+
+  let submitCallback = React.useCallback6((ev: Window.event) => {
+    let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (month, year) = CardUtils.getExpiryDates(cardExpiry)
-    let (token, customerId) = paymentToken
-    let savedCardBody = PaymentBody.savedCardBody(~paymentToken=token, ~customerId, ~cvcNumber)
 
-    let onSessionBody = [("setup_future_usage", "on_session"->Js.Json.string)]
+    let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
     let cardNetwork = {
       if cardBrand != "" {
-        [("card_network", cardBrand->Js.Json.string)]
+        [("card_network", cardBrand->JSON.Encode.string)]
       } else {
         []
       }
     }
-    let deafultCardBody = PaymentBody.cardPaymentBody(
+    let defaultCardBody = PaymentBody.cardPaymentBody(
       ~cardNumber,
       ~month,
       ~year,
       ~cardHolderName="",
       ~cvcNumber,
       ~cardBrand=cardNetwork,
+      ~nickname,
+      (),
     )
     let banContactBody = PaymentBody.bancontactBody()
-    let cardBody = isSaveCardsChecked
-      ? deafultCardBody->Js.Array2.concat(onSessionBody)
-      : deafultCardBody
+    let cardBody = if isCustomerAcceptanceRequired {
+      defaultCardBody->Array.concat(onSessionBody)
+    } else {
+      defaultCardBody
+    }
     if confirm.doSubmit {
       let validFormat =
         (isBancontact ||
-        (isCVCValid->Belt.Option.getWithDefault(false) &&
-        isCardValid->Belt.Option.getWithDefault(false) &&
-        isExpiryValid->Belt.Option.getWithDefault(false))) && areRequiredFieldsValid
+        (isCVCValid->Option.getOr(false) &&
+        isCardValid->Option.getOr(false) &&
+        isExpiryValid->Option.getOr(false))) && areRequiredFieldsValid
       if validFormat && (showFields || isBancontact) {
         intent(
           ~bodyArr={
             (isBancontact ? banContactBody : cardBody)
-            ->Js.Dict.fromArray
-            ->Js.Json.object_
+            ->Dict.fromArray
+            ->JSON.Encode.object
             ->OrcaUtils.flattenObject(true)
             ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
             ->OrcaUtils.getArrayOfTupleFromDict
           },
-          ~confirmParam=confirm.confirmParams,
-          ~handleUserError=false,
-          (),
-        )
-      } else if areRequiredFieldsValid && complete && !empty {
-        intent(
-          ~bodyArr=savedCardBody
-          ->Js.Dict.fromArray
-          ->Js.Json.object_
-          ->OrcaUtils.flattenObject(true)
-          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->OrcaUtils.getArrayOfTupleFromDict,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           (),
@@ -224,25 +178,27 @@ let make = (
         }
       }
     }
-  })
-  submitPaymentData(submitCallback)
+  }, (
+    areRequiredFieldsValid,
+    requiredFieldsBody,
+    empty,
+    complete,
+    isCustomerAcceptanceRequired,
+    nickname,
+  ))
+  useSubmitPaymentData(submitCallback)
 
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
+  let conditionsForShowingSaveCardCheckbox =
+    !isGuestCustomer &&
+    list.payment_type !== SETUP_MANDATE &&
+    options.displaySavedPaymentMethodsCheckbox &&
+    !isBancontact
+
+  let nicknameFieldClassName = conditionsForShowingSaveCardCheckbox ? "pt-2" : "pt-5"
 
   <div className="animate-slowShow">
-    <RenderIf condition={!showFields && !isBancontact}>
-      <SavedMethods
-        paymentToken
-        setPaymentToken
-        savedMethods
-        loadSavedCards
-        cvcProps
-        paymentType
-        list
-        setRequiredFieldsBody
-      />
-    </RenderIf>
     <RenderIf condition={showFields || isBancontact}>
       <div
         className="flex flex-col"
@@ -326,26 +282,36 @@ let make = (
             cvcProps={Some(cvcProps)}
             isBancontact
           />
-          <RenderIf condition={!isBancontact && !options.disableSaveCards}>
+          <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="pt-4 pb-2 flex items-center justify-start">
               <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
             </div>
           </RenderIf>
-          <RenderIf condition={savedMethods->Js.Array2.length > 0 && !isBancontact}>
+          <RenderIf condition={isCustomerAcceptanceRequired}>
+            <div className={`pb-2 ${nicknameFieldClassName}`}>
+              <NicknamePaymentInput paymentType value=nickname setValue=setNickname />
+            </div>
+          </RenderIf>
+          <RenderIf
+            condition={options.displaySavedPaymentMethods &&
+            savedMethods->Array.length > 0 &&
+            !isBancontact}>
             <div
               className="Label flex flex-row gap-3 items-end cursor-pointer"
               style={ReactDOMStyle.make(
                 ~fontSize="14px",
-                ~color=themeObj.colorPrimary,
-                ~fontWeight="400",
+                ~float="left",
                 ~marginTop="14px",
+                ~fontWeight=themeObj.fontWeightNormal,
+                ~width="fit-content",
+                ~color=themeObj.colorPrimary,
                 (),
               )}
               onClick={_ => {
-                setShowFields(._ => false)
+                setShowFields(_ => false)
               }}>
-              <Icon name="card-2" size=22 width=24 />
-              {React.string(localeString.useExisitingSavedCards)}
+              <Icon name="circle_dots" size=20 width=19 />
+              {React.string(localeString.useExistingPaymentMethods)}
             </div>
           </RenderIf>
         </div>

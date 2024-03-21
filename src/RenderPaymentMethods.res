@@ -52,7 +52,7 @@ let make = (
   ) = cvcProps
 
   let blur = blurState ? "blur(2px)" : ""
-  let frameRef = React.useRef(Js.Nullable.null)
+  let frameRef = React.useRef(Nullable.null)
   <div
     className={`flex flex-col justify-between `}
     style={ReactDOMStyle.make(
@@ -73,14 +73,18 @@ let make = (
         {switch paymentType {
         | Card =>
           <React.Suspense
-            fallback={<RenderIf condition={showLoader}> <CardElementShimmer /> </RenderIf>}>
+            fallback={<RenderIf condition={showLoader}>
+              <CardElementShimmer />
+            </RenderIf>}>
             <SingleLineCardPaymentLazy
               paymentType cardProps expiryProps cvcProps zipProps handleElementFocus isFocus
             />
           </React.Suspense>
         | Payment =>
           <React.Suspense
-            fallback={<RenderIf condition={showLoader}> <PaymentElementShimmer /> </RenderIf>}>
+            fallback={<RenderIf condition={showLoader}>
+              <PaymentElementShimmer />
+            </RenderIf>}>
             <PaymentElementRendererLazy paymentType cardProps expiryProps cvcProps countryProps />
           </React.Suspense>
         | CardNumberElement =>

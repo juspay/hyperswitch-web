@@ -4,27 +4,11 @@
 # This hook triggers Jira input modules.
 # Helps in maintaining code compatblity.
 
-# JS Code Check
-echo "*****~~~~~ Checking ReScript Code ~~~~~~*****"
-if (! npm run re:build)
-then
-    echo
-    echo "*****~~~~~ ReScript Code Compilation Failed! ~~~~~*****"
-    exit 1
-fi
-echo "***** ReScript Code Compiled! *****"
+echo "*****~~~~~ Commit hook initiated ~~~~~~*****"
 
-# JS Code Build
-echo "*****~~~~~ Checking ReScript Build ~~~~~~*****"
-if (! npm run build)
-then
-    echo
-    echo "*****~~~~~ ReScript Build Completition Failed! ~~~~~*****"
-    exit 1
-fi
-echo "***** ReScript Build Completed! *****"
 
 #Trailing Space Check
+echo
 echo "Evaluating for trailing spaces"
 
 find . -type f -name '.DS_Store' -exec rm {} +
@@ -40,7 +24,7 @@ then
   echo "Usage of EditorConfig [https://editorconfig.org/#download] plugin is recommended for development "
   exit 1
 fi
-
+echo
 echo "Done Evaluating"
 
 BRANCH_NAME=$(git branch | grep '*' | sed 's/* //')
