@@ -388,11 +388,6 @@ let make = (
     </ErrorBoundary>
   }
 
-  React.useEffect(() => {
-    setShowFields(_ => !displaySavedPaymentMethods)
-    None
-  }, [displaySavedPaymentMethods])
-
   let paymentLabel = if displaySavedPaymentMethods {
     showFields
       ? optionAtomValue.paymentMethodsHeaderText
