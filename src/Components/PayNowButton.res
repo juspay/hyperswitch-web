@@ -58,8 +58,7 @@ let make = (
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
 
   let handleMessage = (event: Types.event) => {
-    let json =
-      event.data->Identity.anyTypeToJson->OrcaUtils.getStringfromjson("")->OrcaUtils.safeParse
+    let json = event.data->Identity.anyTypeToJson->Utils.getStringFromJson("")->OrcaUtils.safeParse
     let dict = json->Utils.getDictFromJson
     switch dict->Dict.get("submitSuccessful") {
     | Some(_) =>

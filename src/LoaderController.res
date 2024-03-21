@@ -302,13 +302,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           | Some(val) =>
             setKeys(prev => {
               ...prev,
-              clientSecret: Some(val->JSON.Decode.string->Option.getOr("")),
+              clientSecret: Some(val->getStringFromJson("")),
             })
             setConfig(prev => {
               ...prev,
               config: {
                 ...prev.config,
-                clientSecret: val->JSON.Decode.string->Option.getOr(""),
+                clientSecret: val->getStringFromJson(""),
               },
             })
           | None => ()

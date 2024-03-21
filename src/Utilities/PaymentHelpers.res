@@ -694,7 +694,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
                 ~value="",
                 ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
-                ~paymentMethod=json->JSON.Decode.string->Option.getOr(""),
+                ~paymentMethod=json->getStringFromJson(""),
                 (),
               )
             }

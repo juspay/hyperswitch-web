@@ -151,7 +151,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           let iframeId =
             eventDataObject
             ->getOptionalJsonFromJson("iframeId")
-            ->getStringfromOptionaljson("no-element")
+            ->getStringFromOptionalJson("no-element")
           iframeHeightRef :=
             iframeHeight->Option.getOr(JSON.Encode.null)->Utils.getFloatFromJson(200.0)
           if iframeId === localSelectorString {
@@ -175,15 +175,15 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
 
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
-            let url = val->getStringfromjson("")
+            let url = val->getStringFromJson("")
             Window.Location.replace(url)
           }
         | None => ()
         }
 
-        let isCopy = eventDataObject->getOptionalJsonFromJson("copy")->getBoolfromjson(false)
+        let isCopy = eventDataObject->getOptionalJsonFromJson("copy")->getBoolFromJson(false)
         let text =
-          eventDataObject->getOptionalJsonFromJson("copyDetails")->getStringfromOptionaljson("")
+          eventDataObject->getOptionalJsonFromJson("copyDetails")->getStringFromOptionalJson("")
         if isCopy {
           open Promise
           writeText(text)
@@ -195,7 +195,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
 
         let combinedHyperClasses = eventDataObject->getOptionalJsonFromJson("concatedString")
         if combinedHyperClasses->Option.isSome {
-          let id = eventDataObject->getOptionalJsonFromJson("id")->getStringfromOptionaljson("")
+          let id = eventDataObject->getOptionalJsonFromJson("id")->getStringFromOptionalJson("")
 
           let decodeStringTest = combinedHyperClasses->Option.flatMap(JSON.Decode.string)
           switch decodeStringTest {
@@ -216,11 +216,11 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         let param = eventDataObject->getOptionalJsonFromJson("param")
         let metadata = eventDataObject->getOptionalJsonFromJson("metadata")
         let iframeID =
-          eventDataObject->getOptionalJsonFromJson("iframeId")->getStringfromOptionaljson("")
+          eventDataObject->getOptionalJsonFromJson("iframeId")->getStringFromOptionalJson("")
 
         if fullscreenIframe->Option.isSome {
-          fullscreen := fullscreenIframe->getBoolfromjson(false)
-          fullscreenParam := param->getStringfromOptionaljson("")
+          fullscreen := fullscreenIframe->getBoolFromJson(false)
+          fullscreenParam := param->getStringFromOptionalJson("")
           fullscreenMetadata :=
             metadata
             ->Option.flatMap(JSON.Decode.object)

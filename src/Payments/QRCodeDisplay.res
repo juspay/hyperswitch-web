@@ -41,7 +41,7 @@ let make = () => {
         ->Dict.toArray
         ->Array.forEach(entries => {
           let (x, val) = entries
-          Dict.set(headers, x, val->JSON.Decode.string->Option.getOr(""))
+          Dict.set(headers, x, val->getStringFromJson(""))
         })
         let expiryTime =
           metaDataDict->getString("expiryTime", "")->Belt.Float.fromString->Option.getOr(0.0)

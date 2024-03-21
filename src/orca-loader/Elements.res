@@ -648,7 +648,7 @@ let make = (
                 let gpayClicked =
                   evJson
                   ->OrcaUtils.getOptionalJsonFromJson("GpayClicked")
-                  ->OrcaUtils.getBoolfromjson(false)
+                  ->OrcaUtils.getBoolFromJson(false)
 
                 if gpayClicked {
                   setTimeout(() => {

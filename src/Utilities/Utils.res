@@ -47,6 +47,10 @@ let getString = (dict, key, default) => {
   getOptionString(dict, key)->Option.getOr(default)
 }
 
+let getStringFromJson = (json, default) => {
+  json->JSON.Decode.string->Option.getOr(default)
+}
+
 let getInt = (dict, key, default: int) => {
   dict
   ->Dict.get(key)
@@ -188,14 +192,12 @@ let getStrArray = (dict, key) => {
   dict
   ->getOptionalArrayFromDict(key)
   ->Option.getOr([])
-  ->Array.map(json => json->JSON.Decode.string->Option.getOr(""))
+  ->Array.map(json => json->getStringFromJson(""))
 }
 let getOptionalStrArray: (Dict.t<JSON.t>, string) => option<array<string>> = (dict, key) => {
   switch dict->getOptionalArrayFromDict(key) {
   | Some(val) =>
-    val->Array.length === 0
-      ? None
-      : Some(val->Array.map(json => json->JSON.Decode.string->Option.getOr("")))
+    val->Array.length === 0 ? None : Some(val->Array.map(json => json->getStringFromJson("")))
   | None => None
   }
 }
