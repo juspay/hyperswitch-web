@@ -1,3 +1,10 @@
+## [0.34.1](https://github.com/juspay/hyperswitch-web/compare/v0.34.0...v0.34.1) (2024-03-22)
+
+
+### Bug Fixes
+
+* applePay Dynamic Fields Error Handling and Dynamic Fields PostalCode Error ([#250](https://github.com/juspay/hyperswitch-web/issues/250)) ([d85aa2a](https://github.com/juspay/hyperswitch-web/commit/d85aa2a0ffaa2205a7c19d41455f2250c5c70ef3))
+
 # [0.34.0](https://github.com/juspay/hyperswitch-web/compare/v0.33.12...v0.34.0) (2024-03-22)
 
 
