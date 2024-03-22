@@ -39,6 +39,7 @@ type nextAction = {
   bank_transfer_steps_and_charges_details: option<JSON.t>,
   session_token: option<JSON.t>,
   image_data_url: option<string>,
+  three_ds_data: option<JSON.t>,
   voucher_details: option<voucherDetails>,
   display_to_timestamp: option<float>,
 }
@@ -63,6 +64,7 @@ let defaultNextAction = {
   bank_transfer_steps_and_charges_details: None,
   session_token: None,
   image_data_url: None,
+  three_ds_data: None,
   voucher_details: None,
   display_to_timestamp: None,
 }
@@ -140,6 +142,11 @@ let getNextAction = (dict, str) => {
         getJsonObjFromDict(json, "session_token", Dict.make())->JSON.Encode.object,
       ),
       image_data_url: Some(json->getString("image_data_url", "")),
+      three_ds_data: Some(
+        json
+        ->Dict.get("three_ds_data")
+        ->Option.getOr(Dict.make()->JSON.Encode.object),
+      ),
       display_to_timestamp: Some(
         json
         ->Dict.get("display_to_timestamp")

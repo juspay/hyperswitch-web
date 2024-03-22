@@ -2,7 +2,7 @@ let switchToInteg = false
 let isLocal = false
 let sdkDomainUrl = `${GlobalVars.sdkUrl}${GlobalVars.repoPublicPath}`
 
-let apiEndPoint = ref(None)
+let apiEndPoint: ref<option<string>> = ref(None)
 
 let setApiEndPoint = str => {
   apiEndPoint := Some(str)

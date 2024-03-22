@@ -166,12 +166,19 @@ let eventTypeMapper = event => {
   | _ => None
   }
 }
-type ele = {
+type rec ele = {
   mutable id: string,
   mutable src: string,
   mutable name: string,
   mutable style: string,
   mutable onload: unit => unit,
+  mutable action: string,
+  mutable method: string,
+  mutable target: string,
+  mutable enctype: string,
+  mutable value: string,
+  submit: (. unit) => unit,
+  appendChild: (. ele) => unit,
 }
 @scope("document") @val external createElement: string => ele = "createElement"
 
