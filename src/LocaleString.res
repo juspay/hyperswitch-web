@@ -1369,4 +1369,88 @@ let localeStrings = [
     useExistingPaymentMethods: "Använd sparade betalningsmetoder",
     nicknamePlaceholder: "Kortets smeknamn (valfritt)",
   },
+  {
+    locale: "ru",
+    localeDirection: "ltr",
+    cardNumberLabel: "Номер карты",
+    inValidCardErrorText: "Номер карты недействителен.",
+    inCompleteCVCErrorText: "Неправильно указан код безопасности карты.",
+    inCompleteExpiryErrorText: "Неправильно указан срок действия карты.",
+    pastExpiryErrorText: "Год истечения срока действия карты в прошлом.",
+    poweredBy: "Работает на Hyperswitch",
+    validThruText: "Окончание действия",
+    sortCodeText: "Номер отделения банка",
+    cvcTextLabel: "CVC",
+    line1Label: "Адресная строка 1",
+    line1Placeholder: "Улица",
+    line2Label: "Адресная строка 2",
+    line2Placeholder: "Квартира, номер блока и т. д. (необязательно)",
+    cityLabel: "Город",
+    postalCodeLabel: "Почтовый индекс",
+    stateLabel: "Область",
+    accountNumberText: "Номер счета",
+    emailLabel: "Электронная почта",
+    fullNameLabel: "Ф.И.О.",
+    fullNamePlaceholder: "Имя и фамилия",
+    countryLabel: "Страна",
+    currencyLabel: "Валюта",
+    bankLabel: "Выберите банк",
+    redirectText: "После оформления заказа вы будете перенаправлены на другую страницу для безопасного завершения покупки.",
+    bankDetailsText: "После ввода этих данных вы получите банковские реквизиты для совершения платежа. Обязательно запишите их.",
+    orPayUsing: "Или оплатить с помощью",
+    addNewCard: "Добавить кредитную/дебетовую карту",
+    useExisitingSavedCards: "Использовать сохраненные дебетовые/кредитные карты",
+    saveCardDetails: "Сохранить данные карты",
+    addBankAccount: "Добавить банковский счет",
+    achBankDebitTerms: _ =>
+      `Ваше разрешение на дебет ACH будет настроено сейчас, но мы подтвердим сумму и сообщим вам об этом до того, как будут приняты будущие платежи.`,
+    sepaDebitTerms: _ =>
+      `Ваше разрешение на дебет SEPA будет настроено сейчас, но мы подтвердим сумму и сообщим вам об этом до того, как будут приняты будущие платежи.`,
+    becsDebitTerms: `Ваше разрешение на дебет BECS будет настроено сейчас, но мы подтвердим сумму и сообщим вам об этом до того, как будут приняты будущие платежи.`,
+    cardTerms: str =>
+      `Предоставляя данные своей карты, вы позволяете компании ${str} списать средства с вашей карты для будущих платежей в соответствии с ее условиями.`,
+    payNowButton: "Оплатить сейчас",
+    cardNumberEmptyText: "Необходимо указать номер карты",
+    cardExpiryDateEmptyText: "Необходимо указать дату окончания срока действия карты",
+    cvcNumberEmptyText: "Необходимо указать номер CVC",
+    enterFieldsText: "Заполните все поля",
+    enterValidDetailsText: "Введите действительные данные",
+    card: "Карта",
+    billingNameLabel: "Имя плательщика",
+    cardHolderName: "Имя держателя карты",
+    cardNickname: "Прозвище карты",
+    billingNamePlaceholder: "Имя и фамилия",
+    emailEmptyText: "Электронная почта не может быть пустой",
+    emailInvalidText: "Неверный адрес электронной почты",
+    line1EmptyText: "Адресная строка 1 не может быть пустой.",
+    line2EmptyText: "Адресная строка 2 не может быть пустой.",
+    cityEmptyText: "Город не может быть пустым",
+    postalCodeEmptyText: "Почтовый индекс не может быть пустым",
+    postalCodeInvalidText: "Неверный почтовый индекс",
+    stateEmptyText: "Штат не может быть пустым",
+    surchargeMsgAmount: (currency, str) => <>
+      {React.string(`Дополнительная сумма в размере${Utils.nbsp}`)}
+      <strong> {React.string(`${currency} ${str}`)} </strong>
+      {React.string({
+        `${Utils.nbsp}будет применено к этой транзакции`
+      })}
+    </>,
+    surchargeMsgAmountForCard: (currency, str) => <>
+      {React.string(`Сумма доплаты до${Utils.nbsp}`)}
+      <strong> {React.string(`${currency} ${str}`)} </strong>
+      {React.string(`${Utils.nbsp}будет применено к этой транзакции`)}
+    </>,
+    surchargeMsgAmountForOneClickWallets: "Возможна дополнительная плата",
+    on: "на",
+    \"and": "и",
+    nameEmptyText: str => `Пожалуйста, предоставьте свой ${str}`,
+    completeNameEmptyText: str =>
+      `Пожалуйста, предоставьте полную ${str}`,
+    billingDetailsText: "Платежные реквизиты",
+    socialSecurityNumberLabel: "Номер социального страхования",
+    saveWalletDetails: "Данные кошельков будут сохранены после выбора.",
+    morePaymentMethods: "Больше способов оплаты",
+    useExistingPaymentMethods: "Используйте сохраненные способы оплаты",
+    nicknamePlaceholder: "Псевдоним карты (необязательно)",
+  },
 ]
