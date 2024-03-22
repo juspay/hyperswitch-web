@@ -529,49 +529,68 @@ let make = (
                         | _ => ()
                         }
                       } else {
-                        let paymentRequest =
-                          applePayPresent
-                          ->Option.flatMap(JSON.Decode.object)
-                          ->Option.getOr(Dict.make())
-                          ->Dict.get("payment_request_data")
-                          ->Option.getOr(Dict.make()->JSON.Encode.object)
-                          ->Utils.transformKeys(Utils.CamelCase)
-
-                        let ssn = applePaySession(3, paymentRequest)
-                        switch applePaySessionRef.contents->Nullable.toOption {
-                        | Some(session) =>
-                          try {
-                            session.abort()
-                          } catch {
-                          | error => Console.log2("Abort fail", error)
-                          }
-                        | None => ()
-                        }
-
-                        ssn.begin()
-                        applePaySessionRef := ssn->Nullable.make
-
-                        ssn.onvalidatemerchant = _event => {
-                          let merchantSession =
+                        try {
+                          let paymentRequest =
                             applePayPresent
                             ->Option.flatMap(JSON.Decode.object)
                             ->Option.getOr(Dict.make())
-                            ->Dict.get("session_token_data")
+                            ->Dict.get("payment_request_data")
                             ->Option.getOr(Dict.make()->JSON.Encode.object)
                             ->Utils.transformKeys(Utils.CamelCase)
-                          ssn.completeMerchantValidation(merchantSession)
-                        }
 
-                        ssn.onpaymentauthorized = event => {
-                          ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->objToJson)
-                          applePaySessionRef := Nullable.null
-                          processPayment(event.payment.token)
-                        }
-                        ssn.oncancel = _ev => {
-                          let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
-                          mountedIframeRef->Window.iframePostMessage(msg)
-                          applePaySessionRef := Nullable.null
-                          Utils.logInfo(Console.log("Apple Pay payment cancelled"))
+                          let ssn = applePaySession(3, paymentRequest)
+                          switch applePaySessionRef.contents->Nullable.toOption {
+                          | Some(session) =>
+                            try {
+                              session.abort()
+                            } catch {
+                            | error => Console.log2("Abort fail", error)
+                            }
+                          | None => ()
+                          }
+
+                          applePaySessionRef := ssn->Nullable.make
+
+                          ssn.onvalidatemerchant = _event => {
+                            let merchantSession =
+                              applePayPresent
+                              ->Option.flatMap(JSON.Decode.object)
+                              ->Option.getOr(Dict.make())
+                              ->Dict.get("session_token_data")
+                              ->Option.getOr(Dict.make()->JSON.Encode.object)
+                              ->Utils.transformKeys(Utils.CamelCase)
+                            ssn.completeMerchantValidation(merchantSession)
+                          }
+
+                          ssn.onpaymentauthorized = event => {
+                            ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->objToJson)
+                            applePaySessionRef := Nullable.null
+                            processPayment(event.payment.token)
+                          }
+                          ssn.oncancel = _ev => {
+                            let msg =
+                              [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
+                            mountedIframeRef->Window.iframePostMessage(msg)
+                            applePaySessionRef := Nullable.null
+                            Utils.logInfo(Console.log("Apple Pay payment cancelled"))
+                          }
+
+                          ssn.begin()
+                        } catch {
+                        | exn => {
+                            logger.setLogInfo(
+                              ~value=exn->Utils.formatException->JSON.stringify,
+                              ~eventName=APPLE_PAY_FLOW,
+                              ~paymentMethod="APPLE_PAY",
+                              (),
+                            )
+                            Utils.logInfo(Console.error2("Apple Pay Error", exn))
+
+                            let msg =
+                              [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
+                            mountedIframeRef->Window.iframePostMessage(msg)
+                            applePaySessionRef := Nullable.null
+                          }
                         }
                       }
                     } else {
