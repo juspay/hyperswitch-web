@@ -1,8 +1,6 @@
 open Utils
 @react.component
 let make = () => {
-  let (expiryTime, setExpiryTime) = React.useState(_ => 900000.0)
-  let (openModal, setOpenModal) = React.useState(_ => false)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let mountToInnerHTML = innerHTML => {
@@ -85,21 +83,11 @@ let make = () => {
           let (x, val) = entries
           Dict.set(headers, x, val->JSON.Decode.string->Option.getOr(""))
         })
-        let _timeExpiry = metaDataDict->getString("expiryTime", "")
       }
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
   })
-  React.useEffect1(() => {
-    if expiryTime < 1000.0 {
-      Modal.close(setOpenModal)
-    }
-    let intervalID = setInterval(() => {
-      setExpiryTime(prev => prev -. 1000.0)
-    }, 1000)
-    Some(() => clearInterval(intervalID))
-  }, [expiryTime])
 
   <div id="threeDsInvisibleIframe" className="bg-black-100 h-96" />
 }
