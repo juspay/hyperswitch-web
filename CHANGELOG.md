@@ -1,3 +1,10 @@
+## [0.34.2](https://github.com/juspay/hyperswitch-web/compare/v0.34.1...v0.34.2) (2024-03-22)
+
+
+### Bug Fixes
+
+* **3ds method iframe:** 3ds failing with no cors and color depth … ([#253](https://github.com/juspay/hyperswitch-web/issues/253)) ([88d955b](https://github.com/juspay/hyperswitch-web/commit/88d955b20be17cccc33803e3dbe3ca122d9868ef))
+
 ## [0.34.1](https://github.com/juspay/hyperswitch-web/compare/v0.34.0...v0.34.1) (2024-03-22)
 
 
