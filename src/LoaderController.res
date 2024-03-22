@@ -257,7 +257,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   })
                 }
               }
-              let latency = Js.Date.now() -. initTimestamp
+              let launchTime = dict->Utils.getFloat("launchTime", 0.0)
+              let latency = Date.now() -. launchTime
               logger.setLogInfo(~value=Window.href, ~eventName=APP_RENDERED, ~latency, ())
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
@@ -267,8 +268,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               ]->Array.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)
               })
-
-              logger.setLogInfo(~eventName=PAYMENT_OPTIONS_PROVIDED, ~value="", ())
+              let latency = Date.now() -. initTimestamp
+              logger.setLogInfo(~eventName=PAYMENT_OPTIONS_PROVIDED, ~latency, ~value="", ())
             }
           } else if dict->getDictIsSome("paymentOptions") {
             let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")

@@ -1,8 +1,7 @@
 @react.component
 let make = () => {
   let (logger, initTimestamp) = React.useMemo0(() => {
-    let logger = OrcaLogger.make()
-Date.now()
+    (OrcaLogger.make(), Date.now())
   })
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
