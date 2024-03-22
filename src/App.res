@@ -23,6 +23,8 @@ let make = () => {
         <FullScreenDivDriver />
       </div>
     | "qrData" => <QRCodeDisplay />
+    | "3dsAuth" => <ThreeDSAuth />
+    | "3ds" => <ThreeDSMethod />
     | "voucherData" => <VoucherDisplay />
     | "preMountLoader" => {
         let clientSecret = CardUtils.getQueryParamsDictforKey(url.search, "clientSecret")

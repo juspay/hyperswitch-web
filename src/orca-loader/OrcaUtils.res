@@ -269,6 +269,18 @@ let makeIframe = (element, url) => {
     element->appendChild(iframe)
   })
 }
+let makeForm = (element, url, id) => {
+  open Types
+  let form = createElement("form")
+  form.id = id
+  form.name = id
+  form.action = url
+  form.method = "POST"
+  form.enctype = "application/x-www-form-urlencoded;charset=UTF-8"
+  form.style = "display: hidden; "
+  element->appendChild(form)
+  form
+}
 
 let getOptionalJson = (ev, str) => {
   ev->getEventDataObj->JSON.Decode.object->Option.getOr(Dict.make())->Dict.get(str)
