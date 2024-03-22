@@ -39,7 +39,7 @@ type nextAction = {
   bank_transfer_steps_and_charges_details: option<JSON.t>,
   session_token: option<JSON.t>,
   image_data_url: option<string>,
-  three_ds_data: option<Js.Json.t>,
+  three_ds_data: option<JSON.t>,
   voucher_details: option<voucherDetails>,
   display_to_timestamp: option<float>,
 }
@@ -144,8 +144,8 @@ let getNextAction = (dict, str) => {
       image_data_url: Some(json->getString("image_data_url", "")),
       three_ds_data: Some(
         json
-        ->Js.Dict.get("three_ds_data")
-        ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_),
+        ->Dict.get("three_ds_data")
+        ->Option.getOr(Dict.make()->JSON.Encode.object),
       ),
       display_to_timestamp: Some(
         json

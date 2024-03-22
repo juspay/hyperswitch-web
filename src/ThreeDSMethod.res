@@ -7,42 +7,41 @@ let make = () => {
 
   let mountToInnerHTML = innerHTML => {
     let ele = Window.querySelector("#threeDsInvisibleIframe")
-    switch ele->Js.Nullable.toOption {
+    switch ele->Nullable.toOption {
     | Some(elem) => elem->Window.innerHTML(innerHTML)
     | None =>
-      Js.Console.warn(
+      Console.warn(
         "INTEGRATION ERROR: Div does not seem to exist on which threeDSMethod is to be mounted",
       )
     }
   }
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->Js.Json.boolean)])
+    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->Js.Json.parseExn
+      let json = ev.data->JSON.parseExn
       let dict = json->Utils.getDictFromJson
-      if dict->Js.Dict.get("fullScreenIframeMounted")->Belt.Option.isSome {
+      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict =
-          metadata->Js.Json.decodeObject->Belt.Option.getWithDefault(Js.Dict.empty())
+        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         let threeDsDataDict =
           metaDataDict
-          ->Js.Dict.get("threeDSData")
-          ->Belt.Option.flatMap(Js.Json.decodeObject)
-          ->Belt.Option.getWithDefault(Js.Dict.empty())
+          ->Dict.get("threeDSData")
+          ->Belt.Option.flatMap(JSON.Decode.object)
+          ->Option.getOr(Dict.make())
         let threeDsUrl =
           threeDsDataDict
-          ->Js.Dict.get("three_ds_method_details")
-          ->Belt.Option.flatMap(Js.Json.decodeObject)
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("three_ds_method_url"))
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getWithDefault("")
+          ->Dict.get("three_ds_method_details")
+          ->Belt.Option.flatMap(JSON.Decode.object)
+          ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_url"))
+          ->Belt.Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
         let threeDsMethodData =
           threeDsDataDict
-          ->Js.Dict.get("three_ds_method_details")
-          ->Belt.Option.flatMap(Js.Json.decodeObject)
-          ->Belt.Option.flatMap(x => x->Js.Dict.get("three_ds_method_data"))
-          ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
+          ->Dict.get("three_ds_method_details")
+          ->Belt.Option.flatMap(JSON.Decode.object)
+          ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_data"))
+          ->Option.getOr(Dict.make()->JSON.Encode.object)
         let iframeId = metaDataDict->getString("iframeId", "")
 
         open Promise
@@ -52,24 +51,23 @@ let make = () => {
           resolve(res)
         })
         ->then(res => {
-          metadata->Utils.getDictFromJson->Js.Dict.set("3dsMethodComp", "Y"->Js.Json.string)
+          metadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
           handlePostMessage([
-            ("fullscreen", true->Js.Json.boolean),
-            ("param", `3dsAuth`->Js.Json.string),
-            ("iframeId", iframeId->Js.Json.string),
+            ("fullscreen", true->JSON.Encode.bool),
+            ("param", `3dsAuth`->JSON.Encode.string),
+            ("iframeId", iframeId->JSON.Encode.string),
             ("metadata", metadata),
           ])
           resolve(res)
         })
         ->catch(e => {
-          metadata->Utils.getDictFromJson->Js.Dict.set("3dsMethodComp", "N"->Js.Json.string)
+          metadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
           handlePostMessage([
-            ("fullscreen", true->Js.Json.boolean),
-            ("param", `3dsAuth`->Js.Json.string),
-            ("iframeId", iframeId->Js.Json.string),
+            ("fullscreen", true->JSON.Encode.bool),
+            ("param", `3dsAuth`->JSON.Encode.string),
+            ("iframeId", iframeId->JSON.Encode.string),
             ("metadata", metadata),
           ])
-          Js.log("3DS validation failed")
           reject(e)
         })
         ->ignore
@@ -77,15 +75,15 @@ let make = () => {
         let headersDict =
           metaDataDict
           ->getJsonObjectFromDict("headers")
-          ->Js.Json.decodeObject
-          ->Belt.Option.getWithDefault(Js.Dict.empty())
-        let headers = Js.Dict.empty()
+          ->JSON.Decode.object
+          ->Option.getOr(Dict.make())
+        let headers = Dict.make()
 
         headersDict
-        ->Js.Dict.entries
-        ->Js.Array2.forEach(entries => {
+        ->Dict.toArray
+        ->Array.forEach(entries => {
           let (x, val) = entries
-          Js.Dict.set(headers, x, val->Js.Json.decodeString->Belt.Option.getWithDefault(""))
+          Dict.set(headers, x, val->JSON.Decode.string->Option.getOr(""))
         })
         let _timeExpiry = metaDataDict->getString("expiryTime", "")
       }
@@ -97,14 +95,10 @@ let make = () => {
     if expiryTime < 1000.0 {
       Modal.close(setOpenModal)
     }
-    let intervalID = Js.Global.setInterval(() => {
+    let intervalID = setInterval(() => {
       setExpiryTime(prev => prev -. 1000.0)
     }, 1000)
-    Some(
-      () => {
-        Js.Global.clearInterval(intervalID)
-      },
-    )
+    Some(() => clearInterval(intervalID))
   }, [expiryTime])
 
   <div id="threeDsInvisibleIframe" className="bg-black-100 h-96" />

@@ -83,34 +83,32 @@ let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
     ~logCategory=API,
     (),
   )
-  let threeDsMethodStr = threeDsMethodData->Js.Json.decodeString->Belt.Option.getWithDefault("")
-  let body = `${Js.Global.encodeURIComponent("threeDSMethodData")}=${Js.Global.encodeURIComponent(
-      threeDsMethodStr,
-    )}`
+  let threeDsMethodStr = threeDsMethodData->JSON.Decode.string->Option.getOr("")
+  let body = `${encodeURIComponent("threeDSMethodData")}=${encodeURIComponent(threeDsMethodStr)}`
   fetchApi(url, ~method=#POST, ~bodyStr=body, ())
   ->then(res => {
     res->Fetch.Response.text
   })
   ->catch(e => {
-    Js.log2("Unable to call 3ds method ", e)
+    Console.log2("Unable to call 3ds method ", e)
     reject(e)
   })
 }
 
 let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let paymentIntentID = Js.String2.split(clientSecret, "_secret_")[0]->Option.getOr("")
+  let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
   let url = `${endpoint}/payments/${paymentIntentID}/3ds/authentication`
   let broswerInfo = BrowserSpec.broswerInfo
   let body =
     [
-      ("client_secret", clientSecret->Js.Json.string),
-      ("device_channel", "BRW"->Js.Json.string),
-      ("threeds_method_comp_ind", threeDsMethodComp->Js.Json.string),
+      ("client_secret", clientSecret->JSON.Encode.string),
+      ("device_channel", "BRW"->JSON.Encode.string),
+      ("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string),
     ]
-    ->Js.Array2.concat(broswerInfo())
-    ->Js.Dict.fromArray
-    ->Js.Json.object_
+    ->Array.concat(broswerInfo())
+    ->Dict.fromArray
+    ->JSON.Encode.object
 
   open Promise
   logApi(
@@ -122,18 +120,10 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
     ~logCategory=API,
     (),
   )
-  fetchApi(
-    url,
-    ~method=#POST,
-    ~bodyStr=body->Js.Json.stringify,
-    ~headers=headers->Js.Dict.fromArray,
-    (),
-  )
-  ->then(res => {
-    res->Fetch.Response.json
-  })
+  fetchApi(url, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray, ())
+  ->then(res => res->Fetch.Response.json)
   ->catch(e => {
-    Js.log2("Unable to call 3ds auth ", e)
+    Console.log2("Unable to call 3ds auth ", e)
     reject(e)
   })
 }
@@ -449,56 +439,47 @@ let rec intentCall = (
               } else if intent.nextAction.type_ === "three_ds_invoke" {
                 let threeDsData =
                   intent.nextAction.three_ds_data
-                  ->Belt.Option.flatMap(Js.Json.decodeObject)
-                  ->Belt.Option.getWithDefault(Js.Dict.empty())
+                  ->Belt.Option.flatMap(JSON.Decode.object)
+                  ->Option.getOr(Dict.make())
                 let do3dsMethodCall =
                   threeDsData
-                  ->Js.Dict.get("three_ds_method_details")
-                  ->Belt.Option.flatMap(Js.Json.decodeObject)
-                  ->Belt.Option.flatMap(x => x->Js.Dict.get("three_ds_method_data_submission"))
-                  ->Belt.Option.getWithDefault(Js.Dict.empty()->Js.Json.object_)
-                  ->Js.Json.decodeBoolean
+                  ->Dict.get("three_ds_method_details")
+                  ->Belt.Option.flatMap(JSON.Decode.object)
+                  ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
+                  ->Option.getOr(Dict.make()->JSON.Encode.object)
+                  ->JSON.Decode.bool
                   ->Utils.getBoolValue
 
-                let headerObj = Js.Dict.empty()
-                headers->Js.Array2.forEach(
+                let headerObj = Dict.make()
+                headers->Array.forEach(
                   entries => {
                     let (x, val) = entries
-                    Js.Dict.set(headerObj, x, val->Js.Json.string)
+                    Dict.set(headerObj, x, val->JSON.Encode.string)
                   },
                 )
-                Js.log2("HERE IS DATA", threeDsData)
                 let metaData =
                   [
-                    ("threeDSData", threeDsData->Js.Json.object_),
-                    ("paymentIntentId", clientSecret->Js.Json.string),
-                    ("headers", headerObj->Js.Json.object_),
-                    ("url", url.href->Js.Json.string),
-                    ("iframeId", iframeId->Js.Json.string),
-                  ]->Js.Dict.fromArray
+                    ("threeDSData", threeDsData->JSON.Encode.object),
+                    ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("headers", headerObj->JSON.Encode.object),
+                    ("url", url.href->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                  ]->Dict.fromArray
 
-                // handleLogging(
-                //   ~optLogger,
-                //   ~value="",
-                //   ~internalMetadata=metaData->Js.Json.object_->Js.Json.stringify,
-                //   ~eventName=DISPLAY_3DS_PAGE,
-                //   ~paymentMethod,
-                //   (),
-                // )
                 if do3dsMethodCall {
                   handlePostMessage([
-                    ("fullscreen", true->Js.Json.boolean),
-                    ("param", `3ds`->Js.Json.string),
-                    ("iframeId", iframeId->Js.Json.string),
-                    ("metadata", metaData->Js.Json.object_),
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `3ds`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData->JSON.Encode.object),
                   ])
                 } else {
-                  metaData->Js.Dict.set("3dsMethodComp", "U"->Js.Json.string)
+                  metaData->Dict.set("3dsMethodComp", "U"->JSON.Encode.string)
                   handlePostMessage([
-                    ("fullscreen", true->Js.Json.boolean),
-                    ("param", `3dsAuth`->Js.Json.string),
-                    ("iframeId", iframeId->Js.Json.string),
-                    ("metadata", metaData->Js.Json.object_),
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `3dsAuth`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData->JSON.Encode.object),
                   ])
                 }
               } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
