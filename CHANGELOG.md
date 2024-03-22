@@ -1,3 +1,10 @@
+# [0.34.0](https://github.com/juspay/hyperswitch-web/compare/v0.33.12...v0.34.0) (2024-03-22)
+
+
+### Features
+
+* 3DS without redirection ([#249](https://github.com/juspay/hyperswitch-web/issues/249)) ([70911e5](https://github.com/juspay/hyperswitch-web/commit/70911e5c5ce23ff6e8936cd8028e6bf037b96686))
+
 ## [0.33.12](https://github.com/juspay/hyperswitch-web/compare/v0.33.11...v0.33.12) (2024-03-21)
 
 
