@@ -9,7 +9,6 @@ let make = (
   ~cvcProps,
   ~paymentType,
   ~list,
-  ~savedMethods,
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
@@ -51,7 +50,7 @@ let make = (
   let isRenderCvv = isCard && paymentItem.requiresCvv
 
   let paymentMethodType = switch paymentItem.paymentMethodType {
-  | Some(paymentMethodType) => paymentMethodType->Utils.snakeToTitleCase
+  | Some(paymentMethodType) => paymentMethodType
   | None => "debit"
   }
 
@@ -101,7 +100,7 @@ let make = (
                       <div> {React.string(paymentItem.card.last4Digits)} </div>
                     </div>
                   </div>
-                : <div> {React.string(paymentMethodType)} </div>}
+                : <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>}
               <RenderIf condition={paymentItem.defaultPaymentMethodSet}>
                 <Icon
                   size=18
@@ -162,7 +161,7 @@ let make = (
                 paymentMethodType
                 setRequiredFieldsBody
                 isSavedCardFlow=true
-                savedCards=savedMethods
+                savedMethod=paymentItem
               />
               <Surcharge
                 list
