@@ -1,3 +1,10 @@
+## [0.34.4](https://github.com/juspay/hyperswitch-web/compare/v0.34.3...v0.34.4) (2024-03-26)
+
+
+### Bug Fixes
+
+* add saved payment methods throughout checkout ([#254](https://github.com/juspay/hyperswitch-web/issues/254)) ([75be834](https://github.com/juspay/hyperswitch-web/commit/75be8345bbfbb760db1c53aec81eef819f4701e6))
+
 ## [0.34.3](https://github.com/juspay/hyperswitch-web/compare/v0.34.2...v0.34.3) (2024-03-26)
 
 ## [0.34.2](https://github.com/juspay/hyperswitch-web/compare/v0.34.1...v0.34.2) (2024-03-22)
