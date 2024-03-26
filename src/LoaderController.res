@@ -131,19 +131,26 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
-    let latency = Js.Date.now() -. launchTime
+    let finalLoadLatency = Js.Date.now() -. launchTime
     switch updatedState {
-    | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency, ())
-    | Loading => logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency, ())
+    | Loaded(_) =>
+      logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
+    | Loading =>
+      logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
     | SemiLoaded => {
         setList(_ => updatedState)
-        logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ~latency, ())
+        logger.setLogInfo(
+          ~value="SemiLoaded",
+          ~eventName=LOADER_CHANGED,
+          ~latency=finalLoadLatency,
+          (),
+        )
       }
     | LoadError(x) =>
       logger.setLogError(
         ~value="LoadError: " ++ x->JSON.stringify,
         ~eventName=LOADER_CHANGED,
-        ~latency,
+        ~latency=finalLoadLatency,
         (),
       )
     }
@@ -265,8 +272,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 }
               }
               setLaunchTime(_ => dict->Utils.getFloat("launchTime", 0.0))
-              let latency = Date.now() -. launchTime
-              logger.setLogInfo(~value=Window.href, ~eventName=APP_RENDERED, ~latency, ())
+              let initLoadlatency = Date.now() -. launchTime
+              logger.setLogInfo(
+                ~value=Window.href,
+                ~eventName=APP_RENDERED,
+                ~latency=initLoadlatency,
+                (),
+              )
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
@@ -275,8 +287,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               ]->Array.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)
               })
-              let latency = Date.now() -. initTimestamp
-              logger.setLogInfo(~eventName=PAYMENT_OPTIONS_PROVIDED, ~latency, ~value="", ())
+              let renderLatency = Date.now() -. initTimestamp
+              logger.setLogInfo(
+                ~eventName=PAYMENT_OPTIONS_PROVIDED,
+                ~latency=renderLatency,
+                ~value="",
+                (),
+              )
             }
           } else if dict->getDictIsSome("paymentOptions") {
             let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")
@@ -348,7 +365,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
-          let latency = Js.Date.now() -. launchTime
+          let finalLoadlatency = Js.Date.now() -. launchTime
           let updatedState: PaymentType.loadType =
             list == Dict.make()->JSON.Encode.object
               ? LoadError(list)
@@ -360,12 +377,18 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   isNonEmptyPaymentMethodList ? Loaded(list) : LoadError(list)
                 }
           switch updatedState {
-          | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency, ())
+          | Loaded(_) =>
+            logger.setLogInfo(
+              ~value="Loaded",
+              ~eventName=LOADER_CHANGED,
+              ~latency=finalLoadlatency,
+              (),
+            )
           | LoadError(x) =>
             logger.setLogError(
               ~value="LoadError: " ++ x->JSON.stringify,
               ~eventName=LOADER_CHANGED,
-              ~latency,
+              ~latency=finalLoadlatency,
               (),
             )
           | _ => ()
