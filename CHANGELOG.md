@@ -1,3 +1,45 @@
+## [0.34.2](https://github.com/juspay/hyperswitch-web/compare/v0.34.1...v0.34.2) (2024-03-22)
+
+
+### Bug Fixes
+
+* **3ds method iframe:** 3ds failing with no cors and color depth … ([#253](https://github.com/juspay/hyperswitch-web/issues/253)) ([88d955b](https://github.com/juspay/hyperswitch-web/commit/88d955b20be17cccc33803e3dbe3ca122d9868ef))
+
+## [0.34.1](https://github.com/juspay/hyperswitch-web/compare/v0.34.0...v0.34.1) (2024-03-22)
+
+
+### Bug Fixes
+
+* applePay Dynamic Fields Error Handling and Dynamic Fields PostalCode Error ([#250](https://github.com/juspay/hyperswitch-web/issues/250)) ([d85aa2a](https://github.com/juspay/hyperswitch-web/commit/d85aa2a0ffaa2205a7c19d41455f2250c5c70ef3))
+
+# [0.34.0](https://github.com/juspay/hyperswitch-web/compare/v0.33.12...v0.34.0) (2024-03-22)
+
+
+### Features
+
+* 3DS without redirection ([#249](https://github.com/juspay/hyperswitch-web/issues/249)) ([70911e5](https://github.com/juspay/hyperswitch-web/commit/70911e5c5ce23ff6e8936cd8028e6bf037b96686))
+
+## [0.33.12](https://github.com/juspay/hyperswitch-web/compare/v0.33.11...v0.33.12) (2024-03-21)
+
+
+### Bug Fixes
+
+* **savedcarditem:** fixed Dynamic Fields not rendering for some saved… ([#246](https://github.com/juspay/hyperswitch-web/issues/246)) ([25d8f67](https://github.com/juspay/hyperswitch-web/commit/25d8f67b3f5a86aa9416b86044eb15c466ac55e5))
+
+## [0.33.11](https://github.com/juspay/hyperswitch-web/compare/v0.33.10...v0.33.11) (2024-03-21)
+
+
+### Bug Fixes
+
+* hotfix changes for postal code ([#245](https://github.com/juspay/hyperswitch-web/issues/245)) ([4ba7350](https://github.com/juspay/hyperswitch-web/commit/4ba7350d4bbfbfcb570bd8c56a51a14df06f4dae))
+
+## [0.33.10](https://github.com/juspay/hyperswitch-web/compare/v0.33.9...v0.33.10) (2024-03-20)
+
+
+### Bug Fixes
+
+* saved Payment Method stuck in loading state and Card Holder Name for every saved card ([#241](https://github.com/juspay/hyperswitch-web/issues/241)) ([6b1bc56](https://github.com/juspay/hyperswitch-web/commit/6b1bc565f659d163297453c6b6f5cc602bee6ff5))
+
 ## [0.33.9](https://github.com/juspay/hyperswitch-web/compare/v0.33.8...v0.33.9) (2024-03-19)
 
 ## [0.33.8](https://github.com/juspay/hyperswitch-web/compare/v0.33.7...v0.33.8) (2024-03-18)

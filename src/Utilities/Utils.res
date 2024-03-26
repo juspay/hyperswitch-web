@@ -818,12 +818,42 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
   | #GET => resolve(None)
   | _ => resolve(Some(Fetch.Body.string(bodyStr)))
   }
-
   body->then(body => {
     Fetch.fetch(
       uri,
       {
         method,
+        ?body,
+        headers: getHeaders(~headers, ~uri, ()),
+      },
+    )
+    ->catch(err => {
+      reject(err)
+    })
+    ->then(resp => {
+      resolve(resp)
+    })
+  })
+}
+
+let fetchApiWithNoCors = (
+  uri,
+  ~bodyStr: string="",
+  ~headers=Dict.make(),
+  ~method: Fetch.method,
+  (),
+) => {
+  open Promise
+  let body = switch method {
+  | #GET => resolve(None)
+  | _ => resolve(Some(Fetch.Body.string(bodyStr)))
+  }
+  body->then(body => {
+    Fetch.fetch(
+      uri,
+      {
+        method,
+        mode: #"no-cors",
         ?body,
         headers: getHeaders(~headers, ~uri, ()),
       },
