@@ -85,7 +85,8 @@ let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
   )
   let threeDsMethodStr = threeDsMethodData->JSON.Decode.string->Option.getOr("")
   let body = `${encodeURIComponent("threeDSMethodData")}=${encodeURIComponent(threeDsMethodStr)}`
-  fetchApi(url, ~method=#POST, ~bodyStr=body, ())
+
+  fetchApiWithNoCors(url, ~method=#POST, ~bodyStr=body, ())
   ->then(res => {
     res->Fetch.Response.text
   })
