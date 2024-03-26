@@ -60,11 +60,9 @@ let make = (
     cvcError,
     setCvcError,
   ) = cvcProps
-  let {customerPaymentMethods, displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.optionAtom,
-  )
+  let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
-  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
 
@@ -88,14 +86,7 @@ let make = (
     None
   }, (empty, complete))
 
-  let (savedMethods, isGuestCustomer) = React.useMemo1(() => {
-    switch customerPaymentMethods {
-    | LoadedSavedCards(savedMethods, isGuest) => (savedMethods, isGuest)
-    | NoResult(isGuest) => ([], isGuest)
-    | _ => ([], true)
-    }
-  }, [customerPaymentMethods])
-
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
     ~cvcNumber,
@@ -290,28 +281,6 @@ let make = (
           <RenderIf condition={isCustomerAcceptanceRequired}>
             <div className={`pb-2 ${nicknameFieldClassName}`}>
               <NicknamePaymentInput paymentType value=nickname setValue=setNickname />
-            </div>
-          </RenderIf>
-          <RenderIf
-            condition={options.displaySavedPaymentMethods &&
-            savedMethods->Array.length > 0 &&
-            !isBancontact}>
-            <div
-              className="Label flex flex-row gap-3 items-end cursor-pointer"
-              style={ReactDOMStyle.make(
-                ~fontSize="14px",
-                ~float="left",
-                ~marginTop="14px",
-                ~fontWeight=themeObj.fontWeightNormal,
-                ~width="fit-content",
-                ~color=themeObj.colorPrimary,
-                (),
-              )}
-              onClick={_ => {
-                setShowFields(_ => false)
-              }}>
-              <Icon name="circle_dots" size=20 width=19 />
-              {React.string(localeString.useExistingPaymentMethods)}
             </div>
           </RenderIf>
         </div>
