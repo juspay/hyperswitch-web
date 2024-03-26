@@ -60,9 +60,7 @@ let make = (
     cvcError,
     setCvcError,
   ) = cvcProps
-  let {customerPaymentMethods, displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.optionAtom,
-  )
+  let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
@@ -88,14 +86,7 @@ let make = (
     None
   }, (empty, complete))
 
-  let (_, isGuestCustomer) = React.useMemo1(() => {
-    switch customerPaymentMethods {
-    | LoadedSavedCards(savedMethods, isGuest) => (savedMethods, isGuest)
-    | NoResult(isGuest) => ([], isGuest)
-    | _ => ([], true)
-    }
-  }, [customerPaymentMethods])
-
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
     ~cvcNumber,

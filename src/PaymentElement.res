@@ -22,7 +22,7 @@ let make = (
     customerPaymentMethods,
     displaySavedPaymentMethods,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
@@ -42,8 +42,8 @@ let make = (
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(isShowOrPayUsing)
 
-  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
-  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
+  let (showFields, setShowFields) = Recoil.useRecoilState(showCardFieldsAtom)
+  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(paymentTokenAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
   let (
     loadSavedCards: PaymentType.savedCardsLoadState,
