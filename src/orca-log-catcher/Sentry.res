@@ -75,7 +75,7 @@ let initiateSentry = (~dsn) => {
         }),
         newSentryReplay(),
       ],
-      tracesSampleRate: 1.0,
+      tracesSampleRate: 0.1,
       tracePropagationTargets: [
         "localhost",
         "https://dev.hyperswitch.io",
