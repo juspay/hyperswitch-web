@@ -59,14 +59,11 @@ While the Unified Checkout is pre-optimized for maximum conversions, it does not
   <h2 id="Quick Start Guide">⚡️ Quick Start Guide</h2>
 </a>
 
-<a href="https://app.hyperswitch.io/register"><img src="./docs/imgs/signup-to-hs.svg" height="35"></a>
-
 Ways to get started with Hyperswitch:
 
-- Try it in our Sandbox Environment: Fast and easy to
-  start.
+- Try it in our Sandbox Environment: Fast and easy to start.
 
-<a href="https://app.hyperswitch.io/register"><img src="./docs/imgs/get-api-keys.svg" height="35"></a>
+<a href="https://app.hyperswitch.io/register" target="_blank"><img src="./docs/imgs/get-api-keys.svg" height="35"></a>
 
 - Install in your local system: Configurations and setup required in your system. Suitable if you like to customise the core offering, [learn more](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md)
 
@@ -122,13 +119,43 @@ This step will prompt you to enter 2 details -
 
 ### About Env Configs
 
-For ease of development and deployment there are configs in /Hyperswitch-react-demo-app/.env
+For ease of development and deployment there are configs in /Hyperswitch-react-demo-app/.env -
+
+#### How to Find Hyperswitch Publishable Key and API Key
+
+To integrate Hyperswitch into your project, follow these steps:
+
+1. **Register**: Begin by registering at [Hyperswitch](https://app.hyperswitch.io/register) to gain access to your dashboard.
+
+2. **Access Your Dashboard**: Once logged in, navigate to your dashboard's home page.
+
+3. **Find Your Keys**: In the sidebar, locate the "Developers" section, then click on [API Keys](https://app.hyperswitch.io/developer-api-keys). Here, you can generate your API Key. Additionally, your Publishable Key is available within the same section.
+
+4. **Integration**: After obtaining your keys, add them to your project's environment variables or configuration file for seamless integration.
+
+The above method is for using our Sandbox Environment.
+
+If you are running our backend locally, you can use our [Postman Collection](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md#try-out-our-apis) for generating the API Key and Publishable Key.
 
 - `HYPERSWITCH_PUBLISHABLE_KEY` - Publishable key of your Hyperswitch Account
-- `HYPERSWITCH_SECRET_KEY` - Api key of your Hyperswitch Account
+- `HYPERSWITCH_SECRET_KEY` - API key of your Hyperswitch Account
 - `HYPERSWITCH_SERVER_URL` - URL of your hosted Hyperswitch Backend server
 - `HYPERSWITCH_CLIENT_URL` - URL of your hosted Hyperswitch SDK
 - `SELF_SERVER_URL` - URL of your node server (/Hyperswitch-react-demo-app/server.js)
+
+<br />
+
+For configuring `customBackendUrl`, when calling Hyper function you can pass the customBackendUrl in props
+
+In Payment.js file -
+
+```javascript
+window.Hyper(publishableKey, {
+  customBackendUrl: `CUSTOM_BACKEND_URL`,
+});
+```
+
+**Warning:** Please maintain API compatibility of your server and web app. If any API contracts are manually changed without the corresponding handling in the SDK, there is a possibility of the application not working as expected. Please ensure that you use the compatible versions. The latest [releases](https://github.com/juspay/hyperswitch/releases) will have the additional details of the compatible versions of the app server, web app, and the control center.
 
 ### Logging
 
@@ -276,7 +303,7 @@ Get updates on Hyperswitch development and chat with the community:
 
 [blog]: https://hyperswitch.io/blog
 [discord]: https://discord.gg/wJZ7DVW8mm
-[slack]: https://join.slack.com/t/hyperswitch-io/shared_invite/zt-1k6cz4lee-SAJzhz6bjmpp4jZCDOtOIg
+[slack]: https://join.slack.com/t/hyperswitch-io/shared_invite/zt-2awm23agh-p_G5xNpziv6yAiedTkkqLg
 [github-discussions]: https://github.com/juspay/hyperswitch-web/discussions
 
 <div style="display: flex;  justify-content: center;">
