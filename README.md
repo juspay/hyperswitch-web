@@ -119,13 +119,9 @@ First install all the node modules by running the following command
 npm install
 ```
 
-Once the installation is successful, you can run the app with the following command -
+Once the installation is successful, you can run the app with the following command in one terminal - `npm run re:start` and `npm run start` on the other terminal for starting the server.
 
-```bash
-npm run start:dev
-```
-
-This will trigger a build of the project. On a successful build, you should see a message `Compiled successfully` in your terminal.
+This will trigger a build of the project. On a successful build, you should see a message 'Compiled successfully' in your terminal.
 
 Now you can proceed with launching the playground. The playground is a demo app where you can test your payments. In a separate terminal, run the following command to start the app on your local machine.
 
