@@ -25,6 +25,11 @@ let devServer = {
       secure: true,
       pathRewrite: { "^/payments": "" },
     },
+    // "/3dsmethod": {
+    //   target: "https://acs40.sandbox.3dsecure.io",
+    //   changeOrigin: true,
+    //   secure: false,
+    // },
   },
   headers: {
     "Cache-Control": "max-age=31536000,must-revalidate",
