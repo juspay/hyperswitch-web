@@ -61,15 +61,36 @@ While the Unified Checkout is pre-optimized for maximum conversions, it does not
 
 Ways to get started with Hyperswitch:
 
-- Try it in our Sandbox Environment: Fast and easy to start.
+### Try it in our Sandbox Environment: Fast and easy to start.
 
-<a href="https://app.hyperswitch.io/register" target="_blank"><img src="./docs/imgs/get-api-keys.svg" height="35"></a>
+- To integrate Hyperswitch into your project, follow these steps:
+
+  1. **Register**: Begin by registering at [Hyperswitch](https://app.hyperswitch.io/register) to gain access to your dashboard.
+
+  2. **Access Your Dashboard**: Once logged in, navigate to your dashboard's home page.
+
+  3. **Find Your Keys**: In the sidebar, locate the "Developers" section, then click on [API Keys](https://app.hyperswitch.io/developer-api-keys). Here, you can generate your API Key. Additionally, your Publishable Key is available within the same section.
+
+  4. **Integration**: After obtaining your Keys add them to your project's environment variables or configuration file for seamless integration.
+
+### For local setup
 
 - Install in your local system: Configurations and setup required in your system. Suitable if you like to customise the core offering, [learn more](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md)
+
+- If you are running our backend locally, you can use our [Postman Collection](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md#try-out-our-apis) for generating the API Key and Publishable Key.
 
 <a href="#Setup-Instructions">
   <h2 id="Setup Instructions">🛠️ Setup Instructions</h2>
 </a>
+
+Before you start the local setup, you will need an understanding of few keys -
+
+### About Env Configs
+
+- `HYPERSWITCH_PUBLISHABLE_KEY` - Publishable key of your Hyperswitch Account. This key will start with `pk_dev_` for local development, `pk_snd_` for sandbox and `pk_prd_` for production.
+- `HYPERSWITCH_SECRET_KEY` - API key of your Hyperswitch Account
+- `HYPERSWITCH_SERVER_URL` - URL of your hosted Hyperswitch Backend server or you can use our Sandbox URL (https://sandbox.hyperswitch.io) or use your backend running locally (eg. http://localhost:8080).
+- `HYPERSWITCH_CLIENT_URL` - URL of your hosted Hyperswitch SDK or you can use our Sandbox URL (https://beta.hyperswitch.io) or use your app running locally (eg http://localhost:9050).
 
 ### Setup Node
 
@@ -112,38 +133,17 @@ Now you can proceed with launching the playground. The playground is a demo app 
 npm run start:playground
 ```
 
-This step will prompt you to enter 2 details -
+**NOTE** - Alternatively, you can update `.env` file and use these commands
 
-- <strong>Publishable Key</strong> - This is a public key that resides on your client side for authentication
-- <strong>Secret Key</strong> - This is the API key which should only be restricted to your app server
+```bash
+cd Hyperswitch-React-Demo-App
+npm install
+npm run start
+```
 
-### About Env Configs
-
-For ease of development and deployment there are configs in /Hyperswitch-react-demo-app/.env -
-
-#### How to Find Hyperswitch Publishable Key and API Key
-
-To integrate Hyperswitch into your project, follow these steps:
-
-1. **Register**: Begin by registering at [Hyperswitch](https://app.hyperswitch.io/register) to gain access to your dashboard.
-
-2. **Access Your Dashboard**: Once logged in, navigate to your dashboard's home page.
-
-3. **Find Your Keys**: In the sidebar, locate the "Developers" section, then click on [API Keys](https://app.hyperswitch.io/developer-api-keys). Here, you can generate your API Key. Additionally, your Publishable Key is available within the same section.
-
-4. **Integration**: After obtaining your keys, add them to your project's environment variables or configuration file for seamless integration.
-
-The above method is for using our Sandbox Environment.
-
-If you are running our backend locally, you can use our [Postman Collection](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md#try-out-our-apis) for generating the API Key and Publishable Key.
-
-- `HYPERSWITCH_PUBLISHABLE_KEY` - Publishable key of your Hyperswitch Account
-- `HYPERSWITCH_SECRET_KEY` - API key of your Hyperswitch Account
-- `HYPERSWITCH_SERVER_URL` - URL of your hosted Hyperswitch Backend server
-- `HYPERSWITCH_CLIENT_URL` - URL of your hosted Hyperswitch SDK
-- `SELF_SERVER_URL` - URL of your node server (/Hyperswitch-react-demo-app/server.js)
-
-<br />
+<a href="#Custom_backend">
+  <h2 id="Custom_backend">⛁ Custom Backend</h2>
+</a>
 
 For configuring `customBackendUrl`, when calling Hyper function you can pass the customBackendUrl in props
 
@@ -157,7 +157,9 @@ window.Hyper(publishableKey, {
 
 **Warning:** Please maintain API compatibility of your server and web app. If any API contracts are manually changed without the corresponding handling in the SDK, there is a possibility of the application not working as expected. Please ensure that you use the compatible versions. The latest [releases](https://github.com/juspay/hyperswitch/releases) will have the additional details of the compatible versions of the app server, web app, and the control center.
 
-### Logging
+<a href="#Custom_logging">
+  <h2 id="Custom_logging">📊 Custom Logging</h2>
+</a>
 
 Logging from the payment checkout web client is crucial for tracking and monitoring the flow of payments. It provides a transparent record of events, errors, and user interactions, aiding developers and support teams in identifying issues, debugging, and ensuring the security and reliability of payment processes. Well-implemented logging enhances traceability and facilitates a more efficient resolution of potential problems in the payment checkout experience.
 
@@ -195,20 +197,12 @@ Now let's test the integration by making a payment from your web client!
 
 Now that the project is up and running, integrating Hyperswitch on your web-app is fast &
 easy.
-Try the steps below to get a feel of how quick the setup is:
 
-1. Get API keys from our [dashboard].
-2. Follow the instructions detailed on our
-   [documentation page][hyperswitch-docs].
+Follow the instructions detailed on our
+[documentation page][hyperswitch-docs].
 
 [dashboard]: https://app.hyperswitch.io/register
 [hyperswitch-docs]: https://hyperswitch.io/docs/sdkIntegrations/unifiedCheckoutWeb/
-
-<a href="#Connect your Hyperswitch self hosted Server">
-  <h2 id="Connect with you Hyperswitch Server">🔌Connect your Hyperswitch self hosted Server</h2>
-</a>
-
-Modify the `HYPERSWITCH_SERVER_URL` key in `.env file` by adding the BE hosted url
 
 <a href="#FAQs">
   <h2 id="FAQs">🤔 FAQs</h2>
