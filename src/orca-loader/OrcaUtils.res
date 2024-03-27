@@ -290,11 +290,11 @@ let getOptionalJsonFromJson = (ev, str) => {
   ev->JSON.Decode.object->Option.getOr(Dict.make())->Dict.get(str)
 }
 
-let getStringFromOptionalJson = (json: option<JSON.t>, default: string) => {
+let getStringFromOptionalJson = (json, default) => {
   json->Option.flatMap(JSON.Decode.string)->Option.getOr(default)
 }
 
-let getBoolFromJson = (json: option<JSON.t>, default: bool) => {
+let getBoolFromJson = (json, default) => {
   json->Option.flatMap(JSON.Decode.bool)->Option.getOr(default)
 }
 
