@@ -1,6 +1,6 @@
 open Utils
 @react.component
-let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
+let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
   open RecoilAtoms
   //<...>//
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
@@ -15,6 +15,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let (divH, setDivH) = React.useState(_ => 0.0)
+  let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
 
   let divRef = React.useRef(Nullable.null)
@@ -130,15 +131,28 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
       showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
+    let finalLoadLatency = Js.Date.now() -. launchTime
     switch updatedState {
-    | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ())
-    | Loading => logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ())
+    | Loaded(_) =>
+      logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
+    | Loading =>
+      logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
     | SemiLoaded => {
         setList(_ => updatedState)
-        logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ())
+        logger.setLogInfo(
+          ~value="SemiLoaded",
+          ~eventName=LOADER_CHANGED,
+          ~latency=finalLoadLatency,
+          (),
+        )
       }
     | LoadError(x) =>
-      logger.setLogError(~value="LoadError: " ++ x->JSON.stringify, ~eventName=LOADER_CHANGED, ())
+      logger.setLogError(
+        ~value="LoadError: " ++ x->JSON.stringify,
+        ~eventName=LOADER_CHANGED,
+        ~latency=finalLoadLatency,
+        (),
+      )
     }
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
@@ -257,8 +271,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                   })
                 }
               }
-
-              logger.setLogInfo(~value=Window.href, ~eventName=APP_RENDERED, ())
+              setLaunchTime(_ => dict->Utils.getFloat("launchTime", 0.0))
+              let initLoadlatency = Date.now() -. launchTime
+              logger.setLogInfo(
+                ~value=Window.href,
+                ~eventName=APP_RENDERED,
+                ~latency=initLoadlatency,
+                (),
+              )
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
@@ -267,8 +287,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
               ]->Array.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)
               })
-
-              logger.setLogInfo(~eventName=PAYMENT_OPTIONS_PROVIDED, ~value="", ())
+              let renderLatency = Date.now() -. initTimestamp
+              logger.setLogInfo(
+                ~eventName=PAYMENT_OPTIONS_PROVIDED,
+                ~latency=renderLatency,
+                ~value="",
+                (),
+              )
             }
           } else if dict->getDictIsSome("paymentOptions") {
             let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")
@@ -340,6 +365,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         }
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
+          let finalLoadlatency = Js.Date.now() -. launchTime
           let updatedState: PaymentType.loadType =
             list == Dict.make()->JSON.Encode.object
               ? LoadError(list)
@@ -351,11 +377,18 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                   isNonEmptyPaymentMethodList ? Loaded(list) : LoadError(list)
                 }
           switch updatedState {
-          | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ())
+          | Loaded(_) =>
+            logger.setLogInfo(
+              ~value="Loaded",
+              ~eventName=LOADER_CHANGED,
+              ~latency=finalLoadlatency,
+              (),
+            )
           | LoadError(x) =>
             logger.setLogError(
               ~value="LoadError: " ++ x->JSON.stringify,
               ~eventName=LOADER_CHANGED,
+              ~latency=finalLoadlatency,
               (),
             )
           | _ => ()

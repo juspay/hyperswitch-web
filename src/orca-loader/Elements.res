@@ -35,6 +35,7 @@ let make = (
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
     let appearance =
       localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
+    let launchTime = localOptions->getFloat("launchTime", 0.0)
 
     let fonts =
       localOptions
@@ -247,6 +248,7 @@ let make = (
             ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
+            ("launchTime", launchTime->JSON.Encode.float),
           ]->Dict.fromArray
 
         let handleApplePayMounted = (event: Types.event) => {
