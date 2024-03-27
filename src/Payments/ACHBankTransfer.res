@@ -13,10 +13,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let complete = email.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == ""
 
-  React.useEffect(() => {
-    handlePostMessageEvents(~complete, ~empty, ~paymentType="bank_transfer", ~loggerState)
-    None
-  }, (empty, complete))
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
 
   React.useEffect(() => {
     setComplete(_ => complete)

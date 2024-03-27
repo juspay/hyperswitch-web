@@ -14,103 +14,46 @@ module Loader = {
   }
 }
 @react.component
-let make = (
-  ~cvcProps: CardUtils.cvcProps,
-  ~cardProps: CardUtils.cardProps,
-  ~expiryProps: CardUtils.expiryProps,
-  ~selectedOption: PaymentModeType.payment,
-  ~savedMethods: array<PaymentType.customerMethods>,
-  ~paymentToken,
-) => {
+let make = () => {
   open RecoilAtoms
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (isDisabled, setIsDisabled) = React.useState(() => false)
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let areRequiredFieldsValidValue = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
-  let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
 
-  let (isCVCValid, _, cvcNumber, _, _, _, _, _, _, _) = cvcProps
-  let (isCardValid, _, _, _, _, _, _, _, _, _) = cardProps
-  let (isExpiryValid, _, _, _, _, _, _, _, _) = expiryProps
-
-  let (token, _) = paymentToken
-  let customerMethod =
-    savedMethods
-    ->Array.filter(savedMethod => {
-      savedMethod.paymentToken === token
-    })
-    ->Array.get(0)
-    ->Option.getOr(PaymentType.defaultCustomerMethods)
-  let isCardPaymentMethod = customerMethod.paymentMethod === "card"
-  let complete = switch isCVCValid {
-  | Some(val) => token !== "" && val
-  | _ => false
-  }
-  let empty = cvcNumber == ""
-  let isSavedMethodCheck =
-    areRequiredFieldsValidValue && (!isCardPaymentMethod || (complete && !empty))
-
-  let validFormat =
-    isCardValid->Option.getOr(false) &&
-    isCVCValid->Option.getOr(false) &&
-    isExpiryValid->Option.getOr(false) &&
-    areRequiredFieldsValidValue
+  let {themeObj, localeString} = configAtom->Recoil.useRecoilValueFromAtom
+  let {sdkHandleConfirmPayment} = optionAtom->Recoil.useRecoilValueFromAtom
+  let (isPayNowButtonDisable, setIsPayNowButtonDisable) = payNowButtonDisable->Recoil.useRecoilState
 
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
+  let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
 
   let handleMessage = (event: Types.event) => {
     let json = event.data->eventToJson->OrcaUtils.getStringfromjson("")->OrcaUtils.safeParse
     let dict = json->Utils.getDictFromJson
     switch dict->Dict.get("submitSuccessful") {
     | Some(_) =>
-      setIsDisabled(_ => false)
+      setIsPayNowButtonDisable(_ => false)
       setShowLoader(_ => false)
     | None => ()
     }
   }
 
   let handleOnClick = _ => {
-    setIsDisabled(_ => true)
+    setIsPayNowButtonDisable(_ => true)
     setShowLoader(_ => true)
     EventListenerManager.addSmartEventListener("message", handleMessage, "onSubmitSuccessful")
     Utils.handlePostMessage([("handleSdkConfirm", confirmPayload)])
   }
 
-  let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
-
-  React.useEffect(() => {
-    if showFields {
-      if selectedOption === Card {
-        setIsDisabled(_ => !validFormat)
-      } else {
-        setIsDisabled(_ => !areRequiredFieldsValidValue)
-      }
-    } else if !customerMethod.requiresCvv {
-      setIsDisabled(_ => customerMethod.requiresCvv)
-    } else {
-      setIsDisabled(_ => !isSavedMethodCheck)
-    }
-    None
-  }, (
-    validFormat,
-    areRequiredFieldsValidValue,
-    selectedOption,
-    isSavedMethodCheck,
-    customerMethod.requiresCvv,
-  ))
-
   <div className="flex flex-col gap-1 h-auto w-full items-center">
     <button
-      disabled=isDisabled
+      disabled=isPayNowButtonDisable
       onClick=handleOnClick
       className={`w-full flex flex-row justify-center items-center`}
       style={ReactDOMStyle.make(
         ~borderRadius=themeObj.buttonBorderRadius,
         ~backgroundColor=themeObj.buttonBackgroundColor,
         ~height=themeObj.buttonHeight,
-        ~cursor={isDisabled ? "not-allowed" : "pointer"},
-        ~opacity={isDisabled ? "0.6" : "1"},
+        ~cursor={isPayNowButtonDisable ? "not-allowed" : "pointer"},
+        ~opacity={isPayNowButtonDisable ? "0.6" : "1"},
         ~width=themeObj.buttonWidth,
         ~borderColor=themeObj.buttonBorderColor,
         (),
