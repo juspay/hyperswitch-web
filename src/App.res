@@ -1,16 +1,14 @@
 @react.component
 let make = () => {
+  let (logger, initTimestamp) = React.useMemo0(() => {
+    (OrcaLogger.make(), Date.now())
+  })
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
   let setLoggerState = Recoil.useSetRecoilState(RecoilAtoms.loggerAtom)
 
   let paymentMode = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let fullscreenMode = CardUtils.getQueryParamsDictforKey(url.search, "fullscreenType")
-
-  let logger = React.useMemo0(() => {
-    let log = OrcaLogger.make()
-    log
-  })
 
   React.useEffect(() => {
     setLoggerState(_ => logger)
@@ -41,7 +39,7 @@ let make = () => {
     | "sepaBankTransfer" =>
       <BankTransfersPopup transferType=fullscreenMode />
     | _ =>
-      <LoaderController paymentMode setIntegrateErrorError logger>
+      <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
         <Payment paymentMode integrateError logger />
       </LoaderController>
     }
