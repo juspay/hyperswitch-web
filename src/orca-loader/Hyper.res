@@ -138,8 +138,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           if (
             publishableKey == "" ||
               !(
+                publishableKey->String.startsWith("pk_dev_") ||
                 publishableKey->String.startsWith("pk_snd_") ||
-                  publishableKey->String.startsWith("pk_prd_")
+                publishableKey->String.startsWith("pk_prd_")
               )
           ) {
             manageErrorWarning(INVALID_PK, (), ~logger)
@@ -348,17 +349,12 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
       let elements = elementsOptions => {
         open Promise
-        let elementsOptionsDict = elementsOptions->JSON.Decode.object
-        elementsOptionsDict
-        ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
-        ->ignore
-
         let clientSecretId =
-          elementsOptionsDict
+          elementsOptions
+          ->JSON.Decode.object
           ->Option.flatMap(x => x->Dict.get("clientSecret"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
-        let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         clientSecret := clientSecretId
         Js.Promise.make((~resolve, ~reject as _) => {
           logger.setClientSecret(clientSecretId)

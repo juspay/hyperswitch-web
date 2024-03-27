@@ -10,7 +10,7 @@ let errorWarning = [
     INVALID_PK,
     Error,
     Static(
-      "INTEGRATION ERROR: Invalid Publishable key, starts with pk_snd_(sandbox/test) or pk_prd_(production/live)",
+      "INTEGRATION ERROR: Invalid Publishable key, starts with pk_dev_(development), pk_snd_(sandbox/test) or pk_prd_(production/live)",
     ),
   ),
   (
