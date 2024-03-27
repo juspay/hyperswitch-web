@@ -1,3 +1,10 @@
+## [0.35.1](https://github.com/juspay/hyperswitch-web/compare/v0.35.0...v0.35.1) (2024-03-27)
+
+
+### Bug Fixes
+
+* pk_dev added for development purpose ([#259](https://github.com/juspay/hyperswitch-web/issues/259)) ([7278237](https://github.com/juspay/hyperswitch-web/commit/72782370fcd12ec24c20d77295de00dbc956c28f))
+
 # [0.35.0](https://github.com/juspay/hyperswitch-web/compare/v0.34.4...v0.35.0) (2024-03-27)
 
 
