@@ -1,4 +1,3 @@
-external ffToDomType: {..} => Dom.node_like<'a> = "%identity"
 @send external contains: (Dom.element, {..}) => bool = "contains"
 
 type ref =

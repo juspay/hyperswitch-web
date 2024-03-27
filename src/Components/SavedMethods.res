@@ -41,7 +41,7 @@ let make = (
           switch obj.card.scheme {
           | Some(ele) => ele
           | None => ""
-          }->cardType,
+          }->getCardType,
           ""->CardTheme.getPaymentMode,
         )
       }

@@ -173,7 +173,7 @@ let charcoalRules = theme =>
       "fontWeight": theme.fontWeightLight,
       "fontSize": theme.fontSizeLg,
     },
-  }->toJson
+  }->Identity.anyTypeToJson
 
 let default = charcoal
 let defaultRules = charcoalRules

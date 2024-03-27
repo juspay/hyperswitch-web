@@ -4,8 +4,6 @@ type parent
 @val external window: window = "window"
 @val @scope("window") external iframeParent: parent = "parent"
 type event = {data: string}
-external eventToJson: event => JSON.t = "%identity"
-external toJson: 'a => JSON.t = "%identity"
 external dictToObj: Dict.t<'a> => {..} = "%identity"
 
 @module("./Phone_number.json")
@@ -47,6 +45,10 @@ let getOptionString = (dict, key) => {
 
 let getString = (dict, key, default) => {
   getOptionString(dict, key)->Option.getOr(default)
+}
+
+let getStringFromJson = (json, default) => {
+  json->JSON.Decode.string->Option.getOr(default)
 }
 
 let getInt = (dict, key, default: int) => {
@@ -190,14 +192,12 @@ let getStrArray = (dict, key) => {
   dict
   ->getOptionalArrayFromDict(key)
   ->Option.getOr([])
-  ->Array.map(json => json->JSON.Decode.string->Option.getOr(""))
+  ->Array.map(json => json->getStringFromJson(""))
 }
 let getOptionalStrArray: (Dict.t<JSON.t>, string) => option<array<string>> = (dict, key) => {
   switch dict->getOptionalArrayFromDict(key) {
   | Some(val) =>
-    val->Array.length === 0
-      ? None
-      : Some(val->Array.map(json => json->JSON.Decode.string->Option.getOr("")))
+    val->Array.length === 0 ? None : Some(val->Array.map(json => json->getStringFromJson("")))
   | None => None
   }
 }
@@ -467,7 +467,8 @@ let isAllValid = (
 ) => {
   card->getBoolValue &&
   cvc->getBoolValue &&
-  expiry->getBoolValue && {paymentMode == "payment" ? true : zip}
+  expiry->getBoolValue &&
+  (paymentMode == "payment" || zip)
 }
 
 let getCountryPostal = (countryCode, postalCodes: array<PostalCodeType.postalCodes>) => {
@@ -658,7 +659,7 @@ let handlePostMessageEvents = (
   ~complete,
   ~empty,
   ~paymentType,
-  ~loggerState: OrcaPaymentPage.OrcaLogger.loggerMake,
+  ~loggerState: OrcaLogger.loggerMake,
 ) => {
   if complete && paymentType !== "" {
     loggerState.setLogInfo(
@@ -873,7 +874,7 @@ let arrayJsonToCamelCase = arr => {
   })
 }
 let formatException = exc => {
-  exc->toJson
+  exc->Identity.anyTypeToJson
 }
 
 let getArrayValFromJsonDict = (dict, key, arrayKey) => {

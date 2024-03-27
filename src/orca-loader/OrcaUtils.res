@@ -1,11 +1,10 @@
 open Utils
-external toNullable: JSON.t => Nullable.t<JSON.t> = "%identity"
-external eventToJson: Types.eventData => JSON.t = "%identity"
+open Identity
 let safeParseOpt = st => {
   try {
     JSON.parseExn(st)->Some
   } catch {
-  | _e => None
+  | _ => None
   }
 }
 let safeParse = st => {
@@ -21,7 +20,7 @@ let rec flattenObject = (obj, addIndicatorForObject) => {
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->toNullable->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Js.Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Decode.object {
@@ -58,17 +57,17 @@ let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepPare
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->toNullable->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Js.Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
-        switch value->JSON.Decode.string->Option.getOr("")->safeParse->JSON.Decode.object {
+        switch value->getStringFromJson("")->safeParse->JSON.Decode.object {
         | Some(_valueObj) => {
             if addIndicatorForObject {
               Dict.set(newDict, key, JSON.Encode.object(Dict.make()))
             }
 
             let flattenedSubObj = flattenObjectWithStringifiedJson(
-              value->JSON.Decode.string->Option.getOr("")->safeParse,
+              value->getStringFromJson("")->safeParse,
               addIndicatorForObject,
               keepParent,
             )
@@ -90,6 +89,7 @@ let rec flattenObjectWithStringifiedJson = (obj, addIndicatorForObject, keepPare
   }
   newDict
 }
+
 let rec flatten = (obj, addIndicatorForObject) => {
   let newDict = Dict.make()
   switch obj->JSON.Classify.classify {
@@ -99,7 +99,7 @@ let rec flatten = (obj, addIndicatorForObject) => {
     ->Array.forEach(entry => {
       let (key, value) = entry
 
-      if value->toNullable->Js.Nullable.isNullable {
+      if value->jsonToNullableJson->Js.Nullable.isNullable {
         Dict.set(newDict, key, value)
       } else {
         switch value->JSON.Classify.classify {
@@ -290,16 +290,12 @@ let getOptionalJsonFromJson = (ev, str) => {
   ev->JSON.Decode.object->Option.getOr(Dict.make())->Dict.get(str)
 }
 
-let getStringfromOptionaljson = (json: option<JSON.t>, default: string) => {
+let getStringFromOptionalJson = (json, default) => {
   json->Option.flatMap(JSON.Decode.string)->Option.getOr(default)
 }
 
-let getBoolfromjson = (json: option<JSON.t>, default: bool) => {
+let getBoolFromJson = (json, default) => {
   json->Option.flatMap(JSON.Decode.bool)->Option.getOr(default)
-}
-
-let getStringfromjson = (json: JSON.t, default: string) => {
-  json->JSON.Decode.string->Option.getOr(default)
 }
 
 let getThemePromise = dict => {
@@ -342,7 +338,7 @@ let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
       resolve(JSON.Encode.bool(true))
     } else {
       let handleMessage = (event: Types.event) => {
-        let json = event.data->eventToJson->getStringfromjson("")->safeParse
+        let json = event.data->anyTypeToJson->getStringFromJson("")->safeParse
 
         let dict = json->Utils.getDictFromJson
         if dict->Dict.get("oneClickDoSubmit")->Option.isSome {

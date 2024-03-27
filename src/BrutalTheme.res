@@ -173,7 +173,7 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
       "borderTopColor": "transparent !important",
       "borderLeftColor": "transparent !important",
     },
-  }->toJson
+  }->Identity.anyTypeToJson
 
 let default = brutal
 let defaultRules = brutalRules

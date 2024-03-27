@@ -1,7 +1,6 @@
 type t<+'a> = Promise.t<'a>
 
 exception JsError(Exn.t)
-external unsafeToJsExn: exn => Exn.t = "%identity"
 
 @new
 external make: ((@uncurry 'a => unit, 'e => unit) => unit) => t<'a> = "Promise"
@@ -45,7 +44,7 @@ let catch = (promise, callback) => {
     let v = if Exn.isCamlExceptionOrOpenVariant(err) {
       err
     } else {
-      JsError(unsafeToJsExn(err))
+      JsError(Identity.unsafeToJsExn(err))
     }
     callback(v)
   })

@@ -1,4 +1,5 @@
 open Utils
+open Identity
 
 @val @scope(("window", "parent", "location")) external href: string = "href"
 
@@ -157,7 +158,7 @@ let rec intentCall = (
     ~headers: Dict.t<string>=?,
     ~method: Fetch.method,
     unit,
-  ) => OrcaPaymentPage.Promise.t<Fetch.Response.t>,
+  ) => Promise.t<Fetch.Response.t>,
   ~uri,
   ~headers,
   ~bodyStr,
@@ -492,9 +493,9 @@ let rec intentCall = (
                 let message = switch walletName {
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->toJson),
+                    ("applePayPresent", session_token->anyTypeToJson),
                   ]
-                | "google_pay" => [("googlePayThirdPartyFlow", session_token->toJson)]
+                | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
 
@@ -538,9 +539,9 @@ let rec intentCall = (
                 let message = switch walletName {
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->toJson),
+                    ("applePayPresent", session_token->anyTypeToJson),
                   ]
-                | "google_pay" => [("googlePayThirdPartyFlow", session_token->toJson)]
+                | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
 
@@ -797,7 +798,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
                 ~value="",
                 ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
-                ~paymentMethod=json->JSON.Decode.string->Option.getOr(""),
+                ~paymentMethod=json->getStringFromJson(""),
                 (),
               )
             }

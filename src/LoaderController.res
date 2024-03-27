@@ -105,7 +105,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     )
     let appearance =
       optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-
+    let localeString = CardTheme.getLocaleObject(localeString == "" ? config.locale : localeString)
     setConfig(_ => {
       config: {
         appearance,
@@ -115,9 +115,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         loader: config.loader,
       },
       themeObj: appearance.variables,
-      localeString: localeString == ""
-        ? CardTheme.getLocaleObject(config.locale)
-        : CardTheme.getLocaleObject(localeString),
+      localeString,
       showLoader: config.loader == Auto || config.loader == Always,
     })
   }
@@ -329,13 +327,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           | Some(val) =>
             setKeys(prev => {
               ...prev,
-              clientSecret: Some(val->JSON.Decode.string->Option.getOr("")),
+              clientSecret: Some(val->getStringFromJson("")),
             })
             setConfig(prev => {
               ...prev,
               config: {
                 ...prev.config,
-                clientSecret: val->JSON.Decode.string->Option.getOr(""),
+                clientSecret: val->getStringFromJson(""),
               },
             })
           | None => ()

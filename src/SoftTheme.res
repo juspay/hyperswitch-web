@@ -180,7 +180,7 @@ let softRules = theme =>
       "fontWeight": theme.fontWeightLight,
       "fontSize": theme.fontSizeLg,
     },
-  }->toJson
+  }->Identity.anyTypeToJson
 
 let default = soft
 let defaultRules = softRules

@@ -124,7 +124,7 @@ let make = (
   }
 
   let getGooglePaymentsClient = () => {
-    google({"environment": GlobalVars.isProd ? "PRODUCTION" : "TEST"}->toJson)
+    google({"environment": GlobalVars.isProd ? "PRODUCTION" : "TEST"}->Identity.anyTypeToJson)
   }
 
   let syncPayment = () => {
@@ -186,7 +186,7 @@ let make = (
       "buttonSizeMode": "fill",
       "buttonColor": options.wallets.style.theme == Dark ? "black" : "white",
     }
-    obj->toJson
+    obj->Identity.anyTypeToJson
   }
   let addGooglePayButton = () => {
     let paymentClient = getGooglePaymentsClient()

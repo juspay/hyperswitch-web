@@ -1,7 +1,5 @@
 open Types
 
-external customerSavedPaymentMethodsToJson: getCustomerSavedPaymentMethods => JSON.t = "%identity"
-
 let getCustomerSavedPaymentMethods = (
   ~clientSecret,
   ~publishableKey,
@@ -135,7 +133,7 @@ let getCustomerSavedPaymentMethods = (
         getCustomerDefaultSavedPaymentMethodData,
         confirmWithCustomerDefaultPaymentMethod,
       }
-      ->customerSavedPaymentMethodsToJson
+      ->Identity.anyTypeToJson
       ->resolve
     | None => {
         let updatedCustomerDetails =

@@ -94,7 +94,7 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = React.useMemo2(() => {
+  let isCustomerAcceptanceRequired = React.useMemo(() => {
     if displaySavedPaymentMethodsCheckbox {
       isSaveCardsChecked || list.payment_type === SETUP_MANDATE
     } else {
@@ -287,7 +287,9 @@ let make = (
       </div>
     </RenderIf>
     <RenderIf condition={showFields || isBancontact}>
-      <Surcharge list paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.cardType} />
+      <Surcharge
+        list paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType}
+      />
     </RenderIf>
     <RenderIf condition={!isBancontact}>
       {switch (list.mandate_payment, options.terms.card) {

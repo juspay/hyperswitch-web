@@ -91,7 +91,7 @@ let getQueryParamsDictforKey = (searchParams, keyName) => {
 
   dict->Dict.get(keyName)->Option.getOr("")
 }
-let cardType = val => {
+let getCardType = val => {
   switch val {
   | "Visa" => VISA
   | "Mastercard" => MASTERCARD
@@ -197,7 +197,7 @@ let formatExpiryToTwoDigit = expiry => {
   }
 }
 
-let isExipryComplete = val => {
+let isExpiryComplete = val => {
   let (month, year) = splitExpiryDates(val)
   month->String.length == 2 && year->String.length == 2
 }
@@ -359,7 +359,7 @@ let getExpiryValidity = cardExpiry => {
   valid
 }
 let isExipryValid = val => {
-  val->String.length > 0 && getExpiryValidity(val) && isExipryComplete(val)
+  val->String.length > 0 && getExpiryValidity(val) && isExpiryComplete(val)
 }
 
 let cardNumberInRange = val => {
@@ -371,7 +371,7 @@ let cardNumberInRange = val => {
   cardLengthInRange
 }
 let max = (a, b) => {
-  a > b ? a : b
+  Math.Int.max(a, b)
 }
 
 let getMaxLength = val => {
@@ -426,7 +426,7 @@ let genreateFontsLink = (fonts: array<CardThemeType.fonts>) => {
 }
 let maxCardLength = cardBrand => {
   let obj = getobjFromCardPattern(cardBrand)
-  Array.reduce(obj.length, 0, (acc, val) => acc > val ? acc : val)
+  Array.reduce(obj.length, 0, (acc, val) => max(acc, val))
 }
 
 let cardValid = (cardNumber, cardBrand) => {
@@ -543,9 +543,9 @@ let setCardValid = (cardnumber, setIsCardValid) => {
 let setExpiryValid = (expiry, setIsExpiryValid) => {
   if isExipryValid(expiry) {
     setIsExpiryValid(_ => Some(true))
-  } else if !getExpiryValidity(expiry) && isExipryComplete(expiry) {
+  } else if !getExpiryValidity(expiry) && isExpiryComplete(expiry) {
     setIsExpiryValid(_ => Some(false))
-  } else if !isExipryComplete(expiry) {
+  } else if !isExpiryComplete(expiry) {
     setIsExpiryValid(_ => None)
   }
 }
@@ -571,12 +571,9 @@ let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
 let clientCountry = Utils.getClientCountry(clientTimeZone)
 
 let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?, ()) => {
-  let country = switch country {
-  | Some(val) => val
-  | None => clientCountry.isoAlpha2
-  }
+  let country = country->Option.getOr(clientCountry.isoAlpha2)
   let countryPostal = Utils.getCountryPostal(country, postalCodes)
-  countryPostal.regex == "" ? "" : countryPostal.regex
+  countryPostal.regex
 }
 
 let getCardDetailsFromCardProps = cardProps => {
