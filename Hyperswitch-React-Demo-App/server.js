@@ -47,7 +47,6 @@ app.get("/create-payment-intent", async (req, res) => {
     const request = {
       currency: "USD",
       amount: 2999,
-      profile_id: process.env.PROFILE_ID,
       order_details: [
         {
           product_name: "Apple iphone 15",

@@ -112,6 +112,14 @@ Now you can proceed with launching the playground. The playground is a demo app 
 npm run start:playground
 ```
 
+**NOTE** - Alternatively, you can update `.env` file and use these commands
+
+```bash
+cd Hyperswitch-React-Demo-App
+npm install
+npm run start
+```
+
 This step will prompt you to enter 2 details -
 
 - <strong>Publishable Key</strong> - This is a public key that resides on your client side for authentication
@@ -121,7 +129,7 @@ This step will prompt you to enter 2 details -
 
 For ease of development and deployment there are configs in /Hyperswitch-react-demo-app/.env -
 
-#### How to Find Hyperswitch Publishable Key, API Key and Profile ID
+#### How to Find Hyperswitch Publishable Key and API Key
 
 To integrate Hyperswitch into your project, follow these steps:
 
@@ -131,9 +139,7 @@ To integrate Hyperswitch into your project, follow these steps:
 
 3. **Find Your Keys**: In the sidebar, locate the "Developers" section, then click on [API Keys](https://app.hyperswitch.io/developer-api-keys). Here, you can generate your API Key. Additionally, your Publishable Key is available within the same section.
 
-4. **Find Your Profile Id**: In the sidebar, locate the "Settings" section, then click on [Business Profile](https://app.hyperswitch.io/business-profiles). There, you can find the business profile for your account.
-
-5. **Integration**: After obtaining your Keys and Profile ID add them to your project's environment variables or configuration file for seamless integration.
+4. **Integration**: After obtaining your Keys add them to your project's environment variables or configuration file for seamless integration.
 
 The above method is for using our Sandbox Environment.
 
@@ -141,7 +147,6 @@ If you are running our backend locally, you can use our [Postman Collection](htt
 
 - `HYPERSWITCH_PUBLISHABLE_KEY` - Publishable key of your Hyperswitch Account
 - `HYPERSWITCH_SECRET_KEY` - API key of your Hyperswitch Account
-- `PROFILE_ID` - This is the Id related to business profile that you choose in control center
 - `HYPERSWITCH_SERVER_URL` - URL of your hosted Hyperswitch Backend server or you can use our Sandbox URL (https://sandbox.hyperswitch.io) or use your backend running locally (eg. http://localhost:8080).
 - `HYPERSWITCH_CLIENT_URL` - URL of your hosted Hyperswitch SDK or you can use our Sandbox URL (https://beta.hyperswitch.io) or use your app running locally (eg http://localhost:9050).
 

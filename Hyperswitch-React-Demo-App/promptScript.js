@@ -10,7 +10,6 @@ const obj = {
     "Self-hosted Hyperswitch Server URL (URL of your Hyperswitch Backend)",
   HYPERSWITCH_CLIENT_URL:
     "Self-hosted Hyperswitch Client URL (URL of your Hyperswitch SDK)",
-  PROFILE_ID: "Profile ID",
 };
 
 function initializeValues(filePath, keyValuePairs) {
