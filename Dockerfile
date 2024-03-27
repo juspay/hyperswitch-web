@@ -1,19 +1,21 @@
 FROM node:18 as base
-
 WORKDIR /usr/src/web
+
 COPY . .
 
 RUN yarn install
+RUN yarn re:start
+RUN yarn build:prod
 
-RUN rm -rf node_modules Hyperswitch-React-Demo-App/node_modules
 
-FROM node:18-alpine
 
-WORKDIR /usr/src/web
+FROM nginx:alpine
 
-COPY --from=base /usr/src/web/ ./
+RUN rm -rf /usr/share/nginx/html/*
 
-EXPOSE 8080 9050 9060 5252 4242
+COPY --from=base /usr/src/web/dist/prod /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-CMD ["yarn", "start:dev"]
-CMD ["yarn", "start:playground"]
+EXPOSE 9050
+
+CMD ["nginx", "-g", "daemon off;"]
