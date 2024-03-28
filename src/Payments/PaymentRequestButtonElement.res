@@ -104,8 +104,7 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
               </SessionPaymentWrapper>
             | ApplePayWallet =>
               switch applePayToken {
-              | ApplePayTokenOptional(optToken) =>
-                <ApplePayLazy sessionObj=optToken list paymentType=NONE walletOptions />
+              | ApplePayTokenOptional(optToken) => <ApplePayLazy sessionObj=optToken list />
               | _ => React.null
               }
 
