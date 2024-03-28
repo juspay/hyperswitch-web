@@ -124,7 +124,7 @@ let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
       ~logCategory=API,
       (),
     )
-    ""->resolve
+    reject(err)
   })
 }
 
@@ -191,7 +191,7 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
       ~logCategory=API,
       (),
     )
-    JSON.Encode.null->resolve
+    reject(err)
   })
 }
 

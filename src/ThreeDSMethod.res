@@ -59,7 +59,7 @@ let make = () => {
         PaymentHelpers.threeDsMethod(threeDsUrl, threeDsMethodData, ~optLogger=Some(logger))
         ->then(res => {
           if res == "" {
-            Js.Exn.raiseError("Empty response from threeDsMethod")->reject
+            Exn.raiseError("Empty response from threeDsMethod")->reject
           } else {
             LoggerUtils.handleLogging(
               ~optLogger=Some(logger),
