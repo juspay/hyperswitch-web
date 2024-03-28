@@ -5,7 +5,7 @@ let make = () => {
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => true)
 
-  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let logger = OrcaLogger.make()
 
   React.useEffect0(() => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -16,6 +16,9 @@ let make = () => {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
+        let publishableKey = metaDataDict->getString("publishableKey", "")
+        logger.setClientSecret(paymentIntentId)
+        logger.setMerchantId(publishableKey)
         let headersDict =
           metaDataDict
           ->getJsonObjectFromDict("headers")
@@ -51,6 +54,14 @@ let make = () => {
 
           let ele = Window.querySelector("#threeDsAuthDiv")
 
+          LoggerUtils.handleLogging(
+            ~optLogger=Some(logger),
+            ~eventName=DISPLAY_THREE_DS_SDK,
+            ~value=transStatus,
+            ~paymentMethod="CARD",
+            (),
+          )
+
           switch ele->Nullable.toOption {
           | Some(elem) =>
             if transStatus === "C" {
@@ -63,12 +74,24 @@ let make = () => {
               form.appendChild(input)
               form.submit()
             } else {
-              let form1 = elem->OrcaUtils.makeForm(threeDsAuthoriseUrl, "3dsFrintionLess")
+              let form1 = elem->OrcaUtils.makeForm(threeDsAuthoriseUrl, "3dsFrictionLess")
               form1.submit()
             }
           | None => ()
           }
           resolve(json)
+        })
+        ->catch(err => {
+          let exceptionMessage = err->Utils.formatException
+          LoggerUtils.handleLogging(
+            ~optLogger=Some(logger),
+            ~eventName=DISPLAY_THREE_DS_SDK,
+            ~value=exceptionMessage->JSON.stringify,
+            ~paymentMethod="CARD",
+            ~logType=ERROR,
+            (),
+          )
+          JSON.Encode.null->resolve
         })
         ->ignore
       }
