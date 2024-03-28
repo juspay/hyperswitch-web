@@ -40,16 +40,8 @@ let make = () => {
           ->Belt.Option.flatMap(JSON.Decode.object)
           ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_data"))
           ->Option.getOr(Dict.make()->JSON.Encode.object)
-        let paymentIntentId =
-          metaDataDict
-          ->Dict.get("paymentIntentId")
-          ->Belt.Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
-        let publishableKey =
-          metaDataDict
-          ->Dict.get("publishableKey")
-          ->Belt.Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
+        let paymentIntentId = metaDataDict->Utils.getString("paymentIntentId", "")
+        let publishableKey = metaDataDict->Utils.getString("publishableKey", "")
         let iframeId = metaDataDict->getString("iframeId", "")
 
         logger.setClientSecret(paymentIntentId)
