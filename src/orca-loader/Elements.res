@@ -402,9 +402,14 @@ let make = (
           let (json, applePayPresent, googlePayPresent) = res
           if componentType === "payment" && applePayPresent->Option.isSome {
             //do operations here
-            let processPayment = (token: JSON.t) => {
+            let processPayment = (payment: ApplePayTypes.paymentResult) => {
               //let body = PaymentBody.applePayBody(~token)
-              let msg = [("applePayProcessPayment", token)]->Dict.fromArray
+              let msg =
+                [
+                  ("applePayProcessPayment", payment.token),
+                  ("applePayBillingContact", payment.billingContact),
+                  ("applePayShippingContact", payment.shippingContact),
+                ]->Dict.fromArray
               mountedIframeRef->Window.iframePostMessage(msg)
             }
 
@@ -567,7 +572,7 @@ let make = (
                           ssn.onpaymentauthorized = event => {
                             ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->objToJson)
                             applePaySessionRef := Nullable.null
-                            processPayment(event.payment.token)
+                            processPayment(event.payment)
                           }
                           ssn.oncancel = _ev => {
                             let msg =

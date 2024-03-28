@@ -1,11 +1,6 @@
-open Utils
+open Promise
 @react.component
-let make = (
-  ~sessionObj: option<JSON.t>,
-  ~list: PaymentMethodsRecord.list,
-  ~paymentType: option<CardThemeType.mode>,
-  ~walletOptions: array<string>,
-) => {
+let make = (~sessionObj: option<JSON.t>, ~list: PaymentMethodsRecord.list) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.keys,
@@ -19,12 +14,8 @@ let make = (
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
   let isApplePaySDKFlow = sessionObj->Option.isSome
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
-  let isWallet = walletOptions->Array.includes("apple_pay")
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
+  let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
 
   let applePayPaymentMethodType = React.useMemo1(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -54,6 +45,17 @@ let make = (
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
+  React.useEffect0(() => {
+    AddressPaymentInput.importStates("./../States.json")
+    ->then(res => {
+      setStatesJson(_ => res.states)
+      resolve()
+    })
+    ->ignore
+
+    None
+  })
+
   let processPayment = bodyArr => {
     let requestBody = PaymentUtils.appendedCustomerAcceptance(
       ~isGuestCustomer,
@@ -61,34 +63,15 @@ let make = (
       ~body=bodyArr,
     )
 
-    if isWallet {
-      intent(
-        ~bodyArr=requestBody,
-        ~confirmParam={
-          return_url: options.wallets.walletReturnUrl,
-          publishableKey,
-        },
-        ~handleUserError=true,
-        (),
-      )
-    } else {
-      let requiredFieldsBodyArr =
-        requestBody
-        ->Dict.fromArray
-        ->JSON.Encode.object
-        ->OrcaUtils.flattenObject(true)
-        ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-        ->OrcaUtils.getArrayOfTupleFromDict
-      intent(
-        ~bodyArr=requiredFieldsBodyArr,
-        ~confirmParam={
-          return_url: options.wallets.walletReturnUrl,
-          publishableKey,
-        },
-        ~handleUserError=true,
-        (),
-      )
-    }
+    intent(
+      ~bodyArr=requestBody,
+      ~confirmParam={
+        return_url: options.wallets.walletReturnUrl,
+        publishableKey,
+      },
+      ~handleUserError=true,
+      (),
+    )
   }
 
   let syncPayment = () => {
@@ -245,7 +228,6 @@ let make = (
       (),
     )
     setApplePayClicked(_ => true)
-    open Promise
     OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
@@ -281,6 +263,12 @@ let make = (
     ->ignore
   }
 
+  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
+    ~list,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="apple_pay",
+  )
+
   React.useEffect(() => {
     let handleApplePayMessages = (ev: Window.event) => {
       let json = try {
@@ -294,13 +282,41 @@ let make = (
         if dict->Dict.get("applePayProcessPayment")->Option.isSome {
           let token =
             dict->Dict.get("applePayProcessPayment")->Option.getOr(Dict.make()->JSON.Encode.object)
+
+          let billingContact =
+            dict
+            ->Dict.get("applePayBillingContact")
+            ->Option.flatMap(JSON.Decode.object)
+            ->Option.getOr(Dict.make())
+            ->ApplePayTypes.billingContactItemToObjMapper
+
+          let shippingContact =
+            dict
+            ->Dict.get("applePayShippingContact")
+            ->Option.flatMap(JSON.Decode.object)
+            ->Option.getOr(Dict.make())
+            ->ApplePayTypes.shippingContactItemToObjMapper
+
+          let requiredFieldsBody = DynamicFieldsUtils.getApplePayRequiredFieldsFromBillingAndShippingContact(
+            ~billingContact,
+            ~shippingContact,
+            ~paymentMethodTypes,
+            ~statesList=stateJson,
+          )
+
           let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
-          processPayment(bodyDict)
+
+          let applePayBody =
+            bodyDict
+            ->Dict.fromArray
+            ->JSON.Encode.object
+            ->OrcaUtils.flattenObject(true)
+            ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+            ->OrcaUtils.getArrayOfTupleFromDict
+
+          processPayment(applePayBody)
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
-          if !isWallet {
-            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-          }
         } else if dict->Dict.get("applePaySyncPayment")->Option.isSome {
           syncPayment()
         }
@@ -315,13 +331,12 @@ let make = (
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
-  }, (isInvokeSDKFlow, requiredFieldsBody, isWallet, processPayment))
+  }, (isInvokeSDKFlow, processPayment, stateJson, paymentMethodTypes))
 
   React.useEffect(() => {
     if (
       (isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
-      isApplePayReady &&
-      isWallet
+        isApplePayReady
     ) {
       setShowApplePay(_ => true)
       areOneClickWalletsRendered(prev => {
@@ -331,64 +346,28 @@ let make = (
       setIsShowOrPayUsing(_ => true)
     }
     None
-  }, (isApplePayReady, isInvokeSDKFlow, paymentExperience, isWallet))
+  }, (isApplePayReady, isInvokeSDKFlow, paymentExperience))
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    if !isWallet {
-      let json = ev.data->JSON.parseExn
-      let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-      if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-        options.readOnly
-          ? ()
-          : handlePostMessage([("applePayButtonClicked", true->JSON.Encode.bool)])
-      } else if areRequiredFieldsEmpty {
-        postFailedSubmitResponse(
-          ~errortype="validation_error",
-          ~message=localeString.enterFieldsText,
-        )
-      } else if !areRequiredFieldsValid {
-        postFailedSubmitResponse(
-          ~errortype="validation_error",
-          ~message=localeString.enterValidDetailsText,
-        )
-      }
-    }
-  }, (areRequiredFieldsValid, areRequiredFieldsEmpty))
-  useSubmitPaymentData(submitCallback)
-
-  {
-    isWallet
-      ? <div>
-          <style> {React.string(css)} </style>
-          {if showApplePay {
-            if showApplePayLoader {
-              <div className="apple-pay-loader-div">
-                <div className="apple-pay-loader" />
-              </div>
-            } else {
-              <button
-                disabled=applePayClicked
-                className="apple-pay-button-with-text apple-pay-button-black-with-text"
-                onClick={_ => onApplePayButtonClicked()}>
-                <span className="text"> {React.string("Pay with")} </span>
-                <span className="logo" />
-              </button>
-            }
-          } else {
-            React.null
-          }}
+  <div>
+    <style> {React.string(css)} </style>
+    {if showApplePay {
+      if showApplePayLoader {
+        <div className="apple-pay-loader-div">
+          <div className="apple-pay-loader" />
         </div>
-      : <DynamicFields
-          paymentType={switch paymentType {
-          | Some(val) => val
-          | _ => NONE
-          }}
-          list
-          paymentMethod="wallet"
-          paymentMethodType="apple_pay"
-          setRequiredFieldsBody
-        />
-  }
+      } else {
+        <button
+          disabled=applePayClicked
+          className="apple-pay-button-with-text apple-pay-button-black-with-text"
+          onClick={_ => onApplePayButtonClicked()}>
+          <span className="text"> {React.string("Pay with")} </span>
+          <span className="logo" />
+        </button>
+      }
+    } else {
+      React.null
+    }}
+  </div>
 }
 
 let default = make

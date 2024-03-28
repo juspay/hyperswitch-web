@@ -141,8 +141,7 @@ let useRequiredFieldsEmptyAndValid = (
       | PhoneNumber => phone.value !== ""
       | StateAndCity => state.value !== "" && city.value !== ""
       | CountryAndPincode(countryArr) =>
-        (country !== "" || countryArr->Array.length === 0) &&
-          postalCode.value !== ""
+        (country !== "" || countryArr->Array.length === 0) && postalCode.value !== ""
 
       | AddressCity => city.value !== ""
       | AddressPincode => postalCode.value !== ""
@@ -718,5 +717,49 @@ let useAreAllRequiredFieldsPrefilled = (~list, ~paymentMethod, ~paymentMethodTyp
 
   paymentMethodTypes.required_fields->Array.reduce(true, (acc, requiredField) => {
     acc && requiredField.value != ""
+  })
+}
+
+let getApplePayRequiredFieldsFromBillingAndShippingContact = (
+  ~billingContact: ApplePayTypes.billingContact,
+  ~shippingContact: ApplePayTypes.shippingContact,
+  ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+  ~statesList,
+) => {
+  paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
+    let getName = {
+      let requiredFieldsArr = item.required_field->String.split(".")
+      switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
+      | "first_name" => billingContact.givenName
+      | "last_name" => billingContact.familyName
+      | _ => billingContact.givenName
+      }
+    }
+
+    let fieldVal = switch item.field_type {
+    | FullName => getName
+    | Country => billingContact.countryCode
+    | BillingName => getName
+    | AddressLine1 => billingContact.addressLines->Array.get(0)->Option.getOr("")
+    | AddressLine2 => billingContact.addressLines->Array.get(1)->Option.getOr("")
+    | AddressCity => billingContact.locality
+    | AddressState =>
+      Utils.getStateNameFromStateCodeAndCountry(
+        statesList,
+        billingContact.administrativeArea,
+        billingContact.countryCode,
+      )
+    | AddressCountry(_) => billingContact.countryCode
+    | AddressPincode => billingContact.postalCode
+    | Email => shippingContact.emailAddress
+    | PhoneNumber => shippingContact.phoneNumber
+    | _ => ""
+    }
+
+    if fieldVal !== "" {
+      acc->Dict.set(item.required_field, fieldVal->JSON.Encode.string)
+    }
+
+    acc
   })
 }
