@@ -1,3 +1,17 @@
+## [0.35.1](https://github.com/juspay/hyperswitch-web/compare/v0.35.0...v0.35.1) (2024-03-27)
+
+
+### Bug Fixes
+
+* pk_dev added for development purpose ([#259](https://github.com/juspay/hyperswitch-web/issues/259)) ([7278237](https://github.com/juspay/hyperswitch-web/commit/72782370fcd12ec24c20d77295de00dbc956c28f))
+
+# [0.35.0](https://github.com/juspay/hyperswitch-web/compare/v0.34.4...v0.35.0) (2024-03-27)
+
+
+### Features
+
+* **logger:** calculate loading latency from iframe init to render ([#248](https://github.com/juspay/hyperswitch-web/issues/248)) ([38387ed](https://github.com/juspay/hyperswitch-web/commit/38387edeeb61601237fbde750aa1d1a8083d2a79))
+
 ## [0.34.4](https://github.com/juspay/hyperswitch-web/compare/v0.34.3...v0.34.4) (2024-03-26)
 
 
