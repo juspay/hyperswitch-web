@@ -70,15 +70,21 @@ type recoilConfig = {
   showLoader: bool,
 }
 let getLocaleObject = string => {
-  let val = if string == "auto" {
+  let locale = if string == "auto" {
     navigator["language"]
   } else {
     string
   }
-  LocaleString.localeStrings
-  ->Array.filter(item => item.locale == val)
-  ->Array.get(0)
-  ->Option.getOr(LocaleString.defaultLocale)
+  switch locale {
+  | "en" => EnglishLocale2.localeStrings
+  | "he" => HebrewLocale.localeStrings
+  | "fr" => FrenchLocale.localeStrings
+  | "en-GB" => EnglishGBLocale.localeStrings
+  | "ar" => ArabicLocale.localeStrings
+  | "ja" => JapaneseLocale.localeStrings
+  | "de" => DeutschLocale.localeStrings
+  | _ => EnglishLocale.localeStrings
+  }
 }
 let defaultRecoilConfig: recoilConfig = {
   config: defaultConfig,
