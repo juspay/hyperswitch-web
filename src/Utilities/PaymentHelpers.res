@@ -78,7 +78,7 @@ let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
     ~optLogger,
     ~url,
     ~type_="request",
-    ~eventName=RETRIEVE_CALL_INIT,
+    ~eventName=THREE_DS_METHOD_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
     (),
@@ -88,11 +88,43 @@ let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
 
   fetchApiWithNoCors(url, ~method=#POST, ~bodyStr=body, ())
   ->then(res => {
-    res->Fetch.Response.text
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.text
+      ->then(text => {
+        logApi(
+          ~optLogger,
+          ~url,
+          ~data=text->JSON.Encode.string,
+          ~statusCode,
+          ~type_="err",
+          ~eventName=THREE_DS_METHOD_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        ""->resolve
+      })
+    } else {
+      logApi(~optLogger, ~url, ~statusCode, ~type_="response", ~eventName=THREE_DS_METHOD_CALL, ())
+      res->Fetch.Response.text
+    }
   })
-  ->catch(e => {
-    Console.log2("Unable to call 3ds method ", e)
-    reject(e)
+  ->catch(err => {
+    let exceptionMessage = err->Utils.formatException
+    Console.log2("Unable to call 3ds method ", exceptionMessage)
+    logApi(
+      ~optLogger,
+      ~url,
+      ~eventName=THREE_DS_METHOD_CALL,
+      ~type_="no_response",
+      ~data=exceptionMessage,
+      ~logType=ERROR,
+      ~logCategory=API,
+      (),
+    )
+    ""->resolve
   })
 }
 
@@ -116,16 +148,50 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
     ~optLogger,
     ~url,
     ~type_="request",
-    ~eventName=RETRIEVE_CALL_INIT,
+    ~eventName=AUTHENTICATION_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
     (),
   )
   fetchApi(url, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray, ())
-  ->then(res => res->Fetch.Response.json)
-  ->catch(e => {
-    Console.log2("Unable to call 3ds auth ", e)
-    reject(e)
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger,
+          ~url,
+          ~data,
+          ~statusCode,
+          ~type_="err",
+          ~eventName=AUTHENTICATION_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(~optLogger, ~url, ~statusCode, ~type_="response", ~eventName=AUTHENTICATION_CALL, ())
+      res->Fetch.Response.json
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->Utils.formatException
+    Console.log2("Unable to call 3ds auth ", exceptionMessage)
+    logApi(
+      ~optLogger,
+      ~url,
+      ~eventName=AUTHENTICATION_CALL,
+      ~type_="no_response",
+      ~data=exceptionMessage,
+      ~logType=ERROR,
+      ~logCategory=API,
+      (),
+    )
+    JSON.Encode.null->resolve
   })
 }
 
@@ -416,6 +482,7 @@ let rec intentCall = (
                   [
                     ("qrData", qrData->JSON.Encode.string),
                     ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
                     ("expiryTime", expiryTime->Belt.Float.toString->JSON.Encode.string),
                     ("url", url.href->JSON.Encode.string),
@@ -462,10 +529,19 @@ let rec intentCall = (
                   [
                     ("threeDSData", threeDsData->JSON.Encode.object),
                     ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
                     ("url", url.href->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
                   ]->Dict.fromArray
+
+                handleLogging(
+                  ~optLogger,
+                  ~value=do3dsMethodCall ? "Y" : "N",
+                  ~eventName=THREE_DS_METHOD,
+                  ~paymentMethod,
+                  (),
+                )
 
                 if do3dsMethodCall {
                   handlePostMessage([
