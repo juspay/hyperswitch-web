@@ -190,7 +190,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         logApi(
           ~optLogger=Some(logger),
           ~url=retrievePaymentUrl,
-          ~type_="request",
+          ~apiLogType=Request,
           ~eventName=RETRIEVE_CALL_INIT,
           ~logType=INFO,
           ~logCategory=API,
@@ -214,7 +214,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 ~url=retrievePaymentUrl,
                 ~data,
                 ~statusCode,
-                ~type_="err",
+                ~apiLogType=Err,
                 ~eventName=RETRIEVE_CALL,
                 ~logType=ERROR,
                 ~logCategory=API,
@@ -228,7 +228,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               ~optLogger=Some(logger),
               ~url=retrievePaymentUrl,
               ~statusCode,
-              ~type_="response",
+              ~apiLogType=Response,
               ~eventName=RETRIEVE_CALL,
               ~logType=INFO,
               ~logCategory=API,
@@ -275,7 +275,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 ifR->Window.iframePostMessage(message)
               })
               logApi(
-                ~type_="method",
+                ~apiLogType=Method,
                 ~optLogger=Some(logger),
                 ~result=val,
                 ~paymentMethod="confirmPayment",
@@ -403,7 +403,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               switch dict->Dict.get("submitSuccessful") {
               | Some(val) =>
                 logApi(
-                  ~type_="method",
+                  ~apiLogType=Method,
                   ~optLogger=Some(logger),
                   ~result=val,
                   ~paymentMethod="confirmCardPayment",

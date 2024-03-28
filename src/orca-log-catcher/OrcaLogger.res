@@ -1,3 +1,4 @@
+type apiLogType = Request | Response | NoResponse | Method | Err
 type logType = DEBUG | INFO | ERROR | WARNING | SILENT
 type logCategory = API | USER_ERROR | USER_EVENT | MERCHANT_EVENT
 
@@ -191,7 +192,7 @@ type loggerMake = {
     ~logType: logType=?,
     ~logCategory: logCategory=?,
     ~paymentMethod: string=?,
-    ~type_: string=?,
+    ~apiLogType: apiLogType=?,
     unit,
   ) => unit,
   setLogInitiated: unit => unit,
@@ -225,7 +226,7 @@ let defaultLoggerConfig = {
     ~logType as _=?,
     ~logCategory as _=?,
     ~paymentMethod as _=?,
-    ~type_ as _=?,
+    ~apiLogType as _=?,
     (),
   ) => (),
   setLogInfo: (
@@ -541,7 +542,7 @@ let make = (
     }
   }
 
-  let calculateLatencyHook = (~eventName, ~type_="", ()) => {
+  let calculateLatencyHook = (~eventName, ~apiLogType=Method, ()) => {
     let currentTimestamp = Date.now()
     let latency = switch eventName {
     | PAYMENT_ATTEMPT => {
@@ -560,8 +561,8 @@ let make = (
     | CUSTOMER_PAYMENT_METHODS_CALL => {
         let logRequestTimestamp =
           events.contents->Dict.get(eventName->eventNameToStrMapper ++ "_INIT")
-        switch (logRequestTimestamp, type_) {
-        | (Some(_), "request") => 0.
+        switch (logRequestTimestamp, apiLogType) {
+        | (Some(_), Request) => 0.
         | (Some(float), _) => currentTimestamp -. float
         | _ => 0.
         }
@@ -628,12 +629,12 @@ let make = (
     ~logType=INFO,
     ~logCategory=API,
     ~paymentMethod="",
-    ~type_="",
+    ~apiLogType=Request,
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
-    let latency = calculateLatencyHook(~eventName, ~type_, ())
+    let latency = calculateLatencyHook(~eventName, ~apiLogType, ())
     let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
     let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
     {
