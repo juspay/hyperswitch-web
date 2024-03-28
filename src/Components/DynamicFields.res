@@ -85,6 +85,44 @@ let make = (
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
+  let defaultCardProps = (
+    None,
+    _ => (),
+    "",
+    _ => (),
+    _ => (),
+    React.useRef(Nullable.null),
+    React.null,
+    "",
+    _ => (),
+    0,
+  )
+
+  let defaultExpiryProps = (
+    None,
+    _ => (),
+    "",
+    _ => (),
+    _ => (),
+    React.useRef(Nullable.null),
+    _ => (),
+    "",
+    _ => (),
+  )
+
+  let defaultCvcProps = (
+    None,
+    _ => (),
+    "",
+    _ => (),
+    _ => (),
+    _ => (),
+    React.useRef(Nullable.null),
+    _ => (),
+    "",
+    _ => (),
+  )
+
   let (stateJson, setStatesJson) = React.useState(_ => None)
 
   let bankNames =
@@ -112,8 +150,10 @@ let make = (
     cardError,
     _,
     maxCardLength,
-  ) =
-    cardProps->CardUtils.getCardDetailsFromCardProps
+  ) = switch cardProps {
+  | Some(cardProps) => cardProps
+  | None => defaultCardProps
+  }
 
   let (
     isExpiryValid,
@@ -125,8 +165,10 @@ let make = (
     _,
     expiryError,
     _,
-  ) =
-    expiryProps->CardUtils.getExpiryDetailsFromExpiryProps
+  ) = switch expiryProps {
+  | Some(expiryProps) => expiryProps
+  | None => defaultExpiryProps
+  }
 
   let (
     isCVCValid,
@@ -139,8 +181,10 @@ let make = (
     _,
     cvcError,
     _,
-  ) =
-    cvcProps->CardUtils.getCvcDetailsFromCvcProps
+  ) = switch cvcProps {
+  | Some(cvcProps) => cvcProps
+  | None => defaultCvcProps
+  }
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
