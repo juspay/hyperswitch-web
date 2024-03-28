@@ -66,7 +66,7 @@ let defaultConfig = {
 type recoilConfig = {
   config: configClass,
   themeObj: themeClass,
-  localeString: LocaleString.localeStrings,
+  localeString: LocaleStringTypes.localeStrings,
   showLoader: bool,
 }
 let getLocaleObject = string => {
