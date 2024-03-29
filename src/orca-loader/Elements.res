@@ -66,6 +66,14 @@ let make = (
       ~logger,
     )
 
+    let customerDetailsPromise = PaymentHelpers.fetchCustomerDetails(
+      ~clientSecret,
+      ~publishableKey,
+      ~endpoint,
+      ~switchToCustomPod,
+      ~optLogger=Some(logger),
+    )
+
     let sessionsPromise = PaymentHelpers.fetchSessions(
       ~clientSecret,
       ~publishableKey,
@@ -127,13 +135,6 @@ let make = (
       ->ignore
     }
     let fetchCustomerDetails = mountedIframeRef => {
-      let customerDetailsPromise = PaymentHelpers.fetchCustomerDetails(
-        ~clientSecret,
-        ~publishableKey,
-        ~endpoint,
-        ~switchToCustomPod,
-        ~optLogger=Some(logger),
-      )
       open Promise
       customerDetailsPromise
       ->then(json => {
@@ -705,8 +706,8 @@ let make = (
           json->resolve
         })
         ->ignore
-        fetchPaymentsList(mountedIframeRef)
         fetchCustomerDetails(mountedIframeRef)
+        fetchPaymentsList(mountedIframeRef)
         mountedIframeRef->Window.iframePostMessage(message)
       }
 
