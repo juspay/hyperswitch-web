@@ -660,7 +660,7 @@ let useSubmitCallback = () => {
 
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
-  React.useCallback5((ev: Window.event) => {
+  React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
@@ -699,7 +699,7 @@ let useSubmitCallback = () => {
 }
 
 let usePaymentMethodTypeFromList = (~list, ~paymentMethod, ~paymentMethodType) => {
-  React.useMemo3(() => {
+  React.useMemo(() => {
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~list,
       ~paymentMethod,

@@ -70,7 +70,7 @@ let make = (
   }
   let empty = cvcNumber == ""
 
-  let submitCallback = React.useCallback4((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (token, customerId) = paymentToken

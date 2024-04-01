@@ -68,7 +68,7 @@ let make = (
       errorString: "",
     })
   }
-  let disbaledBG = React.useMemo1(() => {
+  let disbaledBG = React.useMemo(() => {
     themeObj.colorBackground
   }, [themeObj])
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
