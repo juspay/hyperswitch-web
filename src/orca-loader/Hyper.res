@@ -138,8 +138,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           if (
             publishableKey == "" ||
               !(
+                publishableKey->String.startsWith("pk_dev_") ||
                 publishableKey->String.startsWith("pk_snd_") ||
-                  publishableKey->String.startsWith("pk_prd_")
+                publishableKey->String.startsWith("pk_prd_")
               )
           ) {
             manageErrorWarning(INVALID_PK, (), ~logger)
