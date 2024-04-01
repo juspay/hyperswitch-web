@@ -729,7 +729,7 @@ let make = (
         if (
           newOptions
           ->getDictFromJson
-          ->getBool("displaySavedPaymentMethods", false)
+          ->getBool("displaySavedPaymentMethods", true)
         ) {
           fetchCustomerDetails(mountedIframeRef)
         }

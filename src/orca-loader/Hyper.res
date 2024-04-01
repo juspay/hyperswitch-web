@@ -95,7 +95,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ~metadata=analyticsMetadata,
       (),
     )
-    let isReadyPromise = Js.Promise.make((~resolve, ~reject as _) => {
+    let isReadyPromise = Promise.make((resolve, _) => {
       let handleMessage = (event: Types.event) => {
         let json = event.data->eventToJson
         let dict = json->getDictFromJson

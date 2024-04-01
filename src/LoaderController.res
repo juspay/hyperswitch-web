@@ -131,7 +131,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
-    let finalLoadLatency = Js.Date.now() -. launchTime
+    let finalLoadLatency = Date.now() -. launchTime
     switch updatedState {
     | Loaded(_) =>
       logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
@@ -357,7 +357,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
-          let finalLoadlatency = Js.Date.now() -. launchTime
+          let finalLoadlatency = Date.now() -. launchTime
           let updatedState: PaymentType.loadType =
             list == Dict.make()->JSON.Encode.object
               ? LoadError(list)
