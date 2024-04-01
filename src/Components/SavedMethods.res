@@ -126,7 +126,7 @@ let make = (
           (),
         )
       } else {
-        if cvcNumber === "" {
+        if !isUnknownPaymentMethod && cvcNumber === "" {
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         }
