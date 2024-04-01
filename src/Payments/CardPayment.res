@@ -32,7 +32,7 @@ let make = (
     maxCardLength,
   ) = cardProps
 
-  let cardBrand = React.useMemo1(() => {
+  let cardBrand = React.useMemo(() => {
     cardNumber->CardUtils.getCardBrand
   }, [cardNumber])
 
@@ -94,7 +94,7 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = React.useMemo2(() => {
+  let isCustomerAcceptanceRequired = React.useMemo(() => {
     if displaySavedPaymentMethodsCheckbox {
       isSaveCardsChecked || list.payment_type === SETUP_MANDATE
     } else {

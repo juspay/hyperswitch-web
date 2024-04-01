@@ -22,7 +22,7 @@ let make = (~transferType) => {
 
   let (isCopied, setIsCopied) = React.useState(_ => false)
   let (openModal, setOpenModal) = React.useState(_ => false)
-  let (buttonElement, text) = React.useMemo1(() => {
+  let (buttonElement, text) = React.useMemo(() => {
     !isCopied
       ? (
           <>

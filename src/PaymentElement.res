@@ -119,7 +119,7 @@ let make = (
     ~paymentMethodType="apple_pay",
   )
 
-  let (walletList, paymentOptionsList, actualList) = React.useMemo6(() => {
+  let (walletList, paymentOptionsList, actualList) = React.useMemo(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
       let paymentOrder =
@@ -214,7 +214,7 @@ let make = (
     }
     None
   }, (cardsContainerWidth, paymentOptions))
-  let cardShimmerCount = React.useMemo1(() => {
+  let cardShimmerCount = React.useMemo(() => {
     cardsToRender(cardsContainerWidth)
   }, [cardsContainerWidth])
   let submitCallback = React.useCallback((ev: Window.event) => {
