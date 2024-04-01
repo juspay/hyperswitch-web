@@ -102,7 +102,7 @@ let make = (
     }
   }, (isSaveCardsChecked, list.payment_type))
 
-  let submitCallback = React.useCallback6((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (month, year) = CardUtils.getExpiryDates(cardExpiry)
