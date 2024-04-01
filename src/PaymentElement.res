@@ -399,13 +399,13 @@ let make = (
     let evalMethodsList = () =>
       switch methodslist {
       | SemiLoaded | Loaded(_) => handlePostMessage([("ready", true->JSON.Encode.bool)])
-      | _ => handlePostMessage([("ready", false->JSON.Encode.bool)])
+      | _ => ()
       }
     if !displaySavedPaymentMethods {
       evalMethodsList()
     } else {
       switch customerPaymentMethods {
-      | LoadingSavedCards => handlePostMessage([("ready", false->JSON.Encode.bool)])
+      | LoadingSavedCards => ()
       | LoadedSavedCards(list, _) =>
         list->Array.length > 0
           ? handlePostMessage([("ready", true->JSON.Encode.bool)])

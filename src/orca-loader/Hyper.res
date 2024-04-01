@@ -95,23 +95,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ~metadata=analyticsMetadata,
       (),
     )
-    let isReadyPromise = Promise.make((resolve, _) => {
-      let handleMessage = (event: Types.event) => {
-        let json = event.data->eventToJson
-        let dict = json->getDictFromJson
-
-        switch dict->Dict.get("ready") {
-        | Some(json) => {
-            let isReady = json->JSON.Decode.bool->Option.getOr(false)
-            if isReady {
-              resolve()
-            }
-          }
-        | None => ()
-        }
-      }
-      addSmartEventListener("message", handleMessage, "onReady")
-    })
 
     switch options {
     | Some(userOptions) =>
@@ -282,18 +265,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 
-        let postSubmitMessage = message => {
-          open Promise
-          isReadyPromise
-          ->then(_ => {
-            iframeRef.contents->Array.forEach(ifR => {
-              ifR->Window.iframePostMessage(message)
-            })
-            JSON.Encode.null->resolve
-          })
-          ->ignore
-        }
-
         Promise.make((resolve, _) => {
           let handleMessage = (event: Types.event) => {
             let json = event.data->eventToJson
@@ -352,7 +323,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 ),
               ]->Dict.fromArray
           addSmartEventListener("message", handleMessage, "onSubmit")
-          postSubmitMessage(message)
+          iframeRef.contents->Array.forEach(ifR => {
+            ifR->Window.iframePostMessage(message)
+          })
         })
       }
 

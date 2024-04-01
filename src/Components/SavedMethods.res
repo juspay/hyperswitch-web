@@ -81,6 +81,7 @@ let make = (
       })
       ->Array.get(0)
       ->Option.getOr(PaymentType.defaultCustomerMethods)
+    let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
     let isCardPaymentMethod = customerMethod.paymentMethod === "card"
     let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
 
@@ -108,7 +109,11 @@ let make = (
     }
 
     if confirm.doSubmit {
-      if areRequiredFieldsValid && (!isCardPaymentMethod || isCardPaymentMethodValid) {
+      if (
+        areRequiredFieldsValid &&
+        !isUnknownPaymentMethod &&
+        (!isCardPaymentMethod || isCardPaymentMethodValid)
+      ) {
         intent(
           ~bodyArr=savedPaymentMethodBody
           ->Dict.fromArray
@@ -129,6 +134,9 @@ let make = (
           setUserError(localeString.enterValidDetailsText)
         }
         if !areRequiredFieldsValid {
+          setUserError(localeString.enterValidDetailsText)
+        }
+        if isUnknownPaymentMethod {
           setUserError(localeString.enterValidDetailsText)
         }
       }
