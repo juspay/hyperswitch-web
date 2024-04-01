@@ -151,22 +151,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
       },
     )
   })
-  React.useEffect(() => {
-    if !displaySavedPaymentMethods {
-      switch paymentlist {
-      | SemiLoaded | Loaded(_) => handlePostMessage([("ready", true->JSON.Encode.bool)])
-      | _ => handlePostMessage([("ready", false->JSON.Encode.bool)])
-      }
-    } else {
-      switch optionsPayment.customerPaymentMethods {
-      | LoadingSavedCards => handlePostMessage([("ready", false->JSON.Encode.bool)])
-      | LoadedSavedCards(_)
-      | NoResult(_) =>
-        handlePostMessage([("ready", true->JSON.Encode.bool)])
-      }
-    }
-    None
-  }, (paymentlist, optionsPayment.customerPaymentMethods))
 
   React.useEffect(() => {
     CardUtils.genreateFontsLink(config.fonts)
