@@ -90,27 +90,6 @@ let make = (
   }, (customerPaymentMethods, displaySavedPaymentMethods))
 
   React.useEffect(() => {
-    let evalMethodsList = () =>
-      switch methodslist {
-      | SemiLoaded | Loaded(_) => handlePostMessage([("ready", true->JSON.Encode.bool)])
-      | _ => handlePostMessage([("ready", false->JSON.Encode.bool)])
-      }
-    if !displaySavedPaymentMethods {
-      evalMethodsList()
-    } else {
-      switch customerPaymentMethods {
-      | LoadingSavedCards => handlePostMessage([("ready", false->JSON.Encode.bool)])
-      | LoadedSavedCards(list, _) =>
-        list->Array.length > 0
-          ? handlePostMessage([("ready", true->JSON.Encode.bool)])
-          : evalMethodsList()
-      | NoResult(_) => evalMethodsList()
-      }
-    }
-    None
-  }, (methodslist, customerPaymentMethods))
-
-  React.useEffect(() => {
     let defaultPaymentMethod =
       savedMethods->Array.find(savedMethod => savedMethod.defaultPaymentMethodSet)
 
@@ -415,6 +394,27 @@ let make = (
   } else {
     optionAtomValue.paymentMethodsHeaderText
   }
+
+  React.useEffect(() => {
+    let evalMethodsList = () =>
+      switch methodslist {
+      | SemiLoaded | Loaded(_) => handlePostMessage([("ready", true->JSON.Encode.bool)])
+      | _ => handlePostMessage([("ready", false->JSON.Encode.bool)])
+      }
+    if !displaySavedPaymentMethods {
+      evalMethodsList()
+    } else {
+      switch customerPaymentMethods {
+      | LoadingSavedCards => handlePostMessage([("ready", false->JSON.Encode.bool)])
+      | LoadedSavedCards(list, _) =>
+        list->Array.length > 0
+          ? handlePostMessage([("ready", true->JSON.Encode.bool)])
+          : evalMethodsList()
+      | NoResult(_) => evalMethodsList()
+      }
+    }
+    None
+  }, (methodslist, customerPaymentMethods))
 
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
