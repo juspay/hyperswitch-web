@@ -15,7 +15,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let (divH, setDivH) = React.useState(_ => 0.0)
-  let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
+  let {showCardFormByDefault, paymentMethodOrder, displaySavedPaymentMethods} = optionsPayment
 
   let divRef = React.useRef(Nullable.null)
 
@@ -152,13 +152,21 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     )
   })
   React.useEffect(() => {
-    switch paymentlist {
-    | SemiLoaded => ()
-    | Loaded(_val) => handlePostMessage([("ready", true->JSON.Encode.bool)])
-    | _ => handlePostMessage([("ready", false->JSON.Encode.bool)])
+    if !displaySavedPaymentMethods {
+      switch paymentlist {
+      | SemiLoaded | Loaded(_) => handlePostMessage([("ready", true->JSON.Encode.bool)])
+      | _ => handlePostMessage([("ready", false->JSON.Encode.bool)])
+      }
+    } else {
+      switch optionsPayment.customerPaymentMethods {
+      | LoadingSavedCards => handlePostMessage([("ready", false->JSON.Encode.bool)])
+      | LoadedSavedCards(_)
+      | NoResult(_) =>
+        handlePostMessage([("ready", true->JSON.Encode.bool)])
+      }
     }
     None
-  }, [paymentlist])
+  }, (paymentlist, optionsPayment.customerPaymentMethods))
 
   React.useEffect(() => {
     CardUtils.genreateFontsLink(config.fonts)

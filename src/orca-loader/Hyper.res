@@ -95,6 +95,24 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ~metadata=analyticsMetadata,
       (),
     )
+    let isReadyPromise = Js.Promise.make((~resolve, ~reject as _) => {
+      let handleMessage = (event: Types.event) => {
+        let json = event.data->eventToJson
+        let dict = json->getDictFromJson
+
+        switch dict->Dict.get("ready") {
+        | Some(json) => {
+            let isReady = json->JSON.Decode.bool->Option.getOr(false)
+            if isReady {
+              resolve()
+            }
+          }
+        | None => ()
+        }
+      }
+      addSmartEventListener("message", handleMessage, "onReady")
+    })
+
     switch options {
     | Some(userOptions) =>
       let customBackendUrl =
@@ -263,7 +281,19 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 
-        Js.Promise.make((~resolve, ~reject as _) => {
+        let postSubmitMessage = message => {
+          open Promise
+          isReadyPromise
+          ->then(_ => {
+            iframeRef.contents->Array.forEach(ifR => {
+              ifR->Window.iframePostMessage(message)
+            })
+            JSON.Encode.null->resolve
+          })
+          ->ignore
+        }
+
+        Promise.make((resolve, _reject) => {
           let handleMessage = (event: Types.event) => {
             let json = event.data->eventToJson
             let dict = json->getDictFromJson
@@ -321,9 +351,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 ),
               ]->Dict.fromArray
           addSmartEventListener("message", handleMessage, "onSubmit")
-          iframeRef.contents->Array.forEach(ifR => {
-            ifR->Window.iframePostMessage(message)
-          })
+          postSubmitMessage(message)
         })
       }
 
