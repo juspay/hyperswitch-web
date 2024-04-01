@@ -333,7 +333,7 @@ let make = (
     None
   }, (isApplePayReady, isInvokeSDKFlow, paymentExperience, isWallet))
 
-  let submitCallback = (ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     if !isWallet {
       let json = ev.data->JSON.parseExn
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
@@ -353,7 +353,7 @@ let make = (
         )
       }
     }
-  }
+  }, (areRequiredFieldsValid, areRequiredFieldsEmpty))
   useSubmitPaymentData(submitCallback)
 
   {

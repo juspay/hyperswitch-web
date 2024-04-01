@@ -22,6 +22,7 @@ let make = (
     customerPaymentMethods,
     displaySavedPaymentMethods,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
@@ -41,8 +42,8 @@ let make = (
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(isShowOrPayUsing)
 
-  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
-  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
+  let (showFields, setShowFields) = Recoil.useRecoilState(showCardFieldsAtom)
+  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(paymentTokenAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
   let (
     loadSavedCards: PaymentType.savedCardsLoadState,
@@ -216,7 +217,7 @@ let make = (
   let cardShimmerCount = React.useMemo(() => {
     cardsToRender(cardsContainerWidth)
   }, [cardsContainerWidth])
-  let submitCallback = React.useCallback1((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
@@ -427,6 +428,23 @@ let make = (
           />
         | Accordion => <AccordionContainer paymentOptions checkoutEle />
         }}
+      </div>
+    </RenderIf>
+    <RenderIf
+      condition={displaySavedPaymentMethods && savedMethods->Array.length > 0 && showFields}>
+      <div
+        className="Label flex flex-row gap-3 items-end cursor-pointer my-4"
+        style={ReactDOMStyle.make(
+          ~fontSize="14px",
+          ~float="left",
+          ~fontWeight=themeObj.fontWeightNormal,
+          ~width="fit-content",
+          ~color=themeObj.colorPrimary,
+          (),
+        )}
+        onClick={_ => setShowFields(_ => false)}>
+        <Icon name="circle_dots" size=20 width=19 />
+        {React.string(localeString.useExistingPaymentMethods)}
       </div>
     </RenderIf>
     <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
