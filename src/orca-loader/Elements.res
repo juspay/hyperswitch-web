@@ -195,7 +195,7 @@ let make = (
       })
     }
     let fetchUpdates = () => {
-      Js.Promise.make((~resolve, ~reject as _) => {
+      Promise.make((resolve, _) => {
         setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
       })
     }
