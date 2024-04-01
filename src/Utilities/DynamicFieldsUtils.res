@@ -142,10 +142,10 @@ let useRequiredFieldsEmptyAndValid = (
       | StateAndCity => state.value !== "" && city.value !== ""
       | CountryAndPincode(countryArr) =>
         (country !== "" || countryArr->Array.length === 0) &&
-          postalCode.isValid->Option.getOr(false)
+          postalCode.value !== ""
 
       | AddressCity => city.value !== ""
-      | AddressPincode => postalCode.isValid->Option.getOr(false)
+      | AddressPincode => postalCode.value !== ""
       | AddressState => state.value !== ""
       | BlikCode => blikCode.value !== ""
       | Currency(currencyArr) => currency !== "" || currencyArr->Array.length === 0

@@ -72,6 +72,63 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
   })
 }
 
+let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
+  open Promise
+  logApi(
+    ~optLogger,
+    ~url,
+    ~type_="request",
+    ~eventName=RETRIEVE_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  let threeDsMethodStr = threeDsMethodData->JSON.Decode.string->Option.getOr("")
+  let body = `${encodeURIComponent("threeDSMethodData")}=${encodeURIComponent(threeDsMethodStr)}`
+
+  fetchApiWithNoCors(url, ~method=#POST, ~bodyStr=body, ())
+  ->then(res => {
+    res->Fetch.Response.text
+  })
+  ->catch(e => {
+    Console.log2("Unable to call 3ds method ", e)
+    reject(e)
+  })
+}
+
+let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
+  let url = `${endpoint}/payments/${paymentIntentID}/3ds/authentication`
+  let broswerInfo = BrowserSpec.broswerInfo
+  let body =
+    [
+      ("client_secret", clientSecret->JSON.Encode.string),
+      ("device_channel", "BRW"->JSON.Encode.string),
+      ("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string),
+    ]
+    ->Array.concat(broswerInfo())
+    ->Dict.fromArray
+    ->JSON.Encode.object
+
+  open Promise
+  logApi(
+    ~optLogger,
+    ~url,
+    ~type_="request",
+    ~eventName=RETRIEVE_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  fetchApi(url, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray, ())
+  ->then(res => res->Fetch.Response.json)
+  ->catch(e => {
+    Console.log2("Unable to call 3ds auth ", e)
+    reject(e)
+  })
+}
+
 let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
   open Promise
   retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
@@ -157,8 +214,8 @@ let rec intentCall = (
       res
       ->Fetch.Response.json
       ->then(data => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
+        Promise.make(
+          (resolve, _) => {
             if isConfirm {
               let paymentMethod = switch paymentType {
               | Card => "CARD"
@@ -210,8 +267,8 @@ let rec intentCall = (
         )->then(resolve)
       })
       ->catch(err => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
+        Promise.make(
+          (resolve, _) => {
             let exceptionMessage = err->Utils.formatException
             logApi(
               ~optLogger,
@@ -279,8 +336,8 @@ let rec intentCall = (
       res
       ->Fetch.Response.json
       ->then(data => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
+        Promise.make(
+          (resolve, _) => {
             logApi(~optLogger, ~url=uri, ~statusCode, ~type_="response", ~eventName, ())
             let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
             let paymentMethod = switch paymentType {
@@ -380,6 +437,52 @@ let rec intentCall = (
                   ])
                 }
                 resolve(data)
+              } else if intent.nextAction.type_ === "three_ds_invoke" {
+                let threeDsData =
+                  intent.nextAction.three_ds_data
+                  ->Belt.Option.flatMap(JSON.Decode.object)
+                  ->Option.getOr(Dict.make())
+                let do3dsMethodCall =
+                  threeDsData
+                  ->Dict.get("three_ds_method_details")
+                  ->Belt.Option.flatMap(JSON.Decode.object)
+                  ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
+                  ->Option.getOr(Dict.make()->JSON.Encode.object)
+                  ->JSON.Decode.bool
+                  ->Utils.getBoolValue
+
+                let headerObj = Dict.make()
+                headers->Array.forEach(
+                  entries => {
+                    let (x, val) = entries
+                    Dict.set(headerObj, x, val->JSON.Encode.string)
+                  },
+                )
+                let metaData =
+                  [
+                    ("threeDSData", threeDsData->JSON.Encode.object),
+                    ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("headers", headerObj->JSON.Encode.object),
+                    ("url", url.href->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                  ]->Dict.fromArray
+
+                if do3dsMethodCall {
+                  handlePostMessage([
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `3ds`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData->JSON.Encode.object),
+                  ])
+                } else {
+                  metaData->Dict.set("3dsMethodComp", "U"->JSON.Encode.string)
+                  handlePostMessage([
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `3dsAuth`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData->JSON.Encode.object),
+                  ])
+                }
               } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
                 | Some(token) => token->Utils.getDictFromJson
@@ -488,7 +591,7 @@ let rec intentCall = (
     }
   })
   ->catch(err => {
-    Js.Promise.make((~resolve, ~reject as _) => {
+    Promise.make((resolve, _) => {
       let url = urlSearch(confirmParam.return_url)
       url.searchParams.set("payment_intent_client_secret", clientSecret)
       url.searchParams.set("status", "failed")
@@ -625,6 +728,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
   let list = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+
   let (isManualRetryEnabled, setIsManualRetryEnabled) = Recoil.useRecoilState(
     RecoilAtoms.isManualRetryEnabled,
   )
@@ -632,7 +736,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
     ~confirmParam: ConfirmType.confirmParams,
-    ~iframeId="",
+    ~iframeId=keys.iframeId,
     (),
   ) => {
     switch keys.clientSecret {

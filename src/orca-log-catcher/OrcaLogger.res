@@ -160,6 +160,7 @@ type setLogInfo = (
   ~internalMetadata: string=?,
   ~eventName: eventName,
   ~timestamp: string=?,
+  ~latency: float=?,
   ~logType: logType=?,
   ~logCategory: logCategory=?,
   ~paymentMethod: string=?,
@@ -198,6 +199,7 @@ let defaultLoggerConfig = {
     ~internalMetadata as _=?,
     ~eventName as _,
     ~timestamp as _=?,
+    ~latency as _=?,
     ~logType as _=?,
     ~logCategory as _=?,
     ~paymentMethod as _=?,
@@ -219,6 +221,7 @@ let defaultLoggerConfig = {
     ~internalMetadata as _=?,
     ~eventName as _,
     ~timestamp as _=?,
+    ~latency as _=?,
     ~logType as _=?,
     ~logCategory as _=?,
     ~paymentMethod as _=?,
@@ -558,6 +561,7 @@ let make = (
     ~internalMetadata="",
     ~eventName,
     ~timestamp=?,
+    ~latency=?,
     ~logType=INFO,
     ~logCategory=USER_EVENT,
     ~paymentMethod="",
@@ -565,7 +569,10 @@ let make = (
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
-    let latency = calculateLatencyHook(~eventName, ())
+    let latency = switch latency {
+    | Some(lat) => lat->Float.toString
+    | None => calculateLatencyHook(~eventName, ())
+    }
     let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
     let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
     {
@@ -657,6 +664,7 @@ let make = (
     ~internalMetadata="",
     ~eventName,
     ~timestamp=?,
+    ~latency=?,
     ~logType=ERROR,
     ~logCategory=USER_ERROR,
     ~paymentMethod="",
@@ -664,7 +672,10 @@ let make = (
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
-    let latency = calculateLatencyHook(~eventName, ())
+    let latency = switch latency {
+    | Some(lat) => lat->Float.toString
+    | None => calculateLatencyHook(~eventName, ())
+    }
     let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
     let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
     {
