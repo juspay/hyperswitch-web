@@ -16,7 +16,7 @@ let make = (
     accordionItemLabelClass,
     accordionItemIconClass,
     radioClass,
-  ) = React.useMemo1(
+  ) = React.useMemo(
     () =>
       isActive
         ? (

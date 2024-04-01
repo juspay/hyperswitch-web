@@ -37,7 +37,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
 
   let socialSecurityNumberRef = React.useRef(Nullable.null)
 
-  let (complete, empty) = React.useMemo1(() => {
+  let (complete, empty) = React.useMemo(() => {
     (
       socialSecurityNumber->cleanSocialSecurityNumber->String.length == 11,
       socialSecurityNumber->String.length == 0,
@@ -54,7 +54,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     None
   }, [complete])
 
-  let submitCallback = React.useCallback1((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 

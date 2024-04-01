@@ -1,3 +1,53 @@
+## [0.35.4](https://github.com/juspay/hyperswitch-web/compare/v0.35.3...v0.35.4) (2024-04-01)
+
+## [0.35.3](https://github.com/juspay/hyperswitch-web/compare/v0.35.2...v0.35.3) (2024-04-01)
+
+## [0.35.2](https://github.com/juspay/hyperswitch-web/compare/v0.35.1...v0.35.2) (2024-04-01)
+
+## [0.35.1](https://github.com/juspay/hyperswitch-web/compare/v0.35.0...v0.35.1) (2024-03-27)
+
+
+### Bug Fixes
+
+* pk_dev added for development purpose ([#259](https://github.com/juspay/hyperswitch-web/issues/259)) ([7278237](https://github.com/juspay/hyperswitch-web/commit/72782370fcd12ec24c20d77295de00dbc956c28f))
+
+# [0.35.0](https://github.com/juspay/hyperswitch-web/compare/v0.34.4...v0.35.0) (2024-03-27)
+
+
+### Features
+
+* **logger:** calculate loading latency from iframe init to render ([#248](https://github.com/juspay/hyperswitch-web/issues/248)) ([38387ed](https://github.com/juspay/hyperswitch-web/commit/38387edeeb61601237fbde750aa1d1a8083d2a79))
+
+## [0.34.4](https://github.com/juspay/hyperswitch-web/compare/v0.34.3...v0.34.4) (2024-03-26)
+
+
+### Bug Fixes
+
+* add saved payment methods throughout checkout ([#254](https://github.com/juspay/hyperswitch-web/issues/254)) ([75be834](https://github.com/juspay/hyperswitch-web/commit/75be8345bbfbb760db1c53aec81eef819f4701e6))
+
+## [0.34.3](https://github.com/juspay/hyperswitch-web/compare/v0.34.2...v0.34.3) (2024-03-26)
+
+## [0.34.2](https://github.com/juspay/hyperswitch-web/compare/v0.34.1...v0.34.2) (2024-03-22)
+
+
+### Bug Fixes
+
+* **3ds method iframe:** 3ds failing with no cors and color depth … ([#253](https://github.com/juspay/hyperswitch-web/issues/253)) ([88d955b](https://github.com/juspay/hyperswitch-web/commit/88d955b20be17cccc33803e3dbe3ca122d9868ef))
+
+## [0.34.1](https://github.com/juspay/hyperswitch-web/compare/v0.34.0...v0.34.1) (2024-03-22)
+
+
+### Bug Fixes
+
+* applePay Dynamic Fields Error Handling and Dynamic Fields PostalCode Error ([#250](https://github.com/juspay/hyperswitch-web/issues/250)) ([d85aa2a](https://github.com/juspay/hyperswitch-web/commit/d85aa2a0ffaa2205a7c19d41455f2250c5c70ef3))
+
+# [0.34.0](https://github.com/juspay/hyperswitch-web/compare/v0.33.12...v0.34.0) (2024-03-22)
+
+
+### Features
+
+* 3DS without redirection ([#249](https://github.com/juspay/hyperswitch-web/issues/249)) ([70911e5](https://github.com/juspay/hyperswitch-web/commit/70911e5c5ce23ff6e8936cd8028e6bf037b96686))
+
 ## [0.33.12](https://github.com/juspay/hyperswitch-web/compare/v0.33.11...v0.33.12) (2024-03-21)
 
 
