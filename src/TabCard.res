@@ -5,7 +5,7 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
   let setSelectedOption = Recoil.useSetRecoilState(selectedOptionAtom)
   let setIsPayNowButtonDisable = Recoil.useSetRecoilState(payNowButtonDisable)
-  let (tabClass, tabLabelClass, tabIconClass) = React.useMemo1(
+  let (tabClass, tabLabelClass, tabIconClass) = React.useMemo(
     () => isActive ? ("Tab--selected", "TabLabel--selected", "TabIcon--selected") : ("", "", ""),
     [isActive],
   )

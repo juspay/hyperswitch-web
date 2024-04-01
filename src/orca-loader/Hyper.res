@@ -264,7 +264,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 
-        Js.Promise.make((~resolve, ~reject as _) => {
+        Promise.make((resolve, _) => {
           let handleMessage = (event: Types.event) => {
             let json = event.data->eventToJson
             let dict = json->getDictFromJson
@@ -361,7 +361,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.getOr("")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         clientSecret := clientSecretId
-        Js.Promise.make((~resolve, ~reject as _) => {
+        Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
           resolve(JSON.Encode.null)
         })
@@ -387,7 +387,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         _options: option<JSON.t>,
       ) => {
         let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-        Js.Promise.make((~resolve, ~reject as _) => {
+        Promise.make((resolve, _) => {
           iframeRef.contents
           ->Array.map(iframe => {
             iframe->Window.iframePostMessage(
@@ -505,7 +505,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
         clientSecret := clientSecretId
-        Js.Promise.make((~resolve, ~reject as _) => {
+        Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
           resolve(JSON.Encode.null)
         })

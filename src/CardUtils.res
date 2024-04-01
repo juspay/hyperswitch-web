@@ -653,7 +653,7 @@ let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
 }
 
 let useCardDetails = (~cvcNumber, ~isCvcValidValue, ~isCVCValid) => {
-  React.useMemo3(() => {
+  React.useMemo(() => {
     let isCardDetailsEmpty = String.length(cvcNumber) == 0
     let isCardDetailsValid = isCvcValidValue == "valid"
     let isCardDetailsInvalid = isCvcValidValue == "invalid"
