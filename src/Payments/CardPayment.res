@@ -81,7 +81,11 @@ let make = (
     None
   }, [complete])
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="card")
+  UtilityHooks.useHandlePostMessages(
+    ~complete=complete && areRequiredFieldsValid,
+    ~empty,
+    ~paymentType="card",
+  )
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)

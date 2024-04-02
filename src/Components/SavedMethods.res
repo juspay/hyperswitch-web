@@ -21,6 +21,7 @@ let make = (
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (token, _) = paymentToken
   let savedCardlength = savedMethods->Array.length
+  let setIsPayNowButtonDisable = RecoilAtoms.payNowButtonDisable->Recoil.useSetRecoilState
 
   let getWalletBrandIcon = (obj: PaymentType.customerMethods) => {
     switch obj.paymentMethodType {
@@ -70,19 +71,20 @@ let make = (
   }
   let empty = cvcNumber == ""
 
+  let customerMethod =
+    savedMethods
+    ->Array.filter(savedMethod => {
+      savedMethod.paymentToken === token
+    })
+    ->Array.get(0)
+    ->Option.getOr(PaymentType.defaultCustomerMethods)
+  let isCardPaymentMethod = customerMethod.paymentMethod === "card"
+  let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
+
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (token, customerId) = paymentToken
-    let customerMethod =
-      savedMethods
-      ->Array.filter(savedMethod => {
-        savedMethod.paymentToken === token
-      })
-      ->Array.get(0)
-      ->Option.getOr(PaymentType.defaultCustomerMethods)
-    let isCardPaymentMethod = customerMethod.paymentMethod === "card"
-    let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
 
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>
@@ -134,6 +136,13 @@ let make = (
       }
     }
   }, (areRequiredFieldsValid, requiredFieldsBody, empty, complete))
+
+  React.useEffect(() => {
+    let isValid = areRequiredFieldsValid && (!isCardPaymentMethod || isCardPaymentMethodValid)
+    setIsPayNowButtonDisable(_ => !isValid)
+    None
+  }, (areRequiredFieldsValid, isCardPaymentMethod, isCardPaymentMethodValid))
+
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
