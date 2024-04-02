@@ -99,15 +99,14 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       let handleOnReady = (event: Types.event) => {
         let json = event.data->eventToJson
         let dict = json->getDictFromJson
-
-        switch dict->Dict.get("ready") {
-        | Some(json) => {
-            let isReady = json->JSON.Decode.bool->Option.getOr(false)
-            if isReady {
-              resolve()
-            }
-          }
-        | None => ()
+        if (
+          dict
+          ->Dict.get("ready")
+          ->Option.getOr(JSON.Encode.bool(false))
+          ->JSON.Decode.bool
+          ->Option.getOr(false)
+        ) {
+          resolve(Date.now())
         }
       }
       addSmartEventListener("message", handleOnReady, "handleOnReady")
@@ -262,6 +261,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       }
 
       let confirmPaymentWrapper = (payload, isOneClick, result) => {
+        let confirmTimestamp = Date.now()
         let confirmParams =
           payload
           ->JSON.Decode.object
@@ -290,13 +290,13 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
         Promise.make((resolve1, _) => {
           let isReadyPromise = isReadyPromise
-          let handleMessage = (event: Types.event) => {
-            let json = event.data->eventToJson
-            let dict = json->getDictFromJson
-            switch dict->Dict.get("submitSuccessful") {
-            | Some(val) =>
-              isReadyPromise
-              ->Promise.then(_ => {
+          isReadyPromise
+          ->Promise.then(readyTimestamp => {
+            let handleMessage = (event: Types.event) => {
+              let json = event.data->eventToJson
+              let dict = json->getDictFromJson
+              switch dict->Dict.get("submitSuccessful") {
+              | Some(val) =>
                 logApi(
                   ~type_="method",
                   ~optLogger=Some(logger),
@@ -327,29 +327,31 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 } else {
                   resolve1(data)
                 }
-                Promise.resolve(JSON.Encode.null)
-              })
-              ->ignore
-            | None => ()
+              | None => ()
+              }
             }
-          }
-          let message = isOneClick
-            ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
-            : [
-                ("doSubmit", true->JSON.Encode.bool),
-                ("clientSecret", clientSecret.contents->JSON.Encode.string),
-                (
-                  "confirmParams",
-                  [
-                    ("return_url", url->JSON.Encode.string),
-                    ("publishableKey", publishableKey->JSON.Encode.string),
-                  ]
-                  ->Dict.fromArray
-                  ->JSON.Encode.object,
-                ),
-              ]->Dict.fromArray
-          addSmartEventListener("message", handleMessage, "onSubmit")
-          postSubmitMessage(message)
+            let message = isOneClick
+              ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
+              : [
+                  ("doSubmit", true->JSON.Encode.bool),
+                  ("clientSecret", clientSecret.contents->JSON.Encode.string),
+                  ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
+                  ("readyTimestamp", readyTimestamp->JSON.Encode.float),
+                  (
+                    "confirmParams",
+                    [
+                      ("return_url", url->JSON.Encode.string),
+                      ("publishableKey", publishableKey->JSON.Encode.string),
+                    ]
+                    ->Dict.fromArray
+                    ->JSON.Encode.object,
+                  ),
+                ]->Dict.fromArray
+            addSmartEventListener("message", handleMessage, "onSubmit")
+            postSubmitMessage(message)
+            Promise.resolve(JSON.Encode.null)
+          })
+          ->ignore
         })
       }
 
