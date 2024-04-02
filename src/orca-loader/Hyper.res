@@ -95,6 +95,23 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ~metadata=analyticsMetadata,
       (),
     )
+    let isReadyPromise = Promise.make((resolve, _) => {
+      let handleOnReady = (event: Types.event) => {
+        let json = event.data->eventToJson
+        let dict = json->getDictFromJson
+        if (
+          dict
+          ->Dict.get("ready")
+          ->Option.getOr(JSON.Encode.bool(false))
+          ->JSON.Decode.bool
+          ->Option.getOr(false)
+        ) {
+          resolve(Date.now())
+        }
+      }
+      addSmartEventListener("message", handleOnReady, "handleOnReady")
+    })
+
     switch options {
     | Some(userOptions) =>
       let customBackendUrl =
@@ -244,6 +261,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       }
 
       let confirmPaymentWrapper = (payload, isOneClick, result) => {
+        let confirmTimestamp = Date.now()
         let confirmParams =
           payload
           ->JSON.Decode.object
@@ -264,67 +282,76 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 
-        Promise.make((resolve, _) => {
-          let handleMessage = (event: Types.event) => {
-            let json = event.data->eventToJson
-            let dict = json->getDictFromJson
-
-            switch dict->Dict.get("submitSuccessful") {
-            | Some(val) =>
-              let message = [("submitSuccessful", val)]->Dict.fromArray
-              iframeRef.contents->Array.forEach(ifR => {
-                ifR->Window.iframePostMessage(message)
-              })
-              logApi(
-                ~type_="method",
-                ~optLogger=Some(logger),
-                ~result=val,
-                ~paymentMethod="confirmPayment",
-                ~eventName=CONFIRM_PAYMENT,
-                (),
-              )
-              let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
-              let returnUrl =
-                dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
-
-              if isOneClick {
-                iframeRef.contents->Array.forEach(ifR => {
-                  // to unset one click button loader
-                  ifR->Window.iframePostMessage(
-                    [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
-                  )
-                })
-              }
-
-              if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
-                Window.replace(returnUrl)
-              } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
-                resolve(json)
-              } else {
-                resolve(data)
-              }
-            | None => ()
-            }
-          }
-          let message = isOneClick
-            ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
-            : [
-                ("doSubmit", true->JSON.Encode.bool),
-                ("clientSecret", clientSecret.contents->JSON.Encode.string),
-                (
-                  "confirmParams",
-                  [
-                    ("return_url", url->JSON.Encode.string),
-                    ("publishableKey", publishableKey->JSON.Encode.string),
-                  ]
-                  ->Dict.fromArray
-                  ->JSON.Encode.object,
-                ),
-              ]->Dict.fromArray
-          addSmartEventListener("message", handleMessage, "onSubmit")
+        let postSubmitMessage = message => {
           iframeRef.contents->Array.forEach(ifR => {
             ifR->Window.iframePostMessage(message)
           })
+        }
+
+        Promise.make((resolve1, _) => {
+          let isReadyPromise = isReadyPromise
+          isReadyPromise
+          ->Promise.then(readyTimestamp => {
+            let handleMessage = (event: Types.event) => {
+              let json = event.data->eventToJson
+              let dict = json->getDictFromJson
+              switch dict->Dict.get("submitSuccessful") {
+              | Some(val) =>
+                logApi(
+                  ~type_="method",
+                  ~optLogger=Some(logger),
+                  ~result=val,
+                  ~paymentMethod="confirmPayment",
+                  ~eventName=CONFIRM_PAYMENT,
+                  (),
+                )
+                let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
+                let returnUrl =
+                  dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
+
+                if isOneClick {
+                  iframeRef.contents->Array.forEach(
+                    ifR => {
+                      // to unset one click button loader
+                      ifR->Window.iframePostMessage(
+                        [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
+                      )
+                    },
+                  )
+                }
+
+                if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
+                  Window.replace(returnUrl)
+                } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
+                  resolve1(json)
+                } else {
+                  resolve1(data)
+                }
+              | None => ()
+              }
+            }
+            let message = isOneClick
+              ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
+              : [
+                  ("doSubmit", true->JSON.Encode.bool),
+                  ("clientSecret", clientSecret.contents->JSON.Encode.string),
+                  ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
+                  ("readyTimestamp", readyTimestamp->JSON.Encode.float),
+                  (
+                    "confirmParams",
+                    [
+                      ("return_url", url->JSON.Encode.string),
+                      ("publishableKey", publishableKey->JSON.Encode.string),
+                    ]
+                    ->Dict.fromArray
+                    ->JSON.Encode.object,
+                  ),
+                ]->Dict.fromArray
+            addSmartEventListener("message", handleMessage, "onSubmit")
+            postSubmitMessage(message)
+            Promise.resolve(JSON.Encode.null)
+          })
+          ->ignore
         })
       }
 

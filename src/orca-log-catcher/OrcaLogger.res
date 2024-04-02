@@ -505,6 +505,7 @@ let make = (
       DISPLAY_BANK_TRANSFER_INFO_PAGE,
       DISPLAY_QR_CODE_INFO_PAGE,
       SESSIONS_CALL,
+      RETRIEVE_CALL,
     ]
     arrayOfLogs
     ->Array.find(log => {
