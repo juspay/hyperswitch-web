@@ -33,6 +33,7 @@ let userPhoneNumber = Recoil.atom(
     value: "",
     isValid: None,
     errorString: "",
+    countryCode: "",
   },
 )
 let isGooglePayReady = Recoil.atom("isGooglePayReady", false)

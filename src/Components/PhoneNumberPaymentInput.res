@@ -47,9 +47,18 @@ let make = () => {
     let val: string = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\+D+/g"), "")
     setPhone(prev => {
       ...prev,
+      countryCode: valueDropDown,
       value: val,
     })
   }
+
+  React.useEffect(() => {
+    setPhone(prev => {
+      ...prev,
+      countryCode: valueDropDown,
+    })
+    None
+  }, valueDropDown)
 
   <RenderIf condition={showDetails.phone == Auto}>
     <PaymentField
