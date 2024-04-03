@@ -659,14 +659,12 @@ let handlePostMessageEvents = (
   ~empty,
   ~paymentType,
   ~loggerState: OrcaPaymentPage.OrcaLogger.loggerMake,
+  ~savedMethod=false,
 ) => {
   if complete && paymentType !== "" {
-    loggerState.setLogInfo(
-      ~value="Payment Data Filled",
-      ~eventName=PAYMENT_DATA_FILLED,
-      ~paymentMethod=paymentType,
-      (),
-    )
+    let value =
+      "Payment Data Filled" ++ (savedMethod ? ": Saved Payment Method" : ": New Payment Method")
+    loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType, ())
   }
   handlePostMessage([
     ("elementType", "payment"->JSON.Encode.string),
