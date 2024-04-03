@@ -8,6 +8,7 @@ let make = (
   ~options,
   ~disabled=false,
   ~className="",
+  ~width="w-full",
 ) => {
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -45,7 +46,7 @@ let make = (
 
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
   <RenderIf condition={options->Array.length > 0}>
-    <div className="flex flex-col w-full">
+    <div className={`flex flex-col ${width}`}>
       <RenderIf condition={fieldName->String.length > 0 && appearance.labels == Above}>
         <div
           className={`Label `}

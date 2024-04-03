@@ -4,6 +4,10 @@ open RecoilAtomTypes
 let make = (
   ~setValue=?,
   ~value: RecoilAtomTypes.field,
+  ~valueDropDown=?,
+  ~setValueDropDown=?,
+  ~dropDownFieldName=?,
+  ~dropDownOptions=?,
   ~onChange,
   ~onBlur=?,
   ~rightIcon=React.null,
@@ -75,8 +79,21 @@ let make = (
   }
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
+  let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
 
-  <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
+  <div
+    className={`flex ${flexDirectionBasedOnType} w-full`}
+    style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
+    <RenderIf condition={type_ === "tel"}>
+      <DropdownField
+        appearance=config.appearance
+        value={valueDropDown->Option.getOr("")}
+        setValue={setValueDropDown->Option.getOr(_ => ())}
+        fieldName={dropDownFieldName->Option.getOr(fieldName)}
+        options={dropDownOptions->Option.getOr([])}
+        width="!w-1/3"
+      />
+    </RenderIf>
     <RenderIf condition={fieldName->String.length > 0 && config.appearance.labels == Above}>
       <div
         className={`Label ${labelClass}`}
@@ -90,7 +107,7 @@ let make = (
         {React.string(fieldName)}
       </div>
     </RenderIf>
-    <div className="flex flex-row " style={ReactDOMStyle.make(~direction, ())}>
+    <div className="flex flex-row w-full" style={ReactDOMStyle.make(~direction, ())}>
       <div className="relative w-full">
         <input
           style={ReactDOMStyle.make(
