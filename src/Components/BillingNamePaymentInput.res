@@ -37,7 +37,7 @@ let make = (~paymentType, ~customFieldName=None, ~requiredFields as optionalRequ
   }
   let nameRef = React.useRef(Nullable.null)
 
-  let submitCallback = React.useCallback1((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {

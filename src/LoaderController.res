@@ -131,7 +131,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
-    let finalLoadLatency = Js.Date.now() -. launchTime
+    let finalLoadLatency = Date.now() -. launchTime
     switch updatedState {
     | Loaded(_) =>
       logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
@@ -165,14 +165,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       },
     )
   })
-  React.useEffect(() => {
-    switch paymentlist {
-    | SemiLoaded => ()
-    | Loaded(_val) => handlePostMessage([("ready", true->JSON.Encode.bool)])
-    | _ => handlePostMessage([("ready", false->JSON.Encode.bool)])
-    }
-    None
-  }, [paymentlist])
 
   React.useEffect(() => {
     CardUtils.genreateFontsLink(config.fonts)
@@ -365,7 +357,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
-          let finalLoadlatency = Js.Date.now() -. launchTime
+          let finalLoadlatency = Date.now() -. launchTime
           let updatedState: PaymentType.loadType =
             list == Dict.make()->JSON.Encode.object
               ? LoadError(list)
@@ -376,23 +368,44 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                     list->Utils.getDictFromJson->Utils.getArray("payment_methods")->Array.length > 0
                   isNonEmptyPaymentMethodList ? Loaded(list) : LoadError(list)
                 }
-          switch updatedState {
-          | Loaded(_) =>
-            logger.setLogInfo(
-              ~value="Loaded",
-              ~eventName=LOADER_CHANGED,
-              ~latency=finalLoadlatency,
-              (),
-            )
-          | LoadError(x) =>
-            logger.setLogError(
-              ~value="LoadError: " ++ x->JSON.stringify,
-              ~eventName=LOADER_CHANGED,
-              ~latency=finalLoadlatency,
-              (),
-            )
-          | _ => ()
+
+          let evalMethodsList = () =>
+            switch updatedState {
+            | Loaded(_) =>
+              logger.setLogInfo(
+                ~value="Loaded",
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadlatency,
+                (),
+              )
+            | LoadError(x) =>
+              logger.setLogError(
+                ~value="LoadError: " ++ x->JSON.stringify,
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadlatency,
+                (),
+              )
+            | _ => ()
+            }
+
+          if !optionsPayment.displaySavedPaymentMethods {
+            evalMethodsList()
+          } else {
+            switch optionsPayment.customerPaymentMethods {
+            | LoadingSavedCards => ()
+            | LoadedSavedCards(list, _) =>
+              list->Array.length > 0
+                ? logger.setLogInfo(
+                    ~value="Loaded",
+                    ~eventName=LOADER_CHANGED,
+                    ~latency=finalLoadlatency,
+                    (),
+                  )
+                : evalMethodsList()
+            | NoResult(_) => evalMethodsList()
+            }
           }
+
           setList(_ => updatedState)
         }
         if dict->getDictIsSome("customerPaymentMethods") {
@@ -401,6 +414,41 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             ...prev,
             customerPaymentMethods,
           })
+          let finalLoadlatency = Date.now() -. launchTime
+
+          let evalMethodsList = () =>
+            switch paymentlist {
+            | Loaded(_) =>
+              logger.setLogInfo(
+                ~value="Loaded",
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadlatency,
+                (),
+              )
+            | LoadError(x) =>
+              logger.setLogError(
+                ~value="LoadError: " ++ x->JSON.stringify,
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadlatency,
+                (),
+              )
+
+            | _ => ()
+            }
+
+          switch optionsPayment.customerPaymentMethods {
+          | LoadingSavedCards => ()
+          | LoadedSavedCards(list, _) =>
+            list->Array.length > 0
+              ? logger.setLogInfo(
+                  ~value="Loaded",
+                  ~eventName=LOADER_CHANGED,
+                  ~latency=finalLoadlatency,
+                  (),
+                )
+              : evalMethodsList()
+          | NoResult(_) => evalMethodsList()
+          }
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
           setIsApplePayReady(_ => true)

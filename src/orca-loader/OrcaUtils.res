@@ -257,7 +257,7 @@ let eventHandlerFunc = (
 
 let makeIframe = (element, url) => {
   open Types
-  Js.Promise.make((~resolve, ~reject as _) => {
+  Promise.make((resolve, _) => {
     let iframe = createElement("iframe")
     iframe.id = "orca-fullscreen"
     iframe.src = url
@@ -337,7 +337,7 @@ let getArrayOfTupleFromDict = dict => {
 
 let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
   open EventListenerManager
-  Js.Promise.make((~resolve, ~reject as _) => {
+  Promise.make((resolve, _) => {
     if sdkHandleOneClickConfirmPayment {
       resolve(JSON.Encode.bool(true))
     } else {

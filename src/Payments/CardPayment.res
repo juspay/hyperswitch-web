@@ -32,7 +32,7 @@ let make = (
     maxCardLength,
   ) = cardProps
 
-  let cardBrand = React.useMemo1(() => {
+  let cardBrand = React.useMemo(() => {
     cardNumber->CardUtils.getCardBrand
   }, [cardNumber])
 
@@ -94,7 +94,7 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = React.useMemo2(() => {
+  let isCustomerAcceptanceRequired = React.useMemo(() => {
     if displaySavedPaymentMethodsCheckbox {
       isSaveCardsChecked || list.payment_type === SETUP_MANDATE
     } else {
@@ -102,7 +102,7 @@ let make = (
     }
   }, (isSaveCardsChecked, list.payment_type))
 
-  let submitCallback = React.useCallback6((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (month, year) = CardUtils.getExpiryDates(cardExpiry)

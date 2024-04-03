@@ -579,65 +579,6 @@ let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?, (
   countryPostal.regex == "" ? "" : countryPostal.regex
 }
 
-let getCardDetailsFromCardProps = cardProps => {
-  let defaultCardProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    React.null,
-    "",
-    _ => (),
-    0,
-  )
-
-  switch cardProps {
-  | Some(cardProps) => cardProps
-  | None => defaultCardProps
-  }
-}
-
-let getExpiryDetailsFromExpiryProps = expiryProps => {
-  let defaultExpiryProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    _ => (),
-    "",
-    _ => (),
-  )
-
-  switch expiryProps {
-  | Some(expiryProps) => expiryProps
-  | None => defaultExpiryProps
-  }
-}
-
-let getCvcDetailsFromCvcProps = cvcProps => {
-  let defaultCvcProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    _ => (),
-    "",
-    _ => (),
-  )
-
-  switch cvcProps {
-  | Some(cvcProps) => cvcProps
-  | None => defaultCvcProps
-  }
-}
-
 let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
   if cardEmpty {
     <Icon size=Utils.brandIconSize name="cvc-empty" />
@@ -653,7 +594,7 @@ let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
 }
 
 let useCardDetails = (~cvcNumber, ~isCvcValidValue, ~isCVCValid) => {
-  React.useMemo3(() => {
+  React.useMemo(() => {
     let isCardDetailsEmpty = String.length(cvcNumber) == 0
     let isCardDetailsValid = isCvcValidValue == "valid"
     let isCardDetailsInvalid = isCvcValidValue == "invalid"

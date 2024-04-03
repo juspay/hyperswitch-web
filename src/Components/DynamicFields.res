@@ -27,7 +27,7 @@ let make = (
     ~paymentMethodType,
   )
 
-  let requiredFieldsWithBillingDetails = React.useMemo3(() => {
+  let requiredFieldsWithBillingDetails = React.useMemo(() => {
     if paymentMethod === "card" {
       paymentMethodTypes.required_fields
     } else if (
@@ -39,18 +39,18 @@ let make = (
     }
   }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType))
 
-  let requiredFields = React.useMemo1(() => {
+  let requiredFields = React.useMemo(() => {
     requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress(
       billingAddress,
     )
   }, [requiredFieldsWithBillingDetails])
 
-  let isAllStoredCardsHaveName = React.useMemo1(() => {
+  let isAllStoredCardsHaveName = React.useMemo(() => {
     PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
   }, [savedMethod])
 
   //<...>//
-  let fieldsArr = React.useMemo3(() => {
+  let fieldsArr = React.useMemo(() => {
     PaymentMethodsRecord.getPaymentMethodFields(
       paymentMethodType,
       requiredFields,
@@ -85,6 +85,44 @@ let make = (
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
+  let defaultCardProps = (
+    None,
+    _ => (),
+    "",
+    _ => (),
+    _ => (),
+    React.useRef(Nullable.null),
+    React.null,
+    "",
+    _ => (),
+    0,
+  )
+
+  let defaultExpiryProps = (
+    None,
+    _ => (),
+    "",
+    _ => (),
+    _ => (),
+    React.useRef(Nullable.null),
+    _ => (),
+    "",
+    _ => (),
+  )
+
+  let defaultCvcProps = (
+    None,
+    _ => (),
+    "",
+    _ => (),
+    _ => (),
+    _ => (),
+    React.useRef(Nullable.null),
+    _ => (),
+    "",
+    _ => (),
+  )
+
   let (stateJson, setStatesJson) = React.useState(_ => None)
 
   let bankNames =
@@ -112,8 +150,10 @@ let make = (
     cardError,
     _,
     maxCardLength,
-  ) =
-    cardProps->CardUtils.getCardDetailsFromCardProps
+  ) = switch cardProps {
+  | Some(cardProps) => cardProps
+  | None => defaultCardProps
+  }
 
   let (
     isExpiryValid,
@@ -125,8 +165,10 @@ let make = (
     _,
     expiryError,
     _,
-  ) =
-    expiryProps->CardUtils.getExpiryDetailsFromExpiryProps
+  ) = switch expiryProps {
+  | Some(expiryProps) => expiryProps
+  | None => defaultExpiryProps
+  }
 
   let (
     isCVCValid,
@@ -139,8 +181,10 @@ let make = (
     _,
     cvcError,
     _,
-  ) =
-    cvcProps->CardUtils.getCvcDetailsFromCvcProps
+  ) = switch cvcProps {
+  | Some(cvcProps) => cvcProps
+  | None => defaultCvcProps
+  }
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
@@ -257,11 +301,11 @@ let make = (
     }
   }
 
-  let dynamicFieldsToRenderOutsideBilling = React.useMemo1(() => {
+  let dynamicFieldsToRenderOutsideBilling = React.useMemo(() => {
     fieldsArr->Array.filter(DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
   }, [fieldsArr])
 
-  let dynamicFieldsToRenderInsideBilling = React.useMemo1(() => {
+  let dynamicFieldsToRenderInsideBilling = React.useMemo(() => {
     fieldsArr->Array.filter(field => !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling))
   }, [fieldsArr])
 

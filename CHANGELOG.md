@@ -1,3 +1,23 @@
+## [0.35.6](https://github.com/juspay/hyperswitch-web/compare/v0.35.5...v0.35.6) (2024-04-02)
+
+
+### Bug Fixes
+
+* customer payment methods promise ([#266](https://github.com/juspay/hyperswitch-web/issues/266)) ([57ea1ed](https://github.com/juspay/hyperswitch-web/commit/57ea1ed0483776df98abbbd83b0958674be6490c))
+
+## [0.35.5](https://github.com/juspay/hyperswitch-web/compare/v0.35.4...v0.35.5) (2024-04-02)
+
+
+### Bug Fixes
+
+* react hooks issue fix ([#233](https://github.com/juspay/hyperswitch-web/issues/233)) ([c9dcb63](https://github.com/juspay/hyperswitch-web/commit/c9dcb638a3da08fe0569c94864df46179c2834e8))
+
+## [0.35.4](https://github.com/juspay/hyperswitch-web/compare/v0.35.3...v0.35.4) (2024-04-01)
+
+## [0.35.3](https://github.com/juspay/hyperswitch-web/compare/v0.35.2...v0.35.3) (2024-04-01)
+
+## [0.35.2](https://github.com/juspay/hyperswitch-web/compare/v0.35.1...v0.35.2) (2024-04-01)
+
 ## [0.35.1](https://github.com/juspay/hyperswitch-web/compare/v0.35.0...v0.35.1) (2024-03-27)
 
 
