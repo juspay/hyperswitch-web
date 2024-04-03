@@ -129,7 +129,12 @@ let make = (
         let msg = [("paymentMethodList", json)]->Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
         let maskedPayload = json->PaymentHelpers.maskPayload->JSON.stringify
-        logger.setLogInfo(~value=maskedPayload, ~eventName=PAYMENT_METHODS_RESPONSE, ())
+        logger.setLogInfo(
+          ~value="",
+          ~internalMetadata=maskedPayload,
+          ~eventName=PAYMENT_METHODS_RESPONSE,
+          (),
+        )
         // }, 5000)->ignore
         json->resolve
       })
