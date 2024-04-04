@@ -63,6 +63,14 @@ let make = (
       ~logger,
     )
 
+    let customerDetailsPromise = PaymentHelpers.fetchCustomerDetails(
+      ~clientSecret,
+      ~publishableKey,
+      ~endpoint,
+      ~switchToCustomPod,
+      ~optLogger=Some(logger),
+    )
+
     let sessionsPromise = PaymentHelpers.fetchSessions(
       ~clientSecret,
       ~publishableKey,
@@ -117,20 +125,18 @@ let make = (
         let msg = [("paymentMethodList", json)]->Dict.fromArray
         mountedIframeRef->Window.iframePostMessage(msg)
         let maskedPayload = json->PaymentHelpers.maskPayload->JSON.stringify
-        logger.setLogInfo(~value=maskedPayload, ~eventName=PAYMENT_METHODS_RESPONSE, ())
+        logger.setLogInfo(
+          ~value="",
+          ~internalMetadata=maskedPayload,
+          ~eventName=PAYMENT_METHODS_RESPONSE,
+          (),
+        )
         // }, 5000)->ignore
         json->resolve
       })
       ->ignore
     }
     let fetchCustomerDetails = mountedIframeRef => {
-      let customerDetailsPromise = PaymentHelpers.fetchCustomerDetails(
-        ~clientSecret,
-        ~publishableKey,
-        ~endpoint,
-        ~switchToCustomPod,
-        ~optLogger=Some(logger),
-      )
       open Promise
       customerDetailsPromise
       ->then(json => {
@@ -295,40 +301,79 @@ let make = (
                 paymentDataRequest->GooglePayType.jsonToPaymentRequestDataType(
                   googlePayThirdPartySession,
                 )
-              let secrets = googlePayThirdPartySession->getJsonFromDict("secrets", JSON.Encode.null)
 
-              let payment = secrets->getDictFromJson->getString("payment", "")
+              let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+
+              let connector =
+                googlePayThirdPartySession
+                ->Dict.get("connector")
+                ->Option.getOr(JSON.Encode.null)
+                ->JSON.Decode.string
+                ->Option.getOr("")
 
               try {
-                let trustpay = trustPayApi(secrets)
-                trustpay.executeGooglePayment(payment, googlePayRequest)
-                ->then(res => {
-                  logger.setLogInfo(
-                    ~value="TrustPay GooglePay Success Response",
-                    ~internalMetadata=res->JSON.stringify,
-                    ~eventName=GOOGLE_PAY_FLOW,
-                    ~paymentMethod="GOOGLE_PAY",
-                    (),
-                  )
-                  let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                  mountedIframeRef->Window.iframePostMessage(msg)
-                  resolve()
-                })
-                ->catch(err => {
-                  let exceptionMessage = err->formatException->JSON.stringify
-                  logger.setLogInfo(
-                    ~value=exceptionMessage,
-                    ~eventName=GOOGLE_PAY_FLOW,
-                    ~paymentMethod="GOOGLE_PAY",
-                    ~logType=ERROR,
-                    ~logCategory=USER_ERROR,
-                    (),
-                  )
-                  let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                  mountedIframeRef->Window.iframePostMessage(msg)
-                  resolve()
-                })
-                ->ignore
+                switch connector {
+                | "trustpay" => {
+                    let secrets =
+                      googlePayThirdPartySession->getJsonFromDict("secrets", JSON.Encode.null)
+
+                    let payment = secrets->getDictFromJson->getString("payment", "")
+
+                    let trustpay = trustPayApi(secrets)
+
+                    let polling =
+                      delay(2000)->then(_ =>
+                        PaymentHelpers.pollRetrievePaymentIntent(
+                          clientSecret,
+                          headers,
+                          ~optLogger=Some(logger),
+                          ~switchToCustomPod,
+                          ~isForceSync=true,
+                        )
+                      )
+                    let executeGooglePayment = trustpay.executeGooglePayment(
+                      payment,
+                      googlePayRequest,
+                    )
+                    let timeOut = delay(600000)->then(_ => {
+                      let errorMsg =
+                        [("error", "Request Timed Out"->JSON.Encode.string)]
+                        ->Dict.fromArray
+                        ->JSON.Encode.object
+                      reject(Exn.anyToExnInternal(errorMsg))
+                    })
+
+                    Promise.race([polling, executeGooglePayment, timeOut])
+                    ->then(res => {
+                      logger.setLogInfo(
+                        ~value="TrustPay GooglePay Response",
+                        ~internalMetadata=res->JSON.stringify,
+                        ~eventName=GOOGLE_PAY_FLOW,
+                        ~paymentMethod="GOOGLE_PAY",
+                        (),
+                      )
+                      let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
+                      mountedIframeRef->Window.iframePostMessage(msg)
+                      resolve()
+                    })
+                    ->catch(err => {
+                      let exceptionMessage = err->formatException->JSON.stringify
+                      logger.setLogInfo(
+                        ~value=exceptionMessage,
+                        ~eventName=GOOGLE_PAY_FLOW,
+                        ~paymentMethod="GOOGLE_PAY",
+                        ~logType=ERROR,
+                        ~logCategory=USER_ERROR,
+                        (),
+                      )
+                      let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
+                      mountedIframeRef->Window.iframePostMessage(msg)
+                      resolve()
+                    })
+                    ->ignore
+                  }
+                | _ => ()
+                }
               } catch {
               | err => {
                   let exceptionMessage = err->formatException->JSON.stringify
@@ -488,12 +533,6 @@ let make = (
                               let msg =
                                 [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                               mountedIframeRef->Window.iframePostMessage(msg)
-                              logger.setLogInfo(
-                                ~value="",
-                                ~eventName=PAYMENT_DATA_FILLED,
-                                ~paymentMethod="APPLE_PAY",
-                                (),
-                              )
                               resolve()
                             })
                             ->catch(err => {
@@ -721,8 +760,14 @@ let make = (
           json->resolve
         })
         ->ignore
+        if (
+          newOptions
+          ->getDictFromJson
+          ->getBool("displaySavedPaymentMethods", true)
+        ) {
+          fetchCustomerDetails(mountedIframeRef)
+        }
         fetchPaymentsList(mountedIframeRef)
-        fetchCustomerDetails(mountedIframeRef)
         mountedIframeRef->Window.iframePostMessage(message)
       }
 

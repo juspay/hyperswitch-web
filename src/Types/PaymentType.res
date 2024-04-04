@@ -272,7 +272,7 @@ let defaultSdkHandleConfirmPayment = {
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
-  customerPaymentMethods: NoResult(true),
+  customerPaymentMethods: LoadingSavedCards,
   layout: ObjectLayout(defaultLayout),
   paymentMethodOrder: None,
   fields: defaultFields,

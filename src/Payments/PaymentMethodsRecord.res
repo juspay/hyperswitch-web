@@ -223,7 +223,7 @@ let paymentMethodsFields = [
     paymentMethodName: "giropay",
     icon: Some(icon("giropay", ~size=19, ~width=25)),
     displayName: "GiroPay",
-    fields: [FullName, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -578,6 +578,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "ideal",
   "sofort",
   "pix_transfer",
+  "giropay",
 ]
 
 let getIsBillingField = requiredFieldType => {

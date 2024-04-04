@@ -151,6 +151,11 @@ let make = (
       if result {
         if isInvokeSDKFlow {
           if isDelayedSessionToken {
+            handlePostMessage([
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", "paymentloader"->JSON.Encode.string),
+              ("iframeId", iframeId->JSON.Encode.string),
+            ])
             let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
             processPayment(bodyDict)
           } else {
@@ -165,8 +170,9 @@ let make = (
           let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
           processPayment(bodyDict)
         }
+        let value = "Payment Data Filled: New Payment Method"
         loggerState.setLogInfo(
-          ~value="",
+          ~value,
           ~eventName=PAYMENT_DATA_FILLED,
           ~paymentMethod="GOOGLE_PAY",
           (),
