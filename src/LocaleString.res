@@ -156,6 +156,7 @@ let defaultLocale = {
 type locale = {localeStrings: array<localeStrings>}
 
 let localeStrings = [
+  // ? - English (en)
   {
     locale: "en",
     localeDirection: "ltr",
@@ -238,6 +239,7 @@ let localeStrings = [
     cardNickname: "Card Nickname",
     nicknamePlaceholder: "Card Nickname (Optional)",
   },
+  // ? - Hebrew (he)
   {
     locale: "he",
     localeDirection: "rtl",
@@ -320,6 +322,7 @@ let localeStrings = [
     cardNickname: `כינוי לכרטיס`,
     nicknamePlaceholder: `כינוי לכרטיס (אופציונלי)`,
   },
+  // ? - French (fr)
   {
     locale: `fr`,
     localeDirection: `ltr`,
@@ -402,6 +405,7 @@ let localeStrings = [
     cardNickname: `Pseudonyme de la carte`,
     nicknamePlaceholder: `Surnom de la carte (facultatif)`,
   },
+  // ? - English (en-GB)
   {
     locale: "en-GB",
     localeDirection: "ltr",
@@ -484,6 +488,7 @@ let localeStrings = [
     cardNickname: "Card Nickname",
     nicknamePlaceholder: "Card Nickname (Optional)",
   },
+  // ? - Arabic (ar)
   {
     locale: "ar",
     localeDirection: "rtl",
@@ -566,6 +571,7 @@ let localeStrings = [
     cardNickname: `الاسم علي الكارت`,
     nicknamePlaceholder: `اسم البطاقة (اختياري)`,
   },
+  // ? - Japanese (ja)
   {
     locale: "ja",
     localeDirection: "ltr",
@@ -648,6 +654,7 @@ let localeStrings = [
     cardNickname: `カードのニックネーム`,
     nicknamePlaceholder: `カードニックネーム（任意）`,
   },
+  // ? - German (de)
   {
     locale: "de",
     localeDirection: "ltr",
@@ -730,6 +737,7 @@ let localeStrings = [
     cardNickname: `Spitzname der Karte`,
     nicknamePlaceholder: `Kartenname (optional)`,
   },
+  // ? - French (Belgium) (fr-BE)
   {
     locale: "fr-BE",
     localeDirection: "ltr",
@@ -763,11 +771,11 @@ let localeStrings = [
     useExisitingSavedCards: "Utiliser les cartes de débit/crédit enregistrées",
     saveCardDetails: "Enregistrer les détails de la carte",
     addBankAccount: "Ajouter un compte bancaire",
-    achBankDebitTerms: _ =>
-      `Votre autorisation de débit ACH sera configurée maintenant, mais nous confirmerons le montant et vous informerons avant que les futurs paiements ne soient effectués.`,
-    sepaDebitTerms: _ =>
-      `Votre autorisation de débit SEPA sera configurée maintenant, mais nous confirmerons le montant et vous informerons avant que de futurs paiements ne soient effectués.`,
-    becsDebitTerms: `Votre autorisation de débit BECS sera configurée maintenant, mais nous confirmerons le montant et vous informerons avant que les futurs paiements ne soient effectués.`,
+    achBankDebitTerms: str =>
+      `En fournissant votre numéro de compte et en confirmant ce paiement, vous autorisez ${str} et Hyperswitch, notre prestataire de services de paiement, à envoyer des instructions à votre banque pour débiter votre compte et votre banque à débiter votre compte conformément à ces instructions. Vous avez droit à un remboursement de la part de votre banque selon les termes et conditions de l'accord que vous avez conclu avec elle. Le remboursement doit être demandé dans un délai de 8 semaines à compter de la date à laquelle votre compte a été débité.`,
+    sepaDebitTerms: str =>
+      `En fournissant vos informations de paiement et en confirmant ce paiement, vous autorisez (A) ${str} et Hyperswitch, notre prestataire de services de paiement et/ou PPRO, son prestataire de services local, à envoyer des instructions à votre banque pour débiter votre compte et (B) votre banque à débiter votre compte conformément à ces instructions. Dans le cadre de vos droits, vous avez droit à un remboursement de votre banque selon les termes et conditions de votre accord avec votre banque. Le remboursement doit être demandé dans un délai de 8 semaines à compter de la date à laquelle votre compte a été débité. Vos droits sont expliqués dans une déclaration que vous pouvez obtenir auprès de votre banque. Vous acceptez de recevoir des notifications pour les débits futurs jusqu'à 2 jours avant qu'ils ne se produisent.`,
+    becsDebitTerms: "En fournissant vos coordonnées bancaires et en confirmant ce paiement, vous acceptez la présente demande de prélèvement automatique et l'accord de service de demande de prélèvement automatique et autorisez Hyperswitch Payments Australia Pty Ltd ACN 160 180 343 Numéro d'identification d'utilisateur de prélèvement automatique 507156 (« Hyperswitch ») à débiter votre compte via le système de compensation électronique en bloc (BECS) au nom de Hyperswitch Payment Widget (le « Marchand ») pour tout montant qui vous est communiqué séparément par le Marchand. Vous certifiez que vous êtes soit le titulaire du compte, soit un signataire autorisé du compte mentionné ci-dessus.",
     cardTerms: str =>
       `En fournissant les informations relatives à votre carte, vous autorisez ${str} à débiter votre carte pour les paiements futurs conformément à leurs conditions.`,
     payNowButton: "Payer maintenant",
@@ -810,7 +818,9 @@ let localeStrings = [
     morePaymentMethods: "Plus de méthodes de paiement",
     useExistingPaymentMethods: "Utiliser les modes de paiement enregistrés",
     nicknamePlaceholder: "Surnom de la carte (facultatif)",
+    selectPaymentMethodText: "Veuillez sélectionner un mode de paiement et réessayer",
   },
+  // ? - Spanish (es)
   {
     locale: "es",
     localeDirection: "ltr",
@@ -844,11 +854,11 @@ let localeStrings = [
     useExisitingSavedCards: "Utilizar las tarjetas de débito/crédito guardadas",
     saveCardDetails: "Guardar la información de la tarjeta",
     addBankAccount: "Añadir cuenta bancaria",
-    achBankDebitTerms: _ =>
-      `Su autorización de débito ACH se configurará ahora, pero confirmaremos el monto y le informaremos antes de que se realicen pagos futuros.`,
-    sepaDebitTerms: _ =>
-      `Su autorización de débito SEPA se configurará ahora, pero confirmaremos el monto y le informaremos antes de que se realicen pagos futuros.`,
-    becsDebitTerms: `Su autorización de débito BECS se configurará ahora, pero confirmaremos el monto y le informaremos antes de que se realicen pagos futuros.`,
+    achBankDebitTerms: str =>
+      `Al proporcionar su número de cuenta y confirmar este pago, autoriza a ${str} y Hyperswitch, nuestro proveedor de servicios de pago, a enviar órdenes a su banco para que aplique cargos en su cuenta y para que realice los correspondientes adeudos en la misma de acuerdo con dichas órdenes. Tiene derecho a recibir un reembolso de su banco de acuerdo con las condiciones del contrato suscrito. El reembolso debe reclamarse en un plazo de 8 semanas desde la fecha en la que se aplicó el cargo en su cuenta.`,
+    sepaDebitTerms: str =>
+      `Al proporcionar su información de pago y confirmar este pago, autoriza a (A) ${str} y Hyperswitch, nuestro proveedor de servicios de pago o a PPRO, su proveedor de servicios local, a enviar órdenes a su banco para que aplique cargos en su cuenta y (B) para que realice los correspondientes adeudos en la misma de acuerdo con dichas órdenes. Como parte de sus derechos, tiene la potestad de que su banco le devuelva el dinero según las condiciones de su contrato. El reembolso debe reclamarse en un plazo de 8 semanas desde la fecha en la que se aplicó el cargo en su cuenta. Sus derechos aparecen explicados en una declaración que puede solicitar en su banco. Acepta recibir notificaciones de futuros cargos hasta 2 días antes de que se produzcan.`,
+    becsDebitTerms: "Al proporcionar los datos de su cuenta bancaria y confirmar este pago, acepta esta solicitud de domiciliación bancaria y el acuerdo de servicio para la misma. Además, autoriza a Hyperswitch Payments Australia Pty Ltd ACN 160 180 343, número de identificación de usuario de domiciliación bancaria 507156 («Hyperswitch»), a realizar adeudos en su cuenta a través del sistema de compensación electrónica masiva (BECS) en nombre de Hyperswitch Payment Widget (el «comercio») por cualquier importe que el comercio le comunique individualmente. Certifica que es titular de una cuenta o un firmante autorizado en la cuenta indicada anteriormente.",
     cardTerms: str =>
       `Al proporcionar la información de su tarjeta, permite a ${str} que realice cargos en su tarjeta para futuros pagos de acuerdo con sus términos.`,
     payNowButton: "Pagar ahora",
@@ -891,7 +901,9 @@ let localeStrings = [
     morePaymentMethods: "Más métodos de pago",
     useExistingPaymentMethods: "Utilice métodos de pago guardados",
     nicknamePlaceholder: "Apodo de la tarjeta (opcional)",
+    selectPaymentMethodText: "Por favor seleccione un método de pago y vuelva a intentarlo",
   },
+  // ? - Catalan (ca)
   {
     locale: "ca",
     localeDirection: "ltr",
@@ -925,11 +937,11 @@ let localeStrings = [
     useExisitingSavedCards: "Faci servir les targetes de dèbit o crèdit desades",
     saveCardDetails: "Desi les dades de la targeta",
     addBankAccount: "Afegeixi un compte bancari",
-    achBankDebitTerms: _ =>
-      "La vostra autorització de dèbit ACH es configurarà ara, però confirmarem l'import i us ho farem saber abans que es facin pagaments futurs.",
-    sepaDebitTerms: _ =>
-      "La vostra autorització de dèbit SEPA es configurarà ara, però confirmarem l'import i us ho farem saber abans que es realitzin pagaments futurs.",
-    becsDebitTerms: "La vostra autorització de dèbit BECS es configurarà ara, però confirmarem l'import i us ho farem saber abans que es facin pagaments futurs.",
+    achBankDebitTerms: str =>
+      `En facilitar el número de compte i confirmar el pagament, autoritza ${str} i Hyperswitch, el nostre proveïdor de serveis de pagament, a enviar ordres al seu banc perquè apliqui els càrrecs corresponents al compte. Tindrà dret a rebre un reembossament del banc d'acord amb els termes i condicions del contracte que hi hagi subscrit. El reembossament s'ha de sol·licitar en un termini de 8 setmanes des de la data en què es va aplicar el càrrec al compte.`,
+    sepaDebitTerms: str =>
+      `En facilitar la informació de pagament i confirmar el pagament, autoritza ${str} i Hyperswitch, el nostre proveïdor de serveis de pagament, o a PPRO, el seu proveïdor de serveis local, a enviar ordres al seu banc i a (B) perquè apliqui els càrrecs corresponents al compte. Com a part dels seus drets, podrà rebre un reembossament del banc d'acord amb els termes i condicions del contracte que hi hagi subscrit. El reembossament s'ha de sol·licitar en un termini de 8 setmanes des de la data en què es va aplicar el càrrec al compte. Els seus drets s'expliquen en un extracte que podrà sol·licitar al banc. Accepta rebre notificacions dels càrrecs futurs fins 2 dies abans que es produeixin.`,
+    becsDebitTerms: "En facilitar les dades del compte bancari i confirmar el pagament, accepta aquesta sol·licitud de domiciliació bancària i l'acord de servei corresponent. A més, autoritza Hyperswitch Payments Australia Pty Ltd ACN 160 180 343, amb número d'identificació d'usuari de domiciliació bancària 507156, («Hyperswitch») a aplicar càrrecs al compte a través del sistema de compensació electrònica massiva (BECS) en nom de Hyperswitch Payment Widget (el «comerç») per a qualsevol import que el comerç li comuniqui individualment. Certifica que és titular d'un compte o signatari autoritzat del compte que s'indica anteriorment.",
     cardTerms: str =>
       `En facilitar la informació de la targeta, permet a ${str} que faci càrrecs a la targeta per a pagaments futurs d'acord amb les seves condicions.`,
     payNowButton: "Pagui ara",
@@ -972,7 +984,9 @@ let localeStrings = [
     morePaymentMethods: "més mètodes de pagament",
     useExistingPaymentMethods: "Utilitzeu formes de pagament desades",
     nicknamePlaceholder: "Àlies de la targeta (opcional)",
+    selectPaymentMethodText: "Seleccioneu una forma de pagament i torneu-ho a provar",
   },
+  // ? - Portuguese (pt)
   {
     locale: "pt",
     localeDirection: "ltr",
@@ -1006,11 +1020,11 @@ let localeStrings = [
     useExisitingSavedCards: "Usar cartões de débito/crédito guardados",
     saveCardDetails: "Guardar dados do cartão",
     addBankAccount: "Adicionar conta bancária",
-    achBankDebitTerms: _ =>
-      `Sua autorização de débito ACH será configurada agora, mas confirmaremos o valor e avisaremos você antes que pagamentos futuros sejam realizados.`,
-    sepaDebitTerms: _ =>
-      `Sua autorização de débito SEPA será configurada agora, mas confirmaremos o valor e avisaremos você antes que pagamentos futuros sejam efetuados.`,
-    becsDebitTerms: `Sua autorização de débito BECS será configurada agora, mas confirmaremos o valor e avisaremos você antes que pagamentos futuros sejam realizados.`,
+    achBankDebitTerms: str =>
+      `Ao fornecer o seu número de conta e confirmar este pagamento, está a autorizar ${str} e a Hyperswitch, nossa prestadora de serviços de pagamento, a enviar instruções ao seu banco para debitar a sua conta e ao seu banco para debitar a sua conta de acordo com essas instruções. Tem direito a um reembolso do seu banco de acordo com os termos e condições do seu contrato com o seu banco. Um reembolso tem de ser solicitado dentro de 8 semanas a partir da data em que a sua conta tiver sido debitada.`,
+    sepaDebitTerms: str =>
+      `Ao fornecer as suas informações de pagamento e confirmar este pagamento, autoriza (A) ${str} e a Hyperswitch, a nossa prestadora de serviços de pagamento e/ou a PPRO, fornecedora de serviços local desta, para enviar instruções ao seu banco para debitar a sua conta e (B) ao seu banco para debitar a sua conta de acordo com essas instruções. Como parte dos seus direitos, tem direito a um reembolso do seu banco nos termos e condições do seu contrato com o seu banco. Um reembolso tem de ser solicitado dentro de 8 semanas a partir da data em que a sua conta tiver sido debitada. Os seus direitos são explicados numa declaração que pode obter junto do seu banco. Concorda em receber notificações para débitos futuros até 2 dias antes de ocorrerem.`,
+    becsDebitTerms: "Ao fornecer os seus dados bancários e confirmar este pagamento, concorda com este Pedido de Débito Automático e com o contrato de serviço de Pedido de Débito Automático e autoriza a Hyperswitch Payments Australia Pty Ltd ACN 160 180 343, Número de ID de Utilizador de Débito Automático 507156 (\"Hyperswitch\"), a debitar a sua conta através do Sistema de Compensação Eletrónica em Massa (BECS) em nome de Hyperswitch Payment Widget (o \"Comerciante\") por quaisquer valores separadamente comunicados a si pelo Comerciante. Certifica que é titular da conta ou signatário autorizado na conta listada acima.",
     cardTerms: str =>
       `Ao fornecer as informações do seu cartão, permite ${str} o débito do seu cartão para pagamentos futuros de acordo com as respetivas condições.`,
     payNowButton: "Pagar agora",
@@ -1053,7 +1067,9 @@ let localeStrings = [
     morePaymentMethods: "Mais métodos de pagamento",
     useExistingPaymentMethods: "Use métodos de pagamento salvos",
     nicknamePlaceholder: "Apelido do cartão (opcional)",
+    selectPaymentMethodText: "Selecione uma forma de pagamento e tente novamente",
   },
+  // ? - Italian (it)
   {
     locale: "it",
     localeDirection: "lrt",
@@ -1087,11 +1103,11 @@ let localeStrings = [
     useExisitingSavedCards: "Utilizza carte di debito/credito salvate",
     saveCardDetails: "Salva i dati della carta",
     addBankAccount: "Aggiungi un conto bancario",
-    achBankDebitTerms: _ =>
-      "La tua autorizzazione di addebito ACH verrà impostata ora, ma confermeremo l'importo e ti informeremo prima che vengano effettuati pagamenti futuri.",
-    sepaDebitTerms: _ =>
-      "La tua autorizzazione di addebito SEPA verrà impostata ora, ma confermeremo l'importo e ti informeremo prima che vengano effettuati pagamenti futuri.",
-    becsDebitTerms: "La tua autorizzazione di addebito BECS verrà impostata ora, ma confermeremo l'importo e ti informeremo prima che vengano effettuati pagamenti futuri.",
+    achBankDebitTerms: str =>
+      `Fornendo il tuo numero di conto e confermando questo pagamento, autorizzi ${str} e Hyperswitch, il nostro fornitore di servizi di pagamento, a inviare istruzioni alla tua banca per effettuare l'addebito sul tuo conto e la tua banca a effettuare tale addebito sul conto in conformità alle presenti istruzioni. Hai diritto a un rimborso dalla tua banca secondo i termini e le condizioni del tuo contratto con la stessa. Il rimborso va richiesto entro 8 settimane a partire dalla data di addebito sul conto.`,
+    sepaDebitTerms: str =>
+      `Fornendo le tue informazioni di pagamento e confermando questo pagamento, autorizzi (A) ${str} e Hyperswitch, il nostro fornitore di servizi di pagamento e/o PPRO, il suo fornitore locale di servizi, a inviare istruzioni alla tua banca per effettuare l'addebito sul tuo conto e (B) la tua banca a effettuare tale addebito sul conto in conformità alle presenti istruzioni. Come parte dei tuoi diritti, puoi richiedere un rimborso alla tua banca in conformità con i termini e le condizioni del tuo contratto con tale istituto. Devi richiedere il rimborso entro 8 settimane a partire dalla data di addebito sul conto. Puoi conoscere i tuoi diritti in merito richiedendo la relativa informativa alla tua banca. Accetti di ricevere avvisi relativi ai prossimi addebiti fino a 2 giorni prima della loro data effettiva.`,
+    becsDebitTerms: "Fornendo i dettagli del tuo conto bancario e confermando questo pagamento, accetti la presente Richiesta di addebito diretto e il contratto di servizio per la Richiesta di addebito diretto e autorizzi Hyperswitch Payments Australia Pty Ltd ACN 160 180 343, numero identificativo utente per addebito diretto 507156 ( \"Hyperswitch\") a effettuare l'addebito sul tuo conto tramite il Bulk Electronic Clearing System (BECS) per conto di Hyperswitch Payment Widget (l' Esercente) per qualsiasi importo ti venga comunicato separatamente dall'Esercente. Dichiari di essere titolare o firmatario autorizzato del conto sopra indicato.",
     cardTerms: str =>
       `Fornendo i dati della tua carta, autorizzi ${str} ad addebitare sulla tua carta pagamenti futuri in conformità con i suoi termini.`,
     payNowButton: "Paga ora",
@@ -1134,7 +1150,9 @@ let localeStrings = [
     morePaymentMethods: "Più metodi di pagamento",
     useExistingPaymentMethods: "Utilizza i metodi di pagamento salvati",
     nicknamePlaceholder: "Soprannome della carta (facoltativo)",
+    selectPaymentMethodText: "Seleziona un metodo di pagamento e riprova",
   },
+  // ? - Polish (pl)
   {
     locale: "pl",
     localeDirection: "ltr",
@@ -1168,11 +1186,11 @@ let localeStrings = [
     useExisitingSavedCards: "Użyj zapisanych kart debetowych lub kredytowych",
     saveCardDetails: "Zapisz dane karty",
     addBankAccount: "Dodaj konto bankowe",
-    achBankDebitTerms: _ =>
-      `Twoja autoryzacja polecenia zapłaty ACH zostanie teraz skonfigurowana, ale potwierdzimy kwotę i poinformujemy Cię o tym przed pobraniem przyszłych płatności.`,
-    sepaDebitTerms: _ =>
-      `Twoja autoryzacja polecenia zapłaty SEPA zostanie teraz skonfigurowana, ale potwierdzimy kwotę i poinformujemy Cię o tym przed pobraniem przyszłych płatności.`,
-    becsDebitTerms: `Twoja autoryzacja polecenia zapłaty BECS zostanie teraz skonfigurowana, ale potwierdzimy kwotę i damy Ci znać przed pobraniem przyszłych płatności`,
+    achBankDebitTerms: str =>
+      `Podając numer konta i potwierdzając tę płatność, upoważniasz ${str} i Hyperswitch, naszego dostawcę usług płatniczych, do przekazania Twojemu bankowi dyspozycji obciążenia Twojego konta, a Twój bank – do obciążenia Twojego konta zgodnie z tymi instrukcjami. Przysługuje Ci prawo do zwrotu pieniędzy od banku zgodnie z warunkami umowy zawartej z bankiem. Wniosek o zwrot pieniędzy należy złożyć w ciągu 8 dni od dnia obciążenia konta.`,
+    sepaDebitTerms: str =>
+      `Podając dane do płatności i potwierdzając tę płatność, upoważniasz (A) ${str} i Hyperswitch, naszego dostawcę usług płatniczych, oraz PPRO, lokalnego dostawcy usług tej firmy do przekazania Twojemu bankowi dyspozycji obciążenia Twojego konta, a także (B) Twój bank – do obciążenia Twojego konta zgodnie z tymi instrukcjami. Twoje prawa obejmują prawo do zwrotu pieniędzy przez Twój bank zgodnie z warunkami umowy zawartej z bankiem. Wniosek o zwrot pieniędzy należy złożyć w ciągu 8 dni od dnia obciążenia konta. Twoje prawa są wyjaśnione w wyciągu, który możesz otrzymać od swojego banku. Wyrażasz zgodę na otrzymywanie powiadomień o przyszłych obciążeniach do 2 dni przed ich realizacją.`,
+    becsDebitTerms: "Podając dane konta bankowego i potwierdzając tę płatność, zgadzasz się na niniejsze polecenie zapłaty i umowę o świadczenie usług polecenia zapłaty oraz upoważniasz Hyperswitch Payments Australia Pty Ltd ACN 160 180 343 numer identyfikacyjny użytkownika polecenia zapłaty 507156 („Hyperswitch”) do obciążenia Twojego konta za pośrednictwem Zbiorczego Elektronicznego Systemu Rozliczeniowego (BECS) w imieniu Hyperswitch Payment Widget („Sprzedawca”) wszelkimi kwotami, o których Sprzedawca poinformował Cię osobno. Oświadczasz, że jesteś posiadaczem konta lub osobą upoważnioną do składania podpisów dla konta wymienionego powyżej.",
     cardTerms: str =>
       `Podając dane swojej karty, zezwalasz ${str} na obciążenie jej przyszłymi płatnościami zgodnie z jej warunkami.`,
     payNowButton: "Zapłać teraz",
@@ -1215,7 +1233,9 @@ let localeStrings = [
     morePaymentMethods: "Więcej metod płatności",
     useExistingPaymentMethods: "Skorzystaj z zapisanych metod płatności",
     nicknamePlaceholder: "Pseudonim karty (opcjonalnie)",
+    selectPaymentMethodText: "Wybierz metodę płatności i spróbuj ponownie",
   },
+  // ? - Dutch (nl)
   {
     locale: "nl",
     localeDirection: "ltr",
@@ -1249,11 +1269,11 @@ let localeStrings = [
     useExisitingSavedCards: "Brug gemte debet-/kreditkort",
     saveCardDetails: "Gem kortoplysninger",
     addBankAccount: "Tilføj bankkonto",
-    achBankDebitTerms: _ =>
-      `Uw ACH-incassomachtiging wordt nu ingesteld, maar we bevestigen het bedrag en laten het u weten voordat toekomstige betalingen worden afgeschreven.`,
-    sepaDebitTerms: _ =>
-      `Uw SEPA-incassomachtiging wordt nu ingesteld, maar we bevestigen het bedrag en laten het u weten voordat toekomstige betalingen worden afgeschreven.`,
-    becsDebitTerms: `Uw BECS-incassomachtiging wordt nu ingesteld, maar we bevestigen het bedrag en laten het u weten voordat toekomstige betalingen worden afgeschreven.`,
+    achBankDebitTerms: str =>
+      `Ved at angive dit kontonummer og bekræfte denne betaling giver du ${str} og Hyperswitch, vores betalingstjenesteudbyder, tilladelse til at sende instruktioner til din bank om at debitere din konto og din bank om at debitere din konto i overensstemmelse med disse instruktioner. Du har ret til en refusion fra din bank i henhold til vilkårene og betingelserne i din aftale med din bank. Der skal anmodes om en refusion inden for otte uger fra den dato, hvor din konto blev debiteret.`,
+    sepaDebitTerms: str =>
+      `Ved at angive dine betalingsoplysninger og bekræfte denne betaling giver du (A) ${str} og Hyperswitch, vores betalingstjenesteudbyder og/eller PPRO, dens lokale tjenesteudbyder, tilladelse til at sende instruktioner til din bank om at debitere din konto og (B) din bank om at debitere din konto i overensstemmelse med disse instruktioner. Som en del af dine rettigheder har du ret til en refusion fra din bank i henhold til vilkårene og betingelserne i din aftale med din bank. Der skal anmodes om en refusion inden for otte uger fra den dato, hvor din konto blev debiteret. Dine rettigheder er forklaret i en erklæring, som du kan få fra din bank. Du accepterer at modtage meddelelser om fremtidige debiteringer op til to dage, før de finder sted.`,
+    becsDebitTerms: "Ved at angive dine bankkontooplysninger og bekræfte denne betaling accepterer du denne anmodning om direkte debitering og serviceaftalen om anmodning om direkte debitering og giver Hyperswitch Payments Australia Pty Ltd ACN 160 180 343 Direct Debit User ID-nummer 507156 ( \"Hyperswitch\") tilladelse til at debitere din konto via Bulk Electronic Clearing System (BECS) på vegne af Hyperswitch Payment Widget (\"Forhandleren\") for eventuelle beløb, som Forhandleren har meddelt dig separat. Du bekræfter, at du enten er en kontoindehaver eller en autoriseret underskriver på den konto, der er angivet ovenfor.",
     cardTerms: str =>
       `Ved at angive dine kortoplysninger giver du tilladelse ${str} til at debitere dit kort for fremtidige betalinger i overensstemmelse med deres vilkår.`,
     payNowButton: "Betal nu",
@@ -1296,7 +1316,9 @@ let localeStrings = [
     morePaymentMethods: "Meer betaalmethoden",
     useExistingPaymentMethods: "Gebruik opgeslagen betaalmethoden",
     nicknamePlaceholder: "Bijnaam kaart (optioneel)",
+    selectPaymentMethodText: "Selecteer een betaalmethode en probeer het opnieuw",
   },
+  // ? - Swedish (SV)
   {
     locale: "sv",
     localeDirection: "ltr",
@@ -1330,11 +1352,11 @@ let localeStrings = [
     useExisitingSavedCards: "Använd sparade betal-/kreditkort",
     saveCardDetails: "Spara kortuppgifter",
     addBankAccount: "Lägg till bankkonto",
-    achBankDebitTerms: _ =>
-      `Din ACH-debiteringsauktorisering kommer att ställas in nu, men vi bekräftar beloppet och låter dig veta innan framtida betalningar tas.`,
-    sepaDebitTerms: _ =>
-      `Din SEPA-debiteringsauktorisering kommer att ställas in nu, men vi bekräftar beloppet och låter dig veta innan framtida betalningar tas.`,
-    becsDebitTerms: `Din BECS-debiteringsauktorisering kommer att ställas in nu, men vi bekräftar beloppet och låter dig veta innan framtida betalningar görs.`,
+    achBankDebitTerms: str =>
+      `Genom att ange ditt kontonummer och bekräfta denna betalning godkänner du att ${str} och Hyperswitch, vår betaltjänstleverantör, skickar instruktioner till din bank att debitera ditt konto och att din bank debiterar ditt konto i enlighet med dessa instruktioner. Du har rätt till återbetalning från din bank enligt villkoren i ditt avtal med din bank. En återbetalning måste begäras inom 8 veckor från det datum då ditt konto debiterades.`,
+    sepaDebitTerms: str =>
+      `Genom att ange din betalningsinformation och bekräfta denna betalning godkänner du att (A) ${str} och Hyperswitch, vår betaltjänstleverantör och/eller PPRO, dess lokala tjänsteleverantör, skickar instruktioner till din bank att debitera ditt konto och (B) att din bank debiterar ditt konto i enlighet med dessa instruktioner. Som en del av dina rättigheter har du rätt till återbetalning från din bank enligt villkoren i ditt avtal med din bank. En återbetalning måste begäras inom 8 veckor från det datum då ditt konto debiterades. Dina rättigheter förklaras i ett uttalande som du kan erhålla från din bank. Du samtycker till att få aviseringar för framtida debiteringar upp till 2 dagar innan de inträffar.`,
+    becsDebitTerms: "Genom att ange dina bankkontouppgifter och bekräfta denna betalning godkänner du denna autogirering och serviceavtalet för autogirering och godkänner att Hyperswitch Payments Australia Pty Ltd ACN 160 180 343 med användar-ID för direktdebitering 507156 ( \"Hyperswitch\") debiterar ditt konto via Bulk Electronic Clearing System (BECS) på uppdrag av Hyperswitch Payment Widget (\"Handlaren\") för eventuella belopp som separat meddelats dig av Handlaren. Du intygar att du antingen är kontoinnehavare eller behörig undertecknare för kontot som anges ovan.",
     cardTerms: str =>
       `Genom att ange din kortinformation tillåter du att ${str} debiterar ditt kort för framtida betalningar i enlighet med deras villkor.`,
     payNowButton: "Betala nu",
@@ -1377,7 +1399,9 @@ let localeStrings = [
     morePaymentMethods: "Fler betalningsmetoder",
     useExistingPaymentMethods: "Använd sparade betalningsmetoder",
     nicknamePlaceholder: "Kortets smeknamn (valfritt)",
+    selectPaymentMethodText: "Välj en betalningsmetod och försök igen",
   },
+  // ? - Russian (ru)
   {
     locale: "ru",
     localeDirection: "ltr",
@@ -1411,11 +1435,11 @@ let localeStrings = [
     useExisitingSavedCards: "Использовать сохраненные дебетовые/кредитные карты",
     saveCardDetails: "Сохранить данные карты",
     addBankAccount: "Добавить банковский счет",
-    achBankDebitTerms: _ =>
-      `Ваше разрешение на дебет ACH будет настроено сейчас, но мы подтвердим сумму и сообщим вам об этом до того, как будут приняты будущие платежи.`,
-    sepaDebitTerms: _ =>
-      `Ваше разрешение на дебет SEPA будет настроено сейчас, но мы подтвердим сумму и сообщим вам об этом до того, как будут приняты будущие платежи.`,
-    becsDebitTerms: `Ваше разрешение на дебет BECS будет настроено сейчас, но мы подтвердим сумму и сообщим вам об этом до того, как будут приняты будущие платежи.`,
+    achBankDebitTerms: str =>
+      `Предоставляя номер своего счета и подтверждая этот платеж, вы уполномочиваете ${str} и Hyperswitch, нашего поставщика платежных услуг, отправить инструкции в ваш банк для списания средств с вашего счета, а ваш банк — списать средства с вашего счета в соответствии с этими инструкциями. Вы имеете право на возврат средств от своего банка в соответствии с условиями вашего договора с банком. Заявление на возврат средств должно быть подано в течение 8 недель, начиная с даты списания средств с вашего счета.`,
+    sepaDebitTerms: str =>
+      `Предоставляя свои платежные данные и подтверждая данный платеж, вы уполномочиваете (А) ${str} и Hyperswitch, нашего поставщика платежных услуг и/или PPRO, его местного поставщика услуг, отправить инструкции в ваш банк для списания средств с вашего счета и (Б) ваш банк списать средства с вашего счета в соответствии с этими инструкциями. В рамках своих прав вы имеете право на возврат средств от своего банка в соответствии с условиями вашего договора с банком. Заявление на возврат средств должно быть подано в течение 8 недель, начиная с даты списания средств с вашего счета. Ваши права разъясняются в заявлении, которое вы можете получить в своем банке. Вы соглашаетесь получать уведомления о будущих списаниях средств за 2 дня до их осуществления.`,
+    becsDebitTerms: "Предоставляя свои банковские реквизиты и подтверждая этот платеж, вы соглашаетесь с настоящим Запросом на прямое дебетование и соглашением об услуге Запроса на прямое дебетование и уполномочиваете Hyperswitch Payments Australia Pty Ltd ACN 160 180 343 Direct Debit User ID number 507156 («Hyperswitch») списать средства с вашего счета через Систему массовых электронных расчетов (BECS) от имени Платежного виджета Hyperswitch («Продавец») на любые суммы, отдельно сообщенные вам Продавцом. Вы подтверждаете, что являетесь владельцем счета или уполномоченным лицом с правом подписи по указанному выше счету.",
     cardTerms: str =>
       `Предоставляя данные своей карты, вы позволяете компании ${str} списать средства с вашей карты для будущих платежей в соответствии с ее условиями.`,
     payNowButton: "Оплатить сейчас",
@@ -1461,5 +1485,6 @@ let localeStrings = [
     morePaymentMethods: "Больше способов оплаты",
     useExistingPaymentMethods: "Используйте сохраненные способы оплаты",
     nicknamePlaceholder: "Псевдоним карты (необязательно)",
+    selectPaymentMethodText: "Пожалуйста, выберите способ оплаты и повторите попытку.",
   },
 ]
