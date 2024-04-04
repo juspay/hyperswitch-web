@@ -71,11 +71,19 @@ let make = (
   | _ => false
   }
   let empty = cvcNumber == ""
+  let (token, customerId) = paymentToken
+  let customerMethod =
+    savedMethods
+    ->Array.filter(savedMethod => {
+      savedMethod.paymentToken === token
+    })
+    ->Array.get(0)
+    ->Option.getOr(PaymentType.defaultCustomerMethods)
+  let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
+  let isCardPaymentMethod = customerMethod.paymentMethod === "card"
+  let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    let (token, customerId) = paymentToken
+  React.useEffect(() => {
     let customerMethod =
       savedMethods
       ->Array.filter(savedMethod => {
@@ -83,9 +91,18 @@ let make = (
       })
       ->Array.get(0)
       ->Option.getOr(PaymentType.defaultCustomerMethods)
-    let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
-    let isCardPaymentMethod = customerMethod.paymentMethod === "card"
-    let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
+    let complete =
+      areRequiredFieldsValid &&
+      !isUnknownPaymentMethod &&
+      (!isCardPaymentMethod || isCardPaymentMethodValid)
+    let paymentType = customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
+    handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod=true)
+    None
+  }, (areRequiredFieldsValid, empty, customerMethod, isCardPaymentMethodValid))
+
+  let submitCallback = React.useCallback((ev: Window.event) => {
+    let json = ev.data->JSON.parseExn
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>
@@ -144,7 +161,7 @@ let make = (
         }
       }
     }
-  }, (areRequiredFieldsValid, requiredFieldsBody, empty, complete))
+  }, (areRequiredFieldsValid, requiredFieldsBody, empty, complete, customerMethod))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
