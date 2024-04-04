@@ -19,5 +19,5 @@ let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false
     setIsPayNowButtonDisable(_ => !isCompletelyFilled)
     Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod)
     None
-  }, (complete, empty))
+  }, (complete, empty, paymentType))
 }
