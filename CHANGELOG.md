@@ -1,3 +1,10 @@
+## [0.38.1](https://github.com/juspay/hyperswitch-web/compare/v0.38.0...v0.38.1) (2024-04-04)
+
+
+### Bug Fixes
+
+* disable sdk button changes ([#244](https://github.com/juspay/hyperswitch-web/issues/244)) ([164ffdb](https://github.com/juspay/hyperswitch-web/commit/164ffdb9f117c39b6b10a029eb26328e4fa8e7ee))
+
 # [0.38.0](https://github.com/juspay/hyperswitch-web/compare/v0.37.0...v0.38.0) (2024-04-04)
 
 
