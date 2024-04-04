@@ -1,3 +1,5 @@
+type locale = EN | HE | FR | EN_GB | AR | JA | DE | FR_BE | ES | CA | PT | IT | PL | NL | SV | RU
+
 type localeStrings = {
   locale: string,
   cardNumberLabel: string,

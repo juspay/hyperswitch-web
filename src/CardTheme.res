@@ -75,24 +75,23 @@ let getLocaleObject = string => {
   } else {
     string
   }
-  switch locale {
-  | "en" => EnglishLocale.localeStrings
-  | "he" => HebrewLocale.localeStrings
-  | "fr" => FrenchLocale.localeStrings
-  | "en-GB" => EnglishGBLocale.localeStrings
-  | "ar" => ArabicLocale.localeStrings
-  | "ja" => JapaneseLocale.localeStrings
-  | "de" => DeutschLocale.localeStrings
-  | "fr-BE" => FrenchBelgiumLocale.localeStrings
-  | "es" => SpanishLocale.localeStrings
-  | "ca" => CatalanLocale.localeStrings
-  | "pt" => PortugueseLocale.localeStrings
-  | "it" => ItalianLocale.localeStrings
-  | "pl" => PolishLocale.localeStrings
-  | "nl" => DutchLocale.localeStrings
-  | "sv" => SwedishLocale.localeStrings
-  | "ru" => RussianLocale.localeStrings
-  | _ => EnglishLocale.localeStrings
+  switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
+  | EN => EnglishLocale.localeStrings
+  | HE => HebrewLocale.localeStrings
+  | FR => FrenchLocale.localeStrings
+  | EN_GB => EnglishGBLocale.localeStrings
+  | AR => ArabicLocale.localeStrings
+  | JA => JapaneseLocale.localeStrings
+  | DE => DeutschLocale.localeStrings
+  | FR_BE => FrenchBelgiumLocale.localeStrings
+  | ES => SpanishLocale.localeStrings
+  | CA => CatalanLocale.localeStrings
+  | PT => PortugueseLocale.localeStrings
+  | IT => ItalianLocale.localeStrings
+  | PL => PolishLocale.localeStrings
+  | NL => DutchLocale.localeStrings
+  | SV => SwedishLocale.localeStrings
+  | RU => RussianLocale.localeStrings
   }
 }
 let defaultRecoilConfig: recoilConfig = {
