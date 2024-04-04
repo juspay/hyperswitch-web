@@ -1,3 +1,10 @@
+## [0.36.1](https://github.com/juspay/hyperswitch-web/compare/v0.36.0...v0.36.1) (2024-04-04)
+
+
+### Bug Fixes
+
+* added Loader and Error Handling for TrustPay GooglePay ([#268](https://github.com/juspay/hyperswitch-web/issues/268)) ([1f082eb](https://github.com/juspay/hyperswitch-web/commit/1f082ebe2031a10129b24238f1c60fabd6f5e2e0))
+
 # [0.36.0](https://github.com/juspay/hyperswitch-web/compare/v0.35.6...v0.36.0) (2024-04-04)
 
 
