@@ -94,7 +94,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     let (default, defaultRules) = (themeValues.default, themeValues.defaultRules)
     let config = CardTheme.itemToObjMapper(paymentOptions, default, defaultRules, logger)
 
-    let localeString = Utils.getWarningString(optionsDict, "locale", "", ~logger)
+    let optionsLocaleString = Utils.getWarningString(optionsDict, "locale", "", ~logger)
 
     let optionsAppearance = CardTheme.getAppearance(
       "appearance",
@@ -105,7 +105,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     )
     let appearance =
       optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-    let localeString = CardTheme.getLocaleObject(localeString == "" ? config.locale : localeString)
+    let localeString = CardTheme.getLocaleObject(
+      optionsLocaleString == "" ? config.locale : optionsLocaleString,
+    )
     setConfig(_ => {
       config: {
         appearance,
