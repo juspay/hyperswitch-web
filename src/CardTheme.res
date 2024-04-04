@@ -90,9 +90,8 @@ let getLocaleObject = string => {
   | "it" => ItalianLocale.localeStrings
   | "pl" => PolishLocale.localeStrings
   | "nl" => DutchLocale.localeStrings
-  | "SV" => SwedishLocale.localeStrings
+  | "sv" => SwedishLocale.localeStrings
   | "ru" => RussianLocale.localeStrings
-
   | _ => EnglishLocale.localeStrings
   }
 }
