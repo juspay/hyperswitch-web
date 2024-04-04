@@ -273,6 +273,13 @@ let make = (
           let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
           processPayment(bodyDict)
         }
+        let value = "Payment Data Filled: New Payment Method"
+        loggerState.setLogInfo(
+          ~value,
+          ~eventName=PAYMENT_DATA_FILLED,
+          ~paymentMethod="APPLE_PAY",
+          (),
+        )
       } else {
         setApplePayClicked(_ => false)
       }
