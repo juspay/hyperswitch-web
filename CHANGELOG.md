@@ -1,3 +1,18 @@
+## [0.36.1](https://github.com/juspay/hyperswitch-web/compare/v0.36.0...v0.36.1) (2024-04-04)
+
+
+### Bug Fixes
+
+* added Loader and Error Handling for TrustPay GooglePay ([#268](https://github.com/juspay/hyperswitch-web/issues/268)) ([1f082eb](https://github.com/juspay/hyperswitch-web/commit/1f082ebe2031a10129b24238f1c60fabd6f5e2e0))
+
+# [0.36.0](https://github.com/juspay/hyperswitch-web/compare/v0.35.6...v0.36.0) (2024-04-04)
+
+
+### Features
+
+* **3ds:** three DS SDK - adding logs to track milestone events ([#265](https://github.com/juspay/hyperswitch-web/issues/265)) ([ceab161](https://github.com/juspay/hyperswitch-web/commit/ceab1614e80d8cfb96ac3eea04486ebd509e0770))
+* giropay dynamic fields added ([#267](https://github.com/juspay/hyperswitch-web/issues/267)) ([ad2fa63](https://github.com/juspay/hyperswitch-web/commit/ad2fa630c639c7b246176f1d2683050a58ad3e36))
+
 ## [0.35.6](https://github.com/juspay/hyperswitch-web/compare/v0.35.5...v0.35.6) (2024-04-02)
 
 
