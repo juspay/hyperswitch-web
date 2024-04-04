@@ -166,7 +166,7 @@ let make = (~paymentType, ~className="") => {
     None
   }, [country.value])
 
-  let submitCallback = React.useCallback6((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
@@ -309,7 +309,6 @@ let make = (~paymentType, ~className="") => {
               onChange=onPostalChange
               paymentType
               className
-              type_="tel"
               name="postal"
               inputRef=postalRef
               placeholder=localeString.postalCodeLabel

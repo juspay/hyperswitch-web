@@ -21,7 +21,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
   logApi(
     ~optLogger,
     ~url=uri,
-    ~type_="request",
+    ~apiLogType=Request,
     ~eventName=RETRIEVE_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
@@ -44,7 +44,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
           ~url=uri,
           ~data,
           ~statusCode,
-          ~type_="err",
+          ~apiLogType=Err,
           ~eventName=RETRIEVE_CALL,
           ~logType=ERROR,
           ~logCategory=API,
@@ -57,7 +57,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
         ~optLogger,
         ~url=uri,
         ~statusCode,
-        ~type_="response",
+        ~apiLogType=Response,
         ~eventName=RETRIEVE_CALL,
         ~logType=INFO,
         ~logCategory=API,
@@ -69,6 +69,143 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
   ->catch(e => {
     Console.log2("Unable to retrieve payment details because of ", e)
     JSON.Encode.null->resolve
+  })
+}
+
+let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
+  open Promise
+  logApi(
+    ~optLogger,
+    ~url,
+    ~apiLogType=Request,
+    ~eventName=THREE_DS_METHOD_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  let threeDsMethodStr = threeDsMethodData->JSON.Decode.string->Option.getOr("")
+  let body = `${encodeURIComponent("threeDSMethodData")}=${encodeURIComponent(threeDsMethodStr)}`
+
+  fetchApiWithNoCors(url, ~method=#POST, ~bodyStr=body, ())
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.text
+      ->then(text => {
+        logApi(
+          ~optLogger,
+          ~url,
+          ~data=text->JSON.Encode.string,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=THREE_DS_METHOD_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        ""->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger,
+        ~url,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=THREE_DS_METHOD_CALL,
+        (),
+      )
+      res->Fetch.Response.text
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->Utils.formatException
+    Console.log2("Unable to call 3ds method ", exceptionMessage)
+    logApi(
+      ~optLogger,
+      ~url,
+      ~eventName=THREE_DS_METHOD_CALL,
+      ~apiLogType=NoResponse,
+      ~data=exceptionMessage,
+      ~logType=ERROR,
+      ~logCategory=API,
+      (),
+    )
+    reject(err)
+  })
+}
+
+let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
+  let url = `${endpoint}/payments/${paymentIntentID}/3ds/authentication`
+  let broswerInfo = BrowserSpec.broswerInfo
+  let body =
+    [
+      ("client_secret", clientSecret->JSON.Encode.string),
+      ("device_channel", "BRW"->JSON.Encode.string),
+      ("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string),
+    ]
+    ->Array.concat(broswerInfo())
+    ->Dict.fromArray
+    ->JSON.Encode.object
+
+  open Promise
+  logApi(
+    ~optLogger,
+    ~url,
+    ~apiLogType=Request,
+    ~eventName=AUTHENTICATION_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  fetchApi(url, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray, ())
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger,
+          ~url,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=AUTHENTICATION_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger,
+        ~url,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=AUTHENTICATION_CALL,
+        (),
+      )
+      res->Fetch.Response.json
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->Utils.formatException
+    Console.log2("Unable to call 3ds auth ", exceptionMessage)
+    logApi(
+      ~optLogger,
+      ~url,
+      ~eventName=AUTHENTICATION_CALL,
+      ~apiLogType=NoResponse,
+      ~data=exceptionMessage,
+      ~logType=ERROR,
+      ~logCategory=API,
+      (),
+    )
+    reject(err)
   })
 }
 
@@ -127,7 +264,7 @@ let rec intentCall = (
   logApi(
     ~optLogger,
     ~url=uri,
-    ~type_="request",
+    ~apiLogType=Request,
     ~eventName=initEventName,
     ~logType=INFO,
     ~logCategory=API,
@@ -157,8 +294,8 @@ let rec intentCall = (
       res
       ->Fetch.Response.json
       ->then(data => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
+        Promise.make(
+          (resolve, _) => {
             if isConfirm {
               let paymentMethod = switch paymentType {
               | Card => "CARD"
@@ -181,7 +318,7 @@ let rec intentCall = (
               ~url=uri,
               ~data,
               ~statusCode,
-              ~type_="err",
+              ~apiLogType=Err,
               ~eventName,
               ~logType=ERROR,
               ~logCategory=API,
@@ -210,14 +347,14 @@ let rec intentCall = (
         )->then(resolve)
       })
       ->catch(err => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
+        Promise.make(
+          (resolve, _) => {
             let exceptionMessage = err->Utils.formatException
             logApi(
               ~optLogger,
               ~url=uri,
               ~statusCode,
-              ~type_="no_response",
+              ~apiLogType=NoResponse,
               ~data=exceptionMessage,
               ~eventName,
               ~logType=ERROR,
@@ -279,9 +416,9 @@ let rec intentCall = (
       res
       ->Fetch.Response.json
       ->then(data => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
-            logApi(~optLogger, ~url=uri, ~statusCode, ~type_="response", ~eventName, ())
+        Promise.make(
+          (resolve, _) => {
+            logApi(~optLogger, ~url=uri, ~statusCode, ~apiLogType=Response, ~eventName, ())
             let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
             let paymentMethod = switch paymentType {
             | Card => "CARD"
@@ -359,6 +496,7 @@ let rec intentCall = (
                   [
                     ("qrData", qrData->JSON.Encode.string),
                     ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
                     ("expiryTime", expiryTime->Belt.Float.toString->JSON.Encode.string),
                     ("url", url.href->JSON.Encode.string),
@@ -380,6 +518,61 @@ let rec intentCall = (
                   ])
                 }
                 resolve(data)
+              } else if intent.nextAction.type_ === "three_ds_invoke" {
+                let threeDsData =
+                  intent.nextAction.three_ds_data
+                  ->Belt.Option.flatMap(JSON.Decode.object)
+                  ->Option.getOr(Dict.make())
+                let do3dsMethodCall =
+                  threeDsData
+                  ->Dict.get("three_ds_method_details")
+                  ->Belt.Option.flatMap(JSON.Decode.object)
+                  ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
+                  ->Option.getOr(Dict.make()->JSON.Encode.object)
+                  ->JSON.Decode.bool
+                  ->Utils.getBoolValue
+
+                let headerObj = Dict.make()
+                headers->Array.forEach(
+                  entries => {
+                    let (x, val) = entries
+                    Dict.set(headerObj, x, val->JSON.Encode.string)
+                  },
+                )
+                let metaData =
+                  [
+                    ("threeDSData", threeDsData->JSON.Encode.object),
+                    ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
+                    ("headers", headerObj->JSON.Encode.object),
+                    ("url", url.href->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                  ]->Dict.fromArray
+
+                handleLogging(
+                  ~optLogger,
+                  ~value=do3dsMethodCall ? "Y" : "N",
+                  ~eventName=THREE_DS_METHOD,
+                  ~paymentMethod,
+                  (),
+                )
+
+                if do3dsMethodCall {
+                  handlePostMessage([
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `3ds`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData->JSON.Encode.object),
+                  ])
+                } else {
+                  metaData->Dict.set("3dsMethodComp", "U"->JSON.Encode.string)
+                  handlePostMessage([
+                    ("fullscreen", true->JSON.Encode.bool),
+                    ("param", `3dsAuth`->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                    ("metadata", metaData->JSON.Encode.object),
+                  ])
+                }
               } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
                 | Some(token) => token->Utils.getDictFromJson
@@ -488,7 +681,7 @@ let rec intentCall = (
     }
   })
   ->catch(err => {
-    Js.Promise.make((~resolve, ~reject as _) => {
+    Promise.make((resolve, _) => {
       let url = urlSearch(confirmParam.return_url)
       url.searchParams.set("payment_intent_client_secret", clientSecret)
       url.searchParams.set("status", "failed")
@@ -497,7 +690,7 @@ let rec intentCall = (
         ~optLogger,
         ~url=uri,
         ~eventName,
-        ~type_="no_response",
+        ~apiLogType=NoResponse,
         ~data=exceptionMessage,
         ~logType=ERROR,
         ~logCategory=API,
@@ -625,6 +818,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
   let list = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+
   let (isManualRetryEnabled, setIsManualRetryEnabled) = Recoil.useRecoilState(
     RecoilAtoms.isManualRetryEnabled,
   )
@@ -632,7 +826,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
     ~confirmParam: ConfirmType.confirmParams,
-    ~iframeId="",
+    ~iframeId=keys.iframeId,
     (),
   ) => {
     switch keys.clientSecret {
@@ -807,7 +1001,7 @@ let fetchSessions = (
   logApi(
     ~optLogger,
     ~url=uri,
-    ~type_="request",
+    ~apiLogType=Request,
     ~eventName=SESSIONS_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
@@ -831,7 +1025,7 @@ let fetchSessions = (
           ~url=uri,
           ~data,
           ~statusCode,
-          ~type_="err",
+          ~apiLogType=Err,
           ~eventName=SESSIONS_CALL,
           ~logType=ERROR,
           ~logCategory=API,
@@ -844,7 +1038,7 @@ let fetchSessions = (
         ~optLogger,
         ~url=uri,
         ~statusCode,
-        ~type_="response",
+        ~apiLogType=Response,
         ~eventName=SESSIONS_CALL,
         ~logType=INFO,
         ~logCategory=API,
@@ -858,7 +1052,7 @@ let fetchSessions = (
     logApi(
       ~optLogger,
       ~url=uri,
-      ~type_="no_response",
+      ~apiLogType=NoResponse,
       ~eventName=SESSIONS_CALL,
       ~logType=ERROR,
       ~logCategory=API,
@@ -882,7 +1076,7 @@ let fetchPaymentMethodList = (
   logApi(
     ~optLogger=Some(logger),
     ~url=uri,
-    ~type_="request",
+    ~apiLogType=Request,
     ~eventName=PAYMENT_METHODS_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
@@ -905,7 +1099,7 @@ let fetchPaymentMethodList = (
           ~url=uri,
           ~data,
           ~statusCode,
-          ~type_="err",
+          ~apiLogType=Err,
           ~eventName=PAYMENT_METHODS_CALL,
           ~logType=ERROR,
           ~logCategory=API,
@@ -918,7 +1112,7 @@ let fetchPaymentMethodList = (
         ~optLogger=Some(logger),
         ~url=uri,
         ~statusCode,
-        ~type_="response",
+        ~apiLogType=Response,
         ~eventName=PAYMENT_METHODS_CALL,
         ~logType=INFO,
         ~logCategory=API,
@@ -932,7 +1126,7 @@ let fetchPaymentMethodList = (
     logApi(
       ~optLogger=Some(logger),
       ~url=uri,
-      ~type_="no_response",
+      ~apiLogType=NoResponse,
       ~eventName=PAYMENT_METHODS_CALL,
       ~logType=ERROR,
       ~logCategory=API,
@@ -956,7 +1150,7 @@ let fetchCustomerDetails = (
   logApi(
     ~optLogger,
     ~url=uri,
-    ~type_="request",
+    ~apiLogType=Request,
     ~eventName=CUSTOMER_PAYMENT_METHODS_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
@@ -979,7 +1173,7 @@ let fetchCustomerDetails = (
           ~url=uri,
           ~data,
           ~statusCode,
-          ~type_="err",
+          ~apiLogType=Err,
           ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
           ~logType=ERROR,
           ~logCategory=API,
@@ -992,7 +1186,7 @@ let fetchCustomerDetails = (
         ~optLogger,
         ~url=uri,
         ~statusCode,
-        ~type_="response",
+        ~apiLogType=Response,
         ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
         ~logType=INFO,
         ~logCategory=API,
@@ -1006,7 +1200,7 @@ let fetchCustomerDetails = (
     logApi(
       ~optLogger,
       ~url=uri,
-      ~type_="no_response",
+      ~apiLogType=NoResponse,
       ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
       ~logType=ERROR,
       ~logCategory=API,

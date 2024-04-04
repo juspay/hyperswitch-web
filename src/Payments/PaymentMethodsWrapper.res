@@ -62,7 +62,7 @@ let make = (
     None
   }, (empty, complete))
 
-  let submitCallback = React.useCallback7((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
@@ -115,7 +115,7 @@ let make = (
   ))
   useSubmitPaymentData(submitCallback)
   <div
-    className="flex flex-col animate-slowShow"
+    className="DynamicFields flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
     <DynamicFields
       paymentType

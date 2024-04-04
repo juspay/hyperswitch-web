@@ -1,5 +1,6 @@
 open PaymentType
 open RecoilAtoms
+open Utils
 
 let cardsToRender = (width: int) => {
   let minWidth = 130
@@ -22,11 +23,12 @@ let make = (
     customerPaymentMethods,
     displaySavedPaymentMethods,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
-  let paymentOrder = paymentMethodOrder->Utils.getOptionalArr->Utils.removeDuplicate
+  let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
@@ -41,8 +43,8 @@ let make = (
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(isShowOrPayUsing)
 
-  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
-  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
+  let (showFields, setShowFields) = Recoil.useRecoilState(showCardFieldsAtom)
+  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(paymentTokenAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
   let (
     loadSavedCards: PaymentType.savedCardsLoadState,
@@ -118,12 +120,12 @@ let make = (
     ~paymentMethodType="apple_pay",
   )
 
-  let (walletList, paymentOptionsList, actualList) = React.useMemo6(() => {
+  let (walletList, paymentOptionsList, actualList) = React.useMemo(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
       let paymentOrder =
         paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
-      let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
       let (wallets, otherOptions) =
         plist->PaymentUtils.paymentListLookupNew(
           ~order=paymentOrder,
@@ -133,12 +135,12 @@ let make = (
           ~areAllApplePayRequiredFieldsPrefilled,
         )
       (
-        wallets->Utils.removeDuplicate,
-        paymentOptions->Array.concat(otherOptions)->Utils.removeDuplicate,
+        wallets->removeDuplicate,
+        paymentOptions->Array.concat(otherOptions)->removeDuplicate,
         otherOptions,
       )
     | SemiLoaded =>
-      showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder)
+      showCardFormByDefault && checkPriorityList(paymentMethodOrder)
         ? ([], ["card"], [])
         : ([], [], [])
     | _ => ([], [], [])
@@ -155,7 +157,7 @@ let make = (
   React.useEffect(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
-      let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
 
       setPaymentOptions(_ => {
         paymentOptionsList
@@ -170,11 +172,11 @@ let make = (
               ~logger=loggerState,
               (),
             )
-          } else if !Utils.checkPriorityList(paymentMethodOrder) {
+          } else if !checkPriorityList(paymentMethodOrder) {
             ErrorUtils.manageErrorWarning(
               SDK_CONNECTOR_WARNING,
               ~dynamicStr=`'paymentMethodOrder' is ${Array.joinWith(
-                  paymentMethodOrder->Utils.getOptionalArr,
+                  paymentMethodOrder->getOptionalArr,
                   ", ",
                 )} . Please enable Card Payment as 1st priority to show it as default.`,
               ~logger=loggerState,
@@ -185,7 +187,7 @@ let make = (
     | LoadError(_)
     | SemiLoaded =>
       setPaymentOptions(_ =>
-        showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? ["card"] : []
+        showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? ["card"] : []
       )
     | _ => ()
     }
@@ -213,20 +215,17 @@ let make = (
     }
     None
   }, (cardsContainerWidth, paymentOptions))
-  let cardShimmerCount = React.useMemo1(() => {
+  let cardShimmerCount = React.useMemo(() => {
     cardsToRender(cardsContainerWidth)
   }, [cardsContainerWidth])
-  let submitCallback = React.useCallback1((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
-    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
-      Utils.postFailedSubmitResponse(
-        ~errortype="validation_error",
-        ~message="Select a payment method",
-      )
+      postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
     }
   }, [selectedOption])
-  Utils.useSubmitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
   React.useEffect(() => {
     setSelectedOption(prev =>
       selectedOption !== ""
@@ -236,7 +235,7 @@ let make = (
         : switch methodslist {
           | SemiLoaded
           | LoadError(_) =>
-            showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? "card" : ""
+            showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? "card" : ""
           | Loaded(_) =>
             paymentOptions->Array.includes(selectedOption) && showCardFormByDefault
               ? selectedOption
@@ -272,7 +271,7 @@ let make = (
   let checkRenderOrComp = () => {
     walletOptions->Array.includes("paypal") || isShowOrPayUsing
   }
-  let dict = sessions->Utils.getDictFromJson
+  let dict = sessions->getDictFromJson
   let sessionObj = SessionsType.itemToObjMapper(dict, Others)
   let applePaySessionObj = SessionsType.itemToObjMapper(dict, ApplePayObject)
   let applePayToken = SessionsType.getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
@@ -285,7 +284,7 @@ let make = (
   )
 
   let loader = () => {
-    Utils.handlePostMessageEvents(
+    handlePostMessageEvents(
       ~complete=false,
       ~empty=false,
       ~paymentType=selectedOption,
@@ -396,6 +395,27 @@ let make = (
     optionAtomValue.paymentMethodsHeaderText
   }
 
+  React.useEffect(() => {
+    let evalMethodsList = () =>
+      switch methodslist {
+      | SemiLoaded | Loaded(_) => handlePostMessage([("ready", true->JSON.Encode.bool)])
+      | _ => ()
+      }
+    if !displaySavedPaymentMethods {
+      evalMethodsList()
+    } else {
+      switch customerPaymentMethods {
+      | LoadingSavedCards => ()
+      | LoadedSavedCards(list, _) =>
+        list->Array.length > 0
+          ? handlePostMessage([("ready", true->JSON.Encode.bool)])
+          : evalMethodsList()
+      | NoResult(_) => evalMethodsList()
+      }
+    }
+    None
+  }, (methodslist, customerPaymentMethods))
+
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div className="text-2xl font-semibold text-[#151619] mb-6">
@@ -427,6 +447,23 @@ let make = (
           />
         | Accordion => <AccordionContainer paymentOptions checkoutEle />
         }}
+      </div>
+    </RenderIf>
+    <RenderIf
+      condition={displaySavedPaymentMethods && savedMethods->Array.length > 0 && showFields}>
+      <div
+        className="Label flex flex-row gap-3 items-end cursor-pointer my-4"
+        style={ReactDOMStyle.make(
+          ~fontSize="14px",
+          ~float="left",
+          ~fontWeight=themeObj.fontWeightNormal,
+          ~width="fit-content",
+          ~color=themeObj.colorPrimary,
+          (),
+        )}
+        onClick={_ => setShowFields(_ => false)}>
+        <Icon name="circle_dots" size=20 width=19 />
+        {React.string(localeString.useExistingPaymentMethods)}
       </div>
     </RenderIf>
     <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>

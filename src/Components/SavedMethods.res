@@ -14,10 +14,12 @@ let make = (
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
+    loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT, ())
   }
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (token, _) = paymentToken
   let savedCardlength = savedMethods->Array.length
@@ -70,7 +72,7 @@ let make = (
   }
   let empty = cvcNumber == ""
 
-  let submitCallback = React.useCallback4((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (token, customerId) = paymentToken
@@ -81,6 +83,7 @@ let make = (
       })
       ->Array.get(0)
       ->Option.getOr(PaymentType.defaultCustomerMethods)
+    let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
     let isCardPaymentMethod = customerMethod.paymentMethod === "card"
     let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
 
@@ -108,7 +111,12 @@ let make = (
     }
 
     if confirm.doSubmit {
-      if areRequiredFieldsValid && (!isCardPaymentMethod || isCardPaymentMethodValid) {
+      if (
+        areRequiredFieldsValid &&
+        !isUnknownPaymentMethod &&
+        (!isCardPaymentMethod || isCardPaymentMethodValid) &&
+        confirm.confirmTimestamp >= confirm.readyTimestamp
+      ) {
         intent(
           ~bodyArr=savedPaymentMethodBody
           ->Dict.fromArray
@@ -121,7 +129,10 @@ let make = (
           (),
         )
       } else {
-        if cvcNumber === "" {
+        if isUnknownPaymentMethod || confirm.confirmTimestamp < confirm.readyTimestamp {
+          setUserError(localeString.selectPaymentMethodText)
+        }
+        if !isUnknownPaymentMethod && cvcNumber === "" {
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         }
@@ -136,51 +147,45 @@ let make = (
   }, (areRequiredFieldsValid, requiredFieldsBody, empty, complete))
   useSubmitPaymentData(submitCallback)
 
-  <>
-    <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
-      {if (
-        savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields)
-      ) {
-        <div
-          className="Label flex flex-row gap-3 items-end cursor-pointer"
-          style={ReactDOMStyle.make(
-            ~fontSize="14px",
-            ~color=themeObj.colorPrimary,
-            ~fontWeight="400",
-            ~marginTop="25px",
-            (),
-          )}>
-          <PaymentElementShimmer.Shimmer>
-            <div className="animate-pulse w-full h-12 rounded bg-slate-200 ">
-              <div className="flex flex-row  my-auto">
-                <div className=" w-10 h-5 rounded-full m-3 bg-white bg-opacity-70 " />
-                <div className=" my-auto w-24 h-2 rounded m-3 bg-white bg-opacity-70 " />
-              </div>
+  <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
+    {if savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields) {
+      <div
+        className="Label flex flex-row gap-3 items-end cursor-pointer"
+        style={ReactDOMStyle.make(
+          ~fontSize="14px",
+          ~color=themeObj.colorPrimary,
+          ~fontWeight="400",
+          ~marginTop="25px",
+          (),
+        )}>
+        <PaymentElementShimmer.Shimmer>
+          <div className="animate-pulse w-full h-12 rounded bg-slate-200">
+            <div className="flex flex-row my-auto">
+              <div className="w-10 h-5 rounded-full m-3 bg-white bg-opacity-70" />
+              <div className="my-auto w-24 h-2 rounded m-3 bg-white bg-opacity-70" />
             </div>
-          </PaymentElementShimmer.Shimmer>
-        </div>
-      } else {
-        <RenderIf condition={!showFields}> {bottomElement} </RenderIf>
-      }}
-      <RenderIf condition={!showFields}>
-        <div
-          className="Label flex flex-row gap-3 items-end cursor-pointer"
-          style={ReactDOMStyle.make(
-            ~fontSize="14px",
-            ~float="left",
-            ~marginTop="14px",
-            ~fontWeight="500",
-            ~width="fit-content",
-            ~color=themeObj.colorPrimary,
-            (),
-          )}
-          onClick={_ => {
-            setShowFields(_ => true)
-          }}>
-          <Icon name="circle-plus" size=22 />
-          {React.string(localeString.morePaymentMethods)}
-        </div>
-      </RenderIf>
-    </div>
-  </>
+          </div>
+        </PaymentElementShimmer.Shimmer>
+      </div>
+    } else {
+      <RenderIf condition={!showFields}> {bottomElement} </RenderIf>
+    }}
+    <RenderIf condition={!showFields}>
+      <div
+        className="Label flex flex-row gap-3 items-end cursor-pointer"
+        style={ReactDOMStyle.make(
+          ~fontSize="14px",
+          ~float="left",
+          ~marginTop="14px",
+          ~fontWeight="500",
+          ~width="fit-content",
+          ~color=themeObj.colorPrimary,
+          (),
+        )}
+        onClick={_ => setShowFields(_ => true)}>
+        <Icon name="circle-plus" size=22 />
+        {React.string(localeString.morePaymentMethods)}
+      </div>
+    </RenderIf>
+  </div>
 }
