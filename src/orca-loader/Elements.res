@@ -755,7 +755,8 @@ let make = (
     }
   } catch {
   | e => {
-      Sentry.captureException(e)
+      // Sentry.captureException(e)
+      Console.error(e)
       defaultElement
     }
   }

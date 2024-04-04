@@ -12,26 +12,26 @@ let checkAndAppend = (selector, child) => {
   }
 }
 
-if (
-  Window.querySelectorAll(`script[src="${GlobalVars.sentryScriptUrl}"]`)->Array.length === 0 &&
-    GlobalVars.sentryScriptUrl->typeof !== #undefined
-) {
-  try {
-    let script = Window.createElement("script")
-    script->Window.elementSrc(GlobalVars.sentryScriptUrl)
-    script->Window.elementOnerror(err => {
-      Console.log2("ERROR DURING LOADING Sentry on HyperLoader", err)
-    })
-    script->Window.elementOnload(() => {
-      Sentry.initiateSentryJs(~dsn=GlobalVars.sentryDSN)
-    })
-    Window.window->Window.windowOnload(_ => {
-      Window.body->Window.appendChild(script)
-    })
-  } catch {
-  | e => Console.log2("Sentry load exited", e)
-  }
-}
+// if (
+//   Window.querySelectorAll(`script[src="${GlobalVars.sentryScriptUrl}"]`)->Array.length === 0 &&
+//     GlobalVars.sentryScriptUrl->typeof !== #undefined
+// ) {
+//   try {
+//     let script = Window.createElement("script")
+//     script->Window.elementSrc(GlobalVars.sentryScriptUrl)
+//     script->Window.elementOnerror(err => {
+//       Console.log2("ERROR DURING LOADING Sentry on HyperLoader", err)
+//     })
+//     script->Window.elementOnload(() => {
+//       Sentry.initiateSentryJs(~dsn=GlobalVars.sentryDSN)
+//     })
+//     Window.window->Window.windowOnload(_ => {
+//       Window.body->Window.appendChild(script)
+//     })
+//   } catch {
+//   | e => Console.log2("Sentry load exited", e)
+//   }
+// }
 
 let preloadFile = (~type_, ~href=``, ()) => {
   let link = CommonHooks.createElement("link")
@@ -124,13 +124,13 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     | None => ()
     }
 
-    {
-      () => {
-        logger.setMerchantId(publishableKey)
-        logger.setSessionId(sessionID)
-        logger.setLogInfo(~value=Window.href, ~eventName=APP_INITIATED, ~timestamp=sdkTimestamp, ())
-      }
-    }->Sentry.sentryLogger
+    // {
+    //   () => {
+    logger.setMerchantId(publishableKey)
+    logger.setSessionId(sessionID)
+    logger.setLogInfo(~value=Window.href, ~eventName=APP_INITIATED, ~timestamp=sdkTimestamp, ())
+    //   }
+    // }->Sentry.sentryLogger
     switch Window.getHyper->Nullable.toOption {
     | Some(hyperMethod) => {
         logger.setLogInfo(
@@ -144,38 +144,39 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     | None =>
       let loaderTimestamp = Date.now()->Belt.Float.toString
 
-      {
-        () => {
-          logger.setLogInfo(
-            ~value="loadHyper has been called",
-            ~eventName=LOADER_CALLED,
-            ~timestamp=loaderTimestamp,
-            (),
+      // {
+      //   () => {
+      logger.setLogInfo(
+        ~value="loadHyper has been called",
+        ~eventName=LOADER_CALLED,
+        ~timestamp=loaderTimestamp,
+        (),
+      )
+      if (
+        publishableKey == "" ||
+          !(
+            publishableKey->String.startsWith("pk_dev_") ||
+            publishableKey->String.startsWith("pk_snd_") ||
+            publishableKey->String.startsWith("pk_prd_")
           )
-          if (
-            publishableKey == "" ||
-              !(
-                publishableKey->String.startsWith("pk_dev_") ||
-                publishableKey->String.startsWith("pk_snd_") ||
-                publishableKey->String.startsWith("pk_prd_")
-              )
-          ) {
-            manageErrorWarning(INVALID_PK, (), ~logger)
-          }
+      ) {
+        manageErrorWarning(INVALID_PK, (), ~logger)
+      }
 
-          if (
-            Window.querySelectorAll(`script[src="https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"]`)->Array.length === 0
-          ) {
-            let scriptURL = "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"
-            let script = Window.createElement("script")
-            script->Window.elementSrc(scriptURL)
-            script->Window.elementOnerror(err => {
-              Console.log2("ERROR DURING LOADING APPLE PAY", err)
-            })
-            Window.body->Window.appendChild(script)
-          }
-        }
-      }->Sentry.sentryLogger
+      if (
+        Window.querySelectorAll(`script[src="https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"]`)->Array.length === 0
+      ) {
+        let scriptURL = "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js"
+        let script = Window.createElement("script")
+        script->Window.elementSrc(scriptURL)
+        script->Window.elementOnerror(err => {
+          Console.log2("ERROR DURING LOADING APPLE PAY", err)
+        })
+        Window.body->Window.appendChild(script)
+      }
+
+      // }
+      // }->Sentry.sentryLogger
 
       if (
         Window.querySelectorAll(`script[src="https://pay.google.com/gp/p/js/pay.js"]`)->Array.length === 0
@@ -564,9 +565,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       returnObject
     }
   } catch {
-  | e => {
-      Sentry.captureException(e)
-      defaultHyperInstance
-    }
+  | e =>
+    // Sentry.captureException(e)
+    Console.error(e)
+    defaultHyperInstance
   }
 }

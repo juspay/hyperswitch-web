@@ -340,9 +340,9 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       mount,
     }
   } catch {
-  | e => {
-      Sentry.captureException(e)
-      defaultPaymentElement
-    }
+  | e =>
+    // Sentry.captureException(e)
+    Console.error(e)
+    defaultPaymentElement
   }
 }

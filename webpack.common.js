@@ -7,7 +7,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const BundleAnalyzerPlugin =
   require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
-const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
+// const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 
 const sdkEnv = process.env.sdkEnv;
 const envSdkUrl = process.env.envSdkUrl;
@@ -123,8 +123,8 @@ module.exports = (publicPath = "auto") => {
         backendEndPoint: JSON.stringify(backendEndPoint),
         confirmEndPoint: JSON.stringify(confirmEndPoint),
         logEndpoint: JSON.stringify(logEndpoint),
-        sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
-        sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
+        // sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
+        // sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
         enableLogging: JSON.stringify(enableLogging),
         loggingLevel: JSON.stringify(loggingLevel),
         maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
@@ -151,18 +151,18 @@ module.exports = (publicPath = "auto") => {
       // new webpack.HTMLInjectPlugin({
       //   publicPath: JSON.stringify(repoVersion),
       // }),
-      sentryWebpackPlugin({
-        org: "sentry",
-        project: "hyperswitch-react-sdk",
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-        url: process.env.SENTRY_URL,
-        release: {
-          name: "0.2",
-          uploadLegacySourcemaps: {
-            paths: ["dist"],
-          },
-        },
-      }),
+      // sentryWebpackPlugin({
+      //   org: "sentry",
+      //   project: "hyperswitch-react-sdk",
+      //   authToken: process.env.SENTRY_AUTH_TOKEN,
+      //   url: process.env.SENTRY_URL,
+      //   release: {
+      //     name: "0.2",
+      //     uploadLegacySourcemaps: {
+      //       paths: ["dist"],
+      //     },
+      //   },
+      // }),
     ],
     module: {
       rules: [
