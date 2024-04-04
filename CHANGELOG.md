@@ -1,3 +1,10 @@
+## [0.36.2](https://github.com/juspay/hyperswitch-web/compare/v0.36.1...v0.36.2) (2024-04-04)
+
+
+### Bug Fixes
+
+* **sentry:** reduced sentry tracesSampleRate from 1 to 0.1 ([#242](https://github.com/juspay/hyperswitch-web/issues/242)) ([9294c5f](https://github.com/juspay/hyperswitch-web/commit/9294c5f292bae8dcff2eaa395f8972ffa7e6110b))
+
 ## [0.36.1](https://github.com/juspay/hyperswitch-web/compare/v0.36.0...v0.36.1) (2024-04-04)
 
 
