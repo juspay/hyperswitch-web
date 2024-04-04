@@ -131,7 +131,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
-    let finalLoadLatency = Date.now() -. launchTime
+    let finalLoadLatency = if launchTime <= 0.0 {
+      -1.0
+    } else {
+      Date.now() -. launchTime
+    }
     switch updatedState {
     | Loaded(_) =>
       logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
@@ -263,8 +267,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   })
                 }
               }
-              setLaunchTime(_ => dict->Utils.getFloat("launchTime", 0.0))
-              let initLoadlatency = Date.now() -. launchTime
+              let newLaunchTime = dict->Utils.getFloat("launchTime", 0.0)
+              setLaunchTime(_ => newLaunchTime)
+              let initLoadlatency = Date.now() -. newLaunchTime
               logger.setLogInfo(
                 ~value=Window.href,
                 ~eventName=APP_RENDERED,
@@ -357,7 +362,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
-          let finalLoadlatency = Date.now() -. launchTime
+          let finalLoadLatency = if launchTime <= 0.0 {
+            -1.0
+          } else {
+            Date.now() -. launchTime
+          }
           let updatedState: PaymentType.loadType =
             list == Dict.make()->JSON.Encode.object
               ? LoadError(list)
@@ -375,14 +384,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               logger.setLogInfo(
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadlatency,
+                ~latency=finalLoadLatency,
                 (),
               )
             | LoadError(x) =>
               logger.setLogError(
                 ~value="LoadError: " ++ x->JSON.stringify,
                 ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadlatency,
+                ~latency=finalLoadLatency,
                 (),
               )
             | _ => ()
@@ -398,7 +407,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ? logger.setLogInfo(
                     ~value="Loaded",
                     ~eventName=LOADER_CHANGED,
-                    ~latency=finalLoadlatency,
+                    ~latency=finalLoadLatency,
                     (),
                   )
                 : evalMethodsList()
@@ -414,7 +423,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             ...prev,
             customerPaymentMethods,
           })
-          let finalLoadlatency = Date.now() -. launchTime
+          let finalLoadLatency = if launchTime <= 0.0 {
+            -1.0
+          } else {
+            Date.now() -. launchTime
+          }
 
           let evalMethodsList = () =>
             switch paymentlist {
@@ -422,14 +435,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               logger.setLogInfo(
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadlatency,
+                ~latency=finalLoadLatency,
                 (),
               )
             | LoadError(x) =>
               logger.setLogError(
                 ~value="LoadError: " ++ x->JSON.stringify,
                 ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadlatency,
+                ~latency=finalLoadLatency,
                 (),
               )
 
@@ -443,7 +456,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               ? logger.setLogInfo(
                   ~value="Loaded",
                   ~eventName=LOADER_CHANGED,
-                  ~latency=finalLoadlatency,
+                  ~latency=finalLoadLatency,
                   (),
                 )
               : evalMethodsList()
