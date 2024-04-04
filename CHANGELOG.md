@@ -1,3 +1,15 @@
+# [0.37.0](https://github.com/juspay/hyperswitch-web/compare/v0.36.2...v0.37.0) (2024-04-04)
+
+
+### Bug Fixes
+
+* app rendered event latency calculation ([#273](https://github.com/juspay/hyperswitch-web/issues/273)) ([e3509f0](https://github.com/juspay/hyperswitch-web/commit/e3509f0b67b752c9a6a656e47372ad5e84026cf3))
+
+
+### Features
+
+* logging payment data filled ([#269](https://github.com/juspay/hyperswitch-web/issues/269)) ([e9d76ae](https://github.com/juspay/hyperswitch-web/commit/e9d76ae225f39ba963967161413c2a0422d4a4aa))
+
 ## [0.36.2](https://github.com/juspay/hyperswitch-web/compare/v0.36.1...v0.36.2) (2024-04-04)
 
 
