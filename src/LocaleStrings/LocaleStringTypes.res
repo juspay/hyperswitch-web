@@ -49,6 +49,7 @@ type localeStrings = {
   cvcNumberEmptyText: string,
   enterFieldsText: string,
   enterValidDetailsText: string,
+  selectPaymentMethodText: string,
   card: string,
   surchargeMsgAmount: (string, string) => React.element,
   surchargeMsgAmountForCard: (string, string) => React.element,
@@ -65,6 +66,6 @@ type localeStrings = {
   saveWalletDetails: string,
   morePaymentMethods: string,
   useExistingPaymentMethods: string,
-  nicknameLabel: string,
+  cardNickname: string,
   nicknamePlaceholder: string,
 }

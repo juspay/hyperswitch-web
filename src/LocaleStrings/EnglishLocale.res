@@ -9,11 +9,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   poweredBy: "Powered By Hyperswitch",
   validThruText: "Expiry",
   sortCodeText: "Sort Code",
-  accountNumberText: "Account Number",
   cvcTextLabel: "CVC",
-  emailLabel: "Email",
-  emailEmptyText: "Email cannot be empty",
-  emailInvalidText: "Invalid email address",
   line1Label: "Address line 1",
   line1Placeholder: "Street address",
   line1EmptyText: "Address line 1 cannot be empty",
@@ -27,6 +23,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   postalCodeInvalidText: "Invalid postal code",
   stateLabel: "State",
   stateEmptyText: "State cannot be empty",
+  accountNumberText: "Account Number",
+  emailLabel: "Email",
+  emailEmptyText: "Email cannot be empty",
+  emailInvalidText: "Invalid email address",
   fullNameLabel: "Full name",
   fullNamePlaceholder: "First and last name",
   countryLabel: "Country",
@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cvcNumberEmptyText: "CVC Number cannot be empty",
   enterFieldsText: "Please enter all fields",
   enterValidDetailsText: "Please enter valid details",
+  selectPaymentMethodText: "Please select a payment method and try again",
   card: "Card",
   surchargeMsgAmount: (currency, str) => <>
     {React.string(`A surcharge amount of${Utils.nbsp}`)}
@@ -76,6 +77,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   saveWalletDetails: "Wallets details will be saved upon selection",
   morePaymentMethods: "More payment methods",
   useExistingPaymentMethods: "Use saved payment methods",
-  nicknameLabel: "Card Nickname",
+  cardNickname: "Card Nickname",
   nicknamePlaceholder: "Card Nickname (Optional)",
 }

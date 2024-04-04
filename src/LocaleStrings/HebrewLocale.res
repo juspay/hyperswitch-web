@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cvcNumberEmptyText: `פרטי קוד ה-CVC אינם יכולים להיות ריקים`,
   enterFieldsText: `יש להזין את כל השדות`,
   enterValidDetailsText: `יש להזין פרטים תקינים`,
+  selectPaymentMethodText: `אנא בחר אמצעי תשלום ונסה שוב`,
   card: `כרטיס`,
   surchargeMsgAmount: (currency, str) => <>
     {React.string(`סכום היטל של${Utils.nbsp}`)}
@@ -76,6 +77,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   saveWalletDetails: "פרטי הארנק יישמרו בעת בחירה",
   morePaymentMethods: `אמצעי תשלום נוספים`,
   useExistingPaymentMethods: `השתמש באמצעי תשלום שמורים`,
-  nicknameLabel: `כינוי לכרטיס`,
+  cardNickname: `כינוי לכרטיס`,
   nicknamePlaceholder: `כינוי לכרטיס (אופציונלי)`,
 }

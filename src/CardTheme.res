@@ -76,7 +76,7 @@ let getLocaleObject = string => {
     string
   }
   switch locale {
-  | "en" => EnglishLocale2.localeStrings
+  | "en" => EnglishLocale.localeStrings
   | "he" => HebrewLocale.localeStrings
   | "fr" => FrenchLocale.localeStrings
   | "en-GB" => EnglishGBLocale.localeStrings

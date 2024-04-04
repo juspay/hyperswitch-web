@@ -1,6 +1,6 @@
 let localeStrings: LocaleStringTypes.localeStrings = {
-  locale: "de",
-  localeDirection: "ltr",
+  locale: `de`,
+  localeDirection: `ltr`,
   cardNumberLabel: `Kartennummer`,
   inValidCardErrorText: `Kartennummer ist ungültig.`,
   inCompleteCVCErrorText: `Der Sicherheitscode Ihrer Karte ist unvollständig.`,
@@ -12,7 +12,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cvcTextLabel: `CVC`,
   line1Label: `Adresszeile 1`,
   line1Placeholder: `Adresse`,
-  line1EmptyText: "Adresszeile 1 darf nicht leer sein",
+  line1EmptyText: `Adresszeile 1 darf nicht leer sein`,
   line2Label: `Adresszeile 2`,
   line2Placeholder: `Wohnung, Einheitennummer usw. (optional)`,
   line2EmptyText: `Adresszeile 2 darf nicht leer sein`,
@@ -30,7 +30,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   fullNameLabel: `Vollständiger Name`,
   fullNamePlaceholder: `Vor-und Nachname`,
   countryLabel: `Land`,
-  currencyLabel: "Währung",
+  currencyLabel: `Währung`,
   bankLabel: `Wählen Sie Bank`,
   redirectText: `Nach dem Absenden Ihrer Bestellung werden Sie weitergeleitet, um Ihren Kauf sicher abzuschließen.`,
   bankDetailsText: `Nach Übermittlung dieser Daten erhalten Sie die Bankverbindung, um die Zahlung durchführen zu können. Bitte notieren Sie sich dies unbedingt.`,
@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cvcNumberEmptyText: `Die CVC-Nummer darf nicht leer sein`,
   enterFieldsText: `Bitte füllen Sie alle Felder aus`,
   enterValidDetailsText: `Bitte geben Sie gültige Daten ein`,
+  selectPaymentMethodText: `Bitte wählen Sie eine Zahlungsmethode aus und versuchen Sie es erneut`,
   card: `Karte`,
   surchargeMsgAmount: (currency, str) => <>
     {React.string(`Für diese Transaktion wird ein Zuschlag in Höhe von${Utils.nbsp}`)}
@@ -76,6 +77,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   saveWalletDetails: "Wallet-Details werden beim Auswählen gespeichert",
   morePaymentMethods: `Mehr Zahlungsmethoden`,
   useExistingPaymentMethods: `Gespeicherte Zahlungsarten nutzen`,
-  nicknameLabel: `Spitzname der Karte`,
+  cardNickname: `Spitzname der Karte`,
   nicknamePlaceholder: `Kartenname (optional)`,
 }

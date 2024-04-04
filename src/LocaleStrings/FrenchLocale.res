@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cvcNumberEmptyText: `Le numéro CVC ne peut pas être vide`,
   enterFieldsText: `Veuillez saisir tous les champs`,
   enterValidDetailsText: `Veuillez saisir des informations valides`,
+  selectPaymentMethodText: `Veuillez sélectionner un mode de paiement et réessayer`,
   card: `Carte`,
   surchargeMsgAmount: (currency, str) => <>
     {React.string(`Un montant supplémentaire d'${Utils.nbsp}`)}
@@ -76,6 +77,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   saveWalletDetails: "Les détails du portefeuille seront enregistrés lors de la sélection",
   morePaymentMethods: `Plus de méthodes de paiement`,
   useExistingPaymentMethods: `Utiliser les modes de paiement enregistrés`,
-  nicknameLabel: `Pseudonyme de la carte`,
+  cardNickname: `Pseudonyme de la carte`,
   nicknamePlaceholder: `Surnom de la carte (facultatif)`,
 }

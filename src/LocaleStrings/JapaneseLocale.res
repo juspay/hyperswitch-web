@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cvcNumberEmptyText: `CVC 番号を空にすることはできません`,
   enterFieldsText: `すべてのフィールドに入力してください`,
   enterValidDetailsText: `有効な詳細を入力してください`,
+  selectPaymentMethodText: `支払い方法を選択して、もう一度お試しください`,
   card: `カード`,
   surchargeMsgAmount: (currency, str) => <>
     {React.string(`この取引には${Utils.nbsp}`)}
@@ -76,6 +77,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   saveWalletDetails: "選択時にウォレットの詳細が保存されます",
   morePaymentMethods: `その他の支払い方法`,
   useExistingPaymentMethods: `保存した支払い方法を使用する`,
-  nicknameLabel: `カードのニックネーム`,
+  cardNickname: `カードのニックネーム`,
   nicknamePlaceholder: `カードニックネーム（任意）`,
 }

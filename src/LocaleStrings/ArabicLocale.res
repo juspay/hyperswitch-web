@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cvcNumberEmptyText: `لا يمكن أن يكون رقم التحقق من البطاقة (CVC) فارغًا`,
   enterFieldsText: `الرجاء إدخال كافة الحقول`,
   enterValidDetailsText: `الرجاء إدخال تفاصيل صالحة`,
+  selectPaymentMethodText: `الرجاء تحديد طريقة الدفع والمحاولة مرة أخرى`,
   card: `بطاقة`,
   surchargeMsgAmount: (currency, str) => <>
     {React.string(`سيتم تطبيق مبلغ إضافي من${Utils.nbsp}`)}
@@ -76,6 +77,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   saveWalletDetails: "سيتم حفظ تفاصيل المحفظة عند الاختيار",
   morePaymentMethods: `المزيد من طرق الدفع`,
   useExistingPaymentMethods: `استخدم طرق الدفع المحفوظة`,
-  nicknameLabel: `الاسم علي الكارت`,
+  cardNickname: `الاسم علي الكارت`,
   nicknamePlaceholder: `اسم البطاقة (اختياري)`,
 }
