@@ -12,11 +12,18 @@ type payment = Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applep
 let closePaymentLoaderIfAny = () =>
   Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
 
-let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
+let retrievePaymentIntent = (
+  clientSecret,
+  headers,
+  ~optLogger,
+  ~switchToCustomPod,
+  ~isForceSync=false,
+) => {
   open Promise
   let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let uri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
+  let forceSync = isForceSync ? "&force_sync=true" : ""
+  let uri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}${forceSync}`
 
   logApi(
     ~optLogger,
@@ -209,9 +216,15 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
   })
 }
 
-let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
+let rec pollRetrievePaymentIntent = (
+  clientSecret,
+  headers,
+  ~optLogger,
+  ~switchToCustomPod,
+  ~isForceSync=false,
+) => {
   open Promise
-  retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
+  retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod, ~isForceSync)
   ->then(json => {
     let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
     let status = dict->getString("status", "")
@@ -220,13 +233,19 @@ let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchT
       resolve(json)
     } else {
       delay(2000)->then(_val => {
-        pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
+        pollRetrievePaymentIntent(
+          clientSecret,
+          headers,
+          ~optLogger,
+          ~switchToCustomPod,
+          ~isForceSync,
+        )
       })
     }
   })
   ->catch(e => {
     Console.log2("Unable to retrieve payment due to following error", e)
-    pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
+    pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod, ~isForceSync)
   })
 }
 
