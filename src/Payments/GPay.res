@@ -170,8 +170,9 @@ let make = (
           let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
           processPayment(bodyDict)
         }
+        let value = "Payment Data Filled: New Payment Method"
         loggerState.setLogInfo(
-          ~value="",
+          ~value,
           ~eventName=PAYMENT_DATA_FILLED,
           ~paymentMethod="GOOGLE_PAY",
           (),

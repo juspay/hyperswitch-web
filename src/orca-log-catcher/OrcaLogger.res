@@ -497,9 +497,9 @@ let make = (
     switch timeOut.contents {
     | Some(val) => {
         clearTimeout(val)
-        timeOut := Some(setTimeout(() => sendLogs(), 120000))
+        timeOut := Some(setTimeout(() => sendLogs(), 20000))
       }
-    | None => timeOut := Some(setTimeout(() => sendLogs(), 120000))
+    | None => timeOut := Some(setTimeout(() => sendLogs(), 20000))
     }
     beaconApiCall(mainLogFile)
     let len = mainLogFile->Array.length
@@ -521,6 +521,8 @@ let make = (
       REDIRECTING_USER,
       DISPLAY_BANK_TRANSFER_INFO_PAGE,
       DISPLAY_QR_CODE_INFO_PAGE,
+      DISPLAY_VOUCHER,
+      LOADER_CHANGED,
       SESSIONS_CALL,
       RETRIEVE_CALL,
     ]
