@@ -8,7 +8,7 @@ let make = (~paymentType: CardThemeType.mode, ~value, ~setValue) => {
   }
 
   <PaymentInputField
-    fieldName=localeString.nicknameLabel
+    fieldName=localeString.cardNickname
     value
     onChange
     paymentType
