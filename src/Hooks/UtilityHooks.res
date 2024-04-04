@@ -17,7 +17,7 @@ let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false
   React.useEffect(() => {
     let isCompletelyFilled = complete && paymentType !== ""
     setIsPayNowButtonDisable(_ => !isCompletelyFilled)
-    Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState)
+    Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod)
     None
   }, (complete, empty))
 }
