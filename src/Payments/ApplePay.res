@@ -363,38 +363,36 @@ let make = (
   }, (areRequiredFieldsValid, areRequiredFieldsEmpty))
   useSubmitPaymentData(submitCallback)
 
-  {
-    isWallet
-      ? <div>
-          <style> {React.string(css)} </style>
-          {if showApplePay {
-            if showApplePayLoader {
-              <div className="apple-pay-loader-div">
-                <div className="apple-pay-loader" />
-              </div>
-            } else {
-              <button
-                disabled=applePayClicked
-                className="apple-pay-button-with-text apple-pay-button-black-with-text"
-                onClick={_ => onApplePayButtonClicked()}>
-                <span className="text"> {React.string("Pay with")} </span>
-                <span className="logo" />
-              </button>
-            }
-          } else {
-            React.null
-          }}
-        </div>
-      : <DynamicFields
-          paymentType={switch paymentType {
-          | Some(val) => val
-          | _ => NONE
-          }}
-          list
-          paymentMethod="wallet"
-          paymentMethodType="apple_pay"
-          setRequiredFieldsBody
-        />
+  if isWallet {
+    <div>
+      <style> {React.string(css)} </style>
+      <RenderIf condition={showApplePay}>
+        {if showApplePayLoader {
+          <div className="apple-pay-loader-div">
+            <div className="apple-pay-loader" />
+          </div>
+        } else {
+          <button
+            disabled=applePayClicked
+            className="apple-pay-button-with-text apple-pay-button-black-with-text"
+            onClick={_ => onApplePayButtonClicked()}>
+            <span className="text"> {React.string("Pay with")} </span>
+            <span className="logo" />
+          </button>
+        }}
+      </RenderIf>
+    </div>
+  } else {
+    <DynamicFields
+      paymentType={switch paymentType {
+      | Some(val) => val
+      | _ => NONE
+      }}
+      list
+      paymentMethod="wallet"
+      paymentMethodType="apple_pay"
+      setRequiredFieldsBody
+    />
   }
 }
 
