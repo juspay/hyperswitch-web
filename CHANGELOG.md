@@ -1,3 +1,58 @@
+# [0.38.0](https://github.com/juspay/hyperswitch-web/compare/v0.37.0...v0.38.0) (2024-04-04)
+
+
+### Features
+
+* locale-string added for rest locales ([#247](https://github.com/juspay/hyperswitch-web/issues/247)) ([3070e8f](https://github.com/juspay/hyperswitch-web/commit/3070e8f54d2d7850ee4b20e5ba62a77624896f33))
+
+# [0.37.0](https://github.com/juspay/hyperswitch-web/compare/v0.36.2...v0.37.0) (2024-04-04)
+
+
+### Bug Fixes
+
+* app rendered event latency calculation ([#273](https://github.com/juspay/hyperswitch-web/issues/273)) ([e3509f0](https://github.com/juspay/hyperswitch-web/commit/e3509f0b67b752c9a6a656e47372ad5e84026cf3))
+
+
+### Features
+
+* logging payment data filled ([#269](https://github.com/juspay/hyperswitch-web/issues/269)) ([e9d76ae](https://github.com/juspay/hyperswitch-web/commit/e9d76ae225f39ba963967161413c2a0422d4a4aa))
+
+## [0.36.2](https://github.com/juspay/hyperswitch-web/compare/v0.36.1...v0.36.2) (2024-04-04)
+
+
+### Bug Fixes
+
+* **sentry:** reduced sentry tracesSampleRate from 1 to 0.1 ([#242](https://github.com/juspay/hyperswitch-web/issues/242)) ([9294c5f](https://github.com/juspay/hyperswitch-web/commit/9294c5f292bae8dcff2eaa395f8972ffa7e6110b))
+
+## [0.36.1](https://github.com/juspay/hyperswitch-web/compare/v0.36.0...v0.36.1) (2024-04-04)
+
+
+### Bug Fixes
+
+* added Loader and Error Handling for TrustPay GooglePay ([#268](https://github.com/juspay/hyperswitch-web/issues/268)) ([1f082eb](https://github.com/juspay/hyperswitch-web/commit/1f082ebe2031a10129b24238f1c60fabd6f5e2e0))
+
+# [0.36.0](https://github.com/juspay/hyperswitch-web/compare/v0.35.6...v0.36.0) (2024-04-04)
+
+
+### Features
+
+* **3ds:** three DS SDK - adding logs to track milestone events ([#265](https://github.com/juspay/hyperswitch-web/issues/265)) ([ceab161](https://github.com/juspay/hyperswitch-web/commit/ceab1614e80d8cfb96ac3eea04486ebd509e0770))
+* giropay dynamic fields added ([#267](https://github.com/juspay/hyperswitch-web/issues/267)) ([ad2fa63](https://github.com/juspay/hyperswitch-web/commit/ad2fa630c639c7b246176f1d2683050a58ad3e36))
+
+## [0.35.6](https://github.com/juspay/hyperswitch-web/compare/v0.35.5...v0.35.6) (2024-04-02)
+
+
+### Bug Fixes
+
+* customer payment methods promise ([#266](https://github.com/juspay/hyperswitch-web/issues/266)) ([57ea1ed](https://github.com/juspay/hyperswitch-web/commit/57ea1ed0483776df98abbbd83b0958674be6490c))
+
+## [0.35.5](https://github.com/juspay/hyperswitch-web/compare/v0.35.4...v0.35.5) (2024-04-02)
+
+
+### Bug Fixes
+
+* react hooks issue fix ([#233](https://github.com/juspay/hyperswitch-web/issues/233)) ([c9dcb63](https://github.com/juspay/hyperswitch-web/commit/c9dcb638a3da08fe0569c94864df46179c2834e8))
+
 ## [0.35.4](https://github.com/juspay/hyperswitch-web/compare/v0.35.3...v0.35.4) (2024-04-01)
 
 ## [0.35.3](https://github.com/juspay/hyperswitch-web/compare/v0.35.2...v0.35.3) (2024-04-01)

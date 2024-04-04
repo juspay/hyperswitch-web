@@ -10,7 +10,7 @@ let useIsGuestCustomer = () => {
   }, [customerPaymentMethods])
 }
 
-let useHandlePostMessages = (~complete, ~empty, ~paymentType) => {
+let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let setIsPayNowButtonDisable = RecoilAtoms.payNowButtonDisable->Recoil.useSetRecoilState
 
