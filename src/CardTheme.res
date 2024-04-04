@@ -83,6 +83,16 @@ let getLocaleObject = string => {
   | "ar" => ArabicLocale.localeStrings
   | "ja" => JapaneseLocale.localeStrings
   | "de" => DeutschLocale.localeStrings
+  | "fr-BE" => FrenchBelgiumLocale.localeStrings
+  | "es" => SpanishLocale.localeStrings
+  | "ca" => CatalanLocale.localeStrings
+  | "pt" => PortugueseLocale.localeStrings
+  | "it" => ItalianLocale.localeStrings
+  | "pl" => PolishLocale.localeStrings
+  | "nl" => DutchLocale.localeStrings
+  | "SV" => SwedishLocale.localeStrings
+  | "ru" => RussianLocale.localeStrings
+
   | _ => EnglishLocale.localeStrings
   }
 }
