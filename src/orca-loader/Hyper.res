@@ -95,6 +95,23 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ~metadata=analyticsMetadata,
       (),
     )
+    let isReadyPromise = Promise.make((resolve, _) => {
+      let handleOnReady = (event: Types.event) => {
+        let json = event.data->eventToJson
+        let dict = json->getDictFromJson
+        if (
+          dict
+          ->Dict.get("ready")
+          ->Option.getOr(JSON.Encode.bool(false))
+          ->JSON.Decode.bool
+          ->Option.getOr(false)
+        ) {
+          resolve(Date.now())
+        }
+      }
+      addSmartEventListener("message", handleOnReady, "handleOnReady")
+    })
+
     switch options {
     | Some(userOptions) =>
       let customBackendUrl =
@@ -138,8 +155,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           if (
             publishableKey == "" ||
               !(
+                publishableKey->String.startsWith("pk_dev_") ||
                 publishableKey->String.startsWith("pk_snd_") ||
-                  publishableKey->String.startsWith("pk_prd_")
+                publishableKey->String.startsWith("pk_prd_")
               )
           ) {
             manageErrorWarning(INVALID_PK, (), ~logger)
@@ -190,7 +208,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         logApi(
           ~optLogger=Some(logger),
           ~url=retrievePaymentUrl,
-          ~type_="request",
+          ~apiLogType=Request,
           ~eventName=RETRIEVE_CALL_INIT,
           ~logType=INFO,
           ~logCategory=API,
@@ -214,7 +232,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 ~url=retrievePaymentUrl,
                 ~data,
                 ~statusCode,
-                ~type_="err",
+                ~apiLogType=Err,
                 ~eventName=RETRIEVE_CALL,
                 ~logType=ERROR,
                 ~logCategory=API,
@@ -228,7 +246,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               ~optLogger=Some(logger),
               ~url=retrievePaymentUrl,
               ~statusCode,
-              ~type_="response",
+              ~apiLogType=Response,
               ~eventName=RETRIEVE_CALL,
               ~logType=INFO,
               ~logCategory=API,
@@ -243,6 +261,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       }
 
       let confirmPaymentWrapper = (payload, isOneClick, result) => {
+        let confirmTimestamp = Date.now()
         let confirmParams =
           payload
           ->JSON.Decode.object
@@ -263,67 +282,76 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 
-        Js.Promise.make((~resolve, ~reject as _) => {
-          let handleMessage = (event: Types.event) => {
-            let json = event.data->eventToJson
-            let dict = json->getDictFromJson
-
-            switch dict->Dict.get("submitSuccessful") {
-            | Some(val) =>
-              let message = [("submitSuccessful", val)]->Dict.fromArray
-              iframeRef.contents->Array.forEach(ifR => {
-                ifR->Window.iframePostMessage(message)
-              })
-              logApi(
-                ~type_="method",
-                ~optLogger=Some(logger),
-                ~result=val,
-                ~paymentMethod="confirmPayment",
-                ~eventName=CONFIRM_PAYMENT,
-                (),
-              )
-              let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
-              let returnUrl =
-                dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
-
-              if isOneClick {
-                iframeRef.contents->Array.forEach(ifR => {
-                  // to unset one click button loader
-                  ifR->Window.iframePostMessage(
-                    [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
-                  )
-                })
-              }
-
-              if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
-                Window.replace(returnUrl)
-              } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
-                resolve(json)
-              } else {
-                resolve(data)
-              }
-            | None => ()
-            }
-          }
-          let message = isOneClick
-            ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
-            : [
-                ("doSubmit", true->JSON.Encode.bool),
-                ("clientSecret", clientSecret.contents->JSON.Encode.string),
-                (
-                  "confirmParams",
-                  [
-                    ("return_url", url->JSON.Encode.string),
-                    ("publishableKey", publishableKey->JSON.Encode.string),
-                  ]
-                  ->Dict.fromArray
-                  ->JSON.Encode.object,
-                ),
-              ]->Dict.fromArray
-          addSmartEventListener("message", handleMessage, "onSubmit")
+        let postSubmitMessage = message => {
           iframeRef.contents->Array.forEach(ifR => {
             ifR->Window.iframePostMessage(message)
           })
+        }
+
+        Promise.make((resolve1, _) => {
+          let isReadyPromise = isReadyPromise
+          isReadyPromise
+          ->Promise.then(readyTimestamp => {
+            let handleMessage = (event: Types.event) => {
+              let json = event.data->eventToJson
+              let dict = json->getDictFromJson
+              switch dict->Dict.get("submitSuccessful") {
+              | Some(val) =>
+                logApi(
+                  ~apiLogType=Method,
+                  ~optLogger=Some(logger),
+                  ~result=val,
+                  ~paymentMethod="confirmPayment",
+                  ~eventName=CONFIRM_PAYMENT,
+                  (),
+                )
+                let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
+                let returnUrl =
+                  dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
+
+                if isOneClick {
+                  iframeRef.contents->Array.forEach(
+                    ifR => {
+                      // to unset one click button loader
+                      ifR->Window.iframePostMessage(
+                        [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
+                      )
+                    },
+                  )
+                }
+
+                if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
+                  Window.replace(returnUrl)
+                } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
+                  resolve1(json)
+                } else {
+                  resolve1(data)
+                }
+              | None => ()
+              }
+            }
+            let message = isOneClick
+              ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
+              : [
+                  ("doSubmit", true->JSON.Encode.bool),
+                  ("clientSecret", clientSecret.contents->JSON.Encode.string),
+                  ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
+                  ("readyTimestamp", readyTimestamp->JSON.Encode.float),
+                  (
+                    "confirmParams",
+                    [
+                      ("return_url", url->JSON.Encode.string),
+                      ("publishableKey", publishableKey->JSON.Encode.string),
+                    ]
+                    ->Dict.fromArray
+                    ->JSON.Encode.object,
+                  ),
+                ]->Dict.fromArray
+            addSmartEventListener("message", handleMessage, "onSubmit")
+            postSubmitMessage(message)
+            Promise.resolve(JSON.Encode.null)
+          })
+          ->ignore
         })
       }
 
@@ -348,14 +376,19 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
       let elements = elementsOptions => {
         open Promise
+        let elementsOptionsDict = elementsOptions->JSON.Decode.object
+        elementsOptionsDict
+        ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
+        ->ignore
+
         let clientSecretId =
-          elementsOptions
-          ->JSON.Decode.object
+          elementsOptionsDict
           ->Option.flatMap(x => x->Dict.get("clientSecret"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
+        let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         clientSecret := clientSecretId
-        Js.Promise.make((~resolve, ~reject as _) => {
+        Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
           resolve(JSON.Encode.null)
         })
@@ -381,7 +414,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         _options: option<JSON.t>,
       ) => {
         let decodedData = data->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-        Js.Promise.make((~resolve, ~reject as _) => {
+        Promise.make((resolve, _) => {
           iframeRef.contents
           ->Array.map(iframe => {
             iframe->Window.iframePostMessage(
@@ -403,7 +436,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               switch dict->Dict.get("submitSuccessful") {
               | Some(val) =>
                 logApi(
-                  ~type_="method",
+                  ~apiLogType=Method,
                   ~optLogger=Some(logger),
                   ~result=val,
                   ~paymentMethod="confirmCardPayment",
@@ -499,7 +532,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
         clientSecret := clientSecretId
-        Js.Promise.make((~resolve, ~reject as _) => {
+        Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
           resolve(JSON.Encode.null)
         })

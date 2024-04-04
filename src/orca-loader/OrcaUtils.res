@@ -257,7 +257,7 @@ let eventHandlerFunc = (
 
 let makeIframe = (element, url) => {
   open Types
-  Js.Promise.make((~resolve, ~reject as _) => {
+  Promise.make((resolve, _) => {
     let iframe = createElement("iframe")
     iframe.id = "orca-fullscreen"
     iframe.src = url
@@ -268,6 +268,18 @@ let makeIframe = (element, url) => {
     }
     element->appendChild(iframe)
   })
+}
+let makeForm = (element, url, id) => {
+  open Types
+  let form = createElement("form")
+  form.id = id
+  form.name = id
+  form.action = url
+  form.method = "POST"
+  form.enctype = "application/x-www-form-urlencoded;charset=UTF-8"
+  form.style = "display: hidden; "
+  element->appendChild(form)
+  form
 }
 
 let getOptionalJson = (ev, str) => {
@@ -325,7 +337,7 @@ let getArrayOfTupleFromDict = dict => {
 
 let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
   open EventListenerManager
-  Js.Promise.make((~resolve, ~reject as _) => {
+  Promise.make((resolve, _) => {
     if sdkHandleOneClickConfirmPayment {
       resolve(JSON.Encode.bool(true))
     } else {

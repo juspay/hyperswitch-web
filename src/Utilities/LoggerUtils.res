@@ -1,19 +1,8 @@
-type logType = Request | Response | NoResponse | Method | Err
-let getLogtype = val => {
-  switch val {
-  | "request" => Request
-  | "response" => Response
-  | "no_response" => NoResponse
-  | "method" => Method
-  | "err" => Err
-  | _ => Err
-  }
-}
 let logApi = (
   ~eventName,
   ~statusCode="",
   ~data: JSON.t=Dict.make()->JSON.Encode.object,
-  ~type_,
+  ~apiLogType: OrcaLogger.apiLogType,
   ~url="",
   ~paymentMethod="",
   ~result: JSON.t=Dict.make()->JSON.Encode.object,
@@ -22,8 +11,7 @@ let logApi = (
   ~logCategory: OrcaLogger.logCategory=API,
   (),
 ) => {
-  let logtype = getLogtype(type_)
-  let (value, internalMetadata) = switch logtype {
+  let (value, internalMetadata) = switch apiLogType {
   | Request => ([("url", url->JSON.Encode.string)], [])
   | Response => (
       [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.string)],
@@ -55,7 +43,7 @@ let logApi = (
       ~internalMetadata=ArrayType(internalMetadata),
       ~logType,
       ~logCategory,
-      ~type_,
+      ~apiLogType,
       (),
     )
   | None => ()

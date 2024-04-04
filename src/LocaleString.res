@@ -49,6 +49,7 @@ type localeStrings = {
   cvcNumberEmptyText: string,
   enterFieldsText: string,
   enterValidDetailsText: string,
+  selectPaymentMethodText: string,
   card: string,
   surchargeMsgAmount: (string, string) => React.element,
   surchargeMsgAmountForCard: (string, string) => React.element,
@@ -123,6 +124,7 @@ let defaultLocale = {
   cvcNumberEmptyText: "CVC Number cannot be empty",
   enterFieldsText: "Please enter all fields",
   enterValidDetailsText: "Please enter valid details",
+  selectPaymentMethodText: "Please select a payment method and try again",
   card: "Card",
   surchargeMsgAmount: (currency, str) => <>
     {React.string(`A surcharge amount of${Utils.nbsp}`)}
@@ -208,6 +210,7 @@ let localeStrings = [
     cvcNumberEmptyText: "CVC Number cannot be empty",
     enterFieldsText: "Please enter all fields",
     enterValidDetailsText: "Please enter valid details",
+    selectPaymentMethodText: "Please select a payment method and try again",
     card: "Card",
     surchargeMsgAmount: (currency, str) => <>
       {React.string(`A surcharge amount of${Utils.nbsp}`)}
@@ -289,6 +292,7 @@ let localeStrings = [
     cvcNumberEmptyText: `פרטי קוד ה-CVC אינם יכולים להיות ריקים`,
     enterFieldsText: `יש להזין את כל השדות`,
     enterValidDetailsText: `יש להזין פרטים תקינים`,
+    selectPaymentMethodText: `אנא בחר אמצעי תשלום ונסה שוב`,
     card: `כרטיס`,
     surchargeMsgAmount: (currency, str) => <>
       {React.string(`סכום היטל של${Utils.nbsp}`)}
@@ -370,6 +374,7 @@ let localeStrings = [
     cvcNumberEmptyText: `Le numéro CVC ne peut pas être vide`,
     enterFieldsText: `Veuillez saisir tous les champs`,
     enterValidDetailsText: `Veuillez saisir des informations valides`,
+    selectPaymentMethodText: `Veuillez sélectionner un mode de paiement et réessayer`,
     card: `Carte`,
     surchargeMsgAmount: (currency, str) => <>
       {React.string(`Un montant supplémentaire d'${Utils.nbsp}`)}
@@ -451,6 +456,7 @@ let localeStrings = [
     cvcNumberEmptyText: "CVC Number cannot be empty",
     enterFieldsText: "Please enter all fields",
     enterValidDetailsText: "Please enter valid details",
+    selectPaymentMethodText: `Please select a payment method and try again`,
     card: "Card",
     surchargeMsgAmount: (currency, str) => <>
       {React.string(`A surcharge amount of${Utils.nbsp}`)}
@@ -532,6 +538,7 @@ let localeStrings = [
     cvcNumberEmptyText: `لا يمكن أن يكون رقم التحقق من البطاقة (CVC) فارغًا`,
     enterFieldsText: `الرجاء إدخال كافة الحقول`,
     enterValidDetailsText: `الرجاء إدخال تفاصيل صالحة`,
+    selectPaymentMethodText: `الرجاء تحديد طريقة الدفع والمحاولة مرة أخرى`,
     card: `بطاقة`,
     surchargeMsgAmount: (currency, str) => <>
       {React.string(`سيتم تطبيق مبلغ إضافي من${Utils.nbsp}`)}
@@ -613,6 +620,7 @@ let localeStrings = [
     cvcNumberEmptyText: `CVC 番号を空にすることはできません`,
     enterFieldsText: `すべてのフィールドに入力してください`,
     enterValidDetailsText: `有効な詳細を入力してください`,
+    selectPaymentMethodText: `支払い方法を選択して、もう一度お試しください`,
     card: `カード`,
     surchargeMsgAmount: (currency, str) => <>
       {React.string(`この取引には${Utils.nbsp}`)}
@@ -694,6 +702,7 @@ let localeStrings = [
     cvcNumberEmptyText: `Die CVC-Nummer darf nicht leer sein`,
     enterFieldsText: `Bitte füllen Sie alle Felder aus`,
     enterValidDetailsText: `Bitte geben Sie gültige Daten ein`,
+    selectPaymentMethodText: `Bitte wählen Sie eine Zahlungsmethode aus und versuchen Sie es erneut`,
     card: `Karte`,
     surchargeMsgAmount: (currency, str) => <>
       {React.string(`Für diese Transaktion wird ein Zuschlag in Höhe von${Utils.nbsp}`)}

@@ -13,7 +13,7 @@ let make = (~paymentType: CardThemeType.mode, ~value, ~setValue) => {
     onChange
     paymentType
     appearance=config.appearance
-    inputRef={React.useRef(Js.Nullable.null)}
+    inputRef={React.useRef(Nullable.null)}
     placeholder=localeString.nicknamePlaceholder
   />
 }
