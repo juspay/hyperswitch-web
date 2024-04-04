@@ -1,3 +1,10 @@
+# [0.38.0](https://github.com/juspay/hyperswitch-web/compare/v0.37.0...v0.38.0) (2024-04-04)
+
+
+### Features
+
+* locale-string added for rest locales ([#247](https://github.com/juspay/hyperswitch-web/issues/247)) ([3070e8f](https://github.com/juspay/hyperswitch-web/commit/3070e8f54d2d7850ee4b20e5ba62a77624896f33))
+
 # [0.37.0](https://github.com/juspay/hyperswitch-web/compare/v0.36.2...v0.37.0) (2024-04-04)
 
 
