@@ -64,10 +64,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     country.value == "" ||
     state.value == ""
 
-  React.useEffect(() => {
-    handlePostMessageEvents(~complete, ~empty, ~paymentType="bacs_bank_debit", ~loggerState)
-    None
-  }, (empty, complete))
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bacs_bank_debit")
 
   React.useEffect(() => {
     setComplete(_ => complete)
