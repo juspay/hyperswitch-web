@@ -76,9 +76,9 @@ let make = (
         requestBody
         ->Dict.fromArray
         ->JSON.Encode.object
-        ->OrcaUtils.flattenObject(true)
-        ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-        ->OrcaUtils.getArrayOfTupleFromDict
+        ->flattenObject(true)
+        ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+        ->getArrayOfTupleFromDict
       intent(
         ~bodyArr=requiredFieldsBodyArr,
         ~confirmParam={
@@ -246,7 +246,7 @@ let make = (
     )
     setApplePayClicked(_ => true)
     open Promise
-    OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
+    makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {

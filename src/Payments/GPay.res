@@ -99,9 +99,9 @@ let make = (
           gPayBody
           ->Dict.fromArray
           ->JSON.Encode.object
-          ->OrcaUtils.flattenObject(true)
-          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->OrcaUtils.getArrayOfTupleFromDict
+          ->flattenObject(true)
+          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->getArrayOfTupleFromDict
         }
         processPayment(body)
       }
@@ -146,7 +146,7 @@ let make = (
       (),
     )
     open Promise
-    OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
+    makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         if isInvokeSDKFlow {

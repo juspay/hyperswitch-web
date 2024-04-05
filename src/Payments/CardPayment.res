@@ -144,9 +144,9 @@ let make = (
             (isBancontact ? banContactBody : cardBody)
             ->Dict.fromArray
             ->JSON.Encode.object
-            ->OrcaUtils.flattenObject(true)
-            ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-            ->OrcaUtils.getArrayOfTupleFromDict
+            ->flattenObject(true)
+            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+            ->getArrayOfTupleFromDict
           },
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,

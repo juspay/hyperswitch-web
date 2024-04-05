@@ -293,7 +293,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       addSmartEventListener("message", handle, `onMount-${componentType}`)
 
       let oElement = Window.querySelector(selector)
-      let classesBase = optionsDict->OrcaUtils.getClasses("base")
+      let classesBase = optionsDict->getClasses("base")
       let additionalIframeStyle = componentType->Utils.isOtherElements ? "height: 2rem;" : ""
       switch oElement->Nullable.toOption {
       | Some(elem) => {

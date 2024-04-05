@@ -23,7 +23,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let {config} = configAtom
   let {iframeId} = keys
 
-  let handlePostMessage = data => Utils.handlePostMessage(data, ~targetOrigin=keys.parentURL)
+  let handlePostMessage = data => handlePostMessage(data, ~targetOrigin=keys.parentURL)
 
   let setUserFullName = Recoil.useLoggedSetRecoilState(userFullName, "fullName", logger)
   let setUserEmail = Recoil.useLoggedSetRecoilState(userEmailAddress, "email", logger)
@@ -56,7 +56,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     })
     if optionsPayment.defaultValues.billingDetails.address.country === "" {
       let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
-      let clientCountry = Utils.getClientCountry(clientTimeZone)
+      let clientCountry = getClientCountry(clientTimeZone)
       setUserAddressCountry(prev => {
         ...prev,
         value: clientCountry.countryName,
@@ -94,7 +94,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     let (default, defaultRules) = (themeValues.default, themeValues.defaultRules)
     let config = CardTheme.itemToObjMapper(paymentOptions, default, defaultRules, logger)
 
-    let optionsLocaleString = Utils.getWarningString(optionsDict, "locale", "", ~logger)
+    let optionsLocaleString = getWarningString(optionsDict, "locale", "", ~logger)
 
     let optionsAppearance = CardTheme.getAppearance(
       "appearance",
@@ -128,7 +128,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     logger.setLogInitiated()
     let updatedState: PaymentType.loadType = switch paymentlist {
     | Loading =>
-      showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
+      showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
     let finalLoadLatency = if launchTime <= 0.0 {
@@ -174,7 +174,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     CardUtils.genreateFontsLink(config.fonts)
     let dict = config.appearance.rules->getDictFromJson
     if dict->Dict.toArray->Array.length > 0 {
-      Utils.generateStyleSheet("", dict, "themestyle")
+      generateStyleSheet("", dict, "themestyle")
     }
     switch paymentMode->CardTheme.getPaymentMode {
     | Payment => ()
@@ -189,7 +189,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       ->Array.map(item => {
         let (class, dict) = item
         if dict->Dict.toArray->Array.length > 0 {
-          Utils.generateStyleSheet(class, dict, "widgetstyle")->ignore
+          generateStyleSheet(class, dict, "widgetstyle")->ignore
         }
       })
       ->ignore
@@ -243,7 +243,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 logger.setMetadata(metadata)
               }
               if dict->getDictIsSome("paymentOptions") {
-                let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")
+                let paymentOptions = dict->getDictFromObj("paymentOptions")
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
                 setKeys(prev => {
@@ -252,7 +252,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 })
                 logger.setClientSecret(clientSecret)
 
-                switch OrcaUtils.getThemePromise(paymentOptions) {
+                switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
                   promise
                   ->then(res => {
@@ -267,7 +267,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   })
                 }
               }
-              let newLaunchTime = dict->Utils.getFloat("launchTime", 0.0)
+              let newLaunchTime = dict->getFloat("launchTime", 0.0)
               setLaunchTime(_ => newLaunchTime)
               let initLoadlatency = Date.now() -. newLaunchTime
               logger.setLogInfo(
@@ -293,7 +293,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               )
             }
           } else if dict->getDictIsSome("paymentOptions") {
-            let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")
+            let paymentOptions = dict->getDictFromObj("paymentOptions")
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
             setKeys(prev => {
@@ -302,7 +302,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
             logger.setClientSecret(clientSecret)
 
-            switch OrcaUtils.getThemePromise(paymentOptions) {
+            switch getThemePromise(paymentOptions) {
             | Some(promise) =>
               promise
               ->then(res => {
@@ -337,7 +337,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
           | None => ()
           }
-          switch OrcaUtils.getThemePromise(optionsDict) {
+          switch getThemePromise(optionsDict) {
           | Some(promise) =>
             promise
             ->then(res => {
@@ -370,11 +370,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let updatedState: PaymentType.loadType =
             list == Dict.make()->JSON.Encode.object
               ? LoadError(list)
-              : switch list->Utils.getDictFromJson->Dict.get("error") {
+              : switch list->getDictFromJson->Dict.get("error") {
                 | Some(_) => LoadError(list)
                 | None =>
                   let isNonEmptyPaymentMethodList =
-                    list->Utils.getDictFromJson->Utils.getArray("payment_methods")->Array.length > 0
+                    list->getDictFromJson->getArray("payment_methods")->Array.length > 0
                   isNonEmptyPaymentMethodList ? Loaded(list) : LoadError(list)
                 }
 
@@ -489,7 +489,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   }
 
   React.useEffect(() => {
-    Utils.handlePostMessage([
+    handlePostMessage([
       ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
       ("iframeId", iframeId->JSON.Encode.string),
     ])

@@ -316,29 +316,30 @@ let calculateLuhn = value => {
 
 let getCardBrandIcon = (cardType, paymentType) => {
   open CardThemeType
+  open Utils
   switch cardType {
-  | VISA => <Icon size=Utils.brandIconSize name="visa-light" />
-  | MASTERCARD => <Icon size=Utils.brandIconSize name="mastercard" />
-  | AMEX => <Icon size=Utils.brandIconSize name="amex-light" />
-  | MAESTRO => <Icon size=Utils.brandIconSize name="maestro" />
-  | DINERSCLUB => <Icon size=Utils.brandIconSize name="diners" />
-  | DISCOVER => <Icon size=Utils.brandIconSize name="discover" />
-  | BAJAJ => <Icon size=Utils.brandIconSize name="card" />
-  | SODEXO => <Icon size=Utils.brandIconSize name="card" />
-  | RUPAY => <Icon size=Utils.brandIconSize name="rupay-card" />
-  | JCB => <Icon size=Utils.brandIconSize name="jcb-card" />
-  | CARTESBANCAIRES => <Icon size=Utils.brandIconSize name="card" />
-  | UNIONPAY => <Icon size=Utils.brandIconSize name="card" />
-  | INTERAC => <Icon size=Utils.brandIconSize name="interac" />
+  | VISA => <Icon size=brandIconSize name="visa-light" />
+  | MASTERCARD => <Icon size=brandIconSize name="mastercard" />
+  | AMEX => <Icon size=brandIconSize name="amex-light" />
+  | MAESTRO => <Icon size=brandIconSize name="maestro" />
+  | DINERSCLUB => <Icon size=brandIconSize name="diners" />
+  | DISCOVER => <Icon size=brandIconSize name="discover" />
+  | BAJAJ => <Icon size=brandIconSize name="card" />
+  | SODEXO => <Icon size=brandIconSize name="card" />
+  | RUPAY => <Icon size=brandIconSize name="rupay-card" />
+  | JCB => <Icon size=brandIconSize name="jcb-card" />
+  | CARTESBANCAIRES => <Icon size=brandIconSize name="card" />
+  | UNIONPAY => <Icon size=brandIconSize name="card" />
+  | INTERAC => <Icon size=brandIconSize name="interac" />
   | NOTFOUND =>
     switch paymentType {
-    | Payment => <Icon size=Utils.brandIconSize name="base-card" />
+    | Payment => <Icon size=brandIconSize name="base-card" />
     | Card
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
     | NONE =>
-      <Icon size=Utils.brandIconSize name="default-card" />
+      <Icon size=brandIconSize name="default-card" />
     }
   }
 }
@@ -577,16 +578,17 @@ let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?, (
 }
 
 let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
+  open Utils
   if cardEmpty {
-    <Icon size=Utils.brandIconSize name="cvc-empty" />
+    <Icon size=brandIconSize name="cvc-empty" />
   } else if cardInvalid {
     <div style={ReactDOMStyle.make(~color, ())}>
-      <Icon size=Utils.brandIconSize name="cvc-invalid" />
+      <Icon size=brandIconSize name="cvc-invalid" />
     </div>
   } else if cardComplete {
-    <Icon size=Utils.brandIconSize name="cvc-complete" />
+    <Icon size=brandIconSize name="cvc-complete" />
   } else {
-    <Icon size=Utils.brandIconSize name="cvc-empty" />
+    <Icon size=brandIconSize name="cvc-empty" />
   }
 }
 

@@ -44,7 +44,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
       (),
     )
     open Promise
-    OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
+    Utils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
