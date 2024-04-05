@@ -31,12 +31,8 @@ let make = () => {
     ->Array.get(0)
     ->Option.getOr(
       {
-        "country_code": "",
         "phone_number_code": "",
-        "validation_regex": "",
-        "format_example": "",
-        "format_regex": "",
-      }->toJson,
+      }->Identity.anyTypeToJson,
     )
     ->getDictFromJson
     ->getString("phone_number_code", "")

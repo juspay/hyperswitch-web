@@ -91,7 +91,7 @@ let make = (
         setValue={setValueDropDown->Option.getOr(_ => ())}
         fieldName={dropDownFieldName->Option.getOr(fieldName)}
         options={dropDownOptions->Option.getOr([])}
-        width="!w-1/3 mr-2"
+        width="w-1/3 mr-2"
       />
     </RenderIf>
     <RenderIf condition={fieldName->String.length > 0 && config.appearance.labels == Above}>
