@@ -2,7 +2,6 @@ open Types
 open Utils
 open EventListenerManager
 open Identity
-open OrcaUtils
 
 @val @scope(("navigator", "clipboard"))
 external writeText: string => Promise.t<'a> = "writeText"
