@@ -82,7 +82,9 @@ let make = (
             ~email=email.value,
             ~bank=bank.hyperSwitch,
             ~blikCode=blikCode.value->cleanBlik,
-            ~phoneNumber=phoneNumber.value->cleanPhoneNumber,
+            ~phoneNumber=cleanPhoneNumber(
+              phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
+            ),
             ~paymentExperience=paymentFlow,
             ~currency,
           )

@@ -54,7 +54,7 @@ let make = () => {
       countryCode: valueDropDown,
     })
     None
-  }, valueDropDown)
+  }, [valueDropDown])
 
   <RenderIf condition={showDetails.phone == Auto}>
     <PaymentField
