@@ -1,7 +1,5 @@
 @send external postMessage: (Window.window, JSON.t, string) => unit = "postMessage"
 
-external eventToJson: 'a => JSON.t = "%identity"
-
 module Loader = {
   @react.component
   let make = () => {
@@ -16,8 +14,8 @@ module Loader = {
 @react.component
 let make = () => {
   open RecoilAtoms
+  open Utils
   let (showLoader, setShowLoader) = React.useState(() => false)
-
   let {themeObj, localeString} = configAtom->Recoil.useRecoilValueFromAtom
   let {sdkHandleConfirmPayment} = optionAtom->Recoil.useRecoilValueFromAtom
   let (isPayNowButtonDisable, setIsPayNowButtonDisable) = payNowButtonDisable->Recoil.useRecoilState
@@ -26,8 +24,8 @@ let make = () => {
   let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
 
   let handleMessage = (event: Types.event) => {
-    let json = event.data->eventToJson->OrcaUtils.getStringfromjson("")->OrcaUtils.safeParse
-    let dict = json->Utils.getDictFromJson
+    let json = event.data->Identity.anyTypeToJson->getStringFromJson("")->safeParse
+    let dict = json->getDictFromJson
     switch dict->Dict.get("submitSuccessful") {
     | Some(_) =>
       setIsPayNowButtonDisable(_ => false)
@@ -40,7 +38,7 @@ let make = () => {
     setIsPayNowButtonDisable(_ => true)
     setShowLoader(_ => true)
     EventListenerManager.addSmartEventListener("message", handleMessage, "onSubmitSuccessful")
-    Utils.handlePostMessage([("handleSdkConfirm", confirmPayload)])
+    handlePostMessage([("handleSdkConfirm", confirmPayload)])
   }
 
   <div className="flex flex-col gap-1 h-auto w-full items-center">

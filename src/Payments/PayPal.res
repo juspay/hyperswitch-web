@@ -41,7 +41,7 @@ let make = (~list: PaymentMethodsRecord.list) => {
     )
     setPaypalClicked(_ => true)
     open Promise
-    OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
+    Utils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {

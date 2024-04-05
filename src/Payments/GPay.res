@@ -99,9 +99,9 @@ let make = (
           gPayBody
           ->Dict.fromArray
           ->JSON.Encode.object
-          ->OrcaUtils.flattenObject(true)
-          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->OrcaUtils.getArrayOfTupleFromDict
+          ->flattenObject(true)
+          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->getArrayOfTupleFromDict
         }
         processPayment(body)
       }
@@ -124,7 +124,7 @@ let make = (
   }
 
   let getGooglePaymentsClient = () => {
-    google({"environment": GlobalVars.isProd ? "PRODUCTION" : "TEST"}->toJson)
+    google({"environment": GlobalVars.isProd ? "PRODUCTION" : "TEST"}->Identity.anyTypeToJson)
   }
 
   let syncPayment = () => {
@@ -146,7 +146,7 @@ let make = (
       (),
     )
     open Promise
-    OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
+    makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         if isInvokeSDKFlow {
@@ -192,7 +192,7 @@ let make = (
       "buttonSizeMode": "fill",
       "buttonColor": options.wallets.style.theme == Dark ? "black" : "white",
     }
-    obj->toJson
+    obj->Identity.anyTypeToJson
   }
   let addGooglePayButton = () => {
     let paymentClient = getGooglePaymentsClient()

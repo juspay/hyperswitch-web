@@ -1,6 +1,5 @@
 open Utils
 @val @scope("Object") external assign: (JSON.t, JSON.t, JSON.t) => JSON.t = "assign"
-external toSome: JSON.t => 'a = "%identity"
 type transactionInfo = {
   countryCode: string,
   currencyCode: string,
@@ -113,16 +112,16 @@ let jsonToPaymentRequestDataType: (paymentDataRequest, Dict.t<JSON.t>) => paymen
 ) => {
   paymentRequest.allowedPaymentMethods =
     jsonDict
-    ->Utils.getArray("allowed_payment_methods")
-    ->Array.map(json => Utils.transformKeys(json, Utils.CamelCase))
+    ->getArray("allowed_payment_methods")
+    ->Array.map(json => transformKeys(json, CamelCase))
   paymentRequest.transactionInfo =
     jsonDict
-    ->Utils.getJsonFromDict("transaction_info", JSON.Encode.null)
-    ->Utils.transformKeys(Utils.CamelCase)
+    ->getJsonFromDict("transaction_info", JSON.Encode.null)
+    ->transformKeys(CamelCase)
   paymentRequest.merchantInfo =
     jsonDict
-    ->Utils.getJsonFromDict("merchant_info", JSON.Encode.null)
-    ->Utils.transformKeys(Utils.CamelCase)
+    ->getJsonFromDict("merchant_info", JSON.Encode.null)
+    ->transformKeys(CamelCase)
 
   paymentRequest
 }

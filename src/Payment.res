@@ -49,10 +49,12 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let brand = getCardBrand(cardNumber)
     let maxLength = getMaxLength(cardNumber)
     let isNotBancontact = selectedOption !== "bancontact_card" && brand == ""
-    ((brand == "" && !showFields) || !showFields) && isNotBancontact
-      ? (cardScheme, maxLength)
-      : (brand, maxLength)
+    !showFields && isNotBancontact ? (cardScheme, maxLength) : (brand, maxLength)
   }, (cardNumber, cardScheme, showFields))
+
+  let cardType = React.useMemo1(() => {
+    cardBrand->getCardType
+  }, [cardBrand])
 
   let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = Utils.getClientCountry(clientTimeZone)
@@ -94,7 +96,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
-    let card = val->formatCardNumber(cardBrand->cardType)
+    let card = val->formatCardNumber(cardType)
     let clearValue = card->clearSpaces
     setCardValid(clearValue, setIsCardValid)
     if cardValid(clearValue, cardBrand) {
@@ -293,7 +295,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     }
   }
 
-  let paymentType = paymentMode->getPaymentMode
+  let paymentType = React.useMemo1(() => {
+    paymentMode->getPaymentMode
+  }, [paymentMode])
 
   React.useEffect0(() => {
     let handleFun = (ev: Window.event) => {
@@ -338,31 +342,23 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     Utils.handleMessage(handleDoSubmit, "")
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
-  let cardBrandIcon = getCardBrandIcon(cardBrand->cardType, paymentMode->getPaymentMode)
-
   React.useEffect(() => {
     setCardError(_ =>
-      switch isCardValid {
-      | Some(val) => val ? "" : localeString.inValidCardErrorText
-      | None => ""
-      }
+      isCardValid->Option.getOr(true) ? "" : localeString.inValidCardErrorText
     )
     None
   }, [isCardValid])
 
   React.useEffect(() => {
     setCvcError(_ =>
-      switch isCVCValid {
-      | Some(val) => val ? "" : localeString.inCompleteCVCErrorText
-      | None => ""
-      }
+      isCVCValid->Option.getOr(true) ? "" : localeString.inCompleteCVCErrorText
     )
     None
   }, [isCVCValid])
 
   React.useEffect(() => {
     setExpiryError(_ =>
-      switch (isExpiryValid, isExipryComplete(cardExpiry)) {
+      switch (isExpiryValid, isExpiryComplete(cardExpiry)) {
       | (Some(true), true) => ""
       | (Some(false), true) => localeString.pastExpiryErrorText
       | (Some(_), false) => localeString.inCompleteExpiryErrorText
@@ -370,10 +366,13 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       }
     )
     None
-  }, (isExpiryValid, isExipryComplete(cardExpiry)))
+  }, (isExpiryValid, isExpiryComplete(cardExpiry)))
 
-  let animate = cardBrand->cardType == NOTFOUND ? "animate-slideLeft" : "animate-slideRight"
-  let icon = <div className=animate> cardBrandIcon </div>
+  let icon = React.useMemo(() => {
+    let animate = cardType == NOTFOUND ? "animate-slideLeft" : "animate-slideRight"
+    let cardBrandIcon = getCardBrandIcon(cardType, paymentType)
+    <div className=animate> cardBrandIcon </div>
+  }, (cardType, paymentType))
 
   let cardProps: CardUtils.cardProps = (
     isCardValid,
