@@ -295,7 +295,7 @@ let make = (
   let checkoutEle = {
     <ErrorBoundary key={selectedOption}>
       {switch selectedOption->PaymentModeType.paymentMode {
-      | Card => <PhoneNumberPaymentInput />
+      | Card => <CardPayment cardProps expiryProps cvcProps paymentType list />
       | Klarna =>
         <SessionPaymentWrapper type_=Others>
           {switch klarnaTokenObj {
