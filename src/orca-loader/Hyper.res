@@ -96,7 +96,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     )
     let isReadyPromise = Promise.make((resolve, _) => {
       let handleOnReady = (event: Types.event) => {
-        let json = event.data->Identity.anyTypeToJson
+        let json = event.data->anyTypeToJson
         let dict = json->getDictFromJson
         if (
           dict
@@ -292,7 +292,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           isReadyPromise
           ->Promise.then(readyTimestamp => {
             let handleMessage = (event: Types.event) => {
-              let json = event.data->Identity.anyTypeToJson
+              let json = event.data->anyTypeToJson
               let dict = json->getDictFromJson
               switch dict->Dict.get("submitSuccessful") {
               | Some(val) =>
