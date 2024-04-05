@@ -81,10 +81,11 @@ let make = (
     None
   }, [complete])
 
-  React.useEffect(() => {
-    handlePostMessageEvents(~complete, ~empty, ~paymentType="card", ~loggerState)
-    None
-  }, (empty, complete))
+  UtilityHooks.useHandlePostMessages(
+    ~complete=complete && areRequiredFieldsValid,
+    ~empty,
+    ~paymentType="card",
+  )
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)

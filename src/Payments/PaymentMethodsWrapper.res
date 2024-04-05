@@ -52,15 +52,11 @@ let make = (
 
   let empty = areRequiredFieldsEmpty
 
-  React.useEffect(() => {
-    handlePostMessageEvents(
-      ~complete,
-      ~empty,
-      ~paymentType=paymentMethodDetails.paymentMethodName,
-      ~loggerState,
-    )
-    None
-  }, (empty, complete))
+  UtilityHooks.useHandlePostMessages(
+    ~complete,
+    ~empty,
+    ~paymentType=paymentMethodDetails.paymentMethodName,
+  )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
