@@ -1,4 +1,5 @@
 open Utils
+open Identity
 
 @val @scope(("window", "parent", "location")) external href: string = "href"
 
@@ -9,19 +10,25 @@ type url = {searchParams: searchParams, href: string}
 open LoggerUtils
 type payment = Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Other
 
-let closePaymentLoaderIfAny = () =>
-  Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+let closePaymentLoaderIfAny = () => handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
 
-let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
+let retrievePaymentIntent = (
+  clientSecret,
+  headers,
+  ~optLogger,
+  ~switchToCustomPod,
+  ~isForceSync=false,
+) => {
   open Promise
   let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let uri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
+  let forceSync = isForceSync ? "&force_sync=true" : ""
+  let uri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}${forceSync}`
 
   logApi(
     ~optLogger,
     ~url=uri,
-    ~type_="request",
+    ~apiLogType=Request,
     ~eventName=RETRIEVE_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
@@ -44,7 +51,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
           ~url=uri,
           ~data,
           ~statusCode,
-          ~type_="err",
+          ~apiLogType=Err,
           ~eventName=RETRIEVE_CALL,
           ~logType=ERROR,
           ~logCategory=API,
@@ -57,7 +64,7 @@ let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomP
         ~optLogger,
         ~url=uri,
         ~statusCode,
-        ~type_="response",
+        ~apiLogType=Response,
         ~eventName=RETRIEVE_CALL,
         ~logType=INFO,
         ~logCategory=API,
@@ -77,8 +84,8 @@ let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
   logApi(
     ~optLogger,
     ~url,
-    ~type_="request",
-    ~eventName=RETRIEVE_CALL_INIT,
+    ~apiLogType=Request,
+    ~eventName=THREE_DS_METHOD_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
     (),
@@ -88,11 +95,50 @@ let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
 
   fetchApiWithNoCors(url, ~method=#POST, ~bodyStr=body, ())
   ->then(res => {
-    res->Fetch.Response.text
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.text
+      ->then(text => {
+        logApi(
+          ~optLogger,
+          ~url,
+          ~data=text->JSON.Encode.string,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=THREE_DS_METHOD_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        ""->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger,
+        ~url,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=THREE_DS_METHOD_CALL,
+        (),
+      )
+      res->Fetch.Response.text
+    }
   })
-  ->catch(e => {
-    Console.log2("Unable to call 3ds method ", e)
-    reject(e)
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.log2("Unable to call 3ds method ", exceptionMessage)
+    logApi(
+      ~optLogger,
+      ~url,
+      ~eventName=THREE_DS_METHOD_CALL,
+      ~apiLogType=NoResponse,
+      ~data=exceptionMessage,
+      ~logType=ERROR,
+      ~logCategory=API,
+      (),
+    )
+    reject(err)
   })
 }
 
@@ -115,23 +161,70 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
   logApi(
     ~optLogger,
     ~url,
-    ~type_="request",
-    ~eventName=RETRIEVE_CALL_INIT,
+    ~apiLogType=Request,
+    ~eventName=AUTHENTICATION_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
     (),
   )
   fetchApi(url, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray, ())
-  ->then(res => res->Fetch.Response.json)
-  ->catch(e => {
-    Console.log2("Unable to call 3ds auth ", e)
-    reject(e)
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger,
+          ~url,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=AUTHENTICATION_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger,
+        ~url,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=AUTHENTICATION_CALL,
+        (),
+      )
+      res->Fetch.Response.json
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.log2("Unable to call 3ds auth ", exceptionMessage)
+    logApi(
+      ~optLogger,
+      ~url,
+      ~eventName=AUTHENTICATION_CALL,
+      ~apiLogType=NoResponse,
+      ~data=exceptionMessage,
+      ~logType=ERROR,
+      ~logCategory=API,
+      (),
+    )
+    reject(err)
   })
 }
 
-let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchToCustomPod) => {
+let rec pollRetrievePaymentIntent = (
+  clientSecret,
+  headers,
+  ~optLogger,
+  ~switchToCustomPod,
+  ~isForceSync=false,
+) => {
   open Promise
-  retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
+  retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod, ~isForceSync)
   ->then(json => {
     let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
     let status = dict->getString("status", "")
@@ -140,13 +233,19 @@ let rec pollRetrievePaymentIntent = (clientSecret, headers, ~optLogger, ~switchT
       resolve(json)
     } else {
       delay(2000)->then(_val => {
-        pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
+        pollRetrievePaymentIntent(
+          clientSecret,
+          headers,
+          ~optLogger,
+          ~switchToCustomPod,
+          ~isForceSync,
+        )
       })
     }
   })
   ->catch(e => {
     Console.log2("Unable to retrieve payment due to following error", e)
-    pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod)
+    pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod, ~isForceSync)
   })
 }
 
@@ -157,7 +256,7 @@ let rec intentCall = (
     ~headers: Dict.t<string>=?,
     ~method: Fetch.method,
     unit,
-  ) => OrcaPaymentPage.Promise.t<Fetch.Response.t>,
+  ) => Promise.t<Fetch.Response.t>,
   ~uri,
   ~headers,
   ~bodyStr,
@@ -184,7 +283,7 @@ let rec intentCall = (
   logApi(
     ~optLogger,
     ~url=uri,
-    ~type_="request",
+    ~apiLogType=Request,
     ~eventName=initEventName,
     ~logType=INFO,
     ~logCategory=API,
@@ -214,16 +313,16 @@ let rec intentCall = (
       res
       ->Fetch.Response.json
       ->then(data => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
+        Promise.make(
+          (resolve, _) => {
             if isConfirm {
               let paymentMethod = switch paymentType {
               | Card => "CARD"
               | _ =>
                 bodyStr
                 ->JSON.parseExn
-                ->Utils.getDictFromJson
-                ->Utils.getString("payment_method_type", "")
+                ->getDictFromJson
+                ->getString("payment_method_type", "")
               }
               handleLogging(
                 ~optLogger,
@@ -238,7 +337,7 @@ let rec intentCall = (
               ~url=uri,
               ~data,
               ~statusCode,
-              ~type_="err",
+              ~apiLogType=Err,
               ~eventName,
               ~logType=ERROR,
               ~logCategory=API,
@@ -267,14 +366,14 @@ let rec intentCall = (
         )->then(resolve)
       })
       ->catch(err => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
-            let exceptionMessage = err->Utils.formatException
+        Promise.make(
+          (resolve, _) => {
+            let exceptionMessage = err->formatException
             logApi(
               ~optLogger,
               ~url=uri,
               ~statusCode,
-              ~type_="no_response",
+              ~apiLogType=NoResponse,
               ~data=exceptionMessage,
               ~eventName,
               ~logType=ERROR,
@@ -336,9 +435,9 @@ let rec intentCall = (
       res
       ->Fetch.Response.json
       ->then(data => {
-        Js.Promise.make(
-          (~resolve, ~reject as _) => {
-            logApi(~optLogger, ~url=uri, ~statusCode, ~type_="response", ~eventName, ())
+        Promise.make(
+          (resolve, _) => {
+            logApi(~optLogger, ~url=uri, ~statusCode, ~apiLogType=Response, ~eventName, ())
             let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
             let paymentMethod = switch paymentType {
             | Card => "CARD"
@@ -379,7 +478,7 @@ let rec intentCall = (
                 handleOpenUrl(intent.nextAction.redirectToUrl)
               } else if intent.nextAction.type_ == "display_bank_transfer_information" {
                 let metadata = switch intent.nextAction.bank_transfer_steps_and_charges_details {
-                | Some(obj) => obj->Utils.getDictFromJson
+                | Some(obj) => obj->getDictFromJson
                 | None => Dict.make()
                 }
                 let dict = deepCopyDict(metadata)
@@ -416,6 +515,7 @@ let rec intentCall = (
                   [
                     ("qrData", qrData->JSON.Encode.string),
                     ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
                     ("expiryTime", expiryTime->Belt.Float.toString->JSON.Encode.string),
                     ("url", url.href->JSON.Encode.string),
@@ -449,7 +549,7 @@ let rec intentCall = (
                   ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
                   ->Option.getOr(Dict.make()->JSON.Encode.object)
                   ->JSON.Decode.bool
-                  ->Utils.getBoolValue
+                  ->getBoolValue
 
                 let headerObj = Dict.make()
                 headers->Array.forEach(
@@ -462,10 +562,19 @@ let rec intentCall = (
                   [
                     ("threeDSData", threeDsData->JSON.Encode.object),
                     ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
                     ("url", url.href->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
                   ]->Dict.fromArray
+
+                handleLogging(
+                  ~optLogger,
+                  ~value=do3dsMethodCall ? "Y" : "N",
+                  ~eventName=THREE_DS_METHOD,
+                  ~paymentMethod,
+                  (),
+                )
 
                 if do3dsMethodCall {
                   handlePostMessage([
@@ -485,16 +594,16 @@ let rec intentCall = (
                 }
               } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
-                | Some(token) => token->Utils.getDictFromJson
+                | Some(token) => token->getDictFromJson
                 | None => Dict.make()
                 }
-                let walletName = session_token->Utils.getString("wallet_name", "")
+                let walletName = session_token->getString("wallet_name", "")
                 let message = switch walletName {
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->toJson),
+                    ("applePayPresent", session_token->anyTypeToJson),
                   ]
-                | "google_pay" => [("googlePayThirdPartyFlow", session_token->toJson)]
+                | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
 
@@ -531,16 +640,16 @@ let rec intentCall = (
             } else if intent.status == "processing" {
               if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
-                | Some(token) => token->Utils.getDictFromJson
+                | Some(token) => token->getDictFromJson
                 | None => Dict.make()
                 }
-                let walletName = session_token->Utils.getString("wallet_name", "")
+                let walletName = session_token->getString("wallet_name", "")
                 let message = switch walletName {
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->toJson),
+                    ("applePayPresent", session_token->anyTypeToJson),
                   ]
-                | "google_pay" => [("googlePayThirdPartyFlow", session_token->toJson)]
+                | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
 
@@ -591,16 +700,16 @@ let rec intentCall = (
     }
   })
   ->catch(err => {
-    Js.Promise.make((~resolve, ~reject as _) => {
+    Promise.make((resolve, _) => {
       let url = urlSearch(confirmParam.return_url)
       url.searchParams.set("payment_intent_client_secret", clientSecret)
       url.searchParams.set("status", "failed")
-      let exceptionMessage = err->Utils.formatException
+      let exceptionMessage = err->formatException
       logApi(
         ~optLogger,
         ~url=uri,
         ~eventName,
-        ~type_="no_response",
+        ~apiLogType=NoResponse,
         ~data=exceptionMessage,
         ~logType=ERROR,
         ~logCategory=API,
@@ -761,7 +870,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
 
       let callIntent = body => {
         let maskedPayload =
-          body->OrcaUtils.safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
+          body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
         let loggerPayload =
           [
             ("payload", maskedPayload->JSON.Encode.string),
@@ -797,7 +906,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
                 ~value="",
                 ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
-                ~paymentMethod=json->JSON.Decode.string->Option.getOr(""),
+                ~paymentMethod=json->getStringFromJson(""),
                 (),
               )
             }
@@ -911,7 +1020,7 @@ let fetchSessions = (
   logApi(
     ~optLogger,
     ~url=uri,
-    ~type_="request",
+    ~apiLogType=Request,
     ~eventName=SESSIONS_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
@@ -935,7 +1044,7 @@ let fetchSessions = (
           ~url=uri,
           ~data,
           ~statusCode,
-          ~type_="err",
+          ~apiLogType=Err,
           ~eventName=SESSIONS_CALL,
           ~logType=ERROR,
           ~logCategory=API,
@@ -948,7 +1057,7 @@ let fetchSessions = (
         ~optLogger,
         ~url=uri,
         ~statusCode,
-        ~type_="response",
+        ~apiLogType=Response,
         ~eventName=SESSIONS_CALL,
         ~logType=INFO,
         ~logCategory=API,
@@ -958,11 +1067,11 @@ let fetchSessions = (
     }
   })
   ->catch(err => {
-    let exceptionMessage = err->Utils.formatException
+    let exceptionMessage = err->formatException
     logApi(
       ~optLogger,
       ~url=uri,
-      ~type_="no_response",
+      ~apiLogType=NoResponse,
       ~eventName=SESSIONS_CALL,
       ~logType=ERROR,
       ~logCategory=API,
@@ -986,7 +1095,7 @@ let fetchPaymentMethodList = (
   logApi(
     ~optLogger=Some(logger),
     ~url=uri,
-    ~type_="request",
+    ~apiLogType=Request,
     ~eventName=PAYMENT_METHODS_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
@@ -1009,7 +1118,7 @@ let fetchPaymentMethodList = (
           ~url=uri,
           ~data,
           ~statusCode,
-          ~type_="err",
+          ~apiLogType=Err,
           ~eventName=PAYMENT_METHODS_CALL,
           ~logType=ERROR,
           ~logCategory=API,
@@ -1022,7 +1131,7 @@ let fetchPaymentMethodList = (
         ~optLogger=Some(logger),
         ~url=uri,
         ~statusCode,
-        ~type_="response",
+        ~apiLogType=Response,
         ~eventName=PAYMENT_METHODS_CALL,
         ~logType=INFO,
         ~logCategory=API,
@@ -1032,11 +1141,11 @@ let fetchPaymentMethodList = (
     }
   })
   ->catch(err => {
-    let exceptionMessage = err->Utils.formatException
+    let exceptionMessage = err->formatException
     logApi(
       ~optLogger=Some(logger),
       ~url=uri,
-      ~type_="no_response",
+      ~apiLogType=NoResponse,
       ~eventName=PAYMENT_METHODS_CALL,
       ~logType=ERROR,
       ~logCategory=API,
@@ -1060,7 +1169,7 @@ let fetchCustomerDetails = (
   logApi(
     ~optLogger,
     ~url=uri,
-    ~type_="request",
+    ~apiLogType=Request,
     ~eventName=CUSTOMER_PAYMENT_METHODS_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
@@ -1083,7 +1192,7 @@ let fetchCustomerDetails = (
           ~url=uri,
           ~data,
           ~statusCode,
-          ~type_="err",
+          ~apiLogType=Err,
           ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
           ~logType=ERROR,
           ~logCategory=API,
@@ -1096,7 +1205,7 @@ let fetchCustomerDetails = (
         ~optLogger,
         ~url=uri,
         ~statusCode,
-        ~type_="response",
+        ~apiLogType=Response,
         ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
         ~logType=INFO,
         ~logCategory=API,
@@ -1106,11 +1215,11 @@ let fetchCustomerDetails = (
     }
   })
   ->catch(err => {
-    let exceptionMessage = err->Utils.formatException
+    let exceptionMessage = err->formatException
     logApi(
       ~optLogger,
       ~url=uri,
-      ~type_="no_response",
+      ~apiLogType=NoResponse,
       ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
       ~logType=ERROR,
       ~logCategory=API,

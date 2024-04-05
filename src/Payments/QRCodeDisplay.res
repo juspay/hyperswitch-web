@@ -41,7 +41,7 @@ let make = () => {
         ->Dict.toArray
         ->Array.forEach(entries => {
           let (x, val) = entries
-          Dict.set(headers, x, val->JSON.Decode.string->Option.getOr(""))
+          Dict.set(headers, x, val->getStringFromJson(""))
         })
         let expiryTime =
           metaDataDict->getString("expiryTime", "")->Belt.Float.fromString->Option.getOr(0.0)
@@ -120,7 +120,7 @@ let make = () => {
     ->ignore
   }
 
-  let expiryString = React.useMemo1(() => {
+  let expiryString = React.useMemo(() => {
     let minutes = (expiryTime /. 60000.0)->Belt.Float.toInt->Belt.Int.toString
     let seconds =
       mod(expiryTime->Belt.Float.toInt, 60000)->Belt.Int.toString->String.slice(~start=0, ~end=2)

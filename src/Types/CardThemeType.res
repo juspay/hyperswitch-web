@@ -1,5 +1,4 @@
 type theme = Default | Brutal | Midnight | Soft | Charcoal | NONE
-external toJson: 'a => JSON.t = "%identity"
 
 @val external navigator: 'a = "navigator"
 type showLoader = Auto | Always | Never

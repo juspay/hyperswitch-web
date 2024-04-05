@@ -24,10 +24,10 @@ let make = (
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
-  let isGooglePaySDKFlow = React.useMemo1(() => {
+  let isGooglePaySDKFlow = React.useMemo(() => {
     sessionObj->Option.isSome
   }, [sessionObj])
-  let isGooglePayThirdPartyFlow = React.useMemo1(() => {
+  let isGooglePayThirdPartyFlow = React.useMemo(() => {
     thirdPartySessionObj->Option.isSome
   }, [sessionObj])
 
@@ -50,7 +50,7 @@ let make = (
   | None => PaymentMethodsRecord.RedirectToURL
   }
 
-  let isInvokeSDKFlow = React.useMemo1(() => {
+  let isInvokeSDKFlow = React.useMemo(() => {
     (isGooglePaySDKFlow || isGooglePayThirdPartyFlow) &&
       paymentExperience == PaymentMethodsRecord.InvokeSDK
   }, [sessionObj])
@@ -58,7 +58,7 @@ let make = (
     ? list->PaymentUtils.getConnectors(Wallets(Gpay(SDK)))
     : list->PaymentUtils.getConnectors(Wallets(Gpay(Redirect)))
 
-  let isDelayedSessionToken = React.useMemo1(() => {
+  let isDelayedSessionToken = React.useMemo(() => {
     thirdPartySessionObj
     ->Option.flatMap(JSON.Decode.object)
     ->Option.flatMap(x => x->Dict.get("delayed_session_token"))
@@ -99,9 +99,9 @@ let make = (
           gPayBody
           ->Dict.fromArray
           ->JSON.Encode.object
-          ->OrcaUtils.flattenObject(true)
-          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->OrcaUtils.getArrayOfTupleFromDict
+          ->flattenObject(true)
+          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->getArrayOfTupleFromDict
         }
         processPayment(body)
       }
@@ -124,7 +124,7 @@ let make = (
   }
 
   let getGooglePaymentsClient = () => {
-    google({"environment": GlobalVars.isProd ? "PRODUCTION" : "TEST"}->toJson)
+    google({"environment": GlobalVars.isProd ? "PRODUCTION" : "TEST"}->Identity.anyTypeToJson)
   }
 
   let syncPayment = () => {
@@ -146,11 +146,16 @@ let make = (
       (),
     )
     open Promise
-    OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
+    makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         if isInvokeSDKFlow {
           if isDelayedSessionToken {
+            handlePostMessage([
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", "paymentloader"->JSON.Encode.string),
+              ("iframeId", iframeId->JSON.Encode.string),
+            ])
             let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
             processPayment(bodyDict)
           } else {
@@ -165,8 +170,9 @@ let make = (
           let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
           processPayment(bodyDict)
         }
+        let value = "Payment Data Filled: New Payment Method"
         loggerState.setLogInfo(
-          ~value="",
+          ~value,
           ~eventName=PAYMENT_DATA_FILLED,
           ~paymentMethod="GOOGLE_PAY",
           (),
@@ -186,7 +192,7 @@ let make = (
       "buttonSizeMode": "fill",
       "buttonColor": options.wallets.style.theme == Dark ? "black" : "white",
     }
-    obj->toJson
+    obj->Identity.anyTypeToJson
   }
   let addGooglePayButton = () => {
     let paymentClient = getGooglePaymentsClient()

@@ -28,16 +28,14 @@ let make = (
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
 
-  React.useEffect(() => {
-    handlePostMessageEvents(~complete, ~empty, ~paymentType="bank_transfer", ~loggerState)
-    None
-  }, (empty, complete))
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
+
   React.useEffect(() => {
     setComplete(_ => complete)
     None
   }, [complete])
 
-  let submitCallback = React.useCallback3((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {

@@ -52,17 +52,13 @@ let make = (
 
   let empty = areRequiredFieldsEmpty
 
-  React.useEffect(() => {
-    handlePostMessageEvents(
-      ~complete,
-      ~empty,
-      ~paymentType=paymentMethodDetails.paymentMethodName,
-      ~loggerState,
-    )
-    None
-  }, (empty, complete))
+  UtilityHooks.useHandlePostMessages(
+    ~complete,
+    ~empty,
+    ~paymentType=paymentMethodDetails.paymentMethodName,
+  )
 
-  let submitCallback = React.useCallback7((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
@@ -92,9 +88,9 @@ let make = (
           )
           ->Dict.fromArray
           ->JSON.Encode.object
-          ->OrcaUtils.flattenObject(true)
-          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->OrcaUtils.getArrayOfTupleFromDict,
+          ->flattenObject(true)
+          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->getArrayOfTupleFromDict,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~iframeId,
@@ -115,7 +111,7 @@ let make = (
   ))
   useSubmitPaymentData(submitCallback)
   <div
-    className="flex flex-col animate-slowShow"
+    className="DynamicFields flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
     <DynamicFields
       paymentType

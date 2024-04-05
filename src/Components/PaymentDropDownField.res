@@ -2,9 +2,7 @@ open RecoilAtoms
 @react.component
 let make = (
   ~value: RecoilAtomTypes.field,
-  ~setValue: (
-    OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field
-  ) => unit,
+  ~setValue: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
   ~fieldName,
   ~options,
   ~disabled=false,
@@ -70,7 +68,7 @@ let make = (
       errorString: "",
     })
   }
-  let disbaledBG = React.useMemo1(() => {
+  let disbaledBG = React.useMemo(() => {
     themeObj.colorBackground
   }, [themeObj])
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"

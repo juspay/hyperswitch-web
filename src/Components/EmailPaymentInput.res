@@ -17,15 +17,15 @@ let make = (~paymentType) => {
     let val: string = ReactEvent.Form.target(ev)["value"]
     setEmail(prev => {
       value: val,
-      isValid: val->Utils.isEmailValid,
-      errorString: val->Utils.isEmailValid->Option.getOr(false) ? "" : prev.errorString,
+      isValid: val->isEmailValid,
+      errorString: val->isEmailValid->Option.getOr(false) ? "" : prev.errorString,
     })
   }
   let onBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]
     setEmail(prev => {
       ...prev,
-      isValid: val->Utils.isEmailValid,
+      isValid: val->isEmailValid,
     })
   }
 
@@ -40,9 +40,9 @@ let make = (~paymentType) => {
     None
   }, [email.isValid])
 
-  let submitCallback = React.useCallback1((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
-    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if email.value == "" {
         setEmail(prev => {

@@ -67,9 +67,7 @@ let make = (~paymentType, ~className="") => {
 
   let checkPostalValidity = (
     postal: RecoilAtomTypes.field,
-    setPostal: (
-      OrcaPaymentPage.RecoilAtomTypes.field => OrcaPaymentPage.RecoilAtomTypes.field
-    ) => unit,
+    setPostal: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
     regex,
   ) => {
     if RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== "" && regex !== "" {
@@ -166,9 +164,9 @@ let make = (~paymentType, ~className="") => {
     None
   }, [country.value])
 
-  let submitCallback = React.useCallback6((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
-    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if line1.value == "" {
         setLine1(prev => {

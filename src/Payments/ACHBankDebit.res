@@ -50,12 +50,9 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     modalData->Option.isSome
   let empty = email.value == "" || fullName.value != ""
 
-  React.useEffect(() => {
-    handlePostMessageEvents(~complete, ~empty, ~paymentType="ach_bank_debit", ~loggerState)
-    None
-  }, (empty, complete))
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="ach_bank_debit")
 
-  let submitCallback = React.useCallback3((ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 

@@ -26,7 +26,7 @@ let make = (
   let isWallet = walletOptions->Array.includes("apple_pay")
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
-  let applePayPaymentMethodType = React.useMemo1(() => {
+  let applePayPaymentMethodType = React.useMemo(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
       ~list,
       ~paymentMethod="wallet",
@@ -37,14 +37,14 @@ let make = (
     }
   }, [list])
 
-  let paymentExperience = React.useMemo1(() => {
+  let paymentExperience = React.useMemo(() => {
     switch applePayPaymentMethodType.payment_experience[0] {
     | Some(paymentExperience) => paymentExperience.payment_experience_type
     | None => PaymentMethodsRecord.RedirectToURL
     }
   }, [applePayPaymentMethodType])
 
-  let isInvokeSDKFlow = React.useMemo1(() => {
+  let isInvokeSDKFlow = React.useMemo(() => {
     paymentExperience == PaymentMethodsRecord.InvokeSDK && isApplePaySDKFlow
   }, [sessionObj])
 
@@ -76,9 +76,9 @@ let make = (
         requestBody
         ->Dict.fromArray
         ->JSON.Encode.object
-        ->OrcaUtils.flattenObject(true)
-        ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-        ->OrcaUtils.getArrayOfTupleFromDict
+        ->flattenObject(true)
+        ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+        ->getArrayOfTupleFromDict
       intent(
         ~bodyArr=requiredFieldsBodyArr,
         ~confirmParam={
@@ -246,7 +246,7 @@ let make = (
     )
     setApplePayClicked(_ => true)
     open Promise
-    OrcaUtils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
+    makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
@@ -273,6 +273,13 @@ let make = (
           let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
           processPayment(bodyDict)
         }
+        let value = "Payment Data Filled: New Payment Method"
+        loggerState.setLogInfo(
+          ~value,
+          ~eventName=PAYMENT_DATA_FILLED,
+          ~paymentMethod="APPLE_PAY",
+          (),
+        )
       } else {
         setApplePayClicked(_ => false)
       }
@@ -356,38 +363,36 @@ let make = (
   }, (areRequiredFieldsValid, areRequiredFieldsEmpty))
   useSubmitPaymentData(submitCallback)
 
-  {
-    isWallet
-      ? <div>
-          <style> {React.string(css)} </style>
-          {if showApplePay {
-            if showApplePayLoader {
-              <div className="apple-pay-loader-div">
-                <div className="apple-pay-loader" />
-              </div>
-            } else {
-              <button
-                disabled=applePayClicked
-                className="apple-pay-button-with-text apple-pay-button-black-with-text"
-                onClick={_ => onApplePayButtonClicked()}>
-                <span className="text"> {React.string("Pay with")} </span>
-                <span className="logo" />
-              </button>
-            }
-          } else {
-            React.null
-          }}
-        </div>
-      : <DynamicFields
-          paymentType={switch paymentType {
-          | Some(val) => val
-          | _ => NONE
-          }}
-          list
-          paymentMethod="wallet"
-          paymentMethodType="apple_pay"
-          setRequiredFieldsBody
-        />
+  if isWallet {
+    <div>
+      <style> {React.string(css)} </style>
+      <RenderIf condition={showApplePay}>
+        {if showApplePayLoader {
+          <div className="apple-pay-loader-div">
+            <div className="apple-pay-loader" />
+          </div>
+        } else {
+          <button
+            disabled=applePayClicked
+            className="apple-pay-button-with-text apple-pay-button-black-with-text"
+            onClick={_ => onApplePayButtonClicked()}>
+            <span className="text"> {React.string("Pay with")} </span>
+            <span className="logo" />
+          </button>
+        }}
+      </RenderIf>
+    </div>
+  } else {
+    <DynamicFields
+      paymentType={switch paymentType {
+      | Some(val) => val
+      | _ => NONE
+      }}
+      list
+      paymentMethod="wallet"
+      paymentMethodType="apple_pay"
+      setRequiredFieldsBody
+    />
   }
 }
 

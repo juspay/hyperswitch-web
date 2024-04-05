@@ -223,7 +223,7 @@ let paymentMethodsFields = [
     paymentMethodName: "giropay",
     icon: Some(icon("giropay", ~size=19, ~width=25)),
     displayName: "GiroPay",
-    fields: [FullName, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -578,6 +578,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "ideal",
   "sofort",
   "pix_transfer",
+  "giropay",
 ]
 
 let getIsBillingField = requiredFieldType => {
@@ -818,7 +819,7 @@ let getCardNetworks = (dict, str) => {
   ->Belt.Array.keepMap(JSON.Decode.object)
   ->Array.map(json => {
     {
-      card_network: getString(json, "card_network", "")->CardUtils.cardType,
+      card_network: getString(json, "card_network", "")->CardUtils.getCardType,
       eligible_connectors: getStrArray(json, "eligible_connectors"),
       surcharge_details: json->getSurchargeDetails,
     }

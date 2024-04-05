@@ -1,6 +1,6 @@
 open Utils
 @react.component
-let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
+let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
   open RecoilAtoms
   //<...>//
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
@@ -15,6 +15,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let (divH, setDivH) = React.useState(_ => 0.0)
+  let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
 
   let divRef = React.useRef(Nullable.null)
@@ -22,7 +23,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   let {config} = configAtom
   let {iframeId} = keys
 
-  let handlePostMessage = data => Utils.handlePostMessage(data, ~targetOrigin=keys.parentURL)
+  let handlePostMessage = data => handlePostMessage(data, ~targetOrigin=keys.parentURL)
 
   let setUserFullName = Recoil.useLoggedSetRecoilState(userFullName, "fullName", logger)
   let setUserEmail = Recoil.useLoggedSetRecoilState(userEmailAddress, "email", logger)
@@ -55,7 +56,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     })
     if optionsPayment.defaultValues.billingDetails.address.country === "" {
       let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
-      let clientCountry = Utils.getClientCountry(clientTimeZone)
+      let clientCountry = getClientCountry(clientTimeZone)
       setUserAddressCountry(prev => {
         ...prev,
         value: clientCountry.countryName,
@@ -93,7 +94,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     let (default, defaultRules) = (themeValues.default, themeValues.defaultRules)
     let config = CardTheme.itemToObjMapper(paymentOptions, default, defaultRules, logger)
 
-    let localeString = Utils.getWarningString(optionsDict, "locale", "", ~logger)
+    let optionsLocaleString = getWarningString(optionsDict, "locale", "", ~logger)
 
     let optionsAppearance = CardTheme.getAppearance(
       "appearance",
@@ -104,7 +105,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     )
     let appearance =
       optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-
+    let localeString = CardTheme.getLocaleObject(
+      optionsLocaleString == "" ? config.locale : optionsLocaleString,
+    )
     setConfig(_ => {
       config: {
         appearance,
@@ -114,9 +117,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         loader: config.loader,
       },
       themeObj: appearance.variables,
-      localeString: localeString == ""
-        ? CardTheme.getLocaleObject(config.locale)
-        : CardTheme.getLocaleObject(localeString),
+      localeString,
       showLoader: config.loader == Auto || config.loader == Always,
     })
   }
@@ -127,18 +128,35 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
     logger.setLogInitiated()
     let updatedState: PaymentType.loadType = switch paymentlist {
     | Loading =>
-      showCardFormByDefault && Utils.checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
+      showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
+    let finalLoadLatency = if launchTime <= 0.0 {
+      -1.0
+    } else {
+      Date.now() -. launchTime
+    }
     switch updatedState {
-    | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ())
-    | Loading => logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ())
+    | Loaded(_) =>
+      logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
+    | Loading =>
+      logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
     | SemiLoaded => {
         setList(_ => updatedState)
-        logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ())
+        logger.setLogInfo(
+          ~value="SemiLoaded",
+          ~eventName=LOADER_CHANGED,
+          ~latency=finalLoadLatency,
+          (),
+        )
       }
     | LoadError(x) =>
-      logger.setLogError(~value="LoadError: " ++ x->JSON.stringify, ~eventName=LOADER_CHANGED, ())
+      logger.setLogError(
+        ~value="LoadError: " ++ x->JSON.stringify,
+        ~eventName=LOADER_CHANGED,
+        ~latency=finalLoadLatency,
+        (),
+      )
     }
     Window.addEventListener("click", ev =>
       handleOnClickPostMessage(~targetOrigin=keys.parentURL, ev)
@@ -151,20 +169,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
       },
     )
   })
-  React.useEffect(() => {
-    switch paymentlist {
-    | SemiLoaded => ()
-    | Loaded(_val) => handlePostMessage([("ready", true->JSON.Encode.bool)])
-    | _ => handlePostMessage([("ready", false->JSON.Encode.bool)])
-    }
-    None
-  }, [paymentlist])
 
   React.useEffect(() => {
     CardUtils.genreateFontsLink(config.fonts)
     let dict = config.appearance.rules->getDictFromJson
     if dict->Dict.toArray->Array.length > 0 {
-      Utils.generateStyleSheet("", dict, "themestyle")
+      generateStyleSheet("", dict, "themestyle")
     }
     switch paymentMode->CardTheme.getPaymentMode {
     | Payment => ()
@@ -179,7 +189,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
       ->Array.map(item => {
         let (class, dict) = item
         if dict->Dict.toArray->Array.length > 0 {
-          Utils.generateStyleSheet(class, dict, "widgetstyle")->ignore
+          generateStyleSheet(class, dict, "widgetstyle")->ignore
         }
       })
       ->ignore
@@ -233,7 +243,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                 logger.setMetadata(metadata)
               }
               if dict->getDictIsSome("paymentOptions") {
-                let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")
+                let paymentOptions = dict->getDictFromObj("paymentOptions")
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
                 setKeys(prev => {
@@ -242,7 +252,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                 })
                 logger.setClientSecret(clientSecret)
 
-                switch OrcaUtils.getThemePromise(paymentOptions) {
+                switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
                   promise
                   ->then(res => {
@@ -257,8 +267,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
                   })
                 }
               }
-
-              logger.setLogInfo(~value=Window.href, ~eventName=APP_RENDERED, ())
+              let newLaunchTime = dict->getFloat("launchTime", 0.0)
+              setLaunchTime(_ => newLaunchTime)
+              let initLoadlatency = Date.now() -. newLaunchTime
+              logger.setLogInfo(
+                ~value=Window.href,
+                ~eventName=APP_RENDERED,
+                ~latency=initLoadlatency,
+                (),
+              )
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
@@ -267,11 +284,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
               ]->Array.forEach(keyPair => {
                 dict->CommonHooks.updateKeys(keyPair, setKeys)
               })
-
-              logger.setLogInfo(~eventName=PAYMENT_OPTIONS_PROVIDED, ~value="", ())
+              let renderLatency = Date.now() -. initTimestamp
+              logger.setLogInfo(
+                ~eventName=PAYMENT_OPTIONS_PROVIDED,
+                ~latency=renderLatency,
+                ~value="",
+                (),
+              )
             }
           } else if dict->getDictIsSome("paymentOptions") {
-            let paymentOptions = dict->Utils.getDictFromObj("paymentOptions")
+            let paymentOptions = dict->getDictFromObj("paymentOptions")
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
             setKeys(prev => {
@@ -280,7 +302,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
             })
             logger.setClientSecret(clientSecret)
 
-            switch OrcaUtils.getThemePromise(paymentOptions) {
+            switch getThemePromise(paymentOptions) {
             | Some(promise) =>
               promise
               ->then(res => {
@@ -304,18 +326,18 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
           | Some(val) =>
             setKeys(prev => {
               ...prev,
-              clientSecret: Some(val->JSON.Decode.string->Option.getOr("")),
+              clientSecret: Some(val->getStringFromJson("")),
             })
             setConfig(prev => {
               ...prev,
               config: {
                 ...prev.config,
-                clientSecret: val->JSON.Decode.string->Option.getOr(""),
+                clientSecret: val->getStringFromJson(""),
               },
             })
           | None => ()
           }
-          switch OrcaUtils.getThemePromise(optionsDict) {
+          switch getThemePromise(optionsDict) {
           | Some(promise) =>
             promise
             ->then(res => {
@@ -340,26 +362,59 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
         }
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
+          let finalLoadLatency = if launchTime <= 0.0 {
+            -1.0
+          } else {
+            Date.now() -. launchTime
+          }
           let updatedState: PaymentType.loadType =
             list == Dict.make()->JSON.Encode.object
               ? LoadError(list)
-              : switch list->Utils.getDictFromJson->Dict.get("error") {
+              : switch list->getDictFromJson->Dict.get("error") {
                 | Some(_) => LoadError(list)
                 | None =>
                   let isNonEmptyPaymentMethodList =
-                    list->Utils.getDictFromJson->Utils.getArray("payment_methods")->Array.length > 0
+                    list->getDictFromJson->getArray("payment_methods")->Array.length > 0
                   isNonEmptyPaymentMethodList ? Loaded(list) : LoadError(list)
                 }
-          switch updatedState {
-          | Loaded(_) => logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ())
-          | LoadError(x) =>
-            logger.setLogError(
-              ~value="LoadError: " ++ x->JSON.stringify,
-              ~eventName=LOADER_CHANGED,
-              (),
-            )
-          | _ => ()
+
+          let evalMethodsList = () =>
+            switch updatedState {
+            | Loaded(_) =>
+              logger.setLogInfo(
+                ~value="Loaded",
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadLatency,
+                (),
+              )
+            | LoadError(x) =>
+              logger.setLogError(
+                ~value="LoadError: " ++ x->JSON.stringify,
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadLatency,
+                (),
+              )
+            | _ => ()
+            }
+
+          if !optionsPayment.displaySavedPaymentMethods {
+            evalMethodsList()
+          } else {
+            switch optionsPayment.customerPaymentMethods {
+            | LoadingSavedCards => ()
+            | LoadedSavedCards(list, _) =>
+              list->Array.length > 0
+                ? logger.setLogInfo(
+                    ~value="Loaded",
+                    ~eventName=LOADER_CHANGED,
+                    ~latency=finalLoadLatency,
+                    (),
+                  )
+                : evalMethodsList()
+            | NoResult(_) => evalMethodsList()
+            }
           }
+
           setList(_ => updatedState)
         }
         if dict->getDictIsSome("customerPaymentMethods") {
@@ -368,6 +423,45 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
             ...prev,
             customerPaymentMethods,
           })
+          let finalLoadLatency = if launchTime <= 0.0 {
+            -1.0
+          } else {
+            Date.now() -. launchTime
+          }
+
+          let evalMethodsList = () =>
+            switch paymentlist {
+            | Loaded(_) =>
+              logger.setLogInfo(
+                ~value="Loaded",
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadLatency,
+                (),
+              )
+            | LoadError(x) =>
+              logger.setLogError(
+                ~value="LoadError: " ++ x->JSON.stringify,
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadLatency,
+                (),
+              )
+
+            | _ => ()
+            }
+
+          switch optionsPayment.customerPaymentMethods {
+          | LoadingSavedCards => ()
+          | LoadedSavedCards(list, _) =>
+            list->Array.length > 0
+              ? logger.setLogInfo(
+                  ~value="Loaded",
+                  ~eventName=LOADER_CHANGED,
+                  ~latency=finalLoadLatency,
+                  (),
+                )
+              : evalMethodsList()
+          | NoResult(_) => evalMethodsList()
+          }
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
           setIsApplePayReady(_ => true)
@@ -395,7 +489,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger) => {
   }
 
   React.useEffect(() => {
-    Utils.handlePostMessage([
+    handlePostMessage([
       ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
       ("iframeId", iframeId->JSON.Encode.string),
     ])
