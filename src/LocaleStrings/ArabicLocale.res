@@ -74,7 +74,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   completeNameEmptyText: str => `يرجى تقديم كامل الخاص بك ${str}`,
   billingDetailsText: `تفاصيل الفاتورة`,
   socialSecurityNumberLabel: `رقم الضمان الاجتماعي`,
-  saveWalletDetails: "سيتم حفظ تفاصيل المحفظة عند الاختيار",
+  saveWalletDetails: `سيتم حفظ تفاصيل المحفظة عند الاختيار`,
   morePaymentMethods: `المزيد من طرق الدفع`,
   useExistingPaymentMethods: `استخدم طرق الدفع المحفوظة`,
   cardNickname: `الاسم علي الكارت`,

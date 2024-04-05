@@ -74,7 +74,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   completeNameEmptyText: str => `אנא ספק את המלא שלך ${str}`,
   billingDetailsText: `פרטי תשלום`,
   socialSecurityNumberLabel: `מספר ביטוח לאומי`,
-  saveWalletDetails: "פרטי הארנק יישמרו בעת בחירה",
+  saveWalletDetails: `פרטי הארנק יישמרו בעת בחירה`,
   morePaymentMethods: `אמצעי תשלום נוספים`,
   useExistingPaymentMethods: `השתמש באמצעי תשלום שמורים`,
   cardNickname: `כינוי לכרטיס`,

@@ -1,7 +1,6 @@
 open LocaleStringTypes
 let mapLocalStringToTypeLocale = val => {
   switch val {
-  | "en" => EN
   | "he" => HE
   | "fr" => FR
   | "en-GB" => EN_GB
@@ -17,6 +16,8 @@ let mapLocalStringToTypeLocale = val => {
   | "nl" => NL
   | "sv" => SV
   | "ru" => RU
-  | _ => EN
+  | "en"
+  | _ =>
+    EN
   }
 }

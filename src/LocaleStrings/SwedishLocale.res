@@ -56,7 +56,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cityEmptyText: `Staden får inte vara tom`,
   postalCodeEmptyText: `Postnummer får inte vara tomt`,
   postalCodeInvalidText: `Ogiltigt postnummer`,
-  stateEmptyText: "Staten får inte vara tom",
+  stateEmptyText: `Staten får inte vara tom`,
   surchargeMsgAmount: (currency, str) => <>
     {React.string(`Ett tilläggsbelopp på${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
@@ -68,7 +68,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`${Utils.nbsp}kommer att tillämpas för denna transaktion`)}
   </>,
   surchargeMsgAmountForOneClickWallets: "Tilläggsavgift tillkommer",
-  on: "på",
+  on: `på`,
   \"and": "och",
   nameEmptyText: str => `Vänligen ange din ${str}`,
   completeNameEmptyText: str => `Vänligen ange din fullständiga ${str}`,

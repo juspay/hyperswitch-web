@@ -74,7 +74,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   completeNameEmptyText: str => `Bitte geben Sie Ihr vollständiges Formular an ${str}`,
   billingDetailsText: `Rechnungsdetails`,
   socialSecurityNumberLabel: `Sozialversicherungsnummer`,
-  saveWalletDetails: "Wallet-Details werden beim Auswählen gespeichert",
+  saveWalletDetails: `Wallet-Details werden beim Auswählen gespeichert`,
   morePaymentMethods: `Mehr Zahlungsmethoden`,
   useExistingPaymentMethods: `Gespeicherte Zahlungsarten nutzen`,
   cardNickname: `Spitzname der Karte`,
