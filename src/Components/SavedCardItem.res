@@ -167,7 +167,7 @@ let make = (
                 list
                 paymentMethod=paymentItem.paymentMethod
                 paymentMethodType
-                cardBrand={cardBrand->CardUtils.cardType}
+                cardBrand={cardBrand->CardUtils.getCardType}
               />
             </div>
           </RenderIf>

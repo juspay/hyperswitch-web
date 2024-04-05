@@ -13,6 +13,7 @@ let make = (
   ~cvcProps=None,
   ~isBancontact=false,
 ) => {
+  open Utils
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -125,9 +126,8 @@ let make = (
 
   let (stateJson, setStatesJson) = React.useState(_ => None)
 
-  let bankNames =
-    Bank.getBanks(paymentMethodType)->Utils.getBankNames(paymentMethodTypes.bank_names)
-  let countryNames = Utils.getCountryNames(Country.getCountry(paymentMethodType))
+  let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
+  let countryNames = getCountryNames(Country.getCountry(paymentMethodType))
 
   let setCurrency = val => {
     setCurrency(val)
@@ -226,11 +226,7 @@ let make = (
     None
   })
 
-  let _regex = CardUtils.postalRegex(
-    postalCodes,
-    ~country={Utils.getCountryCode(country).isoAlpha2},
-    (),
-  )
+  let _regex = CardUtils.postalRegex(postalCodes, ~country={getCountryCode(country).isoAlpha2}, ())
 
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
@@ -282,7 +278,7 @@ let make = (
   )
 
   let submitCallback = DynamicFieldsUtils.useSubmitCallback()
-  Utils.useSubmitPaymentData(submitCallback)
+  useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
 
@@ -518,7 +514,7 @@ let make = (
                         fieldName=localeString.stateLabel
                         value=state
                         setValue=setState
-                        options={options->Utils.getStateNames({
+                        options={options->getStateNames({
                           value: country,
                           isValid: None,
                           errorString: "",
@@ -640,7 +636,7 @@ let make = (
                       fieldName=localeString.stateLabel
                       value=state
                       setValue=setState
-                      options={options->Utils.getStateNames({
+                      options={options->getStateNames({
                         value: country,
                         isValid: None,
                         errorString: "",

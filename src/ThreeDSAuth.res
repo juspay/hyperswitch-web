@@ -11,7 +11,7 @@ let make = () => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
-      let dict = json->Utils.getDictFromJson
+      let dict = json->getDictFromJson
       if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
@@ -66,7 +66,7 @@ let make = () => {
           | Some(elem) =>
             if transStatus === "C" {
               setloader(_ => false)
-              let form = elem->OrcaUtils.makeForm(acsUrl, "3dsChallenge")
+              let form = elem->makeForm(acsUrl, "3dsChallenge")
               let input = Types.createElement("input")
               input.name = "creq"
               input.value = creq
@@ -74,7 +74,7 @@ let make = () => {
               form.appendChild(input)
               form.submit()
             } else {
-              let form1 = elem->OrcaUtils.makeForm(threeDsAuthoriseUrl, "3dsFrictionLess")
+              let form1 = elem->makeForm(threeDsAuthoriseUrl, "3dsFrictionLess")
               form1.submit()
             }
           | None => ()
@@ -82,7 +82,7 @@ let make = () => {
           resolve(json)
         })
         ->catch(err => {
-          let exceptionMessage = err->Utils.formatException
+          let exceptionMessage = err->formatException
           LoggerUtils.handleLogging(
             ~optLogger=Some(logger),
             ~eventName=DISPLAY_THREE_DS_SDK,

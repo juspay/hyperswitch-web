@@ -1,10 +1,7 @@
 open Types
 open Utils
 open EventListenerManager
-
-open OrcaUtils
-
-external eventToJson: Types.eventData => JSON.t = "%identity"
+open Identity
 
 @val @scope(("navigator", "clipboard"))
 external writeText: string => Promise.t<'a> = "writeText"
@@ -146,14 +143,14 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let fullscreenMetadata = ref(Dict.make()->JSON.Encode.object)
       let optionsDict = options->getDictFromJson
       let handle = (ev: Types.event) => {
-        let eventDataObject = ev.data->eventToJson
+        let eventDataObject = ev.data->anyTypeToJson
 
         let iframeHeight = eventDataObject->getOptionalJsonFromJson("iframeHeight")
         if iframeHeight->Option.isSome {
           let iframeId =
             eventDataObject
             ->getOptionalJsonFromJson("iframeId")
-            ->getStringfromOptionaljson("no-element")
+            ->getStringFromOptionalJson("no-element")
           iframeHeightRef :=
             iframeHeight->Option.getOr(JSON.Encode.null)->Utils.getFloatFromJson(200.0)
           if iframeId === localSelectorString {
@@ -177,15 +174,15 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
 
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
-            let url = val->getStringfromjson("")
+            let url = val->getStringFromJson("")
             Window.Location.replace(url)
           }
         | None => ()
         }
 
-        let isCopy = eventDataObject->getOptionalJsonFromJson("copy")->getBoolfromjson(false)
+        let isCopy = eventDataObject->getOptionalJsonFromJson("copy")->getBoolFromJson(false)
         let text =
-          eventDataObject->getOptionalJsonFromJson("copyDetails")->getStringfromOptionaljson("")
+          eventDataObject->getOptionalJsonFromJson("copyDetails")->getStringFromOptionalJson("")
         if isCopy {
           open Promise
           writeText(text)
@@ -197,7 +194,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
 
         let combinedHyperClasses = eventDataObject->getOptionalJsonFromJson("concatedString")
         if combinedHyperClasses->Option.isSome {
-          let id = eventDataObject->getOptionalJsonFromJson("id")->getStringfromOptionaljson("")
+          let id = eventDataObject->getOptionalJsonFromJson("id")->getStringFromOptionalJson("")
 
           let decodeStringTest = combinedHyperClasses->Option.flatMap(JSON.Decode.string)
           switch decodeStringTest {
@@ -218,11 +215,11 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         let param = eventDataObject->getOptionalJsonFromJson("param")
         let metadata = eventDataObject->getOptionalJsonFromJson("metadata")
         let iframeID =
-          eventDataObject->getOptionalJsonFromJson("iframeId")->getStringfromOptionaljson("")
+          eventDataObject->getOptionalJsonFromJson("iframeId")->getStringFromOptionalJson("")
 
         if fullscreenIframe->Option.isSome {
-          fullscreen := fullscreenIframe->getBoolfromjson(false)
-          fullscreenParam := param->getStringfromOptionaljson("")
+          fullscreen := fullscreenIframe->getBoolFromJson(false)
+          fullscreenParam := param->getStringFromOptionalJson("")
           fullscreenMetadata :=
             metadata
             ->Option.flatMap(JSON.Decode.object)
@@ -246,7 +243,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
               ? {
                   if iframeID == localSelectorString {
                     let handleFullScreenCallback = (ev: Types.event) => {
-                      let json = ev.data->eventToJson
+                      let json = ev.data->anyTypeToJson
                       let dict = json->Utils.getDictFromJson
                       if dict->Dict.get("iframeMountedCallback")->Option.isSome {
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
@@ -295,7 +292,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       addSmartEventListener("message", handle, `onMount-${componentType}`)
 
       let oElement = Window.querySelector(selector)
-      let classesBase = optionsDict->OrcaUtils.getClasses("base")
+      let classesBase = optionsDict->getClasses("base")
       let additionalIframeStyle = componentType->Utils.isOtherElements ? "height: 2rem;" : ""
       switch oElement->Nullable.toOption {
       | Some(elem) => {

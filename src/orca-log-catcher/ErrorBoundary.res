@@ -1,4 +1,3 @@
-external errorToJson: Sentry.ErrorBoundary.fallbackArg => JSON.t = "%identity"
 type errorLevel = Top | RequestButton | PaymentMethod
 
 let errorIcon = {
@@ -113,7 +112,7 @@ module ErrorCard = {
           sessionId: "",
           source: "orca-elements",
           version: GlobalVars.repoVersion,
-          value: error->errorToJson->JSON.stringify,
+          value: error->Identity.anyTypeToJson->JSON.stringify,
           internalMetadata: "",
           category: USER_ERROR,
           paymentId: "",

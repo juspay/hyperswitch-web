@@ -28,8 +28,6 @@ external addEventListener: (element, string, event => unit) => unit = "addEventL
 @send
 external removeEventListener: (element, string, event => unit) => unit = "removeEventListener"
 
-external dictToObj: Dict.t<'a> => {..} = "%identity"
-
 let useScript = (src: string) => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
   React.useEffect(() => {
@@ -66,7 +64,7 @@ let useScript = (src: string) => {
 
 let updateKeys = (dict, keyPair, setKeys) => {
   let (key, value) = keyPair
-  let valueStr = value->JSON.Decode.string->Option.getOr("")
+  let valueStr = value->Utils.getStringFromJson("")
   let valueBool = default => value->JSON.Decode.bool->Option.getOr(default)
   if dict->Utils.getDictIsSome(key) {
     switch key {

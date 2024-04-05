@@ -3,8 +3,7 @@ open ErrorUtils
 open LoggerUtils
 open Utils
 open EventListenerManager
-
-external eventToJson: Types.eventData => JSON.t = "%identity"
+open Identity
 
 let checkAndAppend = (selector, child) => {
   if Nullable.toOption(CommonHooks.querySelector(selector)) == None {
@@ -97,7 +96,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     )
     let isReadyPromise = Promise.make((resolve, _) => {
       let handleOnReady = (event: Types.event) => {
-        let json = event.data->eventToJson
+        let json = event.data->anyTypeToJson
         let dict = json->getDictFromJson
         if (
           dict
@@ -293,7 +292,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           isReadyPromise
           ->Promise.then(readyTimestamp => {
             let handleMessage = (event: Types.event) => {
-              let json = event.data->eventToJson
+              let json = event.data->anyTypeToJson
               let dict = json->getDictFromJson
               switch dict->Dict.get("submitSuccessful") {
               | Some(val) =>
@@ -364,7 +363,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       }
 
       let handleSdkConfirm = (event: Types.event) => {
-        let json = event.data->eventToJson
+        let json = event.data->anyTypeToJson
         let dict = json->getDictFromJson
         switch dict->Dict.get("handleSdkConfirm") {
         | Some(payload) => confirmPayment(payload)->ignore
@@ -431,7 +430,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             )
 
             let handleMessage = (event: Types.event) => {
-              let json = event.data->eventToJson
+              let json = event.data->anyTypeToJson
               let dict = json->getDictFromJson
               switch dict->Dict.get("submitSuccessful") {
               | Some(val) =>
