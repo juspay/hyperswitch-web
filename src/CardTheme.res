@@ -307,8 +307,8 @@ let getVariables = (str, dict, default, logger) => {
 let getAppearance = (
   str,
   dict,
-  default: OrcaPaymentPage.CardThemeType.themeClass,
-  defaultRules: OrcaPaymentPage.CardThemeType.themeClass => JSON.t,
+  default: CardThemeType.themeClass,
+  defaultRules: CardThemeType.themeClass => JSON.t,
   logger,
 ) => {
   dict
@@ -355,8 +355,8 @@ let getFonts = (str, dict, logger) => {
 }
 let itemToObjMapper = (
   dict,
-  default: OrcaPaymentPage.CardThemeType.themeClass,
-  defaultRules: OrcaPaymentPage.CardThemeType.themeClass => JSON.t,
+  default: CardThemeType.themeClass,
+  defaultRules: CardThemeType.themeClass => JSON.t,
   logger,
 ) => {
   unknownKeysWarning(

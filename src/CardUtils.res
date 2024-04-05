@@ -91,7 +91,7 @@ let getQueryParamsDictforKey = (searchParams, keyName) => {
 
   dict->Dict.get(keyName)->Option.getOr("")
 }
-let cardType = val => {
+let getCardType = val => {
   switch val {
   | "Visa" => VISA
   | "Mastercard" => MASTERCARD
@@ -197,7 +197,7 @@ let formatExpiryToTwoDigit = expiry => {
   }
 }
 
-let isExipryComplete = val => {
+let isExpiryComplete = val => {
   let (month, year) = splitExpiryDates(val)
   month->String.length == 2 && year->String.length == 2
 }
@@ -316,29 +316,30 @@ let calculateLuhn = value => {
 
 let getCardBrandIcon = (cardType, paymentType) => {
   open CardThemeType
+  open Utils
   switch cardType {
-  | VISA => <Icon size=Utils.brandIconSize name="visa-light" />
-  | MASTERCARD => <Icon size=Utils.brandIconSize name="mastercard" />
-  | AMEX => <Icon size=Utils.brandIconSize name="amex-light" />
-  | MAESTRO => <Icon size=Utils.brandIconSize name="maestro" />
-  | DINERSCLUB => <Icon size=Utils.brandIconSize name="diners" />
-  | DISCOVER => <Icon size=Utils.brandIconSize name="discover" />
-  | BAJAJ => <Icon size=Utils.brandIconSize name="card" />
-  | SODEXO => <Icon size=Utils.brandIconSize name="card" />
-  | RUPAY => <Icon size=Utils.brandIconSize name="rupay-card" />
-  | JCB => <Icon size=Utils.brandIconSize name="jcb-card" />
-  | CARTESBANCAIRES => <Icon size=Utils.brandIconSize name="card" />
-  | UNIONPAY => <Icon size=Utils.brandIconSize name="card" />
-  | INTERAC => <Icon size=Utils.brandIconSize name="interac" />
+  | VISA => <Icon size=brandIconSize name="visa-light" />
+  | MASTERCARD => <Icon size=brandIconSize name="mastercard" />
+  | AMEX => <Icon size=brandIconSize name="amex-light" />
+  | MAESTRO => <Icon size=brandIconSize name="maestro" />
+  | DINERSCLUB => <Icon size=brandIconSize name="diners" />
+  | DISCOVER => <Icon size=brandIconSize name="discover" />
+  | BAJAJ => <Icon size=brandIconSize name="card" />
+  | SODEXO => <Icon size=brandIconSize name="card" />
+  | RUPAY => <Icon size=brandIconSize name="rupay-card" />
+  | JCB => <Icon size=brandIconSize name="jcb-card" />
+  | CARTESBANCAIRES => <Icon size=brandIconSize name="card" />
+  | UNIONPAY => <Icon size=brandIconSize name="card" />
+  | INTERAC => <Icon size=brandIconSize name="interac" />
   | NOTFOUND =>
     switch paymentType {
-    | Payment => <Icon size=Utils.brandIconSize name="base-card" />
+    | Payment => <Icon size=brandIconSize name="base-card" />
     | Card
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
     | NONE =>
-      <Icon size=Utils.brandIconSize name="default-card" />
+      <Icon size=brandIconSize name="default-card" />
     }
   }
 }
@@ -359,7 +360,7 @@ let getExpiryValidity = cardExpiry => {
   valid
 }
 let isExipryValid = val => {
-  val->String.length > 0 && getExpiryValidity(val) && isExipryComplete(val)
+  val->String.length > 0 && getExpiryValidity(val) && isExpiryComplete(val)
 }
 
 let cardNumberInRange = val => {
@@ -371,7 +372,7 @@ let cardNumberInRange = val => {
   cardLengthInRange
 }
 let max = (a, b) => {
-  a > b ? a : b
+  Math.Int.max(a, b)
 }
 
 let getMaxLength = val => {
@@ -426,7 +427,7 @@ let genreateFontsLink = (fonts: array<CardThemeType.fonts>) => {
 }
 let maxCardLength = cardBrand => {
   let obj = getobjFromCardPattern(cardBrand)
-  Array.reduce(obj.length, 0, (acc, val) => acc > val ? acc : val)
+  Array.reduce(obj.length, 0, (acc, val) => max(acc, val))
 }
 
 let cardValid = (cardNumber, cardBrand) => {
@@ -543,9 +544,9 @@ let setCardValid = (cardnumber, setIsCardValid) => {
 let setExpiryValid = (expiry, setIsExpiryValid) => {
   if isExipryValid(expiry) {
     setIsExpiryValid(_ => Some(true))
-  } else if !getExpiryValidity(expiry) && isExipryComplete(expiry) {
+  } else if !getExpiryValidity(expiry) && isExpiryComplete(expiry) {
     setIsExpiryValid(_ => Some(false))
-  } else if !isExipryComplete(expiry) {
+  } else if !isExpiryComplete(expiry) {
     setIsExpiryValid(_ => None)
   }
 }
@@ -571,25 +572,23 @@ let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
 let clientCountry = Utils.getClientCountry(clientTimeZone)
 
 let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?, ()) => {
-  let country = switch country {
-  | Some(val) => val
-  | None => clientCountry.isoAlpha2
-  }
+  let country = country->Option.getOr(clientCountry.isoAlpha2)
   let countryPostal = Utils.getCountryPostal(country, postalCodes)
-  countryPostal.regex == "" ? "" : countryPostal.regex
+  countryPostal.regex
 }
 
 let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
+  open Utils
   if cardEmpty {
-    <Icon size=Utils.brandIconSize name="cvc-empty" />
+    <Icon size=brandIconSize name="cvc-empty" />
   } else if cardInvalid {
     <div style={ReactDOMStyle.make(~color, ())}>
-      <Icon size=Utils.brandIconSize name="cvc-invalid" />
+      <Icon size=brandIconSize name="cvc-invalid" />
     </div>
   } else if cardComplete {
-    <Icon size=Utils.brandIconSize name="cvc-complete" />
+    <Icon size=brandIconSize name="cvc-complete" />
   } else {
-    <Icon size=Utils.brandIconSize name="cvc-empty" />
+    <Icon size=brandIconSize name="cvc-empty" />
   }
 }
 

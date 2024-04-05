@@ -594,7 +594,7 @@ let getLayoutValues = (val, logger) => {
     ObjectLayout({
       let layoutType = getWarningString(json, "type", "tabs", ~logger)
       unknownKeysWarning(
-        ["defaultCollapsed", "radios", "spacedAccordionItems", "type"],
+        ["defaultCollapsed", "radios", "spacedAccordionItems", "type", "maxAccordionItems"],
         json,
         "options.layout",
         ~logger,

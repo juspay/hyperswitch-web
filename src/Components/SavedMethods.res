@@ -43,7 +43,7 @@ let make = (
           switch obj.card.scheme {
           | Some(ele) => ele
           | None => ""
-          }->cardType,
+          }->getCardType,
           ""->CardTheme.getPaymentMode,
         )
       }
@@ -83,22 +83,14 @@ let make = (
   let isCardPaymentMethod = customerMethod.paymentMethod === "card"
   let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
 
-  React.useEffect(() => {
-    let customerMethod =
-      savedMethods
-      ->Array.filter(savedMethod => {
-        savedMethod.paymentToken === token
-      })
-      ->Array.get(0)
-      ->Option.getOr(PaymentType.defaultCustomerMethods)
-    let complete =
-      areRequiredFieldsValid &&
-      !isUnknownPaymentMethod &&
-      (!isCardPaymentMethod || isCardPaymentMethodValid)
-    let paymentType = customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
-    handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod=true)
-    None
-  }, (areRequiredFieldsValid, empty, customerMethod, isCardPaymentMethodValid))
+  let complete =
+    areRequiredFieldsValid &&
+    !isUnknownPaymentMethod &&
+    (!isCardPaymentMethod || isCardPaymentMethodValid)
+
+  let paymentType = customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
+
+  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType, ~savedMethod=true)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
@@ -138,9 +130,9 @@ let make = (
           ~bodyArr=savedPaymentMethodBody
           ->Dict.fromArray
           ->JSON.Encode.object
-          ->OrcaUtils.flattenObject(true)
-          ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->OrcaUtils.getArrayOfTupleFromDict,
+          ->flattenObject(true)
+          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->getArrayOfTupleFromDict,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           (),

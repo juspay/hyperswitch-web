@@ -81,10 +81,11 @@ let make = (
     None
   }, [complete])
 
-  React.useEffect(() => {
-    handlePostMessageEvents(~complete, ~empty, ~paymentType="card", ~loggerState)
-    None
-  }, (empty, complete))
+  UtilityHooks.useHandlePostMessages(
+    ~complete=complete && areRequiredFieldsValid,
+    ~empty,
+    ~paymentType="card",
+  )
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
@@ -143,9 +144,9 @@ let make = (
             (isBancontact ? banContactBody : cardBody)
             ->Dict.fromArray
             ->JSON.Encode.object
-            ->OrcaUtils.flattenObject(true)
-            ->OrcaUtils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-            ->OrcaUtils.getArrayOfTupleFromDict
+            ->flattenObject(true)
+            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+            ->getArrayOfTupleFromDict
           },
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
@@ -287,7 +288,9 @@ let make = (
       </div>
     </RenderIf>
     <RenderIf condition={showFields || isBancontact}>
-      <Surcharge list paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.cardType} />
+      <Surcharge
+        list paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType}
+      />
     </RenderIf>
     <RenderIf condition={!isBancontact}>
       {switch (list.mandate_payment, options.terms.card) {

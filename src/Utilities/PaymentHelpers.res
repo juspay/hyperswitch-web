@@ -1,4 +1,5 @@
 open Utils
+open Identity
 
 @val @scope(("window", "parent", "location")) external href: string = "href"
 
@@ -9,8 +10,7 @@ type url = {searchParams: searchParams, href: string}
 open LoggerUtils
 type payment = Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Other
 
-let closePaymentLoaderIfAny = () =>
-  Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+let closePaymentLoaderIfAny = () => handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
 
 let retrievePaymentIntent = (
   clientSecret,
@@ -126,7 +126,7 @@ let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
     }
   })
   ->catch(err => {
-    let exceptionMessage = err->Utils.formatException
+    let exceptionMessage = err->formatException
     Console.log2("Unable to call 3ds method ", exceptionMessage)
     logApi(
       ~optLogger,
@@ -200,7 +200,7 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
     }
   })
   ->catch(err => {
-    let exceptionMessage = err->Utils.formatException
+    let exceptionMessage = err->formatException
     Console.log2("Unable to call 3ds auth ", exceptionMessage)
     logApi(
       ~optLogger,
@@ -256,7 +256,7 @@ let rec intentCall = (
     ~headers: Dict.t<string>=?,
     ~method: Fetch.method,
     unit,
-  ) => OrcaPaymentPage.Promise.t<Fetch.Response.t>,
+  ) => Promise.t<Fetch.Response.t>,
   ~uri,
   ~headers,
   ~bodyStr,
@@ -321,8 +321,8 @@ let rec intentCall = (
               | _ =>
                 bodyStr
                 ->JSON.parseExn
-                ->Utils.getDictFromJson
-                ->Utils.getString("payment_method_type", "")
+                ->getDictFromJson
+                ->getString("payment_method_type", "")
               }
               handleLogging(
                 ~optLogger,
@@ -368,7 +368,7 @@ let rec intentCall = (
       ->catch(err => {
         Promise.make(
           (resolve, _) => {
-            let exceptionMessage = err->Utils.formatException
+            let exceptionMessage = err->formatException
             logApi(
               ~optLogger,
               ~url=uri,
@@ -478,7 +478,7 @@ let rec intentCall = (
                 handleOpenUrl(intent.nextAction.redirectToUrl)
               } else if intent.nextAction.type_ == "display_bank_transfer_information" {
                 let metadata = switch intent.nextAction.bank_transfer_steps_and_charges_details {
-                | Some(obj) => obj->Utils.getDictFromJson
+                | Some(obj) => obj->getDictFromJson
                 | None => Dict.make()
                 }
                 let dict = deepCopyDict(metadata)
@@ -549,7 +549,7 @@ let rec intentCall = (
                   ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
                   ->Option.getOr(Dict.make()->JSON.Encode.object)
                   ->JSON.Decode.bool
-                  ->Utils.getBoolValue
+                  ->getBoolValue
 
                 let headerObj = Dict.make()
                 headers->Array.forEach(
@@ -594,16 +594,16 @@ let rec intentCall = (
                 }
               } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
-                | Some(token) => token->Utils.getDictFromJson
+                | Some(token) => token->getDictFromJson
                 | None => Dict.make()
                 }
-                let walletName = session_token->Utils.getString("wallet_name", "")
+                let walletName = session_token->getString("wallet_name", "")
                 let message = switch walletName {
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->toJson),
+                    ("applePayPresent", session_token->anyTypeToJson),
                   ]
-                | "google_pay" => [("googlePayThirdPartyFlow", session_token->toJson)]
+                | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
 
@@ -640,16 +640,16 @@ let rec intentCall = (
             } else if intent.status == "processing" {
               if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
-                | Some(token) => token->Utils.getDictFromJson
+                | Some(token) => token->getDictFromJson
                 | None => Dict.make()
                 }
-                let walletName = session_token->Utils.getString("wallet_name", "")
+                let walletName = session_token->getString("wallet_name", "")
                 let message = switch walletName {
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
-                    ("applePayPresent", session_token->toJson),
+                    ("applePayPresent", session_token->anyTypeToJson),
                   ]
-                | "google_pay" => [("googlePayThirdPartyFlow", session_token->toJson)]
+                | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | _ => []
                 }
 
@@ -704,7 +704,7 @@ let rec intentCall = (
       let url = urlSearch(confirmParam.return_url)
       url.searchParams.set("payment_intent_client_secret", clientSecret)
       url.searchParams.set("status", "failed")
-      let exceptionMessage = err->Utils.formatException
+      let exceptionMessage = err->formatException
       logApi(
         ~optLogger,
         ~url=uri,
@@ -870,7 +870,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
 
       let callIntent = body => {
         let maskedPayload =
-          body->OrcaUtils.safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
+          body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
         let loggerPayload =
           [
             ("payload", maskedPayload->JSON.Encode.string),
@@ -906,7 +906,7 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
                 ~value="",
                 ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
-                ~paymentMethod=json->JSON.Decode.string->Option.getOr(""),
+                ~paymentMethod=json->getStringFromJson(""),
                 (),
               )
             }
@@ -1067,7 +1067,7 @@ let fetchSessions = (
     }
   })
   ->catch(err => {
-    let exceptionMessage = err->Utils.formatException
+    let exceptionMessage = err->formatException
     logApi(
       ~optLogger,
       ~url=uri,
@@ -1141,7 +1141,7 @@ let fetchPaymentMethodList = (
     }
   })
   ->catch(err => {
-    let exceptionMessage = err->Utils.formatException
+    let exceptionMessage = err->formatException
     logApi(
       ~optLogger=Some(logger),
       ~url=uri,
@@ -1215,7 +1215,7 @@ let fetchCustomerDetails = (
     }
   })
   ->catch(err => {
-    let exceptionMessage = err->Utils.formatException
+    let exceptionMessage = err->formatException
     logApi(
       ~optLogger,
       ~url=uri,
