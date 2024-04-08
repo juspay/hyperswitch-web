@@ -1,0 +1,22 @@
+name: Check PR Label and Assignees
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+jobs:
+  check_label_and_assignees:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check for label
+        if: github.event.pull_request.labels.length == 0
+        run: |
+          echo "Please add at least one label to your pull request."
+          exit 1
+
+      - name: Check for assignees
+        if: github.event.pull_request.assignees == null || github.event.pull_request.assignees.length == 0
+        run: |
+          echo "Please assign someone in your pull request."
+          exit 1
