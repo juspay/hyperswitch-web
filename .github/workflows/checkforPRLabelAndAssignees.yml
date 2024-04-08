@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Debug pull_request labels
-        run: "echo Pull Request Labels: ${{ toJson(github.event.pull_request) }}"
+        run: "echo Pull Request Labels: ${{toJson(github.event.labels) }}  echo Pull Request Labels: ${{toJson(github.event.label) }}"
 
       - name: Check for label
-        if: github.event.pull_request.labels == null
+        if: github.event.label == null
         run: |
           echo "Please add at least one label to your pull request."
           exit 1
