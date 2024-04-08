@@ -4,6 +4,8 @@ on:
     types:
       - reopened
       - opened
+  push:
+
 jobs:
   label_issues:
     runs-on: ubuntu-latest
