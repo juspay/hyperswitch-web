@@ -3,6 +3,7 @@ name: Check PR Label and Assignees
 on:
   pull_request:
     types: [opened, edited, reopened]
+  push:
 
 jobs:
   check_label_and_assignees:
