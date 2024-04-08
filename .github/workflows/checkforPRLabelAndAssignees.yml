@@ -10,13 +10,13 @@ jobs:
 
     steps:
       - name: Check for label
-        if: github.event.pull_request.labels.length == 0
+        if: github.event.pull_request.labels == null
         run: |
           echo "Please add at least one label to your pull request."
           exit 1
 
       - name: Check for assignees
-        if: github.event.pull_request.assignees == null || github.event.pull_request.assignees.length == 0
+        if: github.event.pull_request.assignees == null
         run: |
-          echo "Please assign someone in your pull request."
+          echo "Please assign someone to review this pull request."
           exit 1
