@@ -12,7 +12,7 @@ let make = (
   ~walletOptions: array<string>,
 ) => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let (loggerState, _) = Recoil.useRecoilState(loggerAtom)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
