@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug pull_request labels
+        run: "echo Pull Request Labels: ${{ toJson(github.event.pull_request.labels) }}"
+
       - name: Check for label
         if: github.event.pull_request.labels == null
         run: |
