@@ -1,26 +1,18 @@
-name: Check PR Label and Assignees
-
+name: Label issues
 on:
-  pull_request:
-    types: [opened, edited, reopened]
-  push:
-
+  issues:
+    types:
+      - reopened
+      - opened
 jobs:
-  check_label_and_assignees:
+  label_issues:
     runs-on: ubuntu-latest
-
+    permissions:
+      issues: write
     steps:
-      - name: Debug pull_request labels
-        run: "echo Pull Request Labels: ${{toJson(github.event.labels) }}  echo Pull Request Labels: ${{toJson(github.event.label) }}"
-
-      - name: Check for label
-        if: github.event.label == null
-        run: |
-          echo "Please add at least one label to your pull request."
-          exit 1
-
-      - name: Check for assignees
-        if: github.event.pull_request.assignees == null
-        run: |
-          echo "Please assign someone to review this pull request."
-          exit 1
+      - run: gh issue edit "$NUMBER" --add-label "$LABELS"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+          LABELS: Ready for Review
