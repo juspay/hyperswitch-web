@@ -1,0 +1,43 @@
+name: Update PR Label to Closed
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  pr-label:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Get existing labels
+        run: |
+          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          TOKEN=$GITHUB_TOKEN
+
+          # Add your repository name if it's not the default branch
+          REPO_NAME=$(basename $GITHUB_REPOSITORY)
+
+          # Get existing labels on the PR
+          EXISTING_LABELS=$(curl -s -H "Authorization: Bearer ${{ secrets.AUTO_RELEASE_PAT }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER" \
+            | jq -r '.labels | map(.name) | join(" ")')
+
+          echo $EXISTING_LABELS
+
+           # Remove existing labels
+          for LABEL in $EXISTING_LABELS; do
+            curl -X DELETE \
+              -H 'Accept: application/vnd.github.v3+json' \
+              -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+              "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/${LABEL}"
+          done
+
+      - name: Add new label
+        run: |
+          export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "closed"
