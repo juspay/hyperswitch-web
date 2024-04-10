@@ -1,6 +1,6 @@
 open CardThemeType
 
-let nakedValues = {
+let noThemeValues = {
   fontFamily: "",
   fontSizeBase: "1rem",
   colorPrimary: "",
@@ -17,6 +17,7 @@ let nakedValues = {
   fontWeightMedium: "",
   fontWeightBold: "",
   fontLineHeight: "",
+  fontSize2Xl: "",
   fontSizeXl: "",
   fontSizeLg: "",
   fontSizeSm: "",
@@ -49,7 +50,7 @@ let nakedValues = {
   buttonTextFontWeight: "500",
 }
 
-let nakedValuesRules = _ => Dict.make()->JSON.Encode.object
+let noThemeValuesRules = _ => Dict.make()->JSON.Encode.object
 
-let default = nakedValues
-let defaultRules = nakedValuesRules
+let default = noThemeValues
+let defaultRules = noThemeValuesRules
