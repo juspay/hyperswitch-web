@@ -426,13 +426,22 @@ let make = (
               />
             </div>
           | Currency(currencyArr) =>
+            let updatedCurrencyArray: array<
+              DropdownField.optionType,
+            > = currencyArr->Array.map(item => {
+              let optionVal: DropdownField.optionType = {
+                label: item,
+                value: item,
+              }
+              optionVal
+            })
             <DropdownField
               appearance=config.appearance
               fieldName=localeString.currencyLabel
               value=currency
               setValue=setCurrency
               disabled=false
-              options=currencyArr
+              options=updatedCurrencyArray
             />
           | FullName =>
             <FullNamePaymentInput
@@ -524,6 +533,15 @@ let make = (
                     }}
                   </div>
                 | CountryAndPincode(countryArr) =>
+                  let updatedCountryArray: array<
+                    DropdownField.optionType,
+                  > = countryArr->Array.map(item => {
+                    let optionVal: DropdownField.optionType = {
+                      label: item,
+                      value: item,
+                    }
+                    optionVal
+                  })
                   <div className="flex gap-1">
                     <DropdownField
                       appearance=config.appearance
@@ -531,7 +549,7 @@ let make = (
                       value=country
                       setValue={setCountry}
                       disabled=false
-                      options=countryArr
+                      options=updatedCountryArray
                     />
                     <PaymentField
                       fieldName=localeString.postalCodeLabel
@@ -664,31 +682,58 @@ let make = (
                   />
                 | BlikCode => <BlikCodePaymentInput />
                 | Country =>
+                  let updatedCountryNames: array<
+                    DropdownField.optionType,
+                  > = countryNames->Array.map(item => {
+                    let optionVal: DropdownField.optionType = {
+                      label: item,
+                      value: item,
+                    }
+                    optionVal
+                  })
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
                     setValue=setCountry
                     disabled=false
-                    options=countryNames
+                    options=updatedCountryNames
                   />
                 | AddressCountry(countryArr) =>
+                  let updatedCountryArr: array<
+                    DropdownField.optionType,
+                  > = countryArr->Array.map(item => {
+                    let optionVal: DropdownField.optionType = {
+                      label: item,
+                      value: item,
+                    }
+                    optionVal
+                  })
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
                     setValue=setCountry
                     disabled=false
-                    options=countryArr
+                    options=updatedCountryArr
                   />
                 | Bank =>
+                  let updatedBankNames: array<
+                    DropdownField.optionType,
+                  > = bankNames->Array.map(item => {
+                    let optionVal: DropdownField.optionType = {
+                      label: item,
+                      value: item,
+                    }
+                    optionVal
+                  })
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.bankLabel
                     value=selectedBank
                     setValue=setSelectedBank
                     disabled=false
-                    options=bankNames
+                    options=updatedBankNames
                   />
                 | SpecialField(element) => element
                 | InfoElement =>

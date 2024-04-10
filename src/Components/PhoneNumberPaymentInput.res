@@ -18,8 +18,18 @@ let make = () => {
     ->Option.getOr(Dict.make())
     ->getArray("countries")
 
-  let phoneNumberCodeOptions = countryAndCodeCodeList->Array.reduce([], (acc, countryObj) => {
-    acc->Array.push(countryObj->getDictFromJson->getString("phone_number_code", ""))
+  let phoneNumberCodeOptions: array<
+    DropdownField.optionType,
+  > = countryAndCodeCodeList->Array.reduce([], (acc, countryObj) => {
+    let countryObjDict = countryObj->getDictFromJson
+    let phoneNumberOptionsValue: DropdownField.optionType = {
+      label: `${countryObjDict->getString("country_flag", "")} ${countryObjDict->getString(
+          "phone_number_code",
+          "",
+        )}`,
+      value: countryObjDict->getString("phone_number_code", ""),
+    }
+    acc->Array.push(phoneNumberOptionsValue)
     acc
   })
 

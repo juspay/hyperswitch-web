@@ -89,7 +89,7 @@ let make = (
         appearance=config.appearance
         value={valueDropDown->Option.getOr("")}
         setValue={setValueDropDown->Option.getOr(_ => ())}
-        fieldName={dropDownFieldName->Option.getOr(fieldName)}
+        fieldName={dropDownFieldName->Option.getOr("")}
         options={dropDownOptions->Option.getOr([])}
         width="w-1/3 mr-2"
       />

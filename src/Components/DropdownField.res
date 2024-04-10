@@ -1,3 +1,8 @@
+type optionType = {
+  label: string,
+  value: string,
+}
+
 open RecoilAtoms
 @react.component
 let make = (
@@ -5,7 +10,7 @@ let make = (
   ~value,
   ~setValue,
   ~fieldName,
-  ~options,
+  ~options: array<optionType>,
   ~disabled=false,
   ~className="",
   ~width="w-full",
@@ -31,7 +36,16 @@ let make = (
   }, [themeObj])
   React.useEffect0(() => {
     if value === "" {
-      setValue(_ => options->Array.get(0)->Option.getOr(""))
+      setValue(_ =>
+        (
+          options
+          ->Array.get(0)
+          ->Option.getOr({
+            label: "",
+            value: "",
+          })
+        ).value
+      )
     }
     None
   })
@@ -77,8 +91,8 @@ let make = (
           onFocus=handleFocus
           className={`Input ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
-          ->Array.mapWithIndex((item: string, i) => {
-            <option key={Int.toString(i)} value=item> {React.string(item)} </option>
+          ->Array.map(item => {
+            <option key={item.value} value=item.value> {React.string(item.label)} </option>
           })
           ->React.array}
         </select>

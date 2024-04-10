@@ -60,6 +60,16 @@ let make = (
   }, (email, fullName, country))
   useSubmitPaymentData(submitCallback)
 
+  let updatedOptionsArrayForCountry: array<
+    DropdownField.optionType,
+  > = countryNames->Array.map(item => {
+    let optionVal: DropdownField.optionType = {
+      label: item,
+      value: item,
+    }
+    optionVal
+  })
+
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingTab, ())}>
@@ -72,7 +82,7 @@ let make = (
         value=country
         setValue=setCountry
         disabled=false
-        options=countryNames
+        options=updatedOptionsArrayForCountry
       />
     </RenderIf>
     <Surcharge list paymentMethod="bank_transfer" paymentMethodType="sepa" />
