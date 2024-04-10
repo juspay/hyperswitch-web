@@ -16,6 +16,7 @@ let brutal = {
   fontWeightMedium: "700",
   fontWeightBold: "800",
   fontLineHeight: "",
+  fontSize2Xl: "24px",
   fontSizeXl: "16px",
   fontSizeLg: "14px",
   fontSizeSm: "12px",
@@ -172,6 +173,12 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
       "borderColor": "black !important",
       "borderTopColor": "transparent !important",
       "borderLeftColor": "transparent !important",
+    },
+    ".PaymentMethodsHeaderLabel": {
+      "color": theme.colorText,
+      "fontSize": theme.fontSize2Xl,
+      "fontWeight": theme.fontWeightMedium,
+      "marginBottom": "1.5rem",
     },
   }->Identity.anyTypeToJson
 
