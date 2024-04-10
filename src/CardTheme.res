@@ -66,19 +66,33 @@ let defaultConfig = {
 type recoilConfig = {
   config: configClass,
   themeObj: themeClass,
-  localeString: LocaleString.localeStrings,
+  localeString: LocaleStringTypes.localeStrings,
   showLoader: bool,
 }
 let getLocaleObject = string => {
-  let val = if string == "auto" {
+  let locale = if string == "auto" {
     navigator["language"]
   } else {
     string
   }
-  LocaleString.localeStrings
-  ->Array.filter(item => item.locale == val)
-  ->Array.get(0)
-  ->Option.getOr(LocaleString.defaultLocale)
+  switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
+  | EN => EnglishLocale.localeStrings
+  | HE => HebrewLocale.localeStrings
+  | FR => FrenchLocale.localeStrings
+  | EN_GB => EnglishGBLocale.localeStrings
+  | AR => ArabicLocale.localeStrings
+  | JA => JapaneseLocale.localeStrings
+  | DE => DeutschLocale.localeStrings
+  | FR_BE => FrenchBelgiumLocale.localeStrings
+  | ES => SpanishLocale.localeStrings
+  | CA => CatalanLocale.localeStrings
+  | PT => PortugueseLocale.localeStrings
+  | IT => ItalianLocale.localeStrings
+  | PL => PolishLocale.localeStrings
+  | NL => DutchLocale.localeStrings
+  | SV => SwedishLocale.localeStrings
+  | RU => RussianLocale.localeStrings
+  }
 }
 let defaultRecoilConfig: recoilConfig = {
   config: defaultConfig,
