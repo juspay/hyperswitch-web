@@ -1,3 +1,15 @@
+# [0.39.0](https://github.com/juspay/hyperswitch-web/compare/v0.38.2...v0.39.0) (2024-04-08)
+
+
+### Bug Fixes
+
+* build failing issue because of lower node version ([#280](https://github.com/juspay/hyperswitch-web/issues/280)) ([07002cf](https://github.com/juspay/hyperswitch-web/commit/07002cfe3f54c544801263c2798b3430a81a01ea))
+
+
+### Features
+
+* add GitHub Actions workflow for removing labels from PRs ([#278](https://github.com/juspay/hyperswitch-web/issues/278)) ([ce71d4b](https://github.com/juspay/hyperswitch-web/commit/ce71d4b83d61dbc988b0b36f8bc2d968a0dcf2d8))
+
 ## [0.38.2](https://github.com/juspay/hyperswitch-web/compare/v0.38.1...v0.38.2) (2024-04-05)
 
 ## [0.38.1](https://github.com/juspay/hyperswitch-web/compare/v0.38.0...v0.38.1) (2024-04-04)
