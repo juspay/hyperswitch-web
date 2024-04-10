@@ -1,14 +1,6 @@
 name: Update PR Label to Closed
 
 on:
-  pull_request_target:
-    types:
-      - opened
-      - edited
-      - reopened
-      - ready_for_review
-      - synchronize
-
   pull_request:
     types:
       - closed
