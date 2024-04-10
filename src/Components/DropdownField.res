@@ -91,8 +91,8 @@ let make = (
           onFocus=handleFocus
           className={`Input ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
-          ->Array.map(item => {
-            <option key={item.value} value=item.value> {React.string(item.label)} </option>
+          ->Array.mapWithIndex((item, index) => {
+            <option key={Int.toString(index)} value=item.value> {React.string(item.label)} </option>
           })
           ->React.array}
         </select>
