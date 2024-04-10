@@ -1,3 +1,10 @@
+## [0.39.1](https://github.com/juspay/hyperswitch-web/compare/v0.39.0...v0.39.1) (2024-04-10)
+
+
+### Bug Fixes
+
+* added support for Customization for PaymentMethodHeaderText ([#283](https://github.com/juspay/hyperswitch-web/issues/283)) ([bdbd84a](https://github.com/juspay/hyperswitch-web/commit/bdbd84acc2477938640e4fb1628d66345da5e333))
+
 # [0.39.0](https://github.com/juspay/hyperswitch-web/compare/v0.38.2...v0.39.0) (2024-04-08)
 
 
