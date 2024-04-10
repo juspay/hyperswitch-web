@@ -175,6 +175,7 @@ let getVariables = (str, dict, default, logger) => {
       ),
       fontWeightBold: getWarningString(json, "fontWeightBold", default.fontWeightBold, ~logger),
       fontLineHeight: getWarningString(json, "fontLineHeight", default.fontLineHeight, ~logger),
+      fontSize2Xl: getWarningString(json, "fontSize2Xl", default.fontSize2Xl, ~logger),
       fontSizeXl: getWarningString(json, "fontSizeXl", default.fontSizeXl, ~logger),
       fontSizeLg: getWarningString(json, "fontSizeLg", default.fontSizeLg, ~logger),
       fontSizeSm: getWarningString(json, "fontSizeSm", default.fontSizeSm, ~logger),
