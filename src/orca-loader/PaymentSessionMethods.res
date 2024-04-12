@@ -14,6 +14,7 @@ let getCustomerSavedPaymentMethods = (
     ~endpoint,
     ~switchToCustomPod,
     ~optLogger=Some(logger),
+    ~isPaymentSession=true,
   )
   ->then(customerDetails => {
     let customerPaymentMethods =
