@@ -85,7 +85,8 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     }
     let analyticsInfoDict =
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-    let sessionID = analyticsInfoDict->getString("sessionID", "")
+    let sessionID =
+      analyticsInfoDict->getString("sessionID", "hyp_" ++ Utils.generateRandomString(8))
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Belt.Float.toString)
     let logger = OrcaLogger.make(
       ~sessionId=sessionID,

@@ -6,12 +6,12 @@ const sdkEnv = process.env.sdkEnv;
 
 let backendEndPoint =
   sdkEnv === "prod"
-    ? "https://checkout.hyperswitch.io/api"
+    ? "https://checkout.hyperswitch.io/api/payments"
     : sdkEnv === "sandbox"
-    ? "https://beta.hyperswitch.io/api"
+    ? "https://beta.hyperswitch.io/api/payments"
     : sdkEnv === "integ"
     ? "https://integ-api.hyperswitch.io"
-    : "https://beta.hyperswitch.io/api";
+    : "https://beta.hyperswitch.io/api/payments";
 
 let devServer = {
   contentBase: path.join(__dirname, "dist"),
@@ -19,8 +19,8 @@ let devServer = {
   port: 9050,
   historyApiFallback: true,
   proxy: {
-    "/payments": {
-      target: backendEndPoint + "/payments",
+    "/api/payments": {
+      target: backendEndPoint,
       changeOrigin: true,
       secure: true,
       pathRewrite: { "^/payments": "" },
@@ -30,18 +30,18 @@ let devServer = {
     //   changeOrigin: true,
     //   secure: false,
     // },
-    "/customers": {
-      target: backendEndPoint + "/customers",
-      changeOrigin: true,
-      secure: true,
-      pathRewrite: { "^/customers": "" },
-    },
-    "/account": {
-      target: backendEndPoint + "/account",
-      changeOrigin: true,
-      secure: true,
-      pathRewrite: { "^/account": "" },
-    },
+    // "/customers": {
+    //   target: backendEndPoint + "/customers",
+    //   changeOrigin: true,
+    //   secure: true,
+    //   pathRewrite: { "^/customers": "" },
+    // },
+    // "/account": {
+    //   target: backendEndPoint + "/account",
+    //   changeOrigin: true,
+    //   secure: true,
+    //   pathRewrite: { "^/account": "" },
+    // },
   },
   headers: {
     "Cache-Control": "max-age=31536000,must-revalidate",

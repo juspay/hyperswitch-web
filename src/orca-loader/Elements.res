@@ -276,7 +276,6 @@ let make = (
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
             ("blockConfirm", blockConfirm->JSON.Encode.bool),
             ("switchToCustomPod", switchToCustomPod->JSON.Encode.bool),
-            ("endpoint", endpoint->JSON.Encode.string),
             ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),

@@ -1,5 +1,5 @@
 @react.component
-let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
+let make = (~sessionId, ~publishableKey, ~clientSecret) => {
   open Utils
   let (paymentMethodsResponseSent, setPaymentMethodsResponseSent) = React.useState(_ => false)
   let (
@@ -15,36 +15,32 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
     (),
   )
 
-  let (
-    paymentMethodsResponse,
-    customerPaymentMethodsResponse,
-    sessionTokensResponse,
-  ) = React.useMemo0(() => {
-    (
-      PaymentHelpers.fetchPaymentMethodList(
-        ~clientSecret,
-        ~publishableKey,
-        ~logger,
-        ~switchToCustomPod=false,
-        ~endpoint,
-      ),
-      PaymentHelpers.fetchCustomerDetails(
-        ~clientSecret,
-        ~publishableKey,
-        ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
-        ~endpoint,
-      ),
-      PaymentHelpers.fetchSessions(
-        ~clientSecret,
-        ~publishableKey,
-        ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
-        ~endpoint,
-        (),
-      ),
-    )
-  })
+  let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
+
+  let (paymentMethodsResponse, customerPaymentMethodsResponse, sessionTokensResponse) = (
+    PaymentHelpers.fetchPaymentMethodList(
+      ~clientSecret,
+      ~publishableKey,
+      ~logger,
+      ~switchToCustomPod=false,
+      ~endpoint,
+    ),
+    PaymentHelpers.fetchCustomerPaymentMethodList(
+      ~clientSecret,
+      ~publishableKey,
+      ~optLogger=Some(logger),
+      ~switchToCustomPod=false,
+      ~endpoint,
+    ),
+    PaymentHelpers.fetchSessions(
+      ~clientSecret,
+      ~publishableKey,
+      ~optLogger=Some(logger),
+      ~switchToCustomPod=false,
+      ~endpoint,
+      (),
+    ),
+  )
 
   let sendPromiseData = (promise, key) => {
     open Promise

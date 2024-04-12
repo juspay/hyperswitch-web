@@ -11,20 +11,20 @@ command_discovery() {
 command_discovery curl
 command_discovery aws
 
-echo "Please enter the URL where you have hosted Hyperswitch Backend (https://beta.hyperswitch.io/api) "
+echo "Please enter the URL where you have hosted Hyperswitch Backend (https://beta.hyperswitch.io/api/payments) "
 read HYPERSWITCH_SERVER_URL < /dev/tty
 
 if [ -z "$HYPERSWITCH_SERVER_URL" ]; then
-    echo "Using default api url: https://beta.hyperswitch.io/api"
-    HYPERSWITCH_SERVER_URL="https://beta.hyperswitch.io/api"
+    echo "Using default api url: https://beta.hyperswitch.io/api/payments"
+    HYPERSWITCH_SERVER_URL="https://beta.hyperswitch.io/api/payments"
 fi
 
-# echo "Please enter the api url (https://beta.hyperswitch.io/api) "
+# echo "Please enter the api url (https://beta.hyperswitch.io/api/payments) "
 # read apiBaseUrl < /dev/tty
 
 # if [ -z "$apiBaseUrl" ]; then
-#     echo "Using default api url: https://beta.hyperswitch.io/api"
-#     apiBaseUrl="https://beta.hyperswitch.io/api"
+#     echo "Using default api url: https://beta.hyperswitch.io/api/payments"
+#     apiBaseUrl="https://beta.hyperswitch.io/api/payments"
 # fi
 
 echo "Please enter the URL where you have hosted Hyperswitch Client SDK (https://beta.hyperswitch.io/v1) "

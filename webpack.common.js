@@ -5,8 +5,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
-const BundleAnalyzerPlugin =
-  require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
+const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 
 const sdkEnv = process.env.sdkEnv;
@@ -18,8 +17,7 @@ let repoVersion = require("./package.json").version;
 let majorVersion = "v" + repoVersion.split(".")[0];
 
 let repoName = require("./package.json").name;
-let repoPublicPath =
-  sdkEnv === "local" ? "" : `/${repoVersion}/${majorVersion}`;
+let repoPublicPath = sdkEnv === "local" ? "" : `/${repoVersion}/${majorVersion}`;
 
 let sdkUrl;
 
@@ -54,12 +52,12 @@ let confirmEndPoint;
 if (envBackendUrl === undefined) {
   confirmEndPoint =
     sdkEnv === "prod"
-      ? "https://checkout.hyperswitch.io/api"
+      ? "https://checkout.hyperswitch.io/api/payments"
       : sdkEnv === "sandbox"
-      ? "https://beta.hyperswitch.io/api"
+      ? "https://beta.hyperswitch.io/api/payments"
       : sdkEnv === "integ"
       ? "https://integ-api.hyperswitch.io"
-      : "https://beta.hyperswitch.io/api";
+      : "https://beta.hyperswitch.io/api/payments";
 } else {
   confirmEndPoint = envBackendUrl;
 }
@@ -151,18 +149,18 @@ module.exports = (publicPath = "auto") => {
       // new webpack.HTMLInjectPlugin({
       //   publicPath: JSON.stringify(repoVersion),
       // }),
-      // sentryWebpackPlugin({
-      //   org: "sentry",
-      //   project: "hyperswitch-react-sdk",
-      //   authToken: process.env.SENTRY_AUTH_TOKEN,
-      //   url: process.env.SENTRY_URL,
-      //   release: {
-      //     name: "0.2",
-      //     uploadLegacySourcemaps: {
-      //       paths: ["dist"],
-      //     },
-      //   },
-      // }),
+      sentryWebpackPlugin({
+        org: "sentry",
+        project: "hyperswitch-react-sdk",
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        url: process.env.SENTRY_URL,
+        release: {
+          name: "0.2",
+          uploadLegacySourcemaps: {
+            paths: ["dist"],
+          },
+        },
+      }),
     ],
     module: {
       rules: [
