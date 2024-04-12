@@ -10,7 +10,7 @@ let make = () => {
   let paymentMode = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let fullscreenMode = CardUtils.getQueryParamsDictforKey(url.search, "fullscreenType")
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     setLoggerState(_ => logger)
     None
   }, [logger])

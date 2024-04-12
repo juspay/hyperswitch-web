@@ -30,18 +30,6 @@ let devServer = {
     //   changeOrigin: true,
     //   secure: false,
     // },
-    // "/customers": {
-    //   target: backendEndPoint + "/customers",
-    //   changeOrigin: true,
-    //   secure: true,
-    //   pathRewrite: { "^/customers": "" },
-    // },
-    // "/account": {
-    //   target: backendEndPoint + "/account",
-    //   changeOrigin: true,
-    //   secure: true,
-    //   pathRewrite: { "^/account": "" },
-    // },
   },
   headers: {
     "Cache-Control": "max-age=31536000,must-revalidate",
