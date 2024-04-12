@@ -1,3 +1,10 @@
+## [0.39.3](https://github.com/juspay/hyperswitch-web/compare/v0.39.2...v0.39.3) (2024-04-12)
+
+
+### Bug Fixes
+
+* payment data filled google pay ([#281](https://github.com/juspay/hyperswitch-web/issues/281)) ([c58c0a6](https://github.com/juspay/hyperswitch-web/commit/c58c0a6e70d4f6eb410e7d03865bfd1a44f62dab))
+
 ## [0.39.2](https://github.com/juspay/hyperswitch-web/compare/v0.39.1...v0.39.2) (2024-04-12)
 
 
