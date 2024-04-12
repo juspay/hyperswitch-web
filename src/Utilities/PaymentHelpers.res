@@ -287,6 +287,7 @@ let rec intentCall = (
     ~eventName=initEventName,
     ~logType=INFO,
     ~logCategory=API,
+    ~isPaymentSession,
     (),
   )
   let handleOpenUrl = url => {
@@ -341,6 +342,7 @@ let rec intentCall = (
               ~eventName,
               ~logType=ERROR,
               ~logCategory=API,
+              ~isPaymentSession,
               (),
             )
 
@@ -378,6 +380,7 @@ let rec intentCall = (
               ~eventName,
               ~logType=ERROR,
               ~logCategory=API,
+              ~isPaymentSession,
               (),
             )
             if counter >= 5 {
@@ -437,7 +440,15 @@ let rec intentCall = (
       ->then(data => {
         Promise.make(
           (resolve, _) => {
-            logApi(~optLogger, ~url=uri, ~statusCode, ~apiLogType=Response, ~eventName, ())
+            logApi(
+              ~optLogger,
+              ~url=uri,
+              ~statusCode,
+              ~apiLogType=Response,
+              ~eventName,
+              ~isPaymentSession,
+              (),
+            )
             let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
             let paymentMethod = switch paymentType {
             | Card => "CARD"
@@ -713,6 +724,7 @@ let rec intentCall = (
         ~data=exceptionMessage,
         ~logType=ERROR,
         ~logCategory=API,
+        ~isPaymentSession,
         (),
       )
       if counter >= 5 {
@@ -1170,6 +1182,7 @@ let fetchCustomerPaymentMethodList = (
   ~endpoint,
   ~optLogger,
   ~switchToCustomPod,
+  ~isPaymentSession=false,
 ) => {
   React.useMemo(() => {
     open Promise
@@ -1182,6 +1195,7 @@ let fetchCustomerPaymentMethodList = (
       ~eventName=CUSTOMER_PAYMENT_METHODS_CALL_INIT,
       ~logType=INFO,
       ~logCategory=API,
+      ~isPaymentSession,
       (),
     )
     fetchApi(
@@ -1206,6 +1220,7 @@ let fetchCustomerPaymentMethodList = (
               ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
               ~logType=ERROR,
               ~logCategory=API,
+              ~isPaymentSession,
               (),
             )
             JSON.Encode.null->resolve
@@ -1220,6 +1235,7 @@ let fetchCustomerPaymentMethodList = (
           ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
           ~logType=INFO,
           ~logCategory=API,
+          ~isPaymentSession,
           (),
         )
         res->Fetch.Response.json
@@ -1235,6 +1251,7 @@ let fetchCustomerPaymentMethodList = (
         ~logType=ERROR,
         ~logCategory=API,
         ~data=exceptionMessage,
+        ~isPaymentSession,
         (),
       )
       JSON.Encode.null->resolve

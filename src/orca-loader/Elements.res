@@ -740,26 +740,18 @@ let make = (
                     ->ignore
 
                     let handleGooglePayMessages = (event: Types.event) => {
-                      let evJson = event.data->Identity.anyTypeToJson
+                      let evJson = event.data->anyTypeToJson
                       let gpayClicked =
                         evJson
-                        ->Utils.getOptionalJsonFromJson("GpayClicked")
-                        ->Utils.getBoolFromJson(false)
+                        ->getOptionalJsonFromJson("GpayClicked")
+                        ->getBoolFromJson(false)
 
                       if gpayClicked {
                         setTimeout(() => {
-                          gPayClient.loadPaymentData(paymentDataRequest->Identity.anyTypeToJson)
+                          gPayClient.loadPaymentData(paymentDataRequest->anyTypeToJson)
                           ->then(
                             json => {
-                              logger.setLogInfo(
-                                ~value=json->Identity.anyTypeToJson->JSON.stringify,
-                                ~eventName=GOOGLE_PAY_FLOW,
-                                ~paymentMethod="GOOGLE_PAY",
-                                ~logType=DEBUG,
-                                (),
-                              )
-                              let msg =
-                                [("gpayResponse", json->Identity.anyTypeToJson)]->Dict.fromArray
+                              let msg = [("gpayResponse", json->anyTypeToJson)]->Dict.fromArray
                               mountedIframeRef->Window.iframePostMessage(msg)
                               resolve()
                             },
@@ -767,14 +759,14 @@ let make = (
                           ->catch(
                             err => {
                               logger.setLogInfo(
-                                ~value=err->Identity.anyTypeToJson->JSON.stringify,
+                                ~value=err->anyTypeToJson->JSON.stringify,
                                 ~eventName=GOOGLE_PAY_FLOW,
                                 ~paymentMethod="GOOGLE_PAY",
                                 ~logType=DEBUG,
                                 (),
                               )
 
-                              let msg = [("gpayError", err->Identity.anyTypeToJson)]->Dict.fromArray
+                              let msg = [("gpayError", err->anyTypeToJson)]->Dict.fromArray
                               mountedIframeRef->Window.iframePostMessage(msg)
                               resolve()
                             },

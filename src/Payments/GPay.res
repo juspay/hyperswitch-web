@@ -12,7 +12,7 @@ let make = (
   ~walletOptions: array<string>,
 ) => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -149,6 +149,13 @@ let make = (
     makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
+        let value = "Payment Data Filled: New Payment Method"
+        loggerState.setLogInfo(
+          ~value,
+          ~eventName=PAYMENT_DATA_FILLED,
+          ~paymentMethod="GOOGLE_PAY",
+          (),
+        )
         if isInvokeSDKFlow {
           if isDelayedSessionToken {
             handlePostMessage([
@@ -170,13 +177,6 @@ let make = (
           let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
           processPayment(bodyDict)
         }
-        let value = "Payment Data Filled: New Payment Method"
-        loggerState.setLogInfo(
-          ~value,
-          ~eventName=PAYMENT_DATA_FILLED,
-          ~paymentMethod="GOOGLE_PAY",
-          (),
-        )
       }
       resolve()
     })

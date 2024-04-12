@@ -22,7 +22,7 @@ jobs:
           REPO_NAME=$(basename $GITHUB_REPOSITORY)
 
           # Get existing labels on the PR
-          EXISTING_LABELS=$(curl -s -H "Authorization: Bearer ${{ secrets.AUTO_RELEASE_PAT }}" \
+          EXISTING_LABELS=$(curl -s -H "Authorization: Bearer ${{ secrets.AUTORELEASE_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER" \
             | jq -r '.labels | map(.name) | join(" ")')
@@ -40,4 +40,4 @@ jobs:
       - name: Add new label
         run: |
           export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          gh pr edit ${{ github.event.pull_request.number }} --add-label "closed"
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "Closed"
