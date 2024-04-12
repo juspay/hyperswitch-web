@@ -16,6 +16,7 @@ let default = {
   fontWeightMedium: "600",
   fontWeightBold: "700",
   fontLineHeight: "",
+  fontSize2Xl: "24px",
   fontSizeXl: "16px",
   fontSizeLg: "14px",
   fontSizeSm: "12px",
@@ -184,6 +185,12 @@ let defaultRules = theme =>
     ".Checkbox": {
       "fontWeight": theme.fontWeightLight,
       "fontSize": theme.fontSizeLg,
+    },
+    ".PaymentMethodsHeaderLabel": {
+      "color": theme.colorText,
+      "fontSize": theme.fontSize2Xl,
+      "fontWeight": theme.fontWeightMedium,
+      "marginBottom": "1.5rem",
     },
   }->Identity.anyTypeToJson
 
