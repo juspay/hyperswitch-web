@@ -52,12 +52,12 @@ let confirmEndPoint;
 if (envBackendUrl === undefined) {
   confirmEndPoint =
     sdkEnv === "prod"
-      ? "https://checkout.hyperswitch.io/api/payments"
+      ? "https://checkout.hyperswitch.io/api"
       : sdkEnv === "sandbox"
-      ? "https://beta.hyperswitch.io/api/payments"
+      ? "https://beta.hyperswitch.io/api"
       : sdkEnv === "integ"
       ? "https://integ-api.hyperswitch.io"
-      : "https://beta.hyperswitch.io/api/payments";
+      : "https://beta.hyperswitch.io/api";
 } else {
   confirmEndPoint = envBackendUrl;
 }

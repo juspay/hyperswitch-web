@@ -10,11 +10,6 @@ let make = () => {
   let paymentMode = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let fullscreenMode = CardUtils.getQueryParamsDictforKey(url.search, "fullscreenType")
 
-  let logger = React.useMemo0(() => {
-    let log = OrcaLogger.make()
-    log
-  })
-
   React.useEffect1(() => {
     setLoggerState(_ => logger)
     None

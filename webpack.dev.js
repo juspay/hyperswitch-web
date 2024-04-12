@@ -10,7 +10,7 @@ let backendEndPoint =
     : sdkEnv === "sandbox"
     ? "https://beta.hyperswitch.io/api/payments"
     : sdkEnv === "integ"
-    ? "https://integ-api.hyperswitch.io"
+    ? "https://integ-api.hyperswitch.io/payments"
     : "https://beta.hyperswitch.io/api/payments";
 
 let devServer = {
