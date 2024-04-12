@@ -1,3 +1,10 @@
+## [0.39.2](https://github.com/juspay/hyperswitch-web/compare/v0.39.1...v0.39.2) (2024-04-12)
+
+
+### Bug Fixes
+
+* **states:** moved states to UM (UnitedStatesMinorOutlyingIslands) ([#287](https://github.com/juspay/hyperswitch-web/issues/287)) ([f17270a](https://github.com/juspay/hyperswitch-web/commit/f17270a163b993afb1053165978ba2529615834a))
+
 ## [0.39.1](https://github.com/juspay/hyperswitch-web/compare/v0.39.0...v0.39.1) (2024-04-10)
 
 
