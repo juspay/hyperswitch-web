@@ -27,6 +27,7 @@ type themeClass = {
   fontWeightMedium: string,
   fontWeightBold: string,
   fontLineHeight: string,
+  fontSize2Xl: string,
   fontSizeXl: string,
   fontSizeLg: string,
   fontSizeSm: string,

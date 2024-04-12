@@ -870,9 +870,7 @@
       { "name": "Zhejiang", "code": "ZJ" }
     ],
     "CX": [{ "name": "Christmas Island", "code": "Christmas Island" }],
-    "CC": [
-      { "name": "Cocos (Keeling) Islands", "code": "Cocos (Keeling) Islands" }
-    ],
+    "CC": [{ "name": "Cocos (Keeling) Islands", "code": "Cocos (Keeling) Islands" }],
     "CO": [
       { "name": "Amazonas Department", "code": "AMA" },
       { "name": "Antioquia Department", "code": "ANT" },
@@ -2588,9 +2586,7 @@
       { "name": "Grevenmacher District", "code": "G" },
       { "name": "Luxembourg District", "code": "L" }
     ],
-    "MO": [
-      { "name": "Macao", "code": "Macao" }
-    ],
+    "MO": [{ "name": "Macao", "code": "Macao" }],
     "MK": [
       { "name": "Aerodrom Municipality", "code": "01" },
       { "name": "Aračinovo Municipality", "code": "02" },
@@ -2849,9 +2845,7 @@
       { "name": "Ralik Chain", "code": "L" },
       { "name": "Ratak Chain", "code": "T" }
     ],
-    "MQ": [
-      { "name": "Martinique", "code": "Martinique" }
-    ],
+    "MQ": [{ "name": "Martinique", "code": "Martinique" }],
     "MR": [
       { "name": "Adrar Region", "code": "07" },
       { "name": "Assaba Region", "code": "03" },
@@ -3268,9 +3262,7 @@
     ],
     "NU": [{ "name": "Niue", "code": "Niue" }],
     "NF": [{ "name": "Norfolk Island", "code": "Norfolk Island" }],
-    "MP": [
-      { "name": "Northern Mariana Islands", "code": "Northern Mariana Islands" }
-    ],
+    "MP": [{ "name": "Northern Mariana Islands", "code": "Northern Mariana Islands" }],
     "NO": [
       { "name": "Akershus", "code": "02" },
       { "name": "Buskerud", "code": "06" },
@@ -3849,9 +3841,7 @@
       { "name": "Zlatibor District", "code": "16" },
       { "name": "Šumadija District", "code": "12" }
     ],
-    "CS": [
-      { "name": "Serbia and Montenegro", "code": "Serbia and Montenegro" }
-    ],
+    "CS": [{ "name": "Serbia and Montenegro", "code": "Serbia and Montenegro" }],
     "SC": [
       { "name": "Anse Boileau", "code": "02" },
       { "name": "Anse Royale", "code": "05" },
@@ -4157,7 +4147,10 @@
       { "name": "Western Cape", "code": "WC" }
     ],
     "GS": [
-      { "name": "South Georgia and the South Sandwich Islands", "code": "South Georgia and the South Sandwich Islands" }
+      {
+        "name": "South Georgia and the South Sandwich Islands",
+        "code": "South Georgia and the South Sandwich Islands"
+      }
     ],
     "SS": [
       { "name": "Central Equatoria", "code": "EC" },
@@ -4304,9 +4297,7 @@
       { "name": "Sipaliwini District", "code": "SI" },
       { "name": "Wanica District", "code": "WA" }
     ],
-    "SJ": [
-      { "name": "Svalbard and Jan Mayen", "code": "Svalbard and Jan Mayen" }
-    ],
+    "SJ": [{ "name": "Svalbard and Jan Mayen", "code": "Svalbard and Jan Mayen" }],
     "SZ": [
       { "name": "Hhohho District", "code": "HH" },
       { "name": "Lubombo District", "code": "LU" },
@@ -4682,9 +4673,7 @@
       { "name": "Lebap Region", "code": "L" },
       { "name": "Mary Region", "code": "M" }
     ],
-    "TC": [
-      { "name": "Turks and Caicos Islands", "code": "Turks and Caicos Islands" }
-    ],
+    "TC": [{ "name": "Turks and Caicos Islands", "code": "Turks and Caicos Islands" }],
     "TV": [
       { "name": "Funafuti", "code": "FUN" },
       { "name": "Nanumanga", "code": "NMG" },
@@ -5082,7 +5071,6 @@
       { "name": "American Samoa", "code": "AS" },
       { "name": "Arizona", "code": "AZ" },
       { "name": "Arkansas", "code": "AR" },
-      { "name": "Baker Island", "code": "UM-81" },
       { "name": "California", "code": "CA" },
       { "name": "Colorado", "code": "CO" },
       { "name": "Connecticut", "code": "CT" },
@@ -5092,27 +5080,22 @@
       { "name": "Georgia", "code": "GA" },
       { "name": "Guam", "code": "GU" },
       { "name": "Hawaii", "code": "HI" },
-      { "name": "Howland Island", "code": "UM-84" },
       { "name": "Idaho", "code": "ID" },
       { "name": "Illinois", "code": "IL" },
       { "name": "Indiana", "code": "IN" },
       { "name": "Iowa", "code": "IA" },
-      { "name": "Jarvis Island", "code": "UM-86" },
-      { "name": "Johnston Atoll", "code": "UM-67" },
       { "name": "Kansas", "code": "KS" },
       { "name": "Kentucky", "code": "KY" },
-      { "name": "Kingman Reef", "code": "UM-89" },
       { "name": "Louisiana", "code": "LA" },
       { "name": "Maine", "code": "ME" },
       { "name": "Maryland", "code": "MD" },
       { "name": "Massachusetts", "code": "MA" },
       { "name": "Michigan", "code": "MI" },
-      { "name": "Midway Atoll", "code": "UM-71" },
       { "name": "Minnesota", "code": "MN" },
       { "name": "Mississippi", "code": "MS" },
       { "name": "Missouri", "code": "MO" },
       { "name": "Montana", "code": "MT" },
-      { "name": "Navassa Island", "code": "UM-76" },
+
       { "name": "Nebraska", "code": "NE" },
       { "name": "Nevada", "code": "NV" },
       { "name": "New Hampshire", "code": "NH" },
@@ -5125,7 +5108,6 @@
       { "name": "Ohio", "code": "OH" },
       { "name": "Oklahoma", "code": "OK" },
       { "name": "Oregon", "code": "OR" },
-      { "name": "Palmyra Atoll", "code": "UM-95" },
       { "name": "Pennsylvania", "code": "PA" },
       { "name": "Puerto Rico", "code": "PR" },
       { "name": "Rhode Island", "code": "RI" },
@@ -5138,17 +5120,22 @@
       { "name": "Utah", "code": "UT" },
       { "name": "Vermont", "code": "VT" },
       { "name": "Virginia", "code": "VA" },
-      { "name": "Wake Island", "code": "UM-79" },
+
       { "name": "Washington", "code": "WA" },
       { "name": "West Virginia", "code": "WV" },
       { "name": "Wisconsin", "code": "WI" },
       { "name": "Wyoming", "code": "WY" }
     ],
     "UM": [
-      {
-        "name": "United States Minor Outlying Islands",
-        "code": "United States Minor Outlying Islands"
-      }
+      { "name": "Baker Island", "code": "UM-81" },
+      { "name": "Howland Island", "code": "UM-84" },
+      { "name": "Jarvis Island", "code": "UM-86" },
+      { "name": "Johnston Atoll", "code": "UM-67" },
+      { "name": "Kingman Reef", "code": "UM-89" },
+      { "name": "Midway Atoll", "code": "UM-71" },
+      { "name": "Navassa Island", "code": "UM-76" },
+      { "name": "Palmyra Atoll", "code": "UM-95" },
+      { "name": "Wake Island", "code": "UM-79" }
     ],
     "UY": [
       { "name": "Artigas Department", "code": "AR" },
@@ -5287,18 +5274,10 @@
       { "name": "Đồng Nai", "code": "39" },
       { "name": "Đồng Tháp", "code": "45" }
     ],
-    "VG": [
-      { "name": "Virgin Islands, British", "code": "Virgin Islands, British" }
-    ],
-    "VI": [
-      { "name": "Virgin Islands, U.s.", "code": "Virgin Islands, U.s." }
-    ],
-    "WF": [
-      { "name": "Wallis and Futuna", "code": "Wallis and Futuna" }
-    ],
-    "EH": [
-      { "name": "Western Sahara", "code": "Western Sahara" }
-    ],
+    "VG": [{ "name": "Virgin Islands, British", "code": "Virgin Islands, British" }],
+    "VI": [{ "name": "Virgin Islands, U.s.", "code": "Virgin Islands, U.s." }],
+    "WF": [{ "name": "Wallis and Futuna", "code": "Wallis and Futuna" }],
+    "EH": [{ "name": "Western Sahara", "code": "Western Sahara" }],
     "YE": [
       { "name": "'Adan Governorate", "code": "AD" },
       { "name": "'Amran Governorate", "code": "AM" },
