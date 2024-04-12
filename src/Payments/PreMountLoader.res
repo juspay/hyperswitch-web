@@ -46,7 +46,7 @@ let make = (~sessionId, ~publishableKey, ~clientSecret) => {
     open Promise
     promise
     ->then(res => {
-      handlePostMessage([("response", res), ("data", key->Js.Json.string)])
+      handlePostMessage([("response", res), ("data", key->JSON.Encode.string)])
       switch key {
       | "payment_methods" => setPaymentMethodsResponseSent(_ => true)
       | "session_tokens" => setSessionTokensResponseSent(_ => true)
@@ -56,7 +56,7 @@ let make = (~sessionId, ~publishableKey, ~clientSecret) => {
       resolve()
     })
     ->catch(_err => {
-      handlePostMessage([("response", Js.Json.null), ("data", key->Js.Json.string)])
+      handlePostMessage([("response", JSON.Encode.null), ("data", key->JSON.Encode.string)])
       resolve()
     })
     ->ignore
@@ -64,23 +64,23 @@ let make = (~sessionId, ~publishableKey, ~clientSecret) => {
 
   let handle = (ev: Window.event) => {
     let json = try {
-      ev.data->Js.Json.parseExn
+      ev.data->JSON.parseExn
     } catch {
-    | _ => Js.Json.null
+    | _ => JSON.Encode.null
     }
     let dict = json->Utils.getDictFromJson
-    if dict->Js.Dict.get("sendPaymentMethodsResponse")->Belt.Option.isSome {
+    if dict->Dict.get("sendPaymentMethodsResponse")->Belt.Option.isSome {
       paymentMethodsResponse->sendPromiseData("payment_methods")
-    } else if dict->Js.Dict.get("sendCustomerPaymentMethodsResponse")->Belt.Option.isSome {
+    } else if dict->Dict.get("sendCustomerPaymentMethodsResponse")->Belt.Option.isSome {
       customerPaymentMethodsResponse->sendPromiseData("customer_payment_methods")
-    } else if dict->Js.Dict.get("sendSessionTokensResponse")->Belt.Option.isSome {
+    } else if dict->Dict.get("sendSessionTokensResponse")->Belt.Option.isSome {
       sessionTokensResponse->sendPromiseData("session_tokens")
     }
   }
 
   React.useEffect0(() => {
     Window.addEventListener("message", handle)
-    handlePostMessage([("preMountLoaderIframeMountedCallback", true->Js.Json.boolean)])
+    handlePostMessage([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
     Some(
       () => {
         Window.removeEventListener("message", handle)
@@ -92,7 +92,7 @@ let make = (~sessionId, ~publishableKey, ~clientSecret) => {
     if (
       paymentMethodsResponseSent && customerPaymentMethodsResponseSent && sessionTokensResponseSent
     ) {
-      handlePostMessage([("preMountLoaderIframeUnMount", true->Js.Json.boolean)])
+      handlePostMessage([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
       Window.removeEventListener("message", handle)
     }
     None
