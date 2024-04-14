@@ -715,13 +715,6 @@ let make = (
                     gPayClient.loadPaymentData(paymentDataRequest->anyTypeToJson)
                     ->then(
                       json => {
-                        logger.setLogInfo(
-                          ~value=json->anyTypeToJson->JSON.stringify,
-                          ~eventName=GOOGLE_PAY_FLOW,
-                          ~paymentMethod="GOOGLE_PAY",
-                          ~logType=DEBUG,
-                          (),
-                        )
                         let msg = [("gpayResponse", json->anyTypeToJson)]->Dict.fromArray
                         mountedIframeRef->Window.iframePostMessage(msg)
                         resolve()

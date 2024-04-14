@@ -138,7 +138,7 @@ let convertToScreamingSnakeCase = text => {
 }
 
 type maskableDetails = Email | CardDetails
-type source = Loader | Elements
+type source = Loader | Elements | Headless
 let logInfo = log => {
   Window.isProd ? () : log
 }
@@ -194,6 +194,7 @@ type loggerMake = {
     ~logCategory: logCategory=?,
     ~paymentMethod: string=?,
     ~apiLogType: apiLogType=?,
+    ~isPaymentSession: bool=?,
     unit,
   ) => unit,
   setLogInitiated: unit => unit,
@@ -229,6 +230,7 @@ let defaultLoggerConfig = {
     ~logCategory as _=?,
     ~paymentMethod as _=?,
     ~apiLogType as _=?,
+    ~isPaymentSession as _=?,
     (),
   ) => (),
   setLogInfo: (
@@ -292,26 +294,6 @@ let logFileToObj = logFile => {
   ->JSON.Encode.object
 }
 
-/* SAMPLE LOG FILE
-
-    API CALL
-
-    log_type : "info",
-    session_id : "11bf5b37-e0b8-42e0-8dcf-dc8c4aefc000"
-    service : "orca-elements"
-    version : "92e923dj"
-    timestamp : "2022-08-03 06:37:37.611"
-    category : "api"
-    environment : "sandbox"
-    tag : "outgoing_request"
-    value : { url: payments/ request_headers: "<all headers>" response_headers: "<all headers>" request: "{}" response: "{}" latency: 200 ms response_code: 200 }
-    payment_id: "py_09923i23n20912ndoied"
-    payment_attempt_id: "pa_jnsdfri3383njfin23i"
-    merchant_id: "merchant_name"
-
-
-*/
-
 let getRefFromOption = val => {
   let innerValue = val->Option.getOr("")
   ref(innerValue)
@@ -320,6 +302,7 @@ let getSourceString = source => {
   switch source {
   | Loader => "orca-loader"
   | Elements => "orca-element"
+  | Headless => "headless"
   }
 }
 
@@ -640,6 +623,7 @@ let make = (
     ~logCategory=API,
     ~paymentMethod="",
     ~apiLogType=Request,
+    ~isPaymentSession=false,
     (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
@@ -651,7 +635,7 @@ let make = (
       logType,
       timestamp: localTimestamp,
       sessionId: sessionId.contents,
-      source: sourceString,
+      source: isPaymentSession ? getSourceString(Headless) : sourceString,
       version: GlobalVars.repoVersion,
       value: switch value {
       | ArrayType(a) => a->Dict.fromArray->JSON.Encode.object->JSON.stringify
