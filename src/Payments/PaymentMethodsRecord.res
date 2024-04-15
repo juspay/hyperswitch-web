@@ -492,6 +492,13 @@ let paymentMethodsFields = [
     fields: [InfoElement],
     miniIcon: None,
   },
+  {
+    paymentMethodName: "local_bank_transfer_transfer",
+    fields: [InfoElement],
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Local Bank Transfer",
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
@@ -582,6 +589,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "sofort",
   "pix_transfer",
   "giropay",
+  "local_bank_transfer_transfer",
 ]
 
 let getIsBillingField = requiredFieldType => {
