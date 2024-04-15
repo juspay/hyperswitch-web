@@ -17,21 +17,27 @@ let make = (~sessionId, ~publishableKey, ~clientSecret) => {
 
   let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
 
-  let (paymentMethodsResponse, customerPaymentMethodsResponse, sessionTokensResponse) = (
+  let paymentMethodsResponse = React.useMemo0(() =>
     PaymentHelpers.fetchPaymentMethodList(
       ~clientSecret,
       ~publishableKey,
       ~logger,
       ~switchToCustomPod=false,
       ~endpoint,
-    ),
+    )
+  )
+
+  let customerPaymentMethodsResponse = React.useMemo0(() =>
     PaymentHelpers.fetchCustomerPaymentMethodList(
       ~clientSecret,
       ~publishableKey,
       ~optLogger=Some(logger),
       ~switchToCustomPod=false,
       ~endpoint,
-    ),
+    )
+  )
+
+  let sessionTokensResponse = React.useMemo0(() =>
     PaymentHelpers.fetchSessions(
       ~clientSecret,
       ~publishableKey,
@@ -39,7 +45,7 @@ let make = (~sessionId, ~publishableKey, ~clientSecret) => {
       ~switchToCustomPod=false,
       ~endpoint,
       (),
-    ),
+    )
   )
 
   let sendPromiseData = (promise, key) => {

@@ -1016,86 +1016,82 @@ let fetchSessions = (
   ~endpoint,
   (),
 ) => {
-  React.useMemo(() => {
-    open Promise
-    let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-    let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-    let body =
-      [
-        ("payment_id", paymentIntentID->JSON.Encode.string),
-        ("client_secret", clientSecret->JSON.Encode.string),
-        ("wallets", wallets->JSON.Encode.array),
-        ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object
-    let uri = `${endpoint}/payments/session_tokens`
-    logApi(
-      ~optLogger,
-      ~url=uri,
-      ~apiLogType=Request,
-      ~eventName=SESSIONS_CALL_INIT,
-      ~logType=INFO,
-      ~logCategory=API,
-      (),
-    )
-    fetchApi(
-      uri,
-      ~method=#POST,
-      ~bodyStr=body->JSON.stringify,
-      ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
-      (),
-    )
-    ->then(resp => {
-      let statusCode = resp->Fetch.Response.status->Int.toString
-      if statusCode->String.charAt(0) !== "2" {
-        resp
-        ->Fetch.Response.json
-        ->then(
-          data => {
-            logApi(
-              ~optLogger,
-              ~url=uri,
-              ~data,
-              ~statusCode,
-              ~apiLogType=Err,
-              ~eventName=SESSIONS_CALL,
-              ~logType=ERROR,
-              ~logCategory=API,
-              (),
-            )
-            JSON.Encode.null->resolve
-          },
-        )
-      } else {
+  open Promise
+  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+  let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+  let body =
+    [
+      ("payment_id", paymentIntentID->JSON.Encode.string),
+      ("client_secret", clientSecret->JSON.Encode.string),
+      ("wallets", wallets->JSON.Encode.array),
+      ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
+    ]
+    ->Dict.fromArray
+    ->JSON.Encode.object
+  let uri = `${endpoint}/payments/session_tokens`
+  logApi(
+    ~optLogger,
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=SESSIONS_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    (),
+  )
+  ->then(resp => {
+    let statusCode = resp->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      resp
+      ->Fetch.Response.json
+      ->then(data => {
         logApi(
           ~optLogger,
           ~url=uri,
+          ~data,
           ~statusCode,
-          ~apiLogType=Response,
+          ~apiLogType=Err,
           ~eventName=SESSIONS_CALL,
-          ~logType=INFO,
+          ~logType=ERROR,
           ~logCategory=API,
           (),
         )
-        Fetch.Response.json(resp)
-      }
-    })
-    ->catch(err => {
-      let exceptionMessage = err->formatException
+        JSON.Encode.null->resolve
+      })
+    } else {
       logApi(
         ~optLogger,
         ~url=uri,
-        ~apiLogType=NoResponse,
+        ~statusCode,
+        ~apiLogType=Response,
         ~eventName=SESSIONS_CALL,
-        ~logType=ERROR,
+        ~logType=INFO,
         ~logCategory=API,
-        ~data=exceptionMessage,
         (),
       )
-      JSON.Encode.null->resolve
-    })
-  }, [clientSecret])
+      Fetch.Response.json(resp)
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    logApi(
+      ~optLogger,
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=SESSIONS_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data=exceptionMessage,
+      (),
+    )
+    JSON.Encode.null->resolve
+  })
 }
 
 let fetchPaymentMethodList = (
@@ -1105,75 +1101,71 @@ let fetchPaymentMethodList = (
   ~switchToCustomPod,
   ~endpoint,
 ) => {
-  React.useMemo(() => {
-    open Promise
-    let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-    let uri = `${endpoint}/account/payment_methods?client_secret=${clientSecret}`
-    logApi(
-      ~optLogger=Some(logger),
-      ~url=uri,
-      ~apiLogType=Request,
-      ~eventName=PAYMENT_METHODS_CALL_INIT,
-      ~logType=INFO,
-      ~logCategory=API,
-      (),
-    )
-    fetchApi(
-      uri,
-      ~method=#GET,
-      ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
-      (),
-    )
-    ->then(resp => {
-      let statusCode = resp->Fetch.Response.status->Int.toString
-      if statusCode->String.charAt(0) !== "2" {
-        resp
-        ->Fetch.Response.json
-        ->then(
-          data => {
-            logApi(
-              ~optLogger=Some(logger),
-              ~url=uri,
-              ~data,
-              ~statusCode,
-              ~apiLogType=Err,
-              ~eventName=PAYMENT_METHODS_CALL,
-              ~logType=ERROR,
-              ~logCategory=API,
-              (),
-            )
-            JSON.Encode.null->resolve
-          },
-        )
-      } else {
+  open Promise
+  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+  let uri = `${endpoint}/account/payment_methods?client_secret=${clientSecret}`
+  logApi(
+    ~optLogger=Some(logger),
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=PAYMENT_METHODS_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  fetchApi(
+    uri,
+    ~method=#GET,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    (),
+  )
+  ->then(resp => {
+    let statusCode = resp->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      resp
+      ->Fetch.Response.json
+      ->then(data => {
         logApi(
           ~optLogger=Some(logger),
           ~url=uri,
+          ~data,
           ~statusCode,
-          ~apiLogType=Response,
+          ~apiLogType=Err,
           ~eventName=PAYMENT_METHODS_CALL,
-          ~logType=INFO,
+          ~logType=ERROR,
           ~logCategory=API,
           (),
         )
-        Fetch.Response.json(resp)
-      }
-    })
-    ->catch(err => {
-      let exceptionMessage = err->formatException
+        JSON.Encode.null->resolve
+      })
+    } else {
       logApi(
         ~optLogger=Some(logger),
         ~url=uri,
-        ~apiLogType=NoResponse,
+        ~statusCode,
+        ~apiLogType=Response,
         ~eventName=PAYMENT_METHODS_CALL,
-        ~logType=ERROR,
+        ~logType=INFO,
         ~logCategory=API,
-        ~data=exceptionMessage,
         (),
       )
-      JSON.Encode.null->resolve
-    })
-  }, [clientSecret])
+      Fetch.Response.json(resp)
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    logApi(
+      ~optLogger=Some(logger),
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=PAYMENT_METHODS_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data=exceptionMessage,
+      (),
+    )
+    JSON.Encode.null->resolve
+  })
 }
 
 let fetchCustomerPaymentMethodList = (
@@ -1184,77 +1176,73 @@ let fetchCustomerPaymentMethodList = (
   ~switchToCustomPod,
   ~isPaymentSession=false,
 ) => {
-  React.useMemo(() => {
-    open Promise
-    let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-    let uri = `${endpoint}/customers/payment_methods?client_secret=${clientSecret}`
-    logApi(
-      ~optLogger,
-      ~url=uri,
-      ~apiLogType=Request,
-      ~eventName=CUSTOMER_PAYMENT_METHODS_CALL_INIT,
-      ~logType=INFO,
-      ~logCategory=API,
-      ~isPaymentSession,
-      (),
-    )
-    fetchApi(
-      uri,
-      ~method=#GET,
-      ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
-      (),
-    )
-    ->then(res => {
-      let statusCode = res->Fetch.Response.status->Int.toString
-      if statusCode->String.charAt(0) !== "2" {
-        res
-        ->Fetch.Response.json
-        ->then(
-          data => {
-            logApi(
-              ~optLogger,
-              ~url=uri,
-              ~data,
-              ~statusCode,
-              ~apiLogType=Err,
-              ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-              ~logType=ERROR,
-              ~logCategory=API,
-              ~isPaymentSession,
-              (),
-            )
-            JSON.Encode.null->resolve
-          },
-        )
-      } else {
+  open Promise
+  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+  let uri = `${endpoint}/customers/payment_methods?client_secret=${clientSecret}`
+  logApi(
+    ~optLogger,
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    ~isPaymentSession,
+    (),
+  )
+  fetchApi(
+    uri,
+    ~method=#GET,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    (),
+  )
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
         logApi(
           ~optLogger,
           ~url=uri,
+          ~data,
           ~statusCode,
-          ~apiLogType=Response,
+          ~apiLogType=Err,
           ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-          ~logType=INFO,
+          ~logType=ERROR,
           ~logCategory=API,
           ~isPaymentSession,
           (),
         )
-        res->Fetch.Response.json
-      }
-    })
-    ->catch(err => {
-      let exceptionMessage = err->formatException
+        JSON.Encode.null->resolve
+      })
+    } else {
       logApi(
         ~optLogger,
         ~url=uri,
-        ~apiLogType=NoResponse,
+        ~statusCode,
+        ~apiLogType=Response,
         ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-        ~logType=ERROR,
+        ~logType=INFO,
         ~logCategory=API,
-        ~data=exceptionMessage,
         ~isPaymentSession,
         (),
       )
-      JSON.Encode.null->resolve
-    })
-  }, [clientSecret])
+      res->Fetch.Response.json
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    logApi(
+      ~optLogger,
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data=exceptionMessage,
+      ~isPaymentSession,
+      (),
+    )
+    JSON.Encode.null->resolve
+  })
 }
