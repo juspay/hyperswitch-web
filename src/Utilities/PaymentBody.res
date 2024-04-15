@@ -1576,6 +1576,26 @@ let pixTransferBody = () => {
   ]
 }
 
+let localBankTransferBody = () => {
+  [
+    ("payment_method", "bank_transfer"->JSON.Encode.string),
+    ("payment_method_type", "local_bank_transfer"->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [
+        (
+          "bank_transfer",
+          [("local_bank_transfer", Dict.make()->JSON.Encode.object)]
+          ->Dict.fromArray
+          ->JSON.Encode.object,
+        ),
+      ]
+      ->Dict.fromArray
+      ->JSON.Encode.object,
+    ),
+  ]
+}
+
 let getPaymentBody = (
   ~paymentMethod,
   ~fullName,
@@ -1640,6 +1660,7 @@ let getPaymentBody = (
   | "open_banking_uk" => openBankingUKBody()
   | "evoucher" => rewardBody(~paymentMethodType=paymentMethod)
   | "pix_transfer" => pixTransferBody()
+  | "local_bank_transfer_transfer" => localBankTransferBody()
   | _ => []
   }
 }
