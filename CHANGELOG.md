@@ -1,3 +1,10 @@
+# [0.40.0](https://github.com/juspay/hyperswitch-web/compare/v0.39.4...v0.40.0) (2024-04-15)
+
+
+### Features
+
+* added new redirection payment method local bank transfer ([#288](https://github.com/juspay/hyperswitch-web/issues/288)) ([390febd](https://github.com/juspay/hyperswitch-web/commit/390febd83e7180967e1112d8135ba9919f096851))
+
 ## [0.39.4](https://github.com/juspay/hyperswitch-web/compare/v0.39.3...v0.39.4) (2024-04-15)
 
 
