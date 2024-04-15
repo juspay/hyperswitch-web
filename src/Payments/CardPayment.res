@@ -276,7 +276,9 @@ let make = (
           />
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="pt-4 pb-2 flex items-center justify-start">
-              <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
+              <SaveDetailsCheckbox
+                isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked
+              />
             </div>
           </RenderIf>
           <RenderIf condition={isCustomerAcceptanceRequired}>

@@ -1,12 +1,13 @@
 @react.component
 let make = (~isChecked, ~setIsChecked) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
+
   let css = `.container {
   display: flex;
   cursor: pointer;
   position: relative;
   justify-content: center;
-  align-items: center;
 }
 
 .container input {
@@ -50,9 +51,13 @@ let make = (~isChecked, ~setIsChecked) => {
     <style> {React.string(css)} </style>
     <label className={`container CheckboxInput ${checkedState}`}>
       <input type_={`checkbox`} onChange />
-      <div className={`checkmark CheckboxInput ${checkedState}`} />
-      <div className={`CheckboxLabel ${checkBoxLabelSate} ml-2`}>
-        {React.string(localeString.saveCardDetails)}
+      <div className={`checkmark CheckboxInput ${checkedState} mt-1`} />
+      <div className={`CheckboxLabel ${checkBoxLabelSate} ml-2 w-11/12`}>
+        {React.string(
+          showFields
+            ? localeString.saveCardDetails
+            : "By providing your card information, you allow to charge your card for future payments in accordance with their terms.",
+        )}
       </div>
     </label>
   </div>
