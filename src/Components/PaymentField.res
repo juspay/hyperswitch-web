@@ -20,6 +20,8 @@ let make = (
   ~placeholder="",
   ~className="",
   ~inputRef,
+  ~displayValue=?,
+  ~setDisplayValue=?,
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -92,6 +94,9 @@ let make = (
         fieldName={dropDownFieldName->Option.getOr("")}
         options={dropDownOptions->Option.getOr([])}
         width="w-1/3 mr-2"
+        displayValue={displayValue->Option.getOr("")}
+        setDisplayValue={setDisplayValue->Option.getOr(_ => ())}
+        isDisplayValueVisible=true
       />
     </RenderIf>
     <RenderIf condition={fieldName->String.length > 0 && config.appearance.labels == Above}>

@@ -1,6 +1,7 @@
 type optionType = {
   label: string,
   value: string,
+  displayValue?: string,
 }
 
 open RecoilAtoms
@@ -9,6 +10,9 @@ let make = (
   ~appearance: CardThemeType.appearance,
   ~value,
   ~setValue,
+  ~isDisplayValueVisible=false,
+  ~displayValue=?,
+  ~setDisplayValue=?,
   ~fieldName,
   ~options: array<optionType>,
   ~disabled=false,
@@ -30,6 +34,21 @@ let make = (
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
     setValue(value)
+    if isDisplayValueVisible {
+      let findDisplayValue =
+        options
+        ->Array.find((ele: optionType) => ele.value === value)
+        ->Option.getOr({
+          label: "",
+          value: "",
+          displayValue: "",
+        })
+
+      switch setDisplayValue {
+      | Some(fun) => fun(_ => findDisplayValue.displayValue->Option.getOr(value))
+      | None => ()
+      }
+    }
   }
   let disbaledBG = React.useMemo(() => {
     themeObj.colorBackground
@@ -75,27 +94,38 @@ let make = (
         </div>
       </RenderIf>
       <div className="relative">
-        <select
-          ref={dropdownRef->ReactDOM.Ref.domRef}
-          style={ReactDOMStyle.make(
-            ~background=disabled ? disbaledBG : themeObj.colorBackground,
-            ~opacity=disabled ? "35%" : "",
-            ~padding=themeObj.spacingUnit,
-            ~width="100%",
-            (),
-          )}
-          name=""
-          value
-          disabled={readOnly || disabled}
-          onChange=handleChange
-          onFocus=handleFocus
-          className={`Input ${className} w-full appearance-none outline-none ${cursorClass}`}>
-          {options
-          ->Array.mapWithIndex((item, index) => {
-            <option key={Int.toString(index)} value=item.value> {React.string(item.label)} </option>
-          })
-          ->React.array}
-        </select>
+        <div className={`Input ${className} appearance-none relative`}>
+          <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
+            <div
+              className="absolute top-2.5 right-0 left-2 bottom-0 pointer-events-none bg-white rounded-sm">
+              {React.string(displayValue->Option.getOr(""))}
+            </div>
+          </RenderIf>
+          <select
+            ref={dropdownRef->ReactDOM.Ref.domRef}
+            style={ReactDOMStyle.make(
+              ~background=disabled ? disbaledBG : themeObj.colorBackground,
+              ~opacity=disabled ? "35%" : "",
+              ~padding=themeObj.spacingUnit,
+              ~width="100%",
+              ~borderRadius="6px",
+              (),
+            )}
+            name=""
+            value
+            disabled={readOnly || disabled}
+            onChange=handleChange
+            onFocus=handleFocus
+            className={`appearance-none outline-none ${cursorClass} `}>
+            {options
+            ->Array.mapWithIndex((item, index) => {
+              <option key={Int.toString(index)} value=item.value>
+                {React.string(item.label)}
+              </option>
+            })
+            ->React.array}
+          </select>
+        </div>
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass}`}
@@ -113,7 +143,7 @@ let make = (
           </div>
         </RenderIf>
         <div
-          className="self-center absolute"
+          className="self-center absolute pointer-events-none"
           style={ReactDOMStyle.make(
             ~opacity=disabled ? "35%" : "",
             ~color=themeObj.colorText,

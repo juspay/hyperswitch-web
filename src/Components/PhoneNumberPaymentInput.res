@@ -11,6 +11,7 @@ let make = () => {
   let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", loggerState)
   let clientCountry = getClientCountry(CardUtils.dateTimeFormat().resolvedOptions().timeZone)
   let currentCountryCode = Utils.getCountryCode(clientCountry.countryName)
+  let (displayValue, setDisplayValue) = React.useState(_ => "")
 
   let countryAndCodeCodeList =
     phoneNumberJson
@@ -24,6 +25,10 @@ let make = () => {
     let countryObjDict = countryObj->getDictFromJson
     let phoneNumberOptionsValue: DropdownField.optionType = {
       label: `${countryObjDict->getString("country_flag", "")} ${countryObjDict->getString(
+          "country_name",
+          "",
+        )} ${countryObjDict->getString("phone_number_code", "")}`,
+      displayValue: `${countryObjDict->getString("country_flag", "")} ${countryObjDict->getString(
           "phone_number_code",
           "",
         )}`,
@@ -66,6 +71,19 @@ let make = () => {
     None
   }, [valueDropDown])
 
+  React.useEffect(() => {
+    let findDisplayValue =
+      phoneNumberCodeOptions
+      ->Array.find(ele => ele.value === valueDropDown)
+      ->Option.getOr({
+        label: "",
+        value: "",
+        displayValue: "",
+      })
+    setDisplayValue(_ => findDisplayValue.displayValue->Option.getOr(findDisplayValue.label))
+    None
+  }, [phoneNumberCodeOptions])
+
   <RenderIf condition={showDetails.phone == Auto}>
     <PaymentField
       fieldName="Phone Number"
@@ -80,6 +98,8 @@ let make = () => {
       dropDownOptions=phoneNumberCodeOptions
       valueDropDown
       setValueDropDown
+      displayValue
+      setDisplayValue
     />
   </RenderIf>
 }
