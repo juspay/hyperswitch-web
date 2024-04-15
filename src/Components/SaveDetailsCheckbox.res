@@ -2,6 +2,7 @@
 let make = (~isChecked, ~setIsChecked) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
+  let {business} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
   let css = `.container {
   display: flex;
@@ -54,9 +55,7 @@ let make = (~isChecked, ~setIsChecked) => {
       <div className={`checkmark CheckboxInput ${checkedState} mt-1`} />
       <div className={`CheckboxLabel ${checkBoxLabelSate} ml-2 w-11/12`}>
         {React.string(
-          showFields
-            ? localeString.saveCardDetails
-            : "By providing your card information, you allow to charge your card for future payments in accordance with their terms.",
+          showFields ? localeString.saveCardDetails : localeString.cardTerms(business.name),
         )}
       </div>
     </label>
