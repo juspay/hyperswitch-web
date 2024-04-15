@@ -1,3 +1,10 @@
+## [0.39.4](https://github.com/juspay/hyperswitch-web/compare/v0.39.3...v0.39.4) (2024-04-15)
+
+
+### Bug Fixes
+
+* paypal issue for Ideal Fix ([#290](https://github.com/juspay/hyperswitch-web/issues/290)) ([7678418](https://github.com/juspay/hyperswitch-web/commit/7678418b50c10aa8d9188a383846fb29878d7d14))
+
 ## [0.39.3](https://github.com/juspay/hyperswitch-web/compare/v0.39.2...v0.39.3) (2024-04-12)
 
 
