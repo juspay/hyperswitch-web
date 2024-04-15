@@ -29,7 +29,7 @@ let make = (
     themeObj.colorBackground
   }, [themeObj])
   React.useEffect0(() => {
-    if value === "" {
+    if value === "" || !(options->Array.includes(value)) {
       setValue(_ => options->Array.get(0)->Option.getOr(""))
     }
     None
