@@ -36,7 +36,7 @@ let preloadFile = (~type_, ~href=``, ()) => {
   let link = CommonHooks.createElement("link")
   link.href = href
   link.\"as" = type_
-  link.rel = "preload"
+  link.rel = "prefetch"
   link.crossorigin = "anonymous"
   checkAndAppend(`link[href="${href}"]`, link)
 }
