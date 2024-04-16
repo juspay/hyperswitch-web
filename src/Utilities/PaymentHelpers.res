@@ -976,26 +976,39 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
       }
 
       switch list {
+      | LoadError(data)
       | Loaded(data) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
-        switch paymentList.mandate_payment {
-        | Some(_) =>
-          switch paymentType {
-          | Card
-          | Gpay
-          | Applepay
-          | KlarnaRedirect
-          | Paypal
-          | BankDebits =>
-            intentWithMandate(mandatePaymentType)
-          | _ => intentWithoutMandate(mandatePaymentType)
+        if paymentList.payment_methods->Array.length > 0 {
+          switch paymentList.mandate_payment {
+          | Some(_) =>
+            switch paymentType {
+            | Card
+            | Gpay
+            | Applepay
+            | KlarnaRedirect
+            | Paypal
+            | BankDebits =>
+              intentWithMandate(mandatePaymentType)
+            | _ => intentWithoutMandate(mandatePaymentType)
+            }
+          | None => intentWithoutMandate(mandatePaymentType)
           }
-        | None => intentWithoutMandate(mandatePaymentType)
+        } else {
+          postFailedSubmitResponse(
+            ~errortype="payment_methods_empty",
+            ~message="Payment Failed. Try again!",
+          )
+          Console.warn("Please enable atleast one Payment method.")
         }
       | SemiLoaded => intentWithoutMandate("")
-      | _ => ()
+      | _ =>
+        postFailedSubmitResponse(
+          ~errortype="payment_methods_loading",
+          ~message="Please wait. Try again!",
+        )
       }
     | None =>
       postFailedSubmitResponse(
