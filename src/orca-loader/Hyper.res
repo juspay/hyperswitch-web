@@ -36,7 +36,7 @@ let preloadFile = (~type_, ~href=``, ()) => {
   let link = CommonHooks.createElement("link")
   link.href = href
   link.\"as" = type_
-  link.rel = "preload"
+  link.rel = "prefetch"
   link.crossorigin = "anonymous"
   checkAndAppend(`link[href="${href}"]`, link)
 }
@@ -319,7 +319,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                     },
                   )
                 }
-
+                postSubmitMessage(dict)
                 if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
                   Window.replace(returnUrl)
                 } else if !(val->JSON.Decode.bool->Option.getOr(false)) {

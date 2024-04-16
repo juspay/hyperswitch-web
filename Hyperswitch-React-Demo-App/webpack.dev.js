@@ -16,7 +16,7 @@ let devServer = {
     },
   },
   headers: {
-    "Cache-Control": "max-age=31536000,must-revalidate",
+    "Cache-Control": "must-revalidate",
   },
 };
 

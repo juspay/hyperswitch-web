@@ -1,3 +1,15 @@
+# [0.41.0](https://github.com/juspay/hyperswitch-web/compare/v0.40.0...v0.41.0) (2024-04-16)
+
+
+### Bug Fixes
+
+* **hyper.res:** prefetch assets instead of preload ([#291](https://github.com/juspay/hyperswitch-web/issues/291)) ([703fd50](https://github.com/juspay/hyperswitch-web/commit/703fd505e686d9c897e82bb0109a280484fc1d6b))
+
+
+### Features
+
+* mandate Changes for the Saved card screen & SDK Button Loader changes ([#289](https://github.com/juspay/hyperswitch-web/issues/289)) ([0e5b5ab](https://github.com/juspay/hyperswitch-web/commit/0e5b5abd588732481bfbafb84080b3297bf993c5))
+
 # [0.40.0](https://github.com/juspay/hyperswitch-web/compare/v0.39.4...v0.40.0) (2024-04-15)
 
 
