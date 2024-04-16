@@ -1,5 +1,3 @@
-open CardUtils
-open Utils
 @react.component
 let make = (
   ~paymentToken,
@@ -10,6 +8,10 @@ let make = (
   ~paymentType,
   ~list: PaymentMethodsRecord.list,
 ) => {
+  open CardUtils
+  open Utils
+  open UtilityHooks
+
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
@@ -21,7 +23,7 @@ let make = (
   }
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
   let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+  let isGuestCustomer = useIsGuestCustomer()
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (token, _) = paymentToken
@@ -36,13 +38,12 @@ let make = (
     }
   }
 
-  let isCustomerAcceptanceRequired = React.useMemo(() => {
-    if displaySavedPaymentMethodsCheckbox {
-      isSaveCardsChecked || list.payment_type === SETUP_MANDATE
-    } else {
-      !(isGuestCustomer || list.payment_type === NORMAL)
-    }
-  }, (isSaveCardsChecked, list.payment_type))
+  let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
+    ~displaySavedPaymentMethodsCheckbox,
+    ~isSaveCardsChecked,
+    ~list,
+    ~isGuestCustomer,
+  )
 
   let bottomElement = {
     savedMethods
@@ -101,7 +102,7 @@ let make = (
 
   let paymentType = customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType, ~savedMethod=true)
+  useHandlePostMessages(~complete, ~empty, ~paymentType, ~savedMethod=true)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
@@ -176,8 +177,9 @@ let make = (
   ))
   useSubmitPaymentData(submitCallback)
 
-  let conditionsForShowingSaveCardCheckbox =
+  let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
     !isGuestCustomer && list.payment_type !== SETUP_MANDATE && displaySavedPaymentMethodsCheckbox
+  }, (isGuestCustomer, list, displaySavedPaymentMethodsCheckbox))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields) {
