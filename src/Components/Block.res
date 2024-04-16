@@ -1,10 +1,5 @@
 @react.component
-let make = (
-  ~topElement: option<React.element>=?,
-  ~bottomElement: option<React.element>=?,
-  ~padding="p-5",
-  ~className="",
-) => {
+let make = (~topElement=?, ~bottomElement=?, ~padding="p-5", ~className="") => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let topBlock = switch topElement {
   | Some(ele) => ele

@@ -2,7 +2,7 @@ open RecoilAtoms
 module TabLoader = {
   @react.component
   let make = (~cardShimmerCount) => {
-    let list = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
+    let list = Recoil.useRecoilValueFromAtom(list)
     let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
     open PaymentType
     open PaymentElementShimmer

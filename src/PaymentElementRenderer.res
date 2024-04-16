@@ -5,7 +5,6 @@ let make = (
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
   ~cvcProps: CardUtils.cvcProps,
-  ~countryProps: (string, array<string>),
 ) => {
   let _cardsToRender = width => {
     (width - 40) / 110
@@ -18,7 +17,7 @@ let make = (
     <RenderIf condition=showLoader>
       <PaymentElementShimmer />
     </RenderIf>
-  | _ => <PaymentElement cardProps expiryProps cvcProps countryProps paymentType />
+  | _ => <PaymentElement cardProps expiryProps cvcProps paymentType />
   }
 }
 

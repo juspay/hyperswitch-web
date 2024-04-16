@@ -2,7 +2,7 @@ open RecoilAtoms
 module Loader = {
   @react.component
   let make = (~cardShimmerCount) => {
-    let list = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
+    let list = Recoil.useRecoilValueFromAtom(list)
     let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
     let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
     let layoutClass = CardUtils.getLayoutClass(layout)
@@ -61,7 +61,7 @@ module Loader = {
 @react.component
 let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let list = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
+  let list = Recoil.useRecoilValueFromAtom(list)
   let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (showMore, setShowMore) = React.useState(_ => false)

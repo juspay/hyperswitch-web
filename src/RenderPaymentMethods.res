@@ -8,7 +8,6 @@ let make = (
   ~zipProps,
   ~handleElementFocus,
   ~blurState,
-  ~countryProps,
   ~isFocus,
 ) => {
   let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -85,7 +84,7 @@ let make = (
             fallback={<RenderIf condition={showLoader}>
               <PaymentElementShimmer />
             </RenderIf>}>
-            <PaymentElementRendererLazy paymentType cardProps expiryProps cvcProps countryProps />
+            <PaymentElementRendererLazy paymentType cardProps expiryProps cvcProps />
           </React.Suspense>
         | CardNumberElement =>
           <InputField
