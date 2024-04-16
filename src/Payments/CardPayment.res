@@ -1,7 +1,5 @@
 type target = {checked: bool}
 type event = {target: target}
-open PaymentType
-open PaymentModeType
 
 @react.component
 let make = (
@@ -12,7 +10,11 @@ let make = (
   ~paymentType: CardThemeType.mode,
   ~list: PaymentMethodsRecord.list,
 ) => {
+  open PaymentType
+  open PaymentModeType
   open Utils
+  open UtilityHooks
+
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
@@ -81,13 +83,9 @@ let make = (
     None
   }, [complete])
 
-  UtilityHooks.useHandlePostMessages(
-    ~complete=complete && areRequiredFieldsValid,
-    ~empty,
-    ~paymentType="card",
-  )
+  useHandlePostMessages(~complete=complete && areRequiredFieldsValid, ~empty, ~paymentType="card")
 
-  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+  let isGuestCustomer = useIsGuestCustomer()
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
     ~cvcNumber,
@@ -95,13 +93,12 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = React.useMemo(() => {
-    if displaySavedPaymentMethodsCheckbox {
-      isSaveCardsChecked || list.payment_type === SETUP_MANDATE
-    } else {
-      !(isGuestCustomer || list.payment_type === NORMAL)
-    }
-  }, (isSaveCardsChecked, list.payment_type))
+  let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
+    ~displaySavedPaymentMethodsCheckbox,
+    ~isSaveCardsChecked,
+    ~list,
+    ~isGuestCustomer,
+  )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
@@ -276,7 +273,9 @@ let make = (
           />
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="pt-4 pb-2 flex items-center justify-start">
-              <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
+              <SaveDetailsCheckbox
+                isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked list
+              />
             </div>
           </RenderIf>
           <RenderIf condition={isCustomerAcceptanceRequired}>
