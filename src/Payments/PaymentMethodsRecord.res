@@ -492,6 +492,13 @@ let paymentMethodsFields = [
     fields: [InfoElement],
     miniIcon: None,
   },
+  {
+    paymentMethodName: "local_bank_transfer_transfer",
+    fields: [InfoElement],
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Local Bank Transfer",
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
@@ -523,6 +530,20 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   }
 }
 
+let getOptionsFromPaymentMethodFieldType = (dict, key) => {
+  let options = dict->Utils.getArrayValFromJsonDict(key, "options")
+  switch options->Array.get(0)->Option.getOr("") {
+  | "" => None
+  | "ALL" => AddressCountry(Country.country->Array.map(item => item.countryName))
+  | _ =>
+    AddressCountry(
+      Country.country
+      ->Array.filter(item => options->Array.includes(item.isoAlpha2))
+      ->Array.map(item => item.countryName),
+    )
+  }
+}
+
 let getPaymentMethodsFieldTypeFromDict = dict => {
   let keysArr = dict->Dict.keysToArray
   let key = keysArr->Array.get(0)->Option.getOr("")
@@ -531,19 +552,8 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
       let options = dict->Utils.getArrayValFromJsonDict("user_currency", "options")
       Currency(options)
     }
-  | "user_address_country" => {
-      let options = dict->Utils.getArrayValFromJsonDict("user_address_country", "options")
-      switch options->Array.get(0)->Option.getOr("") {
-      | "" => None
-      | "ALL" => AddressCountry(Country.country->Array.map(item => item.countryName))
-      | _ =>
-        AddressCountry(
-          Country.country
-          ->Array.filter(item => options->Array.includes(item.isoAlpha2))
-          ->Array.map(item => item.countryName),
-        )
-      }
-    }
+  | "user_country" => dict->getOptionsFromPaymentMethodFieldType("user_country")
+  | "user_address_country" => dict->getOptionsFromPaymentMethodFieldType("user_address_country")
   | _ => None
   }
 }
@@ -579,6 +589,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "sofort",
   "pix_transfer",
   "giropay",
+  "local_bank_transfer_transfer",
 ]
 
 let getIsBillingField = requiredFieldType => {
