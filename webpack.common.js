@@ -11,7 +11,7 @@ const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const sdkEnv = process.env.sdkEnv;
 const envSdkUrl = process.env.envSdkUrl;
 const envBackendUrl = process.env.envBackendUrl;
-const envLoggingUrl = process.env.envBackendUrl;
+const envLoggingUrl = process.env.envLoggingUrl;
 
 //git rev-parse --abbrev-ref HEAD
 let repoVersion = require("./package.json").version;
