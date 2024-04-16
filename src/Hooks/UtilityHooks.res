@@ -21,3 +21,16 @@ let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false
     None
   }, (complete, empty, paymentType))
 }
+
+let useIsCustomerAcceptanceRequired = (
+  ~displaySavedPaymentMethodsCheckbox,
+  ~isSaveCardsChecked,
+  ~list: PaymentMethodsRecord.list,
+  ~isGuestCustomer,
+) => React.useMemo(() => {
+    if displaySavedPaymentMethodsCheckbox {
+      isSaveCardsChecked || list.payment_type === SETUP_MANDATE
+    } else {
+      !(isGuestCustomer || list.payment_type === NORMAL)
+    }
+  }, (isSaveCardsChecked, list.payment_type))
