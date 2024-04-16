@@ -179,7 +179,7 @@ let make = (
 
   let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
     !isGuestCustomer && list.payment_type !== SETUP_MANDATE && displaySavedPaymentMethodsCheckbox
-  }, (isGuestCustomer, list, displaySavedPaymentMethodsCheckbox))
+  }, (isGuestCustomer, list.payment_type, displaySavedPaymentMethodsCheckbox))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields) {
