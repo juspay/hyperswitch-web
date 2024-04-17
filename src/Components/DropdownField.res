@@ -54,7 +54,7 @@ let make = (
     themeObj.colorBackground
   }, [themeObj])
   React.useEffect0(() => {
-    if value === "" {
+    if value === "" || !(options->Array.map(val => val.value)->Array.includes(value)) {
       setValue(_ =>
         (
           options

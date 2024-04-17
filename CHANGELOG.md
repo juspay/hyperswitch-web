@@ -1,3 +1,36 @@
+# [0.42.0](https://github.com/juspay/hyperswitch-web/compare/v0.41.0...v0.42.0) (2024-04-17)
+
+
+### Features
+
+* (revert) mandate Changes for the Saved card screen & SDK Button Loader changes ([#301](https://github.com/juspay/hyperswitch-web/issues/301)) ([b490fed](https://github.com/juspay/hyperswitch-web/commit/b490fed4702306997a642041fdff56417822b7ca))
+
+# [0.41.0](https://github.com/juspay/hyperswitch-web/compare/v0.40.0...v0.41.0) (2024-04-16)
+
+
+### Bug Fixes
+
+* **hyper.res:** prefetch assets instead of preload ([#291](https://github.com/juspay/hyperswitch-web/issues/291)) ([703fd50](https://github.com/juspay/hyperswitch-web/commit/703fd505e686d9c897e82bb0109a280484fc1d6b))
+
+
+### Features
+
+* mandate Changes for the Saved card screen & SDK Button Loader changes ([#289](https://github.com/juspay/hyperswitch-web/issues/289)) ([0e5b5ab](https://github.com/juspay/hyperswitch-web/commit/0e5b5abd588732481bfbafb84080b3297bf993c5))
+
+# [0.40.0](https://github.com/juspay/hyperswitch-web/compare/v0.39.4...v0.40.0) (2024-04-15)
+
+
+### Features
+
+* added new redirection payment method local bank transfer ([#288](https://github.com/juspay/hyperswitch-web/issues/288)) ([390febd](https://github.com/juspay/hyperswitch-web/commit/390febd83e7180967e1112d8135ba9919f096851))
+
+## [0.39.4](https://github.com/juspay/hyperswitch-web/compare/v0.39.3...v0.39.4) (2024-04-15)
+
+
+### Bug Fixes
+
+* paypal issue for Ideal Fix ([#290](https://github.com/juspay/hyperswitch-web/issues/290)) ([7678418](https://github.com/juspay/hyperswitch-web/commit/7678418b50c10aa8d9188a383846fb29878d7d14))
+
 ## [0.39.3](https://github.com/juspay/hyperswitch-web/compare/v0.39.2...v0.39.3) (2024-04-12)
 
 
