@@ -208,6 +208,17 @@ let make = (
         <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked list />
       </div>
     </RenderIf>
+    <RenderIf condition={list.payment_type === SETUP_MANDATE}>
+      <div
+        className="opacity-50 text-xs mb-2 text-left"
+        style={ReactDOMStyle.make(
+          ~color=themeObj.colorText,
+          ~marginTop=themeObj.spacingGridColumn,
+          (),
+        )}>
+        <Terms mode={Card} />
+      </div>
+    </RenderIf>
     <RenderIf condition={!showFields}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer"
