@@ -1,5 +1,5 @@
 @react.component
-let make = (~isChecked, ~setIsChecked, ~list: PaymentMethodsRecord.list) => {
+let make = (~isChecked, ~setIsChecked) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
   let {business} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
