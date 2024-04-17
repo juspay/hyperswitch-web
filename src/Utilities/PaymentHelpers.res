@@ -732,7 +732,11 @@ let rec intentCall = (
           if handleUserError {
             handleOpenUrl(url.href)
           } else {
-            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            let failedSubmitResponse = getFailedSubmitResponse(
+              ~errorType="server_error",
+              ~message="Something went wrong",
+            )
+            resolve(failedSubmitResponse)
           }
         } else {
           let paymentIntentID =
@@ -767,7 +771,15 @@ let rec intentCall = (
           ->ignore
         }
       } catch {
-      | _ => postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
+      | _ =>
+        if !isPaymentSession {
+          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
+        }
+        let failedSubmitResponse = getFailedSubmitResponse(
+          ~errorType="server_error",
+          ~message="Something went wrong",
+        )
+        resolve(failedSubmitResponse)
       }
     })->then(resolve)
   })
