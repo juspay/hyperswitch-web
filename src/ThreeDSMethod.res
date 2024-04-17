@@ -12,7 +12,7 @@ let make = () => {
     LoggerUtils.handleLogging(
       ~optLogger=Some(logger),
       ~eventName=THREE_DS_METHOD_RESULT,
-      ~value="Successful Form Submission",
+      ~value="Y",
       ~paymentMethod="CARD",
       (),
     )
@@ -59,14 +59,13 @@ let make = () => {
 
         let iframeId = metaDataDict->getString("iframeId", "")
 
-        let handleFailureScenarios = (eventName, value, internalMetadata, logType) => {
+        let handleFailureScenarios = value => {
           LoggerUtils.handleLogging(
             ~optLogger=Some(logger),
-            ~eventName,
+            ~eventName=THREE_DS_METHOD_RESULT,
             ~value,
-            ~internalMetadata,
             ~paymentMethod="CARD",
-            ~logType,
+            ~logType=ERROR,
             (),
           )
           metadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
@@ -89,31 +88,16 @@ let make = () => {
             input.value = encodeURIComponent(threeDsMethodStr)
             form.target = "threeDsInvisibleIframe"
             form.appendChild(input)
-
-            LoggerUtils.handleLogging(
-              ~optLogger=Some(logger),
-              ~eventName=THREE_DS_METHOD,
-              ~value="Submitting Form",
-              ~paymentMethod="CARD",
-              (),
-            )
-
             try {
               form.submit()
             } catch {
             | err => {
                 let exceptionMessage = err->Utils.formatException->JSON.stringify
-                handleFailureScenarios(
-                  THREE_DS_METHOD_RESULT,
-                  "Form Submission Failed",
-                  exceptionMessage,
-                  ERROR,
-                )
+                handleFailureScenarios(exceptionMessage)
               }
             }
           }
-        | None =>
-          handleFailureScenarios(THREE_DS_METHOD, "Unable to Locate threeDsInvisibleDiv", "", INFO)
+        | None => handleFailureScenarios("Unable to Locate threeDsInvisibleDiv")
         }
       }
     }
