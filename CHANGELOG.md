@@ -1,3 +1,10 @@
+## [0.42.3](https://github.com/juspay/hyperswitch-web/compare/v0.42.2...v0.42.3) (2024-04-17)
+
+
+### Bug Fixes
+
+* (paymenthelpers, paymentelement) promise being unresolved  ([#297](https://github.com/juspay/hyperswitch-web/issues/297)) ([6494f51](https://github.com/juspay/hyperswitch-web/commit/6494f517a95321b4cb0911f772866deff055d878))
+
 ## [0.42.2](https://github.com/juspay/hyperswitch-web/compare/v0.42.1...v0.42.2) (2024-04-17)
 
 
