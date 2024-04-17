@@ -50,10 +50,8 @@ let make = (~isChecked, ~setIsChecked, ~list: PaymentMethodsRecord.list) => {
 
   let valueToBeRendered = if showFields {
     localeString.saveCardDetails
-  } else if business.name !== "" {
-    localeString.cardTerms(business.name)
   } else {
-    localeString.cardTerms(list.merchant_name)
+    localeString.cardTerms(business.name)
   }
 
   <div className={`Checkbox ${checkboxState} flex flex-row gap-2 items-center`}>
