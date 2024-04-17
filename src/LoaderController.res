@@ -483,7 +483,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     }
     handleMessage(handleFun, "Error in parsing sent Data")
-  }, (showCardFormByDefault, paymentMethodOrder, optionsPayment.business.name))
+  }, (showCardFormByDefault, paymentMethodOrder, optionsPayment))
 
   let observer = ResizeObserver.newResizerObserver(entries => {
     entries
