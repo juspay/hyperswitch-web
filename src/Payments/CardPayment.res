@@ -299,7 +299,9 @@ let make = (
       | (Some(_), Auto, NEW_MANDATE)
       | (Some(_), Auto, SETUP_MANDATE)
       | (_, Always, NEW_MANDATE)
-      | (_, Always, SETUP_MANDATE) =>
+      | (_, Always, SETUP_MANDATE)
+      | (_, _, SETUP_MANDATE)
+      | (_, _, NEW_MANDATE) =>
         <div
           className="opacity-50 text-xs mb-2 text-left"
           style={ReactDOMStyle.make(
