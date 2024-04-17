@@ -1,14 +1,12 @@
 @react.component
-let make = (~isChecked, ~setIsChecked, ~list: PaymentMethodsRecord.list) => {
+let make = (~isChecked, ~setIsChecked) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
-  let {business} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-
   let css = `.container {
   display: flex;
   cursor: pointer;
   position: relative;
   justify-content: center;
+  align-items: center;
 }
 
 .container input {
@@ -48,21 +46,13 @@ let make = (~isChecked, ~setIsChecked, ~list: PaymentMethodsRecord.list) => {
     ? ("Checkbox--checked", "CheckboxInput--checked", "CheckboxLabel--checked")
     : ("", "", "")
 
-  let valueToBeRendered = if showFields {
-    localeString.saveCardDetails
-  } else if business.name !== "" {
-    localeString.cardTerms(business.name)
-  } else {
-    localeString.cardTerms(list.merchant_name)
-  }
-
   <div className={`Checkbox ${checkboxState} flex flex-row gap-2 items-center`}>
     <style> {React.string(css)} </style>
     <label className={`container CheckboxInput ${checkedState}`}>
       <input type_={`checkbox`} onChange />
-      <div className={`checkmark CheckboxInput ${checkedState} mt-1`} />
-      <div className={`CheckboxLabel ${checkBoxLabelSate} ml-2 w-11/12`}>
-        {React.string(valueToBeRendered)}
+      <div className={`checkmark CheckboxInput ${checkedState}`} />
+      <div className={`CheckboxLabel ${checkBoxLabelSate} ml-2`}>
+        {React.string(localeString.saveCardDetails)}
       </div>
     </label>
   </div>

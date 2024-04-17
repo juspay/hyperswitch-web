@@ -64,6 +64,20 @@ let boletoBody = (~socialSecurityNumber) => [
   ),
 ]
 
+let savedCardBody = (~paymentToken, ~customerId, ~cvcNumber, ~requiresCvv) => {
+  let savedCardBody = [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_token", paymentToken->JSON.Encode.string),
+    ("customer_id", customerId->JSON.Encode.string),
+  ]
+
+  if requiresCvv {
+    savedCardBody->Array.push(("card_cvc", cvcNumber->JSON.Encode.string))->ignore
+  }
+
+  savedCardBody
+}
+
 let customerAcceptanceBody =
   [
     ("acceptance_type", "online"->JSON.Encode.string),
@@ -78,51 +92,12 @@ let customerAcceptanceBody =
   ->Dict.fromArray
   ->JSON.Encode.object
 
-let savedPaymentMethodBody = (
-  ~paymentToken,
-  ~customerId,
-  ~paymentMethod,
-  ~paymentMethodType,
-  ~isCustomerAcceptanceRequired,
-) => {
-  let savedPaymentMethodBody = [
-    ("payment_method", paymentMethod->JSON.Encode.string),
-    ("payment_token", paymentToken->JSON.Encode.string),
-    ("customer_id", customerId->JSON.Encode.string),
-    ("payment_method_type", paymentMethodType),
-  ]
-
-  if isCustomerAcceptanceRequired {
-    savedPaymentMethodBody->Array.push(("customer_acceptance", customerAcceptanceBody))->ignore
-  }
-
-  savedPaymentMethodBody
-}
-
-let savedCardBody = (
-  ~paymentToken,
-  ~customerId,
-  ~cvcNumber,
-  ~requiresCvv,
-  ~isCustomerAcceptanceRequired,
-) => {
-  let savedCardBody = [
-    ("payment_method", "card"->JSON.Encode.string),
-    ("payment_token", paymentToken->JSON.Encode.string),
-    ("customer_id", customerId->JSON.Encode.string),
-    ("customer_acceptance", customerAcceptanceBody),
-  ]
-
-  if requiresCvv {
-    savedCardBody->Array.push(("card_cvc", cvcNumber->JSON.Encode.string))->ignore
-  }
-
-  if isCustomerAcceptanceRequired {
-    savedCardBody->Array.push(("customer_acceptance", customerAcceptanceBody))->ignore
-  }
-
-  savedCardBody
-}
+let savedPaymentMethodBody = (~paymentToken, ~customerId, ~paymentMethod, ~paymentMethodType) => [
+  ("payment_method", paymentMethod->JSON.Encode.string),
+  ("payment_token", paymentToken->JSON.Encode.string),
+  ("customer_id", customerId->JSON.Encode.string),
+  ("payment_method_type", paymentMethodType),
+]
 
 let mandateBody = paymentType => {
   [
