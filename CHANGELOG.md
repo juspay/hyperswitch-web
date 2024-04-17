@@ -1,3 +1,10 @@
+## [0.42.2](https://github.com/juspay/hyperswitch-web/compare/v0.42.1...v0.42.2) (2024-04-17)
+
+
+### Bug Fixes
+
+* changes card payment ([#306](https://github.com/juspay/hyperswitch-web/issues/306)) ([d9a5b61](https://github.com/juspay/hyperswitch-web/commit/d9a5b611dbb191f1e3f5a4504f3729249e60d73b))
+
 ## [0.42.1](https://github.com/juspay/hyperswitch-web/compare/v0.42.0...v0.42.1) (2024-04-17)
 
 
