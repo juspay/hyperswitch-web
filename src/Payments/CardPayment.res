@@ -191,8 +191,6 @@ let make = (
 
   let nicknameFieldClassName = conditionsForShowingSaveCardCheckbox ? "pt-2" : "pt-5"
 
-  Js.log2("sdvjnsddsjd", (list.mandate_payment, options.terms.card))
-
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
       <div
