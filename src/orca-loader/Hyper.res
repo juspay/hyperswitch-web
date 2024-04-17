@@ -318,7 +318,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                     },
                   )
                 }
-
+                postSubmitMessage(dict)
                 if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
                   Window.replace(returnUrl)
                 } else if !(val->JSON.Decode.bool->Option.getOr(false)) {

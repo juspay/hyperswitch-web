@@ -190,6 +190,8 @@ let make = (
 
   let nicknameFieldClassName = conditionsForShowingSaveCardCheckbox ? "pt-2" : "pt-5"
 
+  Js.log2("sdvjnsddsjd", (list.mandate_payment, options.terms.card))
+
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
       <div
@@ -293,19 +295,21 @@ let make = (
       />
     </RenderIf>
     <RenderIf condition={!isBancontact}>
-      {switch (list.mandate_payment, options.terms.card) {
-      | (Some(_), Auto)
-      | (_, Always) =>
+      {switch (list.mandate_payment, options.terms.card, list.payment_type) {
+      | (Some(_), Auto, _)
+      | (_, Always, _)
+      | (_, _, NEW_MANDATE)
+      | (_, _, SETUP_MANDATE) =>
         <div
           className="opacity-50 text-xs mb-2 text-left"
           style={ReactDOMStyle.make(
             ~color=themeObj.colorText,
-            ~marginTop=themeObj.spacingGridColumn->addSize(10.0, Pixel),
+            ~marginTop=themeObj.spacingGridColumn,
             (),
           )}>
           <Terms mode={Card} />
         </div>
-      | (_, _) => React.null
+      | (_, _, _) => React.null
       }}
     </RenderIf>
   </div>
