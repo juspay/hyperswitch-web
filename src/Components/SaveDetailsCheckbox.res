@@ -44,7 +44,7 @@ let make = (~isChecked, ~setIsChecked) => {
     setIsChecked(_ => value)
   }
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (checkboxState, checkedState, checkBoxLabelSate) = isChecked
+  let (checkboxState, checkedState, checkBoxLabelState) = isChecked
     ? ("Checkbox--checked", "CheckboxInput--checked", "CheckboxLabel--checked")
     : ("", "", "")
 
