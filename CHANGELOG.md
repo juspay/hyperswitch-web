@@ -1,3 +1,29 @@
+## [0.42.1](https://github.com/juspay/hyperswitch-web/compare/v0.42.0...v0.42.1) (2024-04-17)
+
+
+### Bug Fixes
+
+* card payment changes ([#303](https://github.com/juspay/hyperswitch-web/issues/303)) ([25dc996](https://github.com/juspay/hyperswitch-web/commit/25dc996c82fd459a67cf4836c2652cdee91b1cca))
+
+# [0.42.0](https://github.com/juspay/hyperswitch-web/compare/v0.41.0...v0.42.0) (2024-04-17)
+
+
+### Features
+
+* (revert) mandate Changes for the Saved card screen & SDK Button Loader changes ([#301](https://github.com/juspay/hyperswitch-web/issues/301)) ([b490fed](https://github.com/juspay/hyperswitch-web/commit/b490fed4702306997a642041fdff56417822b7ca))
+
+# [0.41.0](https://github.com/juspay/hyperswitch-web/compare/v0.40.0...v0.41.0) (2024-04-16)
+
+
+### Bug Fixes
+
+* **hyper.res:** prefetch assets instead of preload ([#291](https://github.com/juspay/hyperswitch-web/issues/291)) ([703fd50](https://github.com/juspay/hyperswitch-web/commit/703fd505e686d9c897e82bb0109a280484fc1d6b))
+
+
+### Features
+
+* mandate Changes for the Saved card screen & SDK Button Loader changes ([#289](https://github.com/juspay/hyperswitch-web/issues/289)) ([0e5b5ab](https://github.com/juspay/hyperswitch-web/commit/0e5b5abd588732481bfbafb84080b3297bf993c5))
+
 # [0.40.0](https://github.com/juspay/hyperswitch-web/compare/v0.39.4...v0.40.0) (2024-04-15)
 
 
