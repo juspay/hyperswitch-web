@@ -1194,7 +1194,7 @@ let fetchPaymentMethodList = (
   })
 }
 
-let fetchCustomerDetails = (
+let fetchCustomerPaymentMethodList = (
   ~clientSecret,
   ~publishableKey,
   ~endpoint,

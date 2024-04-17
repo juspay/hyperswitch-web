@@ -1234,3 +1234,14 @@ let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
     }
   })
 }
+
+let generateRandomString = length => {
+  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+  let result = ref("")
+  let charactersLength = characters->String.length
+  Int.range(0, length)->Array.forEach(_ => {
+    let charIndex = mod((Math.random() *. 100.0)->Float.toInt, charactersLength)
+    result := result.contents ++ characters->String.charAt(charIndex)
+  })
+  result.contents
+}
