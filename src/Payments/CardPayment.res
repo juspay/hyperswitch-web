@@ -183,6 +183,7 @@ let make = (
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
   let conditionsForShowingSaveCardCheckbox =
+    list.mandate_payment->Option.isNone &&
     !isGuestCustomer &&
     list.payment_type !== SETUP_MANDATE &&
     options.displaySavedPaymentMethodsCheckbox &&
