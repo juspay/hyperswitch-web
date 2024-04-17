@@ -712,65 +712,78 @@ let rec intentCall = (
   })
   ->catch(err => {
     Promise.make((resolve, _) => {
-      let url = urlSearch(confirmParam.return_url)
-      url.searchParams.set("payment_intent_client_secret", clientSecret)
-      url.searchParams.set("status", "failed")
-      let exceptionMessage = err->formatException
-      logApi(
-        ~optLogger,
-        ~url=uri,
-        ~eventName,
-        ~apiLogType=NoResponse,
-        ~data=exceptionMessage,
-        ~logType=ERROR,
-        ~logCategory=API,
-        ~isPaymentSession,
-        (),
-      )
-      if counter >= 5 {
-        if !isPaymentSession {
-          closePaymentLoaderIfAny()
-          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-        }
-        if handleUserError {
-          handleOpenUrl(url.href)
-        } else {
-          let failedSubmitResponse = getFailedSubmitResponse(
-            ~errorType="server_error",
-            ~message="Something went wrong",
-          )
-          resolve(failedSubmitResponse)
-        }
-      } else {
-        let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-        let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
-        let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
-        intentCall(
-          ~fetchApi,
-          ~uri=retrieveUri,
-          ~headers,
-          ~bodyStr,
-          ~confirmParam: ConfirmType.confirmParams,
-          ~clientSecret,
+      try {
+        let url = urlSearch(confirmParam.return_url)
+        url.searchParams.set("payment_intent_client_secret", clientSecret)
+        url.searchParams.set("status", "failed")
+        let exceptionMessage = err->formatException
+        logApi(
           ~optLogger,
-          ~handleUserError,
-          ~paymentType,
-          ~iframeId,
-          ~fetchMethod=#GET,
-          ~setIsManualRetryEnabled,
-          ~switchToCustomPod,
-          ~sdkHandleOneClickConfirmPayment,
-          ~counter=counter + 1,
+          ~url=uri,
+          ~eventName,
+          ~apiLogType=NoResponse,
+          ~data=exceptionMessage,
+          ~logType=ERROR,
+          ~logCategory=API,
           ~isPaymentSession,
           (),
         )
-        ->then(
-          res => {
-            resolve(res)
-            Promise.resolve()
-          },
+        if counter >= 5 {
+          if !isPaymentSession {
+            closePaymentLoaderIfAny()
+            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+          }
+          if handleUserError {
+            handleOpenUrl(url.href)
+          } else {
+            let failedSubmitResponse = getFailedSubmitResponse(
+              ~errorType="server_error",
+              ~message="Something went wrong",
+            )
+            resolve(failedSubmitResponse)
+          }
+        } else {
+          let paymentIntentID =
+            String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+          let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
+          let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
+          intentCall(
+            ~fetchApi,
+            ~uri=retrieveUri,
+            ~headers,
+            ~bodyStr,
+            ~confirmParam: ConfirmType.confirmParams,
+            ~clientSecret,
+            ~optLogger,
+            ~handleUserError,
+            ~paymentType,
+            ~iframeId,
+            ~fetchMethod=#GET,
+            ~setIsManualRetryEnabled,
+            ~switchToCustomPod,
+            ~sdkHandleOneClickConfirmPayment,
+            ~counter=counter + 1,
+            ~isPaymentSession,
+            (),
+          )
+          ->then(
+            res => {
+              resolve(res)
+              Promise.resolve()
+            },
+          )
+          ->ignore
+        }
+      } catch {
+      | _ =>
+        if !isPaymentSession {
+          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
+        }
+        let failedSubmitResponse = getFailedSubmitResponse(
+          ~errorType="server_error",
+          ~message="Something went wrong",
         )
-        ->ignore
+        resolve(failedSubmitResponse)
       }
     })->then(resolve)
   })
