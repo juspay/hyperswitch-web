@@ -36,7 +36,7 @@ let preloadFile = (~type_, ~href=``, ()) => {
   let link = CommonHooks.createElement("link")
   link.href = href
   link.\"as" = type_
-  link.rel = "preload"
+  link.rel = "prefetch"
   link.crossorigin = "anonymous"
   checkAndAppend(`link[href="${href}"]`, link)
 }
@@ -85,7 +85,8 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     }
     let analyticsInfoDict =
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-    let sessionID = analyticsInfoDict->getString("sessionID", "")
+    let sessionID =
+      analyticsInfoDict->getString("sessionID", "hyp_" ++ Utils.generateRandomString(8))
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Belt.Float.toString)
     let logger = OrcaLogger.make(
       ~sessionId=sessionID,
@@ -318,7 +319,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                     },
                   )
                 }
-
+                postSubmitMessage(dict)
                 if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
                   Window.replace(returnUrl)
                 } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
