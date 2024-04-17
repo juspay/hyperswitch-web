@@ -1,3 +1,10 @@
+# [0.42.0](https://github.com/juspay/hyperswitch-web/compare/v0.41.0...v0.42.0) (2024-04-17)
+
+
+### Features
+
+* (revert) mandate Changes for the Saved card screen & SDK Button Loader changes ([#301](https://github.com/juspay/hyperswitch-web/issues/301)) ([b490fed](https://github.com/juspay/hyperswitch-web/commit/b490fed4702306997a642041fdff56417822b7ca))
+
 # [0.41.0](https://github.com/juspay/hyperswitch-web/compare/v0.40.0...v0.41.0) (2024-04-16)
 
 
