@@ -724,7 +724,6 @@ type list = {
   payment_methods: array<methods>,
   mandate_payment: option<mandate>,
   payment_type: payment_type,
-  merchant_name: string,
 }
 
 open Utils
@@ -746,7 +745,6 @@ let defaultList = {
   payment_methods: [],
   mandate_payment: None,
   payment_type: NONE,
-  merchant_name: "",
 }
 let getMethod = str => {
   switch str {
@@ -965,7 +963,6 @@ let itemToObjMapper = dict => {
     payment_methods: getMethodsArr(dict, "payment_methods"),
     mandate_payment: getMandate(dict, "mandate_payment"),
     payment_type: getString(dict, "payment_type", "")->paymentTypeMapper,
-    merchant_name: getString(dict, "merchant_name", ""),
   }
 }
 
