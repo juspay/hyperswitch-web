@@ -89,7 +89,6 @@ let savedCardBody = (
     ("payment_method", "card"->JSON.Encode.string),
     ("payment_token", paymentToken->JSON.Encode.string),
     ("customer_id", customerId->JSON.Encode.string),
-    ("customer_acceptance", customerAcceptanceBody),
   ]
 
   if requiresCvv {
