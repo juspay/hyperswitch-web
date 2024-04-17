@@ -398,7 +398,8 @@ let make = (
   React.useEffect(() => {
     let evalMethodsList = () =>
       switch methodslist {
-      | SemiLoaded | Loaded(_) => handlePostMessage([("ready", true->JSON.Encode.bool)])
+      | SemiLoaded | LoadError(_) | Loaded(_) =>
+        handlePostMessage([("ready", true->JSON.Encode.bool)])
       | _ => ()
       }
     if !displaySavedPaymentMethods {
