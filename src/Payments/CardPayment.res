@@ -296,10 +296,10 @@ let make = (
     </RenderIf>
     <RenderIf condition={!isBancontact}>
       {switch (list.mandate_payment, options.terms.card, list.payment_type) {
-      | (Some(_), Auto, _)
-      | (_, Always, _)
-      | (_, _, NEW_MANDATE)
-      | (_, _, SETUP_MANDATE) =>
+      | (Some(_), Auto, NEW_MANDATE)
+      | (Some(_), Auto, SETUP_MANDATE)
+      | (_, Always, NEW_MANDATE)
+      | (_, Always, SETUP_MANDATE) =>
         <div
           className="opacity-50 text-xs mb-2 text-left"
           style={ReactDOMStyle.make(
