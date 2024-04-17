@@ -48,7 +48,7 @@ let make = (~isChecked, ~setIsChecked) => {
     ? ("Checkbox--checked", "CheckboxInput--checked", "CheckboxLabel--checked")
     : ("", "", "")
 
-  let valueToBeRendered = if showFields {
+  let saveCardCheckboxLabel = if showFields {
     localeString.saveCardDetails
   } else {
     localeString.cardTerms(business.name)
