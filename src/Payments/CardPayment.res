@@ -1,7 +1,5 @@
 type target = {checked: bool}
 type event = {target: target}
-open PaymentType
-open PaymentModeType
 
 @react.component
 let make = (
@@ -12,7 +10,11 @@ let make = (
   ~paymentType: CardThemeType.mode,
   ~list: PaymentMethodsRecord.list,
 ) => {
+  open PaymentType
+  open PaymentModeType
   open Utils
+  open UtilityHooks
+
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
@@ -81,13 +83,9 @@ let make = (
     None
   }, [complete])
 
-  UtilityHooks.useHandlePostMessages(
-    ~complete=complete && areRequiredFieldsValid,
-    ~empty,
-    ~paymentType="card",
-  )
+  useHandlePostMessages(~complete=complete && areRequiredFieldsValid, ~empty, ~paymentType="card")
 
-  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+  let isGuestCustomer = useIsGuestCustomer()
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
     ~cvcNumber,
@@ -95,13 +93,12 @@ let make = (
     ~isCvcValidValue,
   )
 
-  let isCustomerAcceptanceRequired = React.useMemo(() => {
-    if displaySavedPaymentMethodsCheckbox {
-      isSaveCardsChecked || list.payment_type === SETUP_MANDATE
-    } else {
-      !(isGuestCustomer || list.payment_type === NORMAL)
-    }
-  }, (isSaveCardsChecked, list.payment_type))
+  let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
+    ~displaySavedPaymentMethodsCheckbox,
+    ~isSaveCardsChecked,
+    ~list,
+    ~isGuestCustomer,
+  )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
@@ -183,6 +180,7 @@ let make = (
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
   let conditionsForShowingSaveCardCheckbox =
+    list.mandate_payment->Option.isNone &&
     !isGuestCustomer &&
     list.payment_type !== SETUP_MANDATE &&
     options.displaySavedPaymentMethodsCheckbox &&
@@ -276,7 +274,9 @@ let make = (
           />
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="pt-4 pb-2 flex items-center justify-start">
-              <AnimatedCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
+              <SaveDetailsCheckbox
+                isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked
+              />
             </div>
           </RenderIf>
           <RenderIf condition={isCustomerAcceptanceRequired}>
@@ -297,7 +297,9 @@ let make = (
       | (Some(_), Auto, NEW_MANDATE)
       | (Some(_), Auto, SETUP_MANDATE)
       | (_, Always, NEW_MANDATE)
-      | (_, Always, SETUP_MANDATE) =>
+      | (_, Always, SETUP_MANDATE)
+      | (_, _, SETUP_MANDATE)
+      | (_, _, NEW_MANDATE) =>
         <div
           className="opacity-50 text-xs mb-2 text-left"
           style={ReactDOMStyle.make(

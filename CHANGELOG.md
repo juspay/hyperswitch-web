@@ -1,3 +1,33 @@
+## [0.42.6](https://github.com/juspay/hyperswitch-web/compare/v0.42.5...v0.42.6) (2024-04-17)
+
+
+### Bug Fixes
+
+* mandate data pass hide checkbox ([#308](https://github.com/juspay/hyperswitch-web/issues/308)) ([51c98ab](https://github.com/juspay/hyperswitch-web/commit/51c98abc4da2438195cfbb7e418bf7f47f800008))
+
+## [0.42.5](https://github.com/juspay/hyperswitch-web/compare/v0.42.4...v0.42.5) (2024-04-17)
+
+## [0.42.4](https://github.com/juspay/hyperswitch-web/compare/v0.42.3...v0.42.4) (2024-04-17)
+
+
+### Bug Fixes
+
+* promise unresolved type error ([#298](https://github.com/juspay/hyperswitch-web/issues/298)) ([03da575](https://github.com/juspay/hyperswitch-web/commit/03da57557f70ae36dc155392a6ccae2b9cad573e))
+
+## [0.42.3](https://github.com/juspay/hyperswitch-web/compare/v0.42.2...v0.42.3) (2024-04-17)
+
+
+### Bug Fixes
+
+* (paymenthelpers, paymentelement) promise being unresolved  ([#297](https://github.com/juspay/hyperswitch-web/issues/297)) ([6494f51](https://github.com/juspay/hyperswitch-web/commit/6494f517a95321b4cb0911f772866deff055d878))
+
+## [0.42.2](https://github.com/juspay/hyperswitch-web/compare/v0.42.1...v0.42.2) (2024-04-17)
+
+
+### Bug Fixes
+
+* changes card payment ([#306](https://github.com/juspay/hyperswitch-web/issues/306)) ([d9a5b61](https://github.com/juspay/hyperswitch-web/commit/d9a5b611dbb191f1e3f5a4504f3729249e60d73b))
+
 ## [0.42.1](https://github.com/juspay/hyperswitch-web/compare/v0.42.0...v0.42.1) (2024-04-17)
 
 

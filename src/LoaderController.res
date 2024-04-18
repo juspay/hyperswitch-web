@@ -362,6 +362,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("paymentMethodList") {
           let list = dict->getJsonObjectFromDict("paymentMethodList")
+          let listDict = list->getDictFromJson
+          if optionsPayment.business.name === "" {
+            setOptionsPayment(prev => {
+              ...prev,
+              business: {
+                name: listDict->getString("merchant_name", ""),
+              },
+            })
+          }
           let finalLoadLatency = if launchTime <= 0.0 {
             -1.0
           } else {
@@ -370,11 +379,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let updatedState: PaymentType.loadType =
             list == Dict.make()->JSON.Encode.object
               ? LoadError(list)
-              : switch list->getDictFromJson->Dict.get("error") {
+              : switch listDict->Dict.get("error") {
                 | Some(_) => LoadError(list)
                 | None =>
                   let isNonEmptyPaymentMethodList =
-                    list->getDictFromJson->getArray("payment_methods")->Array.length > 0
+                    listDict->getArray("payment_methods")->Array.length > 0
                   isNonEmptyPaymentMethodList ? Loaded(list) : LoadError(list)
                 }
 
@@ -474,7 +483,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     }
     handleMessage(handleFun, "Error in parsing sent Data")
-  }, (showCardFormByDefault, paymentMethodOrder))
+  }, (showCardFormByDefault, paymentMethodOrder, optionsPayment))
 
   let observer = ResizeObserver.newResizerObserver(entries => {
     entries
