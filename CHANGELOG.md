@@ -1,3 +1,10 @@
+## [0.42.6](https://github.com/juspay/hyperswitch-web/compare/v0.42.5...v0.42.6) (2024-04-17)
+
+
+### Bug Fixes
+
+* mandate data pass hide checkbox ([#308](https://github.com/juspay/hyperswitch-web/issues/308)) ([51c98ab](https://github.com/juspay/hyperswitch-web/commit/51c98abc4da2438195cfbb7e418bf7f47f800008))
+
 ## [0.42.5](https://github.com/juspay/hyperswitch-web/compare/v0.42.4...v0.42.5) (2024-04-17)
 
 ## [0.42.4](https://github.com/juspay/hyperswitch-web/compare/v0.42.3...v0.42.4) (2024-04-17)
