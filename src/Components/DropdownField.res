@@ -48,7 +48,8 @@ let make = (
         })
 
       switch setDisplayValue {
-      | Some(fun) => fun(_ => findDisplayValue.displayValue->Option.getOr(value))
+      | Some(setDisplayValueFun) =>
+        setDisplayValueFun(_ => findDisplayValue.displayValue->Option.getOr(value))
       | None => ()
       }
     }
