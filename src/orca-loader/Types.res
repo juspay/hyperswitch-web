@@ -177,8 +177,8 @@ type rec ele = {
   mutable target: string,
   mutable enctype: string,
   mutable value: string,
-  submit: (. unit) => unit,
-  appendChild: (. ele) => unit,
+  submit: unit => unit,
+  appendChild: ele => unit,
 }
 @scope("document") @val external createElement: string => ele = "createElement"
 

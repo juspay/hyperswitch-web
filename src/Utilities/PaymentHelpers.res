@@ -79,69 +79,6 @@ let retrievePaymentIntent = (
   })
 }
 
-let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
-  open Promise
-  logApi(
-    ~optLogger,
-    ~url,
-    ~apiLogType=Request,
-    ~eventName=THREE_DS_METHOD_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
-    (),
-  )
-  let threeDsMethodStr = threeDsMethodData->JSON.Decode.string->Option.getOr("")
-  let body = `${encodeURIComponent("threeDSMethodData")}=${encodeURIComponent(threeDsMethodStr)}`
-
-  fetchApiWithNoCors(url, ~method=#POST, ~bodyStr=body, ())
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
-      res
-      ->Fetch.Response.text
-      ->then(text => {
-        logApi(
-          ~optLogger,
-          ~url,
-          ~data=text->JSON.Encode.string,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=THREE_DS_METHOD_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-          (),
-        )
-        ""->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger,
-        ~url,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=THREE_DS_METHOD_CALL,
-        (),
-      )
-      res->Fetch.Response.text
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.log2("Unable to call 3ds method ", exceptionMessage)
-    logApi(
-      ~optLogger,
-      ~url,
-      ~eventName=THREE_DS_METHOD_CALL,
-      ~apiLogType=NoResponse,
-      ~data=exceptionMessage,
-      ~logType=ERROR,
-      ~logCategory=API,
-      (),
-    )
-    reject(err)
-  })
-}
-
 let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
   let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
@@ -712,65 +649,78 @@ let rec intentCall = (
   })
   ->catch(err => {
     Promise.make((resolve, _) => {
-      let url = urlSearch(confirmParam.return_url)
-      url.searchParams.set("payment_intent_client_secret", clientSecret)
-      url.searchParams.set("status", "failed")
-      let exceptionMessage = err->formatException
-      logApi(
-        ~optLogger,
-        ~url=uri,
-        ~eventName,
-        ~apiLogType=NoResponse,
-        ~data=exceptionMessage,
-        ~logType=ERROR,
-        ~logCategory=API,
-        ~isPaymentSession,
-        (),
-      )
-      if counter >= 5 {
-        if !isPaymentSession {
-          closePaymentLoaderIfAny()
-          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
-        }
-        if handleUserError {
-          handleOpenUrl(url.href)
-        } else {
-          let failedSubmitResponse = getFailedSubmitResponse(
-            ~errorType="server_error",
-            ~message="Something went wrong",
-          )
-          resolve(failedSubmitResponse)
-        }
-      } else {
-        let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-        let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
-        let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
-        intentCall(
-          ~fetchApi,
-          ~uri=retrieveUri,
-          ~headers,
-          ~bodyStr,
-          ~confirmParam: ConfirmType.confirmParams,
-          ~clientSecret,
+      try {
+        let url = urlSearch(confirmParam.return_url)
+        url.searchParams.set("payment_intent_client_secret", clientSecret)
+        url.searchParams.set("status", "failed")
+        let exceptionMessage = err->formatException
+        logApi(
           ~optLogger,
-          ~handleUserError,
-          ~paymentType,
-          ~iframeId,
-          ~fetchMethod=#GET,
-          ~setIsManualRetryEnabled,
-          ~switchToCustomPod,
-          ~sdkHandleOneClickConfirmPayment,
-          ~counter=counter + 1,
+          ~url=uri,
+          ~eventName,
+          ~apiLogType=NoResponse,
+          ~data=exceptionMessage,
+          ~logType=ERROR,
+          ~logCategory=API,
           ~isPaymentSession,
           (),
         )
-        ->then(
-          res => {
-            resolve(res)
-            Promise.resolve()
-          },
+        if counter >= 5 {
+          if !isPaymentSession {
+            closePaymentLoaderIfAny()
+            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+          }
+          if handleUserError {
+            handleOpenUrl(url.href)
+          } else {
+            let failedSubmitResponse = getFailedSubmitResponse(
+              ~errorType="server_error",
+              ~message="Something went wrong",
+            )
+            resolve(failedSubmitResponse)
+          }
+        } else {
+          let paymentIntentID =
+            String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+          let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
+          let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
+          intentCall(
+            ~fetchApi,
+            ~uri=retrieveUri,
+            ~headers,
+            ~bodyStr,
+            ~confirmParam: ConfirmType.confirmParams,
+            ~clientSecret,
+            ~optLogger,
+            ~handleUserError,
+            ~paymentType,
+            ~iframeId,
+            ~fetchMethod=#GET,
+            ~setIsManualRetryEnabled,
+            ~switchToCustomPod,
+            ~sdkHandleOneClickConfirmPayment,
+            ~counter=counter + 1,
+            ~isPaymentSession,
+            (),
+          )
+          ->then(
+            res => {
+              resolve(res)
+              Promise.resolve()
+            },
+          )
+          ->ignore
+        }
+      } catch {
+      | _ =>
+        if !isPaymentSession {
+          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
+        }
+        let failedSubmitResponse = getFailedSubmitResponse(
+          ~errorType="server_error",
+          ~message="Something went wrong",
         )
-        ->ignore
+        resolve(failedSubmitResponse)
       }
     })->then(resolve)
   })
@@ -976,26 +926,39 @@ let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: p
       }
 
       switch list {
+      | LoadError(data)
       | Loaded(data) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
-        switch paymentList.mandate_payment {
-        | Some(_) =>
-          switch paymentType {
-          | Card
-          | Gpay
-          | Applepay
-          | KlarnaRedirect
-          | Paypal
-          | BankDebits =>
-            intentWithMandate(mandatePaymentType)
-          | _ => intentWithoutMandate(mandatePaymentType)
+        if paymentList.payment_methods->Array.length > 0 {
+          switch paymentList.mandate_payment {
+          | Some(_) =>
+            switch paymentType {
+            | Card
+            | Gpay
+            | Applepay
+            | KlarnaRedirect
+            | Paypal
+            | BankDebits =>
+              intentWithMandate(mandatePaymentType)
+            | _ => intentWithoutMandate(mandatePaymentType)
+            }
+          | None => intentWithoutMandate(mandatePaymentType)
           }
-        | None => intentWithoutMandate(mandatePaymentType)
+        } else {
+          postFailedSubmitResponse(
+            ~errortype="payment_methods_empty",
+            ~message="Payment Failed. Try again!",
+          )
+          Console.warn("Please enable atleast one Payment method.")
         }
       | SemiLoaded => intentWithoutMandate("")
-      | _ => ()
+      | _ =>
+        postFailedSubmitResponse(
+          ~errortype="payment_methods_loading",
+          ~message="Please wait. Try again!",
+        )
       }
     | None =>
       postFailedSubmitResponse(
@@ -1168,7 +1131,7 @@ let fetchPaymentMethodList = (
   })
 }
 
-let fetchCustomerDetails = (
+let fetchCustomerPaymentMethodList = (
   ~clientSecret,
   ~publishableKey,
   ~endpoint,

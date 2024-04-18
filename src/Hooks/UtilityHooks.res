@@ -33,4 +33,4 @@ let useIsCustomerAcceptanceRequired = (
     } else {
       !(isGuestCustomer || list.payment_type === NORMAL)
     }
-  }, (isSaveCardsChecked, list.payment_type))
+  }, (isSaveCardsChecked, list.payment_type, isGuestCustomer, displaySavedPaymentMethodsCheckbox))

@@ -6,12 +6,11 @@ let make = (
   ~loadSavedCards: PaymentType.savedCardsLoadState,
   ~cvcProps,
   ~paymentType,
-  ~list: PaymentMethodsRecord.list,
+  ~list,
 ) => {
   open CardUtils
   open Utils
   open UtilityHooks
-
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
@@ -226,7 +225,18 @@ let make = (
     }}
     <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
       <div className="pt-4 pb-2 flex items-center justify-start">
-        <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked list />
+        <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
+      </div>
+    </RenderIf>
+    <RenderIf condition={list.payment_type === SETUP_MANDATE}>
+      <div
+        className="opacity-50 text-xs mb-2 text-left"
+        style={ReactDOMStyle.make(
+          ~color=themeObj.colorText,
+          ~marginTop=themeObj.spacingGridColumn,
+          (),
+        )}>
+        <Terms mode={Card} />
       </div>
     </RenderIf>
     <RenderIf condition={!showFields}>

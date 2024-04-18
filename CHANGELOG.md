@@ -1,3 +1,68 @@
+## [0.43.2](https://github.com/juspay/hyperswitch-web/compare/v0.43.1...v0.43.2) (2024-04-18)
+
+
+### Bug Fixes
+
+* Added envLoggingUrl in webpack ([#294](https://github.com/juspay/hyperswitch-web/issues/294)) ([88587ac](https://github.com/juspay/hyperswitch-web/commit/88587ac725c03fa1362e3ad79222a290f4d86cdb))
+
+## [0.43.1](https://github.com/juspay/hyperswitch-web/compare/v0.43.0...v0.43.1) (2024-04-18)
+
+
+### Bug Fixes
+
+* **threedsmethod:** changed Three DS method API call to hidden Form Post ([#302](https://github.com/juspay/hyperswitch-web/issues/302)) ([e42a5a3](https://github.com/juspay/hyperswitch-web/commit/e42a5a3b0f68ba3264ffbe6d7afde41b1cc01d9d))
+
+# [0.43.0](https://github.com/juspay/hyperswitch-web/compare/v0.42.6...v0.43.0) (2024-04-18)
+
+
+### Features
+
+* mandate changes for Saved Card flow ([#309](https://github.com/juspay/hyperswitch-web/issues/309)) ([648ea87](https://github.com/juspay/hyperswitch-web/commit/648ea87d8e2b0c989edbe7949b43a2c1e70e70cc))
+
+## [0.42.6](https://github.com/juspay/hyperswitch-web/compare/v0.42.5...v0.42.6) (2024-04-17)
+
+
+### Bug Fixes
+
+* mandate data pass hide checkbox ([#308](https://github.com/juspay/hyperswitch-web/issues/308)) ([51c98ab](https://github.com/juspay/hyperswitch-web/commit/51c98abc4da2438195cfbb7e418bf7f47f800008))
+
+## [0.42.5](https://github.com/juspay/hyperswitch-web/compare/v0.42.4...v0.42.5) (2024-04-17)
+
+## [0.42.4](https://github.com/juspay/hyperswitch-web/compare/v0.42.3...v0.42.4) (2024-04-17)
+
+
+### Bug Fixes
+
+* promise unresolved type error ([#298](https://github.com/juspay/hyperswitch-web/issues/298)) ([03da575](https://github.com/juspay/hyperswitch-web/commit/03da57557f70ae36dc155392a6ccae2b9cad573e))
+
+## [0.42.3](https://github.com/juspay/hyperswitch-web/compare/v0.42.2...v0.42.3) (2024-04-17)
+
+
+### Bug Fixes
+
+* (paymenthelpers, paymentelement) promise being unresolved  ([#297](https://github.com/juspay/hyperswitch-web/issues/297)) ([6494f51](https://github.com/juspay/hyperswitch-web/commit/6494f517a95321b4cb0911f772866deff055d878))
+
+## [0.42.2](https://github.com/juspay/hyperswitch-web/compare/v0.42.1...v0.42.2) (2024-04-17)
+
+
+### Bug Fixes
+
+* changes card payment ([#306](https://github.com/juspay/hyperswitch-web/issues/306)) ([d9a5b61](https://github.com/juspay/hyperswitch-web/commit/d9a5b611dbb191f1e3f5a4504f3729249e60d73b))
+
+## [0.42.1](https://github.com/juspay/hyperswitch-web/compare/v0.42.0...v0.42.1) (2024-04-17)
+
+
+### Bug Fixes
+
+* card payment changes ([#303](https://github.com/juspay/hyperswitch-web/issues/303)) ([25dc996](https://github.com/juspay/hyperswitch-web/commit/25dc996c82fd459a67cf4836c2652cdee91b1cca))
+
+# [0.42.0](https://github.com/juspay/hyperswitch-web/compare/v0.41.0...v0.42.0) (2024-04-17)
+
+
+### Features
+
+* (revert) mandate Changes for the Saved card screen & SDK Button Loader changes ([#301](https://github.com/juspay/hyperswitch-web/issues/301)) ([b490fed](https://github.com/juspay/hyperswitch-web/commit/b490fed4702306997a642041fdff56417822b7ca))
+
 # [0.41.0](https://github.com/juspay/hyperswitch-web/compare/v0.40.0...v0.41.0) (2024-04-16)
 
 

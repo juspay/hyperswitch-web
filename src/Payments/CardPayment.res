@@ -180,6 +180,7 @@ let make = (
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
   let conditionsForShowingSaveCardCheckbox =
+    list.mandate_payment->Option.isNone &&
     !isGuestCustomer &&
     list.payment_type !== SETUP_MANDATE &&
     options.displaySavedPaymentMethodsCheckbox &&
@@ -274,7 +275,7 @@ let make = (
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="pt-4 pb-2 flex items-center justify-start">
               <SaveDetailsCheckbox
-                isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked list
+                isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked
               />
             </div>
           </RenderIf>
@@ -292,19 +293,23 @@ let make = (
       />
     </RenderIf>
     <RenderIf condition={!isBancontact}>
-      {switch (list.mandate_payment, options.terms.card) {
-      | (Some(_), Auto)
-      | (_, Always) =>
+      {switch (list.mandate_payment, options.terms.card, list.payment_type) {
+      | (Some(_), Auto, NEW_MANDATE)
+      | (Some(_), Auto, SETUP_MANDATE)
+      | (_, Always, NEW_MANDATE)
+      | (_, Always, SETUP_MANDATE)
+      | (_, _, SETUP_MANDATE)
+      | (_, _, NEW_MANDATE) =>
         <div
           className="opacity-50 text-xs mb-2 text-left"
           style={ReactDOMStyle.make(
             ~color=themeObj.colorText,
-            ~marginTop=themeObj.spacingGridColumn->addSize(10.0, Pixel),
+            ~marginTop=themeObj.spacingGridColumn,
             (),
           )}>
           <Terms mode={Card} />
         </div>
-      | (_, _) => React.null
+      | (_, _, _) => React.null
       }}
     </RenderIf>
   </div>
