@@ -79,69 +79,6 @@ let retrievePaymentIntent = (
   })
 }
 
-let threeDsMethod = (url, threeDsMethodData, ~optLogger) => {
-  open Promise
-  logApi(
-    ~optLogger,
-    ~url,
-    ~apiLogType=Request,
-    ~eventName=THREE_DS_METHOD_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
-    (),
-  )
-  let threeDsMethodStr = threeDsMethodData->JSON.Decode.string->Option.getOr("")
-  let body = `${encodeURIComponent("threeDSMethodData")}=${encodeURIComponent(threeDsMethodStr)}`
-
-  fetchApiWithNoCors(url, ~method=#POST, ~bodyStr=body, ())
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
-      res
-      ->Fetch.Response.text
-      ->then(text => {
-        logApi(
-          ~optLogger,
-          ~url,
-          ~data=text->JSON.Encode.string,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=THREE_DS_METHOD_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-          (),
-        )
-        ""->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger,
-        ~url,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=THREE_DS_METHOD_CALL,
-        (),
-      )
-      res->Fetch.Response.text
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.log2("Unable to call 3ds method ", exceptionMessage)
-    logApi(
-      ~optLogger,
-      ~url,
-      ~eventName=THREE_DS_METHOD_CALL,
-      ~apiLogType=NoResponse,
-      ~data=exceptionMessage,
-      ~logType=ERROR,
-      ~logCategory=API,
-      (),
-    )
-    reject(err)
-  })
-}
-
 let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
   let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")

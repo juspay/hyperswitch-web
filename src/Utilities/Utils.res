@@ -835,37 +835,6 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
   })
 }
 
-let fetchApiWithNoCors = (
-  uri,
-  ~bodyStr: string="",
-  ~headers=Dict.make(),
-  ~method: Fetch.method,
-  (),
-) => {
-  open Promise
-  let body = switch method {
-  | #GET => resolve(None)
-  | _ => resolve(Some(Fetch.Body.string(bodyStr)))
-  }
-  body->then(body => {
-    Fetch.fetch(
-      uri,
-      {
-        method,
-        mode: #"no-cors",
-        ?body,
-        headers: getHeaders(~headers, ~uri, ()),
-      },
-    )
-    ->catch(err => {
-      reject(err)
-    })
-    ->then(resp => {
-      resolve(resp)
-    })
-  })
-}
-
 let arrayJsonToCamelCase = arr => {
   arr->Array.map(item => {
     item->transformKeys(CamelCase)
@@ -1192,7 +1161,7 @@ let makeForm = (element, url, id) => {
   form.action = url
   form.method = "POST"
   form.enctype = "application/x-www-form-urlencoded;charset=UTF-8"
-  form.style = "display: hidden; "
+  form.style = "display: hidden;"
   element->appendChild(form)
   form
 }

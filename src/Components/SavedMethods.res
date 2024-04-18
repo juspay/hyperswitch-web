@@ -1,5 +1,3 @@
-open CardUtils
-open Utils
 @react.component
 let make = (
   ~paymentToken,
@@ -10,6 +8,9 @@ let make = (
   ~paymentType,
   ~list,
 ) => {
+  open CardUtils
+  open Utils
+  open UtilityHooks
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
@@ -19,6 +20,9 @@ let make = (
     postFailedSubmitResponse(~errortype="validation_error", ~message)
     loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT, ())
   }
+  let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
+  let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let isGuestCustomer = useIsGuestCustomer()
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (token, _) = paymentToken
@@ -32,6 +36,13 @@ let make = (
     | _ => <Icon size=brandIconSize name="default-card" />
     }
   }
+
+  let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
+    ~displaySavedPaymentMethodsCheckbox,
+    ~isSaveCardsChecked,
+    ~list,
+    ~isGuestCustomer,
+  )
 
   let bottomElement = {
     savedMethods
@@ -90,7 +101,7 @@ let make = (
 
   let paymentType = customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType, ~savedMethod=true)
+  useHandlePostMessages(~complete, ~empty, ~paymentType, ~savedMethod=true)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
@@ -103,6 +114,7 @@ let make = (
         ~customerId,
         ~cvcNumber,
         ~requiresCvv=customerMethod.requiresCvv,
+        ~isCustomerAcceptanceRequired,
       )
     | _ => {
         let paymentMethodType = switch customerMethod.paymentMethodType {
@@ -115,6 +127,7 @@ let make = (
           ~customerId,
           ~paymentMethod=customerMethod.paymentMethod,
           ~paymentMethodType,
+          ~isCustomerAcceptanceRequired,
         )
       }
     }
@@ -153,8 +166,19 @@ let make = (
         }
       }
     }
-  }, (areRequiredFieldsValid, requiredFieldsBody, empty, complete, customerMethod))
+  }, (
+    areRequiredFieldsValid,
+    requiredFieldsBody,
+    empty,
+    complete,
+    customerMethod,
+    isCustomerAcceptanceRequired,
+  ))
   useSubmitPaymentData(submitCallback)
+
+  let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
+    !isGuestCustomer && list.payment_type !== SETUP_MANDATE && displaySavedPaymentMethodsCheckbox
+  }, (isGuestCustomer, list.payment_type, displaySavedPaymentMethodsCheckbox))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields) {
@@ -179,6 +203,22 @@ let make = (
     } else {
       <RenderIf condition={!showFields}> {bottomElement} </RenderIf>
     }}
+    <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
+      <div className="pt-4 pb-2 flex items-center justify-start">
+        <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
+      </div>
+    </RenderIf>
+    <RenderIf condition={list.payment_type === SETUP_MANDATE}>
+      <div
+        className="opacity-50 text-xs mb-2 text-left"
+        style={ReactDOMStyle.make(
+          ~color=themeObj.colorText,
+          ~marginTop=themeObj.spacingGridColumn,
+          (),
+        )}>
+        <Terms mode={Card} />
+      </div>
+    </RenderIf>
     <RenderIf condition={!showFields}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer"

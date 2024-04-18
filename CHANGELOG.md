@@ -1,3 +1,24 @@
+## [0.43.2](https://github.com/juspay/hyperswitch-web/compare/v0.43.1...v0.43.2) (2024-04-18)
+
+
+### Bug Fixes
+
+* Added envLoggingUrl in webpack ([#294](https://github.com/juspay/hyperswitch-web/issues/294)) ([88587ac](https://github.com/juspay/hyperswitch-web/commit/88587ac725c03fa1362e3ad79222a290f4d86cdb))
+
+## [0.43.1](https://github.com/juspay/hyperswitch-web/compare/v0.43.0...v0.43.1) (2024-04-18)
+
+
+### Bug Fixes
+
+* **threedsmethod:** changed Three DS method API call to hidden Form Post ([#302](https://github.com/juspay/hyperswitch-web/issues/302)) ([e42a5a3](https://github.com/juspay/hyperswitch-web/commit/e42a5a3b0f68ba3264ffbe6d7afde41b1cc01d9d))
+
+# [0.43.0](https://github.com/juspay/hyperswitch-web/compare/v0.42.6...v0.43.0) (2024-04-18)
+
+
+### Features
+
+* mandate changes for Saved Card flow ([#309](https://github.com/juspay/hyperswitch-web/issues/309)) ([648ea87](https://github.com/juspay/hyperswitch-web/commit/648ea87d8e2b0c989edbe7949b43a2c1e70e70cc))
+
 ## [0.42.6](https://github.com/juspay/hyperswitch-web/compare/v0.42.5...v0.42.6) (2024-04-17)
 
 

@@ -11,6 +11,7 @@ const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const sdkEnv = process.env.sdkEnv;
 const envSdkUrl = process.env.envSdkUrl;
 const envBackendUrl = process.env.envBackendUrl;
+const envLoggingUrl = process.env.envLoggingUrl;
 
 //git rev-parse --abbrev-ref HEAD
 let repoVersion = require("./package.json").version;
@@ -62,10 +63,15 @@ if (envBackendUrl === undefined) {
   confirmEndPoint = envBackendUrl;
 }
 
-let logEndpoint =
-  sdkEnv === "prod"
-    ? "https://api.hyperswitch.io/logs/sdk"
-    : "https://sandbox.hyperswitch.io/logs/sdk";
+let logEndpoint;
+if (envLoggingUrl === undefined) {
+  logEndpoint =
+    sdkEnv === "prod"
+      ? "https://api.hyperswitch.io/logs/sdk"
+      : "https://sandbox.hyperswitch.io/logs/sdk";
+} else {
+  logEndpoint = envLoggingUrl;
+}
 
 // Set this to true to enable logging
 let enableLogging = true;
