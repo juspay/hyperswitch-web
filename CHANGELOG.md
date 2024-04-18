@@ -1,3 +1,10 @@
+## [0.43.2](https://github.com/juspay/hyperswitch-web/compare/v0.43.1...v0.43.2) (2024-04-18)
+
+
+### Bug Fixes
+
+* Added envLoggingUrl in webpack ([#294](https://github.com/juspay/hyperswitch-web/issues/294)) ([88587ac](https://github.com/juspay/hyperswitch-web/commit/88587ac725c03fa1362e3ad79222a290f4d86cdb))
+
 ## [0.43.1](https://github.com/juspay/hyperswitch-web/compare/v0.43.0...v0.43.1) (2024-04-18)
 
 
