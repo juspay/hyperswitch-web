@@ -858,7 +858,7 @@ let rec maskPayload = payloadJson => {
   }
 }
 
-let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
+let usePaymentIntent = (optLogger, paymentType) => {
   open RecoilAtoms
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
