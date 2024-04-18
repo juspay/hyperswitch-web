@@ -1,8 +1,13 @@
 type optionType = {
-  label: string,
   value: string,
+  label?: string,
   displayValue?: string,
 }
+
+let updateArrayOfStringToOptionsTypeArray = arrayOfString =>
+  arrayOfString->Array.map(item => {
+    value: item,
+  })
 
 open RecoilAtoms
 @react.component
@@ -39,9 +44,7 @@ let make = (
         options
         ->Array.find((ele: optionType) => ele.value === value)
         ->Option.getOr({
-          label: "",
           value: "",
-          displayValue: "",
         })
 
       switch setDisplayValue {
@@ -60,7 +63,6 @@ let make = (
           options
           ->Array.get(0)
           ->Option.getOr({
-            label: "",
             value: "",
           })
         ).value
@@ -120,7 +122,7 @@ let make = (
             {options
             ->Array.mapWithIndex((item, index) => {
               <option key={Int.toString(index)} value=item.value>
-                {React.string(item.label)}
+                {React.string(item.label->Option.getOr(item.value))}
               </option>
             })
             ->React.array}

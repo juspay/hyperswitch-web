@@ -426,15 +426,8 @@ let make = (
               />
             </div>
           | Currency(currencyArr) =>
-            let updatedCurrencyArray: array<
-              DropdownField.optionType,
-            > = currencyArr->Array.map(item => {
-              let optionVal: DropdownField.optionType = {
-                label: item,
-                value: item,
-              }
-              optionVal
-            })
+            let updatedCurrencyArray =
+              currencyArr->DropdownField.updateArrayOfStringToOptionsTypeArray
             <DropdownField
               appearance=config.appearance
               fieldName=localeString.currencyLabel
@@ -533,15 +526,8 @@ let make = (
                     }}
                   </div>
                 | CountryAndPincode(countryArr) =>
-                  let updatedCountryArray: array<
-                    DropdownField.optionType,
-                  > = countryArr->Array.map(item => {
-                    let optionVal: DropdownField.optionType = {
-                      label: item,
-                      value: item,
-                    }
-                    optionVal
-                  })
+                  let updatedCountryArray =
+                    countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <div className="flex gap-1">
                     <DropdownField
                       appearance=config.appearance
@@ -682,15 +668,8 @@ let make = (
                   />
                 | BlikCode => <BlikCodePaymentInput />
                 | Country =>
-                  let updatedCountryNames: array<
-                    DropdownField.optionType,
-                  > = countryNames->Array.map(item => {
-                    let optionVal: DropdownField.optionType = {
-                      label: item,
-                      value: item,
-                    }
-                    optionVal
-                  })
+                  let updatedCountryNames =
+                    countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
@@ -700,15 +679,8 @@ let make = (
                     options=updatedCountryNames
                   />
                 | AddressCountry(countryArr) =>
-                  let updatedCountryArr: array<
-                    DropdownField.optionType,
-                  > = countryArr->Array.map(item => {
-                    let optionVal: DropdownField.optionType = {
-                      label: item,
-                      value: item,
-                    }
-                    optionVal
-                  })
+                  let updatedCountryArr =
+                    countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
@@ -718,15 +690,8 @@ let make = (
                     options=updatedCountryArr
                   />
                 | Bank =>
-                  let updatedBankNames: array<
-                    DropdownField.optionType,
-                  > = bankNames->Array.map(item => {
-                    let optionVal: DropdownField.optionType = {
-                      label: item,
-                      value: item,
-                    }
-                    optionVal
-                  })
+                  let updatedBankNames =
+                    bankNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.bankLabel

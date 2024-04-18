@@ -23,16 +23,14 @@ let make = () => {
     DropdownField.optionType,
   > = countryAndCodeCodeList->Array.reduce([], (acc, countryObj) => {
     let countryObjDict = countryObj->getDictFromJson
+    let countryFlag = countryObjDict->getString("country_flag", "")
+    let phoneNumberCode = countryObjDict->getString("phone_number_code", "")
+    let countryName = countryObjDict->getString("country_name", "")
+
     let phoneNumberOptionsValue: DropdownField.optionType = {
-      label: `${countryObjDict->getString("country_flag", "")} ${countryObjDict->getString(
-          "country_name",
-          "",
-        )} ${countryObjDict->getString("phone_number_code", "")}`,
-      displayValue: `${countryObjDict->getString("country_flag", "")} ${countryObjDict->getString(
-          "phone_number_code",
-          "",
-        )}`,
-      value: countryObjDict->getString("phone_number_code", ""),
+      label: `${countryFlag} ${countryName} ${phoneNumberCode}`,
+      displayValue: `${countryFlag} ${phoneNumberCode}`,
+      value: phoneNumberCode,
     }
     acc->Array.push(phoneNumberOptionsValue)
     acc
@@ -76,11 +74,13 @@ let make = () => {
       phoneNumberCodeOptions
       ->Array.find(ele => ele.value === valueDropDown)
       ->Option.getOr({
-        label: "",
         value: "",
-        displayValue: "",
       })
-    setDisplayValue(_ => findDisplayValue.displayValue->Option.getOr(findDisplayValue.label))
+    setDisplayValue(_ =>
+      findDisplayValue.displayValue->Option.getOr(
+        findDisplayValue.label->Option.getOr(findDisplayValue.value),
+      )
+    )
     None
   }, [phoneNumberCodeOptions])
 

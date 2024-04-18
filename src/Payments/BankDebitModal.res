@@ -319,11 +319,9 @@ let make = (~setModalData) => {
               disabled=false
               options=[
                 {
-                  label: "Savings",
                   value: "Savings",
                 },
                 {
-                  label: "Checking",
                   value: "Checking",
                 },
               ]

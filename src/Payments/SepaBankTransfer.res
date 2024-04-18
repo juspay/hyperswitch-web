@@ -56,15 +56,8 @@ let make = (~paymentType, ~list) => {
   }, (email, fullName, country))
   useSubmitPaymentData(submitCallback)
 
-  let updatedOptionsArrayForCountry: array<
-    DropdownField.optionType,
-  > = countryNames->Array.map(item => {
-    let optionVal: DropdownField.optionType = {
-      label: item,
-      value: item,
-    }
-    optionVal
-  })
+  let updatedOptionsArrayForCountry =
+    countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
 
   <div
     className="flex flex-col animate-slowShow"
