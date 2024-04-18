@@ -727,10 +727,11 @@ let rec intentCall = (
 }
 
 let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
-  let list = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
-  let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
-  let setIsManualRetryEnabled = Recoil.useSetRecoilState(RecoilAtoms.isManualRetryEnabled)
+  open RecoilAtoms
+  let list = Recoil.useRecoilValueFromAtom(list)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
+  let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
+  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="", ()) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -794,15 +795,14 @@ let rec maskPayload = payloadJson => {
   }
 }
 
-let usePaymentIntent = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
-  let blockConfirm = Recoil.useRecoilValueFromAtom(RecoilAtoms.isConfirmBlocked)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
-  let list = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
-  let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+let usePaymentIntent = (optLogger, paymentType) => {
+  open RecoilAtoms
+  let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
+  let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
+  let list = Recoil.useRecoilValueFromAtom(list)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
 
-  let (isManualRetryEnabled, setIsManualRetryEnabled) = Recoil.useRecoilState(
-    RecoilAtoms.isManualRetryEnabled,
-  )
+  let (isManualRetryEnabled, setIsManualRetryEnabled) = Recoil.useRecoilState(isManualRetryEnabled)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,

@@ -1,7 +1,7 @@
 open PaymentType
 open RecoilAtoms
 @react.component
-let make = (~paymentType, ~countryProps, ~list: PaymentMethodsRecord.list) => {
+let make = (~paymentType, ~list: PaymentMethodsRecord.list) => {
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -15,7 +15,7 @@ let make = (~paymentType, ~countryProps, ~list: PaymentMethodsRecord.list) => {
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
 
-  let (_clientCountry, countryNames) = countryProps
+  let countryNames = Utils.getCountryNames(Country.country)
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {

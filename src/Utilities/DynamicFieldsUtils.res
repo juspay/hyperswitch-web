@@ -1,3 +1,5 @@
+open RecoilAtoms
+
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
   let fieldNameArr = field.value->String.split(" ")
   let requiredFieldsArr = item.required_field->String.split(".")
@@ -107,22 +109,22 @@ let useRequiredFieldsEmptyAndValid = (
   ~cardExpiry,
   ~cvcNumber,
 ) => {
-  let email = Recoil.useRecoilValueFromAtom(RecoilAtoms.userEmailAddress)
-  let fullName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
-  let billingName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBillingName)
-  let line1 = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressline2)
-  let phone = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
-  let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState)
-  let city = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode)
-  let blikCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBlikCode)
-  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
-  let selectedBank = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBank)
-  let currency = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
-  let setAreRequiredFieldsValid = Recoil.useSetRecoilState(RecoilAtoms.areRequiredFieldsValid)
-  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(RecoilAtoms.areRequiredFieldsEmpty)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
+  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
+  let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
+  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
+  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
+  let phone = Recoil.useRecoilValueFromAtom(userPhoneNumber)
+  let state = Recoil.useRecoilValueFromAtom(userAddressState)
+  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
+  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
+  let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
+  let country = Recoil.useRecoilValueFromAtom(userCountry)
+  let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
+  let currency = Recoil.useRecoilValueFromAtom(userCurrency)
+  let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
+  let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
@@ -141,8 +143,7 @@ let useRequiredFieldsEmptyAndValid = (
       | PhoneNumber => phone.value !== ""
       | StateAndCity => state.value !== "" && city.value !== ""
       | CountryAndPincode(countryArr) =>
-        (country !== "" || countryArr->Array.length === 0) &&
-          postalCode.value !== ""
+        (country !== "" || countryArr->Array.length === 0) && postalCode.value !== ""
 
       | AddressCity => city.value !== ""
       | AddressPincode => postalCode.value !== ""
@@ -161,44 +162,47 @@ let useRequiredFieldsEmptyAndValid = (
     })
     setAreRequiredFieldsValid(_ => areRequiredFieldsValid)
 
-    let areRequiredFieldsEmpty =
-      fieldsArrWithBillingAddress->Array.reduce(false, (acc, paymentMethodFields: PaymentMethodsRecord.paymentMethodsFields) => {
-        acc ||
-        switch (paymentMethodFields) {
-        | Email => email.value === ""
-        | FullName => fullName.value === ""
-        | Country => country === "" && countryNames->Array.length > 0
-        | AddressCountry(countryArr) => country === "" && countryArr->Array.length > 0
-        | BillingName => billingName.value === ""
-        | AddressLine1 => line1.value === ""
-        | AddressLine2 => !billingAddress.isUseBillingAddress && line2.value === ""
-        | Bank => selectedBank === "" && bankNames->Array.length > 0
-        | StateAndCity => city.value === "" || state.value === ""
-        | CountryAndPincode(countryArr) =>
-          (country === "" && countryArr->Array.length > 0) || postalCode.value === ""
-        | PhoneNumber => phone.value === ""
-        | AddressCity => city.value === ""
-        | AddressPincode => postalCode.value === ""
-        | AddressState => state.value === ""
-        | BlikCode => blikCode.value === ""
-        | Currency(currencyArr) => currency === "" && currencyArr->Array.length > 0
-        | CardNumber => cardNumber === ""
-        | CardExpiryMonth =>
-          let (month, _) = CardUtils.getExpiryDates(cardExpiry)
-          month === ""
-        | CardExpiryYear =>
-          let (_, year) = CardUtils.getExpiryDates(cardExpiry)
-          year === ""
-        | CardExpiryMonthAndYear =>
-          let (month, year) = CardUtils.getExpiryDates(cardExpiry)
-          month === "" || year === ""
-        | CardCvc => cvcNumber === ""
-        | CardExpiryAndCvc =>
-          let (month, year) = CardUtils.getExpiryDates(cardExpiry)
-          month === "" || year === "" || cvcNumber === ""
-        | _ => false
-        }
-      })
+    let areRequiredFieldsEmpty = fieldsArrWithBillingAddress->Array.reduce(false, (
+      acc,
+      paymentMethodFields: PaymentMethodsRecord.paymentMethodsFields,
+    ) => {
+      open CardUtils
+      acc ||
+      switch paymentMethodFields {
+      | Email => email.value === ""
+      | FullName => fullName.value === ""
+      | Country => country === "" && countryNames->Array.length > 0
+      | AddressCountry(countryArr) => country === "" && countryArr->Array.length > 0
+      | BillingName => billingName.value === ""
+      | AddressLine1 => line1.value === ""
+      | AddressLine2 => !billingAddress.isUseBillingAddress && line2.value === ""
+      | Bank => selectedBank === "" && bankNames->Array.length > 0
+      | StateAndCity => city.value === "" || state.value === ""
+      | CountryAndPincode(countryArr) =>
+        (country === "" && countryArr->Array.length > 0) || postalCode.value === ""
+      | PhoneNumber => phone.value === ""
+      | AddressCity => city.value === ""
+      | AddressPincode => postalCode.value === ""
+      | AddressState => state.value === ""
+      | BlikCode => blikCode.value === ""
+      | Currency(currencyArr) => currency === "" && currencyArr->Array.length > 0
+      | CardNumber => cardNumber === ""
+      | CardExpiryMonth =>
+        let (month, _) = getExpiryDates(cardExpiry)
+        month === ""
+      | CardExpiryYear =>
+        let (_, year) = getExpiryDates(cardExpiry)
+        year === ""
+      | CardExpiryMonthAndYear =>
+        let (month, year) = getExpiryDates(cardExpiry)
+        month === "" || year === ""
+      | CardCvc => cvcNumber === ""
+      | CardExpiryAndCvc =>
+        let (month, year) = getExpiryDates(cardExpiry)
+        month === "" || year === "" || cvcNumber === ""
+      | _ => false
+      }
+    })
     setAreRequiredFieldsEmpty(_ => areRequiredFieldsEmpty)
     None
   }, (
@@ -231,48 +235,32 @@ let useSetInitialRequiredFields = (
   ~requiredFields: array<PaymentMethodsRecord.required_fields>,
   ~paymentMethodType,
 ) => {
-  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let (email, setEmail) = Recoil.useLoggedRecoilState(RecoilAtoms.userEmailAddress, "email", logger)
-  let (fullName, setFullName) = Recoil.useLoggedRecoilState(
-    RecoilAtoms.userFullName,
-    "fullName",
-    logger,
-  )
+  let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", logger)
+  let (fullName, setFullName) = Recoil.useLoggedRecoilState(userFullName, "fullName", logger)
   let (billingName, setBillingName) = Recoil.useLoggedRecoilState(
-    RecoilAtoms.userBillingName,
+    userBillingName,
     "billingName",
     logger,
   )
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline1, "line1", logger)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline2, "line2", logger)
-  let (phone, setPhone) = Recoil.useLoggedRecoilState(RecoilAtoms.userPhoneNumber, "phone", logger)
-  let (state, setState) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressState, "state", logger)
-  let (city, setCity) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressCity, "city", logger)
+  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
+  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
+  let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", logger)
+  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", logger)
+  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
   let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
-    RecoilAtoms.userAddressPincode,
+    userAddressPincode,
     "postal_code",
     logger,
   )
-  let (blikCode, setBlikCode) = Recoil.useLoggedRecoilState(
-    RecoilAtoms.userBlikCode,
-    "blikCode",
-    logger,
-  )
-  let (country, setCountry) = Recoil.useLoggedRecoilState(
-    RecoilAtoms.userCountry,
-    "country",
-    logger,
-  )
+  let (blikCode, setBlikCode) = Recoil.useLoggedRecoilState(userBlikCode, "blikCode", logger)
+  let (country, setCountry) = Recoil.useLoggedRecoilState(userCountry, "country", logger)
   let (selectedBank, setSelectedBank) = Recoil.useLoggedRecoilState(
-    RecoilAtoms.userBank,
+    userBank,
     "selectedBank",
     logger,
   )
-  let (currency, setCurrency) = Recoil.useLoggedRecoilState(
-    RecoilAtoms.userCurrency,
-    "currency",
-    logger,
-  )
+  let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -390,20 +378,20 @@ let useRequiredFieldsBody = (
   ~isAllStoredCardsHaveName,
   ~setRequiredFieldsBody,
 ) => {
-  let email = Recoil.useRecoilValueFromAtom(RecoilAtoms.userEmailAddress)
-  let fullName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
-  let billingName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBillingName)
-  let line1 = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressline2)
-  let phone = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
-  let state = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressState)
-  let city = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userAddressPincode)
-  let blikCode = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBlikCode)
-  let country = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCountry)
-  let selectedBank = Recoil.useRecoilValueFromAtom(RecoilAtoms.userBank)
-  let currency = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
+  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
+  let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
+  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
+  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
+  let phone = Recoil.useRecoilValueFromAtom(userPhoneNumber)
+  let state = Recoil.useRecoilValueFromAtom(userAddressState)
+  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
+  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
+  let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
+  let country = Recoil.useRecoilValueFromAtom(userCountry)
+  let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
+  let currency = Recoil.useRecoilValueFromAtom(userCurrency)
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -646,19 +634,19 @@ let updateDynamicFields = (
 }
 
 let useSubmitCallback = () => {
-  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline1, "line1", logger)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline2, "line2", logger)
-  let (state, setState) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressState, "state", logger)
+  let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
+  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
+  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", logger)
   let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
-    RecoilAtoms.userAddressPincode,
+    userAddressPincode,
     "postal_code",
     logger,
   )
-  let (city, setCity) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressCity, "city", logger)
-  let {billingAddress} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
+  let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
