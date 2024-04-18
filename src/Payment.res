@@ -12,10 +12,10 @@ let setUserError = message => {
 let make = (~paymentMode, ~integrateError, ~logger) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
-  let cardScheme = Recoil.useRecoilValueFromAtom(RecoilAtoms.cardBrand)
-  let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
+  let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
+  let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
-  let paymentToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentTokenAtom)
+  let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let (token, _) = paymentToken
 
   let {iframeId} = keys
@@ -55,12 +55,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let cardType = React.useMemo1(() => {
     cardBrand->getCardType
   }, [cardBrand])
-
-  let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
-  let clientCountry = Utils.getClientCountry(clientTimeZone)
-
-  let countryNames = Utils.getCountryNames(Country.country)
-  let countryProps = (clientCountry.countryName, countryNames)
 
   let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
 
@@ -343,16 +337,12 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
   React.useEffect(() => {
-    setCardError(_ =>
-      isCardValid->Option.getOr(true) ? "" : localeString.inValidCardErrorText
-    )
+    setCardError(_ => isCardValid->Option.getOr(true) ? "" : localeString.inValidCardErrorText)
     None
   }, [isCardValid])
 
   React.useEffect(() => {
-    setCvcError(_ =>
-      isCVCValid->Option.getOr(true) ? "" : localeString.inCompleteCVCErrorText
-    )
+    setCvcError(_ => isCVCValid->Option.getOr(true) ? "" : localeString.inCompleteCVCErrorText)
     None
   }, [isCVCValid])
 
@@ -427,15 +417,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     <ErrorOccured />
   } else {
     <RenderPaymentMethods
-      paymentType
-      cardProps
-      expiryProps
-      cvcProps
-      zipProps
-      handleElementFocus
-      blurState
-      countryProps
-      isFocus
+      paymentType cardProps expiryProps cvcProps zipProps handleElementFocus blurState isFocus
     />
   }
 }

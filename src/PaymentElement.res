@@ -8,13 +8,7 @@ let cardsToRender = (width: int) => {
   noOfCards
 }
 @react.component
-let make = (
-  ~cardProps,
-  ~expiryProps,
-  ~cvcProps,
-  ~countryProps,
-  ~paymentType: CardThemeType.mode,
-) => {
+let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let sessionsObj = Recoil.useRecoilValueFromAtom(sessions)
   let {
     showCardFormByDefault,
@@ -307,12 +301,12 @@ let make = (
               </React.Suspense>
             | None =>
               <React.Suspense fallback={loader()}>
-                <KlarnaPaymentLazy paymentType countryProps list />
+                <KlarnaPaymentLazy paymentType list />
               </React.Suspense>
             }
           | _ =>
             <React.Suspense fallback={loader()}>
-              <KlarnaPaymentLazy paymentType countryProps list />
+              <KlarnaPaymentLazy paymentType list />
             </React.Suspense>
           }}
         </SessionPaymentWrapper>
@@ -322,7 +316,7 @@ let make = (
         </React.Suspense>
       | SepaTransfer =>
         <React.Suspense fallback={loader()}>
-          <SepaBankTransferLazy paymentType list countryProps />
+          <SepaBankTransferLazy paymentType list />
         </React.Suspense>
       | BacsTransfer =>
         <React.Suspense fallback={loader()}>

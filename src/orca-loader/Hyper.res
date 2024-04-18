@@ -131,6 +131,12 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         logger.setLogInfo(~value=Window.href, ~eventName=APP_INITIATED, ~timestamp=sdkTimestamp, ())
       }
     }->Sentry.sentryLogger
+    let isSecure = Window.protocol === "https:"
+    let isLocal = GlobalVars.sdkUrl->String.includes("localhost")
+    if !isSecure && !isLocal {
+      manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.href, ~logger, ())
+      Exn.raiseError("Insecure domain: " ++ Window.href)
+    }
     switch Window.getHyper->Nullable.toOption {
     | Some(hyperMethod) => {
         logger.setLogInfo(

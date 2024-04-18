@@ -2,11 +2,7 @@ open RecoilAtoms
 open Utils
 
 @react.component
-let make = (
-  ~paymentType: CardThemeType.mode,
-  ~list: PaymentMethodsRecord.list,
-  ~countryProps: (string, array<string>),
-) => {
+let make = (~paymentType, ~list) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -19,7 +15,7 @@ let make = (
     ~billingDetails=fields.billingDetails,
     ~logger=loggerState,
   )
-  let (_clientCountry, countryNames) = countryProps
+  let countryNames = Utils.getCountryNames(Country.country)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let clientCountryCode =
     Country.country

@@ -120,6 +120,9 @@ external hostname: string = "hostname"
 @val @scope(("window", "location"))
 external href: string = "href"
 
+@val @scope(("window", "location"))
+external protocol: string = "protocol"
+
 let isSandbox = hostname === "beta.hyperswitch.io"
 
 let isInteg = hostname === "dev.hyperswitch.io"
