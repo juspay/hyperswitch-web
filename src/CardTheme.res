@@ -39,6 +39,10 @@ let getPaymentMode = val => {
   | "cardNumber" => CardNumberElement
   | "cardExpiry" => CardExpiryElement
   | "cardCvc" => CardCVCElement
+  | "googlePay" => GooglePayElement
+  | "payPal" => PayPalElement
+  | "applePay" => ApplePayElement
+  | "paymentRequestButtons" => PaymentRequestButtonsElement
   | _ => NONE
   }
 }

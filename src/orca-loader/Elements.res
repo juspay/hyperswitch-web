@@ -246,6 +246,10 @@ let make = (
       | "cardNumber"
       | "cardExpiry"
       | "cardCvc"
+      | "googlePay"
+      | "payPal"
+      | "applePay"
+      | "paymentRequestButtons"
       | "payment" => ()
       | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger, ())
       }
@@ -269,7 +273,10 @@ let make = (
           ->JSON.Encode.object
         let message =
           [
-            ("paymentElementCreate", (componentType == "payment")->JSON.Encode.bool),
+            (
+              "paymentElementCreate",
+              componentType->Utils.isComponentTypeForPaymentElementCreate->JSON.Encode.bool,
+            ),
             ("otherElements", otherElements->JSON.Encode.bool),
             ("options", newOptions),
             ("componentType", componentType->JSON.Encode.string),
@@ -286,41 +293,53 @@ let make = (
             ("launchTime", launchTime->JSON.Encode.float),
           ]->Dict.fromArray
 
+        let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)
+
         let handleApplePayMounted = (event: Types.event) => {
           let json = event.data->anyTypeToJson
           let dict = json->getDictFromJson
 
           if dict->Dict.get("applePayMounted")->Option.isSome {
-            switch sessionForApplePay->Nullable.toOption {
-            | Some(session) =>
-              try {
-                if session.canMakePayments() {
-                  let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
-                  mountedIframeRef->Window.iframePostMessage(msg)
-                } else {
-                  Console.log("CANNOT MAKE PAYMENT USING APPLE PAY")
-                  logger.setLogInfo(
-                    ~value="CANNOT MAKE PAYMENT USING APPLE PAY",
-                    ~eventName=APPLE_PAY_FLOW,
-                    ~paymentMethod="APPLE_PAY",
-                    ~logType=ERROR,
-                    (),
-                  )
+            if wallets.applePay === Auto {
+              switch sessionForApplePay->Nullable.toOption {
+              | Some(session) =>
+                try {
+                  if session.canMakePayments() {
+                    let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
+                    mountedIframeRef->Window.iframePostMessage(msg)
+                  } else {
+                    Console.log("CANNOT MAKE PAYMENT USING APPLE PAY")
+                    logger.setLogInfo(
+                      ~value="CANNOT MAKE PAYMENT USING APPLE PAY",
+                      ~eventName=APPLE_PAY_FLOW,
+                      ~paymentMethod="APPLE_PAY",
+                      ~logType=ERROR,
+                      (),
+                    )
+                  }
+                } catch {
+                | exn => {
+                    let exnString = exn->anyTypeToJson->JSON.stringify
+                    Console.log("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
+                    logger.setLogInfo(
+                      ~value=exnString,
+                      ~eventName=APPLE_PAY_FLOW,
+                      ~paymentMethod="APPLE_PAY",
+                      ~logType=ERROR,
+                      (),
+                    )
+                  }
                 }
-              } catch {
-              | exn => {
-                  let exnString = exn->anyTypeToJson->JSON.stringify
-                  Console.log("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
-                  logger.setLogInfo(
-                    ~value=exnString,
-                    ~eventName=APPLE_PAY_FLOW,
-                    ~paymentMethod="APPLE_PAY",
-                    ~logType=ERROR,
-                    (),
-                  )
-                }
+              | None => ()
               }
-            | None => ()
+            } else {
+              logger.setLogInfo(
+                ~value="ApplePay is set as 'never' by merchant",
+                ~eventName=APPLE_PAY_FLOW,
+                ~paymentMethod="APPLE_PAY",
+                ~logType=INFO,
+                (),
+              )
             }
           }
         }
@@ -682,7 +701,10 @@ let make = (
               }
               ->then(res => {
                 let (json, applePayPresent, googlePayPresent) = res
-                if componentType === "payment" && applePayPresent->Belt.Option.isSome {
+                if (
+                  componentType->Utils.isComponentTypeForPaymentElementCreate &&
+                    applePayPresent->Belt.Option.isSome
+                ) {
                   //do operations here
                   let processPayment = (token: JSON.t) => {
                     //let body = PaymentBody.applePayBody(~token)
@@ -781,7 +803,11 @@ let make = (
 
                   addSmartEventListener("message", handleApplePayMessages, "onApplePayMessages")
                 }
-                if componentType === "payment" && googlePayPresent->Belt.Option.isSome {
+                if (
+                  componentType->Utils.isComponentTypeForPaymentElementCreate &&
+                  googlePayPresent->Belt.Option.isSome &&
+                  wallets.googlePay === Auto
+                ) {
                   let dict = json->getDictFromJson
                   let sessionObj = SessionsType.itemToObjMapper(dict, Others)
                   let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
@@ -903,6 +929,14 @@ let make = (
                 json->resolve
               })
               ->ignore
+            } else if wallets.googlePay === Never {
+              logger.setLogInfo(
+                ~value="GooglePay is set as never by merchant",
+                ~eventName=GOOGLE_PAY_FLOW,
+                ~paymentMethod="GOOGLE_PAY",
+                ~logType=INFO,
+                (),
+              )
             }
           }
           let msg = [("sendSessionTokensResponse", true->JSON.Encode.bool)]->Dict.fromArray

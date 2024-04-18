@@ -1214,3 +1214,34 @@ let generateRandomString = length => {
   })
   result.contents
 }
+
+let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
+  switch paymentType {
+  | GooglePayElement => wallets->Array.filter(item => item === "google_pay")
+  | PayPalElement => wallets->Array.filter(item => item === "paypal")
+  | ApplePayElement => wallets->Array.filter(item => item === "apple_pay")
+  | _ => wallets
+  }
+}
+
+let componentsForPaymentElementCreate = [
+  "payment",
+  "googlePay",
+  "payPal",
+  "applePay",
+  "paymentRequestButtons",
+]
+
+let isComponentTypeForPaymentElementCreate = componentType => {
+  componentsForPaymentElementCreate->Array.includes(componentType)
+}
+
+let isWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
+  switch paymentType {
+  | GooglePayElement
+  | PayPalElement
+  | ApplePayElement
+  | PaymentRequestButtonsElement => true
+  | _ => false
+  }
+}

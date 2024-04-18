@@ -9,6 +9,10 @@ type mode =
   | CardNumberElement
   | CardExpiryElement
   | CardCVCElement
+  | GooglePayElement
+  | PayPalElement
+  | ApplePayElement
+  | PaymentRequestButtonsElement
   | NONE
 type label = Above | Floating | Never
 type themeClass = {

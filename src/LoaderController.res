@@ -79,6 +79,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | CardCVCElement
     | Card =>
       setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+    | GooglePayElement
+    | PayPalElement
+    | ApplePayElement
+    | PaymentRequestButtonsElement
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
         setOptionsPayment(_ => paymentOptions)
@@ -493,8 +497,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   }
 
   React.useEffect(() => {
+    let iframeHeight = divH->Float.equal(0.0) ? divH : divH +. 1.0
     handlePostMessage([
-      ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
+      ("iframeHeight", iframeHeight->JSON.Encode.float),
       ("iframeId", iframeId->JSON.Encode.string),
     ])
     None
