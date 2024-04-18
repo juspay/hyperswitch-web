@@ -1,3 +1,10 @@
+# [0.43.0](https://github.com/juspay/hyperswitch-web/compare/v0.42.6...v0.43.0) (2024-04-18)
+
+
+### Features
+
+* mandate changes for Saved Card flow ([#309](https://github.com/juspay/hyperswitch-web/issues/309)) ([648ea87](https://github.com/juspay/hyperswitch-web/commit/648ea87d8e2b0c989edbe7949b43a2c1e70e70cc))
+
 ## [0.42.6](https://github.com/juspay/hyperswitch-web/compare/v0.42.5...v0.42.6) (2024-04-17)
 
 
