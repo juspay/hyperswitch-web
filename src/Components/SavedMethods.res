@@ -103,26 +103,6 @@ let make = (
 
   useHandlePostMessages(~complete, ~empty, ~paymentType, ~savedMethod=true)
 
-  React.useEffect(() => {
-    let (token, customerId) = paymentToken
-    let customerMethod =
-      savedMethods
-      ->Array.filter(savedMethod => {
-        savedMethod.paymentToken === token
-      })
-      ->Array.get(0)
-      ->Option.getOr(PaymentType.defaultCustomerMethods)
-    let complete = customerMethod.paymentMethod !== "card" || (complete && !empty)
-    handlePostMessageEvents(
-      ~complete,
-      ~empty,
-      ~paymentType=customerMethod.paymentMethod,
-      ~loggerState,
-      ~savedMethod=true,
-    )
-    None
-  }, (empty, complete, paymentToken))
-
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
