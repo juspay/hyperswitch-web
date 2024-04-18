@@ -134,7 +134,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     let isLocal = GlobalVars.sdkUrl->String.includes("localhost")
     if !isSecure && !isLocal {
       manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.href, ~logger, ())
-      Exn.raiseError("Unsecure domain: " ++ Window.href)
+      Exn.raiseError("Insecure domain: " ++ Window.href)
     }
     switch Window.getHyper->Nullable.toOption {
     | Some(hyperMethod) => {
