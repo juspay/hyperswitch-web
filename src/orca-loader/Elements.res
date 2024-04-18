@@ -114,7 +114,7 @@ let make = (
       )
     })
 
-    let fetchPaymentsList = mountedIframeRef => {
+    let fetchPaymentsList = (mountedIframeRef, componentType) => {
       let handlePaymentMethodsLoaded = (event: Types.event) => {
         let json = event.data->Identity.anyTypeToJson
         let dict = json->getDictFromJson
@@ -161,10 +161,14 @@ let make = (
         }
       }
       let msg = [("sendPaymentMethodsResponse", true->JSON.Encode.bool)]->Dict.fromArray
-      addSmartEventListener("message", handlePaymentMethodsLoaded, "onPaymentMethodsLoaded")
+      addSmartEventListener(
+        "message",
+        handlePaymentMethodsLoaded,
+        `onPaymentMethodsLoaded-${componentType}`,
+      )
       preMountLoaderIframeDiv->Window.iframePostMessage(msg)
     }
-    let fetchCustomerPaymentMethods = (mountedIframeRef, disableSaveCards) => {
+    let fetchCustomerPaymentMethods = (mountedIframeRef, disableSaveCards, componentType) => {
       if !disableSaveCards {
         let handleCustomerPaymentMethodsLoaded = (event: Types.event) => {
           let json = event.data->Identity.anyTypeToJson
@@ -180,7 +184,7 @@ let make = (
         addSmartEventListener(
           "message",
           handleCustomerPaymentMethodsLoaded,
-          "onCustomerPaymentMethodsLoaded",
+          `onCustomerPaymentMethodsLoaded-${componentType}`,
         )
       }
       let msg =
@@ -919,6 +923,14 @@ let make = (
                   } catch {
                   | _ => Console.log("Error loading Gpay")
                   }
+                } else if wallets.googlePay === Never {
+                  logger.setLogInfo(
+                    ~value="GooglePay is set as never by merchant",
+                    ~eventName=GOOGLE_PAY_FLOW,
+                    ~paymentMethod="GOOGLE_PAY",
+                    ~logType=INFO,
+                    (),
+                  )
                 }
 
                 json->resolve
@@ -929,29 +941,25 @@ let make = (
                 json->resolve
               })
               ->ignore
-            } else if wallets.googlePay === Never {
-              logger.setLogInfo(
-                ~value="GooglePay is set as never by merchant",
-                ~eventName=GOOGLE_PAY_FLOW,
-                ~paymentMethod="GOOGLE_PAY",
-                ~logType=INFO,
-                (),
-              )
             }
           }
           let msg = [("sendSessionTokensResponse", true->JSON.Encode.bool)]->Dict.fromArray
-          addSmartEventListener("message", handleSessionTokensLoaded, "onSessionTokensLoaded")
+          addSmartEventListener(
+            "message",
+            handleSessionTokensLoaded,
+            `onSessionTokensLoaded-${componentType}`,
+          )
           preMountLoaderIframeDiv->Window.iframePostMessage(msg)
         }
         preMountLoaderMountedPromise
         ->then(_ => {
-          fetchPaymentsList(mountedIframeRef)
+          fetchPaymentsList(mountedIframeRef, componentType)
           if (
             newOptions
             ->getDictFromJson
             ->getBool("displaySavedPaymentMethods", true)
           ) {
-            fetchCustomerPaymentMethods(mountedIframeRef, false)
+            fetchCustomerPaymentMethods(mountedIframeRef, false, componentType)
           }
           fetchSessionTokens(mountedIframeRef)
           mountedIframeRef->Window.iframePostMessage(message)
