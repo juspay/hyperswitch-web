@@ -3,15 +3,25 @@ open Utils
 let make = () => {
   let logger = OrcaLogger.make()
 
-  let mountToInnerHTML = innerHTML => {
-    let ele = Window.querySelector("#threeDsInvisibleIframe")
-    switch ele->Nullable.toOption {
-    | Some(elem) => elem->Window.innerHTML(innerHTML)
-    | None =>
-      Console.warn(
-        "INTEGRATION ERROR: Div does not seem to exist on which threeDSMethod is to be mounted",
-      )
-    }
+  let (stateMetadata, setStateMetadata) = React.useState(_ => Dict.make()->JSON.Encode.object)
+
+  let handleLoaded = _ev => {
+    stateMetadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
+    let metadataDict = stateMetadata->JSON.Decode.object->Option.getOr(Dict.make())
+    let iframeId = metadataDict->getString("iframeId", "")
+    LoggerUtils.handleLogging(
+      ~optLogger=Some(logger),
+      ~eventName=THREE_DS_METHOD_RESULT,
+      ~value="Y",
+      ~paymentMethod="CARD",
+      (),
+    )
+    handlePostMessage([
+      ("fullscreen", true->JSON.Encode.bool),
+      ("param", `3dsAuth`->JSON.Encode.string),
+      ("iframeId", iframeId->JSON.Encode.string),
+      ("metadata", stateMetadata),
+    ])
   }
 
   React.useEffect0(() => {
@@ -21,6 +31,7 @@ let make = () => {
       let dict = json->Utils.getDictFromJson
       if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
+        setStateMetadata(_ => metadata)
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         let threeDsDataDict =
           metaDataDict
@@ -42,74 +53,65 @@ let make = () => {
           ->Option.getOr(Dict.make()->JSON.Encode.object)
         let paymentIntentId = metaDataDict->Utils.getString("paymentIntentId", "")
         let publishableKey = metaDataDict->Utils.getString("publishableKey", "")
-        let iframeId = metaDataDict->getString("iframeId", "")
 
         logger.setClientSecret(paymentIntentId)
         logger.setMerchantId(publishableKey)
 
-        open Promise
-        PaymentHelpers.threeDsMethod(threeDsUrl, threeDsMethodData, ~optLogger=Some(logger))
-        ->then(res => {
-          if res == "" {
-            Exn.raiseError("Empty response from threeDsMethod")->reject
-          } else {
-            LoggerUtils.handleLogging(
-              ~optLogger=Some(logger),
-              ~eventName=THREE_DS_METHOD_RESULT,
-              ~value="Y",
-              ~paymentMethod="CARD",
-              (),
-            )
-            mountToInnerHTML(res)
-            metadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
-            handlePostMessage([
-              ("fullscreen", true->JSON.Encode.bool),
-              ("param", `3dsAuth`->JSON.Encode.string),
-              ("iframeId", iframeId->JSON.Encode.string),
-              ("metadata", metadata),
-            ])
-            resolve(res)
-          }
-        })
-        ->catch(err => {
-          let exceptionMessage = err->Utils.formatException
+        let iframeId = metaDataDict->getString("iframeId", "")
+
+        let handleFailureScenarios = value => {
+          LoggerUtils.handleLogging(
+            ~optLogger=Some(logger),
+            ~eventName=THREE_DS_METHOD_RESULT,
+            ~value,
+            ~paymentMethod="CARD",
+            ~logType=ERROR,
+            (),
+          )
           metadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
           handlePostMessage([
             ("fullscreen", true->JSON.Encode.bool),
             ("param", `3dsAuth`->JSON.Encode.string),
             ("iframeId", iframeId->JSON.Encode.string),
-            ("metadata", metadata),
+            ("metadata", stateMetadata),
           ])
-          LoggerUtils.handleLogging(
-            ~optLogger=Some(logger),
-            ~eventName=THREE_DS_METHOD_RESULT,
-            ~value=exceptionMessage->JSON.stringify,
-            ~paymentMethod="CARD",
-            ~logType=ERROR,
-            (),
-          )
-          reject(err)
-        })
-        ->ignore
+        }
 
-        let headersDict =
-          metaDataDict
-          ->getJsonObjectFromDict("headers")
-          ->JSON.Decode.object
-          ->Option.getOr(Dict.make())
-        let headers = Dict.make()
+        let ele = Window.querySelector("#threeDsInvisibleDiv")
 
-        headersDict
-        ->Dict.toArray
-        ->Array.forEach(entries => {
-          let (x, val) = entries
-          Dict.set(headers, x, val->JSON.Decode.string->Option.getOr(""))
-        })
+        switch ele->Nullable.toOption {
+        | Some(elem) => {
+            let form = elem->makeForm(threeDsUrl, "threeDsHiddenPostMethod")
+            let input = Types.createElement("input")
+            input.name = encodeURIComponent("threeDSMethodData")
+            let threeDsMethodStr = threeDsMethodData->JSON.Decode.string->Option.getOr("")
+            input.value = encodeURIComponent(threeDsMethodStr)
+            form.target = "threeDsInvisibleIframe"
+            form.appendChild(input)
+            try {
+              form.submit()
+            } catch {
+            | err => {
+                let exceptionMessage = err->Utils.formatException->JSON.stringify
+                handleFailureScenarios(exceptionMessage)
+              }
+            }
+          }
+        | None => handleFailureScenarios("Unable to Locate threeDsInvisibleDiv")
+        }
       }
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
   })
 
-  <div id="threeDsInvisibleIframe" className="bg-black-100 h-96" />
+  <>
+    <div id="threeDsInvisibleDiv" className="hidden" />
+    <iframe
+      id="threeDsInvisibleIframe"
+      name="threeDsInvisibleIframe"
+      className="h-96 invisible"
+      onLoad=handleLoaded
+    />
+  </>
 }

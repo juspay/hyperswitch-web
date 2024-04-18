@@ -835,37 +835,6 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
   })
 }
 
-let fetchApiWithNoCors = (
-  uri,
-  ~bodyStr: string="",
-  ~headers=Dict.make(),
-  ~method: Fetch.method,
-  (),
-) => {
-  open Promise
-  let body = switch method {
-  | #GET => resolve(None)
-  | _ => resolve(Some(Fetch.Body.string(bodyStr)))
-  }
-  body->then(body => {
-    Fetch.fetch(
-      uri,
-      {
-        method,
-        mode: #"no-cors",
-        ?body,
-        headers: getHeaders(~headers, ~uri, ()),
-      },
-    )
-    ->catch(err => {
-      reject(err)
-    })
-    ->then(resp => {
-      resolve(resp)
-    })
-  })
-}
-
 let arrayJsonToCamelCase = arr => {
   arr->Array.map(item => {
     item->transformKeys(CamelCase)
@@ -1192,7 +1161,7 @@ let makeForm = (element, url, id) => {
   form.action = url
   form.method = "POST"
   form.enctype = "application/x-www-form-urlencoded;charset=UTF-8"
-  form.style = "display: hidden; "
+  form.style = "display: hidden;"
   element->appendChild(form)
   form
 }
@@ -1233,4 +1202,15 @@ let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
       handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true, ())
     }
   })
+}
+
+let generateRandomString = length => {
+  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+  let result = ref("")
+  let charactersLength = characters->String.length
+  Int.range(0, length)->Array.forEach(_ => {
+    let charIndex = mod((Math.random() *. 100.0)->Float.toInt, charactersLength)
+    result := result.contents ++ characters->String.charAt(charIndex)
+  })
+  result.contents
 }
