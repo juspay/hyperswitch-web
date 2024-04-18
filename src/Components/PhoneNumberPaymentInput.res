@@ -73,9 +73,7 @@ let make = () => {
     let findDisplayValue =
       phoneNumberCodeOptions
       ->Array.find(ele => ele.value === valueDropDown)
-      ->Option.getOr({
-        value: "",
-      })
+      ->Option.getOr(DropdownField.defaultValue)
     setDisplayValue(_ =>
       findDisplayValue.displayValue->Option.getOr(
         findDisplayValue.label->Option.getOr(findDisplayValue.value),

@@ -9,6 +9,10 @@ let updateArrayOfStringToOptionsTypeArray = arrayOfString =>
     value: item,
   })
 
+let defaultValue = {
+  value: "",
+}
+
 open RecoilAtoms
 @react.component
 let make = (
@@ -43,9 +47,7 @@ let make = (
       let findDisplayValue =
         options
         ->Array.find((ele: optionType) => ele.value === value)
-        ->Option.getOr({
-          value: "",
-        })
+        ->Option.getOr(defaultValue)
 
       switch setDisplayValue {
       | Some(setDisplayValueFun) =>
@@ -63,9 +65,7 @@ let make = (
         (
           options
           ->Array.get(0)
-          ->Option.getOr({
-            value: "",
-          })
+          ->Option.getOr(defaultValue)
         ).value
       )
     }
