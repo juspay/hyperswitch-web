@@ -1,3 +1,10 @@
+## [0.43.3](https://github.com/juspay/hyperswitch-web/compare/v0.43.2...v0.43.3) (2024-04-18)
+
+
+### Bug Fixes
+
+* block non https urls ([#295](https://github.com/juspay/hyperswitch-web/issues/295)) ([2c745eb](https://github.com/juspay/hyperswitch-web/commit/2c745ebf4b26703ad600cb0e5d04742d7eda79ee))
+
 ## [0.43.2](https://github.com/juspay/hyperswitch-web/compare/v0.43.1...v0.43.2) (2024-04-18)
 
 
