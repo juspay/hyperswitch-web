@@ -1,3 +1,10 @@
+## [0.43.5](https://github.com/juspay/hyperswitch-web/compare/v0.43.4...v0.43.5) (2024-04-18)
+
+
+### Bug Fixes
+
+* updated premountloader iframe src ([#311](https://github.com/juspay/hyperswitch-web/issues/311)) ([188ccf0](https://github.com/juspay/hyperswitch-web/commit/188ccf0f9d5cd59859590fa5870b61c569ce70fc))
+
 ## [0.43.4](https://github.com/juspay/hyperswitch-web/compare/v0.43.3...v0.43.4) (2024-04-18)
 
 ## [0.43.3](https://github.com/juspay/hyperswitch-web/compare/v0.43.2...v0.43.3) (2024-04-18)
