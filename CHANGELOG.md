@@ -1,3 +1,10 @@
+## [0.44.1](https://github.com/juspay/hyperswitch-web/compare/v0.44.0...v0.44.1) (2024-04-19)
+
+
+### Bug Fixes
+
+* whitelist 127.0.0.1 for local dev ([#316](https://github.com/juspay/hyperswitch-web/issues/316)) ([7212181](https://github.com/juspay/hyperswitch-web/commit/7212181ca57e1d49eca3feda1c6ba7a5746cebeb))
+
 # [0.44.0](https://github.com/juspay/hyperswitch-web/compare/v0.43.5...v0.44.0) (2024-04-19)
 
 
