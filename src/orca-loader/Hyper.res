@@ -132,7 +132,10 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       }
     }->Sentry.sentryLogger
     let isSecure = Window.protocol === "https:"
-    let isLocal = GlobalVars.sdkUrl->String.includes("localhost")
+    let isLocal =
+      ["localhost", "127.0.0.1"]
+      ->Array.find(url => Window.hostname->String.includes(url))
+      ->Option.isSome
     if !isSecure && !isLocal {
       manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.href, ~logger, ())
       Exn.raiseError("Insecure domain: " ++ Window.href)
