@@ -5,7 +5,7 @@ let make = () => {
   let setLoggerState = Recoil.useSetRecoilState(RecoilAtoms.loggerAtom)
 
   let paymentMode = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let paymentType = paymentMode->CardTheme.getPaymentMode
+  let paymentType = paymentMode->CardThemeType.getPaymentMode
   let (logger, initTimestamp) = React.useMemo0(() => {
     (OrcaLogger.make(~source=Elements(paymentType), ()), Date.now())
   })

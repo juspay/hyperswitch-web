@@ -73,7 +73,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
-    switch paymentMode->CardTheme.getPaymentMode {
+    switch paymentMode->CardThemeType.getPaymentMode {
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
@@ -180,7 +180,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     if dict->Dict.toArray->Array.length > 0 {
       generateStyleSheet("", dict, "themestyle")
     }
-    switch paymentMode->CardTheme.getPaymentMode {
+    switch paymentMode->CardThemeType.getPaymentMode {
     | Payment => ()
     | _ =>
       let styleClass = [

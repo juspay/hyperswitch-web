@@ -137,6 +137,12 @@ let convertToScreamingSnakeCase = text => {
   text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
 }
 
+let toSnakeCaseWithSeparator = (str, separator) => {
+  str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
+    `${separator}${letter->String.toLowerCase}`
+  )
+}
+
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
 let logInfo = log => {
@@ -302,8 +308,15 @@ let getRefFromOption = val => {
 }
 let getSourceString = source => {
   switch source {
-  | Loader => "orca-loader"
-  | Elements(_) => "orca-element"
+  | Loader => "hyper_loader"
+  | Elements(paymentMode) => {
+      let formattedPaymentMode =
+        paymentMode
+        ->CardThemeType.getPaymentModeToStrMapper
+        ->toSnakeCaseWithSeparator("_")
+
+      "hyper" ++ formattedPaymentMode
+    }
   | Headless => "headless"
   }
 }

@@ -32,21 +32,6 @@ let getShowLoader = (str, logger) => {
   }
 }
 
-let getPaymentMode = val => {
-  switch val {
-  | "card" => Card
-  | "payment" => Payment
-  | "cardNumber" => CardNumberElement
-  | "cardExpiry" => CardExpiryElement
-  | "cardCvc" => CardCVCElement
-  | "googlePay" => GooglePayElement
-  | "payPal" => PayPalElement
-  | "applePay" => ApplePayElement
-  | "paymentRequestButtons" => PaymentRequestButtonsElement
-  | _ => NONE
-  }
-}
-
 let defaultAppearance = {
   theme: Default,
   variables: DefaultTheme.default,
