@@ -338,6 +338,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
+    | PaymentMethodCollectElement
     | NONE =>
       <Icon size=brandIconSize name="default-card" />
     }

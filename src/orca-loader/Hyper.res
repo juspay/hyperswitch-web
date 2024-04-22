@@ -244,7 +244,11 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 ~logCategory=API,
                 (),
               )
-              resolve()
+              let jsonError =
+                [("err", data->Js.Json.stringify), ("message", `Failed with error ${statusCode}`)]
+                ->Js.Dict.fromArray
+                ->anyTypeToJson
+              Promise.reject(Js.Exn.raiseError(jsonError->Js.Json.stringify))
             })
             ->ignore
           } else {
@@ -263,6 +267,10 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         })
         ->then(data => {
           [("paymentIntent", data)]->Dict.fromArray->JSON.Encode.object->Promise.resolve
+        })
+        ->catch(err => {
+          let exceptionMessage = err->Utils.formatException
+          err->Promise.reject
         })
       }
 

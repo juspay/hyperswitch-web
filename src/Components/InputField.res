@@ -37,7 +37,8 @@ let make = (
     | Card
     | CardCVCElement
     | CardExpiryElement
-    | CardNumberElement =>
+    | CardNumberElement
+    | PaymentMethodCollectElement =>
       setEleClassName(_ => val)
     | _ => ()
     }

@@ -9,6 +9,7 @@ type mode =
   | CardNumberElement
   | CardExpiryElement
   | CardCVCElement
+  | PaymentMethodCollectElement
   | NONE
 type label = Above | Floating | Never
 type themeClass = {
