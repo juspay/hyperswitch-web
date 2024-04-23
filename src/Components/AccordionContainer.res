@@ -2,13 +2,13 @@ open RecoilAtoms
 module Loader = {
   @react.component
   let make = (~cardShimmerCount) => {
-    let list = Recoil.useRecoilValueFromAtom(list)
+    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
     let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
     let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
     let layoutClass = CardUtils.getLayoutClass(layout)
     open PaymentType
     open PaymentElementShimmer
-    switch list {
+    switch paymentMethodList {
     | SemiLoaded =>
       Array.make(~length=cardShimmerCount - 1, "")
       ->Array.mapWithIndex((_, i) => {
@@ -61,7 +61,7 @@ module Loader = {
 @react.component
 let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let list = Recoil.useRecoilValueFromAtom(list)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (showMore, setShowMore) = React.useState(_ => false)
@@ -81,7 +81,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
       !showMore &&
       !layoutClass.spacedAccordionItems &&
       index == 0 &&
-      list == SemiLoaded &&
+      paymentMethodList == SemiLoaded &&
       cardOptionDetails->Array.length == 1
     ) {
       `${themeObj.borderRadius} ${themeObj.borderRadius} 0px 0px`

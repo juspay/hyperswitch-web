@@ -21,7 +21,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
-  let methodslist = Recoil.useRecoilValueFromAtom(list)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
@@ -115,7 +115,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   )
 
   let (walletList, paymentOptionsList, actualList) = React.useMemo(() => {
-    switch methodslist {
+    switch paymentMethodList {
     | Loaded(paymentlist) =>
       let paymentOrder =
         paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
@@ -140,7 +140,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     | _ => ([], [], [])
     }
   }, (
-    methodslist,
+    paymentMethodList,
     paymentMethodOrder,
     isApplePayReady,
     isGooglePayReady,
@@ -149,7 +149,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   ))
 
   React.useEffect(() => {
-    switch methodslist {
+    switch paymentMethodList {
     | Loaded(paymentlist) =>
       let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
 
@@ -186,7 +186,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     | _ => ()
     }
     None
-  }, (methodslist, walletList, paymentOptionsList, actualList))
+  }, (paymentMethodList, walletList, paymentOptionsList, actualList))
   React.useEffect(() => {
     switch sessionsObj {
     | Loaded(ssn) => setSessions(_ => ssn)
@@ -226,7 +226,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         ? prev
         : layoutClass.defaultCollapsed
         ? ""
-        : switch methodslist {
+        : switch paymentMethodList {
           | SemiLoaded
           | LoadError(_) =>
             showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? "card" : ""
@@ -238,7 +238,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           }
     )
     None
-  }, (layoutClass.defaultCollapsed, paymentOptions, methodslist, selectedOption))
+  }, (layoutClass.defaultCollapsed, paymentOptions, paymentMethodList, selectedOption))
   React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
       let isCard: bool = cardOptions->Array.includes(selectedOption)
@@ -391,7 +391,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   React.useEffect(() => {
     let evalMethodsList = () =>
-      switch methodslist {
+      switch paymentMethodList {
       | SemiLoaded | LoadError(_) | Loaded(_) =>
         handlePostMessage([("ready", true->JSON.Encode.bool)])
       | _ => ()
@@ -409,7 +409,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       }
     }
     None
-  }, (methodslist, customerPaymentMethods))
+  }, (paymentMethodList, customerPaymentMethods))
 
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
@@ -467,7 +467,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     <PoweredBy />
-    {switch methodslist {
+    {switch paymentMethodList {
     | LoadError(_) => React.null
     | _ =>
       <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
