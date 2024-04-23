@@ -177,7 +177,7 @@ let make = (
   useSubmitPaymentData(submitCallback)
 
   let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
-    !isGuestCustomer && list.payment_type !== SETUP_MANDATE && displaySavedPaymentMethodsCheckbox
+    !isGuestCustomer && list.payment_type === NEW_MANDATE && displaySavedPaymentMethodsCheckbox
   }, (isGuestCustomer, list.payment_type, displaySavedPaymentMethodsCheckbox))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">

@@ -1,3 +1,17 @@
+## [0.44.1](https://github.com/juspay/hyperswitch-web/compare/v0.44.0...v0.44.1) (2024-04-19)
+
+
+### Bug Fixes
+
+* whitelist 127.0.0.1 for local dev ([#316](https://github.com/juspay/hyperswitch-web/issues/316)) ([7212181](https://github.com/juspay/hyperswitch-web/commit/7212181ca57e1d49eca3feda1c6ba7a5746cebeb))
+
+# [0.44.0](https://github.com/juspay/hyperswitch-web/compare/v0.43.5...v0.44.0) (2024-04-19)
+
+
+### Features
+
+* normal mandate changes ([#314](https://github.com/juspay/hyperswitch-web/issues/314)) ([0ce1540](https://github.com/juspay/hyperswitch-web/commit/0ce1540623ddbb95c76cb12217e05eccd7ff537a))
+
 ## [0.43.5](https://github.com/juspay/hyperswitch-web/compare/v0.43.4...v0.43.5) (2024-04-18)
 
 
