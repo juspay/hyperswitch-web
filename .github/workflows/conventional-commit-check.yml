@@ -84,3 +84,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh --repo ${{ github.event.repository.full_name }} pr edit --remove-label 'S-conventions-not-followed' ${{ github.event.pull_request.number }}
+
+      - name: Check for label
+        if: ${{ github.event.action == 'labeled' }}
+        run: echo "Label 'your-desired-label' added."
+
+      - name: Handle other cases
+        if: ${{ github.event.action != 'labeled' }}
+        run: echo "Error - Please add label to your Pull Request."
