@@ -90,6 +90,11 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
       "color": theme.colorText,
       "borderRadius": theme.borderRadius,
     },
+    ".Input-Compressed": {
+      "border": `0.1em solid #000000`,
+      "boxShadow": "0.12em 0.12em",
+      "color": theme.colorText,
+    },
     ".Input:-webkit-autofill": {
       "transition": "background-color 5000s ease-in-out 0s",
       "-webkitTextFillColor": `${theme.colorText} !important`,

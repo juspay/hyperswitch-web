@@ -16,6 +16,7 @@ let make = (
   open UtilityHooks
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {innerLayout} = config.appearance
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
@@ -194,6 +195,17 @@ let make = (
         className="flex flex-col"
         style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
         <div className="w-full">
+          <RenderIf condition={innerLayout === Compressed}>
+            <div
+              style={ReactDOMStyle.make(
+                ~marginBottom="5px",
+                ~fontSize=themeObj.fontSizeLg,
+                ~opacity="0.6",
+                (),
+              )}>
+              {React.string("Card information")}
+            </div>
+          </RenderIf>
           <RenderIf condition={!isBancontact}>
             <PaymentInputField
               fieldName=localeString.cardNumberLabel
@@ -210,15 +222,18 @@ let make = (
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
+              className={innerLayout === Spaced ? "" : "!border-b-0"}
             />
             <div
               className="flex flex-row w-full place-content-between"
               style={ReactDOMStyle.make(
-                ~marginTop=themeObj.spacingGridColumn,
-                ~gridColumnGap=themeObj.spacingGridRow,
+                ~marginTop={
+                  innerLayout === Spaced ? themeObj.spacingGridColumn : ""
+                },
+                ~gridColumnGap={innerLayout === Spaced ? themeObj.spacingGridRow : ""},
                 (),
               )}>
-              <div className="w-[45%]">
+              <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.validThruText
                   isValid=isExpiryValid
@@ -235,7 +250,7 @@ let make = (
                   placeholder="MM / YY"
                 />
               </div>
-              <div className="w-[45%]">
+              <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.cvcTextLabel
                   isValid=isCVCValid
@@ -253,7 +268,9 @@ let make = (
                   )}
                   appearance=config.appearance
                   type_="tel"
-                  className="tracking-widest w-full"
+                  className={`tracking-widest w-full ${innerLayout === Spaced
+                      ? ""
+                      : "!border-l-0"}`}
                   maxLength=4
                   inputRef=cvcRef
                   placeholder="123"

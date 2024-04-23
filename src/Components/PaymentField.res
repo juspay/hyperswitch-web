@@ -21,6 +21,7 @@ let make = (
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
@@ -77,7 +78,10 @@ let make = (
   let inputClass = getClassName("Input")
 
   <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
-    <RenderIf condition={fieldName->String.length > 0 && config.appearance.labels == Above}>
+    <RenderIf
+      condition={fieldName->String.length > 0 &&
+      config.appearance.labels == Above &&
+      isSpacedInnerLayout}>
       <div
         className={`Label ${labelClass}`}
         style={ReactDOMStyle.make(
@@ -105,7 +109,9 @@ let make = (
           name
           ?maxLength
           ?pattern
-          className={`Input ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
+          className={`${isSpacedInnerLayout
+              ? "Input"
+              : "Input-Compressed"} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
           placeholder={config.appearance.labels == Above || config.appearance.labels == Never
             ? placeholder
             : ""}

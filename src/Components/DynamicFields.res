@@ -65,6 +65,7 @@ let make = (
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
 
@@ -435,11 +436,22 @@ let make = (
               options=currencyArr
             />
           | FullName =>
-            <FullNamePaymentInput
-              paymentType
-              customFieldName={item->getCustomFieldName}
-              optionalRequiredFields={Some(requiredFields)}
-            />
+            <>
+              <div
+                style={ReactDOMStyle.make(
+                  ~marginBottom="5px",
+                  ~fontSize=themeObj.fontSizeLg,
+                  ~opacity="0.6",
+                  (),
+                )}>
+                {item->getCustomFieldName->Option.getOr("")->React.string}
+              </div>
+              <FullNamePaymentInput
+                paymentType
+                customFieldName={item->getCustomFieldName}
+                optionalRequiredFields={Some(requiredFields)}
+              />
+            </>
           | Email
           | InfoElement
           | Country
@@ -463,15 +475,26 @@ let make = (
       ->React.array}
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
         <div
-          className="p-2 w-full text-left"
+          className={`${isSpacedInnerLayout ? "p-2" : "my-2"} w-full text-left`}
           style={ReactDOMStyle.make(
-            ~border=`1px solid ${themeObj.borderColor}`,
-            ~borderRadius=themeObj.borderRadius,
-            ~margin=`10px 0`,
+            ~border={isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
+            ~borderRadius={isSpacedInnerLayout ? themeObj.borderRadius : ""},
+            ~margin={isSpacedInnerLayout ? `10px 0` : ""},
             (),
           )}>
-          {React.string(localeString.billingDetailsText)}
-          <div className="p-2 flex flex-col gap-2">
+          <div
+            style={ReactDOMStyle.make(
+              ~marginBottom="5px",
+              ~fontSize=themeObj.fontSizeLg,
+              ~opacity="0.6",
+              (),
+            )}>
+            {React.string(localeString.billingDetailsText)}
+          </div>
+          <div
+            className={`${isSpacedInnerLayout ? "p-2" : ""} flex flex-col ${isSpacedInnerLayout
+                ? "gap-2"
+                : ""}`}>
             {dynamicFieldsToRenderInsideBilling
             ->Array.mapWithIndex((item, index) => {
               <div
@@ -482,7 +505,7 @@ let make = (
                 | Email => <EmailPaymentInput paymentType />
                 | PhoneNumber => <PhoneNumberPaymentInput />
                 | StateAndCity =>
-                  <div className="flex gap-1">
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
                     <PaymentField
                       fieldName=localeString.cityLabel
                       setValue={setCity}
@@ -507,6 +530,7 @@ let make = (
                       name="city"
                       inputRef=cityRef
                       placeholder=localeString.cityLabel
+                      className={isSpacedInnerLayout ? "" : "!border-r-0"}
                     />
                     {switch stateJson {
                     | Some(options) =>
@@ -524,7 +548,7 @@ let make = (
                     }}
                   </div>
                 | CountryAndPincode(countryArr) =>
-                  <div className="flex gap-1">
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
                     <DropdownField
                       appearance=config.appearance
                       fieldName=localeString.countryLabel
@@ -532,6 +556,7 @@ let make = (
                       setValue={setCountry}
                       disabled=false
                       options=countryArr
+                      className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
                     />
                     <PaymentField
                       fieldName=localeString.postalCodeLabel
@@ -549,6 +574,7 @@ let make = (
                       name="postal"
                       inputRef=postalRef
                       placeholder=localeString.postalCodeLabel
+                      className={isSpacedInnerLayout ? "" : "!border-t-0"}
                     />
                   </div>
                 | AddressLine1 =>
@@ -576,6 +602,7 @@ let make = (
                     name="line1"
                     inputRef=line1Ref
                     placeholder=localeString.line1Placeholder
+                    className={isSpacedInnerLayout ? "" : "!border-b-0"}
                   />
                 | AddressLine2 =>
                   <PaymentField

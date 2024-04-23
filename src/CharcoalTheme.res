@@ -89,6 +89,12 @@ let charcoalRules = theme =>
       "color": theme.colorText,
       "borderRadius": theme.borderRadius,
     },
+    ".Input-Compressed": {
+      "border": `1px solid ${theme.colorBackground}`,
+      "fontWeight": theme.fontWeightLight,
+      "boxShadow": "0.12em 0.12em",
+      "color": theme.colorText,
+    },
     ".Input:-webkit-autofill": {
       "transition": "background-color 5000s ease-in-out 0s",
       "-webkitTextFillColor": `${theme.colorText} !important`,

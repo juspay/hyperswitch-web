@@ -14,6 +14,7 @@ let make = (
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let getClassName = initialLabel => {
     if value.value->String.length == 0 {
@@ -74,7 +75,10 @@ let make = (
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
   <RenderIf condition={options->Array.length > 0}>
     <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
-      <RenderIf condition={fieldName->String.length > 0 && config.appearance.labels == Above}>
+      <RenderIf
+        condition={fieldName->String.length > 0 &&
+        config.appearance.labels == Above &&
+        isSpacedInnerLayout}>
         <div
           className={`Label ${labelClass} `}
           style={ReactDOMStyle.make(
@@ -102,7 +106,9 @@ let make = (
           disabled={readOnly || disabled}
           onFocus={handleFocus}
           onChange=handleChange
-          className={`Input ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
+          className={`${isSpacedInnerLayout
+              ? "Input"
+              : "Input-Compressed"} ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>

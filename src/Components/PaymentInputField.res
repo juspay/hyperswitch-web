@@ -22,7 +22,8 @@ let make = (
   ~className="",
   ~inputRef,
 ) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {innerLayout} = config.appearance
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
 
@@ -76,7 +77,10 @@ let make = (
   let inputClass = getClassName("Input")
 
   <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
-    <RenderIf condition={fieldName->String.length > 0 && appearance.labels == Above}>
+    <RenderIf
+      condition={fieldName->String.length > 0 &&
+      appearance.labels == Above &&
+      innerLayout === Spaced}>
       <div
         className={`Label ${labelClass}`}
         style={ReactDOMStyle.make(
@@ -105,7 +109,9 @@ let make = (
           name
           ?maxLength
           ?pattern
-          className={`Input ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
+          className={`${innerLayout === Spaced
+              ? "Input"
+              : "Input-Compressed"} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
           placeholder={appearance.labels == Above ? placeholder : ""}
           value
           autoComplete="on"
