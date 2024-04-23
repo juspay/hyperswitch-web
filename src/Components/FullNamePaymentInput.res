@@ -8,8 +8,7 @@ let make = (
   ~customFieldName=None,
   ~optionalRequiredFields=None,
 ) => {
-  Js.log2("paymentTypepaymentType", customFieldName)
-  let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
