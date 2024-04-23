@@ -31,9 +31,7 @@ let userEmailAddress = Recoil.atom("userEmailAddress", defaultFieldValues)
 let userPhoneNumber = Recoil.atom(
   "userPhoneNumber",
   {
-    value: "",
-    isValid: None,
-    errorString: "",
+    ...defaultFieldValues,
     countryCode: "",
   },
 )

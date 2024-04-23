@@ -46,12 +46,11 @@ let make = (
     if isDisplayValueVisible {
       let findDisplayValue =
         options
-        ->Array.find((ele: optionType) => ele.value === value)
+        ->Array.find(ele => ele.value === value)
         ->Option.getOr(defaultValue)
 
       switch setDisplayValue {
-      | Some(setDisplayValueFun) =>
-        setDisplayValueFun(_ => findDisplayValue.displayValue->Option.getOr(value))
+      | Some(fun) => fun(_ => findDisplayValue.displayValue->Option.getOr(value))
       | None => ()
       }
     }
