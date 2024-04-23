@@ -1,0 +1,17 @@
+name: Check Label
+
+on:
+  pull_request:
+    types: [labeled, unlabeled]
+
+jobs:
+  check-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for label
+        if: ${{ github.event.action == 'labeled' }}
+        run: echo "Label 'your-desired-label' added."
+
+      - name: Handle other cases
+        if: ${{ github.event.action != 'labeled' }}
+        run: echo "Error - Please add label to your Pull Request."
