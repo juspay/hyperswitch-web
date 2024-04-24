@@ -16,6 +16,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
   let (token, _) = paymentToken
 
   let {iframeId} = keys
@@ -44,6 +45,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
   let (isCVCValid, setIsCVCValid) = React.useState(_ => None)
   let (isZipValid, setIsZipValid) = React.useState(_ => None)
+  let (isCardSupported, setIsCardSupported) = React.useState(_ => None)
 
   let (cardBrand, maxCardLength) = React.useMemo(() => {
     let brand = getCardBrand(cardNumber)
@@ -51,6 +53,55 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let isNotBancontact = selectedOption !== "bancontact_card" && brand == ""
     !showFields && isNotBancontact ? (cardScheme, maxLength) : (brand, maxLength)
   }, (cardNumber, cardScheme, showFields))
+
+  let supportedCardBrands = React.useMemo(() => {
+    switch paymentMethodList {
+    | Loaded(json) => {
+        let list = json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+        let debit_cards =
+          PaymentMethodsRecord.getPaymentMethodTypeFromList(
+            ~list,
+            ~paymentMethod="card",
+            ~paymentMethodType=PaymentUtils.getPaymentMethodName(
+              ~paymentMethodType="card",
+              ~paymentMethodName="debit",
+            ),
+          )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
+        let credit_cards =
+          PaymentMethodsRecord.getPaymentMethodTypeFromList(
+            ~list,
+            ~paymentMethod="card",
+            ~paymentMethodType=PaymentUtils.getPaymentMethodName(
+              ~paymentMethodType="card",
+              ~paymentMethodName="credit",
+            ),
+          )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
+        Some(
+          debit_cards.card_networks
+          ->Array.concat(credit_cards.card_networks)
+          ->Array.map(network => {
+            network.card_network
+          }),
+        )
+      }
+    | _ => None
+    }
+  }, [paymentMethodList])
+
+  React.useEffect(() => {
+    let cardBrandValue = cardNumber->CardUtils.getCardBrand
+    switch isCardValid {
+    | Some(true) =>
+      switch supportedCardBrands {
+      | Some(brands) =>
+        setIsCardSupported(_ => Some(brands->Array.includes(cardBrandValue->CardUtils.getCardType)))
+      | None => setIsCardSupported(_ => Some(true))
+      }
+    | Some(false) => setIsCardSupported(_ => Some(false))
+    | None => setIsCardSupported(_ => None)
+    }
+    None
+  }, (supportedCardBrands, cardNumber, isCardValid))
 
   let cardType = React.useMemo1(() => {
     cardBrand->getCardType
@@ -367,6 +418,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let cardProps: CardUtils.cardProps = (
     isCardValid,
     setIsCardValid,
+    isCardSupported,
     cardNumber,
     changeCardNumber,
     handleCardBlur,

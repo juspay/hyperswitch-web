@@ -24,6 +24,7 @@ let make = (
   let (
     isCardValid,
     setIsCardValid,
+    isCardSupported,
     cardNumber,
     changeCardNumber,
     handleCardBlur,
@@ -134,6 +135,7 @@ let make = (
         (isBancontact ||
         (isCVCValid->Option.getOr(false) &&
         isCardValid->Option.getOr(false) &&
+        isCardSupported->Option.getOr(false) &&
         isExpiryValid->Option.getOr(false))) && areRequiredFieldsValid
       if validFormat && (showFields || isBancontact) {
         intent(
@@ -160,6 +162,10 @@ let make = (
         }
         if !isBancontact && cvcNumber === "" {
           setCvcError(_ => localeString.cvcNumberEmptyText)
+          setUserError(localeString.enterFieldsText)
+        }
+        if isCardSupported->Option.getOr(false)->not {
+          setCardError(_ => "Unsupported Card")
           setUserError(localeString.enterFieldsText)
         }
         if !validFormat {
