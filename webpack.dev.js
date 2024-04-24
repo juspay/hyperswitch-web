@@ -11,7 +11,7 @@ let backendEndPoint =
     ? "https://beta.hyperswitch.io/api/payments"
     : sdkEnv === "integ"
     ? "https://integ-api.hyperswitch.io/payments"
-    : "https://beta.hyperswitch.io/api/payments";
+    : "http://localhost:8080/payments";
 
 let devServer = {
   contentBase: path.join(__dirname, "dist"),
@@ -19,6 +19,7 @@ let devServer = {
   host: "0.0.0.0",
   port: 9050,
   historyApiFallback: true,
+  compress: true,
   proxy: {
     "/api/payments": {
       target: backendEndPoint,
@@ -35,6 +36,7 @@ let devServer = {
   headers: {
     "Cache-Control": "must-revalidate",
   },
+  disableHostCheck: true,
 };
 
 module.exports = merge([

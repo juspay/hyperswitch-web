@@ -1,13 +1,9 @@
 open LazyUtils
 
 type props = {
-  paymentType: CardThemeType.mode,
-  cardProps: CardUtils.cardProps,
-  expiryProps: CardUtils.expiryProps,
-  cvcProps: CardUtils.cvcProps,
-  zipProps: CardUtils.zipProps,
-  handleElementFocus: bool => unit,
-  isFocus: bool,
+  enabled_payment_methods: array<PaymentMethodCollectUtils.paymentMethodType>,
+  integrateError: bool,
+  logger: OrcaLogger.loggerMake,
 }
 
 let make: props => React.element = reactLazy(() => import_("./PaymentMethodCollectElement.bs.js"))

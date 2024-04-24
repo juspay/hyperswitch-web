@@ -242,7 +242,8 @@ let make = (
       | "cardNumber"
       | "cardExpiry"
       | "cardCvc"
-      | "payment" => ()
+      | "payment"
+      | "paymentMethodCollect" => ()
       | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger, ())
       }
 

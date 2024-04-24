@@ -135,22 +135,7 @@ let make = (
             id="card-cvc"
             isFocus
           />
-
-        | PaymentMethodCollectElement =>
-          <React.Suspense
-            fallback={<RenderIf condition={showLoader}>
-              <CardElementShimmer />
-            </RenderIf>}>
-            <PaymentMethodCollectElement
-              themeType=paymentType
-              cardProps
-              expiryProps
-              cvcProps
-              zipProps
-              handleElementFocus
-              isFocus
-            />
-          </React.Suspense>
+        | PaymentMethodCollectElement
         | NONE => React.null
         }}
       </div>
