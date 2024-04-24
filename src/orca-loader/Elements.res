@@ -23,6 +23,17 @@ let make = (
 ) => {
   let handleApplePayMessages = ref(_ => ())
   let applePaySessionRef = ref(Nullable.null)
+  let isReadyToLoadTrustpayPromise = Promise.make((resolve, _) => {
+    let handleOnReady = (event: Types.event) => {
+      let json = event.data->anyTypeToJson
+      let dict = json->getDictFromJson
+      if dict->Dict.get("preMountLoaderIframeUnMount")->Belt.Option.isSome {
+        Console.log("Lets load Trustpay script")
+        resolve()
+      }
+    }
+    addSmartEventListener("message", handleOnReady, "handleOnReadyToLoadTrustpayScript")
+  })
 
   try {
     let iframeRef = []
@@ -144,13 +155,18 @@ let make = (
                 publishableKey->String.startsWith("pk_prd_")
                   ? "https://tpgw.trustpay.eu/js/v1.js"
                   : "https://test-tpgw.trustpay.eu/js/v1.js"
-              let trustPayScript = Window.createElement("script")
-              trustPayScript->Window.elementSrc(trustPayScriptURL)
-              trustPayScript->Window.elementOnerror(err => {
-                Utils.logInfo(Console.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
+              isReadyToLoadTrustpayPromise
+              ->Promise.then(_ => {
+                let trustPayScript = Window.createElement("script")
+                trustPayScript->Window.elementSrc(trustPayScriptURL)
+                trustPayScript->Window.elementOnerror(err => {
+                  Utils.logInfo(Console.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
+                })
+                Window.body->Window.appendChild(trustPayScript)
+                logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT, ())
+                Promise.resolve()
               })
-              Window.body->Window.appendChild(trustPayScript)
-              logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT, ())
+              ->ignore
             }
           }
           let msg = [("paymentMethodList", json)]->Dict.fromArray
