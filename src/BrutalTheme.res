@@ -103,6 +103,10 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
       "transform": "translate(0.05em, 0.05em)",
       "boxShadow": "0.02em 0.02em",
     },
+    ".Input-Compressed:focus": {
+      "transform": "translate(0.02em, 0.02em)",
+      "boxShadow": "0.01em 0.01em",
+    },
     ".Input--invalid": {
       "border": `0.1em solid ${theme.colorDangerText}`,
       "color": theme.colorDanger,

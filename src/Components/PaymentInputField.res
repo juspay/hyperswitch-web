@@ -134,24 +134,26 @@ let make = (
           </div>
         </RenderIf>
       </div>
-      <div className={`relative flex -ml-10  items-center`}> {rightIcon} </div>
+      <div className={`relative flex -ml-10 items-center`}> {rightIcon} </div>
     </div>
-    {switch errorString {
-    | Some(val) =>
-      <RenderIf condition={val->String.length > 0}>
-        <div
-          className="Error pt-1"
-          style={ReactDOMStyle.make(
-            ~color=themeObj.colorDangerText,
-            ~fontSize=themeObj.fontSizeSm,
-            ~alignSelf="start",
-            ~textAlign="left",
-            (),
-          )}>
-          {React.string(val)}
-        </div>
-      </RenderIf>
-    | None => React.null
-    }}
+    <RenderIf condition={innerLayout === Spaced}>
+      {switch errorString {
+      | Some(val) =>
+        <RenderIf condition={val->String.length > 0}>
+          <div
+            className="Error pt-1"
+            style={ReactDOMStyle.make(
+              ~color=themeObj.colorDangerText,
+              ~fontSize=themeObj.fontSizeSm,
+              ~alignSelf="start",
+              ~textAlign="left",
+              (),
+            )}>
+            {React.string(val)}
+          </div>
+        </RenderIf>
+      | None => React.null
+      }}
+    </RenderIf>
   </div>
 }

@@ -222,7 +222,9 @@ let make = (
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
-              className={innerLayout === Spaced ? "" : "!border-b-0"}
+              className={innerLayout === Compressed && cardError->String.length > 0
+                ? "border-b-0"
+                : ""}
             />
             <div
               className="flex flex-row w-full place-content-between"
@@ -268,15 +270,32 @@ let make = (
                   )}
                   appearance=config.appearance
                   type_="tel"
-                  className={`tracking-widest w-full ${innerLayout === Spaced
-                      ? ""
-                      : "!border-l-0"}`}
+                  className={`tracking-widest w-full ${innerLayout === Compressed &&
+                      cvcError->String.length > 0
+                      ? "!border-l-0"
+                      : ""}`}
                   maxLength=4
                   inputRef=cvcRef
                   placeholder="123"
                 />
               </div>
             </div>
+            <RenderIf
+              condition={cardError->String.length > 0 ||
+              cvcError->String.length > 0 ||
+              expiryError->String.length > 0}>
+              <div
+                className="Error pt-1"
+                style={ReactDOMStyle.make(
+                  ~color=themeObj.colorDangerText,
+                  ~fontSize=themeObj.fontSizeSm,
+                  ~alignSelf="start",
+                  ~textAlign="left",
+                  (),
+                )}>
+                {React.string("Invalid input")}
+              </div>
+            </RenderIf>
           </RenderIf>
           <DynamicFields
             paymentType
