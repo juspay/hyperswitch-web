@@ -1,3 +1,10 @@
+# [0.45.0](https://github.com/juspay/hyperswitch-web/compare/v0.44.1...v0.45.0) (2024-04-24)
+
+
+### Features
+
+* polling status for 3ds flow Part 1 ([#329](https://github.com/juspay/hyperswitch-web/issues/329)) ([bd499b7](https://github.com/juspay/hyperswitch-web/commit/bd499b70af9c79012cbe87f15d953b837dcbfe18))
+
 ## [0.44.1](https://github.com/juspay/hyperswitch-web/compare/v0.44.0...v0.44.1) (2024-04-19)
 
 
