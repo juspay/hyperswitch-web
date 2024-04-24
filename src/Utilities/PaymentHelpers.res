@@ -186,6 +186,94 @@ let rec pollRetrievePaymentIntent = (
   })
 }
 
+let retrieveStatus = (~headers, ~switchToCustomPod, pollID) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let uri = `${endpoint}/poll/status/${pollID}`
+  let logger = OrcaLogger.make()
+  logApi(
+    ~optLogger=Some(logger),
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=POLL_STATUS_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  fetchApi(
+    uri,
+    ~method=#GET,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    (),
+  )
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger=Some(logger),
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=POLL_STATUS_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger=Some(logger),
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=POLL_STATUS_CALL,
+        ~logType=INFO,
+        ~logCategory=API,
+        (),
+      )
+      res->Fetch.Response.json
+    }
+  })
+  ->catch(e => {
+    Console.log2("Unable to Poll status details because of ", e)
+    JSON.Encode.null->resolve
+  })
+}
+
+let rec pollStatus = (~headers, ~switchToCustomPod, ~pollId, ~interval, ~count) => {
+  open Promise
+  retrieveStatus(~headers, ~switchToCustomPod, pollId)
+  ->then(json => {
+    let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+    let status = dict->getString("status", "")
+    Promise.make((resolve, _) => {
+      if status === "completed" {
+        resolve(json)
+      } else if !(count > 0) {
+        handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+        postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong") // redirect to return url
+      } else {
+        delay(interval)
+        ->then(
+          _ => {
+            pollStatus(~headers, ~switchToCustomPod, ~pollId, ~interval, ~count=count - 1)
+          },
+        )
+        ->ignore
+      }
+    })
+  })
+  ->catch(e => {
+    Console.log2("Unable to retrieve payment due to following error", e)
+    pollStatus(~headers, ~switchToCustomPod, ~pollId, ~interval, ~count=count - 1)
+  })
+}
+
 let rec intentCall = (
   ~fetchApi: (
     string,
