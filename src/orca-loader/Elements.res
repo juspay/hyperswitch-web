@@ -423,7 +423,44 @@ let make = (
           }
         }
 
+        let handlePollStatusMessage = (ev: Types.event) => {
+          let eventDataObject = ev.data->anyTypeToJson
+          let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+          switch eventDataObject->getOptionalJsonFromJson("poll_status") {
+          | Some(val) => {
+              handlePostMessage([
+                ("fullscreen", true->JSON.Encode.bool),
+                ("param", "paymentloader"->JSON.Encode.string),
+                ("iframeId", selectorString->JSON.Encode.string),
+              ])
+              let dict = val->getDictFromJson
+              let pollId = dict->getString("poll_id", "")
+              let interval =
+                dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
+              let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
+              let url = dict->getString("return_url_with_query_params", "")
+              PaymentHelpers.pollStatus(~headers, ~switchToCustomPod, ~pollId, ~interval, ~count)
+              ->then(res => {
+                let dict = res->JSON.Decode.object->Option.getOr(Dict.make())
+                let status = dict->getString("status", "")
+                if status === "completed" {
+                  Window.Location.replace(url)->ignore // retrive status
+                }->resolve
+              })
+              ->catch(_e =>
+                postFailedSubmitResponse(
+                  ~errortype="Server_error",
+                  ~message="Something went Wrong",
+                )->resolve
+              )
+              ->ignore
+            }
+          | None => ()
+          }
+        }
+
         addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
+        addSmartEventListener("message", handlePollStatusMessage, "onPollStatusMsg")
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
         Window.removeEventListener("message", handleApplePayMessages.contents)
 
