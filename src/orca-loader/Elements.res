@@ -28,7 +28,6 @@ let make = (
       let json = event.data->anyTypeToJson
       let dict = json->getDictFromJson
       if dict->Dict.get("preMountLoaderIframeUnMount")->Belt.Option.isSome {
-        Console.log("Lets load Trustpay script")
         resolve()
       }
     }
