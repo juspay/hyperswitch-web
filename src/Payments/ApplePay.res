@@ -309,7 +309,8 @@ let make = (
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
           }
         } else if dict->Dict.get("applePaySyncPayment")->Option.isSome {
-          syncPayment()
+          ()
+          // syncPayment(breakpoint)
         }
       } catch {
       | _ => Utils.logInfo(Console.log("Error in parsing Apple Pay Data"))
