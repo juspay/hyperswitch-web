@@ -718,7 +718,7 @@ type mandate = {
 }
 type payment_type = NORMAL | NEW_MANDATE | SETUP_MANDATE | NONE
 
-type list = {
+type paymentMethodList = {
   redirect_url: string,
   currency: string,
   payment_methods: array<methods>,
@@ -969,7 +969,7 @@ let itemToObjMapper = dict => {
   }
 }
 
-let buildFromPaymentList = (plist: list) => {
+let buildFromPaymentList = (plist: paymentMethodList) => {
   let paymentMethodArr = plist.payment_methods
 
   paymentMethodArr
@@ -1004,9 +1004,13 @@ let buildFromPaymentList = (plist: list) => {
   })
 }
 
-let getPaymentMethodTypeFromList = (~list: list, ~paymentMethod, ~paymentMethodType) => {
+let getPaymentMethodTypeFromList = (
+  ~paymentMethodListValue,
+  ~paymentMethod,
+  ~paymentMethodType,
+) => {
   (
-    list.payment_methods
+    paymentMethodListValue.payment_methods
     ->Array.find(item => {
       item.payment_method == paymentMethod
     })

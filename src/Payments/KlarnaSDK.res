@@ -22,12 +22,13 @@ type some = {
 @val external klarnaInit: some = "Klarna.Payments"
 
 @react.component
-let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) => {
+let make = (~sessionObj: SessionsType.token) => {
   open Utils
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let handleCloseLoader = () => {
     Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
@@ -55,7 +56,8 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
         },
         Dict.make()->JSON.Encode.object,
         (res: res) => {
-          let (connectors, _) = list->PaymentUtils.getConnectors(PayLater(Klarna(SDK)))
+          let (connectors, _) =
+            paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(SDK)))
           let body = PaymentBody.klarnaSDKbody(~token=res.authorization_token, ~connectors)
           res.approved
             ? intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
@@ -91,7 +93,7 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
   let bottomElement = <InfoElement />
   <div className="p-1 animate-slowShow">
     <div id="klarna-payments" className="m-3 hidden" />
-    <Surcharge list paymentMethod="pay_later" paymentMethodType="klarna" />
+    <Surcharge paymentMethod="pay_later" paymentMethodType="klarna" />
     <Block bottomElement />
   </div>
 }

@@ -2,7 +2,6 @@ open RecoilAtoms
 @react.component
 let make = (
   ~paymentType,
-  ~list,
   ~paymentMethod,
   ~paymentMethodType,
   ~setRequiredFieldsBody,
@@ -14,6 +13,8 @@ let make = (
   ~isBancontact=false,
 ) => {
   open Utils
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -23,7 +24,7 @@ let make = (
 
   //<...>//
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
-    ~list,
+    ~paymentMethodListValue,
     ~paymentMethod,
     ~paymentMethodType,
   )
@@ -693,7 +694,7 @@ let make = (
                 | SpecialField(element) => element
                 | InfoElement =>
                   <>
-                    <Surcharge list paymentMethod paymentMethodType />
+                    <Surcharge paymentMethod paymentMethodType />
                     {if fieldsArr->Array.length > 1 {
                       bottomElement
                     } else {
@@ -718,7 +719,7 @@ let make = (
       </RenderIf>
       <RenderIf condition={isOnlyInfoElementPresent}>
         {<>
-          <Surcharge list paymentMethod paymentMethodType />
+          <Surcharge paymentMethod paymentMethodType />
           {if fieldsArr->Array.length > 1 {
             bottomElement
           } else {
@@ -727,7 +728,7 @@ let make = (
         </>}
       </RenderIf>
       <RenderIf condition={!isInfoElementPresent}>
-        <Surcharge list paymentMethod paymentMethodType />
+        <Surcharge paymentMethod paymentMethodType />
       </RenderIf>
     </>}
   </RenderIf>

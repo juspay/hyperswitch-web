@@ -1,5 +1,7 @@
+let paymentMethodListValue = Recoil.atom("paymentMethodListValue", PaymentMethodsRecord.defaultList)
+
 let paymentListLookupNew = (
-  list: PaymentMethodsRecord.list,
+  list: PaymentMethodsRecord.paymentMethodList,
   ~order,
   ~showApplePay,
   ~showGooglePay,
@@ -155,7 +157,7 @@ let getExperienceType = method => {
   }
 }
 
-let getConnectors = (list: PaymentMethodsRecord.list, method: connectorType) => {
+let getConnectors = (list: PaymentMethodsRecord.paymentMethodList, method: connectorType) => {
   let paymentMethod =
     list.payment_methods->Array.find(item => item.payment_method == method->getMethod)
   switch paymentMethod {

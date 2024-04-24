@@ -686,21 +686,33 @@ let useSubmitCallback = () => {
   }, (line1, line2, state, city, postalCode))
 }
 
-let usePaymentMethodTypeFromList = (~list, ~paymentMethod, ~paymentMethodType) => {
+let usePaymentMethodTypeFromList = (
+  ~paymentMethodListValue,
+  ~paymentMethod,
+  ~paymentMethodType,
+) => {
   React.useMemo(() => {
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~list,
+      ~paymentMethodListValue,
       ~paymentMethod,
       ~paymentMethodType=PaymentUtils.getPaymentMethodName(
         ~paymentMethodType=paymentMethod,
         ~paymentMethodName=paymentMethodType,
       ),
     )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
-  }, (list, paymentMethod, paymentMethodType))
+  }, (paymentMethodListValue, paymentMethod, paymentMethodType))
 }
 
-let useAreAllRequiredFieldsPrefilled = (~list, ~paymentMethod, ~paymentMethodType) => {
-  let paymentMethodTypes = usePaymentMethodTypeFromList(~list, ~paymentMethod, ~paymentMethodType)
+let useAreAllRequiredFieldsPrefilled = (
+  ~paymentMethodListValue,
+  ~paymentMethod,
+  ~paymentMethodType,
+) => {
+  let paymentMethodTypes = usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
 
   paymentMethodTypes.required_fields->Array.reduce(true, (acc, requiredField) => {
     acc && requiredField.value != ""

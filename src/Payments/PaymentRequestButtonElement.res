@@ -36,9 +36,10 @@ module WalletsSaveDetailsText = {
 }
 
 @react.component
-let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
+let make = (~sessions, ~walletOptions) => {
   open SessionsType
   let dict = sessions->Utils.getDictFromJson
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let sessionObj = React.useMemo(() => itemToObjMapper(dict, Others), [dict])
   let paypalToken = React.useMemo(
@@ -75,17 +76,12 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
                     <GPayLazy
                       paymentType=NONE
                       sessionObj=optToken
-                      list
                       thirdPartySessionObj=googlePayThirdPartyOptToken
                       walletOptions
                     />
                   | _ =>
                     <GPayLazy
-                      paymentType=NONE
-                      sessionObj=optToken
-                      list
-                      thirdPartySessionObj=None
-                      walletOptions
+                      paymentType=NONE sessionObj=optToken thirdPartySessionObj=None walletOptions
                     />
                   }
                 | _ => React.null
@@ -96,16 +92,16 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
                 {switch paypalToken {
                 | OtherTokenOptional(optToken) =>
                   switch optToken {
-                  | Some(token) => <PaypalSDKLazy sessionObj=token list />
-                  | None => <PayPalLazy list />
+                  | Some(token) => <PaypalSDKLazy sessionObj=token />
+                  | None => <PayPalLazy />
                   }
-                | _ => <PayPalLazy list />
+                | _ => <PayPalLazy />
                 }}
               </SessionPaymentWrapper>
             | ApplePayWallet =>
               switch applePayToken {
               | ApplePayTokenOptional(optToken) =>
-                <ApplePayLazy sessionObj=optToken list paymentType=NONE walletOptions />
+                <ApplePayLazy sessionObj=optToken paymentType=NONE walletOptions />
               | _ => React.null
               }
 
@@ -117,7 +113,7 @@ let make = (~sessions, ~walletOptions, ~list: PaymentMethodsRecord.list) => {
       </ErrorBoundary>
     })
     ->React.array}
-    <Surcharge list paymentMethod="wallet" paymentMethodType="google_pay" isForWallets=true />
-    <WalletsSaveDetailsText paymentType=list.payment_type />
+    <Surcharge paymentMethod="wallet" paymentMethodType="google_pay" isForWallets=true />
+    <WalletsSaveDetailsText paymentType=paymentMethodListValue.payment_type />
   </div>
 }
