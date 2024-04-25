@@ -509,6 +509,7 @@ let make = (
       SESSIONS_CALL,
       RETRIEVE_CALL,
       DISPLAY_THREE_DS_SDK,
+      APPLE_PAY_FLOW,
     ]
     arrayOfLogs
     ->Array.find(log => {
