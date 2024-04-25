@@ -151,18 +151,21 @@ let make = (
                 Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0
             ) {
               let trustPayScriptURL =
-                publishableKey->String.startsWith("pk_prd_")
+                publishableKey->String.startsWith("pk_prd_")->not
                   ? "https://tpgw.trustpay.eu/js/v1.js"
                   : "https://test-tpgw.trustpay.eu/js/v1.js"
               isReadyToLoadTrustpayPromise
               ->Promise.then(_ => {
                 let trustPayScript = Window.createElement("script")
+                logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT, ())
                 trustPayScript->Window.elementSrc(trustPayScriptURL)
                 trustPayScript->Window.elementOnerror(err => {
                   Utils.logInfo(Console.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
                 })
+                trustPayScript->Window.elementOnload(_ => {
+                  logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT, ())
+                })
                 Window.body->Window.appendChild(trustPayScript)
-                logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT, ())
                 Promise.resolve()
               })
               ->ignore
@@ -634,6 +637,9 @@ let make = (
 
                                 try {
                                   let trustpay = trustPayApi(secrets)
+                                  Window.window->alert(
+                                    "trustpay: " ++ trustpay->anyTypeToJson->JSON.stringify,
+                                  )
                                   trustpay.finishApplePaymentV2(payment, paymentRequest)
                                   ->then(res => {
                                     Window.window->alert(
