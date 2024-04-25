@@ -151,7 +151,7 @@ let make = (
                 Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0
             ) {
               let trustPayScriptURL =
-                publishableKey->String.startsWith("pk_prd_")->not
+                publishableKey->String.startsWith("pk_prd_")
                   ? "https://tpgw.trustpay.eu/js/v1.js"
                   : "https://test-tpgw.trustpay.eu/js/v1.js"
               isReadyToLoadTrustpayPromise
