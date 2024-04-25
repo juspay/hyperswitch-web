@@ -636,57 +636,63 @@ let make = (
                                 )
 
                                 try {
-                                  let trustpay = trustPayApi(secrets)
-                                  Window.window->alert(
-                                    "trustpay: " ++ trustpay->anyTypeToJson->JSON.stringify,
-                                  )
-                                  trustpay.finishApplePaymentV2(payment, paymentRequest)
-                                  ->then(res => {
+                                  setTimeout(() => {
+                                    let trustpay = trustPayApi(secrets)
                                     Window.window->alert(
-                                      "res: " ++ res->anyTypeToJson->JSON.stringify,
+                                      "trustpay: " ++ trustpay->anyTypeToJson->JSON.stringify,
                                     )
-                                    logger.setLogInfo(
-                                      ~value="TrustPay ApplePay Success Response",
-                                      ~internalMetadata=res->JSON.stringify,
-                                      ~eventName=APPLE_PAY_FLOW,
-                                      ~paymentMethod="APPLE_PAY",
-                                      (),
+                                    trustpay.finishApplePaymentV2(payment, paymentRequest)
+                                    ->then(
+                                      res => {
+                                        Window.window->alert(
+                                          "res: " ++ res->anyTypeToJson->JSON.stringify,
+                                        )
+                                        logger.setLogInfo(
+                                          ~value="TrustPay ApplePay Success Response",
+                                          ~internalMetadata=res->JSON.stringify,
+                                          ~eventName=APPLE_PAY_FLOW,
+                                          ~paymentMethod="APPLE_PAY",
+                                          (),
+                                        )
+                                        let msg =
+                                          [
+                                            ("applePaySyncPayment", true->JSON.Encode.bool),
+                                            ("breakpoint", "1"->JSON.Encode.string),
+                                          ]->Dict.fromArray
+                                        mountedIframeRef->Window.iframePostMessage(msg)
+                                        logger.setLogInfo(
+                                          ~value="",
+                                          ~eventName=PAYMENT_DATA_FILLED,
+                                          ~paymentMethod="APPLE_PAY",
+                                          (),
+                                        )
+                                        resolve()
+                                      },
                                     )
-                                    let msg =
-                                      [
-                                        ("applePaySyncPayment", true->JSON.Encode.bool),
-                                        ("breakpoint", "1"->JSON.Encode.string),
-                                      ]->Dict.fromArray
-                                    mountedIframeRef->Window.iframePostMessage(msg)
-                                    logger.setLogInfo(
-                                      ~value="",
-                                      ~eventName=PAYMENT_DATA_FILLED,
-                                      ~paymentMethod="APPLE_PAY",
-                                      (),
+                                    ->catch(
+                                      err => {
+                                        let exceptionMessage =
+                                          err->Utils.formatException->JSON.stringify
+                                        Window.window->alert(
+                                          "err: " ++ err->anyTypeToJson->JSON.stringify,
+                                        )
+                                        logger.setLogInfo(
+                                          ~eventName=APPLE_PAY_FLOW,
+                                          ~paymentMethod="APPLE_PAY",
+                                          ~value=exceptionMessage,
+                                          (),
+                                        )
+                                        let msg =
+                                          [
+                                            ("applePaySyncPayment", true->JSON.Encode.bool),
+                                            ("breakpoint", "2"->JSON.Encode.string),
+                                          ]->Dict.fromArray
+                                        mountedIframeRef->Window.iframePostMessage(msg)
+                                        resolve()
+                                      },
                                     )
-                                    resolve()
-                                  })
-                                  ->catch(err => {
-                                    let exceptionMessage =
-                                      err->Utils.formatException->JSON.stringify
-                                    Window.window->alert(
-                                      "err: " ++ err->anyTypeToJson->JSON.stringify,
-                                    )
-                                    logger.setLogInfo(
-                                      ~eventName=APPLE_PAY_FLOW,
-                                      ~paymentMethod="APPLE_PAY",
-                                      ~value=exceptionMessage,
-                                      (),
-                                    )
-                                    let msg =
-                                      [
-                                        ("applePaySyncPayment", true->JSON.Encode.bool),
-                                        ("breakpoint", "2"->JSON.Encode.string),
-                                      ]->Dict.fromArray
-                                    mountedIframeRef->Window.iframePostMessage(msg)
-                                    resolve()
-                                  })
-                                  ->ignore
+                                    ->ignore
+                                  }, 0)->ignore
                                 } catch {
                                 | exn => {
                                     logger.setLogInfo(
