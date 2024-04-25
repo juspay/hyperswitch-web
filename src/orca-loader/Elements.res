@@ -4,6 +4,7 @@ open Identity
 open Utils
 open EventListenerManager
 open ApplePayTypes
+@send external alert: ('t, string) => unit = "alert"
 
 type trustPayFunctions = {
   finishApplePaymentV2: (string, paymentRequestData) => Promise.t<JSON.t>,
@@ -423,9 +424,45 @@ let make = (
           }
         }
 
+        let handlePollStatusMessage = (ev: Types.event) => {
+          let eventDataObject = ev.data->anyTypeToJson
+          let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+          switch eventDataObject->getOptionalJsonFromJson("poll_status") {
+          | Some(val) => {
+              handlePostMessage([
+                ("fullscreen", true->JSON.Encode.bool),
+                ("param", "paymentloader"->JSON.Encode.string),
+                ("iframeId", selectorString->JSON.Encode.string),
+              ])
+              let dict = val->getDictFromJson
+              let pollId = dict->getString("poll_id", "")
+              let interval =
+                dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
+              let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
+              let url = dict->getString("return_url_with_query_params", "")
+              PaymentHelpers.pollStatus(~headers, ~switchToCustomPod, ~pollId, ~interval, ~count)
+              ->then(res => {
+                let dict = res->JSON.Decode.object->Option.getOr(Dict.make())
+                let status = dict->getString("status", "")
+                if status === "completed" {
+                  Window.Location.replace(url)->ignore // retrive status
+                }->resolve
+              })
+              ->catch(_e =>
+                postFailedSubmitResponse(
+                  ~errortype="Server_error",
+                  ~message="Something went Wrong",
+                )->resolve
+              )
+              ->ignore
+            }
+          | None => ()
+          }
+        }
+
         addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
+        addSmartEventListener("message", handlePollStatusMessage, "onPollStatusMsg")
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
-        Window.removeEventListener("message", handleApplePayMessages.contents)
 
         let fetchSessionTokens = mountedIframeRef => {
           let handleSessionTokensLoaded = (event: Types.event) => {
@@ -499,6 +536,11 @@ let make = (
                               ->JSON.Decode.bool
                               ->Belt.Option.getWithDefault(false)
 
+                            Window.window->alert(
+                              "isDelayedSessionToken: " ++
+                              isDelayedSessionToken->anyTypeToJson->JSON.stringify,
+                            )
+
                             if isDelayedSessionToken {
                               logger.setLogInfo(
                                 ~value="Delayed Session Token Flow",
@@ -507,18 +549,27 @@ let make = (
                                 (),
                               )
 
-                              let applePayPresent =
+                              let applePaySessionTokenData =
                                 dict
                                 ->Dict.get("applePayPresent")
                                 ->Belt.Option.flatMap(JSON.Decode.object)
                                 ->Belt.Option.getWithDefault(Dict.make())
 
+                              Window.window->alert(
+                                "applePaySessionTokenData: " ++
+                                applePaySessionTokenData->anyTypeToJson->JSON.stringify,
+                              )
+
                               let connector =
-                                applePayPresent
+                                applePaySessionTokenData
                                 ->Dict.get("connector")
                                 ->Belt.Option.getWithDefault(JSON.Encode.null)
                                 ->JSON.Decode.string
                                 ->Belt.Option.getWithDefault("")
+
+                              Window.window->alert(
+                                "connector: " ++ connector->anyTypeToJson->JSON.stringify,
+                              )
 
                               switch connector {
                               | "trustpay" =>
@@ -529,7 +580,7 @@ let make = (
                                   (),
                                 )
                                 let secrets =
-                                  applePayPresent
+                                  applePaySessionTokenData
                                   ->Dict.get("session_token_data")
                                   ->Belt.Option.getWithDefault(JSON.Encode.null)
                                   ->JSON.Decode.object
@@ -537,12 +588,21 @@ let make = (
                                   ->Dict.get("secrets")
                                   ->Belt.Option.getWithDefault(JSON.Encode.null)
 
+                                Window.window->alert(
+                                  "secrets: " ++ secrets->anyTypeToJson->JSON.stringify,
+                                )
+
                                 let paymentRequest =
-                                  applePayPresent
+                                  applePaySessionTokenData
                                   ->Dict.get("payment_request_data")
                                   ->Belt.Option.flatMap(JSON.Decode.object)
                                   ->Belt.Option.getWithDefault(Dict.make())
                                   ->ApplePayTypes.jsonToPaymentRequestDataType
+
+                                Window.window->alert(
+                                  "paymentRequest: " ++
+                                  paymentRequest->anyTypeToJson->JSON.stringify,
+                                )
 
                                 let payment =
                                   secrets
@@ -553,10 +613,17 @@ let make = (
                                   ->JSON.Decode.string
                                   ->Belt.Option.getWithDefault("")
 
+                                Window.window->alert(
+                                  "payment: " ++ payment->anyTypeToJson->JSON.stringify,
+                                )
+
                                 try {
                                   let trustpay = trustPayApi(secrets)
                                   trustpay.finishApplePaymentV2(payment, paymentRequest)
                                   ->then(res => {
+                                    Window.window->alert(
+                                      "res: " ++ res->anyTypeToJson->JSON.stringify,
+                                    )
                                     logger.setLogInfo(
                                       ~value="TrustPay ApplePay Success Response",
                                       ~internalMetadata=res->JSON.stringify,
@@ -567,6 +634,7 @@ let make = (
                                     let msg =
                                       [
                                         ("applePaySyncPayment", true->JSON.Encode.bool),
+                                        ("breakpoint", "1"->JSON.Encode.string),
                                       ]->Dict.fromArray
                                     mountedIframeRef->Window.iframePostMessage(msg)
                                     logger.setLogInfo(
@@ -580,6 +648,9 @@ let make = (
                                   ->catch(err => {
                                     let exceptionMessage =
                                       err->Utils.formatException->JSON.stringify
+                                    Window.window->alert(
+                                      "err: " ++ err->anyTypeToJson->JSON.stringify,
+                                    )
                                     logger.setLogInfo(
                                       ~eventName=APPLE_PAY_FLOW,
                                       ~paymentMethod="APPLE_PAY",
@@ -589,6 +660,7 @@ let make = (
                                     let msg =
                                       [
                                         ("applePaySyncPayment", true->JSON.Encode.bool),
+                                        ("breakpoint", "2"->JSON.Encode.string),
                                       ]->Dict.fromArray
                                     mountedIframeRef->Window.iframePostMessage(msg)
                                     resolve()
@@ -602,9 +674,13 @@ let make = (
                                       ~paymentMethod="APPLE_PAY",
                                       (),
                                     )
+                                    Window.window->alert(
+                                      "exn: " ++ exn->Utils.formatException->JSON.stringify,
+                                    )
                                     let msg =
                                       [
                                         ("applePaySyncPayment", true->JSON.Encode.bool),
+                                        ("breakpoint", "3"->JSON.Encode.string),
                                       ]->Dict.fromArray
                                     mountedIframeRef->Window.iframePostMessage(msg)
                                   }

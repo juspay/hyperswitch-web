@@ -1,3 +1,24 @@
+## [0.45.2](https://github.com/juspay/hyperswitch-web/compare/v0.45.1...v0.45.2) (2024-04-24)
+
+
+### Bug Fixes
+
+* added breakpoints to debug ([1f754b6](https://github.com/juspay/hyperswitch-web/commit/1f754b6f4023709752ef892c0e2861d34aa4f2fe))
+
+## [0.45.1](https://github.com/juspay/hyperswitch-web/compare/v0.45.0...v0.45.1) (2024-04-24)
+
+
+### Bug Fixes
+
+* priority array to include apple pay logs ([#332](https://github.com/juspay/hyperswitch-web/issues/332)) ([937248f](https://github.com/juspay/hyperswitch-web/commit/937248f8ff3507cd9b6ccef3fe56769456f6ccbe))
+
+# [0.45.0](https://github.com/juspay/hyperswitch-web/compare/v0.44.1...v0.45.0) (2024-04-24)
+
+
+### Features
+
+* polling status for 3ds flow Part 1 ([#329](https://github.com/juspay/hyperswitch-web/issues/329)) ([bd499b7](https://github.com/juspay/hyperswitch-web/commit/bd499b70af9c79012cbe87f15d953b837dcbfe18))
+
 ## [0.44.1](https://github.com/juspay/hyperswitch-web/compare/v0.44.0...v0.44.1) (2024-04-19)
 
 
