@@ -1,3 +1,17 @@
+## [0.45.4](https://github.com/juspay/hyperswitch-web/compare/v0.45.3...v0.45.4) (2024-04-25)
+
+
+### Bug Fixes
+
+* apple pay debug ([34d4828](https://github.com/juspay/hyperswitch-web/commit/34d4828894c284c514dc869c6c75c4af59e873cd))
+
+## [0.45.3](https://github.com/juspay/hyperswitch-web/compare/v0.45.2...v0.45.3) (2024-04-25)
+
+
+### Bug Fixes
+
+* apple pay debugging ([#333](https://github.com/juspay/hyperswitch-web/issues/333)) ([ca96770](https://github.com/juspay/hyperswitch-web/commit/ca96770a46c0e273da77ae3f4d1fa154c6f8a87f))
+
 ## [0.45.2](https://github.com/juspay/hyperswitch-web/compare/v0.45.1...v0.45.2) (2024-04-24)
 
 
