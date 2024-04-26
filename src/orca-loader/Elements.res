@@ -439,20 +439,39 @@ let make = (
                 dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
               let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
               let url = dict->getString("return_url_with_query_params", "")
-              PaymentHelpers.pollStatus(~headers, ~switchToCustomPod, ~pollId, ~interval, ~count)
-              ->then(res => {
-                let dict = res->JSON.Decode.object->Option.getOr(Dict.make())
-                let status = dict->getString("status", "")
-                if status === "completed" {
-                  Window.Location.replace(url)->ignore // retrive status
-                }->resolve
-              })
-              ->catch(_e =>
-                postFailedSubmitResponse(
-                  ~errortype="Server_error",
-                  ~message="Something went Wrong",
-                )->resolve
+              PaymentHelpers.pollStatus(
+                ~headers,
+                ~switchToCustomPod,
+                ~pollId,
+                ~interval,
+                ~count,
+                ~returnUrl=url,
               )
+              ->then(_ => {
+                PaymentHelpers.retrievePaymentIntent(
+                  clientSecret,
+                  headers,
+                  ~optLogger=Some(logger),
+                  ~switchToCustomPod,
+                  ~isForceSync=true,
+                )
+                ->then(json => {
+                  let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+                  let status = dict->getString("status", "")
+                  let returnUrl = dict->getString("return_url", "")
+                  Window.Location.replace(
+                    `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
+                  )
+                  resolve()
+                })
+                ->catch(_ => {
+                  Window.Location.replace(url)
+                  resolve()
+                })
+                ->ignore
+                ->resolve
+              })
+              ->catch(e => Console.log2("POLL_STATUS ERROR -", e)->resolve)
               ->ignore
             }
           | None => ()
