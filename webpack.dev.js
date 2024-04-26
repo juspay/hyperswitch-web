@@ -1,8 +1,16 @@
 const path = require("path");
+const fs = require("fs");
+const dotenv = require("dotenv");
 const { merge } = require("webpack-merge");
 const common = require("./webpack.common.js");
 
-const sdkEnv = process.env.sdkEnv;
+// * Load environment variables from .env file
+const envPath = path.resolve(__dirname, ".env");
+const envVars = fs.existsSync(envPath)
+  ? dotenv.parse(fs.readFileSync(envPath))
+  : {};
+
+const sdkEnv = envVars.SDK_ENV ?? "local";
 
 let backendEndPoint =
   sdkEnv === "prod"
