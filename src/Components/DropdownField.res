@@ -99,7 +99,12 @@ let make = (
         <div className={`Input ${className} appearance-none relative`}>
           <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
             <div
-              className="absolute top-2.5 right-0 left-2 bottom-0 pointer-events-none bg-white rounded-sm">
+              className="absolute top-2.5 right-0 left-2 bottom-0 pointer-events-none rounded-sm"
+              style={ReactDOMStyle.make(
+                ~background=disabled ? disbaledBG : themeObj.colorBackground,
+                ~borderRadius="6px",
+                (),
+              )}>
               {React.string(displayValue->Option.getOr(""))}
             </div>
           </RenderIf>
