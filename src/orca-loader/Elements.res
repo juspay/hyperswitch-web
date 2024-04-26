@@ -458,13 +458,10 @@ let make = (
                 ->then(json => {
                   let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
                   let status = dict->getString("status", "")
-                  if status === "succeeded" || status === "failed" {
-                    Window.Location.replace(
-                      `${url}?payment_intent_client_secret=${clientSecret}&status=${status}`,
-                    )
-                  } else {
-                    Window.Location.replace(url)
-                  }
+                  let returnUrl = dict->getString("return_url", "")
+                  Window.Location.replace(
+                    `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
+                  )
                   resolve()
                 })
                 ->catch(_ => {
