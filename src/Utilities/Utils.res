@@ -1224,13 +1224,9 @@ let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   }
 }
 
-let componentsForPaymentElementCreate = [
-  "payment",
-  "googlePay",
-  "payPal",
-  "applePay",
-  "paymentRequestButtons",
-]
+let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "paymentRequestButtons"]
+
+let componentsForPaymentElementCreate = ["payment"]->Array.concat(expressCheckoutComponents)
 
 let isComponentTypeForPaymentElementCreate = componentType => {
   componentsForPaymentElementCreate->Array.includes(componentType)

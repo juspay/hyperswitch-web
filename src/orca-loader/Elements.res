@@ -168,6 +168,7 @@ let make = (
       )
       preMountLoaderIframeDiv->Window.iframePostMessage(msg)
     }
+
     let fetchCustomerPaymentMethods = (mountedIframeRef, disableSaveCards, componentType) => {
       if !disableSaveCards {
         let handleCustomerPaymentMethodsLoaded = (event: Types.event) => {
@@ -957,7 +958,8 @@ let make = (
           if (
             newOptions
             ->getDictFromJson
-            ->getBool("displaySavedPaymentMethods", true)
+            ->getBool("displaySavedPaymentMethods", true) &&
+              !(Utils.expressCheckoutComponents->Array.includes(componentType))
           ) {
             fetchCustomerPaymentMethods(mountedIframeRef, false, componentType)
           }
