@@ -622,6 +622,7 @@ let make = (
                 ~interval,
                 ~count,
                 ~returnUrl=url,
+                ~logger,
               )
               ->then(_ => {
                 PaymentHelpers.retrievePaymentIntent(
