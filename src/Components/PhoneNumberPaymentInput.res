@@ -30,7 +30,7 @@ let make = () => {
     let phoneNumberOptionsValue: DropdownField.optionType = {
       label: `${countryFlag} ${countryName} ${phoneNumberCode}`,
       displayValue: `${countryFlag} ${phoneNumberCode}`,
-      value: phoneNumberCode,
+      value: `${countryFlag}#${phoneNumberCode}`,
     }
     acc->Array.push(phoneNumberOptionsValue)
     acc
@@ -51,12 +51,13 @@ let make = () => {
     ->getString("phone_number_code", "")
 
   let (valueDropDown, setValueDropDown) = React.useState(_ => defaultCountryCodeFilteredValue)
+  let getCountryCodeSplitValue = val => val->String.split("#")->Array.get(1)->Option.getOr("")
 
   let changePhone = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\+D+/g"), "")
     setPhone(prev => {
       ...prev,
-      countryCode: valueDropDown,
+      countryCode: valueDropDown->getCountryCodeSplitValue,
       value: val,
     })
   }
@@ -64,7 +65,7 @@ let make = () => {
   React.useEffect(() => {
     setPhone(prev => {
       ...prev,
-      countryCode: valueDropDown,
+      countryCode: valueDropDown->getCountryCodeSplitValue,
     })
     None
   }, [valueDropDown])
