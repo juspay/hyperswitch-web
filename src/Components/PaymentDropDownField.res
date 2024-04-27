@@ -32,11 +32,15 @@ let make = (
       value.value === initialValue ||
       options->Array.includes(value.value)->not
     ) {
-      setValue(prev => {
-        ...prev,
-        isValid: Some(true),
-        value: initialValue,
-      })
+      setTimeout(() => {
+        setValue(
+          prev => {
+            ...prev,
+            isValid: Some(true),
+            value: initialValue,
+          },
+        )
+      }, 0)->ignore
     }
     None
   }, [options->Array.get(0)->Option.getOr("")])

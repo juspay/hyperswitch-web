@@ -30,7 +30,9 @@ let make = (
   }, [themeObj])
   React.useEffect0(() => {
     if value === "" || !(options->Array.includes(value)) {
-      setValue(_ => options->Array.get(0)->Option.getOr(""))
+      setTimeout(() => {
+        setValue(_ => options->Array.get(0)->Option.getOr(""))
+      }, 0)->ignore
     }
     None
   })
