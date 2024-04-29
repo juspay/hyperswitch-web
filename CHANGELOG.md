@@ -1,3 +1,10 @@
+## [0.46.1](https://github.com/juspay/hyperswitch-web/compare/v0.46.0...v0.46.1) (2024-04-29)
+
+
+### Bug Fixes
+
+* move applepay thirdparty event listeners outside ([#336](https://github.com/juspay/hyperswitch-web/issues/336)) ([c08ec25](https://github.com/juspay/hyperswitch-web/commit/c08ec25e1211e3efdbe7af5c6db44d6a0b7cc03b))
+
 # [0.46.0](https://github.com/juspay/hyperswitch-web/compare/v0.45.1...v0.46.0) (2024-04-26)
 
 

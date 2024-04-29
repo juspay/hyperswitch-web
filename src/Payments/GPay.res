@@ -149,13 +149,6 @@ let make = (
     makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
-        let value = "Payment Data Filled: New Payment Method"
-        loggerState.setLogInfo(
-          ~value,
-          ~eventName=PAYMENT_DATA_FILLED,
-          ~paymentMethod="GOOGLE_PAY",
-          (),
-        )
         if isInvokeSDKFlow {
           if isDelayedSessionToken {
             handlePostMessage([
