@@ -1,7 +1,6 @@
 const webpack = require("webpack");
 const path = require("path");
-const fs = require("fs");
-const dotenv = require("dotenv");
+const dotenv = require("dotenv").config();
 const tailwindcss = require("tailwindcss");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
@@ -11,16 +10,10 @@ const BundleAnalyzerPlugin =
   require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 
-// * Load environment variables from .env file
-const envPath = path.resolve(__dirname, ".env");
-const envVars = fs.existsSync(envPath)
-  ? dotenv.parse(fs.readFileSync(envPath))
-  : {};
-
-const sdkEnv = envVars.SDK_ENV ?? "local";
-const envSdkUrl = envVars.ENV_SDK_URL ?? "";
-const envBackendUrl = envVars.ENV_BACKEND_URL ?? "";
-const envLoggingUrl = envVars.ENV_LOGGING_URL ?? "";
+const sdkEnv = process.env.SDK_ENV ?? "local";
+const envSdkUrl = process.env.ENV_SDK_URL ?? "";
+const envBackendUrl = process.env.ENV_BACKEND_URL ?? "";
+const envLoggingUrl = process.env.ENV_LOGGING_URL ?? "";
 
 //git rev-parse --abbrev-ref HEAD
 let repoVersion = require("./package.json").version;
