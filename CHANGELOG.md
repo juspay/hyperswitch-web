@@ -1,3 +1,10 @@
+# [0.46.0](https://github.com/juspay/hyperswitch-web/compare/v0.45.1...v0.46.0) (2024-04-26)
+
+
+### Features
+
+* three_ds polling part2 ([#334](https://github.com/juspay/hyperswitch-web/issues/334)) ([b61bc3c](https://github.com/juspay/hyperswitch-web/commit/b61bc3cdd049a8b66bbfe38879367ecb22ec0659))
+
 ## [0.45.1](https://github.com/juspay/hyperswitch-web/compare/v0.45.0...v0.45.1) (2024-04-24)
 
 
