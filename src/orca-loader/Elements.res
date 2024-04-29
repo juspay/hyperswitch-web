@@ -423,7 +423,63 @@ let make = (
           }
         }
 
+        let handlePollStatusMessage = (ev: Types.event) => {
+          let eventDataObject = ev.data->anyTypeToJson
+          let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+          switch eventDataObject->getOptionalJsonFromJson("poll_status") {
+          | Some(val) => {
+              handlePostMessage([
+                ("fullscreen", true->JSON.Encode.bool),
+                ("param", "paymentloader"->JSON.Encode.string),
+                ("iframeId", selectorString->JSON.Encode.string),
+              ])
+              let dict = val->getDictFromJson
+              let pollId = dict->getString("poll_id", "")
+              let interval =
+                dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
+              let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
+              let url = dict->getString("return_url_with_query_params", "")
+              PaymentHelpers.pollStatus(
+                ~headers,
+                ~switchToCustomPod,
+                ~pollId,
+                ~interval,
+                ~count,
+                ~returnUrl=url,
+              )
+              ->then(_ => {
+                PaymentHelpers.retrievePaymentIntent(
+                  clientSecret,
+                  headers,
+                  ~optLogger=Some(logger),
+                  ~switchToCustomPod,
+                  ~isForceSync=true,
+                )
+                ->then(json => {
+                  let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+                  let status = dict->getString("status", "")
+                  let returnUrl = dict->getString("return_url", "")
+                  Window.Location.replace(
+                    `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
+                  )
+                  resolve()
+                })
+                ->catch(_ => {
+                  Window.Location.replace(url)
+                  resolve()
+                })
+                ->ignore
+                ->resolve
+              })
+              ->catch(e => Console.log2("POLL_STATUS ERROR -", e)->resolve)
+              ->ignore
+            }
+          | None => ()
+          }
+        }
+
         addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
+        addSmartEventListener("message", handlePollStatusMessage, "onPollStatusMsg")
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
         Window.removeEventListener("message", handleApplePayMessages.contents)
 
