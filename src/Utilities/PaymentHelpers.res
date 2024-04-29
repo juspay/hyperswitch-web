@@ -245,7 +245,7 @@ let retrieveStatus = (~headers, ~switchToCustomPod, pollID) => {
   })
 }
 
-let rec pollStatus = (~headers, ~switchToCustomPod, ~pollId, ~interval, ~count) => {
+let rec pollStatus = (~headers, ~switchToCustomPod, ~pollId, ~interval, ~count, ~returnUrl) => {
   open Promise
   retrieveStatus(~headers, ~switchToCustomPod, pollId)
   ->then(json => {
@@ -254,14 +254,21 @@ let rec pollStatus = (~headers, ~switchToCustomPod, ~pollId, ~interval, ~count) 
     Promise.make((resolve, _) => {
       if status === "completed" {
         resolve(json)
-      } else if !(count > 0) {
+      } else if count === 0 {
         handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
-        postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong") // redirect to return url
+        openUrl(returnUrl)
       } else {
         delay(interval)
         ->then(
           _ => {
-            pollStatus(~headers, ~switchToCustomPod, ~pollId, ~interval, ~count=count - 1)
+            pollStatus(
+              ~headers,
+              ~switchToCustomPod,
+              ~pollId,
+              ~interval,
+              ~count=count - 1,
+              ~returnUrl,
+            )
           },
         )
         ->ignore
@@ -270,7 +277,7 @@ let rec pollStatus = (~headers, ~switchToCustomPod, ~pollId, ~interval, ~count) 
   })
   ->catch(e => {
     Console.log2("Unable to retrieve payment due to following error", e)
-    pollStatus(~headers, ~switchToCustomPod, ~pollId, ~interval, ~count=count - 1)
+    pollStatus(~headers, ~switchToCustomPod, ~pollId, ~interval, ~count=count - 1, ~returnUrl)
   })
 }
 
