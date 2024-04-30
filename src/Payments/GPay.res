@@ -66,7 +66,7 @@ let make = (
     ->Option.getOr(false)
   }, [thirdPartySessionObj])
 
-  let processPayment = (body: array<(string, JSON.t)>, isThirdPartyFlow) => {
+  let processPayment = (body: array<(string, JSON.t)>, ~isThirdPartyFlow=false, ()) => {
     intent(
       ~bodyArr=body,
       ~confirmParam={
@@ -104,7 +104,7 @@ let make = (
           ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
           ->getArrayOfTupleFromDict
         }
-        processPayment(body, false)
+        processPayment(body, ())
       }
       if dict->Dict.get("gpayError")->Option.isSome {
         Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
@@ -158,7 +158,7 @@ let make = (
               ("iframeId", iframeId->JSON.Encode.string),
             ])
             let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
-            processPayment(bodyDict, true)
+            processPayment(bodyDict, ~isThirdPartyFlow=true, ())
           } else {
             handlePostMessage([
               ("fullscreen", true->JSON.Encode.bool),
@@ -169,7 +169,7 @@ let make = (
           }
         } else {
           let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
-          processPayment(bodyDict, false)
+          processPayment(bodyDict, ())
         }
       }
       resolve()
