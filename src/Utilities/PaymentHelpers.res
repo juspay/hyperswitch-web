@@ -924,6 +924,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~bodyArr: array<(string, JSON.t)>,
     ~confirmParam: ConfirmType.confirmParams,
     ~iframeId=keys.iframeId,
+    ~isThirdPartyFlow=false,
     (),
   ) => {
     switch keys.clientSecret {
@@ -941,7 +942,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         ])
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
-        ~isConfirmCall=true,
+        ~isConfirmCall=!isThirdPartyFlow,
         (),
       )
       let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
