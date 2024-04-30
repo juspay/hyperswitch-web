@@ -10,6 +10,8 @@ type trustPayFunctions = {
   executeGooglePayment: (string, GooglePayType.paymentDataRequest) => Promise.t<JSON.t>,
 }
 @new external trustPayApi: JSON.t => trustPayFunctions = "TrustPayApi"
+@val @scope("window")
+external alert: 't => unit = "alert"
 
 let make = (
   options,
@@ -452,6 +454,9 @@ let make = (
           switch dict->Dict.get("applePayButtonClicked") {
           | Some(val) =>
             if val->JSON.Decode.bool->Belt.Option.getWithDefault(false) {
+              alert(event)
+              alert("event.isTrusted handleApplePayThirdPartyFlow")
+              alert(event.isTrusted)
               let applePaySessionTokenData =
                 dict
                 ->Dict.get("applePayPresent")
