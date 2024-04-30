@@ -17,7 +17,6 @@ let make = (~paymentType) => {
     switch methodslist {
     | Loaded(paymentlist) =>
       let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
-
       setWalletOptions(_ => walletList)
       setList(_ => plist)
     | _ => ()

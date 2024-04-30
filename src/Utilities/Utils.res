@@ -1232,12 +1232,13 @@ let isComponentTypeForPaymentElementCreate = componentType => {
   componentsForPaymentElementCreate->Array.includes(componentType)
 }
 
+let walletElementPaymentType: array<CardThemeType.mode> = [
+  GooglePayElement,
+  PayPalElement,
+  ApplePayElement,
+  PaymentRequestButtonsElement,
+]
+
 let isWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
-  switch paymentType {
-  | GooglePayElement
-  | PayPalElement
-  | ApplePayElement
-  | PaymentRequestButtonsElement => true
-  | _ => false
-  }
+  walletElementPaymentType->Array.includes(paymentType)
 }

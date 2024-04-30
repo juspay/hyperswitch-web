@@ -314,7 +314,6 @@ let getSourceString = source => {
         paymentMode
         ->CardThemeType.getPaymentModeToStrMapper
         ->toSnakeCaseWithSeparator("_")
-
       "hyper" ++ formattedPaymentMode
     }
   | Headless => "headless"
