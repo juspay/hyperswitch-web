@@ -434,6 +434,7 @@ let rec intentCall = (
                 String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
               let endpoint = ApiEndpoint.getApiEndPoint(
                 ~publishableKey=confirmParam.publishableKey,
+                ~isConfirmCall=isConfirm,
                 (),
               )
               let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
@@ -777,7 +778,11 @@ let rec intentCall = (
         } else {
           let paymentIntentID =
             String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-          let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
+          let endpoint = ApiEndpoint.getApiEndPoint(
+            ~publishableKey=confirmParam.publishableKey,
+            ~isConfirmCall=isConfirm,
+            (),
+          )
           let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
           intentCall(
             ~fetchApi,
