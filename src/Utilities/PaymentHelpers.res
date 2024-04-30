@@ -186,11 +186,10 @@ let rec pollRetrievePaymentIntent = (
   })
 }
 
-let retrieveStatus = (~headers, ~switchToCustomPod, pollID) => {
+let retrieveStatus = (~headers, ~switchToCustomPod, pollID, logger) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let uri = `${endpoint}/poll/status/${pollID}`
-  let logger = OrcaLogger.make()
   logApi(
     ~optLogger=Some(logger),
     ~url=uri,
@@ -245,9 +244,17 @@ let retrieveStatus = (~headers, ~switchToCustomPod, pollID) => {
   })
 }
 
-let rec pollStatus = (~headers, ~switchToCustomPod, ~pollId, ~interval, ~count, ~returnUrl) => {
+let rec pollStatus = (
+  ~headers,
+  ~switchToCustomPod,
+  ~pollId,
+  ~interval,
+  ~count,
+  ~returnUrl,
+  ~logger,
+) => {
   open Promise
-  retrieveStatus(~headers, ~switchToCustomPod, pollId)
+  retrieveStatus(~headers, ~switchToCustomPod, pollId, logger)
   ->then(json => {
     let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
     let status = dict->getString("status", "")
@@ -268,6 +275,7 @@ let rec pollStatus = (~headers, ~switchToCustomPod, ~pollId, ~interval, ~count, 
               ~interval,
               ~count=count - 1,
               ~returnUrl,
+              ~logger,
             )
           },
         )
@@ -277,7 +285,15 @@ let rec pollStatus = (~headers, ~switchToCustomPod, ~pollId, ~interval, ~count, 
   })
   ->catch(e => {
     Console.log2("Unable to retrieve payment due to following error", e)
-    pollStatus(~headers, ~switchToCustomPod, ~pollId, ~interval, ~count=count - 1, ~returnUrl)
+    pollStatus(
+      ~headers,
+      ~switchToCustomPod,
+      ~pollId,
+      ~interval,
+      ~count=count - 1,
+      ~returnUrl,
+      ~logger,
+    )
   })
 }
 

@@ -9,6 +9,10 @@ type mode =
   | CardNumberElement
   | CardExpiryElement
   | CardCVCElement
+  | GooglePayElement
+  | PayPalElement
+  | ApplePayElement
+  | PaymentRequestButtonsElement
   | NONE
 type label = Above | Floating | Never
 type themeClass = {
@@ -79,4 +83,34 @@ type configClass = {
   clientSecret: string,
   fonts: array<fonts>,
   loader: showLoader,
+}
+
+let getPaymentMode = val => {
+  switch val {
+  | "card" => Card
+  | "payment" => Payment
+  | "cardNumber" => CardNumberElement
+  | "cardExpiry" => CardExpiryElement
+  | "cardCvc" => CardCVCElement
+  | "googlePay" => GooglePayElement
+  | "payPal" => PayPalElement
+  | "applePay" => ApplePayElement
+  | "paymentRequestButtons" => PaymentRequestButtonsElement
+  | _ => NONE
+  }
+}
+
+let getPaymentModeToStrMapper = val => {
+  switch val {
+  | Card => "Card"
+  | Payment => "Payment"
+  | CardNumberElement => "CardNumberElement"
+  | CardExpiryElement => "CardExpiryElement"
+  | CardCVCElement => "CardCVCElement"
+  | GooglePayElement => "GooglePayElement"
+  | PayPalElement => "PayPalElement"
+  | ApplePayElement => "ApplePayElement"
+  | PaymentRequestButtonsElement => "PaymentRequestButtonsElement"
+  | NONE => "None"
+  }
 }

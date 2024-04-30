@@ -137,8 +137,14 @@ let convertToScreamingSnakeCase = text => {
   text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
 }
 
+let toSnakeCaseWithSeparator = (str, separator) => {
+  str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
+    `${separator}${letter->String.toLowerCase}`
+  )
+}
+
 type maskableDetails = Email | CardDetails
-type source = Loader | Elements | Headless
+type source = Loader | Elements(CardThemeType.mode) | Headless
 let logInfo = log => {
   Window.isProd ? () : log
 }
@@ -204,6 +210,7 @@ type loggerMake = {
   setClientSecret: string => unit,
   setMerchantId: string => unit,
   setMetadata: JSON.t => unit,
+  setSource: string => unit,
 }
 
 let defaultLoggerConfig = {
@@ -248,6 +255,7 @@ let defaultLoggerConfig = {
   setMerchantId: _x => (),
   setSessionId: _x => (),
   setMetadata: _x => (),
+  setSource: _x => (),
 }
 
 let logFileToObj = logFile => {
@@ -300,8 +308,14 @@ let getRefFromOption = val => {
 }
 let getSourceString = source => {
   switch source {
-  | Loader => "orca-loader"
-  | Elements => "orca-element"
+  | Loader => "hyper_loader"
+  | Elements(paymentMode) => {
+      let formattedPaymentMode =
+        paymentMode
+        ->CardThemeType.getPaymentModeToStrMapper
+        ->toSnakeCaseWithSeparator("_")
+      "hyper" ++ formattedPaymentMode
+    }
   | Headless => "headless"
   }
 }
@@ -388,14 +402,7 @@ let browserDetect = content => {
 
 let arrayOfNameAndVersion = String.split(Window.userAgent->browserDetect, "-")
 
-let make = (
-  ~sessionId=?,
-  ~source: option<source>=?,
-  ~clientSecret=?,
-  ~merchantId=?,
-  ~metadata=?,
-  (),
-) => {
+let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~metadata=?, ()) => {
   let loggingLevel = switch GlobalVars.loggingLevelStr {
   | "DEBUG" => DEBUG
   | "INFO" => INFO
@@ -410,10 +417,7 @@ let make = (
   let setSessionId = value => {
     sessionId := value
   }
-  let sourceString = switch source {
-  | Some(val) => val->getSourceString
-  | None => GlobalVars.repoName
-  }
+  let sourceString = source->getSourceString
 
   let events = ref(Dict.make())
   let eventsCounter = ref(Dict.make())
@@ -474,6 +478,12 @@ let make = (
   let clientSecret = getRefFromOption(clientSecret)
   let setClientSecret = value => {
     clientSecret := value
+  }
+
+  let sourceRef = ref(source->getSourceString)
+
+  let setSource = value => {
+    sourceRef := value
   }
 
   let rec sendLogs = () => {
@@ -767,5 +777,6 @@ let make = (
     setMetadata,
     setLogApi,
     setLogError,
+    setSource,
   }
 }

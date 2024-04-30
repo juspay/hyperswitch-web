@@ -92,6 +92,7 @@ type wallets = {
   walletReturnUrl: string,
   applePay: showType,
   googlePay: showType,
+  payPal: showType,
   style: style,
 }
 type business = {name: string}
@@ -257,6 +258,7 @@ let defaultWallets = {
   walletReturnUrl: "",
   applePay: Auto,
   googlePay: Auto,
+  payPal: Auto,
   style: defaultStyle,
 }
 let defaultBillingAddress = {
@@ -743,7 +745,7 @@ let getWallets = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["applePay", "googlePay", "style", "walletReturnUrl"],
+      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal"],
       json,
       "options.wallets",
       ~logger,
@@ -757,6 +759,10 @@ let getWallets = (dict, str, logger) => {
       ),
       googlePay: getWarningString(json, "googlePay", "auto", ~logger)->getShowType(
         "options.wallets.googlePay",
+        logger,
+      ),
+      payPal: getWarningString(json, "payPal", "auto", ~logger)->getShowType(
+        "options.wallets.payPal",
         logger,
       ),
       style: getStyle(json, "style", logger),
