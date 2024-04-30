@@ -233,11 +233,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let publishableKey = dict->getString("publishableKey", "")
                 logger.setMerchantId(publishableKey)
               }
-
-              if dict->getDictIsSome("endpoint") {
-                let endpoint = dict->getString("endpoint", "")
-                ApiEndpoint.setApiEndPoint(endpoint)
-              }
               if dict->getDictIsSome("analyticsMetadata") {
                 let metadata = dict->getJsonObjectFromDict("analyticsMetadata")
                 logger.setMetadata(metadata)
