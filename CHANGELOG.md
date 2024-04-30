@@ -1,3 +1,15 @@
+# [0.47.0](https://github.com/juspay/hyperswitch-web/compare/v0.46.5...v0.47.0) (2024-04-30)
+
+
+### Bug Fixes
+
+* third party confirm url ([#342](https://github.com/juspay/hyperswitch-web/issues/342)) ([4ba7599](https://github.com/juspay/hyperswitch-web/commit/4ba7599c90dac4c990950eda9bcff49b9ef59e02))
+
+
+### Features
+
+* added one click widgets (applepay, googlepay, paypal) ([#271](https://github.com/juspay/hyperswitch-web/issues/271)) ([509829a](https://github.com/juspay/hyperswitch-web/commit/509829a0c24e10008eef22ede8f4462dfd9eca2d))
+
 ## [0.46.6](https://github.com/juspay/hyperswitch-web/compare/v0.46.5...v0.46.6) (2024-04-30)
 
 
