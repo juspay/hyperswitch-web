@@ -39,12 +39,12 @@ let backendEndPoint;
 if (envBackendUrl === undefined) {
   backendEndPoint =
     sdkEnv === "prod"
-      ? "https://api.hyperswitch.io"
+      ? "https://checkout.hyperswitch.io/api"
       : sdkEnv === "sandbox"
-      ? "https://sandbox.hyperswitch.io"
+      ? "https://beta.hyperswitch.io/api"
       : sdkEnv === "integ"
       ? "https://integ-api.hyperswitch.io"
-      : "https://sandbox.hyperswitch.io";
+      : "https://beta.hyperswitch.io/api";
 } else {
   backendEndPoint = envBackendUrl;
 }
