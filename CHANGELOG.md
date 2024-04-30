@@ -1,3 +1,10 @@
+## [0.46.5](https://github.com/juspay/hyperswitch-web/compare/v0.46.4...v0.46.5) (2024-04-30)
+
+
+### Bug Fixes
+
+* cdn confirm endpoint ([#341](https://github.com/juspay/hyperswitch-web/issues/341)) ([664fd07](https://github.com/juspay/hyperswitch-web/commit/664fd07e227f49598f8ba83d1894abce0648dec6))
+
 ## [0.46.4](https://github.com/juspay/hyperswitch-web/compare/v0.46.3...v0.46.4) (2024-04-30)
 
 
