@@ -1,3 +1,10 @@
+## [0.46.6](https://github.com/juspay/hyperswitch-web/compare/v0.46.5...v0.46.6) (2024-04-30)
+
+
+### Bug Fixes
+
+* apple pau debugging final ([215ee62](https://github.com/juspay/hyperswitch-web/commit/215ee627fda63e3a03cad35aca144786abeab246))
+
 ## [0.46.5](https://github.com/juspay/hyperswitch-web/compare/v0.46.4...v0.46.5) (2024-04-30)
 
 
