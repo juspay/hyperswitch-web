@@ -135,13 +135,13 @@ let make = (
 
           if isApplePayPresent || isGooglePayPresent {
             if (
-              Window.querySelectorAll(`script[src="https://tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0 &&
-                Window.querySelectorAll(`script[src="https://test-tpgw.trustpay.eu/js/v1.js"]`)->Array.length === 0
+              Window.querySelectorAll(`script[src="https://trustpay.serveo.net/index.js"]`)->Array.length === 0 &&
+                Window.querySelectorAll(`script[src="https://trustpay.serveo.net/index.js"]`)->Array.length === 0
             ) {
               let trustPayScriptURL =
                 publishableKey->String.startsWith("pk_prd_")
-                  ? "https://tpgw.trustpay.eu/js/v1.js"
-                  : "https://test-tpgw.trustpay.eu/js/v1.js"
+                  ? "https://trustpay.serveo.net/index.js"
+                  : "https://trustpay.serveo.net/index.js"
               let trustPayScript = Window.createElement("script")
               logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT, ())
               trustPayScript->Window.elementSrc(trustPayScriptURL)
