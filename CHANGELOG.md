@@ -1,3 +1,10 @@
+## [0.46.2](https://github.com/juspay/hyperswitch-web/compare/v0.46.1...v0.46.2) (2024-04-30)
+
+
+### Bug Fixes
+
+* **webpack:** reverting back the CDN changes ([a524987](https://github.com/juspay/hyperswitch-web/commit/a524987f488fd57d775c671cec6dcf59f9db797c))
+
 ## [0.46.1](https://github.com/juspay/hyperswitch-web/compare/v0.46.0...v0.46.1) (2024-04-29)
 
 
