@@ -4,7 +4,6 @@ open Identity
 open Utils
 open EventListenerManager
 open ApplePayTypes
-@send external alert: ('t, string) => unit = "alert"
 
 type trustPayFunctions = {
   finishApplePaymentV2: (string, paymentRequestData) => Promise.t<JSON.t>,
