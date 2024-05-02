@@ -128,7 +128,7 @@ let make = (
               </div>
               <RenderIf condition={isCard && isCardExpired}>
                 <div
-                  className="italic flex"
+                  className="italic"
                   style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
                   {"*This card has expired"->React.string}
                 </div>
