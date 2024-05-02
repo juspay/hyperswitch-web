@@ -42,17 +42,6 @@ let getShowLoader = (str, logger) => {
   }
 }
 
-let getPaymentMode = val => {
-  switch val {
-  | "card" => Card
-  | "payment" => Payment
-  | "cardNumber" => CardNumberElement
-  | "cardExpiry" => CardExpiryElement
-  | "cardCvc" => CardCVCElement
-  | _ => NONE
-  }
-}
-
 let defaultAppearance = {
   theme: Default,
   variables: DefaultTheme.default,

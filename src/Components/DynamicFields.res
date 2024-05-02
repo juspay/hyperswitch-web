@@ -22,7 +22,7 @@ let make = (
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   //<...>//
-  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
+  let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
     ~list,
     ~paymentMethod,
     ~paymentMethodType,

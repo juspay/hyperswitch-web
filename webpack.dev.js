@@ -6,12 +6,12 @@ const sdkEnv = process.env.sdkEnv;
 
 let backendEndPoint =
   sdkEnv === "prod"
-    ? "https://checkout.hyperswitch.io/api/payments"
+    ? "https://api.hyperswitch.io/payments"
     : sdkEnv === "sandbox"
-    ? "https://beta.hyperswitch.io/api/payments"
+    ? "https://sandbox.hyperswitch.io/payments"
     : sdkEnv === "integ"
     ? "https://integ-api.hyperswitch.io/payments"
-    : "https://beta.hyperswitch.io/api/payments";
+    : "https://sandbox.hyperswitch.io/payments";
 
 let devServer = {
   contentBase: path.join(__dirname, "dist"),
@@ -20,7 +20,7 @@ let devServer = {
   port: 9050,
   historyApiFallback: true,
   proxy: {
-    "/api/payments": {
+    "/payments": {
       target: backendEndPoint,
       changeOrigin: true,
       secure: true,
