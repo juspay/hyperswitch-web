@@ -79,4 +79,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   useExistingPaymentMethods: `Använd sparade betalningsmetoder`,
   nicknamePlaceholder: `Kortets smeknamn (valfritt)`,
   selectPaymentMethodText: `Välj en betalningsmetod och försök igen`,
+  cardHeader: `Kortinformation`,
 }

@@ -79,4 +79,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   useExistingPaymentMethods: `استخدم طرق الدفع المحفوظة`,
   cardNickname: `الاسم علي الكارت`,
   nicknamePlaceholder: `اسم البطاقة (اختياري)`,
+  cardHeader: `معلومات البطاقة`,
 }

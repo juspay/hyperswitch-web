@@ -206,7 +206,7 @@ let make = (
                 ~opacity="0.6",
                 (),
               )}>
-              {React.string("Card information")}
+              {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
           <RenderIf condition={!isBancontact}>
