@@ -1,3 +1,10 @@
+## [0.47.1](https://github.com/juspay/hyperswitch-web/compare/v0.47.0...v0.47.1) (2024-05-02)
+
+
+### Bug Fixes
+
+* **paymentutils:** fixed Maximum Depth Exceeded ([#343](https://github.com/juspay/hyperswitch-web/issues/343)) ([f8443c3](https://github.com/juspay/hyperswitch-web/commit/f8443c3a37874b33de6ec1ee83362aef99dc113c))
+
 # [0.47.0](https://github.com/juspay/hyperswitch-web/compare/v0.46.5...v0.47.0) (2024-04-30)
 
 
