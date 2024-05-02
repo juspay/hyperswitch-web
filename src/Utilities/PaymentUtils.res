@@ -323,7 +323,5 @@ let useGetPaymentMethodList = (~list, ~paymentOptions, ~paymentType) => {
     areAllApplePayRequiredFieldsPrefilled,
     optionAtomValue.wallets.payPal,
     paymentType,
-    paymentOrder,
-    paymentOptions,
   ))
 }
