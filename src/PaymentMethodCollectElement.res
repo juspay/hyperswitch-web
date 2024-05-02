@@ -2,13 +2,10 @@ open PaymentMethodCollectUtils
 open RecoilAtoms
 
 @react.component
-let make = (
-  ~enabledPaymentMethods: array<PaymentMethodCollectUtils.paymentMethodType>,
-  ~integrateError,
-  ~logger,
-) => {
+let make = (~integrateError, ~logger) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
-  let options = Recoil.useRecoilValueFromAtom(elementOptions)
+  let options = Recoil.useRecoilValueFromAtom(paymentMethodCollectOptionAtom)
+  let enabledPaymentMethods = options.enabledPaymentMethods
   let availablePaymentMethods: array<paymentMethod> = []
   let availablePaymentMethodTypes: paymentMethodTypes = {
     card: [],
@@ -70,11 +67,38 @@ let make = (
   if integrateError {
     <ErrorOccured />
   } else {
-    <div disabled=options.disabled className="flex flex-col">
-      <div className="flex flex-row m-auto w-full justify-between items-center">
+    <div className="flex">
+      // Merchant's header / sidebar
+      <div className="flex flex-col merchant-header">
+        <div className="flex flex-row merchant-title"> {React.string("HyperSwitch")} </div>
+        <img
+          className="flex flex-row merchant-logo"
+          src="https://app.hyperswitch.io/HyperswitchFavicon.png"
+          alt="O"
+        />
+      </div>
+      // Collect widget
+      <div className="flex-col">
         {availablePaymentMethods
         ->Array.map(pm => {
-          <div> {React.string(pm->String.make)} </div>
+          <div>
+            {React.string(pm->String.make)}
+            {switch pm->String.make {
+            | "BankTransfer" =>
+              availablePaymentMethodTypes.bankTransfer
+              ->Array.map(v => {
+                React.string(v->String.make)
+              })
+              ->React.array
+            | "Wallet" =>
+              availablePaymentMethodTypes.wallet
+              ->Array.map(v => {
+                React.string(v->String.make)
+              })
+              ->React.array
+            | _ => React.null
+            }}
+          </div>
         })
         ->React.array}
       </div>

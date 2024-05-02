@@ -1,7 +1,6 @@
 open LazyUtils
 
 type props = {
-  enabledPaymentMethods: array<PaymentMethodCollectUtils.paymentMethodType>,
   integrateError: bool,
   logger: OrcaLogger.loggerMake,
 }

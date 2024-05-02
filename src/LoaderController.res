@@ -17,6 +17,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
+  let (paymentMethodCollectOptions, setPaymentMethodCollectOptions) = Recoil.useRecoilState(
+    paymentMethodCollectOptionAtom,
+  )
 
   let divRef = React.useRef(Nullable.null)
 
@@ -79,6 +82,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | CardCVCElement
     | Card =>
       setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+    | PaymentMethodCollectElement => {
+        let paymentMethodCollectOptions = PaymentMethodCollectTypes.itemToObjMapper(
+          optionsDict,
+          logger,
+        )
+        setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
+      }
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
         setOptionsPayment(_ => paymentOptions)
@@ -207,6 +217,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
       try {
         let dict = json->getDictFromJson
+        updateOptions(dict)
         if dict->getDictIsSome("paymentElementCreate") {
           if (
             dict

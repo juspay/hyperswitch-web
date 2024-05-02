@@ -266,7 +266,11 @@ let make = (
           ->JSON.Encode.object
         let message =
           [
-            ("paymentElementCreate", (componentType == "payment")->JSON.Encode.bool),
+            (
+              "paymentElementCreate",
+              (componentType == "payment" || componentType == "paymentMethodCollect")
+                ->JSON.Encode.bool,
+            ),
             ("otherElements", otherElements->JSON.Encode.bool),
             ("options", newOptions),
             ("componentType", componentType->JSON.Encode.string),
