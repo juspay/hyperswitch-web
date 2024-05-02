@@ -70,4 +70,5 @@ type localeStrings = {
   useExistingPaymentMethods: string,
   cardNickname: string,
   nicknamePlaceholder: string,
+  cardHeader: string,
 }

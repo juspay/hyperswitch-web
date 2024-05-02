@@ -418,12 +418,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {React.string(localeString.useExistingPaymentMethods)}
       </div>
     </RenderIf>
-    <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
-      <div className="mt-4">
-        <PayNowButton />
-      </div>
-    </RenderIf>
-    <PoweredBy />
     {switch methodslist {
     | LoadError(_) => React.null
     | _ =>
@@ -431,5 +425,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <PaymentElementShimmer />
       </RenderIf>
     }}
+    <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
+      <div className="mt-4">
+        <PayNowButton />
+      </div>
+    </RenderIf>
+    <PoweredBy />
   </>
 }

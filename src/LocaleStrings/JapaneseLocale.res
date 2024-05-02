@@ -79,4 +79,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   useExistingPaymentMethods: `保存した支払い方法を使用する`,
   cardNickname: `カードのニックネーム`,
   nicknamePlaceholder: `カードニックネーム（任意）`,
+  cardHeader: `カード情報`,
 }

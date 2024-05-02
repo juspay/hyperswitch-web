@@ -79,4 +79,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   useExistingPaymentMethods: `Utilitzeu formes de pagament desades`,
   nicknamePlaceholder: `Àlies de la targeta (opcional)`,
   selectPaymentMethodText: `Seleccioneu una forma de pagament i torneu-ho a provar`,
+  cardHeader: `Informació de la targeta`,
 }
