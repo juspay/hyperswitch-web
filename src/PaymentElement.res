@@ -78,7 +78,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
                   : ele.card.expiryYear->Int.fromString->Option.getOr(0)
               )->Int.toString
 
-            let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}-01`)
+            let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
             expiryDate > currentDate
           } else {
             true
