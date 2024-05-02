@@ -5,6 +5,7 @@ let paymentListLookupNew = (
   ~showGooglePay,
   ~areAllGooglePayRequiredFieldsPrefilled,
   ~areAllApplePayRequiredFieldsPrefilled,
+  ~isShowPaypal,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
@@ -45,7 +46,9 @@ let paymentListLookupNew = (
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodName) {
       otherPaymentList->Array.push(item.paymentMethodName)->ignore
     } else if item.methodType == "wallet" {
-      walletsList->Array.push(item.paymentMethodName)->ignore
+      if item.paymentMethodName !== "paypal" || isShowPaypal {
+        walletsList->Array.push(item.paymentMethodName)->ignore
+      }
     } else if item.methodType == "bank_debit" {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_debit")->ignore
     } else if item.methodType == "bank_transfer" {
@@ -236,4 +239,91 @@ let appendedCustomerAcceptance = (~isGuestCustomer, ~paymentType, ~body) => {
   isAppendingCustomerAcceptance(~isGuestCustomer, ~paymentType)
     ? body->Array.concat([("customer_acceptance", PaymentBody.customerAcceptanceBody)])
     : body
+}
+
+let usePaymentMethodTypeFromList = (~list, ~paymentMethod, ~paymentMethodType) => {
+  React.useMemo(() => {
+    PaymentMethodsRecord.getPaymentMethodTypeFromList(
+      ~list,
+      ~paymentMethod,
+      ~paymentMethodType=getPaymentMethodName(
+        ~paymentMethodType=paymentMethod,
+        ~paymentMethodName=paymentMethodType,
+      ),
+    )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
+  }, (list, paymentMethod, paymentMethodType))
+}
+
+let useAreAllRequiredFieldsPrefilled = (~list, ~paymentMethod, ~paymentMethodType) => {
+  let paymentMethodTypes = usePaymentMethodTypeFromList(~list, ~paymentMethod, ~paymentMethodType)
+
+  paymentMethodTypes.required_fields->Array.reduce(true, (acc, requiredField) => {
+    acc && requiredField.value != ""
+  })
+}
+
+let useGetPaymentMethodList = (~list, ~paymentOptions, ~paymentType) => {
+  open Utils
+  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
+
+  let {showCardFormByDefault, paymentMethodOrder} = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.optionAtom,
+  )
+
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
+  let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+
+  let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
+
+  let areAllGooglePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
+    ~list,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="google_pay",
+  )
+
+  let areAllApplePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
+    ~list,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="apple_pay",
+  )
+
+  React.useMemo(() => {
+    switch methodslist {
+    | Loaded(paymentlist) =>
+      let paymentOrder =
+        paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
+      let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      let (wallets, otherOptions) =
+        plist->paymentListLookupNew(
+          ~order=paymentOrder,
+          ~showApplePay=isApplePayReady,
+          ~showGooglePay=isGooglePayReady,
+          ~areAllGooglePayRequiredFieldsPrefilled,
+          ~areAllApplePayRequiredFieldsPrefilled,
+          ~isShowPaypal=optionAtomValue.wallets.payPal === Auto,
+        )
+      (
+        wallets->removeDuplicate->Utils.getWalletPaymentMethod(paymentType),
+        paymentOptions->Array.concat(otherOptions)->removeDuplicate,
+        otherOptions,
+      )
+    | SemiLoaded =>
+      showCardFormByDefault && checkPriorityList(paymentMethodOrder)
+        ? ([], ["card"], [])
+        : ([], [], [])
+    | _ => ([], [], [])
+    }
+  }, (
+    methodslist,
+    paymentMethodOrder,
+    isApplePayReady,
+    isGooglePayReady,
+    areAllGooglePayRequiredFieldsPrefilled,
+    areAllApplePayRequiredFieldsPrefilled,
+    optionAtomValue.wallets.payPal,
+    paymentType,
+    paymentOrder,
+    paymentOptions,
+  ))
 }
