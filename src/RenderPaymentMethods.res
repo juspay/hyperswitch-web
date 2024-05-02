@@ -79,10 +79,16 @@ let make = (
               paymentType cardProps expiryProps cvcProps zipProps handleElementFocus isFocus
             />
           </React.Suspense>
+        | GooglePayElement
+        | PayPalElement
+        | ApplePayElement
+        | PaymentRequestButtonsElement
         | Payment =>
           <React.Suspense
             fallback={<RenderIf condition={showLoader}>
-              <PaymentElementShimmer />
+              {paymentType->Utils.isWalletElementPaymentType
+                ? <WalletShimmer />
+                : <PaymentElementShimmer />}
             </RenderIf>}>
             <PaymentElementRendererLazy paymentType cardProps expiryProps cvcProps />
           </React.Suspense>
