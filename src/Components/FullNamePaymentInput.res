@@ -3,11 +3,7 @@ open PaymentType
 open Utils
 
 @react.component
-let make = (
-  ~paymentType: CardThemeType.mode,
-  ~customFieldName=None,
-  ~optionalRequiredFields=None,
-) => {
+let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
