@@ -315,6 +315,9 @@ let make = (
     dynamicFieldsToRenderInsideBilling->Array.length > 0 &&
       (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
 
+  let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
+  let spacedStylesForCity = isSpacedInnerLayout ? "p-2" : ""
+
   <RenderIf condition={fieldsArr->Array.length > 0}>
     {<>
       {dynamicFieldsToRenderOutsideBilling
@@ -475,7 +478,7 @@ let make = (
       ->React.array}
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
         <div
-          className={`${isSpacedInnerLayout ? "p-2" : "my-2"} w-full text-left`}
+          className={`${spacedStylesForBiilingDetails} w-full text-left`}
           style={ReactDOMStyle.make(
             ~border={isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
             ~borderRadius={isSpacedInnerLayout ? themeObj.borderRadius : ""},
@@ -492,7 +495,7 @@ let make = (
             {React.string(localeString.billingDetailsText)}
           </div>
           <div
-            className={`${isSpacedInnerLayout ? "p-2" : ""} flex flex-col ${isSpacedInnerLayout
+            className={`${spacedStylesForCity} flex flex-col ${isSpacedInnerLayout
                 ? "gap-2"
                 : ""}`}>
             {dynamicFieldsToRenderInsideBilling

@@ -43,6 +43,7 @@ let make = (
   }
 
   let floatinglabelClass = inputFocused ? "Label--floating" : "Label--resting"
+  let inputClassStyles = isSpacedInnerLayout ? "Input" : "Input-Compressed"
 
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
   <RenderIf condition={options->Array.length > 0}>
@@ -78,9 +79,7 @@ let make = (
           disabled={readOnly || disabled}
           onChange=handleChange
           onFocus=handleFocus
-          className={`${isSpacedInnerLayout
-              ? "Input"
-              : "Input-Compressed"} ${className} w-full appearance-none outline-none ${cursorClass}`}>
+          className={`${inputClassStyles} ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>

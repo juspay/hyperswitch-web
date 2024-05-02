@@ -24,9 +24,7 @@ let getTheme = (val, logger) => {
 let getInnerLayout = str => {
   switch str {
   | "compressed" => Compressed
-  | "spaced"
-  | _ =>
-    Spaced
+  | _ => Spaced
   }
 }
 

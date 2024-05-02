@@ -75,6 +75,7 @@ let make = (
   }
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
+  let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
 
   <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
     <RenderIf
@@ -109,9 +110,7 @@ let make = (
           name
           ?maxLength
           ?pattern
-          className={`${innerLayout === Spaced
-              ? "Input"
-              : "Input-Compressed"} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
+          className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
           placeholder={appearance.labels == Above ? placeholder : ""}
           value
           autoComplete="on"

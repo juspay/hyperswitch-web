@@ -189,6 +189,9 @@ let make = (
 
   let nicknameFieldClassName = conditionsForShowingSaveCardCheckbox ? "pt-2" : "pt-5"
 
+  let compressedLayoutStyleForCvcError =
+    innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
+
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
       <div
@@ -270,10 +273,7 @@ let make = (
                   )}
                   appearance=config.appearance
                   type_="tel"
-                  className={`tracking-widest w-full ${innerLayout === Compressed &&
-                      cvcError->String.length > 0
-                      ? "!border-l-0"
-                      : ""}`}
+                  className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
                   maxLength=4
                   inputRef=cvcRef
                   placeholder="123"

@@ -59,6 +59,7 @@ let make = (
 
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
+  let inputClassStyles = isSpacedInnerLayout ? "Input" : "Input-Compressed"
 
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
@@ -106,9 +107,7 @@ let make = (
           disabled={readOnly || disabled}
           onFocus={handleFocus}
           onChange=handleChange
-          className={`${isSpacedInnerLayout
-              ? "Input"
-              : "Input-Compressed"} ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
+          className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>
