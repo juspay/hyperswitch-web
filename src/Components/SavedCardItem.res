@@ -49,6 +49,22 @@ let make = (
   let isCard = paymentItem.paymentMethod === "card"
   let isRenderCvv = isCard && paymentItem.requiresCvv
 
+  let expiryMonth =
+    (
+      paymentItem.card.expiryMonth->Int.fromString === Some(12)
+        ? 01
+        : paymentItem.card.expiryMonth->Int.fromString->Option.getOr(01) + 1
+    )->Int.toString
+  let expiryYear =
+    (
+      paymentItem.card.expiryMonth->Int.fromString === Some(12)
+        ? paymentItem.card.expiryYear->Int.fromString->Option.getOr(0) + 1
+        : paymentItem.card.expiryYear->Int.fromString->Option.getOr(0)
+    )->Int.toString
+  let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
+  let currentDate = Date.make()
+  let isCardExpired = expiryDate < currentDate
+
   let paymentMethodType = switch paymentItem.paymentMethodType {
   | Some(paymentMethodType) => paymentMethodType
   | None => "debit"
@@ -91,22 +107,31 @@ let make = (
               />
             </div>
             <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
-            <div className="flex items-center gap-4">
-              {isCard
-                ? <div className="flex flex-col items-start">
-                    <div> {React.string(paymentItem.card.nickname)} </div>
-                    <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-                      <div className="tracking-widest"> {React.string(`****`)} </div>
-                      <div> {React.string(paymentItem.card.last4Digits)} </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-4">
+                {isCard
+                  ? <div className="flex flex-col items-start">
+                      <div> {React.string(paymentItem.card.nickname)} </div>
+                      <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
+                        <div className="tracking-widest"> {React.string(`****`)} </div>
+                        <div> {React.string(paymentItem.card.last4Digits)} </div>
+                      </div>
                     </div>
-                  </div>
-                : <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>}
-              <RenderIf condition={paymentItem.defaultPaymentMethodSet}>
-                <Icon
-                  size=18
-                  name="checkmark"
-                  style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}
-                />
+                  : <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>}
+                <RenderIf condition={paymentItem.defaultPaymentMethodSet}>
+                  <Icon
+                    size=18
+                    name="checkmark"
+                    style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}
+                  />
+                </RenderIf>
+              </div>
+              <RenderIf condition={isCard && isCardExpired}>
+                <div
+                  className="italic flex"
+                  style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
+                  {"*This card has expired"->React.string}
+                </div>
               </RenderIf>
             </div>
           </div>

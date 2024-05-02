@@ -61,29 +61,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         | Some(defaultPaymentMethod) =>
           [defaultPaymentMethod]->Array.concat(savedCardsWithoutDefaultPaymentMethod)
         | None => savedCardsWithoutDefaultPaymentMethod
-        }->Array.filter(ele => {
-          if ele.paymentMethod === "card" {
-            let currentDate = Date.make()
-            let expiryMonth =
-              (
-                ele.card.expiryMonth->Int.fromString === Some(12)
-                  ? 01
-                  : ele.card.expiryMonth->Int.fromString->Option.getOr(01) + 1
-              )->Int.toString
-
-            let expiryYear =
-              (
-                ele.card.expiryMonth->Int.fromString === Some(12)
-                  ? ele.card.expiryYear->Int.fromString->Option.getOr(0) + 1
-                  : ele.card.expiryYear->Int.fromString->Option.getOr(0)
-              )->Int.toString
-
-            let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
-            expiryDate > currentDate
-          } else {
-            true
-          }
-        })
+        }
 
         setSavedMethods(_ => finalSavedPaymentMethods)
         setLoadSavedCards(_ =>
