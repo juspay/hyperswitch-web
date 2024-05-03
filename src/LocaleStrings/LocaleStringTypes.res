@@ -71,4 +71,5 @@ type localeStrings = {
   cardNickname: string,
   nicknamePlaceholder: string,
   cardExpiredText: string,
+  cardHeader: string,
 }

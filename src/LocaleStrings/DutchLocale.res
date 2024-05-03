@@ -80,4 +80,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   nicknamePlaceholder: `Bijnaam kaart (optioneel)`,
   selectPaymentMethodText: `Selecteer een betaalmethode en probeer het opnieuw`,
   cardExpiredText: `Deze kaart is verlopen`,
+  cardHeader: `Kaartinformatie`,
 }

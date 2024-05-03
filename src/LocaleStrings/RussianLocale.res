@@ -83,4 +83,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   nicknamePlaceholder: `Псевдоним карты (необязательно)`,
   selectPaymentMethodText: `Пожалуйста, выберите способ оплаты и повторите попытку.`,
   cardExpiredText: `Эта карта истекла`,
+  cardHeader: `Информация о карте`,
 }

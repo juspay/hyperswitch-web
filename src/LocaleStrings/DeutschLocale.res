@@ -80,4 +80,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardNickname: `Spitzname der Karte`,
   nicknamePlaceholder: `Kartenname (optional)`,
   cardExpiredText: `Diese Karte ist abgelaufen`,
+  cardHeader: `Kartendaten`,
 }

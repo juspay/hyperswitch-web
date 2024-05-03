@@ -1,3 +1,10 @@
+# [0.48.0](https://github.com/juspay/hyperswitch-web/compare/v0.47.1...v0.48.0) (2024-05-02)
+
+
+### Features
+
+* compressed theme layout ([#320](https://github.com/juspay/hyperswitch-web/issues/320)) ([bdc1336](https://github.com/juspay/hyperswitch-web/commit/bdc1336a62c1916fd87c46749dc017d6832f1c15))
+
 ## [0.47.1](https://github.com/juspay/hyperswitch-web/compare/v0.47.0...v0.47.1) (2024-05-02)
 
 

@@ -80,4 +80,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardNickname: `الاسم علي الكارت`,
   nicknamePlaceholder: `اسم البطاقة (اختياري)`,
   cardExpiredText: `انتهت صلاحية هذه البطاقة`,
+  cardHeader: `معلومات البطاقة`,
 }

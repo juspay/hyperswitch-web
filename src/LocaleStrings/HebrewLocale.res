@@ -80,4 +80,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardNickname: `כינוי לכרטיס`,
   nicknamePlaceholder: `כינוי לכרטיס (אופציונלי)`,
   cardExpiredText: `הכרטיס הזה פג תוקף`,
+  cardHeader: `מידע כרטיס`,
 }

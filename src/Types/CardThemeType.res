@@ -1,5 +1,7 @@
 type theme = Default | Brutal | Midnight | Soft | Charcoal | NONE
 
+type innerLayout = Spaced | Compressed
+
 @val external navigator: 'a = "navigator"
 type showLoader = Auto | Always | Never
 
@@ -70,6 +72,7 @@ type appearance = {
   variables: themeClass,
   rules: JSON.t,
   labels: label,
+  innerLayout: innerLayout,
 }
 type fonts = {
   cssSrc: string,
