@@ -49,19 +49,8 @@ let make = (
   let isCard = paymentItem.paymentMethod === "card"
   let isRenderCvv = isCard && paymentItem.requiresCvv
 
-  let expiryMonth =
-    (
-      paymentItem.card.expiryMonth->Int.fromString === Some(12)
-        ? 01
-        : paymentItem.card.expiryMonth->Int.fromString->Option.getOr(01) + 1
-    )->Int.toString
-  let expiryYear =
-    (
-      paymentItem.card.expiryMonth->Int.fromString === Some(12)
-        ? paymentItem.card.expiryYear->Int.fromString->Option.getOr(0) + 1
-        : paymentItem.card.expiryYear->Int.fromString->Option.getOr(0)
-    )->Int.toString
-  let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
+  let expiryDate = Date.fromString(`${paymentItem.card.expiryYear}-${paymentItem.card.expiryMonth}`)
+  expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
   let currentDate = Date.make()
   let isCardExpired = isCard && expiryDate < currentDate
 
