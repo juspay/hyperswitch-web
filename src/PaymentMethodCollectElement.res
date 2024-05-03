@@ -21,6 +21,7 @@ let make = (~integrateError, ~logger) => {
   let (selectedPaymentMethodType, setSelectedPaymentMethodType) = React.useState(_ =>
     defaultSelectedPaymentMethodType
   )
+  let (paymentMethodData, setPaymentMethodData) = React.useState(_ => defaultPaymentMethodData)
 
   // Form a list of available payment methods
   React.useEffect(() => {
@@ -111,11 +112,51 @@ let make = (~integrateError, ~logger) => {
       </div>
     }
 
-  let renderInputs = (pmt): paymentMethodType => {
+  let renderInputElement = (label, onClickHandler) => {
+    <div className="input-wrapper">
+      <label htmlFor=""> {React.string(label)} </label>
+      <input type_="text" onClick={onClickHandler} />
+    </div>
+  }
+
+  let renderInputs = (pmt: paymentMethodType) => {
     switch pmt {
-    | Card(_) => <div />
-    | BankTransfer(bankTransferType) => <div />
-    | Wallet(wallet) => <div />
+    | Card(_) =>
+      <div className="collect-card">
+        {renderInputElement("Name on card")}
+        {renderInputElement("Card Number")}
+        {renderInputElement("Expiry Date")}
+      </div>
+    | BankTransfer(bankTransferType) =>
+      <div className="collect-bank">
+        {switch bankTransferType {
+        | ACH =>
+          <React.Fragment>
+            {renderInputElement("Routing Number")}
+            {renderInputElement("Bank Account Number")}
+          </React.Fragment>
+        | Bacs =>
+          <React.Fragment>
+            {renderInputElement("Sort Code")}
+            {renderInputElement("Bank Account Number")}
+          </React.Fragment>
+        | Sepa =>
+          <React.Fragment>
+            {renderInputElement("IBAN")}
+            {renderInputElement("BIC")}
+          </React.Fragment>
+        }}
+      </div>
+    | Wallet(walletType) =>
+      <div className="collect-wallet">
+        {switch walletType {
+        | Paypal =>
+          <React.Fragment>
+            {renderInputElement("Email ID")}
+            {renderInputElement("Mobile Number (Optional)")}
+          </React.Fragment>
+        }}
+      </div>
     }
   }
 

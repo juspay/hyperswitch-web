@@ -34,3 +34,8 @@ let defaultAvailablePaymentMethodTypes = {
 }
 let defaultSelectedPaymentMethod: paymentMethod = Card
 let defaultSelectedPaymentMethodType: option<paymentMethodType> = Some(Card(Debit))
+let defaultPaymentMethodData: paymentMethodData = Card({
+  cardNumber: "",
+  expiryMonth: "",
+  expiryYear: "",
+})
