@@ -1,3 +1,10 @@
+## [0.48.2](https://github.com/juspay/hyperswitch-web/compare/v0.48.1...v0.48.2) (2024-05-03)
+
+
+### Bug Fixes
+
+* remove expired saved cards ([#345](https://github.com/juspay/hyperswitch-web/issues/345)) ([97b66c7](https://github.com/juspay/hyperswitch-web/commit/97b66c74584853010b12443febebb53bb8876ac4))
+
 ## [0.48.1](https://github.com/juspay/hyperswitch-web/compare/v0.48.0...v0.48.1) (2024-05-03)
 
 
