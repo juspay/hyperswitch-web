@@ -330,7 +330,47 @@ let findVersion = (re, content) => {
 }
 
 let browserDetect = content => {
-  if RegExp.test("Edg"->RegExp.fromString, content) {
+  if RegExp.test("Instagram"->RegExp.fromString, content) {
+    let re = %re("/Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig")
+    let version = switch findVersion(re, content)
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
+    | Some(a) => a
+    | None => ""
+    }
+    `Instagram-${version}`
+  } else if RegExp.test("FBAV"->RegExp.fromString, content) {
+    let re = %re("/FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig")
+    let version = switch findVersion(re, content)
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
+    | Some(a) => a
+    | None => ""
+    }
+    `Facebook-${version}`
+  } else if RegExp.test("Twitter"->RegExp.fromString, content) {
+    let re = %re("/iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig")
+    let version = switch findVersion(re, content)
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
+    | Some(a) => a
+    | None => ""
+    }
+    `Twitter-${version}`
+  } else if RegExp.test("LinkedIn"->RegExp.fromString, content) {
+    let re = %re("/LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig")
+    let version = switch findVersion(re, content)
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
+    | Some(a) => a
+    | None => ""
+    }
+    `LinkedIn-${version}`
+  } else if RegExp.test("Edg"->RegExp.fromString, content) {
     let re = %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Array.get(1)
