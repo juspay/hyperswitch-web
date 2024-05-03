@@ -1,3 +1,10 @@
+## [0.48.1](https://github.com/juspay/hyperswitch-web/compare/v0.48.0...v0.48.1) (2024-05-03)
+
+
+### Bug Fixes
+
+* **states:** removed few states from the US list ([#348](https://github.com/juspay/hyperswitch-web/issues/348)) ([46ac3c4](https://github.com/juspay/hyperswitch-web/commit/46ac3c416ec0d5aa1288e8ecd87c8409c8cba0c8))
+
 # [0.48.0](https://github.com/juspay/hyperswitch-web/compare/v0.47.1...v0.48.0) (2024-05-02)
 
 
