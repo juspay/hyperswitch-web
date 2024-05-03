@@ -1,3 +1,10 @@
+# [0.49.0](https://github.com/juspay/hyperswitch-web/compare/v0.48.2...v0.49.0) (2024-05-03)
+
+
+### Features
+
+* **\:** identifying in-app browsers from user agents ([#317](https://github.com/juspay/hyperswitch-web/issues/317)) ([0218221](https://github.com/juspay/hyperswitch-web/commit/02182211a40413fd2f764a7ff9efa9d1493e402a))
+
 ## [0.48.2](https://github.com/juspay/hyperswitch-web/compare/v0.48.1...v0.48.2) (2024-05-03)
 
 
