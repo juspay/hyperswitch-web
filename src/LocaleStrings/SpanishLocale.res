@@ -79,5 +79,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   useExistingPaymentMethods: `Utilice métodos de pago guardados`,
   nicknamePlaceholder: `Apodo de la tarjeta (opcional)`,
   selectPaymentMethodText: `Por favor seleccione un método de pago y vuelva a intentarlo`,
+  cardExpiredText: `Esta tarjeta ha caducado`,
   cardHeader: `Información de la tarjeta`,
 }

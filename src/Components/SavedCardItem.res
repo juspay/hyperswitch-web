@@ -11,7 +11,7 @@ let make = (
   ~list,
   ~setRequiredFieldsBody,
 ) => {
-  let {themeObj, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
   let (
     isCVCValid,
@@ -49,6 +49,11 @@ let make = (
   let isCard = paymentItem.paymentMethod === "card"
   let isRenderCvv = isCard && paymentItem.requiresCvv
 
+  let expiryDate = Date.fromString(`${paymentItem.card.expiryYear}-${paymentItem.card.expiryMonth}`)
+  expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
+  let currentDate = Date.make()
+  let isCardExpired = isCard && expiryDate < currentDate
+
   let paymentMethodType = switch paymentItem.paymentMethodType {
   | Some(paymentMethodType) => paymentMethodType
   | None => "debit"
@@ -70,6 +75,7 @@ let make = (
       ~background="transparent",
       ~color=themeObj.colorTextSecondary,
       ~boxShadow="none",
+      ~opacity={isCardExpired ? "0.7" : "1"},
       (),
     )}
     onClick={_ => setPaymentToken(_ => (paymentItem.paymentToken, paymentItem.customerId))}>
@@ -91,23 +97,25 @@ let make = (
               />
             </div>
             <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
-            <div className="flex items-center gap-4">
-              {isCard
-                ? <div className="flex flex-col items-start">
-                    <div> {React.string(paymentItem.card.nickname)} </div>
-                    <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-                      <div className="tracking-widest"> {React.string(`****`)} </div>
-                      <div> {React.string(paymentItem.card.last4Digits)} </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-4">
+                {isCard
+                  ? <div className="flex flex-col items-start">
+                      <div> {React.string(paymentItem.card.nickname)} </div>
+                      <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
+                        <div className="tracking-widest"> {React.string(`****`)} </div>
+                        <div> {React.string(paymentItem.card.last4Digits)} </div>
+                      </div>
                     </div>
-                  </div>
-                : <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>}
-              <RenderIf condition={paymentItem.defaultPaymentMethodSet}>
-                <Icon
-                  size=18
-                  name="checkmark"
-                  style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}
-                />
-              </RenderIf>
+                  : <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>}
+                <RenderIf condition={paymentItem.defaultPaymentMethodSet}>
+                  <Icon
+                    size=18
+                    name="checkmark"
+                    style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}
+                  />
+                </RenderIf>
+              </div>
             </div>
           </div>
           <RenderIf condition={isCard}>
@@ -123,37 +131,44 @@ let make = (
           </RenderIf>
         </div>
         <div className="w-full ">
-          <RenderIf condition={isActive}>
-            <div className="flex flex-col items-start mx-8">
-              <RenderIf condition={isRenderCvv}>
+          <div className="flex flex-col items-start mx-8">
+            <RenderIf condition={isActive && isRenderCvv}>
+              <div
+                className={`flex flex-row items-start justify-start gap-2`}
+                style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
+                <div className="w-12 mt-6"> {React.string("CVC: ")} </div>
                 <div
-                  className={`flex flex-row items-start justify-start gap-2`}
-                  style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
-                  <div className="w-12 mt-6"> {React.string("CVC: ")} </div>
-                  <div
-                    className={`flex h mx-4 justify-start w-16 ${isActive
-                        ? "opacity-1 mt-4"
-                        : "opacity-0"}`}>
-                    <PaymentInputField
-                      isValid=isCVCValid
-                      setIsValid=setIsCVCValid
-                      value=cvcNumber
-                      onChange=changeCVCNumber
-                      onBlur=handleCVCBlur
-                      errorString=cvcError
-                      inputFieldClassName="flex justify-start"
-                      paymentType
-                      appearance=config.appearance
-                      type_="tel"
-                      className={`tracking-widest justify-start w-full`}
-                      maxLength=4
-                      inputRef=cvcRef
-                      placeholder="123"
-                      height="2.2rem"
-                    />
-                  </div>
+                  className={`flex h mx-4 justify-start w-16 ${isActive
+                      ? "opacity-1 mt-4"
+                      : "opacity-0"}`}>
+                  <PaymentInputField
+                    isValid=isCVCValid
+                    setIsValid=setIsCVCValid
+                    value=cvcNumber
+                    onChange=changeCVCNumber
+                    onBlur=handleCVCBlur
+                    errorString=cvcError
+                    inputFieldClassName="flex justify-start"
+                    paymentType
+                    appearance=config.appearance
+                    type_="tel"
+                    className={`tracking-widest justify-start w-full`}
+                    maxLength=4
+                    inputRef=cvcRef
+                    placeholder="123"
+                    height="2.2rem"
+                  />
                 </div>
-              </RenderIf>
+              </div>
+            </RenderIf>
+            <RenderIf condition={isCardExpired}>
+              <div
+                className="italic mt-3 ml-1"
+                style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.7", ())}>
+                {`*${localeString.cardExpiredText}`->React.string}
+              </div>
+            </RenderIf>
+            <RenderIf condition={isActive}>
               <DynamicFields
                 paymentType
                 list
@@ -169,8 +184,8 @@ let make = (
                 paymentMethodType
                 cardBrand={cardBrand->CardUtils.getCardType}
               />
-            </div>
-          </RenderIf>
+            </RenderIf>
+          </div>
         </div>
       </div>
     </div>
