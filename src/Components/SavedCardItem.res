@@ -11,7 +11,7 @@ let make = (
   ~list,
   ~setRequiredFieldsBody,
 ) => {
-  let {themeObj, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
   let (
     isCVCValid,
@@ -176,7 +176,7 @@ let make = (
               <div
                 className="italic mt-3 ml-1"
                 style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.7", ())}>
-                {"*This card has expired"->React.string}
+                {`*${localeString.cardExpiredText}`->React.string}
               </div>
             </RenderIf>
             <RenderIf condition={isActive}>
