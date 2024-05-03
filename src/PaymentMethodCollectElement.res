@@ -1,4 +1,5 @@
 open PaymentMethodCollectUtils
+open PaymentMethodCollectTypes
 open RecoilAtoms
 
 @react.component
@@ -6,101 +7,151 @@ let make = (~integrateError, ~logger) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(paymentMethodCollectOptionAtom)
   let enabledPaymentMethods = options.enabledPaymentMethods
-  let availablePaymentMethods: array<paymentMethod> = []
-  let availablePaymentMethodTypes: paymentMethodTypes = {
-    card: [],
-    bankTransfer: [],
-    wallet: [],
-  }
 
-  // Form a list of available payment method types
-  let _ = enabledPaymentMethods->Array.map(pm => {
-    switch pm {
-    | Card(cardType) =>
-      switch cardType {
-      | Credit =>
-        if !(availablePaymentMethodTypes.card->Array.includes(Credit)) {
-          availablePaymentMethodTypes.card->Array.push(Credit)
+  // Component states
+  let (availablePaymentMethods, setAvailablePaymentMethods) = React.useState(_ =>
+    defaultAvailablePaymentMethods
+  )
+  let (availablePaymentMethodTypes, setAvailablePaymentMethodTypes) = React.useState(_ =>
+    defaultAvailablePaymentMethodTypes
+  )
+  let (selectedPaymentMethod, setSelectedPaymentMethod) = React.useState(_ =>
+    defaultSelectedPaymentMethod
+  )
+  let (selectedPaymentMethodType, setSelectedPaymentMethodType) = React.useState(_ =>
+    defaultSelectedPaymentMethodType
+  )
+
+  // Form a list of available payment methods
+  React.useEffect(() => {
+    let availablePMT = availablePaymentMethodTypes
+    let _ = enabledPaymentMethods->Array.map(pm => {
+      switch pm {
+      | Card(cardType) =>
+        if !(availablePMT.card->Array.includes(cardType)) {
+          availablePMT.card->Array.push(cardType)
         }
-      | Debit =>
-        if !(availablePaymentMethodTypes.card->Array.includes(Debit)) {
-          availablePaymentMethodTypes.card->Array.push(Debit)
+      | BankTransfer(bankTransferType) =>
+        if !(availablePMT.bankTransfer->Array.includes(bankTransferType)) {
+          availablePMT.bankTransfer->Array.push(bankTransferType)
         }
-      }
-    | BankTransfer(bankTransferType) =>
-      switch bankTransferType {
-      | ACH =>
-        if !(availablePaymentMethodTypes.bankTransfer->Array.includes(ACH)) {
-          availablePaymentMethodTypes.bankTransfer->Array.push(ACH)
-        }
-      | Bacs =>
-        if !(availablePaymentMethodTypes.bankTransfer->Array.includes(Bacs)) {
-          availablePaymentMethodTypes.bankTransfer->Array.push(Bacs)
-        }
-      | Sepa =>
-        if !(availablePaymentMethodTypes.bankTransfer->Array.includes(Sepa)) {
-          availablePaymentMethodTypes.bankTransfer->Array.push(Sepa)
-        }
-      }
-    | Wallet(walletType) =>
-      switch walletType {
-      | Paypal =>
-        if !(availablePaymentMethodTypes.wallet->Array.includes(Paypal)) {
-          availablePaymentMethodTypes.wallet->Array.push(Paypal)
+      | Wallet(walletType) =>
+        if !(availablePMT.wallet->Array.includes(walletType)) {
+          availablePMT.wallet->Array.push(walletType)
         }
       }
+    })
+
+    let availablePM = availablePaymentMethods
+    if !(availablePM->Array.includes(BankTransfer)) && availablePMT.bankTransfer->Array.length > 0 {
+      availablePM->Array.push(BankTransfer)
     }
-  })
+    if !(availablePM->Array.includes(Card)) && availablePMT.card->Array.length > 0 {
+      availablePM->Array.push(Card)
+    }
+    if !(availablePM->Array.includes(Wallet)) && availablePMT.wallet->Array.length > 0 {
+      availablePM->Array.push(Wallet)
+    }
 
-  if availablePaymentMethodTypes.bankTransfer->Array.length > 0 {
-    availablePaymentMethods->Array.push(BankTransfer)
-  }
+    setAvailablePaymentMethods(_ => availablePM)
+    setAvailablePaymentMethodTypes(_ => availablePMT)
 
-  if availablePaymentMethodTypes.card->Array.length > 0 {
-    availablePaymentMethods->Array.push(Card)
-  }
+    None
+  }, [enabledPaymentMethods])
 
-  if availablePaymentMethodTypes.wallet->Array.length > 0 {
-    availablePaymentMethods->Array.push(Wallet)
+  // Reset payment method type
+  React.useEffect(() => {
+    switch selectedPaymentMethod {
+    | Card => setSelectedPaymentMethodType(_ => Some(Card(Debit)))
+    | _ => setSelectedPaymentMethodType(_ => None)
+    }
+
+    None
+  }, [selectedPaymentMethod])
+
+  let renderContentHeader = () =>
+    switch selectedPaymentMethodType {
+    | Some(pmt) =>
+      switch pmt {
+      | Card(_) => React.string("Enter card details")
+      | BankTransfer(bankTransferType) =>
+        React.string("Enter " ++ bankTransferType->String.make ++ " bank details ")
+      | Wallet(walletTransferType) =>
+        React.string("Enter " ++ walletTransferType->String.make ++ " wallet details ")
+      }
+    | None => React.string("Select payment method type")
+    }
+
+  let renderPMTOptions = () =>
+    switch selectedPaymentMethod {
+    | Card => React.null
+    | BankTransfer =>
+      <div>
+        {availablePaymentMethodTypes.bankTransfer
+        ->Array.mapWithIndex((pmt, i) =>
+          <div
+            key={Int.toString(i)}
+            onClick={_ => setSelectedPaymentMethodType(_ => Some(BankTransfer(pmt)))}>
+            {React.string(pmt->String.make)}
+          </div>
+        )
+        ->React.array}
+      </div>
+    | Wallet =>
+      <div>
+        {availablePaymentMethodTypes.wallet
+        ->Array.mapWithIndex((pmt, i) =>
+          <div
+            key={Int.toString(i)}
+            onClick={_ => setSelectedPaymentMethodType(_ => Some(Wallet(pmt)))}>
+            {React.string(pmt->String.make)}
+          </div>
+        )
+        ->React.array}
+      </div>
+    }
+
+  let renderInputs = (pmt): paymentMethodType => {
+    switch pmt {
+    | Card(_) => <div />
+    | BankTransfer(bankTransferType) => <div />
+    | Wallet(wallet) => <div />
+    }
   }
 
   if integrateError {
     <ErrorOccured />
   } else {
     <div className="flex">
-      // Merchant's header / sidebar
-      <div className="flex flex-col merchant-header">
-        <div className="flex flex-row merchant-title"> {React.string("HyperSwitch")} </div>
+      // Merchant's info
+      <div className="flex flex-row merchant-header">
         <img
-          className="flex flex-row merchant-logo"
+          className="h-8 w-auto merchant-logo"
           src="https://app.hyperswitch.io/HyperswitchFavicon.png"
           alt="O"
         />
+        <div className="merchant-title"> {React.string("HyperSwitch")} </div>
       </div>
       // Collect widget
-      <div className="flex-col">
-        {availablePaymentMethods
-        ->Array.map(pm => {
+      <div id="collect" className="flex flex-row">
+        <div className="collect-sidebar">
+          {availablePaymentMethods
+          ->Array.mapWithIndex((pm, i) => {
+            <div key={Int.toString(i)} onClick={e => setSelectedPaymentMethod(_ => pm)}>
+              {React.string(pm->String.make)}
+            </div>
+          })
+          ->React.array}
+        </div>
+        <div className="collect-content">
+          <div className="content-header"> {renderContentHeader()} </div>
           <div>
-            {React.string(pm->String.make)}
-            {switch pm->String.make {
-            | "BankTransfer" =>
-              availablePaymentMethodTypes.bankTransfer
-              ->Array.map(v => {
-                React.string(v->String.make)
-              })
-              ->React.array
-            | "Wallet" =>
-              availablePaymentMethodTypes.wallet
-              ->Array.map(v => {
-                React.string(v->String.make)
-              })
-              ->React.array
-            | _ => React.null
+            {switch selectedPaymentMethodType {
+            | Some(pmt) => renderInputs(pmt)
+            | None => renderPMTOptions()
             }}
           </div>
-        })
-        ->React.array}
+        </div>
       </div>
     </div>
   }

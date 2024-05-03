@@ -25,3 +25,12 @@ let itemToObjMapper = (dict, logger) => {
     },
   }
 }
+
+let defaultAvailablePaymentMethods: array<paymentMethod> = []
+let defaultAvailablePaymentMethodTypes = {
+  card: [],
+  bankTransfer: [],
+  wallet: [],
+}
+let defaultSelectedPaymentMethod: paymentMethod = Card
+let defaultSelectedPaymentMethodType: option<paymentMethodType> = Some(Card(Debit))
