@@ -440,15 +440,17 @@ let make = (
             />
           | FullName =>
             <>
-              <div
-                style={ReactDOMStyle.make(
-                  ~marginBottom="5px",
-                  ~fontSize=themeObj.fontSizeLg,
-                  ~opacity="0.6",
-                  (),
-                )}>
-                {item->getCustomFieldName->Option.getOr("")->React.string}
-              </div>
+              <RenderIf condition={!isSpacedInnerLayout}>
+                <div
+                  style={ReactDOMStyle.make(
+                    ~marginBottom="5px",
+                    ~fontSize=themeObj.fontSizeLg,
+                    ~opacity="0.6",
+                    (),
+                  )}>
+                  {item->getCustomFieldName->Option.getOr("")->React.string}
+                </div>
+              </RenderIf>
               <FullNamePaymentInput
                 paymentType
                 customFieldName={item->getCustomFieldName}
