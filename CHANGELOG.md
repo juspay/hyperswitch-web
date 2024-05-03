@@ -1,3 +1,10 @@
+## [0.49.1](https://github.com/juspay/hyperswitch-web/compare/v0.49.0...v0.49.1) (2024-05-03)
+
+
+### Bug Fixes
+
+* card holder name showing twice ([#349](https://github.com/juspay/hyperswitch-web/issues/349)) ([f72fb5a](https://github.com/juspay/hyperswitch-web/commit/f72fb5a4518e98205479801f74ec5cb2a5bca0fd))
+
 # [0.49.0](https://github.com/juspay/hyperswitch-web/compare/v0.48.2...v0.49.0) (2024-05-03)
 
 
