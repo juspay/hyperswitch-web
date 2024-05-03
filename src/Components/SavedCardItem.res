@@ -63,7 +63,7 @@ let make = (
     )->Int.toString
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   let currentDate = Date.make()
-  let isCardExpired = isCard ? expiryDate < currentDate : false
+  let isCardExpired = isCard && expiryDate < currentDate
 
   let paymentMethodType = switch paymentItem.paymentMethodType {
   | Some(paymentMethodType) => paymentMethodType
@@ -172,7 +172,7 @@ let make = (
                 </div>
               </div>
             </RenderIf>
-            <RenderIf condition={isCard && isCardExpired}>
+            <RenderIf condition={isCardExpired}>
               <div
                 className="italic mt-3 ml-1"
                 style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.7", ())}>
