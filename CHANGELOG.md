@@ -1,3 +1,10 @@
+## [0.50.4](https://github.com/juspay/hyperswitch-web/compare/v0.50.3...v0.50.4) (2024-05-06)
+
+
+### Bug Fixes
+
+* combined Dynamic Fields for credit and debit ([#351](https://github.com/juspay/hyperswitch-web/issues/351)) ([fceda3c](https://github.com/juspay/hyperswitch-web/commit/fceda3c4a4c49b528a564d4eabeb711504e2307a))
+
 ## [0.50.3](https://github.com/juspay/hyperswitch-web/compare/v0.50.2...v0.50.3) (2024-05-06)
 
 ## [0.50.2](https://github.com/juspay/hyperswitch-web/compare/v0.50.1...v0.50.2) (2024-05-06)
