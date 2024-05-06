@@ -161,6 +161,7 @@ type options = {
   sdkHandleConfirmPayment: sdkHandleConfirmPayment,
   paymentMethodsHeaderText?: string,
   savedPaymentMethodsHeaderText?: string,
+  hideExpiredPaymentMethods: bool,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -289,6 +290,7 @@ let defaultOptions = {
   showCardFormByDefault: true,
   billingAddress: defaultBillingAddress,
   sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
+  hideExpiredPaymentMethods: false,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -935,6 +937,7 @@ let itemToObjMapper = (dict, logger) => {
       "sdkHandleConfirmPayment",
       "paymentMethodsHeaderText",
       "savedPaymentMethodsHeaderText",
+      "hideExpiredPaymentMethods",
     ],
     dict,
     "options",
@@ -975,6 +978,7 @@ let itemToObjMapper = (dict, logger) => {
     ->getSdkHandleConfirmPaymentProps,
     paymentMethodsHeaderText: ?getOptionString(dict, "paymentMethodsHeaderText"),
     savedPaymentMethodsHeaderText: ?getOptionString(dict, "savedPaymentMethodsHeaderText"),
+    hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
   }
 }
 

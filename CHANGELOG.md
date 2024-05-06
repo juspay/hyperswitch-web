@@ -1,3 +1,53 @@
+## [0.50.3](https://github.com/juspay/hyperswitch-web/compare/v0.50.2...v0.50.3) (2024-05-06)
+
+## [0.50.2](https://github.com/juspay/hyperswitch-web/compare/v0.50.1...v0.50.2) (2024-05-06)
+
+## [0.50.1](https://github.com/juspay/hyperswitch-web/compare/v0.50.0...v0.50.1) (2024-05-06)
+
+# [0.50.0](https://github.com/juspay/hyperswitch-web/compare/v0.49.2...v0.50.0) (2024-05-06)
+
+
+### Features
+
+* hideExpiredPaymentMethods prop added ([#350](https://github.com/juspay/hyperswitch-web/issues/350)) ([f2a8c42](https://github.com/juspay/hyperswitch-web/commit/f2a8c4295953e8743ad9d5f2c4d7df9c3eba6a96))
+
+## [0.49.2](https://github.com/juspay/hyperswitch-web/compare/v0.49.1...v0.49.2) (2024-05-06)
+
+## [0.49.1](https://github.com/juspay/hyperswitch-web/compare/v0.49.0...v0.49.1) (2024-05-03)
+
+
+### Bug Fixes
+
+* card holder name showing twice ([#349](https://github.com/juspay/hyperswitch-web/issues/349)) ([f72fb5a](https://github.com/juspay/hyperswitch-web/commit/f72fb5a4518e98205479801f74ec5cb2a5bca0fd))
+
+# [0.49.0](https://github.com/juspay/hyperswitch-web/compare/v0.48.2...v0.49.0) (2024-05-03)
+
+
+### Features
+
+* **\:** identifying in-app browsers from user agents ([#317](https://github.com/juspay/hyperswitch-web/issues/317)) ([0218221](https://github.com/juspay/hyperswitch-web/commit/02182211a40413fd2f764a7ff9efa9d1493e402a))
+
+## [0.48.2](https://github.com/juspay/hyperswitch-web/compare/v0.48.1...v0.48.2) (2024-05-03)
+
+
+### Bug Fixes
+
+* remove expired saved cards ([#345](https://github.com/juspay/hyperswitch-web/issues/345)) ([97b66c7](https://github.com/juspay/hyperswitch-web/commit/97b66c74584853010b12443febebb53bb8876ac4))
+
+## [0.48.1](https://github.com/juspay/hyperswitch-web/compare/v0.48.0...v0.48.1) (2024-05-03)
+
+
+### Bug Fixes
+
+* **states:** removed few states from the US list ([#348](https://github.com/juspay/hyperswitch-web/issues/348)) ([46ac3c4](https://github.com/juspay/hyperswitch-web/commit/46ac3c416ec0d5aa1288e8ecd87c8409c8cba0c8))
+
+# [0.48.0](https://github.com/juspay/hyperswitch-web/compare/v0.47.1...v0.48.0) (2024-05-02)
+
+
+### Features
+
+* compressed theme layout ([#320](https://github.com/juspay/hyperswitch-web/issues/320)) ([bdc1336](https://github.com/juspay/hyperswitch-web/commit/bdc1336a62c1916fd87c46749dc017d6832f1c15))
+
 ## [0.47.1](https://github.com/juspay/hyperswitch-web/compare/v0.47.0...v0.47.1) (2024-05-02)
 
 

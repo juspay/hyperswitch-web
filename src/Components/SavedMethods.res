@@ -6,7 +6,6 @@ let make = (
   ~loadSavedCards: PaymentType.savedCardsLoadState,
   ~cvcProps,
   ~paymentType,
-  ~list,
 ) => {
   open CardUtils
   open Utils
@@ -27,6 +26,7 @@ let make = (
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (token, _) = paymentToken
   let savedCardlength = savedMethods->Array.length
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let getWalletBrandIcon = (obj: PaymentType.customerMethods) => {
     switch obj.paymentMethodType {
@@ -40,7 +40,6 @@ let make = (
   let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
     ~isSaveCardsChecked,
-    ~list,
     ~isGuestCustomer,
   )
 
@@ -69,7 +68,6 @@ let make = (
         savedCardlength
         cvcProps
         paymentType
-        list
         setRequiredFieldsBody
       />
     })
@@ -177,8 +175,10 @@ let make = (
   useSubmitPaymentData(submitCallback)
 
   let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
-    !isGuestCustomer && list.payment_type === NEW_MANDATE && displaySavedPaymentMethodsCheckbox
-  }, (isGuestCustomer, list.payment_type, displaySavedPaymentMethodsCheckbox))
+    !isGuestCustomer &&
+    paymentMethodListValue.payment_type === NEW_MANDATE &&
+    displaySavedPaymentMethodsCheckbox
+  }, (isGuestCustomer, paymentMethodListValue.payment_type, displaySavedPaymentMethodsCheckbox))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields) {
@@ -208,7 +208,7 @@ let make = (
         <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
       </div>
     </RenderIf>
-    <RenderIf condition={list.payment_type === SETUP_MANDATE}>
+    <RenderIf condition={paymentMethodListValue.payment_type === SETUP_MANDATE}>
       <div
         className="opacity-50 text-xs mb-2 text-left"
         style={ReactDOMStyle.make(

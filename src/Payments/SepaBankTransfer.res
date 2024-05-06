@@ -2,7 +2,7 @@ open RecoilAtoms
 open Utils
 
 @react.component
-let make = (~paymentType, ~list) => {
+let make = (~paymentType) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -23,6 +23,7 @@ let make = (~paymentType, ~list) => {
     ->Option.getOr(Country.defaultTimeZone)
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
 
@@ -36,7 +37,7 @@ let make = (~paymentType, ~list) => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if complete {
-        let (connectors, _) = list->PaymentUtils.getConnectors(BankTransfer(Sepa))
+        let (connectors, _) = paymentMethodListValue->PaymentUtils.getConnectors(BankTransfer(Sepa))
         intent(
           ~bodyArr=PaymentBody.sepaBankTransferBody(
             ~email=email.value,
@@ -71,7 +72,7 @@ let make = (~paymentType, ~list) => {
         options=countryNames
       />
     </RenderIf>
-    <Surcharge list paymentMethod="bank_transfer" paymentMethodType="sepa" />
+    <Surcharge paymentMethod="bank_transfer" paymentMethodType="sepa" />
     <InfoElement />
   </div>
 }

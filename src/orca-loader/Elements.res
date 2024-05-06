@@ -119,16 +119,19 @@ let make = (
         let isPaymentMethodsData = dict->Utils.getString("data", "") === "payment_methods"
         if isPaymentMethodsData {
           let json = dict->Utils.getJsonFromDict("response", JSON.Encode.null)
-          let isApplePayPresent =
-            PaymentMethodsRecord.getPaymentMethodTypeFromList(
-              ~list=json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper,
-              ~paymentMethod="wallet",
-              ~paymentMethodType="apple_pay",
-            )->Belt.Option.isSome
+          let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
+            ~paymentMethodListValue=json
+            ->Utils.getDictFromJson
+            ->PaymentMethodsRecord.itemToObjMapper,
+            ~paymentMethod="wallet",
+            ~paymentMethodType="apple_pay",
+          )->Belt.Option.isSome
 
           let isGooglePayPresent =
             PaymentMethodsRecord.getPaymentMethodTypeFromList(
-              ~list=json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper,
+              ~paymentMethodListValue=json
+              ->Utils.getDictFromJson
+              ->PaymentMethodsRecord.itemToObjMapper,
               ~paymentMethod="wallet",
               ~paymentMethodType="google_pay",
             )->Belt.Option.isSome

@@ -1,28 +1,31 @@
 const webpack = require("webpack");
 const path = require("path");
+const dotenv = require("dotenv").config();
 const tailwindcss = require("tailwindcss");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
-const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
+const BundleAnalyzerPlugin =
+  require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 
-const sdkEnv = process.env.sdkEnv;
-const envSdkUrl = process.env.envSdkUrl;
-const envBackendUrl = process.env.envBackendUrl;
-const envLoggingUrl = process.env.envLoggingUrl;
+const sdkEnv = process.env.sdkEnv ?? "local";
+const envSdkUrl = process.env.ENV_SDK_URL ?? "";
+const envBackendUrl = process.env.ENV_BACKEND_URL ?? "";
+const envLoggingUrl = process.env.ENV_LOGGING_URL ?? "";
 
 //git rev-parse --abbrev-ref HEAD
 let repoVersion = require("./package.json").version;
 let majorVersion = "v" + repoVersion.split(".")[0];
 
 let repoName = require("./package.json").name;
-let repoPublicPath = sdkEnv === "local" ? "" : `/${repoVersion}/${majorVersion}`;
+let repoPublicPath =
+  sdkEnv === "local" ? "" : `/${repoVersion}/${majorVersion}`;
 
 let sdkUrl;
 
-if (envSdkUrl === undefined) {
+if (envSdkUrl.length === 0) {
   sdkUrl =
     sdkEnv === "prod"
       ? "https://checkout.hyperswitch.io"
@@ -36,7 +39,7 @@ if (envSdkUrl === undefined) {
 }
 
 let backendEndPoint;
-if (envBackendUrl === undefined) {
+if (envBackendUrl.length === 0) {
   backendEndPoint =
     sdkEnv === "prod"
       ? "https://checkout.hyperswitch.io/api"
@@ -50,7 +53,7 @@ if (envBackendUrl === undefined) {
 }
 
 let confirmEndPoint;
-if (envBackendUrl === undefined) {
+if (envBackendUrl.length === 0) {
   confirmEndPoint =
     sdkEnv === "prod"
       ? "https://api.hyperswitch.io"
@@ -64,7 +67,7 @@ if (envBackendUrl === undefined) {
 }
 
 let logEndpoint;
-if (envLoggingUrl === undefined) {
+if (envLoggingUrl.length === 0) {
   logEndpoint =
     sdkEnv === "prod"
       ? "https://api.hyperswitch.io/logs/sdk"
@@ -98,6 +101,7 @@ module.exports = (publicPath = "auto") => {
       clean: true,
       publicPath: `${repoPublicPath}/`,
     },
+    // TODO - Can be commented for faster build in local development
     optimization: {
       sideEffects: true,
       minimize: true,
@@ -155,6 +159,7 @@ module.exports = (publicPath = "auto") => {
       // new webpack.HTMLInjectPlugin({
       //   publicPath: JSON.stringify(repoVersion),
       // }),
+      // TODO - Can be commented if sentry not needed.
       sentryWebpackPlugin({
         org: "sentry",
         project: "hyperswitch-react-sdk",

@@ -21,7 +21,7 @@ let formatSortCode = sortcode => {
 let cleanSortCode = str => str->String.replaceRegExp(%re("/-/g"), "")
 
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
+let make = (~paymentType: CardThemeType.mode) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -146,7 +146,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     <EmailPaymentInput paymentType />
     <FullNamePaymentInput paymentType={paymentType} customFieldName=Some("Bank Holder Name") />
     <AddressPaymentInput paymentType />
-    <Surcharge list paymentMethod="bank_debit" paymentMethodType="bacs" />
+    <Surcharge paymentMethod="bank_debit" paymentMethodType="bacs" />
   </div>
 }
 
