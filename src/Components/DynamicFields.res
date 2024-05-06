@@ -29,9 +29,19 @@ let make = (
     ~paymentMethodType,
   )
 
+  let creditPaymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType="credit",
+  )
+
   let requiredFieldsWithBillingDetails = React.useMemo(() => {
     if paymentMethod === "card" {
+      let creditRequiredFields = creditPaymentMethodTypes.required_fields
+
       paymentMethodTypes.required_fields
+      ->Array.concat(creditRequiredFields)
+      ->DynamicFieldsUtils.removeRequiredFieldsDuplicates
     } else if (
       PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType)
     ) {
