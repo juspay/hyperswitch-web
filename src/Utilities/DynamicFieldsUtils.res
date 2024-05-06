@@ -783,3 +783,23 @@ let useAreAllRequiredFieldsPrefilled = (
     acc && requiredField.value != ""
   })
 }
+
+let removeRequiredFieldsDuplicates = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+) => {
+  let (_, requiredFields) = requiredFields->Array.reduce(([], []), (
+    (requiredFieldKeys, uniqueRequiredFields),
+    item,
+  ) => {
+    let requiredField = item.required_field
+
+    if requiredFieldKeys->Array.includes(requiredField)->not {
+      requiredFieldKeys->Array.push(requiredField)
+      uniqueRequiredFields->Array.push(item)
+    }
+
+    (requiredFieldKeys, uniqueRequiredFields)
+  })
+
+  requiredFields
+}
