@@ -10,7 +10,7 @@ const BundleAnalyzerPlugin =
   require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 
-const sdkEnv = process.env.SDK_ENV ?? "local";
+const sdkEnv = process.env.sdkEnv ?? "local";
 const envSdkUrl = process.env.ENV_SDK_URL ?? "";
 const envBackendUrl = process.env.ENV_BACKEND_URL ?? "";
 const envLoggingUrl = process.env.ENV_LOGGING_URL ?? "";

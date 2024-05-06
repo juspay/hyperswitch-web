@@ -2,7 +2,7 @@ const path = require("path");
 const dotenv = require("dotenv").config();
 const { merge } = require("webpack-merge");
 const common = require("./webpack.common.js");
-const sdkEnv = process.env.SDK_ENV ?? "local";
+const sdkEnv = process.env.sdkEnv ?? "local";
 
 let backendEndPoint =
   sdkEnv === "prod"
