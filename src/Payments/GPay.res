@@ -66,7 +66,7 @@ let make = (
     ->Option.getOr(false)
   }, [thirdPartySessionObj])
 
-  let processPayment = (body: array<(string, JSON.t)>) => {
+  let processPayment = (body: array<(string, JSON.t)>, ~isThirdPartyFlow=false, ()) => {
     intent(
       ~bodyArr=body,
       ~confirmParam={
@@ -74,6 +74,7 @@ let make = (
         publishableKey,
       },
       ~handleUserError=true,
+      ~isThirdPartyFlow,
       (),
     )
   }
@@ -103,7 +104,7 @@ let make = (
           ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
           ->getArrayOfTupleFromDict
         }
-        processPayment(body)
+        processPayment(body, ())
       }
       if dict->Dict.get("gpayError")->Option.isSome {
         Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
@@ -149,13 +150,6 @@ let make = (
     makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
-        let value = "Payment Data Filled: New Payment Method"
-        loggerState.setLogInfo(
-          ~value,
-          ~eventName=PAYMENT_DATA_FILLED,
-          ~paymentMethod="GOOGLE_PAY",
-          (),
-        )
         if isInvokeSDKFlow {
           if isDelayedSessionToken {
             handlePostMessage([
@@ -164,7 +158,7 @@ let make = (
               ("iframeId", iframeId->JSON.Encode.string),
             ])
             let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
-            processPayment(bodyDict)
+            processPayment(bodyDict, ~isThirdPartyFlow=true, ())
           } else {
             handlePostMessage([
               ("fullscreen", true->JSON.Encode.bool),
@@ -175,7 +169,7 @@ let make = (
           }
         } else {
           let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
-          processPayment(bodyDict)
+          processPayment(bodyDict, ())
         }
       }
       resolve()

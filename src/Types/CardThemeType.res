@@ -1,5 +1,7 @@
 type theme = Default | Brutal | Midnight | Soft | Charcoal | NONE
 
+type innerLayout = Spaced | Compressed
+
 @val external navigator: 'a = "navigator"
 type showLoader = Auto | Always | Never
 
@@ -9,6 +11,10 @@ type mode =
   | CardNumberElement
   | CardExpiryElement
   | CardCVCElement
+  | GooglePayElement
+  | PayPalElement
+  | ApplePayElement
+  | PaymentRequestButtonsElement
   | NONE
 type label = Above | Floating | Never
 type themeClass = {
@@ -66,6 +72,7 @@ type appearance = {
   variables: themeClass,
   rules: JSON.t,
   labels: label,
+  innerLayout: innerLayout,
 }
 type fonts = {
   cssSrc: string,
@@ -79,4 +86,34 @@ type configClass = {
   clientSecret: string,
   fonts: array<fonts>,
   loader: showLoader,
+}
+
+let getPaymentMode = val => {
+  switch val {
+  | "card" => Card
+  | "payment" => Payment
+  | "cardNumber" => CardNumberElement
+  | "cardExpiry" => CardExpiryElement
+  | "cardCvc" => CardCVCElement
+  | "googlePay" => GooglePayElement
+  | "payPal" => PayPalElement
+  | "applePay" => ApplePayElement
+  | "paymentRequestButtons" => PaymentRequestButtonsElement
+  | _ => NONE
+  }
+}
+
+let getPaymentModeToStrMapper = val => {
+  switch val {
+  | Card => "Card"
+  | Payment => "Payment"
+  | CardNumberElement => "CardNumberElement"
+  | CardExpiryElement => "CardExpiryElement"
+  | CardCVCElement => "CardCVCElement"
+  | GooglePayElement => "GooglePayElement"
+  | PayPalElement => "PayPalElement"
+  | ApplePayElement => "ApplePayElement"
+  | PaymentRequestButtonsElement => "PaymentRequestButtonsElement"
+  | NONE => "None"
+  }
 }

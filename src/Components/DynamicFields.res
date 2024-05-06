@@ -23,7 +23,7 @@ let make = (
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   //<...>//
-  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
+  let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
     ~paymentMethodListValue,
     ~paymentMethod,
     ~paymentMethodType,
@@ -60,12 +60,19 @@ let make = (
       ~isAllStoredCardsHaveName,
       (),
     )
-    ->DynamicFieldsUtils.updateDynamicFields(billingAddress, ())
+    ->DynamicFieldsUtils.updateDynamicFields(
+      billingAddress,
+      ~paymentMethodListValue,
+      ~paymentMethod,
+      ~isSavedCardFlow,
+      (),
+    )
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
 
@@ -149,7 +156,7 @@ let make = (
     cardRef,
     icon,
     cardError,
-    _,
+    setCardError,
     maxCardLength,
   ) = switch cardProps {
   | Some(cardProps) => cardProps
@@ -165,7 +172,7 @@ let make = (
     expiryRef,
     _,
     expiryError,
-    _,
+    setExpiryError,
   ) = switch expiryProps {
   | Some(expiryProps) => expiryProps
   | None => defaultExpiryProps
@@ -181,7 +188,7 @@ let make = (
     cvcRef,
     _,
     cvcError,
-    _,
+    setCvcError,
   ) = switch cvcProps {
   | Some(cvcProps) => cvcProps
   | None => defaultCvcProps
@@ -276,9 +283,17 @@ let make = (
     ~isSavedCardFlow,
     ~isAllStoredCardsHaveName,
     ~setRequiredFieldsBody,
+    ~paymentMethodListValue,
   )
 
-  let submitCallback = DynamicFieldsUtils.useSubmitCallback()
+  let submitCallback = DynamicFieldsUtils.useSubmitCallback(
+    ~cardNumber,
+    ~setCardError,
+    ~cardExpiry,
+    ~setExpiryError,
+    ~cvcNumber,
+    ~setCvcError,
+  )
   useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
@@ -315,6 +330,9 @@ let make = (
     dynamicFieldsToRenderInsideBilling->Array.length > 0 &&
       (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
 
+  let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
+  let spacedStylesForCity = isSpacedInnerLayout ? "p-2" : ""
+
   <RenderIf condition={fieldsArr->Array.length > 0}>
     {<>
       {dynamicFieldsToRenderOutsideBilling
@@ -323,7 +341,7 @@ let make = (
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
           style={ReactDOMStyle.make(
-            ~marginTop=index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
+            ~marginTop=index !== 0 ? themeObj.spacingGridColumn : "",
             ~gridColumnGap=themeObj.spacingGridRow,
             (),
           )}>
@@ -436,11 +454,24 @@ let make = (
               options=currencyArr
             />
           | FullName =>
-            <FullNamePaymentInput
-              paymentType
-              customFieldName={item->getCustomFieldName}
-              optionalRequiredFields={Some(requiredFields)}
-            />
+            <>
+              <RenderIf condition={!isSpacedInnerLayout}>
+                <div
+                  style={ReactDOMStyle.make(
+                    ~marginBottom="5px",
+                    ~fontSize=themeObj.fontSizeLg,
+                    ~opacity="0.6",
+                    (),
+                  )}>
+                  {item->getCustomFieldName->Option.getOr("")->React.string}
+                </div>
+              </RenderIf>
+              <FullNamePaymentInput
+                paymentType
+                customFieldName={item->getCustomFieldName}
+                optionalRequiredFields={Some(requiredFields)}
+              />
+            </>
           | Email
           | InfoElement
           | Country
@@ -464,15 +495,26 @@ let make = (
       ->React.array}
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
         <div
-          className="p-2 w-full text-left"
+          className={`${spacedStylesForBiilingDetails} w-full text-left`}
           style={ReactDOMStyle.make(
-            ~border=`1px solid ${themeObj.borderColor}`,
-            ~borderRadius=themeObj.borderRadius,
-            ~margin=`10px 0`,
+            ~border={isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
+            ~borderRadius={isSpacedInnerLayout ? themeObj.borderRadius : ""},
+            ~margin={isSpacedInnerLayout ? `10px 0` : ""},
             (),
           )}>
-          {React.string(localeString.billingDetailsText)}
-          <div className="p-2 flex flex-col gap-2">
+          <div
+            style={ReactDOMStyle.make(
+              ~marginBottom="5px",
+              ~fontSize=themeObj.fontSizeLg,
+              ~opacity="0.6",
+              (),
+            )}>
+            {React.string(localeString.billingDetailsText)}
+          </div>
+          <div
+            className={`${spacedStylesForCity} flex flex-col ${isSpacedInnerLayout
+                ? "gap-2"
+                : ""}`}>
             {dynamicFieldsToRenderInsideBilling
             ->Array.mapWithIndex((item, index) => {
               <div
@@ -483,7 +525,7 @@ let make = (
                 | Email => <EmailPaymentInput paymentType />
                 | PhoneNumber => <PhoneNumberPaymentInput />
                 | StateAndCity =>
-                  <div className="flex gap-1">
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
                     <PaymentField
                       fieldName=localeString.cityLabel
                       setValue={setCity}
@@ -508,6 +550,7 @@ let make = (
                       name="city"
                       inputRef=cityRef
                       placeholder=localeString.cityLabel
+                      className={isSpacedInnerLayout ? "" : "!border-r-0"}
                     />
                     {switch stateJson {
                     | Some(options) =>
@@ -525,7 +568,7 @@ let make = (
                     }}
                   </div>
                 | CountryAndPincode(countryArr) =>
-                  <div className="flex gap-1">
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
                     <DropdownField
                       appearance=config.appearance
                       fieldName=localeString.countryLabel
@@ -533,6 +576,7 @@ let make = (
                       setValue={setCountry}
                       disabled=false
                       options=countryArr
+                      className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
                     />
                     <PaymentField
                       fieldName=localeString.postalCodeLabel
@@ -550,6 +594,7 @@ let make = (
                       name="postal"
                       inputRef=postalRef
                       placeholder=localeString.postalCodeLabel
+                      className={isSpacedInnerLayout ? "" : "!border-t-0"}
                     />
                   </div>
                 | AddressLine1 =>
@@ -577,6 +622,7 @@ let make = (
                     name="line1"
                     inputRef=line1Ref
                     placeholder=localeString.line1Placeholder
+                    className={isSpacedInnerLayout ? "" : "!border-b-0"}
                   />
                 | AddressLine2 =>
                   <PaymentField

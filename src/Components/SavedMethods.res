@@ -54,7 +54,7 @@ let make = (
           | Some(ele) => ele
           | None => ""
           }->getCardType,
-          ""->CardTheme.getPaymentMode,
+          ""->CardThemeType.getPaymentMode,
         )
       }
       let isActive = token == obj.paymentToken
