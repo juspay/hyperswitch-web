@@ -19,10 +19,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   } = Recoil.useRecoilValueFromAtom(optionAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
-  let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let methodslist = Recoil.useRecoilValueFromAtom(list)
-  let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
@@ -102,51 +99,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [savedMethods])
 
-  let areAllGooglePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreAllRequiredFieldsPrefilled(
+  let (walletList, paymentOptionsList, actualList) = PaymentUtils.useGetPaymentMethodList(
     ~list,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="google_pay",
+    ~paymentOptions,
+    ~paymentType,
   )
-
-  let areAllApplePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreAllRequiredFieldsPrefilled(
-    ~list,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="apple_pay",
-  )
-
-  let (walletList, paymentOptionsList, actualList) = React.useMemo(() => {
-    switch methodslist {
-    | Loaded(paymentlist) =>
-      let paymentOrder =
-        paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
-      let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
-      let (wallets, otherOptions) =
-        plist->PaymentUtils.paymentListLookupNew(
-          ~order=paymentOrder,
-          ~showApplePay=isApplePayReady,
-          ~showGooglePay=isGooglePayReady,
-          ~areAllGooglePayRequiredFieldsPrefilled,
-          ~areAllApplePayRequiredFieldsPrefilled,
-        )
-      (
-        wallets->removeDuplicate,
-        paymentOptions->Array.concat(otherOptions)->removeDuplicate,
-        otherOptions,
-      )
-    | SemiLoaded =>
-      showCardFormByDefault && checkPriorityList(paymentMethodOrder)
-        ? ([], ["card"], [])
-        : ([], [], [])
-    | _ => ([], [], [])
-    }
-  }, (
-    methodslist,
-    paymentMethodOrder,
-    isApplePayReady,
-    isGooglePayReady,
-    areAllGooglePayRequiredFieldsPrefilled,
-    areAllApplePayRequiredFieldsPrefilled,
-  ))
 
   React.useEffect(() => {
     switch methodslist {
@@ -461,12 +418,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {React.string(localeString.useExistingPaymentMethods)}
       </div>
     </RenderIf>
-    <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
-      <div className="mt-4">
-        <PayNowButton />
-      </div>
-    </RenderIf>
-    <PoweredBy />
     {switch methodslist {
     | LoadError(_) => React.null
     | _ =>
@@ -474,5 +425,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <PaymentElementShimmer />
       </RenderIf>
     }}
+    <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
+      <div className="mt-4">
+        <PayNowButton />
+      </div>
+    </RenderIf>
+    <PoweredBy />
   </>
 }

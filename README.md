@@ -90,7 +90,7 @@ Before you start the local setup, you will need an understanding of few keys -
 - `HYPERSWITCH_PUBLISHABLE_KEY` - Publishable key of your Hyperswitch Account. This key will start with `pk_dev_` for local development, `pk_snd_` for sandbox and `pk_prd_` for production.
 - `HYPERSWITCH_SECRET_KEY` - API key of your Hyperswitch Account
 - `HYPERSWITCH_SERVER_URL` - URL of your hosted Hyperswitch Backend server or you can use our Sandbox URL (https://sandbox.hyperswitch.io) or use your backend running locally (eg. http://localhost:8080).
-- `HYPERSWITCH_CLIENT_URL` - URL of your hosted Hyperswitch SDK or you can use our Sandbox URL (https://beta.hyperswitch.io) or use your app running locally (eg http://localhost:9050).
+- `HYPERSWITCH_CLIENT_URL` - URL of your hosted Hyperswitch SDK or you can use our Sandbox URL (https://beta.hyperswitch.io/v1) or use your app running locally (eg http://localhost:9050).
 
 ### Setup Node
 
