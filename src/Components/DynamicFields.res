@@ -59,7 +59,7 @@ let make = (
       ~isAllStoredCardsHaveName,
       (),
     )
-    ->DynamicFieldsUtils.updateDynamicFields(billingAddress, ())
+    ->DynamicFieldsUtils.updateDynamicFields(billingAddress, ~list, ~paymentMethod, ~isSavedCardFlow, ())
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
@@ -149,7 +149,7 @@ let make = (
     cardRef,
     icon,
     cardError,
-    _,
+    setCardError,
     maxCardLength,
   ) = switch cardProps {
   | Some(cardProps) => cardProps
@@ -165,7 +165,7 @@ let make = (
     expiryRef,
     _,
     expiryError,
-    _,
+    setExpiryError,
   ) = switch expiryProps {
   | Some(expiryProps) => expiryProps
   | None => defaultExpiryProps
@@ -181,7 +181,7 @@ let make = (
     cvcRef,
     _,
     cvcError,
-    _,
+    setCvcError,
   ) = switch cvcProps {
   | Some(cvcProps) => cvcProps
   | None => defaultCvcProps
@@ -276,9 +276,17 @@ let make = (
     ~isSavedCardFlow,
     ~isAllStoredCardsHaveName,
     ~setRequiredFieldsBody,
+    ~list,
   )
 
-  let submitCallback = DynamicFieldsUtils.useSubmitCallback()
+  let submitCallback = DynamicFieldsUtils.useSubmitCallback(
+    ~cardNumber,
+    ~setCardError,
+    ~cardExpiry,
+    ~setExpiryError,
+    ~cvcNumber,
+    ~setCvcError,
+  )
   useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
@@ -326,7 +334,7 @@ let make = (
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
           style={ReactDOMStyle.make(
-            ~marginTop=index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
+            ~marginTop=index !== 0 ? themeObj.spacingGridColumn : "",
             ~gridColumnGap=themeObj.spacingGridRow,
             (),
           )}>
