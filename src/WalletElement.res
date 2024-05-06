@@ -1,7 +1,7 @@
 @react.component
 let make = (~paymentType) => {
   let sessionsObj = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
-  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
+  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
 

@@ -14,17 +14,6 @@
 
 <!-- Describe your changes in detail -->
 
-## Motivation and Context
-
-<!--
-Why is this change required? What problem does it solve?
-If it fixes an open issue, please link to the issue here.
-
-If you don't have an issue, we'd recommend starting with one first so the PR
-can focus on the implementation (unless its an obvious bug or documentation fix
-that will have little conversation).
--->
-
 ## How did you test it?
 
 <!--

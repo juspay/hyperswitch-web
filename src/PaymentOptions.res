@@ -2,11 +2,11 @@ open RecoilAtoms
 module TabLoader = {
   @react.component
   let make = (~cardShimmerCount) => {
-    let list = Recoil.useRecoilValueFromAtom(list)
+    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
     let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
     open PaymentType
     open PaymentElementShimmer
-    switch list {
+    switch paymentMethodList {
     | SemiLoaded =>
       Array.make(~length=cardShimmerCount - 1, "")
       ->Array.mapWithIndex((_, i) => {
