@@ -49,8 +49,10 @@ let make = (
 
   let isCard = paymentItem.paymentMethod === "card"
   let isRenderCvv = isCard && paymentItem.requiresCvv
+  let expiryMonth = paymentItem.card.expiryMonth
+  let expiryYear = paymentItem.card.expiryYear
 
-  let expiryDate = Date.fromString(`${paymentItem.card.expiryYear}-${paymentItem.card.expiryMonth}`)
+  let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
   let currentDate = Date.make()
   let isCardExpired = isCard && expiryDate < currentDate
@@ -125,14 +127,12 @@ let make = (
                 className={`flex flex-row items-center justify-end gap-3 -mt-1`}
                 style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
                 <div className="flex">
-                  {React.string(
-                    `${paymentItem.card.expiryMonth} / ${paymentItem.card.expiryYear->CardUtils.formatExpiryToTwoDigit}`,
-                  )}
+                  {React.string(`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
                 </div>
               </div>
             </RenderIf>
           </div>
-          <div className="w-full ">
+          <div className="w-full">
             <div className="flex flex-col items-start mx-8">
               <RenderIf condition={isActive && isRenderCvv}>
                 <div
