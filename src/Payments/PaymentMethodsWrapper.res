@@ -76,7 +76,8 @@ let make = (
           ->Option.getOr(Bank.defaultBank)
         intent(
           ~bodyArr=PaymentBody.getPaymentBody(
-            ~paymentMethod=paymentMethodName,
+            ~paymentMethod=paymentMethodDetails.methodType,
+            ~paymentMethodType=paymentMethodName,
             ~country=countryCode.isoAlpha2,
             ~fullName=fullName.value,
             ~email=email.value,
