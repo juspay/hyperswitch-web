@@ -1,8 +1,5 @@
 open LazyUtils
 
-type props = {
-  paymentType: CardThemeType.mode,
-  list: PaymentMethodsRecord.list,
-}
+type props = {paymentType: CardThemeType.mode}
 
 let make: props => React.element = reactLazy(() => import_("./BacsBankDebit.bs.js"))

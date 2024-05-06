@@ -1,14 +1,14 @@
 @react.component
 let make = (
-  ~list,
   ~paymentMethod,
   ~paymentMethodType,
   ~cardBrand=CardUtils.NOTFOUND,
   ~isForWallets=false,
 ) => {
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let getPaymentMethodTypes = paymentMethodType => {
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~list,
+      ~paymentMethodListValue,
       ~paymentMethod,
       ~paymentMethodType=PaymentUtils.getPaymentMethodName(
         ~paymentMethodType=paymentMethod,
@@ -19,7 +19,9 @@ let make = (
 
   let paymentMethodTypes = paymentMethodType->getPaymentMethodTypes
 
-  let getOneClickWalletsMessage = SurchargeUtils.useOneClickWalletsMessageGetter(~list)
+  let getOneClickWalletsMessage = SurchargeUtils.useOneClickWalletsMessageGetter(
+    ~paymentMethodListValue,
+  )
   let getSurchargeUtilsMessage = SurchargeUtils.useMessageGetter()
 
   let getSurchargeMessage = () => {
@@ -27,7 +29,8 @@ let make = (
       getOneClickWalletsMessage()
     } else {
       switch paymentMethodTypes.surcharge_details {
-      | Some(surchargeDetails) => getSurchargeUtilsMessage(~paymentMethod, ~surchargeDetails, ~list)
+      | Some(surchargeDetails) =>
+        getSurchargeUtilsMessage(~paymentMethod, ~surchargeDetails, ~paymentMethodListValue)
       | None =>
         if paymentMethod === "card" {
           let creditPaymentMethodTypes = getPaymentMethodTypes("credit")
@@ -50,18 +53,18 @@ let make = (
               getSurchargeUtilsMessage(
                 ~paymentMethod,
                 ~surchargeDetails={creditSurchargeDetails},
-                ~list,
+                ~paymentMethodListValue,
               )
             } else {
               getSurchargeUtilsMessage(
                 ~paymentMethod,
                 ~surchargeDetails={debitSurchargeDetails},
-                ~list,
+                ~paymentMethodListValue,
               )
             }
           | (None, Some(surchargeDetails))
           | (Some(surchargeDetails), None) =>
-            getSurchargeUtilsMessage(~paymentMethod, ~surchargeDetails, ~list)
+            getSurchargeUtilsMessage(~paymentMethod, ~surchargeDetails, ~paymentMethodListValue)
           | (None, None) => None
           }
         } else {

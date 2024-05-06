@@ -1,5 +1,7 @@
+let paymentMethodListValue = Recoil.atom("paymentMethodListValue", PaymentMethodsRecord.defaultList)
+
 let paymentListLookupNew = (
-  list: PaymentMethodsRecord.list,
+  list: PaymentMethodsRecord.paymentMethodList,
   ~order,
   ~showApplePay,
   ~showGooglePay,
@@ -158,7 +160,7 @@ let getExperienceType = method => {
   }
 }
 
-let getConnectors = (list: PaymentMethodsRecord.list, method: connectorType) => {
+let getConnectors = (list: PaymentMethodsRecord.paymentMethodList, method: connectorType) => {
   let paymentMethod =
     list.payment_methods->Array.find(item => item.payment_method == method->getMethod)
   switch paymentMethod {
@@ -241,28 +243,40 @@ let appendedCustomerAcceptance = (~isGuestCustomer, ~paymentType, ~body) => {
     : body
 }
 
-let usePaymentMethodTypeFromList = (~list, ~paymentMethod, ~paymentMethodType) => {
+let usePaymentMethodTypeFromList = (
+  ~paymentMethodListValue,
+  ~paymentMethod,
+  ~paymentMethodType,
+) => {
   React.useMemo(() => {
     PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~list,
+      ~paymentMethodListValue,
       ~paymentMethod,
       ~paymentMethodType=getPaymentMethodName(
         ~paymentMethodType=paymentMethod,
         ~paymentMethodName=paymentMethodType,
       ),
     )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
-  }, (list, paymentMethod, paymentMethodType))
+  }, (paymentMethodListValue, paymentMethod, paymentMethodType))
 }
 
-let useAreAllRequiredFieldsPrefilled = (~list, ~paymentMethod, ~paymentMethodType) => {
-  let paymentMethodTypes = usePaymentMethodTypeFromList(~list, ~paymentMethod, ~paymentMethodType)
+let useAreAllRequiredFieldsPrefilled = (
+  ~paymentMethodListValue,
+  ~paymentMethod,
+  ~paymentMethodType,
+) => {
+  let paymentMethodTypes = usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
 
   paymentMethodTypes.required_fields->Array.reduce(true, (acc, requiredField) => {
     acc && requiredField.value != ""
   })
 }
 
-let useGetPaymentMethodList = (~list, ~paymentOptions, ~paymentType) => {
+let useGetPaymentMethodList = (~paymentMethodListValue, ~paymentOptions, ~paymentType) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
 
@@ -277,13 +291,13 @@ let useGetPaymentMethodList = (~list, ~paymentOptions, ~paymentType) => {
   let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
 
   let areAllGooglePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
-    ~list,
+    ~paymentMethodListValue,
     ~paymentMethod="wallet",
     ~paymentMethodType="google_pay",
   )
 
   let areAllApplePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
-    ~list,
+    ~paymentMethodListValue,
     ~paymentMethod="wallet",
     ~paymentMethodType="apple_pay",
   )

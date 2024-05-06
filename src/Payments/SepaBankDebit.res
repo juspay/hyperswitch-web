@@ -4,7 +4,7 @@ open Utils
 open PaymentModeType
 
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
+let make = (~paymentType: CardThemeType.mode) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
@@ -88,7 +88,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     <FullScreenPortal>
       <BankDebitModal setModalData />
     </FullScreenPortal>
-    <Surcharge list paymentMethod="bank_debit" paymentMethodType="sepa" />
+    <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
     <Terms mode=SepaBankDebit />
   </div>
 }

@@ -3,19 +3,16 @@ open RecoilAtomTypes
 open Utils
 
 @react.component
-let make = (
-  ~paymentType: CardThemeType.mode,
-  ~list: PaymentMethodsRecord.list,
-  ~paymentMethodName: string,
-) => {
+let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
   let phoneNumber = Recoil.useRecoilValueFromAtom(userPhoneNumber)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let optionPaymentMethodDetails =
-    list
+    paymentMethodListValue
     ->PaymentMethodsRecord.buildFromPaymentList
     ->Array.find(x =>
       x.paymentMethodName ===
@@ -116,7 +113,6 @@ let make = (
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
     <DynamicFields
       paymentType
-      list
       paymentMethod=paymentMethodDetails.methodType
       paymentMethodType=paymentMethodName
       setRequiredFieldsBody
