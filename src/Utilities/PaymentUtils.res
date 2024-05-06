@@ -264,7 +264,7 @@ let useAreAllRequiredFieldsPrefilled = (~list, ~paymentMethod, ~paymentMethodTyp
 
 let useGetPaymentMethodList = (~list, ~paymentOptions, ~paymentType) => {
   open Utils
-  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
+  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
 
   let {showCardFormByDefault, paymentMethodOrder} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.optionAtom,
