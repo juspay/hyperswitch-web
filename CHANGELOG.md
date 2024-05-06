@@ -1,3 +1,10 @@
+# [0.50.0](https://github.com/juspay/hyperswitch-web/compare/v0.49.2...v0.50.0) (2024-05-06)
+
+
+### Features
+
+* hideExpiredPaymentMethods prop added ([#350](https://github.com/juspay/hyperswitch-web/issues/350)) ([f2a8c42](https://github.com/juspay/hyperswitch-web/commit/f2a8c4295953e8743ad9d5f2c4d7df9c3eba6a96))
+
 ## [0.49.2](https://github.com/juspay/hyperswitch-web/compare/v0.49.1...v0.49.2) (2024-05-06)
 
 ## [0.49.1](https://github.com/juspay/hyperswitch-web/compare/v0.49.0...v0.49.1) (2024-05-03)
