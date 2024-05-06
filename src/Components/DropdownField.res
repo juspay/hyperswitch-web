@@ -51,7 +51,8 @@ let make = (
         ->Option.getOr(defaultValue)
 
       switch setDisplayValue {
-      | Some(fun) => fun(_ => findDisplayValue.displayValue->Option.getOr(value))
+      | Some(setDisplayValue) =>
+        setDisplayValue(_ => findDisplayValue.displayValue->Option.getOr(value))
       | None => ()
       }
     }
