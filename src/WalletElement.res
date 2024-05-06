@@ -5,10 +5,12 @@ let make = (~paymentType) => {
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
 
-  let (list, setList) = React.useState(_ => PaymentMethodsRecord.defaultList)
+  let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
+    PaymentUtils.paymentMethodListValue,
+  )
 
   let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(
-    ~paymentMethodListValue=list,
+    ~paymentMethodListValue,
     ~paymentOptions=[],
     ~paymentType,
   )
@@ -18,7 +20,7 @@ let make = (~paymentType) => {
     | Loaded(paymentlist) =>
       let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
       setWalletOptions(_ => walletList)
-      setList(_ => plist)
+      setPaymentMethodListValue(_ => plist)
     | _ => ()
     }
     None
