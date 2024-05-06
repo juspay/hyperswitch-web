@@ -641,10 +641,6 @@ let getPaymentMethodFields = (
         isAllStoredCardsHaveName
       ) {
         None
-      } else if (
-        isSavedCardFlow && requiredField.field_type->filterCardDetailsFromSavedPaymentMethod
-      ) {
-        None
       } else {
         requiredField.field_type
       }
