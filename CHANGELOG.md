@@ -1,3 +1,10 @@
+## [0.50.5](https://github.com/juspay/hyperswitch-web/compare/v0.50.4...v0.50.5) (2024-05-06)
+
+
+### Bug Fixes
+
+* fixed Saveds Card Confirm Body Sending card details ([#352](https://github.com/juspay/hyperswitch-web/issues/352)) ([2925299](https://github.com/juspay/hyperswitch-web/commit/29252993dc8738549445c9f3c4ccee594674a89d))
+
 ## [0.50.4](https://github.com/juspay/hyperswitch-web/compare/v0.50.3...v0.50.4) (2024-05-06)
 
 
