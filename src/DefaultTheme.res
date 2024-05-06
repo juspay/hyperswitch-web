@@ -96,6 +96,13 @@ let defaultRules = theme =>
       "boxShadow": `0px 1px 1px rgb(0 0 0 / 3%), 0px 3px 6px rgb(0 0 0 / 2%)`,
       "transition": "background 0.15s ease, border 0.15s ease, box-shadow 0.15s ease, color 0.15s ease",
     },
+    ".Input-Compressed": {
+      "border": `1px solid #e6e6e6`,
+      "color": theme.colorText,
+      "fontWeight": theme.fontWeightLight,
+      "boxShadow": `0px 1px 1px rgb(0 0 0 / 3%), 0px 3px 6px rgb(0 0 0 / 2%)`,
+      "transition": "background 0.15s ease, border 0.15s ease, box-shadow 0.15s ease, color 0.15s ease",
+    },
     ".Input:-webkit-autofill": {
       "transition": "background-color 5000s ease-in-out 0s",
       "-webkitTextFillColor": `${theme.colorText} !important`,
@@ -104,9 +111,15 @@ let defaultRules = theme =>
       "border": `1px solid ${theme.colorPrimary}`,
       "boxShadow": `${theme.colorPrimary}4c 0px 0px 0px 3px`,
     },
+    ".Input-Compressed:focus": {
+      "border": `1px solid ${theme.colorPrimary}`,
+      "boxShadow": `${theme.colorPrimary}4c 0px 0px 0px 2px`,
+      "position": "relative",
+      "zIndex": "2",
+    },
     ".Input--invalid": {
       "color": theme.colorDanger,
-      "border": `2px solid ${theme.colorDanger}`,
+      "border": `1px solid ${theme.colorDanger}`,
       "transition": "border 0.15s ease, box-shadow 0.15s ease, color 0.15s ease",
     },
     ".Input::placeholder": {
