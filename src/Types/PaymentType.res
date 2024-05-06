@@ -92,6 +92,7 @@ type wallets = {
   walletReturnUrl: string,
   applePay: showType,
   googlePay: showType,
+  payPal: showType,
   style: style,
 }
 type business = {name: string}
@@ -160,6 +161,7 @@ type options = {
   sdkHandleConfirmPayment: sdkHandleConfirmPayment,
   paymentMethodsHeaderText?: string,
   savedPaymentMethodsHeaderText?: string,
+  hideExpiredPaymentMethods: bool,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -257,6 +259,7 @@ let defaultWallets = {
   walletReturnUrl: "",
   applePay: Auto,
   googlePay: Auto,
+  payPal: Auto,
   style: defaultStyle,
 }
 let defaultBillingAddress = {
@@ -287,6 +290,7 @@ let defaultOptions = {
   showCardFormByDefault: true,
   billingAddress: defaultBillingAddress,
   sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
+  hideExpiredPaymentMethods: false,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -743,7 +747,7 @@ let getWallets = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["applePay", "googlePay", "style", "walletReturnUrl"],
+      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal"],
       json,
       "options.wallets",
       ~logger,
@@ -757,6 +761,10 @@ let getWallets = (dict, str, logger) => {
       ),
       googlePay: getWarningString(json, "googlePay", "auto", ~logger)->getShowType(
         "options.wallets.googlePay",
+        logger,
+      ),
+      payPal: getWarningString(json, "payPal", "auto", ~logger)->getShowType(
+        "options.wallets.payPal",
         logger,
       ),
       style: getStyle(json, "style", logger),
@@ -929,6 +937,7 @@ let itemToObjMapper = (dict, logger) => {
       "sdkHandleConfirmPayment",
       "paymentMethodsHeaderText",
       "savedPaymentMethodsHeaderText",
+      "hideExpiredPaymentMethods",
     ],
     dict,
     "options",
@@ -969,6 +978,7 @@ let itemToObjMapper = (dict, logger) => {
     ->getSdkHandleConfirmPaymentProps,
     paymentMethodsHeaderText: ?getOptionString(dict, "paymentMethodsHeaderText"),
     savedPaymentMethodsHeaderText: ?getOptionString(dict, "savedPaymentMethodsHeaderText"),
+    hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
   }
 }
 

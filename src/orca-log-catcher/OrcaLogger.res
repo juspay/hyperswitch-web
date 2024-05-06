@@ -63,6 +63,8 @@ type eventName =
   | PAYMENT_METHODS_RESPONSE
   | LOADER_CHANGED
   | PAYMENT_SESSION_INITIATED
+  | POLL_STATUS_INIT
+  | POLL_STATUS_CALL
 
 let eventNameToStrMapper = eventName => {
   switch eventName {
@@ -126,6 +128,8 @@ let eventNameToStrMapper = eventName => {
   | PAYMENT_METHODS_RESPONSE => "PAYMENT_METHODS_RESPONSE"
   | LOADER_CHANGED => "LOADER_CHANGED"
   | PAYMENT_SESSION_INITIATED => "PAYMENT_SESSION_INITIATED"
+  | POLL_STATUS_INIT => "POLL_STATUS_INIT"
+  | POLL_STATUS_CALL => "POLL_STATUS_CALL"
   }
 }
 
@@ -133,8 +137,14 @@ let convertToScreamingSnakeCase = text => {
   text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
 }
 
+let toSnakeCaseWithSeparator = (str, separator) => {
+  str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
+    `${separator}${letter->String.toLowerCase}`
+  )
+}
+
 type maskableDetails = Email | CardDetails
-type source = Loader | Elements | Headless
+type source = Loader | Elements(CardThemeType.mode) | Headless
 let logInfo = log => {
   Window.isProd ? () : log
 }
@@ -200,6 +210,7 @@ type loggerMake = {
   setClientSecret: string => unit,
   setMerchantId: string => unit,
   setMetadata: JSON.t => unit,
+  setSource: string => unit,
 }
 
 let defaultLoggerConfig = {
@@ -244,6 +255,7 @@ let defaultLoggerConfig = {
   setMerchantId: _x => (),
   setSessionId: _x => (),
   setMetadata: _x => (),
+  setSource: _x => (),
 }
 
 let logFileToObj = logFile => {
@@ -296,8 +308,14 @@ let getRefFromOption = val => {
 }
 let getSourceString = source => {
   switch source {
-  | Loader => "orca-loader"
-  | Elements => "orca-element"
+  | Loader => "hyper_loader"
+  | Elements(paymentMode) => {
+      let formattedPaymentMode =
+        paymentMode
+        ->CardThemeType.getPaymentModeToStrMapper
+        ->toSnakeCaseWithSeparator("_")
+      "hyper" ++ formattedPaymentMode
+    }
   | Headless => "headless"
   }
 }
@@ -312,7 +330,47 @@ let findVersion = (re, content) => {
 }
 
 let browserDetect = content => {
-  if RegExp.test("Edg"->RegExp.fromString, content) {
+  if RegExp.test("Instagram"->RegExp.fromString, content) {
+    let re = %re("/Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig")
+    let version = switch findVersion(re, content)
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
+    | Some(a) => a
+    | None => ""
+    }
+    `Instagram-${version}`
+  } else if RegExp.test("FBAV"->RegExp.fromString, content) {
+    let re = %re("/FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig")
+    let version = switch findVersion(re, content)
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
+    | Some(a) => a
+    | None => ""
+    }
+    `Facebook-${version}`
+  } else if RegExp.test("Twitter"->RegExp.fromString, content) {
+    let re = %re("/iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig")
+    let version = switch findVersion(re, content)
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
+    | Some(a) => a
+    | None => ""
+    }
+    `Twitter-${version}`
+  } else if RegExp.test("LinkedIn"->RegExp.fromString, content) {
+    let re = %re("/LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig")
+    let version = switch findVersion(re, content)
+    ->Array.get(1)
+    ->Option.getOr(Nullable.null)
+    ->Nullable.toOption {
+    | Some(a) => a
+    | None => ""
+    }
+    `LinkedIn-${version}`
+  } else if RegExp.test("Edg"->RegExp.fromString, content) {
     let re = %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig")
     let version = switch findVersion(re, content)
     ->Array.get(1)
@@ -384,14 +442,7 @@ let browserDetect = content => {
 
 let arrayOfNameAndVersion = String.split(Window.userAgent->browserDetect, "-")
 
-let make = (
-  ~sessionId=?,
-  ~source: option<source>=?,
-  ~clientSecret=?,
-  ~merchantId=?,
-  ~metadata=?,
-  (),
-) => {
+let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~metadata=?, ()) => {
   let loggingLevel = switch GlobalVars.loggingLevelStr {
   | "DEBUG" => DEBUG
   | "INFO" => INFO
@@ -406,10 +457,7 @@ let make = (
   let setSessionId = value => {
     sessionId := value
   }
-  let sourceString = switch source {
-  | Some(val) => val->getSourceString
-  | None => GlobalVars.repoName
-  }
+  let sourceString = source->getSourceString
 
   let events = ref(Dict.make())
   let eventsCounter = ref(Dict.make())
@@ -472,6 +520,12 @@ let make = (
     clientSecret := value
   }
 
+  let sourceRef = ref(source->getSourceString)
+
+  let setSource = value => {
+    sourceRef := value
+  }
+
   let rec sendLogs = () => {
     switch timeOut.contents {
     | Some(val) => {
@@ -505,6 +559,7 @@ let make = (
       SESSIONS_CALL,
       RETRIEVE_CALL,
       DISPLAY_THREE_DS_SDK,
+      APPLE_PAY_FLOW,
     ]
     arrayOfLogs
     ->Array.find(log => {
@@ -762,5 +817,6 @@ let make = (
     setMetadata,
     setLogApi,
     setLogError,
+    setSource,
   }
 }

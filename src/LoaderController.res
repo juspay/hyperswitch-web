@@ -73,12 +73,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
-    switch paymentMode->CardTheme.getPaymentMode {
+    switch paymentMode->CardThemeType.getPaymentMode {
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
     | Card =>
       setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+    | GooglePayElement
+    | PayPalElement
+    | ApplePayElement
+    | PaymentRequestButtonsElement
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
         setOptionsPayment(_ => paymentOptions)
@@ -176,7 +180,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     if dict->Dict.toArray->Array.length > 0 {
       generateStyleSheet("", dict, "themestyle")
     }
-    switch paymentMode->CardTheme.getPaymentMode {
+    switch paymentMode->CardThemeType.getPaymentMode {
     | Payment => ()
     | _ =>
       let styleClass = [
@@ -232,11 +236,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               if dict->getDictIsSome("publishableKey") {
                 let publishableKey = dict->getString("publishableKey", "")
                 logger.setMerchantId(publishableKey)
-              }
-
-              if dict->getDictIsSome("endpoint") {
-                let endpoint = dict->getString("endpoint", "")
-                ApiEndpoint.setApiEndPoint(endpoint)
               }
               if dict->getDictIsSome("analyticsMetadata") {
                 let metadata = dict->getJsonObjectFromDict("analyticsMetadata")
@@ -500,8 +499,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   }
 
   React.useEffect(() => {
+    let iframeHeight = divH->Float.equal(0.0) ? divH : divH +. 1.0
     handlePostMessage([
-      ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
+      ("iframeHeight", iframeHeight->JSON.Encode.float),
       ("iframeId", iframeId->JSON.Encode.string),
     ])
     None
