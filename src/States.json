@@ -5095,7 +5095,6 @@
       { "name": "Mississippi", "code": "MS" },
       { "name": "Missouri", "code": "MO" },
       { "name": "Montana", "code": "MT" },
-
       { "name": "Nebraska", "code": "NE" },
       { "name": "Nevada", "code": "NV" },
       { "name": "New Hampshire", "code": "NH" },
@@ -5115,12 +5114,9 @@
       { "name": "South Dakota", "code": "SD" },
       { "name": "Tennessee", "code": "TN" },
       { "name": "Texas", "code": "TX" },
-      { "name": "United States Minor Outlying Islands", "code": "UM" },
-      { "name": "United States Virgin Islands", "code": "VI" },
       { "name": "Utah", "code": "UT" },
       { "name": "Vermont", "code": "VT" },
       { "name": "Virginia", "code": "VA" },
-
       { "name": "Washington", "code": "WA" },
       { "name": "West Virginia", "code": "WV" },
       { "name": "Wisconsin", "code": "WI" },

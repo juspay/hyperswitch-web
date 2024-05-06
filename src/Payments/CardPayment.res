@@ -16,6 +16,7 @@ let make = (
   open UtilityHooks
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {innerLayout} = config.appearance
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
@@ -188,12 +189,26 @@ let make = (
 
   let nicknameFieldClassName = conditionsForShowingSaveCardCheckbox ? "pt-2" : "pt-5"
 
+  let compressedLayoutStyleForCvcError =
+    innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
+
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
       <div
         className="flex flex-col"
         style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
         <div className="w-full">
+          <RenderIf condition={innerLayout === Compressed}>
+            <div
+              style={ReactDOMStyle.make(
+                ~marginBottom="5px",
+                ~fontSize=themeObj.fontSizeLg,
+                ~opacity="0.6",
+                (),
+              )}>
+              {React.string(localeString.cardHeader)}
+            </div>
+          </RenderIf>
           <RenderIf condition={!isBancontact}>
             <PaymentInputField
               fieldName=localeString.cardNumberLabel
@@ -210,15 +225,20 @@ let make = (
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
+              className={innerLayout === Compressed && cardError->String.length > 0
+                ? "border-b-0"
+                : ""}
             />
             <div
               className="flex flex-row w-full place-content-between"
               style={ReactDOMStyle.make(
-                ~marginTop=themeObj.spacingGridColumn,
-                ~gridColumnGap=themeObj.spacingGridRow,
+                ~marginTop={
+                  innerLayout === Spaced ? themeObj.spacingGridColumn : ""
+                },
+                ~gridColumnGap={innerLayout === Spaced ? themeObj.spacingGridRow : ""},
                 (),
               )}>
-              <div className="w-[45%]">
+              <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.validThruText
                   isValid=isExpiryValid
@@ -235,7 +255,7 @@ let make = (
                   placeholder="MM / YY"
                 />
               </div>
-              <div className="w-[45%]">
+              <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.cvcTextLabel
                   isValid=isCVCValid
@@ -253,13 +273,29 @@ let make = (
                   )}
                   appearance=config.appearance
                   type_="tel"
-                  className="tracking-widest w-full"
+                  className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
                   maxLength=4
                   inputRef=cvcRef
                   placeholder="123"
                 />
               </div>
             </div>
+            <RenderIf
+              condition={cardError->String.length > 0 ||
+              cvcError->String.length > 0 ||
+              expiryError->String.length > 0}>
+              <div
+                className="Error pt-1"
+                style={ReactDOMStyle.make(
+                  ~color=themeObj.colorDangerText,
+                  ~fontSize=themeObj.fontSizeSm,
+                  ~alignSelf="start",
+                  ~textAlign="left",
+                  (),
+                )}>
+                {React.string("Invalid input")}
+              </div>
+            </RenderIf>
           </RenderIf>
           <DynamicFields
             paymentType

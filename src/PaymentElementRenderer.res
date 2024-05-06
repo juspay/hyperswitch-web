@@ -15,9 +15,14 @@ let make = (
   switch (sessions, list) {
   | (_, Loading) =>
     <RenderIf condition=showLoader>
-      <PaymentElementShimmer />
+      {paymentType->Utils.isWalletElementPaymentType
+        ? <WalletShimmer />
+        : <PaymentElementShimmer />}
     </RenderIf>
-  | _ => <PaymentElement cardProps expiryProps cvcProps paymentType />
+  | _ =>
+    paymentType->Utils.isWalletElementPaymentType
+      ? <WalletElement paymentType />
+      : <PaymentElement cardProps expiryProps cvcProps paymentType />
   }
 }
 

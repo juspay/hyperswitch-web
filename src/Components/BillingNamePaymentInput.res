@@ -4,7 +4,7 @@ open Utils
 
 @react.component
 let make = (~paymentType, ~customFieldName=None, ~requiredFields as optionalRequiredFields=?) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
@@ -74,6 +74,7 @@ let make = (~paymentType, ~customFieldName=None, ~requiredFields as optionalRequ
       name="name"
       inputRef=nameRef
       placeholder
+      className={config.appearance.innerLayout === Spaced ? "" : "!border-b-0"}
     />
   </RenderIf>
 }

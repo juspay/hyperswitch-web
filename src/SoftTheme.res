@@ -85,11 +85,19 @@ let softRules = theme =>
       "boxShadow": `inset 4px 4px 5px #353637, inset -4px -3px 7px #434445`,
       "transition": "background 0.15s ease, border 0.15s ease, box-shadow 0.15s ease, color 0.15s ease",
     },
+    ".Input-Compressed": {
+      "color": theme.colorText,
+      "boxShadow": `inset 4px 4px 5px #353637, inset -4px -3px 7px #434445`,
+      "transition": "background 0.15s ease, border 0.15s ease, box-shadow 0.15s ease, color 0.15s ease",
+    },
     ".Input:-webkit-autofill": {
       "transition": "background-color 5000s ease-in-out 0s",
       "-webkitTextFillColor": `${theme.colorText} !important`,
     },
     ".Input:focus": {
+      "boxShadow": `inset 8px 7px 7px #353637, inset -8px -6px 7px #434445`,
+    },
+    ".Input-Compressed:focus": {
       "boxShadow": `inset 8px 7px 7px #353637, inset -8px -6px 7px #434445`,
     },
     ".Input--invalid": {
