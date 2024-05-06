@@ -60,7 +60,10 @@ let make = (~paymentType, ~list: PaymentMethodsRecord.list) => {
 
   <div
     className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+    style={ReactDOMStyle.make(
+      ~gridGap=config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : "",
+      (),
+    )}>
     <EmailPaymentInput paymentType={paymentType} />
     <FullNamePaymentInput paymentType={paymentType} />
     <RenderIf condition={showAddressDetails.country == Auto}>

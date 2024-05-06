@@ -54,7 +54,7 @@ let make = (
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  let processPayment = bodyArr => {
+  let processPayment = (bodyArr, ~isThirdPartyFlow=false, ()) => {
     let requestBody = PaymentUtils.appendedCustomerAcceptance(
       ~isGuestCustomer,
       ~paymentType=list.payment_type,
@@ -69,6 +69,7 @@ let make = (
           publishableKey,
         },
         ~handleUserError=true,
+        ~isThirdPartyFlow,
         (),
       )
     } else {
@@ -86,6 +87,7 @@ let make = (
           publishableKey,
         },
         ~handleUserError=true,
+        ~isThirdPartyFlow,
         (),
       )
     }
@@ -264,14 +266,14 @@ let make = (
           if isDelayedSessionToken {
             setShowApplePayLoader(_ => true)
             let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
-            processPayment(bodyDict)
+            processPayment(bodyDict, ~isThirdPartyFlow=true, ())
           } else {
             let message = [("applePayButtonClicked", true->JSON.Encode.bool)]
             Utils.handlePostMessage(message)
           }
         } else {
           let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
-          processPayment(bodyDict)
+          processPayment(bodyDict, ())
         }
       } else {
         setApplePayClicked(_ => false)
@@ -295,7 +297,7 @@ let make = (
           let token =
             dict->Dict.get("applePayProcessPayment")->Option.getOr(Dict.make()->JSON.Encode.object)
           let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
-          processPayment(bodyDict)
+          processPayment(bodyDict, ())
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
           if !isWallet {
