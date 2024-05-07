@@ -83,7 +83,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | Card =>
       setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
     | PaymentMethodCollectElement => {
-        let paymentMethodCollectOptions = PaymentMethodCollectTypes.itemToObjMapper(
+        let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(
           optionsDict,
           logger,
         )
@@ -217,7 +217,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
       try {
         let dict = json->getDictFromJson
-        updateOptions(dict)
         if dict->getDictIsSome("paymentElementCreate") {
           if (
             dict

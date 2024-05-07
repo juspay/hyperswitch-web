@@ -19,7 +19,7 @@ let cardBrand = Recoil.atom("cardBrand", "")
 let payNowButtonDisable = Recoil.atom("payNowButtonDisable", true)
 let paymentMethodCollectOptionAtom = Recoil.atom(
   "paymentMethodCollectOptions",
-  PaymentMethodCollectTypes.defaultPaymentMethodCollectOptions,
+  PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
 )
 
 open RecoilAtomTypes

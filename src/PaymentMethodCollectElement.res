@@ -4,7 +4,7 @@ open RecoilAtoms
 
 @react.component
 let make = (~integrateError, ~logger) => {
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(paymentMethodCollectOptionAtom)
   let enabledPaymentMethods = options.enabledPaymentMethods
 
@@ -21,7 +21,10 @@ let make = (~integrateError, ~logger) => {
   let (selectedPaymentMethodType, setSelectedPaymentMethodType) = React.useState(_ =>
     defaultSelectedPaymentMethodType
   )
-  let (paymentMethodData, setPaymentMethodData) = React.useState(_ => defaultPaymentMethodData)
+  let (paymentMethodData, setPaymentMethodData) = React.useState(_ => Dict.make())
+  let (merchantName, setMerchantName) = React.useState(_ =>
+    defaultPaymentMethodCollectOptions.collectorName
+  )
 
   // Form a list of available payment methods
   React.useEffect(() => {
@@ -59,6 +62,12 @@ let make = (~integrateError, ~logger) => {
 
     None
   }, [enabledPaymentMethods])
+
+  // Update merchant's name
+  React.useEffect(() => {
+    setMerchantName(_ => options.collectorName)
+    None
+  }, [options.collectorName])
 
   // Reset payment method type
   React.useEffect(() => {
@@ -112,38 +121,90 @@ let make = (~integrateError, ~logger) => {
       </div>
     }
 
-  let renderInputElement = (label, onClickHandler) => {
+  let renderInputElement = (label, onChangeHandler) => {
     <div className="input-wrapper">
       <label htmlFor=""> {React.string(label)} </label>
-      <input type_="text" onClick={onClickHandler} />
+      <input type_="text" onChange={onChangeHandler} />
     </div>
+  }
+
+  let updatePaymentMethodDataDict = (record, field, value): 'a => {
+    let updatedRecord = Dict.copy(record)
+    switch field {
+    // Card
+    | "nameOnCard" | "cardNumber" | "expiryDate" => updatedRecord->Dict.set(field, value)
+
+    // ACH
+    | "routingNumber"
+    | "accountNumber"
+    | "bankName"
+    | "city" =>
+      updatedRecord->Dict.set(field, value)
+    // Bacs
+    | "sortCode" => updatedRecord->Dict.set(field, value)
+    // SEPA
+    | "iban"
+    | "bic"
+    | "countryCode" =>
+      updatedRecord->Dict.set(field, value)
+
+    // Paypal
+    | "email" => updatedRecord->Dict.set(field, value)
+    | _ => ()
+    }
+
+    updatedRecord
+  }
+
+  let inputHandler = (event: ReactEvent.Form.t, pmt: paymentMethodType, field) => {
+    let updatedPmdDict = switch pmt {
+    // Card
+    | Card(_) =>
+      updatePaymentMethodDataDict(paymentMethodData, field, ReactEvent.Form.target(event)["value"])
+
+    // Bank
+    | BankTransfer(_) =>
+      updatePaymentMethodDataDict(paymentMethodData, field, ReactEvent.Form.target(event)["value"])
+
+    // Wallet
+    | Wallet(_) =>
+      updatePaymentMethodDataDict(paymentMethodData, field, ReactEvent.Form.target(event)["value"])
+    }
+
+    setPaymentMethodData(_ => updatedPmdDict)
   }
 
   let renderInputs = (pmt: paymentMethodType) => {
     switch pmt {
     | Card(_) =>
       <div className="collect-card">
-        {renderInputElement("Name on card")}
-        {renderInputElement("Card Number")}
-        {renderInputElement("Expiry Date")}
+        {renderInputElement("Name on card", event => inputHandler(event, pmt, "nameOnCard"))}
+        {renderInputElement("Card Number", event => inputHandler(event, pmt, "cardNumber"))}
+        {renderInputElement("Expiry Date", event => inputHandler(event, pmt, "expiryDate"))}
       </div>
     | BankTransfer(bankTransferType) =>
       <div className="collect-bank">
         {switch bankTransferType {
         | ACH =>
           <React.Fragment>
-            {renderInputElement("Routing Number")}
-            {renderInputElement("Bank Account Number")}
+            {renderInputElement("Routing Number", event =>
+              inputHandler(event, pmt, "routingNumber")
+            )}
+            {renderInputElement("Bank Account Number", event =>
+              inputHandler(event, pmt, "accountNumber")
+            )}
           </React.Fragment>
         | Bacs =>
           <React.Fragment>
-            {renderInputElement("Sort Code")}
-            {renderInputElement("Bank Account Number")}
+            {renderInputElement("Sort Code", event => inputHandler(event, pmt, "sortCode"))}
+            {renderInputElement("Bank Account Number", event =>
+              inputHandler(event, pmt, "accountNumber")
+            )}
           </React.Fragment>
         | Sepa =>
           <React.Fragment>
-            {renderInputElement("IBAN")}
-            {renderInputElement("BIC")}
+            {renderInputElement("IBAN", event => inputHandler(event, pmt, "iban"))}
+            {renderInputElement("BIC", event => inputHandler(event, pmt, "bic"))}
           </React.Fragment>
         }}
       </div>
@@ -152,11 +213,136 @@ let make = (~integrateError, ~logger) => {
         {switch walletType {
         | Paypal =>
           <React.Fragment>
-            {renderInputElement("Email ID")}
-            {renderInputElement("Mobile Number (Optional)")}
+            {renderInputElement("Email ID", event => inputHandler(event, pmt, "email"))}
+            {renderInputElement("Mobile Number (Optional)", event =>
+              inputHandler(event, pmt, "mobile")
+            )}
           </React.Fragment>
         }}
       </div>
+    }
+  }
+
+  let handleSubmit = _ev => {
+    let pmt = selectedPaymentMethodType
+    let pmdDict = paymentMethodData
+
+    let pmdBody = switch pmt {
+    | None => None
+    // Card
+    | Some(Card(_)) =>
+      switch (
+        pmdDict->Dict.get("nameOnCard"),
+        pmdDict->Dict.get("cardNumber"),
+        pmdDict->Dict.get("expiryDate"),
+      ) {
+      | (Some(nameOnCard), Some(cardNumber), Some(expiryDate)) =>
+        Some([("nameOnCard", nameOnCard), ("cardNumber", cardNumber), ("expiryDate", expiryDate)])
+      | _ => None
+      }
+
+    // Banks
+    // ACH
+    | Some(BankTransfer(ACH)) =>
+      switch (
+        pmdDict->Dict.get("routingNumber"),
+        pmdDict->Dict.get("accountNumber"),
+        pmdDict->Dict.get("bankName"),
+        pmdDict->Dict.get("city"),
+      ) {
+      | (Some(routingNumber), Some(accountNumber), bankName, city) =>
+        Some([
+          ("routingNumber", routingNumber),
+          ("accountNumber", accountNumber),
+          ("bankName", bankName->Option.getOr("")),
+          ("city", city->Option.getOr("")),
+        ])
+      | _ => None
+      }
+
+    // Bacs
+    | Some(BankTransfer(Bacs)) =>
+      switch (
+        pmdDict->Dict.get("sortCode"),
+        pmdDict->Dict.get("accountNumber"),
+        pmdDict->Dict.get("bankName"),
+        pmdDict->Dict.get("city"),
+      ) {
+      | (Some(sortCode), Some(accountNumber), bankName, city) =>
+        Some([
+          ("sortCode", sortCode),
+          ("accountNumber", accountNumber),
+          ("bankName", bankName->Option.getOr("")),
+          ("city", city->Option.getOr("")),
+        ])
+      | _ => None
+      }
+
+    // Sepa
+    | Some(BankTransfer(Sepa)) =>
+      switch (
+        pmdDict->Dict.get("iban"),
+        pmdDict->Dict.get("bic"),
+        pmdDict->Dict.get("bankName"),
+        pmdDict->Dict.get("city"),
+        pmdDict->Dict.get("countryCode"),
+      ) {
+      | (Some(iban), Some(bic), bankName, city, countryCode) =>
+        Some([
+          ("iban", iban),
+          ("bic", bic),
+          ("bankName", bankName->Option.getOr("")),
+          ("city", city->Option.getOr("")),
+          ("countryCode", countryCode->Option.getOr("")),
+        ])
+      | _ => None
+      }
+
+    // Wallets
+    // PayPal
+    | Some(Wallet(Paypal)) =>
+      switch pmdDict->Dict.get("email") {
+      | Some(email) => Some([("email", email)])
+      | _ => None
+      }
+    }
+
+    switch pmdBody {
+    | Some(pmd) => {
+        let paymentMethod = selectedPaymentMethod->getPaymentMethod
+        let pmdBody =
+          pmd->Array.map(((k, v)) => (k, v->JSON.Encode.string))->Dict.fromArray->Js.Json.object_
+        let body: array<(string, Js.Json.t)> = [
+          ("payment_method", paymentMethod->Js.Json.string),
+          (paymentMethod, pmdBody),
+          ("customer_id", options.customerId->Js.Json.string),
+        ]
+        switch selectedPaymentMethodType {
+        | Some(pmt) =>
+          body->Array.push(("payment_method_type", pmt->getPaymentMethodType->Js.Json.string))
+        | None => ()
+        }
+        // Create payment method
+        open Promise
+        PaymentHelpers.createPaymentMethod(
+          ~clientSecret="",
+          ~publishableKey="",
+          ~logger,
+          ~switchToCustomPod=false,
+          ~endpoint="http://localhost:8080",
+          ~body,
+        )
+        ->then(res => {
+          Js.Console.log2("DEBUG RES", res)
+          resolve()
+        })
+        ->catch(err => {
+          Js.Console.log2("DEBUG ERR", err)
+          resolve()
+        })
+        ->ignore
+      }
+    | None => Js.Console.log2("DEBUG", "Invalid data")
     }
   }
 
@@ -171,7 +357,7 @@ let make = (~integrateError, ~logger) => {
           src="https://app.hyperswitch.io/HyperswitchFavicon.png"
           alt="O"
         />
-        <div className="merchant-title"> {React.string("HyperSwitch")} </div>
+        <div className="merchant-title"> {React.string(merchantName)} </div>
       </div>
       // Collect widget
       <div id="collect" className="flex flex-row">
@@ -192,6 +378,9 @@ let make = (~integrateError, ~logger) => {
             | None => renderPMTOptions()
             }}
           </div>
+          <button className="collect-submit" onClick={handleSubmit}>
+            {React.string("SUBMIT")}
+          </button>
         </div>
       </div>
     </div>
