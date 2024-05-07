@@ -58,46 +58,15 @@ let cardPaymentBody = (
     cardBody->Array.push(("nick_name", nickname->JSON.Encode.string))->ignore
   }
 
-  if cardBrand != "" {
-    cardBody->Array.push(("card_network", cardBrand->JSON.Encode.string))->ignore
-  }
-
   [
     ("payment_method", "card"->JSON.Encode.string),
     (
       "payment_method_data",
-      [("card", cardBody->Dict.fromArray->JSON.Encode.object)]
+      [("card", cardBody->Array.concat(cardBrand)->Dict.fromArray->JSON.Encode.object)]
       ->Dict.fromArray
       ->JSON.Encode.object,
     ),
   ]
-}
-
-let dynamicCardPaymentBody = (~cardBrand, ~nickname="", ()) => {
-  let cardBody = []
-
-  if nickname != "" {
-    cardBody->Array.push(("nick_name", nickname->JSON.Encode.string))->ignore
-  }
-
-  if cardBrand != "" {
-    cardBody->Array.push(("card_network", cardBrand->JSON.Encode.string))->ignore
-  }
-
-  let paymentMethodData = if cardBody->Array.length > 0 {
-    [
-      (
-        "payment_method_data",
-        [("card", cardBody->Dict.fromArray->JSON.Encode.object)]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
-      ),
-    ]
-  } else {
-    []
-  }
-
-  [("payment_method", "card"->JSON.Encode.string)]->Array.concat(paymentMethodData)
 }
 
 let bancontactBody = () => [

@@ -228,6 +228,13 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       checkCardExpiry(getCardElementValue(iframeId, "card-expiry"))
     | _ => true
     }
+    let cardNetwork = {
+      if cardBrand != "" {
+        [("card_network", cardNumber->CardUtils.getCardBrand->JSON.Encode.string)]
+      } else {
+        []
+      }
+    }
     if validFormat {
       let body = switch paymentMode->getPaymentMode {
       | Card =>
@@ -239,7 +246,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~year,
           ~cardHolderName="",
           ~cvcNumber,
-          ~cardBrand,
+          ~cardBrand=cardNetwork,
           (),
         )
       | CardNumberElement =>
@@ -251,7 +258,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~year,
           ~cardHolderName="",
           ~cvcNumber=localCvcNumber,
-          ~cardBrand,
+          ~cardBrand=cardNetwork,
           (),
         )
       | _ => []
