@@ -42,7 +42,6 @@ let make = (
       paymentMethodTypes.required_fields
       ->Array.concat(creditRequiredFields)
       ->DynamicFieldsUtils.removeRequiredFieldsDuplicates
-      ->DynamicFieldsUtils.filterCardDetailsIfSavedCardsFlow(isSavedCardFlow)
     } else if (
       PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType)
     ) {
@@ -50,7 +49,7 @@ let make = (
     } else {
       []
     }
-  }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType, isSavedCardFlow))
+  }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType))
 
   let requiredFields = React.useMemo(() => {
     requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress(

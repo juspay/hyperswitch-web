@@ -803,16 +803,3 @@ let removeRequiredFieldsDuplicates = (
 
   requiredFields
 }
-
-let filterCardDetailsIfSavedCardsFlow = (
-  requiredFields: array<PaymentMethodsRecord.required_fields>,
-  isSavedCardFlow,
-) => {
-  if isSavedCardFlow {
-    requiredFields->Array.filter(requiredField => {
-      requiredField.field_type->PaymentMethodsRecord.filterCardDetailsFromSavedPaymentMethod->not
-    })
-  } else {
-    requiredFields
-  }
-}
