@@ -11,13 +11,18 @@ let make = (
   }
   let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
   let sessions = Recoil.useRecoilValueFromAtom(sessions)
-  let list = Recoil.useRecoilValueFromAtom(list)
-  switch (sessions, list) {
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+  switch (sessions, paymentMethodList) {
   | (_, Loading) =>
     <RenderIf condition=showLoader>
-      <PaymentElementShimmer />
+      {paymentType->Utils.isWalletElementPaymentType
+        ? <WalletShimmer />
+        : <PaymentElementShimmer />}
     </RenderIf>
-  | _ => <PaymentElement cardProps expiryProps cvcProps paymentType />
+  | _ =>
+    paymentType->Utils.isWalletElementPaymentType
+      ? <WalletElement paymentType />
+      : <PaymentElement cardProps expiryProps cvcProps paymentType />
   }
 }
 

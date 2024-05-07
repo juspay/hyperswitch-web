@@ -186,6 +186,117 @@ let rec pollRetrievePaymentIntent = (
   })
 }
 
+let retrieveStatus = (~headers, ~switchToCustomPod, pollID, logger) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let uri = `${endpoint}/poll/status/${pollID}`
+  logApi(
+    ~optLogger=Some(logger),
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=POLL_STATUS_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  fetchApi(
+    uri,
+    ~method=#GET,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    (),
+  )
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger=Some(logger),
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=POLL_STATUS_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger=Some(logger),
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=POLL_STATUS_CALL,
+        ~logType=INFO,
+        ~logCategory=API,
+        (),
+      )
+      res->Fetch.Response.json
+    }
+  })
+  ->catch(e => {
+    Console.log2("Unable to Poll status details because of ", e)
+    JSON.Encode.null->resolve
+  })
+}
+
+let rec pollStatus = (
+  ~headers,
+  ~switchToCustomPod,
+  ~pollId,
+  ~interval,
+  ~count,
+  ~returnUrl,
+  ~logger,
+) => {
+  open Promise
+  retrieveStatus(~headers, ~switchToCustomPod, pollId, logger)
+  ->then(json => {
+    let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+    let status = dict->getString("status", "")
+    Promise.make((resolve, _) => {
+      if status === "completed" {
+        resolve(json)
+      } else if count === 0 {
+        handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+        openUrl(returnUrl)
+      } else {
+        delay(interval)
+        ->then(
+          _ => {
+            pollStatus(
+              ~headers,
+              ~switchToCustomPod,
+              ~pollId,
+              ~interval,
+              ~count=count - 1,
+              ~returnUrl,
+              ~logger,
+            )
+          },
+        )
+        ->ignore
+      }
+    })
+  })
+  ->catch(e => {
+    Console.log2("Unable to retrieve payment due to following error", e)
+    pollStatus(
+      ~headers,
+      ~switchToCustomPod,
+      ~pollId,
+      ~interval,
+      ~count=count - 1,
+      ~returnUrl,
+      ~logger,
+    )
+  })
+}
+
 let rec intentCall = (
   ~fetchApi: (
     string,
@@ -339,6 +450,7 @@ let rec intentCall = (
                 String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
               let endpoint = ApiEndpoint.getApiEndPoint(
                 ~publishableKey=confirmParam.publishableKey,
+                ~isConfirmCall=isConfirm,
                 (),
               )
               let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
@@ -682,7 +794,11 @@ let rec intentCall = (
         } else {
           let paymentIntentID =
             String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-          let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
+          let endpoint = ApiEndpoint.getApiEndPoint(
+            ~publishableKey=confirmParam.publishableKey,
+            ~isConfirmCall=isConfirm,
+            (),
+          )
           let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
           intentCall(
             ~fetchApi,
@@ -728,7 +844,7 @@ let rec intentCall = (
 
 let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
-  let list = Recoil.useRecoilValueFromAtom(list)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
@@ -760,7 +876,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           (),
         )->ignore
       }
-      switch list {
+      switch paymentMethodList {
       | Loaded(_) => paymentSync()
       | _ => ()
       }
@@ -799,7 +915,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   open RecoilAtoms
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
-  let list = Recoil.useRecoilValueFromAtom(list)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
 
   let (isManualRetryEnabled, setIsManualRetryEnabled) = Recoil.useRecoilState(isManualRetryEnabled)
@@ -808,6 +924,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~bodyArr: array<(string, JSON.t)>,
     ~confirmParam: ConfirmType.confirmParams,
     ~iframeId=keys.iframeId,
+    ~isThirdPartyFlow=false,
     (),
   ) => {
     switch keys.clientSecret {
@@ -825,7 +942,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         ])
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
-        ~isConfirmCall=true,
+        ~isConfirmCall=!isThirdPartyFlow,
         (),
       )
       let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
@@ -925,7 +1042,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         callIntent(bodyStr)
       }
 
-      switch list {
+      switch paymentMethodList {
       | LoadError(data)
       | Loaded(data) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper

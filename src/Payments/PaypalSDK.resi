@@ -1,2 +1,2 @@
 @react.component
-let default: (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) => React.element
+let default: (~sessionObj: SessionsType.token) => React.element

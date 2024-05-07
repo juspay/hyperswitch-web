@@ -5,7 +5,7 @@ let make = () => {
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => true)
 
-  let logger = OrcaLogger.make()
+  let logger = OrcaLogger.make(~source=Elements(Payment), ())
 
   React.useEffect0(() => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])

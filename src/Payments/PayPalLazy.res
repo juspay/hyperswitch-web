@@ -1,5 +1,5 @@
 open LazyUtils
 
-type props = {list: PaymentMethodsRecord.list}
+type props = {}
 
 let make: props => React.element = reactLazy(() => import_("./PayPal.bs.js"))
