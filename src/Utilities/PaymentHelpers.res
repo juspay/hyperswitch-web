@@ -844,7 +844,7 @@ let rec intentCall = (
 
 let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
-  let list = Recoil.useRecoilValueFromAtom(list)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
@@ -876,7 +876,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           (),
         )->ignore
       }
-      switch list {
+      switch paymentMethodList {
       | Loaded(_) => paymentSync()
       | _ => ()
       }
@@ -915,7 +915,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   open RecoilAtoms
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
-  let list = Recoil.useRecoilValueFromAtom(list)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
 
   let (isManualRetryEnabled, setIsManualRetryEnabled) = Recoil.useRecoilState(isManualRetryEnabled)
@@ -1042,7 +1042,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         callIntent(bodyStr)
       }
 
-      switch list {
+      switch paymentMethodList {
       | LoadError(data)
       | Loaded(data) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper

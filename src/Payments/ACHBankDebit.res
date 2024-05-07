@@ -3,7 +3,7 @@ open Utils
 open PaymentModeType
 
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
+let make = (~paymentType: CardThemeType.mode) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -26,6 +26,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   let (city, _) = Recoil.useLoggedRecoilState(userAddressCity, "city", loggerState)
   let (postalCode, _) = Recoil.useLoggedRecoilState(userAddressPincode, "postal_code", loggerState)
   let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   OutsideClick.useOutsideClick(
     ~refs=ArrayOfRef([toolTipRef]),
@@ -73,7 +74,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
             ~city=city.value,
             ~postalCode=postalCode.value,
             ~state=state.value,
-            ~paymentType=list.payment_type,
+            ~paymentType=paymentMethodListValue.payment_type,
           )
           intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
         | None => ()
@@ -107,7 +108,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
         </div>
       </RenderIf>
     </div>
-    <Surcharge list paymentMethod="bank_debit" paymentMethodType="ach" />
+    <Surcharge paymentMethod="bank_debit" paymentMethodType="ach" />
     <Terms mode=ACHBankDebit />
     <FullScreenPortal>
       <BankDebitModal setModalData />

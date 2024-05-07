@@ -1,2 +1,2 @@
 @react.component
-let default: (~list: PaymentMethodsRecord.list) => React.element
+let default: unit => React.element

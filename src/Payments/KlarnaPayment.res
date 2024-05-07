@@ -1,12 +1,13 @@
 open PaymentType
 open RecoilAtoms
 @react.component
-let make = (~paymentType, ~list: PaymentMethodsRecord.list) => {
+let make = (~paymentType) => {
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), KlarnaRedirect)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let showAddressDetails = getShowAddressDetails(
     ~billingDetails=fields.billingDetails,
@@ -41,7 +42,8 @@ let make = (~paymentType, ~list: PaymentMethodsRecord.list) => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
-    let (connectors, _) = list->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
+    let (connectors, _) =
+      paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
     let body = PaymentBody.klarnaRedirectionBody(
       ~fullName=fullName.value,
       ~email=email.value,
@@ -76,7 +78,7 @@ let make = (~paymentType, ~list: PaymentMethodsRecord.list) => {
         options=countryNames
       />
     </RenderIf>
-    <Surcharge list paymentMethod="pay_later" paymentMethodType="klarna" />
+    <Surcharge paymentMethod="pay_later" paymentMethodType="klarna" />
     <InfoElement />
   </div>
 }

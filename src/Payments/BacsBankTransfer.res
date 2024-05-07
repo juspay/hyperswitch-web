@@ -1,12 +1,7 @@
 open RecoilAtoms
 open Utils
 
-type props = {
-  paymentType: CardThemeType.mode,
-  list: PaymentMethodsRecord.list,
-}
-
-let default = (props: props) => {
+let default = (paymentType: CardThemeType.mode) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -14,6 +9,7 @@ let default = (props: props) => {
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
@@ -30,7 +26,7 @@ let default = (props: props) => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if complete {
-        let (connectors, _) = props.list->PaymentUtils.getConnectors(BankTransfer(Bacs))
+        let (connectors, _) = paymentMethodListValue->PaymentUtils.getConnectors(BankTransfer(Bacs))
         intent(
           ~bodyArr=PaymentBody.bacsBankTransferBody(
             ~email=email.value,
@@ -52,9 +48,9 @@ let default = (props: props) => {
   <div
     className="flex flex-col animate-slowShow"
     style={ReactDOMStyle.make(~gridGap=themeObj.spacingTab, ())}>
-    <EmailPaymentInput paymentType=props.paymentType />
-    <FullNamePaymentInput paymentType={props.paymentType} />
-    <Surcharge list=props.list paymentMethod="bank_transfer" paymentMethodType="bacs" />
+    <EmailPaymentInput paymentType />
+    <FullNamePaymentInput paymentType />
+    <Surcharge paymentMethod="bank_transfer" paymentMethodType="bacs" />
     <InfoElement />
   </div>
 }

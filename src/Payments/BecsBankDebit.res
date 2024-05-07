@@ -3,7 +3,7 @@ open RecoilAtomTypes
 open Utils
 
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
+let make = (~paymentType: CardThemeType.mode) => {
   let cleanBSB = str => str->String.replaceRegExp(%re("/-/g"), "")
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -88,7 +88,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     <FullScreenPortal>
       <BankDebitModal setModalData />
     </FullScreenPortal>
-    <Surcharge list paymentMethod="bank_debit" paymentMethodType="becs" />
+    <Surcharge paymentMethod="bank_debit" paymentMethodType="becs" />
     <Terms mode=PaymentModeType.BecsBankDebit />
   </div>
 }

@@ -2,7 +2,6 @@ open RecoilAtoms
 @react.component
 let make = (
   ~paymentType,
-  ~list,
   ~paymentMethod,
   ~paymentMethodType,
   ~setRequiredFieldsBody,
@@ -14,6 +13,8 @@ let make = (
   ~isBancontact=false,
 ) => {
   open Utils
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -23,14 +24,25 @@ let make = (
 
   //<...>//
   let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
-    ~list,
+    ~paymentMethodListValue,
     ~paymentMethod,
     ~paymentMethodType,
   )
 
+  let creditPaymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType="credit",
+  )
+
   let requiredFieldsWithBillingDetails = React.useMemo(() => {
     if paymentMethod === "card" {
+      let creditRequiredFields = creditPaymentMethodTypes.required_fields
+
       paymentMethodTypes.required_fields
+      ->Array.concat(creditRequiredFields)
+      ->DynamicFieldsUtils.removeRequiredFieldsDuplicates
+      ->DynamicFieldsUtils.filterCardDetailsIfSavedCardsFlow(isSavedCardFlow)
     } else if (
       PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType)
     ) {
@@ -38,7 +50,7 @@ let make = (
     } else {
       []
     }
-  }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType))
+  }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType, isSavedCardFlow))
 
   let requiredFields = React.useMemo(() => {
     requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress(
@@ -59,7 +71,13 @@ let make = (
       ~isAllStoredCardsHaveName,
       (),
     )
-    ->DynamicFieldsUtils.updateDynamicFields(billingAddress, ())
+    ->DynamicFieldsUtils.updateDynamicFields(
+      billingAddress,
+      ~paymentMethodListValue,
+      ~paymentMethod,
+      ~isSavedCardFlow,
+      (),
+    )
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
@@ -149,7 +167,7 @@ let make = (
     cardRef,
     icon,
     cardError,
-    _,
+    setCardError,
     maxCardLength,
   ) = switch cardProps {
   | Some(cardProps) => cardProps
@@ -165,7 +183,7 @@ let make = (
     expiryRef,
     _,
     expiryError,
-    _,
+    setExpiryError,
   ) = switch expiryProps {
   | Some(expiryProps) => expiryProps
   | None => defaultExpiryProps
@@ -181,7 +199,7 @@ let make = (
     cvcRef,
     _,
     cvcError,
-    _,
+    setCvcError,
   ) = switch cvcProps {
   | Some(cvcProps) => cvcProps
   | None => defaultCvcProps
@@ -276,9 +294,17 @@ let make = (
     ~isSavedCardFlow,
     ~isAllStoredCardsHaveName,
     ~setRequiredFieldsBody,
+    ~paymentMethodListValue,
   )
 
-  let submitCallback = DynamicFieldsUtils.useSubmitCallback()
+  let submitCallback = DynamicFieldsUtils.useSubmitCallback(
+    ~cardNumber,
+    ~setCardError,
+    ~cardExpiry,
+    ~setExpiryError,
+    ~cvcNumber,
+    ~setCvcError,
+  )
   useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
@@ -326,7 +352,7 @@ let make = (
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
           style={ReactDOMStyle.make(
-            ~marginTop=index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
+            ~marginTop=index !== 0 ? themeObj.spacingGridColumn : "",
             ~gridColumnGap=themeObj.spacingGridRow,
             (),
           )}>
@@ -725,7 +751,7 @@ let make = (
                 | SpecialField(element) => element
                 | InfoElement =>
                   <>
-                    <Surcharge list paymentMethod paymentMethodType />
+                    <Surcharge paymentMethod paymentMethodType />
                     {if fieldsArr->Array.length > 1 {
                       bottomElement
                     } else {
@@ -750,7 +776,7 @@ let make = (
       </RenderIf>
       <RenderIf condition={isOnlyInfoElementPresent}>
         {<>
-          <Surcharge list paymentMethod paymentMethodType />
+          <Surcharge paymentMethod paymentMethodType />
           {if fieldsArr->Array.length > 1 {
             bottomElement
           } else {
@@ -759,7 +785,7 @@ let make = (
         </>}
       </RenderIf>
       <RenderIf condition={!isInfoElementPresent}>
-        <Surcharge list paymentMethod paymentMethodType />
+        <Surcharge paymentMethod paymentMethodType />
       </RenderIf>
     </>}
   </RenderIf>

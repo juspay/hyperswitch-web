@@ -11,8 +11,8 @@ let make = (
   }
   let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
   let sessions = Recoil.useRecoilValueFromAtom(sessions)
-  let list = Recoil.useRecoilValueFromAtom(list)
-  switch (sessions, list) {
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+  switch (sessions, paymentMethodList) {
   | (_, Loading) =>
     <RenderIf condition=showLoader>
       {paymentType->Utils.isWalletElementPaymentType
