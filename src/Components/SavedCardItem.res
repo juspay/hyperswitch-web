@@ -8,7 +8,6 @@ let make = (
   ~savedCardlength,
   ~cvcProps,
   ~paymentType,
-  ~list,
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
@@ -173,7 +172,6 @@ let make = (
               <RenderIf condition={isActive}>
                 <DynamicFields
                   paymentType
-                  list
                   paymentMethod=paymentItem.paymentMethod
                   paymentMethodType
                   setRequiredFieldsBody
@@ -181,7 +179,6 @@ let make = (
                   savedMethod=paymentItem
                 />
                 <Surcharge
-                  list
                   paymentMethod=paymentItem.paymentMethod
                   paymentMethodType
                   cardBrand={cardBrand->CardUtils.getCardType}

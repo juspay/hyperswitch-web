@@ -6,7 +6,6 @@ open GooglePayType
 @react.component
 let make = (
   ~sessionObj: option<SessionsType.token>,
-  ~list: PaymentMethodsRecord.list,
   ~thirdPartySessionObj: option<JSON.t>,
   ~paymentType: option<CardThemeType.mode>,
   ~walletOptions: array<string>,
@@ -30,13 +29,14 @@ let make = (
   let isGooglePayThirdPartyFlow = React.useMemo(() => {
     thirdPartySessionObj->Option.isSome
   }, [sessionObj])
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
-    ~list,
+    ~paymentMethodListValue,
     ~paymentMethod="wallet",
     ~paymentMethodType="google_pay",
   ) {
@@ -55,8 +55,8 @@ let make = (
       paymentExperience == PaymentMethodsRecord.InvokeSDK
   }, [sessionObj])
   let (connectors, _) = isInvokeSDKFlow
-    ? list->PaymentUtils.getConnectors(Wallets(Gpay(SDK)))
-    : list->PaymentUtils.getConnectors(Wallets(Gpay(Redirect)))
+    ? paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Gpay(SDK)))
+    : paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Gpay(Redirect)))
 
   let isDelayedSessionToken = React.useMemo(() => {
     thirdPartySessionObj
@@ -92,7 +92,7 @@ let make = (
         let obj = metadata->getDictFromJson->itemToObjMapper
         let gPayBody = PaymentUtils.appendedCustomerAcceptance(
           ~isGuestCustomer,
-          ~paymentType=list.payment_type,
+          ~paymentType=paymentMethodListValue.payment_type,
           ~body=PaymentBody.gpayBody(~payObj=obj, ~connectors),
         )
 
@@ -208,7 +208,7 @@ let make = (
       addGooglePayButton()
     }
     None
-  }, (status, list, sessionObj, thirdPartySessionObj, isGPayReady))
+  }, (status, paymentMethodListValue, sessionObj, thirdPartySessionObj, isGPayReady))
 
   React.useEffect0(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
@@ -287,7 +287,6 @@ let make = (
           | Some(val) => val
           | _ => NONE
           }}
-          list
           paymentMethod="wallet"
           paymentMethodType="google_pay"
           setRequiredFieldsBody

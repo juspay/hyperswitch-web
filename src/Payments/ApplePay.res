@@ -2,7 +2,6 @@ open Utils
 @react.component
 let make = (
   ~sessionObj: option<JSON.t>,
-  ~list: PaymentMethodsRecord.list,
   ~paymentType: option<CardThemeType.mode>,
   ~walletOptions: array<string>,
 ) => {
@@ -25,17 +24,18 @@ let make = (
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let isWallet = walletOptions->Array.includes("apple_pay")
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let applePayPaymentMethodType = React.useMemo(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~list,
+      ~paymentMethodListValue,
       ~paymentMethod="wallet",
       ~paymentMethodType="apple_pay",
     ) {
     | Some(paymentMethodType) => paymentMethodType
     | None => PaymentMethodsRecord.defaultPaymentMethodType
     }
-  }, [list])
+  }, [paymentMethodListValue])
 
   let paymentExperience = React.useMemo(() => {
     switch applePayPaymentMethodType.payment_experience[0] {
@@ -49,15 +49,15 @@ let make = (
   }, [sessionObj])
 
   let (connectors, _) = isInvokeSDKFlow
-    ? list->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
-    : list->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
+    ? paymentMethodListValue->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
+    : paymentMethodListValue->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let processPayment = (bodyArr, ~isThirdPartyFlow=false, ()) => {
     let requestBody = PaymentUtils.appendedCustomerAcceptance(
       ~isGuestCustomer,
-      ~paymentType=list.payment_type,
+      ~paymentType=paymentMethodListValue.payment_type,
       ~body=bodyArr,
     )
 
@@ -383,7 +383,6 @@ let make = (
       | Some(val) => val
       | _ => NONE
       }}
-      list
       paymentMethod="wallet"
       paymentMethodType="apple_pay"
       setRequiredFieldsBody

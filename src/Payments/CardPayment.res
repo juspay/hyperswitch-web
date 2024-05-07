@@ -8,7 +8,6 @@ let make = (
   ~cvcProps,
   ~isBancontact=false,
   ~paymentType: CardThemeType.mode,
-  ~list: PaymentMethodsRecord.list,
 ) => {
   open PaymentType
   open PaymentModeType
@@ -18,6 +17,7 @@ let make = (
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let (nickname, setNickname) = React.useState(_ => "")
 
@@ -52,7 +52,6 @@ let make = (
   let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
     ~isSaveCardsChecked,
-    ~list,
     ~isGuestCustomer,
   )
 
@@ -94,9 +93,9 @@ let make = (
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
   let conditionsForShowingSaveCardCheckbox =
-    list.mandate_payment->Option.isNone &&
+    paymentMethodListValue.mandate_payment->Option.isNone &&
     !isGuestCustomer &&
-    list.payment_type !== SETUP_MANDATE &&
+    paymentMethodListValue.payment_type !== SETUP_MANDATE &&
     options.displaySavedPaymentMethodsCheckbox &&
     !isBancontact
 
@@ -110,7 +109,6 @@ let make = (
         <div className="w-full">
           <DynamicFields
             paymentType
-            list
             paymentMethod
             paymentMethodType
             setRequiredFieldsBody
@@ -135,12 +133,14 @@ let make = (
       </div>
     </RenderIf>
     <RenderIf condition={showFields || isBancontact}>
-      <Surcharge
-        list paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType}
-      />
+      <Surcharge paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType} />
     </RenderIf>
     <RenderIf condition={!isBancontact}>
-      {switch (list.mandate_payment, options.terms.card, list.payment_type) {
+      {switch (
+        paymentMethodListValue.mandate_payment,
+        options.terms.card,
+        paymentMethodListValue.payment_type,
+      ) {
       | (Some(_), Auto, NEW_MANDATE)
       | (Some(_), Auto, SETUP_MANDATE)
       | (_, Always, NEW_MANDATE)

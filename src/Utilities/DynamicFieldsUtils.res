@@ -386,7 +386,7 @@ let useRequiredFieldsBody = (
   ~isSavedCardFlow,
   ~isAllStoredCardsHaveName,
   ~setRequiredFieldsBody,
-  ~list: PaymentMethodsRecord.list,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
@@ -477,7 +477,7 @@ let useRequiredFieldsBody = (
   let addCardDetailsBodyIfFallback = requiredFieldsBody => {
     if (
       (paymentMethodType === "debit" || paymentMethodType === "credit") &&
-      list.payment_methods->Array.length === 0 &&
+      paymentMethodListValue.payment_methods->Array.length === 0 &&
       !isSavedCardFlow
     ) {
       PaymentMethodsRecord.cardDetailsFields->Array.reduce(requiredFieldsBody, (acc, item) => {
@@ -648,11 +648,15 @@ let combineCardExpiryAndCvc = arr => {
 
 let addCardDetailsIfFallback = (
   fieldsArr,
-  ~list: PaymentMethodsRecord.list,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ~paymentMethod,
   ~isSavedCardFlow,
 ) => {
-  if paymentMethod === "card" && list.payment_methods->Array.length === 0 && !isSavedCardFlow {
+  if (
+    paymentMethod === "card" &&
+    paymentMethodListValue.payment_methods->Array.length === 0 &&
+    !isSavedCardFlow
+  ) {
     fieldsArr->Array.concat(PaymentMethodsRecord.cardDetailsFields)
   } else {
     fieldsArr
@@ -662,7 +666,7 @@ let addCardDetailsIfFallback = (
 let updateDynamicFields = (
   arr: array<PaymentMethodsRecord.paymentMethodsFields>,
   billingAddress,
-  ~list: PaymentMethodsRecord.list,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ~paymentMethod,
   ~isSavedCardFlow,
   (),
@@ -671,7 +675,7 @@ let updateDynamicFields = (
   ->Utils.removeDuplicate
   ->Array.filter(item => item !== None)
   ->addBillingAddressIfUseBillingAddress(billingAddress)
-  ->addCardDetailsIfFallback(~list, ~paymentMethod, ~isSavedCardFlow)
+  ->addCardDetailsIfFallback(~paymentMethodListValue, ~paymentMethod, ~isSavedCardFlow)
   ->combineStateAndCity
   ->combineCountryAndPostal
   ->combineCardExpiryMonthAndYear
@@ -745,4 +749,70 @@ let useSubmitCallback = (
       }
     }
   }, (line1, line2, state, city, postalCode, cardNumber, cardExpiry, cvcNumber))
+}
+
+let usePaymentMethodTypeFromList = (
+  ~paymentMethodListValue,
+  ~paymentMethod,
+  ~paymentMethodType,
+) => {
+  React.useMemo(() => {
+    PaymentMethodsRecord.getPaymentMethodTypeFromList(
+      ~paymentMethodListValue,
+      ~paymentMethod,
+      ~paymentMethodType=PaymentUtils.getPaymentMethodName(
+        ~paymentMethodType=paymentMethod,
+        ~paymentMethodName=paymentMethodType,
+      ),
+    )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
+  }, (paymentMethodListValue, paymentMethod, paymentMethodType))
+}
+
+let useAreAllRequiredFieldsPrefilled = (
+  ~paymentMethodListValue,
+  ~paymentMethod,
+  ~paymentMethodType,
+) => {
+  let paymentMethodTypes = usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
+  paymentMethodTypes.required_fields->Array.reduce(true, (acc, requiredField) => {
+    acc && requiredField.value != ""
+  })
+}
+
+let removeRequiredFieldsDuplicates = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+) => {
+  let (_, requiredFields) = requiredFields->Array.reduce(([], []), (
+    (requiredFieldKeys, uniqueRequiredFields),
+    item,
+  ) => {
+    let requiredField = item.required_field
+
+    if requiredFieldKeys->Array.includes(requiredField)->not {
+      requiredFieldKeys->Array.push(requiredField)
+      uniqueRequiredFields->Array.push(item)
+    }
+
+    (requiredFieldKeys, uniqueRequiredFields)
+  })
+
+  requiredFields
+}
+
+let filterCardDetailsIfSavedCardsFlow = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+  isSavedCardFlow,
+) => {
+  if isSavedCardFlow {
+    requiredFields->Array.filter(requiredField => {
+      requiredField.field_type->PaymentMethodsRecord.filterCardDetailsFromSavedPaymentMethod->not
+    })
+  } else {
+    requiredFields
+  }
 }
