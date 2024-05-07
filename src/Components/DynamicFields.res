@@ -343,16 +343,38 @@ let make = (
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
   let spacedStylesForCity = isSpacedInnerLayout ? "p-2" : ""
+  let errorMsgInCompressedLayout = if cardError->String.length > 0 {
+    cardError
+  } else if expiryError->String.length > 0 {
+    expiryError
+  } else if cvcError->String.length > 0 {
+    cvcError
+  } else {
+    ""
+  }
 
   <RenderIf condition={fieldsArr->Array.length > 0}>
     {<>
+      <RenderIf
+        condition={dynamicFieldsToRenderOutsideBilling->Array.length > 0 && !isSpacedInnerLayout}>
+        <div
+          style={ReactDOMStyle.make(
+            ~marginBottom="5px",
+            ~marginTop="5px",
+            ~fontSize=themeObj.fontSizeLg,
+            ~opacity="0.6",
+            (),
+          )}>
+          {localeString.cardHeader->React.string}
+        </div>
+      </RenderIf>
       {dynamicFieldsToRenderOutsideBilling
       ->Array.mapWithIndex((item, index) => {
         <div
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
           style={ReactDOMStyle.make(
-            ~marginTop=index !== 0 ? themeObj.spacingGridColumn : "",
+            ~marginTop=index !== 0 && isSpacedInnerLayout ? themeObj.spacingGridColumn : "",
             ~gridColumnGap=themeObj.spacingGridRow,
             (),
           )}>
@@ -416,45 +438,61 @@ let make = (
               placeholder="123"
             />
           | CardExpiryAndCvc =>
-            <div className="flex gap-10">
-              <PaymentInputField
-                fieldName=localeString.validThruText
-                isValid=isExpiryValid
-                setIsValid=setIsExpiryValid
-                value=cardExpiry
-                onChange=changeCardExpiry
-                onBlur=handleExpiryBlur
-                errorString=expiryError
-                paymentType
-                type_="tel"
-                appearance=config.appearance
-                maxLength=7
-                inputRef=expiryRef
-                placeholder="MM / YY"
-              />
-              <PaymentInputField
-                fieldName=localeString.cvcTextLabel
-                isValid=isCVCValid
-                setIsValid=setIsCVCValid
-                value=cvcNumber
-                onChange=changeCVCNumber
-                onBlur=handleCVCBlur
-                errorString=cvcError
-                paymentType
-                rightIcon={CardUtils.setRightIconForCvc(
-                  ~cardEmpty,
-                  ~cardInvalid,
-                  ~color=themeObj.colorIconCardCvcError,
-                  ~cardComplete,
-                )}
-                appearance=config.appearance
-                type_="tel"
-                className="tracking-widest w-full"
-                maxLength=4
-                inputRef=cvcRef
-                placeholder="123"
-              />
-            </div>
+            <>
+              <div className={`flex ${isSpacedInnerLayout ? "gap-10" : ""}`}>
+                <PaymentInputField
+                  fieldName=localeString.validThruText
+                  isValid=isExpiryValid
+                  setIsValid=setIsExpiryValid
+                  value=cardExpiry
+                  onChange=changeCardExpiry
+                  onBlur=handleExpiryBlur
+                  errorString=expiryError
+                  paymentType
+                  type_="tel"
+                  appearance=config.appearance
+                  maxLength=7
+                  inputRef=expiryRef
+                  placeholder="MM / YY"
+                />
+                <PaymentInputField
+                  fieldName=localeString.cvcTextLabel
+                  isValid=isCVCValid
+                  setIsValid=setIsCVCValid
+                  value=cvcNumber
+                  onChange=changeCVCNumber
+                  onBlur=handleCVCBlur
+                  errorString=cvcError
+                  paymentType
+                  rightIcon={CardUtils.setRightIconForCvc(
+                    ~cardEmpty,
+                    ~cardInvalid,
+                    ~color=themeObj.colorIconCardCvcError,
+                    ~cardComplete,
+                  )}
+                  appearance=config.appearance
+                  type_="tel"
+                  className="tracking-widest w-full"
+                  maxLength=4
+                  inputRef=cvcRef
+                  placeholder="123"
+                />
+              </div>
+              <RenderIf
+                condition={!isSpacedInnerLayout && errorMsgInCompressedLayout->String.length > 0}>
+                <div
+                  className="Error pt-1"
+                  style={ReactDOMStyle.make(
+                    ~color=themeObj.colorDangerText,
+                    ~fontSize=themeObj.fontSizeSm,
+                    ~alignSelf="start",
+                    ~textAlign="left",
+                    (),
+                  )}>
+                  {React.string(errorMsgInCompressedLayout)}
+                </div>
+              </RenderIf>
+            </>
           | Currency(currencyArr) =>
             <DropdownField
               appearance=config.appearance
@@ -470,6 +508,7 @@ let make = (
                 <div
                   style={ReactDOMStyle.make(
                     ~marginBottom="5px",
+                    ~marginTop="5px",
                     ~fontSize=themeObj.fontSizeLg,
                     ~opacity="0.6",
                     (),
