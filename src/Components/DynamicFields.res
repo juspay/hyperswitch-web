@@ -355,19 +355,6 @@ let make = (
 
   <RenderIf condition={fieldsArr->Array.length > 0}>
     {<>
-      <RenderIf
-        condition={dynamicFieldsToRenderOutsideBilling->Array.length > 0 && !isSpacedInnerLayout}>
-        <div
-          style={ReactDOMStyle.make(
-            ~marginBottom="5px",
-            ~marginTop="5px",
-            ~fontSize=themeObj.fontSizeLg,
-            ~opacity="0.6",
-            (),
-          )}>
-          {localeString.cardHeader->React.string}
-        </div>
-      </RenderIf>
       {dynamicFieldsToRenderOutsideBilling
       ->Array.mapWithIndex((item, index) => {
         <div
@@ -380,22 +367,38 @@ let make = (
           )}>
           {switch item {
           | CardNumber =>
-            <PaymentInputField
-              fieldName=localeString.cardNumberLabel
-              isValid=isCardValid
-              setIsValid=setIsCardValid
-              value=cardNumber
-              onChange=changeCardNumber
-              onBlur=handleCardBlur
-              rightIcon={icon}
-              errorString=cardError
-              paymentType
-              type_="tel"
-              appearance=config.appearance
-              maxLength=maxCardLength
-              inputRef=cardRef
-              placeholder="1234 1234 1234 1234"
-            />
+            <>
+              <RenderIf
+                condition={dynamicFieldsToRenderOutsideBilling->Array.length > 0 &&
+                  !isSpacedInnerLayout}>
+                <div
+                  style={ReactDOMStyle.make(
+                    ~marginBottom="5px",
+                    ~marginTop="5px",
+                    ~fontSize=themeObj.fontSizeLg,
+                    ~opacity="0.6",
+                    (),
+                  )}>
+                  {localeString.cardHeader->React.string}
+                </div>
+              </RenderIf>
+              <PaymentInputField
+                fieldName=localeString.cardNumberLabel
+                isValid=isCardValid
+                setIsValid=setIsCardValid
+                value=cardNumber
+                onChange=changeCardNumber
+                onBlur=handleCardBlur
+                rightIcon={icon}
+                errorString=cardError
+                paymentType
+                type_="tel"
+                appearance=config.appearance
+                maxLength=maxCardLength
+                inputRef=cardRef
+                placeholder="1234 1234 1234 1234"
+              />
+            </>
           | CardExpiryMonth
           | CardExpiryYear
           | CardExpiryMonthAndYear =>
