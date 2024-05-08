@@ -52,16 +52,6 @@ let getBillingAddressPathFromFieldType = (fieldType: PaymentMethodsRecord.paymen
   }
 }
 
-let getCardAddressPathFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
-  switch fieldType {
-  | CardNumber => "payment_method_data.card.card_number"
-  | CardExpiryMonth => "payment_method_data.card.card_exp_month"
-  | CardExpiryYear => "payment_method_data.card.card_exp_year"
-  | CardCvc => "payment_method_data.card.card_cvc"
-  | _ => ""
-  }
-}
-
 let removeBillingDetailsIfUseBillingAddress = (
   requiredFields: array<PaymentMethodsRecord.required_fields>,
   billingAddress: PaymentType.billingAddress,
@@ -154,6 +144,7 @@ let useRequiredFieldsEmptyAndValid = (
       | StateAndCity => state.value !== "" && city.value !== ""
       | CountryAndPincode(countryArr) =>
         (country !== "" || countryArr->Array.length === 0) && postalCode.value !== ""
+
       | AddressCity => city.value !== ""
       | AddressPincode => postalCode.value !== ""
       | AddressState => state.value !== ""
@@ -386,7 +377,6 @@ let useRequiredFieldsBody = (
   ~isSavedCardFlow,
   ~isAllStoredCardsHaveName,
   ~setRequiredFieldsBody,
-  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
@@ -474,23 +464,6 @@ let useRequiredFieldsBody = (
     }
   }
 
-  let addCardDetailsBodyIfFallback = requiredFieldsBody => {
-    if (
-      (paymentMethodType === "debit" || paymentMethodType === "credit") &&
-      paymentMethodListValue.payment_methods->Array.length === 0 &&
-      !isSavedCardFlow
-    ) {
-      PaymentMethodsRecord.cardDetailsFields->Array.reduce(requiredFieldsBody, (acc, item) => {
-        let value = item->getFieldValueFromFieldType
-        let path = item->getCardAddressPathFromFieldType
-        acc->Dict.set(path, value->JSON.Encode.string)
-        acc
-      })
-    } else {
-      requiredFieldsBody
-    }
-  }
-
   React.useEffect(() => {
     let requiredFieldsBody =
       requiredFields
@@ -519,7 +492,6 @@ let useRequiredFieldsBody = (
         acc
       })
       ->addBillingDetailsIfUseBillingAddress
-      ->addCardDetailsBodyIfFallback
 
     setRequiredFieldsBody(_ => requiredFieldsBody)
     None
@@ -646,54 +618,26 @@ let combineCardExpiryAndCvc = arr => {
   }
 }
 
-let addCardDetailsIfFallback = (
-  fieldsArr,
-  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
-  ~paymentMethod,
-  ~isSavedCardFlow,
-) => {
-  if (
-    paymentMethod === "card" &&
-    paymentMethodListValue.payment_methods->Array.length === 0 &&
-    !isSavedCardFlow
-  ) {
-    fieldsArr->Array.concat(PaymentMethodsRecord.cardDetailsFields)
-  } else {
-    fieldsArr
-  }
-}
-
 let updateDynamicFields = (
   arr: array<PaymentMethodsRecord.paymentMethodsFields>,
   billingAddress,
-  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
-  ~paymentMethod,
-  ~isSavedCardFlow,
   (),
 ) => {
   arr
   ->Utils.removeDuplicate
   ->Array.filter(item => item !== None)
   ->addBillingAddressIfUseBillingAddress(billingAddress)
-  ->addCardDetailsIfFallback(~paymentMethodListValue, ~paymentMethod, ~isSavedCardFlow)
   ->combineStateAndCity
   ->combineCountryAndPostal
   ->combineCardExpiryMonthAndYear
   ->combineCardExpiryAndCvc
 }
 
-let useSubmitCallback = (
-  ~cardNumber,
-  ~setCardError,
-  ~cardExpiry,
-  ~setExpiryError,
-  ~cvcNumber,
-  ~setCvcError,
-) => {
-  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline1, "line1", logger)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressline2, "line2", logger)
-  let (state, setState) = Recoil.useLoggedRecoilState(RecoilAtoms.userAddressState, "state", logger)
+let useSubmitCallback = () => {
+  let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
+  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
+  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", logger)
   let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
     userAddressPincode,
     "postal_code",
@@ -738,17 +682,8 @@ let useSubmitCallback = (
           errorString: localeString.cityEmptyText,
         })
       }
-      if cardNumber === "" {
-        setCardError(_ => localeString.cardNumberEmptyText)
-      }
-      if cardExpiry === "" {
-        setExpiryError(_ => localeString.cardExpiryDateEmptyText)
-      }
-      if cvcNumber === "" {
-        setCvcError(_ => localeString.cvcNumberEmptyText)
-      }
     }
-  }, (line1, line2, state, city, postalCode, cardNumber, cardExpiry, cvcNumber))
+  }, (line1, line2, state, city, postalCode))
 }
 
 let usePaymentMethodTypeFromList = (
@@ -802,17 +737,4 @@ let removeRequiredFieldsDuplicates = (
   })
 
   requiredFields
-}
-
-let filterCardDetailsIfSavedCardsFlow = (
-  requiredFields: array<PaymentMethodsRecord.required_fields>,
-  isSavedCardFlow,
-) => {
-  if isSavedCardFlow {
-    requiredFields->Array.filter(requiredField => {
-      requiredField.field_type->PaymentMethodsRecord.filterCardDetailsFromSavedPaymentMethod->not
-    })
-  } else {
-    requiredFields
-  }
 }

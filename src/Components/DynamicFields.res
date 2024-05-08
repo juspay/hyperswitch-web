@@ -42,7 +42,6 @@ let make = (
       paymentMethodTypes.required_fields
       ->Array.concat(creditRequiredFields)
       ->DynamicFieldsUtils.removeRequiredFieldsDuplicates
-      ->DynamicFieldsUtils.filterCardDetailsIfSavedCardsFlow(isSavedCardFlow)
     } else if (
       PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType)
     ) {
@@ -50,7 +49,7 @@ let make = (
     } else {
       []
     }
-  }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType, isSavedCardFlow))
+  }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType))
 
   let requiredFields = React.useMemo(() => {
     requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress(
@@ -71,13 +70,7 @@ let make = (
       ~isAllStoredCardsHaveName,
       (),
     )
-    ->DynamicFieldsUtils.updateDynamicFields(
-      billingAddress,
-      ~paymentMethodListValue,
-      ~paymentMethod,
-      ~isSavedCardFlow,
-      (),
-    )
+    ->DynamicFieldsUtils.updateDynamicFields(billingAddress, ())
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
@@ -167,7 +160,7 @@ let make = (
     cardRef,
     icon,
     cardError,
-    setCardError,
+    _,
     maxCardLength,
   ) = switch cardProps {
   | Some(cardProps) => cardProps
@@ -183,7 +176,7 @@ let make = (
     expiryRef,
     _,
     expiryError,
-    setExpiryError,
+    _,
   ) = switch expiryProps {
   | Some(expiryProps) => expiryProps
   | None => defaultExpiryProps
@@ -199,7 +192,7 @@ let make = (
     cvcRef,
     _,
     cvcError,
-    setCvcError,
+    _,
   ) = switch cvcProps {
   | Some(cvcProps) => cvcProps
   | None => defaultCvcProps
@@ -294,17 +287,9 @@ let make = (
     ~isSavedCardFlow,
     ~isAllStoredCardsHaveName,
     ~setRequiredFieldsBody,
-    ~paymentMethodListValue,
   )
 
-  let submitCallback = DynamicFieldsUtils.useSubmitCallback(
-    ~cardNumber,
-    ~setCardError,
-    ~cardExpiry,
-    ~setExpiryError,
-    ~cvcNumber,
-    ~setCvcError,
-  )
+  let submitCallback = DynamicFieldsUtils.useSubmitCallback()
   useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
@@ -352,7 +337,7 @@ let make = (
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
           style={ReactDOMStyle.make(
-            ~marginTop=index !== 0 ? themeObj.spacingGridColumn : "",
+            ~marginTop=index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
             ~gridColumnGap=themeObj.spacingGridRow,
             (),
           )}>

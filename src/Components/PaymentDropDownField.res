@@ -28,26 +28,17 @@ let make = (
   }
   React.useEffect(() => {
     let initialValue = options->Array.get(0)->Option.getOr("")
-    if (
-      value.value === "" ||
-      value.value === initialValue ||
-      options->Array.includes(value.value)->not
-    ) {
-      setValue(prev => {
-        ...prev,
+    if value.value === "" || options->Array.includes(value.value)->not {
+      setValue(_ => {
+        errorString: "",
         isValid: Some(true),
         value: initialValue,
       })
     }
     None
-  }, [options->Array.get(0)->Option.getOr("")])
+  }, [options])
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    // setValue(.prev => {
-    //   ...prev,
-    //   isValid: None,
-    //   errorString: "",
-    // })
     Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
   }
   let focusClass = if inputFocused || value.value->String.length > 0 {
