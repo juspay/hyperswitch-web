@@ -1068,7 +1068,7 @@ let createPaymentMethod = (
 ) => {
   open Promise
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-  let uri = `${endpoint}/payment_methods?client_secret=${clientSecret}`
+  let uri = `${endpoint}/payment_methods`
   logApi(
     ~optLogger=Some(logger),
     ~url=uri,
@@ -1078,11 +1078,9 @@ let createPaymentMethod = (
     ~logCategory=API,
     (),
   )
-  let browserInfo = BrowserSpec.broswerInfo
-  let bi = browserInfo()->Array.map(((k, v)) => (k, v->JSON.stringify))
   let body =
     body
-    ->Array.concat(browserInfo())
+    ->Array.concat([("client_secret", clientSecret->Js.Json.string)])
     ->Dict.fromArray
     ->JSON.Encode.object
   fetchApi(

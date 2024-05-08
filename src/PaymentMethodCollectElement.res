@@ -25,6 +25,10 @@ let make = (~integrateError, ~logger) => {
   let (merchantName, setMerchantName) = React.useState(_ =>
     defaultPaymentMethodCollectOptions.collectorName
   )
+  let (fieldValidityDict, setFieldValidityDict): (
+    Js.Dict.t<option<bool>>,
+    (Js.Dict.t<option<bool>> => Js.Dict.t<option<bool>>) => unit,
+  ) = React.useState(_ => Dict.make())
 
   // Form a list of available payment methods
   React.useEffect(() => {
@@ -157,20 +161,11 @@ let make = (~integrateError, ~logger) => {
   }
 
   let inputHandler = (event: ReactEvent.Form.t, pmt: paymentMethodType, field) => {
-    let updatedPmdDict = switch pmt {
-    // Card
-    | Card(_) =>
-      updatePaymentMethodDataDict(paymentMethodData, field, ReactEvent.Form.target(event)["value"])
-
-    // Bank
-    | BankTransfer(_) =>
-      updatePaymentMethodDataDict(paymentMethodData, field, ReactEvent.Form.target(event)["value"])
-
-    // Wallet
-    | Wallet(_) =>
-      updatePaymentMethodDataDict(paymentMethodData, field, ReactEvent.Form.target(event)["value"])
-    }
-
+    let updatedPmdDict = updatePaymentMethodDataDict(
+      paymentMethodData,
+      field,
+      ReactEvent.Form.target(event)["value"],
+    )
     setPaymentMethodData(_ => updatedPmdDict)
   }
 
@@ -178,9 +173,74 @@ let make = (~integrateError, ~logger) => {
     switch pmt {
     | Card(_) =>
       <div className="collect-card">
-        {renderInputElement("Name on card", event => inputHandler(event, pmt, "nameOnCard"))}
-        {renderInputElement("Card Number", event => inputHandler(event, pmt, "cardNumber"))}
-        {renderInputElement("Expiry Date", event => inputHandler(event, pmt, "expiryDate"))}
+        <InputField
+          id="nameOnCard"
+          fieldName="Cardholder Name"
+          placeholder="Your name"
+          value={getValueFromDict(paymentMethodData, "nameOnCard")}
+          paymentType={PaymentMethodCollectElement}
+          inputRef={React.useRef(Nullable.null)}
+          isFocus={true}
+          isValid={fieldValidityDict->Dict.get("nameOnCard")->Option.getOr(None)}
+          onChange={event => inputHandler(event, pmt, "nameOnCard")}
+          setIsValid={updatedValidity => {
+            let v = updatedValidity()
+            setFieldValidity("nameOnCard", v, fieldValidityDict, setFieldValidityDict)
+          }}
+          onBlur={_ev =>
+            calculateAndSetValidity(
+              paymentMethodData,
+              "nameOnCard",
+              fieldValidityDict,
+              setFieldValidityDict,
+            )}
+        />
+        <InputField
+          id="cardNumber"
+          fieldName="Card Number"
+          placeholder="1234 1234 1234 1234"
+          value={getValueFromDict(paymentMethodData, "cardNumber")}
+          paymentType={PaymentMethodCollectElement}
+          type_="tel"
+          inputRef={React.useRef(Nullable.null)}
+          isFocus={true}
+          isValid={fieldValidityDict->Dict.get("cardNumber")->Option.getOr(None)}
+          onChange={event => inputHandler(event, pmt, "cardNumber")}
+          setIsValid={updatedValidity => {
+            let v = updatedValidity()
+            setFieldValidity("cardNumber", v, fieldValidityDict, setFieldValidityDict)
+          }}
+          onBlur={_ev =>
+            calculateAndSetValidity(
+              paymentMethodData,
+              "cardNumber",
+              fieldValidityDict,
+              setFieldValidityDict,
+            )}
+        />
+        <InputField
+          id="expiryDate"
+          fieldName="Expiry Date"
+          placeholder="MM / YY"
+          maxLength=7
+          value={getValueFromDict(paymentMethodData, "expiryDate")}
+          paymentType={PaymentMethodCollectElement}
+          inputRef={React.useRef(Nullable.null)}
+          isFocus={true}
+          isValid={fieldValidityDict->Dict.get("expiryDate")->Option.getOr(None)}
+          onChange={event => inputHandler(event, pmt, "expiryDate")}
+          setIsValid={updatedValidity => {
+            let v = updatedValidity()
+            setFieldValidity("expiryDate", v, fieldValidityDict, setFieldValidityDict)
+          }}
+          onBlur={_ev =>
+            calculateAndSetValidity(
+              paymentMethodData,
+              "expiryDate",
+              fieldValidityDict,
+              setFieldValidityDict,
+            )}
+        />
       </div>
     | BankTransfer(bankTransferType) =>
       <div className="collect-bank">
@@ -224,88 +284,7 @@ let make = (~integrateError, ~logger) => {
   }
 
   let handleSubmit = _ev => {
-    let pmt = selectedPaymentMethodType
-    let pmdDict = paymentMethodData
-
-    let pmdBody = switch pmt {
-    | None => None
-    // Card
-    | Some(Card(_)) =>
-      switch (
-        pmdDict->Dict.get("nameOnCard"),
-        pmdDict->Dict.get("cardNumber"),
-        pmdDict->Dict.get("expiryDate"),
-      ) {
-      | (Some(nameOnCard), Some(cardNumber), Some(expiryDate)) =>
-        Some([("nameOnCard", nameOnCard), ("cardNumber", cardNumber), ("expiryDate", expiryDate)])
-      | _ => None
-      }
-
-    // Banks
-    // ACH
-    | Some(BankTransfer(ACH)) =>
-      switch (
-        pmdDict->Dict.get("routingNumber"),
-        pmdDict->Dict.get("accountNumber"),
-        pmdDict->Dict.get("bankName"),
-        pmdDict->Dict.get("city"),
-      ) {
-      | (Some(routingNumber), Some(accountNumber), bankName, city) =>
-        Some([
-          ("routingNumber", routingNumber),
-          ("accountNumber", accountNumber),
-          ("bankName", bankName->Option.getOr("")),
-          ("city", city->Option.getOr("")),
-        ])
-      | _ => None
-      }
-
-    // Bacs
-    | Some(BankTransfer(Bacs)) =>
-      switch (
-        pmdDict->Dict.get("sortCode"),
-        pmdDict->Dict.get("accountNumber"),
-        pmdDict->Dict.get("bankName"),
-        pmdDict->Dict.get("city"),
-      ) {
-      | (Some(sortCode), Some(accountNumber), bankName, city) =>
-        Some([
-          ("sortCode", sortCode),
-          ("accountNumber", accountNumber),
-          ("bankName", bankName->Option.getOr("")),
-          ("city", city->Option.getOr("")),
-        ])
-      | _ => None
-      }
-
-    // Sepa
-    | Some(BankTransfer(Sepa)) =>
-      switch (
-        pmdDict->Dict.get("iban"),
-        pmdDict->Dict.get("bic"),
-        pmdDict->Dict.get("bankName"),
-        pmdDict->Dict.get("city"),
-        pmdDict->Dict.get("countryCode"),
-      ) {
-      | (Some(iban), Some(bic), bankName, city, countryCode) =>
-        Some([
-          ("iban", iban),
-          ("bic", bic),
-          ("bankName", bankName->Option.getOr("")),
-          ("city", city->Option.getOr("")),
-          ("countryCode", countryCode->Option.getOr("")),
-        ])
-      | _ => None
-      }
-
-    // Wallets
-    // PayPal
-    | Some(Wallet(Paypal)) =>
-      switch pmdDict->Dict.get("email") {
-      | Some(email) => Some([("email", email)])
-      | _ => None
-      }
-    }
+    let pmdBody = formCreatePaymentMethodRequestBody(selectedPaymentMethodType, paymentMethodData)
 
     switch pmdBody {
     | Some(pmd) => {
@@ -318,22 +297,24 @@ let make = (~integrateError, ~logger) => {
           ("customer_id", options.customerId->Js.Json.string),
         ]
         switch selectedPaymentMethodType {
-        | Some(pmt) =>
-          body->Array.push(("payment_method_type", pmt->getPaymentMethodType->Js.Json.string))
+        | Some(selectedPaymentMethodType) =>
+          body->Array.push((
+            "payment_method_type",
+            selectedPaymentMethodType->getPaymentMethodType->Js.Json.string,
+          ))
         | None => ()
         }
         // Create payment method
         open Promise
         PaymentHelpers.createPaymentMethod(
-          ~clientSecret="",
-          ~publishableKey="",
+          ~clientSecret=keys.clientSecret->Option.getOr(""),
+          ~publishableKey=keys.publishableKey,
           ~logger,
           ~switchToCustomPod=false,
           ~endpoint="http://localhost:8080",
           ~body,
         )
         ->then(res => {
-          Js.Console.log2("DEBUG RES", res)
           resolve()
         })
         ->catch(err => {
@@ -364,7 +345,7 @@ let make = (~integrateError, ~logger) => {
         <div className="collect-sidebar">
           {availablePaymentMethods
           ->Array.mapWithIndex((pm, i) => {
-            <div key={Int.toString(i)} onClick={e => setSelectedPaymentMethod(_ => pm)}>
+            <div key={Int.toString(i)} onClick={_e => setSelectedPaymentMethod(_ => pm)}>
               {React.string(pm->String.make)}
             </div>
           })
