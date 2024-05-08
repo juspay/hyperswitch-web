@@ -359,6 +359,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
         }
+        if dict->getDictIsSome("endpoint") {
+          ApiEndpoint.setApiEndPoint(dict->getString("endpoint", ""))
+        }
         if dict->getDictIsSome("paymentMethodList") {
           let paymentMethodList = dict->getJsonObjectFromDict("paymentMethodList")
           let listDict = paymentMethodList->getDictFromJson
