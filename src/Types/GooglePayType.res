@@ -11,6 +11,9 @@ type paymentDataRequest = {
   mutable allowedPaymentMethods: array<JSON.t>,
   mutable transactionInfo: JSON.t,
   mutable merchantInfo: JSON.t,
+  mutable shippingAddressRequired: bool,
+  mutable emailRequired: bool,
+  mutable shippingAddressParameters: JSON.t,
 }
 @val @scope("Object") external assign2: (JSON.t, JSON.t) => paymentDataRequest = "assign"
 type element = {
@@ -62,6 +65,19 @@ type paymentMethodData = {
   info: JSON.t,
   tokenizationData: JSON.t,
   \"type": string,
+}
+
+type billingContact = {
+  address1: string,
+  address2: string,
+  address3: string,
+  administrativeArea: string,
+  countryCode: string,
+  locality: string,
+  name: string,
+  phoneNumber: string,
+  postalCode: string,
+  sortingCode: string,
 }
 
 type paymentData = {paymentMethodData: paymentMethodData}
@@ -124,4 +140,19 @@ let jsonToPaymentRequestDataType: (paymentDataRequest, Dict.t<JSON.t>) => paymen
     ->transformKeys(CamelCase)
 
   paymentRequest
+}
+
+let billingContactItemToObjMapper = dict => {
+  {
+    address1: dict->Utils.getString("address1", ""),
+    address2: dict->Utils.getString("address2", ""),
+    address3: dict->Utils.getString("address3", ""),
+    administrativeArea: dict->Utils.getString("administrativeArea", ""),
+    countryCode: dict->Utils.getString("countryCode", ""),
+    locality: dict->Utils.getString("locality", ""),
+    name: dict->Utils.getString("name", ""),
+    phoneNumber: dict->Utils.getString("phoneNumber", ""),
+    postalCode: dict->Utils.getString("postalCode", ""),
+    sortingCode: dict->Utils.getString("sortingCode", ""),
+  }
 }

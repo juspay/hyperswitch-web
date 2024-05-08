@@ -300,7 +300,7 @@ let make = (~sessionObj: option<JSON.t>) => {
             ->Option.getOr(Dict.make())
             ->ApplePayTypes.shippingContactItemToObjMapper
 
-          let requiredFieldsBody = DynamicFieldsUtils.getApplePayRequiredFieldsFromBillingAndShippingContact(
+          let requiredFieldsBody = DynamicFieldsUtils.getApplePayRequiredFields(
             ~billingContact,
             ~shippingContact,
             ~paymentMethodTypes,

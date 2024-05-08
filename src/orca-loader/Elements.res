@@ -840,6 +840,11 @@ let make = (
                   paymentDataRequest.transactionInfo =
                     gpayobj.transaction_info->transformKeys(CamelCase)
                   paymentDataRequest.merchantInfo = gpayobj.merchant_info->transformKeys(CamelCase)
+                  paymentDataRequest.shippingAddressRequired = gpayobj.shippingAddressRequired
+                  paymentDataRequest.emailRequired = gpayobj.emailRequired
+                  paymentDataRequest.shippingAddressParameters =
+                    gpayobj.shippingAddressParameters->transformKeys(CamelCase)
+
                   try {
                     let gPayClient = GooglePayType.google(
                       {

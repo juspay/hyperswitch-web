@@ -3,8 +3,6 @@ let paymentMethodListValue = Recoil.atom("paymentMethodListValue", PaymentMethod
 let paymentListLookupNew = (
   list: PaymentMethodsRecord.paymentMethodList,
   ~order,
-  ~showGooglePay,
-  ~areAllGooglePayRequiredFieldsPrefilled,
   ~isShowPaypal,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
@@ -25,14 +23,6 @@ let paymentListLookupNew = (
     "samsung_pay",
   ]
   let otherPaymentList = []
-  let googlePayFields = pmList->Array.find(item => item.paymentMethodName === "google_pay")
-  switch googlePayFields {
-  | Some(val) =>
-    if val.fields->Array.length > 0 && showGooglePay && !areAllGooglePayRequiredFieldsPrefilled {
-      walletToBeDisplayedInTabs->Array.push("google_pay")->ignore
-    }
-  | None => ()
-  }
 
   pmList->Array.forEach(item => {
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodName) {
@@ -266,24 +256,16 @@ let useAreAllRequiredFieldsPrefilled = (
   })
 }
 
-let useGetPaymentMethodList = (~paymentMethodListValue, ~paymentOptions, ~paymentType) => {
+let useGetPaymentMethodList = (~paymentOptions, ~paymentType) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
 
   let {showCardFormByDefault, paymentMethodOrder} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.optionAtom,
   )
-
-  let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
   let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
-
-  let areAllGooglePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="google_pay",
-  )
 
   React.useMemo(() => {
     switch methodslist {
@@ -294,8 +276,6 @@ let useGetPaymentMethodList = (~paymentMethodListValue, ~paymentOptions, ~paymen
       let (wallets, otherOptions) =
         plist->paymentListLookupNew(
           ~order=paymentOrder,
-          ~showGooglePay=isGooglePayReady,
-          ~areAllGooglePayRequiredFieldsPrefilled,
           ~isShowPaypal=optionAtomValue.wallets.payPal === Auto,
         )
       (
@@ -309,12 +289,5 @@ let useGetPaymentMethodList = (~paymentMethodListValue, ~paymentOptions, ~paymen
         : ([], [], [])
     | _ => ([], [], [])
     }
-  }, (
-    methodslist,
-    paymentMethodOrder,
-    isGooglePayReady,
-    areAllGooglePayRequiredFieldsPrefilled,
-    optionAtomValue.wallets.payPal,
-    paymentType,
-  ))
+  }, (methodslist, paymentMethodOrder, optionAtomValue.wallets.payPal, paymentType))
 }

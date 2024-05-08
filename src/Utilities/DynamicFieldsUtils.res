@@ -739,7 +739,7 @@ let removeRequiredFieldsDuplicates = (
   requiredFields
 }
 
-let getApplePayRequiredFieldsFromBillingAndShippingContact = (
+let getApplePayRequiredFields = (
   ~billingContact: ApplePayTypes.billingContact,
   ~shippingContact: ApplePayTypes.shippingContact,
   ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
@@ -753,10 +753,14 @@ let getApplePayRequiredFieldsFromBillingAndShippingContact = (
     }
 
     let getName = {
+      let firstName = billingContact.givenName->getBillingOrShipping(shippingContact.givenName)
+      let lastName = billingContact.familyName->getBillingOrShipping(shippingContact.familyName)
+
       switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
-      | "last_name" => billingContact.familyName->getBillingOrShipping(shippingContact.familyName)
-      | _ => billingContact.givenName->getBillingOrShipping(shippingContact.givenName)
-      }
+      | "first_name" => firstName
+      | "last_name" => lastName
+      | _ => firstName->String.concatMany([" ", lastName])
+      }->String.trim
     }
 
     let getAddressLine = (addressLines, index) => {
@@ -765,7 +769,6 @@ let getApplePayRequiredFieldsFromBillingAndShippingContact = (
 
     let fieldVal = switch item.field_type {
     | FullName => getName
-    | Country => billingContact.countryCode->getBillingOrShipping(shippingContact.countryCode)
     | BillingName => getName
     | AddressLine1 =>
       let billingAddressLine1 = billingContact.addressLines->getAddressLine(0)
@@ -782,11 +785,80 @@ let getApplePayRequiredFieldsFromBillingAndShippingContact = (
       let countryCode =
         billingContact.countryCode->getBillingOrShipping(shippingContact.countryCode)
       Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+    | Country
     | AddressCountry(_) =>
       billingContact.countryCode->getBillingOrShipping(shippingContact.countryCode)
     | AddressPincode => billingContact.postalCode->getBillingOrShipping(shippingContact.postalCode)
     | Email => shippingContact.emailAddress
     | PhoneNumber => shippingContact.phoneNumber
+    | _ => ""
+    }
+
+    if fieldVal !== "" {
+      acc->Dict.set(item.required_field, fieldVal->JSON.Encode.string)
+    }
+
+    acc
+  })
+}
+
+let getGooglePayRequiredFields = (
+  ~billingContact: GooglePayType.billingContact,
+  ~shippingContact: GooglePayType.billingContact,
+  ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+  ~statesList,
+  ~email,
+) => {
+  paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
+    let requiredFieldsArr = item.required_field->String.split(".")
+
+    let getBillingOrShipping = (billingVal, shippingVal) => {
+      requiredFieldsArr->Array.includes("billing") ? billingVal : shippingVal
+    }
+
+    let getName = {
+      let name = billingContact.name->getBillingOrShipping(shippingContact.name)
+
+      let nameArr = name->String.split(" ")
+      let nameArrLength = nameArr->Array.length
+      switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
+      | "first_name" => {
+          let end = nameArrLength === 1 ? nameArrLength : nameArrLength - 1
+          nameArr
+          ->Array.slice(~start=0, ~end)
+          ->Array.reduce("", (acc, item) => {
+            acc ++ " " ++ item
+          })
+        }
+      | "last_name" =>
+        if nameArrLength === 1 {
+          ""
+        } else {
+          nameArr->Array.get(nameArrLength - 1)->Option.getOr(name)
+        }
+      | _ => name
+      }->String.trim
+    }
+
+    let fieldVal = switch item.field_type {
+    | FullName => getName
+    | BillingName => getName
+    | AddressLine1 => billingContact.address1->getBillingOrShipping(shippingContact.address1)
+    | AddressLine2 => billingContact.address2->getBillingOrShipping(shippingContact.address2)
+    | AddressCity => billingContact.locality->getBillingOrShipping(shippingContact.locality)
+    | AddressState =>
+      let administrativeArea =
+        billingContact.administrativeArea->getBillingOrShipping(shippingContact.administrativeArea)
+      let countryCode =
+        billingContact.countryCode->getBillingOrShipping(shippingContact.countryCode)
+      Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+    | Country
+    | AddressCountry(_) =>
+      billingContact.countryCode->getBillingOrShipping(shippingContact.countryCode)
+    | AddressPincode => billingContact.postalCode->getBillingOrShipping(shippingContact.postalCode)
+    | Email => email
+    | PhoneNumber =>
+      shippingContact.phoneNumber->String.replaceAll(" ", "")->String.replaceAll("-", "")
     | _ => ""
     }
 

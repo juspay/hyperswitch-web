@@ -5,15 +5,9 @@ let make = (~paymentType) => {
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
 
-  let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
-    PaymentUtils.paymentMethodListValue,
-  )
+  let setPaymentMethodListValue = Recoil.useSetRecoilState(PaymentUtils.paymentMethodListValue)
 
-  let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(
-    ~paymentMethodListValue,
-    ~paymentOptions=[],
-    ~paymentType,
-  )
+  let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(~paymentOptions=[], ~paymentType)
 
   React.useEffect(() => {
     switch methodslist {
