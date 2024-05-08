@@ -360,7 +360,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           )
         }
         if dict->getDictIsSome("endpoint") {
-          ApiEndpoint.setApiEndPoint(dict->getString("endpoint", ""))
+          switch dict->getString("endpoint", "") {
+          | "" => ()
+          | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+          }
         }
         if dict->getDictIsSome("paymentMethodList") {
           let paymentMethodList = dict->getJsonObjectFromDict("paymentMethodList")
