@@ -1,3 +1,10 @@
+## [0.50.8](https://github.com/juspay/hyperswitch-web/compare/v0.50.7...v0.50.8) (2024-05-08)
+
+
+### Bug Fixes
+
+* dropdown error even when first option is selected ([#356](https://github.com/juspay/hyperswitch-web/issues/356)) ([3e7b007](https://github.com/juspay/hyperswitch-web/commit/3e7b0071b8db132c901cbc0a7fc44f6ef13349d8))
+
 ## [0.50.6](https://github.com/juspay/hyperswitch-web/compare/v0.50.5...v0.50.6) (2024-05-07)
 
 ## [0.50.5](https://github.com/juspay/hyperswitch-web/compare/v0.50.4...v0.50.5) (2024-05-06)
