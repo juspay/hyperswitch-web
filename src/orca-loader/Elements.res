@@ -19,9 +19,9 @@ let make = (
   ~publishableKey,
   ~logger: option<OrcaLogger.loggerMake>,
   ~analyticsMetadata,
+  ~customBackendUrl,
 ) => {
   let applePaySessionRef = ref(Nullable.null)
-
   try {
     let iframeRef = []
     let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
@@ -297,6 +297,7 @@ let make = (
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),
+            ("customBackendUrlVal", customBackendUrl->JSON.Encode.string),
           ]->Dict.fromArray
 
         let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)
