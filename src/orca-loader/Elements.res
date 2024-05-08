@@ -698,9 +698,14 @@ let make = (
                     applePayPresent->Belt.Option.isSome
                 ) {
                   //do operations here
-                  let processPayment = (token: JSON.t) => {
+                  let processPayment = (payment: ApplePayTypes.paymentResult) => {
                     //let body = PaymentBody.applePayBody(~token)
-                    let msg = [("applePayProcessPayment", token)]->Dict.fromArray
+                    let msg =
+                      [
+                        ("applePayProcessPayment", payment.token),
+                        ("applePayBillingContact", payment.billingContact),
+                        ("applePayShippingContact", payment.shippingContact),
+                      ]->Dict.fromArray
                     mountedIframeRef->Window.iframePostMessage(msg)
                   }
 
@@ -762,7 +767,7 @@ let make = (
                               {"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson,
                             )
                             applePaySessionRef := Nullable.null
-                            processPayment(event.payment.token)
+                            processPayment(event.payment)
                             let value = "Payment Data Filled: New Payment Method"
                             logger.setLogInfo(
                               ~value,

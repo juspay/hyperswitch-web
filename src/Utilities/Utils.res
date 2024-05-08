@@ -1246,3 +1246,29 @@ let isWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
 let getUniqueArray = arr => arr->Array.map(item => (item, ""))->Dict.fromArray->Dict.keysToArray
 
 let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
+
+let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, country: string) => {
+  let options =
+    list
+    ->getDictFromJson
+    ->getOptionalArrayFromDict(country)
+    ->Option.getOr([])
+
+  let val = options->Array.find(item =>
+    item
+    ->getDictFromJson
+    ->Dict.get("code")
+    ->Option.flatMap(JSON.Decode.string)
+    ->Option.getOr("") === stateCode
+  )
+
+  switch val {
+  | Some(stateObj) =>
+    stateObj
+    ->getDictFromJson
+    ->Dict.get("name")
+    ->Option.flatMap(JSON.Decode.string)
+    ->Option.getOr(stateCode)
+  | None => stateCode
+  }
+}

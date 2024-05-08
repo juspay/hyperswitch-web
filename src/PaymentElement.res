@@ -226,8 +226,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }
   let dict = sessions->getDictFromJson
   let sessionObj = SessionsType.itemToObjMapper(dict, Others)
-  let applePaySessionObj = SessionsType.itemToObjMapper(dict, ApplePayObject)
-  let applePayToken = SessionsType.getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
   let klarnaTokenObj = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
   let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
   let googlePayThirdPartySessionObj = SessionsType.itemToObjMapper(dict, GooglePayThirdPartyObject)
@@ -317,12 +315,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
               <GPayLazy paymentType sessionObj=optToken thirdPartySessionObj=None walletOptions />
             </React.Suspense>
           }
-        | _ => React.null
-        }
-      | ApplePay =>
-        switch applePayToken {
-        | ApplePayTokenOptional(optToken) =>
-          <ApplePayLazy sessionObj=optToken walletOptions paymentType />
         | _ => React.null
         }
       | Boleto =>

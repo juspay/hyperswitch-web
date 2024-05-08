@@ -3,10 +3,8 @@ let paymentMethodListValue = Recoil.atom("paymentMethodListValue", PaymentMethod
 let paymentListLookupNew = (
   list: PaymentMethodsRecord.paymentMethodList,
   ~order,
-  ~showApplePay,
   ~showGooglePay,
   ~areAllGooglePayRequiredFieldsPrefilled,
-  ~areAllApplePayRequiredFieldsPrefilled,
   ~isShowPaypal,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
@@ -28,18 +26,10 @@ let paymentListLookupNew = (
   ]
   let otherPaymentList = []
   let googlePayFields = pmList->Array.find(item => item.paymentMethodName === "google_pay")
-  let applePayFields = pmList->Array.find(item => item.paymentMethodName === "apple_pay")
   switch googlePayFields {
   | Some(val) =>
     if val.fields->Array.length > 0 && showGooglePay && !areAllGooglePayRequiredFieldsPrefilled {
       walletToBeDisplayedInTabs->Array.push("google_pay")->ignore
-    }
-  | None => ()
-  }
-  switch applePayFields {
-  | Some(val) =>
-    if val.fields->Array.length > 0 && showApplePay && !areAllApplePayRequiredFieldsPrefilled {
-      walletToBeDisplayedInTabs->Array.push("apple_pay")->ignore
     }
   | None => ()
   }
@@ -284,7 +274,6 @@ let useGetPaymentMethodList = (~paymentMethodListValue, ~paymentOptions, ~paymen
     RecoilAtoms.optionAtom,
   )
 
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
@@ -296,12 +285,6 @@ let useGetPaymentMethodList = (~paymentMethodListValue, ~paymentOptions, ~paymen
     ~paymentMethodType="google_pay",
   )
 
-  let areAllApplePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="apple_pay",
-  )
-
   React.useMemo(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
@@ -311,10 +294,8 @@ let useGetPaymentMethodList = (~paymentMethodListValue, ~paymentOptions, ~paymen
       let (wallets, otherOptions) =
         plist->paymentListLookupNew(
           ~order=paymentOrder,
-          ~showApplePay=isApplePayReady,
           ~showGooglePay=isGooglePayReady,
           ~areAllGooglePayRequiredFieldsPrefilled,
-          ~areAllApplePayRequiredFieldsPrefilled,
           ~isShowPaypal=optionAtomValue.wallets.payPal === Auto,
         )
       (
@@ -331,10 +312,8 @@ let useGetPaymentMethodList = (~paymentMethodListValue, ~paymentOptions, ~paymen
   }, (
     methodslist,
     paymentMethodOrder,
-    isApplePayReady,
     isGooglePayReady,
     areAllGooglePayRequiredFieldsPrefilled,
-    areAllApplePayRequiredFieldsPrefilled,
     optionAtomValue.wallets.payPal,
     paymentType,
   ))
