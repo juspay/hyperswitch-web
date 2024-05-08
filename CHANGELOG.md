@@ -1,3 +1,10 @@
+## [0.50.9](https://github.com/juspay/hyperswitch-web/compare/v0.50.8...v0.50.9) (2024-05-08)
+
+
+### Bug Fixes
+
+* isthirdpartyflow fix ([#360](https://github.com/juspay/hyperswitch-web/issues/360)) ([2b19175](https://github.com/juspay/hyperswitch-web/commit/2b19175d6680525d50d03a6e3b042804ce8b8953))
+
 ## [0.50.8](https://github.com/juspay/hyperswitch-web/compare/v0.50.7...v0.50.8) (2024-05-08)
 
 
