@@ -462,12 +462,14 @@ let isAllValid = (
   card: option<bool>,
   cvc: option<bool>,
   expiry: option<bool>,
+  cardBrand: bool,
   zip: bool,
   paymentMode: string,
 ) => {
   card->getBoolValue &&
   cvc->getBoolValue &&
   expiry->getBoolValue &&
+  cardBrand &&
   (paymentMode == "payment" || zip)
 }
 
@@ -1241,4 +1243,8 @@ let walletElementPaymentType: array<CardThemeType.mode> = [
 
 let isWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
   walletElementPaymentType->Array.includes(paymentType)
+}
+
+let getUniqueArray = arr => {
+  arr->Array.map(item => (item, ""))->Dict.fromArray->Dict.keysToArray
 }

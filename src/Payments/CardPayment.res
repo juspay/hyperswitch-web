@@ -72,12 +72,37 @@ let make = (
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
+  Console.log(paymentMethodListValue)
+  let combinedCardNetworks = React.useMemo1(() =>
+    (
+      paymentMethodListValue.payment_methods
+      ->Array.find(ele => ele.payment_method === "card")
+      ->Option.getOr({
+        payment_method: "card",
+        payment_method_types: [],
+      })
+    ).payment_method_types
+    ->Array.map(ele => ele.card_networks)
+    ->Array.reduce([], (acc, ele) =>
+      acc->Array.concat(ele->Array.map(val => val.card_network->CardUtils.getCardStringFromType))
+    )
+    ->Utils.getUniqueArray
+  , [paymentMethodListValue])
+
+  let isCardBrandValid = combinedCardNetworks->Array.includes(cardBrand)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
-  let complete = isAllValid(isCardValid, isCVCValid, isExpiryValid, true, "payment")
+  let complete = isAllValid(
+    isCardValid,
+    isCVCValid,
+    isExpiryValid,
+    isCardBrandValid,
+    true,
+    "payment",
+  )
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect(() => {
     setComplete(_ => complete)
@@ -134,7 +159,8 @@ let make = (
         (isBancontact ||
         (isCVCValid->Option.getOr(false) &&
         isCardValid->Option.getOr(false) &&
-        isExpiryValid->Option.getOr(false))) && areRequiredFieldsValid
+        isExpiryValid->Option.getOr(false) &&
+        isCardBrandValid)) && areRequiredFieldsValid
       if validFormat && (showFields || isBancontact) {
         intent(
           ~bodyArr={
@@ -161,6 +187,9 @@ let make = (
         if !isBancontact && cvcNumber === "" {
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
+        }
+        if !isCardBrandValid {
+          setUserError(localeString.cardBrandConfiguredErrorText)
         }
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)

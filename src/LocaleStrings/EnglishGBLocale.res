@@ -81,4 +81,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   nicknamePlaceholder: "Card Nickname (Optional)",
   cardExpiredText: `This card has expired`,
   cardHeader: `Card information`,
+  cardBrandConfiguredErrorText: `Card brand not configured`,
 }

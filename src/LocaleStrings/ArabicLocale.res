@@ -81,4 +81,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   nicknamePlaceholder: `اسم البطاقة (اختياري)`,
   cardExpiredText: `انتهت صلاحية هذه البطاقة`,
   cardHeader: `معلومات البطاقة`,
+  cardBrandConfiguredErrorText: `علامة بطاقة غير مكونة`,
 }

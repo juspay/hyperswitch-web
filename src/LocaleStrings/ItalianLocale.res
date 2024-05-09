@@ -81,4 +81,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   selectPaymentMethodText: `Seleziona un metodo di pagamento e riprova`,
   cardExpiredText: `Questa carta è scaduta`,
   cardHeader: `Informazioni sulla carta`,
+  cardBrandConfiguredErrorText: `Marca della carta non configurata`,
 }
