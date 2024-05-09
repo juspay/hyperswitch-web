@@ -462,14 +462,12 @@ let isAllValid = (
   card: option<bool>,
   cvc: option<bool>,
   expiry: option<bool>,
-  cardBrand: bool,
   zip: bool,
   paymentMode: string,
 ) => {
   card->getBoolValue &&
   cvc->getBoolValue &&
   expiry->getBoolValue &&
-  cardBrand &&
   (paymentMode == "payment" || zip)
 }
 

@@ -81,5 +81,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   nicknamePlaceholder: `Kartenname (optional)`,
   cardExpiredText: `Diese Karte ist abgelaufen`,
   cardHeader: `Kartendaten`,
-  cardBrandConfiguredErrorText: `Kartenmarke nicht konfiguriert`,
+  cardBrandConfiguredErrorText: str => `${str} wird derzeit nicht unterstützt.`,
 }

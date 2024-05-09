@@ -72,5 +72,5 @@ type localeStrings = {
   nicknamePlaceholder: string,
   cardExpiredText: string,
   cardHeader: string,
-  cardBrandConfiguredErrorText: string,
+  cardBrandConfiguredErrorText: string => string,
 }

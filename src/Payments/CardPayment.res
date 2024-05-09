@@ -72,40 +72,34 @@ let make = (
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
-  let combinedCardNetworks = React.useMemo1(() =>
-    (
+
+  let combinedCardNetworks = React.useMemo1(() => {
+    let cardPaymentMethod =
       paymentMethodListValue.payment_methods
       ->Array.find(ele => ele.payment_method === "card")
       ->Option.getOr({
         payment_method: "card",
         payment_method_types: [],
       })
-    ).payment_method_types
-    ->Array.map(ele => ele.card_networks)
-    ->Array.reduce([], (acc, ele) =>
-      acc->Array.concat(
-        ele->Array.map(
-          val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase,
-        ),
-      )
-    )
-    ->Utils.getUniqueArray
-  , [paymentMethodListValue])
 
+    let cardNetworks = cardPaymentMethod.payment_method_types->Array.map(ele => ele.card_networks)
+
+    let cardNetworkNames =
+      cardNetworks->Array.map(ele =>
+        ele->Array.map(val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase)
+      )
+
+    cardNetworkNames
+    ->Array.reduce([], (acc, ele) => acc->Array.concat(ele))
+    ->Utils.getUniqueArray
+  }, [paymentMethodListValue])
   let isCardBrandValid = combinedCardNetworks->Array.includes(cardBrand->String.toLowerCase)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
-  let complete = isAllValid(
-    isCardValid,
-    isCVCValid,
-    isExpiryValid,
-    isCardBrandValid,
-    true,
-    "payment",
-  )
+  let complete = isAllValid(isCardValid, isCVCValid, isExpiryValid, true, "payment")
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect(() => {
     setComplete(_ => complete)
@@ -158,13 +152,8 @@ let make = (
       defaultCardBody
     }
     if confirm.doSubmit {
-      let validFormat =
-        (isBancontact ||
-        (isCVCValid->Option.getOr(false) &&
-        isCardValid->Option.getOr(false) &&
-        isExpiryValid->Option.getOr(false) &&
-        isCardBrandValid)) && areRequiredFieldsValid
-      if validFormat && (showFields || isBancontact) {
+      let validFormat = (isBancontact || complete) && areRequiredFieldsValid
+      if validFormat && (showFields || isBancontact) && isCardBrandValid {
         intent(
           ~bodyArr={
             (isBancontact ? banContactBody : cardBody)
@@ -191,11 +180,11 @@ let make = (
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         }
-        if !isCardBrandValid {
-          setUserError(localeString.cardBrandConfiguredErrorText)
-        }
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)
+        }
+        if !isCardBrandValid {
+          setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
         }
       }
     }
@@ -206,6 +195,7 @@ let make = (
     complete,
     isCustomerAcceptanceRequired,
     nickname,
+    isCardBrandValid,
   ))
   useSubmitPaymentData(submitCallback)
 
