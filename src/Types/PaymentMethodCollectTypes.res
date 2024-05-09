@@ -5,7 +5,7 @@ type paymentMethod =
 
 type card = Credit | Debit
 type bankTransfer = ACH | Bacs | Sepa
-type wallet = Paypal
+type wallet = Paypal | Pix | Venmo
 type paymentMethodType =
   | Card(card)
   | BankTransfer(bankTransfer)
@@ -84,6 +84,8 @@ let decodeTransfer = (value: string): option<bankTransfer> =>
 let decodeWallet = (methodType: string): option<wallet> =>
   switch methodType {
   | "paypal" => Some(Paypal)
+  | "pix" => Some(Pix)
+  | "venmo" => Some(Venmo)
   | _ => None
   }
 
@@ -110,7 +112,7 @@ let decodePaymentMethodType = (json: Js.Json.t): option<array<paymentMethodType>
               | Some(transfer) => payment_methods->Array.push(BankTransfer(transfer))
               | None => ()
               }
-            | (Some("wallets"), Some(walletType)) =>
+            | (Some("wallet"), Some(walletType)) =>
               switch decodeWallet(walletType) {
               | Some(wallet) => payment_methods->Array.push(Wallet(wallet))
               | None => ()

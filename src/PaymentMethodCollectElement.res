@@ -6,7 +6,6 @@ open RecoilAtoms
 let make = (~integrateError, ~logger) => {
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(paymentMethodCollectOptionAtom)
-  let enabledPaymentMethods = options.enabledPaymentMethods
 
   // Component states
   let (availablePaymentMethods, setAvailablePaymentMethods) = React.useState(_ =>
@@ -22,9 +21,9 @@ let make = (~integrateError, ~logger) => {
     defaultSelectedPaymentMethodType
   )
   let (paymentMethodData, setPaymentMethodData) = React.useState(_ => Dict.make())
-  let (merchantName, setMerchantName) = React.useState(_ =>
-    defaultPaymentMethodCollectOptions.collectorName
-  )
+  let (merchantName, setMerchantName) = React.useState(_ => options.collectorName)
+  let (merchantLogo, setMerchantLogo) = React.useState(_ => options.logo)
+  let (merchantTheme, setMerchantTheme) = React.useState(_ => options.theme)
   let (fieldValidityDict, setFieldValidityDict): (
     Js.Dict.t<option<bool>>,
     (Js.Dict.t<option<bool>> => Js.Dict.t<option<bool>>) => unit,
@@ -40,8 +39,12 @@ let make = (~integrateError, ~logger) => {
 
   // Form a list of available payment methods
   React.useEffect(() => {
-    let availablePMT = availablePaymentMethodTypes
-    let _ = enabledPaymentMethods->Array.map(pm => {
+    let availablePMT = {
+      card: [],
+      bankTransfer: [],
+      wallet: [],
+    }
+    let _ = options.enabledPaymentMethods->Array.map(pm => {
       switch pm {
       | Card(cardType) =>
         if !(availablePMT.card->Array.includes(cardType)) {
@@ -58,7 +61,7 @@ let make = (~integrateError, ~logger) => {
       }
     })
 
-    let availablePM = availablePaymentMethods
+    let availablePM: array<paymentMethod> = []
     if !(availablePM->Array.includes(BankTransfer)) && availablePMT.bankTransfer->Array.length > 0 {
       availablePM->Array.push(BankTransfer)
     }
@@ -73,13 +76,24 @@ let make = (~integrateError, ~logger) => {
     setAvailablePaymentMethodTypes(_ => availablePMT)
 
     None
-  }, [enabledPaymentMethods])
+  }, [options.enabledPaymentMethods])
 
   // Update merchant's name
   React.useEffect(() => {
     setMerchantName(_ => options.collectorName)
     None
   }, [options.collectorName])
+
+  // Update merchant's logo
+  React.useEffect(() => {
+    setMerchantLogo(_ => options.logo)
+    None
+  }, [options.logo])
+
+  React.useEffect(() => {
+    setMerchantTheme(_ => options.theme)
+    None
+  }, [options.theme])
 
   // Reset payment method type
   React.useEffect(() => {
@@ -111,11 +125,11 @@ let make = (~integrateError, ~logger) => {
       <div>
         {availablePaymentMethodTypes.bankTransfer
         ->Array.mapWithIndex((pmt, i) =>
-          <div
+          <button
             key={Int.toString(i)}
             onClick={_ => setSelectedPaymentMethodType(_ => Some(BankTransfer(pmt)))}>
             {React.string(pmt->String.make)}
-          </div>
+          </button>
         )
         ->React.array}
       </div>
@@ -123,22 +137,15 @@ let make = (~integrateError, ~logger) => {
       <div>
         {availablePaymentMethodTypes.wallet
         ->Array.mapWithIndex((pmt, i) =>
-          <div
+          <button
             key={Int.toString(i)}
             onClick={_ => setSelectedPaymentMethodType(_ => Some(Wallet(pmt)))}>
             {React.string(pmt->String.make)}
-          </div>
+          </button>
         )
         ->React.array}
       </div>
     }
-
-  let renderInputElement = (label, onChangeHandler) => {
-    <div className="input-wrapper">
-      <label htmlFor=""> {React.string(label)} </label>
-      <input type_="text" onChange={onChangeHandler} />
-    </div>
-  }
 
   let updatePaymentMethodDataDict = (record, field, value): 'a => {
     let updatedRecord = Dict.copy(record)
@@ -381,28 +388,159 @@ let make = (~integrateError, ~logger) => {
           </React.Fragment>
         | Sepa =>
           <React.Fragment>
-            {renderInputElement("IBAN", event => inputHandler(event, pmt, "iban"))}
-            {renderInputElement("BIC", event => inputHandler(event, pmt, "bic"))}
+            <InputField
+              id="iban"
+              fieldName="International Bank Account Number (IBAN)"
+              placeholder="NL42TEST0123456789"
+              maxLength=18
+              value={getValueFromDict(paymentMethodData, "iban")}
+              paymentType={PaymentMethodCollectElement}
+              inputRef={sortCodeRef}
+              isFocus={true}
+              isValid={fieldValidityDict->Dict.get("iban")->Option.getOr(None)}
+              onChange={event => inputHandler(event, pmt, "iban")}
+              setIsValid={updatedValidityFn => {
+                setFieldValidity(
+                  "iban",
+                  updatedValidityFn(),
+                  fieldValidityDict,
+                  setFieldValidityDict,
+                )
+              }}
+              onBlur={_ev =>
+                calculateAndSetValidity(
+                  paymentMethodData,
+                  "iban",
+                  fieldValidityDict,
+                  setFieldValidityDict,
+                )}
+            />
+            <InputField
+              id="bic"
+              fieldName="Bank Identifier Code"
+              placeholder="ABNANL2A"
+              maxLength=8
+              value={getValueFromDict(paymentMethodData, "bic")}
+              paymentType={PaymentMethodCollectElement}
+              inputRef={accountNumberRef}
+              isFocus={true}
+              isValid={fieldValidityDict->Dict.get("bic")->Option.getOr(None)}
+              onChange={event => inputHandler(event, pmt, "bic")}
+              setIsValid={updatedValidityFn => {
+                setFieldValidity(
+                  "bic",
+                  updatedValidityFn(),
+                  fieldValidityDict,
+                  setFieldValidityDict,
+                )
+              }}
+              onBlur={_ev =>
+                calculateAndSetValidity(
+                  paymentMethodData,
+                  "bic",
+                  fieldValidityDict,
+                  setFieldValidityDict,
+                )}
+            />
           </React.Fragment>
         }}
       </div>
     | Wallet(walletType) =>
       <div className="collect-wallet">
         {switch walletType {
-        | Paypal =>
+        | Paypal | Venmo =>
           <React.Fragment>
-            {renderInputElement("Email ID", event => inputHandler(event, pmt, "email"))}
-            {renderInputElement("Mobile Number (Optional)", event =>
-              inputHandler(event, pmt, "mobile")
-            )}
+            <InputField
+              id="email"
+              fieldName="Registered email ID"
+              placeholder="paypal@gmail.com"
+              value={getValueFromDict(paymentMethodData, "email")}
+              paymentType={PaymentMethodCollectElement}
+              inputRef={sortCodeRef}
+              isFocus={true}
+              isValid={fieldValidityDict->Dict.get("email")->Option.getOr(None)}
+              onChange={event => inputHandler(event, pmt, "email")}
+              setIsValid={updatedValidityFn => {
+                setFieldValidity(
+                  "email",
+                  updatedValidityFn(),
+                  fieldValidityDict,
+                  setFieldValidityDict,
+                )
+              }}
+              onBlur={_ev =>
+                calculateAndSetValidity(
+                  paymentMethodData,
+                  "email",
+                  fieldValidityDict,
+                  setFieldValidityDict,
+                )}
+            />
+            <InputField
+              id="mobileNumber"
+              fieldName="Registered Mobile Number (Optional)"
+              placeholder="(555) 555-1234"
+              value={getValueFromDict(paymentMethodData, "mobileNumber")}
+              paymentType={PaymentMethodCollectElement}
+              inputRef={accountNumberRef}
+              isFocus={true}
+              isValid={fieldValidityDict->Dict.get("mobileNumber")->Option.getOr(None)}
+              onChange={event => inputHandler(event, pmt, "mobileNumber")}
+              setIsValid={updatedValidityFn => {
+                setFieldValidity(
+                  "mobileNumber",
+                  updatedValidityFn(),
+                  fieldValidityDict,
+                  setFieldValidityDict,
+                )
+              }}
+              onBlur={_ev =>
+                calculateAndSetValidity(
+                  paymentMethodData,
+                  "mobileNumber",
+                  fieldValidityDict,
+                  setFieldValidityDict,
+                )}
+            />
           </React.Fragment>
+        | Pix =>
+          <InputField
+            id="pixId"
+            fieldName="Pix ID"
+            placeholder="paypal@gmail.com"
+            value={getValueFromDict(paymentMethodData, "pixId")}
+            paymentType={PaymentMethodCollectElement}
+            inputRef={sortCodeRef}
+            isFocus={true}
+            isValid={fieldValidityDict->Dict.get("pixId")->Option.getOr(None)}
+            onChange={event => inputHandler(event, pmt, "pixId")}
+            setIsValid={updatedValidityFn => {
+              setFieldValidity(
+                "pixId",
+                updatedValidityFn(),
+                fieldValidityDict,
+                setFieldValidityDict,
+              )
+            }}
+            onBlur={_ev =>
+              calculateAndSetValidity(
+                paymentMethodData,
+                "pixId",
+                fieldValidityDict,
+                setFieldValidityDict,
+              )}
+          />
         }}
       </div>
     }
   }
 
   let handleSubmit = _ev => {
-    let pmdBody = formCreatePaymentMethodRequestBody(selectedPaymentMethodType, paymentMethodData)
+    let pmdBody = formCreatePaymentMethodRequestBody(
+      selectedPaymentMethodType,
+      paymentMethodData,
+      fieldValidityDict,
+    )
 
     switch pmdBody {
     | Some(pmd) => {
@@ -433,6 +571,7 @@ let make = (~integrateError, ~logger) => {
           ~body,
         )
         ->then(res => {
+          Js.Console.log2("DEBUG RES", res)
           resolve()
         })
         ->catch(err => {
@@ -451,11 +590,7 @@ let make = (~integrateError, ~logger) => {
     <div className="flex">
       // Merchant's info
       <div className="flex flex-row merchant-header">
-        <img
-          className="h-8 w-auto merchant-logo"
-          src="https://app.hyperswitch.io/HyperswitchFavicon.png"
-          alt="O"
-        />
+        <img className="h-8 w-auto merchant-logo" src={merchantLogo} alt="O" />
         <div className="merchant-title"> {React.string(merchantName)} </div>
       </div>
       // Collect widget
@@ -463,9 +598,9 @@ let make = (~integrateError, ~logger) => {
         <div className="collect-sidebar">
           {availablePaymentMethods
           ->Array.mapWithIndex((pm, i) => {
-            <div key={Int.toString(i)} onClick={_e => setSelectedPaymentMethod(_ => pm)}>
+            <button key={Int.toString(i)} onClick={_e => setSelectedPaymentMethod(_ => pm)}>
               {React.string(pm->String.make)}
-            </div>
+            </button>
           })
           ->React.array}
         </div>

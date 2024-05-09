@@ -27,6 +27,8 @@ let getPaymentMethodType = (paymentMethodType: paymentMethodType): string => {
   | Wallet(walletType) =>
     switch walletType {
     | Paypal => "paypal"
+    | Pix => "pix"
+    | Venmo => "venmo"
     }
   }
 }
@@ -94,20 +96,14 @@ let getValueFromDict = (paymentMethodDataDict, key) => {
 }
 
 let setFieldValidity = (key, validity: option<bool>, fieldValidityDict, setFieldValidityDict) => {
-  // Update validity in dictionary
   let updatedFieldValidityDict = fieldValidityDict->Dict.copy
   updatedFieldValidityDict->Dict.set(key, validity)
   setFieldValidityDict(_ => updatedFieldValidityDict)
 }
 
-let calculateAndSetValidity = (
-  paymentMethodDataDict,
-  key,
-  fieldValidityDict,
-  setFieldValidityDict,
-) => {
+let calculateValidity = (paymentMethodDataDict, key) => {
   let value = paymentMethodDataDict->getValueFromDict(key)
-  let updatedValidity = switch key {
+  switch key {
   | "cardNumber" =>
     if cardNumberInRange(value)->Array.includes(true) && calculateLuhn(value) {
       Some(true)
@@ -124,15 +120,70 @@ let calculateAndSetValidity = (
     } else {
       Some(false)
     }
+  | "routingNumber" =>
+    if value->String.length === 9 {
+      let p1 = switch (
+        value->String.charAt(0)->Belt.Int.fromString,
+        value->String.charAt(3)->Belt.Int.fromString,
+        value->String.charAt(6)->Belt.Int.fromString,
+      ) {
+      | (Some(a), Some(b), Some(c)) => Some(3 * (a + b + c))
+      | _ => None
+      }
+
+      let p2 = switch (
+        value->String.charAt(1)->Belt.Int.fromString,
+        value->String.charAt(4)->Belt.Int.fromString,
+        value->String.charAt(7)->Belt.Int.fromString,
+      ) {
+      | (Some(a), Some(b), Some(c)) => Some(7 * (a + b + c))
+      | _ => None
+      }
+
+      let p3 = switch (
+        value->String.charAt(2)->Belt.Int.fromString,
+        value->String.charAt(5)->Belt.Int.fromString,
+        value->String.charAt(8)->Belt.Int.fromString,
+      ) {
+      | (Some(a), Some(b), Some(c)) => Some(a + b + c)
+      | _ => None
+      }
+
+      switch (p1, p2, p3) {
+      | (Some(a), Some(b), Some(c)) => Some(mod(a + b + c, 10) == 0)
+      | _ => Some(false)
+      }
+    } else {
+      None
+    }
   | _ => None
   }
+}
 
+let calculateAndSetValidity = (
+  paymentMethodDataDict,
+  key,
+  fieldValidityDict,
+  setFieldValidityDict,
+) => {
+  let updatedValidity = calculateValidity(paymentMethodDataDict, key)
   setFieldValidity(key, updatedValidity, fieldValidityDict, setFieldValidityDict)
+  Js.Console.log4("DEBUG", key, updatedValidity, fieldValidityDict)
+}
+
+let checkValidity = (keys, fieldValidityDict) => {
+  keys->Array.reduce(true, (acc, key) => {
+    switch fieldValidityDict->Dict.get(key) {
+    | Some(validity) => acc && validity->Option.getOr(true)
+    | None => false
+    }
+  })
 }
 
 let formCreatePaymentMethodRequestBody = (
   paymentMethodType: option<paymentMethodType>,
   paymentMethodDataDict,
+  fieldValidityDict,
 ) => {
   switch paymentMethodType {
   | None => None
@@ -143,17 +194,21 @@ let formCreatePaymentMethodRequestBody = (
       paymentMethodDataDict->Dict.get("cardNumber"),
       paymentMethodDataDict->Dict.get("expiryDate"),
     ) {
-    | (Some(nameOnCard), Some(cardNumber), Some(expiryDate)) => {
-        let arr = expiryDate->String.split("/")
-        switch (arr->Array.get(0), arr->Array.get(1)) {
-        | (Some(month), Some(year)) =>
-          Some([
-            ("card_holder_name", nameOnCard),
-            ("card_number", cardNumber),
-            ("card_exp_month", month),
-            ("card_exp_year", year),
-          ])
-        | _ => None
+    | (Some(nameOnCard), Some(cardNumber), Some(expiryDate)) =>
+      switch ["cardNumber", "nameOnCard", "expiryDate"]->checkValidity(fieldValidityDict) {
+      | false => None
+      | true => {
+          let arr = expiryDate->String.split("/")
+          switch (arr->Array.get(0), arr->Array.get(1)) {
+          | (Some(month), Some(year)) =>
+            Some([
+              ("card_holder_name", nameOnCard),
+              ("card_number", cardNumber),
+              ("card_exp_month", month),
+              ("card_exp_year", year),
+            ])
+          | _ => None
+          }
         }
       }
     | _ => None
@@ -169,12 +224,18 @@ let formCreatePaymentMethodRequestBody = (
       paymentMethodDataDict->Dict.get("city"),
     ) {
     | (Some(routingNumber), Some(accountNumber), bankName, city) =>
-      Some([
-        ("bank_routing_number", routingNumber),
-        ("bank_account_number", accountNumber),
-        ("bank_name", bankName->Option.getOr("")),
-        ("bank_city", city->Option.getOr("")),
-      ])
+      switch ["routingNumber", "accountNumber", "bankName", "city"]->checkValidity(
+        fieldValidityDict,
+      ) {
+      | false => None
+      | true =>
+        Some([
+          ("bank_routing_number", routingNumber),
+          ("bank_account_number", accountNumber),
+          ("bank_name", bankName->Option.getOr("")),
+          ("bank_city", city->Option.getOr("")),
+        ])
+      }
     | _ => None
     }
 
@@ -187,12 +248,16 @@ let formCreatePaymentMethodRequestBody = (
       paymentMethodDataDict->Dict.get("city"),
     ) {
     | (Some(sortCode), Some(accountNumber), bankName, city) =>
-      Some([
-        ("bank_sort_code", sortCode),
-        ("bank_account_number", accountNumber),
-        ("bank_name", bankName->Option.getOr("")),
-        ("bank_city", city->Option.getOr("")),
-      ])
+      switch ["sortCode", "accountNumber", "bankName", "city"]->checkValidity(fieldValidityDict) {
+      | false => None
+      | true =>
+        Some([
+          ("bank_sort_code", sortCode),
+          ("bank_account_number", accountNumber),
+          ("bank_name", bankName->Option.getOr("")),
+          ("bank_city", city->Option.getOr("")),
+        ])
+      }
     | _ => None
     }
 
@@ -206,13 +271,17 @@ let formCreatePaymentMethodRequestBody = (
       paymentMethodDataDict->Dict.get("countryCode"),
     ) {
     | (Some(iban), Some(bic), bankName, city, countryCode) =>
-      Some([
-        ("iban", iban),
-        ("bic", bic),
-        ("bank_name", bankName->Option.getOr("")),
-        ("bank_city", city->Option.getOr("")),
-        ("bank_country_code", countryCode->Option.getOr("")),
-      ])
+      switch ["iban", "bic", "bankName", "city", "countryCode"]->checkValidity(fieldValidityDict) {
+      | false => None
+      | true =>
+        Some([
+          ("iban", iban),
+          ("bic", bic),
+          ("bank_name", bankName->Option.getOr("")),
+          ("bank_city", city->Option.getOr("")),
+          ("bank_country_code", countryCode->Option.getOr("")),
+        ])
+      }
     | _ => None
     }
 
@@ -223,5 +292,7 @@ let formCreatePaymentMethodRequestBody = (
     | Some(email) => Some([("email", email)])
     | _ => None
     }
+  // TODO: handle Pix and Venmo
+  | _ => None
   }
 }
