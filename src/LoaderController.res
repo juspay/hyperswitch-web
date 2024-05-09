@@ -360,7 +360,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           )
         }
         if (
-          dict->getDictIsSome("customBackendUrlVal") &&
+          dict->getDictIsSome("customBackendUrl") &&
             dict
             ->getString("customBackendUrl", "")
             ->String.length > 0
