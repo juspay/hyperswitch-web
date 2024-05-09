@@ -36,7 +36,7 @@ module WalletsSaveDetailsText = {
 }
 
 @react.component
-let make = (~sessions, ~walletOptions) => {
+let make = (~sessions, ~walletOptions, ~paymentType) => {
   open SessionsType
   let dict = sessions->Utils.getDictFromJson
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -86,7 +86,7 @@ let make = (~sessions, ~walletOptions) => {
                 {switch paypalToken {
                 | OtherTokenOptional(optToken) =>
                   switch optToken {
-                  | Some(token) => <PaypalSDKLazy sessionObj=token />
+                  | Some(token) => <PaypalSDKLazy sessionObj=token paymentType />
                   | None => <PayPalLazy />
                   }
                 | _ => <PayPalLazy />

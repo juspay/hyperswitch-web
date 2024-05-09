@@ -344,7 +344,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         showFields}>
       <div className="flex flex-col place-items-center">
         <ErrorBoundary key="payment_request_buttons_all" level={ErrorBoundary.RequestButton}>
-          <PaymentRequestButtonElement sessions walletOptions />
+          <PaymentRequestButtonElement sessions walletOptions paymentType />
         </ErrorBoundary>
         <RenderIf
           condition={paymentOptions->Array.length > 0 &&

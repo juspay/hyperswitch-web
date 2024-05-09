@@ -270,7 +270,7 @@ let make = (
           [
             (
               "paymentElementCreate",
-              componentType->isComponentTypeForPaymentElementCreate->JSON.Encode.bool,
+              componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
             ),
             ("otherElements", otherElements->JSON.Encode.bool),
             ("options", newOptions),
@@ -694,7 +694,7 @@ let make = (
               ->then(res => {
                 let (json, applePayPresent, googlePayPresent) = res
                 if (
-                  componentType->isComponentTypeForPaymentElementCreate &&
+                  componentType->getIsComponentTypeForPaymentElementCreate &&
                     applePayPresent->Belt.Option.isSome
                 ) {
                   //do operations here
@@ -737,6 +737,30 @@ let make = (
                             ->Dict.get("payment_request_data")
                             ->Belt.Option.getWithDefault(Dict.make()->JSON.Encode.object)
                             ->transformKeys(CamelCase)
+
+                          let requiredShippingContactFields =
+                            paymentRequest
+                            ->Utils.getDictFromJson
+                            ->Utils.getStrArray("requiredShippingContactFields")
+
+                          if (
+                            componentType->getIsExpressCheckoutComponent->not &&
+                              requiredShippingContactFields->Array.length !== 0
+                          ) {
+                            let requiredShippingContactFields =
+                              requiredShippingContactFields->Array.filter(item =>
+                                item !== "postalAddress"
+                              )
+
+                            paymentRequest
+                            ->Utils.getDictFromJson
+                            ->Dict.set(
+                              "requiredShippingContactFields",
+                              requiredShippingContactFields
+                              ->Utils.getArrofJsonString
+                              ->JSON.Encode.array,
+                            )
+                          }
 
                           let ssn = applePaySession(3, paymentRequest)
                           switch applePaySessionRef.contents->Nullable.toOption {
@@ -801,7 +825,7 @@ let make = (
                   addSmartEventListener("message", handleApplePayMessages, "onApplePayMessages")
                 }
                 if (
-                  componentType->isComponentTypeForPaymentElementCreate &&
+                  componentType->getIsComponentTypeForPaymentElementCreate &&
                   googlePayPresent->Belt.Option.isSome &&
                   wallets.googlePay === Auto
                 ) {
@@ -840,10 +864,13 @@ let make = (
                   paymentDataRequest.transactionInfo =
                     gpayobj.transaction_info->transformKeys(CamelCase)
                   paymentDataRequest.merchantInfo = gpayobj.merchant_info->transformKeys(CamelCase)
-                  paymentDataRequest.shippingAddressRequired = gpayobj.shippingAddressRequired
                   paymentDataRequest.emailRequired = gpayobj.emailRequired
-                  paymentDataRequest.shippingAddressParameters =
-                    gpayobj.shippingAddressParameters->transformKeys(CamelCase)
+
+                  if componentType->getIsExpressCheckoutComponent {
+                    paymentDataRequest.shippingAddressRequired = gpayobj.shippingAddressRequired
+                    paymentDataRequest.shippingAddressParameters =
+                      gpayobj.shippingAddressParameters->transformKeys(CamelCase)
+                  }
 
                   try {
                     let gPayClient = GooglePayType.google(

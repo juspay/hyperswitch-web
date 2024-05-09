@@ -30,7 +30,7 @@ let make = (~paymentType) => {
   <RenderIf condition={walletOptions->Array.length > 0}>
     <div className="flex flex-col place-items-center">
       <ErrorBoundary key="payment_request_buttons_all" level={ErrorBoundary.RequestButton}>
-        <PaymentRequestButtonElement sessions walletOptions />
+        <PaymentRequestButtonElement sessions walletOptions paymentType />
       </ErrorBoundary>
     </div>
   </RenderIf>

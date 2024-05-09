@@ -2,7 +2,7 @@ open PaypalSDKTypes
 open Promise
 
 @react.component
-let make = (~sessionObj: SessionsType.token) => {
+let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) => {
   let {iframeId, publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.keys,
   )
@@ -11,7 +11,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let token = sessionObj.token
-  let orderDetails = sessionObj.orderDetails->getOrderDetails
+  let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   let checkoutScript =
     Window.document(Window.window)->Window.getElementById("braintree-checkout")->Nullable.toOption

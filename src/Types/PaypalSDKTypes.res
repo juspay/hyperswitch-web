@@ -123,16 +123,23 @@ let getShippingDetails = shippingAddressOverrideObj => {
   }
 }
 
-let getOrderDetails = orderDetails => {
+let getOrderDetails = (orderDetails, paymentType) => {
   let orderDetailsDict = orderDetails->Utils.getDictFromJson
 
-  let shippingAddressOverride =
-    orderDetailsDict->Utils.getJsonObjectFromDict("shipping_address_override")->getShippingDetails
+  let isWalletElementPaymentType = paymentType->Utils.getIsWalletElementPaymentType
+
+  let shippingAddressOverride = isWalletElementPaymentType
+    ? orderDetailsDict->Utils.getJsonObjectFromDict("shipping_address_override")->getShippingDetails
+    : None
+
+  let enableShippingAddress = isWalletElementPaymentType
+    ? orderDetailsDict->Utils.getOptionBool("enable_shipping_address")
+    : None
 
   {
     flow: orderDetailsDict->Utils.getString("flow", "vault"),
     billingAgreementDescription: None,
-    enableShippingAddress: orderDetailsDict->Utils.getOptionBool("enable_shipping_address"),
+    enableShippingAddress,
     shippingAddressEditable: None,
     shippingAddressOverride,
   }
