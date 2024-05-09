@@ -802,6 +802,28 @@ let getApplePayRequiredFields = (
   })
 }
 
+let getNameFromString = (name, requiredFieldsArr) => {
+  let nameArr = name->String.split(" ")
+  let nameArrLength = nameArr->Array.length
+  switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
+  | "first_name" => {
+      let end = nameArrLength === 1 ? nameArrLength : nameArrLength - 1
+      nameArr
+      ->Array.slice(~start=0, ~end)
+      ->Array.reduce("", (acc, item) => {
+        acc ++ " " ++ item
+      })
+    }
+  | "last_name" =>
+    if nameArrLength === 1 {
+      ""
+    } else {
+      nameArr->Array.get(nameArrLength - 1)->Option.getOr(name)
+    }
+  | _ => name
+  }->String.trim
+}
+
 let getGooglePayRequiredFields = (
   ~billingContact: GooglePayType.billingContact,
   ~shippingContact: GooglePayType.billingContact,
@@ -819,25 +841,7 @@ let getGooglePayRequiredFields = (
     let getName = {
       let name = billingContact.name->getBillingOrShipping(shippingContact.name)
 
-      let nameArr = name->String.split(" ")
-      let nameArrLength = nameArr->Array.length
-      switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
-      | "first_name" => {
-          let end = nameArrLength === 1 ? nameArrLength : nameArrLength - 1
-          nameArr
-          ->Array.slice(~start=0, ~end)
-          ->Array.reduce("", (acc, item) => {
-            acc ++ " " ++ item
-          })
-        }
-      | "last_name" =>
-        if nameArrLength === 1 {
-          ""
-        } else {
-          nameArr->Array.get(nameArrLength - 1)->Option.getOr(name)
-        }
-      | _ => name
-      }->String.trim
+      name->getNameFromString(requiredFieldsArr)
     }
 
     let fieldVal = switch item.field_type {
@@ -859,6 +863,52 @@ let getGooglePayRequiredFields = (
     | Email => email
     | PhoneNumber =>
       shippingContact.phoneNumber->String.replaceAll(" ", "")->String.replaceAll("-", "")
+    | _ => ""
+    }
+
+    if fieldVal !== "" {
+      acc->Dict.set(item.required_field, fieldVal->JSON.Encode.string)
+    }
+
+    acc
+  })
+}
+
+let getPaypalRequiredFields = (
+  ~details: PaypalSDKTypes.details,
+  ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+  ~statesList,
+) => {
+  paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
+    let requiredFieldsArr = item.required_field->String.split(".")
+
+    let getName = {
+      let name = details.shippingAddress.recipientName->Option.getOr("")
+
+      name->getNameFromString(requiredFieldsArr)
+    }
+
+    let fieldVal = switch item.field_type {
+    | FullName => getName
+    | BillingName => getName
+    | AddressLine1 => details.shippingAddress.line1->Option.getOr("")
+    | AddressLine2 => details.shippingAddress.line2->Option.getOr("")
+    | AddressCity => details.shippingAddress.city->Option.getOr("")
+    | AddressState =>
+      let administrativeArea = details.shippingAddress.state->Option.getOr("")
+      let countryCode = details.shippingAddress.countryCode->Option.getOr("")
+      Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+    | Country
+    | AddressCountry(_) =>
+      details.shippingAddress.countryCode->Option.getOr("")
+    | AddressPincode => details.shippingAddress.postalCode->Option.getOr("")
+    | Email => details.email
+    | PhoneNumber =>
+      switch (details.phone->Option.getOr(""), details.shippingAddress.phone->Option.getOr("")) {
+      | (phone, "") => phone
+      | ("", phone) => phone
+      | _ => ""
+      }
     | _ => ""
     }
 

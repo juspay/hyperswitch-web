@@ -13,6 +13,7 @@ type token = {
   shippingAddressRequired: bool,
   emailRequired: bool,
   shippingAddressParameters: JSON.t,
+  orderDetails: JSON.t,
 }
 
 type tokenType =
@@ -39,6 +40,7 @@ let defaultToken = {
   shippingAddressRequired: false,
   emailRequired: false,
   shippingAddressParameters: Dict.make()->JSON.Encode.object,
+  orderDetails: Dict.make()->JSON.Encode.object,
 }
 let getWallet = str => {
   switch str {
@@ -68,6 +70,7 @@ let getSessionsToken = (dict, str) => {
         shippingAddressRequired: getBool(dict, "shipping_address_required", false),
         emailRequired: getBool(dict, "email_required", false),
         shippingAddressParameters: getJsonObjectFromDict(dict, "shipping_address_parameters"),
+        orderDetails: getJsonObjectFromDict(dict, "order_details"),
       }
     })
   })
