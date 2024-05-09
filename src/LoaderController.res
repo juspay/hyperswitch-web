@@ -362,7 +362,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         if (
           dict->getDictIsSome("customBackendUrlVal") &&
             dict
-            ->getString("customBackendUrlVal", "")
+            ->getString("customBackendUrl", "")
             ->String.length > 0
         ) {
           if dict->getDictIsSome("endpoint") {
