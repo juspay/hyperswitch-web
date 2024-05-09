@@ -297,7 +297,7 @@ let make = (
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),
-            ("customBackendUrlVal", customBackendUrl->JSON.Encode.string),
+            ("customBackendUrl", customBackendUrl->JSON.Encode.string),
           ]->Dict.fromArray
 
         let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)
