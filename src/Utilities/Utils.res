@@ -1245,6 +1245,4 @@ let isWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
   walletElementPaymentType->Array.includes(paymentType)
 }
 
-let getUniqueArray = arr => {
-  arr->Array.map(item => (item, ""))->Dict.fromArray->Dict.keysToArray
-}
+let getUniqueArray = arr => arr->Array.map(item => (item, ""))->Dict.fromArray->Dict.keysToArray

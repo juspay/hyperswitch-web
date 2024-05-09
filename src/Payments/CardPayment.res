@@ -72,7 +72,6 @@ let make = (
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
-  Console.log(paymentMethodListValue)
   let combinedCardNetworks = React.useMemo1(() =>
     (
       paymentMethodListValue.payment_methods
