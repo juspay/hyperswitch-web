@@ -84,12 +84,16 @@ let make = (
     ).payment_method_types
     ->Array.map(ele => ele.card_networks)
     ->Array.reduce([], (acc, ele) =>
-      acc->Array.concat(ele->Array.map(val => val.card_network->CardUtils.getCardStringFromType))
+      acc->Array.concat(
+        ele->Array.map(
+          val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase,
+        ),
+      )
     )
     ->Utils.getUniqueArray
   , [paymentMethodListValue])
 
-  let isCardBrandValid = combinedCardNetworks->Array.includes(cardBrand)
+  let isCardBrandValid = combinedCardNetworks->Array.includes(cardBrand->String.toLowerCase)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
