@@ -942,7 +942,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         ])
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
-        ~isConfirmCall=!isThirdPartyFlow,
+        ~isConfirmCall=isThirdPartyFlow,
         (),
       )
       let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
