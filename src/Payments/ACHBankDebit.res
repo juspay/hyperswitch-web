@@ -87,9 +87,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   }, (email, modalData, fullName))
   useSubmitPaymentData(submitCallback)
 
-  <div
-    className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+  <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <FullNamePaymentInput paymentType={paymentType} />
     <EmailPaymentInput paymentType />
     <div className="flex flex-col">
@@ -97,13 +95,12 @@ let make = (~paymentType: CardThemeType.mode) => {
       <RenderIf condition={bankError->String.length > 0}>
         <div
           className="Error pt-1"
-          style={ReactDOMStyle.make(
-            ~color=themeObj.colorDangerText,
-            ~fontSize=themeObj.fontSizeSm,
-            ~alignSelf="start",
-            ~textAlign="left",
-            (),
-          )}>
+          style={
+            color: themeObj.colorDangerText,
+            fontSize: themeObj.fontSizeSm,
+            alignSelf: "start",
+            textAlign: "left",
+          }>
           {React.string(bankError)}
         </div>
       </RenderIf>

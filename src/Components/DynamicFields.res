@@ -336,11 +336,10 @@ let make = (
         <div
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
-          style={ReactDOMStyle.make(
-            ~marginTop=index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
-            ~gridColumnGap=themeObj.spacingGridRow,
-            (),
-          )}>
+          style={
+            marginTop: index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
+            gridColumnGap: themeObj.spacingGridRow,
+          }>
           {switch item {
           | CardNumber =>
             <PaymentInputField
@@ -453,12 +452,11 @@ let make = (
             <>
               <RenderIf condition={!isSpacedInnerLayout}>
                 <div
-                  style={ReactDOMStyle.make(
-                    ~marginBottom="5px",
-                    ~fontSize=themeObj.fontSizeLg,
-                    ~opacity="0.6",
-                    (),
-                  )}>
+                  style={
+                    marginBottom: "5px",
+                    fontSize: themeObj.fontSizeLg,
+                    opacity: "0.6",
+                  }>
                   {item->getCustomFieldName->Option.getOr("")->React.string}
                 </div>
               </RenderIf>
@@ -492,19 +490,17 @@ let make = (
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
         <div
           className={`${spacedStylesForBiilingDetails} w-full text-left`}
-          style={ReactDOMStyle.make(
-            ~border={isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
-            ~borderRadius={isSpacedInnerLayout ? themeObj.borderRadius : ""},
-            ~margin={isSpacedInnerLayout ? `10px 0` : ""},
-            (),
-          )}>
+          style={
+            border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
+            borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
+            margin: {isSpacedInnerLayout ? `10px 0` : ""},
+          }>
           <div
-            style={ReactDOMStyle.make(
-              ~marginBottom="5px",
-              ~fontSize=themeObj.fontSizeLg,
-              ~opacity="0.6",
-              (),
-            )}>
+            style={
+              marginBottom: "5px",
+              fontSize: themeObj.fontSizeLg,
+              opacity: "0.6",
+            }>
             {React.string(localeString.billingDetailsText)}
           </div>
           <div

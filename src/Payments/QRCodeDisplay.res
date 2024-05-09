@@ -134,7 +134,7 @@ let make = () => {
         className=" flex flex-row w-full justify-center items-start mb-8 font-medium text-2xl font-semibold text-[#151A1F] opacity-50">
         {expiryString->React.string}
       </div>
-      <img style={ReactDOMStyle.make(~height="13rem", ())} src=qrCode />
+      <img style={height: "13rem"} src=qrCode />
       <div className=" flex flex-col max-w-md justify-between items-center">
         <div className="Disclaimer w-full mt-16 font-medium text-xs text-[#151A1F] opacity-50">
           {React.string(
@@ -145,12 +145,11 @@ let make = () => {
           <div>
             <button
               className="w-full mt-6 p-2 h-[40px]"
-              style={ReactDOMStyle.make(
-                ~background="#006DF9",
-                ~borderRadius="4px",
-                ~color="#ffffff",
-                (),
-              )}
+              style={
+                background: "#006DF9",
+                borderRadius: "4px",
+                color: "#ffffff",
+              }
               onClick={_ => {
                 closeModal()
               }}>

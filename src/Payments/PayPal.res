@@ -83,19 +83,16 @@ let make = () => {
   })
 
   <button
-    style={ReactDOMStyle.make(
-      ~display="inline-block",
-      ~color=textColor,
-      ~height=`${height->Belt.Int.toString}px`,
-      ~borderRadius="2px",
-      ~width="100%",
-      ~backgroundColor=buttonColor,
-      (),
-    )}
+    style={
+      display: "inline-block",
+      color: textColor,
+      height: `${height->Belt.Int.toString}px`,
+      borderRadius: "2px",
+      width: "100%",
+      backgroundColor: buttonColor,
+    }
     onClick={_ => options.readOnly ? () : onPaypalClick()}>
-    <div
-      className="justify-center"
-      style={ReactDOMStyle.make(~display="flex", ~flexDirection="row", ~color=textColor, ())}>
+    <div className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
       {if !paypalClicked {
         payPalIcon
       } else {

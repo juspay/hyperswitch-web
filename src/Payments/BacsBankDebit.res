@@ -114,10 +114,8 @@ let make = (~paymentType: CardThemeType.mode) => {
     }
   }
 
-  <div
-    className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
-    <div className="flex flex-row" style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridRow, ())}>
+  <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
+    <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>
       <PaymentInputField
         fieldName=localeString.sortCodeText
         value=sortcode

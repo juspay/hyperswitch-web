@@ -58,20 +58,18 @@ let make = (
     ""
   }
 
-  <div
-    className={` flex flex-col w-full`} style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
+  <div className={` flex flex-col w-full`} style={color: themeObj.colorText}>
     <RenderIf condition={fieldName->String.length > 0}>
-      <div style={ReactDOMStyle.make()}> {React.string(fieldName)} </div>
+      <div> {React.string(fieldName)} </div>
     </RenderIf>
-    <div className="flex flex-row " style={ReactDOMStyle.make(~direction, ())}>
+    <div className="flex flex-row " style={direction: direction}>
       <input
         id
-        style={ReactDOMStyle.make(
-          ~background=themeObj.colorBackground,
-          ~padding=themeObj.spacingUnit,
-          ~width="100%",
-          (),
-        )}
+        style={
+          background: themeObj.colorBackground,
+          padding: themeObj.spacingUnit,
+          width: "100%",
+        }
         disabled=options.disabled
         ref={inputRef->ReactDOM.Ref.domRef}
         type_

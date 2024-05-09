@@ -8,11 +8,10 @@ let make = (~showText=true) => {
       ->Array.mapWithIndex((item, i) => {
         <Icon
           size=52
-          style={ReactDOMStyle.make(
-            ~animation="slowShow 1.5s ease-in-out infinite",
-            ~animationDelay={((i + 1) * 180)->Belt.Int.toString ++ "ms"},
-            (),
-          )}
+          style={
+            animation: "slowShow 1.5s ease-in-out infinite",
+            animationDelay: {((i + 1) * 180)->Belt.Int.toString ++ "ms"},
+          }
           name=item
           key={i->Belt.Int.toString}
         />

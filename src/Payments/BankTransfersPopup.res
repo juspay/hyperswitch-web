@@ -86,15 +86,14 @@ let make = (~transferType) => {
         </div>
         <div
           className="DetailsSection w-full m-8 text-center"
-          style={ReactDOMStyle.make(
-            ~background="rgba(21, 26, 31, 0.03)",
-            ~border="1px solid rgba(21, 26, 31, 0.06)",
-            ~borderRadius="5px",
-            (),
-          )}>
+          style={
+            background: "rgba(21, 26, 31, 0.03)",
+            border: "1px solid rgba(21, 26, 31, 0.06)",
+            borderRadius: "5px",
+          }>
           <div
             className="flex font-medium p-5 justify-between text-sm"
-            style={ReactDOMStyle.make(~borderBottom="1px dashed rgba(21, 26, 31, 0.06)", ())}>
+            style={borderBottom: "1px dashed rgba(21, 26, 31, 0.06)"}>
             <span className="text-[#151a1fe6]"> {React.string("Bank Account Details")} </span>
             <button
               className={`flex flex-row ${text} cursor-pointer`} onClick={_ => handleClick(keys)}>
@@ -129,12 +128,11 @@ let make = (~transferType) => {
           <div>
             <button
               className="w-full mt-6 p-2 h-[40px]"
-              style={ReactDOMStyle.make(
-                ~background="#006DF9",
-                ~borderRadius="4px",
-                ~color="#ffffff",
-                (),
-              )}
+              style={
+                background: "#006DF9",
+                borderRadius: "4px",
+                color: "#ffffff",
+              }
               onClick={_ => {
                 postSubmitResponse(~jsonData=postData, ~url=return_url)
                 Modal.close(setOpenModal)

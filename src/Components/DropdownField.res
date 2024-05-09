@@ -54,26 +54,24 @@ let make = (
         isSpacedInnerLayout}>
         <div
           className={`Label `}
-          style={ReactDOMStyle.make(
-            ~fontWeight=themeObj.fontWeightNormal,
-            ~fontSize=themeObj.fontSizeLg,
-            ~marginBottom="5px",
-            ~opacity="0.6",
-            (),
-          )}>
+          style={
+            fontWeight: themeObj.fontWeightNormal,
+            fontSize: themeObj.fontSizeLg,
+            marginBottom: "5px",
+            opacity: "0.6",
+          }>
           {React.string(fieldName)}
         </div>
       </RenderIf>
       <div className="relative">
         <select
           ref={dropdownRef->ReactDOM.Ref.domRef}
-          style={ReactDOMStyle.make(
-            ~background=disabled ? disbaledBG : themeObj.colorBackground,
-            ~opacity=disabled ? "35%" : "",
-            ~padding=themeObj.spacingUnit,
-            ~width="100%",
-            (),
-          )}
+          style={
+            background: disabled ? disbaledBG : themeObj.colorBackground,
+            opacity: disabled ? "35%" : "",
+            padding: themeObj.spacingUnit,
+            width: "100%",
+          }
           name=""
           value
           disabled={readOnly || disabled}
@@ -89,29 +87,27 @@ let make = (
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass}`}
-            style={ReactDOMStyle.make(
-              ~marginBottom={
+            style={
+              marginBottom: {
                 inputFocused || value->String.length > 0 ? "" : themeObj.spacingUnit
               },
-              ~fontSize={
+              fontSize: {
                 inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
-              ~opacity="0.6",
-              (),
-            )}>
+              opacity: "0.6",
+            }>
             {React.string(fieldName)}
           </div>
         </RenderIf>
         <div
           className="self-center absolute"
-          style={ReactDOMStyle.make(
-            ~opacity=disabled ? "35%" : "",
-            ~color=themeObj.colorText,
-            ~left=localeString.localeDirection == "rtl" ? "1%" : "97%",
-            ~top="42%",
-            ~marginLeft=localeString.localeDirection == "rtl" ? "1rem" : "-1rem",
-            (),
-          )}>
+          style={
+            opacity: disabled ? "35%" : "",
+            color: themeObj.colorText,
+            left: localeString.localeDirection == "rtl" ? "1%" : "97%",
+            top: "42%",
+            marginLeft: localeString.localeDirection == "rtl" ? "1rem" : "-1rem",
+          }>
           <Icon size=10 name={"arrow-down"} />
         </div>
       </div>

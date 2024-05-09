@@ -57,9 +57,7 @@ let make = (~paymentType) => {
   }, (email, fullName, country))
   useSubmitPaymentData(submitCallback)
 
-  <div
-    className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingTab, ())}>
+  <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <EmailPaymentInput paymentType />
     <FullNamePaymentInput paymentType={paymentType} />
     <RenderIf condition={showAddressDetails.country == Auto}>
