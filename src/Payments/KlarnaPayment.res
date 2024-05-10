@@ -16,7 +16,8 @@ let make = (~paymentType) => {
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
 
-  let countryNames = Utils.getCountryNames(Country.country)
+  let countryNames =
+    Utils.getCountryNames(Country.country)->DropdownField.updateArrayOfStringToOptionsTypeArray
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {

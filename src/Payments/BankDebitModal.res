@@ -312,7 +312,14 @@ let make = (~setModalData) => {
               value=accountType
               setValue=setAccountType
               disabled=false
-              options=["Savings", "Checking"]
+              options=[
+                {
+                  value: "Savings",
+                },
+                {
+                  value: "Checking",
+                },
+              ]
               className=" focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
             />
           </div>

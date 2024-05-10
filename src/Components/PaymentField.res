@@ -4,6 +4,10 @@ open RecoilAtomTypes
 let make = (
   ~setValue=?,
   ~value: RecoilAtomTypes.field,
+  ~valueDropDown=?,
+  ~setValueDropDown=?,
+  ~dropDownFieldName=?,
+  ~dropDownOptions=?,
   ~onChange,
   ~onBlur=?,
   ~rightIcon=React.null,
@@ -16,6 +20,8 @@ let make = (
   ~placeholder="",
   ~className="",
   ~inputRef,
+  ~displayValue=?,
+  ~setDisplayValue=?,
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -76,9 +82,25 @@ let make = (
   }
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
+
   let inputClassStyles = isSpacedInnerLayout ? "Input" : "Input-Compressed"
 
-  <div className="flex flex-col w-full" style={color: themeObj.colorText}>
+  let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
+
+  <div className={`flex ${flexDirectionBasedOnType} w-full`} style={color: themeObj.colorText}>
+    <RenderIf condition={type_ === "tel"}>
+      <DropdownField
+        appearance=config.appearance
+        value={valueDropDown->Option.getOr("")}
+        setValue={setValueDropDown->Option.getOr(_ => ())}
+        fieldName={dropDownFieldName->Option.getOr("")}
+        options={dropDownOptions->Option.getOr([])}
+        width="w-1/3 mr-2"
+        displayValue={displayValue->Option.getOr("")}
+        setDisplayValue={setDisplayValue->Option.getOr(_ => ())}
+        isDisplayValueVisible=true
+      />
+    </RenderIf>
     <RenderIf
       condition={fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
@@ -94,7 +116,7 @@ let make = (
         {React.string(fieldName)}
       </div>
     </RenderIf>
-    <div className="flex flex-row " style={direction: direction}>
+    <div className="flex flex-row w-full" style={direction: direction}>
       <div className="relative w-full">
         <input
           style={

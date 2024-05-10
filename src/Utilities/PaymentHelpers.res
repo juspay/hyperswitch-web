@@ -600,13 +600,13 @@ let rec intentCall = (
               } else if intent.nextAction.type_ === "three_ds_invoke" {
                 let threeDsData =
                   intent.nextAction.three_ds_data
-                  ->Belt.Option.flatMap(JSON.Decode.object)
+                  ->Option.flatMap(JSON.Decode.object)
                   ->Option.getOr(Dict.make())
                 let do3dsMethodCall =
                   threeDsData
                   ->Dict.get("three_ds_method_details")
-                  ->Belt.Option.flatMap(JSON.Decode.object)
-                  ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
+                  ->Option.flatMap(JSON.Decode.object)
+                  ->Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
                   ->Option.getOr(Dict.make()->JSON.Encode.object)
                   ->JSON.Decode.bool
                   ->getBoolValue

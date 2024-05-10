@@ -36,20 +36,20 @@ let make = () => {
         let threeDsDataDict =
           metaDataDict
           ->Dict.get("threeDSData")
-          ->Belt.Option.flatMap(JSON.Decode.object)
+          ->Option.flatMap(JSON.Decode.object)
           ->Option.getOr(Dict.make())
         let threeDsUrl =
           threeDsDataDict
           ->Dict.get("three_ds_method_details")
-          ->Belt.Option.flatMap(JSON.Decode.object)
-          ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_url"))
-          ->Belt.Option.flatMap(JSON.Decode.string)
+          ->Option.flatMap(JSON.Decode.object)
+          ->Option.flatMap(x => x->Dict.get("three_ds_method_url"))
+          ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
         let threeDsMethodData =
           threeDsDataDict
           ->Dict.get("three_ds_method_details")
-          ->Belt.Option.flatMap(JSON.Decode.object)
-          ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_data"))
+          ->Option.flatMap(JSON.Decode.object)
+          ->Option.flatMap(x => x->Dict.get("three_ds_method_data"))
           ->Option.getOr(Dict.make()->JSON.Encode.object)
         let paymentIntentId = metaDataDict->Utils.getString("paymentIntentId", "")
         let publishableKey = metaDataDict->Utils.getString("publishableKey", "")

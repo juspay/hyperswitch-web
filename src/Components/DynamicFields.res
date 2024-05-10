@@ -440,13 +440,15 @@ let make = (
               />
             </div>
           | Currency(currencyArr) =>
+            let updatedCurrencyArray =
+              currencyArr->DropdownField.updateArrayOfStringToOptionsTypeArray
             <DropdownField
               appearance=config.appearance
               fieldName=localeString.currencyLabel
               value=currency
               setValue=setCurrency
               disabled=false
-              options=currencyArr
+              options=updatedCurrencyArray
             />
           | FullName =>
             <>
@@ -560,6 +562,8 @@ let make = (
                     }}
                   </div>
                 | CountryAndPincode(countryArr) =>
+                  let updatedCountryArray =
+                    countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
                     <DropdownField
                       appearance=config.appearance
@@ -567,7 +571,7 @@ let make = (
                       value=country
                       setValue={setCountry}
                       disabled=false
-                      options=countryArr
+                      options=updatedCountryArray
                       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
                     />
                     <PaymentField
@@ -703,31 +707,37 @@ let make = (
                   />
                 | BlikCode => <BlikCodePaymentInput />
                 | Country =>
+                  let updatedCountryNames =
+                    countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
                     setValue=setCountry
                     disabled=false
-                    options=countryNames
+                    options=updatedCountryNames
                   />
                 | AddressCountry(countryArr) =>
+                  let updatedCountryArr =
+                    countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
                     setValue=setCountry
                     disabled=false
-                    options=countryArr
+                    options=updatedCountryArr
                   />
                 | Bank =>
+                  let updatedBankNames =
+                    bankNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.bankLabel
                     value=selectedBank
                     setValue=setSelectedBank
                     disabled=false
-                    options=bankNames
+                    options=updatedBankNames
                   />
                 | SpecialField(element) => element
                 | InfoElement =>

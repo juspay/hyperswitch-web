@@ -57,6 +57,9 @@ let make = (~paymentType) => {
   }, (email, fullName, country))
   useSubmitPaymentData(submitCallback)
 
+  let updatedOptionsArrayForCountry =
+    countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
+
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <EmailPaymentInput paymentType />
     <FullNamePaymentInput paymentType={paymentType} />
@@ -67,7 +70,7 @@ let make = (~paymentType) => {
         value=country
         setValue=setCountry
         disabled=false
-        options=countryNames
+        options=updatedOptionsArrayForCountry
       />
     </RenderIf>
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="sepa" />
