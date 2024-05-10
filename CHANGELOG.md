@@ -1,3 +1,10 @@
+## [0.50.14](https://github.com/juspay/hyperswitch-web/compare/v0.50.13...v0.50.14) (2024-05-10)
+
+
+### Bug Fixes
+
+* apple_pay sdk pay now button ([#365](https://github.com/juspay/hyperswitch-web/issues/365)) ([dd1bb0f](https://github.com/juspay/hyperswitch-web/commit/dd1bb0f4399db175f8140fd4236b8aa25a02737c))
+
 ## [0.50.13](https://github.com/juspay/hyperswitch-web/compare/v0.50.12...v0.50.13) (2024-05-10)
 
 
