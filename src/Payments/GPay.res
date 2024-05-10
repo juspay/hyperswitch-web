@@ -22,6 +22,7 @@ let make = (
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let setIsPayNowButtonDisable = Recoil.useSetRecoilState(payNowButtonDisable)
   let status = CommonHooks.useScript("https://pay.google.com/gp/p/js/pay.js")
   let isGooglePaySDKFlow = React.useMemo(() => {
     sessionObj->Option.isSome
@@ -78,6 +79,11 @@ let make = (
       (),
     )
   }
+
+  React.useEffect(() => {
+    setIsPayNowButtonDisable(_ => !areRequiredFieldsValid)
+    None
+  }, [areRequiredFieldsValid])
 
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
