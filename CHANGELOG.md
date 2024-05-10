@@ -1,3 +1,17 @@
+## [0.50.14](https://github.com/juspay/hyperswitch-web/compare/v0.50.13...v0.50.14) (2024-05-10)
+
+
+### Bug Fixes
+
+* apple_pay sdk pay now button ([#365](https://github.com/juspay/hyperswitch-web/issues/365)) ([dd1bb0f](https://github.com/juspay/hyperswitch-web/commit/dd1bb0f4399db175f8140fd4236b8aa25a02737c))
+
+## [0.50.13](https://github.com/juspay/hyperswitch-web/compare/v0.50.12...v0.50.13) (2024-05-10)
+
+
+### Bug Fixes
+
+* paynow button fix for required fields ([#364](https://github.com/juspay/hyperswitch-web/issues/364)) ([0d8f1f7](https://github.com/juspay/hyperswitch-web/commit/0d8f1f76cadd8030b15af38669e5a038d1ddfd3b))
+
 ## [0.50.12](https://github.com/juspay/hyperswitch-web/compare/v0.50.11...v0.50.12) (2024-05-10)
 
 

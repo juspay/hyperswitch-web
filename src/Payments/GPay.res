@@ -79,6 +79,12 @@ let make = (
     )
   }
 
+  UtilityHooks.useHandlePostMessages(
+    ~complete=areRequiredFieldsValid,
+    ~empty=areRequiredFieldsEmpty,
+    ~paymentType="google_pay",
+  )
+
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
       let json = try {
