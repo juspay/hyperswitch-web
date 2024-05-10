@@ -280,9 +280,10 @@ let make = (
               </div>
             </div>
             <RenderIf
-              condition={cardError->String.length > 0 ||
-              cvcError->String.length > 0 ||
-              expiryError->String.length > 0}>
+              condition={innerLayout === Compressed &&
+                (cardError->String.length > 0 ||
+                cvcError->String.length > 0 ||
+                expiryError->String.length > 0)}>
               <div
                 className="Error pt-1"
                 style={ReactDOMStyle.make(
