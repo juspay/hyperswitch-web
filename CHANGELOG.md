@@ -1,3 +1,10 @@
+## [0.50.12](https://github.com/juspay/hyperswitch-web/compare/v0.50.11...v0.50.12) (2024-05-10)
+
+
+### Bug Fixes
+
+* card brand configuration error added ([#362](https://github.com/juspay/hyperswitch-web/issues/362)) ([f14c591](https://github.com/juspay/hyperswitch-web/commit/f14c591e91717af35c4cda9db2e19bc0d180dd9d))
+
 ## [0.50.11](https://github.com/juspay/hyperswitch-web/compare/v0.50.10...v0.50.11) (2024-05-10)
 
 ## [0.50.10](https://github.com/juspay/hyperswitch-web/compare/v0.50.9...v0.50.10) (2024-05-10)
