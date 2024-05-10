@@ -110,6 +110,25 @@ let getCardType = val => {
   }
 }
 
+let getCardStringFromType = val => {
+  switch val {
+  | VISA => "Visa"
+  | MASTERCARD => "Mastercard"
+  | AMEX => "AmericanExpress"
+  | MAESTRO => "Maestro"
+  | DINERSCLUB => "DinersClub"
+  | DISCOVER => "Discover"
+  | BAJAJ => "BAJAJ"
+  | SODEXO => "SODEXO"
+  | RUPAY => "RuPay"
+  | JCB => "JCB"
+  | CARTESBANCAIRES => "CartesBancaires"
+  | UNIONPAY => "UnionPay"
+  | INTERAC => "Interac"
+  | NOTFOUND => "NOTFOUND"
+  }
+}
+
 let getobjFromCardPattern = cardBrand => {
   let patternsDict = CardPattern.cardPatterns
   patternsDict
@@ -586,7 +605,7 @@ let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
   if cardEmpty {
     <Icon size=brandIconSize name="cvc-empty" />
   } else if cardInvalid {
-    <div style={ReactDOMStyle.make(~color, ())}>
+    <div style={color: color}>
       <Icon size=brandIconSize name="cvc-invalid" />
     </div>
   } else if cardComplete {

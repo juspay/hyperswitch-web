@@ -13,17 +13,16 @@ let make = (~topElement=?, ~bottomElement=?, ~padding="p-5", ~className="") => {
   | (Some(_), Some(_)) =>
     <div
       className={"BlockDivider"}
-      style={ReactDOMStyle.make(
-        ~marginTop=themeObj.spacingUnit,
-        ~marginBottom=themeObj.spacingUnit,
-        (),
-      )}
+      style={
+        marginTop: themeObj.spacingUnit,
+        marginBottom: themeObj.spacingUnit,
+      }
     />
   | (_, _) => React.null
   }
   <div
     className={`Block flex flex-col ${padding} ${className}`}
-    style={ReactDOMStyle.make(~lineHeight=themeObj.fontLineHeight, ())}>
+    style={lineHeight: themeObj.fontLineHeight}>
     <div className="BlockTop"> {topBlock} </div>
     {divider}
     <div className="BlockAction"> {actionBlock} </div>

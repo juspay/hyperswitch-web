@@ -6,7 +6,6 @@ let make = (
   ~loadSavedCards: PaymentType.savedCardsLoadState,
   ~cvcProps,
   ~paymentType,
-  ~list,
 ) => {
   open CardUtils
   open Utils
@@ -27,6 +26,7 @@ let make = (
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let (token, _) = paymentToken
   let savedCardlength = savedMethods->Array.length
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let getWalletBrandIcon = (obj: PaymentType.customerMethods) => {
     switch obj.paymentMethodType {
@@ -40,7 +40,6 @@ let make = (
   let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
     ~isSaveCardsChecked,
-    ~list,
     ~isGuestCustomer,
   )
 
@@ -69,7 +68,6 @@ let make = (
         savedCardlength
         cvcProps
         paymentType
-        list
         setRequiredFieldsBody
       />
     })
@@ -177,20 +175,21 @@ let make = (
   useSubmitPaymentData(submitCallback)
 
   let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
-    !isGuestCustomer && list.payment_type === NEW_MANDATE && displaySavedPaymentMethodsCheckbox
-  }, (isGuestCustomer, list.payment_type, displaySavedPaymentMethodsCheckbox))
+    !isGuestCustomer &&
+    paymentMethodListValue.payment_type === NEW_MANDATE &&
+    displaySavedPaymentMethodsCheckbox
+  }, (isGuestCustomer, paymentMethodListValue.payment_type, displaySavedPaymentMethodsCheckbox))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields) {
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer"
-        style={ReactDOMStyle.make(
-          ~fontSize="14px",
-          ~color=themeObj.colorPrimary,
-          ~fontWeight="400",
-          ~marginTop="25px",
-          (),
-        )}>
+        style={
+          fontSize: "14px",
+          color: themeObj.colorPrimary,
+          fontWeight: "400",
+          marginTop: "25px",
+        }>
         <PaymentElementShimmer.Shimmer>
           <div className="animate-pulse w-full h-12 rounded bg-slate-200">
             <div className="flex flex-row my-auto">
@@ -208,29 +207,27 @@ let make = (
         <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
       </div>
     </RenderIf>
-    <RenderIf condition={list.payment_type === SETUP_MANDATE}>
+    <RenderIf condition={paymentMethodListValue.payment_type === SETUP_MANDATE}>
       <div
         className="opacity-50 text-xs mb-2 text-left"
-        style={ReactDOMStyle.make(
-          ~color=themeObj.colorText,
-          ~marginTop=themeObj.spacingGridColumn,
-          (),
-        )}>
+        style={
+          color: themeObj.colorText,
+          marginTop: themeObj.spacingGridColumn,
+        }>
         <Terms mode={Card} />
       </div>
     </RenderIf>
     <RenderIf condition={!showFields}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer"
-        style={ReactDOMStyle.make(
-          ~fontSize="14px",
-          ~float="left",
-          ~marginTop="14px",
-          ~fontWeight="500",
-          ~width="fit-content",
-          ~color=themeObj.colorPrimary,
-          (),
-        )}
+        style={
+          fontSize: "14px",
+          float: "left",
+          marginTop: "14px",
+          fontWeight: "500",
+          width: "fit-content",
+          color: themeObj.colorPrimary,
+        }
         onClick={_ => setShowFields(_ => true)}>
         <Icon name="circle-plus" size=22 />
         {React.string(localeString.morePaymentMethods)}

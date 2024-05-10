@@ -173,19 +173,16 @@ module ErrorCard = {
     | _ =>
       <div
         ref={divRef->ReactDOM.Ref.domRef}
-        style={ReactDOMStyle.make(
-          ~color=themeObj.colorPrimary,
-          ~backgroundColor=themeObj.colorBackground,
-          ~borderRadius=themeObj.borderRadius,
-          ~borderColor=themeObj.borderColor,
-          (),
-        )}
+        style={
+          color: themeObj.colorPrimary,
+          backgroundColor: themeObj.colorBackground,
+          borderRadius: themeObj.borderRadius,
+          borderColor: themeObj.borderColor,
+        }
         className="flex  items-center">
         <div className="flex flex-row  items-center m-6">
-          <div style={ReactDOMStyle.make(~marginLeft="1rem", ())}> {errorIcon} </div>
-          <div
-            className="flex flex-col items-center justify-center"
-            style={ReactDOMStyle.make(~marginLeft="3rem", ())}>
+          <div style={marginLeft: "1rem"}> {errorIcon} </div>
+          <div className="flex flex-col items-center justify-center" style={marginLeft: "3rem"}>
             <div> {"Oops, something went wrong!"->React.string} </div>
             <div className="text-sm"> {message->React.string} </div>
           </div>

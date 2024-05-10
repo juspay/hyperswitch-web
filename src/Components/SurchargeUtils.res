@@ -13,7 +13,7 @@ type walletSurchargeDetails = {
   surchargeDetails: PaymentMethodsRecord.surchargeDetails,
 }
 
-let useSurchargeDetailsForOneClickWallets = (~list) => {
+let useSurchargeDetailsForOneClickWallets = (~paymentMethodListValue) => {
   let areOneClickWalletsRendered = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.areOneClickWalletsRendered,
   )
@@ -29,7 +29,7 @@ let useSurchargeDetailsForOneClickWallets = (~list) => {
       if isWalletBtnRendered {
         let paymentMethodType =
           PaymentMethodsRecord.getPaymentMethodTypeFromList(
-            ~list,
+            ~paymentMethodListValue,
             ~paymentMethod="wallet",
             ~paymentMethodType=wallet.paymentMethodType,
           )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
@@ -47,7 +47,7 @@ let useSurchargeDetailsForOneClickWallets = (~list) => {
         acc
       }
     })
-  }, (areOneClickWalletsRendered, list))
+  }, (areOneClickWalletsRendered, paymentMethodListValue))
 }
 
 let useMessageGetter = () => {
@@ -56,14 +56,14 @@ let useMessageGetter = () => {
   let getMessage = (
     ~surchargeDetails: PaymentMethodsRecord.surchargeDetails,
     ~paymentMethod,
-    ~list: PaymentMethodsRecord.list,
+    ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ) => {
     let surchargeValue = surchargeDetails.displayTotalSurchargeAmount->Float.toString
 
     let localeStrForSurcharge = if paymentMethod === "card" {
-      localeString.surchargeMsgAmountForCard(list.currency, surchargeValue)
+      localeString.surchargeMsgAmountForCard(paymentMethodListValue.currency, surchargeValue)
     } else {
-      localeString.surchargeMsgAmount(list.currency, surchargeValue)
+      localeString.surchargeMsgAmount(paymentMethodListValue.currency, surchargeValue)
     }
 
     Some(localeStrForSurcharge)
@@ -72,10 +72,10 @@ let useMessageGetter = () => {
   getMessage
 }
 
-let useOneClickWalletsMessageGetter = (~list) => {
+let useOneClickWalletsMessageGetter = (~paymentMethodListValue) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
-  let oneClickWalletsArr = useSurchargeDetailsForOneClickWallets(~list)
+  let oneClickWalletsArr = useSurchargeDetailsForOneClickWallets(~paymentMethodListValue)
 
   let getOneClickWalletsMessage = () => {
     if oneClickWalletsArr->Array.length !== 0 {
@@ -83,7 +83,7 @@ let useOneClickWalletsMessageGetter = (~list) => {
         let amount = wallet.surchargeDetails.displayTotalSurchargeAmount->Float.toString
         let myMsg =
           <>
-            <strong> {React.string(`${list.currency} ${amount}`)} </strong>
+            <strong> {React.string(`${paymentMethodListValue.currency} ${amount}`)} </strong>
             {React.string(`${Utils.nbsp}${localeString.on} ${wallet.name}`)}
           </>
         let msgToConcat = if index === 0 {

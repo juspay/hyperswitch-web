@@ -91,13 +91,12 @@ let make = (
         isSpacedInnerLayout}>
         <div
           className={`Label `}
-          style={ReactDOMStyle.make(
-            ~fontWeight=themeObj.fontWeightNormal,
-            ~fontSize=themeObj.fontSizeLg,
-            ~marginBottom="5px",
-            ~opacity="0.6",
-            (),
-          )}>
+          style={
+            fontWeight: themeObj.fontWeightNormal,
+            fontSize: themeObj.fontSizeLg,
+            marginBottom: "5px",
+            opacity: "0.6",
+          }>
           {React.string(fieldName)}
         </div>
       </RenderIf>
@@ -106,23 +105,23 @@ let make = (
           <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
             <div
               className="absolute top-2.5 right-0 left-2 bottom-0 pointer-events-none rounded-sm"
-              style={ReactDOMStyle.make(
-                ~background=disabled ? disbaledBG : themeObj.colorBackground,
-                ~borderRadius="6px",
-                (),
-              )}>
+              style={
+                background: disabled ? disbaledBG : themeObj.colorBackground,
+                opacity: disabled ? "35%" : "",
+                padding: themeObj.spacingUnit,
+                width: "100%",
+              }>
               {React.string(displayValue->Option.getOr(""))}
             </div>
           </RenderIf>
           <select
             ref={dropdownRef->ReactDOM.Ref.domRef}
-            style={ReactDOMStyle.make(
-              ~background=disabled ? disbaledBG : themeObj.colorBackground,
-              ~opacity=disabled ? "35%" : "",
-              ~padding=themeObj.spacingUnit,
-              ~width="100%",
-              (),
-            )}
+            style={
+              background: disabled ? disbaledBG : themeObj.colorBackground,
+              opacity: disabled ? "35%" : "",
+              padding: themeObj.spacingUnit,
+              width: "100%",
+            }
             name=""
             value
             disabled={readOnly || disabled}
@@ -141,29 +140,27 @@ let make = (
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass}`}
-            style={ReactDOMStyle.make(
-              ~marginBottom={
+            style={
+              marginBottom: {
                 inputFocused || value->String.length > 0 ? "" : themeObj.spacingUnit
               },
-              ~fontSize={
+              fontSize: {
                 inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
-              ~opacity="0.6",
-              (),
-            )}>
+              opacity: "0.6",
+            }>
             {React.string(fieldName)}
           </div>
         </RenderIf>
         <div
           className="self-center absolute pointer-events-none"
-          style={ReactDOMStyle.make(
-            ~opacity=disabled ? "35%" : "",
-            ~color=themeObj.colorText,
-            ~left=localeString.localeDirection == "rtl" ? "1%" : "97%",
-            ~top="42%",
-            ~marginLeft=localeString.localeDirection == "rtl" ? "1rem" : "-1rem",
-            (),
-          )}>
+          style={
+            opacity: disabled ? "35%" : "",
+            color: themeObj.colorText,
+            left: localeString.localeDirection == "rtl" ? "1%" : "97%",
+            top: "42%",
+            marginLeft: localeString.localeDirection == "rtl" ? "1rem" : "-1rem",
+          }>
           <Icon size=10 name={"arrow-down"} />
         </div>
       </div>

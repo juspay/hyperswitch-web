@@ -1,3 +1,53 @@
+## [0.50.12](https://github.com/juspay/hyperswitch-web/compare/v0.50.11...v0.50.12) (2024-05-10)
+
+
+### Bug Fixes
+
+* card brand configuration error added ([#362](https://github.com/juspay/hyperswitch-web/issues/362)) ([f14c591](https://github.com/juspay/hyperswitch-web/commit/f14c591e91717af35c4cda9db2e19bc0d180dd9d))
+
+## [0.50.11](https://github.com/juspay/hyperswitch-web/compare/v0.50.10...v0.50.11) (2024-05-10)
+
+## [0.50.10](https://github.com/juspay/hyperswitch-web/compare/v0.50.9...v0.50.10) (2024-05-10)
+
+
+### Bug Fixes
+
+* api-endpoint-url fix for custom backend url ([#357](https://github.com/juspay/hyperswitch-web/issues/357)) ([494a815](https://github.com/juspay/hyperswitch-web/commit/494a815fdf68b944e9fd3076163fbbacc3d3f2ed))
+
+## [0.50.9](https://github.com/juspay/hyperswitch-web/compare/v0.50.8...v0.50.9) (2024-05-08)
+
+
+### Bug Fixes
+
+* isthirdpartyflow fix ([#360](https://github.com/juspay/hyperswitch-web/issues/360)) ([2b19175](https://github.com/juspay/hyperswitch-web/commit/2b19175d6680525d50d03a6e3b042804ce8b8953))
+
+## [0.50.8](https://github.com/juspay/hyperswitch-web/compare/v0.50.7...v0.50.8) (2024-05-08)
+
+
+### Bug Fixes
+
+* dropdown error even when first option is selected ([#356](https://github.com/juspay/hyperswitch-web/issues/356)) ([3e7b007](https://github.com/juspay/hyperswitch-web/commit/3e7b0071b8db132c901cbc0a7fc44f6ef13349d8))
+
+## [0.50.6](https://github.com/juspay/hyperswitch-web/compare/v0.50.5...v0.50.6) (2024-05-07)
+
+## [0.50.5](https://github.com/juspay/hyperswitch-web/compare/v0.50.4...v0.50.5) (2024-05-06)
+
+
+### Bug Fixes
+
+* fixed Saveds Card Confirm Body Sending card details ([#352](https://github.com/juspay/hyperswitch-web/issues/352)) ([2925299](https://github.com/juspay/hyperswitch-web/commit/29252993dc8738549445c9f3c4ccee594674a89d))
+
+## [0.50.4](https://github.com/juspay/hyperswitch-web/compare/v0.50.3...v0.50.4) (2024-05-06)
+
+
+### Bug Fixes
+
+* combined Dynamic Fields for credit and debit ([#351](https://github.com/juspay/hyperswitch-web/issues/351)) ([fceda3c](https://github.com/juspay/hyperswitch-web/commit/fceda3c4a4c49b528a564d4eabeb711504e2307a))
+
+## [0.50.3](https://github.com/juspay/hyperswitch-web/compare/v0.50.2...v0.50.3) (2024-05-06)
+
+## [0.50.2](https://github.com/juspay/hyperswitch-web/compare/v0.50.1...v0.50.2) (2024-05-06)
+
 ## [0.50.1](https://github.com/juspay/hyperswitch-web/compare/v0.50.0...v0.50.1) (2024-05-06)
 
 # [0.50.0](https://github.com/juspay/hyperswitch-web/compare/v0.49.2...v0.50.0) (2024-05-06)

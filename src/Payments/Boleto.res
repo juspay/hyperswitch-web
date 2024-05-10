@@ -23,9 +23,8 @@ let formatSocialSecurityNumber = socialSecurityNumber => {
 }
 
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
+let make = (~paymentType: CardThemeType.mode) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
 
@@ -87,9 +86,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
     }
   }
 
-  <div
-    className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+  <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <PaymentInputField
       fieldName=localeString.socialSecurityNumberLabel
       value=socialSecurityNumber
@@ -104,7 +101,7 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
       inputRef=socialSecurityNumberRef
       placeholder="000.000.000-00"
     />
-    <Surcharge list paymentMethod="voucher" paymentMethodType="boleto" />
+    <Surcharge paymentMethod="voucher" paymentMethodType="boleto" />
     <InfoElement />
   </div>
 }

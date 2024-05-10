@@ -11,12 +11,14 @@ module Loader = {
 let payPalIcon = <Icon size=35 width=90 name="paypal" />
 
 @react.component
-let make = (~list: PaymentMethodsRecord.list) => {
+let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
   let (_, _, labelType) = options.wallets.style.type_
   let _label = switch labelType {
   | Paypal(val) => val->PaypalSDKTypes.getLabel
@@ -45,12 +47,13 @@ let make = (~list: PaymentMethodsRecord.list) => {
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
-        let (connectors, _) = list->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
+        let (connectors, _) =
+          paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
         let body = PaymentBody.paypalRedirectionBody(~connectors)
 
         let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
           ~isGuestCustomer,
-          ~paymentType=list.payment_type,
+          ~paymentType=paymentMethodListValue.payment_type,
           ~body,
         )
 
@@ -80,19 +83,16 @@ let make = (~list: PaymentMethodsRecord.list) => {
   })
 
   <button
-    style={ReactDOMStyle.make(
-      ~display="inline-block",
-      ~color=textColor,
-      ~height=`${height->Belt.Int.toString}px`,
-      ~borderRadius="2px",
-      ~width="100%",
-      ~backgroundColor=buttonColor,
-      (),
-    )}
+    style={
+      display: "inline-block",
+      color: textColor,
+      height: `${height->Belt.Int.toString}px`,
+      borderRadius: "2px",
+      width: "100%",
+      backgroundColor: buttonColor,
+    }
     onClick={_ => options.readOnly ? () : onPaypalClick()}>
-    <div
-      className="justify-center"
-      style={ReactDOMStyle.make(~display="flex", ~flexDirection="row", ~color=textColor, ())}>
+    <div className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
       {if !paypalClicked {
         payPalIcon
       } else {

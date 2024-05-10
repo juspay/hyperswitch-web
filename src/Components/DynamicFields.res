@@ -2,7 +2,6 @@ open RecoilAtoms
 @react.component
 let make = (
   ~paymentType,
-  ~list,
   ~paymentMethod,
   ~paymentMethodType,
   ~setRequiredFieldsBody,
@@ -14,6 +13,8 @@ let make = (
   ~isBancontact=false,
 ) => {
   open Utils
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -23,14 +24,24 @@ let make = (
 
   //<...>//
   let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
-    ~list,
+    ~paymentMethodListValue,
     ~paymentMethod,
     ~paymentMethodType,
   )
 
+  let creditPaymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType="credit",
+  )
+
   let requiredFieldsWithBillingDetails = React.useMemo(() => {
     if paymentMethod === "card" {
+      let creditRequiredFields = creditPaymentMethodTypes.required_fields
+
       paymentMethodTypes.required_fields
+      ->Array.concat(creditRequiredFields)
+      ->DynamicFieldsUtils.removeRequiredFieldsDuplicates
     } else if (
       PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType)
     ) {
@@ -59,7 +70,7 @@ let make = (
       ~isAllStoredCardsHaveName,
       (),
     )
-    ->DynamicFieldsUtils.updateDynamicFields(billingAddress, ~list, ~paymentMethod, ~isSavedCardFlow, ())
+    ->DynamicFieldsUtils.updateDynamicFields(billingAddress, ())
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
@@ -149,7 +160,7 @@ let make = (
     cardRef,
     icon,
     cardError,
-    setCardError,
+    _,
     maxCardLength,
   ) = switch cardProps {
   | Some(cardProps) => cardProps
@@ -165,7 +176,7 @@ let make = (
     expiryRef,
     _,
     expiryError,
-    setExpiryError,
+    _,
   ) = switch expiryProps {
   | Some(expiryProps) => expiryProps
   | None => defaultExpiryProps
@@ -181,7 +192,7 @@ let make = (
     cvcRef,
     _,
     cvcError,
-    setCvcError,
+    _,
   ) = switch cvcProps {
   | Some(cvcProps) => cvcProps
   | None => defaultCvcProps
@@ -276,17 +287,9 @@ let make = (
     ~isSavedCardFlow,
     ~isAllStoredCardsHaveName,
     ~setRequiredFieldsBody,
-    ~list,
   )
 
-  let submitCallback = DynamicFieldsUtils.useSubmitCallback(
-    ~cardNumber,
-    ~setCardError,
-    ~cardExpiry,
-    ~setExpiryError,
-    ~cvcNumber,
-    ~setCvcError,
-  )
+  let submitCallback = DynamicFieldsUtils.useSubmitCallback()
   useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
@@ -333,11 +336,10 @@ let make = (
         <div
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
-          style={ReactDOMStyle.make(
-            ~marginTop=index !== 0 ? themeObj.spacingGridColumn : "",
-            ~gridColumnGap=themeObj.spacingGridRow,
-            (),
-          )}>
+          style={
+            marginTop: index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
+            gridColumnGap: themeObj.spacingGridRow,
+          }>
           {switch item {
           | CardNumber =>
             <PaymentInputField
@@ -452,12 +454,11 @@ let make = (
             <>
               <RenderIf condition={!isSpacedInnerLayout}>
                 <div
-                  style={ReactDOMStyle.make(
-                    ~marginBottom="5px",
-                    ~fontSize=themeObj.fontSizeLg,
-                    ~opacity="0.6",
-                    (),
-                  )}>
+                  style={
+                    marginBottom: "5px",
+                    fontSize: themeObj.fontSizeLg,
+                    opacity: "0.6",
+                  }>
                   {item->getCustomFieldName->Option.getOr("")->React.string}
                 </div>
               </RenderIf>
@@ -491,19 +492,17 @@ let make = (
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
         <div
           className={`${spacedStylesForBiilingDetails} w-full text-left`}
-          style={ReactDOMStyle.make(
-            ~border={isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
-            ~borderRadius={isSpacedInnerLayout ? themeObj.borderRadius : ""},
-            ~margin={isSpacedInnerLayout ? `10px 0` : ""},
-            (),
-          )}>
+          style={
+            border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
+            borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
+            margin: {isSpacedInnerLayout ? `10px 0` : ""},
+          }>
           <div
-            style={ReactDOMStyle.make(
-              ~marginBottom="5px",
-              ~fontSize=themeObj.fontSizeLg,
-              ~opacity="0.6",
-              (),
-            )}>
+            style={
+              marginBottom: "5px",
+              fontSize: themeObj.fontSizeLg,
+              opacity: "0.6",
+            }>
             {React.string(localeString.billingDetailsText)}
           </div>
           <div
@@ -743,7 +742,7 @@ let make = (
                 | SpecialField(element) => element
                 | InfoElement =>
                   <>
-                    <Surcharge list paymentMethod paymentMethodType />
+                    <Surcharge paymentMethod paymentMethodType />
                     {if fieldsArr->Array.length > 1 {
                       bottomElement
                     } else {
@@ -768,7 +767,7 @@ let make = (
       </RenderIf>
       <RenderIf condition={isOnlyInfoElementPresent}>
         {<>
-          <Surcharge list paymentMethod paymentMethodType />
+          <Surcharge paymentMethod paymentMethodType />
           {if fieldsArr->Array.length > 1 {
             bottomElement
           } else {
@@ -777,7 +776,7 @@ let make = (
         </>}
       </RenderIf>
       <RenderIf condition={!isInfoElementPresent}>
-        <Surcharge list paymentMethod paymentMethodType />
+        <Surcharge paymentMethod paymentMethodType />
       </RenderIf>
     </>}
   </RenderIf>

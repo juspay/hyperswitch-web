@@ -115,17 +115,16 @@ let make = (
 
   <div className={` flex flex-col w-full`}>
     <RenderIf condition={fieldName->String.length > 0}>
-      <div style={ReactDOMStyle.make()}> {React.string(fieldName)} </div>
+      <div> {React.string(fieldName)} </div>
     </RenderIf>
-    <div className="flex flex-row " style={ReactDOMStyle.make(~direction, ())}>
+    <div className="flex flex-row " style={direction: direction}>
       <input
         id
-        style={ReactDOMStyle.make(
-          ~background="transparent",
-          ~width="-webkit-fill-available",
-          ~color=textColor,
-          (),
-        )}
+        style={
+          background: "transparent",
+          width: "-webkit-fill-available",
+          color: textColor,
+        }
         disabled=options.disabled
         ref={inputRef->ReactDOM.Ref.domRef}
         type_
@@ -144,7 +143,7 @@ let make = (
     {switch errorString {
     | Some(val) =>
       <RenderIf condition={val->String.length > 0}>
-        <div className="py-1" style={ReactDOMStyle.make()}> {React.string(val)} </div>
+        <div className="py-1"> {React.string(val)} </div>
       </RenderIf>
     | None => React.null
     }}

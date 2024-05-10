@@ -81,4 +81,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   nicknamePlaceholder: `カードニックネーム（任意）`,
   cardExpiredText: `このカードは期限切れです`,
   cardHeader: `カード情報`,
+  cardBrandConfiguredErrorText: str => `${str} は現在サポートされていません。`,
 }

@@ -508,24 +508,24 @@ type required_fields = {
   value: string,
 }
 
-let getPaymentMethodsFieldTypeFromString = str => {
-  switch str {
-  | "user_email_address" => Email
-  | "user_full_name" => FullName
-  | "user_country" => Country
-  | "user_bank" => Bank
-  | "user_phone_number" => PhoneNumber
-  | "user_address_line1" => AddressLine1
-  | "user_address_line2" => AddressLine2
-  | "user_address_city" => AddressCity
-  | "user_address_pincode" => AddressPincode
-  | "user_address_state" => AddressState
-  | "user_blik_code" => BlikCode
-  | "user_billing_name" => BillingName
-  | "user_card_number" => CardNumber
-  | "user_card_expiry_month" => CardExpiryMonth
-  | "user_card_expiry_year" => CardExpiryYear
-  | "user_card_cvc" => CardCvc
+let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
+  switch (str, isBancontact) {
+  | ("user_email_address", _) => Email
+  | ("user_full_name", _) => FullName
+  | ("user_country", _) => Country
+  | ("user_bank", _) => Bank
+  | ("user_phone_number", _) => PhoneNumber
+  | ("user_address_line1", _) => AddressLine1
+  | ("user_address_line2", _) => AddressLine2
+  | ("user_address_city", _) => AddressCity
+  | ("user_address_pincode", _) => AddressPincode
+  | ("user_address_state", _) => AddressState
+  | ("user_blik_code", _) => BlikCode
+  | ("user_billing_name", _) => BillingName
+  | ("user_card_number", true) => CardNumber
+  | ("user_card_expiry_month", true) => CardExpiryMonth
+  | ("user_card_expiry_year", true) => CardExpiryYear
+  | ("user_card_cvc", true) => CardCvc
   | _ => None
   }
 }
@@ -558,7 +558,7 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
   }
 }
 
-let getFieldType = dict => {
+let getFieldType = (dict, isBancontact) => {
   let fieldClass =
     dict
     ->Dict.get("field_type")
@@ -570,7 +570,7 @@ let getFieldType = dict => {
     None
   | Number(_val) => None
   | Array(_arr) => None
-  | String(val) => val->getPaymentMethodsFieldTypeFromString
+  | String(val) => val->getPaymentMethodsFieldTypeFromString(isBancontact)
   | Object(dict) => dict->getPaymentMethodsFieldTypeFromDict
   }
 }
@@ -614,16 +614,6 @@ let getIsAnyBillingDetailEmpty = (requiredFields: array<required_fields>) => {
   })
 }
 
-let filterCardDetailsFromSavedPaymentMethod = fieldType => {
-  switch fieldType {
-  | CardNumber
-  | CardExpiryMonth
-  | CardExpiryYear
-  | CardCvc => true
-  | _ => false
-  }
-}
-
 let getPaymentMethodFields = (
   paymentMethod,
   requiredFields: array<required_fields>,
@@ -639,10 +629,6 @@ let getPaymentMethodFields = (
         isSavedCardFlow &&
         requiredField.display_name === "card_holder_name" &&
         isAllStoredCardsHaveName
-      ) {
-        None
-      } else if (
-        isSavedCardFlow && requiredField.field_type->filterCardDetailsFromSavedPaymentMethod
       ) {
         None
       } else {
@@ -732,7 +718,7 @@ type mandate = {
 }
 type payment_type = NORMAL | NEW_MANDATE | SETUP_MANDATE | NONE
 
-type list = {
+type paymentMethodList = {
   redirect_url: string,
   currency: string,
   payment_methods: array<methods>,
@@ -876,7 +862,7 @@ let getAchConnectors = (dict, str) => {
   ->getStrArray("elligible_connectors")
 }
 
-let getDynamicFieldsFromJsonDict = dict => {
+let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
   let requiredFields =
     Utils.getJsonFromDict(dict, "required_fields", JSON.Encode.null)
     ->Utils.getDictFromJson
@@ -887,7 +873,7 @@ let getDynamicFieldsFromJsonDict = dict => {
     {
       required_field: requiredFieldsDict->Utils.getString("required_field", ""),
       display_name: requiredFieldsDict->Utils.getString("display_name", ""),
-      field_type: requiredFieldsDict->getFieldType,
+      field_type: requiredFieldsDict->getFieldType(isBancontact),
       value: requiredFieldsDict->Utils.getString("value", ""),
     }
   })
@@ -908,7 +894,9 @@ let getPaymentMethodTypes = (dict, str) => {
       bank_names: getBankNames(jsonDict, "bank_names"),
       bank_debits_connectors: getAchConnectors(jsonDict, "bank_debit"),
       bank_transfers_connectors: getAchConnectors(jsonDict, "bank_transfer"),
-      required_fields: jsonDict->getDynamicFieldsFromJsonDict,
+      required_fields: jsonDict->getDynamicFieldsFromJsonDict(
+        paymentMethodType === "bancontact_card",
+      ),
       surcharge_details: jsonDict->getSurchargeDetails,
     }
   })
@@ -981,7 +969,7 @@ let itemToObjMapper = dict => {
   }
 }
 
-let buildFromPaymentList = (plist: list) => {
+let buildFromPaymentList = (plist: paymentMethodList) => {
   let paymentMethodArr = plist.payment_methods
 
   paymentMethodArr
@@ -1016,9 +1004,13 @@ let buildFromPaymentList = (plist: list) => {
   })
 }
 
-let getPaymentMethodTypeFromList = (~list: list, ~paymentMethod, ~paymentMethodType) => {
+let getPaymentMethodTypeFromList = (
+  ~paymentMethodListValue,
+  ~paymentMethod,
+  ~paymentMethodType,
+) => {
   (
-    list.payment_methods
+    paymentMethodListValue.payment_methods
     ->Array.find(item => {
       item.payment_method == paymentMethod
     })
@@ -1067,5 +1059,3 @@ let paymentMethodFieldToStrMapper = (field: paymentMethodsFields) => {
   | CardExpiryAndCvc => "CardExpiryAndCvc"
   }
 }
-
-let cardDetailsFields = [CardNumber, CardExpiryMonth, CardExpiryYear, CardCvc]

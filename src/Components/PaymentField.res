@@ -87,9 +87,7 @@ let make = (
 
   let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
 
-  <div
-    className={`flex ${flexDirectionBasedOnType} w-full`}
-    style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
+  <div className={`flex ${flexDirectionBasedOnType} w-full`} style={color: themeObj.colorText}>
     <RenderIf condition={type_ === "tel"}>
       <DropdownField
         appearance=config.appearance
@@ -109,25 +107,23 @@ let make = (
       isSpacedInnerLayout}>
       <div
         className={`Label ${labelClass}`}
-        style={ReactDOMStyle.make(
-          ~fontWeight=themeObj.fontWeightNormal,
-          ~fontSize=themeObj.fontSizeLg,
-          ~marginBottom="5px",
-          ~opacity="0.6",
-          (),
-        )}>
+        style={
+          fontWeight: themeObj.fontWeightNormal,
+          fontSize: themeObj.fontSizeLg,
+          marginBottom: "5px",
+          opacity: "0.6",
+        }>
         {React.string(fieldName)}
       </div>
     </RenderIf>
-    <div className="flex flex-row w-full" style={ReactDOMStyle.make(~direction, ())}>
+    <div className="flex flex-row w-full" style={direction: direction}>
       <div className="relative w-full">
         <input
-          style={ReactDOMStyle.make(
-            ~background=backgroundClass,
-            ~padding=themeObj.spacingUnit,
-            ~width="100%",
-            (),
-          )}
+          style={
+            background: backgroundClass,
+            padding: themeObj.spacingUnit,
+            width: "100%",
+          }
           disabled=readOnly
           ref={inputRef->ReactDOM.Ref.domRef}
           type_
@@ -147,16 +143,15 @@ let make = (
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
-            style={ReactDOMStyle.make(
-              ~marginBottom={
+            style={
+              marginBottom: {
                 inputFocused || value.value->String.length > 0 ? "" : themeObj.spacingUnit
               },
-              ~fontSize={
+              fontSize: {
                 inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
-              ~opacity="0.6",
-              (),
-            )}>
+              opacity: "0.6",
+            }>
             {React.string(fieldName)}
           </div>
         </RenderIf>
@@ -166,13 +161,12 @@ let make = (
     <RenderIf condition={value.errorString->String.length > 0}>
       <div
         className="Error pt-1"
-        style={ReactDOMStyle.make(
-          ~color=themeObj.colorDangerText,
-          ~fontSize=themeObj.fontSizeSm,
-          ~alignSelf="start",
-          ~textAlign="left",
-          (),
-        )}>
+        style={
+          color: themeObj.colorDangerText,
+          fontSize: themeObj.fontSizeSm,
+          alignSelf: "start",
+          textAlign: "left",
+        }>
         {React.string(value.errorString)}
       </div>
     </RenderIf>

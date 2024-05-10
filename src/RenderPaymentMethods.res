@@ -54,16 +54,15 @@ let make = (
   let frameRef = React.useRef(Nullable.null)
   <div
     className={`flex flex-col justify-between `}
-    style={ReactDOMStyle.make(
-      ~color=themeObj.colorText,
-      ~background="transparent",
-      ~marginLeft="4px",
-      ~marginRight="4px",
-      ~fontFamily=themeObj.fontFamily,
-      ~fontSize=themeObj.fontSizeBase,
-      ~filter=blur,
-      (),
-    )}
+    style={
+      color: themeObj.colorText,
+      background: "transparent",
+      marginLeft: "4px",
+      marginRight: "4px",
+      fontFamily: themeObj.fontFamily,
+      fontSize: themeObj.fontSizeBase,
+      filter: blur,
+    }
     dir=localeString.localeDirection>
     <div
       ref={frameRef->ReactDOM.Ref.domRef}
