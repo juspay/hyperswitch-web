@@ -7,19 +7,18 @@ module ToolTip = {
     <RenderIf condition={openTip}>
       <button
         className="h-auto max-w-20 w-auto cursor-pointer absolute m-1 px-1 py-2 top-[-3rem] right-[1em]"
-        style={ReactDOMStyle.make(
-          ~background=themeObj.colorBackground,
-          ~color=themeObj.colorDanger,
-          ~fontSize=themeObj.fontSizeBase,
-          ~padding=`${themeObj.spacingUnit} ${themeObj.spacingUnit->Utils.addSize(
+        style={
+          background: themeObj.colorBackground,
+          color: themeObj.colorDanger,
+          fontSize: themeObj.fontSizeBase,
+          padding: `${themeObj.spacingUnit} ${themeObj.spacingUnit->Utils.addSize(
               7.0,
               Utils.Pixel,
             )}`,
-          ~border=`1px solid ${themeObj.borderColor}`,
-          ~borderRadius=themeObj.borderRadius,
-          ~boxShadow=`0px 0px 8px ${themeObj.borderColor}`,
-          (),
-        )}
+          border: `1px solid ${themeObj.borderColor}`,
+          borderRadius: themeObj.borderRadius,
+          boxShadow: `0px 0px 8px ${themeObj.borderColor}`,
+        }
         onClick={ev => onclick(ev)}
         ref={forwardRef->ReactDOM.Ref.domRef}>
         {React.string("Remove account")}
@@ -46,14 +45,13 @@ let make = (~modalData, ~setModalData) => {
     className={`PickerItem flex flex-row justify-between items-center ${isDataAvailable
         ? ""
         : "cursor-pointer"}`}
-    style={ReactDOMStyle.make(
-      ~marginTop=themeObj.spacingGridColumn,
-      ~padding=themeObj.spacingUnit->addSize(11.0, Pixel),
-      ~color={
+    style={
+      marginTop: themeObj.spacingGridColumn,
+      padding: themeObj.spacingUnit->addSize(11.0, Pixel),
+      color: {
         isDataAvailable ? themeObj.colorTextSecondary : themeObj.colorPrimary
       },
-      (),
-    )}
+    }
     onClick={_ => isDataAvailable ? () : openModal()}>
     {switch modalData {
     | Some(data: ACHTypes.data) =>

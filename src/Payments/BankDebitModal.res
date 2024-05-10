@@ -98,7 +98,7 @@ module AccountNumberCard = {
       </div>
       <div
         className=" bg-[#DFDFE0] h-28 rounded-r absolute right-0 top-0 w-[20%]"
-        style={ReactDOMStyle.make(~clipPath="polygon(50% 0, 100% 0, 100% 100%, 0% 100%)", ())}
+        style={clipPath: "polygon(50% 0, 100% 0, 100% 100%, 0% 100%)"}
       />
     </div>
   }
@@ -187,7 +187,7 @@ let make = (~setModalData) => {
     <div className="flex flex-col w-full h-auto overflow-scroll">
       <div className={`flex flex-col`}>
         <div
-          style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ~marginBottom="5px", ())}
+          style={color: themeObj.colorPrimary, marginBottom: "5px"}
           className="self-start font-semibold text-lg text-[#151A1F]">
           {React.string(localeString.billingDetailsText)}
         </div>
@@ -198,19 +198,18 @@ let make = (~setModalData) => {
           />
         </div>
         <div
-          style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ~marginBottom="5px", ())}
+          style={color: themeObj.colorPrimary, marginBottom: "5px"}
           className="self-start font-semibold text-lg text-[#151A1F]">
           {React.string("Bank Details")}
         </div>
         <div
           className={`Label mb-1 mt-5`}
-          style={ReactDOMStyle.make(
-            ~fontWeight=themeObj.fontWeightNormal,
-            ~fontSize=themeObj.fontSizeLg,
-            ~color=themeObj.colorText,
-            ~marginBottom="5px",
-            (),
-          )}>
+          style={
+            fontWeight: themeObj.fontWeightNormal,
+            fontSize: themeObj.fontSizeLg,
+            color: themeObj.colorText,
+            marginBottom: "5px",
+          }>
           {React.string("Account Holder Name")}
         </div>
         <Input
@@ -226,13 +225,12 @@ let make = (~setModalData) => {
         <RenderIf condition={isSepaDebit}>
           <div
             className={`Label mb-1 mt-5`}
-            style={ReactDOMStyle.make(
-              ~fontWeight=themeObj.fontWeightNormal,
-              ~fontSize=themeObj.fontSizeLg,
-              ~color=themeObj.colorText,
-              ~marginBottom="5px",
-              (),
-            )}>
+            style={
+              fontWeight: themeObj.fontWeightNormal,
+              fontSize: themeObj.fontSizeLg,
+              color: themeObj.colorText,
+              marginBottom: "5px",
+            }>
             {React.string("IBAN")}
           </div>
           <Input
@@ -246,16 +244,15 @@ let make = (~setModalData) => {
         </RenderIf>
         <div className="flex flex-row items-center w-full justify-between">
           <RenderIf condition={isAchDebit}>
-            <div className="w-full" style={ReactDOMStyle.make(~marginRight="1rem", ())}>
+            <div className="w-full" style={marginRight: "1rem"}>
               <div
                 className={`Label mb-1 mt-5`}
-                style={ReactDOMStyle.make(
-                  ~fontWeight=themeObj.fontWeightNormal,
-                  ~fontSize=themeObj.fontSizeLg,
-                  ~color=themeObj.colorText,
-                  ~marginBottom="5px",
-                  (),
-                )}>
+                style={
+                  fontWeight: themeObj.fontWeightNormal,
+                  fontSize: themeObj.fontSizeLg,
+                  color: themeObj.colorText,
+                  marginBottom: "5px",
+                }>
                 {React.string("Routing number")}
               </div>
               <Input
@@ -278,13 +275,12 @@ let make = (~setModalData) => {
             <div className="w-full ">
               <div
                 className={`Label mb-1 mt-5`}
-                style={ReactDOMStyle.make(
-                  ~fontWeight=themeObj.fontWeightNormal,
-                  ~fontSize=themeObj.fontSizeLg,
-                  ~color=themeObj.colorText,
-                  ~marginBottom="5px",
-                  (),
-                )}>
+                style={
+                  fontWeight: themeObj.fontWeightNormal,
+                  fontSize: themeObj.fontSizeLg,
+                  color: themeObj.colorText,
+                  marginBottom: "5px",
+                }>
                 {React.string("Account number")}
               </div>
               <Input
@@ -304,13 +300,12 @@ let make = (~setModalData) => {
         <RenderIf condition={isAchDebit}>
           <div
             className="w-full mb-1 mt-5"
-            style={ReactDOMStyle.make(
-              ~fontWeight=themeObj.fontWeightNormal,
-              ~fontSize=themeObj.fontSizeLg,
-              ~color=themeObj.colorText,
-              ~marginBottom="5px",
-              (),
-            )}>
+            style={
+              fontWeight: themeObj.fontWeightNormal,
+              fontSize: themeObj.fontSizeLg,
+              color: themeObj.colorText,
+              marginBottom: "5px",
+            }>
             <DropdownField
               appearance=config.appearance
               fieldName="Account type"
@@ -325,13 +320,12 @@ let make = (~setModalData) => {
         <RenderIf condition={isBecsDebit}>
           <div
             className={`Label mb-1 mt-5`}
-            style={ReactDOMStyle.make(
-              ~fontWeight=themeObj.fontWeightNormal,
-              ~fontSize=themeObj.fontSizeLg,
-              ~color=themeObj.colorText,
-              ~marginBottom="5px",
-              (),
-            )}>
+            style={
+              fontWeight: themeObj.fontWeightNormal,
+              fontSize: themeObj.fontSizeLg,
+              color: themeObj.colorText,
+              marginBottom: "5px",
+            }>
             {React.string("BSB")}
           </div>
           <Input

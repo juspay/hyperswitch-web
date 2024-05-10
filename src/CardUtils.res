@@ -586,7 +586,7 @@ let setRightIconForCvc = (~cardEmpty, ~cardInvalid, ~color, ~cardComplete) => {
   if cardEmpty {
     <Icon size=brandIconSize name="cvc-empty" />
   } else if cardInvalid {
-    <div style={ReactDOMStyle.make(~color, ())}>
+    <div style={color: color}>
       <Icon size=brandIconSize name="cvc-invalid" />
     </div>
   } else if cardComplete {

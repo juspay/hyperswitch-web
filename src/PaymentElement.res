@@ -402,14 +402,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       condition={displaySavedPaymentMethods && savedMethods->Array.length > 0 && showFields}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer my-4"
-        style={ReactDOMStyle.make(
-          ~fontSize="14px",
-          ~float="left",
-          ~fontWeight=themeObj.fontWeightNormal,
-          ~width="fit-content",
-          ~color=themeObj.colorPrimary,
-          (),
-        )}
+        style={
+          fontSize: "14px",
+          float: "left",
+          fontWeight: themeObj.fontWeightNormal,
+          width: "fit-content",
+          color: themeObj.colorPrimary,
+        }
         onClick={_ => setShowFields(_ => false)}>
         <Icon name="circle_dots" size=20 width=19 />
         {React.string(localeString.useExistingPaymentMethods)}

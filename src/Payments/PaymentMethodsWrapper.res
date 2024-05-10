@@ -110,7 +110,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   useSubmitPaymentData(submitCallback)
   <div
     className="DynamicFields flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+    style={gridGap: themeObj.spacingGridColumn}>
     <DynamicFields
       paymentType
       paymentMethod=paymentMethodDetails.methodType

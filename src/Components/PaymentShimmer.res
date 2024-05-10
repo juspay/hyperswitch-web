@@ -6,7 +6,7 @@ let make = (~showInBlock=true) => {
     <Shimmer classname="opacity-50">
       <div
         className="w-full h-2 animate-pulse"
-        style={ReactDOMStyle.make(~backgroundColor=themeObj.colorPrimary, ~opacity="10%", ())}
+        style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
       />
     </Shimmer>
   if showInBlock {

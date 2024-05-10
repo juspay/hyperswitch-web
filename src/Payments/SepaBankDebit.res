@@ -78,10 +78,9 @@ let make = (~paymentType: CardThemeType.mode) => {
 
   <div
     className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(
-      ~gridGap={config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
-      (),
-    )}>
+    style={
+      gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
+    }>
     <EmailPaymentInput paymentType />
     <FullNamePaymentInput paymentType />
     <AddBankAccount modalData setModalData />

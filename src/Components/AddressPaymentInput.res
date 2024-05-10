@@ -205,8 +205,7 @@ let make = (~paymentType, ~className="") => {
   let hasDefaulltValues =
     line2.value !== "" || city.value !== "" || postalCode.value !== "" || state.value !== ""
 
-  <div
-    className="flex flex-col" style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+  <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>
     <RenderIf condition={showField(showDetails.address, Line1) == Auto}>
       <PaymentField
         fieldName=localeString.line1Label
@@ -228,9 +227,7 @@ let make = (~paymentType, ~className="") => {
       />
     </RenderIf>
     <RenderIf condition={showOtherFileds || hasDefaulltValues}>
-      <div
-        className="flex flex-col animate-slowShow"
-        style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+      <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
         <RenderIf condition={showField(showDetails.address, Line2) == Auto}>
           <PaymentField
             fieldName=localeString.line2Label
@@ -250,9 +247,7 @@ let make = (~paymentType, ~className="") => {
             placeholder=localeString.line2Placeholder
           />
         </RenderIf>
-        <div
-          className="flex flex-row"
-          style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridRow, ())}>
+        <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>
           <RenderIf condition={showField(showDetails.address, Country) == Auto}>
             <PaymentDropDownField
               fieldName=localeString.countryLabel
@@ -276,9 +271,7 @@ let make = (~paymentType, ~className="") => {
             }}
           </RenderIf>
         </div>
-        <div
-          className="flex flex-row"
-          style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridRow, ())}>
+        <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>
           <RenderIf condition={showField(showDetails.address, City) == Auto}>
             <PaymentField
               fieldName=localeString.cityLabel

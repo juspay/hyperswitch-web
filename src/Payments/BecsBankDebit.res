@@ -79,9 +79,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   }, (email, fullName, modalData))
   useSubmitPaymentData(submitCallback)
 
-  <div
-    className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+  <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <EmailPaymentInput paymentType />
     <FullNamePaymentInput paymentType />
     <AddBankAccount modalData setModalData />

@@ -45,9 +45,7 @@ let default = (paymentType: CardThemeType.mode) => {
   }, [email, fullName])
   useSubmitPaymentData(submitCallback)
 
-  <div
-    className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingTab, ())}>
+  <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <EmailPaymentInput paymentType />
     <FullNamePaymentInput paymentType />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="bacs" />

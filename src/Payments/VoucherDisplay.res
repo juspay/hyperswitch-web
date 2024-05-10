@@ -89,12 +89,11 @@ let make = () => {
           <div>
             <button
               className="w-full mt-6 p-2 h-[40px]"
-              style={ReactDOMStyle.make(
-                ~background="#006DF9",
-                ~borderRadius="4px",
-                ~color="#ffffff",
-                (),
-              )}
+              style={
+                background: "#006DF9",
+                borderRadius: "4px",
+                color: "#ffffff",
+              }
               onClick={_ => {
                 closeModal()
               }}>

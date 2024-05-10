@@ -18,9 +18,7 @@ let make = (~mode) => {
   let (termsText, showTerm) = terms
 
   <RenderIf condition={showTerm == Auto || showTerm == Always}>
-    <div
-      className="opacity-50 text-xs mb-2 text-left"
-      style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
+    <div className="opacity-50 text-xs mb-2 text-left" style={color: themeObj.colorText}>
       {React.string(termsText)}
     </div>
   </RenderIf>
