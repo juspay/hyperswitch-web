@@ -19,15 +19,16 @@ let make = (
   ~publishableKey,
   ~logger: option<OrcaLogger.loggerMake>,
   ~analyticsMetadata,
+  ~customBackendUrl,
 ) => {
   let applePaySessionRef = ref(Nullable.null)
-
   try {
     let iframeRef = []
     let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
+
     let appearance =
       localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
     let launchTime = localOptions->getFloat("launchTime", 0.0)
@@ -67,7 +68,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}"
+          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}"
           allow="*"
           name="orca-payment"
         ></iframe>
@@ -99,9 +100,9 @@ let make = (
       let preMountLoaderIframeCallback = (ev: Types.event) => {
         let json = ev.data->Identity.anyTypeToJson
         let dict = json->Utils.getDictFromJson
-        if dict->Dict.get("preMountLoaderIframeMountedCallback")->Belt.Option.isSome {
+        if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
           resolve(true->JSON.Encode.bool)
-        } else if dict->Dict.get("preMountLoaderIframeUnMount")->Belt.Option.isSome {
+        } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
           unMountPreMountLoaderIframe()
         }
       }
@@ -125,16 +126,15 @@ let make = (
             ->PaymentMethodsRecord.itemToObjMapper,
             ~paymentMethod="wallet",
             ~paymentMethodType="apple_pay",
-          )->Belt.Option.isSome
+          )->Option.isSome
 
-          let isGooglePayPresent =
-            PaymentMethodsRecord.getPaymentMethodTypeFromList(
-              ~paymentMethodListValue=json
-              ->Utils.getDictFromJson
-              ->PaymentMethodsRecord.itemToObjMapper,
-              ~paymentMethod="wallet",
-              ~paymentMethodType="google_pay",
-            )->Belt.Option.isSome
+          let isGooglePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
+            ~paymentMethodListValue=json
+            ->Utils.getDictFromJson
+            ->PaymentMethodsRecord.itemToObjMapper,
+            ~paymentMethod="wallet",
+            ~paymentMethodType="google_pay",
+          )->Option.isSome
 
           if isApplePayPresent || isGooglePayPresent {
             if (
@@ -297,6 +297,7 @@ let make = (
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),
+            ("customBackendUrl", customBackendUrl->JSON.Encode.string),
           ]->Dict.fromArray
 
         let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)
