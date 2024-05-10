@@ -1,3 +1,10 @@
+# [0.51.0](https://github.com/juspay/hyperswitch-web/compare/v0.50.14...v0.51.0) (2024-05-10)
+
+
+### Features
+
+* phone country dropdown added ([#270](https://github.com/juspay/hyperswitch-web/issues/270)) ([f6a945c](https://github.com/juspay/hyperswitch-web/commit/f6a945c238b28f69ded4062ff851170f5ee0a590))
+
 ## [0.50.14](https://github.com/juspay/hyperswitch-web/compare/v0.50.13...v0.50.14) (2024-05-10)
 
 
