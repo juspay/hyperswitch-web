@@ -1,3 +1,10 @@
+## [0.50.13](https://github.com/juspay/hyperswitch-web/compare/v0.50.12...v0.50.13) (2024-05-10)
+
+
+### Bug Fixes
+
+* paynow button fix for required fields ([#364](https://github.com/juspay/hyperswitch-web/issues/364)) ([0d8f1f7](https://github.com/juspay/hyperswitch-web/commit/0d8f1f76cadd8030b15af38669e5a038d1ddfd3b))
+
 ## [0.50.12](https://github.com/juspay/hyperswitch-web/compare/v0.50.11...v0.50.12) (2024-05-10)
 
 
