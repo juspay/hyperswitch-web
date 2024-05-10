@@ -31,7 +31,8 @@ let make = () => {
         let clientSecret = CardUtils.getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = CardUtils.getQueryParamsDictforKey(url.search, "sessionId")
         let publishableKey = CardUtils.getQueryParamsDictforKey(url.search, "publishableKey")
-        <PreMountLoader publishableKey sessionId clientSecret />
+        let endpoint = CardUtils.getQueryParamsDictforKey(url.search, "endpoint")
+        <PreMountLoader publishableKey sessionId clientSecret endpoint />
       }
     | "achBankTransfer"
     | "bacsBankTransfer"

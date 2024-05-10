@@ -359,6 +359,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
         }
+        if (
+          dict->getDictIsSome("customBackendUrl") &&
+            dict
+            ->getString("customBackendUrl", "")
+            ->String.length > 0
+        ) {
+          if dict->getDictIsSome("endpoint") {
+            switch dict->getString("endpoint", "") {
+            | "" => ()
+            | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+            }
+          }
+        }
         if dict->getDictIsSome("paymentMethodList") {
           let paymentMethodList = dict->getJsonObjectFromDict("paymentMethodList")
           let listDict = paymentMethodList->getDictFromJson

@@ -215,18 +215,15 @@ let make = (
 
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
-      <div
-        className="flex flex-col"
-        style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+      <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>
         <div className="w-full">
           <RenderIf condition={innerLayout === Compressed}>
             <div
-              style={ReactDOMStyle.make(
-                ~marginBottom="5px",
-                ~fontSize=themeObj.fontSizeLg,
-                ~opacity="0.6",
-                (),
-              )}>
+              style={
+                marginBottom: "5px",
+                fontSize: themeObj.fontSizeLg,
+                opacity: "0.6",
+              }>
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
@@ -252,13 +249,12 @@ let make = (
             />
             <div
               className="flex flex-row w-full place-content-between"
-              style={ReactDOMStyle.make(
-                ~marginTop={
+              style={
+                marginTop: {
                   innerLayout === Spaced ? themeObj.spacingGridColumn : ""
                 },
-                ~gridColumnGap={innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-                (),
-              )}>
+                gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
+              }>
               <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.validThruText
@@ -302,18 +298,18 @@ let make = (
               </div>
             </div>
             <RenderIf
-              condition={cardError->String.length > 0 ||
-              cvcError->String.length > 0 ||
-              expiryError->String.length > 0}>
+              condition={innerLayout === Compressed &&
+                (cardError->String.length > 0 ||
+                cvcError->String.length > 0 ||
+                expiryError->String.length > 0)}>
               <div
                 className="Error pt-1"
-                style={ReactDOMStyle.make(
-                  ~color=themeObj.colorDangerText,
-                  ~fontSize=themeObj.fontSizeSm,
-                  ~alignSelf="start",
-                  ~textAlign="left",
-                  (),
-                )}>
+                style={
+                  color: themeObj.colorDangerText,
+                  fontSize: themeObj.fontSizeSm,
+                  alignSelf: "start",
+                  textAlign: "left",
+                }>
                 {React.string("Invalid input")}
               </div>
             </RenderIf>
@@ -360,11 +356,10 @@ let make = (
       | (_, _, NEW_MANDATE) =>
         <div
           className="opacity-50 text-xs mb-2 text-left"
-          style={ReactDOMStyle.make(
-            ~color=themeObj.colorText,
-            ~marginTop=themeObj.spacingGridColumn,
-            (),
-          )}>
+          style={
+            color: themeObj.colorText,
+            marginTop: themeObj.spacingGridColumn,
+          }>
           <Terms mode={Card} />
         </div>
       | (_, _, _) => React.null

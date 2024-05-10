@@ -171,9 +171,7 @@ let make = (
           />
         </div>
         <RenderIf condition={!options.hidePostalCode}>
-          <div
-            className={`w-2/5 ${pincodeClass} slowShow`}
-            style={ReactDOMStyle.make(~display=showPincode, ())}>
+          <div className={`w-2/5 ${pincodeClass} slowShow`} style={display: showPincode}>
             <InputField
               onKeyDown=onZipCodeKeyDown
               isValid=isZipValid

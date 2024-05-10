@@ -1,5 +1,5 @@
 @react.component
-let make = (~sessionId, ~publishableKey, ~clientSecret) => {
+let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
   open Utils
   let (paymentMethodsResponseSent, setPaymentMethodsResponseSent) = React.useState(_ => false)
   let (
@@ -14,8 +14,6 @@ let make = (~sessionId, ~publishableKey, ~clientSecret) => {
     ~clientSecret,
     (),
   )
-
-  let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
 
   let paymentMethodsResponse = React.useMemo0(() =>
     PaymentHelpers.fetchPaymentMethodList(

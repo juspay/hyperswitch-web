@@ -36,21 +36,20 @@ let make = (
   )
   <div
     className={`AccordionItem flex flex-col`}
-    style={ReactDOMStyle.make(
-      ~minHeight="60px",
-      ~width="-webkit-fill-available",
-      ~padding="20px",
-      ~cursor="pointer",
-      ~marginBottom=layoutClass.spacedAccordionItems ? themeObj.spacingAccordionItem : "",
-      ~border=`1px solid ${themeObj.borderColor}`,
-      ~borderRadius={borderRadiusStyle},
-      ~borderBottomStyle=borderBottom ? "solid" : "hidden",
-      (),
-    )}
+    style={
+      minHeight: "60px",
+      width: "-webkit-fill-available",
+      padding: "20px",
+      cursor: "pointer",
+      marginBottom: layoutClass.spacedAccordionItems ? themeObj.spacingAccordionItem : "",
+      border: `1px solid ${themeObj.borderColor}`,
+      borderRadius: {borderRadiusStyle},
+      borderBottomStyle: borderBottom ? "solid" : "hidden",
+    }
     onClick={_ => setSelectedOption(_ => paymentOption.paymentMethodName)}>
     <div
       className={`flex flex-row items-center ${accordionClass}`}
-      style={ReactDOMStyle.make(~columnGap=themeObj.spacingUnit, ())}>
+      style={columnGap: themeObj.spacingUnit}>
       <RenderIf condition=layoutClass.radios>
         <Radio checked=radioClass />
       </RenderIf>

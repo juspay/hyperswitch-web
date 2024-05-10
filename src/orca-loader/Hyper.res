@@ -415,6 +415,10 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~clientSecret={clientSecretId},
           ~logger=Some(logger),
           ~analyticsMetadata,
+          ~customBackendUrl=options
+          ->Option.getOr(JSON.Encode.null)
+          ->getDictFromJson
+          ->getString("customBackendUrl", ""),
         )
       }
       let confirmCardPaymentFn = (
