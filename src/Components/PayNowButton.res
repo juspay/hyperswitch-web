@@ -17,6 +17,7 @@ let make = () => {
   let {themeObj, localeString} = configAtom->Recoil.useRecoilValueFromAtom
   let {sdkHandleConfirmPayment} = optionAtom->Recoil.useRecoilValueFromAtom
   let (isPayNowButtonDisable, setIsPayNowButtonDisable) = payNowButtonDisable->Recoil.useRecoilState
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
   let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
@@ -31,6 +32,11 @@ let make = () => {
     | None => ()
     }
   }
+
+  React.useEffect1(() => {
+    setIsPayNowButtonDisable(_ => !areRequiredFieldsValid)
+    None
+  }, [areRequiredFieldsValid])
 
   let handleOnClick = _ => {
     setIsPayNowButtonDisable(_ => true)
