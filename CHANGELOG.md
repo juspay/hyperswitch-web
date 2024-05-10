@@ -1,3 +1,10 @@
+## [0.50.10](https://github.com/juspay/hyperswitch-web/compare/v0.50.9...v0.50.10) (2024-05-10)
+
+
+### Bug Fixes
+
+* api-endpoint-url fix for custom backend url ([#357](https://github.com/juspay/hyperswitch-web/issues/357)) ([494a815](https://github.com/juspay/hyperswitch-web/commit/494a815fdf68b944e9fd3076163fbbacc3d3f2ed))
+
 ## [0.50.9](https://github.com/juspay/hyperswitch-web/compare/v0.50.8...v0.50.9) (2024-05-08)
 
 
