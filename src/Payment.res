@@ -16,7 +16,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.list)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let (token, _) = paymentToken
 
   let {iframeId} = keys
@@ -60,7 +60,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
         let list = json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
         let debit_cards =
           PaymentMethodsRecord.getPaymentMethodTypeFromList(
-            ~list,
+            ~paymentMethodListValue=list,
             ~paymentMethod="card",
             ~paymentMethodType=PaymentUtils.getPaymentMethodName(
               ~paymentMethodType="card",
@@ -69,7 +69,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
         let credit_cards =
           PaymentMethodsRecord.getPaymentMethodTypeFromList(
-            ~list,
+            ~paymentMethodListValue=list,
             ~paymentMethod="card",
             ~paymentMethodType=PaymentUtils.getPaymentMethodName(
               ~paymentMethodType="card",
@@ -97,8 +97,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
         setIsCardSupported(_ => Some(brands->Array.includes(cardBrandValue->CardUtils.getCardType)))
       | None => setIsCardSupported(_ => Some(true))
       }
-    | Some(false) => setIsCardSupported(_ => Some(false))
-    | None => setIsCardSupported(_ => None)
+    | _ => setIsCardSupported(_ => None)
     }
     None
   }, (supportedCardBrands, cardNumber, isCardValid))
@@ -205,7 +204,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
     if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
-      setIsCardValid(_ => Some(true))
+      setIsCardValid(_ => Some(isCardSupported->Option.getOr(true)))
     } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => None)
     } else {
@@ -388,9 +387,13 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
   React.useEffect(() => {
-    setCardError(_ => isCardValid->Option.getOr(true) ? "" : localeString.inValidCardErrorText)
+    setCardError(_ =>
+      isCardSupported->Option.getOr(true)
+        ? isCardValid->Option.getOr(true) ? "" : localeString.inValidCardErrorText
+        : "Unsupported card"
+    )
     None
-  }, [isCardValid])
+  }, [isCardValid, isCardSupported])
 
   React.useEffect(() => {
     setCvcError(_ => isCVCValid->Option.getOr(true) ? "" : localeString.inCompleteCVCErrorText)
