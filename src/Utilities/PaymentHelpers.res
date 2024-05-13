@@ -948,7 +948,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
       let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
 
       let callIntent = body => {
-        let contentLength = body->String.length
+        let contentLength = body->String.length->Int.toString
         let maskedPayload =
           body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
         let loggerPayload =
@@ -973,7 +973,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
           handleLogging(
             ~optLogger,
             ~internalMetadata=loggerPayload,
-            ~value=contentLength->Int.toString,
+            ~value=contentLength,
             ~eventName=PAYMENT_ATTEMPT,
             ~paymentMethod="CARD",
             (),
@@ -983,7 +983,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             if str === "payment_method_type" {
               handleLogging(
                 ~optLogger,
-                ~value=contentLength->Int.toString,
+                ~value=contentLength,
                 ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
                 ~paymentMethod=json->getStringFromJson(""),
