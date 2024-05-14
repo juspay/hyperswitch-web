@@ -361,6 +361,13 @@ let useSetInitialRequiredFields = (
       | CardExpiryMonthAndYear
       | CardCvc
       | CardExpiryAndCvc
+      | ShippingName // Shipping Details are currently supported by only one click widgets
+      | ShippingAddressLine1
+      | ShippingAddressLine2
+      | ShippingAddressCity
+      | ShippingAddressPincode
+      | ShippingAddressState
+      | ShippingAddressCountry(_)
       | None => ()
       }
     })
@@ -435,6 +442,13 @@ let useRequiredFieldsBody = (
     | CardExpiryMonthAndYear
     | CardExpiryAndCvc
     | FullName
+    | ShippingName // Shipping Details are currently supported by only one click widgets
+    | ShippingAddressLine1
+    | ShippingAddressLine2
+    | ShippingAddressCity
+    | ShippingAddressPincode
+    | ShippingAddressState
+    | ShippingAddressCountry(_)
     | None => ""
     }
   }
@@ -748,14 +762,7 @@ let getApplePayRequiredFields = (
   paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
 
-    let getBillingOrShipping = (billingVal, shippingVal) => {
-      requiredFieldsArr->Array.includes("billing") ? billingVal : shippingVal
-    }
-
-    let getName = {
-      let firstName = billingContact.givenName->getBillingOrShipping(shippingContact.givenName)
-      let lastName = billingContact.familyName->getBillingOrShipping(shippingContact.familyName)
-
+    let getName = (firstName, lastName) => {
       switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
       | "first_name" => firstName
       | "last_name" => lastName
@@ -768,29 +775,36 @@ let getApplePayRequiredFields = (
     }
 
     let fieldVal = switch item.field_type {
-    | FullName => getName
-    | BillingName => getName
-    | AddressLine1 =>
-      let billingAddressLine1 = billingContact.addressLines->getAddressLine(0)
-      let shippingAddressLine1 = shippingContact.addressLines->getAddressLine(0)
-      billingAddressLine1->getBillingOrShipping(shippingAddressLine1)
-    | AddressLine2 =>
-      let billingAddressLine1 = billingContact.addressLines->getAddressLine(1)
-      let shippingAddressLine1 = shippingContact.addressLines->getAddressLine(1)
-      billingAddressLine1->getBillingOrShipping(shippingAddressLine1)
-    | AddressCity => billingContact.locality->getBillingOrShipping(shippingContact.locality)
+    | FullName
+    | BillingName =>
+      getName(billingContact.givenName, billingContact.familyName)
+    | AddressLine1 => billingContact.addressLines->getAddressLine(0)
+    | AddressLine2 => billingContact.addressLines->getAddressLine(1)
+    | AddressCity => billingContact.locality
     | AddressState =>
-      let administrativeArea =
-        billingContact.administrativeArea->getBillingOrShipping(shippingContact.administrativeArea)
-      let countryCode =
-        billingContact.countryCode->getBillingOrShipping(shippingContact.countryCode)
-      Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+      Utils.getStateNameFromStateCodeAndCountry(
+        statesList,
+        billingContact.administrativeArea,
+        billingContact.countryCode,
+      )
     | Country
     | AddressCountry(_) =>
-      billingContact.countryCode->getBillingOrShipping(shippingContact.countryCode)
-    | AddressPincode => billingContact.postalCode->getBillingOrShipping(shippingContact.postalCode)
+      billingContact.countryCode
+    | AddressPincode => billingContact.postalCode
     | Email => shippingContact.emailAddress
     | PhoneNumber => shippingContact.phoneNumber
+    | ShippingName => getName(shippingContact.givenName, shippingContact.familyName)
+    | ShippingAddressLine1 => shippingContact.addressLines->getAddressLine(0)
+    | ShippingAddressLine2 => shippingContact.addressLines->getAddressLine(1)
+    | ShippingAddressCity => shippingContact.locality
+    | ShippingAddressState =>
+      Utils.getStateNameFromStateCodeAndCountry(
+        statesList,
+        shippingContact.administrativeArea,
+        shippingContact.countryCode,
+      )
+    | ShippingAddressCountry(_) => shippingContact.countryCode
+    | ShippingAddressPincode => shippingContact.postalCode
     | _ => ""
     }
 
@@ -834,35 +848,37 @@ let getGooglePayRequiredFields = (
   paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
 
-    let getBillingOrShipping = (billingVal, shippingVal) => {
-      requiredFieldsArr->Array.includes("billing") ? billingVal : shippingVal
-    }
-
-    let getName = {
-      let name = billingContact.name->getBillingOrShipping(shippingContact.name)
-
-      name->getNameFromString(requiredFieldsArr)
-    }
-
     let fieldVal = switch item.field_type {
-    | FullName => getName
-    | BillingName => getName
-    | AddressLine1 => billingContact.address1->getBillingOrShipping(shippingContact.address1)
-    | AddressLine2 => billingContact.address2->getBillingOrShipping(shippingContact.address2)
-    | AddressCity => billingContact.locality->getBillingOrShipping(shippingContact.locality)
+    | FullName => billingContact.name->getNameFromString(requiredFieldsArr)
+    | BillingName => billingContact.name->getNameFromString(requiredFieldsArr)
+    | AddressLine1 => billingContact.address1
+    | AddressLine2 => billingContact.address2
+    | AddressCity => billingContact.locality
     | AddressState =>
-      let administrativeArea =
-        billingContact.administrativeArea->getBillingOrShipping(shippingContact.administrativeArea)
-      let countryCode =
-        billingContact.countryCode->getBillingOrShipping(shippingContact.countryCode)
-      Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+      Utils.getStateNameFromStateCodeAndCountry(
+        statesList,
+        billingContact.administrativeArea,
+        billingContact.countryCode,
+      )
     | Country
     | AddressCountry(_) =>
-      billingContact.countryCode->getBillingOrShipping(shippingContact.countryCode)
-    | AddressPincode => billingContact.postalCode->getBillingOrShipping(shippingContact.postalCode)
+      billingContact.countryCode
+    | AddressPincode => billingContact.postalCode
     | Email => email
     | PhoneNumber =>
       shippingContact.phoneNumber->String.replaceAll(" ", "")->String.replaceAll("-", "")
+    | ShippingName => shippingContact.name->getNameFromString(requiredFieldsArr)
+    | ShippingAddressLine1 => shippingContact.address1
+    | ShippingAddressLine2 => shippingContact.address2
+    | ShippingAddressCity => shippingContact.locality
+    | ShippingAddressState =>
+      Utils.getStateNameFromStateCodeAndCountry(
+        statesList,
+        shippingContact.administrativeArea,
+        shippingContact.countryCode,
+      )
+    | ShippingAddressCountry(_) => shippingContact.countryCode
+    | ShippingAddressPincode => shippingContact.postalCode
     | _ => ""
     }
 
@@ -882,26 +898,21 @@ let getPaypalRequiredFields = (
   paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
 
-    let getName = {
-      let name = details.shippingAddress.recipientName->Option.getOr("")
-
-      name->getNameFromString(requiredFieldsArr)
-    }
-
     let fieldVal = switch item.field_type {
-    | FullName => getName
-    | BillingName => getName
-    | AddressLine1 => details.shippingAddress.line1->Option.getOr("")
-    | AddressLine2 => details.shippingAddress.line2->Option.getOr("")
-    | AddressCity => details.shippingAddress.city->Option.getOr("")
-    | AddressState =>
-      let administrativeArea = details.shippingAddress.state->Option.getOr("")
-      let countryCode = details.shippingAddress.countryCode->Option.getOr("")
-      Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
-    | Country
-    | AddressCountry(_) =>
-      details.shippingAddress.countryCode->Option.getOr("")
-    | AddressPincode => details.shippingAddress.postalCode->Option.getOr("")
+    | ShippingName => {
+        let name = details.shippingAddress.recipientName->Option.getOr("")
+        name->getNameFromString(requiredFieldsArr)
+      }
+    | ShippingAddressLine1 => details.shippingAddress.line1->Option.getOr("")
+    | ShippingAddressLine2 => details.shippingAddress.line2->Option.getOr("")
+    | ShippingAddressCity => details.shippingAddress.city->Option.getOr("")
+    | ShippingAddressState => {
+        let administrativeArea = details.shippingAddress.state->Option.getOr("")
+        let countryCode = details.shippingAddress.countryCode->Option.getOr("")
+        Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+      }
+    | ShippingAddressCountry(_) => details.shippingAddress.countryCode->Option.getOr("")
+    | ShippingAddressPincode => details.shippingAddress.postalCode->Option.getOr("")
     | Email => details.email
     | PhoneNumber =>
       switch (details.phone->Option.getOr(""), details.shippingAddress.phone->Option.getOr("")) {
