@@ -1,3 +1,10 @@
+## [0.51.1](https://github.com/juspay/hyperswitch-web/compare/v0.51.0...v0.51.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* added display_voucher_information again ([#369](https://github.com/juspay/hyperswitch-web/issues/369)) ([91978a9](https://github.com/juspay/hyperswitch-web/commit/91978a9db150ea3f1ce4518fcbace4142ef28343))
+
 # [0.51.0](https://github.com/juspay/hyperswitch-web/compare/v0.50.14...v0.51.0) (2024-05-10)
 
 
