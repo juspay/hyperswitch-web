@@ -651,6 +651,40 @@ let rec intentCall = (
                     ("metadata", metaData->JSON.Encode.object),
                   ])
                 }
+              } else if intent.nextAction.type_ === "display_voucher_information" {
+                let voucherData = intent.nextAction.voucher_details->Option.getOr({
+                  download_url: "",
+                  reference: "",
+                })
+                let headerObj = Dict.make()
+                headers->Array.forEach(
+                  entries => {
+                    let (x, val) = entries
+                    Dict.set(headerObj, x, val->JSON.Encode.string)
+                  },
+                )
+                let metaData =
+                  [
+                    ("voucherUrl", voucherData.download_url->JSON.Encode.string),
+                    ("reference", voucherData.reference->JSON.Encode.string),
+                    ("returnUrl", url.href->JSON.Encode.string),
+                    ("paymentMethod", paymentMethod->JSON.Encode.string),
+                    ("payment_intent_data", data),
+                  ]->Dict.fromArray
+                handleLogging(
+                  ~optLogger,
+                  ~value="",
+                  ~internalMetadata=metaData->JSON.Encode.object->JSON.stringify,
+                  ~eventName=DISPLAY_VOUCHER,
+                  ~paymentMethod,
+                  (),
+                )
+                handlePostMessage([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", `voucherData`->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                  ("metadata", metaData->JSON.Encode.object),
+                ])
               } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
                 | Some(token) => token->getDictFromJson
@@ -946,6 +980,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
       let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
 
       let callIntent = body => {
+        let contentLength = body->String.length->Int.toString
         let maskedPayload =
           body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
         let loggerPayload =
@@ -968,17 +1003,17 @@ let usePaymentIntent = (optLogger, paymentType) => {
           handleLogging(
             ~optLogger,
             ~internalMetadata=loggerPayload,
-            ~value="",
+            ~value=contentLength,
             ~eventName=PAYMENT_ATTEMPT,
             ~paymentMethod="CARD",
             (),
           )
         | _ =>
-          let _ = bodyArr->Array.map(((str, json)) => {
+          bodyArr->Array.forEach(((str, json)) => {
             if str === "payment_method_type" {
               handleLogging(
                 ~optLogger,
-                ~value="",
+                ~value=contentLength,
                 ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
                 ~paymentMethod=json->getStringFromJson(""),
