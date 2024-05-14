@@ -10,26 +10,24 @@ let billingDetailsTuple = (
   ~state,
   ~postalCode,
   ~country,
-) => {
-  (
-    "billing_details",
-    [
-      ("name", fullName->JSON.Encode.string),
-      ("email", email->JSON.Encode.string),
-      (
-        "address",
-        [
-          ("line1", line1->JSON.Encode.string),
-          ("line2", line2->JSON.Encode.string),
-          ("city", city->JSON.Encode.string),
-          ("state", state->JSON.Encode.string),
-          ("zip", postalCode->JSON.Encode.string),
-          ("country", country->JSON.Encode.string),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  )
-}
+) => (
+  "billing_details",
+  [
+    ("name", fullName->JSON.Encode.string),
+    ("email", email->JSON.Encode.string),
+    (
+      "address",
+      [
+        ("line1", line1->JSON.Encode.string),
+        ("line2", line2->JSON.Encode.string),
+        ("city", city->JSON.Encode.string),
+        ("state", state->JSON.Encode.string),
+        ("zip", postalCode->JSON.Encode.string),
+        ("country", country->JSON.Encode.string),
+      ]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]->Utils.getJsonFromArrayOfJson,
+)
 
 let cardPaymentBody = (
   ~cardNumber,
@@ -155,13 +153,12 @@ let mandateBody = paymentType => [
   ("payment_type", {paymentType === "" ? JSON.Encode.null : paymentType->JSON.Encode.string}),
 ]
 
-let paymentTypeBody = paymentType => {
+let paymentTypeBody = paymentType =>
   if paymentType != "" {
     [("payment_type", paymentType->JSON.Encode.string)]
   } else {
     []
   }
-}
 
 let confirmPayloadForSDKButton = (sdkHandleConfirmPayment: PaymentType.sdkHandleConfirmPayment) =>
   [
@@ -470,26 +467,24 @@ let gpayRedirectBody = (~connectors: array<string>) => [
   ),
 ]
 
-let gPayThirdPartySdkBody = (~connectors) => {
-  [
-    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-    ("payment_method", "wallet"->JSON.Encode.string),
-    ("payment_method_type", "google_pay"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "wallet",
-          [
-            ("google_pay_third_party_sdk", Dict.make()->JSON.Encode.object),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
-    ),
-  ]
-}
+let gPayThirdPartySdkBody = (~connectors) => [
+  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+  ("payment_method", "wallet"->JSON.Encode.string),
+  ("payment_method_type", "google_pay"->JSON.Encode.string),
+  (
+    "payment_method_data",
+    [
+      (
+        "wallet",
+        [
+          ("google_pay_third_party_sdk", Dict.make()->JSON.Encode.object),
+        ]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]
+    ->Dict.fromArray
+    ->JSON.Encode.object,
+  ),
+]
 
 let applePayBody = (~token, ~connectors) => {
   let dict = token->JSON.Decode.object->Option.getOr(Dict.make())
@@ -520,41 +515,37 @@ let applePayBody = (~token, ~connectors) => {
   ]
 }
 
-let applePayRedirectBody = (~connectors) => {
-  [
-    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-    ("payment_method", "wallet"->JSON.Encode.string),
-    ("payment_method_type", "apple_pay"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "wallet",
-          [("apple_pay_redirect", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ]
-}
+let applePayRedirectBody = (~connectors) => [
+  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+  ("payment_method", "wallet"->JSON.Encode.string),
+  ("payment_method_type", "apple_pay"->JSON.Encode.string),
+  (
+    "payment_method_data",
+    [
+      (
+        "wallet",
+        [("apple_pay_redirect", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]->Utils.getJsonFromArrayOfJson,
+  ),
+]
 
-let applePayThirdPartySdkBody = (~connectors) => {
-  [
-    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-    ("payment_method", "wallet"->JSON.Encode.string),
-    ("payment_method_type", "apple_pay"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "wallet",
-          [
-            ("apple_pay_third_party_sdk", Dict.make()->JSON.Encode.object),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ]
-}
+let applePayThirdPartySdkBody = (~connectors) => [
+  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+  ("payment_method", "wallet"->JSON.Encode.string),
+  ("payment_method_type", "apple_pay"->JSON.Encode.string),
+  (
+    "payment_method_data",
+    [
+      (
+        "wallet",
+        [
+          ("apple_pay_third_party_sdk", Dict.make()->JSON.Encode.object),
+        ]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]->Utils.getJsonFromArrayOfJson,
+  ),
+]
 
 let cryptoBody = (~currency) => [
   ("payment_method", "crypto"->JSON.Encode.string),
@@ -995,13 +986,12 @@ let multibancoBody = (~email) => [
   ),
 ]
 
-let getPaymentMethodType = (paymentMethod, paymentMethodType) => {
+let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
   | "bank_transfer" => paymentMethodType->String.replace("_transfer", "")
   | _ => paymentMethodType
   }
-}
 
 let appendRedirectPaymentMethods = [
   "touch_n_go",
@@ -1020,7 +1010,7 @@ let appendRedirectPaymentMethods = [
   "ali_pay",
 ]
 
-let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) => {
+let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) =>
   if isQrPaymentMethod {
     paymentMethodType ++ "_qr"
   } else if appendRedirectPaymentMethods->Array.includes(paymentMethodType) {
@@ -1028,17 +1018,15 @@ let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) => {
   } else {
     paymentMethodType
   }
-}
 
 let paymentExperiencePaymentMethods = ["affirm"]
 
-let appendPaymentExperience = (paymentBodyArr, paymentMethodType) => {
+let appendPaymentExperience = (paymentBodyArr, paymentMethodType) =>
   if paymentExperiencePaymentMethods->Array.includes(paymentMethodType) {
     paymentBodyArr->Array.concat([("payment_experience", "redirect_to_url"->JSON.Encode.string)])
   } else {
     paymentBodyArr
   }
-}
 
 let dynamicPaymentBody = (paymentMethod, paymentMethodType, ~isQrPaymentMethod=false) => {
   let paymentMethodType = paymentMethod->getPaymentMethodType(paymentMethodType)
@@ -1073,7 +1061,7 @@ let getPaymentBody = (
   ~paymentExperience: PaymentMethodsRecord.paymentFlow=RedirectToURL,
   ~phoneNumber,
   ~currency,
-) => {
+) =>
   switch paymentMethodType {
   | "afterpay_clearpay" => afterpayRedirectionBody(~fullName, ~email)
   | "crypto_currency" => cryptoBody(~currency)
@@ -1111,4 +1099,3 @@ let getPaymentBody = (
     rewardBody(~paymentMethodType)
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }
-}
