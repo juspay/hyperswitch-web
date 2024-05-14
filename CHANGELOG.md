@@ -1,3 +1,10 @@
+# [0.52.0](https://github.com/juspay/hyperswitch-web/compare/v0.51.1...v0.52.0) (2024-05-14)
+
+
+### Features
+
+* added content length ([#366](https://github.com/juspay/hyperswitch-web/issues/366)) ([2a1b42a](https://github.com/juspay/hyperswitch-web/commit/2a1b42ad2e62b6cd5461345516e5d0ddcaa0abeb))
+
 ## [0.51.1](https://github.com/juspay/hyperswitch-web/compare/v0.51.0...v0.51.1) (2024-05-14)
 
 
