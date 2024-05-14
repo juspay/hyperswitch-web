@@ -653,7 +653,7 @@ let rec intentCall = (
                   ])
                 }
               } else if intent.nextAction.type_ === "display_voucher_information" {
-                let voucherData = intent.nextAction.voucher_details->Belt.Option.getWithDefault({
+                let voucherData = intent.nextAction.voucher_details->Option.getOr({
                   download_url: "",
                   reference: "",
                 })
