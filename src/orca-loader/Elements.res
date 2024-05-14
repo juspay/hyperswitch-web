@@ -99,7 +99,7 @@ let make = (
     let preMountLoaderMountedPromise = Promise.make((resolve, _reject) => {
       let preMountLoaderIframeCallback = (ev: Types.event) => {
         let json = ev.data->Identity.anyTypeToJson
-        let dict = json->Utils.getDictFromJson
+        let dict = json->getDictFromJson
         if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
           resolve(true->JSON.Encode.bool)
         } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
@@ -117,12 +117,12 @@ let make = (
       let handlePaymentMethodsLoaded = (event: Types.event) => {
         let json = event.data->Identity.anyTypeToJson
         let dict = json->getDictFromJson
-        let isPaymentMethodsData = dict->Utils.getString("data", "") === "payment_methods"
+        let isPaymentMethodsData = dict->getString("data", "") === "payment_methods"
         if isPaymentMethodsData {
-          let json = dict->Utils.getJsonFromDict("response", JSON.Encode.null)
+          let json = dict->getJsonFromDict("response", JSON.Encode.null)
           let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
             ~paymentMethodListValue=json
-            ->Utils.getDictFromJson
+            ->getDictFromJson
             ->PaymentMethodsRecord.itemToObjMapper,
             ~paymentMethod="wallet",
             ~paymentMethodType="apple_pay",
@@ -130,7 +130,7 @@ let make = (
 
           let isGooglePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
             ~paymentMethodListValue=json
-            ->Utils.getDictFromJson
+            ->getDictFromJson
             ->PaymentMethodsRecord.itemToObjMapper,
             ~paymentMethod="wallet",
             ~paymentMethodType="google_pay",
@@ -149,7 +149,7 @@ let make = (
               logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT, ())
               trustPayScript->Window.elementSrc(trustPayScriptURL)
               trustPayScript->Window.elementOnerror(err => {
-                Utils.logInfo(Console.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
+                logInfo(Console.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
               })
               trustPayScript->Window.elementOnload(_ => {
                 logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT, ())
@@ -176,9 +176,9 @@ let make = (
           let json = event.data->Identity.anyTypeToJson
           let dict = json->getDictFromJson
           let isCustomerPaymentMethodsData =
-            dict->Utils.getString("data", "") === "customer_payment_methods"
+            dict->getString("data", "") === "customer_payment_methods"
           if isCustomerPaymentMethodsData {
-            let json = dict->Utils.getJsonFromDict("response", JSON.Encode.null)
+            let json = dict->getJsonFromDict("response", JSON.Encode.null)
             let msg = [("customerPaymentMethods", json)]->Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
           }
@@ -274,14 +274,12 @@ let make = (
             ("locale", locale),
             ("loader", loader),
             ("fonts", fonts),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ]->getJsonFromArrayOfJson
         let message =
           [
             (
               "paymentElementCreate",
-              componentType->Utils.isComponentTypeForPaymentElementCreate->JSON.Encode.bool,
+              componentType->isComponentTypeForPaymentElementCreate->JSON.Encode.bool,
             ),
             ("otherElements", otherElements->JSON.Encode.bool),
             ("options", newOptions),
@@ -410,9 +408,7 @@ let make = (
                     )
                     let timeOut = delay(600000)->then(_ => {
                       let errorMsg =
-                        [("error", "Request Timed Out"->JSON.Encode.string)]
-                        ->Dict.fromArray
-                        ->JSON.Encode.object
+                        [("error", "Request Timed Out"->JSON.Encode.string)]->getJsonFromArrayOfJson
                       reject(Exn.anyToExnInternal(errorMsg))
                     })
 
@@ -564,7 +560,7 @@ let make = (
                       resolve()
                     })
                     ->catch(err => {
-                      let exceptionMessage = err->Utils.formatException->JSON.stringify
+                      let exceptionMessage = err->formatException->JSON.stringify
                       logger.setLogInfo(
                         ~eventName=APPLE_PAY_FLOW,
                         ~paymentMethod="APPLE_PAY",
@@ -579,7 +575,7 @@ let make = (
                   } catch {
                   | exn => {
                       logger.setLogInfo(
-                        ~value=exn->Utils.formatException->JSON.stringify,
+                        ~value=exn->formatException->JSON.stringify,
                         ~eventName=APPLE_PAY_FLOW,
                         ~paymentMethod="APPLE_PAY",
                         (),
@@ -663,9 +659,9 @@ let make = (
           let handleSessionTokensLoaded = (event: Types.event) => {
             let json = event.data->Identity.anyTypeToJson
             let dict = json->getDictFromJson
-            let sessionTokensData = dict->Utils.getString("data", "") === "session_tokens"
+            let sessionTokensData = dict->getString("data", "") === "session_tokens"
             if sessionTokensData {
-              let json = dict->Utils.getJsonFromDict("response", JSON.Encode.null)
+              let json = dict->getJsonFromDict("response", JSON.Encode.null)
 
               {
                 let sessionsArr =
@@ -707,7 +703,7 @@ let make = (
               ->then(res => {
                 let (json, applePayPresent, googlePayPresent) = res
                 if (
-                  componentType->Utils.isComponentTypeForPaymentElementCreate &&
+                  componentType->isComponentTypeForPaymentElementCreate &&
                     applePayPresent->Belt.Option.isSome
                 ) {
                   //do operations here
@@ -744,7 +740,7 @@ let make = (
                             ->Belt.Option.getWithDefault(Dict.make())
                             ->Dict.get("payment_request_data")
                             ->Belt.Option.getWithDefault(Dict.make()->JSON.Encode.object)
-                            ->Utils.transformKeys(Utils.CamelCase)
+                            ->transformKeys(CamelCase)
 
                           let ssn = applePaySession(3, paymentRequest)
                           switch applePaySessionRef.contents->Nullable.toOption {
@@ -766,7 +762,7 @@ let make = (
                               ->Belt.Option.getWithDefault(Dict.make())
                               ->Dict.get("session_token_data")
                               ->Belt.Option.getWithDefault(Dict.make()->JSON.Encode.object)
-                              ->Utils.transformKeys(Utils.CamelCase)
+                              ->transformKeys(CamelCase)
                             ssn.completeMerchantValidation(merchantSession)
                           }
 
@@ -789,7 +785,7 @@ let make = (
                               [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
                             mountedIframeRef->Window.iframePostMessage(msg)
                             applePaySessionRef := Nullable.null
-                            Utils.logInfo(Console.log("Apple Pay Payment Cancelled"))
+                            logInfo(Console.log("Apple Pay Payment Cancelled"))
                             logger.setLogInfo(
                               ~value="Apple Pay Payment Cancelled",
                               ~eventName=APPLE_PAY_FLOW,
@@ -809,7 +805,7 @@ let make = (
                   addSmartEventListener("message", handleApplePayMessages, "onApplePayMessages")
                 }
                 if (
-                  componentType->Utils.isComponentTypeForPaymentElementCreate &&
+                  componentType->isComponentTypeForPaymentElementCreate &&
                   googlePayPresent->Belt.Option.isSome &&
                   wallets.googlePay === Auto
                 ) {
@@ -959,7 +955,7 @@ let make = (
             newOptions
             ->getDictFromJson
             ->getBool("displaySavedPaymentMethods", true) &&
-              !(Utils.expressCheckoutComponents->Array.includes(componentType))
+              !(expressCheckoutComponents->Array.includes(componentType))
           ) {
             fetchCustomerPaymentMethods(mountedIframeRef, false, componentType)
           }

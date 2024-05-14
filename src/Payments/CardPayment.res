@@ -157,8 +157,7 @@ let make = (
         intent(
           ~bodyArr={
             (isBancontact ? banContactBody : cardBody)
-            ->Dict.fromArray
-            ->JSON.Encode.object
+            ->getJsonFromArrayOfJson
             ->flattenObject(true)
             ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
             ->getArrayOfTupleFromDict

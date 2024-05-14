@@ -38,9 +38,7 @@ let broswerInfo = () => {
         ("time_zone", date.getTimezoneOffset()->JSON.Encode.float),
         ("java_enabled", true->JSON.Encode.bool),
         ("java_script_enabled", true->JSON.Encode.bool),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
+      ]->Utils.getJsonFromArrayOfJson,
     ),
   ]
 }

@@ -139,8 +139,7 @@ let make = (
       ) {
         intent(
           ~bodyArr=savedPaymentMethodBody
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ->getJsonFromArrayOfJson
           ->flattenObject(true)
           ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
           ->getArrayOfTupleFromDict,

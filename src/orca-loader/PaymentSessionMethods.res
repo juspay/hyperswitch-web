@@ -105,8 +105,7 @@ let getCustomerSavedPaymentMethods = (
           ("payment_method_type", paymentMethodType),
         ]
 
-        let bodyStr =
-          body->Array.concat(broswerInfo)->Dict.fromArray->JSON.Encode.object->JSON.stringify
+        let bodyStr = body->Array.concat(broswerInfo)->Utils.getJsonFromArrayOfJson->JSON.stringify
 
         PaymentHelpers.intentCall(
           ~fetchApi=Utils.fetchApi,
@@ -147,13 +146,9 @@ let getCustomerSavedPaymentMethods = (
                   "message",
                   "There is no customer default saved payment method data"->JSON.Encode.string,
                 ),
-              ]
-              ->Dict.fromArray
-              ->JSON.Encode.object,
+              ]->Utils.getJsonFromArrayOfJson,
             ),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ]->Utils.getJsonFromArrayOfJson
         updatedCustomerDetails->resolve
       }
     }
@@ -167,13 +162,9 @@ let getCustomerSavedPaymentMethods = (
           [
             ("type", "server_error"->JSON.Encode.string),
             ("message", exceptionMessage->JSON.Encode.string),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object,
+          ]->Utils.getJsonFromArrayOfJson,
         ),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object
+      ]->Utils.getJsonFromArrayOfJson
     updatedCustomerDetails->resolve
   })
 }
