@@ -1,3 +1,10 @@
+## [0.52.1](https://github.com/juspay/hyperswitch-web/compare/v0.52.0...v0.52.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* do not unmount preMountLoader iframe ([#367](https://github.com/juspay/hyperswitch-web/issues/367)) ([ba47e5f](https://github.com/juspay/hyperswitch-web/commit/ba47e5f4faece8be2ec5a374bafd266da7d591e4))
+
 # [0.52.0](https://github.com/juspay/hyperswitch-web/compare/v0.51.1...v0.52.0) (2024-05-14)
 
 
