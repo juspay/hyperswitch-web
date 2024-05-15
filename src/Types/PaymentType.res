@@ -908,6 +908,7 @@ let getConfirmParams = dict => {
   {
     return_url: dict->getString("return_url", ""),
     publishableKey: dict->getString("publishableKey", ""),
+    redirect: dict->getString("redirect", "if_required"),
   }
 }
 
