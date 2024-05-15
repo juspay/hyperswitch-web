@@ -58,30 +58,28 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     switch paymentMethodList {
     | Loaded(json) => {
         let list = json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
-        let debit_cards =
-          PaymentMethodsRecord.getPaymentMethodTypeFromList(
-            ~paymentMethodListValue=list,
-            ~paymentMethod="card",
-            ~paymentMethodType=PaymentUtils.getPaymentMethodName(
-              ~paymentMethodType="card",
-              ~paymentMethodName="debit",
-            ),
-          )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
-        let credit_cards =
-          PaymentMethodsRecord.getPaymentMethodTypeFromList(
-            ~paymentMethodListValue=list,
-            ~paymentMethod="card",
-            ~paymentMethodType=PaymentUtils.getPaymentMethodName(
-              ~paymentMethodType="card",
-              ~paymentMethodName="credit",
-            ),
-          )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
+        let cardPaymentMethod =
+          list.payment_methods
+          ->Array.find(ele => ele.payment_method === "card")
+          ->Option.getOr({
+            payment_method: "card",
+            payment_method_types: [],
+          })
+
+        let cardNetworks =
+          cardPaymentMethod.payment_method_types->Array.map(ele => ele.card_networks)
+
+        let cardNetworkNames =
+          cardNetworks->Array.map(ele =>
+            ele->Array.map(
+              val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase,
+            )
+          )
+
         Some(
-          debit_cards.card_networks
-          ->Array.concat(credit_cards.card_networks)
-          ->Array.map(network => {
-            network.card_network
-          }),
+          cardNetworkNames
+          ->Array.reduce([], (acc, ele) => acc->Array.concat(ele))
+          ->Utils.getUniqueArray,
         )
       }
     | _ => None
@@ -93,8 +91,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let clearValue = cardNumber->clearSpaces
     if cardValid(clearValue, cardBrand) {
       switch supportedCardBrands {
-      | Some(brands) =>
-        setIsCardSupported(_ => Some(brands->Array.includes(cardBrand->CardUtils.getCardType)))
+      | Some(brands) => setIsCardSupported(_ => Some(brands->Array.includes(cardBrand)))
       | None => setIsCardSupported(_ => Some(true))
       }
     } else {
@@ -209,7 +206,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       let clearValue = cardNumber->clearSpaces
       let isSupported = if cardValid(clearValue, cardBrand) {
         switch supportedCardBrands {
-        | Some(brands) => Some(brands->Array.includes(cardBrand->CardUtils.getCardType))
+        | Some(brands) => Some(brands->Array.includes(cardBrand))
         | None => Some(true)
         }
       } else {
