@@ -1,0 +1,96 @@
+name: Conventional Commit Message Check
+
+on:
+  # This is a dangerous event trigger as it causes the workflow to run in the
+  # context of the target repository.
+  # Avoid checking out the head of the pull request or building code from the
+  # pull request whenever this trigger is used.
+  # Since we only label pull requests, do not have a checkout step in this
+  # workflow, and restrict permissions on the token, this is an acceptable
+  # use of this trigger.
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - reopened
+      - ready_for_review
+      - synchronize
+
+  merge_group:
+    types:
+      - checks_requested
+
+permissions:
+  # Reference: https://github.com/cli/cli/issues/6274
+  repository-projects: read
+  pull-requests: write
+
+env:
+  # Allow more retries for network requests in cargo (downloading crates) and
+  # rustup (installing toolchains). This should help to reduce flaky CI failures
+  # from transient network timeouts or other issues.
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+  # Use cargo's sparse index protocol
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+
+jobs:
+  pr_linked_issues_check:
+    name: Verify PR contains one or more linked issues
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify PR contains one or more linked issues
+        if: ${{ github.event_name == 'pull_request_target' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.AUTORELEASE_PAT }}
+        run: |
+          # GitHub does not provide information about linked issues for a pull request via the REST API.
+          # This information is available only within the GraphQL API.
+
+          # Obtain issue number and repository name with owner (in the `owner/repo` format) for all linked issues
+          query='query ($owner: String!, $repository: String!, $prNumber: Int!) {
+              repository(owner: $owner, name: $repository) {
+                pullRequest(number: $prNumber) {
+                  closingIssuesReferences(first: 10) {
+                    nodes {
+                      number
+                      repository {
+                        nameWithOwner
+                      }
+                    }
+                  }
+                }
+              }
+            }'
+
+          # Obtain linked issues in the `owner/repo#issue_number` format, one issue per line.
+          # The variable contains an empty string if the pull request has no linked issues.
+          linked_issues="$(
+            gh api graphql \
+              --raw-field "query=${query}" \
+              --field 'owner=${{ github.event.repository.owner.login }}' \
+              --field 'repository=${{ github.event.repository.name }}' \
+              --field 'prNumber=${{ github.event.pull_request.number }}' \
+              --jq '.data.repository.pullRequest.closingIssuesReferences.nodes[] | "\(.repository.nameWithOwner)#\(.number)"'
+          )"
+
+          if [[ -z "${linked_issues}" ]]; then
+            echo "::error::PR does not contain any linked issues"
+            exit 1
+          else
+            echo "PR contains at least one linked issue"
+          fi
+
+          while IFS= read -r issue; do
+            # Split `${issue}` by `#` to obtain repository with owner (in `owner/repository` format) and issue number
+            IFS='#' read -r repository_with_owner issue_number <<< "${issue}"
+            issue_state="$(gh issue view --repo "${repository_with_owner}" --json 'state' "${issue_number}" --jq '.state')"
+
+            # Transform `${issue_state}` to lowercase for comparison
+            if [[ "${issue_state,,}" != 'open' ]]; then
+              echo "::error::At least one of the linked issues is not open"
+              exit 1
+            fi
+          done <<< "${linked_issues}"
