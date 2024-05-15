@@ -23,14 +23,13 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
     className={`Tab ${tabClass} flex flex-col animate-slowShow`}
     type_="button"
     disabled=readOnly
-    style={ReactDOMStyle.make(
-      ~minWidth="5rem",
-      ~overflowWrap="anywhere",
-      ~width="100%",
-      ~padding=themeObj.spacingUnit,
-      ~cursor="pointer",
-      (),
-    )}
+    style={
+      minWidth: "5rem",
+      overflowWrap: "anywhere",
+      width: "100%",
+      padding: themeObj.spacingUnit,
+      cursor: "pointer",
+    }
     onClick>
     <div className={`TabIcon ${tabIconClass}`}>
       {switch icon {

@@ -338,11 +338,10 @@ let make = (
         <div
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
-          style={ReactDOMStyle.make(
-            ~marginTop=index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
-            ~gridColumnGap=themeObj.spacingGridRow,
-            (),
-          )}>
+          style={
+            marginTop: index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
+            gridColumnGap: themeObj.spacingGridRow,
+          }>
           {switch item {
           | CardNumber =>
             <PaymentInputField
@@ -443,24 +442,25 @@ let make = (
               />
             </div>
           | Currency(currencyArr) =>
+            let updatedCurrencyArray =
+              currencyArr->DropdownField.updateArrayOfStringToOptionsTypeArray
             <DropdownField
               appearance=config.appearance
               fieldName=localeString.currencyLabel
               value=currency
               setValue=setCurrency
               disabled=false
-              options=currencyArr
+              options=updatedCurrencyArray
             />
           | FullName =>
             <>
               <RenderIf condition={!isSpacedInnerLayout}>
                 <div
-                  style={ReactDOMStyle.make(
-                    ~marginBottom="5px",
-                    ~fontSize=themeObj.fontSizeLg,
-                    ~opacity="0.6",
-                    (),
-                  )}>
+                  style={
+                    marginBottom: "5px",
+                    fontSize: themeObj.fontSizeLg,
+                    opacity: "0.6",
+                  }>
                   {item->getCustomFieldName->Option.getOr("")->React.string}
                 </div>
               </RenderIf>
@@ -494,19 +494,17 @@ let make = (
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
         <div
           className={`${spacedStylesForBiilingDetails} w-full text-left`}
-          style={ReactDOMStyle.make(
-            ~border={isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
-            ~borderRadius={isSpacedInnerLayout ? themeObj.borderRadius : ""},
-            ~margin={isSpacedInnerLayout ? `10px 0` : ""},
-            (),
-          )}>
+          style={
+            border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
+            borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
+            margin: {isSpacedInnerLayout ? `10px 0` : ""},
+          }>
           <div
-            style={ReactDOMStyle.make(
-              ~marginBottom="5px",
-              ~fontSize=themeObj.fontSizeLg,
-              ~opacity="0.6",
-              (),
-            )}>
+            style={
+              marginBottom: "5px",
+              fontSize: themeObj.fontSizeLg,
+              opacity: "0.6",
+            }>
             {React.string(localeString.billingDetailsText)}
           </div>
           <div
@@ -566,6 +564,8 @@ let make = (
                     }}
                   </div>
                 | CountryAndPincode(countryArr) =>
+                  let updatedCountryArray =
+                    countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
                     <DropdownField
                       appearance=config.appearance
@@ -573,7 +573,7 @@ let make = (
                       value=country
                       setValue={setCountry}
                       disabled=false
-                      options=countryArr
+                      options=updatedCountryArray
                       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
                     />
                     <PaymentField
@@ -709,31 +709,37 @@ let make = (
                   />
                 | BlikCode => <BlikCodePaymentInput />
                 | Country =>
+                  let updatedCountryNames =
+                    countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
                     setValue=setCountry
                     disabled=false
-                    options=countryNames
+                    options=updatedCountryNames
                   />
                 | AddressCountry(countryArr) =>
+                  let updatedCountryArr =
+                    countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
                     setValue=setCountry
                     disabled=false
-                    options=countryArr
+                    options=updatedCountryArr
                   />
                 | Bank =>
+                  let updatedBankNames =
+                    bankNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.bankLabel
                     value=selectedBank
                     setValue=setSelectedBank
                     disabled=false
-                    options=bankNames
+                    options=updatedBankNames
                   />
                 | SpecialField(element) => element
                 | InfoElement =>

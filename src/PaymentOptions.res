@@ -13,24 +13,23 @@ module TabLoader = {
         <div
           className={`Tab flex flex-col gap-3 animate-pulse cursor-default`}
           key={i->Belt.Int.toString}
-          style={ReactDOMStyle.make(
-            ~minWidth="5rem",
-            ~overflowWrap="hidden",
-            ~width="100%",
-            ~padding=themeObj.spacingUnit,
-            ~cursor="pointer",
-            (),
-          )}>
+          style={
+            minWidth: "5rem",
+            overflowWrap: "hidden",
+            width: "100%",
+            padding: themeObj.spacingUnit,
+            cursor: "pointer",
+          }>
           <Shimmer classname="opacity-50 w-1/3">
             <div
               className="w-full h-3 animate-pulse"
-              style={ReactDOMStyle.make(~backgroundColor=themeObj.colorPrimary, ~opacity="10%", ())}
+              style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
             />
           </Shimmer>
           <Shimmer classname="opacity-50">
             <div
               className="w-full h-2 animate-pulse"
-              style={ReactDOMStyle.make(~backgroundColor=themeObj.colorPrimary, ~opacity="10%", ())}
+              style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
             />
           </Shimmer>
         </div>
@@ -109,14 +108,13 @@ let make = (
     <div
       ref={payOptionsRef->ReactDOM.Ref.domRef}
       className="flex flex-row overflow-auto no-scrollbar"
-      style={ReactDOMStyle.make(
-        ~columnGap=themeObj.spacingTab,
-        ~marginBottom=themeObj.spacingGridColumn,
-        ~paddingBottom="7px",
-        ~padding="4px",
-        ~height="auto",
-        (),
-      )}>
+      style={
+        columnGap: themeObj.spacingTab,
+        marginBottom: themeObj.spacingGridColumn,
+        paddingBottom: "7px",
+        padding: "4px",
+        height: "auto",
+      }>
       {cardOptionDetails
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
@@ -147,17 +145,16 @@ let make = (
             className={`TabMore place-items-start outline-none`}
             onChange=handleChange
             disabled=readOnly
-            style={ReactDOMStyle.make(
-              ~width="40px",
-              ~paddingLeft=themeObj.spacingUnit,
-              ~background=themeObj.colorBackground,
-              ~cursor="pointer",
-              ~height="inherit",
-              ~borderRadius=themeObj.borderRadius,
-              ~appearance="none",
-              ~color="transparent",
-              (),
-            )}>
+            style={
+              width: "40px",
+              paddingLeft: themeObj.spacingUnit,
+              background: themeObj.colorBackground,
+              cursor: "pointer",
+              height: "inherit",
+              borderRadius: themeObj.borderRadius,
+              appearance: "none",
+              color: "transparent",
+            }>
             <option value=selectedPaymentOption.paymentMethodName disabled={true}>
               {React.string(
                 selectedPaymentOption.displayName === "Card"
@@ -178,7 +175,7 @@ let make = (
               <option
                 key={Int.toString(i)}
                 value=item.paymentMethodName
-                style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}>
+                style={color: themeObj.colorPrimary}>
                 {React.string(
                   item.displayName === "card"
                     ? localeString.card

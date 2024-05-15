@@ -6,8 +6,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
-const BundleAnalyzerPlugin =
-  require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
+const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 
 const sdkEnv = process.env.sdkEnv ?? "local";
@@ -20,8 +19,7 @@ let repoVersion = require("./package.json").version;
 let majorVersion = "v" + repoVersion.split(".")[0];
 
 let repoName = require("./package.json").name;
-let repoPublicPath =
-  sdkEnv === "local" ? "" : `/${repoVersion}/${majorVersion}`;
+let repoPublicPath = sdkEnv === "local" ? "" : `/${repoVersion}/${majorVersion}`;
 
 let sdkUrl;
 
@@ -102,22 +100,22 @@ module.exports = (publicPath = "auto") => {
       publicPath: `${repoPublicPath}/`,
     },
     // TODO - Can be commented for faster build in local development
-    optimization: {
-      sideEffects: true,
-      minimize: true,
-      minimizer: [
-        new TerserPlugin({
-          terserOptions: {
-            compress: {
-              drop_console: false,
-            },
-          },
-        }),
-        // For webpack@5 you can use the `...` syntax to extend existing minimizers (i.e. `terser-webpack-plugin`), uncomment the next line
-        // `...`,
-        // new CssMinimizerPlugin(),
-      ],
-    },
+    // optimization: {
+    //   sideEffects: true,
+    //   minimize: true,
+    //   minimizer: [
+    //     new TerserPlugin({
+    //       terserOptions: {
+    //         compress: {
+    //           drop_console: false,
+    //         },
+    //       },
+    //     }),
+    //     // For webpack@5 you can use the `...` syntax to extend existing minimizers (i.e. `terser-webpack-plugin`), uncomment the next line
+    //     // `...`,
+    //     // new CssMinimizerPlugin(),
+    //   ],
+    // },
     plugins: [
       new MiniCssExtractPlugin(),
       new CopyPlugin({
@@ -160,18 +158,18 @@ module.exports = (publicPath = "auto") => {
       //   publicPath: JSON.stringify(repoVersion),
       // }),
       // TODO - Can be commented if sentry not needed.
-      sentryWebpackPlugin({
-        org: "sentry",
-        project: "hyperswitch-react-sdk",
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-        url: process.env.SENTRY_URL,
-        release: {
-          name: "0.2",
-          uploadLegacySourcemaps: {
-            paths: ["dist"],
-          },
-        },
-      }),
+      // sentryWebpackPlugin({
+      //   org: "sentry",
+      //   project: "hyperswitch-react-sdk",
+      //   authToken: process.env.SENTRY_AUTH_TOKEN,
+      //   url: process.env.SENTRY_URL,
+      //   release: {
+      //     name: "0.2",
+      //     uploadLegacySourcemaps: {
+      //       paths: ["dist"],
+      //     },
+      //   },
+      // }),
     ],
     module: {
       rules: [

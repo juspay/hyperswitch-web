@@ -31,9 +31,8 @@ let userEmailAddress = Recoil.atom("userEmailAddress", defaultFieldValues)
 let userPhoneNumber = Recoil.atom(
   "userPhoneNumber",
   {
-    value: "+351 ",
-    isValid: None,
-    errorString: "",
+    ...defaultFieldValues,
+    countryCode: "",
   },
 )
 let isGooglePayReady = Recoil.atom("isGooglePayReady", false)

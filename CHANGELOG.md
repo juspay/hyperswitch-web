@@ -1,3 +1,54 @@
+# [0.51.0](https://github.com/juspay/hyperswitch-web/compare/v0.50.14...v0.51.0) (2024-05-10)
+
+
+### Features
+
+* phone country dropdown added ([#270](https://github.com/juspay/hyperswitch-web/issues/270)) ([f6a945c](https://github.com/juspay/hyperswitch-web/commit/f6a945c238b28f69ded4062ff851170f5ee0a590))
+
+## [0.50.14](https://github.com/juspay/hyperswitch-web/compare/v0.50.13...v0.50.14) (2024-05-10)
+
+
+### Bug Fixes
+
+* apple_pay sdk pay now button ([#365](https://github.com/juspay/hyperswitch-web/issues/365)) ([dd1bb0f](https://github.com/juspay/hyperswitch-web/commit/dd1bb0f4399db175f8140fd4236b8aa25a02737c))
+
+## [0.50.13](https://github.com/juspay/hyperswitch-web/compare/v0.50.12...v0.50.13) (2024-05-10)
+
+
+### Bug Fixes
+
+* paynow button fix for required fields ([#364](https://github.com/juspay/hyperswitch-web/issues/364)) ([0d8f1f7](https://github.com/juspay/hyperswitch-web/commit/0d8f1f76cadd8030b15af38669e5a038d1ddfd3b))
+
+## [0.50.12](https://github.com/juspay/hyperswitch-web/compare/v0.50.11...v0.50.12) (2024-05-10)
+
+
+### Bug Fixes
+
+* card brand configuration error added ([#362](https://github.com/juspay/hyperswitch-web/issues/362)) ([f14c591](https://github.com/juspay/hyperswitch-web/commit/f14c591e91717af35c4cda9db2e19bc0d180dd9d))
+
+## [0.50.11](https://github.com/juspay/hyperswitch-web/compare/v0.50.10...v0.50.11) (2024-05-10)
+
+## [0.50.10](https://github.com/juspay/hyperswitch-web/compare/v0.50.9...v0.50.10) (2024-05-10)
+
+
+### Bug Fixes
+
+* api-endpoint-url fix for custom backend url ([#357](https://github.com/juspay/hyperswitch-web/issues/357)) ([494a815](https://github.com/juspay/hyperswitch-web/commit/494a815fdf68b944e9fd3076163fbbacc3d3f2ed))
+
+## [0.50.9](https://github.com/juspay/hyperswitch-web/compare/v0.50.8...v0.50.9) (2024-05-08)
+
+
+### Bug Fixes
+
+* isthirdpartyflow fix ([#360](https://github.com/juspay/hyperswitch-web/issues/360)) ([2b19175](https://github.com/juspay/hyperswitch-web/commit/2b19175d6680525d50d03a6e3b042804ce8b8953))
+
+## [0.50.8](https://github.com/juspay/hyperswitch-web/compare/v0.50.7...v0.50.8) (2024-05-08)
+
+
+### Bug Fixes
+
+* dropdown error even when first option is selected ([#356](https://github.com/juspay/hyperswitch-web/issues/356)) ([3e7b007](https://github.com/juspay/hyperswitch-web/commit/3e7b0071b8db132c901cbc0a7fc44f6ef13349d8))
+
 ## [0.50.6](https://github.com/juspay/hyperswitch-web/compare/v0.50.5...v0.50.6) (2024-05-07)
 
 ## [0.50.5](https://github.com/juspay/hyperswitch-web/compare/v0.50.4...v0.50.5) (2024-05-06)

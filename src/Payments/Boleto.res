@@ -86,9 +86,7 @@ let make = (~paymentType: CardThemeType.mode) => {
     }
   }
 
-  <div
-    className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+  <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <PaymentInputField
       fieldName=localeString.socialSecurityNumberLabel
       value=socialSecurityNumber

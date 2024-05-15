@@ -65,30 +65,29 @@ let make = (
     <button
       className={`PickerItem ${pickerItemClass} flex flex-row items-stretch`}
       type_="button"
-      style={ReactDOMStyle.make(
-        ~minWidth="150px",
-        ~width="100%",
-        ~padding="1rem 0 1rem 0",
-        ~cursor="pointer",
-        ~borderBottom=index == savedCardlength - 1 ? "0px" : `1px solid ${themeObj.borderColor}`,
-        ~borderTop="none",
-        ~borderLeft="none",
-        ~borderRight="none",
-        ~borderRadius="0px",
-        ~background="transparent",
-        ~color=themeObj.colorTextSecondary,
-        ~boxShadow="none",
-        ~opacity={isCardExpired ? "0.7" : "1"},
-        (),
-      )}
+      style={
+        minWidth: "150px",
+        width: "100%",
+        padding: "1rem 0 1rem 0",
+        cursor: "pointer",
+        borderBottom: index == savedCardlength - 1 ? "0px" : `1px solid ${themeObj.borderColor}`,
+        borderTop: "none",
+        borderLeft: "none",
+        borderRight: "none",
+        borderRadius: "0px",
+        background: "transparent",
+        color: themeObj.colorTextSecondary,
+        boxShadow: "none",
+        opacity: {isCardExpired ? "0.7" : "1"},
+      }
       onClick={_ => setPaymentToken(_ => (paymentItem.paymentToken, paymentItem.customerId))}>
       <div className="w-full">
         <div>
           <div className="flex flex-row justify-between items-center">
             <div
               className={`flex flex-row justify-center items-center`}
-              style={ReactDOMStyle.make(~columnGap=themeObj.spacingUnit, ())}>
-              <div style={ReactDOMStyle.make(~color=isActive ? themeObj.colorPrimary : "", ())}>
+              style={columnGap: themeObj.spacingUnit}>
+              <div style={color: isActive ? themeObj.colorPrimary : ""}>
                 <Radio
                   checked=isActive
                   height="18px"
@@ -112,11 +111,7 @@ let make = (
                       </div>
                     : <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>}
                   <RenderIf condition={paymentItem.defaultPaymentMethodSet}>
-                    <Icon
-                      size=18
-                      name="checkmark"
-                      style={ReactDOMStyle.make(~color=themeObj.colorPrimary, ())}
-                    />
+                    <Icon size=18 name="checkmark" style={color: themeObj.colorPrimary} />
                   </RenderIf>
                 </div>
               </div>
@@ -124,7 +119,7 @@ let make = (
             <RenderIf condition={isCard}>
               <div
                 className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
+                style={fontSize: "14px", opacity: "0.5"}>
                 <div className="flex">
                   {React.string(`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
                 </div>
@@ -136,7 +131,7 @@ let make = (
               <RenderIf condition={isActive && isRenderCvv}>
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
-                  style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.5", ())}>
+                  style={fontSize: "14px", opacity: "0.5"}>
                   <div className="w-12 mt-6"> {React.string("CVC: ")} </div>
                   <div
                     className={`flex h mx-4 justify-start w-16 ${isActive
@@ -163,9 +158,7 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf condition={isCardExpired}>
-                <div
-                  className="italic mt-3 ml-1"
-                  style={ReactDOMStyle.make(~fontSize="14px", ~opacity="0.7", ())}>
+                <div className="italic mt-3 ml-1" style={fontSize: "14px", opacity: "0.7"}>
                   {`*${localeString.cardExpiredText}`->React.string}
                 </div>
               </RenderIf>

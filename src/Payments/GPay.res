@@ -79,6 +79,12 @@ let make = (
     )
   }
 
+  UtilityHooks.useHandlePostMessages(
+    ~complete=areRequiredFieldsValid,
+    ~empty=areRequiredFieldsEmpty,
+    ~paymentType="google_pay",
+  )
+
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
       let json = try {
@@ -277,7 +283,7 @@ let make = (
     isWallet
       ? <RenderIf condition={isRenderGooglePayButton}>
           <div
-            style={ReactDOMStyle.make(~height=`${height->Belt.Int.toString}px`, ())}
+            style={height: `${height->Belt.Int.toString}px`}
             id="google-pay-button"
             className={`w-full flex flex-row justify-center rounded-md`}
           />

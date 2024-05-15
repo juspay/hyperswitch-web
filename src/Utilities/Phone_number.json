@@ -2,6 +2,8 @@
   "countries": [
     {
       "country_code": "AF",
+      "country_name": "Afghanistan",
+      "country_flag": "🇦🇫",
       "phone_number_code": "+93",
       "validation_regex": "^(\\+?93)?\\d{9}$",
       "format_example": "0701234567",
@@ -9,6 +11,8 @@
     },
     {
       "country_code": "AL",
+      "country_name": "Albania",
+      "country_flag": "🇦🇱",
       "phone_number_code": "+355",
       "validation_regex": "^(\\+?355|0)6[789]\\d{7}$",
       "format_example": "0671234567",
@@ -16,6 +20,8 @@
     },
     {
       "country_code": "DZ",
+      "country_name": "Algeria",
+      "country_flag": "🇩🇿",
       "phone_number_code": "+213",
       "validation_regex": "^(\\+?213|0)(5|6|7)\\d{8}$",
       "format_example": "0551234567",
@@ -23,6 +29,8 @@
     },
     {
       "country_code": "AD",
+      "country_name": "Andorra",
+      "country_flag": "🇦🇩",
       "phone_number_code": "+376",
       "validation_regex": "^(\\+?376)?\\d{6}$",
       "format_example": "612345",
@@ -30,6 +38,8 @@
     },
     {
       "country_code": "AO",
+      "country_name": "Angola",
+      "country_flag": "🇦🇴",
       "phone_number_code": "+244",
       "validation_regex": "^(\\+?244)\\d{9}$",
       "format_example": "923123456",
@@ -37,6 +47,8 @@
     },
     {
       "country_code": "AG",
+      "country_name": "Antigua and Barbuda",
+      "country_flag": "🇦🇬",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?268\\d{7}$",
       "format_example": "(268) 123-4567",
@@ -44,6 +56,8 @@
     },
     {
       "country_code": "AR",
+      "country_name": "Argentina",
+      "country_flag": "🇦🇷",
       "phone_number_code": "+54",
       "validation_regex": "^(\\+?54)?9?(11|2\\d|3[0-9])\\d{8}$",
       "format_example": "91123456789",
@@ -51,6 +65,8 @@
     },
     {
       "country_code": "AM",
+      "country_name": "Armenia",
+      "country_flag": "🇦🇲",
       "phone_number_code": "+374",
       "validation_regex": "^(\\+?374)?(10|55|77|93)\\d{6}$",
       "format_example": "091123456",
@@ -58,6 +74,8 @@
     },
     {
       "country_code": "AU",
+      "country_name": "Australia",
+      "country_flag": "🇦🇺",
       "phone_number_code": "+61",
       "validation_regex": "^(\\+?61|0)[2-478](?!11)\\d{8}$",
       "format_example": "0412345678",
@@ -65,6 +83,8 @@
     },
     {
       "country_code": "AT",
+      "country_name": "Austria",
+      "country_flag": "🇦🇹",
       "phone_number_code": "+43",
       "validation_regex": "^(\\+?43|0)\\d{4,5}\\d{4,}$",
       "format_example": "06641234567",
@@ -72,6 +92,8 @@
     },
     {
       "country_code": "AZ",
+      "country_name": "Azerbaijan",
+      "country_flag": "🇦🇿",
       "phone_number_code": "+994",
       "validation_regex": "^(\\+?994|0)5\\d{8}$",
       "format_example": "0501234567",
@@ -79,6 +101,8 @@
     },
     {
       "country_code": "BS",
+      "country_name": "Bahamas",
+      "country_flag": "🇧🇸",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?242\\d{7}$",
       "format_example": "(242) 123-4567",
@@ -86,6 +110,8 @@
     },
     {
       "country_code": "BH",
+      "country_name": "Bahrain",
+      "country_flag": "🇧🇭",
       "phone_number_code": "+973",
       "validation_regex": "^(\\+?973)?\\d{8}$",
       "format_example": "34567890",
@@ -93,6 +119,8 @@
     },
     {
       "country_code": "BD",
+      "country_name": "Bangladesh",
+      "country_flag": "🇧🇩",
       "phone_number_code": "+880",
       "validation_regex": "^(\\+?880|0)1[13456789][0-9]{8}$",
       "format_example": "01712345678",
@@ -100,6 +128,8 @@
     },
     {
       "country_code": "BB",
+      "country_name": "Barbados",
+      "country_flag": "🇧🇧",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?246\\d{7}$",
       "format_example": "(246) 123-4567",
@@ -107,6 +137,8 @@
     },
     {
       "country_code": "BY",
+      "country_name": "Belarus",
+      "country_flag": "🇧🇾",
       "phone_number_code": "+375",
       "validation_regex": "^(\\+?375)(24|25|29|33|44)\\d{7}$",
       "format_example": "291234567",
@@ -114,6 +146,8 @@
     },
     {
       "country_code": "BE",
+      "country_name": "Belgium",
+      "country_flag": "🇧🇪",
       "phone_number_code": "+32",
       "validation_regex": "^(\\+?32|0)\\d{8,9}$",
       "format_example": "0470123456",
@@ -121,6 +155,8 @@
     },
     {
       "country_code": "BZ",
+      "country_name": "Belize",
+      "country_flag": "🇧🇿",
       "phone_number_code": "+501",
       "validation_regex": "^(\\+?501)?\\d{7}$",
       "format_example": "6101234",
@@ -128,6 +164,8 @@
     },
     {
       "country_code": "BJ",
+      "country_name": "Benin",
+      "country_flag": "🇧🇯",
       "phone_number_code": "+229",
       "validation_regex": "^(\\+?229)?\\d{8}$",
       "format_example": "90123456",
@@ -135,6 +173,8 @@
     },
     {
       "country_code": "BT",
+      "country_name": "Bhutan",
+      "country_flag": "🇧🇹",
       "phone_number_code": "+975",
       "validation_regex": "^(\\+?975)?\\d{7}$",
       "format_example": "17123456",
@@ -142,6 +182,8 @@
     },
     {
       "country_code": "BO",
+      "country_name": "Bolivia",
+      "country_flag": "🇧🇴",
       "phone_number_code": "+591",
       "validation_regex": "^(\\+?591)?([2679]\\d{7,8}|[1-5]\\d{1,7})$",
       "format_example": "71234567",
@@ -149,6 +191,8 @@
     },
     {
       "country_code": "BA",
+      "country_name": "Bosnia and Herzegovina",
+      "country_flag": "🇧🇦",
       "phone_number_code": "+387",
       "validation_regex": "^(\\+?387|0)6[0-6]\\d{6}$",
       "format_example": "061234567",
@@ -156,6 +200,8 @@
     },
     {
       "country_code": "BW",
+      "country_name": "Botswana",
+      "country_flag": "🇧🇼",
       "phone_number_code": "+267",
       "validation_regex": "^(\\+?267)?\\d{7}$",
       "format_example": "71123456",
@@ -163,6 +209,8 @@
     },
     {
       "country_code": "BR",
+      "country_name": "Brazil",
+      "country_flag": "🇧🇷",
       "phone_number_code": "+55",
       "validation_regex": "^(\\+?55|0[1-9]{2})[2-9]\\d{7,8}$",
       "format_example": "01123456789",
@@ -170,6 +218,8 @@
     },
     {
       "country_code": "BN",
+      "country_name": "Brunei",
+      "country_flag": "🇧🇳",
       "phone_number_code": "+673",
       "validation_regex": "^(\\+?673)?\\d{7}$",
       "format_example": "7123456",
@@ -177,6 +227,8 @@
     },
     {
       "country_code": "BG",
+      "country_name": "Bulgaria",
+      "country_flag": "🇧🇬",
       "phone_number_code": "+359",
       "validation_regex": "^(\\+?359|0)8[789]\\d{7}$",
       "format_example": "0888123456",
@@ -184,6 +236,8 @@
     },
     {
       "country_code": "BF",
+      "country_name": "Burkina Faso",
+      "country_flag": "🇧🇫",
       "phone_number_code": "+226",
       "validation_regex": "^(\\+?226)?\\d{8}$",
       "format_example": "70123456",
@@ -191,6 +245,8 @@
     },
     {
       "country_code": "BI",
+      "country_name": "Burundi",
+      "country_flag": "🇧🇮",
       "phone_number_code": "+257",
       "validation_regex": "^(\\+?257)?\\d{8}$",
       "format_example": "79123456",
@@ -198,6 +254,8 @@
     },
     {
       "country_code": "KH",
+      "country_name": "Cambodia",
+      "country_flag": "🇰🇭",
       "phone_number_code": "+855",
       "validation_regex": "^(\\+?855|0)1\\d{8}$",
       "format_example": "091234567",
@@ -205,6 +263,8 @@
     },
     {
       "country_code": "CM",
+      "country_name": "Cameroon",
+      "country_flag": "🇨🇲",
       "phone_number_code": "+237",
       "validation_regex": "^(\\+?237)?[2368]\\d{7,8}$",
       "format_example": "671234567",
@@ -212,6 +272,8 @@
     },
     {
       "country_code": "CA",
+      "country_name": "Canada",
+      "country_flag": "🇨🇦",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?[2-9]\\d{2}[2-9](?!11)\\d{6}$",
       "format_example": "(123) 456-7890",
@@ -219,6 +281,8 @@
     },
     {
       "country_code": "CV",
+      "country_name": "Cape Verde",
+      "country_flag": "🇨🇻",
       "phone_number_code": "+238",
       "validation_regex": "^(\\+?238)?\\d{7}$",
       "format_example": "9912345",
@@ -226,6 +290,8 @@
     },
     {
       "country_code": "CF",
+      "country_name": "Central African Republic",
+      "country_flag": "🇨🇫",
       "phone_number_code": "+236",
       "validation_regex": "^(\\+?236)?\\d{8}$",
       "format_example": "70123456",
@@ -233,6 +299,8 @@
     },
     {
       "country_code": "TD",
+      "country_name": "Chad",
+      "country_flag": "🇹🇩",
       "phone_number_code": "+235",
       "validation_regex": "^(\\+?235)?\\d{6}$",
       "format_example": "66123456",
@@ -240,6 +308,8 @@
     },
     {
       "country_code": "CL",
+      "country_name": "Chile",
+      "country_flag": "🇨🇱",
       "phone_number_code": "+56",
       "validation_regex": "^(\\+?56|0)[2-9]\\d{1}\\d{7}$",
       "format_example": "091234567",
@@ -247,6 +317,8 @@
     },
     {
       "country_code": "CN",
+      "country_name": "China",
+      "country_flag": "🇨🇳",
       "phone_number_code": "+86",
       "validation_regex": "^(\\+?86)?1[345789]\\d{9}$",
       "format_example": "13812345678",
@@ -254,6 +326,8 @@
     },
     {
       "country_code": "CO",
+      "country_name": "Colombia",
+      "country_flag": "🇨🇴",
       "phone_number_code": "+57",
       "validation_regex": "^(\\+?57)?[1-8]\\d{7,10}$",
       "format_example": "3212345678",
@@ -261,6 +335,8 @@
     },
     {
       "country_code": "KM",
+      "country_name": "Comoros",
+      "country_flag": "🇰🇲",
       "phone_number_code": "+269",
       "validation_regex": "^(\\+?269|0)3\\d{6}$",
       "format_example": "3212345",
@@ -268,6 +344,8 @@
     },
     {
       "country_code": "CG",
+      "country_name": "Congo - Brazzaville",
+      "country_flag": "🇨🇬",
       "phone_number_code": "+242",
       "validation_regex": "^(\\+?242)?\\d{6}$",
       "format_example": "06123456",
@@ -275,6 +353,8 @@
     },
     {
       "country_code": "CD",
+      "country_name": "Congo - Kinshasa",
+      "country_flag": "🇨🇩",
       "phone_number_code": "+243",
       "validation_regex": "^(\\+?243)?\\d{9}$",
       "format_example": "081234567",
@@ -282,6 +362,8 @@
     },
     {
       "country_code": "CR",
+      "country_name": "Costa Rica",
+      "country_flag": "🇨🇷",
       "phone_number_code": "+506",
       "validation_regex": "^(\\+?506)?[24578]\\d{7}$",
       "format_example": "83123456",
@@ -289,6 +371,8 @@
     },
     {
       "country_code": "HR",
+      "country_name": "Croatia",
+      "country_flag": "🇭🇷",
       "phone_number_code": "+385",
       "validation_regex": "^(\\+?385|0)9\\d{8}$",
       "format_example": "0912345678",
@@ -296,6 +380,8 @@
     },
     {
       "country_code": "CU",
+      "country_name": "Cuba",
+      "country_flag": "🇨🇺",
       "phone_number_code": "+53",
       "validation_regex": "^(\\+?53)?5[2-9]\\d{7}$",
       "format_example": "5281234567",
@@ -303,6 +389,8 @@
     },
     {
       "country_code": "CY",
+      "country_name": "Cyprus",
+      "country_flag": "🇨🇾",
       "phone_number_code": "+357",
       "validation_regex": "^(\\+?357|0)9\\d{7}$",
       "format_example": "96123456",
@@ -310,6 +398,8 @@
     },
     {
       "country_code": "CZ",
+      "country_name": "Czech Republic",
+      "country_flag": "🇨🇿",
       "phone_number_code": "+420",
       "validation_regex": "^(\\+?420)?[26789]\\d{8}$",
       "format_example": "601123456",
@@ -317,6 +407,8 @@
     },
     {
       "country_code": "CI",
+      "country_name": "Côte d'Ivoire",
+      "country_flag": "🇨🇮",
       "phone_number_code": "+225",
       "validation_regex": "^(\\+?225)?\\d{8}$",
       "format_example": "01234567",
@@ -324,6 +416,8 @@
     },
     {
       "country_code": "DK",
+      "country_name": "Denmark",
+      "country_flag": "🇩🇰",
       "phone_number_code": "+45",
       "validation_regex": "^(\\+?45)?\\d{8}$",
       "format_example": "12345678",
@@ -331,6 +425,8 @@
     },
     {
       "country_code": "DJ",
+      "country_name": "Djibouti",
+      "country_flag": "🇩🇯",
       "phone_number_code": "+253",
       "validation_regex": "^(\\+?253)?\\d{6}$",
       "format_example": "77123456",
@@ -338,6 +434,8 @@
     },
     {
       "country_code": "DM",
+      "country_name": "Dominica",
+      "country_flag": "🇩🇲",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?767\\d{7}$",
       "format_example": "(767) 123-4567",
@@ -345,6 +443,8 @@
     },
     {
       "country_code": "DO",
+      "country_name": "Dominican Republic",
+      "country_flag": "🇩🇴",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?809\\d{7}$",
       "format_example": "(809) 123-4567",
@@ -352,6 +452,8 @@
     },
     {
       "country_code": "TL",
+      "country_name": "East Timor",
+      "country_flag": "🇹🇱",
       "phone_number_code": "+670",
       "validation_regex": "^(\\+?670)?\\d{7}$",
       "format_example": "7721234",
@@ -359,6 +461,8 @@
     },
     {
       "country_code": "EC",
+      "country_name": "Ecuador",
+      "country_flag": "🇪🇨",
       "phone_number_code": "+593",
       "validation_regex": "^(\\+?593|0)([2-7]|9[2-9])\\d{7}$",
       "format_example": "091234567",
@@ -366,6 +470,8 @@
     },
     {
       "country_code": "EG",
+      "country_name": "Egypt",
+      "country_flag": "🇪🇬",
       "phone_number_code": "+20",
       "validation_regex": "^(\\+?20|0)1[0-2]\\d{8}$",
       "format_example": "01012345678",
@@ -373,6 +479,8 @@
     },
     {
       "country_code": "SV",
+      "country_name": "El Salvador",
+      "country_flag": "🇸🇻",
       "phone_number_code": "+503",
       "validation_regex": "^(\\+?503)?[67]\\d{7}$",
       "format_example": "70123456",
@@ -380,6 +488,8 @@
     },
     {
       "country_code": "GQ",
+      "country_name": "Equatorial Guinea",
+      "country_flag": "🇬🇶",
       "phone_number_code": "+240",
       "validation_regex": "^(\\+?240)?\\d{6}$",
       "format_example": "222123456",
@@ -387,6 +497,8 @@
     },
     {
       "country_code": "ER",
+      "country_name": "Eritrea",
+      "country_flag": "🇪🇷",
       "phone_number_code": "+291",
       "validation_regex": "^(\\+?291)?\\d{7}$",
       "format_example": "07123456",
@@ -394,6 +506,8 @@
     },
     {
       "country_code": "EE",
+      "country_name": "Estonia",
+      "country_flag": "🇪🇪",
       "phone_number_code": "+372",
       "validation_regex": "^(\\+?372)?\\d{7}$",
       "format_example": "51234567",
@@ -401,6 +515,8 @@
     },
     {
       "country_code": "ET",
+      "country_name": "Ethiopia",
+      "country_flag": "🇪🇹",
       "phone_number_code": "+251",
       "validation_regex": "^(\\+?251|0)9\\d{8}$",
       "format_example": "0911234567",
@@ -408,6 +524,8 @@
     },
     {
       "country_code": "FK",
+      "country_name": "Falkland Islands",
+      "country_flag": "🇫🇰",
       "phone_number_code": "+500",
       "validation_regex": "^(\\+?500)?\\d{5}$",
       "format_example": "51234",
@@ -415,6 +533,8 @@
     },
     {
       "country_code": "FO",
+      "country_name": "Faroe Islands",
+      "country_flag": "🇫🇴",
       "phone_number_code": "+298",
       "validation_regex": "^(\\+?298)?\\d{6}$",
       "format_example": "211234",
@@ -422,6 +542,8 @@
     },
     {
       "country_code": "FJ",
+      "country_name": "Fiji",
+      "country_flag": "🇫🇯",
       "phone_number_code": "+679",
       "validation_regex": "^(\\+?679)?\\d{7}$",
       "format_example": "7012345",
@@ -429,6 +551,8 @@
     },
     {
       "country_code": "FI",
+      "country_name": "Finland",
+      "country_flag": "🇫🇮",
       "phone_number_code": "+358",
       "validation_regex": "^(\\+?358|0)4\\d{8}$",
       "format_example": "0412345678",
@@ -436,6 +560,8 @@
     },
     {
       "country_code": "FR",
+      "country_name": "France",
+      "country_flag": "🇫🇷",
       "phone_number_code": "+33",
       "validation_regex": "^(\\+?33|0)[67]\\d{8}$",
       "format_example": "0612345678",
@@ -443,6 +569,8 @@
     },
     {
       "country_code": "GF",
+      "country_name": "French Guiana",
+      "country_flag": "🇬🇫",
       "phone_number_code": "+594",
       "validation_regex": "^(\\+?594|0)6\\d{8}$",
       "format_example": "0691234567",
@@ -450,6 +578,8 @@
     },
     {
       "country_code": "PF",
+      "country_name": "French Polynesia",
+      "country_flag": "🇵🇫",
       "phone_number_code": "+689",
       "validation_regex": "^(\\+?689)\\d{6}$",
       "format_example": "401234",
@@ -457,6 +587,8 @@
     },
     {
       "country_code": "GA",
+      "country_name": "Gabon",
+      "country_flag": "🇬🇦",
       "phone_number_code": "+241",
       "validation_regex": "^(\\+?241)?\\d{6}$",
       "format_example": "06123456",
@@ -464,6 +596,8 @@
     },
     {
       "country_code": "GM",
+      "country_name": "Gambia",
+      "country_flag": "🇬🇲",
       "phone_number_code": "+220",
       "validation_regex": "^(\\+?220)?\\d{7}$",
       "format_example": "3012345",
@@ -471,6 +605,8 @@
     },
     {
       "country_code": "GE",
+      "country_name": "Georgia",
+      "country_flag": "🇬🇪",
       "phone_number_code": "+995",
       "validation_regex": "^(\\+?995|0)5\\d{8}$",
       "format_example": "599123456",
@@ -478,6 +614,8 @@
     },
     {
       "country_code": "DE",
+      "country_name": "Germany",
+      "country_flag": "🇩🇪",
       "phone_number_code": "+49",
       "validation_regex": "^(\\+?49|0)(\\d{2,4}-?\\d{2,12})$",
       "format_example": "030 12345678",
@@ -485,6 +623,8 @@
     },
     {
       "country_code": "GH",
+      "country_name": "Ghana",
+      "country_flag": "🇬🇭",
       "phone_number_code": "+233",
       "validation_regex": "^(\\+?233|0)([236]-?\\d{7,9}|[45]\\d{8})$",
       "format_example": "0241234567",
@@ -492,6 +632,8 @@
     },
     {
       "country_code": "GI",
+      "country_name": "Gibraltar",
+      "country_flag": "🇬🇮",
       "phone_number_code": "+350",
       "validation_regex": "^(\\+?350)?\\d{8}$",
       "format_example": "57123456",
@@ -499,6 +641,8 @@
     },
     {
       "country_code": "GR",
+      "country_name": "Greece",
+      "country_flag": "🇬🇷",
       "phone_number_code": "+30",
       "validation_regex": "^(\\+?30|0)6\\d{9}$",
       "format_example": "6912345678",
@@ -506,6 +650,8 @@
     },
     {
       "country_code": "GL",
+      "country_name": "Greenland",
+      "country_flag": "🇬🇱",
       "phone_number_code": "+299",
       "validation_regex": "^(\\+?299)?\\d{6}$",
       "format_example": "221234",
@@ -513,6 +659,8 @@
     },
     {
       "country_code": "GD",
+      "country_name": "Grenada",
+      "country_flag": "🇬🇩",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?473\\d{7}$",
       "format_example": "(473) 123-4567",
@@ -520,6 +668,8 @@
     },
     {
       "country_code": "GP",
+      "country_name": "Guadeloupe",
+      "country_flag": "🇬🇵",
       "phone_number_code": "+590",
       "validation_regex": "^(\\+?590|0)690\\d{6}$",
       "format_example": "0690123456",
@@ -527,6 +677,8 @@
     },
     {
       "country_code": "GT",
+      "country_name": "Guatemala",
+      "country_flag": "🇬🇹",
       "phone_number_code": "+502",
       "validation_regex": "^(\\+?502)?[24568]\\d{7}$",
       "format_example": "50123456",
@@ -534,6 +686,8 @@
     },
     {
       "country_code": "GG",
+      "country_name": "Guernsey",
+      "country_flag": "🇬🇬",
       "phone_number_code": "+44",
       "validation_regex": "^(\\+?44|0)1481\\d{6}$",
       "format_example": "01481123456",
@@ -541,6 +695,8 @@
     },
     {
       "country_code": "GN",
+      "country_name": "Guinea",
+      "country_flag": "🇬🇳",
       "phone_number_code": "+224",
       "validation_regex": "^(\\+?224)\\d{8}$",
       "format_example": "601123456",
@@ -548,6 +704,8 @@
     },
     {
       "country_code": "GW",
+      "country_name": "Guinea-Bissau",
+      "country_flag": "🇬🇼",
       "phone_number_code": "+245",
       "validation_regex": "^(\\+?245)\\d{7}$",
       "format_example": "5512345",
@@ -555,6 +713,8 @@
     },
     {
       "country_code": "GY",
+      "country_name": "Guyana",
+      "country_flag": "🇬🇾",
       "phone_number_code": "+592",
       "validation_regex": "^(\\+?592)\\d{6}$",
       "format_example": "6123456",
@@ -562,6 +722,8 @@
     },
     {
       "country_code": "HT",
+      "country_name": "Haiti",
+      "country_flag": "🇭🇹",
       "phone_number_code": "+509",
       "validation_regex": "^(\\+?509)?[2-9]\\d{7}$",
       "format_example": "34123456",
@@ -569,6 +731,8 @@
     },
     {
       "country_code": "HN",
+      "country_name": "Honduras",
+      "country_flag": "🇭🇳",
       "phone_number_code": "+504",
       "validation_regex": "^(\\+?504)?[78]\\d{7}$",
       "format_example": "97123456",
@@ -576,6 +740,8 @@
     },
     {
       "country_code": "HK",
+      "country_name": "Hong Kong SAR China",
+      "country_flag": "🇭🇰",
       "phone_number_code": "+852",
       "validation_regex": "^(\\+?852)?[569]\\d{3}\\d{4}$",
       "format_example": "9123 4567",
@@ -583,6 +749,8 @@
     },
     {
       "country_code": "HU",
+      "country_name": "Hungary",
+      "country_flag": "🇭🇺",
       "phone_number_code": "+36",
       "validation_regex": "^(\\+?36)(20|30|70)\\d{7}$",
       "format_example": "201234567",
@@ -590,6 +758,8 @@
     },
     {
       "country_code": "IS",
+      "country_name": "Iceland",
+      "country_flag": "🇮🇸",
       "phone_number_code": "+354",
       "validation_regex": "^(\\+?354)?\\d{7}$",
       "format_example": "6112345",
@@ -597,6 +767,8 @@
     },
     {
       "country_code": "IN",
+      "country_name": "India",
+      "country_flag": "🇮🇳",
       "phone_number_code": "+91",
       "validation_regex": "^(\\+?91|0)?[6789]\\d{9}$",
       "format_example": "9123456789",
@@ -604,6 +776,8 @@
     },
     {
       "country_code": "ID",
+      "country_name": "Indonesia",
+      "country_flag": "🇮🇩",
       "phone_number_code": "+62",
       "validation_regex": "^(\\+?62|0)[2-9]\\d{7,11}$",
       "format_example": "08123456789",
@@ -611,6 +785,8 @@
     },
     {
       "country_code": "IR",
+      "country_name": "Iran",
+      "country_flag": "🇮🇷",
       "phone_number_code": "+98",
       "validation_regex": "^(\\+?98|0)9\\d{9}$",
       "format_example": "09123456789",
@@ -618,6 +794,8 @@
     },
     {
       "country_code": "IQ",
+      "country_name": "Iraq",
+      "country_flag": "🇮🇶",
       "phone_number_code": "+964",
       "validation_regex": "^(\\+?964|0)7[0-9]\\d{8}$",
       "format_example": "07912345678",
@@ -625,6 +803,8 @@
     },
     {
       "country_code": "IE",
+      "country_name": "Ireland",
+      "country_flag": "🇮🇪",
       "phone_number_code": "+353",
       "validation_regex": "^(\\+?353|0)\\d{8,9}$",
       "format_example": "0871234567",
@@ -632,6 +812,8 @@
     },
     {
       "country_code": "IM",
+      "country_name": "Isle of Man",
+      "country_flag": "🇮🇲",
       "phone_number_code": "+44",
       "validation_regex": "^(\\+?44|0)1624\\d{6}$",
       "format_example": "01624 123456",
@@ -639,6 +821,8 @@
     },
     {
       "country_code": "IL",
+      "country_name": "Israel",
+      "country_flag": "🇮🇱",
       "phone_number_code": "+972",
       "validation_regex": "^(\\+?972|0)([23489]|5[0248]|77)[1-9]\\d{6}$",
       "format_example": "0501234567",
@@ -646,6 +830,8 @@
     },
     {
       "country_code": "IT",
+      "country_name": "Italy",
+      "country_flag": "🇮🇹",
       "phone_number_code": "+39",
       "validation_regex": "^(\\+?39)?\\d{10}$",
       "format_example": "3123456789",
@@ -653,6 +839,8 @@
     },
     {
       "country_code": "JM",
+      "country_name": "Jamaica",
+      "country_flag": "🇯🇲",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?876\\d{7}$",
       "format_example": "(876) 123-4567",
@@ -660,6 +848,8 @@
     },
     {
       "country_code": "JP",
+      "country_name": "Japan",
+      "country_flag": "🇯🇵",
       "phone_number_code": "+81",
       "validation_regex": "^(\\+?81|0)\\d{1,4}-?\\d{1,4}-?\\d{4}$",
       "format_example": "090-1234-5678",
@@ -667,6 +857,8 @@
     },
     {
       "country_code": "JE",
+      "country_name": "Jersey",
+      "country_flag": "🇯🇪",
       "phone_number_code": "+44",
       "validation_regex": "^(\\+?44|0)1534\\d{6}$",
       "format_example": "01534 123456",
@@ -674,6 +866,8 @@
     },
     {
       "country_code": "JO",
+      "country_name": "Jordan",
+      "country_flag": "🇯🇴",
       "phone_number_code": "+962",
       "validation_regex": "^(\\+?962|0)7[789]\\d{7}$",
       "format_example": "0791234567",
@@ -681,6 +875,8 @@
     },
     {
       "country_code": "KZ",
+      "country_name": "Kazakhstan",
+      "country_flag": "🇰🇿",
       "phone_number_code": "+7",
       "validation_regex": "^(\\+?7|8)7\\d{9}$",
       "format_example": "87771234567",
@@ -688,6 +884,8 @@
     },
     {
       "country_code": "KE",
+      "country_name": "Kenya",
+      "country_flag": "🇰🇪",
       "phone_number_code": "+254",
       "validation_regex": "^(\\+?254|0)7\\d{8}$",
       "format_example": "0712345678",
@@ -695,6 +893,8 @@
     },
     {
       "country_code": "KI",
+      "country_name": "Kiribati",
+      "country_flag": "🇰🇮",
       "phone_number_code": "+686",
       "validation_regex": "^(\\+?686)?\\d{5}$",
       "format_example": "90123",
@@ -702,6 +902,8 @@
     },
     {
       "country_code": "KW",
+      "country_name": "Kuwait",
+      "country_flag": "🇰🇼",
       "phone_number_code": "+965",
       "validation_regex": "^(\\+?965)?\\d{8}$",
       "format_example": "51234567",
@@ -709,6 +911,8 @@
     },
     {
       "country_code": "KG",
+      "country_name": "Kyrgyzstan",
+      "country_flag": "🇰🇬",
       "phone_number_code": "+996",
       "validation_regex": "^(\\+?996)?\\d{9}$",
       "format_example": "0700123456",
@@ -716,6 +920,8 @@
     },
     {
       "country_code": "LA",
+      "country_name": "Laos",
+      "country_flag": "🇱🇦",
       "phone_number_code": "+856",
       "validation_regex": "^(\\+?856|0)20\\d{8}$",
       "format_example": "020 12345678",
@@ -723,6 +929,8 @@
     },
     {
       "country_code": "LV",
+      "country_name": "Latvia",
+      "country_flag": "🇱🇻",
       "phone_number_code": "+371",
       "validation_regex": "^(\\+?371)2\\d{7}$",
       "format_example": "21234567",
@@ -730,6 +938,8 @@
     },
     {
       "country_code": "LB",
+      "country_name": "Lebanon",
+      "country_flag": "🇱🇧",
       "phone_number_code": "+961",
       "validation_regex": "^(\\+?961|0)3\\d{7}$",
       "format_example": "03123456",
@@ -737,6 +947,8 @@
     },
     {
       "country_code": "LS",
+      "country_name": "Lesotho",
+      "country_flag": "🇱🇸",
       "phone_number_code": "+266",
       "validation_regex": "^(\\+?266)?\\d{8}$",
       "format_example": "50123456",
@@ -744,6 +956,8 @@
     },
     {
       "country_code": "LR",
+      "country_name": "Liberia",
+      "country_flag": "🇱🇷",
       "phone_number_code": "+231",
       "validation_regex": "^(\\+?231)[56]\\d{7}$",
       "format_example": "65123456",
@@ -751,6 +965,8 @@
     },
     {
       "country_code": "LY",
+      "country_name": "Libya",
+      "country_flag": "🇱🇾",
       "phone_number_code": "+218",
       "validation_regex": "^(\\+?218|0)9\\d{8}$",
       "format_example": "0912345678",
@@ -758,6 +974,8 @@
     },
     {
       "country_code": "LI",
+      "country_name": "Liechtenstein",
+      "country_flag": "🇱🇮",
       "phone_number_code": "+423",
       "validation_regex": "^(\\+?423)?\\d{7}$",
       "format_example": "6612345",
@@ -765,6 +983,8 @@
     },
     {
       "country_code": "LT",
+      "country_name": "Lithuania",
+      "country_flag": "🇱🇹",
       "phone_number_code": "+370",
       "validation_regex": "^(\\+?370)\\d{8}$",
       "format_example": "61234567",
@@ -772,6 +992,8 @@
     },
     {
       "country_code": "LU",
+      "country_name": "Luxembourg",
+      "country_flag": "🇱🇺",
       "phone_number_code": "+352",
       "validation_regex": "^(\\+?352)\\d{6}$",
       "format_example": "621123456",
@@ -779,6 +1001,8 @@
     },
     {
       "country_code": "MO",
+      "country_name": "Macau SAR China",
+      "country_flag": "🇲🇴",
       "phone_number_code": "+853",
       "validation_regex": "^(\\+?853)?6\\d{7}$",
       "format_example": "66123456",
@@ -786,6 +1010,8 @@
     },
     {
       "country_code": "MK",
+      "country_name": "Macedonia",
+      "country_flag": "🇲🇰",
       "phone_number_code": "+389",
       "validation_regex": "^(\\+?389)7\\d{8}$",
       "format_example": "071234567",
@@ -793,6 +1019,8 @@
     },
     {
       "country_code": "MG",
+      "country_name": "Madagascar",
+      "country_flag": "🇲🇬",
       "phone_number_code": "+261",
       "validation_regex": "^(\\+?261)?3[2-9]\\d{7}$",
       "format_example": "0321234567",
@@ -800,6 +1028,8 @@
     },
     {
       "country_code": "MW",
+      "country_name": "Malawi",
+      "country_flag": "🇲🇼",
       "phone_number_code": "+265",
       "validation_regex": "^(\\+?265)\\d{8}$",
       "format_example": "991234567",
@@ -807,6 +1037,8 @@
     },
     {
       "country_code": "MY",
+      "country_name": "Malaysia",
+      "country_flag": "🇲🇾",
       "phone_number_code": "+60",
       "validation_regex": "^(\\+?60|0)([3467-9]|1[2-5789])\\d{7,9}$",
       "format_example": "012-3456789",
@@ -814,6 +1046,8 @@
     },
     {
       "country_code": "MV",
+      "country_name": "Maldives",
+      "country_flag": "🇲🇻",
       "phone_number_code": "+960",
       "validation_regex": "^(\\+?960)?\\d{7}$",
       "format_example": "7712345",
@@ -821,6 +1055,8 @@
     },
     {
       "country_code": "ML",
+      "country_name": "Mali",
+      "country_flag": "🇲🇱",
       "phone_number_code": "+223",
       "validation_regex": "^(\\+?223)[67]\\d{7}$",
       "format_example": "65123456",
@@ -828,6 +1064,8 @@
     },
     {
       "country_code": "MT",
+      "country_name": "Malta",
+      "country_flag": "🇲🇹",
       "phone_number_code": "+356",
       "validation_regex": "^(\\+?356)?[79]\\d{7}$",
       "format_example": "79012345",
@@ -835,6 +1073,8 @@
     },
     {
       "country_code": "MH",
+      "country_name": "Marshall Islands",
+      "country_flag": "🇲🇭",
       "phone_number_code": "+692",
       "validation_regex": "^(\\+?692)?\\d{7}$",
       "format_example": "2351234",
@@ -842,6 +1082,8 @@
     },
     {
       "country_code": "MQ",
+      "country_name": "Martinique",
+      "country_flag": "🇲🇶",
       "phone_number_code": "+596",
       "validation_regex": "^(\\+?596|0)696\\d{6}$",
       "format_example": "0696123456",
@@ -849,6 +1091,8 @@
     },
     {
       "country_code": "MR",
+      "country_name": "Mauritania",
+      "country_flag": "🇲🇷",
       "phone_number_code": "+222",
       "validation_regex": "^(\\+?222)?\\d{6}$",
       "format_example": "22123456",
@@ -856,6 +1100,8 @@
     },
     {
       "country_code": "MU",
+      "country_name": "Mauritius",
+      "country_flag": "🇲🇺",
       "phone_number_code": "+230",
       "validation_regex": "^(\\+?230)?\\d{7}$",
       "format_example": "51234567",
@@ -863,6 +1109,8 @@
     },
     {
       "country_code": "YT",
+      "country_name": "Mayotte",
+      "country_flag": "🇾🇹",
       "phone_number_code": "+262",
       "validation_regex": "^(\\+?262|0)639\\d{6}$",
       "format_example": "0639123456",
@@ -870,6 +1118,8 @@
     },
     {
       "country_code": "MX",
+      "country_name": "Mexico",
+      "country_flag": "🇲🇽",
       "phone_number_code": "+52",
       "validation_regex": "^(\\+?52|01)?[1-9]\\d{9}$",
       "format_example": "5512345678",
@@ -877,6 +1127,8 @@
     },
     {
       "country_code": "MD",
+      "country_name": "Moldova",
+      "country_flag": "🇲🇩",
       "phone_number_code": "+373",
       "validation_regex": "^(\\+?373|0)(6[369]|\\d{2})\\d{6}$",
       "format_example": "062123456",
@@ -884,6 +1136,8 @@
     },
     {
       "country_code": "MC",
+      "country_name": "Monaco",
+      "country_flag": "🇲🇨",
       "phone_number_code": "+377",
       "validation_regex": "^(\\+?377)\\d{8}$",
       "format_example": "61234567",
@@ -891,6 +1145,8 @@
     },
     {
       "country_code": "MN",
+      "country_name": "Mongolia",
+      "country_flag": "🇲🇳",
       "phone_number_code": "+976",
       "validation_regex": "^(\\+?976)?\\d{8}$",
       "format_example": "88123456",
@@ -898,6 +1154,8 @@
     },
     {
       "country_code": "ME",
+      "country_name": "Montenegro",
+      "country_flag": "🇲🇪",
       "phone_number_code": "+382",
       "validation_regex": "^(\\+?382|0)6[0-6]\\d{6}$",
       "format_example": "067123456",
@@ -905,6 +1163,8 @@
     },
     {
       "country_code": "MS",
+      "country_name": "Montserrat",
+      "country_flag": "🇲🇸",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?664\\d{7}$",
       "format_example": "(664) 123-4567",
@@ -912,6 +1172,8 @@
     },
     {
       "country_code": "MA",
+      "country_name": "Morocco",
+      "country_flag": "🇲🇦",
       "phone_number_code": "+212",
       "validation_regex": "^(\\+?212|0)\\d{9}$",
       "format_example": "0612345678",
@@ -919,6 +1181,8 @@
     },
     {
       "country_code": "MZ",
+      "country_name": "Mozambique",
+      "country_flag": "🇲🇿",
       "phone_number_code": "+258",
       "validation_regex": "^(\\+?258)?[28]\\d{7,8}$",
       "format_example": "821234567",
@@ -926,6 +1190,8 @@
     },
     {
       "country_code": "MM",
+      "country_name": "Myanmar (Burma)",
+      "country_flag": "🇲🇲",
       "phone_number_code": "+95",
       "validation_regex": "^(\\+?95|0)\\d{9}$",
       "format_example": "0912345678",
@@ -933,6 +1199,8 @@
     },
     {
       "country_code": "NA",
+      "country_name": "Namibia",
+      "country_flag": "🇳🇦",
       "phone_number_code": "+264",
       "validation_regex": "^(\\+?264|0)\\d{8,9}$",
       "format_example": "0811234567",
@@ -940,6 +1208,8 @@
     },
     {
       "country_code": "NR",
+      "country_name": "Nauru",
+      "country_flag": "🇳🇷",
       "phone_number_code": "+674",
       "validation_regex": "^(\\+?674)\\d{5}$",
       "format_example": "5551234",
@@ -947,6 +1217,8 @@
     },
     {
       "country_code": "NP",
+      "country_name": "Nepal",
+      "country_flag": "🇳🇵",
       "phone_number_code": "+977",
       "validation_regex": "^(\\+?977)?9[78]\\d{8}$",
       "format_example": "9812345678",
@@ -954,6 +1226,8 @@
     },
     {
       "country_code": "NL",
+      "country_name": "Netherlands",
+      "country_flag": "🇳🇱",
       "phone_number_code": "+31",
       "validation_regex": "^(\\+?31|0)6\\d{8}$",
       "format_example": "0612345678",
@@ -961,6 +1235,8 @@
     },
     {
       "country_code": "NC",
+      "country_name": "New Caledonia",
+      "country_flag": "🇳🇨",
       "phone_number_code": "+687",
       "validation_regex": "^(\\+?687)\\d{6}$",
       "format_example": "751234",
@@ -968,6 +1244,8 @@
     },
     {
       "country_code": "NZ",
+      "country_name": "New Zealand",
+      "country_flag": "🇳🇿",
       "phone_number_code": "+64",
       "validation_regex": "^(\\+?64|0)2\\d{7,9}$",
       "format_example": "021123456",
@@ -975,6 +1253,8 @@
     },
     {
       "country_code": "NI",
+      "country_name": "Nicaragua",
+      "country_flag": "🇳🇮",
       "phone_number_code": "+505",
       "validation_regex": "^(\\+?505)\\d{8}$",
       "format_example": "81234567",
@@ -982,6 +1262,8 @@
     },
     {
       "country_code": "NE",
+      "country_name": "Niger",
+      "country_flag": "🇳🇪",
       "phone_number_code": "+227",
       "validation_regex": "^(\\+?227)[25-7]\\d{7}$",
       "format_example": "92123456",
@@ -989,6 +1271,8 @@
     },
     {
       "country_code": "NG",
+      "country_name": "Nigeria",
+      "country_flag": "🇳🇬",
       "phone_number_code": "+234",
       "validation_regex": "^(\\+?234)[7-9]\\d{9}$",
       "format_example": "08123456789",
@@ -996,6 +1280,8 @@
     },
     {
       "country_code": "NU",
+      "country_name": "Niue",
+      "country_flag": "🇳🇺",
       "phone_number_code": "+683",
       "validation_regex": "^(\\+?683)\\d{4}$",
       "format_example": "4012",
@@ -1003,6 +1289,8 @@
     },
     {
       "country_code": "NF",
+      "country_name": "Norfolk Island",
+      "country_flag": "🇳🇫",
       "phone_number_code": "+672",
       "validation_regex": "^(\\+?672)3\\d{3}$",
       "format_example": "3123",
@@ -1010,6 +1298,8 @@
     },
     {
       "country_code": "KP",
+      "country_name": "North Korea",
+      "country_flag": "🇰🇵",
       "phone_number_code": "+850",
       "validation_regex": "^(\\+?850)?\\d{8}$",
       "format_example": "1921234567",
@@ -1017,6 +1307,8 @@
     },
     {
       "country_code": "MP",
+      "country_name": "Northern Mariana Islands",
+      "country_flag": "🇲🇵",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?670\\d{7}$",
       "format_example": "(670) 123-4567",
@@ -1024,6 +1316,8 @@
     },
     {
       "country_code": "NO",
+      "country_name": "Norway",
+      "country_flag": "🇳🇴",
       "phone_number_code": "+47",
       "validation_regex": "^(\\+?47)?[29]\\d{7}$",
       "format_example": "912 34 567",
@@ -1031,6 +1325,8 @@
     },
     {
       "country_code": "OM",
+      "country_name": "Oman",
+      "country_flag": "🇴🇲",
       "phone_number_code": "+968",
       "validation_regex": "^(\\+?968)?9\\d{7}$",
       "format_example": "91234567",
@@ -1038,6 +1334,8 @@
     },
     {
       "country_code": "PK",
+      "country_name": "Pakistan",
+      "country_flag": "🇵🇰",
       "phone_number_code": "+92",
       "validation_regex": "^(\\+?92|0)3\\d{9}$",
       "format_example": "03123456789",
@@ -1045,6 +1343,8 @@
     },
     {
       "country_code": "PW",
+      "country_name": "Palau",
+      "country_flag": "🇵🇼",
       "phone_number_code": "+680",
       "validation_regex": "^(\\+?680)?\\d{7}$",
       "format_example": "6201234",
@@ -1052,6 +1352,8 @@
     },
     {
       "country_code": "PS",
+      "country_name": "Palestinian Territories",
+      "country_flag": "🇵🇸",
       "phone_number_code": "+970",
       "validation_regex": "^(\\+?970)5[02-9]\\d{7}$",
       "format_example": "0599123456",
@@ -1059,6 +1361,8 @@
     },
     {
       "country_code": "PA",
+      "country_name": "Panama",
+      "country_flag": "🇵🇦",
       "phone_number_code": "+507",
       "validation_regex": "^(\\+?507)\\d{7,8}$",
       "format_example": "61234567",
@@ -1066,6 +1370,8 @@
     },
     {
       "country_code": "PG",
+      "country_name": "Papua New Guinea",
+      "country_flag": "🇵🇬",
       "phone_number_code": "+675",
       "validation_regex": "^(\\+?675)\\d{7}$",
       "format_example": "70123456",
@@ -1073,6 +1379,8 @@
     },
     {
       "country_code": "PY",
+      "country_name": "Paraguay",
+      "country_flag": "🇵🇾",
       "phone_number_code": "+595",
       "validation_regex": "^(\\+?595|0)9[678]\\d{7}$",
       "format_example": "0986123456",
@@ -1080,6 +1388,8 @@
     },
     {
       "country_code": "PE",
+      "country_name": "Peru",
+      "country_flag": "🇵🇪",
       "phone_number_code": "+51",
       "validation_regex": "^(\\+?51|0)9\\d{8}$",
       "format_example": "912345678",
@@ -1087,6 +1397,8 @@
     },
     {
       "country_code": "PH",
+      "country_name": "Philippines",
+      "country_flag": "🇵🇭",
       "phone_number_code": "+63",
       "validation_regex": "^(\\+?63|0)\\d{10}$",
       "format_example": "09123456789",
@@ -1094,6 +1406,8 @@
     },
     {
       "country_code": "PN",
+      "country_name": "Pitcairn Islands",
+      "country_flag": "🇵🇳",
       "phone_number_code": "+870",
       "validation_regex": "^(\\+?870)\\d{8}$",
       "format_example": "51234567",
@@ -1101,6 +1415,8 @@
     },
     {
       "country_code": "PL",
+      "country_name": "Poland",
+      "country_flag": "🇵🇱",
       "phone_number_code": "+48",
       "validation_regex": "^(\\+?48)?[5-8]\\d{8}$",
       "format_example": "512345678",
@@ -1108,6 +1424,8 @@
     },
     {
       "country_code": "PT",
+      "country_name": "Portugal",
+      "country_flag": "🇵🇹",
       "phone_number_code": "+351",
       "validation_regex": "^(\\+?351)?9[1236]\\d{7}$",
       "format_example": "912345678",
@@ -1115,6 +1433,8 @@
     },
     {
       "country_code": "PR",
+      "country_name": "Puerto Rico",
+      "country_flag": "🇵🇷",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?787\\d{7}$",
       "format_example": "(787) 123-4567",
@@ -1122,6 +1442,8 @@
     },
     {
       "country_code": "QA",
+      "country_name": "Qatar",
+      "country_flag": "🇶🇦",
       "phone_number_code": "+974",
       "validation_regex": "^(\\+?974)?\\d{8}$",
       "format_example": "33123456",
@@ -1129,6 +1451,8 @@
     },
     {
       "country_code": "RE",
+      "country_name": "Réunion",
+      "country_flag": "🇷🇪",
       "phone_number_code": "+262",
       "validation_regex": "^(\\+?262|0)6\\d{8}$",
       "format_example": "0692123456",
@@ -1136,6 +1460,8 @@
     },
     {
       "country_code": "RO",
+      "country_name": "Romania",
+      "country_flag": "🇷🇴",
       "phone_number_code": "+40",
       "validation_regex": "^(\\+?40|0)7[2-8]\\d{7}$",
       "format_example": "0712345678",
@@ -1143,6 +1469,8 @@
     },
     {
       "country_code": "RU",
+      "country_name": "Russia",
+      "country_flag": "🇷🇺",
       "phone_number_code": "+7",
       "validation_regex": "^(\\+?7|8)9\\d{9}$",
       "format_example": "9123456789",
@@ -1150,6 +1478,8 @@
     },
     {
       "country_code": "RW",
+      "country_name": "Rwanda",
+      "country_flag": "🇷🇼",
       "phone_number_code": "+250",
       "validation_regex": "^(\\+?250)\\d{9}$",
       "format_example": "0781234567",
@@ -1157,6 +1487,8 @@
     },
     {
       "country_code": "BL",
+      "country_name": "Saint Barthélemy",
+      "country_flag": "🇧🇱",
       "phone_number_code": "+590",
       "validation_regex": "^(\\+?590|0)690\\d{6}$",
       "format_example": "0690123456",
@@ -1164,6 +1496,8 @@
     },
     {
       "country_code": "SH",
+      "country_name": "Saint Helena",
+      "country_flag": "🇸🇭",
       "phone_number_code": "+290",
       "validation_regex": "^(\\+?290)\\d{4}$",
       "format_example": "5123",
@@ -1171,6 +1505,8 @@
     },
     {
       "country_code": "KN",
+      "country_name": "Saint Kitts and Nevis",
+      "country_flag": "🇰🇳",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?869\\d{7}$",
       "format_example": "(869) 123-4567",
@@ -1178,6 +1514,8 @@
     },
     {
       "country_code": "LC",
+      "country_name": "Saint Lucia",
+      "country_flag": "🇱🇨",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?758\\d{7}$",
       "format_example": "(758) 123-4567",
@@ -1185,6 +1523,8 @@
     },
     {
       "country_code": "MF",
+      "country_name": "Saint Martin",
+      "country_flag": "🇲🇫",
       "phone_number_code": "+590",
       "validation_regex": "^(\\+?590|0)696\\d{6}$",
       "format_example": "0696123456",
@@ -1192,6 +1532,8 @@
     },
     {
       "country_code": "PM",
+      "country_name": "Saint Pierre and Miquelon",
+      "country_flag": "🇵🇲",
       "phone_number_code": "+508",
       "validation_regex": "^(\\+?508)\\d{6}$",
       "format_example": "551234",
@@ -1199,13 +1541,18 @@
     },
     {
       "country_code": "VC",
+      "country_name": "Saint Vincent and the Grenadines",
+      "country_flag": "🇻🇨",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?784\\d{7}$",
       "format_example": "(784) 123-4567",
       "format_regex": "^\\(\\d{3}\\) \\d{3}-\\d{4}$"
     },
+
     {
       "country_code": "WS",
+      "country_name": "Samoa",
+      "country_flag": "🇼🇸",
       "phone_number_code": "+685",
       "validation_regex": "^(\\+?685)\\d{6}$",
       "format_example": "601234",
@@ -1213,6 +1560,8 @@
     },
     {
       "country_code": "SM",
+      "country_name": "San Marino",
+      "country_flag": "🇸🇲",
       "phone_number_code": "+378",
       "validation_regex": "^(\\+?378)\\d{5,11}$",
       "format_example": "666123456",
@@ -1220,6 +1569,8 @@
     },
     {
       "country_code": "ST",
+      "country_name": "São Tomé and Príncipe",
+      "country_flag": "🇸🇹",
       "phone_number_code": "+239",
       "validation_regex": "^(\\+?239)\\d{7}$",
       "format_example": "9812345",
@@ -1227,6 +1578,8 @@
     },
     {
       "country_code": "SA",
+      "country_name": "Saudi Arabia",
+      "country_flag": "🇸🇦",
       "phone_number_code": "+966",
       "validation_regex": "^(\\+?966|0)(5(0|[5-9])|[67]\\d)\\d{7}$",
       "format_example": "0501234567",
@@ -1234,6 +1587,8 @@
     },
     {
       "country_code": "SN",
+      "country_name": "Senegal",
+      "country_flag": "🇸🇳",
       "phone_number_code": "+221",
       "validation_regex": "^(\\+?221)[4679]\\d{7}$",
       "format_example": "701234567",
@@ -1241,6 +1596,8 @@
     },
     {
       "country_code": "RS",
+      "country_name": "Serbia",
+      "country_flag": "🇷🇸",
       "phone_number_code": "+381",
       "validation_regex": "^(\\+?3816|0)\\d{7,9}$",
       "format_example": "601234567",
@@ -1248,6 +1605,8 @@
     },
     {
       "country_code": "SC",
+      "country_name": "Seychelles",
+      "country_flag": "🇸🇨",
       "phone_number_code": "+248",
       "validation_regex": "^(\\+?248)\\d{6}$",
       "format_example": "2512345",
@@ -1255,6 +1614,8 @@
     },
     {
       "country_code": "SL",
+      "country_name": "Sierra Leone",
+      "country_flag": "🇸🇱",
       "phone_number_code": "+232",
       "validation_regex": "^(\\+?232)\\d{8}$",
       "format_example": "076123456",
@@ -1262,6 +1623,8 @@
     },
     {
       "country_code": "SG",
+      "country_name": "Singapore",
+      "country_flag": "🇸🇬",
       "phone_number_code": "+65",
       "validation_regex": "^(\\+?65)?[689]\\d{7}$",
       "format_example": "91234567",
@@ -1269,6 +1632,8 @@
     },
     {
       "country_code": "SX",
+      "country_name": "Sint Maarten",
+      "country_flag": "🇸🇽",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?721\\d{7}$",
       "format_example": "(721) 123-4567",
@@ -1276,6 +1641,8 @@
     },
     {
       "country_code": "SK",
+      "country_name": "Slovakia",
+      "country_flag": "🇸🇰",
       "phone_number_code": "+421",
       "validation_regex": "^(\\+?421)?9\\d{8}$",
       "format_example": "0912345678",
@@ -1283,6 +1650,8 @@
     },
     {
       "country_code": "SI",
+      "country_name": "Slovenia",
+      "country_flag": "🇸🇮",
       "phone_number_code": "+386",
       "validation_regex": "^(\\+?386)\\d{8}$",
       "format_example": "03123456",
@@ -1290,6 +1659,8 @@
     },
     {
       "country_code": "SB",
+      "country_name": "Solomon Islands",
+      "country_flag": "🇸🇧",
       "phone_number_code": "+677",
       "validation_regex": "^(\\+?677)\\d{5}$",
       "format_example": "50123",
@@ -1297,6 +1668,8 @@
     },
     {
       "country_code": "SO",
+      "country_name": "Somalia",
+      "country_flag": "🇸🇴",
       "phone_number_code": "+252",
       "validation_regex": "^(\\+?252)\\d{7,8}$",
       "format_example": "71234567",
@@ -1304,6 +1677,8 @@
     },
     {
       "country_code": "ZA",
+      "country_name": "South Africa",
+      "country_flag": "🇿🇦",
       "phone_number_code": "+27",
       "validation_regex": "^(\\+?27|0)\\d{9}$",
       "format_example": "0712345678",
@@ -1311,6 +1686,8 @@
     },
     {
       "country_code": "GS",
+      "country_name": "South Georgia & South Sandwich Islands",
+      "country_flag": "🇬🇸",
       "phone_number_code": "+500",
       "validation_regex": "^(\\+?500)\\d{4}$",
       "format_example": "51234",
@@ -1318,6 +1695,8 @@
     },
     {
       "country_code": "KR",
+      "country_name": "South Korea",
+      "country_flag": "🇰🇷",
       "phone_number_code": "+82",
       "validation_regex": "^(\\+?82|0)1\\d{9}$",
       "format_example": "01012345678",
@@ -1325,6 +1704,8 @@
     },
     {
       "country_code": "SS",
+      "country_name": "South Sudan",
+      "country_flag": "🇸🇸",
       "phone_number_code": "+211",
       "validation_regex": "^(\\+?211)?\\d{9}$",
       "format_example": "977123456",
@@ -1332,6 +1713,8 @@
     },
     {
       "country_code": "ES",
+      "country_name": "Spain",
+      "country_flag": "🇪🇸",
       "phone_number_code": "+34",
       "validation_regex": "^(\\+?34)?[6789]\\d{8}$",
       "format_example": "612345678",
@@ -1339,6 +1722,8 @@
     },
     {
       "country_code": "LK",
+      "country_name": "Sri Lanka",
+      "country_flag": "🇱🇰",
       "phone_number_code": "+94",
       "validation_regex": "^(\\+?94|0)[1-9]\\d{8}$",
       "format_example": "0712345678",
@@ -1346,6 +1731,8 @@
     },
     {
       "country_code": "SD",
+      "country_name": "Sudan",
+      "country_flag": "🇸🇩",
       "phone_number_code": "+249",
       "validation_regex": "^(\\+?249)\\d{9}$",
       "format_example": "0912345678",
@@ -1353,6 +1740,8 @@
     },
     {
       "country_code": "SR",
+      "country_name": "Suriname",
+      "country_flag": "🇸🇷",
       "phone_number_code": "+597",
       "validation_regex": "^(\\+?597)\\d{6}$",
       "format_example": "8512345",
@@ -1360,6 +1749,8 @@
     },
     {
       "country_code": "SJ",
+      "country_name": "Svalbard and Jan Mayen",
+      "country_flag": "🇸🇯",
       "phone_number_code": "+47",
       "validation_regex": "^(\\+?47)?[2489]\\d{7}$",
       "format_example": "91234567",
@@ -1367,6 +1758,8 @@
     },
     {
       "country_code": "SZ",
+      "country_name": "Swaziland",
+      "country_flag": "🇸🇿",
       "phone_number_code": "+268",
       "validation_regex": "^(\\+?268)\\d{7}$",
       "format_example": "76123456",
@@ -1374,6 +1767,8 @@
     },
     {
       "country_code": "SE",
+      "country_name": "Sweden",
+      "country_flag": "🇸🇪",
       "phone_number_code": "+46",
       "validation_regex": "^(\\+?46|0)7[02369]\\d{7}$",
       "format_example": "0701234567",
@@ -1381,6 +1776,8 @@
     },
     {
       "country_code": "CH",
+      "country_name": "Switzerland",
+      "country_flag": "🇨🇭",
       "phone_number_code": "+41",
       "validation_regex": "^(\\+?41|0)7[56789]\\d{7}$",
       "format_example": "0781234567",
@@ -1388,6 +1785,8 @@
     },
     {
       "country_code": "SY",
+      "country_name": "Syria",
+      "country_flag": "🇸🇾",
       "phone_number_code": "+963",
       "validation_regex": "^(\\+?963|0)9\\d{8}$",
       "format_example": "0912345678",
@@ -1395,6 +1794,8 @@
     },
     {
       "country_code": "TW",
+      "country_name": "Taiwan",
+      "country_flag": "🇹🇼",
       "phone_number_code": "+886",
       "validation_regex": "^(\\+?886\\-?|0)?9\\d{8}$",
       "format_example": "0912345678",
@@ -1402,6 +1803,8 @@
     },
     {
       "country_code": "TJ",
+      "country_name": "Tajikistan",
+      "country_flag": "🇹🇯",
       "phone_number_code": "+992",
       "validation_regex": "^(\\+?992\\-?)?[5-9]\\d{8}$",
       "format_example": "901234567",
@@ -1409,6 +1812,8 @@
     },
     {
       "country_code": "TZ",
+      "country_name": "Tanzania",
+      "country_flag": "🇹🇿",
       "phone_number_code": "+255",
       "validation_regex": "^(\\+?255)\\d{9}$",
       "format_example": "0712345678",
@@ -1416,6 +1821,8 @@
     },
     {
       "country_code": "TH",
+      "country_name": "Thailand",
+      "country_flag": "🇹🇭",
       "phone_number_code": "+66",
       "validation_regex": "^(\\+?66|0)\\d{8,9}$",
       "format_example": "0812345678",
@@ -1423,6 +1830,8 @@
     },
     {
       "country_code": "TG",
+      "country_name": "Togo",
+      "country_flag": "🇹🇬",
       "phone_number_code": "+228",
       "validation_regex": "^(\\+?228)\\d{8}$",
       "format_example": "90123456",
@@ -1430,6 +1839,8 @@
     },
     {
       "country_code": "TK",
+      "country_name": "Tokelau",
+      "country_flag": "🇹🇰",
       "phone_number_code": "+690",
       "validation_regex": "^(\\+?690)\\d{4}$",
       "format_example": "3123",
@@ -1437,6 +1848,8 @@
     },
     {
       "country_code": "TO",
+      "country_name": "Tonga",
+      "country_flag": "🇹🇴",
       "phone_number_code": "+676",
       "validation_regex": "^(\\+?676)\\d{5}$",
       "format_example": "20123",
@@ -1444,6 +1857,8 @@
     },
     {
       "country_code": "TT",
+      "country_name": "Trinidad and Tobago",
+      "country_flag": "🇹🇹",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?868\\d{7}$",
       "format_example": "(868) 123-4567",
@@ -1451,6 +1866,8 @@
     },
     {
       "country_code": "TN",
+      "country_name": "Tunisia",
+      "country_flag": "🇹🇳",
       "phone_number_code": "+216",
       "validation_regex": "^(\\+?216)?[2459]\\d{7}$",
       "format_example": "20123456",
@@ -1458,6 +1875,8 @@
     },
     {
       "country_code": "TR",
+      "country_name": "Turkey",
+      "country_flag": "🇹🇷",
       "phone_number_code": "+90",
       "validation_regex": "^(\\+?90|0)?5\\d{9}$",
       "format_example": "05321234567",
@@ -1465,6 +1884,8 @@
     },
     {
       "country_code": "TM",
+      "country_name": "Turkmenistan",
+      "country_flag": "🇹🇲",
       "phone_number_code": "+993",
       "validation_regex": "^(\\+?993\\-?)?\\d{7}$",
       "format_example": "6612345",
@@ -1472,6 +1893,8 @@
     },
     {
       "country_code": "TC",
+      "country_name": "Turks and Caicos Islands",
+      "country_flag": "🇹🇨",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?649\\d{7}$",
       "format_example": "(649) 123-4567",
@@ -1479,6 +1902,8 @@
     },
     {
       "country_code": "TV",
+      "country_name": "Tuvalu",
+      "country_flag": "🇹🇻",
       "phone_number_code": "+688",
       "validation_regex": "^(\\+?688)\\d{5}$",
       "format_example": "90123",
@@ -1486,6 +1911,8 @@
     },
     {
       "country_code": "UG",
+      "country_name": "Uganda",
+      "country_flag": "🇺🇬",
       "phone_number_code": "+256",
       "validation_regex": "^(\\+?256)\\d{9}$",
       "format_example": "0712345678",
@@ -1493,6 +1920,8 @@
     },
     {
       "country_code": "UA",
+      "country_name": "Ukraine",
+      "country_flag": "🇺🇦",
       "phone_number_code": "+380",
       "validation_regex": "^(\\+?380)\\d{9}$",
       "format_example": "0661234567",
@@ -1500,6 +1929,8 @@
     },
     {
       "country_code": "AE",
+      "country_name": "United Arab Emirates",
+      "country_flag": "🇦🇪",
       "phone_number_code": "+971",
       "validation_regex": "^(\\+?971|0)5[056-9]\\d{7}$",
       "format_example": "0501234567",
@@ -1507,6 +1938,8 @@
     },
     {
       "country_code": "GB",
+      "country_name": "United Kingdom",
+      "country_flag": "🇬🇧",
       "phone_number_code": "+44",
       "validation_regex": "^(\\+?44|0)7\\d{9}$",
       "format_example": "07123456789",
@@ -1514,6 +1947,8 @@
     },
     {
       "country_code": "US",
+      "country_name": "United States",
+      "country_flag": "🇺🇸",
       "phone_number_code": "+1",
       "validation_regex": "^(\\+?1)?[2-9]\\d{2}[2-9](?!11)\\d{6}$",
       "format_example": "(123) 456-7890",
@@ -1521,6 +1956,8 @@
     },
     {
       "country_code": "UY",
+      "country_name": "Uruguay",
+      "country_flag": "🇺🇾",
       "phone_number_code": "+598",
       "validation_regex": "^(\\+?598|0)9\\d{7}$",
       "format_example": "091234567",
@@ -1528,6 +1965,8 @@
     },
     {
       "country_code": "UZ",
+      "country_name": "Uzbekistan",
+      "country_flag": "🇺🇿",
       "phone_number_code": "+998",
       "validation_regex": "^(\\+?998\\-?)[13-79]\\d{7}$",
       "format_example": "901234567",
@@ -1535,6 +1974,8 @@
     },
     {
       "country_code": "VU",
+      "country_name": "Vanuatu",
+      "country_flag": "🇻🇺",
       "phone_number_code": "+678",
       "validation_regex": "^(\\+?678)\\d{5}$",
       "format_example": "59123",
@@ -1542,6 +1983,8 @@
     },
     {
       "country_code": "VE",
+      "country_name": "Venezuela",
+      "country_flag": "🇻🇪",
       "phone_number_code": "+58",
       "validation_regex": "^(\\+?58)?[41269]\\d{7}$",
       "format_example": "04121234567",
@@ -1549,6 +1992,8 @@
     },
     {
       "country_code": "VN",
+      "country_name": "Vietnam",
+      "country_flag": "🇻🇳",
       "phone_number_code": "+84",
       "validation_regex": "^(\\+?84|0)1\\d{9}$",
       "format_example": "0912345678",
@@ -1556,6 +2001,8 @@
     },
     {
       "country_code": "WF",
+      "country_name": "Wallis and Futuna",
+      "country_flag": "🇼🇫",
       "phone_number_code": "+681",
       "validation_regex": "^(\\+?681)\\d{6}$",
       "format_example": "501234",
@@ -1563,6 +2010,8 @@
     },
     {
       "country_code": "EH",
+      "country_name": "Western Sahara",
+      "country_flag": "🇪🇭",
       "phone_number_code": "+212",
       "validation_regex": "^(\\+?212)\\d{9}$",
       "format_example": "0651234567",
@@ -1570,6 +2019,8 @@
     },
     {
       "country_code": "YE",
+      "country_name": "Yemen",
+      "country_flag": "🇾🇪",
       "phone_number_code": "+967",
       "validation_regex": "^(\\+?967)?[12569]\\d{7}$",
       "format_example": "712345678",
@@ -1577,6 +2028,8 @@
     },
     {
       "country_code": "ZM",
+      "country_name": "Zambia",
+      "country_flag": "🇿🇲",
       "phone_number_code": "+260",
       "validation_regex": "^(\\+?260)\\d{9}$",
       "format_example": "0951234567",
@@ -1584,6 +2037,8 @@
     },
     {
       "country_code": "ZW",
+      "country_name": "Zimbabwe",
+      "country_flag": "🇿🇼",
       "phone_number_code": "+263",
       "validation_regex": "^(\\+?263)\\d{9}$",
       "format_example": "0712345678",

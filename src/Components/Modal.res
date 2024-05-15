@@ -46,24 +46,22 @@ let make = (
     </div>
   <div
     className="h-screen w-screen bg-black/40 flex m-auto items-center backdrop-blur-sm overflow-scroll"
-    style={ReactDOMStyle.make(
-      ~transition="opacity .35s ease .1s,background-color 600ms linear",
-      ~opacity=!openModal ? "0" : "100",
-      (),
-    )}>
+    style={
+      transition: "opacity .35s ease .1s,background-color 600ms linear",
+      opacity: !openModal ? "0" : "100",
+    }>
     {loaderUI}
     {<div
       className={`w-full h-full sm:h-auto sm:w-[55%] md:w-[45%] lg:w-[35%] xl:w-[32%] 2xl:w-[27%]  m-auto bg-white flex flex-col justify-start sm:justify-center px-5 pb-5 md:pb-6 pt-4 md:pt-7 rounded-none sm:rounded-md relative overflow-scroll ${animate}`}
-      style={ReactDOMStyle.make(
-        ~transition="opacity .35s ease .1s,transform .35s ease .1s,-webkit-transform .35s ease .1s",
-        ~opacity=!openModal ? "0" : "100",
-        ~backgroundColor={
+      style={
+        transition: "opacity .35s ease .1s,transform .35s ease .1s,-webkit-transform .35s ease .1s",
+        opacity: !openModal ? "0" : "100",
+        backgroundColor: {
           themeObj.colorBackground === "transparent"
             ? ""
             : themeObj.colorBackground->Utils.rgbaTorgb
         },
-        (),
-      )}>
+      }>
       <div className="absolute top-0 left-0 w-full flex flex-col">
         <RenderIf condition={testMode && !Window.isProd}>
           <div

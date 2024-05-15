@@ -74,6 +74,28 @@ let make = (
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
 
+  let combinedCardNetworks = React.useMemo1(() => {
+    let cardPaymentMethod =
+      paymentMethodListValue.payment_methods
+      ->Array.find(ele => ele.payment_method === "card")
+      ->Option.getOr({
+        payment_method: "card",
+        payment_method_types: [],
+      })
+
+    let cardNetworks = cardPaymentMethod.payment_method_types->Array.map(ele => ele.card_networks)
+
+    let cardNetworkNames =
+      cardNetworks->Array.map(ele =>
+        ele->Array.map(val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase)
+      )
+
+    cardNetworkNames
+    ->Array.reduce([], (acc, ele) => acc->Array.concat(ele))
+    ->Utils.getUniqueArray
+  }, [paymentMethodListValue])
+  let isCardBrandValid = combinedCardNetworks->Array.includes(cardBrand->String.toLowerCase)
+
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
@@ -165,8 +187,8 @@ let make = (
           setUserError(localeString.enterFieldsText)
         }
         if isCardSupported->Option.getOr(false)->not {
-          setCardError(_ => "Unsupported Card")
-          setUserError(localeString.enterFieldsText)
+          setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
+          setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
         }
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)
@@ -180,6 +202,7 @@ let make = (
     complete,
     isCustomerAcceptanceRequired,
     nickname,
+    isCardBrandValid,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -199,18 +222,15 @@ let make = (
 
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
-      <div
-        className="flex flex-col"
-        style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+      <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>
         <div className="w-full">
           <RenderIf condition={innerLayout === Compressed}>
             <div
-              style={ReactDOMStyle.make(
-                ~marginBottom="5px",
-                ~fontSize=themeObj.fontSizeLg,
-                ~opacity="0.6",
-                (),
-              )}>
+              style={
+                marginBottom: "5px",
+                fontSize: themeObj.fontSizeLg,
+                opacity: "0.6",
+              }>
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
@@ -236,13 +256,12 @@ let make = (
             />
             <div
               className="flex flex-row w-full place-content-between"
-              style={ReactDOMStyle.make(
-                ~marginTop={
+              style={
+                marginTop: {
                   innerLayout === Spaced ? themeObj.spacingGridColumn : ""
                 },
-                ~gridColumnGap={innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-                (),
-              )}>
+                gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
+              }>
               <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.validThruText
@@ -286,18 +305,18 @@ let make = (
               </div>
             </div>
             <RenderIf
-              condition={cardError->String.length > 0 ||
-              cvcError->String.length > 0 ||
-              expiryError->String.length > 0}>
+              condition={innerLayout === Compressed &&
+                (cardError->String.length > 0 ||
+                cvcError->String.length > 0 ||
+                expiryError->String.length > 0)}>
               <div
                 className="Error pt-1"
-                style={ReactDOMStyle.make(
-                  ~color=themeObj.colorDangerText,
-                  ~fontSize=themeObj.fontSizeSm,
-                  ~alignSelf="start",
-                  ~textAlign="left",
-                  (),
-                )}>
+                style={
+                  color: themeObj.colorDangerText,
+                  fontSize: themeObj.fontSizeSm,
+                  alignSelf: "start",
+                  textAlign: "left",
+                }>
                 {React.string("Invalid input")}
               </div>
             </RenderIf>
@@ -344,11 +363,10 @@ let make = (
       | (_, _, NEW_MANDATE) =>
         <div
           className="opacity-50 text-xs mb-2 text-left"
-          style={ReactDOMStyle.make(
-            ~color=themeObj.colorText,
-            ~marginTop=themeObj.spacingGridColumn,
-            (),
-          )}>
+          style={
+            color: themeObj.colorText,
+            marginTop: themeObj.spacingGridColumn,
+          }>
           <Terms mode={Card} />
         </div>
       | (_, _, _) => React.null

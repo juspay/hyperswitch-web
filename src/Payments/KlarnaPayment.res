@@ -16,7 +16,8 @@ let make = (~paymentType) => {
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
 
-  let countryNames = Utils.getCountryNames(Country.country)
+  let countryNames =
+    Utils.getCountryNames(Country.country)->DropdownField.updateArrayOfStringToOptionsTypeArray
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {
@@ -62,10 +63,9 @@ let make = (~paymentType) => {
 
   <div
     className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(
-      ~gridGap=config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : "",
-      (),
-    )}>
+    style={
+      gridGap: config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : "",
+    }>
     <EmailPaymentInput paymentType={paymentType} />
     <FullNamePaymentInput paymentType={paymentType} />
     <RenderIf condition={showAddressDetails.country == Auto}>

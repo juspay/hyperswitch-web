@@ -89,18 +89,19 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, [paymentMethodList])
 
   React.useEffect(() => {
-    let cardBrandValue = cardNumber->CardUtils.getCardBrand
-    switch isCardValid {
-    | Some(true) =>
+    let cardBrand = cardNumber->CardUtils.getCardBrand
+    let clearValue = cardNumber->clearSpaces
+    if cardValid(clearValue, cardBrand) {
       switch supportedCardBrands {
       | Some(brands) =>
-        setIsCardSupported(_ => Some(brands->Array.includes(cardBrandValue->CardUtils.getCardType)))
+        setIsCardSupported(_ => Some(brands->Array.includes(cardBrand->CardUtils.getCardType)))
       | None => setIsCardSupported(_ => Some(true))
       }
-    | _ => setIsCardSupported(_ => None)
+    } else {
+      setIsCardSupported(_ => None)
     }
     None
-  }, (supportedCardBrands, cardNumber, isCardValid))
+  }, (supportedCardBrands, cardNumber))
 
   let cardType = React.useMemo1(() => {
     cardBrand->getCardType
@@ -204,7 +205,18 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
     if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
-      setIsCardValid(_ => Some(isCardSupported->Option.getOr(true)))
+      let cardBrand = cardNumber->CardUtils.getCardBrand
+      let clearValue = cardNumber->clearSpaces
+      let isSupported = if cardValid(clearValue, cardBrand) {
+        switch supportedCardBrands {
+        | Some(brands) => Some(brands->Array.includes(cardBrand->CardUtils.getCardType))
+        | None => Some(true)
+        }
+      } else {
+        None
+      }
+      Console.log(("isCardSupported", isSupported))
+      setIsCardValid(_ => isSupported)
     } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => None)
     } else {
@@ -388,9 +400,11 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   React.useEffect(() => {
     setCardError(_ =>
-      isCardSupported->Option.getOr(true)
-        ? isCardValid->Option.getOr(true) ? "" : localeString.inValidCardErrorText
-        : "Unsupported card"
+      isCardSupported->Option.getOr(true) && isCardValid->Option.getOr(true)
+        ? ""
+        : isCardSupported->Option.getOr(true)
+        ? localeString.inValidCardErrorText
+        : localeString.cardBrandConfiguredErrorText(cardBrand)
     )
     None
   }, [isCardValid, isCardSupported])
