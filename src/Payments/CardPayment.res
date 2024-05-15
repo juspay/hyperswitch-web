@@ -100,7 +100,14 @@ let make = (
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
-  let complete = isAllValid(isCardValid, isCVCValid, isExpiryValid, true, "payment")
+  let complete = isAllValid(
+    isCardValid,
+    isCardSupported,
+    isCVCValid,
+    isExpiryValid,
+    true,
+    "payment",
+  )
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect(() => {
     setComplete(_ => complete)
@@ -186,7 +193,7 @@ let make = (
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         }
-        if isCardSupported->Option.getOr(false)->not {
+        if isCardSupported->Option.getOr(true)->not {
           setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
           setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
         }

@@ -16,7 +16,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (token, _) = paymentToken
 
   let {iframeId} = keys
@@ -55,49 +55,42 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cardNumber, cardScheme, showFields))
 
   let supportedCardBrands = React.useMemo(() => {
-    switch paymentMethodList {
-    | Loaded(json) => {
-        let list = json->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
-        let cardPaymentMethod =
-          list.payment_methods
-          ->Array.find(ele => ele.payment_method === "card")
-          ->Option.getOr({
-            payment_method: "card",
-            payment_method_types: [],
-          })
+    let cardPaymentMethod =
+      paymentMethodListValue.payment_methods->Array.find(ele => ele.payment_method === "card")
 
-        let cardNetworks =
-          cardPaymentMethod.payment_method_types->Array.map(ele => ele.card_networks)
-
-        let cardNetworkNames =
-          cardNetworks->Array.map(ele =>
-            ele->Array.map(
-              val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase,
-            )
+    switch cardPaymentMethod {
+    | Some(cardPaymentMethod) =>
+      let cardNetworks = cardPaymentMethod.payment_method_types->Array.map(ele => ele.card_networks)
+      let cardNetworkNames =
+        cardNetworks->Array.map(ele =>
+          ele->Array.map(
+            val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase,
           )
-
-        Some(
-          cardNetworkNames
-          ->Array.reduce([], (acc, ele) => acc->Array.concat(ele))
-          ->Utils.getUniqueArray,
         )
-      }
-    | _ => None
+      Some(
+        cardNetworkNames
+        ->Array.reduce([], (acc, ele) => acc->Array.concat(ele))
+        ->Utils.getUniqueArray,
+      )
+    | None => None
     }
-  }, [paymentMethodList])
+  }, [paymentMethodListValue])
 
-  React.useEffect(() => {
+  let checkIsCardSupported = cardNumber => {
     let cardBrand = cardNumber->CardUtils.getCardBrand
     let clearValue = cardNumber->clearSpaces
     if cardValid(clearValue, cardBrand) {
       switch supportedCardBrands {
-      | Some(brands) =>
-        setIsCardSupported(_ => Some(brands->Array.includes(cardBrand->String.toLowerCase)))
-      | None => setIsCardSupported(_ => Some(true))
+      | Some(brands) => Some(brands->Array.includes(cardBrand->String.toLowerCase))
+      | None => Some(true)
       }
     } else {
-      setIsCardSupported(_ => None)
+      None
     }
+  }
+
+  React.useEffect(() => {
+    setIsCardSupported(_ => checkIsCardSupported(cardNumber))
     None
   }, (supportedCardBrands, cardNumber))
 
@@ -142,7 +135,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let card = val->formatCardNumber(cardType)
     let clearValue = card->clearSpaces
     setCardValid(clearValue, setIsCardValid)
-    if cardValid(clearValue, cardBrand) {
+    if cardValid(clearValue, cardBrand) && checkIsCardSupported(clearValue)->Option.getOr(false) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
     if card->String.length > 6 && cardNumber->pincodeVisibility {
@@ -203,17 +196,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
     if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
-      let cardBrand = cardNumber->CardUtils.getCardBrand
-      let clearValue = cardNumber->clearSpaces
-      let isSupported = if cardValid(clearValue, cardBrand) {
-        switch supportedCardBrands {
-        | Some(brands) => Some(brands->Array.includes(cardBrand->String.toLowerCase))
-        | None => Some(true)
-        }
-      } else {
-        None
-      }
-      setIsCardValid(_ => isSupported)
+      setIsCardValid(_ => checkIsCardSupported(cardNumber))
     } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => None)
     } else {
@@ -396,13 +379,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
   React.useEffect(() => {
-    setCardError(_ =>
-      isCardSupported->Option.getOr(true) && isCardValid->Option.getOr(true)
-        ? ""
-        : isCardSupported->Option.getOr(true)
-        ? localeString.inValidCardErrorText
-        : localeString.cardBrandConfiguredErrorText(cardBrand)
-    )
+    let cardError = if isCardSupported->Option.getOr(true) && isCardValid->Option.getOr(true) {
+      ""
+    } else if isCardSupported->Option.getOr(true) {
+      localeString.inValidCardErrorText
+    } else {
+      localeString.cardBrandConfiguredErrorText(cardBrand)
+    }
+    setCardError(_ => cardError)
     None
   }, [isCardValid, isCardSupported])
 

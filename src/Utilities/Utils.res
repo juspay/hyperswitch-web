@@ -460,12 +460,14 @@ let sortBasedOnPriority = (sortArr: array<string>, priorityArr: array<string>) =
 
 let isAllValid = (
   card: option<bool>,
+  cardSupported: option<bool>,
   cvc: option<bool>,
   expiry: option<bool>,
   zip: bool,
   paymentMode: string,
 ) => {
   card->getBoolValue &&
+  cardSupported->getBoolValue &&
   cvc->getBoolValue &&
   expiry->getBoolValue &&
   (paymentMode == "payment" || zip)
@@ -798,7 +800,11 @@ let delay = timeOut => {
 }
 let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
   let headerObj =
-    [("Content-Type", "application/json"), ("sdk-version", Window.version)]->Dict.fromArray
+    [
+      ("Content-Type", "application/json"),
+      ("sdk-version", Window.version),
+      ("payment_confirm_source", "sdk"),
+    ]->Dict.fromArray
 
   switch (token, uri) {
   | (Some(tok), Some(_uriVal)) => headerObj->Dict.set("Authorization", tok)
