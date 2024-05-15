@@ -99,6 +99,7 @@ module.exports = (publicPath = "auto") => {
       clean: true,
       publicPath: `${repoPublicPath}/`,
     },
+    // TODO - Can be commented for faster build in local development
     optimization: {
       sideEffects: true,
       minimize: true,
@@ -156,6 +157,7 @@ module.exports = (publicPath = "auto") => {
       // new webpack.HTMLInjectPlugin({
       //   publicPath: JSON.stringify(repoVersion),
       // }),
+      // TODO - Can be commented if sentry not needed.
       sentryWebpackPlugin({
         org: "sentry",
         project: "hyperswitch-react-sdk",
