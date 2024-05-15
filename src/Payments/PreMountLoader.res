@@ -96,7 +96,6 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
     if (
       paymentMethodsResponseSent && customerPaymentMethodsResponseSent && sessionTokensResponseSent
     ) {
-      handlePostMessage([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
       Window.removeEventListener("message", handle)
     }
     None

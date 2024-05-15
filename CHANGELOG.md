@@ -1,3 +1,24 @@
+## [0.52.1](https://github.com/juspay/hyperswitch-web/compare/v0.52.0...v0.52.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* do not unmount preMountLoader iframe ([#367](https://github.com/juspay/hyperswitch-web/issues/367)) ([ba47e5f](https://github.com/juspay/hyperswitch-web/commit/ba47e5f4faece8be2ec5a374bafd266da7d591e4))
+
+# [0.52.0](https://github.com/juspay/hyperswitch-web/compare/v0.51.1...v0.52.0) (2024-05-14)
+
+
+### Features
+
+* added content length ([#366](https://github.com/juspay/hyperswitch-web/issues/366)) ([2a1b42a](https://github.com/juspay/hyperswitch-web/commit/2a1b42ad2e62b6cd5461345516e5d0ddcaa0abeb))
+
+## [0.51.1](https://github.com/juspay/hyperswitch-web/compare/v0.51.0...v0.51.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* added display_voucher_information again ([#369](https://github.com/juspay/hyperswitch-web/issues/369)) ([91978a9](https://github.com/juspay/hyperswitch-web/commit/91978a9db150ea3f1ce4518fcbace4142ef28343))
+
 # [0.51.0](https://github.com/juspay/hyperswitch-web/compare/v0.50.14...v0.51.0) (2024-05-10)
 
 
