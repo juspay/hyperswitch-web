@@ -91,7 +91,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let clearValue = cardNumber->clearSpaces
     if cardValid(clearValue, cardBrand) {
       switch supportedCardBrands {
-      | Some(brands) => setIsCardSupported(_ => Some(brands->Array.includes(cardBrand)))
+      | Some(brands) =>
+        setIsCardSupported(_ => Some(brands->Array.includes(cardBrand->String.toLowerCase)))
       | None => setIsCardSupported(_ => Some(true))
       }
     } else {
@@ -206,7 +207,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       let clearValue = cardNumber->clearSpaces
       let isSupported = if cardValid(clearValue, cardBrand) {
         switch supportedCardBrands {
-        | Some(brands) => Some(brands->Array.includes(cardBrand))
+        | Some(brands) => Some(brands->Array.includes(cardBrand->String.toLowerCase))
         | None => Some(true)
         }
       } else {
