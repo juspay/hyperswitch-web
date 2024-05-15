@@ -215,7 +215,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       } else {
         None
       }
-      Console.log(("isCardSupported", isSupported))
       setIsCardValid(_ => isSupported)
     } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => None)
