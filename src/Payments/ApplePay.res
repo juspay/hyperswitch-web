@@ -47,16 +47,7 @@ let make = (~sessionObj: option<JSON.t>) => {
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  React.useEffect0(() => {
-    AddressPaymentInput.importStates("./../States.json")
-    ->then(res => {
-      setStatesJson(_ => res.states)
-      resolve()
-    })
-    ->ignore
-
-    None
-  })
+  PaymentUtils.useStatesJson(setStatesJson)
 
   let processPayment = (bodyArr, ~isThirdPartyFlow=false, ()) => {
     let requestBody = PaymentUtils.appendedCustomerAcceptance(
@@ -252,7 +243,7 @@ let make = (~sessionObj: option<JSON.t>) => {
             processPayment(bodyDict, ~isThirdPartyFlow=true, ())
           } else {
             let message = [("applePayButtonClicked", true->JSON.Encode.bool)]
-            Utils.handlePostMessage(message)
+            handlePostMessage(message)
           }
         } else {
           let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
@@ -281,23 +272,19 @@ let make = (~sessionObj: option<JSON.t>) => {
       }
 
       try {
-        let dict = json->Utils.getDictFromJson
+        let dict = json->getDictFromJson
         if dict->Dict.get("applePayProcessPayment")->Option.isSome {
           let token =
             dict->Dict.get("applePayProcessPayment")->Option.getOr(Dict.make()->JSON.Encode.object)
 
           let billingContact =
             dict
-            ->Dict.get("applePayBillingContact")
-            ->Option.flatMap(JSON.Decode.object)
-            ->Option.getOr(Dict.make())
+            ->getDictfromDict("applePayBillingContact")
             ->ApplePayTypes.billingContactItemToObjMapper
 
           let shippingContact =
             dict
-            ->Dict.get("applePayShippingContact")
-            ->Option.flatMap(JSON.Decode.object)
-            ->Option.getOr(Dict.make())
+            ->getDictfromDict("applePayShippingContact")
             ->ApplePayTypes.shippingContactItemToObjMapper
 
           let requiredFieldsBody = DynamicFieldsUtils.getApplePayRequiredFields(
@@ -311,11 +298,10 @@ let make = (~sessionObj: option<JSON.t>) => {
 
           let applePayBody =
             bodyDict
-            ->Dict.fromArray
-            ->JSON.Encode.object
-            ->Utils.flattenObject(true)
-            ->Utils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-            ->Utils.getArrayOfTupleFromDict
+            ->getJsonFromArrayOfJson
+            ->flattenObject(true)
+            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+            ->getArrayOfTupleFromDict
 
           processPayment(applePayBody, ())
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
@@ -324,13 +310,13 @@ let make = (~sessionObj: option<JSON.t>) => {
           syncPayment()
         }
       } catch {
-      | _ => Utils.logInfo(Console.log("Error in parsing Apple Pay Data"))
+      | _ => logInfo(Console.log("Error in parsing Apple Pay Data"))
       }
     }
     Window.addEventListener("message", handleApplePayMessages)
     Some(
       () => {
-        Utils.handlePostMessage([("applePaySessionAbort", true->JSON.Encode.bool)])
+        handlePostMessage([("applePaySessionAbort", true->JSON.Encode.bool)])
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )

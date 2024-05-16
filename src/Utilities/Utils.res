@@ -1261,18 +1261,14 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
   let val = options->Array.find(item =>
     item
     ->getDictFromJson
-    ->Dict.get("code")
-    ->Option.flatMap(JSON.Decode.string)
-    ->Option.getOr("") === stateCode
+    ->getString("code", "") === stateCode
   )
 
   switch val {
   | Some(stateObj) =>
     stateObj
     ->getDictFromJson
-    ->Dict.get("name")
-    ->Option.flatMap(JSON.Decode.string)
-    ->Option.getOr(stateCode)
+    ->getString("name", stateCode)
   | None => stateCode
   }
 }

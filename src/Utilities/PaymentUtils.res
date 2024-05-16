@@ -291,3 +291,17 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType) => {
     }
   }, (methodslist, paymentMethodOrder, optionAtomValue.wallets.payPal, paymentType))
 }
+
+let useStatesJson = setStatesJson => {
+  open Promise
+  React.useEffect0(() => {
+    AddressPaymentInput.importStates("./../States.json")
+    ->then(res => {
+      setStatesJson(_ => res.states)
+      resolve()
+    })
+    ->ignore
+
+    None
+  })
+}

@@ -49,16 +49,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
     ~paymentMethodType="paypal",
   )
 
-  React.useEffect0(() => {
-    AddressPaymentInput.importStates("./../States.json")
-    ->then(res => {
-      setStatesJson(_ => res.states)
-      resolve()
-    })
-    ->ignore
-
-    None
-  })
+  PaymentUtils.useStatesJson(setStatesJson)
 
   let loadPaypalSdk = () => {
     loggerState.setLogInfo(
@@ -122,8 +113,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
 
                               let paypalBody =
                                 body
-                                ->Dict.fromArray
-                                ->JSON.Encode.object
+                                ->Utils.getJsonFromArrayOfJson
                                 ->Utils.flattenObject(true)
                                 ->Utils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
                                 ->Utils.getArrayOfTupleFromDict

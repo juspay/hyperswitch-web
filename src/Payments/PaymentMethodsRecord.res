@@ -552,10 +552,12 @@ let getOptionsFromPaymentMethodFieldType = (dict, key, ~isAddressCountry=true) =
       isAddressCountry ? AddressCountry(countryArr) : ShippingAddressCountry(countryArr)
     }
   | _ => {
-      let countryArr =
-        Country.country
-        ->Array.filter(item => options->Array.includes(item.isoAlpha2))
-        ->Array.map(item => item.countryName)
+      let countryArr = Country.country->Array.reduce([], (acc, country) => {
+        if options->Array.includes(country.isoAlpha2) {
+          acc->Array.push(country.countryName)
+        }
+        acc
+      })
       isAddressCountry ? AddressCountry(countryArr) : ShippingAddressCountry(countryArr)
     }
   }

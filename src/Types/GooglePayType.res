@@ -144,15 +144,15 @@ let jsonToPaymentRequestDataType: (paymentDataRequest, Dict.t<JSON.t>) => paymen
 
 let billingContactItemToObjMapper = dict => {
   {
-    address1: dict->Utils.getString("address1", ""),
-    address2: dict->Utils.getString("address2", ""),
-    address3: dict->Utils.getString("address3", ""),
-    administrativeArea: dict->Utils.getString("administrativeArea", ""),
-    countryCode: dict->Utils.getString("countryCode", ""),
-    locality: dict->Utils.getString("locality", ""),
-    name: dict->Utils.getString("name", ""),
-    phoneNumber: dict->Utils.getString("phoneNumber", ""),
-    postalCode: dict->Utils.getString("postalCode", ""),
-    sortingCode: dict->Utils.getString("sortingCode", ""),
+    address1: dict->getString("address1", ""),
+    address2: dict->getString("address2", ""),
+    address3: dict->getString("address3", ""),
+    administrativeArea: dict->getString("administrativeArea", ""),
+    countryCode: dict->getString("countryCode", ""),
+    locality: dict->getString("locality", ""),
+    name: dict->getString("name", ""),
+    phoneNumber: dict->getString("phoneNumber", ""),
+    postalCode: dict->getString("postalCode", ""),
+    sortingCode: dict->getString("sortingCode", ""),
   }
 }

@@ -78,16 +78,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
 
   let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
 
-  React.useEffect0(() => {
-    AddressPaymentInput.importStates("./../States.json")
-    ->then(res => {
-      setStatesJson(_ => res.states)
-      resolve()
-    })
-    ->ignore
-
-    None
-  })
+  PaymentUtils.useStatesJson(setStatesJson)
 
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
@@ -96,7 +87,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
       } catch {
       | _ => Dict.make()->JSON.Encode.object
       }
-      let dict = json->Utils.getDictFromJson
+      let dict = json->getDictFromJson
       if dict->Dict.get("gpayResponse")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")
         let obj = metadata->getDictFromJson->itemToObjMapper
@@ -109,21 +100,21 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
         let billingContact =
           obj.paymentMethodData.info
           ->getDictFromJson
-          ->Utils.getJsonObjectFromDict("billingAddress")
+          ->getJsonObjectFromDict("billingAddress")
           ->getDictFromJson
           ->billingContactItemToObjMapper
 
         let shippingContact =
           metadata
           ->getDictFromJson
-          ->Utils.getJsonObjectFromDict("shippingAddress")
+          ->getJsonObjectFromDict("shippingAddress")
           ->getDictFromJson
           ->billingContactItemToObjMapper
 
         let email =
           metadata
           ->getDictFromJson
-          ->Utils.getString("email", "")
+          ->getString("email", "")
 
         let requiredFieldsBody = DynamicFieldsUtils.getGooglePayRequiredFields(
           ~billingContact,
@@ -143,7 +134,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
         processPayment(body, ())
       }
       if dict->Dict.get("gpayError")->Option.isSome {
-        Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+        handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
       }
     }
     Window.addEventListener("message", handle)
@@ -248,13 +239,13 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
       } catch {
       | _ => Dict.make()->JSON.Encode.object
       }
-      let dict = json->Utils.getDictFromJson
+      let dict = json->getDictFromJson
       try {
         if dict->Dict.get("googlePaySyncPayment")->Option.isSome {
           syncPayment()
         }
       } catch {
-      | _ => Utils.logInfo(Console.log("Error in syncing GooglePay Payment"))
+      | _ => logInfo(Console.log("Error in syncing GooglePay Payment"))
       }
     }
     Window.addEventListener("message", handleGooglePayMessages)
