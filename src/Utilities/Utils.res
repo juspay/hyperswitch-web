@@ -1244,3 +1244,5 @@ let isWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
 }
 
 let getUniqueArray = arr => arr->Array.map(item => (item, ""))->Dict.fromArray->Dict.keysToArray
+
+let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object

@@ -10,30 +10,24 @@ let billingDetailsTuple = (
   ~state,
   ~postalCode,
   ~country,
-) => {
-  (
-    "billing_details",
-    [
-      ("name", fullName->JSON.Encode.string),
-      ("email", email->JSON.Encode.string),
-      (
-        "address",
-        [
-          ("line1", line1->JSON.Encode.string),
-          ("line2", line2->JSON.Encode.string),
-          ("city", city->JSON.Encode.string),
-          ("state", state->JSON.Encode.string),
-          ("zip", postalCode->JSON.Encode.string),
-          ("country", country->JSON.Encode.string),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
-      ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
-  )
-}
+) => (
+  "billing_details",
+  [
+    ("name", fullName->JSON.Encode.string),
+    ("email", email->JSON.Encode.string),
+    (
+      "address",
+      [
+        ("line1", line1->JSON.Encode.string),
+        ("line2", line2->JSON.Encode.string),
+        ("city", city->JSON.Encode.string),
+        ("state", state->JSON.Encode.string),
+        ("zip", postalCode->JSON.Encode.string),
+        ("country", country->JSON.Encode.string),
+      ]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]->Utils.getJsonFromArrayOfJson,
+)
 
 let cardPaymentBody = (
   ~cardNumber,
@@ -62,9 +56,9 @@ let cardPaymentBody = (
     ("payment_method", "card"->JSON.Encode.string),
     (
       "payment_method_data",
-      [("card", cardBody->Array.concat(cardBrand)->Dict.fromArray->JSON.Encode.object)]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
+      [
+        ("card", cardBody->Array.concat(cardBrand)->Utils.getJsonFromArrayOfJson),
+      ]->Utils.getJsonFromArrayOfJson,
     ),
   ]
 }
@@ -85,17 +79,13 @@ let boletoBody = (~socialSecurityNumber) => [
         [
           (
             "boleto",
-            [("social_security_number", socialSecurityNumber->JSON.Encode.string)]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            [
+              ("social_security_number", socialSecurityNumber->JSON.Encode.string),
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -105,13 +95,11 @@ let customerAcceptanceBody =
     ("accepted_at", Date.now()->Js.Date.fromFloat->Date.toISOString->JSON.Encode.string),
     (
       "online",
-      [("user_agent", BrowserSpec.navigator.userAgent->JSON.Encode.string)]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
+      [
+        ("user_agent", BrowserSpec.navigator.userAgent->JSON.Encode.string),
+      ]->Utils.getJsonFromArrayOfJson,
     ),
-  ]
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ]->Utils.getJsonFromArrayOfJson
 
 let savedCardBody = (
   ~paymentToken,
@@ -158,38 +146,30 @@ let savedPaymentMethodBody = (
   savedPaymentMethodBody
 }
 
-let mandateBody = paymentType => {
-  [
-    (
-      "mandate_data",
-      [("customer_acceptance", customerAcceptanceBody)]->Dict.fromArray->JSON.Encode.object,
-    ),
-    ("customer_acceptance", customerAcceptanceBody),
-    ("setup_future_usage", "off_session"->JSON.Encode.string),
-    ("payment_type", {paymentType === "" ? JSON.Encode.null : paymentType->JSON.Encode.string}),
-  ]
-}
+let mandateBody = paymentType => [
+  ("mandate_data", [("customer_acceptance", customerAcceptanceBody)]->Utils.getJsonFromArrayOfJson),
+  ("customer_acceptance", customerAcceptanceBody),
+  ("setup_future_usage", "off_session"->JSON.Encode.string),
+  ("payment_type", {paymentType === "" ? JSON.Encode.null : paymentType->JSON.Encode.string}),
+]
 
-let paymentTypeBody = paymentType => {
+let paymentTypeBody = paymentType =>
   if paymentType != "" {
     [("payment_type", paymentType->JSON.Encode.string)]
   } else {
     []
   }
-}
 
 let confirmPayloadForSDKButton = (sdkHandleConfirmPayment: PaymentType.sdkHandleConfirmPayment) =>
   [
     ("redirect", "always"->JSON.Encode.string),
     (
       "confirmParams",
-      [("return_url", sdkHandleConfirmPayment.confirmParams.return_url->JSON.Encode.string)]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
+      [
+        ("return_url", sdkHandleConfirmPayment.confirmParams.return_url->JSON.Encode.string),
+      ]->Utils.getJsonFromArrayOfJson,
     ),
-  ]
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ]->Utils.getJsonFromArrayOfJson
 
 let achBankDebitBody = (
   ~email,
@@ -230,17 +210,11 @@ let achBankDebitBody = (
                 ("bank_account_holder_name", bank.accountHolderName->JSON.Encode.string),
                 ("routing_number", bank.routingNumber->JSON.Encode.string),
                 ("bank_type", bank.accountType->JSON.Encode.string),
-              ]
-              ->Dict.fromArray
-              ->JSON.Encode.object,
+              ]->Utils.getJsonFromArrayOfJson,
             ),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object,
+          ]->Utils.getJsonFromArrayOfJson,
         ),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
+      ]->Utils.getJsonFromArrayOfJson,
     ),
   ]->Array.concat(mandateBody(paymentType->PaymentMethodsRecord.paymentTypeToStringMapper))
 
@@ -278,17 +252,11 @@ let sepaBankDebitBody = (
               ),
               ("iban", data.iban->JSON.Encode.string),
               ("bank_account_holder_name", data.accountHolderName->JSON.Encode.string),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -328,17 +296,11 @@ let bacsBankDebitBody = (
               ("bank_account_holder_name", bankAccountHolderName->JSON.Encode.string),
               ("sort_code", sortCode->JSON.Encode.string),
               ("account_number", accNum->JSON.Encode.string),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -377,17 +339,11 @@ let becsBankDebitBody = (
               ("bsb_number", data.sortCode->JSON.Encode.string),
               ("account_number", data.accountNumber->JSON.Encode.string),
               ("bank_account_holder_name", data.accountHolderName->JSON.Encode.string),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -408,17 +364,11 @@ let klarnaRedirectionBody = (~fullName, ~email, ~country, ~connectors) => [
             [
               ("billing_email", email->JSON.Encode.string),
               ("billing_country", country->JSON.Encode.string),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -432,13 +382,11 @@ let klarnaSDKbody = (~token, ~connectors) => [
     [
       (
         "pay_later",
-        [("klarna_sdk", [("token", token->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object)]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        [
+          ("klarna_sdk", [("token", token->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -452,13 +400,9 @@ let paypalRedirectionBody = (~connectors) => [
     [
       (
         "wallet",
-        [("paypal_redirect", []->Dict.fromArray->JSON.Encode.object)]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        [("paypal_redirect", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -472,13 +416,11 @@ let paypalSdkBody = (~token, ~connectors) => [
     [
       (
         "wallet",
-        [("paypal_sdk", [("token", token->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object)]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        [
+          ("paypal_sdk", [("token", token->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -502,17 +444,11 @@ let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) 
                 "tokenization_data",
                 payObj.paymentMethodData.tokenizationData->Utils.transformKeys(Utils.SnakeCase),
               ),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -525,36 +461,30 @@ let gpayRedirectBody = (~connectors: array<string>) => [
     [
       (
         "wallet",
-        [("google_pay_redirect", Dict.make()->JSON.Encode.object)]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        [("google_pay_redirect", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]->Utils.getJsonFromArrayOfJson,
+  ),
+]
+
+let gPayThirdPartySdkBody = (~connectors) => [
+  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+  ("payment_method", "wallet"->JSON.Encode.string),
+  ("payment_method_type", "google_pay"->JSON.Encode.string),
+  (
+    "payment_method_data",
+    [
+      (
+        "wallet",
+        [
+          ("google_pay_third_party_sdk", Dict.make()->JSON.Encode.object),
+        ]->Utils.getJsonFromArrayOfJson,
       ),
     ]
     ->Dict.fromArray
     ->JSON.Encode.object,
   ),
 ]
-
-let gPayThirdPartySdkBody = (~connectors) => {
-  [
-    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-    ("payment_method", "wallet"->JSON.Encode.string),
-    ("payment_method_type", "google_pay"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "wallet",
-          [("google_pay_third_party_sdk", Dict.make()->JSON.Encode.object)]
-          ->Dict.fromArray
-          ->JSON.Encode.object,
-        ),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
-    ),
-  ]
-}
 
 let applePayBody = (~token, ~connectors) => {
   let dict = token->JSON.Decode.object->Option.getOr(Dict.make())
@@ -574,9 +504,9 @@ let applePayBody = (~token, ~connectors) => {
       [
         (
           "wallet",
-          [("apple_pay", dict->JSON.Encode.object->Utils.transformKeys(SnakeCase))]
-          ->Dict.fromArray
-          ->JSON.Encode.object,
+          [
+            ("apple_pay", dict->JSON.Encode.object->Utils.transformKeys(SnakeCase)),
+          ]->Utils.getJsonFromArrayOfJson,
         ),
       ]
       ->Dict.fromArray
@@ -585,47 +515,37 @@ let applePayBody = (~token, ~connectors) => {
   ]
 }
 
-let applePayRedirectBody = (~connectors) => {
-  [
-    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-    ("payment_method", "wallet"->JSON.Encode.string),
-    ("payment_method_type", "apple_pay"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "wallet",
-          [("apple_pay_redirect", Dict.make()->JSON.Encode.object)]
-          ->Dict.fromArray
-          ->JSON.Encode.object,
-        ),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
-    ),
-  ]
-}
+let applePayRedirectBody = (~connectors) => [
+  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+  ("payment_method", "wallet"->JSON.Encode.string),
+  ("payment_method_type", "apple_pay"->JSON.Encode.string),
+  (
+    "payment_method_data",
+    [
+      (
+        "wallet",
+        [("apple_pay_redirect", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]->Utils.getJsonFromArrayOfJson,
+  ),
+]
 
-let applePayThirdPartySdkBody = (~connectors) => {
-  [
-    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-    ("payment_method", "wallet"->JSON.Encode.string),
-    ("payment_method_type", "apple_pay"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "wallet",
-          [("apple_pay_third_party_sdk", Dict.make()->JSON.Encode.object)]
-          ->Dict.fromArray
-          ->JSON.Encode.object,
-        ),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
-    ),
-  ]
-}
+let applePayThirdPartySdkBody = (~connectors) => [
+  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+  ("payment_method", "wallet"->JSON.Encode.string),
+  ("payment_method_type", "apple_pay"->JSON.Encode.string),
+  (
+    "payment_method_data",
+    [
+      (
+        "wallet",
+        [
+          ("apple_pay_third_party_sdk", Dict.make()->JSON.Encode.object),
+        ]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]->Utils.getJsonFromArrayOfJson,
+  ),
+]
 
 let cryptoBody = (~currency) => [
   ("payment_method", "crypto"->JSON.Encode.string),
@@ -634,13 +554,8 @@ let cryptoBody = (~currency) => [
   (
     "payment_method_data",
     [
-      (
-        "crypto",
-        [("pay_currency", currency->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
-      ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+      ("crypto", [("pay_currency", currency->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -659,17 +574,11 @@ let afterpayRedirectionBody = (~fullName, ~email) => [
             [
               ("billing_email", email->JSON.Encode.string),
               ("billing_name", fullName->JSON.Encode.string),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -687,20 +596,14 @@ let giroPayBody = (~name, ~iban="", ()) => [
             [
               (
                 "billing_details",
-                [("billing_name", name->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+                [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
               ),
               ("bank_account_iban", iban->JSON.Encode.string),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -723,21 +626,13 @@ let sofortBody = (~country, ~name, ~email) => [
                 [
                   ("billing_name", name->JSON.Encode.string),
                   ("email", (email == "" ? "test@gmail.com" : email)->JSON.Encode.string),
-                ]
-                ->Dict.fromArray
-                ->JSON.Encode.object,
+                ]->Utils.getJsonFromArrayOfJson,
               ),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -755,20 +650,14 @@ let iDealBody = (~name, ~bankName) => [
             [
               (
                 "billing_details",
-                [("billing_name", name->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+                [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
               ),
               ("bank_name", (bankName == "" ? "american_express" : bankName)->JSON.Encode.string),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -786,20 +675,14 @@ let epsBody = (~name, ~bankName) => [
             [
               (
                 "billing_details",
-                [("billing_name", name->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+                [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
               ),
               ("bank_name", (bankName === "" ? "american_express" : bankName)->JSON.Encode.string),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -818,19 +701,13 @@ let achBankTransferBody = (~email, ~connectors) => [
             [
               (
                 "billing_details",
-                [("email", email->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+                [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
               ),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 let bacsBankTransferBody = (~email, ~name, ~connectors) => [
@@ -848,21 +725,16 @@ let bacsBankTransferBody = (~email, ~name, ~connectors) => [
             [
               (
                 "billing_details",
-                [("email", email->JSON.Encode.string), ("name", name->JSON.Encode.string)]
-                ->Dict.fromArray
-                ->JSON.Encode.object,
+                [
+                  ("email", email->JSON.Encode.string),
+                  ("name", name->JSON.Encode.string),
+                ]->Utils.getJsonFromArrayOfJson,
               ),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 let sepaBankTransferBody = (~email, ~name, ~country, ~connectors) => [
@@ -880,22 +752,17 @@ let sepaBankTransferBody = (~email, ~name, ~country, ~connectors) => [
             [
               (
                 "billing_details",
-                [("email", email->JSON.Encode.string), ("name", name->JSON.Encode.string)]
-                ->Dict.fromArray
-                ->JSON.Encode.object,
+                [
+                  ("email", email->JSON.Encode.string),
+                  ("name", name->JSON.Encode.string),
+                ]->Utils.getJsonFromArrayOfJson,
               ),
               ("country", country->JSON.Encode.string),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 let blikBody = (~blikCode) => [
@@ -907,17 +774,10 @@ let blikBody = (~blikCode) => [
       (
         "bank_redirect",
         [
-          (
-            "blik",
-            [("blik_code", blikCode->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
-          ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+          ("blik", [("blik_code", blikCode->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -935,19 +795,13 @@ let p24Body = (~email) => [
             [
               (
                 "billing_details",
-                [("email", email->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+                [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
               ),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -962,17 +816,14 @@ let interacBody = (~email, ~country) => [
         [
           (
             "interac",
-            [("email", email->JSON.Encode.string), ("country", country->JSON.Encode.string)]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            [
+              ("email", email->JSON.Encode.string),
+              ("country", country->JSON.Encode.string),
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -985,17 +836,10 @@ let trustlyBody = (~country) => [
       (
         "bank_redirect",
         [
-          (
-            "trustly",
-            [("country", country->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
-          ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+          ("trustly", [("country", country->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -1010,15 +854,11 @@ let polandOB = (~bank) => [
         [
           (
             "online_banking_poland",
-            [("issuer", bank->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+            [("issuer", bank->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -1033,15 +873,11 @@ let czechOB = (~bank) => [
         [
           (
             "online_banking_czech_republic",
-            [("issuer", bank->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+            [("issuer", bank->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -1056,15 +892,11 @@ let slovakiaOB = (~bank) => [
         [
           (
             "online_banking_slovakia",
-            [("issuer", bank->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+            [("issuer", bank->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -1079,17 +911,11 @@ let mbWayBody = (~phoneNumber) => [
         [
           (
             "mb_way_redirect",
-            [("telephone_number", phoneNumber->JSON.Encode.string)]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            [("telephone_number", phoneNumber->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -1110,15 +936,11 @@ let fpxOBBody = (~bank) => [
         [
           (
             "online_banking_fpx",
-            [("issuer", bank->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+            [("issuer", bank->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 let thailandOBBody = (~bank) => [
@@ -1132,15 +954,11 @@ let thailandOBBody = (~bank) => [
         [
           (
             "online_banking_thailand",
-            [("issuer", bank->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+            [("issuer", bank->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
@@ -1158,29 +976,22 @@ let multibancoBody = (~email) => [
             [
               (
                 "billing_details",
-                [("email", email->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object,
+                [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
               ),
-            ]
-            ->Dict.fromArray
-            ->JSON.Encode.object,
+            ]->Utils.getJsonFromArrayOfJson,
           ),
-        ]
-        ->Dict.fromArray
-        ->JSON.Encode.object,
+        ]->Utils.getJsonFromArrayOfJson,
       ),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object,
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
-let getPaymentMethodType = (paymentMethod, paymentMethodType) => {
+let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
   | "bank_transfer" => paymentMethodType->String.replace("_transfer", "")
   | _ => paymentMethodType
   }
-}
 
 let appendRedirectPaymentMethods = [
   "touch_n_go",
@@ -1199,7 +1010,7 @@ let appendRedirectPaymentMethods = [
   "ali_pay",
 ]
 
-let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) => {
+let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) =>
   if isQrPaymentMethod {
     paymentMethodType ++ "_qr"
   } else if appendRedirectPaymentMethods->Array.includes(paymentMethodType) {
@@ -1207,17 +1018,15 @@ let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) => {
   } else {
     paymentMethodType
   }
-}
 
 let paymentExperiencePaymentMethods = ["affirm"]
 
-let appendPaymentExperience = (paymentBodyArr, paymentMethodType) => {
+let appendPaymentExperience = (paymentBodyArr, paymentMethodType) =>
   if paymentExperiencePaymentMethods->Array.includes(paymentMethodType) {
     paymentBodyArr->Array.concat([("payment_experience", "redirect_to_url"->JSON.Encode.string)])
   } else {
     paymentBodyArr
   }
-}
 
 let dynamicPaymentBody = (paymentMethod, paymentMethodType, ~isQrPaymentMethod=false) => {
   let paymentMethodType = paymentMethod->getPaymentMethodType(paymentMethodType)
@@ -1234,13 +1043,9 @@ let dynamicPaymentBody = (paymentMethod, paymentMethodType, ~isQrPaymentMethod=f
               paymentMethodType->appendPaymentMethodExperience(isQrPaymentMethod),
               Dict.make()->JSON.Encode.object,
             ),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object,
+          ]->Utils.getJsonFromArrayOfJson,
         ),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
+      ]->Utils.getJsonFromArrayOfJson,
     ),
   ]->appendPaymentExperience(paymentMethodType)
 }
@@ -1256,7 +1061,7 @@ let getPaymentBody = (
   ~paymentExperience: PaymentMethodsRecord.paymentFlow=RedirectToURL,
   ~phoneNumber,
   ~currency,
-) => {
+) =>
   switch paymentMethodType {
   | "afterpay_clearpay" => afterpayRedirectionBody(~fullName, ~email)
   | "crypto_currency" => cryptoBody(~currency)
@@ -1294,4 +1099,3 @@ let getPaymentBody = (
     rewardBody(~paymentMethodType)
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }
-}

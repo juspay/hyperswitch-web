@@ -91,8 +91,7 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
       ("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string),
     ]
     ->Array.concat(broswerInfo())
-    ->Dict.fromArray
-    ->JSON.Encode.object
+    ->getJsonFromArrayOfJson
 
   open Promise
   logApi(
@@ -934,8 +933,7 @@ let rec maskPayload = payloadJson => {
       let (key, value) = entry
       (key, maskPayload(value))
     })
-    ->Dict.fromArray
-    ->JSON.Encode.object
+    ->Utils.getJsonFromArrayOfJson
 
   | Array(arr) => arr->Array.map(maskPayload)->JSON.Encode.array
   | String(valueStr) => valueStr->maskStr->JSON.Encode.string
@@ -995,12 +993,10 @@ let usePaymentIntent = (optLogger, paymentType) => {
                 let (key, value) = header
                 (key, value->JSON.Encode.string)
               })
-              ->Dict.fromArray
-              ->JSON.Encode.object,
+              ->Utils.getJsonFromArrayOfJson,
             ),
           ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ->Utils.getJsonFromArrayOfJson
           ->JSON.stringify
         switch paymentType {
         | Card =>
@@ -1059,8 +1055,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             bodyArr->Array.concat(broswerInfo()),
             mandatePaymentType->PaymentBody.paymentTypeBody,
           ])
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ->Utils.getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
@@ -1071,8 +1066,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
           ->Array.concat(
             bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
           )
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ->Utils.getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
@@ -1140,9 +1134,7 @@ let fetchSessions = (
       ("client_secret", clientSecret->JSON.Encode.string),
       ("wallets", wallets->JSON.Encode.array),
       ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object
+    ]->getJsonFromArrayOfJson
   let uri = `${endpoint}/payments/session_tokens`
   logApi(
     ~optLogger,

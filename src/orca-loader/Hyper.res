@@ -265,7 +265,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           Fetch.Response.json(resp)
         })
         ->then(data => {
-          [("paymentIntent", data)]->Dict.fromArray->JSON.Encode.object->Promise.resolve
+          [("paymentIntent", data)]->getJsonFromArrayOfJson->Promise.resolve
         })
       }
 
@@ -351,9 +351,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                     [
                       ("return_url", url->JSON.Encode.string),
                       ("publishableKey", publishableKey->JSON.Encode.string),
-                    ]
-                    ->Dict.fromArray
-                    ->JSON.Encode.object,
+                    ]->getJsonFromArrayOfJson,
                   ),
                 ]->Dict.fromArray
             addSmartEventListener("message", handleMessage, "onSubmit")
@@ -436,9 +434,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 ("clientSecret", clientSecretId->JSON.Encode.string),
                 (
                   "confirmParams",
-                  [("publishableKey", publishableKey->JSON.Encode.string)]
-                  ->Dict.fromArray
-                  ->JSON.Encode.object,
+                  [("publishableKey", publishableKey->JSON.Encode.string)]->getJsonFromArrayOfJson,
                 ),
               ]->Dict.fromArray,
             )
@@ -478,7 +474,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let amount = dict->Dict.get("amount")->Option.getOr(0.0->JSON.Encode.float)
         dict->Dict.set(
           "amount",
-          [("currency", currency), ("value", amount)]->Dict.fromArray->JSON.Encode.object,
+          [("currency", currency), ("value", amount)]->getJsonFromArrayOfJson,
         )
         Some(dict->JSON.Encode.object)
       }
@@ -507,10 +503,8 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let applePayPaymentMethodData =
           [
             ("supportedMethods", "https://apple.com/apple-pay"->JSON.Encode.string),
-            ("data", [("version", 12.00->JSON.Encode.float)]->Dict.fromArray->JSON.Encode.object),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+            ("data", [("version", 12.00->JSON.Encode.float)]->getJsonFromArrayOfJson),
+          ]->getJsonFromArrayOfJson
         let methodData = [applePayPaymentMethodData]->JSON.Encode.array
         let details =
           [
@@ -518,9 +512,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             ("displayItems", displayItems),
             ("total", optionsTotal),
             ("shippingOptions", shippingOptions),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ]->getJsonFromArrayOfJson
 
         let optionsForPaymentRequest =
           [
@@ -529,9 +521,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             ("requestPayerPhone", requestPayerPhone),
             ("requestShipping", requestShipping),
             ("shippingType", "shipping"->JSON.Encode.string),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ]->getJsonFromArrayOfJson
         Window.paymentRequest(methodData, details, optionsForPaymentRequest)
       }
 
