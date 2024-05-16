@@ -19,16 +19,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   } = Recoil.useRecoilValueFromAtom(optionAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
-  let isGooglePayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
-  let methodslist = Recoil.useRecoilValueFromAtom(list)
-  let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
 
-  let (list, setList) = React.useState(_ => PaymentMethodsRecord.defaultList)
+  let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
+    PaymentUtils.paymentMethodListValue,
+  )
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
@@ -41,9 +40,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (paymentToken, setPaymentToken) = Recoil.useRecoilState(paymentTokenAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
   let (
-    loadSavedCards: PaymentType.savedCardsLoadState,
-    setLoadSavedCards: (PaymentType.savedCardsLoadState => PaymentType.savedCardsLoadState) => unit,
-  ) = React.useState(_ => PaymentType.LoadingSavedCards)
+    loadSavedCards: savedCardsLoadState,
+    setLoadSavedCards: (savedCardsLoadState => savedCardsLoadState) => unit,
+  ) = React.useState(_ => LoadingSavedCards)
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
@@ -102,54 +101,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [savedMethods])
 
-  let areAllGooglePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreAllRequiredFieldsPrefilled(
-    ~list,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="google_pay",
+  let (walletList, paymentOptionsList, actualList) = PaymentUtils.useGetPaymentMethodList(
+    ~paymentMethodListValue,
+    ~paymentOptions,
+    ~paymentType,
   )
-
-  let areAllApplePayRequiredFieldsPrefilled = DynamicFieldsUtils.useAreAllRequiredFieldsPrefilled(
-    ~list,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="apple_pay",
-  )
-
-  let (walletList, paymentOptionsList, actualList) = React.useMemo(() => {
-    switch methodslist {
-    | Loaded(paymentlist) =>
-      let paymentOrder =
-        paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
-      let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
-      let (wallets, otherOptions) =
-        plist->PaymentUtils.paymentListLookupNew(
-          ~order=paymentOrder,
-          ~showApplePay=isApplePayReady,
-          ~showGooglePay=isGooglePayReady,
-          ~areAllGooglePayRequiredFieldsPrefilled,
-          ~areAllApplePayRequiredFieldsPrefilled,
-        )
-      (
-        wallets->removeDuplicate,
-        paymentOptions->Array.concat(otherOptions)->removeDuplicate,
-        otherOptions,
-      )
-    | SemiLoaded =>
-      showCardFormByDefault && checkPriorityList(paymentMethodOrder)
-        ? ([], ["card"], [])
-        : ([], [], [])
-    | _ => ([], [], [])
-    }
-  }, (
-    methodslist,
-    paymentMethodOrder,
-    isApplePayReady,
-    isGooglePayReady,
-    areAllGooglePayRequiredFieldsPrefilled,
-    areAllApplePayRequiredFieldsPrefilled,
-  ))
 
   React.useEffect(() => {
-    switch methodslist {
+    switch paymentMethodList {
     | Loaded(paymentlist) =>
       let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
 
@@ -157,7 +116,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         paymentOptionsList
       })
       setWalletOptions(_ => walletList)
-      setList(_ => plist)
+      setPaymentMethodListValue(_ => plist)
       showCardFormByDefault
         ? if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
             ErrorUtils.manageErrorWarning(
@@ -186,7 +145,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     | _ => ()
     }
     None
-  }, (methodslist, walletList, paymentOptionsList, actualList))
+  }, (paymentMethodList, walletList, paymentOptionsList, actualList))
   React.useEffect(() => {
     switch sessionsObj {
     | Loaded(ssn) => setSessions(_ => ssn)
@@ -226,7 +185,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         ? prev
         : layoutClass.defaultCollapsed
         ? ""
-        : switch methodslist {
+        : switch paymentMethodList {
           | SemiLoaded
           | LoadError(_) =>
             showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? "card" : ""
@@ -238,7 +197,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           }
     )
     None
-  }, (layoutClass.defaultCollapsed, paymentOptions, methodslist, selectedOption))
+  }, (layoutClass.defaultCollapsed, paymentOptions, paymentMethodList, selectedOption))
   React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
       let isCard: bool = cardOptions->Array.includes(selectedOption)
@@ -289,7 +248,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let checkoutEle = {
     <ErrorBoundary key={selectedOption}>
       {switch selectedOption->PaymentModeType.paymentMode {
-      | Card => <CardPayment cardProps expiryProps cvcProps paymentType list />
+      | Card => <CardPayment cardProps expiryProps cvcProps paymentType />
       | Klarna =>
         <SessionPaymentWrapper type_=Others>
           {switch klarnaTokenObj {
@@ -297,48 +256,48 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             switch optToken {
             | Some(token) =>
               <React.Suspense fallback={loader()}>
-                <KlarnaSDKLazy sessionObj=token list />
+                <KlarnaSDKLazy sessionObj=token />
               </React.Suspense>
             | None =>
               <React.Suspense fallback={loader()}>
-                <KlarnaPaymentLazy paymentType list />
+                <KlarnaPaymentLazy paymentType />
               </React.Suspense>
             }
           | _ =>
             <React.Suspense fallback={loader()}>
-              <KlarnaPaymentLazy paymentType list />
+              <KlarnaPaymentLazy paymentType />
             </React.Suspense>
           }}
         </SessionPaymentWrapper>
       | ACHTransfer =>
         <React.Suspense fallback={loader()}>
-          <ACHBankTransferLazy paymentType list />
+          <ACHBankTransferLazy paymentType />
         </React.Suspense>
       | SepaTransfer =>
         <React.Suspense fallback={loader()}>
-          <SepaBankTransferLazy paymentType list />
+          <SepaBankTransferLazy paymentType />
         </React.Suspense>
       | BacsTransfer =>
         <React.Suspense fallback={loader()}>
-          <BacsBankTransferLazy paymentType list />
+          <BacsBankTransferLazy paymentType />
         </React.Suspense>
       | ACHBankDebit =>
         <React.Suspense fallback={loader()}>
-          <ACHBankDebitLazy paymentType list />
+          <ACHBankDebitLazy paymentType />
         </React.Suspense>
       | SepaBankDebit =>
         <React.Suspense fallback={loader()}>
-          <SepaBankDebitLazy paymentType list />
+          <SepaBankDebitLazy paymentType />
         </React.Suspense>
       | BacsBankDebit =>
         <React.Suspense fallback={loader()}>
-          <BacsBankDebitLazy paymentType list />
+          <BacsBankDebitLazy paymentType />
         </React.Suspense>
       | BanContactCard =>
-        <CardPayment cardProps expiryProps cvcProps paymentType isBancontact=true list />
+        <CardPayment cardProps expiryProps cvcProps paymentType isBancontact=true />
       | BecsBankDebit =>
         <React.Suspense fallback={loader()}>
-          <BecsBankDebitLazy paymentType list />
+          <BecsBankDebitLazy paymentType />
         </React.Suspense>
       | GooglePay =>
         switch gPayToken {
@@ -349,16 +308,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
               <GPayLazy
                 paymentType
                 sessionObj=optToken
-                list
                 thirdPartySessionObj=googlePayThirdPartyOptToken
                 walletOptions
               />
             </React.Suspense>
           | _ =>
             <React.Suspense fallback={loader()}>
-              <GPayLazy
-                paymentType sessionObj=optToken list thirdPartySessionObj=None walletOptions
-              />
+              <GPayLazy paymentType sessionObj=optToken thirdPartySessionObj=None walletOptions />
             </React.Suspense>
           }
         | _ => React.null
@@ -366,16 +322,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | ApplePay =>
         switch applePayToken {
         | ApplePayTokenOptional(optToken) =>
-          <ApplePayLazy sessionObj=optToken list walletOptions paymentType />
+          <ApplePayLazy sessionObj=optToken walletOptions paymentType />
         | _ => React.null
         }
       | Boleto =>
         <React.Suspense fallback={loader()}>
-          <BoletoLazy paymentType list />
+          <BoletoLazy paymentType />
         </React.Suspense>
       | _ =>
         <React.Suspense fallback={loader()}>
-          <PaymentMethodsWrapperLazy paymentType list paymentMethodName=selectedOption />
+          <PaymentMethodsWrapperLazy paymentType paymentMethodName=selectedOption />
         </React.Suspense>
       }}
     </ErrorBoundary>
@@ -391,7 +347,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   React.useEffect(() => {
     let evalMethodsList = () =>
-      switch methodslist {
+      switch paymentMethodList {
       | SemiLoaded | LoadError(_) | Loaded(_) =>
         handlePostMessage([("ready", true->JSON.Encode.bool)])
       | _ => ()
@@ -409,7 +365,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       }
     }
     None
-  }, (methodslist, customerPaymentMethods))
+  }, (paymentMethodList, customerPaymentMethods))
 
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
@@ -418,16 +374,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     <RenderIf condition={!showFields && displaySavedPaymentMethods}>
-      <SavedMethods
-        paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType list
-      />
+      <SavedMethods paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType />
     </RenderIf>
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
         showFields}>
       <div className="flex flex-col place-items-center">
         <ErrorBoundary key="payment_request_buttons_all" level={ErrorBoundary.RequestButton}>
-          <PaymentRequestButtonElement sessions walletOptions list />
+          <PaymentRequestButtonElement sessions walletOptions />
         </ErrorBoundary>
         <RenderIf
           condition={paymentOptions->Array.length > 0 &&
@@ -448,31 +402,30 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       condition={displaySavedPaymentMethods && savedMethods->Array.length > 0 && showFields}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer my-4"
-        style={ReactDOMStyle.make(
-          ~fontSize="14px",
-          ~float="left",
-          ~fontWeight=themeObj.fontWeightNormal,
-          ~width="fit-content",
-          ~color=themeObj.colorPrimary,
-          (),
-        )}
+        style={
+          fontSize: "14px",
+          float: "left",
+          fontWeight: themeObj.fontWeightNormal,
+          width: "fit-content",
+          color: themeObj.colorPrimary,
+        }
         onClick={_ => setShowFields(_ => false)}>
         <Icon name="circle_dots" size=20 width=19 />
         {React.string(localeString.useExistingPaymentMethods)}
       </div>
     </RenderIf>
-    <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
-      <div className="mt-4">
-        <PayNowButton />
-      </div>
-    </RenderIf>
-    <PoweredBy />
-    {switch methodslist {
+    {switch paymentMethodList {
     | LoadError(_) => React.null
     | _ =>
       <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
         <PaymentElementShimmer />
       </RenderIf>
     }}
+    <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
+      <div className="mt-4">
+        <PayNowButton />
+      </div>
+    </RenderIf>
+    <PoweredBy />
   </>
 }

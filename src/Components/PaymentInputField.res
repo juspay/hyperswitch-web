@@ -22,7 +22,8 @@ let make = (
   ~className="",
   ~inputRef,
 ) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {innerLayout} = config.appearance
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
 
@@ -74,38 +75,40 @@ let make = (
   }
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
+  let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
 
-  <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
-    <RenderIf condition={fieldName->String.length > 0 && appearance.labels == Above}>
+  <div className="flex flex-col w-full" style={color: themeObj.colorText}>
+    <RenderIf
+      condition={fieldName->String.length > 0 &&
+      appearance.labels == Above &&
+      innerLayout === Spaced}>
       <div
         className={`Label ${labelClass}`}
-        style={ReactDOMStyle.make(
-          ~fontWeight=themeObj.fontWeightNormal,
-          ~fontSize=themeObj.fontSizeLg,
-          ~marginBottom="5px",
-          ~opacity="0.6",
-          (),
-        )}>
+        style={
+          fontWeight: themeObj.fontWeightNormal,
+          fontSize: themeObj.fontSizeLg,
+          marginBottom: "5px",
+          opacity: "0.6",
+        }>
         {React.string(fieldName)}
       </div>
     </RenderIf>
-    <div className="flex flex-row " style={ReactDOMStyle.make(~direction, ())}>
+    <div className="flex flex-row " style={direction: direction}>
       <div className={`relative w-full ${inputFieldClassName}`}>
         <input
-          style={ReactDOMStyle.make(
-            ~background=backgroundClass,
-            ~padding=themeObj.spacingUnit,
-            ~width=fieldWidth,
-            ~height,
-            (),
-          )}
+          style={
+            background: backgroundClass,
+            padding: themeObj.spacingUnit,
+            width: fieldWidth,
+            height,
+          }
           disabled=readOnly
           ref={inputRef->ReactDOM.Ref.domRef}
           type_
           name
           ?maxLength
           ?pattern
-          className={`Input ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
+          className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
           placeholder={appearance.labels == Above ? placeholder : ""}
           value
           autoComplete="on"
@@ -116,36 +119,36 @@ let make = (
         <RenderIf condition={appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} text-opacity-20 pointer-events-none`}
-            style={ReactDOMStyle.make(
-              ~marginBottom={
+            style={
+              marginBottom: {
                 inputFocused || value->String.length > 0 ? "" : themeObj.spacingUnit
               },
-              ~fontSize={inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""},
-              ~opacity="0.6",
-              (),
-            )}>
+              fontSize: {inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""},
+              opacity: "0.6",
+            }>
             {React.string(fieldName)}
           </div>
         </RenderIf>
       </div>
-      <div className={`relative flex -ml-10  items-center`}> {rightIcon} </div>
+      <div className={`relative flex -ml-10 items-center`}> {rightIcon} </div>
     </div>
-    {switch errorString {
-    | Some(val) =>
-      <RenderIf condition={val->String.length > 0}>
-        <div
-          className="Error pt-1"
-          style={ReactDOMStyle.make(
-            ~color=themeObj.colorDangerText,
-            ~fontSize=themeObj.fontSizeSm,
-            ~alignSelf="start",
-            ~textAlign="left",
-            (),
-          )}>
-          {React.string(val)}
-        </div>
-      </RenderIf>
-    | None => React.null
-    }}
+    <RenderIf condition={innerLayout === Spaced}>
+      {switch errorString {
+      | Some(val) =>
+        <RenderIf condition={val->String.length > 0}>
+          <div
+            className="Error pt-1"
+            style={
+              color: themeObj.colorDangerText,
+              fontSize: themeObj.fontSizeSm,
+              alignSelf: "start",
+              textAlign: "left",
+            }>
+            {React.string(val)}
+          </div>
+        </RenderIf>
+      | None => React.null
+      }}
+    </RenderIf>
   </div>
 }

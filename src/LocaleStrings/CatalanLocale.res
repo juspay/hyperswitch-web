@@ -79,4 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   useExistingPaymentMethods: `Utilitzeu formes de pagament desades`,
   nicknamePlaceholder: `Àlies de la targeta (opcional)`,
   selectPaymentMethodText: `Seleccioneu una forma de pagament i torneu-ho a provar`,
+  cardExpiredText: `Aquesta targeta ha caducat`,
+  cardHeader: `Informació de la targeta`,
+  cardBrandConfiguredErrorText: str => `${str} no està suportat en aquest moment.`,
 }

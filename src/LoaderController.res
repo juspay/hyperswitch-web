@@ -5,7 +5,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   //<...>//
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
   let (keys, setKeys) = Recoil.useRecoilState(keys)
-  let (paymentlist, setList) = Recoil.useRecoilState(list)
+  let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
@@ -76,7 +76,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   let updateOptions = dict => {
     let optionsDict = dict->getDictFromObj("options")
-    switch paymentMode->CardTheme.getPaymentMode {
+    switch paymentMode->CardThemeType.getPaymentMode {
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
@@ -89,6 +89,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         )
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
       }
+    | GooglePayElement
+    | PayPalElement
+    | ApplePayElement
+    | PaymentRequestButtonsElement
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
         setOptionsPayment(_ => paymentOptions)
@@ -136,7 +140,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     handlePostMessage([("iframeMounted", true->JSON.Encode.bool)])
     handlePostMessage([("applePayMounted", true->JSON.Encode.bool)])
     logger.setLogInitiated()
-    let updatedState: PaymentType.loadType = switch paymentlist {
+    let updatedState: PaymentType.loadType = switch paymentMethodList {
     | Loading =>
       showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
@@ -152,7 +156,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | Loading =>
       logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
     | SemiLoaded => {
-        setList(_ => updatedState)
+        setPaymentMethodList(_ => updatedState)
         logger.setLogInfo(
           ~value="SemiLoaded",
           ~eventName=LOADER_CHANGED,
@@ -186,7 +190,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     if dict->Dict.toArray->Array.length > 0 {
       generateStyleSheet("", dict, "themestyle")
     }
-    switch paymentMode->CardTheme.getPaymentMode {
+    switch paymentMode->CardThemeType.getPaymentMode {
     | Payment => ()
     | _ =>
       let styleClass = [
@@ -242,11 +246,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               if dict->getDictIsSome("publishableKey") {
                 let publishableKey = dict->getString("publishableKey", "")
                 logger.setMerchantId(publishableKey)
-              }
-
-              if dict->getDictIsSome("endpoint") {
-                let endpoint = dict->getString("endpoint", "")
-                ApiEndpoint.setApiEndPoint(endpoint)
               }
               if dict->getDictIsSome("analyticsMetadata") {
                 let metadata = dict->getJsonObjectFromDict("analyticsMetadata")
@@ -370,9 +369,22 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
         }
+        if (
+          dict->getDictIsSome("customBackendUrl") &&
+            dict
+            ->getString("customBackendUrl", "")
+            ->String.length > 0
+        ) {
+          if dict->getDictIsSome("endpoint") {
+            switch dict->getString("endpoint", "") {
+            | "" => ()
+            | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
+            }
+          }
+        }
         if dict->getDictIsSome("paymentMethodList") {
-          let list = dict->getJsonObjectFromDict("paymentMethodList")
-          let listDict = list->getDictFromJson
+          let paymentMethodList = dict->getJsonObjectFromDict("paymentMethodList")
+          let listDict = paymentMethodList->getDictFromJson
           if optionsPayment.business.name === "" {
             setOptionsPayment(prev => {
               ...prev,
@@ -387,14 +399,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             Date.now() -. launchTime
           }
           let updatedState: PaymentType.loadType =
-            list == Dict.make()->JSON.Encode.object
-              ? LoadError(list)
+            paymentMethodList == Dict.make()->JSON.Encode.object
+              ? LoadError(paymentMethodList)
               : switch listDict->Dict.get("error") {
-                | Some(_) => LoadError(list)
+                | Some(_) => LoadError(paymentMethodList)
                 | None =>
                   let isNonEmptyPaymentMethodList =
                     listDict->getArray("payment_methods")->Array.length > 0
-                  isNonEmptyPaymentMethodList ? Loaded(list) : LoadError(list)
+                  isNonEmptyPaymentMethodList
+                    ? Loaded(paymentMethodList)
+                    : LoadError(paymentMethodList)
                 }
 
           let evalMethodsList = () =>
@@ -434,7 +448,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }
           }
 
-          setList(_ => updatedState)
+          setPaymentMethodList(_ => updatedState)
         }
         if dict->getDictIsSome("customerPaymentMethods") {
           let customerPaymentMethods = dict->PaymentType.createCustomerObjArr
@@ -449,7 +463,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
 
           let evalMethodsList = () =>
-            switch paymentlist {
+            switch paymentMethodList {
             | Loaded(_) =>
               logger.setLogInfo(
                 ~value="Loaded",
@@ -508,8 +522,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   }
 
   React.useEffect(() => {
+    let iframeHeight = divH->Float.equal(0.0) ? divH : divH +. 1.0
     handlePostMessage([
-      ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
+      ("iframeHeight", iframeHeight->JSON.Encode.float),
       ("iframeId", iframeId->JSON.Encode.string),
     ])
     None

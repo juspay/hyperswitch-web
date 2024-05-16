@@ -2,7 +2,6 @@ open RecoilAtoms
 @react.component
 let make = (
   ~paymentType,
-  ~list,
   ~paymentMethod,
   ~paymentMethodType,
   ~setRequiredFieldsBody,
@@ -14,6 +13,8 @@ let make = (
   ~isBancontact=false,
 ) => {
   open Utils
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -22,15 +23,25 @@ let make = (
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   //<...>//
-  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
-    ~list,
+  let paymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
     ~paymentMethod,
     ~paymentMethodType,
   )
 
+  let creditPaymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
+    ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType="credit",
+  )
+
   let requiredFieldsWithBillingDetails = React.useMemo(() => {
     if paymentMethod === "card" {
+      let creditRequiredFields = creditPaymentMethodTypes.required_fields
+
       paymentMethodTypes.required_fields
+      ->Array.concat(creditRequiredFields)
+      ->DynamicFieldsUtils.removeRequiredFieldsDuplicates
     } else if (
       PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType)
     ) {
@@ -65,6 +76,7 @@ let make = (
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
 
@@ -314,6 +326,9 @@ let make = (
     dynamicFieldsToRenderInsideBilling->Array.length > 0 &&
       (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
 
+  let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
+  let spacedStylesForCity = isSpacedInnerLayout ? "p-2" : ""
+
   <RenderIf condition={fieldsArr->Array.length > 0}>
     {<>
       {dynamicFieldsToRenderOutsideBilling
@@ -321,11 +336,10 @@ let make = (
         <div
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
-          style={ReactDOMStyle.make(
-            ~marginTop=index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
-            ~gridColumnGap=themeObj.spacingGridRow,
-            (),
-          )}>
+          style={
+            marginTop: index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
+            gridColumnGap: themeObj.spacingGridRow,
+          }>
           {switch item {
           | CardNumber =>
             <PaymentInputField
@@ -426,20 +440,34 @@ let make = (
               />
             </div>
           | Currency(currencyArr) =>
+            let updatedCurrencyArray =
+              currencyArr->DropdownField.updateArrayOfStringToOptionsTypeArray
             <DropdownField
               appearance=config.appearance
               fieldName=localeString.currencyLabel
               value=currency
               setValue=setCurrency
               disabled=false
-              options=currencyArr
+              options=updatedCurrencyArray
             />
           | FullName =>
-            <FullNamePaymentInput
-              paymentType
-              customFieldName={item->getCustomFieldName}
-              optionalRequiredFields={Some(requiredFields)}
-            />
+            <>
+              <RenderIf condition={!isSpacedInnerLayout}>
+                <div
+                  style={
+                    marginBottom: "5px",
+                    fontSize: themeObj.fontSizeLg,
+                    opacity: "0.6",
+                  }>
+                  {item->getCustomFieldName->Option.getOr("")->React.string}
+                </div>
+              </RenderIf>
+              <FullNamePaymentInput
+                paymentType
+                customFieldName={item->getCustomFieldName}
+                optionalRequiredFields={Some(requiredFields)}
+              />
+            </>
           | Email
           | InfoElement
           | Country
@@ -463,15 +491,24 @@ let make = (
       ->React.array}
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
         <div
-          className="p-2 w-full text-left"
-          style={ReactDOMStyle.make(
-            ~border=`1px solid ${themeObj.borderColor}`,
-            ~borderRadius=themeObj.borderRadius,
-            ~margin=`10px 0`,
-            (),
-          )}>
-          {React.string(localeString.billingDetailsText)}
-          <div className="p-2 flex flex-col gap-2">
+          className={`${spacedStylesForBiilingDetails} w-full text-left`}
+          style={
+            border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
+            borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
+            margin: {isSpacedInnerLayout ? `10px 0` : ""},
+          }>
+          <div
+            style={
+              marginBottom: "5px",
+              fontSize: themeObj.fontSizeLg,
+              opacity: "0.6",
+            }>
+            {React.string(localeString.billingDetailsText)}
+          </div>
+          <div
+            className={`${spacedStylesForCity} flex flex-col ${isSpacedInnerLayout
+                ? "gap-2"
+                : ""}`}>
             {dynamicFieldsToRenderInsideBilling
             ->Array.mapWithIndex((item, index) => {
               <div
@@ -482,7 +519,7 @@ let make = (
                 | Email => <EmailPaymentInput paymentType />
                 | PhoneNumber => <PhoneNumberPaymentInput />
                 | StateAndCity =>
-                  <div className="flex gap-1">
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
                     <PaymentField
                       fieldName=localeString.cityLabel
                       setValue={setCity}
@@ -507,6 +544,7 @@ let make = (
                       name="city"
                       inputRef=cityRef
                       placeholder=localeString.cityLabel
+                      className={isSpacedInnerLayout ? "" : "!border-r-0"}
                     />
                     {switch stateJson {
                     | Some(options) =>
@@ -524,14 +562,17 @@ let make = (
                     }}
                   </div>
                 | CountryAndPincode(countryArr) =>
-                  <div className="flex gap-1">
+                  let updatedCountryArray =
+                    countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
                     <DropdownField
                       appearance=config.appearance
                       fieldName=localeString.countryLabel
                       value=country
                       setValue={setCountry}
                       disabled=false
-                      options=countryArr
+                      options=updatedCountryArray
+                      className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
                     />
                     <PaymentField
                       fieldName=localeString.postalCodeLabel
@@ -549,6 +590,7 @@ let make = (
                       name="postal"
                       inputRef=postalRef
                       placeholder=localeString.postalCodeLabel
+                      className={isSpacedInnerLayout ? "" : "!border-t-0"}
                     />
                   </div>
                 | AddressLine1 =>
@@ -576,6 +618,7 @@ let make = (
                     name="line1"
                     inputRef=line1Ref
                     placeholder=localeString.line1Placeholder
+                    className={isSpacedInnerLayout ? "" : "!border-b-0"}
                   />
                 | AddressLine2 =>
                   <PaymentField
@@ -664,36 +707,42 @@ let make = (
                   />
                 | BlikCode => <BlikCodePaymentInput />
                 | Country =>
+                  let updatedCountryNames =
+                    countryNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
                     setValue=setCountry
                     disabled=false
-                    options=countryNames
+                    options=updatedCountryNames
                   />
                 | AddressCountry(countryArr) =>
+                  let updatedCountryArr =
+                    countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
                     setValue=setCountry
                     disabled=false
-                    options=countryArr
+                    options=updatedCountryArr
                   />
                 | Bank =>
+                  let updatedBankNames =
+                    bankNames->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.bankLabel
                     value=selectedBank
                     setValue=setSelectedBank
                     disabled=false
-                    options=bankNames
+                    options=updatedBankNames
                   />
                 | SpecialField(element) => element
                 | InfoElement =>
                   <>
-                    <Surcharge list paymentMethod paymentMethodType />
+                    <Surcharge paymentMethod paymentMethodType />
                     {if fieldsArr->Array.length > 1 {
                       bottomElement
                     } else {
@@ -718,7 +767,7 @@ let make = (
       </RenderIf>
       <RenderIf condition={isOnlyInfoElementPresent}>
         {<>
-          <Surcharge list paymentMethod paymentMethodType />
+          <Surcharge paymentMethod paymentMethodType />
           {if fieldsArr->Array.length > 1 {
             bottomElement
           } else {
@@ -727,7 +776,7 @@ let make = (
         </>}
       </RenderIf>
       <RenderIf condition={!isInfoElementPresent}>
-        <Surcharge list paymentMethod paymentMethodType />
+        <Surcharge paymentMethod paymentMethodType />
       </RenderIf>
     </>}
   </RenderIf>

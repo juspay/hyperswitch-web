@@ -1,14 +1,14 @@
 const path = require("path");
+const dotenv = require("dotenv").config();
 const { merge } = require("webpack-merge");
 const common = require("./webpack.common.js");
-
-const sdkEnv = process.env.sdkEnv;
+const sdkEnv = process.env.sdkEnv ?? "local";
 
 let backendEndPoint =
   sdkEnv === "prod"
-    ? "https://checkout.hyperswitch.io/api/payments"
+    ? "https://api.hyperswitch.io/payments"
     : sdkEnv === "sandbox"
-    ? "https://beta.hyperswitch.io/api/payments"
+    ? "https://sandbox.hyperswitch.io/payments"
     : sdkEnv === "integ"
     ? "https://integ-api.hyperswitch.io/payments"
     : "http://localhost:8080/payments";
@@ -21,7 +21,7 @@ let devServer = {
   historyApiFallback: true,
   compress: true,
   proxy: {
-    "/api/payments": {
+    "/payments": {
       target: backendEndPoint,
       changeOrigin: true,
       secure: true,

@@ -3,7 +3,7 @@ open RecoilAtomTypes
 open Utils
 
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
+let make = (~paymentType: CardThemeType.mode) => {
   let cleanBSB = str => str->String.replaceRegExp(%re("/-/g"), "")
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -79,16 +79,14 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
   }, (email, fullName, modalData))
   useSubmitPaymentData(submitCallback)
 
-  <div
-    className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+  <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <EmailPaymentInput paymentType />
     <FullNamePaymentInput paymentType />
     <AddBankAccount modalData setModalData />
     <FullScreenPortal>
       <BankDebitModal setModalData />
     </FullScreenPortal>
-    <Surcharge list paymentMethod="bank_debit" paymentMethodType="becs" />
+    <Surcharge paymentMethod="bank_debit" paymentMethodType="becs" />
     <Terms mode=PaymentModeType.BecsBankDebit />
   </div>
 }

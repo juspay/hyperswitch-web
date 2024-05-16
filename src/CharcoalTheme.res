@@ -89,6 +89,11 @@ let charcoalRules = theme =>
       "color": theme.colorText,
       "borderRadius": theme.borderRadius,
     },
+    ".Input-Compressed": {
+      "border": `1px solid ${theme.colorBackground}`,
+      "fontWeight": theme.fontWeightLight,
+      "color": theme.colorText,
+    },
     ".Input:-webkit-autofill": {
       "transition": "background-color 5000s ease-in-out 0s",
       "-webkitTextFillColor": `${theme.colorText} !important`,
@@ -96,6 +101,12 @@ let charcoalRules = theme =>
     ".Input:focus": {
       "border": `1px solid ${theme.colorPrimary}`,
       "boxShadow": `${theme.colorPrimary}4c 0px 0px 0px 3px`,
+    },
+    ".Input-Compressed:focus": {
+      "border": `2px solid ${theme.colorPrimary}`,
+      "boxShadow": `${theme.colorPrimary}4c 0px 0px 0px 2px`,
+      "position": "relative",
+      "zIndex": "2",
     },
     ".Input--invalid": {
       "color": theme.colorDanger,

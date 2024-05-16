@@ -6,7 +6,7 @@ let portalNodes = Recoil.atom("portalNodes", PortalState.defaultDict)
 let elementOptions = Recoil.atom("elementOptions", ElementType.defaultOptions)
 let optionAtom = Recoil.atom("options", PaymentType.defaultOptions)
 let sessions = Recoil.atom("sessions", PaymentType.Loading)
-let list = Recoil.atom("paymentMethodList", PaymentType.Loading)
+let paymentMethodList = Recoil.atom("paymentMethodList", PaymentType.Loading)
 let loggerAtom = Recoil.atom("component", OrcaLogger.defaultLoggerConfig)
 let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
@@ -35,9 +35,8 @@ let userEmailAddress = Recoil.atom("userEmailAddress", defaultFieldValues)
 let userPhoneNumber = Recoil.atom(
   "userPhoneNumber",
   {
-    value: "+351 ",
-    isValid: None,
-    errorString: "",
+    ...defaultFieldValues,
+    countryCode: "",
   },
 )
 let isGooglePayReady = Recoil.atom("isGooglePayReady", false)

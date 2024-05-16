@@ -5,7 +5,7 @@ let make = () => {
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => true)
 
-  let logger = OrcaLogger.make()
+  let logger = OrcaLogger.make(~source=Elements(Payment), ())
 
   React.useEffect0(() => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -104,10 +104,7 @@ let make = () => {
     <div className="backdrop-blur-xl">
       <div id="threeDsAuthDiv" className="hidden" />
       <iframe
-        id="threeDsAuthFrame"
-        name="threeDsAuthFrame"
-        style={ReactDOMStyle.make(~minHeight="500px", ())}
-        width="100%"
+        id="threeDsAuthFrame" name="threeDsAuthFrame" style={minHeight: "500px"} width="100%"
       />
     </div>
   </Modal>

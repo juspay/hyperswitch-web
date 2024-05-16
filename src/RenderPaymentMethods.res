@@ -54,16 +54,15 @@ let make = (
   let frameRef = React.useRef(Nullable.null)
   <div
     className={`flex flex-col justify-between `}
-    style={ReactDOMStyle.make(
-      ~color=themeObj.colorText,
-      ~background="transparent",
-      ~marginLeft="4px",
-      ~marginRight="4px",
-      ~fontFamily=themeObj.fontFamily,
-      ~fontSize=themeObj.fontSizeBase,
-      ~filter=blur,
-      (),
-    )}
+    style={
+      color: themeObj.colorText,
+      background: "transparent",
+      marginLeft: "4px",
+      marginRight: "4px",
+      fontFamily: themeObj.fontFamily,
+      fontSize: themeObj.fontSizeBase,
+      filter: blur,
+    }
     dir=localeString.localeDirection>
     <div
       ref={frameRef->ReactDOM.Ref.domRef}
@@ -79,10 +78,16 @@ let make = (
               paymentType cardProps expiryProps cvcProps zipProps handleElementFocus isFocus
             />
           </React.Suspense>
+        | GooglePayElement
+        | PayPalElement
+        | ApplePayElement
+        | PaymentRequestButtonsElement
         | Payment =>
           <React.Suspense
             fallback={<RenderIf condition={showLoader}>
-              <PaymentElementShimmer />
+              {paymentType->Utils.isWalletElementPaymentType
+                ? <WalletShimmer />
+                : <PaymentElementShimmer />}
             </RenderIf>}>
             <PaymentElementRendererLazy paymentType cardProps expiryProps cvcProps />
           </React.Suspense>

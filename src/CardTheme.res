@@ -20,6 +20,14 @@ let getTheme = (val, logger) => {
     }
   }
 }
+
+let getInnerLayout = str => {
+  switch str {
+  | "compressed" => Compressed
+  | _ => Spaced
+  }
+}
+
 let getShowLoader = (str, logger) => {
   switch str {
   | "auto" => Auto
@@ -32,24 +40,13 @@ let getShowLoader = (str, logger) => {
   }
 }
 
-let getPaymentMode = val => {
-  switch val {
-  | "card" => Card
-  | "payment" => Payment
-  | "cardNumber" => CardNumberElement
-  | "cardExpiry" => CardExpiryElement
-  | "cardCvc" => CardCVCElement
-  | "paymentMethodCollect" => PaymentMethodCollectElement
-  | _ => NONE
-  }
-}
-
 let defaultAppearance = {
   theme: Default,
   variables: DefaultTheme.default,
   componentType: "payment",
   labels: Above,
   rules: Dict.make()->JSON.Encode.object,
+  innerLayout: Spaced,
 }
 let defaultFonts = {
   cssSrc: "",
@@ -317,7 +314,12 @@ let getAppearance = (
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    unknownKeysWarning(["theme", "variables", "rules", "labels"], json, "appearance", ~logger)
+    unknownKeysWarning(
+      ["theme", "variables", "rules", "labels", "innerLayout"],
+      json,
+      "appearance",
+      ~logger,
+    )
 
     let rulesJson = defaultRules(getVariables("variables", json, default, logger))
 
@@ -326,6 +328,7 @@ let getAppearance = (
       componentType: getWarningString(json, "componentType", "", ~logger),
       variables: getVariables("variables", json, default, logger),
       rules: mergeJsons(rulesJson, getJsonObjectFromDict(json, "rules")),
+      innerLayout: getWarningString(json, "innerLayout", "spaced", ~logger)->getInnerLayout,
       labels: switch getWarningString(json, "labels", "above", ~logger) {
       | "above" => Above
       | "floating" => Floating

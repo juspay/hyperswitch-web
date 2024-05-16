@@ -2,7 +2,6 @@ open Utils
 @react.component
 let make = (
   ~sessionObj: option<JSON.t>,
-  ~list: PaymentMethodsRecord.list,
   ~paymentType: option<CardThemeType.mode>,
   ~walletOptions: array<string>,
 ) => {
@@ -25,17 +24,24 @@ let make = (
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let isWallet = walletOptions->Array.includes("apple_pay")
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  UtilityHooks.useHandlePostMessages(
+    ~complete=areRequiredFieldsValid,
+    ~empty=areRequiredFieldsEmpty,
+    ~paymentType="apple_pay",
+  )
 
   let applePayPaymentMethodType = React.useMemo(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
-      ~list,
+      ~paymentMethodListValue,
       ~paymentMethod="wallet",
       ~paymentMethodType="apple_pay",
     ) {
     | Some(paymentMethodType) => paymentMethodType
     | None => PaymentMethodsRecord.defaultPaymentMethodType
     }
-  }, [list])
+  }, [paymentMethodListValue])
 
   let paymentExperience = React.useMemo(() => {
     switch applePayPaymentMethodType.payment_experience[0] {
@@ -49,15 +55,15 @@ let make = (
   }, [sessionObj])
 
   let (connectors, _) = isInvokeSDKFlow
-    ? list->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
-    : list->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
+    ? paymentMethodListValue->PaymentUtils.getConnectors(Wallets(ApplePay(SDK)))
+    : paymentMethodListValue->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  let processPayment = bodyArr => {
+  let processPayment = (bodyArr, ~isThirdPartyFlow=false, ()) => {
     let requestBody = PaymentUtils.appendedCustomerAcceptance(
       ~isGuestCustomer,
-      ~paymentType=list.payment_type,
+      ~paymentType=paymentMethodListValue.payment_type,
       ~body=bodyArr,
     )
 
@@ -69,13 +75,13 @@ let make = (
           publishableKey,
         },
         ~handleUserError=true,
+        ~isThirdPartyFlow,
         (),
       )
     } else {
       let requiredFieldsBodyArr =
         requestBody
-        ->Dict.fromArray
-        ->JSON.Encode.object
+        ->getJsonFromArrayOfJson
         ->flattenObject(true)
         ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
         ->getArrayOfTupleFromDict
@@ -86,6 +92,7 @@ let make = (
           publishableKey,
         },
         ~handleUserError=true,
+        ~isThirdPartyFlow,
         (),
       )
     }
@@ -264,22 +271,15 @@ let make = (
           if isDelayedSessionToken {
             setShowApplePayLoader(_ => true)
             let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
-            processPayment(bodyDict)
+            processPayment(bodyDict, ~isThirdPartyFlow=true, ())
           } else {
             let message = [("applePayButtonClicked", true->JSON.Encode.bool)]
             Utils.handlePostMessage(message)
           }
         } else {
           let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
-          processPayment(bodyDict)
+          processPayment(bodyDict, ())
         }
-        let value = "Payment Data Filled: New Payment Method"
-        loggerState.setLogInfo(
-          ~value,
-          ~eventName=PAYMENT_DATA_FILLED,
-          ~paymentMethod="APPLE_PAY",
-          (),
-        )
       } else {
         setApplePayClicked(_ => false)
       }
@@ -302,7 +302,7 @@ let make = (
           let token =
             dict->Dict.get("applePayProcessPayment")->Option.getOr(Dict.make()->JSON.Encode.object)
           let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
-          processPayment(bodyDict)
+          processPayment(bodyDict, ())
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
           if !isWallet {
@@ -388,7 +388,6 @@ let make = (
       | Some(val) => val
       | _ => NONE
       }}
-      list
       paymentMethod="wallet"
       paymentMethodType="apple_pay"
       setRequiredFieldsBody

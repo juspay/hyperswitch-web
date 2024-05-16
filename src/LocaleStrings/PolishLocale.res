@@ -79,4 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   useExistingPaymentMethods: `Skorzystaj z zapisanych metod płatności`,
   nicknamePlaceholder: `Pseudonim karty (opcjonalnie)`,
   selectPaymentMethodText: `Wybierz metodę płatności i spróbuj ponownie`,
+  cardExpiredText: `Ta karta wygasła`,
+  cardHeader: `Informacje o karcie`,
+  cardBrandConfiguredErrorText: str => `${str} nie jest obecnie obsługiwany.`,
 }

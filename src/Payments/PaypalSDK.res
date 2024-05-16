@@ -1,10 +1,11 @@
 @react.component
-let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) => {
+let make = (~sessionObj: SessionsType.token) => {
   let {iframeId, publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.keys,
   )
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(RecoilAtoms.loggerAtom)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let token = sessionObj.token
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
@@ -88,14 +89,16 @@ let make = (~sessionObj: SessionsType.token, ~list: PaymentMethodsRecord.list) =
                             data,
                             (_err, payload) => {
                               let (connectors, _) =
-                                list->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
+                                paymentMethodListValue->PaymentUtils.getConnectors(
+                                  Wallets(Paypal(SDK)),
+                                )
                               let body = PaymentBody.paypalSdkBody(
                                 ~token=payload.nonce,
                                 ~connectors,
                               )
                               let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
                                 ~isGuestCustomer,
-                                ~paymentType=list.payment_type,
+                                ~paymentType=paymentMethodListValue.payment_type,
                                 ~body,
                               )
 

@@ -79,4 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   useExistingPaymentMethods: "Use saved payment methods",
   cardNickname: "Card Nickname",
   nicknamePlaceholder: "Card Nickname (Optional)",
+  cardExpiredText: `This card has expired`,
+  cardHeader: `Card information`,
+  cardBrandConfiguredErrorText: str => `${str} is not supported at the moment.`,
 }

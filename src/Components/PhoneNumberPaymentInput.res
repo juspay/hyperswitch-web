@@ -1,37 +1,87 @@
-open RecoilAtoms
-open PaymentType
-
 @react.component
 let make = () => {
+  open RecoilAtoms
+  open PaymentType
+  open Utils
+
+  let phoneRef = React.useRef(Nullable.null)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-
-  let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", loggerState)
-
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
-  let formatBSB = bsb => {
-    let formatted = bsb
+  let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", loggerState)
+  let clientCountry = getClientCountry(CardUtils.dateTimeFormat().resolvedOptions().timeZone)
+  let currentCountryCode = Utils.getCountryCode(clientCountry.countryName)
+  let (displayValue, setDisplayValue) = React.useState(_ => "")
 
-    let secondPart = formatted->String.sliceToEnd(~start=4)->String.trim
+  let countryAndCodeCodeList =
+    phoneNumberJson
+    ->JSON.Decode.object
+    ->Option.getOr(Dict.make())
+    ->getArray("countries")
 
-    if formatted->String.length <= 4 {
-      "+351 "
-    } else if formatted->String.length > 4 {
-      `+351 ${secondPart}`
-    } else {
-      formatted
+  let phoneNumberCodeOptions: array<
+    DropdownField.optionType,
+  > = countryAndCodeCodeList->Array.reduce([], (acc, countryObj) => {
+    let countryObjDict = countryObj->getDictFromJson
+    let countryFlag = countryObjDict->getString("country_flag", "")
+    let phoneNumberCode = countryObjDict->getString("phone_number_code", "")
+    let countryName = countryObjDict->getString("country_name", "")
+
+    let phoneNumberOptionsValue: DropdownField.optionType = {
+      label: `${countryFlag} ${countryName} ${phoneNumberCode}`,
+      displayValue: `${countryFlag} ${phoneNumberCode}`,
+      value: `${countryFlag}#${phoneNumberCode}`,
     }
-  }
+    acc->Array.push(phoneNumberOptionsValue)
+    acc
+  })
+
+  let defaultCountryCodeFilteredValue =
+    countryAndCodeCodeList
+    ->Array.filter(countryObj => {
+      countryObj->getDictFromJson->getString("country_code", "") === currentCountryCode.isoAlpha2
+    })
+    ->Array.get(0)
+    ->Option.getOr(
+      {
+        "phone_number_code": "",
+      }->Identity.anyTypeToJson,
+    )
+    ->getDictFromJson
+    ->getString("phone_number_code", "")
+
+  let (valueDropDown, setValueDropDown) = React.useState(_ => defaultCountryCodeFilteredValue)
+  let getCountryCodeSplitValue = val => val->String.split("#")->Array.get(1)->Option.getOr("")
 
   let changePhone = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\+D+/g"), "")
+    let val: string = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\D|\s/g"), "")
     setPhone(prev => {
       ...prev,
-      value: val->formatBSB,
+      countryCode: valueDropDown->getCountryCodeSplitValue,
+      value: val,
     })
   }
 
-  let phoneRef = React.useRef(Nullable.null)
+  React.useEffect(() => {
+    setPhone(prev => {
+      ...prev,
+      countryCode: valueDropDown->getCountryCodeSplitValue,
+    })
+    None
+  }, [valueDropDown])
+
+  React.useEffect(() => {
+    let findDisplayValue =
+      phoneNumberCodeOptions
+      ->Array.find(ele => ele.value === valueDropDown)
+      ->Option.getOr(DropdownField.defaultValue)
+    setDisplayValue(_ =>
+      findDisplayValue.displayValue->Option.getOr(
+        findDisplayValue.label->Option.getOr(findDisplayValue.value),
+      )
+    )
+    None
+  }, [phoneNumberCodeOptions])
 
   <RenderIf condition={showDetails.phone == Auto}>
     <PaymentField
@@ -44,6 +94,11 @@ let make = () => {
       inputRef=phoneRef
       placeholder="+351 200 000 000"
       maxLength=14
+      dropDownOptions=phoneNumberCodeOptions
+      valueDropDown
+      setValueDropDown
+      displayValue
+      setDisplayValue
     />
   </RenderIf>
 }

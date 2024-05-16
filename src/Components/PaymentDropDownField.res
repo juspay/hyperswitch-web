@@ -14,6 +14,7 @@ let make = (
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let getClassName = initialLabel => {
     if value.value->String.length == 0 {
@@ -27,26 +28,17 @@ let make = (
   }
   React.useEffect(() => {
     let initialValue = options->Array.get(0)->Option.getOr("")
-    if (
-      value.value === "" ||
-      value.value === initialValue ||
-      options->Array.includes(value.value)->not
-    ) {
-      setValue(prev => {
-        ...prev,
+    if value.value === "" || options->Array.includes(value.value)->not {
+      setValue(_ => {
+        errorString: "",
         isValid: Some(true),
         value: initialValue,
       })
     }
     None
-  }, [options->Array.get(0)->Option.getOr("")])
+  }, [options])
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    // setValue(.prev => {
-    //   ...prev,
-    //   isValid: None,
-    //   errorString: "",
-    // })
     Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
   }
   let focusClass = if inputFocused || value.value->String.length > 0 {
@@ -58,6 +50,7 @@ let make = (
 
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
+  let inputClassStyles = isSpacedInnerLayout ? "Input" : "Input-Compressed"
 
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
@@ -73,36 +66,37 @@ let make = (
   }, [themeObj])
   let cursorClass = !disabled ? "cursor-pointer" : "cursor-not-allowed"
   <RenderIf condition={options->Array.length > 0}>
-    <div className="flex flex-col w-full" style={ReactDOMStyle.make(~color=themeObj.colorText, ())}>
-      <RenderIf condition={fieldName->String.length > 0 && config.appearance.labels == Above}>
+    <div className="flex flex-col w-full" style={color: themeObj.colorText}>
+      <RenderIf
+        condition={fieldName->String.length > 0 &&
+        config.appearance.labels == Above &&
+        isSpacedInnerLayout}>
         <div
           className={`Label ${labelClass} `}
-          style={ReactDOMStyle.make(
-            ~fontWeight=themeObj.fontWeightNormal,
-            ~fontSize=themeObj.fontSizeLg,
-            ~marginBottom="5px",
-            ~opacity="0.6",
-            (),
-          )}>
+          style={
+            fontWeight: themeObj.fontWeightNormal,
+            fontSize: themeObj.fontSizeLg,
+            marginBottom: "5px",
+            opacity: "0.6",
+          }>
           {React.string(fieldName)}
         </div>
       </RenderIf>
       <div className="relative">
         <select
           ref={dropdownRef->ReactDOM.Ref.domRef}
-          style={ReactDOMStyle.make(
-            ~background=disabled ? disbaledBG : themeObj.colorBackground,
-            ~opacity=disabled ? "35%" : "",
-            ~padding="11px 20px 11px 11px",
-            ~width="100%",
-            (),
-          )}
+          style={
+            background: disabled ? disbaledBG : themeObj.colorBackground,
+            opacity: disabled ? "35%" : "",
+            padding: "11px 20px 11px 11px",
+            width: "100%",
+          }
           name=""
           value=value.value
           disabled={readOnly || disabled}
           onFocus={handleFocus}
           onChange=handleChange
-          className={`Input ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
+          className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>
@@ -112,41 +106,38 @@ let make = (
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
-            style={ReactDOMStyle.make(
-              ~marginBottom={
+            style={
+              marginBottom: {
                 inputFocused || value.value->String.length > 0 ? "" : themeObj.spacingUnit
               },
-              ~fontSize={
+              fontSize: {
                 inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
-              ~opacity="0.6",
-              (),
-            )}>
+              opacity: "0.6",
+            }>
             {React.string(fieldName)}
           </div>
         </RenderIf>
         <div
           className="self-center absolute"
-          style={ReactDOMStyle.make(
-            ~opacity=disabled ? "35%" : "",
-            ~color=themeObj.colorText,
-            ~left=localeString.localeDirection == "rtl" ? "1%" : "97%",
-            ~top="42%",
-            ~marginLeft=localeString.localeDirection == "rtl" ? "1rem" : "-1rem",
-            (),
-          )}>
+          style={
+            opacity: disabled ? "35%" : "",
+            color: themeObj.colorText,
+            left: localeString.localeDirection == "rtl" ? "1%" : "97%",
+            top: "42%",
+            marginLeft: localeString.localeDirection == "rtl" ? "1rem" : "-1rem",
+          }>
           <Icon size=10 name={"arrow-down"} />
         </div>
         <RenderIf condition={value.errorString->String.length > 0}>
           <div
             className="Error pt-1"
-            style={ReactDOMStyle.make(
-              ~color=themeObj.colorDangerText,
-              ~fontSize=themeObj.fontSizeSm,
-              ~alignSelf="start",
-              ~textAlign="left",
-              (),
-            )}>
+            style={
+              color: themeObj.colorDangerText,
+              fontSize: themeObj.fontSizeSm,
+              alignSelf: "start",
+              textAlign: "left",
+            }>
             {React.string(value.errorString)}
           </div>
         </RenderIf>

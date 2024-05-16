@@ -1,3 +1,251 @@
+## [0.52.3](https://github.com/juspay/hyperswitch-web/compare/v0.52.2...v0.52.3) (2024-05-16)
+
+
+### Bug Fixes
+
+* rescript minor version upgrade ([#378](https://github.com/juspay/hyperswitch-web/issues/378)) ([a8d59bb](https://github.com/juspay/hyperswitch-web/commit/a8d59bb1254fb5c6fd51029158e5b6aff5d515c6))
+
+## [0.52.2](https://github.com/juspay/hyperswitch-web/compare/v0.52.1...v0.52.2) (2024-05-16)
+
+
+### Bug Fixes
+
+* added utility function ([#368](https://github.com/juspay/hyperswitch-web/issues/368)) ([4c2c5a1](https://github.com/juspay/hyperswitch-web/commit/4c2c5a1b451cc3f80d73b002121055df6cb38c9b))
+
+## [0.52.1](https://github.com/juspay/hyperswitch-web/compare/v0.52.0...v0.52.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* do not unmount preMountLoader iframe ([#367](https://github.com/juspay/hyperswitch-web/issues/367)) ([ba47e5f](https://github.com/juspay/hyperswitch-web/commit/ba47e5f4faece8be2ec5a374bafd266da7d591e4))
+
+# [0.52.0](https://github.com/juspay/hyperswitch-web/compare/v0.51.1...v0.52.0) (2024-05-14)
+
+
+### Features
+
+* added content length ([#366](https://github.com/juspay/hyperswitch-web/issues/366)) ([2a1b42a](https://github.com/juspay/hyperswitch-web/commit/2a1b42ad2e62b6cd5461345516e5d0ddcaa0abeb))
+
+## [0.51.1](https://github.com/juspay/hyperswitch-web/compare/v0.51.0...v0.51.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* added display_voucher_information again ([#369](https://github.com/juspay/hyperswitch-web/issues/369)) ([91978a9](https://github.com/juspay/hyperswitch-web/commit/91978a9db150ea3f1ce4518fcbace4142ef28343))
+
+# [0.51.0](https://github.com/juspay/hyperswitch-web/compare/v0.50.14...v0.51.0) (2024-05-10)
+
+
+### Features
+
+* phone country dropdown added ([#270](https://github.com/juspay/hyperswitch-web/issues/270)) ([f6a945c](https://github.com/juspay/hyperswitch-web/commit/f6a945c238b28f69ded4062ff851170f5ee0a590))
+
+## [0.50.14](https://github.com/juspay/hyperswitch-web/compare/v0.50.13...v0.50.14) (2024-05-10)
+
+
+### Bug Fixes
+
+* apple_pay sdk pay now button ([#365](https://github.com/juspay/hyperswitch-web/issues/365)) ([dd1bb0f](https://github.com/juspay/hyperswitch-web/commit/dd1bb0f4399db175f8140fd4236b8aa25a02737c))
+
+## [0.50.13](https://github.com/juspay/hyperswitch-web/compare/v0.50.12...v0.50.13) (2024-05-10)
+
+
+### Bug Fixes
+
+* paynow button fix for required fields ([#364](https://github.com/juspay/hyperswitch-web/issues/364)) ([0d8f1f7](https://github.com/juspay/hyperswitch-web/commit/0d8f1f76cadd8030b15af38669e5a038d1ddfd3b))
+
+## [0.50.12](https://github.com/juspay/hyperswitch-web/compare/v0.50.11...v0.50.12) (2024-05-10)
+
+
+### Bug Fixes
+
+* card brand configuration error added ([#362](https://github.com/juspay/hyperswitch-web/issues/362)) ([f14c591](https://github.com/juspay/hyperswitch-web/commit/f14c591e91717af35c4cda9db2e19bc0d180dd9d))
+
+## [0.50.11](https://github.com/juspay/hyperswitch-web/compare/v0.50.10...v0.50.11) (2024-05-10)
+
+## [0.50.10](https://github.com/juspay/hyperswitch-web/compare/v0.50.9...v0.50.10) (2024-05-10)
+
+
+### Bug Fixes
+
+* api-endpoint-url fix for custom backend url ([#357](https://github.com/juspay/hyperswitch-web/issues/357)) ([494a815](https://github.com/juspay/hyperswitch-web/commit/494a815fdf68b944e9fd3076163fbbacc3d3f2ed))
+
+## [0.50.9](https://github.com/juspay/hyperswitch-web/compare/v0.50.8...v0.50.9) (2024-05-08)
+
+
+### Bug Fixes
+
+* isthirdpartyflow fix ([#360](https://github.com/juspay/hyperswitch-web/issues/360)) ([2b19175](https://github.com/juspay/hyperswitch-web/commit/2b19175d6680525d50d03a6e3b042804ce8b8953))
+
+## [0.50.8](https://github.com/juspay/hyperswitch-web/compare/v0.50.7...v0.50.8) (2024-05-08)
+
+
+### Bug Fixes
+
+* dropdown error even when first option is selected ([#356](https://github.com/juspay/hyperswitch-web/issues/356)) ([3e7b007](https://github.com/juspay/hyperswitch-web/commit/3e7b0071b8db132c901cbc0a7fc44f6ef13349d8))
+
+## [0.50.6](https://github.com/juspay/hyperswitch-web/compare/v0.50.5...v0.50.6) (2024-05-07)
+
+## [0.50.5](https://github.com/juspay/hyperswitch-web/compare/v0.50.4...v0.50.5) (2024-05-06)
+
+
+### Bug Fixes
+
+* fixed Saveds Card Confirm Body Sending card details ([#352](https://github.com/juspay/hyperswitch-web/issues/352)) ([2925299](https://github.com/juspay/hyperswitch-web/commit/29252993dc8738549445c9f3c4ccee594674a89d))
+
+## [0.50.4](https://github.com/juspay/hyperswitch-web/compare/v0.50.3...v0.50.4) (2024-05-06)
+
+
+### Bug Fixes
+
+* combined Dynamic Fields for credit and debit ([#351](https://github.com/juspay/hyperswitch-web/issues/351)) ([fceda3c](https://github.com/juspay/hyperswitch-web/commit/fceda3c4a4c49b528a564d4eabeb711504e2307a))
+
+## [0.50.3](https://github.com/juspay/hyperswitch-web/compare/v0.50.2...v0.50.3) (2024-05-06)
+
+## [0.50.2](https://github.com/juspay/hyperswitch-web/compare/v0.50.1...v0.50.2) (2024-05-06)
+
+## [0.50.1](https://github.com/juspay/hyperswitch-web/compare/v0.50.0...v0.50.1) (2024-05-06)
+
+# [0.50.0](https://github.com/juspay/hyperswitch-web/compare/v0.49.2...v0.50.0) (2024-05-06)
+
+
+### Features
+
+* hideExpiredPaymentMethods prop added ([#350](https://github.com/juspay/hyperswitch-web/issues/350)) ([f2a8c42](https://github.com/juspay/hyperswitch-web/commit/f2a8c4295953e8743ad9d5f2c4d7df9c3eba6a96))
+
+## [0.49.2](https://github.com/juspay/hyperswitch-web/compare/v0.49.1...v0.49.2) (2024-05-06)
+
+## [0.49.1](https://github.com/juspay/hyperswitch-web/compare/v0.49.0...v0.49.1) (2024-05-03)
+
+
+### Bug Fixes
+
+* card holder name showing twice ([#349](https://github.com/juspay/hyperswitch-web/issues/349)) ([f72fb5a](https://github.com/juspay/hyperswitch-web/commit/f72fb5a4518e98205479801f74ec5cb2a5bca0fd))
+
+# [0.49.0](https://github.com/juspay/hyperswitch-web/compare/v0.48.2...v0.49.0) (2024-05-03)
+
+
+### Features
+
+* **\:** identifying in-app browsers from user agents ([#317](https://github.com/juspay/hyperswitch-web/issues/317)) ([0218221](https://github.com/juspay/hyperswitch-web/commit/02182211a40413fd2f764a7ff9efa9d1493e402a))
+
+## [0.48.2](https://github.com/juspay/hyperswitch-web/compare/v0.48.1...v0.48.2) (2024-05-03)
+
+
+### Bug Fixes
+
+* remove expired saved cards ([#345](https://github.com/juspay/hyperswitch-web/issues/345)) ([97b66c7](https://github.com/juspay/hyperswitch-web/commit/97b66c74584853010b12443febebb53bb8876ac4))
+
+## [0.48.1](https://github.com/juspay/hyperswitch-web/compare/v0.48.0...v0.48.1) (2024-05-03)
+
+
+### Bug Fixes
+
+* **states:** removed few states from the US list ([#348](https://github.com/juspay/hyperswitch-web/issues/348)) ([46ac3c4](https://github.com/juspay/hyperswitch-web/commit/46ac3c416ec0d5aa1288e8ecd87c8409c8cba0c8))
+
+# [0.48.0](https://github.com/juspay/hyperswitch-web/compare/v0.47.1...v0.48.0) (2024-05-02)
+
+
+### Features
+
+* compressed theme layout ([#320](https://github.com/juspay/hyperswitch-web/issues/320)) ([bdc1336](https://github.com/juspay/hyperswitch-web/commit/bdc1336a62c1916fd87c46749dc017d6832f1c15))
+
+## [0.47.1](https://github.com/juspay/hyperswitch-web/compare/v0.47.0...v0.47.1) (2024-05-02)
+
+
+### Bug Fixes
+
+* **paymentutils:** fixed Maximum Depth Exceeded ([#343](https://github.com/juspay/hyperswitch-web/issues/343)) ([f8443c3](https://github.com/juspay/hyperswitch-web/commit/f8443c3a37874b33de6ec1ee83362aef99dc113c))
+
+# [0.47.0](https://github.com/juspay/hyperswitch-web/compare/v0.46.5...v0.47.0) (2024-04-30)
+
+
+### Bug Fixes
+
+* third party confirm url ([#342](https://github.com/juspay/hyperswitch-web/issues/342)) ([4ba7599](https://github.com/juspay/hyperswitch-web/commit/4ba7599c90dac4c990950eda9bcff49b9ef59e02))
+
+
+### Features
+
+* added one click widgets (applepay, googlepay, paypal) ([#271](https://github.com/juspay/hyperswitch-web/issues/271)) ([509829a](https://github.com/juspay/hyperswitch-web/commit/509829a0c24e10008eef22ede8f4462dfd9eca2d))
+
+## [0.46.6](https://github.com/juspay/hyperswitch-web/compare/v0.46.5...v0.46.6) (2024-04-30)
+
+
+### Bug Fixes
+
+* third party confirm url ([#342](https://github.com/juspay/hyperswitch-web/issues/342)) ([4ba7599](https://github.com/juspay/hyperswitch-web/commit/4ba7599c90dac4c990950eda9bcff49b9ef59e02))
+
+## [0.46.5](https://github.com/juspay/hyperswitch-web/compare/v0.46.4...v0.46.5) (2024-04-30)
+
+
+### Bug Fixes
+
+* cdn confirm endpoint ([#341](https://github.com/juspay/hyperswitch-web/issues/341)) ([664fd07](https://github.com/juspay/hyperswitch-web/commit/664fd07e227f49598f8ba83d1894abce0648dec6))
+
+## [0.46.4](https://github.com/juspay/hyperswitch-web/compare/v0.46.3...v0.46.4) (2024-04-30)
+
+
+### Bug Fixes
+
+* cdn confirm endpoint ([#340](https://github.com/juspay/hyperswitch-web/issues/340)) ([6750ad0](https://github.com/juspay/hyperswitch-web/commit/6750ad014677a173de2c9874a9771f9bdf149557))
+
+## [0.46.3](https://github.com/juspay/hyperswitch-web/compare/v0.46.2...v0.46.3) (2024-04-30)
+
+
+### Bug Fixes
+
+* cdn backend endpoint ([#339](https://github.com/juspay/hyperswitch-web/issues/339)) ([5aa7459](https://github.com/juspay/hyperswitch-web/commit/5aa74596c123a909f646ed767a694f741e1a2d4f))
+
+## [0.46.2](https://github.com/juspay/hyperswitch-web/compare/v0.46.1...v0.46.2) (2024-04-30)
+
+
+### Bug Fixes
+
+* **webpack:** reverting back the CDN changes ([a524987](https://github.com/juspay/hyperswitch-web/commit/a524987f488fd57d775c671cec6dcf59f9db797c))
+
+## [0.46.1](https://github.com/juspay/hyperswitch-web/compare/v0.46.0...v0.46.1) (2024-04-29)
+
+
+### Bug Fixes
+
+* move applepay thirdparty event listeners outside ([#336](https://github.com/juspay/hyperswitch-web/issues/336)) ([c08ec25](https://github.com/juspay/hyperswitch-web/commit/c08ec25e1211e3efdbe7af5c6db44d6a0b7cc03b))
+
+# [0.46.0](https://github.com/juspay/hyperswitch-web/compare/v0.45.1...v0.46.0) (2024-04-26)
+
+
+### Features
+
+* three_ds polling part2 ([#334](https://github.com/juspay/hyperswitch-web/issues/334)) ([b61bc3c](https://github.com/juspay/hyperswitch-web/commit/b61bc3cdd049a8b66bbfe38879367ecb22ec0659))
+
+## [0.45.1](https://github.com/juspay/hyperswitch-web/compare/v0.45.0...v0.45.1) (2024-04-24)
+
+
+### Bug Fixes
+
+* priority array to include apple pay logs ([#332](https://github.com/juspay/hyperswitch-web/issues/332)) ([937248f](https://github.com/juspay/hyperswitch-web/commit/937248f8ff3507cd9b6ccef3fe56769456f6ccbe))
+
+# [0.45.0](https://github.com/juspay/hyperswitch-web/compare/v0.44.1...v0.45.0) (2024-04-24)
+
+
+### Features
+
+* polling status for 3ds flow Part 1 ([#329](https://github.com/juspay/hyperswitch-web/issues/329)) ([bd499b7](https://github.com/juspay/hyperswitch-web/commit/bd499b70af9c79012cbe87f15d953b837dcbfe18))
+
+## [0.44.1](https://github.com/juspay/hyperswitch-web/compare/v0.44.0...v0.44.1) (2024-04-19)
+
+
+### Bug Fixes
+
+* whitelist 127.0.0.1 for local dev ([#316](https://github.com/juspay/hyperswitch-web/issues/316)) ([7212181](https://github.com/juspay/hyperswitch-web/commit/7212181ca57e1d49eca3feda1c6ba7a5746cebeb))
+
+# [0.44.0](https://github.com/juspay/hyperswitch-web/compare/v0.43.5...v0.44.0) (2024-04-19)
+
+
+### Features
+
+* normal mandate changes ([#314](https://github.com/juspay/hyperswitch-web/issues/314)) ([0ce1540](https://github.com/juspay/hyperswitch-web/commit/0ce1540623ddbb95c76cb12217e05eccd7ff537a))
+
 ## [0.43.5](https://github.com/juspay/hyperswitch-web/compare/v0.43.4...v0.43.5) (2024-04-18)
 
 

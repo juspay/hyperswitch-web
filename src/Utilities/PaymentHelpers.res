@@ -92,8 +92,7 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
       ("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string),
     ]
     ->Array.concat(broswerInfo())
-    ->Dict.fromArray
-    ->JSON.Encode.object
+    ->getJsonFromArrayOfJson
 
   open Promise
   logApi(
@@ -184,6 +183,117 @@ let rec pollRetrievePaymentIntent = (
   ->catch(e => {
     Console.log2("Unable to retrieve payment due to following error", e)
     pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod, ~isForceSync)
+  })
+}
+
+let retrieveStatus = (~headers, ~switchToCustomPod, pollID, logger) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let uri = `${endpoint}/poll/status/${pollID}`
+  logApi(
+    ~optLogger=Some(logger),
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=POLL_STATUS_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  fetchApi(
+    uri,
+    ~method=#GET,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    (),
+  )
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger=Some(logger),
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=POLL_STATUS_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger=Some(logger),
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=POLL_STATUS_CALL,
+        ~logType=INFO,
+        ~logCategory=API,
+        (),
+      )
+      res->Fetch.Response.json
+    }
+  })
+  ->catch(e => {
+    Console.log2("Unable to Poll status details because of ", e)
+    JSON.Encode.null->resolve
+  })
+}
+
+let rec pollStatus = (
+  ~headers,
+  ~switchToCustomPod,
+  ~pollId,
+  ~interval,
+  ~count,
+  ~returnUrl,
+  ~logger,
+) => {
+  open Promise
+  retrieveStatus(~headers, ~switchToCustomPod, pollId, logger)
+  ->then(json => {
+    let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+    let status = dict->getString("status", "")
+    Promise.make((resolve, _) => {
+      if status === "completed" {
+        resolve(json)
+      } else if count === 0 {
+        handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+        openUrl(returnUrl)
+      } else {
+        delay(interval)
+        ->then(
+          _ => {
+            pollStatus(
+              ~headers,
+              ~switchToCustomPod,
+              ~pollId,
+              ~interval,
+              ~count=count - 1,
+              ~returnUrl,
+              ~logger,
+            )
+          },
+        )
+        ->ignore
+      }
+    })
+  })
+  ->catch(e => {
+    Console.log2("Unable to retrieve payment due to following error", e)
+    pollStatus(
+      ~headers,
+      ~switchToCustomPod,
+      ~pollId,
+      ~interval,
+      ~count=count - 1,
+      ~returnUrl,
+      ~logger,
+    )
   })
 }
 
@@ -340,6 +450,7 @@ let rec intentCall = (
                 String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
               let endpoint = ApiEndpoint.getApiEndPoint(
                 ~publishableKey=confirmParam.publishableKey,
+                ~isConfirmCall=isConfirm,
                 (),
               )
               let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
@@ -489,13 +600,13 @@ let rec intentCall = (
               } else if intent.nextAction.type_ === "three_ds_invoke" {
                 let threeDsData =
                   intent.nextAction.three_ds_data
-                  ->Belt.Option.flatMap(JSON.Decode.object)
+                  ->Option.flatMap(JSON.Decode.object)
                   ->Option.getOr(Dict.make())
                 let do3dsMethodCall =
                   threeDsData
                   ->Dict.get("three_ds_method_details")
-                  ->Belt.Option.flatMap(JSON.Decode.object)
-                  ->Belt.Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
+                  ->Option.flatMap(JSON.Decode.object)
+                  ->Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
                   ->Option.getOr(Dict.make()->JSON.Encode.object)
                   ->JSON.Decode.bool
                   ->getBoolValue
@@ -541,6 +652,40 @@ let rec intentCall = (
                     ("metadata", metaData->JSON.Encode.object),
                   ])
                 }
+              } else if intent.nextAction.type_ === "display_voucher_information" {
+                let voucherData = intent.nextAction.voucher_details->Option.getOr({
+                  download_url: "",
+                  reference: "",
+                })
+                let headerObj = Dict.make()
+                headers->Array.forEach(
+                  entries => {
+                    let (x, val) = entries
+                    Dict.set(headerObj, x, val->JSON.Encode.string)
+                  },
+                )
+                let metaData =
+                  [
+                    ("voucherUrl", voucherData.download_url->JSON.Encode.string),
+                    ("reference", voucherData.reference->JSON.Encode.string),
+                    ("returnUrl", url.href->JSON.Encode.string),
+                    ("paymentMethod", paymentMethod->JSON.Encode.string),
+                    ("payment_intent_data", data),
+                  ]->Dict.fromArray
+                handleLogging(
+                  ~optLogger,
+                  ~value="",
+                  ~internalMetadata=metaData->JSON.Encode.object->JSON.stringify,
+                  ~eventName=DISPLAY_VOUCHER,
+                  ~paymentMethod,
+                  (),
+                )
+                handlePostMessage([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", `voucherData`->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                  ("metadata", metaData->JSON.Encode.object),
+                ])
               } else if intent.nextAction.type_ == "third_party_sdk_session_token" {
                 let session_token = switch intent.nextAction.session_token {
                 | Some(token) => token->getDictFromJson
@@ -683,7 +828,11 @@ let rec intentCall = (
         } else {
           let paymentIntentID =
             String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-          let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
+          let endpoint = ApiEndpoint.getApiEndPoint(
+            ~publishableKey=confirmParam.publishableKey,
+            ~isConfirmCall=isConfirm,
+            (),
+          )
           let retrieveUri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
           intentCall(
             ~fetchApi,
@@ -729,7 +878,7 @@ let rec intentCall = (
 
 let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
-  let list = Recoil.useRecoilValueFromAtom(list)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
@@ -761,7 +910,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           (),
         )->ignore
       }
-      switch list {
+      switch paymentMethodList {
       | Loaded(_) => paymentSync()
       | _ => ()
       }
@@ -785,8 +934,7 @@ let rec maskPayload = payloadJson => {
       let (key, value) = entry
       (key, maskPayload(value))
     })
-    ->Dict.fromArray
-    ->JSON.Encode.object
+    ->Utils.getJsonFromArrayOfJson
 
   | Array(arr) => arr->Array.map(maskPayload)->JSON.Encode.array
   | String(valueStr) => valueStr->maskStr->JSON.Encode.string
@@ -800,7 +948,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   open RecoilAtoms
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
-  let list = Recoil.useRecoilValueFromAtom(list)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
 
   let (isManualRetryEnabled, setIsManualRetryEnabled) = Recoil.useRecoilState(isManualRetryEnabled)
@@ -809,6 +957,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~bodyArr: array<(string, JSON.t)>,
     ~confirmParam: ConfirmType.confirmParams,
     ~iframeId=keys.iframeId,
+    ~isThirdPartyFlow=false,
     (),
   ) => {
     switch keys.clientSecret {
@@ -826,12 +975,13 @@ let usePaymentIntent = (optLogger, paymentType) => {
         ])
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
-        ~isConfirmCall=true,
+        ~isConfirmCall=isThirdPartyFlow,
         (),
       )
       let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
 
       let callIntent = body => {
+        let contentLength = body->String.length->Int.toString
         let maskedPayload =
           body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
         let loggerPayload =
@@ -844,29 +994,27 @@ let usePaymentIntent = (optLogger, paymentType) => {
                 let (key, value) = header
                 (key, value->JSON.Encode.string)
               })
-              ->Dict.fromArray
-              ->JSON.Encode.object,
+              ->Utils.getJsonFromArrayOfJson,
             ),
           ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ->Utils.getJsonFromArrayOfJson
           ->JSON.stringify
         switch paymentType {
         | Card =>
           handleLogging(
             ~optLogger,
             ~internalMetadata=loggerPayload,
-            ~value="",
+            ~value=contentLength,
             ~eventName=PAYMENT_ATTEMPT,
             ~paymentMethod="CARD",
             (),
           )
         | _ =>
-          let _ = bodyArr->Array.map(((str, json)) => {
+          bodyArr->Array.forEach(((str, json)) => {
             if str === "payment_method_type" {
               handleLogging(
                 ~optLogger,
-                ~value="",
+                ~value=contentLength,
                 ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
                 ~paymentMethod=json->getStringFromJson(""),
@@ -908,8 +1056,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             bodyArr->Array.concat(broswerInfo()),
             mandatePaymentType->PaymentBody.paymentTypeBody,
           ])
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ->Utils.getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
@@ -920,13 +1067,12 @@ let usePaymentIntent = (optLogger, paymentType) => {
           ->Array.concat(
             bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
           )
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ->Utils.getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
 
-      switch list {
+      switch paymentMethodList {
       | LoadError(data)
       | Loaded(data) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
@@ -989,9 +1135,7 @@ let fetchSessions = (
       ("client_secret", clientSecret->JSON.Encode.string),
       ("wallets", wallets->JSON.Encode.array),
       ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
-    ]
-    ->Dict.fromArray
-    ->JSON.Encode.object
+    ]->getJsonFromArrayOfJson
   let uri = `${endpoint}/payments/session_tokens`
   logApi(
     ~optLogger,

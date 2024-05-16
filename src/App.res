@@ -1,14 +1,15 @@
 @react.component
 let make = () => {
-  let (logger, initTimestamp) = React.useMemo0(() => {
-    (OrcaLogger.make(), Date.now())
-  })
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
   let setLoggerState = Recoil.useSetRecoilState(RecoilAtoms.loggerAtom)
   let {showLoader} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   let paymentMode = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+  let paymentType = paymentMode->CardThemeType.getPaymentMode
+  let (logger, initTimestamp) = React.useMemo0(() => {
+    (OrcaLogger.make(~source=Elements(paymentType), ()), Date.now())
+  })
   let fullscreenMode = CardUtils.getQueryParamsDictforKey(url.search, "fullscreenType")
 
   React.useEffect(() => {
@@ -41,7 +42,8 @@ let make = () => {
         let clientSecret = CardUtils.getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = CardUtils.getQueryParamsDictforKey(url.search, "sessionId")
         let publishableKey = CardUtils.getQueryParamsDictforKey(url.search, "publishableKey")
-        <PreMountLoader publishableKey sessionId clientSecret />
+        let endpoint = CardUtils.getQueryParamsDictforKey(url.search, "endpoint")
+        <PreMountLoader publishableKey sessionId clientSecret endpoint />
       }
     | "achBankTransfer"
     | "bacsBankTransfer"

@@ -4,8 +4,9 @@ open Utils
 open PaymentModeType
 
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) => {
+let make = (~paymentType: CardThemeType.mode) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
 
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -77,14 +78,16 @@ let make = (~paymentType: CardThemeType.mode, ~list: PaymentMethodsRecord.list) 
 
   <div
     className="flex flex-col animate-slowShow"
-    style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+    style={
+      gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
+    }>
     <EmailPaymentInput paymentType />
     <FullNamePaymentInput paymentType />
     <AddBankAccount modalData setModalData />
     <FullScreenPortal>
       <BankDebitModal setModalData />
     </FullScreenPortal>
-    <Surcharge list paymentMethod="bank_debit" paymentMethodType="sepa" />
+    <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
     <Terms mode=SepaBankDebit />
   </div>
 }

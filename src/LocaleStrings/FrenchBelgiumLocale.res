@@ -79,4 +79,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   useExistingPaymentMethods: `Utiliser les modes de paiement enregistrés`,
   nicknamePlaceholder: `Surnom de la carte (facultatif)`,
   selectPaymentMethodText: `Veuillez sélectionner un mode de paiement et réessayer`,
+  cardExpiredText: `Cette carte a expiré`,
+  cardHeader: `Informations de carte`,
+  cardBrandConfiguredErrorText: str => `${str} n'est pas pris en charge pour le moment.`,
 }

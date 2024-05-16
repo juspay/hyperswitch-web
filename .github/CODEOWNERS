@@ -4,27 +4,27 @@ docs/ @akash-c-k
 LICENSE @akash-c-k
 README.md @akash-c-k
 SECURITY.md @akash-c-k
-.gitignore @prafulkoppalkar @ArushKapoorJuspay
+.gitignore @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
 
-Hyperswitch-React-Demo-App/ @prafulkoppalkar @JeevaRamu0104
+Hyperswitch-React-Demo-App/ @prafulkoppalkar @JeevaRamu0104 @PritishBudhiraja
 Hyperswitch-React-Demo-App/Dockerfile @JeevaRamu0104 @prafulkoppalkar
 Hyperswitch-React-Demo-App/Makefile @JeevaRamu0104 @prafulkoppalkar
-Hyperswitch-React-Demo-App/promptScript.js @prafulkoppalkar @ArushKapoorJuspay
-Hyperswitch-React-Demo-App/webpack.common.js @prafulkoppalkar @ArushKapoorJuspay
-Hyperswitch-React-Demo-App/webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay
+Hyperswitch-React-Demo-App/promptScript.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
+Hyperswitch-React-Demo-App/webpack.common.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
+Hyperswitch-React-Demo-App/webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
 
-.husky/ @harsh-Juspay @prafulkoppalkar @PritishBudhiraja
-.github/ @harsh-Juspay @prafulkoppalkar @PritishBudhiraja
+.husky/ @prafulkoppalkar @PritishBudhiraja
+.github/ @prafulkoppalkar @PritishBudhiraja
 
 aws/ @prafulkoppalkar
 
-webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay
-webpack.common.js @prafulkoppalkar @ArushKapoorJuspay
+webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
+webpack.common.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
 
 src/orca-log-catcher @vsrivatsa-juspay @prafulkoppalkar
 src/orca-loader @prafulkoppalkar
-src/LoaderConroller.res @prafulkoppalkar
-src/Utilities @prafulkoppalkar
-src/libraries @prafulkoppalkar
-src/Hooks @prafulkoppalkar
-src/Payment.res @prafulkoppalkar
+src/LoaderConroller.res @prafulkoppalkar @PritishBudhiraja
+src/Utilities @prafulkoppalkar @PritishBudhiraja
+src/libraries @prafulkoppalkar @PritishBudhiraja
+src/Hooks @prafulkoppalkar @PritishBudhiraja
+src/Payment.res @prafulkoppalkar @PritishBudhiraja

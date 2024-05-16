@@ -8,7 +8,6 @@ let make = (
   ~cvcProps,
   ~isBancontact=false,
   ~paymentType: CardThemeType.mode,
-  ~list: PaymentMethodsRecord.list,
 ) => {
   open PaymentType
   open PaymentModeType
@@ -16,8 +15,10 @@ let make = (
   open UtilityHooks
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {innerLayout} = config.appearance
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let (nickname, setNickname) = React.useState(_ => "")
 
@@ -72,6 +73,28 @@ let make = (
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
 
+  let combinedCardNetworks = React.useMemo1(() => {
+    let cardPaymentMethod =
+      paymentMethodListValue.payment_methods
+      ->Array.find(ele => ele.payment_method === "card")
+      ->Option.getOr({
+        payment_method: "card",
+        payment_method_types: [],
+      })
+
+    let cardNetworks = cardPaymentMethod.payment_method_types->Array.map(ele => ele.card_networks)
+
+    let cardNetworkNames =
+      cardNetworks->Array.map(ele =>
+        ele->Array.map(val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase)
+      )
+
+    cardNetworkNames
+    ->Array.reduce([], (acc, ele) => acc->Array.concat(ele))
+    ->Utils.getUniqueArray
+  }, [paymentMethodListValue])
+  let isCardBrandValid = combinedCardNetworks->Array.includes(cardBrand->String.toLowerCase)
+
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
@@ -96,7 +119,6 @@ let make = (
   let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
     ~isSaveCardsChecked,
-    ~list,
     ~isGuestCustomer,
   )
 
@@ -130,17 +152,12 @@ let make = (
       defaultCardBody
     }
     if confirm.doSubmit {
-      let validFormat =
-        (isBancontact ||
-        (isCVCValid->Option.getOr(false) &&
-        isCardValid->Option.getOr(false) &&
-        isExpiryValid->Option.getOr(false))) && areRequiredFieldsValid
-      if validFormat && (showFields || isBancontact) {
+      let validFormat = (isBancontact || complete) && areRequiredFieldsValid
+      if validFormat && (showFields || isBancontact) && isCardBrandValid {
         intent(
           ~bodyArr={
             (isBancontact ? banContactBody : cardBody)
-            ->Dict.fromArray
-            ->JSON.Encode.object
+            ->getJsonFromArrayOfJson
             ->flattenObject(true)
             ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
             ->getArrayOfTupleFromDict
@@ -165,6 +182,9 @@ let make = (
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)
         }
+        if !isCardBrandValid {
+          setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+        }
       }
     }
   }, (
@@ -174,26 +194,38 @@ let make = (
     complete,
     isCustomerAcceptanceRequired,
     nickname,
+    isCardBrandValid,
   ))
   useSubmitPaymentData(submitCallback)
 
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
   let conditionsForShowingSaveCardCheckbox =
-    list.mandate_payment->Option.isNone &&
+    paymentMethodListValue.mandate_payment->Option.isNone &&
     !isGuestCustomer &&
-    list.payment_type !== SETUP_MANDATE &&
+    paymentMethodListValue.payment_type !== SETUP_MANDATE &&
     options.displaySavedPaymentMethodsCheckbox &&
     !isBancontact
 
   let nicknameFieldClassName = conditionsForShowingSaveCardCheckbox ? "pt-2" : "pt-5"
 
+  let compressedLayoutStyleForCvcError =
+    innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
+
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
-      <div
-        className="flex flex-col"
-        style={ReactDOMStyle.make(~gridGap=themeObj.spacingGridColumn, ())}>
+      <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>
         <div className="w-full">
+          <RenderIf condition={innerLayout === Compressed}>
+            <div
+              style={
+                marginBottom: "5px",
+                fontSize: themeObj.fontSizeLg,
+                opacity: "0.6",
+              }>
+              {React.string(localeString.cardHeader)}
+            </div>
+          </RenderIf>
           <RenderIf condition={!isBancontact}>
             <PaymentInputField
               fieldName=localeString.cardNumberLabel
@@ -210,15 +242,19 @@ let make = (
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
+              className={innerLayout === Compressed && cardError->String.length > 0
+                ? "border-b-0"
+                : ""}
             />
             <div
               className="flex flex-row w-full place-content-between"
-              style={ReactDOMStyle.make(
-                ~marginTop=themeObj.spacingGridColumn,
-                ~gridColumnGap=themeObj.spacingGridRow,
-                (),
-              )}>
-              <div className="w-[45%]">
+              style={
+                marginTop: {
+                  innerLayout === Spaced ? themeObj.spacingGridColumn : ""
+                },
+                gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
+              }>
+              <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.validThruText
                   isValid=isExpiryValid
@@ -235,7 +271,7 @@ let make = (
                   placeholder="MM / YY"
                 />
               </div>
-              <div className="w-[45%]">
+              <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.cvcTextLabel
                   isValid=isCVCValid
@@ -253,17 +289,32 @@ let make = (
                   )}
                   appearance=config.appearance
                   type_="tel"
-                  className="tracking-widest w-full"
+                  className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
                   maxLength=4
                   inputRef=cvcRef
                   placeholder="123"
                 />
               </div>
             </div>
+            <RenderIf
+              condition={innerLayout === Compressed &&
+                (cardError->String.length > 0 ||
+                cvcError->String.length > 0 ||
+                expiryError->String.length > 0)}>
+              <div
+                className="Error pt-1"
+                style={
+                  color: themeObj.colorDangerText,
+                  fontSize: themeObj.fontSizeSm,
+                  alignSelf: "start",
+                  textAlign: "left",
+                }>
+                {React.string("Invalid input")}
+              </div>
+            </RenderIf>
           </RenderIf>
           <DynamicFields
             paymentType
-            list
             paymentMethod
             paymentMethodType
             setRequiredFieldsBody
@@ -288,12 +339,14 @@ let make = (
       </div>
     </RenderIf>
     <RenderIf condition={showFields || isBancontact}>
-      <Surcharge
-        list paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType}
-      />
+      <Surcharge paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType} />
     </RenderIf>
     <RenderIf condition={!isBancontact}>
-      {switch (list.mandate_payment, options.terms.card, list.payment_type) {
+      {switch (
+        paymentMethodListValue.mandate_payment,
+        options.terms.card,
+        paymentMethodListValue.payment_type,
+      ) {
       | (Some(_), Auto, NEW_MANDATE)
       | (Some(_), Auto, SETUP_MANDATE)
       | (_, Always, NEW_MANDATE)
@@ -302,11 +355,10 @@ let make = (
       | (_, _, NEW_MANDATE) =>
         <div
           className="opacity-50 text-xs mb-2 text-left"
-          style={ReactDOMStyle.make(
-            ~color=themeObj.colorText,
-            ~marginTop=themeObj.spacingGridColumn,
-            (),
-          )}>
+          style={
+            color: themeObj.colorText,
+            marginTop: themeObj.spacingGridColumn,
+          }>
           <Terms mode={Card} />
         </div>
       | (_, _, _) => React.null
