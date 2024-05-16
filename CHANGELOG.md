@@ -1,3 +1,10 @@
+## [0.52.2](https://github.com/juspay/hyperswitch-web/compare/v0.52.1...v0.52.2) (2024-05-16)
+
+
+### Bug Fixes
+
+* added utility function ([#368](https://github.com/juspay/hyperswitch-web/issues/368)) ([4c2c5a1](https://github.com/juspay/hyperswitch-web/commit/4c2c5a1b451cc3f80d73b002121055df6cb38c9b))
+
 ## [0.52.1](https://github.com/juspay/hyperswitch-web/compare/v0.52.0...v0.52.1) (2024-05-14)
 
 
