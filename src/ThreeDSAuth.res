@@ -141,10 +141,8 @@ let make = () => {
 
   let expiryString = React.useMemo(() => {
     let minutes = (expiryTime /. 60000.0)->Belt.Float.toInt->Belt.Int.toString
-
     let seconds =
       mod(expiryTime->Belt.Float.toInt, 60000)->Belt.Int.toString->String.slice(~start=0, ~end=-3)
-    Console.log(mod(expiryTime->Belt.Float.toInt, 60000))
     let secondsString =
       seconds->String.length == 1 ? `0${seconds}` : seconds->String.length == 0 ? "00" : seconds
     `${minutes}:${secondsString}`
