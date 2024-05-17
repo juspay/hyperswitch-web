@@ -1,3 +1,10 @@
+# [0.53.0](https://github.com/juspay/hyperswitch-web/compare/v0.52.3...v0.53.0) (2024-05-17)
+
+
+### Features
+
+* address collection for one click widgets ([#361](https://github.com/juspay/hyperswitch-web/issues/361)) ([48c48a3](https://github.com/juspay/hyperswitch-web/commit/48c48a31f931df615fc27fe492a9ce268d24fff7))
+
 ## [0.52.3](https://github.com/juspay/hyperswitch-web/compare/v0.52.2...v0.52.3) (2024-05-16)
 
 

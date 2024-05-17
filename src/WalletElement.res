@@ -5,15 +5,9 @@ let make = (~paymentType) => {
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
 
-  let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
-    PaymentUtils.paymentMethodListValue,
-  )
+  let setPaymentMethodListValue = Recoil.useSetRecoilState(PaymentUtils.paymentMethodListValue)
 
-  let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(
-    ~paymentMethodListValue,
-    ~paymentOptions=[],
-    ~paymentType,
-  )
+  let (walletList, _, _) = PaymentUtils.useGetPaymentMethodList(~paymentOptions=[], ~paymentType)
 
   React.useEffect(() => {
     switch methodslist {
@@ -36,7 +30,7 @@ let make = (~paymentType) => {
   <RenderIf condition={walletOptions->Array.length > 0}>
     <div className="flex flex-col place-items-center">
       <ErrorBoundary key="payment_request_buttons_all" level={ErrorBoundary.RequestButton}>
-        <PaymentRequestButtonElement sessions walletOptions />
+        <PaymentRequestButtonElement sessions walletOptions paymentType />
       </ErrorBoundary>
     </div>
   </RenderIf>

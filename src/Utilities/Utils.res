@@ -1228,7 +1228,11 @@ let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "paymentRequ
 
 let componentsForPaymentElementCreate = ["payment"]->Array.concat(expressCheckoutComponents)
 
-let isComponentTypeForPaymentElementCreate = componentType => {
+let getIsExpressCheckoutComponent = componentType => {
+  expressCheckoutComponents->Array.includes(componentType)
+}
+
+let getIsComponentTypeForPaymentElementCreate = componentType => {
   componentsForPaymentElementCreate->Array.includes(componentType)
 }
 
@@ -1239,10 +1243,32 @@ let walletElementPaymentType: array<CardThemeType.mode> = [
   PaymentRequestButtonsElement,
 ]
 
-let isWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
+let getIsWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
   walletElementPaymentType->Array.includes(paymentType)
 }
 
 let getUniqueArray = arr => arr->Array.map(item => (item, ""))->Dict.fromArray->Dict.keysToArray
 
 let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
+
+let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, country: string) => {
+  let options =
+    list
+    ->getDictFromJson
+    ->getOptionalArrayFromDict(country)
+    ->Option.getOr([])
+
+  let val = options->Array.find(item =>
+    item
+    ->getDictFromJson
+    ->getString("code", "") === stateCode
+  )
+
+  switch val {
+  | Some(stateObj) =>
+    stateObj
+    ->getDictFromJson
+    ->getString("name", stateCode)
+  | None => stateCode
+  }
+}
