@@ -86,7 +86,7 @@ let make = (
         | Payment =>
           <React.Suspense
             fallback={<RenderIf condition={showLoader}>
-              {paymentType->Utils.isWalletElementPaymentType
+              {paymentType->Utils.getIsWalletElementPaymentType
                 ? <WalletShimmer />
                 : <PaymentElementShimmer />}
             </RenderIf>}>

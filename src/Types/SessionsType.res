@@ -10,6 +10,10 @@ type token = {
   allowed_payment_methods: array<JSON.t>,
   transaction_info: JSON.t,
   merchant_info: JSON.t,
+  shippingAddressRequired: bool,
+  emailRequired: bool,
+  shippingAddressParameters: JSON.t,
+  orderDetails: JSON.t,
 }
 
 type tokenType =
@@ -33,6 +37,10 @@ let defaultToken = {
   allowed_payment_methods: [],
   transaction_info: Dict.make()->JSON.Encode.object,
   merchant_info: Dict.make()->JSON.Encode.object,
+  shippingAddressRequired: false,
+  emailRequired: false,
+  shippingAddressParameters: Dict.make()->JSON.Encode.object,
+  orderDetails: Dict.make()->JSON.Encode.object,
 }
 let getWallet = str => {
   switch str {
@@ -59,6 +67,10 @@ let getSessionsToken = (dict, str) => {
         allowed_payment_methods: getArray(dict, "allowed_payment_methods"),
         transaction_info: getJsonObjectFromDict(dict, "transaction_info"),
         merchant_info: getJsonObjectFromDict(dict, "merchant_info"),
+        shippingAddressRequired: getBool(dict, "shipping_address_required", false),
+        emailRequired: getBool(dict, "email_required", false),
+        shippingAddressParameters: getJsonObjectFromDict(dict, "shipping_address_parameters"),
+        orderDetails: getJsonObjectFromDict(dict, "order_details"),
       }
     })
   })

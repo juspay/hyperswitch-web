@@ -1,5 +1,3 @@
-open Types
-
 let getCustomerSavedPaymentMethods = (
   ~clientSecret,
   ~publishableKey,
@@ -8,6 +6,8 @@ let getCustomerSavedPaymentMethods = (
   ~switchToCustomPod,
 ) => {
   open Promise
+  open Types
+  open Utils
   PaymentHelpers.fetchCustomerPaymentMethodList(
     ~clientSecret,
     ~publishableKey,
@@ -40,12 +40,11 @@ let getCustomerSavedPaymentMethods = (
       let confirmWithCustomerDefaultPaymentMethod = payload => {
         let customerPaymentMethod =
           customerDefaultPaymentMethod->JSON.Decode.object->Option.getOr(Dict.make())
-        let paymentToken =
-          customerPaymentMethod->Utils.getJsonFromDict("payment_token", JSON.Encode.null)
+        let paymentToken = customerPaymentMethod->getJsonFromDict("payment_token", JSON.Encode.null)
         let paymentMethod =
-          customerPaymentMethod->Utils.getJsonFromDict("payment_method", JSON.Encode.null)
+          customerPaymentMethod->getJsonFromDict("payment_method", JSON.Encode.null)
         let paymentMethodType =
-          customerPaymentMethod->Utils.getJsonFromDict("payment_method_type", JSON.Encode.null)
+          customerPaymentMethod->getJsonFromDict("payment_method_type", JSON.Encode.null)
 
         let confirmParams =
           payload
@@ -105,11 +104,10 @@ let getCustomerSavedPaymentMethods = (
           ("payment_method_type", paymentMethodType),
         ]
 
-        let bodyStr =
-          body->Array.concat(broswerInfo)->Dict.fromArray->JSON.Encode.object->JSON.stringify
+        let bodyStr = body->Array.concat(broswerInfo)->getJsonFromArrayOfJson->JSON.stringify
 
         PaymentHelpers.intentCall(
-          ~fetchApi=Utils.fetchApi,
+          ~fetchApi,
           ~uri,
           ~headers,
           ~bodyStr,
@@ -147,19 +145,15 @@ let getCustomerSavedPaymentMethods = (
                   "message",
                   "There is no customer default saved payment method data"->JSON.Encode.string,
                 ),
-              ]
-              ->Dict.fromArray
-              ->JSON.Encode.object,
+              ]->getJsonFromArrayOfJson,
             ),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ]->getJsonFromArrayOfJson
         updatedCustomerDetails->resolve
       }
     }
   })
   ->catch(err => {
-    let exceptionMessage = err->Utils.formatException->JSON.stringify
+    let exceptionMessage = err->formatException->JSON.stringify
     let updatedCustomerDetails =
       [
         (
@@ -167,13 +161,9 @@ let getCustomerSavedPaymentMethods = (
           [
             ("type", "server_error"->JSON.Encode.string),
             ("message", exceptionMessage->JSON.Encode.string),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object,
+          ]->getJsonFromArrayOfJson,
         ),
-      ]
-      ->Dict.fromArray
-      ->JSON.Encode.object
+      ]->getJsonFromArrayOfJson
     updatedCustomerDetails->resolve
   })
 }

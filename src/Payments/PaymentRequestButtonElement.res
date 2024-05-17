@@ -36,7 +36,7 @@ module WalletsSaveDetailsText = {
 }
 
 @react.component
-let make = (~sessions, ~walletOptions) => {
+let make = (~sessions, ~walletOptions, ~paymentType) => {
   open SessionsType
   let dict = sessions->Utils.getDictFromJson
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -74,15 +74,9 @@ let make = (~sessions, ~walletOptions) => {
                   switch googlePayThirdPartyToken {
                   | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
                     <GPayLazy
-                      paymentType=NONE
-                      sessionObj=optToken
-                      thirdPartySessionObj=googlePayThirdPartyOptToken
-                      walletOptions
+                      sessionObj=optToken thirdPartySessionObj=googlePayThirdPartyOptToken
                     />
-                  | _ =>
-                    <GPayLazy
-                      paymentType=NONE sessionObj=optToken thirdPartySessionObj=None walletOptions
-                    />
+                  | _ => <GPayLazy sessionObj=optToken thirdPartySessionObj=None />
                   }
                 | _ => React.null
                 }}
@@ -92,7 +86,7 @@ let make = (~sessions, ~walletOptions) => {
                 {switch paypalToken {
                 | OtherTokenOptional(optToken) =>
                   switch optToken {
-                  | Some(token) => <PaypalSDKLazy sessionObj=token />
+                  | Some(token) => <PaypalSDKLazy sessionObj=token paymentType />
                   | None => <PayPalLazy />
                   }
                 | _ => <PayPalLazy />
@@ -100,8 +94,7 @@ let make = (~sessions, ~walletOptions) => {
               </SessionPaymentWrapper>
             | ApplePayWallet =>
               switch applePayToken {
-              | ApplePayTokenOptional(optToken) =>
-                <ApplePayLazy sessionObj=optToken paymentType=NONE walletOptions />
+              | ApplePayTokenOptional(optToken) => <ApplePayLazy sessionObj=optToken />
               | _ => React.null
               }
 

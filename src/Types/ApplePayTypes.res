@@ -1,5 +1,27 @@
 type token = {paymentData: JSON.t}
-type paymentResult = {token: JSON.t}
+type billingContact = {
+  addressLines: array<string>,
+  administrativeArea: string,
+  countryCode: string,
+  familyName: string,
+  givenName: string,
+  locality: string,
+  postalCode: string,
+}
+
+type shippingContact = {
+  emailAddress: string,
+  phoneNumber: string,
+  addressLines: array<string>,
+  administrativeArea: string,
+  countryCode: string,
+  familyName: string,
+  givenName: string,
+  locality: string,
+  postalCode: string,
+}
+
+type paymentResult = {token: JSON.t, billingContact: JSON.t, shippingContact: JSON.t}
 type event = {validationURL: string, payment: paymentResult}
 type innerSession
 type session = {
@@ -80,5 +102,31 @@ let jsonToPaymentRequestDataType: Dict.t<JSON.t> => paymentRequestData = jsonDic
       ~merchantIdentifier=Utils.getString(jsonDict, "merchant_identifier", ""),
       (),
     )
+  }
+}
+
+let billingContactItemToObjMapper = dict => {
+  {
+    addressLines: dict->Utils.getStrArray("addressLines"),
+    administrativeArea: dict->Utils.getString("administrativeArea", ""),
+    countryCode: dict->Utils.getString("countryCode", ""),
+    familyName: dict->Utils.getString("familyName", ""),
+    givenName: dict->Utils.getString("givenName", ""),
+    locality: dict->Utils.getString("locality", ""),
+    postalCode: dict->Utils.getString("postalCode", ""),
+  }
+}
+
+let shippingContactItemToObjMapper = dict => {
+  {
+    emailAddress: dict->Utils.getString("emailAddress", ""),
+    phoneNumber: dict->Utils.getString("phoneNumber", ""),
+    addressLines: dict->Utils.getStrArray("addressLines"),
+    administrativeArea: dict->Utils.getString("administrativeArea", ""),
+    countryCode: dict->Utils.getString("countryCode", ""),
+    familyName: dict->Utils.getString("familyName", ""),
+    givenName: dict->Utils.getString("givenName", ""),
+    locality: dict->Utils.getString("locality", ""),
+    postalCode: dict->Utils.getString("postalCode", ""),
   }
 }

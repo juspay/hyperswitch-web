@@ -25,9 +25,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
 
-  let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
-    PaymentUtils.paymentMethodListValue,
-  )
+  let setPaymentMethodListValue = Recoil.useSetRecoilState(PaymentUtils.paymentMethodListValue)
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
@@ -102,7 +100,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, [savedMethods])
 
   let (walletList, paymentOptionsList, actualList) = PaymentUtils.useGetPaymentMethodList(
-    ~paymentMethodListValue,
     ~paymentOptions,
     ~paymentType,
   )
@@ -226,15 +223,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }
   let dict = sessions->getDictFromJson
   let sessionObj = SessionsType.itemToObjMapper(dict, Others)
-  let applePaySessionObj = SessionsType.itemToObjMapper(dict, ApplePayObject)
-  let applePayToken = SessionsType.getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
   let klarnaTokenObj = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
-  let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
-  let googlePayThirdPartySessionObj = SessionsType.itemToObjMapper(dict, GooglePayThirdPartyObject)
-  let googlePayThirdPartyToken = SessionsType.getPaymentSessionObj(
-    googlePayThirdPartySessionObj.sessionsToken,
-    Gpay,
-  )
 
   let loader = () => {
     handlePostMessageEvents(
@@ -299,32 +288,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <React.Suspense fallback={loader()}>
           <BecsBankDebitLazy paymentType />
         </React.Suspense>
-      | GooglePay =>
-        switch gPayToken {
-        | OtherTokenOptional(optToken) =>
-          switch googlePayThirdPartyToken {
-          | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
-            <React.Suspense fallback={loader()}>
-              <GPayLazy
-                paymentType
-                sessionObj=optToken
-                thirdPartySessionObj=googlePayThirdPartyOptToken
-                walletOptions
-              />
-            </React.Suspense>
-          | _ =>
-            <React.Suspense fallback={loader()}>
-              <GPayLazy paymentType sessionObj=optToken thirdPartySessionObj=None walletOptions />
-            </React.Suspense>
-          }
-        | _ => React.null
-        }
-      | ApplePay =>
-        switch applePayToken {
-        | ApplePayTokenOptional(optToken) =>
-          <ApplePayLazy sessionObj=optToken walletOptions paymentType />
-        | _ => React.null
-        }
       | Boleto =>
         <React.Suspense fallback={loader()}>
           <BoletoLazy paymentType />
@@ -381,7 +344,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         showFields}>
       <div className="flex flex-col place-items-center">
         <ErrorBoundary key="payment_request_buttons_all" level={ErrorBoundary.RequestButton}>
-          <PaymentRequestButtonElement sessions walletOptions />
+          <PaymentRequestButtonElement sessions walletOptions paymentType />
         </ErrorBoundary>
         <RenderIf
           condition={paymentOptions->Array.length > 0 &&

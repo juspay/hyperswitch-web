@@ -3,7 +3,7 @@ open RecoilAtoms
 module Loader = {
   @react.component
   let make = () => {
-    <div className=" w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600">
+    <div className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600">
       <Icon size=32 name="loader" />
     </div>
   }
