@@ -637,7 +637,9 @@ let make = (
                   }
                 })
                 ->catch(err => {
-                  Window.Location.replace(url)
+                  if redirect.contents === "always" {
+                    Window.Location.replace(url)
+                  }
                   resolve(err->Identity.anyTypeToJson)
                 })
                 ->ignore
