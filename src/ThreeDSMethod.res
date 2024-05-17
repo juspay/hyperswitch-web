@@ -106,6 +106,7 @@ let make = () => {
   })
 
   <>
+    <PaymentLoader />
     <div id="threeDsInvisibleDiv" className="hidden" />
     <iframe
       id="threeDsInvisibleIframe"
