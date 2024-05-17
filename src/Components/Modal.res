@@ -20,11 +20,10 @@ let make = (
     setOpenModal(_ => false)
     switch closeCallback {
     | Some(fn) => fn()
-    | None => ()
+    | None => setTimeout(() => {
+        Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+      }, 450)->ignore
     }
-    setTimeout(() => {
-      Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
-    }, 450)->ignore
   }
 
   React.useEffect(() => {

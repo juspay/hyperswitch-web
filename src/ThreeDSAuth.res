@@ -153,7 +153,7 @@ let make = () => {
     <RenderIf condition={loader}>
       <PaymentLoader />
     </RenderIf>
-    <Modal loader={loader} showClose=true openModal setOpenModal closeCallback={handleFrictionLess}>
+    <Modal loader={loader} openModal setOpenModal closeCallback={handleFrictionLess}>
       <div className="backdrop-blur-xl">
         <div
           className="flex flex-row w-full justify-center items-start font-medium text-2xl mb-2 font-semibold text-[#151A1F] opacity-50">
