@@ -28,6 +28,7 @@ let make = (
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
+    let redirect = ref("if_required")
 
     let appearance =
       localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
@@ -588,6 +589,10 @@ let make = (
         let handlePollStatusMessage = (ev: Types.event) => {
           let eventDataObject = ev.data->anyTypeToJson
           let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+          switch eventDataObject->getOptionalJsonFromJson("confirmParams") {
+          | Some(obj) => redirect := obj->getDictFromJson->getString("redirect", "if_required")
+          | None => ()
+          }
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
           | Some(val) => {
               handlePostMessage([
@@ -619,17 +624,32 @@ let make = (
                   ~isForceSync=true,
                 )
                 ->then(json => {
-                  let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
-                  let status = dict->getString("status", "")
-                  let returnUrl = dict->getString("return_url", "")
-                  Window.Location.replace(
-                    `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
-                  )
-                  resolve()
+                  if redirect.contents === "always" {
+                    let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+                    let status = dict->getString("status", "")
+                    let returnUrl = dict->getString("return_url", "")
+                    Window.Location.replace(
+                      `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
+                    )
+                    resolve(JSON.Encode.null)
+                  } else {
+                    handlePostMessage([
+                      ("fullscreen", false->JSON.Encode.bool),
+                      ("submitSuccessful", true->JSON.Encode.bool),
+                      ("data", json),
+                    ])
+                    resolve(json)
+                  }
                 })
-                ->catch(_ => {
-                  Window.Location.replace(url)
-                  resolve()
+                ->catch(err => {
+                  if redirect.contents === "always" {
+                    Window.Location.replace(url)
+                  }
+                  handlePostMessage([
+                    ("submitSuccessful", false->JSON.Encode.bool),
+                    ("error", err->Identity.anyTypeToJson),
+                  ])
+                  resolve(err->Identity.anyTypeToJson)
                 })
                 ->ignore
                 ->resolve
@@ -637,6 +657,36 @@ let make = (
               ->catch(e => Console.log2("POLL_STATUS ERROR -", e)->resolve)
               ->ignore
             }
+          | None => ()
+          }
+
+          switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
+          | Some(val) =>
+            if redirect.contents === "always" {
+              Window.Location.replace(val->JSON.Decode.string->Option.getOr(""))
+              resolve(JSON.Encode.null)
+            } else {
+              PaymentHelpers.retrievePaymentIntent(
+                clientSecret,
+                headers,
+                ~optLogger=Some(logger),
+                ~switchToCustomPod,
+                ~isForceSync=true,
+              )
+              ->then(json => {
+                handlePostMessage([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
+                resolve(json)
+              })
+              ->catch(err => {
+                handlePostMessage([
+                  ("submitSuccessful", false->JSON.Encode.bool),
+                  ("error", err->Identity.anyTypeToJson),
+                ])
+                resolve(err->Identity.anyTypeToJson)
+              })
+              ->finally(_ => handlePostMessage([("fullscreen", false->JSON.Encode.bool)]))
+            }->ignore
+
           | None => ()
           }
         }

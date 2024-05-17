@@ -69,6 +69,7 @@ let getCustomerSavedPaymentMethods = (
         let confirmParam: ConfirmType.confirmParams = {
           return_url: returnUrl,
           publishableKey,
+          redirect,
         }
 
         let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
@@ -123,7 +124,6 @@ let getCustomerSavedPaymentMethods = (
           ~sdkHandleOneClickConfirmPayment=false,
           ~counter=0,
           ~isPaymentSession=true,
-          ~paymentSessionRedirect=redirect,
           (),
         )
       }

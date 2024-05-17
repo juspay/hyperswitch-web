@@ -319,7 +319,6 @@ let rec intentCall = (
   ~sdkHandleOneClickConfirmPayment,
   ~counter,
   ~isPaymentSession=false,
-  ~paymentSessionRedirect="if_redirect",
   (),
 ) => {
   open Promise
@@ -356,6 +355,7 @@ let rec intentCall = (
     let url = urlSearch(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
+    handlePostMessage([("confirmParams", confirmParam->Identity.anyTypeToJson)])
 
     if statusCode->String.charAt(0) !== "2" {
       res
@@ -515,7 +515,7 @@ let rec intentCall = (
               | (Paypal, false) =>
                 if !isPaymentSession {
                   postSubmitResponse(~jsonData=data, ~url=url.href)
-                } else if paymentSessionRedirect === "always" {
+                } else if confirmParam.redirect === Some("always") {
                   handleOpenUrl(url.href)
                 } else {
                   resolve(data)
