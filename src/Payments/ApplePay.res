@@ -81,8 +81,7 @@ let make = (
     } else {
       let requiredFieldsBodyArr =
         requestBody
-        ->Dict.fromArray
-        ->JSON.Encode.object
+        ->getJsonFromArrayOfJson
         ->flattenObject(true)
         ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
         ->getArrayOfTupleFromDict
