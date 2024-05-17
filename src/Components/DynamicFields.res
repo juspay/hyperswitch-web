@@ -484,7 +484,14 @@ let make = (
           | BlikCode
           | SpecialField(_)
           | CountryAndPincode(_)
-          | AddressCountry(_) => React.null
+          | AddressCountry(_)
+          | ShippingName // Shipping Details are currently supported by only one click widgets
+          | ShippingAddressLine1
+          | ShippingAddressLine2
+          | ShippingAddressCity
+          | ShippingAddressPincode
+          | ShippingAddressState
+          | ShippingAddressCountry(_) => React.null
           }}
         </div>
       })
@@ -757,6 +764,13 @@ let make = (
                 | CardExpiryAndCvc
                 | Currency(_)
                 | FullName
+                | ShippingName // Shipping Details are currently supported by only one click widgets
+                | ShippingAddressLine1
+                | ShippingAddressLine2
+                | ShippingAddressCity
+                | ShippingAddressPincode
+                | ShippingAddressState
+                | ShippingAddressCountry(_)
                 | None => React.null
                 }}
               </div>

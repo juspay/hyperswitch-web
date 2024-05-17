@@ -27,6 +27,13 @@ type paymentMethodsFields =
   | CardExpiryMonthAndYear
   | CardCvc
   | CardExpiryAndCvc
+  | ShippingName
+  | ShippingAddressLine1
+  | ShippingAddressLine2
+  | ShippingAddressCity
+  | ShippingAddressPincode
+  | ShippingAddressState
+  | ShippingAddressCountry(array<string>)
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -526,21 +533,33 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_card_expiry_month", true) => CardExpiryMonth
   | ("user_card_expiry_year", true) => CardExpiryYear
   | ("user_card_cvc", true) => CardCvc
+  | ("user_shipping_name", _) => ShippingName
+  | ("user_shipping_address_line1", _) => ShippingAddressLine1
+  | ("user_shipping_address_line2", _) => ShippingAddressLine2
+  | ("user_shipping_address_city", _) => ShippingAddressCity
+  | ("user_shipping_address_pincode", _) => ShippingAddressPincode
+  | ("user_shipping_address_state", _) => ShippingAddressState
   | _ => None
   }
 }
 
-let getOptionsFromPaymentMethodFieldType = (dict, key) => {
+let getOptionsFromPaymentMethodFieldType = (dict, key, ~isAddressCountry=true) => {
   let options = dict->Utils.getArrayValFromJsonDict(key, "options")
   switch options->Array.get(0)->Option.getOr("") {
   | "" => None
-  | "ALL" => AddressCountry(Country.country->Array.map(item => item.countryName))
-  | _ =>
-    AddressCountry(
-      Country.country
-      ->Array.filter(item => options->Array.includes(item.isoAlpha2))
-      ->Array.map(item => item.countryName),
-    )
+  | "ALL" => {
+      let countryArr = Country.country->Array.map(item => item.countryName)
+      isAddressCountry ? AddressCountry(countryArr) : ShippingAddressCountry(countryArr)
+    }
+  | _ => {
+      let countryArr = Country.country->Array.reduce([], (acc, country) => {
+        if options->Array.includes(country.isoAlpha2) {
+          acc->Array.push(country.countryName)
+        }
+        acc
+      })
+      isAddressCountry ? AddressCountry(countryArr) : ShippingAddressCountry(countryArr)
+    }
   }
 }
 
@@ -554,6 +573,11 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
     }
   | "user_country" => dict->getOptionsFromPaymentMethodFieldType("user_country")
   | "user_address_country" => dict->getOptionsFromPaymentMethodFieldType("user_address_country")
+  | "user_shipping_address_country" =>
+    dict->getOptionsFromPaymentMethodFieldType(
+      "user_shipping_address_country",
+      ~isAddressCountry=false,
+    )
   | _ => None
   }
 }
@@ -1057,5 +1081,12 @@ let paymentMethodFieldToStrMapper = (field: paymentMethodsFields) => {
   | CardExpiryMonthAndYear => "CardExpiryMonthAndYear"
   | CardCvc => "CardCvc"
   | CardExpiryAndCvc => "CardExpiryAndCvc"
+  | ShippingName => "ShippingName"
+  | ShippingAddressLine1 => "ShippingAddressLine1"
+  | ShippingAddressLine2 => "ShippingAddressLine2"
+  | ShippingAddressCity => "ShippingAddressCity"
+  | ShippingAddressPincode => "ShippingAddressPincode"
+  | ShippingAddressState => "ShippingAddressState"
+  | ShippingAddressCountry(_) => "ShippingAddressCountry"
   }
 }
