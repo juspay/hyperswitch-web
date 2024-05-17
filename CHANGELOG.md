@@ -1,3 +1,10 @@
+## [0.53.1](https://github.com/juspay/hyperswitch-web/compare/v0.53.0...v0.53.1) (2024-05-17)
+
+
+### Bug Fixes
+
+* openurl_if_required enhancement ([#371](https://github.com/juspay/hyperswitch-web/issues/371)) ([77fcdcf](https://github.com/juspay/hyperswitch-web/commit/77fcdcf09f2352b72908ffca770be6bdfd57932a))
+
 # [0.53.0](https://github.com/juspay/hyperswitch-web/compare/v0.52.3...v0.53.0) (2024-05-17)
 
 
