@@ -355,7 +355,7 @@ let rec intentCall = (
     let url = urlSearch(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
-    handlePostMessage([("confirmParamsPostMessage", confirmParam->Identity.anyTypeToJson)])
+    handlePostMessage([("confirmParams", confirmParam->Identity.anyTypeToJson)])
 
     if statusCode->String.charAt(0) !== "2" {
       res
