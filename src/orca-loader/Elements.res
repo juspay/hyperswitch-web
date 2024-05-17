@@ -633,6 +633,11 @@ let make = (
                     )
                     resolve(JSON.Encode.null)
                   } else {
+                    handlePostMessage([
+                      ("fullscreen", false->JSON.Encode.bool),
+                      ("submitSuccessful", true->JSON.Encode.bool),
+                      ("data", json),
+                    ])
                     resolve(json)
                   }
                 })
@@ -640,6 +645,10 @@ let make = (
                   if redirect.contents === "always" {
                     Window.Location.replace(url)
                   }
+                  handlePostMessage([
+                    ("submitSuccessful", false->JSON.Encode.bool),
+                    ("error", err->Identity.anyTypeToJson),
+                  ])
                   resolve(err->Identity.anyTypeToJson)
                 })
                 ->ignore
@@ -665,9 +674,14 @@ let make = (
                 ~isForceSync=true,
               )
               ->then(json => {
+                handlePostMessage([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
                 resolve(json)
               })
               ->catch(err => {
+                handlePostMessage([
+                  ("submitSuccessful", false->JSON.Encode.bool),
+                  ("error", err->Identity.anyTypeToJson),
+                ])
                 resolve(err->Identity.anyTypeToJson)
               })
               ->finally(_ => handlePostMessage([("fullscreen", false->JSON.Encode.bool)]))
