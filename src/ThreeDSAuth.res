@@ -6,7 +6,7 @@ let make = () => {
   let (loader, setloader) = React.useState(_ => true)
 
   let threeDsAuthoriseUrl = React.useRef("")
-  let (expiryTime, setExpiryTime) = React.useState(_ => 60000.0)
+  let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
   let logger = OrcaLogger.make(~source=Elements(Payment), ())
 
