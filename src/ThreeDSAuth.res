@@ -6,7 +6,7 @@ let make = () => {
   let (loader, setloader) = React.useState(_ => true)
 
   let threeDsAuthoriseUrl = React.useRef("")
-  let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
+  let (expiryTime, setExpiryTime) = React.useState(_ => 60000.0)
 
   let logger = OrcaLogger.make(~source=Elements(Payment), ())
 
@@ -139,34 +139,12 @@ let make = () => {
     )
   }, [expiryTime])
 
-  let expiryString = React.useMemo(() => {
-    let minutes = (expiryTime /. 60000.0)->Belt.Float.toInt->Belt.Int.toString
-    let seconds =
-      mod(expiryTime->Belt.Float.toInt, 60000)->Belt.Int.toString->String.slice(~start=0, ~end=-3)
-    let secondsString =
-      seconds->String.length == 1 ? `0${seconds}` : seconds->String.length == 0 ? "00" : seconds
-    `${minutes}:${secondsString}`
-  }, [expiryTime])
-  <>
-    <RenderIf condition={loader}>
-      <PaymentLoader />
-    </RenderIf>
-    <Modal loader={loader} openModal setOpenModal closeCallback={handleFrictionLess}>
-      <div className="backdrop-blur-xl">
-        <div
-          className="flex flex-row w-full justify-center items-start font-medium text-2xl mb-2 font-semibold text-[#151A1F] opacity-50">
-          {expiryString->React.string}
-        </div>
-        <div className="w-full font-medium text-xs text-[#151A1F] opacity-50 mb-2">
-          {React.string(
-            " Please complete the payment within next 10 minutes, after which you will be automatically redirected. ",
-          )}
-        </div>
-        <div id="threeDsAuthDiv" className="hidden" />
-        <iframe
-          id="threeDsAuthFrame" name="threeDsAuthFrame" style={minHeight: "500px"} width="100%"
-        />
-      </div>
-    </Modal>
-  </>
+  <Modal loader={loader} openModal setOpenModal closeCallback={handleFrictionLess}>
+    <div className="backdrop-blur-xl">
+      <div id="threeDsAuthDiv" className="hidden" />
+      <iframe
+        id="threeDsAuthFrame" name="threeDsAuthFrame" style={minHeight: "500px"} width="100%"
+      />
+    </div>
+  </Modal>
 }
