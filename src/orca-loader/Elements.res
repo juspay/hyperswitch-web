@@ -90,12 +90,21 @@ let make = (
 
     let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
 
+    let unMountPreMountLoaderIframe = () => {
+      switch preMountLoaderIframeDiv->Nullable.toOption {
+      | Some(iframe) => iframe->remove
+      | None => ()
+      }
+    }
+
     let preMountLoaderMountedPromise = Promise.make((resolve, _reject) => {
       let preMountLoaderIframeCallback = (ev: Types.event) => {
         let json = ev.data->Identity.anyTypeToJson
         let dict = json->getDictFromJson
         if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
           resolve(true->JSON.Encode.bool)
+        } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
+          unMountPreMountLoaderIframe()
         }
       }
       addSmartEventListener(
