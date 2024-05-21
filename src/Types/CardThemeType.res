@@ -17,6 +17,7 @@ type mode =
   | ApplePayElement
   | KlarnaElement
   | ExpressCheckoutElement
+  | PaymentManagement
   | NONE
 type label = Above | Floating | Never
 type themeClass = {
@@ -104,6 +105,7 @@ let getPaymentMode = val => {
   | "paymentMethodCollect" => PaymentMethodCollectElement
   | "klarna" => KlarnaElement
   | "expressCheckout" => ExpressCheckoutElement
+  | "paymentManagement" => PaymentManagement
   | _ => NONE
   }
 }
@@ -121,6 +123,7 @@ let getPaymentModeToStrMapper = val => {
   | PaymentMethodCollectElement => "PaymentMethodCollectElement"
   | KlarnaElement => "KlarnaElement"
   | ExpressCheckoutElement => "ExpressCheckoutElement"
+  | PaymentManagement => "PaymentManagement"
   | NONE => "None"
   }
 }
