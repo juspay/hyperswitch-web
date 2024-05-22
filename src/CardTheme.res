@@ -67,35 +67,45 @@ type recoilConfig = {
   localeString: LocaleStringTypes.localeStrings,
   showLoader: bool,
 }
-let getLocaleObject = string => {
-  let locale = if string == "auto" {
-    navigator["language"]
-  } else {
-    string
-  }
-  switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
-  | EN => EnglishLocale.localeStrings
-  | HE => HebrewLocale.localeStrings
-  | FR => FrenchLocale.localeStrings
-  | EN_GB => EnglishGBLocale.localeStrings
-  | AR => ArabicLocale.localeStrings
-  | JA => JapaneseLocale.localeStrings
-  | DE => DeutschLocale.localeStrings
-  | FR_BE => FrenchBelgiumLocale.localeStrings
-  | ES => SpanishLocale.localeStrings
-  | CA => CatalanLocale.localeStrings
-  | PT => PortugueseLocale.localeStrings
-  | IT => ItalianLocale.localeStrings
-  | PL => PolishLocale.localeStrings
-  | NL => DutchLocale.localeStrings
-  | SV => SwedishLocale.localeStrings
-  | RU => RussianLocale.localeStrings
+
+let getLocaleObject = async string => {
+  try {
+    let locale = if string == "auto" {
+      navigator["language"]
+    } else {
+      string
+    }
+
+    let promiseLocale = switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
+    | EN => Js.import(EnglishLocale.localeStrings)
+    | HE => Js.import(HebrewLocale.localeStrings)
+    | FR => Js.import(FrenchLocale.localeStrings)
+    | EN_GB => Js.import(EnglishGBLocale.localeStrings)
+    | AR => Js.import(ArabicLocale.localeStrings)
+    | JA => Js.import(JapaneseLocale.localeStrings)
+    | DE => Js.import(DeutschLocale.localeStrings)
+    | FR_BE => Js.import(FrenchBelgiumLocale.localeStrings)
+    | ES => Js.import(SpanishLocale.localeStrings)
+    | CA => Js.import(CatalanLocale.localeStrings)
+    | PT => Js.import(PortugueseLocale.localeStrings)
+    | IT => Js.import(ItalianLocale.localeStrings)
+    | PL => Js.import(PolishLocale.localeStrings)
+    | NL => Js.import(DutchLocale.localeStrings)
+    | SV => Js.import(SwedishLocale.localeStrings)
+    | RU => Js.import(RussianLocale.localeStrings)
+    }
+
+    let awaitedLocaleValue = await promiseLocale
+    awaitedLocaleValue
+  } catch {
+  | _ => EnglishLocale.localeStrings
   }
 }
+
 let defaultRecoilConfig: recoilConfig = {
   config: defaultConfig,
   themeObj: defaultConfig.appearance.variables,
-  localeString: getLocaleObject(defaultConfig.locale),
+  localeString: EnglishLocale.localeStrings,
   showLoader: false,
 }
 
