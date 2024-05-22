@@ -1,3 +1,10 @@
+# [0.54.0](https://github.com/juspay/hyperswitch-web/compare/v0.53.3...v0.54.0) (2024-05-22)
+
+
+### Features
+
+* isolate paymentElementCreate message ([#387](https://github.com/juspay/hyperswitch-web/issues/387)) ([0fdfacd](https://github.com/juspay/hyperswitch-web/commit/0fdfacd5826cebc16bb0a807d0539c42055e30f5))
+
 ## [0.53.3](https://github.com/juspay/hyperswitch-web/compare/v0.53.2...v0.53.3) (2024-05-22)
 
 
