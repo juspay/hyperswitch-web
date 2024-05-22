@@ -25,16 +25,12 @@ let make = () => {
       let dict = json->Utils.getDictFromJson
       if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+        let metaDataDict = metadata->getDictFromJson
         let qrData = metaDataDict->getString("qrData", "")
         setQrCode(_ => qrData)
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
         setClientSecret(_ => paymentIntentId)
-        let headersDict =
-          metaDataDict
-          ->getJsonObjectFromDict("headers")
-          ->JSON.Decode.object
-          ->Option.getOr(Dict.make())
+        let headersDict = metaDataDict->getDictfromDict("headers")
         let headers = Dict.make()
         setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))
         headersDict
@@ -91,8 +87,7 @@ let make = () => {
       ~switchToCustomPod,
     )
     ->then(json => {
-      let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
-      let status = dict->getString("status", "")
+      let status = json->getDictFromJson->getString("status", "")
 
       if status === "succeeded" {
         postSubmitResponse(~jsonData=json, ~url=return_url)

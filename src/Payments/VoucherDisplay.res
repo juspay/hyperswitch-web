@@ -27,7 +27,7 @@ let make = () => {
       let dict = json->Utils.getDictFromJson
       if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+        let metaDataDict = metadata->getDictFromJson
         setReturnUrl(_ => metaDataDict->getString("returnUrl", ""))
         setDownloadUrl(_ => metaDataDict->getString("voucherUrl", ""))
         setReference(_ => metaDataDict->getString("reference", ""))

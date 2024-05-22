@@ -12,23 +12,17 @@ let make = () => {
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
       let dict = json->getDictFromJson
-      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+      if dict->Utils.getDictIsSome("fullScreenIframeMounted") {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
         let publishableKey = metaDataDict->getString("publishableKey", "")
         logger.setClientSecret(paymentIntentId)
         logger.setMerchantId(publishableKey)
-        let headersDict =
-          metaDataDict
-          ->getJsonObjectFromDict("headers")
-          ->JSON.Decode.object
-          ->Option.getOr(Dict.make())
+        let headersDict = metaDataDict->getDictfromDict("headers")
         let threeDsAuthoriseUrl =
           metaDataDict
-          ->getJsonObjectFromDict("threeDSData")
-          ->JSON.Decode.object
-          ->Option.getOr(Dict.make())
+          ->getDictfromDict("threeDSData")
           ->getString("three_ds_authorize_url", "")
         let headers =
           headersDict

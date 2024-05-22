@@ -15,8 +15,7 @@ let make = () => {
 
   let countryAndCodeCodeList =
     phoneNumberJson
-    ->JSON.Decode.object
-    ->Option.getOr(Dict.make())
+    ->getDictFromJson
     ->getArray("countries")
 
   let phoneNumberCodeOptions: array<

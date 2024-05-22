@@ -827,11 +827,7 @@ let getPaymentExperience = (dict, str) => {
 }
 
 let getSurchargeDetails = dict => {
-  let surchargDetails =
-    dict
-    ->Dict.get("surcharge_details")
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.getOr(Dict.make())
+  let surchargDetails = dict->getDictfromDict("surcharge_details")
 
   let displayTotalSurchargeAmount =
     surchargDetails
@@ -880,9 +876,7 @@ let getBankNames = (dict, str) => {
 
 let getAchConnectors = (dict, str) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
-  ->Option.getOr(Dict.make())
+  ->getDictfromDict(str)
   ->getStrArray("elligible_connectors")
 }
 

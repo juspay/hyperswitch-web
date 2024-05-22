@@ -26,7 +26,7 @@ let make = (
     let iframeRef = []
     let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
-    let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
+    let localOptions = options->getDictFromJson
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
     let redirect = ref("if_required")
 

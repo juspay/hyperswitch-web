@@ -162,8 +162,7 @@ let rec pollRetrievePaymentIntent = (
   open Promise
   retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod, ~isForceSync)
   ->then(json => {
-    let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
-    let status = dict->getString("status", "")
+    let status = json->getDictFromJson->getString("status", "")
 
     if status === "succeeded" || status === "failed" {
       resolve(json)

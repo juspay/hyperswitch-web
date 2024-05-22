@@ -301,13 +301,13 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       | _ => Dict.make()->JSON.Encode.object
       }
       let dict = json->Utils.getDictFromJson
-      if dict->Dict.get("doBlur")->Option.isSome {
+      if dict->Utils.getDictIsSome("doBlur") {
         logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR, ())
         setBlurState(_ => true)
-      } else if dict->Dict.get("doFocus")->Option.isSome {
+      } else if dict->Utils.getDictIsSome("doFocus") {
         logger.setLogInfo(~value="doFocus Triggered", ~eventName=FOCUS, ())
         cardRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
-      } else if dict->Dict.get("doClearValues")->Option.isSome {
+      } else if dict->Utils.getDictIsSome("doClearValues") {
         logger.setLogInfo(~value="doClearValues Triggered", ~eventName=CLEAR, ())
         //clear all values
         setCardNumber(_ => "")

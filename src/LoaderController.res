@@ -212,15 +212,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       try {
         let dict = json->getDictFromJson
         if dict->getDictIsSome("paymentElementCreate") {
-          if (
-            dict
-            ->Dict.get("paymentElementCreate")
-            ->Option.flatMap(JSON.Decode.bool)
-            ->Option.getOr(false)
-          ) {
-            if (
-              dict->Dict.get("otherElements")->Option.flatMap(JSON.Decode.bool)->Option.getOr(false)
-            ) {
+          if dict->getBool("paymentElementCreate", false) {
+            if dict->getBool("otherElements", false) {
               updateOptions(dict)
             } else {
               let sdkSessionId = dict->getString("sdkSessionId", "no-element")

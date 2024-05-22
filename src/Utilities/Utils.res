@@ -421,19 +421,14 @@ let checkEmailValid = (
 }
 
 let validatePhoneNumber = (countryCode, number) => {
-  let phoneNumberDict = phoneNumberJson->JSON.Decode.object->Option.getOr(Dict.make())
+  let phoneNumberDict = phoneNumberJson->getDictFromJson
   let countriesArr =
     phoneNumberDict
-    ->Dict.get("countries")
-    ->Option.flatMap(JSON.Decode.array)
-    ->Option.getOr([])
+    ->getArray("countries")
     ->Belt.Array.keepMap(JSON.Decode.object)
 
   let filteredArr = countriesArr->Array.filter(countryObj => {
-    countryObj
-    ->Dict.get("phone_number_code")
-    ->Option.flatMap(JSON.Decode.string)
-    ->Option.getOr("") == countryCode
+    countryObj->getString("phone_number_code", "") == countryCode
   })
   switch filteredArr[0] {
   | Some(obj) =>
@@ -692,9 +687,7 @@ let getStateNames = (list: JSON.t, country: RecoilAtomTypes.field) => {
 
   options->Array.reduce([], (arr, item) => {
     arr
-    ->Array.push(
-      item->getDictFromJson->Dict.get("name")->Option.flatMap(JSON.Decode.string)->Option.getOr(""),
-    )
+    ->Array.push(item->getDictFromJson->getString("name", ""))
     ->ignore
     arr
   })
@@ -846,12 +839,8 @@ let formatException = exc => {
 
 let getArrayValFromJsonDict = (dict, key, arrayKey) => {
   dict
-  ->Dict.get(key)
-  ->Option.flatMap(JSON.Decode.object)
-  ->Option.getOr(Dict.make())
-  ->Dict.get(arrayKey)
-  ->Option.flatMap(JSON.Decode.array)
-  ->Option.getOr([])
+  ->getDictfromDict(key)
+  ->getArray(arrayKey)
   ->Belt.Array.keepMap(JSON.Decode.string)
 }
 
@@ -909,8 +898,7 @@ let getOptionalJson = (json, str) => {
   ->JSON.Decode.object
   ->Option.flatMap(x => x->Dict.get("data"))
   ->Option.getOr(Dict.make()->JSON.Encode.object)
-  ->JSON.Decode.object
-  ->Option.getOr(Dict.make())
+  ->getDictFromJson
   ->Dict.get(str)
 }
 

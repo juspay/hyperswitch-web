@@ -33,11 +33,7 @@ let make = () => {
         let metadata = dict->getJsonObjectFromDict("metadata")
         setStateMetadata(_ => metadata)
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
-        let threeDsDataDict =
-          metaDataDict
-          ->Dict.get("threeDSData")
-          ->Option.flatMap(JSON.Decode.object)
-          ->Option.getOr(Dict.make())
+        let threeDsDataDict = metaDataDict->getDictfromDict("threeDSData")
         let threeDsUrl =
           threeDsDataDict
           ->Dict.get("three_ds_method_details")

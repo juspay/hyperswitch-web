@@ -487,7 +487,7 @@ let gPayThirdPartySdkBody = (~connectors) => [
 ]
 
 let applePayBody = (~token, ~connectors) => {
-  let dict = token->JSON.Decode.object->Option.getOr(Dict.make())
+  let dict = token->Utils.getDictFromJson
   let paymentDataString =
     dict
     ->Dict.get("paymentData")

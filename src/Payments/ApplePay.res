@@ -230,12 +230,8 @@ let make = (~sessionObj: option<JSON.t>) => {
           let isDelayedSessionToken =
             sessionObj
             ->Option.getOr(JSON.Encode.null)
-            ->JSON.Decode.object
-            ->Option.getOr(Dict.make())
-            ->Dict.get("delayed_session_token")
-            ->Option.getOr(JSON.Encode.null)
-            ->JSON.Decode.bool
-            ->Option.getOr(false)
+            ->getDictFromJson
+            ->getBool("delayed_session_token", false)
 
           if isDelayedSessionToken {
             setShowApplePayLoader(_ => true)
