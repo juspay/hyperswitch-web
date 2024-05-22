@@ -15,7 +15,7 @@ let make = (~paymentType) => {
     ~billingDetails=fields.billingDetails,
     ~logger=loggerState,
   )
-  let countryNames = Utils.getCountryNames(Country.country)
+  let countryNames = getCountryNames(Country.country)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let clientCountryCode =
     Country.country

@@ -55,7 +55,7 @@ let make = (~paymentType: CardThemeType.mode) => {
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
-    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
       if modalData->Option.isNone {

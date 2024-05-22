@@ -151,14 +151,14 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             eventDataObject
             ->getOptionalJsonFromJson("iframeId")
             ->getStringFromOptionalJson("no-element")
-          iframeHeightRef :=
-            iframeHeight->Option.getOr(JSON.Encode.null)->Utils.getFloatFromJson(200.0)
+          iframeHeightRef := iframeHeight->Option.getOr(JSON.Encode.null)->getFloatFromJson(200.0)
           if iframeId === localSelectorString {
             let elem = Window.querySelector(
               `#orca-payment-element-iframeRef-${localSelectorString}`,
             )
             switch elem->Nullable.toOption {
-            | Some(ele) => ele
+            | Some(ele) =>
+              ele
               ->Window.style
               ->Window.setHeight(`${iframeHeightRef.contents->Float.toString}px`)
             | None => ()
@@ -239,7 +239,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
                   if iframeID == localSelectorString {
                     let handleFullScreenCallback = (ev: Types.event) => {
                       let json = ev.data->anyTypeToJson
-                      let dict = json->Utils.getDictFromJson
+                      let dict = json->getDictFromJson
                       if dict->Dict.get("iframeMountedCallback")->Option.isSome {
                         let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
                         fullScreenEle->Window.iframePostMessage(
@@ -288,8 +288,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
 
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->getClasses("base")
-      let additionalIframeStyle =
-        componentType->Utils.isOtherElements ? "height: 2rem;" : "height: 0;"
+      let additionalIframeStyle = componentType->isOtherElements ? "height: 2rem;" : "height: 0;"
       switch oElement->Nullable.toOption {
       | Some(elem) => {
           let iframeDiv = `<div id="orca-element-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">

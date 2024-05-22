@@ -11,10 +11,7 @@ module ToolTip = {
           background: themeObj.colorBackground,
           color: themeObj.colorDanger,
           fontSize: themeObj.fontSizeBase,
-          padding: `${themeObj.spacingUnit} ${themeObj.spacingUnit->Utils.addSize(
-              7.0,
-              Utils.Pixel,
-            )}`,
+          padding: `${themeObj.spacingUnit} ${themeObj.spacingUnit->addSize(7.0, Pixel)}`,
           border: `1px solid ${themeObj.borderColor}`,
           borderRadius: themeObj.borderRadius,
           boxShadow: `0px 0px 8px ${themeObj.borderColor}`,

@@ -1,8 +1,8 @@
 open Utils
 let getKeyValue = (json, str) => {
   json
-  ->Dict.get(str)
-  ->Option.getOr(Dict.make()->JSON.Encode.object)
+  ->getDictfromDict(str)
+  ->JSON.Encode.object
   ->JSON.Decode.string
   ->Option.getOr("")
 }
@@ -51,15 +51,14 @@ let make = (~transferType) => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
-      let dict = json->Utils.getDictFromJson
+      let dict = json->getDictFromJson
       if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let dictMetadata =
           dict
-          ->getJsonObjectFromDict("metadata")
-          ->getDictFromJson
-          ->Dict.get(responseType)
-          ->Option.getOr(Dict.make()->JSON.Encode.object)
+          ->getDictfromDict("metadata")
+          ->getDictfromDict(responseType)
+          ->JSON.Encode.object
           ->getDictFromJson
         setKeys(_ => dictMetadata->Dict.keysToArray)
         setJson(_ => dictMetadata)

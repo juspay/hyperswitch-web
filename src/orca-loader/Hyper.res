@@ -72,21 +72,20 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     let isPreloadEnabled =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getBool("isPreloadEnabled", true)
+      ->getDictFromJson
+      ->getBool("isPreloadEnabled", true)
     let analyticsMetadata =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getDictFromObj("analytics")
-      ->Utils.getJsonObjectFromDict("metadata")
+      ->getDictFromJson
+      ->getDictFromObj("analytics")
+      ->getJsonObjectFromDict("metadata")
     if isPreloadEnabled {
       preloader()
     }
     let analyticsInfoDict =
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-    let sessionID =
-      analyticsInfoDict->getString("sessionID", "hyp_" ++ Utils.generateRandomString(8))
+    let sessionID = analyticsInfoDict->getString("sessionID", "hyp_" ++ generateRandomString(8))
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
     let logger = OrcaLogger.make(
       ~sessionId=sessionID,
@@ -193,7 +192,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let googlePayScript = Window.createElement("script")
         googlePayScript->Window.elementSrc(googlePayScriptURL)
         googlePayScript->Window.elementOnerror(err => {
-          Utils.logInfo(Console.log2("ERROR DURING LOADING GOOGLE PAY SCRIPT", err))
+          logInfo(Console.log2("ERROR DURING LOADING GOOGLE PAY SCRIPT", err))
         })
         Window.body->Window.appendChild(googlePayScript)
         logger.setLogInfo(~value="GooglePay Script Loaded", ~eventName=GOOGLE_PAY_SCRIPT, ())
@@ -313,7 +312,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                   ~eventName=CONFIRM_PAYMENT,
                   (),
                 )
-                let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
+                let data = dict->getDictfromDict("data")->JSON.Encode.object
                 let returnUrl =
                   dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
 

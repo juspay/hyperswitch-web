@@ -31,8 +31,8 @@ let make = (~sessionObj: SessionsType.token) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let handleCloseLoader = () => {
-    Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
-    Utils.postFailedSubmitResponse(
+    handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+    postFailedSubmitResponse(
       ~errortype="confirm_payment_failed",
       ~message="An unknown error has occurred",
     )
@@ -40,10 +40,10 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let submitCallback = (ev: Window.event) => {
     let json = ev.data->JSON.parseExn
-    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      Utils.handlePostMessage([
+      handlePostMessage([
         ("fullscreen", true->JSON.Encode.bool),
         ("param", "paymentloader"->JSON.Encode.string),
         ("iframeId", iframeId->JSON.Encode.string),

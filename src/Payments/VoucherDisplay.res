@@ -24,7 +24,7 @@ let make = () => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
-      let dict = json->Utils.getDictFromJson
+      let dict = json->getDictFromJson
       if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let metaDataDict = metadata->getDictFromJson

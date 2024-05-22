@@ -932,7 +932,7 @@ let rec maskPayload = payloadJson => {
       let (key, value) = entry
       (key, maskPayload(value))
     })
-    ->Utils.getJsonFromArrayOfJson
+    ->getJsonFromArrayOfJson
 
   | Array(arr) => arr->Array.map(maskPayload)->JSON.Encode.array
   | String(valueStr) => valueStr->maskStr->JSON.Encode.string
@@ -999,10 +999,10 @@ let usePaymentIntent = (optLogger, paymentType) => {
                 let (key, value) = header
                 (key, value->JSON.Encode.string)
               })
-              ->Utils.getJsonFromArrayOfJson,
+              ->getJsonFromArrayOfJson,
             ),
           ]
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         switch paymentType {
         | Card =>
@@ -1061,7 +1061,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             bodyArr->Array.concat(broswerInfo()),
             mandatePaymentType->PaymentBody.paymentTypeBody,
           ])
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
@@ -1072,7 +1072,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
           ->Array.concat(
             bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
           )
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }

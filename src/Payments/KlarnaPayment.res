@@ -1,7 +1,8 @@
-open PaymentType
-open RecoilAtoms
 @react.component
 let make = (~paymentType) => {
+  open Utils
+  open PaymentType
+  open RecoilAtoms
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -17,14 +18,13 @@ let make = (~paymentType) => {
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
 
   let countryNames =
-    Utils.getCountryNames(Country.country)->DropdownField.updateArrayOfStringToOptionsTypeArray
+    getCountryNames(Country.country)->DropdownField.updateArrayOfStringToOptionsTypeArray
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {
     setCountry(val)
   }
 
-  open Utils
   let clientCountryCode =
     Country.country
     ->Array.find(item => item.countryName == country)
@@ -42,7 +42,7 @@ let make = (~paymentType) => {
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
-    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (connectors, _) =
       paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
     let body = PaymentBody.klarnaRedirectionBody(

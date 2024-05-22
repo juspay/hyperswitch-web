@@ -270,8 +270,7 @@ let make = (~sessionObj: option<JSON.t>) => {
       try {
         let dict = json->getDictFromJson
         if dict->Dict.get("applePayProcessPayment")->Option.isSome {
-          let token =
-            dict->Dict.get("applePayProcessPayment")->Option.getOr(Dict.make()->JSON.Encode.object)
+          let token = dict->getDictfromDict("applePayProcessPayment")->JSON.Encode.object
 
           let billingContact =
             dict

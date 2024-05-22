@@ -30,8 +30,7 @@ let make = (
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
     let redirect = ref("if_required")
 
-    let appearance =
-      localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
+    let appearance = localOptions->getDictfromDict("appearance")->JSON.Encode.object
     let launchTime = localOptions->getFloat("launchTime", 0.0)
 
     let fonts =
