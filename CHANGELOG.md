@@ -1,3 +1,11 @@
+## [0.53.3](https://github.com/juspay/hyperswitch-web/compare/v0.53.2...v0.53.3) (2024-05-22)
+
+
+### Bug Fixes
+
+* added patch for revert to generate tag ([#385](https://github.com/juspay/hyperswitch-web/issues/385)) ([4a0d92f](https://github.com/juspay/hyperswitch-web/commit/4a0d92f775fafd21e892e58a12151cbd58f7a170))
+* reverse core lib issue ([#386](https://github.com/juspay/hyperswitch-web/issues/386)) ([28f9067](https://github.com/juspay/hyperswitch-web/commit/28f90670d61c18828f7e24007f9c898bf3ad2acc))
+
 ## [0.53.2](https://github.com/juspay/hyperswitch-web/compare/v0.53.1...v0.53.2) (2024-05-22)
 
 
