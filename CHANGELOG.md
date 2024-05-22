@@ -1,3 +1,15 @@
+## [0.53.2](https://github.com/juspay/hyperswitch-web/compare/v0.53.1...v0.53.2) (2024-05-22)
+
+
+### Bug Fixes
+
+* updated headers ([#381](https://github.com/juspay/hyperswitch-web/issues/381)) ([bd9d7e4](https://github.com/juspay/hyperswitch-web/commit/bd9d7e4f31b8c88e34c675c87655f2a51fe475f7))
+
+
+### Reverts
+
+* do not unmount preMountLoader iframe ([#382](https://github.com/juspay/hyperswitch-web/issues/382)) ([9d259c2](https://github.com/juspay/hyperswitch-web/commit/9d259c25ac88d142f910bff81895d10dabbd0dc1))
+
 ## [0.53.1](https://github.com/juspay/hyperswitch-web/compare/v0.53.0...v0.53.1) (2024-05-17)
 
 
