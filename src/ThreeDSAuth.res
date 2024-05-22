@@ -14,7 +14,7 @@ let make = () => {
       let dict = json->getDictFromJson
       if dict->Utils.getDictIsSome("fullScreenIframeMounted") {
         let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+        let metaDataDict = metadata->getDictFromJson
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
         let publishableKey = metaDataDict->getString("publishableKey", "")
         logger.setClientSecret(paymentIntentId)
@@ -41,7 +41,7 @@ let make = () => {
           ~headers,
         )
         ->then(json => {
-          let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+          let dict = json->getDictFromJson
           let creq = dict->getString("challenge_request", "")
           let transStatus = dict->getString("trans_status", "Y")
           let acsUrl = dict->getString("acs_url", "")

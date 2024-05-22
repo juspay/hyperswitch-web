@@ -87,7 +87,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
     let sessionID =
       analyticsInfoDict->getString("sessionID", "hyp_" ++ Utils.generateRandomString(8))
-    let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Belt.Float.toString)
+    let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
     let logger = OrcaLogger.make(
       ~sessionId=sessionID,
       ~source=Loader,
@@ -151,7 +151,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         hyperMethod
       }
     | None =>
-      let loaderTimestamp = Date.now()->Belt.Float.toString
+      let loaderTimestamp = Date.now()->Float.toString
 
       {
         () => {

@@ -55,8 +55,8 @@ let getInt = (dict, key, default: int) => {
   dict
   ->Dict.get(key)
   ->Option.flatMap(JSON.Decode.float)
-  ->Option.getOr(default->Belt.Int.toFloat)
-  ->Belt.Float.toInt
+  ->Option.getOr(default->Int.toFloat)
+  ->Float.toInt
 }
 
 let getFloatFromString = (str, default) => str->Float.fromString->Option.getOr(default)
@@ -172,7 +172,7 @@ let getNumberWithWarning = (dict, key, ~logger, default) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.float {
-    | Some(val) => val->Belt.Float.toInt
+    | Some(val) => val->Float.toInt
     | None =>
       manageErrorWarning(TYPE_INT_ERROR, ~dynamicStr=key, ~logger, ())
       default
@@ -361,7 +361,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
         }
         (key->toCase, val->JSON.Encode.string)
       }
-    | Number(val) => (key->toCase, val->Belt.Float.toString->JSON.Encode.string)
+    | Number(val) => (key->toCase, val->Float.toString->JSON.Encode.string)
     | _ => (key->toCase, value)
     }
     x
@@ -624,14 +624,14 @@ let addSize = (str: string, value: float, unit: sizeunit) => {
       arr
       ->Array.slice(~start=0, ~end={arr->Array.length - unitInString->String.length})
       ->Array.joinWith("")
-      ->Belt.Float.fromString
+      ->Float.fromString
       ->Option.getOr(0.0)
-    (val +. value)->Belt.Float.toString ++ unitInString
+    (val +. value)->Float.toString ++ unitInString
   } else {
     str
   }
 }
-let toInt = val => val->Belt.Int.fromString->Option.getOr(0)
+let toInt = val => val->Int.fromString->Option.getOr(0)
 
 let validateRountingNumber = str => {
   if str->String.length != 9 {

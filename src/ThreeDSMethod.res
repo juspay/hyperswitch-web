@@ -6,9 +6,9 @@ let make = () => {
   let (stateMetadata, setStateMetadata) = React.useState(_ => Dict.make()->JSON.Encode.object)
 
   let handleLoaded = _ev => {
-    stateMetadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
-    let metadataDict = stateMetadata->JSON.Decode.object->Option.getOr(Dict.make())
-    let iframeId = metadataDict->getString("iframeId", "")
+    let stateMetaDataDict = stateMetadata->getDictFromJson
+    stateMetaDataDict->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
+    let iframeId = stateMetaDataDict->getString("iframeId", "")
     LoggerUtils.handleLogging(
       ~optLogger=Some(logger),
       ~eventName=THREE_DS_METHOD_RESULT,
@@ -28,11 +28,11 @@ let make = () => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
-      let dict = json->Utils.getDictFromJson
+      let dict = json->getDictFromJson
       if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
         setStateMetadata(_ => metadata)
-        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+        let metaDataDict = metadata->getDictFromJson
         let threeDsDataDict = metaDataDict->getDictfromDict("threeDSData")
         let threeDsUrl =
           threeDsDataDict
@@ -47,8 +47,8 @@ let make = () => {
           ->Option.flatMap(JSON.Decode.object)
           ->Option.flatMap(x => x->Dict.get("three_ds_method_data"))
           ->Option.getOr(Dict.make()->JSON.Encode.object)
-        let paymentIntentId = metaDataDict->Utils.getString("paymentIntentId", "")
-        let publishableKey = metaDataDict->Utils.getString("publishableKey", "")
+        let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
+        let publishableKey = metaDataDict->getString("publishableKey", "")
 
         logger.setClientSecret(paymentIntentId)
         logger.setMerchantId(publishableKey)
@@ -64,7 +64,7 @@ let make = () => {
             ~logType=ERROR,
             (),
           )
-          metadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
+          metadata->getDictFromJson->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
           handlePostMessage([
             ("fullscreen", true->JSON.Encode.bool),
             ("param", `3dsAuth`->JSON.Encode.string),
@@ -88,7 +88,7 @@ let make = () => {
               form.submit()
             } catch {
             | err => {
-                let exceptionMessage = err->Utils.formatException->JSON.stringify
+                let exceptionMessage = err->formatException->JSON.stringify
                 handleFailureScenarios(exceptionMessage)
               }
             }
