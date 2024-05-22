@@ -279,10 +279,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
         let redirect =
           payload
-          ->JSON.Decode.object
-          ->Option.flatMap(x => x->Dict.get("redirect"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("if_required")
+          ->getDictFromJson
+          ->getDictfromDict("confirmParams")
+          ->getString("redirect", "if_required")
 
         let url =
           confirmParams
@@ -351,6 +350,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                     [
                       ("return_url", url->JSON.Encode.string),
                       ("publishableKey", publishableKey->JSON.Encode.string),
+                      ("redirect", redirect->JSON.Encode.string),
                     ]->getJsonFromArrayOfJson,
                   ),
                 ]->Dict.fromArray

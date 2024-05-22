@@ -17,7 +17,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let (token, _) = paymentToken
 
   let {iframeId} = keys
 
@@ -256,7 +255,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     setCardError(_ => "")
     setExpiryError(_ => "")
     None
-  }, (token, showFields))
+  }, (paymentToken.paymentToken, showFields))
 
   let submitValue = (_ev, confirmParam) => {
     let validFormat = switch paymentMode->getPaymentMode {

@@ -1,4 +1,4 @@
-type load = Loading | Loaded(JSON.t) | LoadError
+open RecoilAtomTypes
 
 let keys = Recoil.atom("keys", CommonHooks.defaultkeys)
 let configAtom = Recoil.atom("defaultRecoilConfig", CardTheme.defaultRecoilConfig)
@@ -12,13 +12,17 @@ let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
 let switchToCustomPod = Recoil.atom("switchToCustomPod", false)
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
-let paymentTokenAtom = Recoil.atom("paymentToken", ("", ""))
+let paymentTokenAtom = Recoil.atom(
+  "paymentToken",
+  {
+    paymentToken: "",
+    customerId: "",
+  },
+)
 let showCardFieldsAtom = Recoil.atom("showCardFields", false)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")
 let payNowButtonDisable = Recoil.atom("payNowButtonDisable", true)
-
-open RecoilAtomTypes
 
 let defaultFieldValues = {
   value: "",

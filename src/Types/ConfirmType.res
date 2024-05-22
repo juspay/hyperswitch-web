@@ -1,6 +1,7 @@
 type confirmParams = {
   return_url: string,
   publishableKey: string,
+  redirect?: string,
 }
 
 type confirm = {
@@ -14,6 +15,7 @@ open Utils
 let defaultConfirm = {
   return_url: "",
   publishableKey: "",
+  redirect: "if_required",
 }
 let getConfirmParams = (dict, str) => {
   dict
@@ -23,6 +25,7 @@ let getConfirmParams = (dict, str) => {
     {
       return_url: getString(json, "return_url", ""),
       publishableKey: getString(json, "publishableKey", ""),
+      redirect: getString(json, "redirect", "if_required"),
     }
   })
   ->Option.getOr(defaultConfirm)

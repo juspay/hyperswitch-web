@@ -802,8 +802,8 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
   let headerObj =
     [
       ("Content-Type", "application/json"),
-      ("sdk-version", Window.version),
-      ("payment_confirm_source", "sdk"),
+      ("X-Client-Version", Window.version),
+      ("X-Payment-Confirm-Source", "sdk"),
     ]->Dict.fromArray
 
   switch (token, uri) {

@@ -93,7 +93,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
 
     switch tokenObj {
-    | Some(obj) => setPaymentToken(_ => (obj.paymentToken, obj.customerId))
+    | Some(obj) =>
+      setPaymentToken(_ => {
+        paymentToken: obj.paymentToken,
+        customerId: obj.customerId,
+      })
     | None => ()
     }
     None

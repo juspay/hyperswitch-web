@@ -1,6 +1,6 @@
 @react.component
 let make = (
-  ~paymentToken,
+  ~paymentToken: RecoilAtomTypes.paymentToken,
   ~setPaymentToken,
   ~savedMethods: array<PaymentType.customerMethods>,
   ~loadSavedCards: PaymentType.savedCardsLoadState,
@@ -24,9 +24,10 @@ let make = (
   let isGuestCustomer = useIsGuestCustomer()
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
-  let (token, _) = paymentToken
   let savedCardlength = savedMethods->Array.length
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
   let getWalletBrandIcon = (obj: PaymentType.customerMethods) => {
     switch obj.paymentMethodType {
@@ -57,7 +58,7 @@ let make = (
           ""->CardThemeType.getPaymentMode,
         )
       }
-      let isActive = token == obj.paymentToken
+      let isActive = paymentTokenVal == obj.paymentToken
       <SavedCardItem
         key={i->Belt.Int.toString}
         setPaymentToken
@@ -76,15 +77,14 @@ let make = (
 
   let (isCVCValid, _, cvcNumber, _, _, _, _, _, _, setCvcError) = cvcProps
   let complete = switch isCVCValid {
-  | Some(val) => token !== "" && val
+  | Some(val) => paymentTokenVal !== "" && val
   | _ => false
   }
   let empty = cvcNumber == ""
-  let (token, customerId) = paymentToken
   let customerMethod =
     savedMethods
     ->Array.filter(savedMethod => {
-      savedMethod.paymentToken === token
+      savedMethod.paymentToken === paymentTokenVal
     })
     ->Array.get(0)
     ->Option.getOr(PaymentType.defaultCustomerMethods)
@@ -108,7 +108,7 @@ let make = (
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>
       PaymentBody.savedCardBody(
-        ~paymentToken=token,
+        ~paymentToken=paymentTokenVal,
         ~customerId,
         ~cvcNumber,
         ~requiresCvv=customerMethod.requiresCvv,
@@ -121,7 +121,7 @@ let make = (
         | Some(paymentMethodType) => paymentMethodType->JSON.Encode.string
         }
         PaymentBody.savedPaymentMethodBody(
-          ~paymentToken=token,
+          ~paymentToken=paymentTokenVal,
           ~customerId,
           ~paymentMethod=customerMethod.paymentMethod,
           ~paymentMethodType,

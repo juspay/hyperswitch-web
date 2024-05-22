@@ -319,7 +319,6 @@ let rec intentCall = (
   ~sdkHandleOneClickConfirmPayment,
   ~counter,
   ~isPaymentSession=false,
-  ~paymentSessionRedirect="if_redirect",
   (),
 ) => {
   open Promise
@@ -356,6 +355,7 @@ let rec intentCall = (
     let url = urlSearch(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
+    handlePostMessage([("confirmParams", confirmParam->Identity.anyTypeToJson)])
 
     if statusCode->String.charAt(0) !== "2" {
       res
@@ -515,7 +515,7 @@ let rec intentCall = (
               | (Paypal, false) =>
                 if !isPaymentSession {
                   postSubmitResponse(~jsonData=data, ~url=url.href)
-                } else if paymentSessionRedirect === "always" {
+                } else if confirmParam.redirect === Some("always") {
                   handleOpenUrl(url.href)
                 } else {
                   resolve(data)
@@ -945,6 +945,9 @@ let rec maskPayload = payloadJson => {
 
 let usePaymentIntent = (optLogger, paymentType) => {
   open RecoilAtoms
+  let url = RescriptReactRouter.useUrl()
+  let paymentTypeFromUrl =
+    CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
@@ -962,7 +965,11 @@ let usePaymentIntent = (optLogger, paymentType) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-      let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
+      let headers = [
+        ("Content-Type", "application/json"),
+        ("api-key", confirmParam.publishableKey),
+        ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+      ]
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = isManualRetryEnabled
         ? [("retry_action", "manual_retry"->JSON.Encode.string)]
