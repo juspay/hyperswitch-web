@@ -92,38 +92,40 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
-  let setConfigs = (dict, themeValues: ThemeImporter.themeDataModule) => {
-    let paymentOptions = dict->getDictFromObj("paymentOptions")
-    let optionsDict = dict->getDictFromObj("options")
-    let (default, defaultRules) = (themeValues.default, themeValues.defaultRules)
-    let config = CardTheme.itemToObjMapper(paymentOptions, default, defaultRules, logger)
-
-    let optionsLocaleString = getWarningString(optionsDict, "locale", "", ~logger)
-
-    let optionsAppearance = CardTheme.getAppearance(
-      "appearance",
-      optionsDict,
-      default,
-      defaultRules,
-      logger,
-    )
-    let appearance =
-      optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-    let localeString = CardTheme.getLocaleObject(
-      optionsLocaleString == "" ? config.locale : optionsLocaleString,
-    )
-    setConfig(_ => {
-      config: {
-        appearance,
-        locale: config.locale,
-        fonts: config.fonts,
-        clientSecret: config.clientSecret,
-        loader: config.loader,
-      },
-      themeObj: appearance.variables,
-      localeString,
-      showLoader: config.loader == Auto || config.loader == Always,
-    })
+  let setConfigs = async (dict, themeValues: ThemeImporter.themeDataModule) => {
+    try {
+      let paymentOptions = dict->getDictFromObj("paymentOptions")
+      let optionsDict = dict->getDictFromObj("options")
+      let (default, defaultRules) = (themeValues.default, themeValues.defaultRules)
+      let config = CardTheme.itemToObjMapper(paymentOptions, default, defaultRules, logger)
+      let optionsLocaleString = getWarningString(optionsDict, "locale", "", ~logger)
+      let optionsAppearance = CardTheme.getAppearance(
+        "appearance",
+        optionsDict,
+        default,
+        defaultRules,
+        logger,
+      )
+      let appearance =
+        optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
+      let localeString = await CardTheme.getLocaleObject(
+        optionsLocaleString == "" ? config.locale : optionsLocaleString,
+      )
+      setConfig(_ => {
+        config: {
+          appearance,
+          locale: config.locale,
+          fonts: config.fonts,
+          clientSecret: config.clientSecret,
+          loader: config.loader,
+        },
+        themeObj: appearance.variables,
+        localeString,
+        showLoader: config.loader == Auto || config.loader == Always,
+      })
+    } catch {
+    | _ => ()
+    }
   }
 
   React.useEffect0(() => {
@@ -253,18 +255,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
                 switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
-                  promise
-                  ->then(res => {
+                  promise->then(res => {
                     dict->setConfigs(res)
-                    resolve()
                   })
-                  ->ignore
                 | None =>
                   dict->setConfigs({
                     default: DefaultTheme.default,
                     defaultRules: DefaultTheme.defaultRules,
                   })
-                }
+                }->ignore
               }
               let newLaunchTime = dict->getFloat("launchTime", 0.0)
               setLaunchTime(_ => newLaunchTime)
@@ -303,18 +302,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
             switch getThemePromise(paymentOptions) {
             | Some(promise) =>
-              promise
-              ->then(res => {
+              promise->then(res => {
                 dict->setConfigs(res)
-                resolve()
               })
-              ->ignore
+
             | None =>
               dict->setConfigs({
                 default: DefaultTheme.default,
                 defaultRules: DefaultTheme.defaultRules,
               })
-            }
+            }->ignore
           }
         } else if dict->getDictIsSome("paymentElementsUpdate") {
           updateOptions(dict)
@@ -338,18 +335,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
           switch getThemePromise(optionsDict) {
           | Some(promise) =>
-            promise
-            ->then(res => {
+            promise->then(res => {
               dict->setConfigs(res)
-              resolve()
             })
-            ->ignore
+
           | None =>
             dict->setConfigs({
               default: DefaultTheme.default,
               defaultRules: DefaultTheme.defaultRules,
             })
-          }
+          }->ignore
         }
         if dict->getDictIsSome("sessions") {
           setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))
