@@ -72,12 +72,12 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
     } catch {
     | _ => JSON.Encode.null
     }
-    let dict = json->Utils.getDictFromJson
-    if dict->Dict.get("sendPaymentMethodsResponse")->Option.isSome {
+    let dict = json->getDictFromJson
+    if dict->getDictIsSome("sendPaymentMethodsResponse") {
       paymentMethodsResponse->sendPromiseData("payment_methods")
-    } else if dict->Dict.get("sendCustomerPaymentMethodsResponse")->Option.isSome {
+    } else if dict->getDictIsSome("sendCustomerPaymentMethodsResponse") {
       customerPaymentMethodsResponse->sendPromiseData("customer_payment_methods")
-    } else if dict->Dict.get("sendSessionTokensResponse")->Option.isSome {
+    } else if dict->getDictIsSome("sendSessionTokensResponse") {
       sessionTokensResponse->sendPromiseData("session_tokens")
     }
   }
