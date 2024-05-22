@@ -945,6 +945,9 @@ let rec maskPayload = payloadJson => {
 
 let usePaymentIntent = (optLogger, paymentType) => {
   open RecoilAtoms
+  let url = RescriptReactRouter.useUrl()
+  let paymentTypeFromUrl =
+    CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
@@ -962,7 +965,11 @@ let usePaymentIntent = (optLogger, paymentType) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-      let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
+      let headers = [
+        ("Content-Type", "application/json"),
+        ("api-key", confirmParam.publishableKey),
+        ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+      ]
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = isManualRetryEnabled
         ? [("retry_action", "manual_retry"->JSON.Encode.string)]

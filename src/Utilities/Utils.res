@@ -798,7 +798,11 @@ let delay = timeOut => {
 }
 let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
   let headerObj =
-    [("Content-Type", "application/json"), ("sdk-version", Window.version)]->Dict.fromArray
+    [
+      ("Content-Type", "application/json"),
+      ("X-Client-Version", Window.version),
+      ("X-Payment-Confirm-Source", "sdk"),
+    ]->Dict.fromArray
 
   switch (token, uri) {
   | (Some(tok), Some(_uriVal)) => headerObj->Dict.set("Authorization", tok)
