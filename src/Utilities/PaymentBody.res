@@ -166,7 +166,7 @@ let confirmPayloadForSDKButton = (sdkHandleConfirmPayment: PaymentType.sdkHandle
       "confirmParams",
       [
         ("return_url", sdkHandleConfirmPayment.confirmParams.return_url->JSON.Encode.string),
-        ("redirect", "always"->JSON.Encode.string),
+        ("redirect", "always"->JSON.Encode.string), // *As in the case of SDK Button we are not returning the promise back so it will always redirect
       ]->Utils.getJsonFromArrayOfJson,
     ),
   ]->Utils.getJsonFromArrayOfJson
