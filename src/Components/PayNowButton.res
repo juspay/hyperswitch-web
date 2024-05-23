@@ -21,21 +21,9 @@ let make = () => {
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
   let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
 
-  let handleMessage = (event: Types.event) => {
-    let json = event.data->Identity.anyTypeToJson->getStringFromJson("")->safeParse
-    let dict = json->getDictFromJson
-    switch dict->Dict.get("submitSuccessful") {
-    | Some(_) =>
-      setIsPayNowButtonDisable(_ => false)
-      setShowLoader(_ => false)
-    | None => ()
-    }
-  }
-
   let handleOnClick = _ => {
     setIsPayNowButtonDisable(_ => true)
     setShowLoader(_ => true)
-    EventListenerManager.addSmartEventListener("message", handleMessage, "onSubmitSuccessful")
     handlePostMessage([("handleSdkConfirm", confirmPayload)])
   }
 

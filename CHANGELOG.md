@@ -1,3 +1,17 @@
+## [0.54.1](https://github.com/juspay/hyperswitch-web/compare/v0.54.0...v0.54.1) (2024-05-22)
+
+
+### Bug Fixes
+
+* saved method checkbox condition updated ([#395](https://github.com/juspay/hyperswitch-web/issues/395)) ([8642913](https://github.com/juspay/hyperswitch-web/commit/8642913f5ba4be1c441499f15da2aab64870b209))
+
+# [0.54.0](https://github.com/juspay/hyperswitch-web/compare/v0.53.3...v0.54.0) (2024-05-22)
+
+
+### Features
+
+* isolate paymentElementCreate message ([#387](https://github.com/juspay/hyperswitch-web/issues/387)) ([0fdfacd](https://github.com/juspay/hyperswitch-web/commit/0fdfacd5826cebc16bb0a807d0539c42055e30f5))
+
 ## [0.53.3](https://github.com/juspay/hyperswitch-web/compare/v0.53.2...v0.53.3) (2024-05-22)
 
 
