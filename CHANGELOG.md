@@ -1,3 +1,10 @@
+## [0.54.2](https://github.com/juspay/hyperswitch-web/compare/v0.54.1...v0.54.2) (2024-05-23)
+
+
+### Bug Fixes
+
+* sdk button redirect issue ([#398](https://github.com/juspay/hyperswitch-web/issues/398)) ([dd78d56](https://github.com/juspay/hyperswitch-web/commit/dd78d5611100e23025e19d1563e1ff1e5434a692))
+
 ## [0.54.1](https://github.com/juspay/hyperswitch-web/compare/v0.54.0...v0.54.1) (2024-05-22)
 
 
