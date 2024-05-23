@@ -166,7 +166,12 @@ let confirmPayloadForSDKButton = (sdkHandleConfirmPayment: PaymentType.sdkHandle
       "confirmParams",
       [
         ("return_url", sdkHandleConfirmPayment.confirmParams.return_url->JSON.Encode.string),
-        ("redirect", "always"->JSON.Encode.string),
+        (
+          "redirect",
+          sdkHandleConfirmPayment.confirmParams.redirect
+          ->Option.getOr("if_required")
+          ->JSON.Encode.string,
+        ),
       ]->Utils.getJsonFromArrayOfJson,
     ),
   ]->Utils.getJsonFromArrayOfJson
