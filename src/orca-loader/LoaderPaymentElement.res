@@ -214,7 +214,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           eventDataObject->getOptionalJsonFromJson("iframeId")->getStringFromOptionalJson("")
 
         if fullscreenIframe->Option.isSome {
-          fullscreen := fullscreenIframe->getBoolFromJson(false)
+          fullscreen := fullscreenIframe->getBoolFromJson(true)
           fullscreenParam := param->getStringFromOptionalJson("")
           fullscreenMetadata :=
             metadata

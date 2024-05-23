@@ -267,6 +267,9 @@ module.exports = {
         "3/10": "30%",
         "7/10": "70%",
       },
+      height: {
+        "min-content": "min-content",
+      },
     },
   },
   variants: {},
