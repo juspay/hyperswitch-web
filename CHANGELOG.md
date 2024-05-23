@@ -1,3 +1,10 @@
+# [0.55.0](https://github.com/juspay/hyperswitch-web/compare/v0.54.2...v0.55.0) (2024-05-23)
+
+
+### Features
+
+* unsupported card networks validation ([#370](https://github.com/juspay/hyperswitch-web/issues/370)) ([05f527a](https://github.com/juspay/hyperswitch-web/commit/05f527abb475bdaf29912fd452a3b0f4b0b3bb55))
+
 ## [0.54.2](https://github.com/juspay/hyperswitch-web/compare/v0.54.1...v0.54.2) (2024-05-23)
 
 
