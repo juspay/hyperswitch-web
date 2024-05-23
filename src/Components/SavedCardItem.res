@@ -80,7 +80,13 @@ let make = (
         boxShadow: "none",
         opacity: {isCardExpired ? "0.7" : "1"},
       }
-      onClick={_ => setPaymentToken(_ => (paymentItem.paymentToken, paymentItem.customerId))}>
+      onClick={_ => {
+        open RecoilAtomTypes
+        setPaymentToken(_ => {
+          paymentToken: paymentItem.paymentToken,
+          customerId: paymentItem.customerId,
+        })
+      }}>
       <div className="w-full">
         <div>
           <div className="flex flex-row justify-between items-center">

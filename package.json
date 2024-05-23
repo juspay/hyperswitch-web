@@ -1,6 +1,6 @@
 {
   "name": "orca-payment-page",
-  "version": "0.52.3",
+  "version": "0.54.1",
   "main": "index.js",
   "private": true,
   "dependencies": {
@@ -144,6 +144,10 @@
             },
             {
               "type": "chore",
+              "release": "patch"
+            },
+            {
+              "type": "revert",
               "release": "patch"
             }
           ]

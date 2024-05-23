@@ -28,6 +28,7 @@ let make = (
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
+    let redirect = ref("if_required")
 
     let appearance =
       localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
@@ -89,12 +90,21 @@ let make = (
 
     let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
 
+    let unMountPreMountLoaderIframe = () => {
+      switch preMountLoaderIframeDiv->Nullable.toOption {
+      | Some(iframe) => iframe->remove
+      | None => ()
+      }
+    }
+
     let preMountLoaderMountedPromise = Promise.make((resolve, _reject) => {
       let preMountLoaderIframeCallback = (ev: Types.event) => {
         let json = ev.data->Identity.anyTypeToJson
         let dict = json->getDictFromJson
         if dict->Dict.get("preMountLoaderIframeMountedCallback")->Option.isSome {
           resolve(true->JSON.Encode.bool)
+        } else if dict->Dict.get("preMountLoaderIframeUnMount")->Option.isSome {
+          unMountPreMountLoaderIframe()
         }
       }
       addSmartEventListener(
@@ -271,7 +281,7 @@ let make = (
           [
             (
               "paymentElementCreate",
-              componentType->isComponentTypeForPaymentElementCreate->JSON.Encode.bool,
+              componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
             ),
             ("otherElements", otherElements->JSON.Encode.bool),
             ("options", newOptions),
@@ -589,6 +599,10 @@ let make = (
         let handlePollStatusMessage = (ev: Types.event) => {
           let eventDataObject = ev.data->anyTypeToJson
           let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+          switch eventDataObject->getOptionalJsonFromJson("confirmParams") {
+          | Some(obj) => redirect := obj->getDictFromJson->getString("redirect", "if_required")
+          | None => ()
+          }
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
           | Some(val) => {
               handlePostMessage([
@@ -620,17 +634,32 @@ let make = (
                   ~isForceSync=true,
                 )
                 ->then(json => {
-                  let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
-                  let status = dict->getString("status", "")
-                  let returnUrl = dict->getString("return_url", "")
-                  Window.Location.replace(
-                    `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
-                  )
-                  resolve()
+                  if redirect.contents === "always" {
+                    let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+                    let status = dict->getString("status", "")
+                    let returnUrl = dict->getString("return_url", "")
+                    Window.Location.replace(
+                      `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
+                    )
+                    resolve(JSON.Encode.null)
+                  } else {
+                    handlePostMessage([
+                      ("fullscreen", false->JSON.Encode.bool),
+                      ("submitSuccessful", true->JSON.Encode.bool),
+                      ("data", json),
+                    ])
+                    resolve(json)
+                  }
                 })
-                ->catch(_ => {
-                  Window.Location.replace(url)
-                  resolve()
+                ->catch(err => {
+                  if redirect.contents === "always" {
+                    Window.Location.replace(url)
+                  }
+                  handlePostMessage([
+                    ("submitSuccessful", false->JSON.Encode.bool),
+                    ("error", err->Identity.anyTypeToJson),
+                  ])
+                  resolve(err->Identity.anyTypeToJson)
                 })
                 ->ignore
                 ->resolve
@@ -638,6 +667,36 @@ let make = (
               ->catch(e => Console.log2("POLL_STATUS ERROR -", e)->resolve)
               ->ignore
             }
+          | None => ()
+          }
+
+          switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
+          | Some(val) =>
+            if redirect.contents === "always" {
+              Window.Location.replace(val->JSON.Decode.string->Option.getOr(""))
+              resolve(JSON.Encode.null)
+            } else {
+              PaymentHelpers.retrievePaymentIntent(
+                clientSecret,
+                headers,
+                ~optLogger=Some(logger),
+                ~switchToCustomPod,
+                ~isForceSync=true,
+              )
+              ->then(json => {
+                handlePostMessage([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
+                resolve(json)
+              })
+              ->catch(err => {
+                handlePostMessage([
+                  ("submitSuccessful", false->JSON.Encode.bool),
+                  ("error", err->Identity.anyTypeToJson),
+                ])
+                resolve(err->Identity.anyTypeToJson)
+              })
+              ->finally(_ => handlePostMessage([("fullscreen", false->JSON.Encode.bool)]))
+            }->ignore
+
           | None => ()
           }
         }
@@ -695,13 +754,18 @@ let make = (
               ->then(res => {
                 let (json, applePayPresent, googlePayPresent) = res
                 if (
-                  componentType->isComponentTypeForPaymentElementCreate &&
+                  componentType->getIsComponentTypeForPaymentElementCreate &&
                     applePayPresent->Belt.Option.isSome
                 ) {
                   //do operations here
-                  let processPayment = (token: JSON.t) => {
+                  let processPayment = (payment: ApplePayTypes.paymentResult) => {
                     //let body = PaymentBody.applePayBody(~token)
-                    let msg = [("applePayProcessPayment", token)]->Dict.fromArray
+                    let msg =
+                      [
+                        ("applePayProcessPayment", payment.token),
+                        ("applePayBillingContact", payment.billingContact),
+                        ("applePayShippingContact", payment.shippingContact),
+                      ]->Dict.fromArray
                     mountedIframeRef->Window.iframePostMessage(msg)
                   }
 
@@ -734,6 +798,30 @@ let make = (
                             ->Belt.Option.getWithDefault(Dict.make()->JSON.Encode.object)
                             ->transformKeys(CamelCase)
 
+                          let requiredShippingContactFields =
+                            paymentRequest
+                            ->Utils.getDictFromJson
+                            ->Utils.getStrArray("requiredShippingContactFields")
+
+                          if (
+                            componentType->getIsExpressCheckoutComponent->not &&
+                              requiredShippingContactFields->Array.length !== 0
+                          ) {
+                            let requiredShippingContactFields =
+                              requiredShippingContactFields->Array.filter(item =>
+                                item !== "postalAddress"
+                              )
+
+                            paymentRequest
+                            ->Utils.getDictFromJson
+                            ->Dict.set(
+                              "requiredShippingContactFields",
+                              requiredShippingContactFields
+                              ->Utils.getArrofJsonString
+                              ->JSON.Encode.array,
+                            )
+                          }
+
                           let ssn = applePaySession(3, paymentRequest)
                           switch applePaySessionRef.contents->Nullable.toOption {
                           | Some(session) =>
@@ -763,7 +851,7 @@ let make = (
                               {"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson,
                             )
                             applePaySessionRef := Nullable.null
-                            processPayment(event.payment.token)
+                            processPayment(event.payment)
                             let value = "Payment Data Filled: New Payment Method"
                             logger.setLogInfo(
                               ~value,
@@ -797,7 +885,7 @@ let make = (
                   addSmartEventListener("message", handleApplePayMessages, "onApplePayMessages")
                 }
                 if (
-                  componentType->isComponentTypeForPaymentElementCreate &&
+                  componentType->getIsComponentTypeForPaymentElementCreate &&
                   googlePayPresent->Belt.Option.isSome &&
                   wallets.googlePay === Auto
                 ) {
@@ -836,6 +924,14 @@ let make = (
                   paymentDataRequest.transactionInfo =
                     gpayobj.transaction_info->transformKeys(CamelCase)
                   paymentDataRequest.merchantInfo = gpayobj.merchant_info->transformKeys(CamelCase)
+                  paymentDataRequest.emailRequired = gpayobj.emailRequired
+
+                  if componentType->getIsExpressCheckoutComponent {
+                    paymentDataRequest.shippingAddressRequired = gpayobj.shippingAddressRequired
+                    paymentDataRequest.shippingAddressParameters =
+                      gpayobj.shippingAddressParameters->transformKeys(CamelCase)
+                  }
+
                   try {
                     let gPayClient = GooglePayType.google(
                       {
@@ -952,10 +1048,10 @@ let make = (
             fetchCustomerPaymentMethods(mountedIframeRef, false, componentType)
           }
           fetchSessionTokens(mountedIframeRef)
-          mountedIframeRef->Window.iframePostMessage(message)
           resolve()
         })
         ->ignore
+        mountedIframeRef->Window.iframePostMessage(message)
       }
 
       let paymentElement = LoaderPaymentElement.make(

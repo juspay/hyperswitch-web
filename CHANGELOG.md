@@ -1,3 +1,51 @@
+## [0.54.1](https://github.com/juspay/hyperswitch-web/compare/v0.54.0...v0.54.1) (2024-05-22)
+
+
+### Bug Fixes
+
+* saved method checkbox condition updated ([#395](https://github.com/juspay/hyperswitch-web/issues/395)) ([8642913](https://github.com/juspay/hyperswitch-web/commit/8642913f5ba4be1c441499f15da2aab64870b209))
+
+# [0.54.0](https://github.com/juspay/hyperswitch-web/compare/v0.53.3...v0.54.0) (2024-05-22)
+
+
+### Features
+
+* isolate paymentElementCreate message ([#387](https://github.com/juspay/hyperswitch-web/issues/387)) ([0fdfacd](https://github.com/juspay/hyperswitch-web/commit/0fdfacd5826cebc16bb0a807d0539c42055e30f5))
+
+## [0.53.3](https://github.com/juspay/hyperswitch-web/compare/v0.53.2...v0.53.3) (2024-05-22)
+
+
+### Bug Fixes
+
+* added patch for revert to generate tag ([#385](https://github.com/juspay/hyperswitch-web/issues/385)) ([4a0d92f](https://github.com/juspay/hyperswitch-web/commit/4a0d92f775fafd21e892e58a12151cbd58f7a170))
+* reverse core lib issue ([#386](https://github.com/juspay/hyperswitch-web/issues/386)) ([28f9067](https://github.com/juspay/hyperswitch-web/commit/28f90670d61c18828f7e24007f9c898bf3ad2acc))
+
+## [0.53.2](https://github.com/juspay/hyperswitch-web/compare/v0.53.1...v0.53.2) (2024-05-22)
+
+
+### Bug Fixes
+
+* updated headers ([#381](https://github.com/juspay/hyperswitch-web/issues/381)) ([bd9d7e4](https://github.com/juspay/hyperswitch-web/commit/bd9d7e4f31b8c88e34c675c87655f2a51fe475f7))
+
+
+### Reverts
+
+* do not unmount preMountLoader iframe ([#382](https://github.com/juspay/hyperswitch-web/issues/382)) ([9d259c2](https://github.com/juspay/hyperswitch-web/commit/9d259c25ac88d142f910bff81895d10dabbd0dc1))
+
+## [0.53.1](https://github.com/juspay/hyperswitch-web/compare/v0.53.0...v0.53.1) (2024-05-17)
+
+
+### Bug Fixes
+
+* openurl_if_required enhancement ([#371](https://github.com/juspay/hyperswitch-web/issues/371)) ([77fcdcf](https://github.com/juspay/hyperswitch-web/commit/77fcdcf09f2352b72908ffca770be6bdfd57932a))
+
+# [0.53.0](https://github.com/juspay/hyperswitch-web/compare/v0.52.3...v0.53.0) (2024-05-17)
+
+
+### Features
+
+* address collection for one click widgets ([#361](https://github.com/juspay/hyperswitch-web/issues/361)) ([48c48a3](https://github.com/juspay/hyperswitch-web/commit/48c48a31f931df615fc27fe492a9ce268d24fff7))
+
 ## [0.52.3](https://github.com/juspay/hyperswitch-web/compare/v0.52.2...v0.52.3) (2024-05-16)
 
 
