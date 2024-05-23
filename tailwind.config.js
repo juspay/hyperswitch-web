@@ -263,6 +263,10 @@ module.exports = {
       margin: {
         "20vh": "20vh",
       },
+      width: {
+        "3/10": "30%",
+        "7/10": "70%",
+      },
     },
   },
   variants: {},

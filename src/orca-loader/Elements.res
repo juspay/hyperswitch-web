@@ -947,7 +947,7 @@ let make = (
             newOptions
             ->getDictFromJson
             ->getBool("displaySavedPaymentMethods", true) &&
-              !(expressCheckoutComponents->Array.includes(componentType))
+              !(spmComponents->Array.includes(componentType))
           ) {
             fetchCustomerPaymentMethods(mountedIframeRef, false, componentType)
           }

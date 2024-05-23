@@ -168,7 +168,6 @@ let calculateAndSetValidity = (
 ) => {
   let updatedValidity = calculateValidity(paymentMethodDataDict, key)
   setFieldValidity(key, updatedValidity, fieldValidityDict, setFieldValidityDict)
-  Js.Console.log4("DEBUG", key, updatedValidity, fieldValidityDict)
 }
 
 let checkValidity = (keys, fieldValidityDict) => {

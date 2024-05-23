@@ -1,6 +1,7 @@
 open PaymentMethodCollectUtils
 open PaymentMethodCollectTypes
 open RecoilAtoms
+open Utils
 
 @react.component
 let make = (~integrateError, ~logger) => {
@@ -589,12 +590,14 @@ let make = (~integrateError, ~logger) => {
   } else {
     <div className="flex">
       // Merchant's info
-      <div className="flex flex-row merchant-header">
-        <img className="h-8 w-auto merchant-logo" src={merchantLogo} alt="O" />
-        <div className="merchant-title"> {React.string(merchantName)} </div>
+      <div className="flex flex-col merchant-header w-3/10">
+        <div className="flex flex-row">
+          <img className="h-8 w-auto merchant-logo" src={merchantLogo} alt="O" />
+          <div className="merchant-title"> {React.string(merchantName)} </div>
+        </div>
       </div>
       // Collect widget
-      <div id="collect" className="flex flex-row">
+      <div className="flex flex-row w-7/10">
         <div className="collect-sidebar">
           {availablePaymentMethods
           ->Array.mapWithIndex((pm, i) => {

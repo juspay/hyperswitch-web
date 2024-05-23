@@ -100,6 +100,7 @@ let getPaymentMode = val => {
   | "payPal" => PayPalElement
   | "applePay" => ApplePayElement
   | "paymentRequestButtons" => PaymentRequestButtonsElement
+  | "paymentMethodCollect" => PaymentMethodCollectElement
   | _ => NONE
   }
 }
@@ -115,6 +116,7 @@ let getPaymentModeToStrMapper = val => {
   | PayPalElement => "PayPalElement"
   | ApplePayElement => "ApplePayElement"
   | PaymentRequestButtonsElement => "PaymentRequestButtonsElement"
+  | PaymentMethodCollectElement => "PaymentMethodCollectElement"
   | NONE => "None"
   }
 }
