@@ -26,8 +26,10 @@ let make = () => {
     let dict = json->getDictFromJson
     switch dict->Dict.get("submitSuccessful") {
     | Some(_) =>
-      setIsPayNowButtonDisable(_ => false)
-      setShowLoader(_ => false)
+      if sdkHandleConfirmPayment.confirmParams.redirect === Some("if_required") {
+        setIsPayNowButtonDisable(_ => false)
+        setShowLoader(_ => false)
+      }
     | None => ()
     }
   }
