@@ -936,8 +936,7 @@ let getMethodsArr = (dict, str) => {
 
 let getOptionalMandateType = (dict, str) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       amount: getInt(json, "amount", 0),
@@ -948,8 +947,7 @@ let getOptionalMandateType = (dict, str) => {
 
 let getMandate = (dict, str) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       single_use: getOptionalMandateType(json, "single_use"),

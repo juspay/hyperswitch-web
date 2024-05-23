@@ -124,8 +124,7 @@ let defaultOptions = {
 }
 let getClasses = (str, dict, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       base: getWarningString(json, "base", "OrcaElement", ~logger),
@@ -146,8 +145,7 @@ let getClasses = (str, dict, logger) => {
 
 let rec getStyleObj = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       backgroundColor: getWarningString(json, "backgroundColor", "", ~logger),
@@ -190,8 +188,7 @@ let getTheme = (str, key, logger) => {
 }
 let getPaymentRequestButton = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       type_: getWarningString(json, "type", "", ~logger),
@@ -207,8 +204,7 @@ let getPaymentRequestButton = (dict, str, logger) => {
 
 let getStyle = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       base: getJsonObjectFromDict(json, "base"),

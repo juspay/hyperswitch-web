@@ -304,8 +304,7 @@ let getLayout = (str, logger) => {
 }
 let getAddress = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     let countryNames = []
     Country.country->Array.map(item => countryNames->Array.push(item.countryName))->ignore
@@ -337,8 +336,7 @@ let getAddress = (dict, str, logger) => {
 }
 let getBillingDetails = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     unknownKeysWarning(
       ["name", "email", "phone", "address"],
@@ -358,8 +356,7 @@ let getBillingDetails = (dict, str, logger) => {
 
 let getDefaultValues = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     unknownKeysWarning(["billingDetails"], json, "options.defaultValues", ~logger)
     let defaultValues: defaultValues = {
@@ -371,8 +368,7 @@ let getDefaultValues = (dict, str, logger) => {
 }
 let getBusiness = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     unknownKeysWarning(["name"], json, "options.business", ~logger)
     {
@@ -518,8 +514,7 @@ let getShowTerms: (string, string, 'a) => showTerms = (str, key, logger) => {
 
 let getShowAddress = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     let x: showAddress = {
       line1: getWarningString(json, "line1", "auto", ~logger)->getShowType(
@@ -581,8 +576,7 @@ let getBilling = (dict, str, logger) => {
 }
 let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     let defaultFields: fields = {
       billingDetails: getBilling(json, "billingDetails", logger),
@@ -616,8 +610,7 @@ let getLayoutValues = (val, logger) => {
 }
 let getTerms = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     unknownKeysWarning(
       ["auBecsDebit", "bancontact", "card", "ideal", "sepaDebit", "sofort", "usBankAccount"],
@@ -728,8 +721,7 @@ let getHeightArray = (val, logger) => {
 }
 let getStyle = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     unknownKeysWarning(["type", "theme", "height"], json, "options.wallets.style", ~logger)
     let style = {
@@ -743,8 +735,7 @@ let getStyle = (dict, str, logger) => {
 }
 let getWallets = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     unknownKeysWarning(
       ["applePay", "googlePay", "style", "walletReturnUrl", "payPal"],
@@ -784,8 +775,7 @@ let getLayout = (dict, str, logger) => {
 
 let getCardDetails = (dict, str) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       scheme: Some(getString(json, "scheme", "")),
@@ -868,8 +858,7 @@ let getCustomMethodNames = (dict, str) => {
 
 let getBillingAddress = (dict, str, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     unknownKeysWarning(
       ["isUseBillingAddress", "usePrefilledValues"],

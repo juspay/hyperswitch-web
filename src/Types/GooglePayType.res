@@ -93,8 +93,7 @@ let defaultPaymentMethodData = {
 
 let getTokenizationData = (str, dict) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       token: getString(json, "token", ""),
@@ -104,8 +103,7 @@ let getTokenizationData = (str, dict) => {
 }
 let getPaymentMethodData = (str, dict) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       description: getString(json, "description", ""),

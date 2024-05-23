@@ -17,95 +17,84 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (parent, JSON.t, string) => unit = "postMessage"
 open ErrorUtils
-let handlePostMessage = (~targetOrigin="*", messageArr) => {
+let handlePostMessage = (~targetOrigin="*", messageArr) =>
   iframeParent->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
-}
 
-let handleOnFocusPostMessage = (~targetOrigin="*", ()) => {
+let handleOnFocusPostMessage = (~targetOrigin="*", ()) =>
   handlePostMessage([("focus", true->JSON.Encode.bool)], ~targetOrigin)
-}
 
-let handleOnBlurPostMessage = (~targetOrigin="*", ()) => {
+let handleOnBlurPostMessage = (~targetOrigin="*", ()) =>
   handlePostMessage([("blur", true->JSON.Encode.bool)], ~targetOrigin)
-}
 
-let handleOnClickPostMessage = (~targetOrigin="*", ev) => {
+let handleOnClickPostMessage = (~targetOrigin="*", ev) =>
   handlePostMessage(
     [("clickTriggered", true->JSON.Encode.bool), ("event", ev->JSON.stringify->JSON.Encode.string)],
     ~targetOrigin,
   )
-}
 let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false, ()) => {
   let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
   handlePostMessage([(message, true->JSON.Encode.bool)], ~targetOrigin)
 }
-let getOptionString = (dict, key) => {
-  dict->Dict.get(key)->Option.flatMap(JSON.Decode.string)
-}
 
-let getString = (dict, key, default) => {
-  getOptionString(dict, key)->Option.getOr(default)
-}
+let getOptionalDict = (dict, str) =>
+  dict
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
 
-let getStringFromJson = (json, default) => {
-  json->JSON.Decode.string->Option.getOr(default)
-}
+let getOptionString = (dict, key) => dict->Dict.get(key)->Option.flatMap(JSON.Decode.string)
 
-let getInt = (dict, key, default: int) => {
+let getString = (dict, key, default) => getOptionString(dict, key)->Option.getOr(default)
+
+let getStringFromJson = (json, default) => json->JSON.Decode.string->Option.getOr(default)
+
+let getInt = (dict, key, default: int) =>
   dict
   ->Dict.get(key)
   ->Option.flatMap(JSON.Decode.float)
   ->Option.getOr(default->Int.toFloat)
   ->Float.toInt
-}
 
 let getFloatFromString = (str, default) => str->Float.fromString->Option.getOr(default)
 
-let getFloatFromJson = (json, default) => {
+let getFloatFromJson = (json, default) =>
   switch json->JSON.Classify.classify {
   | String(str) => getFloatFromString(str, default)
   | Number(floatValue) => floatValue
   | _ => default
   }
-}
 
-let getFloat = (dict, key, default) => {
+let getFloat = (dict, key, default) =>
   dict->Dict.get(key)->Option.map(json => getFloatFromJson(json, default))->Option.getOr(default)
-}
 
-let getJsonBoolValue = (dict, key, default) => {
+let getJsonBoolValue = (dict, key, default) =>
   dict->Dict.get(key)->Option.getOr(default->JSON.Encode.bool)
-}
 
-let getJsonStringFromDict = (dict, key, default) => {
+let getJsonStringFromDict = (dict, key, default) =>
   dict->Dict.get(key)->Option.getOr(default->JSON.Encode.string)
-}
 
-let getJsonArrayFromDict = (dict, key, default) => {
+let getJsonArrayFromDict = (dict, key, default) =>
   dict->Dict.get(key)->Option.getOr(default->JSON.Encode.array)
-}
-let getJsonFromDict = (dict, key, default) => {
-  dict->Dict.get(key)->Option.getOr(default)
-}
 
-let getJsonObjFromDict = (dict, key, default) => {
-  dict->Dict.get(key)->Option.flatMap(JSON.Decode.object)->Option.getOr(default)
-}
-let getDecodedStringFromJson = (json, callbackFunc, defaultValue) => {
+let getJsonFromDict = (dict, key, default) => dict->Dict.get(key)->Option.getOr(default)
+
+let getJsonObjFromDict = (dict, key, default) =>
+  dict
+  ->getOptionalDict(key)
+  ->Option.getOr(default)
+
+let getDecodedStringFromJson = (json, callbackFunc, defaultValue) =>
   json
   ->JSON.Decode.object
   ->Option.flatMap(callbackFunc)
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
-}
 
-let getDecodedBoolFromJson = (json, callbackFunc, defaultValue) => {
+let getDecodedBoolFromJson = (json, callbackFunc, defaultValue) =>
   json
   ->JSON.Decode.object
   ->Option.flatMap(callbackFunc)
   ->Option.flatMap(JSON.Decode.bool)
   ->Option.getOr(defaultValue)
-}
 
 let getRequiredString = (dict, key, default, ~logger) => {
   let optionalStr = getOptionString(dict, key)
@@ -134,29 +123,20 @@ let getWarningString = (dict, key, default, ~logger) => {
   }
 }
 
-let getDictFromObj = (dict, key) => {
-  dict->Dict.get(key)->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-}
+let getDictFromObj = (dict, key) => dict->getOptionalDict(key)->Option.getOr(Dict.make())
 
-let getJsonObjectFromDict = (dict, key) => {
+let getJsonObjectFromDict = (dict, key) =>
   dict->Dict.get(key)->Option.getOr(JSON.Encode.object(Dict.make()))
-}
-let getOptionBool = (dict, key) => {
-  dict->Dict.get(key)->Option.flatMap(JSON.Decode.bool)
-}
-let getDictFromJson = (json: JSON.t) => {
-  json->JSON.Decode.object->Option.getOr(Dict.make())
-}
 
-let getDictfromDict = (dict, key) => {
-  dict->getJsonObjectFromDict(key)->getDictFromJson
-}
+let getOptionBool = (dict, key) => dict->Dict.get(key)->Option.flatMap(JSON.Decode.bool)
 
-let getBool = (dict, key, default) => {
-  getOptionBool(dict, key)->Option.getOr(default)
-}
+let getDictFromJson = json => json->JSON.Decode.object->Option.getOr(Dict.make())
 
-let getBoolWithWarning = (dict, key, default, ~logger) => {
+let getDictfromDict = (dict, key) => dict->getJsonObjectFromDict(key)->getDictFromJson
+
+let getBool = (dict, key, default) => getOptionBool(dict, key)->Option.getOr(default)
+
+let getBoolWithWarning = (dict, key, default, ~logger) =>
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.bool {
@@ -167,8 +147,8 @@ let getBoolWithWarning = (dict, key, default, ~logger) => {
     }
   | None => default
   }
-}
-let getNumberWithWarning = (dict, key, ~logger, default) => {
+
+let getNumberWithWarning = (dict, key, ~logger, default) =>
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.float {
@@ -179,32 +159,27 @@ let getNumberWithWarning = (dict, key, ~logger, default) => {
     }
   | None => default
   }
-}
 
-let getOptionalArrayFromDict = (dict, key) => {
-  dict->Dict.get(key)->Option.flatMap(JSON.Decode.array)
-}
-let getArray = (dict, key) => {
-  dict->getOptionalArrayFromDict(key)->Option.getOr([])
-}
+let getOptionalArrayFromDict = (dict, key) => dict->Dict.get(key)->Option.flatMap(JSON.Decode.array)
 
-let getStrArray = (dict, key) => {
+let getArray = (dict, key) => dict->getOptionalArrayFromDict(key)->Option.getOr([])
+
+let getStrArray = (dict, key) =>
   dict
   ->getOptionalArrayFromDict(key)
   ->Option.getOr([])
   ->Array.map(json => json->getStringFromJson(""))
-}
-let getOptionalStrArray: (Dict.t<JSON.t>, string) => option<array<string>> = (dict, key) => {
+
+let getOptionalStrArray: (Dict.t<JSON.t>, string) => option<array<string>> = (dict, key) =>
   switch dict->getOptionalArrayFromDict(key) {
   | Some(val) =>
     val->Array.length === 0 ? None : Some(val->Array.map(json => json->getStringFromJson("")))
   | None => None
   }
-}
 
 let getBoolValue = val => val->Option.getOr(false)
 
-let toKebabCase = str => {
+let toKebabCase = str =>
   str
   ->String.split("")
   ->Array.mapWithIndex((item, i) => {
@@ -215,7 +190,6 @@ let toKebabCase = str => {
     }
   })
   ->Array.joinWith("")
-}
 
 let handleMessage = (fun, _errorMessage) => {
   let handle = (ev: Window.event) => {
@@ -228,9 +202,8 @@ let handleMessage = (fun, _errorMessage) => {
   Window.addEventListener("message", handle)
   Some(() => Window.removeEventListener("message", handle))
 }
-let useSubmitPaymentData = callback => {
+let useSubmitPaymentData = callback =>
   React.useEffect(() => {handleMessage(callback, "")}, [callback])
-}
 
 let useWindowSize = () => {
   let (size, setSize) = React.useState(_ => (0, 0))
@@ -294,7 +267,7 @@ let postSubmitResponse = (~jsonData, ~url) => {
   ])
 }
 
-let getFailedSubmitResponse = (~errorType, ~message) => {
+let getFailedSubmitResponse = (~errorType, ~message) =>
   [
     (
       "error",
@@ -305,7 +278,6 @@ let getFailedSubmitResponse = (~errorType, ~message) => {
   ]
   ->Dict.fromArray
   ->JSON.Encode.object
-}
 
 let toCamelCase = str => {
   if str->String.includes(":") {
@@ -370,19 +342,17 @@ let rec transformKeys = (json: JSON.t, to: case) => {
   ->JSON.Encode.object
 }
 
-let getClientCountry = clientTimeZone => {
+let getClientCountry = clientTimeZone =>
   Country.country
   ->Array.find(item => item.timeZones->Array.find(i => i == clientTimeZone)->Option.isSome)
   ->Option.getOr(Country.defaultTimeZone)
-}
 
-let removeDuplicate = arr => {
+let removeDuplicate = arr =>
   arr->Array.filterWithIndex((item, i) => {
     arr->Array.indexOf(item) === i
   })
-}
 
-let isEmailValid = email => {
+let isEmailValid = email =>
   switch email->String.match(
     %re(
       "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/"
@@ -391,12 +361,11 @@ let isEmailValid = email => {
   | Some(_match) => Some(true)
   | None => email->String.length > 0 ? Some(false) : None
   }
-}
 
 let checkEmailValid = (
   email: RecoilAtomTypes.field,
   fn: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
-) => {
+) =>
   switch email.value->String.match(
     %re(
       "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/"
@@ -418,7 +387,6 @@ let checkEmailValid = (
           isValid: None,
         })
   }
-}
 
 let validatePhoneNumber = (countryCode, number) => {
   let phoneNumberDict = phoneNumberJson->getDictFromJson
@@ -459,12 +427,11 @@ let isAllValid = (
   expiry: option<bool>,
   zip: bool,
   paymentMode: string,
-) => {
+) =>
   card->getBoolValue &&
   cvc->getBoolValue &&
   expiry->getBoolValue &&
   (paymentMode == "payment" || zip)
-}
 
 let getCountryPostal = (countryCode, postalCodes: array<PostalCodeType.postalCodes>) => {
   postalCodes
@@ -472,21 +439,19 @@ let getCountryPostal = (countryCode, postalCodes: array<PostalCodeType.postalCod
   ->Option.getOr(PostalCodeType.defaultPostalCode)
 }
 
-let getCountryNames = (list: array<Country.timezoneType>) => {
+let getCountryNames = (list: array<Country.timezoneType>) =>
   list->Array.reduce([], (arr, item) => {
     arr->Array.push(item.countryName)->ignore
     arr
   })
-}
 
-let getBankNames = (list: Bank.bankList, allBanks: array<string>) => {
+let getBankNames = (list: Bank.bankList, allBanks: array<string>) =>
   list->Array.reduce([], (arr, item) => {
     if allBanks->Array.includes(item.hyperSwitch) {
       arr->Array.push(item.displayName)->ignore
     }
     arr
   })
-}
 
 let getBankKeys = (str, banks: Bank.bankList, default) => {
   let bank = banks->Array.find(item => item.displayName == str)->Option.getOr(default)
@@ -576,13 +541,10 @@ let generateStyleSheet = (classname, dict, id) => {
   | None => createStyle()
   }
 }
-let openUrl = url => {
-  handlePostMessage([("openurl", url->JSON.Encode.string)])
-}
 
-let getArrofJsonString = (arr: array<string>) => {
-  arr->Array.map(item => item->JSON.Encode.string)
-}
+let openUrl = url => handlePostMessage([("openurl", url->JSON.Encode.string)])
+
+let getArrofJsonString = (arr: array<string>) => arr->Array.map(item => item->JSON.Encode.string)
 
 let getPaymentDetails = (arr: array<string>) => {
   let finalArr = []
@@ -597,17 +559,16 @@ let getPaymentDetails = (arr: array<string>) => {
   ->ignore
   finalArr
 }
-let getOptionalArr = arr => {
+let getOptionalArr = arr =>
   switch arr {
   | Some(val) => val
   | None => []
   }
-}
 
-let checkPriorityList = paymentMethodOrder => {
+let checkPriorityList = paymentMethodOrder =>
   paymentMethodOrder->getOptionalArr->Array.get(0)->Option.getOr("") == "card" ||
     paymentMethodOrder->Option.isNone
-}
+
 type sizeunit = Pixel | Rem | Em
 let addSize = (str: string, value: float, unit: sizeunit) => {
   let getUnit = unit => {
@@ -672,11 +633,10 @@ let handlePostMessageEvents = (
 
 let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
 
-let getCountryCode = country => {
+let getCountryCode = country =>
   Country.country
   ->Array.find(item => item.countryName == country)
   ->Option.getOr(Country.defaultTimeZone)
-}
 
 let getStateNames = (list: JSON.t, country: RecoilAtomTypes.field) => {
   let options =
@@ -727,9 +687,7 @@ let snakeToTitleCase = str => {
   ->Array.joinWith(" ")
 }
 
-let logInfo = log => {
-  Window.isProd ? () : log
-}
+let logInfo = log => Window.isProd ? () : log
 
 let formatIBAN = iban => {
   let formatted = iban->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
@@ -758,9 +716,7 @@ let formatBSB = bsb => {
   }
 }
 
-let getDictIsSome = (dict, key) => {
-  dict->Dict.get(key)->Option.isSome
-}
+let getDictIsSome = (dict, key) => dict->Dict.get(key)->Option.isSome
 
 let rgbaTorgb = bgColor => {
   let cleanBgColor = bgColor->String.trim
@@ -782,13 +738,13 @@ let rgbaTorgb = bgColor => {
   }
 }
 
-let delay = timeOut => {
+let delay = timeOut =>
   Promise.make((resolve, _reject) => {
     setTimeout(() => {
       resolve(Dict.make())
     }, timeOut)->ignore
   })
-}
+
 let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
   let headerObj =
     [
@@ -832,34 +788,28 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
   })
 }
 
-let arrayJsonToCamelCase = arr => {
+let arrayJsonToCamelCase = arr =>
   arr->Array.map(item => {
     item->transformKeys(CamelCase)
   })
-}
-let formatException = exc => {
-  exc->Identity.anyTypeToJson
-}
 
-let getArrayValFromJsonDict = (dict, key, arrayKey) => {
+let formatException = exc => exc->Identity.anyTypeToJson
+
+let getArrayValFromJsonDict = (dict, key, arrayKey) =>
   dict
   ->getDictfromDict(key)
   ->getArray(arrayKey)
   ->Belt.Array.keepMap(JSON.Decode.string)
-}
 
-let isOtherElements = componentType => {
+let isOtherElements = componentType =>
   componentType == "card" ||
   componentType == "cardNumber" ||
   componentType == "cardExpiry" ||
   componentType == "cardCvc"
-}
 
 let nbsp = `\u00A0`
 
-let callbackFuncForExtractingValFromDict = key => {
-  x => x->Dict.get(key)
-}
+let callbackFuncForExtractingValFromDict = key => x => x->Dict.get(key)
 
 let brandIconSize = 28
 
@@ -868,45 +818,38 @@ let getClasses = (options, key) => {
   classes->getString(key, "")
 }
 
-let safeParseOpt = st => {
+let safeParseOpt = st =>
   try {
     JSON.parseExn(st)->Some
   } catch {
   | _ => None
   }
-}
-let safeParse = st => {
-  safeParseOpt(st)->Option.getOr(JSON.Encode.null)
-}
 
-let getArrayOfTupleFromDict = dict => {
+let safeParse = st => safeParseOpt(st)->Option.getOr(JSON.Encode.null)
+
+let getArrayOfTupleFromDict = dict =>
   dict
   ->Dict.keysToArray
   ->Array.map(key => (key, Dict.get(dict, key)->Option.getOr(JSON.Encode.null)))
-}
 
-let getOptionalJsonFromJson = (json, str) => {
+let getOptionalJsonFromJson = (json, str) =>
   json->JSON.Decode.object->Option.getOr(Dict.make())->Dict.get(str)
-}
 
-let getStringFromOptionalJson = (json, default) => {
+let getStringFromOptionalJson = (json, default) =>
   json->Option.flatMap(JSON.Decode.string)->Option.getOr(default)
-}
 
-let getBoolFromJson = (json, default) => {
+let getBoolFromJson = (json, default) =>
   json->Option.flatMap(JSON.Decode.bool)->Option.getOr(default)
-}
 
-let getOptionalJson = (json, str) => {
+let getOptionalJson = (json, str) =>
   json
   ->JSON.Decode.object
   ->Option.flatMap(x => x->Dict.get("data"))
   ->Option.getOr(Dict.make()->JSON.Encode.object)
   ->getDictFromJson
   ->Dict.get(str)
-}
 
-let rec setNested = (dict, keys, value) => {
+let rec setNested = (dict, keys, value) =>
   switch keys[0] {
   | Some(firstKey) =>
     if keys->Array.length === 1 {
@@ -928,7 +871,6 @@ let rec setNested = (dict, keys, value) => {
     }
   | None => ()
   }
-}
 
 let unflattenObject = obj => {
   let newDict = Dict.make()
@@ -946,14 +888,13 @@ let unflattenObject = obj => {
   newDict
 }
 
-let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
+let mergeTwoFlattenedJsonDicts = (dict1, dict2) =>
   dict1
   ->Dict.toArray
   ->Array.concat(dict2->Dict.toArray)
   ->Dict.fromArray
   ->JSON.Encode.object
   ->unflattenObject
-}
 
 open Identity
 
@@ -1207,26 +1148,23 @@ let generateRandomString = length => {
   result.contents
 }
 
-let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
+let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) =>
   switch paymentType {
   | GooglePayElement => wallets->Array.filter(item => item === "google_pay")
   | PayPalElement => wallets->Array.filter(item => item === "paypal")
   | ApplePayElement => wallets->Array.filter(item => item === "apple_pay")
   | _ => wallets
   }
-}
 
 let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "paymentRequestButtons"]
 
 let componentsForPaymentElementCreate = ["payment"]->Array.concat(expressCheckoutComponents)
 
-let getIsExpressCheckoutComponent = componentType => {
+let getIsExpressCheckoutComponent = componentType =>
   expressCheckoutComponents->Array.includes(componentType)
-}
 
-let getIsComponentTypeForPaymentElementCreate = componentType => {
+let getIsComponentTypeForPaymentElementCreate = componentType =>
   componentsForPaymentElementCreate->Array.includes(componentType)
-}
 
 let walletElementPaymentType: array<CardThemeType.mode> = [
   GooglePayElement,
@@ -1243,7 +1181,7 @@ let getUniqueArray = arr => arr->Array.map(item => (item, ""))->Dict.fromArray->
 
 let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
 
-let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, country: string) => {
+let getStateNameFromStateCodeAndCountry = (list, stateCode: string, country: string) => {
   let options =
     list
     ->getDictFromJson

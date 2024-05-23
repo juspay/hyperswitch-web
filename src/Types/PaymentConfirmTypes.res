@@ -80,8 +80,7 @@ let defaultIntent = {
 
 let getAchCreditTransfer = (dict, str) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       account_number: getString(json, "account_number", ""),
@@ -94,8 +93,7 @@ let getAchCreditTransfer = (dict, str) => {
 }
 let getBacsBankInstructions = (dict, str) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       account_holder_name: getString(json, "account_holder_name", ""),
@@ -107,8 +105,7 @@ let getBacsBankInstructions = (dict, str) => {
 }
 let getBankTransferDetails = (dict, str) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     {
       ach_credit_transfer: getAchCreditTransfer(json, "ach_credit_transfer"),
@@ -125,38 +122,36 @@ let getVoucherDetails = json => {
 
 let getNextAction = (dict, str) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
-  ->Option.map(json => {
+  ->getOptionalDict(str)
+  ->Option.map(dictOfJson => {
     {
-      redirectToUrl: getString(json, "redirect_to_url", ""),
-      type_: getString(json, "type", ""),
+      redirectToUrl: getString(dictOfJson, "redirect_to_url", ""),
+      type_: getString(dictOfJson, "type", ""),
       bank_transfer_steps_and_charges_details: Some(
         getJsonObjFromDict(
-          json,
+          dictOfJson,
           "bank_transfer_steps_and_charges_details",
           Dict.make(),
         )->JSON.Encode.object,
       ),
       session_token: Some(
-        getJsonObjFromDict(json, "session_token", Dict.make())->JSON.Encode.object,
+        getJsonObjFromDict(dictOfJson, "session_token", Dict.make())->JSON.Encode.object,
       ),
-      image_data_url: Some(json->getString("image_data_url", "")),
+      image_data_url: Some(dictOfJson->getString("image_data_url", "")),
       three_ds_data: Some(
-        json
+        dictOfJson
         ->Dict.get("three_ds_data")
         ->Option.getOr(Dict.make()->JSON.Encode.object),
       ),
       display_to_timestamp: Some(
-        json
+        dictOfJson
         ->Dict.get("display_to_timestamp")
         ->Option.flatMap(JSON.Decode.float)
         ->Option.getOr(0.0),
       ),
       voucher_details: {
-        json
-        ->Dict.get("voucher_details")
-        ->Option.flatMap(JSON.Decode.object)
+        dictOfJson
+        ->getOptionalDict("voucher_details")
         ->Option.map(json => json->getVoucherDetails)
       },
     }

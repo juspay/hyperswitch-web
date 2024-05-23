@@ -482,8 +482,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let currency = optionsDict->getJsonStringFromDict("currency", "")
         let optionsTotal =
           optionsDict
-          ->Dict.get("total")
-          ->Option.flatMap(JSON.Decode.object)
+          ->getOptionalDict("total")
           ->Option.flatMap(x => addAmountToDict(x, currency))
           ->Option.getOr(Dict.make()->JSON.Encode.object)
         let displayItems = optionsDict->getJsonArrayFromDict("displayItems", [])
@@ -494,8 +493,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
         let shippingOptions =
           optionsDict
-          ->Dict.get("shippingOptions")
-          ->Option.flatMap(JSON.Decode.object)
+          ->getOptionalDict("shippingOptions")
           ->Option.flatMap(x => addAmountToDict(x, currency))
           ->Option.getOr(Dict.make()->JSON.Encode.object)
 

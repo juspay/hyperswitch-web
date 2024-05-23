@@ -111,8 +111,7 @@ let defaultRecoilConfig: recoilConfig = {
 
 let getVariables = (str, dict, default, logger) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     let validKeys = [
       "fontFamily",
@@ -321,8 +320,7 @@ let getAppearance = (
   logger,
 ) => {
   dict
-  ->Dict.get(str)
-  ->Option.flatMap(JSON.Decode.object)
+  ->getOptionalDict(str)
   ->Option.map(json => {
     unknownKeysWarning(
       ["theme", "variables", "rules", "labels", "innerLayout"],
