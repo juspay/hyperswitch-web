@@ -176,8 +176,16 @@ let make = (
   let conditionsForShowingSaveCardCheckbox = React.useMemo(() => {
     !isGuestCustomer &&
     paymentMethodListValue.payment_type === NEW_MANDATE &&
-    displaySavedPaymentMethodsCheckbox
-  }, (isGuestCustomer, paymentMethodListValue.payment_type, displaySavedPaymentMethodsCheckbox))
+    displaySavedPaymentMethodsCheckbox &&
+    savedMethods->Array.some(ele => {
+      ele.paymentMethod === "card" && ele.requiresCvv
+    })
+  }, (
+    isGuestCustomer,
+    paymentMethodListValue.payment_type,
+    displaySavedPaymentMethodsCheckbox,
+    savedMethods,
+  ))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields) {
