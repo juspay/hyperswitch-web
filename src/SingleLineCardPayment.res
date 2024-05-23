@@ -16,6 +16,7 @@ let make = (
   let (
     isCardValid,
     setIsCardValid,
+    _,
     cardNumber,
     changeCardNumber,
     handleCardBlur,

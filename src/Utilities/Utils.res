@@ -460,12 +460,14 @@ let sortBasedOnPriority = (sortArr: array<string>, priorityArr: array<string>) =
 
 let isAllValid = (
   card: option<bool>,
+  cardSupported: option<bool>,
   cvc: option<bool>,
   expiry: option<bool>,
   zip: bool,
   paymentMode: string,
 ) => {
   card->getBoolValue &&
+  cardSupported->getBoolValue &&
   cvc->getBoolValue &&
   expiry->getBoolValue &&
   (paymentMode == "payment" || zip)

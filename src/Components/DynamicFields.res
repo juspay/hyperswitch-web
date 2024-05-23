@@ -101,6 +101,7 @@ let make = (
   let defaultCardProps = (
     None,
     _ => (),
+    None,
     "",
     _ => (),
     _ => (),
@@ -154,6 +155,7 @@ let make = (
   let (
     isCardValid,
     setIsCardValid,
+    _,
     cardNumber,
     changeCardNumber,
     handleCardBlur,
