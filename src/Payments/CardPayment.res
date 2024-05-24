@@ -25,6 +25,7 @@ let make = (
   let (
     isCardValid,
     setIsCardValid,
+    isCardSupported,
     cardNumber,
     changeCardNumber,
     handleCardBlur,
@@ -99,7 +100,14 @@ let make = (
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
-  let complete = isAllValid(isCardValid, isCVCValid, isExpiryValid, true, "payment")
+  let complete = isAllValid(
+    isCardValid,
+    isCardSupported,
+    isCVCValid,
+    isExpiryValid,
+    true,
+    "payment",
+  )
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect(() => {
     setComplete(_ => complete)
@@ -152,8 +160,13 @@ let make = (
       defaultCardBody
     }
     if confirm.doSubmit {
-      let validFormat = (isBancontact || complete) && areRequiredFieldsValid
-      if validFormat && (showFields || isBancontact) && isCardBrandValid {
+      let validFormat =
+        (isBancontact ||
+        (isCVCValid->Option.getOr(false) &&
+        isCardValid->Option.getOr(false) &&
+        isCardSupported->Option.getOr(false) &&
+        isExpiryValid->Option.getOr(false))) && areRequiredFieldsValid
+      if validFormat && (showFields || isBancontact) {
         intent(
           ~bodyArr={
             (isBancontact ? banContactBody : cardBody)
@@ -179,11 +192,12 @@ let make = (
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
         }
+        if isCardSupported->Option.getOr(true)->not {
+          setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
+          setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+        }
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)
-        }
-        if !isCardBrandValid {
-          setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
         }
       }
     }
