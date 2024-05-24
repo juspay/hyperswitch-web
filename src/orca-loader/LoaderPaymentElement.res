@@ -159,9 +159,13 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             )
             switch elem->Nullable.toOption {
             | Some(ele) =>
-              ele
-              ->Window.style
-              ->Window.setHeight(`${iframeHeightRef.contents->Float.toString}px`)
+              switch localSelectorString {
+              | "payment-method-collect" => ele->Window.style->Window.setHeight("100vh")
+              | _ =>
+                ele
+                ->Window.style
+                ->Window.setHeight(`${iframeHeightRef.contents->Float.toString}px`)
+              }
             | None => ()
             }
           }
@@ -290,11 +294,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
       let oElement = Window.querySelector(selector)
       let classesBase = optionsDict->getClasses("base")
       let additionalIframeStyle =
-        componentType->Utils.isOtherElements
-          ? "height: 2rem;"
-          : componentType == "paymentMethodCollect"
-          ? "height: 100vh;"
-          : "height: 0;"
+        componentType->Utils.isOtherElements ? "height: 2rem;" : "height: 0;"
       switch oElement->Nullable.toOption {
       | Some(elem) => {
           let iframeDiv = `<div id="orca-element-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">

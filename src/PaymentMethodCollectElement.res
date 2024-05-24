@@ -637,7 +637,7 @@ let make = (~integrateError, ~logger) => {
   if integrateError {
     <ErrorOccured />
   } else {
-    <div className="flex">
+    <div className="flex h-screen">
       // Merchant's info
       <div className="flex flex-col w-3/10 p-[50px]" style={backgroundColor: merchantTheme}>
         <div className="flex flex-row">
