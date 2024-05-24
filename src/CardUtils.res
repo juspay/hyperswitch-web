@@ -17,6 +17,7 @@ type cardIssuer =
 type cardProps = (
   option<bool>,
   (option<bool> => option<bool>) => unit,
+  option<bool>,
   string,
   JsxEvent.Form.t => unit,
   JsxEvent.Focus.t => unit,
