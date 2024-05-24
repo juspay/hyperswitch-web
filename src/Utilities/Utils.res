@@ -132,7 +132,7 @@ let getOptionBool = (dict, key) => dict->Dict.get(key)->Option.flatMap(JSON.Deco
 
 let getDictFromJson = json => json->JSON.Decode.object->Option.getOr(Dict.make())
 
-let getDictfromDict = (dict, key) => dict->getJsonObjectFromDict(key)->getDictFromJson
+let getDictFromDict = (dict, key) => dict->getJsonObjectFromDict(key)->getDictFromJson
 
 let getBool = (dict, key, default) => getOptionBool(dict, key)->Option.getOr(default)
 
@@ -797,7 +797,7 @@ let formatException = exc => exc->Identity.anyTypeToJson
 
 let getArrayValFromJsonDict = (dict, key, arrayKey) =>
   dict
-  ->getDictfromDict(key)
+  ->getDictFromDict(key)
   ->getArray(arrayKey)
   ->Belt.Array.keepMap(JSON.Decode.string)
 

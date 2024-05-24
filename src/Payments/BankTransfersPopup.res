@@ -1,7 +1,7 @@
 open Utils
 let getKeyValue = (json, str) => {
   json
-  ->getDictfromDict(str)
+  ->getDictFromDict(str)
   ->JSON.Encode.object
   ->JSON.Decode.string
   ->Option.getOr("")
@@ -56,8 +56,8 @@ let make = (~transferType) => {
         let metadata = dict->getJsonObjectFromDict("metadata")
         let dictMetadata =
           dict
-          ->getDictfromDict("metadata")
-          ->getDictfromDict(responseType)
+          ->getDictFromDict("metadata")
+          ->getDictFromDict(responseType)
           ->JSON.Encode.object
           ->getDictFromJson
         setKeys(_ => dictMetadata->Dict.keysToArray)

@@ -490,7 +490,7 @@ let applePayBody = (~token, ~connectors) => {
   let dict = token->Utils.getDictFromJson
   let paymentDataString =
     dict
-    ->Utils.getDictfromDict("paymentData")
+    ->Utils.getDictFromDict("paymentData")
     ->JSON.Encode.object
     ->JSON.stringify
     ->btoa

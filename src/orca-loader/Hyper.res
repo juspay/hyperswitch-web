@@ -279,7 +279,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let redirect =
           payload
           ->getDictFromJson
-          ->getDictfromDict("confirmParams")
+          ->getDictFromDict("confirmParams")
           ->getString("redirect", "if_required")
 
         let url =
@@ -312,7 +312,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                   ~eventName=CONFIRM_PAYMENT,
                   (),
                 )
-                let data = dict->getDictfromDict("data")->JSON.Encode.object
+                let data = dict->getDictFromDict("data")->JSON.Encode.object
                 let returnUrl =
                   dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
 

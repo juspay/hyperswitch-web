@@ -270,16 +270,16 @@ let make = (~sessionObj: option<JSON.t>) => {
       try {
         let dict = json->getDictFromJson
         if dict->Dict.get("applePayProcessPayment")->Option.isSome {
-          let token = dict->getDictfromDict("applePayProcessPayment")->JSON.Encode.object
+          let token = dict->getDictFromDict("applePayProcessPayment")->JSON.Encode.object
 
           let billingContact =
             dict
-            ->getDictfromDict("applePayBillingContact")
+            ->getDictFromDict("applePayBillingContact")
             ->ApplePayTypes.billingContactItemToObjMapper
 
           let shippingContact =
             dict
-            ->getDictfromDict("applePayShippingContact")
+            ->getDictFromDict("applePayShippingContact")
             ->ApplePayTypes.shippingContactItemToObjMapper
 
           let requiredFieldsBody = DynamicFieldsUtils.getApplePayRequiredFields(

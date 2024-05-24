@@ -1,7 +1,7 @@
 open Utils
 let getKeyValue = (json, str) => {
   json
-  ->getDictfromDict(str)
+  ->getDictFromDict(str)
   ->JSON.Encode.object
   ->JSON.Decode.string
   ->Option.getOr("")
@@ -30,7 +30,7 @@ let make = () => {
         setQrCode(_ => qrData)
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
         setClientSecret(_ => paymentIntentId)
-        let headersDict = metaDataDict->getDictfromDict("headers")
+        let headersDict = metaDataDict->getDictFromDict("headers")
         let headers = Dict.make()
         setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))
         headersDict

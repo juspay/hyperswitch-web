@@ -30,7 +30,7 @@ let make = (
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
     let redirect = ref("if_required")
 
-    let appearance = localOptions->getDictfromDict("appearance")->JSON.Encode.object
+    let appearance = localOptions->getDictFromDict("appearance")->JSON.Encode.object
     let launchTime = localOptions->getFloat("launchTime", 0.0)
 
     let fonts =
@@ -474,7 +474,7 @@ let make = (
           switch dict->Dict.get("applePayButtonClicked") {
           | Some(val) =>
             if val->JSON.Decode.bool->Option.getOr(false) {
-              let applePaySessionTokenData = dict->getDictfromDict("applePayPresent")
+              let applePaySessionTokenData = dict->getDictFromDict("applePayPresent")
 
               let isDelayedSessionToken =
                 applePaySessionTokenData->getBool("delayed_session_token", false)
@@ -499,13 +499,13 @@ let make = (
                   )
                   let secrets =
                     applePaySessionTokenData
-                    ->getDictfromDict("session_token_data")
+                    ->getDictFromDict("session_token_data")
                     ->Dict.get("secrets")
                     ->Option.getOr(JSON.Encode.null)
 
                   let paymentRequest =
                     applePaySessionTokenData
-                    ->getDictfromDict("payment_request_data")
+                    ->getDictFromDict("payment_request_data")
                     ->ApplePayTypes.jsonToPaymentRequestDataType
 
                   let payment =
@@ -765,7 +765,7 @@ let make = (
                             applePayPresent
                             ->Belt.Option.flatMap(JSON.Decode.object)
                             ->Option.getOr(Dict.make())
-                            ->getDictfromDict("payment_request_data")
+                            ->getDictFromDict("payment_request_data")
                             ->JSON.Encode.object
                             ->transformKeys(CamelCase)
 
@@ -811,7 +811,7 @@ let make = (
                               applePayPresent
                               ->Belt.Option.flatMap(JSON.Decode.object)
                               ->Option.getOr(Dict.make())
-                              ->getDictfromDict("session_token_data")
+                              ->getDictFromDict("session_token_data")
                               ->JSON.Encode.object
                               ->transformKeys(CamelCase)
                             ssn.completeMerchantValidation(merchantSession)

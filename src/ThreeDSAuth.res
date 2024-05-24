@@ -19,10 +19,10 @@ let make = () => {
         let publishableKey = metaDataDict->getString("publishableKey", "")
         logger.setClientSecret(paymentIntentId)
         logger.setMerchantId(publishableKey)
-        let headersDict = metaDataDict->getDictfromDict("headers")
+        let headersDict = metaDataDict->getDictFromDict("headers")
         let threeDsAuthoriseUrl =
           metaDataDict
-          ->getDictfromDict("threeDSData")
+          ->getDictFromDict("threeDSData")
           ->getString("three_ds_authorize_url", "")
         let headers =
           headersDict

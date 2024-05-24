@@ -587,7 +587,7 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
 let getFieldType = (dict, isBancontact) => {
   let fieldClass =
     dict
-    ->getDictfromDict("field_type")
+    ->getDictFromDict("field_type")
     ->JSON.Encode.object
     ->JSON.Classify.classify
   switch fieldClass {
@@ -827,7 +827,7 @@ let getPaymentExperience = (dict, str) => {
 }
 
 let getSurchargeDetails = dict => {
-  let surchargDetails = dict->getDictfromDict("surcharge_details")
+  let surchargDetails = dict->getDictFromDict("surcharge_details")
 
   let displayTotalSurchargeAmount =
     surchargDetails
@@ -876,7 +876,7 @@ let getBankNames = (dict, str) => {
 
 let getAchConnectors = (dict, str) => {
   dict
-  ->getDictfromDict(str)
+  ->getDictFromDict(str)
   ->getStrArray("elligible_connectors")
 }
 
