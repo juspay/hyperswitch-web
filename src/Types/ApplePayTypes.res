@@ -1,3 +1,5 @@
+open Utils
+
 type token = {paymentData: JSON.t}
 type billingContact = {
   addressLines: array<string>,
@@ -65,41 +67,41 @@ type paymentRequestData = {
 
 let jsonToPaymentRequestDataType: Dict.t<JSON.t> => paymentRequestData = jsonDict => {
   let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
-  let clientCountry = Utils.getClientCountry(clientTimeZone)
+  let clientCountry = getClientCountry(clientTimeZone)
   let defaultCountryCode = clientCountry.isoAlpha2
 
   let getTotal = totalDict => {
-    Utils.getString(totalDict, "type", "") == ""
+    getString(totalDict, "type", "") == ""
       ? total(
-          ~label=Utils.getString(totalDict, "label", ""),
-          ~amount=Utils.getString(totalDict, "amount", ""),
+          ~label=getString(totalDict, "label", ""),
+          ~amount=getString(totalDict, "amount", ""),
           (),
         )
       : total(
-          ~label=Utils.getString(totalDict, "label", ""),
-          ~amount=Utils.getString(totalDict, "amount", ""),
-          ~\"type"=Utils.getString(totalDict, "type", ""),
+          ~label=getString(totalDict, "label", ""),
+          ~amount=getString(totalDict, "amount", ""),
+          ~\"type"=getString(totalDict, "type", ""),
           (),
         )
   }
 
-  if Utils.getString(jsonDict, "merchant_identifier", "") == "" {
+  if getString(jsonDict, "merchant_identifier", "") == "" {
     paymentRequestData(
-      ~countryCode=Utils.getString(jsonDict, "country_code", defaultCountryCode),
-      ~currencyCode=Utils.getString(jsonDict, "currency_code", ""),
-      ~merchantCapabilities=Utils.getStrArray(jsonDict, "merchant_capabilities"),
-      ~supportedNetworks=Utils.getStrArray(jsonDict, "supported_networks"),
-      ~total=getTotal(jsonDict->Utils.getDictFromObj("total")),
+      ~countryCode=getString(jsonDict, "country_code", defaultCountryCode),
+      ~currencyCode=getString(jsonDict, "currency_code", ""),
+      ~merchantCapabilities=getStrArray(jsonDict, "merchant_capabilities"),
+      ~supportedNetworks=getStrArray(jsonDict, "supported_networks"),
+      ~total=getTotal(jsonDict->getDictFromObj("total")),
       (),
     )
   } else {
     paymentRequestData(
-      ~countryCode=Utils.getString(jsonDict, "country_code", ""),
-      ~currencyCode=Utils.getString(jsonDict, "currency_code", ""),
-      ~merchantCapabilities=Utils.getStrArray(jsonDict, "merchant_capabilities"),
-      ~supportedNetworks=Utils.getStrArray(jsonDict, "supported_networks"),
-      ~total=getTotal(jsonDict->Utils.getDictFromObj("total")),
-      ~merchantIdentifier=Utils.getString(jsonDict, "merchant_identifier", ""),
+      ~countryCode=getString(jsonDict, "country_code", ""),
+      ~currencyCode=getString(jsonDict, "currency_code", ""),
+      ~merchantCapabilities=getStrArray(jsonDict, "merchant_capabilities"),
+      ~supportedNetworks=getStrArray(jsonDict, "supported_networks"),
+      ~total=getTotal(jsonDict->getDictFromObj("total")),
+      ~merchantIdentifier=getString(jsonDict, "merchant_identifier", ""),
       (),
     )
   }
@@ -107,26 +109,60 @@ let jsonToPaymentRequestDataType: Dict.t<JSON.t> => paymentRequestData = jsonDic
 
 let billingContactItemToObjMapper = dict => {
   {
-    addressLines: dict->Utils.getStrArray("addressLines"),
-    administrativeArea: dict->Utils.getString("administrativeArea", ""),
-    countryCode: dict->Utils.getString("countryCode", ""),
-    familyName: dict->Utils.getString("familyName", ""),
-    givenName: dict->Utils.getString("givenName", ""),
-    locality: dict->Utils.getString("locality", ""),
-    postalCode: dict->Utils.getString("postalCode", ""),
+    addressLines: dict->getStrArray("addressLines"),
+    administrativeArea: dict->getString("administrativeArea", ""),
+    countryCode: dict->getString("countryCode", ""),
+    familyName: dict->getString("familyName", ""),
+    givenName: dict->getString("givenName", ""),
+    locality: dict->getString("locality", ""),
+    postalCode: dict->getString("postalCode", ""),
   }
 }
 
 let shippingContactItemToObjMapper = dict => {
   {
-    emailAddress: dict->Utils.getString("emailAddress", ""),
-    phoneNumber: dict->Utils.getString("phoneNumber", ""),
-    addressLines: dict->Utils.getStrArray("addressLines"),
-    administrativeArea: dict->Utils.getString("administrativeArea", ""),
-    countryCode: dict->Utils.getString("countryCode", ""),
-    familyName: dict->Utils.getString("familyName", ""),
-    givenName: dict->Utils.getString("givenName", ""),
-    locality: dict->Utils.getString("locality", ""),
-    postalCode: dict->Utils.getString("postalCode", ""),
+    emailAddress: dict->getString("emailAddress", ""),
+    phoneNumber: dict->getString("phoneNumber", ""),
+    addressLines: dict->getStrArray("addressLines"),
+    administrativeArea: dict->getString("administrativeArea", ""),
+    countryCode: dict->getString("countryCode", ""),
+    familyName: dict->getString("familyName", ""),
+    givenName: dict->getString("givenName", ""),
+    locality: dict->getString("locality", ""),
+    postalCode: dict->getString("postalCode", ""),
   }
+}
+
+let getPaymentRequestFromSession = (~sessionObj, ~componentName) => {
+  let paymentRequest =
+    sessionObj
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.getOr(Dict.make())
+    ->Dict.get("payment_request_data")
+    ->Option.getOr(Dict.make()->JSON.Encode.object)
+    ->transformKeys(CamelCase)
+
+  let requiredShippingContactFields =
+    paymentRequest
+    ->getDictFromJson
+    ->getStrArray("requiredShippingContactFields")
+
+  if (
+    componentName->getIsExpressCheckoutComponent->not &&
+      requiredShippingContactFields->Array.length !== 0
+  ) {
+    let shippingFieldsWithoutPostalAddress =
+      requiredShippingContactFields->Array.filter(item => item !== "postalAddress")
+
+    paymentRequest
+    ->getDictFromJson
+    ->Dict.set(
+      "requiredShippingContactFields",
+      shippingFieldsWithoutPostalAddress
+      ->getArrofJsonString
+      ->JSON.Encode.array,
+    )
+  }
+
+  paymentRequest
 }

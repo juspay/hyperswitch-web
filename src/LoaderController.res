@@ -82,7 +82,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | GooglePayElement
     | PayPalElement
     | ApplePayElement
-    | PaymentRequestButtonsElement
+    | ExpressCheckoutElement
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
         setOptionsPayment(_ => paymentOptions)

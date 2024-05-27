@@ -2,6 +2,8 @@ open Utils
 open Promise
 @react.component
 let make = (~sessionObj: option<JSON.t>) => {
+  let url = RescriptReactRouter.useUrl()
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.keys,
@@ -242,7 +244,14 @@ let make = (~sessionObj: option<JSON.t>) => {
             let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
             processPayment(bodyDict, ~isThirdPartyFlow=true, ())
           } else {
-            let message = [("applePayButtonClicked", true->JSON.Encode.bool)]
+            let paymentRequest = ApplePayTypes.getPaymentRequestFromSession(
+              ~sessionObj,
+              ~componentName,
+            )
+            let message = [
+              ("applePayButtonClicked", true->JSON.Encode.bool),
+              ("applePayPaymentRequest", paymentRequest),
+            ]
             handlePostMessage(message)
           }
         } else {

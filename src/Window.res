@@ -60,13 +60,17 @@ external style: Dom.element => style = "style"
 @send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
 @send external click: Dom.element => unit = "click"
 
+let sendPostMessage = (element, message) => {
+  element->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
+}
+
 let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
   switch iframeRef->Nullable.toOption {
   | Some(ref) =>
     try {
       ref
       ->contentWindow
-      ->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
+      ->sendPostMessage(message)
     } catch {
     | _ => ()
     }

@@ -6,6 +6,8 @@ open Promise
 
 @react.component
 let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: option<JSON.t>) => {
+  let url = RescriptReactRouter.useUrl()
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
@@ -183,12 +185,18 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
             let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
             processPayment(bodyDict, ~isThirdPartyFlow=true, ())
           } else {
+            let paymentDataRequest = getPaymentDataFromSession(~sessionObj, ~componentName)
             handlePostMessage([
               ("fullscreen", true->JSON.Encode.bool),
               ("param", "paymentloader"->JSON.Encode.string),
               ("iframeId", iframeId->JSON.Encode.string),
             ])
-            options.readOnly ? () : handlePostMessage([("GpayClicked", true->JSON.Encode.bool)])
+            if !options.readOnly {
+              handlePostMessage([
+                ("GpayClicked", true->JSON.Encode.bool),
+                ("GpayPaymentDataRequest", paymentDataRequest->Identity.anyTypeToJson),
+              ])
+            }
           }
         } else {
           let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
