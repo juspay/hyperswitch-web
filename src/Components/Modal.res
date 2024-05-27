@@ -18,13 +18,12 @@ let make = (
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let closeModal = () => {
     setOpenModal(_ => false)
-    setTimeout(() => {
-      switch closeCallback {
-      | Some(fn) => fn()
-      | None => ()
-      }
-      Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
-    }, 450)->ignore
+    switch closeCallback {
+    | Some(fn) => fn()
+    | None => setTimeout(() => {
+        Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+      }, 450)->ignore
+    }
   }
 
   React.useEffect(() => {

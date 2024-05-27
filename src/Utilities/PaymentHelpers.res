@@ -121,6 +121,10 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
           ~logCategory=API,
           (),
         )
+        let dict = data->getDictFromJson
+        let errorObj = PaymentError.itemToObjMapper(dict)
+        closePaymentLoaderIfAny()
+        postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
         JSON.Encode.null->resolve
       })
     } else {

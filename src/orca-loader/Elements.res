@@ -604,11 +604,6 @@ let make = (
           }
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
           | Some(val) => {
-              handlePostMessage([
-                ("fullscreen", true->JSON.Encode.bool),
-                ("param", "paymentloader"->JSON.Encode.string),
-                ("iframeId", selectorString->JSON.Encode.string),
-              ])
               let dict = val->getDictFromJson
               let pollId = dict->getString("poll_id", "")
               let interval =
