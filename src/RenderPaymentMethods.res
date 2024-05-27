@@ -82,7 +82,7 @@ let make = (
         | GooglePayElement
         | PayPalElement
         | ApplePayElement
-        | PaymentRequestButtonsElement
+        | ExpressCheckoutElement
         | Payment =>
           <React.Suspense
             fallback={<RenderIf condition={showLoader}>

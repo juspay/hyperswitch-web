@@ -156,3 +156,31 @@ let billingContactItemToObjMapper = dict => {
     sortingCode: dict->getString("sortingCode", ""),
   }
 }
+
+let baseRequest = {
+  "apiVersion": 2,
+  "apiVersionMinor": 0,
+}
+
+let getPaymentDataFromSession = (~sessionObj, ~componentName) => {
+  let gpayobj = switch sessionObj {
+  | Some(val) => val
+  | _ => SessionsType.defaultToken
+  }
+  let paymentDataRequest = assign2(
+    Dict.make()->JSON.Encode.object,
+    baseRequest->Identity.anyTypeToJson,
+  )
+  paymentDataRequest.allowedPaymentMethods = gpayobj.allowed_payment_methods->arrayJsonToCamelCase
+  paymentDataRequest.transactionInfo = gpayobj.transaction_info->transformKeys(CamelCase)
+  paymentDataRequest.merchantInfo = gpayobj.merchant_info->transformKeys(CamelCase)
+  paymentDataRequest.emailRequired = gpayobj.emailRequired
+
+  if componentName->getIsExpressCheckoutComponent {
+    paymentDataRequest.shippingAddressRequired = gpayobj.shippingAddressRequired
+    paymentDataRequest.shippingAddressParameters =
+      gpayobj.shippingAddressParameters->transformKeys(CamelCase)
+  }
+
+  paymentDataRequest
+}
