@@ -1,3 +1,10 @@
+## [0.55.1](https://github.com/juspay/hyperswitch-web/compare/v0.55.0...v0.55.1) (2024-05-27)
+
+
+### Bug Fixes
+
+* sdk button loader issue ([#400](https://github.com/juspay/hyperswitch-web/issues/400)) ([e012642](https://github.com/juspay/hyperswitch-web/commit/e012642865231e6c2787b828730cfc1c41ebbe36))
+
 # [0.55.0](https://github.com/juspay/hyperswitch-web/compare/v0.54.2...v0.55.0) (2024-05-23)
 
 
