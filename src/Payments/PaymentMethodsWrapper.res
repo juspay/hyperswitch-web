@@ -33,7 +33,6 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let (country, _) = Recoil.useRecoilState(userCountry)
   let (selectedBank, _) = Recoil.useRecoilState(userBank)
   let setFieldComplete = Recoil.useSetRecoilState(fieldsComplete)
-  let cleanBlik = str => str->String.replaceRegExp(%re("/-/g"), "")
   let cleanPhoneNumber = str => str->String.replaceRegExp(%re("/\s/g"), "")
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
@@ -79,7 +78,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
             ~fullName=fullName.value,
             ~email=email.value,
             ~bank=bank.hyperSwitch,
-            ~blikCode=blikCode.value->cleanBlik,
+            ~blikCode=blikCode.value->removeHyphen,
             ~phoneNumber=cleanPhoneNumber(
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
             ),
