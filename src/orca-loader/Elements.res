@@ -256,7 +256,7 @@ let make = (
       | "googlePay"
       | "payPal"
       | "applePay"
-      | "paymentRequestButtons"
+      | "expressCheckout"
       | "payment" => ()
       | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger, ())
       }
@@ -312,7 +312,7 @@ let make = (
                 try {
                   if session.canMakePayments() {
                     let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
-                    mountedIframeRef->Window.iframePostMessage(msg)
+                    event.source->Window.sendPostMessage(msg)
                   } else {
                     Console.log("CANNOT MAKE PAYMENT USING APPLE PAY")
                     logger.setLogInfo(
@@ -430,7 +430,7 @@ let make = (
                         (),
                       )
                       let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                      mountedIframeRef->Window.iframePostMessage(msg)
+                      event.source->Window.sendPostMessage(msg)
                       resolve()
                     })
                     ->catch(err => {
@@ -444,7 +444,7 @@ let make = (
                         (),
                       )
                       let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                      mountedIframeRef->Window.iframePostMessage(msg)
+                      event.source->Window.sendPostMessage(msg)
                       resolve()
                     })
                     ->ignore
@@ -463,7 +463,7 @@ let make = (
                     (),
                   )
                   let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                  mountedIframeRef->Window.iframePostMessage(msg)
+                  event.source->Window.sendPostMessage(msg)
                 }
               }
             }
@@ -557,7 +557,7 @@ let make = (
                         (),
                       )
                       let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                      mountedIframeRef->Window.iframePostMessage(msg)
+                      event.source->Window.sendPostMessage(msg)
                       resolve()
                     })
                     ->catch(err => {
@@ -569,7 +569,7 @@ let make = (
                         (),
                       )
                       let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                      mountedIframeRef->Window.iframePostMessage(msg)
+                      event.source->Window.sendPostMessage(msg)
                       resolve()
                     })
                     ->ignore
@@ -582,7 +582,7 @@ let make = (
                         (),
                       )
                       let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
-                      mountedIframeRef->Window.iframePostMessage(msg)
+                      event.source->Window.sendPostMessage(msg)
                     }
                   }
                 | _ => ()
@@ -760,14 +760,17 @@ let make = (
                         ("applePayBillingContact", payment.billingContact),
                         ("applePayShippingContact", payment.shippingContact),
                       ]->Dict.fromArray
-                    mountedIframeRef->Window.iframePostMessage(msg)
+                    event.source->Window.sendPostMessage(msg)
                   }
 
                   let handleApplePayMessages = (event: Types.event) => {
                     let json = event.data->Identity.anyTypeToJson
                     let dict = json->getDictFromJson
-                    switch dict->Dict.get("applePayButtonClicked") {
-                    | Some(val) =>
+                    switch (
+                      dict->Dict.get("applePayButtonClicked"),
+                      dict->Dict.get("applePayPaymentRequest"),
+                    ) {
+                    | (Some(val), Some(paymentRequest)) =>
                       if val->JSON.Decode.bool->Belt.Option.getWithDefault(false) {
                         let isDelayedSessionToken =
                           applePayPresent
@@ -784,37 +787,6 @@ let make = (
                             ~paymentMethod="APPLE_PAY",
                             (),
                           )
-                          let paymentRequest =
-                            applePayPresent
-                            ->Belt.Option.flatMap(JSON.Decode.object)
-                            ->Belt.Option.getWithDefault(Dict.make())
-                            ->Dict.get("payment_request_data")
-                            ->Belt.Option.getWithDefault(Dict.make()->JSON.Encode.object)
-                            ->transformKeys(CamelCase)
-
-                          let requiredShippingContactFields =
-                            paymentRequest
-                            ->Utils.getDictFromJson
-                            ->Utils.getStrArray("requiredShippingContactFields")
-
-                          if (
-                            componentType->getIsExpressCheckoutComponent->not &&
-                              requiredShippingContactFields->Array.length !== 0
-                          ) {
-                            let requiredShippingContactFields =
-                              requiredShippingContactFields->Array.filter(item =>
-                                item !== "postalAddress"
-                              )
-
-                            paymentRequest
-                            ->Utils.getDictFromJson
-                            ->Dict.set(
-                              "requiredShippingContactFields",
-                              requiredShippingContactFields
-                              ->Utils.getArrofJsonString
-                              ->JSON.Encode.array,
-                            )
-                          }
 
                           let ssn = applePaySession(3, paymentRequest)
                           switch applePaySessionRef.contents->Nullable.toOption {
@@ -857,7 +829,7 @@ let make = (
                           ssn.oncancel = _ev => {
                             let msg =
                               [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
-                            mountedIframeRef->Window.iframePostMessage(msg)
+                            event.source->Window.sendPostMessage(msg)
                             applePaySessionRef := Nullable.null
                             logInfo(Console.log("Apple Pay Payment Cancelled"))
                             logger.setLogInfo(
@@ -872,7 +844,7 @@ let make = (
                       } else {
                         ()
                       }
-                    | None => ()
+                    | _ => ()
                     }
                   }
 
@@ -897,34 +869,13 @@ let make = (
                   | _ => SessionsType.defaultToken
                   }
 
-                  let baseRequest = {
-                    "apiVersion": 2,
-                    "apiVersionMinor": 0,
-                  }
-                  let paymentDataRequest = GooglePayType.assign2(
-                    Dict.make()->JSON.Encode.object,
-                    baseRequest->Identity.anyTypeToJson,
-                  )
-
                   let payRequest = GooglePayType.assign(
                     Dict.make()->JSON.Encode.object,
-                    baseRequest->Identity.anyTypeToJson,
+                    GooglePayType.baseRequest->Identity.anyTypeToJson,
                     {
                       "allowedPaymentMethods": gpayobj.allowed_payment_methods->arrayJsonToCamelCase,
                     }->Identity.anyTypeToJson,
                   )
-                  paymentDataRequest.allowedPaymentMethods =
-                    gpayobj.allowed_payment_methods->arrayJsonToCamelCase
-                  paymentDataRequest.transactionInfo =
-                    gpayobj.transaction_info->transformKeys(CamelCase)
-                  paymentDataRequest.merchantInfo = gpayobj.merchant_info->transformKeys(CamelCase)
-                  paymentDataRequest.emailRequired = gpayobj.emailRequired
-
-                  if componentType->getIsExpressCheckoutComponent {
-                    paymentDataRequest.shippingAddressRequired = gpayobj.shippingAddressRequired
-                    paymentDataRequest.shippingAddressParameters =
-                      gpayobj.shippingAddressParameters->transformKeys(CamelCase)
-                  }
 
                   try {
                     let gPayClient = GooglePayType.google(
@@ -962,13 +913,18 @@ let make = (
                         ->getOptionalJsonFromJson("GpayClicked")
                         ->getBoolFromJson(false)
 
-                      if gpayClicked {
+                      let paymentDataRequest =
+                        evJson
+                        ->getOptionalJsonFromJson("GpayPaymentDataRequest")
+                        ->Option.getOr(JSON.Encode.null)
+
+                      if gpayClicked && paymentDataRequest !== JSON.Encode.null {
                         setTimeout(() => {
-                          gPayClient.loadPaymentData(paymentDataRequest->anyTypeToJson)
+                          gPayClient.loadPaymentData(paymentDataRequest)
                           ->then(
                             json => {
                               let msg = [("gpayResponse", json->anyTypeToJson)]->Dict.fromArray
-                              mountedIframeRef->Window.iframePostMessage(msg)
+                              event.source->Window.sendPostMessage(msg)
                               let value = "Payment Data Filled: New Payment Method"
                               logger.setLogInfo(
                                 ~value,
@@ -990,7 +946,7 @@ let make = (
                               )
 
                               let msg = [("gpayError", err->anyTypeToJson)]->Dict.fromArray
-                              mountedIframeRef->Window.iframePostMessage(msg)
+                              event.source->Window.sendPostMessage(msg)
                               resolve()
                             },
                           )

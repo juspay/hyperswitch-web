@@ -361,7 +361,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
     | GooglePayElement
     | PayPalElement
     | ApplePayElement
-    | PaymentRequestButtonsElement
+    | ExpressCheckoutElement
     | NONE =>
       <Icon size=brandIconSize name="default-card" />
     }
