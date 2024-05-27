@@ -1042,10 +1042,10 @@ let make = (
             fetchCustomerPaymentMethods(mountedIframeRef, false, componentType)
           }
           fetchSessionTokens(mountedIframeRef)
-          mountedIframeRef->Window.iframePostMessage(message)
           resolve()
         })
         ->ignore
+        mountedIframeRef->Window.iframePostMessage(message)
       }
 
       let paymentElement = LoaderPaymentElement.make(

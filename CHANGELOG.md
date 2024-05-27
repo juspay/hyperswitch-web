@@ -1,3 +1,39 @@
+# [0.55.0](https://github.com/juspay/hyperswitch-web/compare/v0.54.2...v0.55.0) (2024-05-23)
+
+
+### Features
+
+* unsupported card networks validation ([#370](https://github.com/juspay/hyperswitch-web/issues/370)) ([05f527a](https://github.com/juspay/hyperswitch-web/commit/05f527abb475bdaf29912fd452a3b0f4b0b3bb55))
+
+## [0.54.2](https://github.com/juspay/hyperswitch-web/compare/v0.54.1...v0.54.2) (2024-05-23)
+
+
+### Bug Fixes
+
+* sdk button redirect issue ([#398](https://github.com/juspay/hyperswitch-web/issues/398)) ([dd78d56](https://github.com/juspay/hyperswitch-web/commit/dd78d5611100e23025e19d1563e1ff1e5434a692))
+
+## [0.54.1](https://github.com/juspay/hyperswitch-web/compare/v0.54.0...v0.54.1) (2024-05-22)
+
+
+### Bug Fixes
+
+* saved method checkbox condition updated ([#395](https://github.com/juspay/hyperswitch-web/issues/395)) ([8642913](https://github.com/juspay/hyperswitch-web/commit/8642913f5ba4be1c441499f15da2aab64870b209))
+
+# [0.54.0](https://github.com/juspay/hyperswitch-web/compare/v0.53.3...v0.54.0) (2024-05-22)
+
+
+### Features
+
+* isolate paymentElementCreate message ([#387](https://github.com/juspay/hyperswitch-web/issues/387)) ([0fdfacd](https://github.com/juspay/hyperswitch-web/commit/0fdfacd5826cebc16bb0a807d0539c42055e30f5))
+
+## [0.53.3](https://github.com/juspay/hyperswitch-web/compare/v0.53.2...v0.53.3) (2024-05-22)
+
+
+### Bug Fixes
+
+* added patch for revert to generate tag ([#385](https://github.com/juspay/hyperswitch-web/issues/385)) ([4a0d92f](https://github.com/juspay/hyperswitch-web/commit/4a0d92f775fafd21e892e58a12151cbd58f7a170))
+* reverse core lib issue ([#386](https://github.com/juspay/hyperswitch-web/issues/386)) ([28f9067](https://github.com/juspay/hyperswitch-web/commit/28f90670d61c18828f7e24007f9c898bf3ad2acc))
+
 ## [0.53.2](https://github.com/juspay/hyperswitch-web/compare/v0.53.1...v0.53.2) (2024-05-22)
 
 
