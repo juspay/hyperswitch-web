@@ -1,3 +1,10 @@
+## [0.56.1](https://github.com/juspay/hyperswitch-web/compare/v0.56.0...v0.56.1) (2024-05-27)
+
+
+### Bug Fixes
+
+* redirection for 400 confirm call ([#402](https://github.com/juspay/hyperswitch-web/issues/402)) ([a169a44](https://github.com/juspay/hyperswitch-web/commit/a169a44585f2f2a33cce3d0d2b232b0c82671107))
+
 # [0.56.0](https://github.com/juspay/hyperswitch-web/compare/v0.55.2...v0.56.0) (2024-05-27)
 
 
