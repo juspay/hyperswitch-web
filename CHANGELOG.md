@@ -1,3 +1,15 @@
+# [0.56.0](https://github.com/juspay/hyperswitch-web/compare/v0.55.2...v0.56.0) (2024-05-27)
+
+
+### Bug Fixes
+
+* added Fixes for one click widgets ([#399](https://github.com/juspay/hyperswitch-web/issues/399)) ([a1a1c5e](https://github.com/juspay/hyperswitch-web/commit/a1a1c5e3017d1c43edae05081e74f6e9ffdaa924))
+
+
+### Features
+
+* 3DS netcetra Part B ([#383](https://github.com/juspay/hyperswitch-web/issues/383)) ([aa44b98](https://github.com/juspay/hyperswitch-web/commit/aa44b98b853bda6ed2b91f5276e027a120df2be8))
+
 ## [0.55.2](https://github.com/juspay/hyperswitch-web/compare/v0.55.1...v0.55.2) (2024-05-27)
 
 
