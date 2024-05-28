@@ -34,6 +34,7 @@ type paymentMethodsFields =
   | ShippingAddressPincode
   | ShippingAddressState
   | ShippingAddressCountry(array<string>)
+  | CurrencyNetworks
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -172,7 +173,7 @@ let paymentMethodsFields = [
   },
   {
     paymentMethodName: "crypto_currency",
-    fields: [InfoElement],
+    fields: [CurrencyNetworks, InfoElement],
     icon: Some(icon("crypto", ~size=19)),
     displayName: "Crypto",
     miniIcon: None,
@@ -1052,41 +1053,4 @@ let getCardNetwork = (~paymentMethodType, ~cardBrand) => {
   ->Array.filter(cardNetwork => cardNetwork.card_network === cardBrand)
   ->Array.get(0)
   ->Option.getOr(defaultCardNetworks)
-}
-
-let paymentMethodFieldToStrMapper = (field: paymentMethodsFields) => {
-  switch field {
-  | Email => "Email"
-  | FullName => "FullName"
-  | InfoElement => "InfoElement"
-  | Country => "Country"
-  | Bank => "Bank"
-  | SpecialField(_) => "SpecialField"
-  | None => "None"
-  | BillingName => "BillingName"
-  | PhoneNumber => "PhoneNumber"
-  | AddressLine1 => "AddressLine1"
-  | AddressLine2 => "AddressLine2"
-  | AddressCity => "AddressCity"
-  | StateAndCity => "StateAndCity"
-  | CountryAndPincode(_) => "CountryAndPincode"
-  | AddressPincode => "AddressPincode"
-  | AddressState => "AddressState"
-  | AddressCountry(_) => "AddressCountry"
-  | BlikCode => "BlikCode"
-  | Currency(_) => "Currency"
-  | CardNumber => "CardNumber"
-  | CardExpiryMonth => "CardExpiryMonth"
-  | CardExpiryYear => "CardExpiryYear"
-  | CardExpiryMonthAndYear => "CardExpiryMonthAndYear"
-  | CardCvc => "CardCvc"
-  | CardExpiryAndCvc => "CardExpiryAndCvc"
-  | ShippingName => "ShippingName"
-  | ShippingAddressLine1 => "ShippingAddressLine1"
-  | ShippingAddressLine2 => "ShippingAddressLine2"
-  | ShippingAddressCity => "ShippingAddressCity"
-  | ShippingAddressPincode => "ShippingAddressPincode"
-  | ShippingAddressState => "ShippingAddressState"
-  | ShippingAddressCountry(_) => "ShippingAddressCountry"
-  }
 }

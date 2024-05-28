@@ -82,4 +82,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Aquesta targeta ha caducat`,
   cardHeader: `Informació de la targeta`,
   cardBrandConfiguredErrorText: str => `${str} no està suportat en aquest moment.`,
+  currencyNetwork: `Xarxes de Monedes`,
 }
