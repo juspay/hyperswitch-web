@@ -246,7 +246,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }
 
   let submitAPICall = (body, confirmParam) => {
-    intent(~bodyArr=body, ~confirmParam, ~handleUserError=false, ())
+    intent(~bodyArr=body, ~confirmParam, ~handleUserError=false, ())->ignore
   }
   React.useEffect(() => {
     setCvcNumber(_ => "")

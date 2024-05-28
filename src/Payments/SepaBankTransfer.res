@@ -49,7 +49,7 @@ let make = (~paymentType) => {
           ~handleUserError=false,
           ~iframeId,
           (),
-        )
+        )->ignore
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }

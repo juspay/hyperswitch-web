@@ -76,7 +76,7 @@ let make = (~paymentType: CardThemeType.mode) => {
             ~state=state.value,
             ~paymentType=paymentMethodListValue.payment_type,
           )
-          intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
+          intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())->ignore
         | None => ()
         }
         ()

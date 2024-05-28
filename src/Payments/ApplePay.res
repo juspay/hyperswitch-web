@@ -67,7 +67,7 @@ let make = (~sessionObj: option<JSON.t>) => {
       ~handleUserError=true,
       ~isThirdPartyFlow,
       (),
-    )
+    )->ignore
   }
 
   let syncPayment = () => {
