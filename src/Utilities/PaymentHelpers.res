@@ -350,7 +350,7 @@ let rec intentCall = (
     isCompleteAuthorize,
   ) {
   | (true, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
-  | (_, true) => (COMPLETE_AUTHORIZE, COMPLETE_AUTHORIZE_INIT)
+  | (_, true) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
   | _ => (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
   }
   logApi(
@@ -738,9 +738,7 @@ let rec intentCall = (
                   [
                     ("orderId", intent.connectorTransactionId->JSON.Encode.string),
                     ("nextActionData", nextActionData),
-                  ]
-                  ->Dict.fromArray
-                  ->JSON.Encode.object
+                  ]->getJsonFromArrayOfJson
                 resolve(response)
               } else {
                 if !isPaymentSession {

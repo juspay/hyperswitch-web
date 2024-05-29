@@ -16,7 +16,7 @@ let loadPaypalSDK = (
   ~completeAuthorize: PaymentHelpers.completeAuthorize,
   ~handleCloseLoader,
   ~areOneClickWalletsRendered: (
-    OrcaPaymentPage.RecoilAtoms.areOneClickWalletsRendered => OrcaPaymentPage.RecoilAtoms.areOneClickWalletsRendered
+    RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
   ) => unit,
 ) => {
   loggerState.setLogInfo(
@@ -56,9 +56,7 @@ let loadPaypalSDK = (
             },
             ~handleUserError=true,
             (),
-          )->then(val => {
-            val->Utils.getDictFromJson->Utils.getString("orderId", "")->resolve
-          })
+          )->then(val => val->Utils.getDictFromJson->Utils.getString("orderId", "")->resolve)
         },
         onApprove: (_data, actions) => {
           if !options.readOnly {
@@ -132,7 +130,7 @@ let loadBraintreePaypalSdk = (
   ~stateJson,
   ~handleCloseLoader,
   ~areOneClickWalletsRendered: (
-    OrcaPaymentPage.RecoilAtoms.areOneClickWalletsRendered => OrcaPaymentPage.RecoilAtoms.areOneClickWalletsRendered
+    RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
   ) => unit,
 ) => {
   loggerState.setLogInfo(

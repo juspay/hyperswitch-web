@@ -59,7 +59,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
     paypalScript->Window.elementSrc(paypalScriptURL)
     paypalScript->Window.elementOnerror(exn => {
       let err = exn->Identity.anyTypeToJson->JSON.stringify
-      loggerState.setLogInfo(
+      loggerState.setLogError(
         ~value=`Error During Loading PayPal SDK Script: ${err}`,
         ~eventName=PAYPAL_SDK_FLOW,
         (),
