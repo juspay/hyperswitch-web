@@ -48,15 +48,19 @@ let loadPaypalSDK = (
             ~paymentType=paymentMethodListValue.payment_type,
             ~body,
           )
-          intent(
-            ~bodyArr=modifiedPaymentBody,
-            ~confirmParam={
-              return_url: options.wallets.walletReturnUrl,
-              publishableKey,
-            },
-            ~handleUserError=true,
-            (),
-          )->then(val => val->Utils.getDictFromJson->Utils.getString("orderId", "")->resolve)
+          Promise.make((resolve, _) => {
+            intent(
+              ~bodyArr=modifiedPaymentBody,
+              ~confirmParam={
+                return_url: options.wallets.walletReturnUrl,
+                publishableKey,
+              },
+              ~handleUserError=true,
+              ~intentCallback=val =>
+                val->Utils.getDictFromJson->Utils.getString("orderId", "")->resolve,
+              (),
+            )
+          })
         },
         onApprove: (_data, actions) => {
           if !options.readOnly {
@@ -210,7 +214,7 @@ let loadBraintreePaypalSdk = (
                               },
                               ~handleUserError=true,
                               (),
-                            )->ignore
+                            )
                           },
                         )
                   },

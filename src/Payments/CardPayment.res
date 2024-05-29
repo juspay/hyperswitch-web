@@ -178,7 +178,7 @@ let make = (
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           (),
-        )->ignore
+        )
       } else {
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)

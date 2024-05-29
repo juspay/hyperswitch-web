@@ -53,7 +53,7 @@ let make = (~paymentType) => {
     )
     if confirm.doSubmit {
       if complete {
-        intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())->ignore
+        intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }

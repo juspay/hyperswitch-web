@@ -37,7 +37,7 @@ let default = (paymentType: CardThemeType.mode) => {
           ~handleUserError=false,
           ~iframeId,
           (),
-        )->ignore
+        )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }

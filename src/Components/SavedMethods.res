@@ -146,7 +146,7 @@ let make = (
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           (),
-        )->ignore
+        )
       } else {
         if isUnknownPaymentMethod || confirm.confirmTimestamp < confirm.readyTimestamp {
           setUserError(localeString.selectPaymentMethodText)

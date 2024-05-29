@@ -14,16 +14,17 @@ let closePaymentLoaderIfAny = () => handlePostMessage([("fullscreen", false->JSO
 
 type paymentIntent = (
   ~handleUserError: bool=?,
-  ~bodyArr: array<(string, RescriptCore.JSON.t)>,
+  ~bodyArr: array<(string, JSON.t)>,
   ~confirmParam: ConfirmType.confirmParams,
   ~iframeId: string=?,
   ~isThirdPartyFlow: bool=?,
+  ~intentCallback: Core__JSON.t => unit=?,
   unit,
-) => RescriptCore.Promise.t<Core__JSON.t>
+) => unit
 
 type completeAuthorize = (
   ~handleUserError: bool=?,
-  ~bodyArr: array<(string, RescriptCore.JSON.t)>,
+  ~bodyArr: array<(string, JSON.t)>,
   ~confirmParam: ConfirmType.confirmParams,
   ~iframeId: string=?,
   unit,
@@ -997,6 +998,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~confirmParam: ConfirmType.confirmParams,
     ~iframeId=keys.iframeId,
     ~isThirdPartyFlow=false,
+    ~intentCallback=_ => (),
     (),
   ) => {
     switch keys.clientSecret {
@@ -1069,7 +1071,6 @@ let usePaymentIntent = (optLogger, paymentType) => {
         }
         if blockConfirm && Window.isInteg {
           Console.log3("CONFIRM IS BLOCKED", body->JSON.parseExn, headers)
-          JSON.Encode.null->resolve
         } else {
           intentCall(
             ~fetchApi,
@@ -1089,6 +1090,11 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~counter=0,
             (),
           )
+          ->then(val => {
+            intentCallback(val)
+            resolve()
+          })
+          ->ignore
         }
       }
 
@@ -1143,7 +1149,6 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~message="Payment Failed. Try again!",
           )
           Console.warn("Please enable atleast one Payment method.")
-          JSON.Encode.null->resolve
         }
       | SemiLoaded => intentWithoutMandate("")
       | _ =>
@@ -1151,14 +1156,12 @@ let usePaymentIntent = (optLogger, paymentType) => {
           ~errortype="payment_methods_loading",
           ~message="Please wait. Try again!",
         )
-        JSON.Encode.null->resolve
       }
     | None =>
       postFailedSubmitResponse(
         ~errortype="confirm_payment_failed",
         ~message="Payment failed. Try again!",
       )
-      JSON.Encode.null->resolve
     }
   }
 }

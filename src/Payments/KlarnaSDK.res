@@ -60,7 +60,7 @@ let make = (~sessionObj: SessionsType.token) => {
             paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(SDK)))
           let body = PaymentBody.klarnaSDKbody(~token=res.authorization_token, ~connectors)
           res.approved
-            ? intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())->ignore
+            ? intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
             : handleCloseLoader()
         },
       )

@@ -65,7 +65,7 @@ let make = () => {
           },
           ~handleUserError=true,
           (),
-        )->ignore
+        )
       } else {
         setPaypalClicked(_ => false)
       }

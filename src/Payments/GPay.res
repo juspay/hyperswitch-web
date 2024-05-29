@@ -69,7 +69,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
       ~handleUserError=true,
       ~isThirdPartyFlow,
       (),
-    )->ignore
+    )
   }
 
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
