@@ -92,7 +92,7 @@ let make = () => {
       type_="tel"
       name="phone"
       inputRef=phoneRef
-      placeholder="+351 200 000 000"
+      placeholder="000 000 000"
       maxLength=14
       dropDownOptions=phoneNumberCodeOptions
       valueDropDown
