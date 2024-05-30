@@ -1,3 +1,10 @@
+## [0.57.1](https://github.com/juspay/hyperswitch-web/compare/v0.57.0...v0.57.1) (2024-05-30)
+
+
+### Bug Fixes
+
+* hide terms based upon prop ([#408](https://github.com/juspay/hyperswitch-web/issues/408)) ([8a5d554](https://github.com/juspay/hyperswitch-web/commit/8a5d5548d70750725a61381abf4fa68879fa4746))
+
 # [0.57.0](https://github.com/juspay/hyperswitch-web/compare/v0.56.1...v0.57.0) (2024-05-30)
 
 
