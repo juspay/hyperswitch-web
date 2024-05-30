@@ -34,7 +34,7 @@ let make = (~sessionObj: SessionsType.token) => {
     Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
   }
 
-  let submitCallback = (ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
@@ -61,7 +61,7 @@ let make = (~sessionObj: SessionsType.token) => {
         },
       )
     }
-  }
+  }, [status])
   useSubmitPaymentData(submitCallback)
 
   React.useEffect(() => {
