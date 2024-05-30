@@ -32,10 +32,6 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let handleCloseLoader = () => {
     Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
-    Utils.postFailedSubmitResponse(
-      ~errortype="confirm_payment_failed",
-      ~message="An unknown error has occurred",
-    )
   }
 
   let submitCallback = (ev: Window.event) => {
