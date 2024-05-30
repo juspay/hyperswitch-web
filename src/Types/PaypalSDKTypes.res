@@ -2,7 +2,8 @@ type clientErr = bool
 type clientInstance
 type paypalCheckoutErr = {message: string}
 type data
-type actions
+type order = {get: unit => RescriptCore.Promise.t<JSON.t>}
+type actions = {order: order}
 type err
 type vault = {vault: bool}
 type shipping = {
@@ -73,10 +74,11 @@ type style = {
 type buttons = {
   style: style,
   fundingSource: string,
-  createBillingAgreement: unit => unit,
+  createBillingAgreement?: unit => unit,
+  createOrder?: unit => RescriptCore.Promise.t<string>,
   onApprove: (data, actions) => unit,
   onCancel: data => unit,
-  onError: err => unit,
+  onError?: err => unit,
 }
 let getLabel = (var: PaymentType.paypalStyleType) => {
   switch var {
@@ -120,6 +122,41 @@ let getShippingDetails = shippingAddressOverrideObj => {
       state,
       phone,
     })
+  }
+}
+
+let paypalShippingDetails = purchaseUnit => {
+  let shippingAddress = purchaseUnit->Utils.getDictfromDict("shipping")
+  let payee = purchaseUnit->Utils.getDictfromDict("payee")
+
+  let address = shippingAddress->Utils.getDictfromDict("address")
+  let name = shippingAddress->Utils.getDictfromDict("name")
+
+  let recipientName = name->Utils.getOptionString("full_name")
+  let line1 = address->Utils.getOptionString("address_line_1")
+  let line2 = address->Utils.getOptionString("address_line_2")
+  let city = address->Utils.getOptionString("admin_area_2")
+  let countryCode = address->Utils.getOptionString("country_code")
+  let postalCode = address->Utils.getOptionString("postal_code")
+  let state = address->Utils.getOptionString("admin_area_1")
+  let email = payee->Utils.getString("email_address", "")
+
+  let payeePhone = payee->Utils.getOptionString("phone")
+  let shippingAddressPhone = address->Utils.getOptionString("phone")
+
+  {
+    email,
+    shippingAddress: {
+      recipientName,
+      line1,
+      line2,
+      city,
+      countryCode,
+      postalCode,
+      state,
+      phone: shippingAddressPhone,
+    },
+    phone: payeePhone,
   }
 }
 
