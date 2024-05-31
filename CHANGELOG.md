@@ -1,3 +1,10 @@
+# [0.58.0](https://github.com/juspay/hyperswitch-web/compare/v0.57.3...v0.58.0) (2024-05-31)
+
+
+### Features
+
+* ali pay hk added, fix for disableSavedPaymentMethods prop ([#410](https://github.com/juspay/hyperswitch-web/issues/410)) ([41a006c](https://github.com/juspay/hyperswitch-web/commit/41a006c59d1cb3b8da2088976b306e7444b11285))
+
 ## [0.57.3](https://github.com/juspay/hyperswitch-web/compare/v0.57.2...v0.57.3) (2024-05-31)
 
 
