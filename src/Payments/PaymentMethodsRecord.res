@@ -34,7 +34,7 @@ type paymentMethodsFields =
   | ShippingAddressPincode
   | ShippingAddressState
   | ShippingAddressCountry(array<string>)
-  | CurrencyNetworks
+  | CryptoCurrencyNetworks
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -173,7 +173,7 @@ let paymentMethodsFields = [
   },
   {
     paymentMethodName: "crypto_currency",
-    fields: [CurrencyNetworks, InfoElement],
+    fields: [InfoElement],
     icon: Some(icon("crypto", ~size=19)),
     displayName: "Crypto",
     miniIcon: None,

@@ -34,7 +34,6 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let (selectedBank, _) = Recoil.useRecoilState(userBank)
   let setFieldComplete = Recoil.useSetRecoilState(fieldsComplete)
   let cleanPhoneNumber = str => str->String.replaceRegExp(%re("/\s/g"), "")
-  let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
@@ -84,8 +83,6 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
             ),
             ~paymentExperience=paymentFlow,
-            ~currency,
-            ~cryptoCurrencyNetworks,
           )
           ->Dict.fromArray
           ->JSON.Encode.object

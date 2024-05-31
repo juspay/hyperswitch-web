@@ -356,7 +356,7 @@ let useSetInitialRequiredFields = (
         if value !== "" && selectedBank === "" {
           setSelectedBank(_ => value)
         }
-      | CurrencyNetworks =>
+      | CryptoCurrencyNetworks =>
         if value !== "" && cryptoCurrencyNetworks === "" {
           setCryptoCurrencyNetworks(_ => value)
         }
@@ -442,7 +442,7 @@ let useRequiredFieldsBody = (
     | CardExpiryYear =>
       let (_, year) = CardUtils.getExpiryDates(cardExpiry)
       year
-    | CurrencyNetworks => currencyNetwork
+    | CryptoCurrencyNetworks => currencyNetwork
     | CardCvc => cvcNumber
     | StateAndCity
     | CountryAndPincode(_)
@@ -547,7 +547,7 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | CardExpiryMonthAndYear
   | CardCvc
   | CardExpiryAndCvc
-  | CurrencyNetworks
+  | CryptoCurrencyNetworks
   | Currency(_) => true
   | _ => false
   }

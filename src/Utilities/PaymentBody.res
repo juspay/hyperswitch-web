@@ -547,24 +547,6 @@ let applePayThirdPartySdkBody = (~connectors) => [
   ),
 ]
 
-let cryptoBody = (~currency, ~cryptoCurrencyNetworks) => [
-  ("payment_method", "crypto"->JSON.Encode.string),
-  ("payment_method_type", "crypto_currency"->JSON.Encode.string),
-  ("payment_experience", "redirect_to_url"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "crypto",
-        [
-          ("pay_currency", currency->JSON.Encode.string),
-          ("network", cryptoCurrencyNetworks->JSON.Encode.string),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
-
 let afterpayRedirectionBody = (~fullName, ~email) => [
   ("payment_method", "pay_later"->JSON.Encode.string),
   ("payment_method_type", "afterpay_clearpay"->JSON.Encode.string),
@@ -1066,12 +1048,9 @@ let getPaymentBody = (
   ~blikCode,
   ~paymentExperience: PaymentMethodsRecord.paymentFlow=RedirectToURL,
   ~phoneNumber,
-  ~currency,
-  ~cryptoCurrencyNetworks,
 ) =>
   switch paymentMethodType {
   | "afterpay_clearpay" => afterpayRedirectionBody(~fullName, ~email)
-  | "crypto_currency" => cryptoBody(~currency, ~cryptoCurrencyNetworks)
   | "sofort" => sofortBody(~country, ~name=fullName, ~email)
   | "ideal" => iDealBody(~name=fullName, ~bankName=bank)
   | "eps" => epsBody(~name=fullName, ~bankName=bank)

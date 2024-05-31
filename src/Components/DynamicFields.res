@@ -470,7 +470,7 @@ let make = (
                 optionalRequiredFields={Some(requiredFields)}
               />
             </>
-          | CurrencyNetworks => <CryptoCurrencyNetworks />
+          | CryptoCurrencyNetworks => <CryptoCurrencyNetworks />
           | Email
           | InfoElement
           | Country
@@ -774,7 +774,7 @@ let make = (
                 | ShippingAddressPincode
                 | ShippingAddressState
                 | ShippingAddressCountry(_)
-                | CurrencyNetworks
+                | CryptoCurrencyNetworks
                 | None => React.null
                 }}
               </div>
