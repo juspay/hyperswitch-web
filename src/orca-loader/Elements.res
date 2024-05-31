@@ -171,8 +171,12 @@ let make = (
       preMountLoaderIframeDiv->Window.iframePostMessage(msg)
     }
 
-    let fetchCustomerPaymentMethods = (mountedIframeRef, disableSaveCards, componentType) => {
-      if !disableSaveCards {
+    let fetchCustomerPaymentMethods = (
+      mountedIframeRef,
+      disableSavedPaymentMethods,
+      componentType,
+    ) => {
+      if !disableSavedPaymentMethods {
         let handleCustomerPaymentMethodsLoaded = (event: Types.event) => {
           let json = event.data->Identity.anyTypeToJson
           let dict = json->getDictFromJson
@@ -192,7 +196,7 @@ let make = (
       }
       let msg =
         [
-          ("sendCustomerPaymentMethodsResponse", !disableSaveCards->JSON.Encode.bool),
+          ("sendCustomerPaymentMethodsResponse", !disableSavedPaymentMethods->JSON.Encode.bool),
         ]->Dict.fromArray
       preMountLoaderIframeDiv->Window.iframePostMessage(msg)
     }
@@ -992,14 +996,12 @@ let make = (
         preMountLoaderMountedPromise
         ->then(_ => {
           fetchPaymentsList(mountedIframeRef, componentType)
-          if (
+          let disableSavedPaymentMethods =
             newOptions
             ->getDictFromJson
             ->getBool("displaySavedPaymentMethods", true) &&
-              !(expressCheckoutComponents->Array.includes(componentType))
-          ) {
-            fetchCustomerPaymentMethods(mountedIframeRef, false, componentType)
-          }
+              !(expressCheckoutComponents->Array.includes(componentType))->not
+          fetchCustomerPaymentMethods(mountedIframeRef, disableSavedPaymentMethods, componentType)
           fetchSessionTokens(mountedIframeRef)
           resolve()
         })
