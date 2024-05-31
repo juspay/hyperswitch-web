@@ -1008,6 +1008,7 @@ let appendRedirectPaymentMethods = [
   "affirm",
   "we_chat_pay",
   "ali_pay",
+  "ali_pay_hk",
 ]
 
 let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) =>
@@ -1069,7 +1070,8 @@ let getPaymentBody = (
   | "ideal" => iDealBody(~name=fullName, ~bankName=bank)
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
   | "blik" => blikBody(~blikCode)
-  | "ali_pay" =>
+  | "ali_pay"
+  | "ali_pay_hk" =>
     switch paymentExperience {
     | QrFlow => dynamicPaymentBody(paymentMethod, paymentMethodType, ~isQrPaymentMethod=true)
     | RedirectToURL

@@ -157,6 +157,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "ali_pay_hk",
+    fields: [InfoElement],
+    icon: Some(icon("alipayhk", ~size=19)),
+    displayName: "Ali Pay HK",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "we_chat_pay",
     fields: [InfoElement],
     icon: Some(icon("wechatpay", ~size=19)),
