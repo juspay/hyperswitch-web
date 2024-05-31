@@ -214,7 +214,9 @@ let make = (
         <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />
       </div>
     </RenderIf>
-    <RenderIf condition={paymentMethodListValue.payment_type === SETUP_MANDATE}>
+    <RenderIf
+      condition={displaySavedPaymentMethodsCheckbox &&
+      paymentMethodListValue.payment_type === SETUP_MANDATE}>
       <div
         className="opacity-50 text-xs mb-2 text-left"
         style={

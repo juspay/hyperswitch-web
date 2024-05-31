@@ -12,6 +12,24 @@ type payment = Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applep
 
 let closePaymentLoaderIfAny = () => handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
 
+type paymentIntent = (
+  ~handleUserError: bool=?,
+  ~bodyArr: array<(string, JSON.t)>,
+  ~confirmParam: ConfirmType.confirmParams,
+  ~iframeId: string=?,
+  ~isThirdPartyFlow: bool=?,
+  ~intentCallback: Core__JSON.t => unit=?,
+  unit,
+) => unit
+
+type completeAuthorize = (
+  ~handleUserError: bool=?,
+  ~bodyArr: array<(string, JSON.t)>,
+  ~confirmParam: ConfirmType.confirmParams,
+  ~iframeId: string=?,
+  unit,
+) => unit
+
 let retrievePaymentIntent = (
   clientSecret,
   headers,
@@ -327,9 +345,15 @@ let rec intentCall = (
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
-  let (eventName: OrcaLogger.eventName, initEventName: OrcaLogger.eventName) = isConfirm
-    ? (CONFIRM_CALL, CONFIRM_CALL_INIT)
-    : (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
+  let isCompleteAuthorize = uri->String.includes("/complete_authorize")
+  let (eventName: OrcaLogger.eventName, initEventName: OrcaLogger.eventName) = switch (
+    isConfirm,
+    isCompleteAuthorize,
+  ) {
+  | (true, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
+  | (_, true) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
+  | _ => (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
+  }
   logApi(
     ~optLogger,
     ~url=uri,
@@ -708,6 +732,15 @@ let rec intentCall = (
                   handlePostMessage(message)
                 }
                 resolve(data)
+              } else if intent.nextAction.type_ === "invoke_sdk_client" {
+                let nextActionData =
+                  intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
+                let response =
+                  [
+                    ("orderId", intent.connectorTransactionId->JSON.Encode.string),
+                    ("nextActionData", nextActionData),
+                  ]->getJsonFromArrayOfJson
+                resolve(response)
               } else {
                 if !isPaymentSession {
                   postFailedSubmitResponse(
@@ -949,6 +982,7 @@ let rec maskPayload = payloadJson => {
 
 let usePaymentIntent = (optLogger, paymentType) => {
   open RecoilAtoms
+  open Promise
   let url = RescriptReactRouter.useUrl()
   let paymentTypeFromUrl =
     CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
@@ -964,6 +998,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~confirmParam: ConfirmType.confirmParams,
     ~iframeId=keys.iframeId,
     ~isThirdPartyFlow=false,
+    ~intentCallback=_ => (),
     (),
   ) => {
     switch keys.clientSecret {
@@ -1054,7 +1089,12 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
             ~counter=0,
             (),
-          )->ignore
+          )
+          ->then(val => {
+            intentCallback(val)
+            resolve()
+          })
+          ->ignore
         }
       }
 
@@ -1121,6 +1161,73 @@ let usePaymentIntent = (optLogger, paymentType) => {
       postFailedSubmitResponse(
         ~errortype="confirm_payment_failed",
         ~message="Payment failed. Try again!",
+      )
+    }
+  }
+}
+
+let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
+  open RecoilAtoms
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
+  let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
+  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let url = RescriptReactRouter.useUrl()
+  let paymentTypeFromUrl =
+    CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
+  (
+    ~handleUserError=false,
+    ~bodyArr: array<(string, JSON.t)>,
+    ~confirmParam: ConfirmType.confirmParams,
+    ~iframeId=keys.iframeId,
+    (),
+  ) => {
+    switch keys.clientSecret {
+    | Some(clientSecret) =>
+      let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+      let headers = [
+        ("Content-Type", "application/json"),
+        ("api-key", confirmParam.publishableKey),
+        ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+      ]
+      let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
+      let uri = `${endpoint}/payments/${paymentIntentID}/complete_authorize`
+
+      let browserInfo = BrowserSpec.broswerInfo
+      let bodyStr =
+        [("client_secret", clientSecret->JSON.Encode.string)]
+        ->Array.concatMany([bodyArr, browserInfo()])
+        ->Utils.getJsonFromArrayOfJson
+        ->JSON.stringify
+
+      let completeAuthorize = () => {
+        intentCall(
+          ~fetchApi,
+          ~uri,
+          ~headers,
+          ~bodyStr,
+          ~confirmParam: ConfirmType.confirmParams,
+          ~clientSecret,
+          ~optLogger,
+          ~handleUserError,
+          ~paymentType,
+          ~iframeId,
+          ~fetchMethod=#POST,
+          ~setIsManualRetryEnabled,
+          ~switchToCustomPod,
+          ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
+          ~counter=0,
+          (),
+        )->ignore
+      }
+      switch paymentMethodList {
+      | Loaded(_) => completeAuthorize()
+      | _ => ()
+      }
+    | None =>
+      postFailedSubmitResponse(
+        ~errortype="complete_authorize_failed",
+        ~message="Complete Authorize Failed. Try Again!",
       )
     }
   }

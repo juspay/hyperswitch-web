@@ -1,3 +1,29 @@
+## [0.57.2](https://github.com/juspay/hyperswitch-web/compare/v0.57.1...v0.57.2) (2024-05-30)
+
+
+### Bug Fixes
+
+* allow customer to pay with different payment method on cancel of… ([#409](https://github.com/juspay/hyperswitch-web/issues/409)) ([d48c5c2](https://github.com/juspay/hyperswitch-web/commit/d48c5c26b2eb96ceeaa75c348d73c3f6ab480cc4))
+
+## [0.57.1](https://github.com/juspay/hyperswitch-web/compare/v0.57.0...v0.57.1) (2024-05-30)
+
+
+### Bug Fixes
+
+* hide terms based upon prop ([#408](https://github.com/juspay/hyperswitch-web/issues/408)) ([8a5d554](https://github.com/juspay/hyperswitch-web/commit/8a5d5548d70750725a61381abf4fa68879fa4746))
+
+# [0.57.0](https://github.com/juspay/hyperswitch-web/compare/v0.56.1...v0.57.0) (2024-05-30)
+
+
+### Bug Fixes
+
+* fixed ApplePay Event Handler ([#406](https://github.com/juspay/hyperswitch-web/issues/406)) ([bfc7470](https://github.com/juspay/hyperswitch-web/commit/bfc747010c6a5c891d0d93e7ce9dbbcdd8980e07))
+
+
+### Features
+
+* added PayPal SDK Via PayPal ([#404](https://github.com/juspay/hyperswitch-web/issues/404)) ([084932d](https://github.com/juspay/hyperswitch-web/commit/084932d644cc4f7da9aebe124e069e97ee14476b))
+
 ## [0.56.1](https://github.com/juspay/hyperswitch-web/compare/v0.56.0...v0.56.1) (2024-05-27)
 
 

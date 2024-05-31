@@ -66,7 +66,6 @@ let make = (~paymentType: CardThemeType.mode) => {
           ~iframeId,
           (),
         )
-        ()
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }

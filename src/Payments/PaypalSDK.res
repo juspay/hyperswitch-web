@@ -1,5 +1,4 @@
 open PaypalSDKTypes
-open Promise
 
 @react.component
 let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) => {
@@ -13,6 +12,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
+  let completeAuthorize = PaymentHelpers.useCompleteAuthorize(Some(loggerState), Paypal)
   let checkoutScript =
     Window.document(Window.window)->Window.getElementById("braintree-checkout")->Nullable.toOption
   let clientScript =
@@ -51,123 +51,70 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
 
   PaymentUtils.useStatesJson(setStatesJson)
 
-  let loadPaypalSdk = () => {
-    loggerState.setLogInfo(
-      ~value="Paypal SDK Button Clicked",
-      ~eventName=PAYPAL_SDK_FLOW,
-      ~paymentMethod="PAYPAL",
-      (),
-    )
-    Utils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
-    ->then(result => {
-      let result = result->JSON.Decode.bool->Option.getOr(false)
-      if result {
-        braintree.client.create({authorization: token}, (clientErr, clientInstance) => {
-          if clientErr {
-            Console.error2("Error creating client", clientErr)
-          }
-          braintree.paypalCheckout.create(
-            {client: clientInstance},
-            (paypalCheckoutErr, paypalCheckoutInstance) => {
-              switch paypalCheckoutErr->Nullable.toOption {
-              | Some(val) => Console.warn(`INTEGRATION ERROR: ${val.message}`)
-              | None => ()
-              }
-              paypalCheckoutInstance.loadPayPalSDK(
-                {vault: true},
-                () => {
-                  let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
-                  paypalWrapper.innerHTML = ""
-                  paypal["Buttons"]({
-                    style: buttonStyle,
-                    fundingSource: paypal["FUNDING"]["PAYPAL"],
-                    createBillingAgreement: () => {
-                      //Paypal Clicked
-                      Utils.handlePostMessage([
-                        ("fullscreen", true->JSON.Encode.bool),
-                        ("param", "paymentloader"->JSON.Encode.string),
-                        ("iframeId", iframeId->JSON.Encode.string),
-                      ])
-                      options.readOnly ? () : paypalCheckoutInstance.createPayment(orderDetails)
-                    },
-                    onApprove: (data, _actions) => {
-                      options.readOnly
-                        ? ()
-                        : paypalCheckoutInstance.tokenizePayment(
-                            data,
-                            (_err, payload) => {
-                              let (connectors, _) =
-                                paymentMethodListValue->PaymentUtils.getConnectors(
-                                  Wallets(Paypal(SDK)),
-                                )
-                              let body = PaymentBody.paypalSdkBody(
-                                ~token=payload.nonce,
-                                ~connectors,
-                              )
-
-                              let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
-                                ~details=payload.details,
-                                ~paymentMethodTypes,
-                                ~statesList=stateJson,
-                              )
-
-                              let paypalBody =
-                                body
-                                ->Utils.getJsonFromArrayOfJson
-                                ->Utils.flattenObject(true)
-                                ->Utils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-                                ->Utils.getArrayOfTupleFromDict
-
-                              let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
-                                ~isGuestCustomer,
-                                ~paymentType=paymentMethodListValue.payment_type,
-                                ~body=paypalBody,
-                              )
-
-                              intent(
-                                ~bodyArr=modifiedPaymentBody,
-                                ~confirmParam={
-                                  return_url: options.wallets.walletReturnUrl,
-                                  publishableKey,
-                                },
-                                ~handleUserError=true,
-                                (),
-                              )
-                            },
-                          )
-                    },
-                    onCancel: _data => {
-                      handleCloseLoader()
-                    },
-                    onError: _err => {
-                      handleCloseLoader()
-                    },
-                  }).render("#paypal-button")
-                  areOneClickWalletsRendered(
-                    prev => {
-                      ...prev,
-                      isPaypal: true,
-                    },
-                  )
-                },
-              )
-            },
-          )
-        })->ignore
-      }
-      resolve()
+  let mountPaypalSDK = () => {
+    let clientId = sessionObj.token
+    let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields`
+    loggerState.setLogInfo(~value="PayPal SDK Script Loading", ~eventName=PAYPAL_SDK_FLOW, ())
+    let paypalScript = Window.createElement("script")
+    paypalScript->Window.elementSrc(paypalScriptURL)
+    paypalScript->Window.elementOnerror(exn => {
+      let err = exn->Identity.anyTypeToJson->JSON.stringify
+      loggerState.setLogError(
+        ~value=`Error During Loading PayPal SDK Script: ${err}`,
+        ~eventName=PAYPAL_SDK_FLOW,
+        (),
+      )
     })
-    ->ignore
+    paypalScript->Window.elementOnload(_ => {
+      loggerState.setLogInfo(~value="PayPal SDK Script Loaded", ~eventName=PAYPAL_SDK_FLOW, ())
+      PaypalSDKHelpers.loadPaypalSDK(
+        ~loggerState,
+        ~sdkHandleOneClickConfirmPayment,
+        ~buttonStyle,
+        ~iframeId,
+        ~paymentMethodListValue,
+        ~isGuestCustomer,
+        ~intent,
+        ~options,
+        ~publishableKey,
+        ~paymentMethodTypes,
+        ~stateJson,
+        ~completeAuthorize,
+        ~handleCloseLoader,
+        ~areOneClickWalletsRendered,
+      )
+    })
+    Window.body->Window.appendChild(paypalScript)
   }
+
   React.useEffect(() => {
     try {
-      switch (
-        checkoutScript,
-        clientScript,
-        stateJson->Identity.jsonToNullableJson->Js.Nullable.isNullable,
-      ) {
-      | (Some(_), Some(_), false) => loadPaypalSdk()
-      | (_, _, _) => Utils.logInfo(Console.log("Error loading Paypal"))
+      if stateJson->Identity.jsonToNullableJson->Js.Nullable.isNullable->not {
+        switch sessionObj.connector {
+        | "paypal" => mountPaypalSDK()
+        | _ =>
+          switch (checkoutScript, clientScript) {
+          | (Some(_), Some(_)) =>
+            PaypalSDKHelpers.loadBraintreePaypalSdk(
+              ~loggerState,
+              ~sdkHandleOneClickConfirmPayment,
+              ~token,
+              ~buttonStyle,
+              ~iframeId,
+              ~paymentMethodListValue,
+              ~isGuestCustomer,
+              ~intent,
+              ~options,
+              ~orderDetails,
+              ~publishableKey,
+              ~paymentMethodTypes,
+              ~stateJson,
+              ~handleCloseLoader,
+              ~areOneClickWalletsRendered,
+            )
+          | _ => ()
+          }
+        }
       }
     } catch {
     | _err => Utils.logInfo(Console.log("Error loading Paypal"))
