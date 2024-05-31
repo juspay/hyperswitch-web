@@ -756,7 +756,10 @@ let make = (
                     applePayPresent->Belt.Option.isSome
                 ) {
                   //do operations here
-                  let processPayment = (payment: ApplePayTypes.paymentResult) => {
+                  let processPayment = (
+                    payment: ApplePayTypes.paymentResult,
+                    applePayEvent: Types.event,
+                  ) => {
                     //let body = PaymentBody.applePayBody(~token)
                     let msg =
                       [
@@ -764,11 +767,11 @@ let make = (
                         ("applePayBillingContact", payment.billingContact),
                         ("applePayShippingContact", payment.shippingContact),
                       ]->Dict.fromArray
-                    event.source->Window.sendPostMessage(msg)
+                    applePayEvent.source->Window.sendPostMessage(msg)
                   }
 
-                  let handleApplePayMessages = (event: Types.event) => {
-                    let json = event.data->Identity.anyTypeToJson
+                  let handleApplePayMessages = (applePayEvent: Types.event) => {
+                    let json = applePayEvent.data->Identity.anyTypeToJson
                     let dict = json->getDictFromJson
                     switch (
                       dict->Dict.get("applePayButtonClicked"),
@@ -821,7 +824,7 @@ let make = (
                               {"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson,
                             )
                             applePaySessionRef := Nullable.null
-                            processPayment(event.payment)
+                            processPayment(event.payment, applePayEvent)
                             let value = "Payment Data Filled: New Payment Method"
                             logger.setLogInfo(
                               ~value,
@@ -833,7 +836,7 @@ let make = (
                           ssn.oncancel = _ev => {
                             let msg =
                               [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
-                            event.source->Window.sendPostMessage(msg)
+                            applePayEvent.source->Window.sendPostMessage(msg)
                             applePaySessionRef := Nullable.null
                             logInfo(Console.log("Apple Pay Payment Cancelled"))
                             logger.setLogInfo(

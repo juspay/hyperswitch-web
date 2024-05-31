@@ -32,13 +32,9 @@ let make = (~sessionObj: SessionsType.token) => {
 
   let handleCloseLoader = () => {
     Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
-    Utils.postFailedSubmitResponse(
-      ~errortype="confirm_payment_failed",
-      ~message="An unknown error has occurred",
-    )
   }
 
-  let submitCallback = (ev: Window.event) => {
+  let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
@@ -65,7 +61,7 @@ let make = (~sessionObj: SessionsType.token) => {
         },
       )
     }
-  }
+  }, [status])
   useSubmitPaymentData(submitCallback)
 
   React.useEffect(() => {

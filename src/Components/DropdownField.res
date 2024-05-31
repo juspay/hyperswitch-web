@@ -104,12 +104,12 @@ let make = (
         <div className={`Input ${className} appearance-none relative`}>
           <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
             <div
-              className="absolute top-2.5 right-0 left-2 bottom-0 pointer-events-none rounded-sm"
+              className="absolute top-1 left-1 right-0 bottom-0  pointer-events-none rounded-sm z-20 whitespace-nowrap"
               style={
                 background: disabled ? disbaledBG : themeObj.colorBackground,
                 opacity: disabled ? "35%" : "",
                 padding: themeObj.spacingUnit,
-                width: "100%",
+                width: "95%",
               }>
               {React.string(displayValue->Option.getOr(""))}
             </div>
