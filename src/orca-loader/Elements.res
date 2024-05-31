@@ -989,14 +989,16 @@ let make = (
         preMountLoaderMountedPromise
         ->then(_ => {
           fetchPaymentsList(mountedIframeRef, componentType)
-          if (
+          let requireCustomerPaymentMethods =
             newOptions
             ->getDictFromJson
             ->getBool("displaySavedPaymentMethods", true) &&
               !(expressCheckoutComponents->Array.includes(componentType))
-          ) {
-            fetchCustomerPaymentMethods(mountedIframeRef, false, componentType)
-          }
+          fetchCustomerPaymentMethods(
+            mountedIframeRef,
+            requireCustomerPaymentMethods,
+            componentType,
+          )
           fetchSessionTokens(mountedIframeRef)
           resolve()
         })
