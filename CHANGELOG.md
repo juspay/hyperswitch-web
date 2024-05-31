@@ -1,3 +1,10 @@
+## [0.57.2](https://github.com/juspay/hyperswitch-web/compare/v0.57.1...v0.57.2) (2024-05-30)
+
+
+### Bug Fixes
+
+* allow customer to pay with different payment method on cancel of… ([#409](https://github.com/juspay/hyperswitch-web/issues/409)) ([d48c5c2](https://github.com/juspay/hyperswitch-web/commit/d48c5c26b2eb96ceeaa75c348d73c3f6ab480cc4))
+
 ## [0.57.1](https://github.com/juspay/hyperswitch-web/compare/v0.57.0...v0.57.1) (2024-05-30)
 
 
