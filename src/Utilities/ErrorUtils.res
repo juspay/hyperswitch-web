@@ -112,51 +112,27 @@ let manageErrorWarning = (
   ~logger: OrcaLogger.loggerMake,
   (),
 ) => {
-  let entry = errorWarning->Array.find(((value, _, _)) => {
-    value == key
-  })
+  let entry = errorWarning->Array.find(((value, _, _)) => value == key)
   switch entry {
   | Some(value) => {
-      let (key, type_, str) = value
-      switch (type_, str) {
-      | (Error, Static(string)) =>
-        logger.setLogError(
-          ~value=string,
-          ~eventName=key,
-          ~logType=ERROR,
-          ~logCategory=USER_ERROR,
-          (),
-        )
-        Console.error(string)
-        Exn.raiseError(string)
-      | (Warning, Static(string)) =>
-        logger.setLogError(
-          ~value=string,
-          ~eventName=key,
-          ~logType=WARNING,
-          ~logCategory=USER_ERROR,
-          (),
-        )
-        Console.warn(string)
-      | (Error, Dynamic(fn)) =>
-        logger.setLogError(
-          ~value=fn(dynamicStr),
-          ~eventName=key,
-          ~logType=ERROR,
-          ~logCategory=USER_ERROR,
-          (),
-        )
-        Console.error(fn(dynamicStr))
-        Exn.raiseError(fn(dynamicStr))
-      | (Warning, Dynamic(fn)) =>
-        logger.setLogError(
-          ~value=fn(dynamicStr),
-          ~eventName=key,
-          ~logType=WARNING,
-          ~logCategory=USER_ERROR,
-          (),
-        )
-        Console.warn(fn(dynamicStr))
+      let (eventName, type_, str) = value
+
+      let value = switch str {
+      | Static(string) => string
+      | Dynamic(fn) => fn(dynamicStr)
+      }
+      let logType: OrcaLogger.logType = switch type_ {
+      | Warning => WARNING
+      | Error => ERROR
+      }
+
+      logger.setLogError(~value, ~eventName, ~logType, ~logCategory=USER_ERROR, ())
+
+      switch type_ {
+      | Warning => Console.warn(value)
+      | Error =>
+        Console.error(value)
+        Exn.raiseError(value)
       }
     }
   | None => ()
