@@ -297,6 +297,11 @@ let rec pollStatus = (
               ~count=count - 1,
               ~returnUrl,
               ~logger,
+            )->then(
+              res => {
+                resolve(res)
+                Promise.resolve()
+              },
             )
           },
         )
@@ -314,7 +319,7 @@ let rec pollStatus = (
       ~count=count - 1,
       ~returnUrl,
       ~logger,
-    )
+    )->then(res => resolve(res))
   })
 }
 
