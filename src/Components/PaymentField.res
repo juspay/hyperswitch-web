@@ -87,22 +87,10 @@ let make = (
 
   let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
 
-  <div className={`flex ${flexDirectionBasedOnType} w-full`} style={color: themeObj.colorText}>
-    <RenderIf condition={type_ === "tel"}>
-      <DropdownField
-        appearance=config.appearance
-        value={valueDropDown->Option.getOr("")}
-        setValue={setValueDropDown->Option.getOr(_ => ())}
-        fieldName={dropDownFieldName->Option.getOr("")}
-        options={dropDownOptions->Option.getOr([])}
-        width="w-1/3 mr-2"
-        displayValue={displayValue->Option.getOr("")}
-        setDisplayValue={setDisplayValue->Option.getOr(_ => ())}
-        isDisplayValueVisible=true
-      />
-    </RenderIf>
+  <div className="flex flex-col">
     <RenderIf
-      condition={fieldName->String.length > 0 &&
+      condition={name === "phone" &&
+      fieldName->String.length > 0 &&
       config.appearance.labels == Above &&
       isSpacedInnerLayout}>
       <div
@@ -116,59 +104,90 @@ let make = (
         {React.string(fieldName)}
       </div>
     </RenderIf>
-    <div className="flex flex-row w-full" style={direction: direction}>
-      <div className="relative w-full">
-        <input
-          style={
-            background: backgroundClass,
-            padding: themeObj.spacingUnit,
-            width: "100%",
-          }
-          disabled=readOnly
-          ref={inputRef->ReactDOM.Ref.domRef}
-          type_
-          name
-          ?maxLength
-          ?pattern
-          className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
-          placeholder={config.appearance.labels == Above || config.appearance.labels == Never
-            ? placeholder
-            : ""}
-          value={value.value}
-          autoComplete="on"
-          onChange
-          onBlur=handleBlur
-          onFocus=handleFocus
+    <div className={`flex ${flexDirectionBasedOnType} w-full`} style={color: themeObj.colorText}>
+      <RenderIf condition={type_ === "tel"}>
+        <DropdownField
+          appearance=config.appearance
+          value={valueDropDown->Option.getOr("")}
+          setValue={setValueDropDown->Option.getOr(_ => ())}
+          fieldName={dropDownFieldName->Option.getOr("")}
+          options={dropDownOptions->Option.getOr([])}
+          width="w-1/3 mr-2"
+          displayValue={displayValue->Option.getOr("")}
+          setDisplayValue={setDisplayValue->Option.getOr(_ => ())}
+          isDisplayValueVisible=true
         />
-        <RenderIf condition={config.appearance.labels == Floating}>
-          <div
-            className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
+      </RenderIf>
+      <RenderIf
+        condition={name !== "phone" &&
+        fieldName->String.length > 0 &&
+        config.appearance.labels == Above &&
+        isSpacedInnerLayout}>
+        <div
+          className={`Label ${labelClass}`}
+          style={
+            fontWeight: themeObj.fontWeightNormal,
+            fontSize: themeObj.fontSizeLg,
+            marginBottom: "5px",
+            opacity: "0.6",
+          }>
+          {React.string(fieldName)}
+        </div>
+      </RenderIf>
+      <div className="flex flex-row w-full" style={direction: direction}>
+        <div className="relative w-full">
+          <input
             style={
-              marginBottom: {
-                inputFocused || value.value->String.length > 0 ? "" : themeObj.spacingUnit
-              },
-              fontSize: {
-                inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
-              },
-              opacity: "0.6",
-            }>
-            {React.string(fieldName)}
-          </div>
-        </RenderIf>
+              background: backgroundClass,
+              padding: themeObj.spacingUnit,
+              width: "100%",
+            }
+            disabled=readOnly
+            ref={inputRef->ReactDOM.Ref.domRef}
+            type_
+            name
+            ?maxLength
+            ?pattern
+            className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
+            placeholder={config.appearance.labels == Above || config.appearance.labels == Never
+              ? placeholder
+              : ""}
+            value={value.value}
+            autoComplete="on"
+            onChange
+            onBlur=handleBlur
+            onFocus=handleFocus
+          />
+          <RenderIf condition={config.appearance.labels == Floating}>
+            <div
+              className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
+              style={
+                marginBottom: {
+                  inputFocused || value.value->String.length > 0 ? "" : themeObj.spacingUnit
+                },
+                fontSize: {
+                  inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
+                },
+                opacity: "0.6",
+              }>
+              {React.string(fieldName)}
+            </div>
+          </RenderIf>
+        </div>
+        <div className={`relative flex -ml-10  items-center`}> {rightIcon} </div>
       </div>
-      <div className={`relative flex -ml-10  items-center`}> {rightIcon} </div>
+      <RenderIf condition={value.errorString->String.length > 0}>
+        <div
+          className="Error pt-1"
+          style={
+            color: themeObj.colorDangerText,
+            fontSize: themeObj.fontSizeSm,
+            alignSelf: "start",
+            textAlign: "left",
+          }>
+          {React.string(value.errorString)}
+        </div>
+      </RenderIf>
     </div>
-    <RenderIf condition={value.errorString->String.length > 0}>
-      <div
-        className="Error pt-1"
-        style={
-          color: themeObj.colorDangerText,
-          fontSize: themeObj.fontSizeSm,
-          alignSelf: "start",
-          textAlign: "left",
-        }>
-        {React.string(value.errorString)}
-      </div>
-    </RenderIf>
   </div>
 }
