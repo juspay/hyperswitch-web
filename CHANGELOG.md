@@ -1,3 +1,11 @@
+## [0.57.3](https://github.com/juspay/hyperswitch-web/compare/v0.57.2...v0.57.3) (2024-05-31)
+
+
+### Bug Fixes
+
+* error utils refactor ([#405](https://github.com/juspay/hyperswitch-web/issues/405)) ([8d833e4](https://github.com/juspay/hyperswitch-web/commit/8d833e4385a4e9b3c819fbc3ad062a9a3f352cf8))
+* mb_way ui fix ([#407](https://github.com/juspay/hyperswitch-web/issues/407)) ([9c6a87c](https://github.com/juspay/hyperswitch-web/commit/9c6a87c5e99102a8047cb674810b713f60069ea0))
+
 ## [0.57.2](https://github.com/juspay/hyperswitch-web/compare/v0.57.1...v0.57.2) (2024-05-30)
 
 
