@@ -540,6 +540,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_shipping_address_city", _) => ShippingAddressCity
   | ("user_shipping_address_pincode", _) => ShippingAddressPincode
   | ("user_shipping_address_state", _) => ShippingAddressState
+  | ("text", _) => CryptoCurrencyNetworks
   | _ => None
   }
 }

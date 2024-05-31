@@ -335,11 +335,11 @@ let make = (
     {<>
       {dynamicFieldsToRenderOutsideBilling
       ->Array.mapWithIndex((item, index) => {
+        Js.log3("item, index", item, index)
         <div
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
           style={
-            marginTop: index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
             gridColumnGap: themeObj.spacingGridRow,
           }>
           {switch item {

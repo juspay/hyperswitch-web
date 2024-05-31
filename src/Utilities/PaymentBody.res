@@ -1083,5 +1083,6 @@ let getPaymentBody = (
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)
+  | "crypto_currency" => []
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }
