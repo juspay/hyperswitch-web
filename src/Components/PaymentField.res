@@ -87,7 +87,7 @@ let make = (
 
   let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
 
-  <div className="flex flex-col">
+  <div className="flex flex-col w-full">
     <RenderIf
       condition={name === "phone" &&
       fieldName->String.length > 0 &&
