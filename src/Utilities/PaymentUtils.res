@@ -10,6 +10,7 @@ let paymentListLookupNew = (
   let walletToBeDisplayedInTabs = [
     "mb_way",
     "ali_pay",
+    "ali_pay_hk",
     "mobile_pay",
     "we_chat_pay",
     "vipps",
