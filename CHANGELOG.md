@@ -1,3 +1,10 @@
+## [0.58.2](https://github.com/juspay/hyperswitch-web/compare/v0.58.1...v0.58.2) (2024-06-03)
+
+
+### Bug Fixes
+
+* remove postal code check ([#412](https://github.com/juspay/hyperswitch-web/issues/412)) ([13b9625](https://github.com/juspay/hyperswitch-web/commit/13b962581e8243d99f070b2fc7e2ab4edc180e49))
+
 ## [0.58.1](https://github.com/juspay/hyperswitch-web/compare/v0.58.0...v0.58.1) (2024-06-03)
 
 
