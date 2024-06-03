@@ -89,7 +89,7 @@ let make = (
     "postal_code",
     logger,
   )
-  let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
+
   let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
@@ -215,17 +215,6 @@ let make = (
 
   React.useEffect0(() => {
     open Promise
-    // Dynamically import/download Postal codes and states JSON
-    PostalCodeType.importPostalCode("./../PostalCodes.bs.js")
-    ->then(res => {
-      setPostalCodes(_ => res.default)
-      resolve()
-    })
-    ->catch(_ => {
-      setPostalCodes(_ => [PostalCodeType.defaultPostalCode])
-      resolve()
-    })
-    ->ignore
     AddressPaymentInput.importStates("./../States.json")
     ->then(res => {
       setStatesJson(_ => Some(res.states))
@@ -239,8 +228,6 @@ let make = (
 
     None
   })
-
-  let _regex = CardUtils.postalRegex(postalCodes, ~country={getCountryCode(country).isoAlpha2}, ())
 
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]

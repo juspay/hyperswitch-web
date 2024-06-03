@@ -97,8 +97,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     cardBrand->getCardType
   }, [cardBrand])
 
-  let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
-
   React.useEffect(() => {
     let obj = getobjFromCardPattern(cardBrand)
     let cvcLength = obj.maxCVCLenth
@@ -110,23 +108,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     }
     None
   }, (cvcNumber, cardNumber))
-
-  React.useEffect0(() => {
-    open Promise
-    if paymentMode->getPaymentMode == Card {
-      PostalCodeType.importPostalCode("./PostalCodes.bs.js")
-      ->then(res => {
-        setPostalCodes(_ => res.default)
-        resolve()
-      })
-      ->catch(_ => {
-        setPostalCodes(_ => [PostalCodeType.defaultPostalCode])
-        resolve()
-      })
-      ->ignore
-    }
-    None
-  })
 
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
@@ -175,10 +156,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let changeZipCode = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("zipCode", logger)
-    let regex = postalRegex(postalCodes, ())
-    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) {
-      blurRef(zipRef)
-    }
     setZipCode(_ => val)
   }
 
@@ -235,13 +212,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let handleZipBlur = ev => {
     let zipCode = ReactEvent.Focus.target(ev)["value"]
-    let regex = postalRegex(postalCodes, ())
-    if RegExp.test(regex->RegExp.fromString, zipCode) || regex == "" {
-      setIsZipValid(_ => Some(true))
-    } else if zipCode->String.length == 0 {
-      setIsZipValid(_ => None)
-    } else {
+    if zipCode === "" {
       setIsZipValid(_ => Some(false))
+    } else {
+      setIsZipValid(_ => Some(true))
     }
   }
 
