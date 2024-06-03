@@ -59,7 +59,6 @@ let make = (~paymentType, ~className="") => {
   let cityRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
 
-  let (postalCodes, setPostalCodes) = React.useState(_ => [PostalCodeType.defaultPostalCode])
   let (stateJson, setStatesJson) = React.useState(_ => None)
   let (showOtherFileds, setShowOtherFields) = React.useState(_ => false)
 
@@ -68,17 +67,14 @@ let make = (~paymentType, ~className="") => {
   let checkPostalValidity = (
     postal: RecoilAtomTypes.field,
     setPostal: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
-    regex,
   ) => {
-    if RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== "" && regex !== "" {
+    if postal.value !== "" {
       setPostal(prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
-    } else if (
-      regex !== "" && !RegExp.test(regex->RegExp.fromString, postal.value) && postal.value !== ""
-    ) {
+    } else {
       setPostal(prev => {
         ...prev,
         isValid: Some(false),
@@ -89,17 +85,6 @@ let make = (~paymentType, ~className="") => {
 
   React.useEffect0(() => {
     open Promise
-    // Dynamically import/download Postal codes and states JSON
-    PostalCodeType.importPostalCode("./../PostalCodes.bs.js")
-    ->then(res => {
-      setPostalCodes(_ => res.default)
-      resolve()
-    })
-    ->catch(_ => {
-      setPostalCodes(_ => [PostalCodeType.defaultPostalCode])
-      resolve()
-    })
-    ->ignore
     importStates("./../States.json")
     ->then(res => {
       setStatesJson(_ => Some(res.states))
@@ -114,12 +99,6 @@ let make = (~paymentType, ~className="") => {
     None
   })
 
-  let regex = CardUtils.postalRegex(
-    postalCodes,
-    ~country={getCountryCode(country.value).isoAlpha2},
-    (),
-  )
-
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
 
@@ -128,20 +107,17 @@ let make = (~paymentType, ~className="") => {
       value: val,
       errorString: "",
     })
-    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) {
-      CardUtils.blurRef(postalRef)
-    }
   }
 
   let onPostalBlur = ev => {
     let val = ReactEvent.Focus.target(ev)["value"]
-    if regex !== "" && RegExp.test(regex->RegExp.fromString, val) && val !== "" {
+    if val !== "" {
       setPostalCode(prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
-    } else if regex !== "" && !RegExp.test(regex->RegExp.fromString, val) && val !== "" {
+    } else {
       setPostalCode(prev => {
         ...prev,
         isValid: Some(false),
@@ -151,9 +127,9 @@ let make = (~paymentType, ~className="") => {
   }
 
   React.useEffect(() => {
-    checkPostalValidity(postalCode, setPostalCode, regex)
+    checkPostalValidity(postalCode, setPostalCode)
     None
-  }, (regex, country.value))
+  }, country.value)
 
   React.useEffect(() => {
     setState(prev => {
