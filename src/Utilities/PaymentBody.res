@@ -1052,6 +1052,7 @@ let getPaymentBody = (
 ) =>
   switch paymentMethodType {
   | "afterpay_clearpay" => afterpayRedirectionBody(~fullName, ~email)
+  | "crypto_currency" => []
   | "sofort" => sofortBody(~country, ~name=fullName, ~email)
   | "ideal" => iDealBody(~name=fullName, ~bankName=bank)
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
@@ -1085,6 +1086,5 @@ let getPaymentBody = (
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)
-  | "crypto_currency" => []
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }
