@@ -1,3 +1,11 @@
+## [0.58.3](https://github.com/juspay/hyperswitch-web/compare/v0.58.2...v0.58.3) (2024-06-03)
+
+
+### Bug Fixes
+
+* fixed polling status and firefox form rendering ([#411](https://github.com/juspay/hyperswitch-web/issues/411)) ([600495b](https://github.com/juspay/hyperswitch-web/commit/600495b32725566265b6e5dd5d05ed3962226c3b))
+* width issue dropdown ([#415](https://github.com/juspay/hyperswitch-web/issues/415)) ([7defc1d](https://github.com/juspay/hyperswitch-web/commit/7defc1d9817e053c85610be317838815935d3385))
+
 ## [0.58.2](https://github.com/juspay/hyperswitch-web/compare/v0.58.1...v0.58.2) (2024-06-03)
 
 
