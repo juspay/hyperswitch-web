@@ -12,7 +12,7 @@ let make = () => {
     ->Dict.get(currencyVal)
     ->Option.getOr([])
     ->Array.map(item => {
-      label: Utils.splitAndJoinTheString(~str=item, ~delimiter="_"),
+      label: Utils.toSpacedUpperCase(~str=item, ~delimiter="_"),
       value: item,
     })
 

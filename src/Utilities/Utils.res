@@ -1300,7 +1300,7 @@ let currencyNetworksDict =
     ("DAI", ["ethereum", "bnb_smart_chain"]),
   ]->Dict.fromArray
 
-let splitAndJoinTheString = (~str, ~delimiter) =>
+let toSpacedUpperCase = (~str, ~delimiter) =>
   str
   ->String.toUpperCase
   ->String.split(delimiter)
