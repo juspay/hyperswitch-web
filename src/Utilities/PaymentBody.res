@@ -563,6 +563,10 @@ let afterpayRedirectionBody = () => [
   ("payment_method", "pay_later"->JSON.Encode.string),
   ("payment_method_type", "afterpay_clearpay"->JSON.Encode.string),
   ("payment_experience", "redirect_to_url"->JSON.Encode.string),
+  (
+    "payment_method_data",
+    [("pay_later", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
+  ),
 ]
 
 let giroPayBody = (~name, ~iban="", ()) => [
