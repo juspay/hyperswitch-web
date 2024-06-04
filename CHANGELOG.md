@@ -1,3 +1,10 @@
+## [0.59.1](https://github.com/juspay/hyperswitch-web/compare/v0.59.0...v0.59.1) (2024-06-04)
+
+
+### Bug Fixes
+
+* apple-pay outline ([#417](https://github.com/juspay/hyperswitch-web/issues/417)) ([c476d29](https://github.com/juspay/hyperswitch-web/commit/c476d29ad46bd581aea4e771e953e393af1191e2))
+
 # [0.59.0](https://github.com/juspay/hyperswitch-web/compare/v0.58.3...v0.59.0) (2024-06-04)
 
 
