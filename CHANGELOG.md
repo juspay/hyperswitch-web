@@ -1,3 +1,10 @@
+# [0.59.0](https://github.com/juspay/hyperswitch-web/compare/v0.58.3...v0.59.0) (2024-06-04)
+
+
+### Features
+
+* enabled afterpay with dynamic fields ([#416](https://github.com/juspay/hyperswitch-web/issues/416)) ([0f64ec3](https://github.com/juspay/hyperswitch-web/commit/0f64ec398e87a4871c7967f5283a0255d0510592))
+
 ## [0.58.3](https://github.com/juspay/hyperswitch-web/compare/v0.58.2...v0.58.3) (2024-06-03)
 
 
