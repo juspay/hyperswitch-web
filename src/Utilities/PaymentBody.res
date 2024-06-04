@@ -559,27 +559,10 @@ let cryptoBody = (~currency) => [
   ),
 ]
 
-let afterpayRedirectionBody = (~fullName, ~email) => [
+let afterpayRedirectionBody = () => [
   ("payment_method", "pay_later"->JSON.Encode.string),
   ("payment_method_type", "afterpay_clearpay"->JSON.Encode.string),
   ("payment_experience", "redirect_to_url"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "pay_later",
-        [
-          (
-            "afterpay_clearpay_redirect",
-            [
-              ("billing_email", email->JSON.Encode.string),
-              ("billing_name", fullName->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
 ]
 
 let giroPayBody = (~name, ~iban="", ()) => [
@@ -1064,7 +1047,7 @@ let getPaymentBody = (
   ~currency,
 ) =>
   switch paymentMethodType {
-  | "afterpay_clearpay" => afterpayRedirectionBody(~fullName, ~email)
+  | "afterpay_clearpay" => afterpayRedirectionBody()
   | "crypto_currency" => cryptoBody(~currency)
   | "sofort" => sofortBody(~country, ~name=fullName, ~email)
   | "ideal" => iDealBody(~name=fullName, ~bankName=bank)
