@@ -48,7 +48,7 @@ let make = (~sessionObj: SessionsType.token) => {
         {
           container: None,
           color_text: None,
-          payment_method_category: Some("klarna"),
+          payment_method_category: None,
         },
         Dict.make()->JSON.Encode.object,
         (res: res) => {
@@ -76,7 +76,7 @@ let make = (~sessionObj: SessionsType.token) => {
         {
           container: Some("#klarna-payments"),
           color_text: Some("#E51515"),
-          payment_method_category: Some("pay_later"),
+          payment_method_category: None,
         },
         (_res: res) => {
           handlePostMessageEvents(~complete=true, ~empty=false, ~paymentType="klarna", ~loggerState)
