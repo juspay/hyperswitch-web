@@ -48,9 +48,6 @@ let paymentMode = str => {
 }
 
 let defaultOrder = [
-  "apple_pay",
-  "google_pay",
-  "paypal",
   "card",
   "klarna",
   "affirm",
@@ -66,6 +63,9 @@ let defaultOrder = [
   "giropay",
   "ideal",
   "eps",
+  "apple_pay",
+  "google_pay",
+  "paypal",
   "crypto",
   "bancontact_card",
   "boleto",
