@@ -565,7 +565,14 @@ let afterpayRedirectionBody = () => [
   ("payment_experience", "redirect_to_url"->JSON.Encode.string),
   (
     "payment_method_data",
-    [("pay_later", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
+    [
+      (
+        "pay_later",
+        [
+          ("afterpay_clearpay_redirect", []->Utils.getJsonFromArrayOfJson),
+        ]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
 
