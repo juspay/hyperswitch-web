@@ -22,7 +22,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (_, _, buttonType) = options.wallets.style.type_
-  let (_, _, heightType) = options.wallets.style.height
+  let (_, _, heightType, _) = options.wallets.style.height
   let buttonStyle = {
     layout: "vertical",
     color: options.wallets.style.theme == Outline

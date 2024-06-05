@@ -6,6 +6,7 @@ let oneClickWallets = [
   {paymentMethodType: "apple_pay", displayName: "ApplePay"},
   {paymentMethodType: "paypal", displayName: "Paypal"},
   {paymentMethodType: "google_pay", displayName: "GooglePay"},
+  {paymentMethodType: "klarna", displayName: "Klarna"},
 ]
 
 type walletSurchargeDetails = {
@@ -20,17 +21,18 @@ let useSurchargeDetailsForOneClickWallets = (~paymentMethodListValue) => {
 
   React.useMemo(() => {
     oneClickWallets->Array.reduce([], (acc, wallet) => {
-      let isWalletBtnRendered = switch wallet.paymentMethodType {
-      | "apple_pay" => areOneClickWalletsRendered.isApplePay
-      | "paypal" => areOneClickWalletsRendered.isPaypal
-      | "google_pay" => areOneClickWalletsRendered.isGooglePay
-      | _ => false
+      let (isWalletBtnRendered, paymentMethod) = switch wallet.paymentMethodType {
+      | "apple_pay" => (areOneClickWalletsRendered.isApplePay, "wallet")
+      | "paypal" => (areOneClickWalletsRendered.isPaypal, "wallet")
+      | "google_pay" => (areOneClickWalletsRendered.isGooglePay, "wallet")
+      | "klarna" => (areOneClickWalletsRendered.isKlarna, "pay_later")
+      | _ => (false, "")
       }
       if isWalletBtnRendered {
         let paymentMethodType =
           PaymentMethodsRecord.getPaymentMethodTypeFromList(
             ~paymentMethodListValue,
-            ~paymentMethod="wallet",
+            ~paymentMethod,
             ~paymentMethodType=wallet.paymentMethodType,
           )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
         switch paymentMethodType.surcharge_details {
