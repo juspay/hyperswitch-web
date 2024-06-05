@@ -384,7 +384,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     {switch paymentMethodList {
     | LoadError(_) => React.null
     | _ =>
-      <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
+      <RenderIf
+        condition={!displaySavedPaymentMethods &&
+        paymentOptions->Array.length == 0 &&
+        walletOptions->Array.length == 0}>
         <PaymentElementShimmer />
       </RenderIf>
     }}
