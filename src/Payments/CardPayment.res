@@ -229,7 +229,7 @@ let make = (
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
       <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>
-        <div className="w-full">
+        <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
           <RenderIf condition={innerLayout === Compressed}>
             <div
               style={
@@ -263,9 +263,6 @@ let make = (
             <div
               className="flex flex-row w-full place-content-between"
               style={
-                marginTop: {
-                  innerLayout === Spaced ? themeObj.spacingGridColumn : ""
-                },
                 gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
               }>
               <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>

@@ -327,9 +327,6 @@ let make = (
           className="flex flex-col w-full place-content-between"
           style={
             gridColumnGap: themeObj.spacingGridRow,
-            marginTop: item !== CryptoCurrencyNetworks
-              ? index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : ""
-              : "",
           }>
           {switch item {
           | CardNumber =>
