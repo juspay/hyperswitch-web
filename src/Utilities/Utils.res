@@ -1226,11 +1226,12 @@ let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   | GooglePayElement => wallets->Array.filter(item => item === "google_pay")
   | PayPalElement => wallets->Array.filter(item => item === "paypal")
   | ApplePayElement => wallets->Array.filter(item => item === "apple_pay")
+  | KlarnaElement => wallets->Array.filter(item => item === "klarna")
   | _ => wallets
   }
 }
 
-let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "expressCheckout"]
+let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "klarna", "expressCheckout"]
 
 let componentsForPaymentElementCreate = ["payment"]->Array.concat(expressCheckoutComponents)
 
@@ -1246,6 +1247,7 @@ let walletElementPaymentType: array<CardThemeType.mode> = [
   GooglePayElement,
   PayPalElement,
   ApplePayElement,
+  KlarnaElement,
   ExpressCheckoutElement,
 ]
 

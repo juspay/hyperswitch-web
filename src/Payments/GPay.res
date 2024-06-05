@@ -144,7 +144,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
   }, (paymentMethodTypes, stateJson))
 
   let (_, buttonType, _) = options.wallets.style.type_
-  let (_, heightType, _) = options.wallets.style.height
+  let (_, heightType, _, _) = options.wallets.style.height
   let height = switch heightType {
   | GooglePay(val) => val
   | _ => 48
