@@ -753,6 +753,36 @@ let removeRequiredFieldsDuplicates = (
   requiredFields
 }
 
+let getNameFromString = (name, requiredFieldsArr) => {
+  let nameArr = name->String.split(" ")
+  let nameArrLength = nameArr->Array.length
+  switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
+  | "first_name" => {
+      let end = nameArrLength === 1 ? nameArrLength : nameArrLength - 1
+      nameArr
+      ->Array.slice(~start=0, ~end)
+      ->Array.reduce("", (acc, item) => {
+        acc ++ " " ++ item
+      })
+    }
+  | "last_name" =>
+    if nameArrLength === 1 {
+      ""
+    } else {
+      nameArr->Array.get(nameArrLength - 1)->Option.getOr(name)
+    }
+  | _ => name
+  }->String.trim
+}
+
+let getNameFromFirstAndLastName = (~firstName, ~lastName, ~requiredFieldsArr) => {
+  switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
+  | "first_name" => firstName
+  | "last_name" => lastName
+  | _ => firstName->String.concatMany([" ", lastName])
+  }->String.trim
+}
+
 let getApplePayRequiredFields = (
   ~billingContact: ApplePayTypes.billingContact,
   ~shippingContact: ApplePayTypes.shippingContact,
@@ -777,7 +807,11 @@ let getApplePayRequiredFields = (
     let fieldVal = switch item.field_type {
     | FullName
     | BillingName =>
-      getName(billingContact.givenName, billingContact.familyName)
+      getNameFromFirstAndLastName(
+        ~firstName=billingContact.givenName,
+        ~lastName=billingContact.familyName,
+        ~requiredFieldsArr,
+      )
     | AddressLine1 => billingContact.addressLines->getAddressLine(0)
     | AddressLine2 => billingContact.addressLines->getAddressLine(1)
     | AddressCity => billingContact.locality
@@ -814,28 +848,6 @@ let getApplePayRequiredFields = (
 
     acc
   })
-}
-
-let getNameFromString = (name, requiredFieldsArr) => {
-  let nameArr = name->String.split(" ")
-  let nameArrLength = nameArr->Array.length
-  switch requiredFieldsArr->Array.get(requiredFieldsArr->Array.length - 1)->Option.getOr("") {
-  | "first_name" => {
-      let end = nameArrLength === 1 ? nameArrLength : nameArrLength - 1
-      nameArr
-      ->Array.slice(~start=0, ~end)
-      ->Array.reduce("", (acc, item) => {
-        acc ++ " " ++ item
-      })
-    }
-  | "last_name" =>
-    if nameArrLength === 1 {
-      ""
-    } else {
-      nameArr->Array.get(nameArrLength - 1)->Option.getOr(name)
-    }
-  | _ => name
-  }->String.trim
 }
 
 let getGooglePayRequiredFields = (
@@ -920,6 +932,43 @@ let getPaypalRequiredFields = (
       | ("", phone) => phone
       | _ => ""
       }
+    | _ => ""
+    }
+
+    if fieldVal !== "" {
+      acc->Dict.set(item.required_field, fieldVal->JSON.Encode.string)
+    }
+
+    acc
+  })
+}
+
+let getKlarnaRequiredFields = (
+  ~shippingContact: KlarnaSDKTypes.collected_shipping_address,
+  ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+  ~statesList,
+) => {
+  paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
+    let requiredFieldsArr = item.required_field->String.split(".")
+
+    let fieldVal = switch item.field_type {
+    | ShippingName =>
+      getNameFromFirstAndLastName(
+        ~firstName=shippingContact.given_name,
+        ~lastName=shippingContact.family_name,
+        ~requiredFieldsArr,
+      )
+    | ShippingAddressLine1 => shippingContact.street_address
+    | ShippingAddressCity => shippingContact.city
+    | ShippingAddressState => {
+        let administrativeArea = shippingContact.region
+        let countryCode = shippingContact.country
+        Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+      }
+    | ShippingAddressCountry(_) => shippingContact.country
+    | ShippingAddressPincode => shippingContact.postal_code
+    | Email => shippingContact.email
+    | PhoneNumber => shippingContact.phone
     | _ => ""
     }
 
