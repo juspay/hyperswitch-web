@@ -1,3 +1,10 @@
+## [0.59.2](https://github.com/juspay/hyperswitch-web/compare/v0.59.1...v0.59.2) (2024-06-04)
+
+
+### Bug Fixes
+
+* afterpay_body fix ([#418](https://github.com/juspay/hyperswitch-web/issues/418)) ([1338e15](https://github.com/juspay/hyperswitch-web/commit/1338e15e4cc4708610b56c59ee665af1f438fef2))
+
 ## [0.59.1](https://github.com/juspay/hyperswitch-web/compare/v0.59.0...v0.59.1) (2024-06-04)
 
 
