@@ -71,8 +71,8 @@ type options = {timeZone: string}
 type dateTimeFormat = {resolvedOptions: unit => options}
 @val @scope("Intl") external dateTimeFormat: unit => dateTimeFormat = "DateTimeFormat"
 
-let toInt = val => val->Belt.Int.fromString->Option.getOr(0)
-let toString = val => val->Belt.Int.toString
+let toInt = val => val->Int.fromString->Option.getOr(0)
+let toString = val => val->Int.toString
 
 let getQueryParamsDictforKey = (searchParams, keyName) => {
   let dict = Dict.make()
@@ -206,7 +206,7 @@ let getExpiryDates = val => {
   let date = Date.make()->Date.toISOString
   let (month, year) = splitExpiryDates(val)
   let (_, currentYear) = getCurrentMonthAndYear(date)
-  let prefix = currentYear->Belt.Int.toString->String.slice(~start=0, ~end=2)
+  let prefix = currentYear->Int.toString->String.slice(~start=0, ~end=2)
   (month, `${prefix}${year}`)
 }
 let formatExpiryToTwoDigit = expiry => {
@@ -269,7 +269,7 @@ let getCardBrand = cardNumber => {
         isin
         ->String.replaceRegExp(%re("/[^\d]/g"), "")
         ->String.substring(~start=0, ~end=6)
-        ->Belt.Int.fromString
+        ->Int.fromString
         ->Option.getOr(0)
 
       let range = cardRanges->Array.map(cardRange => {
@@ -317,12 +317,11 @@ let calculateLuhn = value => {
     ->Array.map(item => {
       let val = item->toInt
       let double = val * 2
-      let str = double->Belt.Int.toString
+      let str = double->Int.toString
       let arr = str->String.split("")
 
       switch (arr[0], arr[1]) {
-      | (Some(first), Some(second)) if double > 9 =>
-        (first->toInt + second->toInt)->Belt.Int.toString
+      | (Some(first), Some(second)) if double > 9 => (first->toInt + second->toInt)->Int.toString
       | _ => str
       }
     })
