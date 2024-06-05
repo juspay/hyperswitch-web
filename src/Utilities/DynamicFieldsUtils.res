@@ -774,6 +774,9 @@ let getApplePayRequiredFields = (
       addressLines->Array.get(index)->Option.getOr("")
     }
 
+    let billingCountryCode = billingContact.countryCode->String.toUpperCase
+    let shippingCountryCode = shippingContact.countryCode->String.toUpperCase
+
     let fieldVal = switch item.field_type {
     | FullName
     | BillingName =>
@@ -785,11 +788,10 @@ let getApplePayRequiredFields = (
       Utils.getStateNameFromStateCodeAndCountry(
         statesList,
         billingContact.administrativeArea,
-        billingContact.countryCode,
+        billingCountryCode,
       )
     | Country
-    | AddressCountry(_) =>
-      billingContact.countryCode
+    | AddressCountry(_) => billingCountryCode
     | AddressPincode => billingContact.postalCode
     | Email => shippingContact.emailAddress
     | PhoneNumber => shippingContact.phoneNumber
@@ -801,9 +803,9 @@ let getApplePayRequiredFields = (
       Utils.getStateNameFromStateCodeAndCountry(
         statesList,
         shippingContact.administrativeArea,
-        shippingContact.countryCode,
+        shippingCountryCode,
       )
-    | ShippingAddressCountry(_) => shippingContact.countryCode
+    | ShippingAddressCountry(_) => shippingCountryCode
     | ShippingAddressPincode => shippingContact.postalCode
     | _ => ""
     }
