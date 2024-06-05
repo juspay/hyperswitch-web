@@ -83,7 +83,7 @@ let make = (~sessionObj: option<JSON.t>) => {
 
   let buttonColor = switch options.wallets.style.theme {
   | Outline
-  | Light => "white"
+  | Light => "white-outline"
   | Dark => "black"
   }
 

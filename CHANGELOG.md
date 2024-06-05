@@ -1,3 +1,32 @@
+## [0.59.2](https://github.com/juspay/hyperswitch-web/compare/v0.59.1...v0.59.2) (2024-06-04)
+
+
+### Bug Fixes
+
+* afterpay_body fix ([#418](https://github.com/juspay/hyperswitch-web/issues/418)) ([1338e15](https://github.com/juspay/hyperswitch-web/commit/1338e15e4cc4708610b56c59ee665af1f438fef2))
+
+## [0.59.1](https://github.com/juspay/hyperswitch-web/compare/v0.59.0...v0.59.1) (2024-06-04)
+
+
+### Bug Fixes
+
+* apple-pay outline ([#417](https://github.com/juspay/hyperswitch-web/issues/417)) ([c476d29](https://github.com/juspay/hyperswitch-web/commit/c476d29ad46bd581aea4e771e953e393af1191e2))
+
+# [0.59.0](https://github.com/juspay/hyperswitch-web/compare/v0.58.3...v0.59.0) (2024-06-04)
+
+
+### Features
+
+* enabled afterpay with dynamic fields ([#416](https://github.com/juspay/hyperswitch-web/issues/416)) ([0f64ec3](https://github.com/juspay/hyperswitch-web/commit/0f64ec398e87a4871c7967f5283a0255d0510592))
+
+## [0.58.3](https://github.com/juspay/hyperswitch-web/compare/v0.58.2...v0.58.3) (2024-06-03)
+
+
+### Bug Fixes
+
+* fixed polling status and firefox form rendering ([#411](https://github.com/juspay/hyperswitch-web/issues/411)) ([600495b](https://github.com/juspay/hyperswitch-web/commit/600495b32725566265b6e5dd5d05ed3962226c3b))
+* width issue dropdown ([#415](https://github.com/juspay/hyperswitch-web/issues/415)) ([7defc1d](https://github.com/juspay/hyperswitch-web/commit/7defc1d9817e053c85610be317838815935d3385))
+
 ## [0.58.2](https://github.com/juspay/hyperswitch-web/compare/v0.58.1...v0.58.2) (2024-06-03)
 
 

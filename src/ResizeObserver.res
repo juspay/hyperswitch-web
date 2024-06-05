@@ -1,4 +1,4 @@
-type observer = {observe: Dom.element => unit}
+type observer = {observe: Dom.element => unit, disconnect: unit => unit}
 type dimensions = {
   height: float,
   width: float,
