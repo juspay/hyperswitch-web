@@ -48,10 +48,11 @@ let getPaymentMethodsFieldsOrder = paymentMethodField => {
   | AddressLine2 => 5
   | AddressCity => 6
   | AddressState => 7
-  | AddressCountry(_) => 8
-  | AddressPincode => 9
   | StateAndCity => 7
+  | AddressCountry(_) => 8
   | CountryAndPincode(_) => 8
+  | AddressPincode => 9
+  | CryptoCurrencyNetworks => 10
   | InfoElement => 99
   | _ => 3
   }
