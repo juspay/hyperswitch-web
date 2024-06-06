@@ -14,6 +14,7 @@ type mode =
   | GooglePayElement
   | PayPalElement
   | ApplePayElement
+  | KlarnaElement
   | ExpressCheckoutElement
   | NONE
 type label = Above | Floating | Never
@@ -98,6 +99,7 @@ let getPaymentMode = val => {
   | "googlePay" => GooglePayElement
   | "payPal" => PayPalElement
   | "applePay" => ApplePayElement
+  | "klarna" => KlarnaElement
   | "expressCheckout" => ExpressCheckoutElement
   | _ => NONE
   }
@@ -113,6 +115,7 @@ let getPaymentModeToStrMapper = val => {
   | GooglePayElement => "GooglePayElement"
   | PayPalElement => "PayPalElement"
   | ApplePayElement => "ApplePayElement"
+  | KlarnaElement => "KlarnaElement"
   | ExpressCheckoutElement => "ExpressCheckoutElement"
   | NONE => "None"
   }

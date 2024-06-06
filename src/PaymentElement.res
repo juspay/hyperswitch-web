@@ -45,6 +45,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     setLoadSavedCards: (savedCardsLoadState => savedCardsLoadState) => unit,
   ) = React.useState(_ => LoadingSavedCards)
 
+  let isKlarnaRedirectFlow = PaymentUtils.getIsKlarnaRedirectFlow(sessions)
+
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
@@ -109,6 +111,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (walletList, paymentOptionsList, actualList) = PaymentUtils.useGetPaymentMethodList(
     ~paymentOptions,
     ~paymentType,
+    ~sessions,
   )
 
   React.useEffect(() => {
@@ -228,9 +231,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let checkRenderOrComp = () => {
     walletOptions->Array.includes("paypal") || isShowOrPayUsing
   }
-  let dict = sessions->getDictFromJson
-  let sessionObj = SessionsType.itemToObjMapper(dict, Others)
-  let klarnaTokenObj = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
 
   let loader = () => {
     handlePostMessageEvents(
@@ -246,25 +246,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       {switch selectedOption->PaymentModeType.paymentMode {
       | Card => <CardPayment cardProps expiryProps cvcProps paymentType />
       | Klarna =>
-        <SessionPaymentWrapper type_=Others>
-          {switch klarnaTokenObj {
-          | OtherTokenOptional(optToken) =>
-            switch optToken {
-            | Some(token) =>
-              <React.Suspense fallback={loader()}>
-                <KlarnaSDKLazy sessionObj=token />
-              </React.Suspense>
-            | None =>
-              <React.Suspense fallback={loader()}>
-                <KlarnaPaymentLazy paymentType />
-              </React.Suspense>
-            }
-          | _ =>
-            <React.Suspense fallback={loader()}>
-              <KlarnaPaymentLazy paymentType />
-            </React.Suspense>
-          }}
-        </SessionPaymentWrapper>
+        <RenderIf condition={isKlarnaRedirectFlow}>
+          <React.Suspense fallback={loader()}>
+            <KlarnaPaymentLazy paymentType />
+          </React.Suspense>
+        </RenderIf>
       | ACHTransfer =>
         <React.Suspense fallback={loader()}>
           <ACHBankTransferLazy paymentType />

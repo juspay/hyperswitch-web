@@ -1,3 +1,10 @@
+# [0.60.0](https://github.com/juspay/hyperswitch-web/compare/v0.59.2...v0.60.0) (2024-06-05)
+
+
+### Features
+
+* added Klarna as a one click widget ([#420](https://github.com/juspay/hyperswitch-web/issues/420)) ([bdd0fa3](https://github.com/juspay/hyperswitch-web/commit/bdd0fa3ffd5b4e0018109541323981c945a1ed4a))
+
 ## [0.59.2](https://github.com/juspay/hyperswitch-web/compare/v0.59.1...v0.59.2) (2024-06-04)
 
 
