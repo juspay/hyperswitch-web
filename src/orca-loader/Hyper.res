@@ -277,11 +277,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(x => x->Dict.get("confirmParams"))
           ->Option.getOr(Dict.make()->JSON.Encode.object)
 
-        let redirect =
-          payload
-          ->getDictFromJson
-          ->getDictfromDict("confirmParams")
-          ->getString("redirect", "if_required")
+        let redirect = payload->getDictFromJson->getString("redirect", "if_required")
 
         let url =
           confirmParams
