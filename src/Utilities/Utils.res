@@ -1282,3 +1282,13 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
 }
 
 let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")
+
+let compareLogic = (a, b) => {
+  if a == b {
+    0.
+  } else if a > b {
+    -1.
+  } else {
+    1.
+  }
+}
