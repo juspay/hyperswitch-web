@@ -346,9 +346,9 @@ let make = (~sessionObj: option<JSON.t>) => {
     None
   }, (isApplePayReady, isInvokeSDKFlow, paymentExperience))
 
-  <div>
-    <style> {React.string(css)} </style>
-    <RenderIf condition={showApplePay}>
+  <RenderIf condition={showApplePay}>
+    <div>
+      <style> {React.string(css)} </style>
       {if showApplePayLoader {
         <div className="apple-pay-loader-div">
           <div className="apple-pay-loader" />
@@ -362,8 +362,8 @@ let make = (~sessionObj: option<JSON.t>) => {
           <span className="logo" />
         </button>
       }}
-    </RenderIf>
-  </div>
+    </div>
+  </RenderIf>
 }
 
 let default = make

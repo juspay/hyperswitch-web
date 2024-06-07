@@ -24,7 +24,7 @@ let make = () => {
   | Paypal(val) => val->PaypalSDKTypes.getLabel
   | _ => Paypal->PaypalSDKTypes.getLabel
   }
-  let (_, _, heightType) = options.wallets.style.height
+  let (_, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
   | Paypal(val) => val
   | _ => 48
