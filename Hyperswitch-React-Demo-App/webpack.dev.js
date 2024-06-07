@@ -2,7 +2,7 @@ const path = require("path");
 const { merge } = require("webpack-merge");
 const common = require("./webpack.common.js");
 
-let devServer = {
+const devServer = {
   contentBase: path.join(__dirname, "dist"),
   hot: true,
   port: 9060,
@@ -20,10 +20,7 @@ let devServer = {
   },
 };
 
-module.exports = merge([
-  common("/payments"),
-  {
-    mode: "development",
-    devServer: devServer,
-  },
-]);
+module.exports = merge(common("/payments"), {
+  mode: "development",
+  devServer,
+});

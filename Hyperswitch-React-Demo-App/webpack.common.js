@@ -4,14 +4,14 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
-const BundleAnalyzerPlugin =
-  require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
+const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 require("dotenv").config({ path: "./.env" });
 
 module.exports = (endpoint, publicPath = "auto") => {
-  let entries = {
+  const entries = {
     app: "./src/index.js",
   };
+
   return {
     mode: "development",
     devtool: "source-map",
@@ -37,9 +37,7 @@ module.exports = (endpoint, publicPath = "auto") => {
       new CopyPlugin({
         patterns: [
           { from: "public" },
-          {
-            from: path.resolve(__dirname, "server.js"),
-          },
+          { from: path.resolve(__dirname, "server.js") },
         ],
       }),
       new HtmlWebpackPlugin({
