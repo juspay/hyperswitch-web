@@ -1,3 +1,10 @@
+# [0.61.0](https://github.com/juspay/hyperswitch-web/compare/v0.60.0...v0.61.0) (2024-06-07)
+
+
+### Features
+
+* self serve url in env ([#425](https://github.com/juspay/hyperswitch-web/issues/425)) ([107e914](https://github.com/juspay/hyperswitch-web/commit/107e914865a0b6a677663746689c6452287fae19))
+
 # [0.60.0](https://github.com/juspay/hyperswitch-web/compare/v0.59.2...v0.60.0) (2024-06-05)
 
 
