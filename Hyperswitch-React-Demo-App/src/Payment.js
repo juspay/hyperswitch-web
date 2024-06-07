@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { useEffect, useState } from "react";
 import React from "react";
 import { HyperElements } from "@juspay-tech/react-hyper-js";
@@ -8,10 +9,11 @@ function Payment() {
   const [clientSecret, setClientSecret] = useState("");
 
   useEffect(() => {
+    let url = SELF_SERVER_URL === "" ? ENDPOINT : SELF_SERVER_URL;
     Promise.all([
-      fetch(`${endPoint}/config`),
-      fetch(`${endPoint}/urls`),
-      fetch(`${endPoint}/create-payment-intent`),
+      fetch(`${url}/config`),
+      fetch(`${url}/urls`),
+      fetch(`${url}/create-payment-intent`),
     ])
       .then((responses) => {
         return Promise.all(responses.map((response) => response.json()));
