@@ -60,7 +60,7 @@ type terms = {
   usBankAccount: showTerms,
 }
 type buttonHeight = Default | Custom
-type heightType = ApplePay(int) | GooglePay(int) | Paypal(int)
+type heightType = ApplePay(int) | GooglePay(int) | Paypal(int) | Klarna(int)
 type googlePayStyleType = Default | Buy | Donate | Checkout | Subscribe | Book | Pay | Order
 type paypalStyleType = Paypal | Checkout | Buynow | Pay | Installment
 type applePayStyleType =
@@ -86,13 +86,14 @@ type theme = Dark | Light | Outline
 type style = {
   type_: styleTypeArray,
   theme: theme,
-  height: (heightType, heightType, heightType),
+  height: (heightType, heightType, heightType, heightType),
 }
 type wallets = {
   walletReturnUrl: string,
   applePay: showType,
   googlePay: showType,
   payPal: showType,
+  klarna: showType,
   style: style,
 }
 type business = {name: string}
@@ -253,13 +254,14 @@ let defaultFields = {
 let defaultStyle = {
   type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal)),
   theme: Light,
-  height: (ApplePay(48), GooglePay(48), Paypal(48)),
+  height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48)),
 }
 let defaultWallets = {
   walletReturnUrl: "",
   applePay: Auto,
   googlePay: Auto,
   payPal: Auto,
+  klarna: Auto,
   style: defaultStyle,
 }
 let defaultBillingAddress = {
@@ -713,6 +715,31 @@ let getPaypalHeight = (val, logger) => {
       : Paypal(val)
   val
 }
+let getKlarnaHeight = (val, logger) => {
+  let val: heightType =
+    val < 40
+      ? {
+          valueOutRangeWarning(
+            val,
+            "options.style.height",
+            "[40-60] - Klarna. Value set to min",
+            ~logger,
+          )
+          Klarna(40)
+        }
+      : val > 60
+      ? {
+        valueOutRangeWarning(
+          val,
+          "options.style.height",
+          "[40-60] - Paypal. Value set to max",
+          ~logger,
+        )
+        Klarna(60)
+      }
+      : Klarna(val)
+  val
+}
 let getTheme = (str, logger) => {
   switch str {
   | "outline" => Outline
@@ -724,7 +751,12 @@ let getTheme = (str, logger) => {
   }
 }
 let getHeightArray = (val, logger) => {
-  (val->getApplePayHeight(logger), val->getGooglePayHeight(logger), val->getPaypalHeight(logger))
+  (
+    val->getApplePayHeight(logger),
+    val->getGooglePayHeight(logger),
+    val->getPaypalHeight(logger),
+    val->getKlarnaHeight(logger),
+  )
 }
 let getStyle = (dict, str, logger) => {
   dict
@@ -747,7 +779,7 @@ let getWallets = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal"],
+      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna"],
       json,
       "options.wallets",
       ~logger,
@@ -765,6 +797,10 @@ let getWallets = (dict, str, logger) => {
       ),
       payPal: getWarningString(json, "payPal", "auto", ~logger)->getShowType(
         "options.wallets.payPal",
+        logger,
+      ),
+      klarna: getWarningString(json, "klarna", "auto", ~logger)->getShowType(
+        "options.wallets.klarna",
         logger,
       ),
       style: getStyle(json, "style", logger),

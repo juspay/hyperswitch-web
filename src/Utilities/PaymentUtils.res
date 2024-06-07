@@ -4,6 +4,8 @@ let paymentListLookupNew = (
   list: PaymentMethodsRecord.paymentMethodList,
   ~order,
   ~isShowPaypal,
+  ~isShowKlarnaOneClick,
+  ~isKlarnaRedirectFlow,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
@@ -40,6 +42,12 @@ let paymentListLookupNew = (
       otherPaymentList->Array.push("card")->ignore
     } else if item.methodType == "reward" {
       otherPaymentList->Array.push(item.paymentMethodName)->ignore
+    } else if item.methodType == "pay_later" {
+      if item.paymentMethodName === "klarna" && !isKlarnaRedirectFlow && isShowKlarnaOneClick {
+        walletsList->Array.push(item.paymentMethodName)->ignore
+      } else {
+        otherPaymentList->Array.push(item.paymentMethodName)->ignore
+      }
     } else {
       otherPaymentList->Array.push(item.paymentMethodName)->ignore
     }
@@ -257,7 +265,17 @@ let useAreAllRequiredFieldsPrefilled = (
   })
 }
 
-let useGetPaymentMethodList = (~paymentOptions, ~paymentType) => {
+let getIsKlarnaRedirectFlow = sessions => {
+  let dict = sessions->Utils.getDictFromJson
+  let sessionObj = SessionsType.itemToObjMapper(dict, Others)
+  let klarnaTokenObj = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
+  switch klarnaTokenObj {
+  | OtherTokenOptional(optToken) => optToken->Option.isNone
+  | _ => true
+  }
+}
+
+let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
 
@@ -267,6 +285,14 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType) => {
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
   let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
+
+  let isKlarnaRedirectFlow = getIsKlarnaRedirectFlow(sessions)
+
+  let filterPaymentMethods = (paymentOptionsList: array<string>, ~isKlarnaRedirectFlow) => {
+    paymentOptionsList->Array.filter(paymentOptionsName =>
+      !(paymentOptionsName === "klarna" && !isKlarnaRedirectFlow)
+    )
+  }
 
   React.useMemo(() => {
     switch methodslist {
@@ -278,10 +304,15 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType) => {
         plist->paymentListLookupNew(
           ~order=paymentOrder,
           ~isShowPaypal=optionAtomValue.wallets.payPal === Auto,
+          ~isShowKlarnaOneClick=optionAtomValue.wallets.klarna === Auto,
+          ~isKlarnaRedirectFlow,
         )
       (
         wallets->removeDuplicate->Utils.getWalletPaymentMethod(paymentType),
-        paymentOptions->Array.concat(otherOptions)->removeDuplicate,
+        paymentOptions
+        ->Array.concat(otherOptions)
+        ->removeDuplicate
+        ->filterPaymentMethods(~isKlarnaRedirectFlow),
         otherOptions,
       )
     | SemiLoaded =>
@@ -290,7 +321,14 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType) => {
         : ([], [], [])
     | _ => ([], [], [])
     }
-  }, (methodslist, paymentMethodOrder, optionAtomValue.wallets.payPal, paymentType))
+  }, (
+    methodslist,
+    paymentMethodOrder,
+    optionAtomValue.wallets.payPal,
+    optionAtomValue.wallets.klarna,
+    paymentType,
+    isKlarnaRedirectFlow,
+  ))
 }
 
 let useStatesJson = setStatesJson => {

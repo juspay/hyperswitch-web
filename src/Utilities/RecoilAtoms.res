@@ -63,12 +63,14 @@ type areOneClickWalletsRendered = {
   isGooglePay: bool,
   isApplePay: bool,
   isPaypal: bool,
+  isKlarna: bool,
 }
 
 let defaultAreOneClickWalletsRendered = {
   isGooglePay: false,
   isApplePay: false,
   isPaypal: false,
+  isKlarna: false,
 }
 
 let areOneClickWalletsRendered = Recoil.atom(
