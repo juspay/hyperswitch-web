@@ -95,6 +95,8 @@ Before you start the local setup, you will need an understanding of few keys -
 
 - **`HYPERSWITCH_CLIENT_URL`:** The URL of your hosted Hyperswitch SDK. You can also use our Sandbox URL (https://beta.hyperswitch.io/v1) or specify your app running locally (e.g., http://localhost:9050).
 
+- **`SELF_SERVER_URL`:** The URL of the hosted server file for generating client-secret and for fetching urls & configs. (eg: http://localhost:9060/payments)
+
 ### About Env Configs for SDK
 
 - **`ENV_BACKEND_URL`:** Sets the endpoint for all the APIs used within the SDK to interact with the backend service. If you are running your own backend service, you can configure and specify its endpoint here for local setups.
