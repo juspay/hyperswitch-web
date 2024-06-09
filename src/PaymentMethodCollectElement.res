@@ -318,10 +318,16 @@ let make = (~integrateError, ~logger) => {
     key->setFieldValidity(updatedValidity)
   }
 
-  let labelClasses = "text-[14px] text-jp-gray-800 mt-[10px]"
-  let inputClasses = "min-w-full border-2 border-jp-gray-200 mt-[5px] px-[10px] py-[8px] rounded-lg"
-
-  let renderInputTemplate = (field: paymentMethodDataField) =>
+  let renderInputTemplate = (field: paymentMethodDataField) => {
+    let isValid = field->getFieldValidity
+    let labelClasses = `text-[14px] mt-[10px] ${isValid->Option.getOr(true)
+        ? "text-jp-gray-800"
+        : "text-red-950"}`
+    let inputClasses = `min-w-full border mt-[5px] px-[10px] py-[8px] rounded-lg ${isValid->Option.getOr(
+        true,
+      )
+        ? "border-jp-gray-200"
+        : "border-red-950"}`
     <InputField
       id={field->getPaymentMethodDataFieldKey}
       className=inputClasses
@@ -329,15 +335,16 @@ let make = (~integrateError, ~logger) => {
       paymentType={PaymentMethodCollectElement}
       inputRef
       isFocus={true}
+      isValid
       fieldName={field->getPaymentMethodDataFieldLabel}
       placeholder={field->getPaymentMethodDataFieldPlaceholder}
       maxLength={field->getPaymentMethodDataFieldMaxLength}
       value={field->getPaymentMethodDataValue}
-      isValid={field->getFieldValidity}
       onChange={event => field->setPaymentMethodDataValue(ReactEvent.Form.target(event)["value"])}
       setIsValid={updatedValidityFn => field->setFieldValidity(updatedValidityFn())}
       onBlur={_ev => field->calculateAndSetValidity}
     />
+  }
 
   let renderInputs = (pmt: paymentMethodType) => {
     <div>
