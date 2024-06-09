@@ -194,7 +194,7 @@ let make = (~integrateError, ~logger) => {
         <button
           key={Int.toString(i)}
           onClick={_ => setSelectedPaymentMethod(_ => Some(pm))}
-          className="text-start border border-solid border-jp-gray-400 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50">
+          className="text-start border border-solid border-jp-gray-200 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50">
           {React.string(pm->String.make)}
         </button>
       })
@@ -203,7 +203,7 @@ let make = (~integrateError, ~logger) => {
   }
 
   let renderPMTOptions = () => {
-    let commonClasses = "text-start border border-solid border-jp-gray-400 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50"
+    let commonClasses = "text-start border border-solid border-jp-gray-200 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50"
     <div className="flex flex-col">
       {switch selectedPaymentMethod {
       | Some(Card) => React.null
@@ -725,9 +725,11 @@ let make = (~integrateError, ~logger) => {
       | PayoutLinkInitiate =>
         <React.Fragment>
           // Merchant's info
-          <div className="flex flex-col w-4/10 p-[50px]" style={backgroundColor: merchantTheme}>
+          <div
+            className="flex flex-col w-4/10 px-[50px] py-[80px]"
+            style={backgroundColor: merchantTheme}>
             <div
-              className="flex flex-col self-end min-w-fit rounded-md shadow-lg min-w-96"
+              className="flex flex-col self-end rounded-md shadow-lg min-w-80 w-full max-w-96"
               style={backgroundColor: "#FEFEFE"}>
               <div className="mx-[20px] mt-[20px] flex flex-row justify-between">
                 <div className="font-bold text-[35px]">
@@ -751,7 +753,7 @@ let make = (~integrateError, ~logger) => {
             </div>
           </div>
           // Collect widget
-          <div className="flex flex-row w-6/10 p-[50px] shadow-lg">
+          <div className="flex flex-row w-6/10 px-[50px] py-[80px]">
             <div className="shadow-lg rounded p-[40px] h-min min-w-96">
               <div className="flex flex-row justify-start">
                 <div className="flex justify-center items-center"> {renderBackButton()} </div>
