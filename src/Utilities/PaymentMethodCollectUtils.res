@@ -3,6 +3,80 @@ open ErrorUtils
 open PaymentMethodCollectTypes
 open Utils
 
+type t = Js.Dict.t<Js.Json.t>
+
+// Function to get a nested value
+let getNestedValue = (dict: t, key: string): option<Js.Json.t> => {
+  let keys = "."->Js.String.split(key)
+  let length = Array.length(keys)
+
+  let rec traverse = (currentDict, index): option<Js.Json.t> => {
+    if index === length - 1 {
+      Js.Dict.get(currentDict, Array.getUnsafe(keys, index))
+    } else {
+      let keyPart = Array.getUnsafe(keys, index)
+      switch Js.Dict.get(currentDict, keyPart) {
+      | Some(subDict) =>
+        switch Js.Json.decodeObject(subDict) {
+        | Some(innerDict) => traverse(innerDict, index + 1)
+        | None => None
+        }
+      | None => None
+      }
+    }
+  }
+
+  traverse(dict, 0)
+}
+
+// Helper function to get or create a sub-dictionary
+let getOrCreateSubDict = (dict: t, key: string): t => {
+  switch Js.Dict.get(dict, key) {
+  | Some(subDict) =>
+    switch Js.Json.decodeObject(subDict) {
+    | Some(innerDict) => innerDict
+    | None => {
+        let newSubDict = Js.Dict.empty()
+        Js.Dict.set(dict, key, Js.Json.object_(newSubDict))
+        newSubDict
+      }
+    }
+  | None => {
+      let newSubDict = Js.Dict.empty()
+      Js.Dict.set(dict, key, Js.Json.object_(newSubDict))
+      newSubDict
+    }
+  }
+}
+
+// Function to set a nested value
+let setNestedValue = (dict: t, key: string, value: Js.Json.t): unit => {
+  let keys = "."->Js.String.split(key)
+  let length = Array.length(keys)
+  let rec traverse = (currentDict, index) => {
+    if index === length - 1 {
+      Js.Dict.set(currentDict, Array.getUnsafe(keys, index), value)
+    } else {
+      let keyPart = Array.getUnsafe(keys, index)
+      let subDict = getOrCreateSubDict(currentDict, keyPart)
+      traverse(subDict, index + 1)
+    }
+  }
+
+  traverse(dict, 0)
+}
+
+let setValue = (dict, key, value): Js.Dict.t<Js.Json.t> => {
+  let pmdCopy = Dict.copy(dict)
+  pmdCopy->setNestedValue(key, value->JSON.Encode.string)
+  pmdCopy
+}
+
+let getValue = (dict, key) =>
+  dict
+  ->getNestedValue(key)
+  ->Option.flatMap(JSON.Decode.string)
+
 let getPaymentMethod = (paymentMethod: paymentMethod): string => {
   switch paymentMethod {
   | Card => "card"
@@ -32,6 +106,96 @@ let getPaymentMethodType = (paymentMethodType: paymentMethodType): string => {
     }
   }
 }
+
+let getPaymentMethodDataFieldKey = (key: paymentMethodDataField): string =>
+  switch key {
+  | CardNumber => "card.cardNumber"
+  | CardExpDate => "card.cardExp"
+  | CardHolderName => "card.cardHolder"
+  | ACHRoutingNumber => "ach.routing"
+  | ACHAccountNumber => "ach.account"
+  | ACHBankName => "ach.bankName"
+  | ACHBankCity => "ach.bankCity"
+  | BacsSortCode => "bacs.sort"
+  | BacsAccountNumber => "bacs.account"
+  | BacsBankName => "bacs.bankName"
+  | BacsBankCity => "bacs.bankCity"
+  | SepaIban => "sepa.iban"
+  | SepaBic => "sepa.bic"
+  | SepaBankName => "sepa.bankName"
+  | SepaBankCity => "sepa.bankCity"
+  | SepaCountryCode => "sepa.countryCode"
+  | PaypalMail => "paypal.email"
+  | PaypalMobNumber => "paypal.phoneNumber"
+  | PixId => "pix.id"
+  | VenmoMail => "venmo.email"
+  | VenmoMobNumber => "venmo.phoneNumber"
+  }
+
+let getPaymentMethodDataFieldLabel = (key: paymentMethodDataField): string =>
+  switch key {
+  | CardNumber => "Card Number"
+  | CardExpDate => "Expiry Date"
+  | CardHolderName => "Cardholder Name"
+  | ACHRoutingNumber => "Routing Number"
+  | ACHAccountNumber | BacsAccountNumber => "Account Number"
+  | BacsSortCode => "Sort Code"
+  | SepaIban => "International Bank Account Number (IBAN)"
+  | SepaBic => "Bank Identifier Code (BIC)"
+  | PixId => "Pix ID"
+
+  | PaypalMail | VenmoMail => "Email"
+  | PaypalMobNumber | VenmoMobNumber => "Phone Number"
+
+  | SepaCountryCode => "Country Code (Optional)"
+
+  | ACHBankName
+  | BacsBankName
+  | SepaBankName => "Bank Name (Optional)"
+
+  | ACHBankCity
+  | BacsBankCity
+  | SepaBankCity => "Bank City (Optional)"
+  }
+
+let getPaymentMethodDataFieldPlaceholder = (key: paymentMethodDataField): string =>
+  switch key {
+  | CardNumber => "****** 4242"
+  | CardExpDate => "MM / YY"
+  | CardHolderName => "Your Name"
+  | ACHRoutingNumber => "110000000"
+  | ACHAccountNumber => "**** 6789"
+  | BacsSortCode => "11000"
+  | BacsAccountNumber => "**** 1822"
+  | SepaIban => "NL **** 6789"
+  | SepaBic => "ABNANL2A"
+  | SepaCountryCode => "Country"
+  | PixId => "**** 3251"
+
+  | BacsBankName
+  | SepaBankName => "Bank Name"
+
+  | ACHBankName
+  | ACHBankCity
+  | BacsBankCity
+  | SepaBankCity => "Bank City"
+
+  | PaypalMail | VenmoMail => "Your Email"
+  | PaypalMobNumber | VenmoMobNumber => "Your Phone"
+  }
+
+let getPaymentMethodDataFieldMaxLength = (key: paymentMethodDataField): int =>
+  switch key {
+  | CardNumber => 18
+  | CardExpDate => 7
+  | ACHRoutingNumber => 9
+  | ACHAccountNumber => 12
+  | BacsSortCode => 5
+  | BacsAccountNumber => 8
+  | SepaIban => 18
+  | SepaBic => 8
+  | _ => 32
+  }
 
 // Defaults
 let defaultPaymentMethodCollectFlow: paymentMethodCollectFlow = PayoutLinkInitiate
@@ -104,20 +268,14 @@ let itemToObjMapper = (dict, logger) => {
   }
 }
 
-let getValueFromDict = (paymentMethodDataDict, key) => {
-  paymentMethodDataDict->Dict.get(key)->Option.getOr("")
-}
+let calculateValidity = (dict, key) => {
+  let value =
+    dict
+    ->getValue(key->getPaymentMethodDataFieldKey)
+    ->Option.getOr("")
 
-let setFieldValidity = (key, validity: option<bool>, fieldValidityDict, setFieldValidityDict) => {
-  let updatedFieldValidityDict = fieldValidityDict->Dict.copy
-  updatedFieldValidityDict->Dict.set(key, validity)
-  setFieldValidityDict(_ => updatedFieldValidityDict)
-}
-
-let calculateValidity = (paymentMethodDataDict, key) => {
-  let value = paymentMethodDataDict->getValueFromDict(key)
   switch key {
-  | "cardNumber" =>
+  | CardNumber =>
     if cardNumberInRange(value)->Array.includes(true) && calculateLuhn(value) {
       Some(true)
     } else if value->String.length == 0 {
@@ -125,7 +283,7 @@ let calculateValidity = (paymentMethodDataDict, key) => {
     } else {
       Some(false)
     }
-  | "expiryDate" =>
+  | CardExpDate =>
     if value->String.length > 0 && getExpiryValidity(value) {
       Some(true)
     } else if value->String.length == 0 {
@@ -133,7 +291,7 @@ let calculateValidity = (paymentMethodDataDict, key) => {
     } else {
       Some(false)
     }
-  | "routingNumber" =>
+  | ACHRoutingNumber =>
     if value->String.length === 9 {
       let p1 = switch (
         value->String.charAt(0)->Belt.Int.fromString,
@@ -167,27 +325,17 @@ let calculateValidity = (paymentMethodDataDict, key) => {
       | _ => Some(false)
       }
     } else {
-      None
+      Some(false)
     }
   | _ => None
   }
-}
-
-let calculateAndSetValidity = (
-  paymentMethodDataDict,
-  key,
-  fieldValidityDict,
-  setFieldValidityDict,
-) => {
-  let updatedValidity = calculateValidity(paymentMethodDataDict, key)
-  setFieldValidity(key, updatedValidity, fieldValidityDict, setFieldValidityDict)
 }
 
 let checkValidity = (keys, fieldValidityDict) => {
   keys->Array.reduce(true, (acc, key) => {
     switch fieldValidityDict->Dict.get(key) {
     | Some(validity) => acc && validity->Option.getOr(true)
-    | None => false
+    | None => acc
     }
   })
 }
@@ -197,17 +345,22 @@ let formCreatePaymentMethodRequestBody = (
   paymentMethodDataDict,
   fieldValidityDict,
 ) => {
+  Js.Console.log3("DEBUGG", fieldValidityDict, paymentMethodDataDict)
   switch paymentMethodType {
   | None => None
   // Card
   | Some(Card(_)) =>
     switch (
-      paymentMethodDataDict->Dict.get("nameOnCard"),
-      paymentMethodDataDict->Dict.get("cardNumber"),
-      paymentMethodDataDict->Dict.get("expiryDate"),
+      paymentMethodDataDict->getValue(CardHolderName->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(CardNumber->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(CardExpDate->getPaymentMethodDataFieldKey),
     ) {
     | (Some(nameOnCard), Some(cardNumber), Some(expiryDate)) =>
-      switch ["cardNumber", "nameOnCard", "expiryDate"]->checkValidity(fieldValidityDict) {
+      switch [
+        CardHolderName->getPaymentMethodDataFieldKey,
+        CardNumber->getPaymentMethodDataFieldKey,
+        CardExpDate->getPaymentMethodDataFieldKey,
+      ]->checkValidity(fieldValidityDict) {
       | false => None
       | true => {
           let arr = expiryDate->String.split("/")
@@ -230,15 +383,18 @@ let formCreatePaymentMethodRequestBody = (
   // ACH
   | Some(BankTransfer(ACH)) =>
     switch (
-      paymentMethodDataDict->Dict.get("routingNumber"),
-      paymentMethodDataDict->Dict.get("accountNumber"),
-      paymentMethodDataDict->Dict.get("bankName"),
-      paymentMethodDataDict->Dict.get("city"),
+      paymentMethodDataDict->getValue(ACHRoutingNumber->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(ACHAccountNumber->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(ACHBankName->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(ACHBankCity->getPaymentMethodDataFieldKey),
     ) {
     | (Some(routingNumber), Some(accountNumber), bankName, city) =>
-      switch ["routingNumber", "accountNumber", "bankName", "city"]->checkValidity(
-        fieldValidityDict,
-      ) {
+      switch [
+        ACHRoutingNumber->getPaymentMethodDataFieldKey,
+        ACHAccountNumber->getPaymentMethodDataFieldKey,
+        ACHBankName->getPaymentMethodDataFieldKey,
+        ACHBankCity->getPaymentMethodDataFieldKey,
+      ]->checkValidity(fieldValidityDict) {
       | false => None
       | true =>
         Some([
@@ -254,13 +410,18 @@ let formCreatePaymentMethodRequestBody = (
   // Bacs
   | Some(BankTransfer(Bacs)) =>
     switch (
-      paymentMethodDataDict->Dict.get("sortCode"),
-      paymentMethodDataDict->Dict.get("accountNumber"),
-      paymentMethodDataDict->Dict.get("bankName"),
-      paymentMethodDataDict->Dict.get("city"),
+      paymentMethodDataDict->getValue(BacsSortCode->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(BacsAccountNumber->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(BacsBankName->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(BacsBankCity->getPaymentMethodDataFieldKey),
     ) {
     | (Some(sortCode), Some(accountNumber), bankName, city) =>
-      switch ["sortCode", "accountNumber", "bankName", "city"]->checkValidity(fieldValidityDict) {
+      switch [
+        BacsSortCode->getPaymentMethodDataFieldKey,
+        BacsAccountNumber->getPaymentMethodDataFieldKey,
+        BacsBankName->getPaymentMethodDataFieldKey,
+        BacsBankCity->getPaymentMethodDataFieldKey,
+      ]->checkValidity(fieldValidityDict) {
       | false => None
       | true =>
         Some([
@@ -276,14 +437,20 @@ let formCreatePaymentMethodRequestBody = (
   // Sepa
   | Some(BankTransfer(Sepa)) =>
     switch (
-      paymentMethodDataDict->Dict.get("iban"),
-      paymentMethodDataDict->Dict.get("bic"),
-      paymentMethodDataDict->Dict.get("bankName"),
-      paymentMethodDataDict->Dict.get("city"),
-      paymentMethodDataDict->Dict.get("countryCode"),
+      paymentMethodDataDict->getValue(SepaIban->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(SepaBic->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(SepaBankName->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(SepaBankCity->getPaymentMethodDataFieldKey),
+      paymentMethodDataDict->getValue(SepaCountryCode->getPaymentMethodDataFieldKey),
     ) {
     | (Some(iban), Some(bic), bankName, city, countryCode) =>
-      switch ["iban", "bic", "bankName", "city", "countryCode"]->checkValidity(fieldValidityDict) {
+      switch [
+        SepaIban->getPaymentMethodDataFieldKey,
+        SepaBic->getPaymentMethodDataFieldKey,
+        SepaBankName->getPaymentMethodDataFieldKey,
+        SepaBankCity->getPaymentMethodDataFieldKey,
+        SepaCountryCode->getPaymentMethodDataFieldKey,
+      ]->checkValidity(fieldValidityDict) {
       | false => None
       | true =>
         Some([
@@ -300,7 +467,7 @@ let formCreatePaymentMethodRequestBody = (
   // Wallets
   // PayPal
   | Some(Wallet(Paypal)) =>
-    switch paymentMethodDataDict->Dict.get("email") {
+    switch paymentMethodDataDict->getValue(PaypalMail->getPaymentMethodDataFieldKey) {
     | Some(email) => Some([("email", email)])
     | _ => None
     }

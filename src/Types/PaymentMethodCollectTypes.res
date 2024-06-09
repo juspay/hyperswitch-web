@@ -55,6 +55,32 @@ type paymentMethodData =
   | BankTransfer(bankTransferDetails)
   | Wallet(walletDetails)
 
+type paymentMethodDataField =
+  // Cards
+  | CardNumber
+  | CardExpDate
+  | CardHolderName
+  // Banks
+  | ACHRoutingNumber
+  | ACHAccountNumber
+  | ACHBankName
+  | ACHBankCity
+  | BacsSortCode
+  | BacsAccountNumber
+  | BacsBankName
+  | BacsBankCity
+  | SepaIban
+  | SepaBic
+  | SepaBankName
+  | SepaBankCity
+  | SepaCountryCode
+  // Wallets
+  | PaypalMail
+  | PaypalMobNumber
+  | PixId
+  | VenmoMail
+  | VenmoMobNumber
+
 type paymentMethodCollectFlow = PayoutLinkInitiate | PayoutMethodCollect
 
 type paymentMethodCollectOptions = {

@@ -35,12 +35,7 @@ let make = (~integrateError, ~logger) => {
   ) = React.useState(_ => Dict.make())
 
   // DOM references
-  let nameOnCardRef = React.useRef(Nullable.null)
-  let cardNumberRef = React.useRef(Nullable.null)
-  let expiryDateRef = React.useRef(Nullable.null)
-  let routingNumberRef = React.useRef(Nullable.null)
-  let accountNumberRef = React.useRef(Nullable.null)
-  let sortCodeRef = React.useRef(Nullable.null)
+  let inputRef = React.useRef(Nullable.null)
 
   // Form a list of available payment methods
   React.useEffect(() => {
@@ -135,16 +130,26 @@ let make = (~integrateError, ~logger) => {
     None
   }, [selectedPaymentMethod])
 
+  let resetForm = () => {
+    setPaymentMethodData(_ => Dict.make())
+    setFieldValidityDict(_ => Dict.make())
+  }
+
   let handleBackClick = () => {
     switch selectedPaymentMethodType {
     | Some(Card(_)) => {
         setSelectedPaymentMethod(_ => None)
         setSelectedPaymentMethodType(_ => None)
+        resetForm()
       }
     | Some(_) => setSelectedPaymentMethodType(_ => None)
     | None =>
       switch selectedPaymentMethod {
-      | Some(_) => setSelectedPaymentMethod(_ => None)
+      | Some(_) => {
+          setSelectedPaymentMethod(_ => None)
+          resetForm()
+          ()
+        }
       | None => ()
       }
     }
@@ -234,43 +239,6 @@ let make = (~integrateError, ~logger) => {
     </div>
   }
 
-  let updatePaymentMethodDataDict = (record, field, value): 'a => {
-    let updatedRecord = Dict.copy(record)
-    switch field {
-    // Card
-    | "nameOnCard" | "cardNumber" | "expiryDate" => updatedRecord->Dict.set(field, value)
-
-    // ACH
-    | "routingNumber"
-    | "accountNumber"
-    | "bankName"
-    | "city" =>
-      updatedRecord->Dict.set(field, value)
-    // Bacs
-    | "sortCode" => updatedRecord->Dict.set(field, value)
-    // SEPA
-    | "iban"
-    | "bic"
-    | "countryCode" =>
-      updatedRecord->Dict.set(field, value)
-
-    // Paypal
-    | "email" => updatedRecord->Dict.set(field, value)
-    | _ => ()
-    }
-
-    updatedRecord
-  }
-
-  let inputHandler = (event: ReactEvent.Form.t, pmt: paymentMethodType, field) => {
-    let updatedPmdDict = updatePaymentMethodDataDict(
-      paymentMethodData,
-      field,
-      ReactEvent.Form.target(event)["value"],
-    )
-    setPaymentMethodData(_ => updatedPmdDict)
-  }
-
   let handleSubmit = _ev => {
     let pmdBody = formCreatePaymentMethodRequestBody(
       selectedPaymentMethodType,
@@ -326,385 +294,96 @@ let make = (~integrateError, ~logger) => {
     }
   }
 
+  // PMD dict
+  let setPaymentMethodDataValue = (key: paymentMethodDataField, value) =>
+    setPaymentMethodData(_ => paymentMethodData->setValue(key->getPaymentMethodDataFieldKey, value))
+
+  let getPaymentMethodDataValue = (key: paymentMethodDataField) =>
+    paymentMethodData
+    ->getValue(key->getPaymentMethodDataFieldKey)
+    ->Option.getOr("")
+
+  // Field validity dict
+  let setFieldValidity = (key: paymentMethodDataField, value) => {
+    let fieldValidityCopy = fieldValidityDict->Dict.copy
+    fieldValidityCopy->Dict.set(key->getPaymentMethodDataFieldKey, value)
+    setFieldValidityDict(_ => fieldValidityCopy)
+  }
+
+  let getFieldValidity = (key: paymentMethodDataField) =>
+    fieldValidityDict->Dict.get(key->getPaymentMethodDataFieldKey)->Option.getOr(None)
+
+  let calculateAndSetValidity = (key: paymentMethodDataField) => {
+    let updatedValidity = paymentMethodData->calculateValidity(key)
+    key->setFieldValidity(updatedValidity)
+  }
+
+  let labelClasses = "text-[14px] text-jp-gray-800 mt-[10px]"
+  let inputClasses = "min-w-full border-2 border-jp-gray-200 mt-[5px] px-[10px] py-[8px] rounded-lg"
+
+  let renderInputTemplate = (field: paymentMethodDataField) =>
+    <InputField
+      id={field->getPaymentMethodDataFieldKey}
+      className=inputClasses
+      labelClassName=labelClasses
+      paymentType={PaymentMethodCollectElement}
+      inputRef
+      isFocus={true}
+      fieldName={field->getPaymentMethodDataFieldLabel}
+      placeholder={field->getPaymentMethodDataFieldPlaceholder}
+      maxLength={field->getPaymentMethodDataFieldMaxLength}
+      value={field->getPaymentMethodDataValue}
+      isValid={field->getFieldValidity}
+      onChange={event => field->setPaymentMethodDataValue(ReactEvent.Form.target(event)["value"])}
+      setIsValid={updatedValidityFn => field->setFieldValidity(updatedValidityFn())}
+      onBlur={_ev => field->calculateAndSetValidity}
+    />
+
   let renderInputs = (pmt: paymentMethodType) => {
-    let labelClasses = "text-[14px] text-jp-gray-800 mt-[10px]"
-    let inputClasses = "min-w-full border-2 border-jp-gray-200 mt-[5px] px-[10px] py-[8px] rounded-lg"
     <div>
       {switch pmt {
       | Card(_) =>
         <div className="collect-card">
           <div className="flex flex-row">
-            <div className="w-5/10">
-              <InputField
-                id="cardNumber"
-                fieldName="Card Number"
-                placeholder="1234 1234 1234 1234"
-                value={getValueFromDict(paymentMethodData, "cardNumber")}
-                paymentType={PaymentMethodCollectElement}
-                type_="tel"
-                inputRef={cardNumberRef}
-                isFocus={true}
-                isValid={fieldValidityDict->Dict.get("cardNumber")->Option.getOr(None)}
-                onChange={event => inputHandler(event, pmt, "cardNumber")}
-                labelClassName=labelClasses
-                className={inputClasses}
-                setIsValid={updatedValidityFn => {
-                  setFieldValidity(
-                    "cardNumber",
-                    updatedValidityFn(),
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )
-                }}
-                onBlur={_ev =>
-                  calculateAndSetValidity(
-                    paymentMethodData,
-                    "cardNumber",
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )}
-              />
-            </div>
-            <div className="w-3/10 ml-[30px]">
-              <InputField
-                id="expiryDate"
-                fieldName="Expiry Date"
-                placeholder="MM / YY"
-                maxLength=7
-                value={getValueFromDict(paymentMethodData, "expiryDate")}
-                paymentType={PaymentMethodCollectElement}
-                inputRef={expiryDateRef}
-                isFocus={true}
-                isValid={fieldValidityDict->Dict.get("expiryDate")->Option.getOr(None)}
-                onChange={event => inputHandler(event, pmt, "expiryDate")}
-                labelClassName=labelClasses
-                className={inputClasses}
-                setIsValid={updatedValidityFn => {
-                  setFieldValidity(
-                    "expiryDate",
-                    updatedValidityFn(),
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )
-                }}
-                onBlur={_ev =>
-                  calculateAndSetValidity(
-                    paymentMethodData,
-                    "expiryDate",
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )}
-              />
-            </div>
+            <div className="w-5/10"> {CardNumber->renderInputTemplate} </div>
+            <div className="w-3/10 ml-[30px]"> {CardExpDate->renderInputTemplate} </div>
           </div>
-          <InputField
-            id="nameOnCard"
-            fieldName="Cardholder Name"
-            placeholder="Your name"
-            value={getValueFromDict(paymentMethodData, "nameOnCard")}
-            paymentType={PaymentMethodCollectElement}
-            inputRef={nameOnCardRef}
-            isFocus={true}
-            isValid={fieldValidityDict->Dict.get("nameOnCard")->Option.getOr(None)}
-            onChange={event => inputHandler(event, pmt, "nameOnCard")}
-            labelClassName=labelClasses
-            className=inputClasses
-            setIsValid={updatedValidityFn => {
-              setFieldValidity(
-                "nameOnCard",
-                updatedValidityFn(),
-                fieldValidityDict,
-                setFieldValidityDict,
-              )
-            }}
-            onBlur={_ev =>
-              calculateAndSetValidity(
-                paymentMethodData,
-                "nameOnCard",
-                fieldValidityDict,
-                setFieldValidityDict,
-              )}
-          />
+          {CardHolderName->renderInputTemplate}
         </div>
       | BankTransfer(bankTransferType) =>
         <div className="collect-bank">
           {switch bankTransferType {
           | ACH =>
             <React.Fragment>
-              <InputField
-                id="routingNumber"
-                fieldName="Routing Number"
-                placeholder="110000000"
-                maxLength=9
-                value={getValueFromDict(paymentMethodData, "routingNumber")}
-                paymentType={PaymentMethodCollectElement}
-                inputRef={routingNumberRef}
-                isFocus={true}
-                isValid={fieldValidityDict->Dict.get("routingNumber")->Option.getOr(None)}
-                onChange={event => inputHandler(event, pmt, "routingNumber")}
-                labelClassName=labelClasses
-                className=inputClasses
-                setIsValid={updatedValidityFn => {
-                  setFieldValidity(
-                    "routingNumber",
-                    updatedValidityFn(),
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )
-                }}
-                onBlur={_ev =>
-                  calculateAndSetValidity(
-                    paymentMethodData,
-                    "routingNumber",
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )}
-              />
-              <InputField
-                id="accountNumber"
-                fieldName="Bank Account Number"
-                placeholder="000123456789"
-                maxLength=12
-                value={getValueFromDict(paymentMethodData, "accountNumber")}
-                paymentType={PaymentMethodCollectElement}
-                inputRef={accountNumberRef}
-                isFocus={true}
-                isValid={fieldValidityDict->Dict.get("accountNumber")->Option.getOr(None)}
-                onChange={event => inputHandler(event, pmt, "accountNumber")}
-                labelClassName=labelClasses
-                className=inputClasses
-                setIsValid={updatedValidityFn => {
-                  setFieldValidity(
-                    "accountNumber",
-                    updatedValidityFn(),
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )
-                }}
-                onBlur={_ev =>
-                  calculateAndSetValidity(
-                    paymentMethodData,
-                    "accountNumber",
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )}
-              />
+              {ACHRoutingNumber->renderInputTemplate}
+              {ACHAccountNumber->renderInputTemplate}
             </React.Fragment>
           | Bacs =>
             <React.Fragment>
-              <InputField
-                id="sortCode"
-                fieldName="Sort Code"
-                placeholder="11000"
-                maxLength=5
-                value={getValueFromDict(paymentMethodData, "sortCode")}
-                paymentType={PaymentMethodCollectElement}
-                inputRef={sortCodeRef}
-                isFocus={true}
-                isValid={fieldValidityDict->Dict.get("sortCode")->Option.getOr(None)}
-                onChange={event => inputHandler(event, pmt, "sortCode")}
-                labelClassName=labelClasses
-                className=inputClasses
-                setIsValid={updatedValidityFn => {
-                  setFieldValidity(
-                    "sortCode",
-                    updatedValidityFn(),
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )
-                }}
-                onBlur={_ev =>
-                  calculateAndSetValidity(
-                    paymentMethodData,
-                    "sortCode",
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )}
-              />
-              <InputField
-                id="accountNumber"
-                fieldName="Bank Account Number"
-                placeholder="28821822"
-                maxLength=8
-                value={getValueFromDict(paymentMethodData, "accountNumber")}
-                paymentType={PaymentMethodCollectElement}
-                inputRef={accountNumberRef}
-                isFocus={true}
-                isValid={fieldValidityDict->Dict.get("accountNumber")->Option.getOr(None)}
-                onChange={event => inputHandler(event, pmt, "accountNumber")}
-                labelClassName=labelClasses
-                className=inputClasses
-                setIsValid={updatedValidityFn => {
-                  setFieldValidity(
-                    "accountNumber",
-                    updatedValidityFn(),
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )
-                }}
-                onBlur={_ev =>
-                  calculateAndSetValidity(
-                    paymentMethodData,
-                    "accountNumber",
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )}
-              />
+              {BacsSortCode->renderInputTemplate}
+              {BacsAccountNumber->renderInputTemplate}
             </React.Fragment>
           | Sepa =>
             <React.Fragment>
-              <InputField
-                id="iban"
-                fieldName="International Bank Account Number (IBAN)"
-                placeholder="NL42TEST0123456789"
-                maxLength=18
-                value={getValueFromDict(paymentMethodData, "iban")}
-                paymentType={PaymentMethodCollectElement}
-                inputRef={sortCodeRef}
-                isFocus={true}
-                isValid={fieldValidityDict->Dict.get("iban")->Option.getOr(None)}
-                onChange={event => inputHandler(event, pmt, "iban")}
-                labelClassName=labelClasses
-                className=inputClasses
-                setIsValid={updatedValidityFn => {
-                  setFieldValidity(
-                    "iban",
-                    updatedValidityFn(),
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )
-                }}
-                onBlur={_ev =>
-                  calculateAndSetValidity(
-                    paymentMethodData,
-                    "iban",
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )}
-              />
-              <InputField
-                id="bic"
-                fieldName="Bank Identifier Code"
-                placeholder="ABNANL2A"
-                maxLength=8
-                value={getValueFromDict(paymentMethodData, "bic")}
-                paymentType={PaymentMethodCollectElement}
-                inputRef={accountNumberRef}
-                isFocus={true}
-                isValid={fieldValidityDict->Dict.get("bic")->Option.getOr(None)}
-                onChange={event => inputHandler(event, pmt, "bic")}
-                labelClassName=labelClasses
-                className=inputClasses
-                setIsValid={updatedValidityFn => {
-                  setFieldValidity(
-                    "bic",
-                    updatedValidityFn(),
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )
-                }}
-                onBlur={_ev =>
-                  calculateAndSetValidity(
-                    paymentMethodData,
-                    "bic",
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )}
-              />
+              {SepaIban->renderInputTemplate}
+              {SepaBic->renderInputTemplate}
             </React.Fragment>
           }}
         </div>
       | Wallet(walletType) =>
         <div className="collect-wallet">
           {switch walletType {
-          | Paypal | Venmo =>
+          | Paypal =>
             <React.Fragment>
-              <InputField
-                id="email"
-                fieldName="Registered email ID"
-                placeholder="paypal@gmail.com"
-                value={getValueFromDict(paymentMethodData, "email")}
-                paymentType={PaymentMethodCollectElement}
-                inputRef={sortCodeRef}
-                isFocus={true}
-                isValid={fieldValidityDict->Dict.get("email")->Option.getOr(None)}
-                onChange={event => inputHandler(event, pmt, "email")}
-                labelClassName=labelClasses
-                className=inputClasses
-                setIsValid={updatedValidityFn => {
-                  setFieldValidity(
-                    "email",
-                    updatedValidityFn(),
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )
-                }}
-                onBlur={_ev =>
-                  calculateAndSetValidity(
-                    paymentMethodData,
-                    "email",
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )}
-              />
-              <InputField
-                id="mobileNumber"
-                fieldName="Registered Mobile Number (Optional)"
-                placeholder="(555) 555-1234"
-                value={getValueFromDict(paymentMethodData, "mobileNumber")}
-                paymentType={PaymentMethodCollectElement}
-                inputRef={accountNumberRef}
-                isFocus={true}
-                isValid={fieldValidityDict->Dict.get("mobileNumber")->Option.getOr(None)}
-                onChange={event => inputHandler(event, pmt, "mobileNumber")}
-                labelClassName=labelClasses
-                className=inputClasses
-                setIsValid={updatedValidityFn => {
-                  setFieldValidity(
-                    "mobileNumber",
-                    updatedValidityFn(),
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )
-                }}
-                onBlur={_ev =>
-                  calculateAndSetValidity(
-                    paymentMethodData,
-                    "mobileNumber",
-                    fieldValidityDict,
-                    setFieldValidityDict,
-                  )}
-              />
+              {PaypalMail->renderInputTemplate}
+              {PaypalMobNumber->renderInputTemplate}
             </React.Fragment>
-          | Pix =>
-            <InputField
-              id="pixId"
-              fieldName="Pix ID"
-              placeholder="paypal@gmail.com"
-              value={getValueFromDict(paymentMethodData, "pixId")}
-              paymentType={PaymentMethodCollectElement}
-              inputRef={sortCodeRef}
-              isFocus={true}
-              isValid={fieldValidityDict->Dict.get("pixId")->Option.getOr(None)}
-              onChange={event => inputHandler(event, pmt, "pixId")}
-              labelClassName=labelClasses
-              className=inputClasses
-              setIsValid={updatedValidityFn => {
-                setFieldValidity(
-                  "pixId",
-                  updatedValidityFn(),
-                  fieldValidityDict,
-                  setFieldValidityDict,
-                )
-              }}
-              onBlur={_ev =>
-                calculateAndSetValidity(
-                  paymentMethodData,
-                  "pixId",
-                  fieldValidityDict,
-                  setFieldValidityDict,
-                )}
-            />
+          | Venmo =>
+            <React.Fragment>
+              {VenmoMail->renderInputTemplate}
+              {VenmoMobNumber->renderInputTemplate}
+            </React.Fragment>
+          | Pix => PixId->renderInputTemplate
           }}
         </div>
       }}
