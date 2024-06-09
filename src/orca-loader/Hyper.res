@@ -269,7 +269,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         })
       }
 
-      let confirmPaymentWrapper = (payload, isOneClick, result) => {
+      let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
         let confirmTimestamp = Date.now()
         let confirmParams =
           payload
@@ -277,11 +277,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(x => x->Dict.get("confirmParams"))
           ->Option.getOr(Dict.make()->JSON.Encode.object)
 
-        let redirect =
-          payload
-          ->getDictFromJson
-          ->getDictfromDict("confirmParams")
-          ->getString("redirect", "if_required")
+        let redirect = payload->getDictFromJson->getString("redirect", "if_required")
 
         let url =
           confirmParams
@@ -328,7 +324,11 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                   )
                 }
                 postSubmitMessage(dict)
-                if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
+
+                if (
+                  isSdkButton ||
+                  (val->JSON.Decode.bool->Option.getOr(false) && redirect === "always")
+                ) {
                   Window.replace(returnUrl)
                 } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
                   resolve1(json)
@@ -370,11 +370,15 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         confirmPaymentWrapper(payload, true, result)
       }
 
+      let confirmPaymentViaSDKButton = payload => {
+        confirmPaymentWrapper(payload, false, true, ~isSdkButton=true)
+      }
+
       let handleSdkConfirm = (event: Types.event) => {
         let json = event.data->anyTypeToJson
         let dict = json->getDictFromJson
         switch dict->Dict.get("handleSdkConfirm") {
-        | Some(payload) => confirmPayment(payload)->ignore
+        | Some(payload) => confirmPaymentViaSDKButton(payload)->ignore
         | None => ()
         }
       }

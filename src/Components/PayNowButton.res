@@ -25,9 +25,11 @@ let make = () => {
     let json = event.data->Identity.anyTypeToJson->getStringFromJson("")->safeParse
     let dict = json->getDictFromJson
     switch dict->Dict.get("submitSuccessful") {
-    | Some(_) =>
-      setIsPayNowButtonDisable(_ => false)
-      setShowLoader(_ => false)
+    | Some(submitSuccessfulVal) =>
+      if !(submitSuccessfulVal->JSON.Decode.bool->Option.getOr(false)) {
+        setIsPayNowButtonDisable(_ => false)
+        setShowLoader(_ => false)
+      }
     | None => ()
     }
   }

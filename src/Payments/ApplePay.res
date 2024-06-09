@@ -2,6 +2,8 @@ open Utils
 open Promise
 @react.component
 let make = (~sessionObj: option<JSON.t>) => {
+  let url = RescriptReactRouter.useUrl()
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.keys,
@@ -81,7 +83,7 @@ let make = (~sessionObj: option<JSON.t>) => {
 
   let buttonColor = switch options.wallets.style.theme {
   | Outline
-  | Light => "white"
+  | Light => "white-outline"
   | Dark => "black"
   }
 
@@ -242,7 +244,14 @@ let make = (~sessionObj: option<JSON.t>) => {
             let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
             processPayment(bodyDict, ~isThirdPartyFlow=true, ())
           } else {
-            let message = [("applePayButtonClicked", true->JSON.Encode.bool)]
+            let paymentRequest = ApplePayTypes.getPaymentRequestFromSession(
+              ~sessionObj,
+              ~componentName,
+            )
+            let message = [
+              ("applePayButtonClicked", true->JSON.Encode.bool),
+              ("applePayPaymentRequest", paymentRequest),
+            ]
             handlePostMessage(message)
           }
         } else {
@@ -337,9 +346,9 @@ let make = (~sessionObj: option<JSON.t>) => {
     None
   }, (isApplePayReady, isInvokeSDKFlow, paymentExperience))
 
-  <div>
-    <style> {React.string(css)} </style>
-    <RenderIf condition={showApplePay}>
+  <RenderIf condition={showApplePay}>
+    <div>
+      <style> {React.string(css)} </style>
       {if showApplePayLoader {
         <div className="apple-pay-loader-div">
           <div className="apple-pay-loader" />
@@ -353,8 +362,8 @@ let make = (~sessionObj: option<JSON.t>) => {
           <span className="logo" />
         </button>
       }}
-    </RenderIf>
-  </div>
+    </div>
+  </RenderIf>
 }
 
 let default = make

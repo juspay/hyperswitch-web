@@ -5,7 +5,10 @@ let make = () => {
 
   let (stateMetadata, setStateMetadata) = React.useState(_ => Dict.make()->JSON.Encode.object)
 
-  let handleLoaded = _ev => {
+  let divRef = React.useRef(Nullable.null)
+  let observer = React.useRef(None)
+
+  let handleIframeContentLoaded = () => {
     stateMetadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
     let metadataDict = stateMetadata->JSON.Decode.object->Option.getOr(Dict.make())
     let iframeId = metadataDict->getString("iframeId", "")
@@ -22,6 +25,21 @@ let make = () => {
       ("iframeId", iframeId->JSON.Encode.string),
       ("metadata", stateMetadata),
     ])
+  }
+
+  observer.current = Some(
+    ResizeObserver.newResizerObserver(_ => {
+      handleIframeContentLoaded()
+      switch observer.current {
+      | Some(currentObserver: ResizeObserver.observer) => currentObserver.disconnect()
+      | _ => ()
+      }
+      ()
+    }),
+  )
+  switch (divRef.current->Nullable.toOption, observer.current) {
+  | (Some(ref), Some(observer)) => observer.observe(ref)
+  | _ => ()
   }
 
   React.useEffect0(() => {
@@ -111,7 +129,7 @@ let make = () => {
       id="threeDsInvisibleIframe"
       name="threeDsInvisibleIframe"
       className="h-96 invisible"
-      onLoad=handleLoaded
+      ref={divRef->ReactDOM.Ref.domRef}
     />
   </>
 }

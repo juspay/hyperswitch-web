@@ -17,6 +17,7 @@ type cardIssuer =
 type cardProps = (
   option<bool>,
   (option<bool> => option<bool>) => unit,
+  option<bool>,
   string,
   JsxEvent.Form.t => unit,
   JsxEvent.Focus.t => unit,
@@ -361,7 +362,8 @@ let getCardBrandIcon = (cardType, paymentType) => {
     | GooglePayElement
     | PayPalElement
     | ApplePayElement
-    | PaymentRequestButtonsElement
+    | KlarnaElement
+    | ExpressCheckoutElement
     | NONE =>
       <Icon size=brandIconSize name="default-card" />
     }

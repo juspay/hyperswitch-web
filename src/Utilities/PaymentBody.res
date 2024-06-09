@@ -162,11 +162,11 @@ let paymentTypeBody = paymentType =>
 
 let confirmPayloadForSDKButton = (sdkHandleConfirmPayment: PaymentType.sdkHandleConfirmPayment) =>
   [
-    ("redirect", "always"->JSON.Encode.string),
     (
       "confirmParams",
       [
         ("return_url", sdkHandleConfirmPayment.confirmParams.return_url->JSON.Encode.string),
+        ("redirect", "always"->JSON.Encode.string), // *As in the case of SDK Button we are not returning the promise back so it will always redirect
       ]->Utils.getJsonFromArrayOfJson,
     ),
   ]->Utils.getJsonFromArrayOfJson
@@ -559,7 +559,7 @@ let cryptoBody = (~currency) => [
   ),
 ]
 
-let afterpayRedirectionBody = (~fullName, ~email) => [
+let afterpayRedirectionBody = () => [
   ("payment_method", "pay_later"->JSON.Encode.string),
   ("payment_method_type", "afterpay_clearpay"->JSON.Encode.string),
   ("payment_experience", "redirect_to_url"->JSON.Encode.string),
@@ -569,13 +569,7 @@ let afterpayRedirectionBody = (~fullName, ~email) => [
       (
         "pay_later",
         [
-          (
-            "afterpay_clearpay_redirect",
-            [
-              ("billing_email", email->JSON.Encode.string),
-              ("billing_name", fullName->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
+          ("afterpay_clearpay_redirect", []->Utils.getJsonFromArrayOfJson),
         ]->Utils.getJsonFromArrayOfJson,
       ),
     ]->Utils.getJsonFromArrayOfJson,
@@ -1008,6 +1002,7 @@ let appendRedirectPaymentMethods = [
   "affirm",
   "we_chat_pay",
   "ali_pay",
+  "ali_pay_hk",
 ]
 
 let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) =>
@@ -1063,13 +1058,14 @@ let getPaymentBody = (
   ~currency,
 ) =>
   switch paymentMethodType {
-  | "afterpay_clearpay" => afterpayRedirectionBody(~fullName, ~email)
+  | "afterpay_clearpay" => afterpayRedirectionBody()
   | "crypto_currency" => cryptoBody(~currency)
   | "sofort" => sofortBody(~country, ~name=fullName, ~email)
   | "ideal" => iDealBody(~name=fullName, ~bankName=bank)
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
   | "blik" => blikBody(~blikCode)
-  | "ali_pay" =>
+  | "ali_pay"
+  | "ali_pay_hk" =>
     switch paymentExperience {
     | QrFlow => dynamicPaymentBody(paymentMethod, paymentMethodType, ~isQrPaymentMethod=true)
     | RedirectToURL

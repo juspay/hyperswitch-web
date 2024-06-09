@@ -116,7 +116,7 @@ let icon = (~size=22, ~width=size, name) => {
 let paymentMethodsFields = [
   {
     paymentMethodName: "afterpay_clearpay",
-    fields: [Email, FullName, InfoElement],
+    fields: [InfoElement],
     icon: Some(icon("afterpay", ~size=19)),
     displayName: "After Pay",
     miniIcon: None,
@@ -154,6 +154,13 @@ let paymentMethodsFields = [
     fields: [InfoElement],
     icon: Some(icon("alipay", ~size=19)),
     displayName: "Ali Pay",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "ali_pay_hk",
+    fields: [InfoElement],
+    icon: Some(icon("alipayhk", ~size=19)),
+    displayName: "Ali Pay HK",
     miniIcon: None,
   },
   {
@@ -614,6 +621,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "pix_transfer",
   "giropay",
   "local_bank_transfer_transfer",
+  "afterpay_clearpay",
 ]
 
 let getIsBillingField = requiredFieldType => {

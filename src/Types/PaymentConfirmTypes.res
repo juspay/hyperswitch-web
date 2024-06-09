@@ -42,6 +42,7 @@ type nextAction = {
   three_ds_data: option<JSON.t>,
   voucher_details: option<voucherDetails>,
   display_to_timestamp: option<float>,
+  next_action_data: option<JSON.t>,
 }
 type intent = {
   nextAction: nextAction,
@@ -51,6 +52,7 @@ type intent = {
   error_message: string,
   payment_method_type: string,
   manualRetryAllowed: bool,
+  connectorTransactionId: string,
 }
 open Utils
 
@@ -67,6 +69,7 @@ let defaultNextAction = {
   three_ds_data: None,
   voucher_details: None,
   display_to_timestamp: None,
+  next_action_data: None,
 }
 let defaultIntent = {
   nextAction: defaultNextAction,
@@ -76,6 +79,7 @@ let defaultIntent = {
   error_message: "",
   payment_method_type: "",
   manualRetryAllowed: false,
+  connectorTransactionId: "",
 }
 
 let getAchCreditTransfer = (dict, str) => {
@@ -159,6 +163,7 @@ let getNextAction = (dict, str) => {
         ->Option.flatMap(JSON.Decode.object)
         ->Option.map(json => json->getVoucherDetails)
       },
+      next_action_data: Some(json->getDictfromDict("next_action_data")->JSON.Encode.object),
     }
   })
   ->Option.getOr(defaultNextAction)
@@ -172,5 +177,6 @@ let itemToObjMapper = dict => {
     error_message: getString(dict, "error_message", ""),
     payment_method_type: getString(dict, "payment_method_type", ""),
     manualRetryAllowed: getBool(dict, "manual_retry_allowed", false),
+    connectorTransactionId: getString(dict, "connector_transaction_id", ""),
   }
 }

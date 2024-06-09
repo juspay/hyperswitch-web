@@ -460,12 +460,14 @@ let sortBasedOnPriority = (sortArr: array<string>, priorityArr: array<string>) =
 
 let isAllValid = (
   card: option<bool>,
+  cardSupported: option<bool>,
   cvc: option<bool>,
   expiry: option<bool>,
   zip: bool,
   paymentMode: string,
 ) => {
   card->getBoolValue &&
+  cardSupported->getBoolValue &&
   cvc->getBoolValue &&
   expiry->getBoolValue &&
   (paymentMode == "payment" || zip)
@@ -1224,11 +1226,12 @@ let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   | GooglePayElement => wallets->Array.filter(item => item === "google_pay")
   | PayPalElement => wallets->Array.filter(item => item === "paypal")
   | ApplePayElement => wallets->Array.filter(item => item === "apple_pay")
+  | KlarnaElement => wallets->Array.filter(item => item === "klarna")
   | _ => wallets
   }
 }
 
-let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "paymentRequestButtons"]
+let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "klarna", "expressCheckout"]
 
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
 
@@ -1247,7 +1250,8 @@ let walletElementPaymentType: array<CardThemeType.mode> = [
   GooglePayElement,
   PayPalElement,
   ApplePayElement,
-  PaymentRequestButtonsElement,
+  KlarnaElement,
+  ExpressCheckoutElement,
 ]
 
 let getIsWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
@@ -1279,3 +1283,5 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
   | None => stateCode
   }
 }
+
+let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")
