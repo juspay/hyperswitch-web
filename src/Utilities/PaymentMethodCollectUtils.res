@@ -34,6 +34,10 @@ let getPaymentMethodType = (paymentMethodType: paymentMethodType): string => {
 }
 
 // Defaults
+let defaultPaymentMethodCollectFlow: paymentMethodCollectFlow = PayoutLinkInitiate
+let defaultAmount = 100
+let defaultCurrency = "EUR"
+
 let defaultEnabledPaymentMethods: array<paymentMethodType> = [
   Card(Credit),
   Card(Debit),
@@ -51,6 +55,9 @@ let defaultPaymentMethodCollectOptions = {
   collectorName: "HyperSwitch",
   logo: "",
   returnUrl: None,
+  amount: defaultAmount,
+  currency: defaultCurrency,
+  flow: defaultPaymentMethodCollectFlow,
 }
 
 let defaultAvailablePaymentMethods: array<paymentMethod> = []
@@ -59,8 +66,8 @@ let defaultAvailablePaymentMethodTypes = {
   bankTransfer: [],
   wallet: [],
 }
-let defaultSelectedPaymentMethod: paymentMethod = Card
-let defaultSelectedPaymentMethodType: option<paymentMethodType> = Some(Card(Debit))
+let defaultSelectedPaymentMethod: option<paymentMethod> = None
+let defaultSelectedPaymentMethodType: option<paymentMethodType> = None
 
 let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(
@@ -72,6 +79,9 @@ let itemToObjMapper = (dict, logger) => {
       "collectorName",
       "logo",
       "returnUrl",
+      "amount",
+      "currency",
+      "flow",
     ],
     dict,
     "options",
@@ -88,6 +98,9 @@ let itemToObjMapper = (dict, logger) => {
     collectorName: getString(dict, "collectorName", ""),
     logo: getString(dict, "logo", ""),
     returnUrl: dict->Dict.get("returnUrl")->Option.flatMap(JSON.Decode.string),
+    amount: dict->decodeAmount(defaultAmount),
+    currency: getString(dict, "currency", defaultCurrency),
+    flow: dict->decodeFlow(defaultPaymentMethodCollectFlow),
   }
 }
 

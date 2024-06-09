@@ -22,6 +22,10 @@ let make = (~integrateError, ~logger) => {
   )
   let (collectError, setCollectError) = React.useState(_ => None)
   let (paymentMethodData, setPaymentMethodData) = React.useState(_ => Dict.make())
+  let (amount, setAmount) = React.useState(_ => options.amount)
+  let (currency, setCurrency) = React.useState(_ => options.currency)
+  let (flow, setFlow) = React.useState(_ => options.flow)
+  let (linkId, setLinkId) = React.useState(_ => options.linkId)
   let (merchantName, setMerchantName) = React.useState(_ => options.collectorName)
   let (merchantLogo, setMerchantLogo) = React.useState(_ => options.logo)
   let (merchantTheme, setMerchantTheme) = React.useState(_ => options.theme)
@@ -79,6 +83,30 @@ let make = (~integrateError, ~logger) => {
     None
   }, [options.enabledPaymentMethods])
 
+  // Update amount
+  React.useEffect(() => {
+    setAmount(_ => options.amount)
+    None
+  }, [options.amount])
+
+  // Update currency
+  React.useEffect(() => {
+    setCurrency(_ => options.currency)
+    None
+  }, [options.currency])
+
+  // Update flow
+  React.useEffect(() => {
+    setFlow(_ => options.flow)
+    None
+  }, [options.flow])
+
+  // Update linkId
+  React.useEffect(() => {
+    setLinkId(_ => options.linkId)
+    None
+  }, [options.linkId])
+
   // Update merchant's name
   React.useEffect(() => {
     setMerchantName(_ => options.collectorName)
@@ -100,12 +128,39 @@ let make = (~integrateError, ~logger) => {
   // Reset payment method type
   React.useEffect(() => {
     switch selectedPaymentMethod {
-    | Card => setSelectedPaymentMethodType(_ => Some(Card(Debit)))
+    | Some(Card) => setSelectedPaymentMethodType(_ => Some(Card(Debit)))
     | _ => setSelectedPaymentMethodType(_ => None)
     }
 
     None
   }, [selectedPaymentMethod])
+
+  let handleBackClick = () => {
+    switch selectedPaymentMethodType {
+    | Some(Card(_)) => {
+        setSelectedPaymentMethod(_ => None)
+        setSelectedPaymentMethodType(_ => None)
+      }
+    | Some(_) => setSelectedPaymentMethodType(_ => None)
+    | None =>
+      switch selectedPaymentMethod {
+      | Some(_) => setSelectedPaymentMethod(_ => None)
+      | None => ()
+      }
+    }
+  }
+
+  let renderBackButton = () => {
+    switch (selectedPaymentMethod, selectedPaymentMethodType) {
+    | (Some(_), _) =>
+      <button
+        className="bg-jp-gray-600 rounded-full h-7 w-7 self-center"
+        onClick={_ => handleBackClick()}>
+        {React.string("←")}
+      </button>
+    | (None, _) => React.null
+    }
+  }
 
   let renderContentHeader = () =>
     switch selectedPaymentMethodType {
@@ -119,18 +174,40 @@ let make = (~integrateError, ~logger) => {
       }
     | None =>
       switch selectedPaymentMethod {
-      | Card => React.string("Enter card details")
-      | BankTransfer => React.string("Select a bank method")
-      | Wallet => React.string("Select a wallet")
+      | Some(Card) => React.string("Enter card details")
+      | Some(BankTransfer) => React.string("Select a bank method")
+      | Some(Wallet) => React.string("Select a wallet")
+      | None => React.string("Select an account for payouts")
       }
     }
 
+  let renderContentSubHeader = () =>
+    switch selectedPaymentMethod {
+    | Some(_) => React.null
+    | None => React.string("Funds will be credited to this account")
+    }
+
+  let renderPMOptions = () => {
+    <div className="flex flex-col mt-[10px]">
+      {availablePaymentMethods
+      ->Array.mapWithIndex((pm, i) => {
+        <button
+          key={Int.toString(i)}
+          onClick={_ => setSelectedPaymentMethod(_ => Some(pm))}
+          className="text-start border border-solid border-jp-gray-400 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50">
+          {React.string(pm->String.make)}
+        </button>
+      })
+      ->React.array}
+    </div>
+  }
+
   let renderPMTOptions = () => {
-    let commonClasses = "text-start py-[5px] w-[100px] ml-[10px] hover:bg-jp-gray-200 pl-[10px] rounded-[2px]"
+    let commonClasses = "text-start border border-solid border-jp-gray-400 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50"
     <div className="flex flex-col">
       {switch selectedPaymentMethod {
-      | Card => React.null
-      | BankTransfer =>
+      | Some(Card) => React.null
+      | Some(BankTransfer) =>
         availablePaymentMethodTypes.bankTransfer
         ->Array.mapWithIndex((pmt, i) =>
           <button
@@ -141,7 +218,7 @@ let make = (~integrateError, ~logger) => {
           </button>
         )
         ->React.array
-      | Wallet =>
+      | Some(Wallet) =>
         availablePaymentMethodTypes.wallet
         ->Array.mapWithIndex((pmt, i) =>
           <button
@@ -152,6 +229,7 @@ let make = (~integrateError, ~logger) => {
           </button>
         )
         ->React.array
+      | None => renderPMOptions()
       }}
     </div>
   }
@@ -202,14 +280,17 @@ let make = (~integrateError, ~logger) => {
 
     switch pmdBody {
     | Some(pmd) => {
-        let paymentMethod = selectedPaymentMethod->getPaymentMethod
         let pmdBody =
           pmd->Array.map(((k, v)) => (k, v->JSON.Encode.string))->Dict.fromArray->Js.Json.object_
-        let body: array<(string, Js.Json.t)> = [
-          ("payment_method", paymentMethod->Js.Json.string),
-          (paymentMethod, pmdBody),
-          ("customer_id", options.customerId->Js.Json.string),
-        ]
+        let body: array<(string, Js.Json.t)> = [("customer_id", options.customerId->Js.Json.string)]
+        switch selectedPaymentMethod {
+        | Some(selectedPaymentMethod) => {
+            let paymentMethod = selectedPaymentMethod->getPaymentMethod
+            body->Array.push(("payment_method", paymentMethod->Js.Json.string))
+            body->Array.push((paymentMethod, pmdBody))
+          }
+        | None => ()
+        }
         switch selectedPaymentMethodType {
         | Some(selectedPaymentMethodType) =>
           body->Array.push((
@@ -246,12 +327,76 @@ let make = (~integrateError, ~logger) => {
   }
 
   let renderInputs = (pmt: paymentMethodType) => {
-    let labelClasses = "text-[16px] font-semibold mt-[10px]"
-    let inputClasses = "border-2 border-jp-gray-200 mt-[10px] px-[10px] py-[8px]"
+    let labelClasses = "text-[14px] text-jp-gray-800 mt-[10px]"
+    let inputClasses = "min-w-full border-2 border-jp-gray-200 mt-[5px] px-[10px] py-[8px] rounded-lg"
     <div>
       {switch pmt {
       | Card(_) =>
         <div className="collect-card">
+          <div className="flex flex-row">
+            <div className="w-5/10">
+              <InputField
+                id="cardNumber"
+                fieldName="Card Number"
+                placeholder="1234 1234 1234 1234"
+                value={getValueFromDict(paymentMethodData, "cardNumber")}
+                paymentType={PaymentMethodCollectElement}
+                type_="tel"
+                inputRef={cardNumberRef}
+                isFocus={true}
+                isValid={fieldValidityDict->Dict.get("cardNumber")->Option.getOr(None)}
+                onChange={event => inputHandler(event, pmt, "cardNumber")}
+                labelClassName=labelClasses
+                className={inputClasses}
+                setIsValid={updatedValidityFn => {
+                  setFieldValidity(
+                    "cardNumber",
+                    updatedValidityFn(),
+                    fieldValidityDict,
+                    setFieldValidityDict,
+                  )
+                }}
+                onBlur={_ev =>
+                  calculateAndSetValidity(
+                    paymentMethodData,
+                    "cardNumber",
+                    fieldValidityDict,
+                    setFieldValidityDict,
+                  )}
+              />
+            </div>
+            <div className="w-3/10 ml-[30px]">
+              <InputField
+                id="expiryDate"
+                fieldName="Expiry Date"
+                placeholder="MM / YY"
+                maxLength=7
+                value={getValueFromDict(paymentMethodData, "expiryDate")}
+                paymentType={PaymentMethodCollectElement}
+                inputRef={expiryDateRef}
+                isFocus={true}
+                isValid={fieldValidityDict->Dict.get("expiryDate")->Option.getOr(None)}
+                onChange={event => inputHandler(event, pmt, "expiryDate")}
+                labelClassName=labelClasses
+                className={inputClasses}
+                setIsValid={updatedValidityFn => {
+                  setFieldValidity(
+                    "expiryDate",
+                    updatedValidityFn(),
+                    fieldValidityDict,
+                    setFieldValidityDict,
+                  )
+                }}
+                onBlur={_ev =>
+                  calculateAndSetValidity(
+                    paymentMethodData,
+                    "expiryDate",
+                    fieldValidityDict,
+                    setFieldValidityDict,
+                  )}
+              />
+            </div>
+          </div>
           <InputField
             id="nameOnCard"
             fieldName="Cardholder Name"
@@ -276,64 +421,6 @@ let make = (~integrateError, ~logger) => {
               calculateAndSetValidity(
                 paymentMethodData,
                 "nameOnCard",
-                fieldValidityDict,
-                setFieldValidityDict,
-              )}
-          />
-          <InputField
-            id="cardNumber"
-            fieldName="Card Number"
-            placeholder="1234 1234 1234 1234"
-            value={getValueFromDict(paymentMethodData, "cardNumber")}
-            paymentType={PaymentMethodCollectElement}
-            type_="tel"
-            inputRef={cardNumberRef}
-            isFocus={true}
-            isValid={fieldValidityDict->Dict.get("cardNumber")->Option.getOr(None)}
-            onChange={event => inputHandler(event, pmt, "cardNumber")}
-            labelClassName=labelClasses
-            className=inputClasses
-            setIsValid={updatedValidityFn => {
-              setFieldValidity(
-                "cardNumber",
-                updatedValidityFn(),
-                fieldValidityDict,
-                setFieldValidityDict,
-              )
-            }}
-            onBlur={_ev =>
-              calculateAndSetValidity(
-                paymentMethodData,
-                "cardNumber",
-                fieldValidityDict,
-                setFieldValidityDict,
-              )}
-          />
-          <InputField
-            id="expiryDate"
-            fieldName="Expiry Date"
-            placeholder="MM / YY"
-            maxLength=7
-            value={getValueFromDict(paymentMethodData, "expiryDate")}
-            paymentType={PaymentMethodCollectElement}
-            inputRef={expiryDateRef}
-            isFocus={true}
-            isValid={fieldValidityDict->Dict.get("expiryDate")->Option.getOr(None)}
-            onChange={event => inputHandler(event, pmt, "expiryDate")}
-            labelClassName=labelClasses
-            className=inputClasses
-            setIsValid={updatedValidityFn => {
-              setFieldValidity(
-                "expiryDate",
-                updatedValidityFn(),
-                fieldValidityDict,
-                setFieldValidityDict,
-              )
-            }}
-            onBlur={_ev =>
-              calculateAndSetValidity(
-                paymentMethodData,
-                "expiryDate",
                 fieldValidityDict,
                 setFieldValidityDict,
               )}
@@ -622,61 +709,110 @@ let make = (~integrateError, ~logger) => {
         </div>
       }}
       <button
-        className="mt-[30px] text-[18px] rounded-[2px] font-bold bg-blue-800 hover:bg-blue-900 px-[10px] py-[5px] text-white"
+        className="min-w-full mt-[40px] text-[18px] font-semibold px-[10px] py-[5px] text-white rounded"
+        style={backgroundColor: merchantTheme}
         onClick={handleSubmit}>
-        {React.string("SUBMIT")}
+        {React.string("SAVE")}
       </button>
     </div>
   }
-
-  React.useEffect(() => {
-    Utils.handlePostMessage([("fullscreen", true->JSON.Encode.bool)])
-    None
-  }, [options])
 
   if integrateError {
     <ErrorOccured />
   } else {
     <div className="flex h-screen">
-      // Merchant's info
-      <div className="flex flex-col w-3/10 p-[50px]" style={backgroundColor: merchantTheme}>
-        <div className="flex flex-row">
-          <img className="h-12 w-auto" src={merchantLogo} alt="O" />
-          <div className="ml-[15px] text-white self-center text-[25px] font-bold">
-            {React.string(merchantName)}
+      {switch flow {
+      | PayoutLinkInitiate =>
+        <React.Fragment>
+          // Merchant's info
+          <div className="flex flex-col w-4/10 p-[50px]" style={backgroundColor: merchantTheme}>
+            <div
+              className="flex flex-col self-end min-w-fit rounded-md shadow-lg min-w-96"
+              style={backgroundColor: "#FEFEFE"}>
+              <div className="mx-[20px] mt-[20px] flex flex-row justify-between">
+                <div className="font-bold text-[35px]">
+                  {React.string(`${currency} ${amount->Int.toString}`)}
+                </div>
+                <img className="h-12 w-auto" src={merchantLogo} alt="O" />
+              </div>
+              <div className="mx-[20px]">
+                <div className="self-center text-[20px] font-semibold">
+                  {React.string("Payout from ")}
+                  {React.string(merchantName)}
+                </div>
+                <div className="flex flex-row mt-[5px]">
+                  <div className="font-semibold text-[12px]"> {React.string("Ref Id")} </div>
+                  <div className="ml-[5px] text-[12px] text-gray-800"> {React.string(linkId)} </div>
+                </div>
+              </div>
+              <div className="mt-[10px] px-[20px] py-[5px] bg-gray-200 text-[13px] rounded-b-lg">
+                {React.string(`Link expires on: `)}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      // Collect widget
-      <div className="flex flex-row w-7/10 p-[50px] ml-[30px]">
-        <div
-          className="flex flex-col rounded-[2px] h-min-content border-2 border-jp-gray-200 mt-[60px]">
-          {availablePaymentMethods
-          ->Array.mapWithIndex((pm, i) => {
-            let border = availablePaymentMethods->Array.length - 1 === i ? "" : "border-b-2"
-            let paymentMethod = pm->String.make
-            let background =
-              selectedPaymentMethod->String.make === paymentMethod ? "bg-blue-200" : ""
-            let classes = `p-[10px] text-start ${border} ${background} hover:bg-blue-200`
-            <button
-              key={Int.toString(i)}
-              onClick={_e => setSelectedPaymentMethod(_ => pm)}
-              className={classes}>
-              {React.string(paymentMethod)}
-            </button>
-          })
-          ->React.array}
-        </div>
-        <div className="ml-[30px] min-h-[250px]">
-          <div className="text-[40px] font-bold"> {renderContentHeader()} </div>
-          <div>
-            {switch selectedPaymentMethodType {
-            | Some(pmt) => renderInputs(pmt)
-            | None => renderPMTOptions()
-            }}
+          // Collect widget
+          <div className="flex flex-row w-6/10 p-[50px] shadow-lg">
+            <div className="shadow-lg rounded p-[40px] h-min min-w-96">
+              <div className="flex flex-row justify-start">
+                <div className="flex justify-center items-center"> {renderBackButton()} </div>
+                <div className="ml-[20px] text-[30px] font-semibold"> {renderContentHeader()} </div>
+              </div>
+              <div className="text-[16px] text-center text-gray-500">
+                {renderContentSubHeader()}
+              </div>
+              <div className="mt-[10px]">
+                {switch selectedPaymentMethodType {
+                | Some(pmt) => renderInputs(pmt)
+                | None => renderPMTOptions()
+                }}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </React.Fragment>
+
+      | PayoutMethodCollect =>
+        <React.Fragment>
+          // Merchant's info
+          <div className="flex flex-col w-3/10 p-[50px]" style={backgroundColor: merchantTheme}>
+            <div className="flex flex-row">
+              <img className="h-12 w-auto" src={merchantLogo} alt="O" />
+              <div className="ml-[15px] text-white self-center text-[25px] font-bold">
+                {React.string(merchantName)}
+              </div>
+            </div>
+          </div>
+          // Collect widget
+          <div className="flex flex-row w-7/10 p-[50px] ml-[30px]">
+            <div
+              className="flex flex-col rounded-[2px] h-min-content border-2 border-jp-gray-200 mt-[60px]">
+              {availablePaymentMethods
+              ->Array.mapWithIndex((pm, i) => {
+                let border = availablePaymentMethods->Array.length - 1 === i ? "" : "border-b-2"
+                let paymentMethod = pm->String.make
+                let background =
+                  selectedPaymentMethod->String.make === paymentMethod ? "bg-blue-200" : ""
+                let classes = `p-[10px] text-start ${border} ${background} hover:bg-blue-200`
+                <button
+                  key={Int.toString(i)}
+                  onClick={_e => setSelectedPaymentMethod(_ => Some(pm))}
+                  className={classes}>
+                  {React.string(paymentMethod)}
+                </button>
+              })
+              ->React.array}
+            </div>
+            <div className="ml-[30px] min-h-[250px]">
+              <div className="text-[40px] font-bold"> {renderContentHeader()} </div>
+              <div>
+                {switch selectedPaymentMethodType {
+                | Some(pmt) => renderInputs(pmt)
+                | None => renderPMTOptions()
+                }}
+              </div>
+            </div>
+          </div>
+        </React.Fragment>
+      }}
     </div>
   }
 }

@@ -55,6 +55,8 @@ type paymentMethodData =
   | BankTransfer(bankTransferDetails)
   | Wallet(walletDetails)
 
+type paymentMethodCollectFlow = PayoutLinkInitiate | PayoutMethodCollect
+
 type paymentMethodCollectOptions = {
   enabledPaymentMethods: array<paymentMethodType>,
   linkId: string,
@@ -63,9 +65,33 @@ type paymentMethodCollectOptions = {
   collectorName: string,
   logo: string,
   returnUrl: option<string>,
+  amount: int,
+  currency: string,
+  flow: paymentMethodCollectFlow,
 }
 
 /** DECODERS */
+let decodeAmount = (dict, defaultAmount) =>
+  switch dict->Dict.get("amount") {
+  | Some(amount) =>
+    amount
+    ->JSON.Decode.string
+    ->Option.flatMap(amountStr => Belt.Int.fromString(amountStr))
+    ->Option.getOr(defaultAmount)
+  | None => defaultAmount
+  }
+
+let decodeFlow = (dict, defaultPaymentMethodCollectFlow) =>
+  switch dict->Dict.get("flow") {
+  | Some(flow) =>
+    switch flow->JSON.Decode.string {
+    | Some("PayoutLinkInitiate") => PayoutLinkInitiate
+    | Some("PayoutMethodCollect") => PayoutMethodCollect
+    | _ => defaultPaymentMethodCollectFlow
+    }
+  | None => defaultPaymentMethodCollectFlow
+  }
+
 let decodeCard = (cardType: string): option<card> =>
   switch cardType {
   | "credit" => Some(Credit)
