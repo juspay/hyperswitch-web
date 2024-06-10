@@ -21,7 +21,7 @@ main{
   font-family:sans-serif ;
   justify-content: center;
 }
-.mainConatiner{
+.mainContainer{
   gap: 1em;
   padding: 1em;
 }
@@ -294,7 +294,7 @@ margin-left: 10px;
   .title{
     font-size: 20px;
   }
-  .mainConatiner{
+  .mainContainer{
     display: flex;
     flex-direction: column;
     justify-content: center;

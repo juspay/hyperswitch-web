@@ -3,17 +3,15 @@ import Cart from "./Cart";
 import { useState, useEffect } from "react";
 import { useHyper, useElements } from "@juspay-tech/react-hyper-js";
 import { useNavigate } from "react-router-dom";
-import "./App.css";
-import "./index";
 import React from "react";
 import Completion from "./Completion";
+import "./App.css";
 
 export default function CheckoutForm() {
   const hyper = useHyper();
   const elements = useElements();
   const navigate = useNavigate();
-  const [isSuccess, setSucces] = useState(false);
-
+  const [isSuccess, setSuccess] = useState(false);
   const [message, setMessage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -21,7 +19,7 @@ export default function CheckoutForm() {
     switch (status) {
       case "succeeded":
         setMessage("Payment successful");
-        setSucces(true);
+        setSuccess(true);
         break;
       case "processing":
         setMessage("Your payment is processing.");
@@ -55,26 +53,30 @@ export default function CheckoutForm() {
 
     setIsProcessing(true);
 
-    const { error, status } = await hyper.confirmPayment({
-      elements,
-      confirmParams: {
-        // Make sure to change this to your payment completion page
-        return_url: `${window.location.origin}`,
-      },
-    });
+    try {
+      const { error, status } = await hyper.confirmPayment({
+        elements,
+        confirmParams: {
+          // Make sure to change this to your payment completion page
+          return_url: `${window.location.origin}`,
+        },
+      });
 
-    if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage("Unexpected Error");
+      if (error) {
+        setMessage(error.message);
+      } else {
+        setMessage("Unexpected Error");
+      }
+
+      if (status) {
+        console.log("-status", status);
+        handlePaymentStatus(status);
+      }
+    } catch (error) {
+      setMessage("Error confirming payment: " + error.message);
+    } finally {
+      setIsProcessing(false);
     }
-
-    if (status) {
-      console.log("-status", status);
-      handlePaymentStatus(status);
-    }
-
-    setIsProcessing(false);
   };
 
   useEffect(() => {
@@ -107,27 +109,27 @@ export default function CheckoutForm() {
   };
 
   return (
-    <div class="browser">
-      <div class="toolbar">
-        <div class="controls">
-          <div class="btn close"></div>
-          <div class="btn min"></div>
-          <div class="btn max"></div>
+    <div className="browser">
+      <div className="toolbar">
+        <div className="controls">
+          <div className="btn close"></div>
+          <div className="btn min"></div>
+          <div className="btn max"></div>
         </div>
       </div>
-      <div class="tabbar">
-        <div class="input">
-          <div class="info"> &#8505;</div>
+      <div className="tabbar">
+        <div className="input">
+          <div className="info"> &#8505;</div>
           <div> http://localhost:9060</div>
         </div>
       </div>
-      <div class="viewport">
+      <div className="viewport">
         {!isSuccess ? (
           <>
             <Cart />
             <div className="payment-form">
               <form id="payment-form" onSubmit={handleSubmit}>
-                <div class="paymentElement">
+                <div className="paymentElement">
                   <PaymentElement id="payment-element" options={options} />
                 </div>
                 <button
@@ -135,7 +137,7 @@ export default function CheckoutForm() {
                   id="submit"
                 >
                   <span id="button-text">
-                    {isProcessing ? "Processing ... " : "Pay now"}
+                    {isProcessing ? "Processing..." : "Pay now"}
                   </span>
                 </button>
                 {/* Show any error or success messages */}
