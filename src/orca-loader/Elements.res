@@ -260,6 +260,7 @@ let make = (
       | "googlePay"
       | "payPal"
       | "applePay"
+      | "klarna"
       | "expressCheckout"
       | "payment" => ()
       | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger, ())
