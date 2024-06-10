@@ -11,7 +11,7 @@ let make = (
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {hideExpiredPaymentMethods, hideSavedCardTickIcon} = Recoil.useRecoilValueFromAtom(
+  let {hideExpiredPaymentMethods, displayDefaultSavedPaymentIcon} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.optionAtom,
   )
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
@@ -119,7 +119,8 @@ let make = (
                       </div>
                     : <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>}
                   <RenderIf
-                    condition={!hideSavedCardTickIcon && paymentItem.defaultPaymentMethodSet}>
+                    condition={displayDefaultSavedPaymentIcon &&
+                    paymentItem.defaultPaymentMethodSet}>
                     <Icon size=18 name="checkmark" style={color: themeObj.colorPrimary} />
                   </RenderIf>
                 </div>
