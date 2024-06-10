@@ -17,8 +17,6 @@ let make = () => {
     None
   }, [logger])
 
-  Js.Console.log3("DEBUGGGGGG", fullscreenMode, paymentMode)
-
   let renderFullscreen = switch paymentMode {
   | "paymentMethodCollect" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>

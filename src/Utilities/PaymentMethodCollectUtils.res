@@ -282,6 +282,7 @@ let itemToObjMapper = (dict, logger) => {
     [
       "enabledPaymentMethods",
       "linkId",
+      "payoutId",
       "customerId",
       "theme",
       "collectorName",
