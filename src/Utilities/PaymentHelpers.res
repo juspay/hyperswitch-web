@@ -1325,6 +1325,79 @@ let fetchSessions = (
   })
 }
 
+let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~switchToCustomPod, ~uri, ~body) => {
+  open Promise
+  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+  logApi(
+    ~optLogger=Some(logger),
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=CONFIRM_PAYOUT_CALL,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  let body =
+    body
+    ->Array.concat([("client_secret", clientSecret->Js.Json.string)])
+    ->Dict.fromArray
+    ->JSON.Encode.object
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    (),
+  )
+  ->then(resp => {
+    let statusCode = resp->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      resp
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger=Some(logger),
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=CONFIRM_PAYOUT_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        resolve(data)
+      })
+    } else {
+      logApi(
+        ~optLogger=Some(logger),
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=CONFIRM_PAYOUT_CALL,
+        ~logType=INFO,
+        ~logCategory=API,
+        (),
+      )
+      Fetch.Response.json(resp)
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    logApi(
+      ~optLogger=Some(logger),
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=CONFIRM_PAYOUT_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data=exceptionMessage,
+      (),
+    )
+    JSON.Encode.null->resolve
+  })
+}
+
 let createPaymentMethod = (
   ~clientSecret,
   ~publishableKey,
@@ -1396,7 +1469,7 @@ let createPaymentMethod = (
       ~optLogger=Some(logger),
       ~url=uri,
       ~apiLogType=NoResponse,
-      ~eventName=SESSIONS_CALL,
+      ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
       ~logType=ERROR,
       ~logCategory=API,
       ~data=exceptionMessage,

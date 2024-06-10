@@ -17,44 +17,6 @@ type paymentMethodTypes = {
   wallet: array<wallet>,
 }
 
-type achBankTransferDetails = {
-  routingNumber: string,
-  accountNumber: string,
-  bankName: option<string>,
-  city: option<string>,
-}
-type bacsBankTransferDetails = {
-  sortCode: string,
-  accountNumber: string,
-  bankName: option<string>,
-  city: option<string>,
-}
-type sepaBankTransferDetails = {
-  iban: string,
-  bic: string,
-  bankName: option<string>,
-  city: option<string>,
-  countryCode: option<string>,
-}
-type bankTransferDetails =
-  | ACH(achBankTransferDetails)
-  | Bacs(bacsBankTransferDetails)
-  | Sepa(sepaBankTransferDetails)
-
-type paypalWalletDetails = {email: string}
-type walletDetails = Paypal(paypalWalletDetails)
-
-type cardDetails = {
-  nameOnCard: string,
-  cardNumber: string,
-  expiryDate: string,
-}
-
-type paymentMethodData =
-  | Card(cardDetails)
-  | BankTransfer(bankTransferDetails)
-  | Wallet(walletDetails)
-
 type paymentMethodDataField =
   // Cards
   | CardNumber
@@ -78,14 +40,18 @@ type paymentMethodDataField =
   | PaypalMail
   | PaypalMobNumber
   | PixId
-  | VenmoMail
+  | PixBankAccountNumber
+  | PixBankName
   | VenmoMobNumber
+
+type paymentMethodData = (paymentMethod, paymentMethodType, array<(paymentMethodDataField, string)>)
 
 type paymentMethodCollectFlow = PayoutLinkInitiate | PayoutMethodCollect
 
 type paymentMethodCollectOptions = {
   enabledPaymentMethods: array<paymentMethodType>,
   linkId: string,
+  payoutId: string,
   customerId: string,
   theme: string,
   collectorName: string,
