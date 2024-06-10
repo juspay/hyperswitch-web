@@ -6,9 +6,9 @@ README.md @akash-c-k
 SECURITY.md @akash-c-k
 .gitignore @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
 
-Hyperswitch-React-Demo-App/ @prafulkoppalkar @JeevaRamu0104 @PritishBudhiraja
-Hyperswitch-React-Demo-App/Dockerfile @JeevaRamu0104 @prafulkoppalkar
-Hyperswitch-React-Demo-App/Makefile @JeevaRamu0104 @prafulkoppalkar
+Hyperswitch-React-Demo-App/ @prafulkoppalkar @PritishBudhiraja
+Hyperswitch-React-Demo-App/Dockerfile @prafulkoppalkar
+Hyperswitch-React-Demo-App/Makefile @prafulkoppalkar
 Hyperswitch-React-Demo-App/promptScript.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
 Hyperswitch-React-Demo-App/webpack.common.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
 Hyperswitch-React-Demo-App/webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
