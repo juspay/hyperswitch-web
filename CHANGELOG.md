@@ -1,3 +1,10 @@
+## [0.61.2](https://github.com/juspay/hyperswitch-web/compare/v0.61.1...v0.61.2) (2024-06-07)
+
+
+### Bug Fixes
+
+* redirect issue ([#432](https://github.com/juspay/hyperswitch-web/issues/432)) ([a984498](https://github.com/juspay/hyperswitch-web/commit/a9844988ee15fe40a2e7ba2b38f6c49fbe31b5a8))
+
 ## [0.61.1](https://github.com/juspay/hyperswitch-web/compare/v0.61.0...v0.61.1) (2024-06-07)
 
 # [0.61.0](https://github.com/juspay/hyperswitch-web/compare/v0.60.0...v0.61.0) (2024-06-07)
