@@ -288,12 +288,12 @@ let make = (~sessionObj: option<JSON.t>) => {
 
           let billingContact =
             dict
-            ->getDictfromDict("applePayBillingContact")
+            ->getDictFromDict("applePayBillingContact")
             ->ApplePayTypes.billingContactItemToObjMapper
 
           let shippingContact =
             dict
-            ->getDictfromDict("applePayShippingContact")
+            ->getDictFromDict("applePayShippingContact")
             ->ApplePayTypes.shippingContactItemToObjMapper
 
           let requiredFieldsBody = DynamicFieldsUtils.getApplePayRequiredFields(

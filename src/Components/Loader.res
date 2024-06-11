@@ -10,10 +10,10 @@ let make = (~showText=true) => {
           size=52
           style={
             animation: "slowShow 1.5s ease-in-out infinite",
-            animationDelay: {((i + 1) * 180)->Belt.Int.toString ++ "ms"},
+            animationDelay: {((i + 1) * 180)->Int.toString ++ "ms"},
           }
           name=item
-          key={i->Belt.Int.toString}
+          key={i->Int.toString}
         />
       })
       ->React.array}

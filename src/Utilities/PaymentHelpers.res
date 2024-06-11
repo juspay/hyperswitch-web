@@ -609,7 +609,7 @@ let rec intentCall = (
                     ("paymentIntentId", clientSecret->JSON.Encode.string),
                     ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                     ("headers", headerObj->JSON.Encode.object),
-                    ("expiryTime", expiryTime->Belt.Float.toString->JSON.Encode.string),
+                    ("expiryTime", expiryTime->Float.toString->JSON.Encode.string),
                     ("url", url.href->JSON.Encode.string),
                   ]->Dict.fromArray
                 handleLogging(

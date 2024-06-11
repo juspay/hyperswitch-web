@@ -137,7 +137,7 @@ module ErrorCard = {
       if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Array.includes(loggingLevel) {
         let errorLog: OrcaLogger.logFile = {
           logType: ERROR,
-          timestamp: Date.now()->Belt.Float.toString,
+          timestamp: Date.now()->Float.toString,
           sessionId: "",
           source: "orca-elements",
           version: GlobalVars.repoVersion,
