@@ -107,18 +107,19 @@ app.get("/create-payment-intent", async (req, res) => {
       },
     };
     if (SERVER_URL) {
-      const apiResponse = await fetch(
-        `${process.env.HYPERSWITCH_SERVER_URL}/payments`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "api-key": process.env.HYPERSWITCH_SECRET_KEY,
-          },
-          body: JSON.stringify(request),
-        }
-      );
+      const url =
+        process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
+        process.env.HYPERSWITCH_SERVER_URL;
+
+      const apiResponse = await fetch(`${url}/payments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "api-key": process.env.HYPERSWITCH_SECRET_KEY,
+        },
+        body: JSON.stringify(request),
+      });
       paymentIntent = await apiResponse.json();
 
       if (paymentIntent.error) {
