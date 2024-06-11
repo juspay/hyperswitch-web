@@ -1,3 +1,10 @@
+## [0.62.1](https://github.com/juspay/hyperswitch-web/compare/v0.62.0...v0.62.1) (2024-06-11)
+
+
+### Bug Fixes
+
+* demo app docker url needed ([#437](https://github.com/juspay/hyperswitch-web/issues/437)) ([2fdf8a5](https://github.com/juspay/hyperswitch-web/commit/2fdf8a5d412e4e24984c876daaf1a9bd381c4400))
+
 # [0.62.0](https://github.com/juspay/hyperswitch-web/compare/v0.61.2...v0.62.0) (2024-06-11)
 
 
