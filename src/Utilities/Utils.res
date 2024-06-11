@@ -1282,3 +1282,28 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
 }
 
 let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")
+
+let currencyNetworksDict =
+  [
+    ("BTC", ["bitcoin", "bnb_smart_chain"]),
+    ("LTC", ["litecoin", "bnb_smart_chain"]),
+    ("ETH", ["ethereum", "bnb_smart_chain"]),
+    ("XRP", ["ripple", "bnb_smart_chain"]),
+    ("XLM", ["stellar", "bnb_smart_chain"]),
+    ("BCH", ["bitcoin_cash", "bnb_smart_chain"]),
+    ("ADA", ["cardano", "bnb_smart_chain"]),
+    ("SOL", ["solana", "bnb_smart_chain"]),
+    ("SHIB", ["ethereum", "bnb_smart_chain"]),
+    ("TRX", ["tron", "bnb_smart_chain"]),
+    ("DOGE", ["dogecoin", "bnb_smart_chain"]),
+    ("BNB", ["bnb_smart_chain"]),
+    ("USDT", ["ethereum", "tron", "bnb_smart_chain"]),
+    ("USDC", ["ethereum", "tron", "bnb_smart_chain"]),
+    ("DAI", ["ethereum", "bnb_smart_chain"]),
+  ]->Dict.fromArray
+
+let toSpacedUpperCase = (~str, ~delimiter) =>
+  str
+  ->String.toUpperCase
+  ->String.split(delimiter)
+  ->Array.joinWith(" ")

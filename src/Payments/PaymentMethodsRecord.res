@@ -34,6 +34,7 @@ type paymentMethodsFields =
   | ShippingAddressPincode
   | ShippingAddressState
   | ShippingAddressCountry(array<string>)
+  | CryptoCurrencyNetworks
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -47,10 +48,11 @@ let getPaymentMethodsFieldsOrder = paymentMethodField => {
   | AddressLine2 => 5
   | AddressCity => 6
   | AddressState => 7
-  | AddressCountry(_) => 8
-  | AddressPincode => 9
   | StateAndCity => 7
+  | AddressCountry(_) => 8
   | CountryAndPincode(_) => 8
+  | AddressPincode => 9
+  | CryptoCurrencyNetworks => 10
   | InfoElement => 99
   | _ => 3
   }
@@ -546,6 +548,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_shipping_address_city", _) => ShippingAddressCity
   | ("user_shipping_address_pincode", _) => ShippingAddressPincode
   | ("user_shipping_address_state", _) => ShippingAddressState
+  | ("user_crypto_currency_network", _) => CryptoCurrencyNetworks
   | _ => None
   }
 }
@@ -1060,41 +1063,4 @@ let getCardNetwork = (~paymentMethodType, ~cardBrand) => {
   ->Array.filter(cardNetwork => cardNetwork.card_network === cardBrand)
   ->Array.get(0)
   ->Option.getOr(defaultCardNetworks)
-}
-
-let paymentMethodFieldToStrMapper = (field: paymentMethodsFields) => {
-  switch field {
-  | Email => "Email"
-  | FullName => "FullName"
-  | InfoElement => "InfoElement"
-  | Country => "Country"
-  | Bank => "Bank"
-  | SpecialField(_) => "SpecialField"
-  | None => "None"
-  | BillingName => "BillingName"
-  | PhoneNumber => "PhoneNumber"
-  | AddressLine1 => "AddressLine1"
-  | AddressLine2 => "AddressLine2"
-  | AddressCity => "AddressCity"
-  | StateAndCity => "StateAndCity"
-  | CountryAndPincode(_) => "CountryAndPincode"
-  | AddressPincode => "AddressPincode"
-  | AddressState => "AddressState"
-  | AddressCountry(_) => "AddressCountry"
-  | BlikCode => "BlikCode"
-  | Currency(_) => "Currency"
-  | CardNumber => "CardNumber"
-  | CardExpiryMonth => "CardExpiryMonth"
-  | CardExpiryYear => "CardExpiryYear"
-  | CardExpiryMonthAndYear => "CardExpiryMonthAndYear"
-  | CardCvc => "CardCvc"
-  | CardExpiryAndCvc => "CardExpiryAndCvc"
-  | ShippingName => "ShippingName"
-  | ShippingAddressLine1 => "ShippingAddressLine1"
-  | ShippingAddressLine2 => "ShippingAddressLine2"
-  | ShippingAddressCity => "ShippingAddressCity"
-  | ShippingAddressPincode => "ShippingAddressPincode"
-  | ShippingAddressState => "ShippingAddressState"
-  | ShippingAddressCountry(_) => "ShippingAddressCountry"
-  }
 }
