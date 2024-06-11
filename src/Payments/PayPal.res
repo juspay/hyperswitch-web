@@ -87,7 +87,7 @@ let make = () => {
       display: "inline-block",
       color: textColor,
       height: `${height->Int.toString}px`,
-      borderRadius: "2px",
+      borderRadius: `${options.wallets.style.buttonRadius->Int.toString}px`,
       width: "100%",
       backgroundColor: buttonColor,
     }

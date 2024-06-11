@@ -87,6 +87,7 @@ type style = {
   type_: styleTypeArray,
   theme: theme,
   height: (heightType, heightType, heightType, heightType),
+  buttonRadius: int,
 }
 type wallets = {
   walletReturnUrl: string,
@@ -255,6 +256,7 @@ let defaultStyle = {
   type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal)),
   theme: Light,
   height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48)),
+  buttonRadius: 2,
 }
 let defaultWallets = {
   walletReturnUrl: "",
@@ -768,6 +770,7 @@ let getStyle = (dict, str, logger) => {
       type_: getWarningString(json, "type", "", ~logger)->getTypeArray(logger),
       theme: getWarningString(json, "theme", "", ~logger)->getTheme(logger),
       height: getNumberWithWarning(json, "height", 48, ~logger)->getHeightArray(logger),
+      buttonRadius: getNumberWithWarning(json, "buttonRadius", 2, ~logger),
     }
     style
   })

@@ -216,6 +216,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
       },
       "buttonSizeMode": "fill",
       "buttonColor": options.wallets.style.theme == Dark ? "black" : "white",
+      "buttonRadius": options.wallets.style.buttonRadius,
     }
     obj->Identity.anyTypeToJson
   }
