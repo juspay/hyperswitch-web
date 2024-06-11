@@ -173,7 +173,7 @@ let unknownPropValueWarning = (
 let valueOutRangeWarning = (num: int, dictType, range, ~logger: OrcaLogger.loggerMake) => {
   manageErrorWarning(
     VALUE_OUT_OF_RANGE,
-    ~dynamicStr=`${num->Belt.Int.toString} value in ${dictType} Expected value between ${range}`,
+    ~dynamicStr=`${num->Int.toString} value in ${dictType} Expected value between ${range}`,
     ~logger: OrcaLogger.loggerMake,
     (),
   )

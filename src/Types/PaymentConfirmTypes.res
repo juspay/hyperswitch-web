@@ -163,7 +163,7 @@ let getNextAction = (dict, str) => {
         ->Option.flatMap(JSON.Decode.object)
         ->Option.map(json => json->getVoucherDetails)
       },
-      next_action_data: Some(json->getDictfromDict("next_action_data")->JSON.Encode.object),
+      next_action_data: Some(json->getDictFromDict("next_action_data")->JSON.Encode.object),
     }
   })
   ->Option.getOr(defaultNextAction)

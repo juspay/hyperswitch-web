@@ -953,7 +953,7 @@ let getConfirmParams = dict => {
 let getSdkHandleConfirmPaymentProps = dict => {
   handleConfirm: dict->getBool("handleConfirm", false),
   buttonText: ?dict->getOptionString("buttonText"),
-  confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
+  confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
 let itemToObjMapper = (dict, logger) => {
@@ -1014,7 +1014,7 @@ let itemToObjMapper = (dict, logger) => {
     showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
     billingAddress: getBillingAddress(dict, "billingAddress", logger),
     sdkHandleConfirmPayment: dict
-    ->getDictfromDict("sdkHandleConfirmPayment")
+    ->getDictFromDict("sdkHandleConfirmPayment")
     ->getSdkHandleConfirmPaymentProps,
     paymentMethodsHeaderText: ?getOptionString(dict, "paymentMethodsHeaderText"),
     savedPaymentMethodsHeaderText: ?getOptionString(dict, "savedPaymentMethodsHeaderText"),

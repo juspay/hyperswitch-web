@@ -65,8 +65,8 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
     {walletOptions
     ->Array.mapWithIndex((item, i) => {
       <ErrorBoundary
-        level={ErrorBoundary.RequestButton} key={`${item}-${i->Belt.Int.toString}-request-button`}>
-        <React.Suspense fallback={<WalletShimmer />} key={i->Belt.Int.toString}>
+        level={ErrorBoundary.RequestButton} key={`${item}-${i->Int.toString}-request-button`}>
+        <React.Suspense fallback={<WalletShimmer />} key={i->Int.toString}>
           {switch clientSecret {
           | Some(_) =>
             switch item->paymentMode {
