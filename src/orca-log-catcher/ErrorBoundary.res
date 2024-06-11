@@ -92,6 +92,35 @@ let errorIcon = {
   </svg>
 }
 
+module ErrorTextAndImage = {
+  @react.component
+  let make = (~divRef, ~level) => {
+    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let message = switch level {
+    | Top => "We'll be back with you shortly :)"
+    | _ => "Try another payment method :)"
+    }
+
+    <div
+      ref={divRef->ReactDOM.Ref.domRef}
+      style={
+        color: themeObj.colorPrimary,
+        backgroundColor: themeObj.colorBackground,
+        borderRadius: themeObj.borderRadius,
+        borderColor: themeObj.borderColor,
+      }
+      className="flex  items-center">
+      <div className="flex flex-row  items-center m-6">
+        <div style={marginLeft: "1rem"}> {errorIcon} </div>
+        <div className="flex flex-col items-center justify-center" style={marginLeft: "3rem"}>
+          <div> {"Oops, something went wrong!"->React.string} </div>
+          <div className="text-sm"> {message->React.string} </div>
+        </div>
+      </div>
+    </div>
+  }
+}
+
 module ErrorCard = {
   @react.component
   let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level) => {
@@ -134,7 +163,6 @@ module ErrorCard = {
     })
 
     let (divH, setDivH) = React.useState(_ => 0.0)
-    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let (keys, _setKeys) = Recoil.useRecoilState(RecoilAtoms.keys)
     let {iframeId} = keys
     let divRef = React.useRef(Nullable.null)
@@ -164,30 +192,9 @@ module ErrorCard = {
       None
     }, (divH, iframeId))
 
-    let message = switch level {
-    | Top => "We'll be back with you shortly :)"
-    | _ => "Try another payment method :)"
-    }
     switch level {
     | RequestButton => React.null
-    | _ =>
-      <div
-        ref={divRef->ReactDOM.Ref.domRef}
-        style={
-          color: themeObj.colorPrimary,
-          backgroundColor: themeObj.colorBackground,
-          borderRadius: themeObj.borderRadius,
-          borderColor: themeObj.borderColor,
-        }
-        className="flex  items-center">
-        <div className="flex flex-row  items-center m-6">
-          <div style={marginLeft: "1rem"}> {errorIcon} </div>
-          <div className="flex flex-col items-center justify-center" style={marginLeft: "3rem"}>
-            <div> {"Oops, something went wrong!"->React.string} </div>
-            <div className="text-sm"> {message->React.string} </div>
-          </div>
-        </div>
-      </div>
+    | _ => <ErrorTextAndImage divRef level />
     }
   }
 }
