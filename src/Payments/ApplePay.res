@@ -148,7 +148,7 @@ let make = (~sessionObj: option<JSON.t>) => {
         height: 3rem;
         display: flex;
         cursor: pointer;
-        border-radius: 2px;
+        border-radius: ${options.wallets.style.buttonRadius->Int.toString}px;
     }
     .apple-pay-button-white-with-text {
         -apple-pay-button-style: white;
@@ -166,7 +166,7 @@ let make = (~sessionObj: option<JSON.t>) => {
           display: inline-flex;
           justify-content: center;
           font-size: 12px;
-          border-radius: 5px;
+          border-radius: ${options.wallets.style.buttonRadius->Int.toString}px;
           padding: 0px;
           box-sizing: border-box;
           min-width: 200px;
