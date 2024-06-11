@@ -326,7 +326,6 @@ let make = (
           key={`outside-billing-${index->Int.toString}`}
           className="flex flex-col w-full place-content-between"
           style={
-            marginTop: index !== 0 || paymentMethod === "card" ? themeObj.spacingGridColumn : "",
             gridColumnGap: themeObj.spacingGridRow,
           }>
           {switch item {
@@ -457,6 +456,7 @@ let make = (
                 optionalRequiredFields={Some(requiredFields)}
               />
             </>
+          | CryptoCurrencyNetworks => <CryptoCurrencyNetworks />
           | Email
           | InfoElement
           | Country
@@ -760,6 +760,7 @@ let make = (
                 | ShippingAddressPincode
                 | ShippingAddressState
                 | ShippingAddressCountry(_)
+                | CryptoCurrencyNetworks
                 | None => React.null
                 }}
               </div>

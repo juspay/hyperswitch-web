@@ -125,6 +125,7 @@ let useRequiredFieldsEmptyAndValid = (
   let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
@@ -149,6 +150,7 @@ let useRequiredFieldsEmptyAndValid = (
       | AddressPincode => postalCode.value !== ""
       | AddressState => state.value !== ""
       | BlikCode => blikCode.value !== ""
+      | CryptoCurrencyNetworks => cryptoCurrencyNetworks !== ""
       | Currency(currencyArr) => currency !== "" || currencyArr->Array.length === 0
       | CardNumber => isCardValid->Option.getOr(false)
       | CardExpiryMonth
@@ -185,6 +187,7 @@ let useRequiredFieldsEmptyAndValid = (
       | AddressPincode => postalCode.value === ""
       | AddressState => state.value === ""
       | BlikCode => blikCode.value === ""
+      | CryptoCurrencyNetworks => cryptoCurrencyNetworks === ""
       | Currency(currencyArr) => currency === "" && currencyArr->Array.length > 0
       | CardNumber => cardNumber === ""
       | CardExpiryMonth =>
@@ -261,6 +264,9 @@ let useSetInitialRequiredFields = (
     logger,
   )
   let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
+  let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
+    cryptoCurrencyNetworks,
+  )
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -353,6 +359,10 @@ let useSetInitialRequiredFields = (
         if value !== "" && selectedBank === "" {
           setSelectedBank(_ => value)
         }
+      | CryptoCurrencyNetworks =>
+        if value !== "" && cryptoCurrencyNetworks === "" {
+          setCryptoCurrencyNetworks(_ => value)
+        }
       | SpecialField(_)
       | InfoElement
       | CardNumber
@@ -399,6 +409,7 @@ let useRequiredFieldsBody = (
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -434,6 +445,7 @@ let useRequiredFieldsBody = (
     | CardExpiryYear =>
       let (_, year) = CardUtils.getExpiryDates(cardExpiry)
       year
+    | CryptoCurrencyNetworks => cryptoCurrencyNetworks
     | CardCvc => cvcNumber
     | StateAndCity
     | CountryAndPincode(_)
@@ -526,6 +538,7 @@ let useRequiredFieldsBody = (
     cardExpiry,
     cvcNumber,
     selectedBank,
+    cryptoCurrencyNetworks,
   ])
 }
 
@@ -538,6 +551,7 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | CardExpiryMonthAndYear
   | CardCvc
   | CardExpiryAndCvc
+  | CryptoCurrencyNetworks
   | Currency(_) => true
   | _ => false
   }

@@ -83,7 +83,6 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
             ),
             ~paymentExperience=paymentFlow,
-            ~currency,
           )
           ->Dict.fromArray
           ->JSON.Encode.object

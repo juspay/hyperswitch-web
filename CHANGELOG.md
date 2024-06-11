@@ -1,3 +1,15 @@
+# [0.62.0](https://github.com/juspay/hyperswitch-web/compare/v0.61.2...v0.62.0) (2024-06-11)
+
+
+### Bug Fixes
+
+* two shimmers issue fixed ([#424](https://github.com/juspay/hyperswitch-web/issues/424)) ([78ba856](https://github.com/juspay/hyperswitch-web/commit/78ba8561e85e7dbf9f7257337b155265295d7392))
+
+
+### Features
+
+* crypto currency network added ([#403](https://github.com/juspay/hyperswitch-web/issues/403)) ([24f7297](https://github.com/juspay/hyperswitch-web/commit/24f72972e7faa45edc77f7e75248ca9c8f3334d8))
+
 ## [0.61.2](https://github.com/juspay/hyperswitch-web/compare/v0.61.1...v0.61.2) (2024-06-07)
 
 
