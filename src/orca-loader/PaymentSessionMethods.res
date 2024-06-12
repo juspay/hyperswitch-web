@@ -46,7 +46,9 @@ let getCustomerSavedPaymentMethods = (
       ->Option.getOr(false)
     })
 
-    let paymentNotExist = (~message="There is no customer default saved payment method data") =>
+    let paymentNotExist = (
+      ~message="There is no default saved payment method data for this customer",
+    ) =>
       [
         (
           "error",
@@ -69,7 +71,7 @@ let getCustomerSavedPaymentMethods = (
 
       switch customerPaymentMethodsCopy->Array.get(0) {
       | Some(customerLastPaymentUsed) => customerLastPaymentUsed
-      | None => paymentNotExist(~message="No recent payments found.")
+      | None => paymentNotExist(~message="No recent payments found for this customer.")
       }
     }
 
@@ -173,7 +175,7 @@ let getCustomerSavedPaymentMethods = (
           ~paymentMethodObject=customerLastPaymentUsed,
           ~payload,
         )
-      | None => paymentNotExist(~message="No recent payments found.")->resolve
+      | None => paymentNotExist(~message="No recent payments found for this customer.")->resolve
       }
     }
 
