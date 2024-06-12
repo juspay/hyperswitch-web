@@ -122,10 +122,13 @@ external sendBeacon: (string, string) => unit = "sendBeacon"
 external hostname: string = "hostname"
 
 @val @scope(("window", "location"))
-external href: string = "href"
+external origin: string = "origin"
 
 @val @scope(("window", "location"))
 external protocol: string = "protocol"
+
+@val @scope(("window", "location"))
+external pathname: string = "pathname"
 
 let isSandbox = hostname === "beta.hyperswitch.io"
 
@@ -140,3 +143,5 @@ module Location = {
 module Element = {
   @get external clientWidth: Dom.element => int = "clientWidth"
 }
+
+let hrefWithoutSearch = origin ++ pathname
