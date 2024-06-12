@@ -27,9 +27,9 @@ const repoPublicPath =
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
   const urls = {
-    prod: "https://checkout.hyperswitch.io",
-    sandbox: "https://beta.hyperswitch.io",
-    integ: "https://dev.hyperswitch.io",
+    prod: "http://localhost:9050",
+    sandbox: "http://localhost:9050",
+    integ: "http://localhost:9050",
     local: "http://localhost:9050",
   };
   return urls[env] || urls.local;

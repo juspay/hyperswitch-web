@@ -21,6 +21,7 @@ let make = (~integrateError, ~logger) => {
   let (flow, setFlow) = React.useState(_ => options.flow)
   let (linkId, setLinkId) = React.useState(_ => options.linkId)
   let (loader, setLoader) = React.useState(_ => false)
+  let (showStatus, setShowStatus) = React.useState(_ => false)
   let (payoutId, setPayoutId) = React.useState(_ => options.payoutId)
   let (merchantLogo, setMerchantLogo) = React.useState(_ => options.logo)
   let (merchantName, setMerchantName) = React.useState(_ => options.collectorName)
@@ -144,6 +145,7 @@ let make = (~integrateError, ~logger) => {
           resolve()
         })
         ->finally(() => {
+          setShowStatus(_ => true)
           setLoader(_ => false)
         })
         ->ignore
@@ -184,53 +186,79 @@ let make = (~integrateError, ~logger) => {
     <div className="flex h-screen">
       {switch flow {
       | PayoutLinkInitiate =>
-        <React.Fragment>
-          // Merchant's info
-          <div
-            className="flex flex-col w-4/10 px-[50px] py-[80px]"
-            style={backgroundColor: merchantTheme}>
+        if showStatus {
+          switch (apiResponse, apiError) {
+          | (Some(res), _) =>
+            <div>
+              {React.string("STATUS: ")}
+              {switch res->JSON.Decode.object {
+              | Some(dict) =>
+                switch dict->Dict.get("status") {
+                | Some(status) =>
+                  switch status->JSON.Decode.string {
+                  | Some(status) => React.string(status)
+                  | None => React.string("INTERNAL WEBSITE ERROR")
+                  }
+                | None => React.string("FAILED TO GET STATUS")
+                }
+              | None => React.string("INTERNAL WEBSITE ERROR")
+              }}
+            </div>
+          | (_, Some(err)) =>
+            <div>
+              <div> {React.string("FAILED TO SUBMIT PAYOUTS")} </div>
+            </div>
+          | _ => <div> {React.string("INTERNAL WEBSITE ERROR")} </div>
+          }
+        } else {
+          <React.Fragment>
+            // Merchant's info
             <div
-              className="flex flex-col self-end rounded-md shadow-lg min-w-80 w-full max-w-96"
-              style={backgroundColor: "#FEFEFE"}>
-              <div className="mx-[20px] mt-[20px] flex flex-row justify-between">
-                <div className="font-bold text-[35px]">
-                  {React.string(`${currency} ${amount->Int.toString}`)}
+              className="flex flex-col w-4/10 px-[50px] py-[80px]"
+              style={backgroundColor: merchantTheme}>
+              <div
+                className="flex flex-col self-end rounded-md shadow-lg min-w-80 w-full max-w-96"
+                style={backgroundColor: "#FEFEFE"}>
+                <div className="mx-[20px] mt-[20px] flex flex-row justify-between">
+                  <div className="font-bold text-[35px]">
+                    {React.string(`${currency} ${amount->Int.toString}`)}
+                  </div>
+                  <img className="h-12 w-auto" src={merchantLogo} alt="O" />
                 </div>
-                <img className="h-12 w-auto" src={merchantLogo} alt="O" />
-              </div>
-              <div className="mx-[20px]">
-                <div className="self-center text-[20px] font-semibold">
-                  {React.string("Payout from ")}
-                  {React.string(merchantName)}
-                </div>
-                <div className="flex flex-row mt-[5px]">
-                  <div className="font-semibold text-[12px]"> {React.string("Ref Id")} </div>
-                  <div className="ml-[5px] text-[12px] text-gray-800">
-                    {React.string(payoutId)}
+                <div className="mx-[20px]">
+                  <div className="self-center text-[20px] font-semibold">
+                    {React.string("Payout from ")}
+                    {React.string(merchantName)}
+                  </div>
+                  <div className="flex flex-row mt-[5px]">
+                    <div className="font-semibold text-[12px]"> {React.string("Ref Id")} </div>
+                    <div className="ml-[5px] text-[12px] text-gray-800">
+                      {React.string(payoutId)}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="mt-[10px] px-[20px] py-[5px] bg-gray-200 text-[13px] rounded-b-lg">
-                {React.string(`Link expires on: `)}
+                <div className="mt-[10px] px-[20px] py-[5px] bg-gray-200 text-[13px] rounded-b-lg">
+                  {React.string(`Link expires on: `)}
+                </div>
               </div>
             </div>
-          </div>
-          // Collect widget
-          <div className="flex flex-row w-6/10 h-min">
-            <div className="relative mx-[50px] my-[80px]">
-              {loader
-                ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
-                : {React.null}}
-              <CollectWidget
-                logger
-                primaryTheme={merchantTheme}
-                handleSubmit
-                availablePaymentMethods
-                availablePaymentMethodTypes
-              />
+            // Collect widget
+            <div className="flex flex-row w-6/10 h-min">
+              <div className="relative mx-[50px] my-[80px]">
+                {loader
+                  ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
+                  : {React.null}}
+                <CollectWidget
+                  logger
+                  primaryTheme={merchantTheme}
+                  handleSubmit
+                  availablePaymentMethods
+                  availablePaymentMethodTypes
+                />
+              </div>
             </div>
-          </div>
-        </React.Fragment>
+          </React.Fragment>
+        }
 
       | PayoutMethodCollect =>
         <React.Fragment>
