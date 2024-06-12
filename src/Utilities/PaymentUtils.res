@@ -5,7 +5,8 @@ let paymentListLookupNew = (
   ~order,
   ~isShowPaypal,
   ~isShowKlarnaOneClick,
-  ~isKlarnaRedirectFlow,
+  ~isKlarnaSDKFlow,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
@@ -43,8 +44,21 @@ let paymentListLookupNew = (
     } else if item.methodType == "reward" {
       otherPaymentList->Array.push(item.paymentMethodName)->ignore
     } else if item.methodType == "pay_later" {
-      if item.paymentMethodName === "klarna" && !isKlarnaRedirectFlow && isShowKlarnaOneClick {
-        walletsList->Array.push(item.paymentMethodName)->ignore
+      if item.paymentMethodName === "klarna" {
+        let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
+          ~paymentMethodList=paymentMethodListValue,
+          ~paymentMethodName=item.methodType,
+          ~paymentMethodType=item.paymentMethodName,
+        )
+
+        let isInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
+        let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
+
+        if isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience {
+          walletsList->Array.push(item.paymentMethodName)->ignore
+        } else if isRedirectExperience {
+          otherPaymentList->Array.push(item.paymentMethodName)->ignore
+        }
       } else {
         otherPaymentList->Array.push(item.paymentMethodName)->ignore
       }
@@ -265,13 +279,13 @@ let useAreAllRequiredFieldsPrefilled = (
   })
 }
 
-let getIsKlarnaRedirectFlow = sessions => {
+let getIsKlarnaSDKFlow = sessions => {
   let dict = sessions->Utils.getDictFromJson
   let sessionObj = SessionsType.itemToObjMapper(dict, Others)
   let klarnaTokenObj = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
   switch klarnaTokenObj {
-  | OtherTokenOptional(optToken) => optToken->Option.isNone
-  | _ => true
+  | OtherTokenOptional(optToken) => optToken->Option.isSome
+  | _ => false
   }
 }
 
@@ -286,13 +300,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
 
   let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
 
-  let isKlarnaRedirectFlow = getIsKlarnaRedirectFlow(sessions)
-
-  let filterPaymentMethods = (paymentOptionsList: array<string>, ~isKlarnaRedirectFlow) => {
-    paymentOptionsList->Array.filter(paymentOptionsName =>
-      !(paymentOptionsName === "klarna" && !isKlarnaRedirectFlow)
-    )
-  }
+  let isKlarnaSDKFlow = getIsKlarnaSDKFlow(sessions)
 
   React.useMemo(() => {
     switch methodslist {
@@ -305,14 +313,30 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
           ~order=paymentOrder,
           ~isShowPaypal=optionAtomValue.wallets.payPal === Auto,
           ~isShowKlarnaOneClick=optionAtomValue.wallets.klarna === Auto,
-          ~isKlarnaRedirectFlow,
+          ~isKlarnaSDKFlow,
+          ~paymentMethodListValue=plist,
         )
+
+      let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
+        ~paymentMethodList=plist,
+        ~paymentMethodName="pay_later",
+        ~paymentMethodType="klarna",
+      )
+
+      let isKlarnaInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
+
+      let filterPaymentMethods = (paymentOptionsList: array<string>) => {
+        paymentOptionsList->Array.filter(paymentOptionsName =>
+          !(paymentOptionsName === "klarna" && isKlarnaSDKFlow && isKlarnaInvokeSDKExperience)
+        )
+      }
+
       (
         wallets->removeDuplicate->Utils.getWalletPaymentMethod(paymentType),
         paymentOptions
         ->Array.concat(otherOptions)
         ->removeDuplicate
-        ->filterPaymentMethods(~isKlarnaRedirectFlow),
+        ->filterPaymentMethods,
         otherOptions,
       )
     | SemiLoaded =>
@@ -327,7 +351,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     optionAtomValue.wallets.payPal,
     optionAtomValue.wallets.klarna,
     paymentType,
-    isKlarnaRedirectFlow,
+    isKlarnaSDKFlow,
   ))
 }
 
