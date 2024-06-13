@@ -742,6 +742,11 @@ type methods = {
   payment_method_types: array<paymentMethodTypes>,
 }
 
+let defaultMethods = {
+  payment_method: "card",
+  payment_method_types: [],
+}
+
 type mandateType = {
   amount: int,
   currency: string,
@@ -1049,10 +1054,7 @@ let getPaymentMethodTypeFromList = (
     ->Array.find(item => {
       item.payment_method == paymentMethod
     })
-    ->Option.getOr({
-      payment_method: "card",
-      payment_method_types: [],
-    })
+    ->Option.getOr(defaultMethods)
   ).payment_method_types->Array.find(item => {
     item.payment_method_type == paymentMethodType
   })
@@ -1063,4 +1065,25 @@ let getCardNetwork = (~paymentMethodType, ~cardBrand) => {
   ->Array.filter(cardNetwork => cardNetwork.card_network === cardBrand)
   ->Array.get(0)
   ->Option.getOr(defaultCardNetworks)
+}
+
+let getPaymentExperienceTypeFromPML = (
+  ~paymentMethodList: paymentMethodList,
+  ~paymentMethodName,
+  ~paymentMethodType,
+) => {
+  paymentMethodList.payment_methods
+  ->Array.filter(paymentMethod => paymentMethod.payment_method === paymentMethodName)
+  ->Array.get(0)
+  ->Option.flatMap(method =>
+    method.payment_method_types
+    ->Array.filter(methodTypes => methodTypes.payment_method_type === paymentMethodType)
+    ->Array.get(0)
+  )
+  ->Option.flatMap(paymentMethodTypes =>
+    paymentMethodTypes.payment_experience
+    ->Array.map(paymentExperience => paymentExperience.payment_experience_type)
+    ->Some
+  )
+  ->Option.getOr([])
 }
