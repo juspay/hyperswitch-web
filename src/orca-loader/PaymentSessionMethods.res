@@ -88,7 +88,7 @@ let getCustomerSavedPaymentMethods = (
       let confirmParams =
         payload
         ->getDictFromJson
-        ->getDictfromDict("confirmParams")
+        ->getDictFromDict("confirmParams")
 
       let redirect = confirmParams->getString("redirect", "if_required")
 
