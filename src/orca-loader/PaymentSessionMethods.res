@@ -65,7 +65,7 @@ let getCustomerSavedPaymentMethods = (
       | None => paymentNotExist()
       }
 
-    let getCustomerLastPaymentMethodUsedData = () => {
+    let getCustomerLastUsedPaymentMethodData = () => {
       let customerPaymentMethodsCopy = customerDetailsArray->Array.copy
       customerPaymentMethodsCopy->Array.sort(sortFunctions)
 
@@ -165,7 +165,7 @@ let getCustomerSavedPaymentMethods = (
       }
     }
 
-    let confirmWithCustomerLastPaymentUsed = payload => {
+    let confirmWithLastUsedPaymentMethod = payload => {
       let customerPaymentMethodsCopy = customerDetailsArray->Array.copy
       customerPaymentMethodsCopy->Array.sort(sortFunctions)
 
@@ -181,9 +181,9 @@ let getCustomerSavedPaymentMethods = (
 
     {
       getCustomerDefaultSavedPaymentMethodData,
-      getCustomerLastPaymentMethodUsedData,
+      getCustomerLastUsedPaymentMethodData,
       confirmWithCustomerDefaultPaymentMethod,
-      confirmWithCustomerLastPaymentUsed,
+      confirmWithLastUsedPaymentMethod,
     }
     ->Identity.anyTypeToJson
     ->resolve
