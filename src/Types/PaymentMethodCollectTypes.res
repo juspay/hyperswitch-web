@@ -62,6 +62,60 @@ type paymentMethodCollectOptions = {
   flow: paymentMethodCollectFlow,
 }
 
+// API TYPES
+type payoutStatus =
+  | Success
+  | Failed
+  | Cancelled
+  | Initiated
+  | Expired
+  | Reversed
+  | Pending
+  | Ineligible
+  | RequiresCreation
+  | RequiresConfirmation
+  | RequiresPayoutMethodData
+  | RequiresFulfillment
+  | RequiresVendorAccountCreation
+
+type payoutSuccessResponse = {
+  payoutId: string,
+  merchantId: string,
+  customerId: string,
+  amount: string,
+  currency: string,
+  connector: option<string>,
+  payoutType: string,
+  status: payoutStatus,
+  errorMessage: option<string>,
+  errorCode: option<string>,
+  connectorTransactionId: option<string>,
+}
+
+type payoutFailureResponse = {
+  errorType: string,
+  code: string,
+  message: string,
+  reason: option<string>,
+}
+
+type payoutConfirmResponse =
+  | SuccessResponse(payoutSuccessResponse)
+  | ErrorResponse(payoutFailureResponse)
+
+type statusInfoField = {
+  key: string,
+  value: string,
+}
+
+type statusInfo = {
+  status: payoutStatus,
+  payoutId: string,
+  message: string,
+  code: option<string>,
+  reason: option<string>,
+}
+
 /** DECODERS */
 let decodeAmount = (dict, defaultAmount) =>
   switch dict->Dict.get("amount") {
@@ -141,6 +195,94 @@ let decodePaymentMethodType = (json: Js.Json.t): option<array<paymentMethodType>
           None
         })
       Some(payment_methods)
+    }
+  | None => None
+  }
+}
+
+let decodePayoutConfirmResponse = (json: Js.Json.t): option<payoutConfirmResponse> => {
+  switch json->Js.Json.decodeObject {
+  | Some(obj) => {
+      let status = switch obj->Dict.get("status")->Option.flatMap(JSON.Decode.string) {
+      | Some("success") => Some(Success)
+      | Some("failed") => Some(Failed)
+      | Some("cancelled") => Some(Cancelled)
+      | Some("initiated") => Some(Initiated)
+      | Some("expired") => Some(Expired)
+      | Some("reversed") => Some(Reversed)
+      | Some("pending") => Some(Pending)
+      | Some("ineligible") => Some(Ineligible)
+      | Some("requires_creation") => Some(RequiresCreation)
+      | Some("requires_confirmation") => Some(RequiresConfirmation)
+      | Some("requires_payout_method_data") => Some(RequiresPayoutMethodData)
+      | Some("requires_fulfillment") => Some(RequiresFulfillment)
+      | Some("requires_vendor_account_creation") => Some(RequiresVendorAccountCreation)
+      | _ => None
+      }
+
+      // If status is found in the response, try to decode PayoutCreateResponse, else try to decode ErrorResponse
+      switch status {
+      | None =>
+        switch (
+          obj->Dict.get("type")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("code")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("message")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("reason")->Option.flatMap(JSON.Decode.string),
+        ) {
+        | (Some(errorType), Some(code), Some(message), reason) => {
+            let payoutFailureResponse = {
+              errorType,
+              code,
+              message,
+              reason,
+            }
+            Some(ErrorResponse(payoutFailureResponse))
+          }
+        | _ => None
+        }
+      | Some(status) =>
+        switch (
+          obj->Dict.get("payout_id")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("merchant_id")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("customer_id")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("amount")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("currency")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("payout_type")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("connector")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("error_message")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("error_code")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("connector_transaction_id")->Option.flatMap(JSON.Decode.string),
+        ) {
+        | (
+            Some(payoutId),
+            Some(merchantId),
+            Some(customerId),
+            Some(amount),
+            Some(currency),
+            Some(payoutType),
+            connector,
+            errorMessage,
+            errorCode,
+            connectorTransactionId,
+          ) => {
+            let payoutSuccessResponse = {
+              payoutId,
+              merchantId,
+              customerId,
+              amount,
+              currency,
+              payoutType,
+              connector,
+              errorMessage,
+              errorCode,
+              connectorTransactionId,
+              status,
+            }
+            Some(SuccessResponse(payoutSuccessResponse))
+          }
+        | _ => None
+        }
+      }
     }
   | None => None
   }

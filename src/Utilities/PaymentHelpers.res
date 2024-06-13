@@ -1,6 +1,7 @@
 open Utils
 open Identity
 open PaymentMethodCollectUtils
+open PaymentMethodCollectTypes
 
 @val @scope(("window", "parent", "location")) external href: string = "href"
 
@@ -1351,10 +1352,11 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~switchToCustomPod
   )
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
-      resp
-      ->Fetch.Response.json
-      ->then(data => {
+
+    resp
+    ->Fetch.Response.json
+    ->then(data => {
+      if statusCode->String.charAt(0) !== "2" {
         logApi(
           ~optLogger=Some(logger),
           ~url=uri,
@@ -1366,21 +1368,20 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~switchToCustomPod
           ~logCategory=API,
           (),
         )
-        resolve(data)
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=CONFIRM_PAYOUT_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-        (),
-      )
-      Fetch.Response.json(resp)
-    }
+      } else {
+        logApi(
+          ~optLogger=Some(logger),
+          ~url=uri,
+          ~statusCode,
+          ~apiLogType=Response,
+          ~eventName=CONFIRM_PAYOUT_CALL,
+          ~logType=INFO,
+          ~logCategory=API,
+          (),
+        )
+      }
+      resolve(data)
+    })
   })
   ->catch(err => {
     let exceptionMessage = err->formatException

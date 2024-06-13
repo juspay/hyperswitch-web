@@ -14,14 +14,13 @@ let make = (~integrateError, ~logger) => {
   let (availablePaymentMethodTypes, setAvailablePaymentMethodTypes) = React.useState(_ =>
     defaultAvailablePaymentMethodTypes
   )
-  let (apiError, setApiError) = React.useState(_ => None)
-  let (apiResponse, setApiResponse) = React.useState(_ => None)
   let (amount, setAmount) = React.useState(_ => options.amount)
   let (currency, setCurrency) = React.useState(_ => options.currency)
   let (flow, setFlow) = React.useState(_ => options.flow)
   let (linkId, setLinkId) = React.useState(_ => options.linkId)
   let (loader, setLoader) = React.useState(_ => false)
   let (showStatus, setShowStatus) = React.useState(_ => false)
+  let (statusInfo, setStatusInfo) = React.useState(_ => defaultStatusInfo)
   let (payoutId, setPayoutId) = React.useState(_ => options.payoutId)
   let (merchantLogo, setMerchantLogo) = React.useState(_ => options.logo)
   let (merchantName, setMerchantName) = React.useState(_ => options.collectorName)
@@ -135,13 +134,51 @@ let make = (~integrateError, ~logger) => {
           ~body=pmdBody,
         )
         ->then(res => {
-          Js.Console.log2("DEBUGG RES", res)
-          setApiResponse(_ => Some(res))
+          let data = res->decodePayoutConfirmResponse
+          switch data {
+          | Some(SuccessResponse(res)) => {
+              let updatedStatusInfo = {
+                payoutId: res.payoutId,
+                status: res.status,
+                message: res.errorMessage->Option.getOr(""),
+                code: res.errorCode,
+                reason: None,
+              }
+              setStatusInfo(_ => updatedStatusInfo)
+            }
+          | Some(ErrorResponse(err)) => {
+              let updatedStatusInfo = {
+                payoutId,
+                status: Failed,
+                message: err.message,
+                code: Some(err.code),
+                reason: err.reason,
+              }
+              setStatusInfo(_ => updatedStatusInfo)
+            }
+          | None => {
+              let updatedStatusInfo = {
+                payoutId,
+                status: Failed,
+                message: "Failed to process your payout. Please check with your provider for more details.",
+                code: None,
+                reason: None,
+              }
+              setStatusInfo(_ => updatedStatusInfo)
+            }
+          }
           resolve()
         })
         ->catch(err => {
-          Js.Console.log2("DEBUGG ERR", err)
-          setApiError(_ => Some(err))
+          Js.Console.error2("CRITICAL - Payouts confirm failed with unknown error", err)
+          let updatedStatusInfo = {
+            payoutId,
+            status: Failed,
+            message: "Failed to process your payout. Please check with your provider for more details.",
+            code: None,
+            reason: None,
+          }
+          setStatusInfo(_ => updatedStatusInfo)
           resolve()
         })
         ->finally(() => {
@@ -165,12 +202,10 @@ let make = (~integrateError, ~logger) => {
       )
       ->then(res => {
         Js.Console.log2("DEBUGG RES", res)
-        setApiResponse(_ => Some(res))
         resolve()
       })
       ->catch(err => {
         Js.Console.log2("DEBUGG ERR", err)
-        setApiError(_ => Some(err))
         resolve()
       })
       ->finally(() => {
@@ -180,36 +215,84 @@ let make = (~integrateError, ~logger) => {
     }
   }
 
+  let renderCollectWidget = () =>
+    <div className="flex flex-row w-6/10 h-min">
+      <div className="relative mx-[50px] my-[80px]">
+        {loader
+          ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
+          : {React.null}}
+        <CollectWidget
+          logger
+          primaryTheme={merchantTheme}
+          handleSubmit
+          availablePaymentMethods
+          availablePaymentMethodTypes
+        />
+      </div>
+    </div>
+
+  let renderPayoutStatus = () => {
+    let status = statusInfo.status
+    let imageSource = getPayoutImageSource(status)
+    let readableStatus = getPayoutReadableStatus(status)
+    let statusInfoFields: array<statusInfoField> = [{key: "Ref Id", value: payoutId}]
+
+    statusInfo.code
+    ->Option.flatMap(code => {
+      statusInfoFields->Array.push({key: "Error Code", value: code})
+      None
+    })
+    ->ignore
+    statusInfo.reason
+    ->Option.flatMap(reason => {
+      statusInfoFields->Array.push({key: "Reason", value: reason})
+      None
+    })
+    ->ignore
+
+    <div
+      className="flex flex-col self-center items-center justify-center rounded-lg shadow-lg max-w-[500px]">
+      <div
+        className="flex flex-row justify-between items-center w-full px-[40px] py-[20px] border-b border-jp-gray-300">
+        <div className="text-[25px] font-semibold"> {React.string(merchantName)} </div>
+        <img className="h-[30px] w-auto" src={merchantLogo} alt="o" />
+      </div>
+      <img className="h-[160px] w-[160px] mt-[30px]" src={imageSource} alt="o" />
+      <div className="text-[20px] font-semibold mt-[10px]"> {React.string(readableStatus)} </div>
+      <div className="text-jp-gray-800 m text-center mx-[40px] mb-[40px]">
+        {React.string(statusInfo.message)}
+      </div>
+      <div
+        className="flex border-t border-bg-jp-gray-300 mt-[20px] py-[20px] w-full justify-center">
+        <div className="flex flex-col max-w-[500px] bg-white px-[10px] py-[5px]">
+          {statusInfoFields
+          ->Array.mapWithIndex((info, i) => {
+            let border = i === 0 ? "border" : "border-l border-r border-b"
+            <div
+              key={i->Int.toString}
+              className={`flex flex-row items-center border-jp-gray-700 border-solid ${border} rounded px-[10px]`}>
+              <div className="text-[15px] pr-[10px] text-jp-gray-900">
+                {React.string(info.key)}
+              </div>
+              <div className="text-[14px] pl-[10px] border-l border-jp-gray-700">
+                {React.string(info.value)}
+              </div>
+            </div>
+          })
+          ->React.array}
+        </div>
+      </div>
+    </div>
+  }
+
   if integrateError {
     <ErrorOccured />
   } else {
-    <div className="flex h-screen">
+    <div className="flex h-screen justify-center">
       {switch flow {
       | PayoutLinkInitiate =>
         if showStatus {
-          switch (apiResponse, apiError) {
-          | (Some(res), _) =>
-            <div>
-              {React.string("STATUS: ")}
-              {switch res->JSON.Decode.object {
-              | Some(dict) =>
-                switch dict->Dict.get("status") {
-                | Some(status) =>
-                  switch status->JSON.Decode.string {
-                  | Some(status) => React.string(status)
-                  | None => React.string("INTERNAL WEBSITE ERROR")
-                  }
-                | None => React.string("FAILED TO GET STATUS")
-                }
-              | None => React.string("INTERNAL WEBSITE ERROR")
-              }}
-            </div>
-          | (_, Some(err)) =>
-            <div>
-              <div> {React.string("FAILED TO SUBMIT PAYOUTS")} </div>
-            </div>
-          | _ => <div> {React.string("INTERNAL WEBSITE ERROR")} </div>
-          }
+          renderPayoutStatus()
         } else {
           <React.Fragment>
             // Merchant's info
@@ -243,20 +326,7 @@ let make = (~integrateError, ~logger) => {
               </div>
             </div>
             // Collect widget
-            <div className="flex flex-row w-6/10 h-min">
-              <div className="relative mx-[50px] my-[80px]">
-                {loader
-                  ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
-                  : {React.null}}
-                <CollectWidget
-                  logger
-                  primaryTheme={merchantTheme}
-                  handleSubmit
-                  availablePaymentMethods
-                  availablePaymentMethodTypes
-                />
-              </div>
-            </div>
+            {renderCollectWidget()}
           </React.Fragment>
         }
 
@@ -272,13 +342,7 @@ let make = (~integrateError, ~logger) => {
             </div>
           </div>
           // Collect widget
-          <CollectWidget
-            logger
-            primaryTheme={merchantTheme}
-            handleSubmit
-            availablePaymentMethods
-            availablePaymentMethodTypes
-          />
+          {renderCollectWidget()}
         </React.Fragment>
       }}
     </div>

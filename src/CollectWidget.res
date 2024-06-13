@@ -138,10 +138,10 @@ let make = (
       }
     }
 
-  let renderInfoTemplate = (label, value) => {
+  let renderInfoTemplate = (label, value, uniqueKey) => {
     let labelClasses = "w-4/10 text-jp-gray-800 text-[14px] min-w-40 text-end"
     let valueClasses = "w-6/10 text-[14px] min-w-40"
-    <div className="flex flex-row items-center">
+    <div key={uniqueKey} className="flex flex-row items-center">
       <div className={labelClasses}> {React.string(label)} </div>
       <div className="mx-[10px] h-[15px] w-[2px] bg-jp-gray-300"> {React.string("")} </div>
       <div className={valueClasses}> {React.string(value)} </div>
@@ -162,7 +162,7 @@ let make = (
         {fields
         ->Array.mapWithIndex((field, i) => {
           let (field, value) = field
-          {renderInfoTemplate(field->getPaymentMethodDataFieldLabel, value)}
+          {renderInfoTemplate(field->getPaymentMethodDataFieldLabel, value, i->Int.toString)}
         })
         ->React.array}
       </div>

@@ -240,11 +240,46 @@ let getPaymentMethodDataFieldMaxLength = (key: paymentMethodDataField): int =>
   | _ => 32
   }
 
+let getPayoutImageSource = (payoutStatus: payoutStatus): string => {
+  switch payoutStatus {
+  | Success => "https://live.hyperswitch.io/payment-link-assets/success.png"
+  | Initiated
+  | Pending => "https://live.hyperswitch.io/payment-link-assets/pending.png"
+  | RequiresFulfillment
+  | Cancelled
+  | Failed
+  | Ineligible
+  | Expired
+  | RequiresCreation
+  | Reversed
+  | RequiresConfirmation
+  | RequiresPayoutMethodData
+  | RequiresVendorAccountCreation => "https://live.hyperswitch.io/payment-link-assets/failed.png"
+  }
+}
+
+let getPayoutReadableStatus = (payoutStatus: payoutStatus): string => {
+  switch payoutStatus {
+  | Success => "Payout Successful"
+  | Initiated
+  | Pending => "Payout Processing"
+  | RequiresFulfillment
+  | Cancelled
+  | Failed
+  | Ineligible
+  | Expired
+  | RequiresCreation
+  | Reversed
+  | RequiresConfirmation
+  | RequiresPayoutMethodData
+  | RequiresVendorAccountCreation => "Payout Failed"
+  }
+}
+
 // Defaults
 let defaultPaymentMethodCollectFlow: paymentMethodCollectFlow = PayoutLinkInitiate
 let defaultAmount = 100
 let defaultCurrency = "EUR"
-
 let defaultEnabledPaymentMethods: array<paymentMethodType> = [
   Card(Credit),
   Card(Debit),
@@ -253,7 +288,6 @@ let defaultEnabledPaymentMethods: array<paymentMethodType> = [
   BankTransfer(Sepa),
   Wallet(Paypal),
 ]
-
 let defaultPaymentMethodCollectOptions = {
   enabledPaymentMethods: defaultEnabledPaymentMethods,
   linkId: "",
@@ -267,7 +301,6 @@ let defaultPaymentMethodCollectOptions = {
   currency: defaultCurrency,
   flow: defaultPaymentMethodCollectFlow,
 }
-
 let defaultAvailablePaymentMethods: array<paymentMethod> = []
 let defaultAvailablePaymentMethodTypes = {
   card: [],
@@ -276,6 +309,13 @@ let defaultAvailablePaymentMethodTypes = {
 }
 let defaultSelectedPaymentMethod: option<paymentMethod> = None
 let defaultSelectedPaymentMethodType: option<paymentMethodType> = None
+let defaultStatusInfo = {
+  status: Success,
+  payoutId: "",
+  message: "Your payout was received. Funds should be deposited in your selected payment mode within 2-3 business days.",
+  code: None,
+  reason: None,
+}
 
 let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(
