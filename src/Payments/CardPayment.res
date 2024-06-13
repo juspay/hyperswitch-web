@@ -78,10 +78,7 @@ let make = (
     let cardPaymentMethod =
       paymentMethodListValue.payment_methods
       ->Array.find(ele => ele.payment_method === "card")
-      ->Option.getOr({
-        payment_method: "card",
-        payment_method_types: [],
-      })
+      ->Option.getOr(PaymentMethodsRecord.defaultMethods)
 
     let cardNetworks = cardPaymentMethod.payment_method_types->Array.map(ele => ele.card_networks)
 

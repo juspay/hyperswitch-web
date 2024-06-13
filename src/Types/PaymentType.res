@@ -128,6 +128,7 @@ type customerMethods = {
   paymentMethodType: option<string>,
   defaultPaymentMethodSet: bool,
   requiresCvv: bool,
+  lastUsedAt: string,
 }
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
@@ -164,6 +165,7 @@ type options = {
   paymentMethodsHeaderText?: string,
   savedPaymentMethodsHeaderText?: string,
   hideExpiredPaymentMethods: bool,
+  displayDefaultSavedPaymentIcon: bool,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -183,6 +185,7 @@ let defaultCustomerMethods = {
   paymentMethodType: None,
   defaultPaymentMethodSet: false,
   requiresCvv: true,
+  lastUsedAt: "",
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -295,6 +298,7 @@ let defaultOptions = {
   billingAddress: defaultBillingAddress,
   sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
   hideExpiredPaymentMethods: false,
+  displayDefaultSavedPaymentIcon: true,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -875,6 +879,7 @@ let createCustomerObjArr = dict => {
         paymentMethodType: getPaymentMethodType(dict),
         defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
         requiresCvv: getBool(dict, "requires_cvv", true),
+        lastUsedAt: getString(dict, "last_used_at", ""),
       }
     })
   LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
@@ -897,6 +902,7 @@ let getCustomerMethods = (dict, str) => {
           paymentMethodType: getPaymentMethodType(dict),
           defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
           requiresCvv: getBool(dict, "requires_cvv", true),
+          lastUsedAt: getString(dict, "last_used_at", ""),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)
@@ -979,6 +985,7 @@ let itemToObjMapper = (dict, logger) => {
       "savedPaymentMethodsHeaderText",
       "hideExpiredPaymentMethods",
       "branding",
+      "displayDefaultSavedPaymentIcon",
     ],
     dict,
     "options",
@@ -1020,6 +1027,7 @@ let itemToObjMapper = (dict, logger) => {
     paymentMethodsHeaderText: ?getOptionString(dict, "paymentMethodsHeaderText"),
     savedPaymentMethodsHeaderText: ?getOptionString(dict, "savedPaymentMethodsHeaderText"),
     hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
+    displayDefaultSavedPaymentIcon: getBool(dict, "displayDefaultSavedPaymentIcon", true),
   }
 }
 

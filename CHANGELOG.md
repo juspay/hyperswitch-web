@@ -1,3 +1,38 @@
+## [0.65.1](https://github.com/juspay/hyperswitch-web/compare/v0.65.0...v0.65.1) (2024-06-13)
+
+
+### Bug Fixes
+
+* transforming billing and shipping country code to touppercase for applepay ([#441](https://github.com/juspay/hyperswitch-web/issues/441)) ([4745fa2](https://github.com/juspay/hyperswitch-web/commit/4745fa259ef3398fd0c9a39b12fe622b29a824ca))
+
+# [0.65.0](https://github.com/juspay/hyperswitch-web/compare/v0.64.0...v0.65.0) (2024-06-13)
+
+
+### Features
+
+* added prop for displayDefaultSavedPaymentIcon ([#434](https://github.com/juspay/hyperswitch-web/issues/434)) ([b141aed](https://github.com/juspay/hyperswitch-web/commit/b141aedf07e8eff9d6653440631aa193e72db712))
+
+# [0.64.0](https://github.com/juspay/hyperswitch-web/compare/v0.63.0...v0.64.0) (2024-06-13)
+
+
+### Features
+
+* added confirm and get handler for last used payment ([#428](https://github.com/juspay/hyperswitch-web/issues/428)) ([5e46da0](https://github.com/juspay/hyperswitch-web/commit/5e46da0924977fa00ccd5ce716c1ed494076ae7f))
+
+# [0.63.0](https://github.com/juspay/hyperswitch-web/compare/v0.62.3...v0.63.0) (2024-06-13)
+
+
+### Features
+
+* log href without including search params ([#439](https://github.com/juspay/hyperswitch-web/issues/439)) ([ad43a5c](https://github.com/juspay/hyperswitch-web/commit/ad43a5cbe8a53ca06aff77b852d76d84f2b1df05))
+
+## [0.62.3](https://github.com/juspay/hyperswitch-web/compare/v0.62.2...v0.62.3) (2024-06-13)
+
+
+### Bug Fixes
+
+* removed fallback in case of sessions call fail based on payment experience ([#440](https://github.com/juspay/hyperswitch-web/issues/440)) ([8f2e408](https://github.com/juspay/hyperswitch-web/commit/8f2e4085a65aff510ae49b416bc987aa2ca5b4da))
+
 ## [0.62.2](https://github.com/juspay/hyperswitch-web/compare/v0.62.1...v0.62.2) (2024-06-11)
 
 

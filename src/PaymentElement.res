@@ -45,8 +45,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     setLoadSavedCards: (savedCardsLoadState => savedCardsLoadState) => unit,
   ) = React.useState(_ => LoadingSavedCards)
 
-  let isKlarnaRedirectFlow = PaymentUtils.getIsKlarnaRedirectFlow(sessions)
-
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
@@ -67,6 +65,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           [defaultPaymentMethod]->Array.concat(savedCardsWithoutDefaultPaymentMethod)
         | None => savedCardsWithoutDefaultPaymentMethod
         }
+
+        finalSavedPaymentMethods->Array.sort((a, b) =>
+          compareLogic(Date.fromString(a.lastUsedAt), Date.fromString(b.lastUsedAt))
+        )
 
         setSavedMethods(_ => finalSavedPaymentMethods)
         setLoadSavedCards(_ =>
@@ -246,11 +248,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       {switch selectedOption->PaymentModeType.paymentMode {
       | Card => <CardPayment cardProps expiryProps cvcProps paymentType />
       | Klarna =>
-        <RenderIf condition={isKlarnaRedirectFlow}>
-          <React.Suspense fallback={loader()}>
-            <KlarnaPaymentLazy paymentType />
-          </React.Suspense>
-        </RenderIf>
+        <React.Suspense fallback={loader()}>
+          <KlarnaPaymentLazy paymentType />
+        </React.Suspense>
       | ACHTransfer =>
         <React.Suspense fallback={loader()}>
           <ACHBankTransferLazy paymentType />

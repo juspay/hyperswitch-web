@@ -128,7 +128,12 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       () => {
         logger.setMerchantId(publishableKey)
         logger.setSessionId(sessionID)
-        logger.setLogInfo(~value=Window.href, ~eventName=APP_INITIATED, ~timestamp=sdkTimestamp, ())
+        logger.setLogInfo(
+          ~value=Window.hrefWithoutSearch,
+          ~eventName=APP_INITIATED,
+          ~timestamp=sdkTimestamp,
+          (),
+        )
       }
     }->Sentry.sentryLogger
     let isSecure = Window.protocol === "https:"
@@ -137,8 +142,8 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ->Array.find(url => Window.hostname->String.includes(url))
       ->Option.isSome
     if !isSecure && !isLocal {
-      manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.href, ~logger, ())
-      Exn.raiseError("Insecure domain: " ++ Window.href)
+      manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.hrefWithoutSearch, ~logger, ())
+      Exn.raiseError("Insecure domain: " ++ Window.hrefWithoutSearch)
     }
     switch Window.getHyper->Nullable.toOption {
     | Some(hyperMethod) => {
@@ -404,7 +409,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
-          logger.setLogInfo(~value=Window.href, ~eventName=ORCA_ELEMENTS_CALLED, ())
+          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=ORCA_ELEMENTS_CALLED, ())
           resolve()
         })
         ->ignore
@@ -544,7 +549,11 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
-          logger.setLogInfo(~value=Window.href, ~eventName=PAYMENT_SESSION_INITIATED, ())
+          logger.setLogInfo(
+            ~value=Window.hrefWithoutSearch,
+            ~eventName=PAYMENT_SESSION_INITIATED,
+            (),
+          )
           resolve()
         })
         ->ignore
