@@ -978,6 +978,7 @@ let itemToObjMapper = (dict, logger) => {
       "paymentMethodsHeaderText",
       "savedPaymentMethodsHeaderText",
       "hideExpiredPaymentMethods",
+      "branding",
     ],
     dict,
     "options",

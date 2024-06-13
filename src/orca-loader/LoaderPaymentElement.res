@@ -158,7 +158,8 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
               `#orca-payment-element-iframeRef-${localSelectorString}`,
             )
             switch elem->Nullable.toOption {
-            | Some(ele) => ele
+            | Some(ele) =>
+              ele
               ->Window.style
               ->Window.setHeight(`${iframeHeightRef.contents->Float.toString}px`)
             | None => ()
@@ -246,6 +247,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
                           [
                             ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
+                            ("options", options),
                           ]->Dict.fromArray,
                         )
                       }
@@ -254,6 +256,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
                           [
                             ("fullScreenIframeMounted", true->JSON.Encode.bool),
                             ("metadata", fullscreenMetadata.contents),
+                            ("options", options),
                           ]->Dict.fromArray,
                         )
                       }
@@ -269,7 +272,10 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
               : {
                   ele->Window.innerHTML("")
                   mainElement->Window.iframePostMessage(
-                    [("fullScreenIframeMounted", false->JSON.Encode.bool)]->Dict.fromArray,
+                    [
+                      ("fullScreenIframeMounted", false->JSON.Encode.bool),
+                      ("options", options),
+                    ]->Dict.fromArray,
                   )
                 }
           | None => ()
