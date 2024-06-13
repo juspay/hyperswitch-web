@@ -1,3 +1,10 @@
+# [0.63.0](https://github.com/juspay/hyperswitch-web/compare/v0.62.3...v0.63.0) (2024-06-13)
+
+
+### Features
+
+* log href without including search params ([#439](https://github.com/juspay/hyperswitch-web/issues/439)) ([ad43a5c](https://github.com/juspay/hyperswitch-web/commit/ad43a5cbe8a53ca06aff77b852d76d84f2b1df05))
+
 ## [0.62.3](https://github.com/juspay/hyperswitch-web/compare/v0.62.2...v0.62.3) (2024-06-13)
 
 
