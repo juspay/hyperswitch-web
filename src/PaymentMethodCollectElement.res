@@ -261,7 +261,6 @@ let make = (~integrateError, ~logger) => {
           ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
           : {React.null}}
         <CollectWidget
-          logger
           primaryTheme={merchantTheme}
           handleSubmit
           availablePaymentMethods

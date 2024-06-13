@@ -17,9 +17,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
-  let (paymentMethodCollectOptions, setPaymentMethodCollectOptions) = Recoil.useRecoilState(
-    paymentMethodCollectOptionAtom,
-  )
+  let (_, setPaymentMethodCollectOptions) = Recoil.useRecoilState(paymentMethodCollectOptionAtom)
 
   let divRef = React.useRef(Nullable.null)
 

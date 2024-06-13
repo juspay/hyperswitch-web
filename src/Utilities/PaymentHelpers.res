@@ -1,7 +1,5 @@
 open Utils
 open Identity
-open PaymentMethodCollectUtils
-open PaymentMethodCollectTypes
 
 @val @scope(("window", "parent", "location")) external href: string = "href"
 

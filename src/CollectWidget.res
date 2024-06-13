@@ -3,7 +3,6 @@ open PaymentMethodCollectUtils
 
 @react.component
 let make = (
-  ~logger,
   ~availablePaymentMethods,
   ~availablePaymentMethodTypes,
   ~primaryTheme,
