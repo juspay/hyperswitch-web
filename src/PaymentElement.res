@@ -66,6 +66,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         | None => savedCardsWithoutDefaultPaymentMethod
         }
 
+        finalSavedPaymentMethods->Array.sort((a, b) =>
+          compareLogic(Date.fromString(a.lastUsedAt), Date.fromString(b.lastUsedAt))
+        )
+
         setSavedMethods(_ => finalSavedPaymentMethods)
         setLoadSavedCards(_ =>
           finalSavedPaymentMethods->Array.length == 0
