@@ -181,6 +181,7 @@ let make = (~integrateError, ~logger) => {
                 status: res.status,
                 message: getPayoutStatusMessage(res.status),
                 code: res.errorCode,
+                errorMessage: res.errorMessage,
                 reason: None,
               }
               setStatusInfo(_ => updatedStatusInfo)
@@ -189,8 +190,9 @@ let make = (~integrateError, ~logger) => {
               let updatedStatusInfo = {
                 payoutId,
                 status: Failed,
-                message: err.message,
+                message: "Failed to process your payout. Please check with your provider for more details.",
                 code: Some(err.code),
+                errorMessage: Some(err.message),
                 reason: err.reason,
               }
               setStatusInfo(_ => updatedStatusInfo)
@@ -201,6 +203,7 @@ let make = (~integrateError, ~logger) => {
                 status: Failed,
                 message: "Failed to process your payout. Please check with your provider for more details.",
                 code: None,
+                errorMessage: None,
                 reason: None,
               }
               setStatusInfo(_ => updatedStatusInfo)
@@ -215,6 +218,7 @@ let make = (~integrateError, ~logger) => {
             status: Failed,
             message: "Failed to process your payout. Please check with your provider for more details.",
             code: None,
+            errorMessage: None,
             reason: None,
           }
           setStatusInfo(_ => updatedStatusInfo)
@@ -281,6 +285,12 @@ let make = (~integrateError, ~logger) => {
       None
     })
     ->ignore
+    statusInfo.errorMessage
+    ->Option.flatMap(errorMessage => {
+      statusInfoFields->Array.push({key: "Error Message", value: errorMessage})
+      None
+    })
+    ->ignore
     statusInfo.reason
     ->Option.flatMap(reason => {
       statusInfoFields->Array.push({key: "Reason", value: reason})
@@ -301,14 +311,15 @@ let make = (~integrateError, ~logger) => {
         <div className="text-jp-gray-800 m text-center mx-[40px] mb-[40px]">
           {React.string(statusInfo.message)}
         </div>
-        <div
-          className="flex border-t border-bg-jp-gray-300 mt-[20px] py-[20px] w-full justify-center">
-          <div className="flex flex-col max-w-[500px] bg-white px-[10px] py-[5px]">
+        <div className="flex border-t border-bg-jp-gray-300 py-[20px] w-full justify-center">
+          <div className="flex flex-col max-w-[500px] bg-white w-full mx-[40px]">
             {statusInfoFields
             ->Array.mapWithIndex((info, i) => {
               <div key={i->Int.toString} className={`flex flex-row items-center`}>
-                <div className="text-[15px] text-jp-gray-900"> {React.string(info.key)} </div>
-                <div className="text-[13px] ml-[10px] pl-[10px] border-l border-jp-gray-700">
+                <div className="text-[15px] text-jp-gray-900 min-w-[10ch] text-right">
+                  {React.string(info.key)}
+                </div>
+                <div className="text-[13px] ml-[10px] pl-[10px] border-l border-jp-gray-300">
                   {React.string(info.value)}
                 </div>
               </div>

@@ -114,6 +114,7 @@ type statusInfo = {
   payoutId: string,
   message: string,
   code: option<string>,
+  errorMessage: option<string>,
   reason: option<string>,
 }
 

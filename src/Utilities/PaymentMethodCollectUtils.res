@@ -348,6 +348,7 @@ let defaultStatusInfo = {
   payoutId: "",
   message: "Your payout was successful. Funds were deposited in your selected payment mode.",
   code: None,
+  errorMessage: None,
   reason: None,
 }
 
