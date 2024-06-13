@@ -60,7 +60,7 @@ let make = (
       }
       let isActive = paymentTokenVal == obj.paymentToken
       <SavedCardItem
-        key={i->Belt.Int.toString}
+        key={i->Int.toString}
         setPaymentToken
         isActive
         paymentItem=obj

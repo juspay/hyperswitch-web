@@ -55,8 +55,8 @@ let getInt = (dict, key, default: int) => {
   dict
   ->Dict.get(key)
   ->Option.flatMap(JSON.Decode.float)
-  ->Option.getOr(default->Belt.Int.toFloat)
-  ->Belt.Float.toInt
+  ->Option.getOr(default->Int.toFloat)
+  ->Float.toInt
 }
 
 let getFloatFromString = (str, default) => str->Float.fromString->Option.getOr(default)
@@ -148,7 +148,7 @@ let getDictFromJson = (json: JSON.t) => {
   json->JSON.Decode.object->Option.getOr(Dict.make())
 }
 
-let getDictfromDict = (dict, key) => {
+let getDictFromDict = (dict, key) => {
   dict->getJsonObjectFromDict(key)->getDictFromJson
 }
 
@@ -172,7 +172,7 @@ let getNumberWithWarning = (dict, key, ~logger, default) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.float {
-    | Some(val) => val->Belt.Float.toInt
+    | Some(val) => val->Float.toInt
     | None =>
       manageErrorWarning(TYPE_INT_ERROR, ~dynamicStr=key, ~logger, ())
       default
@@ -361,7 +361,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
         }
         (key->toCase, val->JSON.Encode.string)
       }
-    | Number(val) => (key->toCase, val->Belt.Float.toString->JSON.Encode.string)
+    | Number(val) => (key->toCase, val->Float.toString->JSON.Encode.string)
     | _ => (key->toCase, value)
     }
     x
@@ -631,14 +631,14 @@ let addSize = (str: string, value: float, unit: sizeunit) => {
       arr
       ->Array.slice(~start=0, ~end={arr->Array.length - unitInString->String.length})
       ->Array.joinWith("")
-      ->Belt.Float.fromString
+      ->Float.fromString
       ->Option.getOr(0.0)
-    (val +. value)->Belt.Float.toString ++ unitInString
+    (val +. value)->Float.toString ++ unitInString
   } else {
     str
   }
 }
-let toInt = val => val->Belt.Int.fromString->Option.getOr(0)
+let toInt = val => val->Int.fromString->Option.getOr(0)
 
 let validateRountingNumber = str => {
   if str->String.length != 9 {
@@ -1292,3 +1292,28 @@ let compareLogic = (a, b) => {
     1.
   }
 }
+
+let currencyNetworksDict =
+  [
+    ("BTC", ["bitcoin", "bnb_smart_chain"]),
+    ("LTC", ["litecoin", "bnb_smart_chain"]),
+    ("ETH", ["ethereum", "bnb_smart_chain"]),
+    ("XRP", ["ripple", "bnb_smart_chain"]),
+    ("XLM", ["stellar", "bnb_smart_chain"]),
+    ("BCH", ["bitcoin_cash", "bnb_smart_chain"]),
+    ("ADA", ["cardano", "bnb_smart_chain"]),
+    ("SOL", ["solana", "bnb_smart_chain"]),
+    ("SHIB", ["ethereum", "bnb_smart_chain"]),
+    ("TRX", ["tron", "bnb_smart_chain"]),
+    ("DOGE", ["dogecoin", "bnb_smart_chain"]),
+    ("BNB", ["bnb_smart_chain"]),
+    ("USDT", ["ethereum", "tron", "bnb_smart_chain"]),
+    ("USDC", ["ethereum", "tron", "bnb_smart_chain"]),
+    ("DAI", ["ethereum", "bnb_smart_chain"]),
+  ]->Dict.fromArray
+
+let toSpacedUpperCase = (~str, ~delimiter) =>
+  str
+  ->String.toUpperCase
+  ->String.split(delimiter)
+  ->Array.joinWith(" ")

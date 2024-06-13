@@ -9,6 +9,7 @@ let cardsToRender = (width: int) => {
 }
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
+  let divRef = React.useRef(Nullable.null)
   let sessionsObj = Recoil.useRecoilValueFromAtom(sessions)
   let {
     showCardFormByDefault,
@@ -25,7 +26,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
 
-  let setPaymentMethodListValue = Recoil.useSetRecoilState(PaymentUtils.paymentMethodListValue)
+  let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
+    PaymentUtils.paymentMethodListValue,
+  )
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
@@ -41,8 +44,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     loadSavedCards: savedCardsLoadState,
     setLoadSavedCards: (savedCardsLoadState => savedCardsLoadState) => unit,
   ) = React.useState(_ => LoadingSavedCards)
-
-  let isKlarnaRedirectFlow = PaymentUtils.getIsKlarnaRedirectFlow(sessions)
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
@@ -247,11 +248,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       {switch selectedOption->PaymentModeType.paymentMode {
       | Card => <CardPayment cardProps expiryProps cvcProps paymentType />
       | Klarna =>
-        <RenderIf condition={isKlarnaRedirectFlow}>
-          <React.Suspense fallback={loader()}>
-            <KlarnaPaymentLazy paymentType />
-          </React.Suspense>
-        </RenderIf>
+        <React.Suspense fallback={loader()}>
+          <KlarnaPaymentLazy paymentType />
+        </React.Suspense>
       | ACHTransfer =>
         <React.Suspense fallback={loader()}>
           <ACHBankTransferLazy paymentType />
@@ -372,9 +371,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     {switch paymentMethodList {
-    | LoadError(_) => React.null
+    | LoadError(_) =>
+      <RenderIf condition={paymentMethodListValue.payment_methods->Array.length === 0}>
+        <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+      </RenderIf>
     | _ =>
-      <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
+      <RenderIf
+        condition={!displaySavedPaymentMethods &&
+        paymentOptions->Array.length == 0 &&
+        walletOptions->Array.length == 0}>
         <PaymentElementShimmer />
       </RenderIf>
     }}

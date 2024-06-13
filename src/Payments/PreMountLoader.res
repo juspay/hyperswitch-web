@@ -73,11 +73,11 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
     | _ => JSON.Encode.null
     }
     let dict = json->Utils.getDictFromJson
-    if dict->Dict.get("sendPaymentMethodsResponse")->Belt.Option.isSome {
+    if dict->Dict.get("sendPaymentMethodsResponse")->Option.isSome {
       paymentMethodsResponse->sendPromiseData("payment_methods")
-    } else if dict->Dict.get("sendCustomerPaymentMethodsResponse")->Belt.Option.isSome {
+    } else if dict->Dict.get("sendCustomerPaymentMethodsResponse")->Option.isSome {
       customerPaymentMethodsResponse->sendPromiseData("customer_payment_methods")
-    } else if dict->Dict.get("sendSessionTokensResponse")->Belt.Option.isSome {
+    } else if dict->Dict.get("sendSessionTokensResponse")->Option.isSome {
       sessionTokensResponse->sendPromiseData("session_tokens")
     }
   }

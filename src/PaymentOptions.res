@@ -12,7 +12,7 @@ module TabLoader = {
       ->Array.mapWithIndex((_, i) => {
         <div
           className={`Tab flex flex-col gap-3 animate-pulse cursor-default`}
-          key={i->Belt.Int.toString}
+          key={i->Int.toString}
           style={
             minWidth: "5rem",
             overflowWrap: "hidden",
@@ -118,7 +118,7 @@ let make = (
       {cardOptionDetails
       ->Array.mapWithIndex((payOption, i) => {
         let isActive = payOption.paymentMethodName == selectedOption
-        <TabCard key={i->Belt.Int.toString} paymentOption=payOption isActive />
+        <TabCard key={i->Int.toString} paymentOption=payOption isActive />
       })
       ->React.array}
       <TabLoader cardShimmerCount />

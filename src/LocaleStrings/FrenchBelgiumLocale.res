@@ -82,4 +82,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `Cette carte a expiré`,
   cardHeader: `Informations de carte`,
   cardBrandConfiguredErrorText: str => `${str} n'est pas pris en charge pour le moment.`,
+  currencyNetwork: `Réseaux Monétaires`,
 }

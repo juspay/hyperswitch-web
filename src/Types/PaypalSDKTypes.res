@@ -126,11 +126,11 @@ let getShippingDetails = shippingAddressOverrideObj => {
 }
 
 let paypalShippingDetails = purchaseUnit => {
-  let shippingAddress = purchaseUnit->Utils.getDictfromDict("shipping")
-  let payee = purchaseUnit->Utils.getDictfromDict("payee")
+  let shippingAddress = purchaseUnit->Utils.getDictFromDict("shipping")
+  let payee = purchaseUnit->Utils.getDictFromDict("payee")
 
-  let address = shippingAddress->Utils.getDictfromDict("address")
-  let name = shippingAddress->Utils.getDictfromDict("name")
+  let address = shippingAddress->Utils.getDictFromDict("address")
+  let name = shippingAddress->Utils.getDictFromDict("name")
 
   let recipientName = name->Utils.getOptionString("full_name")
   let line1 = address->Utils.getOptionString("address_line_1")
