@@ -1380,11 +1380,13 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~switchToCustomPod
           (),
         )
       }
+      Js.Console.log2("Resolving", data)
       resolve(data)
     })
   })
   ->catch(err => {
     let exceptionMessage = err->formatException
+    Js.Console.log2("MAJOR ERR", err)
     logApi(
       ~optLogger=Some(logger),
       ~url=uri,

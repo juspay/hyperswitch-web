@@ -17,8 +17,10 @@ let make = (~integrateError, ~logger) => {
   let (amount, setAmount) = React.useState(_ => options.amount)
   let (currency, setCurrency) = React.useState(_ => options.currency)
   let (flow, setFlow) = React.useState(_ => options.flow)
-  let (linkId, setLinkId) = React.useState(_ => options.linkId)
   let (loader, setLoader) = React.useState(_ => false)
+  let (returnUrl, setReturnUrl) = React.useState(_ => options.returnUrl)
+  let (secondsUntilRedirect, setSecondsUntilRedirect) = React.useState(_ => None)
+  let (sessionExpiry, setSessionExpiry) = React.useState(_ => options.sessionExpiry)
   let (showStatus, setShowStatus) = React.useState(_ => false)
   let (statusInfo, setStatusInfo) = React.useState(_ => defaultStatusInfo)
   let (payoutId, setPayoutId) = React.useState(_ => options.payoutId)
@@ -85,12 +87,6 @@ let make = (~integrateError, ~logger) => {
     None
   }, [options.flow])
 
-  // Update linkId
-  React.useEffect(() => {
-    setLinkId(_ => options.linkId)
-    None
-  }, [options.linkId])
-
   // Update payoutId
   React.useEffect(() => {
     setPayoutId(_ => options.payoutId)
@@ -115,13 +111,55 @@ let make = (~integrateError, ~logger) => {
     None
   }, [options.theme])
 
+  // Update returnUrl
+  React.useEffect(() => {
+    setReturnUrl(_ => options.returnUrl)
+    None
+  }, [options.returnUrl])
+
+  // Update sessionExpiry
+  React.useEffect(() => {
+    setSessionExpiry(_ => options.sessionExpiry)
+    None
+  }, [options.sessionExpiry])
+
+  // Start a timer for redirecting to return_url
+  React.useEffect(() => {
+    switch (returnUrl, showStatus) {
+    | (Some(returnUrl), true) => {
+        setSecondsUntilRedirect(_ => Some(5))
+        // Start a interval to update redirect text every second
+        let interval = setInterval(() =>
+          setSecondsUntilRedirect(
+            prev =>
+              switch prev {
+              | Some(val) => val > 0 ? Some(val - 1) : Some(val)
+              | None => Some(5)
+              },
+          )
+        , 1000)
+        // Clear after 5s and redirect
+        setTimeout(() => {
+          clearInterval(interval)
+          // Append query params and redirect
+          let url = PaymentHelpers.urlSearch(returnUrl)
+          url.searchParams.set("payout_id", payoutId)
+          url.searchParams.set("status", statusInfo.status->getPayoutStatusString)
+          Utils.openUrl(url.href)
+        }, 5010)->ignore
+      }
+    | _ => ()
+    }
+    None
+  }, [showStatus])
+
   let handleSubmit = pmd => {
     setLoader(_ => true)
     let pmdBody = flow->formBody(pmd)
 
     switch flow {
     | PayoutLinkInitiate => {
-        let endpoint = "http://localhost:8080"
+        let endpoint = ApiEndpoint.getApiEndPoint()
         let uri = `${endpoint}/payouts/${payoutId}/confirm`
         // Create payment method
         open Promise
@@ -140,7 +178,7 @@ let make = (~integrateError, ~logger) => {
               let updatedStatusInfo = {
                 payoutId: res.payoutId,
                 status: res.status,
-                message: res.errorMessage->Option.getOr(""),
+                message: getPayoutStatusMessage(res.status),
                 code: res.errorCode,
                 reason: None,
               }
@@ -197,7 +235,7 @@ let make = (~integrateError, ~logger) => {
         ~publishableKey=keys.publishableKey,
         ~logger,
         ~switchToCustomPod=false,
-        ~endpoint="http://localhost:8080",
+        ~endpoint=ApiEndpoint.getApiEndPoint(),
         ~body=pmdBody,
       )
       ->then(res => {
@@ -250,37 +288,41 @@ let make = (~integrateError, ~logger) => {
     })
     ->ignore
 
-    <div
-      className="flex flex-col self-center items-center justify-center rounded-lg shadow-lg max-w-[500px]">
+    <div className="flex flex-col items-center justify-center">
       <div
-        className="flex flex-row justify-between items-center w-full px-[40px] py-[20px] border-b border-jp-gray-300">
-        <div className="text-[25px] font-semibold"> {React.string(merchantName)} </div>
-        <img className="h-[30px] w-auto" src={merchantLogo} alt="o" />
-      </div>
-      <img className="h-[160px] w-[160px] mt-[30px]" src={imageSource} alt="o" />
-      <div className="text-[20px] font-semibold mt-[10px]"> {React.string(readableStatus)} </div>
-      <div className="text-jp-gray-800 m text-center mx-[40px] mb-[40px]">
-        {React.string(statusInfo.message)}
-      </div>
-      <div
-        className="flex border-t border-bg-jp-gray-300 mt-[20px] py-[20px] w-full justify-center">
-        <div className="flex flex-col max-w-[500px] bg-white px-[10px] py-[5px]">
-          {statusInfoFields
-          ->Array.mapWithIndex((info, i) => {
-            let border = i === 0 ? "border" : "border-l border-r border-b"
-            <div
-              key={i->Int.toString}
-              className={`flex flex-row items-center border-jp-gray-700 border-solid ${border} rounded px-[10px]`}>
-              <div className="text-[15px] pr-[10px] text-jp-gray-900">
-                {React.string(info.key)}
-              </div>
-              <div className="text-[14px] pl-[10px] border-l border-jp-gray-700">
-                {React.string(info.value)}
-              </div>
-            </div>
-          })
-          ->React.array}
+        className="flex flex-col self-center items-center justify-center rounded-lg shadow-lg max-w-[500px]">
+        <div
+          className="flex flex-row justify-between items-center w-full px-[40px] py-[20px] border-b border-jp-gray-300">
+          <div className="text-[25px] font-semibold"> {React.string(merchantName)} </div>
+          <img className="h-[30px] w-auto" src={merchantLogo} alt="o" />
         </div>
+        <img className="h-[160px] w-[160px] mt-[30px]" src={imageSource} alt="o" />
+        <div className="text-[20px] font-semibold mt-[10px]"> {React.string(readableStatus)} </div>
+        <div className="text-jp-gray-800 m text-center mx-[40px] mb-[40px]">
+          {React.string(statusInfo.message)}
+        </div>
+        <div
+          className="flex border-t border-bg-jp-gray-300 mt-[20px] py-[20px] w-full justify-center">
+          <div className="flex flex-col max-w-[500px] bg-white px-[10px] py-[5px]">
+            {statusInfoFields
+            ->Array.mapWithIndex((info, i) => {
+              <div key={i->Int.toString} className={`flex flex-row items-center`}>
+                <div className="text-[15px] text-jp-gray-900"> {React.string(info.key)} </div>
+                <div className="text-[13px] ml-[10px] pl-[10px] border-l border-jp-gray-700">
+                  {React.string(info.value)}
+                </div>
+              </div>
+            })
+            ->React.array}
+          </div>
+        </div>
+      </div>
+      <div className="mt-[40px]">
+        {switch secondsUntilRedirect {
+        | Some(seconds) =>
+          React.string("Redirecting in " ++ seconds->Int.toString ++ " seconds ...")
+        | None => React.null
+        }}
       </div>
     </div>
   }
@@ -321,7 +363,7 @@ let make = (~integrateError, ~logger) => {
                   </div>
                 </div>
                 <div className="mt-[10px] px-[20px] py-[5px] bg-gray-200 text-[13px] rounded-b-lg">
-                  {React.string(`Link expires on: `)}
+                  {React.string(`Link expires on: ${sessionExpiry}`)}
                 </div>
               </div>
             </div>

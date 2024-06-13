@@ -258,7 +258,7 @@ let getPayoutImageSource = (payoutStatus: payoutStatus): string => {
   }
 }
 
-let getPayoutReadableStatus = (payoutStatus: payoutStatus): string => {
+let getPayoutReadableStatus = (payoutStatus: payoutStatus): string =>
   switch payoutStatus {
   | Success => "Payout Successful"
   | Initiated
@@ -274,7 +274,40 @@ let getPayoutReadableStatus = (payoutStatus: payoutStatus): string => {
   | RequiresPayoutMethodData
   | RequiresVendorAccountCreation => "Payout Failed"
   }
-}
+
+let getPayoutStatusString = (payoutStatus: payoutStatus): string =>
+  switch payoutStatus {
+  | Success => "success"
+  | Initiated => "initiated"
+  | Pending => "pending"
+  | RequiresFulfillment => "requires_fulfillment"
+  | Cancelled => "expired"
+  | Failed => "failed"
+  | Ineligible => "ineligible"
+  | Expired => "cancelled"
+  | RequiresCreation => "requires_creation"
+  | Reversed => "reversed"
+  | RequiresConfirmation => "requires_confirmation"
+  | RequiresPayoutMethodData => "requires_payout_method_data"
+  | RequiresVendorAccountCreation => "requires_vendor_account_creation"
+  }
+
+let getPayoutStatusMessage = (payoutStatus: payoutStatus): string =>
+  switch payoutStatus {
+  | Success => "Your payout was made to selected payment method."
+  | Initiated
+  | Pending => "Your payout should be processed within 2-3 business days."
+  | RequiresFulfillment
+  | Cancelled
+  | Failed
+  | Ineligible
+  | Expired
+  | RequiresCreation
+  | Reversed
+  | RequiresConfirmation
+  | RequiresPayoutMethodData
+  | RequiresVendorAccountCreation => "Failed to process your payout. Please check with your provider for more details."
+  }
 
 // Defaults
 let defaultPaymentMethodCollectFlow: paymentMethodCollectFlow = PayoutLinkInitiate
@@ -300,6 +333,7 @@ let defaultPaymentMethodCollectOptions = {
   amount: defaultAmount,
   currency: defaultCurrency,
   flow: defaultPaymentMethodCollectFlow,
+  sessionExpiry: "",
 }
 let defaultAvailablePaymentMethods: array<paymentMethod> = []
 let defaultAvailablePaymentMethodTypes = {
@@ -312,7 +346,7 @@ let defaultSelectedPaymentMethodType: option<paymentMethodType> = None
 let defaultStatusInfo = {
   status: Success,
   payoutId: "",
-  message: "Your payout was received. Funds should be deposited in your selected payment mode within 2-3 business days.",
+  message: "Your payout was successful. Funds were deposited in your selected payment mode.",
   code: None,
   reason: None,
 }
@@ -331,6 +365,7 @@ let itemToObjMapper = (dict, logger) => {
       "amount",
       "currency",
       "flow",
+      "sessionExpiry",
     ],
     dict,
     "options",
@@ -351,6 +386,7 @@ let itemToObjMapper = (dict, logger) => {
     amount: dict->decodeAmount(defaultAmount),
     currency: getString(dict, "currency", defaultCurrency),
     flow: dict->decodeFlow(defaultPaymentMethodCollectFlow),
+    sessionExpiry: getString(dict, "sessionExpiry", ""),
   }
 }
 

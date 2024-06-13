@@ -60,6 +60,7 @@ type paymentMethodCollectOptions = {
   amount: int,
   currency: string,
   flow: paymentMethodCollectFlow,
+  sessionExpiry: string,
 }
 
 // API TYPES
@@ -82,7 +83,7 @@ type payoutSuccessResponse = {
   payoutId: string,
   merchantId: string,
   customerId: string,
-  amount: string,
+  amount: float,
   currency: string,
   connector: option<string>,
   payoutType: string,
@@ -245,7 +246,7 @@ let decodePayoutConfirmResponse = (json: Js.Json.t): option<payoutConfirmRespons
           obj->Dict.get("payout_id")->Option.flatMap(JSON.Decode.string),
           obj->Dict.get("merchant_id")->Option.flatMap(JSON.Decode.string),
           obj->Dict.get("customer_id")->Option.flatMap(JSON.Decode.string),
-          obj->Dict.get("amount")->Option.flatMap(JSON.Decode.string),
+          obj->Dict.get("amount")->Option.flatMap(JSON.Decode.float),
           obj->Dict.get("currency")->Option.flatMap(JSON.Decode.string),
           obj->Dict.get("payout_type")->Option.flatMap(JSON.Decode.string),
           obj->Dict.get("connector")->Option.flatMap(JSON.Decode.string),

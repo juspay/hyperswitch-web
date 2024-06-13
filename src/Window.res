@@ -135,6 +135,7 @@ let isProd = hostname === "checkout.hyperswitch.io"
 
 module Location = {
   @val @scope(("window", "location")) external replace: string => unit = "replace"
+  @val @scope(("window", "location")) external assign: string => unit = "assign"
 }
 
 module Element = {
