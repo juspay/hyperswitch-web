@@ -1,3 +1,10 @@
+# [0.64.0](https://github.com/juspay/hyperswitch-web/compare/v0.63.0...v0.64.0) (2024-06-13)
+
+
+### Features
+
+* added confirm and get handler for last used payment ([#428](https://github.com/juspay/hyperswitch-web/issues/428)) ([5e46da0](https://github.com/juspay/hyperswitch-web/commit/5e46da0924977fa00ccd5ce716c1ed494076ae7f))
+
 # [0.63.0](https://github.com/juspay/hyperswitch-web/compare/v0.62.3...v0.63.0) (2024-06-13)
 
 
