@@ -1,3 +1,10 @@
+## [0.65.1](https://github.com/juspay/hyperswitch-web/compare/v0.65.0...v0.65.1) (2024-06-13)
+
+
+### Bug Fixes
+
+* transforming billing and shipping country code to touppercase for applepay ([#441](https://github.com/juspay/hyperswitch-web/issues/441)) ([4745fa2](https://github.com/juspay/hyperswitch-web/commit/4745fa259ef3398fd0c9a39b12fe622b29a824ca))
+
 # [0.65.0](https://github.com/juspay/hyperswitch-web/compare/v0.64.0...v0.65.0) (2024-06-13)
 
 
