@@ -7,9 +7,9 @@ const sdkEnv = process.env.sdkEnv ?? "local";
 
 const endpointMap = {
   prod: "https://api.hyperswitch.io/payments",
-  sandbox: "http://localhost:8080/payments",
+  sandbox: "https://sandbox.hyperswitch.io/payments",
   integ: "https://integ-api.hyperswitch.io/payments",
-  local: "http://localhost:8080/payments", // Default or local environment endpoint
+  local: "https://sandbox.hyperswitch.io/payments", // Default or local environment endpoint
 };
 
 const backendEndPoint = endpointMap[sdkEnv] || endpointMap.local;
@@ -20,7 +20,6 @@ const devServer = {
   host: "0.0.0.0",
   port: 9050,
   historyApiFallback: true,
-  compress: true,
   proxy: {
     "/payments": {
       target: backendEndPoint,
@@ -38,7 +37,6 @@ const devServer = {
   headers: {
     "Cache-Control": "must-revalidate",
   },
-  disableHostCheck: true,
 };
 
 module.exports = merge(common(), {

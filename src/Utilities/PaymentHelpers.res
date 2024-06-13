@@ -1333,7 +1333,7 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~switchToCustomPod
     ~optLogger=Some(logger),
     ~url=uri,
     ~apiLogType=Request,
-    ~eventName=CONFIRM_PAYOUT_CALL,
+    ~eventName=CONFIRM_PAYOUT_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
     (),
@@ -1380,13 +1380,11 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~switchToCustomPod
           (),
         )
       }
-      Js.Console.log2("Resolving", data)
       resolve(data)
     })
   })
   ->catch(err => {
     let exceptionMessage = err->formatException
-    Js.Console.log2("MAJOR ERR", err)
     logApi(
       ~optLogger=Some(logger),
       ~url=uri,
@@ -1416,7 +1414,7 @@ let createPaymentMethod = (
     ~optLogger=Some(logger),
     ~url=uri,
     ~apiLogType=Request,
-    ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
+    ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
     (),
