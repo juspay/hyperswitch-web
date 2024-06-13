@@ -1,3 +1,10 @@
+# [0.65.0](https://github.com/juspay/hyperswitch-web/compare/v0.64.0...v0.65.0) (2024-06-13)
+
+
+### Features
+
+* added prop for displayDefaultSavedPaymentIcon ([#434](https://github.com/juspay/hyperswitch-web/issues/434)) ([b141aed](https://github.com/juspay/hyperswitch-web/commit/b141aedf07e8eff9d6653440631aa193e72db712))
+
 # [0.64.0](https://github.com/juspay/hyperswitch-web/compare/v0.63.0...v0.64.0) (2024-06-13)
 
 
