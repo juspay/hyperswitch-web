@@ -216,6 +216,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
       },
       "buttonSizeMode": "fill",
       "buttonColor": options.wallets.style.theme == Dark ? "black" : "white",
+      "buttonRadius": options.wallets.style.buttonRadius,
     }
     obj->Identity.anyTypeToJson
   }
@@ -277,7 +278,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
 
   <RenderIf condition={isRenderGooglePayButton}>
     <div
-      style={height: `${height->Belt.Int.toString}px`}
+      style={height: `${height->Int.toString}px`}
       id="google-pay-button"
       className={`w-full flex flex-row justify-center rounded-md`}
     />

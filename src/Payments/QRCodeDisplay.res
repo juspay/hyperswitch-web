@@ -44,7 +44,7 @@ let make = () => {
           Dict.set(headers, x, val->getStringFromJson(""))
         })
         let expiryTime =
-          metaDataDict->getString("expiryTime", "")->Belt.Float.fromString->Option.getOr(0.0)
+          metaDataDict->getString("expiryTime", "")->Float.fromString->Option.getOr(0.0)
         let timeExpiry = expiryTime -. Date.now()
         if timeExpiry > 0.0 && timeExpiry < 900000.0 {
           setExpiryTime(_ => timeExpiry)
@@ -121,9 +121,8 @@ let make = () => {
   }
 
   let expiryString = React.useMemo(() => {
-    let minutes = (expiryTime /. 60000.0)->Belt.Float.toInt->Belt.Int.toString
-    let seconds =
-      mod(expiryTime->Belt.Float.toInt, 60000)->Belt.Int.toString->String.slice(~start=0, ~end=2)
+    let minutes = (expiryTime /. 60000.0)->Float.toInt->Int.toString
+    let seconds = mod(expiryTime->Float.toInt, 60000)->Int.toString->String.slice(~start=0, ~end=2)
     let seconds = seconds->String.length == 1 ? `${seconds}0` : seconds
     `${minutes}:${seconds}`
   }, [expiryTime])

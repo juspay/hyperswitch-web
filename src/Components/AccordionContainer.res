@@ -19,7 +19,7 @@ module Loader = {
           : ""
         <div
           className={`AccordionItem flex flex-row gap-3 animate-pulse cursor-default place-items-center`}
-          key={i->Belt.Int.toString}
+          key={i->Int.toString}
           style={
             minWidth: "80px",
             minHeight: "60px",
@@ -131,7 +131,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
         let isActive = payOption.paymentMethodName == selectedOption
         let borderRadiusStyle = getBorderRadiusStyleForCardOptionDetails(i)
         <Accordion
-          key={i->Belt.Int.toString}
+          key={i->Int.toString}
           paymentOption=payOption
           isActive
           checkoutEle
@@ -149,7 +149,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
           let isActive = payOption.paymentMethodName == selectedOption
           let borderRadiusStyle = getBorderRadiusStyleForDropDownOptionDetails(i)
           <Accordion
-            key={i->Belt.Int.toString}
+            key={i->Int.toString}
             paymentOption=payOption
             isActive
             checkoutEle

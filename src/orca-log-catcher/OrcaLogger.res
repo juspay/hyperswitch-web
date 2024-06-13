@@ -620,7 +620,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       }
     | _ => 0.
     }
-    latency > 0. ? latency->Belt.Float.toString : ""
+    latency > 0. ? latency->Float.toString : ""
   }
 
   let setLogInfo = (
@@ -640,8 +640,8 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     | Some(lat) => lat->Float.toString
     | None => calculateLatencyHook(~eventName, ())
     }
-    let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
-    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
+    let localTimestamp = timestamp->Option.getOr(Date.now()->Float.toString)
+    let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -691,8 +691,8 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = calculateLatencyHook(~eventName, ~apiLogType, ())
-    let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
-    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
+    let localTimestamp = timestamp->Option.getOr(Date.now()->Float.toString)
+    let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -744,8 +744,8 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     | Some(lat) => lat->Float.toString
     | None => calculateLatencyHook(~eventName, ())
     }
-    let localTimestamp = timestamp->Option.getOr(Date.now()->Belt.Float.toString)
-    let localTimestampFloat = localTimestamp->Belt.Float.fromString->Option.getOr(Date.now())
+    let localTimestamp = timestamp->Option.getOr(Date.now()->Float.toString)
+    let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
     {
       logType,
       timestamp: localTimestamp,
@@ -782,7 +782,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     {
       logType: INFO,
       eventName,
-      timestamp: Date.now()->Belt.Float.toString,
+      timestamp: Date.now()->Float.toString,
       sessionId: sessionId.contents,
       source: sourceString,
       version: GlobalVars.repoVersion,

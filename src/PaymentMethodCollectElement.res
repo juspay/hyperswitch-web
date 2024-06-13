@@ -159,7 +159,8 @@ let make = (~integrateError, ~logger) => {
 
     switch flow {
     | PayoutLinkInitiate => {
-        let endpoint = ApiEndpoint.getApiEndPoint()
+        // let endpoint = ApiEndpoint.getApiEndPoint()
+        let endpoint = "http://localhost:8080"
         let uri = `${endpoint}/payouts/${payoutId}/confirm`
         // Create payment method
         open Promise

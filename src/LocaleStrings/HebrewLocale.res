@@ -82,4 +82,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardExpiredText: `הכרטיס הזה פג תוקף`,
   cardHeader: `מידע כרטיס`,
   cardBrandConfiguredErrorText: str => `${str} לא נתמך כרגע.`,
+  currencyNetwork: `רשתות מטבעות`,
 }
