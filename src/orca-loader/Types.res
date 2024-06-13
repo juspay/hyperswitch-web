@@ -41,7 +41,9 @@ type element = {
 
 type getCustomerSavedPaymentMethods = {
   getCustomerDefaultSavedPaymentMethodData: unit => JSON.t,
+  getCustomerLastUsedPaymentMethodData: unit => JSON.t,
   confirmWithCustomerDefaultPaymentMethod: JSON.t => Promise.t<JSON.t>,
+  confirmWithLastUsedPaymentMethod: JSON.t => Promise.t<JSON.t>,
 }
 
 type initPaymentSession = {getCustomerSavedPaymentMethods: unit => Promise.t<JSON.t>}
@@ -122,7 +124,15 @@ let getCustomerDefaultSavedPaymentMethodData = () => {
   JSON.Encode.null
 }
 
+let getCustomerLastUsedPaymentMethodData = () => {
+  JSON.Encode.null
+}
+
 let confirmWithCustomerDefaultPaymentMethod = _confirmParams => {
+  Promise.resolve(Dict.make()->JSON.Encode.object)
+}
+
+let confirmWithLastUsedPaymentMethod = _confirmParams => {
   Promise.resolve(Dict.make()->JSON.Encode.object)
 }
 
