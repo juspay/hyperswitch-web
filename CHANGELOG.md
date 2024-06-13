@@ -1,3 +1,10 @@
+## [0.62.3](https://github.com/juspay/hyperswitch-web/compare/v0.62.2...v0.62.3) (2024-06-13)
+
+
+### Bug Fixes
+
+* removed fallback in case of sessions call fail based on payment experience ([#440](https://github.com/juspay/hyperswitch-web/issues/440)) ([8f2e408](https://github.com/juspay/hyperswitch-web/commit/8f2e4085a65aff510ae49b416bc987aa2ca5b4da))
+
 ## [0.62.2](https://github.com/juspay/hyperswitch-web/compare/v0.62.1...v0.62.2) (2024-06-11)
 
 
