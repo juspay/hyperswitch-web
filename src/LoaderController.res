@@ -270,7 +270,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               setLaunchTime(_ => newLaunchTime)
               let initLoadlatency = Date.now() -. newLaunchTime
               logger.setLogInfo(
-                ~value=Window.href,
+                ~value=Window.hrefWithoutSearch,
                 ~eventName=APP_RENDERED,
                 ~latency=initLoadlatency,
                 (),
