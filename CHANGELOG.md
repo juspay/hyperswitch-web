@@ -1,3 +1,10 @@
+## [0.65.2](https://github.com/juspay/hyperswitch-web/compare/v0.65.1...v0.65.2) (2024-06-13)
+
+
+### Bug Fixes
+
+* loader changes ([#442](https://github.com/juspay/hyperswitch-web/issues/442)) ([47c4d11](https://github.com/juspay/hyperswitch-web/commit/47c4d11ec14aba191ec2d754c4a0cdc923fb1443))
+
 ## [0.65.1](https://github.com/juspay/hyperswitch-web/compare/v0.65.0...v0.65.1) (2024-06-13)
 
 
