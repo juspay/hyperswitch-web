@@ -130,6 +130,7 @@ async function createPaymentIntent(request) {
     const paymentIntent = await apiResponse.json();
 
     if (paymentIntent.error) {
+      console.error("Error - ", paymentIntent.error);
       throw new Error(paymentIntent?.error?.message ?? "Something went wrong.");
     }
     return paymentIntent;
