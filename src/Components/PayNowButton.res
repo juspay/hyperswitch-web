@@ -53,7 +53,7 @@ let make = () => {
         cursor: {isPayNowButtonDisable ? "not-allowed" : "pointer"},
         opacity: {isPayNowButtonDisable ? "0.6" : "1"},
         width: themeObj.buttonWidth,
-        borderColor: themeObj.buttonBorderColor,
+        border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
       }>
       <span
         id="button-text"
