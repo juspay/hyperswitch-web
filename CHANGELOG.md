@@ -1,3 +1,10 @@
+# [0.66.0](https://github.com/juspay/hyperswitch-web/compare/v0.65.5...v0.66.0) (2024-06-14)
+
+
+### Features
+
+* hideCardNicknameField added ([#445](https://github.com/juspay/hyperswitch-web/issues/445)) ([36109ca](https://github.com/juspay/hyperswitch-web/commit/36109ca1700d426908b956a1e10512e3602fe7dd))
+
 ## [0.65.5](https://github.com/juspay/hyperswitch-web/compare/v0.65.4...v0.65.5) (2024-06-14)
 
 
