@@ -6,26 +6,14 @@ README.md @akash-c-k
 SECURITY.md @akash-c-k
 .gitignore @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
 
-Hyperswitch-React-Demo-App/ @prafulkoppalkar @JeevaRamu0104 @PritishBudhiraja @seekshiva
-Hyperswitch-React-Demo-App/Dockerfile @JeevaRamu0104 @prafulkoppalkar
-Hyperswitch-React-Demo-App/Makefile @JeevaRamu0104 @prafulkoppalkar
-Hyperswitch-React-Demo-App/promptScript.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
-Hyperswitch-React-Demo-App/webpack.common.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
-Hyperswitch-React-Demo-App/webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
+Hyperswitch-React-Demo-App/ @prafulkoppalkar @PritishBudhiraja @seekshiva @ArushKapoorJuspay
 
-.husky/ @prafulkoppalkar @PritishBudhiraja
-.github/ @prafulkoppalkar @PritishBudhiraja
+.husky/ @prafulkoppalkar @PritishBudhiraja @seekshiva
+.github/ @prafulkoppalkar @PritishBudhiraja @seekshiva
 
-aws/ @prafulkoppalkar
+aws/ @prafulkoppalkar @seekshiva
 
-webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
-webpack.common.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
+webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja @seekshiva
+webpack.common.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja @seekshiva
 
-src/ @seekshiva
-src/orca-log-catcher @vsrivatsa-juspay @prafulkoppalkar
-src/orca-loader @prafulkoppalkar
-src/LoaderConroller.res @prafulkoppalkar @PritishBudhiraja
-src/Utilities @prafulkoppalkar @PritishBudhiraja
-src/libraries @prafulkoppalkar @PritishBudhiraja
-src/Hooks @prafulkoppalkar @PritishBudhiraja
-src/Payment.res @prafulkoppalkar @PritishBudhiraja
+src/ @seekshiva @PritishBudhiraja @ArushKapoorJuspay @prafulkoppalkar @vsrivatsa-juspay
