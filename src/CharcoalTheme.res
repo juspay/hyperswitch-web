@@ -47,6 +47,7 @@ let charcoal = {
   buttonTextColor: "#ffffff",
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
+  buttonBorderWidth: "0px",
 }
 
 let charcoalRules = theme =>

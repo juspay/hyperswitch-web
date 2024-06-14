@@ -121,7 +121,7 @@ let make = (
             paymentType
             maxLength=7
             inputRef=expiryRef
-            placeholder="MM / YY"
+            placeholder=localeString.expiryPlaceholder
             id="card-expiry"
             isFocus
           />

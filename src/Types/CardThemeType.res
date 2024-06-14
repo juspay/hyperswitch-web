@@ -67,6 +67,7 @@ type themeClass = {
   buttonTextColor: string,
   buttonTextFontSize: string,
   buttonTextFontWeight: string,
+  buttonBorderWidth: string,
 }
 type appearance = {
   theme: theme,

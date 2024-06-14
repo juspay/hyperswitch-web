@@ -74,4 +74,5 @@ type localeStrings = {
   cardHeader: string,
   cardBrandConfiguredErrorText: string => string,
   currencyNetwork: string,
+  expiryPlaceholder: string,
 }
