@@ -56,9 +56,17 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         let defaultPaymentMethod =
           savedPaymentMethods->Array.find(savedCard => savedCard.defaultPaymentMethodSet)
 
-        let savedCardsWithoutDefaultPaymentMethod = savedPaymentMethods->Array.filter(savedCard => {
-          !savedCard.defaultPaymentMethodSet
-        })
+        let sortSavedPaymentMethods = arr =>
+          arr->Array.toSorted((a, b) =>
+            compareLogic(Date.fromString(a.lastUsedAt), Date.fromString(b.lastUsedAt))
+          )
+
+        let savedCardsWithoutDefaultPaymentMethod =
+          savedPaymentMethods
+          ->Array.filter(savedCard => {
+            !savedCard.defaultPaymentMethodSet
+          })
+          ->sortSavedPaymentMethods
 
         let finalSavedPaymentMethods = if optionAtomValue.displayDefaultSavedPaymentIcon {
           switch defaultPaymentMethod {
@@ -67,9 +75,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           | None => savedCardsWithoutDefaultPaymentMethod
           }
         } else {
-          savedPaymentMethods->Array.toSorted((a, b) =>
-            compareLogic(Date.fromString(a.lastUsedAt), Date.fromString(b.lastUsedAt))
-          )
+          savedPaymentMethods->sortSavedPaymentMethods
         }
 
         setSavedMethods(_ => finalSavedPaymentMethods)
