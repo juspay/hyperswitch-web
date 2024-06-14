@@ -60,15 +60,17 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           !savedCard.defaultPaymentMethodSet
         })
 
-        let finalSavedPaymentMethods = switch defaultPaymentMethod {
-        | Some(defaultPaymentMethod) =>
-          [defaultPaymentMethod]->Array.concat(savedCardsWithoutDefaultPaymentMethod)
-        | None => savedCardsWithoutDefaultPaymentMethod
+        let finalSavedPaymentMethods = if optionAtomValue.displayDefaultSavedPaymentIcon {
+          switch defaultPaymentMethod {
+          | Some(defaultPaymentMethod) =>
+            [defaultPaymentMethod]->Array.concat(savedCardsWithoutDefaultPaymentMethod)
+          | None => savedCardsWithoutDefaultPaymentMethod
+          }
+        } else {
+          savedPaymentMethods->Array.toSorted((a, b) =>
+            compareLogic(Date.fromString(a.lastUsedAt), Date.fromString(b.lastUsedAt))
+          )
         }
-
-        finalSavedPaymentMethods->Array.sort((a, b) =>
-          compareLogic(Date.fromString(a.lastUsedAt), Date.fromString(b.lastUsedAt))
-        )
 
         setSavedMethods(_ => finalSavedPaymentMethods)
         setLoadSavedCards(_ =>
@@ -88,13 +90,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (customerPaymentMethods, displaySavedPaymentMethods))
 
   React.useEffect(() => {
-    let defaultPaymentMethod =
-      savedMethods->Array.find(savedMethod => savedMethod.defaultPaymentMethodSet)
+    let defaultSelectedPaymentMethod = optionAtomValue.displayDefaultSavedPaymentIcon
+      ? savedMethods->Array.find(savedMethod => savedMethod.defaultPaymentMethodSet)
+      : savedMethods->Array.get(0)
 
     let isSavedMethodsEmpty = savedMethods->Array.length === 0
 
-    let tokenObj = switch (isSavedMethodsEmpty, defaultPaymentMethod) {
-    | (false, Some(defaultPaymentMethod)) => Some(defaultPaymentMethod)
+    let tokenObj = switch (isSavedMethodsEmpty, defaultSelectedPaymentMethod) {
+    | (false, Some(defaultSelectedPaymentMethod)) => Some(defaultSelectedPaymentMethod)
     | (false, None) => Some(savedMethods->Array.get(0)->Option.getOr(defaultCustomerMethods))
     | _ => None
     }
