@@ -53,29 +53,26 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       }
     | (_, LoadingSavedCards) => ()
     | (_, LoadedSavedCards(savedPaymentMethods, isGuestCustomer)) => {
-        let defaultPaymentMethod =
-          savedPaymentMethods->Array.find(savedCard => savedCard.defaultPaymentMethodSet)
-
-        let sortSavedPaymentMethods = (a, b) =>
-          compareLogic(Date.fromString(a.lastUsedAt), Date.fromString(b.lastUsedAt))
-
-        let finalSavedPaymentMethods = if optionAtomValue.displayDefaultSavedPaymentIcon {
-          let savedCardsWithoutDefaultPaymentMethod =
-            savedPaymentMethods->Array.filter(savedCard => {
-              !savedCard.defaultPaymentMethodSet
-            })
-
-          savedCardsWithoutDefaultPaymentMethod->Array.sort(sortSavedPaymentMethods)
-
-          switch defaultPaymentMethod {
-          | Some(defaultPaymentMethod) =>
-            [defaultPaymentMethod]->Array.concat(savedCardsWithoutDefaultPaymentMethod)
-          | None => savedCardsWithoutDefaultPaymentMethod
+        let sortSavedPaymentMethods = (a, b) => {
+          let defaultCompareVal = compareLogic(
+            Date.fromString(a.lastUsedAt),
+            Date.fromString(b.lastUsedAt),
+          )
+          if optionAtomValue.displayDefaultSavedPaymentIcon {
+            if a.defaultPaymentMethodSet {
+              -1.
+            } else if b.defaultPaymentMethodSet {
+              1.
+            } else {
+              defaultCompareVal
+            }
+          } else {
+            defaultCompareVal
           }
-        } else {
-          savedPaymentMethods->Array.sort(sortSavedPaymentMethods)
-          savedPaymentMethods
         }
+
+        let finalSavedPaymentMethods = savedPaymentMethods->Array.copy
+        finalSavedPaymentMethods->Array.sort(sortSavedPaymentMethods)
 
         setSavedMethods(_ => finalSavedPaymentMethods)
         setLoadSavedCards(_ =>
