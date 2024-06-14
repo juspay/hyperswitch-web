@@ -235,7 +235,7 @@ let getPaymentMethodDataFieldMaxLength = (key: paymentMethodDataField): int =>
   | ACHAccountNumber => 12
   | BacsSortCode => 5
   | BacsAccountNumber => 8
-  | SepaIban => 18
+  | SepaIban => 34
   | SepaBic => 8
   | _ => 32
   }
