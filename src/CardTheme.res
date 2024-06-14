@@ -158,6 +158,7 @@ let getVariables = (str, dict, default, logger) => {
       "buttonTextColor",
       "buttonTextFontSize",
       "buttonTextFontWeight",
+      "buttonBorderWidth",
     ]
     unknownKeysWarning(validKeys, json, "appearance.variables", ~logger)
     {
@@ -306,6 +307,12 @@ let getVariables = (str, dict, default, logger) => {
         json,
         "buttonTextFontWeight",
         default.buttonTextFontWeight,
+        ~logger,
+      ),
+      buttonBorderWidth: getWarningString(
+        json,
+        "buttonBorderWidth",
+        default.buttonBorderWidth,
         ~logger,
       ),
     }

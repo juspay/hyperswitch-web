@@ -47,6 +47,7 @@ let brutal = {
   buttonTextColor: "#000000",
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
+  buttonBorderWidth: "0px",
 }
 let brutalRules = (theme: CardThemeType.themeClass) =>
   {

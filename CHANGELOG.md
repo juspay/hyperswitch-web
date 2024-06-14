@@ -1,3 +1,10 @@
+## [0.65.4](https://github.com/juspay/hyperswitch-web/compare/v0.65.3...v0.65.4) (2024-06-14)
+
+
+### Bug Fixes
+
+* button border changes ([#443](https://github.com/juspay/hyperswitch-web/issues/443)) ([a573e16](https://github.com/juspay/hyperswitch-web/commit/a573e16349414b2642da7d44a5924d15d3d0d2c1))
+
 ## [0.65.3](https://github.com/juspay/hyperswitch-web/compare/v0.65.2...v0.65.3) (2024-06-14)
 
 ## [0.65.2](https://github.com/juspay/hyperswitch-web/compare/v0.65.1...v0.65.2) (2024-06-13)

@@ -276,7 +276,7 @@ let make = (
                   appearance=config.appearance
                   maxLength=7
                   inputRef=expiryRef
-                  placeholder="MM / YY"
+                  placeholder=localeString.expiryPlaceholder
                 />
               </div>
               <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>

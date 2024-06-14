@@ -48,6 +48,7 @@ let soft = {
   buttonTextColor: "#7d8fff",
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
+  buttonBorderWidth: "0px",
 }
 
 let softRules = theme =>
