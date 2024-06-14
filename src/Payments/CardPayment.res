@@ -276,7 +276,7 @@ let make = (
                   appearance=config.appearance
                   maxLength=7
                   inputRef=expiryRef
-                  placeholder="MM / YY"
+                  placeholder=localeString.expiryPlaceholder
                 />
               </div>
               <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
@@ -338,7 +338,7 @@ let make = (
               />
             </div>
           </RenderIf>
-          <RenderIf condition={isCustomerAcceptanceRequired}>
+          <RenderIf condition={!options.hideCardNicknameField && isCustomerAcceptanceRequired}>
             <div className={`pb-2 ${nicknameFieldClassName}`}>
               <NicknamePaymentInput paymentType value=nickname setValue=setNickname />
             </div>

@@ -87,4 +87,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardBrandConfiguredErrorText: str =>
     `${str} в данный момент не поддерживается.`,
   currencyNetwork: `Валютные сети`,
+  expiryPlaceholder: `MM / ГГ`,
 }

@@ -1,3 +1,26 @@
+# [0.66.0](https://github.com/juspay/hyperswitch-web/compare/v0.65.5...v0.66.0) (2024-06-14)
+
+
+### Features
+
+* hideCardNicknameField added ([#445](https://github.com/juspay/hyperswitch-web/issues/445)) ([36109ca](https://github.com/juspay/hyperswitch-web/commit/36109ca1700d426908b956a1e10512e3602fe7dd))
+
+## [0.65.5](https://github.com/juspay/hyperswitch-web/compare/v0.65.4...v0.65.5) (2024-06-14)
+
+
+### Bug Fixes
+
+* locales update for mm/yy ([#444](https://github.com/juspay/hyperswitch-web/issues/444)) ([0ebc610](https://github.com/juspay/hyperswitch-web/commit/0ebc6101b962fff7cca42d6da1b44319b2c17f88))
+
+## [0.65.4](https://github.com/juspay/hyperswitch-web/compare/v0.65.3...v0.65.4) (2024-06-14)
+
+
+### Bug Fixes
+
+* button border changes ([#443](https://github.com/juspay/hyperswitch-web/issues/443)) ([a573e16](https://github.com/juspay/hyperswitch-web/commit/a573e16349414b2642da7d44a5924d15d3d0d2c1))
+
+## [0.65.3](https://github.com/juspay/hyperswitch-web/compare/v0.65.2...v0.65.3) (2024-06-14)
+
 ## [0.65.2](https://github.com/juspay/hyperswitch-web/compare/v0.65.1...v0.65.2) (2024-06-13)
 
 

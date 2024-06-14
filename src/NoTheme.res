@@ -48,6 +48,7 @@ let noThemeValues = {
   buttonTextColor: "",
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
+  buttonBorderWidth: "0px",
 }
 
 let noThemeValuesRules = _ => Dict.make()->JSON.Encode.object

@@ -1,17 +1,3 @@
-let sortFunctions = (a, b) => {
-  open Utils
-  let temp1 = Date.fromString(a->getDictFromJson->getString("last_used_at", ""))
-  let temp2 = Date.fromString(b->getDictFromJson->getString("last_used_at", ""))
-
-  if temp1 === temp2 {
-    0.
-  } else if temp1 > temp2 {
-    -1.
-  } else {
-    1.
-  }
-}
-
 let getCustomerSavedPaymentMethods = (
   ~clientSecret,
   ~publishableKey,
@@ -46,6 +32,9 @@ let getCustomerSavedPaymentMethods = (
       ->Option.getOr(false)
     })
 
+    let getLastUsedAtDate = val =>
+      Date.fromString(val->getDictFromJson->getString("last_used_at", ""))
+
     let paymentNotExist = (
       ~message="There is no default saved payment method data for this customer",
     ) =>
@@ -67,7 +56,9 @@ let getCustomerSavedPaymentMethods = (
 
     let getCustomerLastUsedPaymentMethodData = () => {
       let customerPaymentMethodsCopy = customerDetailsArray->Array.copy
-      customerPaymentMethodsCopy->Array.sort(sortFunctions)
+      customerPaymentMethodsCopy->Array.sort((a, b) =>
+        compareLogic(a->getLastUsedAtDate, b->getLastUsedAtDate)
+      )
 
       switch customerPaymentMethodsCopy->Array.get(0) {
       | Some(customerLastPaymentUsed) => customerLastPaymentUsed
@@ -167,7 +158,9 @@ let getCustomerSavedPaymentMethods = (
 
     let confirmWithLastUsedPaymentMethod = payload => {
       let customerPaymentMethodsCopy = customerDetailsArray->Array.copy
-      customerPaymentMethodsCopy->Array.sort(sortFunctions)
+      customerPaymentMethodsCopy->Array.sort((a, b) =>
+        compareLogic(a->getLastUsedAtDate, b->getLastUsedAtDate)
+      )
 
       switch customerPaymentMethodsCopy->Array.get(0) {
       | Some(customerLastPaymentUsed) =>
