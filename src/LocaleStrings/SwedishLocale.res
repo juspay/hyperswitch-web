@@ -83,4 +83,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardHeader: `Kortinformation`,
   cardBrandConfiguredErrorText: str => `${str} stöds inte för tillfället.`,
   currencyNetwork: `Valutanätverk`,
+  expiryPlaceholder: `MM / ÅÅ`,
 }

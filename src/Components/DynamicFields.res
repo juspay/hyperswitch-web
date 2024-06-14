@@ -362,7 +362,7 @@ let make = (
               appearance=config.appearance
               maxLength=7
               inputRef=expiryRef
-              placeholder="MM / YY"
+              placeholder=localeString.expiryPlaceholder
             />
           | CardCvc =>
             <PaymentInputField
@@ -402,7 +402,7 @@ let make = (
                 appearance=config.appearance
                 maxLength=7
                 inputRef=expiryRef
-                placeholder="MM / YY"
+                placeholder=localeString.expiryPlaceholder
               />
               <PaymentInputField
                 fieldName=localeString.cvcTextLabel
