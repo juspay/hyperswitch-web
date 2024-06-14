@@ -115,7 +115,10 @@ app.get("/create-payment-intent", async (_, res) => {
 
 async function createPaymentIntent(request) {
   if (SERVER_URL) {
-    const apiResponse = await fetch(`${SERVER_URL}/payments`, {
+    const url =
+      process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
+      process.env.HYPERSWITCH_SERVER_URL;
+    const apiResponse = await fetch(`${url}/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

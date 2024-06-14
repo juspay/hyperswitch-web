@@ -86,4 +86,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardHeader: `Информация о карте`,
   cardBrandConfiguredErrorText: str =>
     `${str} в данный момент не поддерживается.`,
+  currencyNetwork: `Валютные сети`,
 }

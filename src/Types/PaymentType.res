@@ -87,6 +87,7 @@ type style = {
   type_: styleTypeArray,
   theme: theme,
   height: (heightType, heightType, heightType, heightType),
+  buttonRadius: int,
 }
 type wallets = {
   walletReturnUrl: string,
@@ -127,6 +128,7 @@ type customerMethods = {
   paymentMethodType: option<string>,
   defaultPaymentMethodSet: bool,
   requiresCvv: bool,
+  lastUsedAt: string,
 }
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
@@ -163,6 +165,7 @@ type options = {
   paymentMethodsHeaderText?: string,
   savedPaymentMethodsHeaderText?: string,
   hideExpiredPaymentMethods: bool,
+  displayDefaultSavedPaymentIcon: bool,
 }
 let defaultCardDetails = {
   scheme: None,
@@ -182,6 +185,7 @@ let defaultCustomerMethods = {
   paymentMethodType: None,
   defaultPaymentMethodSet: false,
   requiresCvv: true,
+  lastUsedAt: "",
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -255,6 +259,7 @@ let defaultStyle = {
   type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal)),
   theme: Light,
   height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48)),
+  buttonRadius: 2,
 }
 let defaultWallets = {
   walletReturnUrl: "",
@@ -293,6 +298,7 @@ let defaultOptions = {
   billingAddress: defaultBillingAddress,
   sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
   hideExpiredPaymentMethods: false,
+  displayDefaultSavedPaymentIcon: true,
 }
 let getLayout = (str, logger) => {
   switch str {
@@ -768,6 +774,7 @@ let getStyle = (dict, str, logger) => {
       type_: getWarningString(json, "type", "", ~logger)->getTypeArray(logger),
       theme: getWarningString(json, "theme", "", ~logger)->getTheme(logger),
       height: getNumberWithWarning(json, "height", 48, ~logger)->getHeightArray(logger),
+      buttonRadius: getNumberWithWarning(json, "buttonRadius", 2, ~logger),
     }
     style
   })
@@ -872,6 +879,7 @@ let createCustomerObjArr = dict => {
         paymentMethodType: getPaymentMethodType(dict),
         defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
         requiresCvv: getBool(dict, "requires_cvv", true),
+        lastUsedAt: getString(dict, "last_used_at", ""),
       }
     })
   LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
@@ -894,6 +902,7 @@ let getCustomerMethods = (dict, str) => {
           paymentMethodType: getPaymentMethodType(dict),
           defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
           requiresCvv: getBool(dict, "requires_cvv", true),
+          lastUsedAt: getString(dict, "last_used_at", ""),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)
@@ -951,7 +960,7 @@ let getConfirmParams = dict => {
 let getSdkHandleConfirmPaymentProps = dict => {
   handleConfirm: dict->getBool("handleConfirm", false),
   buttonText: ?dict->getOptionString("buttonText"),
-  confirmParams: dict->getDictfromDict("confirmParams")->getConfirmParams,
+  confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
 let itemToObjMapper = (dict, logger) => {
@@ -975,6 +984,8 @@ let itemToObjMapper = (dict, logger) => {
       "paymentMethodsHeaderText",
       "savedPaymentMethodsHeaderText",
       "hideExpiredPaymentMethods",
+      "branding",
+      "displayDefaultSavedPaymentIcon",
     ],
     dict,
     "options",
@@ -1011,11 +1022,12 @@ let itemToObjMapper = (dict, logger) => {
     showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
     billingAddress: getBillingAddress(dict, "billingAddress", logger),
     sdkHandleConfirmPayment: dict
-    ->getDictfromDict("sdkHandleConfirmPayment")
+    ->getDictFromDict("sdkHandleConfirmPayment")
     ->getSdkHandleConfirmPaymentProps,
     paymentMethodsHeaderText: ?getOptionString(dict, "paymentMethodsHeaderText"),
     savedPaymentMethodsHeaderText: ?getOptionString(dict, "savedPaymentMethodsHeaderText"),
     hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
+    displayDefaultSavedPaymentIcon: getBool(dict, "displayDefaultSavedPaymentIcon", true),
   }
 }
 

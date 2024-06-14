@@ -90,7 +90,7 @@ let useOneClickWalletsMessageGetter = (~paymentMethodListValue) => {
           </>
         let msgToConcat = if index === 0 {
           myMsg
-        } else if index === oneClickWalletsArr->Belt.Array.length - 1 {
+        } else if index === oneClickWalletsArr->Array.length - 1 {
           <>
             {React.string(`${Utils.nbsp}${localeString.\"and"}${Utils.nbsp}`)}
             {myMsg}
