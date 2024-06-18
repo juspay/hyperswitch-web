@@ -124,7 +124,7 @@ let decodeAmount = (dict, defaultAmount) =>
   | Some(amount) =>
     amount
     ->JSON.Decode.string
-    ->Option.flatMap(amountStr => Belt.Int.fromString(amountStr))
+    ->Option.flatMap(amountStr => Int.fromString(amountStr))
     ->Option.getOr(defaultAmount)
   | None => defaultAmount
   }
@@ -163,8 +163,8 @@ let decodeWallet = (methodType: string): option<wallet> =>
   | _ => None
   }
 
-let decodePaymentMethodType = (json: Js.Json.t): option<array<paymentMethodType>> => {
-  switch Js.Json.decodeObject(json) {
+let decodePaymentMethodType = (json: JSON.t): option<array<paymentMethodType>> => {
+  switch JSON.Decode.object(json) {
   | Some(obj) => {
       let payment_method = obj->Dict.get("payment_method")->Option.flatMap(JSON.Decode.string)
       let payment_methods: array<paymentMethodType> = []
@@ -202,8 +202,8 @@ let decodePaymentMethodType = (json: Js.Json.t): option<array<paymentMethodType>
   }
 }
 
-let decodePayoutConfirmResponse = (json: Js.Json.t): option<payoutConfirmResponse> => {
-  switch json->Js.Json.decodeObject {
+let decodePayoutConfirmResponse = (json: JSON.t): option<payoutConfirmResponse> => {
+  switch json->JSON.Decode.object {
   | Some(obj) => {
       let status = switch obj->Dict.get("status")->Option.flatMap(JSON.Decode.string) {
       | Some("success") => Some(Success)
@@ -305,8 +305,8 @@ let decodePayoutConfirmResponse = (json: Js.Json.t): option<payoutConfirmRespons
  *
  * Decoded format - array<paymentMethodType>
  */
-let decodePaymentMethodTypeArray = (jsonArray: Js.Json.t): array<paymentMethodType> =>
-  switch Js.Json.decodeArray(jsonArray) {
+let decodePaymentMethodTypeArray = (jsonArray: JSON.t): array<paymentMethodType> =>
+  switch JSON.Decode.array(jsonArray) {
   | Some(items) =>
     items
     ->Belt.Array.keepMap(decodePaymentMethodType)

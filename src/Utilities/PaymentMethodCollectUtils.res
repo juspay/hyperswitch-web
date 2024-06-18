@@ -3,21 +3,21 @@ open ErrorUtils
 open PaymentMethodCollectTypes
 open Utils
 
-type t = Js.Dict.t<Js.Json.t>
+type t = Dict.t<JSON.t>
 
 // Function to get a nested value
-let getNestedValue = (dict: t, key: string): option<Js.Json.t> => {
-  let keys = "."->Js.String.split(key)
+let getNestedValue = (dict: t, key: string): option<JSON.t> => {
+  let keys = String.split(key, ".")
   let length = Array.length(keys)
 
-  let rec traverse = (currentDict, index): option<Js.Json.t> => {
+  let rec traverse = (currentDict, index): option<JSON.t> => {
     if index === length - 1 {
-      Js.Dict.get(currentDict, Array.getUnsafe(keys, index))
+      Dict.get(currentDict, Array.getUnsafe(keys, index))
     } else {
       let keyPart = Array.getUnsafe(keys, index)
-      switch Js.Dict.get(currentDict, keyPart) {
+      switch Dict.get(currentDict, keyPart) {
       | Some(subDict) =>
-        switch Js.Json.decodeObject(subDict) {
+        switch JSON.Decode.object(subDict) {
         | Some(innerDict) => traverse(innerDict, index + 1)
         | None => None
         }
@@ -31,31 +31,30 @@ let getNestedValue = (dict: t, key: string): option<Js.Json.t> => {
 
 // Helper function to get or create a sub-dictionary
 let getOrCreateSubDict = (dict: t, key: string): t => {
-  switch Js.Dict.get(dict, key) {
+  switch Dict.get(dict, key) {
   | Some(subDict) =>
-    switch Js.Json.decodeObject(subDict) {
+    switch JSON.Decode.object(subDict) {
     | Some(innerDict) => innerDict
     | None => {
-        let newSubDict = Js.Dict.empty()
-        Js.Dict.set(dict, key, Js.Json.object_(newSubDict))
+        let newSubDict = Dict.make()
+        Dict.set(dict, key, JSON.Encode.object(newSubDict))
         newSubDict
       }
     }
   | None => {
-      let newSubDict = Js.Dict.empty()
-      Js.Dict.set(dict, key, Js.Json.object_(newSubDict))
+      let newSubDict = Dict.make()
+      Dict.set(dict, key, JSON.Encode.object(newSubDict))
       newSubDict
     }
   }
 }
 
 // Function to set a nested value
-let setNestedValue = (dict: t, key: string, value: Js.Json.t): unit => {
-  let keys = "."->Js.String.split(key)
-  let length = Array.length(keys)
+let setNestedValue = (dict: t, key: string, value: JSON.t): unit => {
+  let keys = String.split(key, ".")
   let rec traverse = (currentDict, index) => {
-    if index === length - 1 {
-      Js.Dict.set(currentDict, Array.getUnsafe(keys, index), value)
+    if index === Array.length(keys) - 1 {
+      Dict.set(currentDict, Array.getUnsafe(keys, index), value)
     } else {
       let keyPart = Array.getUnsafe(keys, index)
       let subDict = getOrCreateSubDict(currentDict, keyPart)
@@ -66,7 +65,7 @@ let setNestedValue = (dict: t, key: string, value: Js.Json.t): unit => {
   traverse(dict, 0)
 }
 
-let setValue = (dict, key, value): Js.Dict.t<Js.Json.t> => {
+let setValue = (dict, key, value): Dict.t<JSON.t> => {
   let pmdCopy = Dict.copy(dict)
   pmdCopy->setNestedValue(key, value->JSON.Encode.string)
   pmdCopy
@@ -417,27 +416,27 @@ let calculateValidity = (dict, key) => {
   | ACHRoutingNumber =>
     if value->String.length === 9 {
       let p1 = switch (
-        value->String.charAt(0)->Belt.Int.fromString,
-        value->String.charAt(3)->Belt.Int.fromString,
-        value->String.charAt(6)->Belt.Int.fromString,
+        value->String.charAt(0)->Int.fromString,
+        value->String.charAt(3)->Int.fromString,
+        value->String.charAt(6)->Int.fromString,
       ) {
       | (Some(a), Some(b), Some(c)) => Some(3 * (a + b + c))
       | _ => None
       }
 
       let p2 = switch (
-        value->String.charAt(1)->Belt.Int.fromString,
-        value->String.charAt(4)->Belt.Int.fromString,
-        value->String.charAt(7)->Belt.Int.fromString,
+        value->String.charAt(1)->Int.fromString,
+        value->String.charAt(4)->Int.fromString,
+        value->String.charAt(7)->Int.fromString,
       ) {
       | (Some(a), Some(b), Some(c)) => Some(7 * (a + b + c))
       | _ => None
       }
 
       let p3 = switch (
-        value->String.charAt(2)->Belt.Int.fromString,
-        value->String.charAt(5)->Belt.Int.fromString,
-        value->String.charAt(8)->Belt.Int.fromString,
+        value->String.charAt(2)->Int.fromString,
+        value->String.charAt(5)->Int.fromString,
+        value->String.charAt(8)->Int.fromString,
       ) {
       | (Some(a), Some(b), Some(c)) => Some(a + b + c)
       | _ => None
@@ -634,24 +633,24 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
     pmdApiFields
     ->Array.map(((k, v)) => (k, v->JSON.Encode.string))
     ->Dict.fromArray
-    ->Js.Json.object_
+    ->JSON.Encode.object
 
-  let body: array<(string, Js.Json.t)> = []
+  let body: array<(string, JSON.t)> = []
 
   switch flow {
   | PayoutMethodCollect => {
-      body->Array.push(("payment_method", paymentMethod->Js.Json.string))
+      body->Array.push(("payment_method", paymentMethod->JSON.Encode.string))
       body->Array.push((
         "payment_method_type",
-        paymentMethodType->getPaymentMethodType->Js.Json.string,
+        paymentMethodType->getPaymentMethodType->JSON.Encode.string,
       ))
       body->Array.push((paymentMethod, pmdBody))
     }
   | PayoutLinkInitiate => {
       let pmd = Dict.make()
       pmd->Dict.set(paymentMethod, pmdBody)
-      let pmd = pmd->Js.Json.object_
-      body->Array.push(("payout_type", paymentMethod->Js.Json.string))
+      let pmd = pmd->JSON.Encode.object
+      body->Array.push(("payout_type", paymentMethod->JSON.Encode.string))
       body->Array.push(("payout_method_data", pmd))
     }
   }

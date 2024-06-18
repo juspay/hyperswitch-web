@@ -16,8 +16,8 @@ let make = (
     defaultSelectedPaymentMethodType
   )
   let (fieldValidityDict, setFieldValidityDict): (
-    Js.Dict.t<option<bool>>,
-    (Js.Dict.t<option<bool>> => Js.Dict.t<option<bool>>) => unit,
+    Dict.t<option<bool>>,
+    (Dict.t<option<bool>> => Dict.t<option<bool>>) => unit,
   ) = React.useState(_ => Dict.make())
   let (savedPMD, setSavedPMD): (
     option<paymentMethodData>,

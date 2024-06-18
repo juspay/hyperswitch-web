@@ -212,7 +212,7 @@ let make = (~integrateError, ~logger) => {
           resolve()
         })
         ->catch(err => {
-          Js.Console.error2("CRITICAL - Payouts confirm failed with unknown error", err)
+          Console.error2("CRITICAL - Payouts confirm failed with unknown error", err)
           let updatedStatusInfo = {
             payoutId,
             status: Failed,
@@ -231,7 +231,7 @@ let make = (~integrateError, ~logger) => {
         ->ignore
       }
     | PayoutMethodCollect =>
-      pmdBody->Array.push(("customer_id", options.customerId->Js.Json.string))
+      pmdBody->Array.push(("customer_id", options.customerId->JSON.Encode.string))
 
       // Create payment method
       open Promise
@@ -244,11 +244,11 @@ let make = (~integrateError, ~logger) => {
         ~body=pmdBody,
       )
       ->then(res => {
-        Js.Console.log2("DEBUGG RES", res)
+        Console.log2("DEBUGG RES", res)
         resolve()
       })
       ->catch(err => {
-        Js.Console.log2("DEBUGG ERR", err)
+        Console.log2("DEBUGG ERR", err)
         resolve()
       })
       ->finally(() => {

@@ -1338,7 +1338,7 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~switchToCustomPod
   )
   let body =
     body
-    ->Array.concat([("client_secret", clientSecret->Js.Json.string)])
+    ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
     ->Dict.fromArray
     ->JSON.Encode.object
   fetchApi(
@@ -1419,7 +1419,7 @@ let createPaymentMethod = (
   )
   let body =
     body
-    ->Array.concat([("client_secret", clientSecret->Js.Json.string)])
+    ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
     ->Dict.fromArray
     ->JSON.Encode.object
   fetchApi(
