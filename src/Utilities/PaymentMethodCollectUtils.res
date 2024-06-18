@@ -632,8 +632,7 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
   let pmdBody =
     pmdApiFields
     ->Array.map(((k, v)) => (k, v->JSON.Encode.string))
-    ->Dict.fromArray
-    ->JSON.Encode.object
+    ->getJsonFromArrayOfJson
 
   let body: array<(string, JSON.t)> = []
 
