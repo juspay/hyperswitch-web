@@ -1,3 +1,10 @@
+# [0.67.0](https://github.com/juspay/hyperswitch-web/compare/v0.66.2...v0.67.0) (2024-06-18)
+
+
+### Features
+
+* add datepicker library ([#449](https://github.com/juspay/hyperswitch-web/issues/449)) ([d28074d](https://github.com/juspay/hyperswitch-web/commit/d28074de5c49684005f498eff597175a11bb8c29))
+
 ## [0.66.2](https://github.com/juspay/hyperswitch-web/compare/v0.66.1...v0.66.2) (2024-06-14)
 
 ## [0.66.1](https://github.com/juspay/hyperswitch-web/compare/v0.66.0...v0.66.1) (2024-06-14)
