@@ -232,8 +232,8 @@ let getPaymentMethodDataFieldMaxLength = (key: paymentMethodDataField): int =>
   | CardExpDate => 7
   | ACHRoutingNumber => 9
   | ACHAccountNumber => 12
-  | BacsSortCode => 5
-  | BacsAccountNumber => 8
+  | BacsSortCode => 6
+  | BacsAccountNumber => 18
   | SepaIban => 34
   | SepaBic => 8
   | _ => 32
@@ -243,8 +243,8 @@ let getPayoutImageSource = (payoutStatus: payoutStatus): string => {
   switch payoutStatus {
   | Success => "https://live.hyperswitch.io/payment-link-assets/success.png"
   | Initiated
-  | Pending => "https://live.hyperswitch.io/payment-link-assets/pending.png"
-  | RequiresFulfillment
+  | Pending
+  | RequiresFulfillment => "https://live.hyperswitch.io/payment-link-assets/pending.png"
   | Cancelled
   | Failed
   | Ineligible
@@ -261,8 +261,8 @@ let getPayoutReadableStatus = (payoutStatus: payoutStatus): string =>
   switch payoutStatus {
   | Success => "Payout Successful"
   | Initiated
-  | Pending => "Payout Processing"
-  | RequiresFulfillment
+  | Pending
+  | RequiresFulfillment => "Payout Processing"
   | Cancelled
   | Failed
   | Ineligible
@@ -295,8 +295,8 @@ let getPayoutStatusMessage = (payoutStatus: payoutStatus): string =>
   switch payoutStatus {
   | Success => "Your payout was made to selected payment method."
   | Initiated
-  | Pending => "Your payout should be processed within 2-3 business days."
-  | RequiresFulfillment
+  | Pending
+  | RequiresFulfillment => "Your payout should be processed within 2-3 business days."
   | Cancelled
   | Failed
   | Ineligible
