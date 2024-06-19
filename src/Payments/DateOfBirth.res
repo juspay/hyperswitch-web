@@ -15,13 +15,13 @@ let months = [
   "December",
 ]
 
-let startYear = 2009
+let startYear = 1900
 let currentYear = Date.getFullYear(Date.make())
 let years = Array.fromInitializer(~length=currentYear - startYear, i => currentYear - i)
 
 @react.component
 let make = () => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (selectedDate, setSelectedDate) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
 
   <div className="flex flex-col gap-1">
@@ -32,7 +32,7 @@ let make = () => {
         fontSize: themeObj.fontSizeLg,
         opacity: "0.6",
       }>
-      {React.string("Date of Birth")}
+      {React.string(localeString.dateOfBirth)}
     </div>
     <DatePicker
       showIcon=true
@@ -40,7 +40,6 @@ let make = () => {
       className="w-full border border-gray-300 rounded p-2"
       selected={selectedDate}
       onChange={date => setSelectedDate(_ => date)}
-      placeholderText="Enter Date of Birth"
       dateFormat="dd-MM-yyyy"
       wrapperClassName="datepicker"
       renderCustomHeader={val => {

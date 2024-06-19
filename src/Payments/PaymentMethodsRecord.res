@@ -716,17 +716,6 @@ type paymentMethod =
   Cards | Wallets | PayLater | BankRedirect | BankTransfer | BankDebit | Crypto | Voucher | NONE
 
 type cardType = Credit | Debit
-type paymentMethodType =
-  | Card(cardType)
-  | Klarna
-  | Affirm
-  | AfterPay
-  | Gpay
-  | Paypal
-  | ApplePay
-  | CryptoCurrency
-  | Mifinity
-  | NONE
 
 type paymentExperience = {
   payment_experience_type: paymentFlow,
@@ -821,20 +810,6 @@ let getMethod = str => {
   }
 }
 
-let getPaymentMethodType = str => {
-  switch str {
-  | "afterpay_clearpay" => AfterPay
-  | "klarna" => Klarna
-  | "affirm" => Affirm
-  | "apple_pay" => ApplePay
-  | "google_pay" => Gpay
-  | "credit" => Card(Credit)
-  | "debit" => Card(Debit)
-  | "crypto_currency" => CryptoCurrency
-  | "mifinity" => Mifinity
-  | _ => NONE
-  }
-}
 let getPaymentExperienceType = str => {
   switch str {
   | "redirect_to_url" => RedirectToURL
