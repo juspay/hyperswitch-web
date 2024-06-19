@@ -357,7 +357,7 @@ let make = (~integrateError, ~logger) => {
                 style={backgroundColor: "#FEFEFE"}>
                 <div className="mx-[20px] mt-[20px] flex flex-row justify-between">
                   <div className="font-bold text-[35px]">
-                    {React.string(`${currency} ${amount->Int.toString}`)}
+                    {React.string(`${currency} ${amount}`)}
                   </div>
                   <img className="h-12 w-auto" src={merchantLogo} alt="O" />
                 </div>

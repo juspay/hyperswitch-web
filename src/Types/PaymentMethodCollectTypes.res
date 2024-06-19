@@ -57,7 +57,7 @@ type paymentMethodCollectOptions = {
   collectorName: string,
   logo: string,
   returnUrl: option<string>,
-  amount: int,
+  amount: string,
   currency: string,
   flow: paymentMethodCollectFlow,
   sessionExpiry: string,
@@ -124,7 +124,6 @@ let decodeAmount = (dict, defaultAmount) =>
   | Some(amount) =>
     amount
     ->JSON.Decode.string
-    ->Option.flatMap(amountStr => Int.fromString(amountStr))
     ->Option.getOr(defaultAmount)
   | None => defaultAmount
   }

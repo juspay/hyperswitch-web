@@ -310,7 +310,7 @@ let getPayoutStatusMessage = (payoutStatus: payoutStatus): string =>
 
 // Defaults
 let defaultPaymentMethodCollectFlow: paymentMethodCollectFlow = PayoutLinkInitiate
-let defaultAmount = 100
+let defaultAmount = "0.01"
 let defaultCurrency = "EUR"
 let defaultEnabledPaymentMethods: array<paymentMethodType> = [
   Card(Credit),
