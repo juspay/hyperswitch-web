@@ -35,6 +35,7 @@ type paymentMethodsFields =
   | ShippingAddressState
   | ShippingAddressCountry(array<string>)
   | CryptoCurrencyNetworks
+  | DateOfBirth
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -515,6 +516,13 @@ let paymentMethodsFields = [
     displayName: "Local Bank Transfer",
     miniIcon: None,
   },
+  {
+    paymentMethodName: "mifinity",
+    fields: [InfoElement],
+    icon: Some(icon("mifinity")),
+    displayName: "Mifinity",
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
@@ -549,6 +557,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_shipping_address_pincode", _) => ShippingAddressPincode
   | ("user_shipping_address_state", _) => ShippingAddressState
   | ("user_crypto_currency_network", _) => CryptoCurrencyNetworks
+  | ("user_date_of_birth", _) => DateOfBirth
   | _ => None
   }
 }
@@ -625,6 +634,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "giropay",
   "local_bank_transfer_transfer",
   "afterpay_clearpay",
+  "mifinity",
 ]
 
 let getIsBillingField = requiredFieldType => {
@@ -707,7 +717,16 @@ type paymentMethod =
 
 type cardType = Credit | Debit
 type paymentMethodType =
-  Card(cardType) | Klarna | Affirm | AfterPay | Gpay | Paypal | ApplePay | CryptoCurrency | NONE
+  | Card(cardType)
+  | Klarna
+  | Affirm
+  | AfterPay
+  | Gpay
+  | Paypal
+  | ApplePay
+  | CryptoCurrency
+  | Mifinity
+  | NONE
 
 type paymentExperience = {
   payment_experience_type: paymentFlow,
@@ -812,6 +831,7 @@ let getPaymentMethodType = str => {
   | "credit" => Card(Credit)
   | "debit" => Card(Debit)
   | "crypto_currency" => CryptoCurrency
+  | "mifinity" => Mifinity
   | _ => NONE
   }
 }

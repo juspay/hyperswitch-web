@@ -28,5 +28,7 @@ external make: (
   ~renderCustomHeader: customHeaderProps => React.element=?,
   ~showWeekNumbers: bool=?,
   ~placeholderText: string=?,
+  ~className: string=?,
   ~wrapperClassName: string=?,
+  ~closeOnScroll: bool=?,
 ) => React.element = "default"
