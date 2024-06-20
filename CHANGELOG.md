@@ -1,3 +1,10 @@
+# [0.68.0](https://github.com/juspay/hyperswitch-web/compare/v0.67.0...v0.68.0) (2024-06-20)
+
+
+### Features
+
+* mifinity wallet addition ([#451](https://github.com/juspay/hyperswitch-web/issues/451)) ([283af60](https://github.com/juspay/hyperswitch-web/commit/283af60daaed8c5eb5f6fe0b25b24dac765a6d54))
+
 # [0.67.0](https://github.com/juspay/hyperswitch-web/compare/v0.66.2...v0.67.0) (2024-06-18)
 
 

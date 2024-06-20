@@ -267,6 +267,7 @@ let useSetInitialRequiredFields = (
   let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
     cryptoCurrencyNetworks,
   )
+  let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -363,6 +364,10 @@ let useSetInitialRequiredFields = (
         if value !== "" && cryptoCurrencyNetworks === "" {
           setCryptoCurrencyNetworks(_ => value)
         }
+      | DateOfBirth =>
+        if value !== "" && dateOfBirth->Date.toDateString === "" {
+          setDateOfBirth(_ => dateOfBirth)
+        }
       | SpecialField(_)
       | InfoElement
       | CardNumber
@@ -410,6 +415,7 @@ let useRequiredFieldsBody = (
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
+  let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -446,6 +452,7 @@ let useRequiredFieldsBody = (
       let (_, year) = CardUtils.getExpiryDates(cardExpiry)
       year
     | CryptoCurrencyNetworks => cryptoCurrencyNetworks
+    | DateOfBirth => dateOfBirth->Date.toISOString->String.slice(~start=0, ~end=10)
     | CardCvc => cvcNumber
     | StateAndCity
     | CountryAndPincode(_)
@@ -521,7 +528,7 @@ let useRequiredFieldsBody = (
 
     setRequiredFieldsBody(_ => requiredFieldsBody)
     None
-  }, [
+  }, (
     fullName.value,
     email.value,
     line1.value,
@@ -539,7 +546,8 @@ let useRequiredFieldsBody = (
     cvcNumber,
     selectedBank,
     cryptoCurrencyNetworks,
-  ])
+    dateOfBirth,
+  ))
 }
 
 let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
@@ -552,6 +560,7 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | CardCvc
   | CardExpiryAndCvc
   | CryptoCurrencyNetworks
+  | DateOfBirth
   | Currency(_) => true
   | _ => false
   }
