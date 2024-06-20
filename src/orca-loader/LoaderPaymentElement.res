@@ -159,9 +159,11 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             )
             switch elem->Nullable.toOption {
             | Some(ele) =>
-              switch localSelectorString {
+              switch iframeId {
               | "payout-link" | "payment-method-collect" =>
-                ele->Window.style->Window.setHeight("100vh")
+                ele
+                ->Window.style
+                ->Window.setHeight("100vh")
               | _ =>
                 ele
                 ->Window.style
