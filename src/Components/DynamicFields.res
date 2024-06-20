@@ -481,6 +481,7 @@ let make = (
           | ShippingAddressCity
           | ShippingAddressPincode
           | ShippingAddressState
+          | PhoneCountryCode
           | ShippingAddressCountry(_) => React.null
           }}
         </div>
@@ -763,6 +764,7 @@ let make = (
                 | ShippingAddressCountry(_)
                 | CryptoCurrencyNetworks
                 | DateOfBirth
+                | PhoneCountryCode
                 | None => React.null
                 }}
               </div>

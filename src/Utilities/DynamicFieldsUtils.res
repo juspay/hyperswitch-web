@@ -289,17 +289,32 @@ let useSetInitialRequiredFields = (
       field: RecoilAtomTypes.field,
       item: PaymentMethodsRecord.required_fields,
       isNameField,
+      ~isCountryCodeAvailable=?,
     ) => {
       if isNameField && field.value === "" {
-        setMethod(prev => {
-          ...prev,
-          value: getNameValue(item),
-        })
+        if isCountryCodeAvailable->Option.isSome {
+          setMethod(prev => {
+            ...prev,
+            countryCode: getNameValue(item),
+          })
+        } else {
+          setMethod(prev => {
+            ...prev,
+            value: getNameValue(item),
+          })
+        }
       } else if field.value === "" {
-        setMethod(prev => {
-          ...prev,
-          value: item.value,
-        })
+        if isCountryCodeAvailable->Option.isSome {
+          setMethod(prev => {
+            ...prev,
+            countryCode: item.value,
+          })
+        } else {
+          setMethod(prev => {
+            ...prev,
+            value: item.value,
+          })
+        }
       }
     }
 
@@ -338,6 +353,8 @@ let useSetInitialRequiredFields = (
         }
       | AddressState => setFields(setState, state, requiredField, false)
       | AddressCity => setFields(setCity, city, requiredField, false)
+      | PhoneCountryCode =>
+        setFields(setPhone, phone, requiredField, false, ~isCountryCodeAvailable=true)
       | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
       | PhoneNumber => setFields(setPhone, phone, requiredField, false)
       | BlikCode => setFields(setBlikCode, blikCode, requiredField, false)
@@ -427,6 +444,7 @@ let useRequiredFieldsBody = (
     | AddressState => state.value
     | BlikCode => blikCode.value->Utils.removeHyphen
     | PhoneNumber => phone.value
+    | PhoneCountryCode => phone.countryCode->Option.getOr("")
     | Currency(_) => currency
     | Country => country
     | Bank =>
@@ -538,6 +556,7 @@ let useRequiredFieldsBody = (
     state.value,
     blikCode.value,
     phone.value,
+    phone.countryCode,
     currency,
     billingName.value,
     country,
