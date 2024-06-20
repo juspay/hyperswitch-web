@@ -1,3 +1,10 @@
+# [0.69.0](https://github.com/juspay/hyperswitch-web/compare/v0.68.0...v0.69.0) (2024-06-20)
+
+
+### Features
+
+* phone country code accept ([#452](https://github.com/juspay/hyperswitch-web/issues/452)) ([45d8f22](https://github.com/juspay/hyperswitch-web/commit/45d8f22e3597b515e53f668d31b1f4e2bffd1ca2))
+
 # [0.68.0](https://github.com/juspay/hyperswitch-web/compare/v0.67.0...v0.68.0) (2024-06-20)
 
 
