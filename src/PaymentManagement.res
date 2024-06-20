@@ -3,13 +3,11 @@ open RecoilAtoms
 
 @react.component
 let make = () => {
-  let {customerPaymentMethods, displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(
-    optionAtom,
-  )
+  let {savedPaymentMethods, displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
 
   React.useEffect(() => {
-    switch customerPaymentMethods {
+    switch savedPaymentMethods {
     | LoadedSavedCards(savedPaymentMethods, _) => {
         let defaultPaymentMethod =
           savedPaymentMethods->Array.find(savedCard => savedCard.defaultPaymentMethodSet)
@@ -31,10 +29,17 @@ let make = () => {
     }
 
     None
-  }, (customerPaymentMethods, displaySavedPaymentMethods))
+  }, (savedPaymentMethods, displaySavedPaymentMethods))
+
+  let loading = false
 
   <>
-    <SavedPaymentManagement savedMethods />
+    <RenderIf condition={!loading}>
+      <SavedPaymentManagement savedMethods />
+    </RenderIf>
+    <RenderIf condition={loading}>
+      <div> {"Loading..."->React.string} </div>
+    </RenderIf>
     <PoweredBy />
   </>
 }

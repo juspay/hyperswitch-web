@@ -87,6 +87,7 @@ type fonts = {
 type configClass = {
   appearance: appearance,
   locale: string,
+  ephimeralKey: string,
   clientSecret: string,
   fonts: array<fonts>,
   loader: showLoader,

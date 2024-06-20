@@ -1,6 +1,8 @@
 @react.component
 let make = (~brandIcon, ~paymentItem: PaymentType.customerMethods) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let {hideExpiredPaymentMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let isCard = paymentItem.paymentMethod === "card"
   let expiryMonth = paymentItem.card.expiryMonth
@@ -12,6 +14,27 @@ let make = (~brandIcon, ~paymentItem: PaymentType.customerMethods) => {
   let paymentMethodType = switch paymentItem.paymentMethodType {
   | Some(paymentMethodType) => paymentMethodType
   | None => "debit"
+  }
+
+  let handleDelete = e => {
+    Console.log2("methodID", paymentItem.paymentMethodId)
+    open Promise
+    PaymentHelpers.deletePaymentMethod(
+      ~ephimeralKey=config.ephimeralKey,
+      ~paymentMethodId=paymentItem.paymentMethodId,
+      ~logger,
+      ~switchToCustomPod,
+    )
+    ->then(res => {
+      Console.log2("deleted paymentId", res)
+      resolve()
+    })
+    ->catch(err => {
+      Console.log2("deleting error ", err)
+      resolve()
+    })
+    ->ignore
+    e->ReactEvent.Mouse.stopPropagation
   }
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div
@@ -67,16 +90,14 @@ let make = (~brandIcon, ~paymentItem: PaymentType.customerMethods) => {
             <div className={`flex justify-end`} style={width: `25%`}>
               <button
                 style={
-                  background: "#006DF9",
+                  background: themeObj.colorPrimary,
                   color: "white",
                   padding: "3px 5px",
                   border: "none",
                   borderRadius: "5px",
                   cursor: "pointer",
                 }
-                onClick={e => {
-                  e->ReactEvent.Mouse.stopPropagation
-                }}>
+                onClick={handleDelete}>
                 {"Delete"->React.string}
               </button>
             </div>

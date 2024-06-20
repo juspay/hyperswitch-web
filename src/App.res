@@ -43,7 +43,9 @@ let make = () => {
         let sessionId = CardUtils.getQueryParamsDictforKey(url.search, "sessionId")
         let publishableKey = CardUtils.getQueryParamsDictforKey(url.search, "publishableKey")
         let endpoint = CardUtils.getQueryParamsDictforKey(url.search, "endpoint")
-        <PreMountLoader publishableKey sessionId clientSecret endpoint />
+        let ephimeralKey = CardUtils.getQueryParamsDictforKey(url.search, "ephimeralKey")
+
+        <PreMountLoader publishableKey sessionId clientSecret endpoint ephimeralKey />
       }
     | "achBankTransfer"
     | "bacsBankTransfer"

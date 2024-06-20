@@ -1717,3 +1717,150 @@ let paymentIntentForPaymentSession = (
     (),
   )
 }
+
+let fetchSavedPaymentMethodList = (
+  ~ephimeralKey,
+  ~endpoint,
+  ~optLogger,
+  ~switchToCustomPod,
+  ~isPaymentSession=false,
+) => {
+  open Promise
+  let headers = [("Content-Type", "application/json"), ("api-key", ephimeralKey)]
+  let uri = `${endpoint}/customers/payment_methods`
+  logApi(
+    ~optLogger,
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    ~isPaymentSession,
+    (),
+  )
+  fetchApi(
+    uri,
+    ~method=#GET,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    (),
+  )
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger,
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          ~isPaymentSession,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger,
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+        ~logType=INFO,
+        ~logCategory=API,
+        ~isPaymentSession,
+        (),
+      )
+      res->Fetch.Response.json
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    logApi(
+      ~optLogger,
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data=exceptionMessage,
+      ~isPaymentSession,
+      (),
+    )
+    JSON.Encode.null->resolve
+  })
+}
+
+let deletePaymentMethod = (~ephimeralKey, ~paymentMethodId, ~logger, ~switchToCustomPod) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let headers = [("Content-Type", "application/json"), ("api-key", ephimeralKey)]
+  let uri = `${endpoint}/payment_methods/${paymentMethodId}`
+  logApi(
+    ~optLogger=Some(logger),
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=PAYMENT_METHODS_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+  fetchApi(
+    uri,
+    ~method=#DELETE,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod, ()),
+    (),
+  )
+  ->then(resp => {
+    let statusCode = resp->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      resp
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger=Some(logger),
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=SAVED_PAYMENT_METHODS_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger=Some(logger),
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=SAVED_PAYMENT_METHODS_CALL,
+        ~logType=INFO,
+        ~logCategory=API,
+        (),
+      )
+      Fetch.Response.json(resp)
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    logApi(
+      ~optLogger=Some(logger),
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=SAVED_PAYMENT_METHODS_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data=exceptionMessage,
+      (),
+    )
+    JSON.Encode.null->resolve
+  })
+}

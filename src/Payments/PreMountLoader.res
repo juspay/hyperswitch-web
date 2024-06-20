@@ -1,11 +1,14 @@
 @react.component
-let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
+let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint, ~ephimeralKey) => {
   open Utils
   let (paymentMethodsResponseSent, setPaymentMethodsResponseSent) = React.useState(_ => false)
   let (
     customerPaymentMethodsResponseSent,
     setCustomerPaymentMethodsResponseSent,
   ) = React.useState(_ => false)
+  let (savedPaymentMethodsResponseSent, setSavedPaymentMethodsResponseSent) = React.useState(_ =>
+    false
+  )
   let (sessionTokensResponseSent, setSessionTokensResponseSent) = React.useState(_ => false)
   let logger = OrcaLogger.make(
     ~sessionId,
@@ -46,6 +49,15 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
     )
   )
 
+  let savedPaymentMethodsResponse = React.useMemo0(() =>
+    PaymentHelpers.fetchSavedPaymentMethodList(
+      ~ephimeralKey,
+      ~optLogger=Some(logger),
+      ~switchToCustomPod=false,
+      ~endpoint,
+    )
+  )
+
   let sendPromiseData = (promise, key) => {
     open Promise
     promise
@@ -55,6 +67,7 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
       | "payment_methods" => setPaymentMethodsResponseSent(_ => true)
       | "session_tokens" => setSessionTokensResponseSent(_ => true)
       | "customer_payment_methods" => setCustomerPaymentMethodsResponseSent(_ => true)
+      | "saved_payment_methods" => setSavedPaymentMethodsResponseSent(_ => true)
       | _ => ()
       }
       resolve()
@@ -79,6 +92,8 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
       customerPaymentMethodsResponse->sendPromiseData("customer_payment_methods")
     } else if dict->Dict.get("sendSessionTokensResponse")->Option.isSome {
       sessionTokensResponse->sendPromiseData("session_tokens")
+    } else if dict->Dict.get("sendSavedPaymentMethodsResponse")->Belt.Option.isSome {
+      savedPaymentMethodsResponse->sendPromiseData("saved_payment_methods")
     }
   }
 
@@ -92,15 +107,23 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint) => {
     )
   })
 
-  React.useEffect3(() => {
+  React.useEffect4(() => {
     if (
-      paymentMethodsResponseSent && customerPaymentMethodsResponseSent && sessionTokensResponseSent
+      paymentMethodsResponseSent &&
+      customerPaymentMethodsResponseSent &&
+      sessionTokensResponseSent &&
+      savedPaymentMethodsResponseSent
     ) {
       handlePostMessage([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
       Window.removeEventListener("message", handle)
     }
     None
-  }, (paymentMethodsResponseSent, customerPaymentMethodsResponseSent, sessionTokensResponseSent))
+  }, (
+    paymentMethodsResponseSent,
+    customerPaymentMethodsResponseSent,
+    sessionTokensResponseSent,
+    savedPaymentMethodsResponseSent,
+  ))
 
   React.null
 }

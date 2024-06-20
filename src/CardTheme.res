@@ -59,6 +59,7 @@ let defaultConfig = {
   locale: "auto",
   fonts: [],
   clientSecret: "",
+  ephimeralKey: "",
   loader: Auto,
 }
 type recoilConfig = {
@@ -392,6 +393,7 @@ let itemToObjMapper = (
     locale: getWarningString(dict, "locale", "auto", ~logger),
     fonts: getFonts("fonts", dict, logger),
     clientSecret: getWarningString(dict, "clientSecret", "", ~logger),
+    ephimeralKey: getWarningString(dict, "ephimeralKey", "", ~logger),
     loader: getWarningString(dict, "loader", "auto", ~logger)->getShowLoader(logger),
   }
 }

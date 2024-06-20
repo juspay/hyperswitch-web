@@ -206,6 +206,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
       let iframeRef = ref([])
       let clientSecret = ref("")
+      let ephimeralKey = ref("")
       let setIframeRef = ref => {
         iframeRef.contents->Array.push(ref)->ignore
       }
@@ -397,6 +398,12 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
 
+        let ephimeralKeyId =
+          elementsOptionsDict
+          ->Option.flatMap(x => x->Dict.get("ephimeralKey"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+
         let clientSecretId =
           elementsOptionsDict
           ->Option.flatMap(x => x->Dict.get("clientSecret"))
@@ -404,6 +411,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.getOr("")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         clientSecret := clientSecretId
+        ephimeralKey := ephimeralKeyId
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
           resolve(JSON.Encode.null)
@@ -420,6 +428,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~sdkSessionId=sessionID,
           ~publishableKey,
           ~clientSecret={clientSecretId},
+          ~ephimeralKey={ephimeralKeyId},
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options

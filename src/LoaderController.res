@@ -128,6 +128,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           locale: config.locale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
+          ephimeralKey: config.ephimeralKey,
           loader: config.loader,
         },
         themeObj: appearance.variables,
@@ -258,9 +259,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
+                let ephimeralKey = getWarningString(paymentOptions, "ephimeralKey", "", ~logger)
                 setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
+                  ephimeralKey: Some(ephimeralKey),
                 })
                 logger.setClientSecret(clientSecret)
 
@@ -305,9 +308,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             let paymentOptions = dict->getDictFromObj("paymentOptions")
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
+            let ephimeralKey = getWarningString(paymentOptions, "ephimeralKey", "", ~logger)
             setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
+              ephimeralKey: Some(ephimeralKey),
             })
             logger.setClientSecret(clientSecret)
 
@@ -447,10 +452,58 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           setPaymentMethodList(_ => updatedState)
         }
         if dict->getDictIsSome("customerPaymentMethods") {
-          let customerPaymentMethods = dict->PaymentType.createCustomerObjArr
+          let customerPaymentMethods =
+            dict->PaymentType.createCustomerObjArr("customerPaymentMethods")
           setOptionsPayment(prev => {
             ...prev,
             customerPaymentMethods,
+          })
+          let finalLoadLatency = if launchTime <= 0.0 {
+            -1.0
+          } else {
+            Date.now() -. launchTime
+          }
+
+          let evalMethodsList = () =>
+            switch paymentMethodList {
+            | Loaded(_) =>
+              logger.setLogInfo(
+                ~value="Loaded",
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadLatency,
+                (),
+              )
+            | LoadError(x) =>
+              logger.setLogError(
+                ~value="LoadError: " ++ x->JSON.stringify,
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadLatency,
+                (),
+              )
+
+            | _ => ()
+            }
+
+          switch optionsPayment.customerPaymentMethods {
+          | LoadingSavedCards => ()
+          | LoadedSavedCards(list, _) =>
+            list->Array.length > 0
+              ? logger.setLogInfo(
+                  ~value="Loaded",
+                  ~eventName=LOADER_CHANGED,
+                  ~latency=finalLoadLatency,
+                  (),
+                )
+              : evalMethodsList()
+          | NoResult(_) => evalMethodsList()
+          }
+        }
+        if dict->getDictIsSome("savedPaymentMethods") {
+          let savedPaymentMethods = dict->PaymentType.createCustomerObjArr("savedPaymentMethods")
+          Console.log2("loader Controler", savedPaymentMethods)
+          setOptionsPayment(prev => {
+            ...prev,
+            savedPaymentMethods,
           })
           let finalLoadLatency = if launchTime <= 0.0 {
             -1.0
