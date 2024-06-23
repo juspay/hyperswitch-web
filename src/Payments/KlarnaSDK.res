@@ -13,6 +13,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
@@ -105,6 +106,7 @@ let make = (~sessionObj: SessionsType.token) => {
                               publishableKey,
                             },
                             ~handleUserError=false,
+                            ~manualRetry=isManualRetryEnabled,
                             (),
                           )
                         : handleCloseLoader()

@@ -14,6 +14,7 @@ let make = (
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let setUserError = message => {
@@ -176,6 +177,7 @@ let make = (
               ->getArrayOfTupleFromDict,
               ~confirmParam=confirm.confirmParams,
               ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
               (),
             )
           }
@@ -193,6 +195,7 @@ let make = (
               ->getArrayOfTupleFromDict,
               ~confirmParam=confirm.confirmParams,
               ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
               (),
             )
           }
@@ -205,6 +208,7 @@ let make = (
             ->getArrayOfTupleFromDict,
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
             (),
           )
         }
@@ -233,6 +237,7 @@ let make = (
     isCustomerAcceptanceRequired,
     applePayToken,
     gPayToken,
+    isManualRetryEnabled,
   ))
   useSubmitPaymentData(submitCallback)
 

@@ -6,6 +6,7 @@ let loadPaypalSDK = (
   ~sdkHandleOneClickConfirmPayment,
   ~buttonStyle,
   ~iframeId,
+  ~isManualRetryEnabled,
   ~paymentMethodListValue,
   ~isGuestCustomer,
   ~intent: PaymentHelpers.paymentIntent,
@@ -58,6 +59,7 @@ let loadPaypalSDK = (
               ~handleUserError=true,
               ~intentCallback=val =>
                 val->Utils.getDictFromJson->Utils.getString("orderId", "")->resolve,
+              ~manualRetry=isManualRetryEnabled,
               (),
             )
           })
