@@ -1317,3 +1317,15 @@ let toSpacedUpperCase = (~str, ~delimiter) =>
   ->String.toUpperCase
   ->String.split(delimiter)
   ->Array.joinWith(" ")
+
+let handleFailureResponse = (~message, ~errorType) =>
+  [
+    (
+      "error",
+      [
+        ("type", errorType->JSON.Encode.string),
+        ("message", message->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson,
+    ),
+  ]->getJsonFromArrayOfJson
+

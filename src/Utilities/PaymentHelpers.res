@@ -10,6 +10,17 @@ type url = {searchParams: searchParams, href: string}
 open LoggerUtils
 type payment = Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Other
 
+let getPaymentType = paymentMethodType =>
+  switch paymentMethodType {
+  | "apple_pay" => Applepay
+  | "google_pay" => Gpay
+  | "debit"
+  | "credit"
+  | "" =>
+    Card
+  | _ => Other
+  }
+
 let closePaymentLoaderIfAny = () => handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
 
 type paymentIntent = (
@@ -1246,6 +1257,7 @@ let fetchSessions = (
   ~optLogger,
   ~switchToCustomPod,
   ~endpoint,
+  ~isPaymentSession=false,
   (),
 ) => {
   open Promise
@@ -1266,6 +1278,7 @@ let fetchSessions = (
     ~eventName=SESSIONS_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
+    ~isPaymentSession,
     (),
   )
   fetchApi(
@@ -1290,6 +1303,7 @@ let fetchSessions = (
           ~eventName=SESSIONS_CALL,
           ~logType=ERROR,
           ~logCategory=API,
+          ~isPaymentSession,
           (),
         )
         JSON.Encode.null->resolve
@@ -1303,6 +1317,7 @@ let fetchSessions = (
         ~eventName=SESSIONS_CALL,
         ~logType=INFO,
         ~logCategory=API,
+        ~isPaymentSession,
         (),
       )
       Fetch.Response.json(resp)
@@ -1318,6 +1333,7 @@ let fetchSessions = (
       ~logType=ERROR,
       ~logCategory=API,
       ~data=exceptionMessage,
+      ~isPaymentSession,
       (),
     )
     JSON.Encode.null->resolve
@@ -1476,3 +1492,72 @@ let fetchCustomerPaymentMethodList = (
     JSON.Encode.null->resolve
   })
 }
+
+let paymentIntentForPaymentSession = (
+  ~body,
+  ~paymentType,
+  ~payload,
+  ~publishableKey,
+  ~clientSecret,
+  ~logger,
+) => {
+  let confirmParams =
+    payload
+    ->getDictFromJson
+    ->getDictFromDict("confirmParams")
+
+  let redirect = confirmParams->getString("redirect", "if_required")
+
+  let returnUrl = confirmParams->getString("return_url", "")
+
+  let confirmParam: ConfirmType.confirmParams = {
+    return_url: returnUrl,
+    publishableKey,
+    redirect,
+  }
+
+  let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
+
+  let endpoint = ApiEndpoint.getApiEndPoint(
+    ~publishableKey=confirmParam.publishableKey,
+    ~isConfirmCall=true,
+    (),
+  )
+  let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
+  let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
+
+  let broswerInfo = BrowserSpec.broswerInfo()
+
+  let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
+
+  let bodyStr =
+    body
+    ->Array.concatMany([
+      broswerInfo,
+      [("client_secret", clientSecret->JSON.Encode.string)],
+      returnUrlArr,
+    ])
+    ->getJsonFromArrayOfJson
+    ->JSON.stringify
+
+  intentCall(
+    ~fetchApi,
+    ~uri,
+    ~headers,
+    ~bodyStr,
+    ~confirmParam: ConfirmType.confirmParams,
+    ~clientSecret,
+    ~optLogger=Some(logger),
+    ~handleUserError=false,
+    ~paymentType,
+    ~iframeId="",
+    ~fetchMethod=#POST,
+    ~setIsManualRetryEnabled={_ => ()},
+    ~switchToCustomPod=false,
+    ~sdkHandleOneClickConfirmPayment=false,
+    ~counter=0,
+    ~isPaymentSession=true,
+    (),
+  )
+}
+

@@ -825,13 +825,64 @@ let getNameFromFirstAndLastName = (~firstName, ~lastName, ~requiredFieldsArr) =>
   }->String.trim
 }
 
+let defaultRequiredFieldsArray: array<PaymentMethodsRecord.required_fields> = [
+  {
+    required_field: "email",
+    display_name: "email",
+    field_type: Email,
+    value: "",
+  },
+  {
+    required_field: "payment_method_data.billing.address.state",
+    display_name: "state",
+    field_type: AddressState,
+    value: "",
+  },
+  {
+    required_field: "payment_method_data.billing.address.first_name",
+    display_name: "billing_first_name",
+    field_type: BillingName,
+    value: "",
+  },
+  {
+    required_field: "payment_method_data.billing.address.city",
+    display_name: "city",
+    field_type: AddressCity,
+    value: "",
+  },
+  {
+    required_field: "payment_method_data.billing.address.country",
+    display_name: "country",
+    field_type: AddressCountry(["ALL"]),
+    value: "",
+  },
+  {
+    required_field: "payment_method_data.billing.address.line1",
+    display_name: "line",
+    field_type: AddressLine1,
+    value: "",
+  },
+  {
+    required_field: "payment_method_data.billing.address.zip",
+    display_name: "zip",
+    field_type: AddressPincode,
+    value: "",
+  },
+  {
+    required_field: "payment_method_data.billing.address.last_name",
+    display_name: "billing_last_name",
+    field_type: BillingName,
+    value: "",
+  },
+]
+
 let getApplePayRequiredFields = (
   ~billingContact: ApplePayTypes.billingContact,
   ~shippingContact: ApplePayTypes.shippingContact,
-  ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+  ~requiredFields=defaultRequiredFieldsArray,
   ~statesList,
 ) => {
-  paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
+  requiredFields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
 
     let getName = (firstName, lastName) => {
@@ -897,11 +948,11 @@ let getApplePayRequiredFields = (
 let getGooglePayRequiredFields = (
   ~billingContact: GooglePayType.billingContact,
   ~shippingContact: GooglePayType.billingContact,
-  ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
+  ~requiredFields=defaultRequiredFieldsArray,
   ~statesList,
   ~email,
 ) => {
-  paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
+  requiredFields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
 
     let fieldVal = switch item.field_type {
