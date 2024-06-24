@@ -11,6 +11,7 @@ type paymentMethodsFields =
   | None
   | BillingName
   | PhoneNumber
+  | PhoneCountryCode
   | AddressLine1
   | AddressLine2
   | AddressCity
@@ -558,6 +559,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_shipping_address_state", _) => ShippingAddressState
   | ("user_crypto_currency_network", _) => CryptoCurrencyNetworks
   | ("user_date_of_birth", _) => DateOfBirth
+  | ("user_phone_number_country_code", _) => PhoneCountryCode
   | _ => None
   }
 }

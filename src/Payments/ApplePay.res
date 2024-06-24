@@ -19,7 +19,6 @@ let make = (~sessionObj: option<JSON.t>) => {
   let isApplePaySDKFlow = sessionObj->Option.isSome
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
 
   let applePayPaymentMethodType = React.useMemo(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -48,27 +47,6 @@ let make = (~sessionObj: option<JSON.t>) => {
     : paymentMethodListValue->PaymentUtils.getConnectors(Wallets(ApplePay(Redirect)))
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
-
-  PaymentUtils.useStatesJson(setStatesJson)
-
-  let processPayment = (bodyArr, ~isThirdPartyFlow=false, ()) => {
-    let requestBody = PaymentUtils.appendedCustomerAcceptance(
-      ~isGuestCustomer,
-      ~paymentType=paymentMethodListValue.payment_type,
-      ~body=bodyArr,
-    )
-
-    intent(
-      ~bodyArr=requestBody,
-      ~confirmParam={
-        return_url: options.wallets.walletReturnUrl,
-        publishableKey,
-      },
-      ~handleUserError=true,
-      ~isThirdPartyFlow,
-      (),
-    )
-  }
 
   let syncPayment = () => {
     sync(
@@ -242,21 +220,28 @@ let make = (~sessionObj: option<JSON.t>) => {
           if isDelayedSessionToken {
             setShowApplePayLoader(_ => true)
             let bodyDict = PaymentBody.applePayThirdPartySdkBody(~connectors)
-            processPayment(bodyDict, ~isThirdPartyFlow=true, ())
-          } else {
-            let paymentRequest = ApplePayTypes.getPaymentRequestFromSession(
-              ~sessionObj,
-              ~componentName,
+            ApplePayHelpers.processPayment(
+              ~bodyArr=bodyDict,
+              ~isThirdPartyFlow=true,
+              ~isGuestCustomer,
+              ~paymentMethodListValue,
+              ~intent,
+              ~options,
+              ~publishableKey,
             )
-            let message = [
-              ("applePayButtonClicked", true->JSON.Encode.bool),
-              ("applePayPaymentRequest", paymentRequest),
-            ]
-            handlePostMessage(message)
+          } else {
+            ApplePayHelpers.handleApplePayButtonClicked(~sessionObj, ~componentName)
           }
         } else {
           let bodyDict = PaymentBody.applePayRedirectBody(~connectors)
-          processPayment(bodyDict, ())
+          ApplePayHelpers.processPayment(
+            ~bodyArr=bodyDict,
+            ~isGuestCustomer,
+            ~paymentMethodListValue,
+            ~intent,
+            ~options,
+            ~publishableKey,
+          )
         }
       } else {
         setApplePayClicked(_ => false)
@@ -266,70 +251,13 @@ let make = (~sessionObj: option<JSON.t>) => {
     ->ignore
   }
 
-  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="apple_pay",
+  ApplePayHelpers.useHandleApplePayResponse(
+    ~connectors,
+    ~intent,
+    ~setApplePayClicked,
+    ~syncPayment,
+    ~isInvokeSDKFlow,
   )
-
-  React.useEffect(() => {
-    let handleApplePayMessages = (ev: Window.event) => {
-      let json = try {
-        ev.data->JSON.parseExn
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
-
-      try {
-        let dict = json->getDictFromJson
-        if dict->Dict.get("applePayProcessPayment")->Option.isSome {
-          let token =
-            dict->Dict.get("applePayProcessPayment")->Option.getOr(Dict.make()->JSON.Encode.object)
-
-          let billingContact =
-            dict
-            ->getDictFromDict("applePayBillingContact")
-            ->ApplePayTypes.billingContactItemToObjMapper
-
-          let shippingContact =
-            dict
-            ->getDictFromDict("applePayShippingContact")
-            ->ApplePayTypes.shippingContactItemToObjMapper
-
-          let requiredFieldsBody = DynamicFieldsUtils.getApplePayRequiredFields(
-            ~billingContact,
-            ~shippingContact,
-            ~paymentMethodTypes,
-            ~statesList=stateJson,
-          )
-
-          let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
-
-          let applePayBody =
-            bodyDict
-            ->getJsonFromArrayOfJson
-            ->flattenObject(true)
-            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-            ->getArrayOfTupleFromDict
-
-          processPayment(applePayBody, ())
-        } else if dict->Dict.get("showApplePayButton")->Option.isSome {
-          setApplePayClicked(_ => false)
-        } else if dict->Dict.get("applePaySyncPayment")->Option.isSome {
-          syncPayment()
-        }
-      } catch {
-      | _ => logInfo(Console.log("Error in parsing Apple Pay Data"))
-      }
-    }
-    Window.addEventListener("message", handleApplePayMessages)
-    Some(
-      () => {
-        handlePostMessage([("applePaySessionAbort", true->JSON.Encode.bool)])
-        Window.removeEventListener("message", handleApplePayMessages)
-      },
-    )
-  }, (isInvokeSDKFlow, processPayment, stateJson))
 
   React.useEffect(() => {
     if (
