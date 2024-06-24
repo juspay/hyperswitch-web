@@ -26,6 +26,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
 
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
+  let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentMethodListValue,
   )
@@ -72,7 +75,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           }
         }
 
-        let finalSavedPaymentMethods = savedPaymentMethods->Array.copy
+        let finalSavedPaymentMethods =
+          savedPaymentMethods
+          ->Array.copy
+          ->Array.filter(savedMethod => {
+            switch savedMethod.paymentMethodType {
+            | Some("apple_pay") => isApplePayReady
+            | Some("google_pay") => isGPayReady
+            | _ => true
+            }
+          })
         finalSavedPaymentMethods->Array.sort(sortSavedPaymentMethods)
 
         let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
@@ -98,7 +110,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
 
     None
-  }, (customerPaymentMethods, displaySavedPaymentMethods, optionAtomValue))
+  }, (
+    customerPaymentMethods,
+    displaySavedPaymentMethods,
+    optionAtomValue,
+    isApplePayReady,
+    isGPayReady,
+  ))
 
   React.useEffect(() => {
     let defaultSelectedPaymentMethod = optionAtomValue.displayDefaultSavedPaymentIcon
@@ -344,7 +362,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     <RenderIf condition={!showFields && displaySavedPaymentMethods}>
-      <SavedMethods paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType sessions />
+      <SavedMethods
+        paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType sessions
+      />
     </RenderIf>
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&

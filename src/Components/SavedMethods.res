@@ -33,8 +33,10 @@ let make = (
   let dict = sessions->Utils.getDictFromJson
   let sessionObj = React.useMemo(() => SessionsType.itemToObjMapper(dict, Others), [dict])
 
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
-  let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
+
+  let applePaySessionObj = SessionsType.itemToObjMapper(dict, ApplePayObject)
+  let applePayToken = SessionsType.getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let savedCardlength = savedMethods->Array.length
@@ -59,13 +61,6 @@ let make = (
 
   let bottomElement = {
     savedMethods
-    ->Array.filter(savedMethod => {
-      switch savedMethod.paymentMethodType {
-      | Some("apple_pay") => isApplePayReady
-      | Some("google_pay") => isGPayReady
-      | _ => true
-      }
-    })
     ->Array.mapWithIndex((obj, i) => {
       let brandIcon = switch obj.paymentMethod {
       | "wallet" => getWalletBrandIcon(obj)
@@ -121,9 +116,9 @@ let make = (
 
   useHandlePostMessages(~complete, ~empty, ~paymentType, ~savedMethod=true)
 
-  GooglePayHelpers.useHandleGooglePayResponse(~connectors=[], ~intent)
+  GooglePayHelpers.useHandleGooglePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
 
-  ApplePayHelpers.useHandleApplePayResponse(~connectors=[], ~intent)
+  ApplePayHelpers.useHandleApplePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
@@ -162,52 +157,44 @@ let make = (
         confirm.confirmTimestamp >= confirm.readyTimestamp
       ) {
         switch customerMethod.paymentMethodType {
-        | Some("google_pay") => {
-            let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
-            switch gPayToken {
-            | OtherTokenOptional(optToken) =>
-              GooglePayHelpers.handleGooglePayClicked(
-                ~sessionObj=optToken,
-                ~componentName,
-                ~iframeId,
-                ~readOnly,
-              )
-            | _ =>
-              // TODO - To be replaced with proper error message
-              intent(
-                ~bodyArr=savedPaymentMethodBody
-                ->getJsonFromArrayOfJson
-                ->flattenObject(true)
-                ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-                ->getArrayOfTupleFromDict,
-                ~confirmParam=confirm.confirmParams,
-                ~handleUserError=false,
-                (),
-              )
-            }
-          }
-        | Some("apple_pay") => {
-            let applePaySessionObj = SessionsType.itemToObjMapper(dict, ApplePayObject)
-            let applePayToken = SessionsType.getPaymentSessionObj(
-              applePaySessionObj.sessionsToken,
-              ApplePay,
+        | Some("google_pay") =>
+          switch gPayToken {
+          | OtherTokenOptional(optToken) =>
+            GooglePayHelpers.handleGooglePayClicked(
+              ~sessionObj=optToken,
+              ~componentName,
+              ~iframeId,
+              ~readOnly,
             )
-            switch applePayToken {
-            | ApplePayTokenOptional(optToken) =>
-              ApplePayHelpers.handleApplePayButtonClicked(~sessionObj=optToken, ~componentName)
-            | _ =>
-              // TODO - To be replaced with proper error message
-              intent(
-                ~bodyArr=savedPaymentMethodBody
-                ->getJsonFromArrayOfJson
-                ->flattenObject(true)
-                ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-                ->getArrayOfTupleFromDict,
-                ~confirmParam=confirm.confirmParams,
-                ~handleUserError=false,
-                (),
-              )
-            }
+          | _ =>
+            // TODO - To be replaced with proper error message
+            intent(
+              ~bodyArr=savedPaymentMethodBody
+              ->getJsonFromArrayOfJson
+              ->flattenObject(true)
+              ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+              ->getArrayOfTupleFromDict,
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              (),
+            )
+          }
+        | Some("apple_pay") =>
+          switch applePayToken {
+          | ApplePayTokenOptional(optToken) =>
+            ApplePayHelpers.handleApplePayButtonClicked(~sessionObj=optToken, ~componentName)
+          | _ =>
+            // TODO - To be replaced with proper error message
+            intent(
+              ~bodyArr=savedPaymentMethodBody
+              ->getJsonFromArrayOfJson
+              ->flattenObject(true)
+              ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+              ->getArrayOfTupleFromDict,
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              (),
+            )
           }
         | _ =>
           intent(
@@ -244,6 +231,8 @@ let make = (
     complete,
     customerMethod,
     isCustomerAcceptanceRequired,
+    applePayToken,
+    gPayToken,
   ))
   useSubmitPaymentData(submitCallback)
 
