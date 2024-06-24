@@ -369,3 +369,56 @@ let useStatesJson = setStatesJson => {
     None
   })
 }
+
+let getStateJson = () => {
+  open Promise
+  AddressPaymentInput.importStates("./../States.json")->then(res => {
+    res.states->resolve
+  })
+}
+
+let sortCustomerMethodsBasedOnPriority = (
+  sortArr: array<PaymentType.customerMethods>,
+  priorityArr: array<string>,
+  ~displayDefaultSavedPaymentIcon=true,
+) => {
+  let priorityArr = priorityArr->Array.length > 0 ? priorityArr : PaymentModeType.defaultOrder
+
+  let getPaymentMethod = (customerMethod: PaymentType.customerMethods) => {
+    if customerMethod.paymentMethod === "card" {
+      customerMethod.paymentMethod
+    } else {
+      switch customerMethod.paymentMethodType {
+      | Some(paymentMethodType) => paymentMethodType
+      | _ => customerMethod.paymentMethod
+      }
+    }
+  }
+
+  let getCustomerMethodPriority = (paymentMethod: string) => {
+    let priorityArrLength = priorityArr->Array.length
+    let index = priorityArr->Array.indexOf(paymentMethod)
+
+    index === -1 ? priorityArrLength : index
+  }
+
+  let handleCustomerMethodsSort = (
+    firstCustomerMethod: PaymentType.customerMethods,
+    secondCustomerMethod: PaymentType.customerMethods,
+  ) => {
+    let firstPaymentMethod = firstCustomerMethod->getPaymentMethod
+    let secondPaymentMethod = secondCustomerMethod->getPaymentMethod
+
+    if (
+      displayDefaultSavedPaymentIcon &&
+      (firstCustomerMethod.defaultPaymentMethodSet || secondCustomerMethod.defaultPaymentMethodSet)
+    ) {
+      firstCustomerMethod.defaultPaymentMethodSet ? -1 : 1
+    } else {
+      firstPaymentMethod->getCustomerMethodPriority - secondPaymentMethod->getCustomerMethodPriority
+    }
+  }
+
+  sortArr->Belt.SortArray.stableSortBy(handleCustomerMethodsSort)
+}
+

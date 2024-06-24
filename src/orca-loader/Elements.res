@@ -761,21 +761,6 @@ let make = (
                   componentType->getIsComponentTypeForPaymentElementCreate &&
                     applePayPresent->Option.isSome
                 ) {
-                  //do operations here
-                  let processPayment = (
-                    payment: ApplePayTypes.paymentResult,
-                    applePayEvent: Types.event,
-                  ) => {
-                    //let body = PaymentBody.applePayBody(~token)
-                    let msg =
-                      [
-                        ("applePayProcessPayment", payment.token),
-                        ("applePayBillingContact", payment.billingContact),
-                        ("applePayShippingContact", payment.shippingContact),
-                      ]->Dict.fromArray
-                    applePayEvent.source->Window.sendPostMessage(msg)
-                  }
-
                   let handleApplePayMessages = (applePayEvent: Types.event) => {
                     let json = applePayEvent.data->Identity.anyTypeToJson
                     let dict = json->getDictFromJson
@@ -801,58 +786,24 @@ let make = (
                             (),
                           )
 
-                          let ssn = applePaySession(3, paymentRequest)
-                          switch applePaySessionRef.contents->Nullable.toOption {
-                          | Some(session) =>
-                            try {
-                              session.abort()
-                            } catch {
-                            | error => Console.log2("Abort fail", error)
-                            }
-                          | None => ()
-                          }
-
-                          applePaySessionRef := ssn->Js.Nullable.return
-
-                          ssn.onvalidatemerchant = _event => {
-                            let merchantSession =
-                              applePayPresent
-                              ->Belt.Option.flatMap(JSON.Decode.object)
-                              ->Option.getOr(Dict.make())
-                              ->Dict.get("session_token_data")
-                              ->Option.getOr(Dict.make()->JSON.Encode.object)
-                              ->transformKeys(CamelCase)
-                            ssn.completeMerchantValidation(merchantSession)
-                          }
-
-                          ssn.onpaymentauthorized = event => {
-                            ssn.completePayment(
-                              {"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson,
-                            )
-                            applePaySessionRef := Nullable.null
-                            processPayment(event.payment, applePayEvent)
-                            let value = "Payment Data Filled: New Payment Method"
-                            logger.setLogInfo(
-                              ~value,
-                              ~eventName=PAYMENT_DATA_FILLED,
-                              ~paymentMethod="APPLE_PAY",
-                              (),
-                            )
-                          }
-                          ssn.oncancel = _ev => {
+                          let callBackFunc = payment => {
                             let msg =
-                              [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
+                              [
+                                ("applePayProcessPayment", payment.token),
+                                ("applePayBillingContact", payment.billingContact),
+                                ("applePayShippingContact", payment.shippingContact),
+                              ]->Dict.fromArray
                             applePayEvent.source->Window.sendPostMessage(msg)
-                            applePaySessionRef := Nullable.null
-                            logInfo(Console.log("Apple Pay Payment Cancelled"))
-                            logger.setLogInfo(
-                              ~value="Apple Pay Payment Cancelled",
-                              ~eventName=APPLE_PAY_FLOW,
-                              ~paymentMethod="APPLE_PAY",
-                              (),
-                            )
                           }
-                          ssn.begin()
+
+                          ApplePayHelpers.startApplePaySession(
+                            ~paymentRequest,
+                            ~applePaySessionRef,
+                            ~applePayPresent,
+                            ~logger,
+                            ~applePayEvent=Some(applePayEvent),
+                            ~callBackFunc,
+                          )
                         }
                       } else {
                         ()

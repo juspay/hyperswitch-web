@@ -59,89 +59,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
     ->Option.getOr(false)
   }, [thirdPartySessionObj])
 
-  let processPayment = (body: array<(string, JSON.t)>, ~isThirdPartyFlow=false, ()) => {
-    intent(
-      ~bodyArr=body,
-      ~confirmParam={
-        return_url: options.wallets.walletReturnUrl,
-        publishableKey,
-      },
-      ~handleUserError=true,
-      ~isThirdPartyFlow,
-      (),
-    )
-  }
-
-  let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod="wallet",
-    ~paymentMethodType="google_pay",
-  )
-
-  let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
-
-  PaymentUtils.useStatesJson(setStatesJson)
-
-  React.useEffect(() => {
-    let handle = (ev: Window.event) => {
-      let json = try {
-        ev.data->JSON.parseExn
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
-      let dict = json->getDictFromJson
-      if dict->Dict.get("gpayResponse")->Option.isSome {
-        let metadata = dict->getJsonObjectFromDict("gpayResponse")
-        let obj = metadata->getDictFromJson->itemToObjMapper
-        let gPayBody = PaymentUtils.appendedCustomerAcceptance(
-          ~isGuestCustomer,
-          ~paymentType=paymentMethodListValue.payment_type,
-          ~body=PaymentBody.gpayBody(~payObj=obj, ~connectors),
-        )
-
-        let billingContact =
-          obj.paymentMethodData.info
-          ->getDictFromJson
-          ->getJsonObjectFromDict("billingAddress")
-          ->getDictFromJson
-          ->billingContactItemToObjMapper
-
-        let shippingContact =
-          metadata
-          ->getDictFromJson
-          ->getJsonObjectFromDict("shippingAddress")
-          ->getDictFromJson
-          ->billingContactItemToObjMapper
-
-        let email =
-          metadata
-          ->getDictFromJson
-          ->getString("email", "")
-
-        let requiredFieldsBody = DynamicFieldsUtils.getGooglePayRequiredFields(
-          ~billingContact,
-          ~shippingContact,
-          ~paymentMethodTypes,
-          ~statesList=stateJson,
-          ~email,
-        )
-
-        let body = {
-          gPayBody
-          ->getJsonFromArrayOfJson
-          ->flattenObject(true)
-          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->getArrayOfTupleFromDict
-        }
-        processPayment(body, ())
-      }
-      if dict->Dict.get("gpayError")->Option.isSome {
-        handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
-      }
-    }
-    Window.addEventListener("message", handle)
-    Some(() => {Window.removeEventListener("message", handle)})
-  }, (paymentMethodTypes, stateJson))
+  GooglePayHelpers.useHandleGooglePayResponse(~connectors, ~intent)
 
   let (_, buttonType, _) = options.wallets.style.type_
   let (_, heightType, _, _) = options.wallets.style.height
@@ -183,24 +101,24 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
               ("iframeId", iframeId->JSON.Encode.string),
             ])
             let bodyDict = PaymentBody.gPayThirdPartySdkBody(~connectors)
-            processPayment(bodyDict, ~isThirdPartyFlow=true, ())
+            GooglePayHelpers.processPayment(
+              ~body=bodyDict,
+              ~isThirdPartyFlow=true,
+              ~intent,
+              ~options,
+              ~publishableKey,
+            )
           } else {
-            let paymentDataRequest = getPaymentDataFromSession(~sessionObj, ~componentName)
-            handlePostMessage([
-              ("fullscreen", true->JSON.Encode.bool),
-              ("param", "paymentloader"->JSON.Encode.string),
-              ("iframeId", iframeId->JSON.Encode.string),
-            ])
-            if !options.readOnly {
-              handlePostMessage([
-                ("GpayClicked", true->JSON.Encode.bool),
-                ("GpayPaymentDataRequest", paymentDataRequest->Identity.anyTypeToJson),
-              ])
-            }
+            GooglePayHelpers.handleGooglePayClicked(
+              ~sessionObj,
+              ~componentName,
+              ~iframeId,
+              ~readOnly=options.readOnly,
+            )
           }
         } else {
           let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
-          processPayment(bodyDict, ())
+          GooglePayHelpers.processPayment(~body=bodyDict, ~intent, ~options, ~publishableKey)
         }
       }
       resolve()

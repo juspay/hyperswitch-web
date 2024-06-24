@@ -6,6 +6,7 @@ let make = (
   ~loadSavedCards: PaymentType.savedCardsLoadState,
   ~cvcProps,
   ~paymentType,
+  ~sessions,
 ) => {
   open CardUtils
   open Utils
@@ -20,8 +21,20 @@ let make = (
     loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT, ())
   }
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
-  let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {displaySavedPaymentMethodsCheckbox, readOnly} = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.optionAtom,
+  )
   let isGuestCustomer = useIsGuestCustomer()
+
+  let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let url = RescriptReactRouter.useUrl()
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+
+  let dict = sessions->Utils.getDictFromJson
+  let sessionObj = React.useMemo(() => SessionsType.itemToObjMapper(dict, Others), [dict])
+
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
+  let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let savedCardlength = savedMethods->Array.length
@@ -46,6 +59,13 @@ let make = (
 
   let bottomElement = {
     savedMethods
+    ->Array.filter(savedMethod => {
+      switch savedMethod.paymentMethodType {
+      | Some("apple_pay") => isApplePayReady
+      | Some("google_pay") => isGPayReady
+      | _ => true
+      }
+    })
     ->Array.mapWithIndex((obj, i) => {
       let brandIcon = switch obj.paymentMethod {
       | "wallet" => getWalletBrandIcon(obj)
@@ -101,6 +121,10 @@ let make = (
 
   useHandlePostMessages(~complete, ~empty, ~paymentType, ~savedMethod=true)
 
+  GooglePayHelpers.useHandleGooglePayResponse(~connectors=[], ~intent)
+
+  ApplePayHelpers.useHandleApplePayResponse(~connectors=[], ~intent)
+
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
@@ -137,16 +161,66 @@ let make = (
         (!isCardPaymentMethod || isCardPaymentMethodValid) &&
         confirm.confirmTimestamp >= confirm.readyTimestamp
       ) {
-        intent(
-          ~bodyArr=savedPaymentMethodBody
-          ->getJsonFromArrayOfJson
-          ->flattenObject(true)
-          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->getArrayOfTupleFromDict,
-          ~confirmParam=confirm.confirmParams,
-          ~handleUserError=false,
-          (),
-        )
+        switch customerMethod.paymentMethodType {
+        | Some("google_pay") => {
+            let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
+            switch gPayToken {
+            | OtherTokenOptional(optToken) =>
+              GooglePayHelpers.handleGooglePayClicked(
+                ~sessionObj=optToken,
+                ~componentName,
+                ~iframeId,
+                ~readOnly,
+              )
+            | _ =>
+              // TODO - To be replaced with proper error message
+              intent(
+                ~bodyArr=savedPaymentMethodBody
+                ->getJsonFromArrayOfJson
+                ->flattenObject(true)
+                ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+                ->getArrayOfTupleFromDict,
+                ~confirmParam=confirm.confirmParams,
+                ~handleUserError=false,
+                (),
+              )
+            }
+          }
+        | Some("apple_pay") => {
+            let applePaySessionObj = SessionsType.itemToObjMapper(dict, ApplePayObject)
+            let applePayToken = SessionsType.getPaymentSessionObj(
+              applePaySessionObj.sessionsToken,
+              ApplePay,
+            )
+            switch applePayToken {
+            | ApplePayTokenOptional(optToken) =>
+              ApplePayHelpers.handleApplePayButtonClicked(~sessionObj=optToken, ~componentName)
+            | _ =>
+              // TODO - To be replaced with proper error message
+              intent(
+                ~bodyArr=savedPaymentMethodBody
+                ->getJsonFromArrayOfJson
+                ->flattenObject(true)
+                ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+                ->getArrayOfTupleFromDict,
+                ~confirmParam=confirm.confirmParams,
+                ~handleUserError=false,
+                (),
+              )
+            }
+          }
+        | _ =>
+          intent(
+            ~bodyArr=savedPaymentMethodBody
+            ->getJsonFromArrayOfJson
+            ->flattenObject(true)
+            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+            ->getArrayOfTupleFromDict,
+            ~confirmParam=confirm.confirmParams,
+            ~handleUserError=false,
+            (),
+          )
+        }
       } else {
         if isUnknownPaymentMethod || confirm.confirmTimestamp < confirm.readyTimestamp {
           setUserError(localeString.selectPaymentMethodText)
