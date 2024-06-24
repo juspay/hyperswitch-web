@@ -57,6 +57,7 @@ let cryptoCurrencyNetworks = Recoil.atom("cryptoCurrencyNetworks", "")
 let isShowOrPayUsing = Recoil.atom("isShowOrPayUsing", false)
 let areRequiredFieldsValid = Recoil.atom("areRequiredFieldsValid", true)
 let areRequiredFieldsEmpty = Recoil.atom("areRequiredFieldsEmpty", false)
+let dateOfBirth = Recoil.atom("dateOfBirth", Date.make())
 let userBillingName = Recoil.atom("userBillingName", defaultFieldValues)
 
 type areOneClickWalletsRendered = {

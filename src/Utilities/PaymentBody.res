@@ -424,33 +424,42 @@ let paypalSdkBody = (~token, ~connectors) => [
   ),
 ]
 
-let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) => [
-  ("payment_method", "wallet"->JSON.Encode.string),
-  ("payment_method_type", "google_pay"->JSON.Encode.string),
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  (
-    "payment_method_data",
-    [
-      (
-        "wallet",
-        [
-          (
-            "google_pay",
-            [
-              ("type", payObj.paymentMethodData.\"type"->JSON.Encode.string),
-              ("description", payObj.paymentMethodData.description->JSON.Encode.string),
-              ("info", payObj.paymentMethodData.info->Utils.transformKeys(Utils.SnakeCase)),
-              (
-                "tokenization_data",
-                payObj.paymentMethodData.tokenizationData->Utils.transformKeys(Utils.SnakeCase),
-              ),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
+let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) => {
+  let gPayBody = [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "google_pay"->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [
+        (
+          "wallet",
+          [
+            (
+              "google_pay",
+              [
+                ("type", payObj.paymentMethodData.\"type"->JSON.Encode.string),
+                ("description", payObj.paymentMethodData.description->JSON.Encode.string),
+                ("info", payObj.paymentMethodData.info->Utils.transformKeys(Utils.SnakeCase)),
+                (
+                  "tokenization_data",
+                  payObj.paymentMethodData.tokenizationData->Utils.transformKeys(Utils.SnakeCase),
+                ),
+              ]->Utils.getJsonFromArrayOfJson,
+            ),
+          ]->Utils.getJsonFromArrayOfJson,
+        ),
+      ]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]
+
+  if connectors->Array.length > 0 {
+    gPayBody
+    ->Array.push(("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array))
+    ->ignore
+  }
+
+  gPayBody
+}
 
 let gpayRedirectBody = (~connectors: array<string>) => [
   ("payment_method", "wallet"->JSON.Encode.string),
@@ -495,8 +504,8 @@ let applePayBody = (~token, ~connectors) => {
     ->JSON.stringify
     ->btoa
   dict->Dict.set("paymentData", paymentDataString->JSON.Encode.string)
-  [
-    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+
+  let applePayBody = [
     ("payment_method", "wallet"->JSON.Encode.string),
     ("payment_method_type", "apple_pay"->JSON.Encode.string),
     (
@@ -513,6 +522,14 @@ let applePayBody = (~token, ~connectors) => {
       ->JSON.Encode.object,
     ),
   ]
+
+  if connectors->Array.length > 0 {
+    applePayBody
+    ->Array.push(("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array))
+    ->ignore
+  }
+
+  applePayBody
 }
 
 let applePayRedirectBody = (~connectors) => [

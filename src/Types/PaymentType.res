@@ -849,13 +849,7 @@ let getPaymentMethodType = dict => {
   dict->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
 }
 
-let createCustomerObjArr = dict => {
-  let customerDict =
-    dict
-    ->Dict.get("customerPaymentMethods")
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.getOr(Dict.make())
-
+let itemToCustomerObjMapper = customerDict => {
   let customerArr =
     customerDict
     ->Dict.get("customer_payment_methods")
@@ -876,7 +870,7 @@ let createCustomerObjArr = dict => {
         paymentToken: getString(dict, "payment_token", ""),
         customerId: getString(dict, "customer_id", ""),
         paymentMethod: getString(dict, "payment_method", ""),
-        paymentMethodIssuer: Some(getString(dict, "payment_method_issuer", "")),
+        paymentMethodIssuer: getOptionString(dict, "payment_method_issuer"),
         card: getCardDetails(dict, "card"),
         paymentMethodType: getPaymentMethodType(dict),
         defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
@@ -884,6 +878,17 @@ let createCustomerObjArr = dict => {
         lastUsedAt: getString(dict, "last_used_at", ""),
       }
     })
+
+  (customerPaymentMethods, isGuestCustomer)
+}
+
+let createCustomerObjArr = dict => {
+  let customerDict =
+    dict
+    ->Dict.get("customerPaymentMethods")
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.getOr(Dict.make())
+  let (customerPaymentMethods, isGuestCustomer) = customerDict->itemToCustomerObjMapper
   LoadedSavedCards(customerPaymentMethods, isGuestCustomer)
 }
 

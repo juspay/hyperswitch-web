@@ -88,4 +88,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     `${str} в данный момент не поддерживается.`,
   currencyNetwork: `Валютные сети`,
   expiryPlaceholder: `MM / ГГ`,
+  dateOfBirth: `Дата рождения`,
 }

@@ -53,12 +53,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       }
     | (_, LoadingSavedCards) => ()
     | (_, LoadedSavedCards(savedPaymentMethods, isGuestCustomer)) => {
+        let displayDefaultSavedPaymentIcon = optionAtomValue.displayDefaultSavedPaymentIcon
         let sortSavedPaymentMethods = (a, b) => {
           let defaultCompareVal = compareLogic(
             Date.fromString(a.lastUsedAt),
             Date.fromString(b.lastUsedAt),
           )
-          if optionAtomValue.displayDefaultSavedPaymentIcon {
+          if displayDefaultSavedPaymentIcon {
             if a.defaultPaymentMethodSet {
               -1.
             } else if b.defaultPaymentMethodSet {
@@ -74,7 +75,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         let finalSavedPaymentMethods = savedPaymentMethods->Array.copy
         finalSavedPaymentMethods->Array.sort(sortSavedPaymentMethods)
 
-        setSavedMethods(_ => finalSavedPaymentMethods)
+        let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
+
+        let sortSavedMethodsBasedOnPriority =
+          finalSavedPaymentMethods->PaymentUtils.sortCustomerMethodsBasedOnPriority(
+            paymentOrder,
+            ~displayDefaultSavedPaymentIcon,
+          )
+
+        setSavedMethods(_ => sortSavedMethodsBasedOnPriority)
         setLoadSavedCards(_ =>
           finalSavedPaymentMethods->Array.length == 0
             ? NoResult(isGuestCustomer)
@@ -89,7 +98,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
 
     None
-  }, (customerPaymentMethods, displaySavedPaymentMethods))
+  }, (customerPaymentMethods, displaySavedPaymentMethods, optionAtomValue))
 
   React.useEffect(() => {
     let defaultSelectedPaymentMethod = optionAtomValue.displayDefaultSavedPaymentIcon
@@ -335,7 +344,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     <RenderIf condition={!showFields && displaySavedPaymentMethods}>
-      <SavedMethods paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType />
+      <SavedMethods paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType sessions />
     </RenderIf>
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&

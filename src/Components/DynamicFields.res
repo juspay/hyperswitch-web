@@ -457,6 +457,7 @@ let make = (
               />
             </>
           | CryptoCurrencyNetworks => <CryptoCurrencyNetworks />
+          | DateOfBirth => <DateOfBirth />
           | Email
           | InfoElement
           | Country
@@ -480,6 +481,7 @@ let make = (
           | ShippingAddressCity
           | ShippingAddressPincode
           | ShippingAddressState
+          | PhoneCountryCode
           | ShippingAddressCountry(_) => React.null
           }}
         </div>
@@ -761,6 +763,8 @@ let make = (
                 | ShippingAddressState
                 | ShippingAddressCountry(_)
                 | CryptoCurrencyNetworks
+                | DateOfBirth
+                | PhoneCountryCode
                 | None => React.null
                 }}
               </div>
