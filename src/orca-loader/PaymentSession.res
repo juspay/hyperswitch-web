@@ -1,6 +1,12 @@
 open Types
 
-let make = (options, ~clientSecret, ~publishableKey, ~logger: option<OrcaLogger.loggerMake>) => {
+let make = (
+  options,
+  ~clientSecret,
+  ~publishableKey,
+  ~logger: option<OrcaLogger.loggerMake>,
+  ~ephemeralKey,
+) => {
   let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
   let switchToCustomPod =
     GlobalVars.isInteg &&
@@ -19,6 +25,13 @@ let make = (options, ~clientSecret, ~publishableKey, ~logger: option<OrcaLogger.
         ~endpoint,
         ~logger,
         ~switchToCustomPod,
+      ),
+    getPaymentManagementMethods: _ =>
+      PaymentSessionMethods.getPaymentManagementMethods(
+        ~ephemeralKey,
+        ~logger,
+        ~switchToCustomPod,
+        ~endpoint,
       ),
   }
 

@@ -46,7 +46,15 @@ type getCustomerSavedPaymentMethods = {
   confirmWithLastUsedPaymentMethod: JSON.t => Promise.t<JSON.t>,
 }
 
-type initPaymentSession = {getCustomerSavedPaymentMethods: unit => Promise.t<JSON.t>}
+type getPaymentManagementMethods = {
+  getSavedPaymentManagementMethodsList: unit => Promise.t<JSON.t>,
+  deleteSavedPaymentMethod: JSON.t => Promise.t<JSON.t>,
+}
+
+type initPaymentSession = {
+  getCustomerSavedPaymentMethods: unit => Promise.t<JSON.t>,
+  getPaymentManagementMethods: unit => Promise.t<JSON.t>,
+}
 
 type confirmParams = {return_url: string}
 
@@ -125,6 +133,14 @@ let getCustomerDefaultSavedPaymentMethodData = () => {
   JSON.Encode.null
 }
 
+let getSavedPaymentManagementMethodsList = () => {
+  JSON.Encode.null
+}
+
+let deleteSavedPaymentMethod = () => {
+  JSON.Encode.null
+}
+
 let getCustomerLastUsedPaymentMethodData = () => {
   JSON.Encode.null
 }
@@ -146,8 +162,13 @@ let defaultGetCustomerSavedPaymentMethods = () => {
   Promise.resolve(JSON.Encode.null)
 }
 
+let defaultGetPaymentManagementMethods = () => {
+  Promise.resolve(JSON.Encode.null)
+}
+
 let defaultInitPaymentSession: initPaymentSession = {
   getCustomerSavedPaymentMethods: defaultGetCustomerSavedPaymentMethods,
+  getPaymentManagementMethods: defaultGetPaymentManagementMethods,
 }
 
 let defaultHyperInstance = {
