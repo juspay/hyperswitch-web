@@ -78,7 +78,7 @@ let processPayment = (
   )
 }
 
-let useHandleGooglePayResponse = (~connectors, ~intent) => {
+let useHandleGooglePayResponse = (~connectors, ~intent, ~isSavedMethodsFlow=false) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
@@ -123,6 +123,9 @@ let useHandleGooglePayResponse = (~connectors, ~intent) => {
       }
       if dict->Dict.get("gpayError")->Option.isSome {
         handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+        if isSavedMethodsFlow {
+          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+        }
       }
     }
     Window.addEventListener("message", handle)

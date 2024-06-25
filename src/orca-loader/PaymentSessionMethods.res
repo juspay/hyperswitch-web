@@ -12,12 +12,6 @@ let getCustomerSavedPaymentMethods = (
   open GooglePayType
   let applePaySessionRef = ref(Nullable.null)
 
-  let gPayClient = google(
-    {
-      "environment": publishableKey->String.startsWith("pk_prd_") ? "PRODUCTION" : "TEST",
-    }->Identity.anyTypeToJson,
-  )
-
   PaymentHelpers.fetchCustomerPaymentMethodList(
     ~clientSecret,
     ~publishableKey,
@@ -27,6 +21,12 @@ let getCustomerSavedPaymentMethods = (
     ~isPaymentSession=true,
   )
   ->then(customerDetails => {
+    let gPayClient = google(
+      {
+        "environment": publishableKey->String.startsWith("pk_prd_") ? "PRODUCTION" : "TEST",
+      }->Identity.anyTypeToJson,
+    )
+
     let customerDetailsDict = customerDetails->JSON.Decode.object->Option.getOr(Dict.make())
     let (customerPaymentMethods, isGuestCustomer) =
       customerDetailsDict->PaymentType.itemToCustomerObjMapper
@@ -168,7 +168,12 @@ let getCustomerSavedPaymentMethods = (
 
         PaymentUtils.getStateJson()
         ->then(stateJson => {
-          logger.setLogInfo(~value="States Loaded", ~eventName=APPLE_PAY_FLOW, ~paymentMethod="APPLE_PAY", ())
+          logger.setLogInfo(
+            ~value="States Loaded",
+            ~eventName=APPLE_PAY_FLOW,
+            ~paymentMethod="APPLE_PAY",
+            (),
+          )
           stateJson->completeApplePayPayment
         })
         ->catch(err => {
@@ -226,7 +231,12 @@ let getCustomerSavedPaymentMethods = (
         PaymentUtils.getStateJson()
         ->then(
           stateJson => {
-            logger.setLogInfo(~value="States Loaded", ~eventName=GOOGLE_PAY_FLOW, ~paymentMethod="GOOGLE_PAY", ())
+            logger.setLogInfo(
+              ~value="States Loaded",
+              ~eventName=GOOGLE_PAY_FLOW,
+              ~paymentMethod="GOOGLE_PAY",
+              (),
+            )
             stateJson->completeGooglePayPayment
           },
         )
@@ -423,7 +433,7 @@ let getCustomerSavedPaymentMethods = (
         ->Identity.anyTypeToJson
         ->resolve
       })
-      ->catch(err => {
+      ->catch(_ => {
         updateCustomerPaymentMethodsRef(~isFilterApplePay=true, ~isFilterGooglePay=true)
 
         {

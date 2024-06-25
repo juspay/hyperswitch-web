@@ -1,3 +1,45 @@
+## [0.70.7](https://github.com/juspay/hyperswitch-web/compare/v0.70.6...v0.70.7) (2024-06-25)
+
+
+### Bug Fixes
+
+* google Pay Fix ([#458](https://github.com/juspay/hyperswitch-web/issues/458)) ([1bcd585](https://github.com/juspay/hyperswitch-web/commit/1bcd585f09f9eb5c151614e29827127d4d6dc4e0))
+
+## [0.70.6](https://github.com/juspay/hyperswitch-web/compare/v0.70.5...v0.70.6) (2024-06-25)
+
+
+### Bug Fixes
+
+* fixed handling of empty string in requiredString and warningString ([#450](https://github.com/juspay/hyperswitch-web/issues/450)) ([a1c75fb](https://github.com/juspay/hyperswitch-web/commit/a1c75fbaea004b2abd274544b90e40a9b1a74cea))
+
+## [0.70.5](https://github.com/juspay/hyperswitch-web/compare/v0.70.4...v0.70.5) (2024-06-25)
+
+
+### Bug Fixes
+
+* headers update & warnings removed ([#457](https://github.com/juspay/hyperswitch-web/issues/457)) ([a4b653b](https://github.com/juspay/hyperswitch-web/commit/a4b653b79b0056bfc1966f6dcab5a02c272c2c47))
+
+## [0.70.4](https://github.com/juspay/hyperswitch-web/compare/v0.70.3...v0.70.4) (2024-06-25)
+
+
+### Bug Fixes
+
+* handle requires_customer_action and processing status for pix pa… ([#456](https://github.com/juspay/hyperswitch-web/issues/456)) ([a680e71](https://github.com/juspay/hyperswitch-web/commit/a680e71a73a31eef89d66fd1d35666da53294a51))
+
+## [0.70.3](https://github.com/juspay/hyperswitch-web/compare/v0.70.2...v0.70.3) (2024-06-24)
+
+
+### Bug Fixes
+
+* fixed Saved Methods ApplePay and GooglePay Handler ([#455](https://github.com/juspay/hyperswitch-web/issues/455)) ([bce8bea](https://github.com/juspay/hyperswitch-web/commit/bce8bea6045acbae2df1016b93623709715a8277))
+
+## [0.70.2](https://github.com/juspay/hyperswitch-web/compare/v0.70.1...v0.70.2) (2024-06-24)
+
+
+### Bug Fixes
+
+* package update ([0d01ff2](https://github.com/juspay/hyperswitch-web/commit/0d01ff290e0d22e17bf294d939d500c6c9a927a5))
+
 # [0.69.0](https://github.com/juspay/hyperswitch-web/compare/v0.68.0...v0.69.0) (2024-06-20)
 
 
