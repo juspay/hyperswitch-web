@@ -433,7 +433,7 @@ let getCustomerSavedPaymentMethods = (
         ->Identity.anyTypeToJson
         ->resolve
       })
-      ->catch(err => {
+      ->catch(_ => {
         updateCustomerPaymentMethodsRef(~isFilterApplePay=true, ~isFilterGooglePay=true)
 
         {

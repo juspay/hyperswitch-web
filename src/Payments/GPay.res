@@ -27,8 +27,6 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
 
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
-  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
-
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
     ~paymentMethodListValue,
     ~paymentMethod="wallet",
