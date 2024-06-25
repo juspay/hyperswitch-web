@@ -1,3 +1,17 @@
+## [0.70.3](https://github.com/juspay/hyperswitch-web/compare/v0.70.2...v0.70.3) (2024-06-24)
+
+
+### Bug Fixes
+
+* fixed Saved Methods ApplePay and GooglePay Handler ([#455](https://github.com/juspay/hyperswitch-web/issues/455)) ([bce8bea](https://github.com/juspay/hyperswitch-web/commit/bce8bea6045acbae2df1016b93623709715a8277))
+
+## [0.70.2](https://github.com/juspay/hyperswitch-web/compare/v0.70.1...v0.70.2) (2024-06-24)
+
+
+### Bug Fixes
+
+* package update ([0d01ff2](https://github.com/juspay/hyperswitch-web/commit/0d01ff290e0d22e17bf294d939d500c6c9a927a5))
+
 # [0.69.0](https://github.com/juspay/hyperswitch-web/compare/v0.68.0...v0.69.0) (2024-06-20)
 
 
