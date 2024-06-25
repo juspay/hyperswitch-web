@@ -1,3 +1,10 @@
+## [0.70.6](https://github.com/juspay/hyperswitch-web/compare/v0.70.5...v0.70.6) (2024-06-25)
+
+
+### Bug Fixes
+
+* fixed handling of empty string in requiredString and warningString ([#450](https://github.com/juspay/hyperswitch-web/issues/450)) ([a1c75fb](https://github.com/juspay/hyperswitch-web/commit/a1c75fbaea004b2abd274544b90e40a9b1a74cea))
+
 ## [0.70.5](https://github.com/juspay/hyperswitch-web/compare/v0.70.4...v0.70.5) (2024-06-25)
 
 
