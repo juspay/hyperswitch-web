@@ -110,14 +110,12 @@ let getDecodedBoolFromJson = (json, callbackFunc, defaultValue) => {
 let getRequiredString = (dict, key, default, ~logger) => {
   let optionalStr = getOptionString(dict, key)
   switch optionalStr {
-  | Some(val) => {
-      val == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr=key, ~logger, ()) : ()
-      val
-    }
-  | None => {
+  | None
+  | Some("") => {
       manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr=key, ~logger, ())
       optionalStr->Option.getOr(default)
     }
+  | Some(val) => val
   }
 }
 
@@ -125,10 +123,11 @@ let getWarningString = (dict, key, default, ~logger) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
     switch val->JSON.Decode.string {
-    | Some(val) => val
-    | None =>
+    | None
+    | Some("") =>
       manageErrorWarning(TYPE_STRING_ERROR, ~dynamicStr=key, ~logger, ())
       default
+    | Some(val) => val
     }
   | None => default
   }
