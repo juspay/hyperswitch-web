@@ -1,3 +1,10 @@
+## [0.70.7](https://github.com/juspay/hyperswitch-web/compare/v0.70.6...v0.70.7) (2024-06-25)
+
+
+### Bug Fixes
+
+* google Pay Fix ([#458](https://github.com/juspay/hyperswitch-web/issues/458)) ([1bcd585](https://github.com/juspay/hyperswitch-web/commit/1bcd585f09f9eb5c151614e29827127d4d6dc4e0))
+
 ## [0.70.6](https://github.com/juspay/hyperswitch-web/compare/v0.70.5...v0.70.6) (2024-06-25)
 
 
