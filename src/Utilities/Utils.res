@@ -805,8 +805,8 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
       ("Content-Type", "application/json"),
       ("X-Client-Version", Window.version),
       ("X-Payment-Confirm-Source", "sdk"),
-      ("browserName", arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
-      ("browserVersion", arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+      ("Browser-Name", arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+      ("Browser-Version", arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
       ("X-Client-Platform", "web"),
     ]->Dict.fromArray
 
