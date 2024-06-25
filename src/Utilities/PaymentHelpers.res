@@ -558,6 +558,7 @@ let rec intentCall = (
               | (Applepay, false)
               | (Paypal, false) =>
                 if !isPaymentSession {
+                  closePaymentLoaderIfAny()
                   postSubmitResponse(~jsonData=data, ~url=url.href)
                 } else if confirmParam.redirect === Some("always") {
                   handleOpenUrl(url.href)
@@ -1560,4 +1561,3 @@ let paymentIntentForPaymentSession = (
     (),
   )
 }
-

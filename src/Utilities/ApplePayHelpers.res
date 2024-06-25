@@ -138,6 +138,7 @@ let useHandleApplePayResponse = (
   ~setApplePayClicked=_ => (),
   ~syncPayment=() => (),
   ~isInvokeSDKFlow=true,
+  ~isSavedMethodsFlow=false,
 ) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -191,6 +192,9 @@ let useHandleApplePayResponse = (
           )
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
+          if isSavedMethodsFlow {
+            postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+          }
         } else if dict->Dict.get("applePaySyncPayment")->Option.isSome {
           syncPayment()
         }
