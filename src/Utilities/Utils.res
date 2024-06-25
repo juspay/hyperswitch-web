@@ -799,11 +799,15 @@ let delay = timeOut => {
   })
 }
 let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
+  let arrayOfNameAndVersion = String.split(Window.userAgent->OrcaLogger.browserDetect, "-")
   let headerObj =
     [
       ("Content-Type", "application/json"),
       ("X-Client-Version", Window.version),
       ("X-Payment-Confirm-Source", "sdk"),
+      ("browserName", arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+      ("browserVersion", arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+      ("X-Client-Platform", "web"),
     ]->Dict.fromArray
 
   switch (token, uri) {
@@ -1328,4 +1332,3 @@ let handleFailureResponse = (~message, ~errorType) =>
       ]->getJsonFromArrayOfJson,
     ),
   ]->getJsonFromArrayOfJson
-
