@@ -168,7 +168,12 @@ let getCustomerSavedPaymentMethods = (
 
         PaymentUtils.getStateJson()
         ->then(stateJson => {
-          logger.setLogInfo(~value="States Loaded", ~eventName=APPLE_PAY_FLOW, ~paymentMethod="APPLE_PAY", ())
+          logger.setLogInfo(
+            ~value="States Loaded",
+            ~eventName=APPLE_PAY_FLOW,
+            ~paymentMethod="APPLE_PAY",
+            (),
+          )
           stateJson->completeApplePayPayment
         })
         ->catch(err => {
@@ -226,7 +231,12 @@ let getCustomerSavedPaymentMethods = (
         PaymentUtils.getStateJson()
         ->then(
           stateJson => {
-            logger.setLogInfo(~value="States Loaded", ~eventName=GOOGLE_PAY_FLOW, ~paymentMethod="GOOGLE_PAY", ())
+            logger.setLogInfo(
+              ~value="States Loaded",
+              ~eventName=GOOGLE_PAY_FLOW,
+              ~paymentMethod="GOOGLE_PAY",
+              (),
+            )
             stateJson->completeGooglePayPayment
           },
         )
@@ -423,7 +433,7 @@ let getCustomerSavedPaymentMethods = (
         ->Identity.anyTypeToJson
         ->resolve
       })
-      ->catch(err => {
+      ->catch(_ => {
         updateCustomerPaymentMethodsRef(~isFilterApplePay=true, ~isFilterGooglePay=true)
 
         {
