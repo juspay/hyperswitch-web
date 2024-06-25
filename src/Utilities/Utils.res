@@ -804,6 +804,9 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
       ("Content-Type", "application/json"),
       ("X-Client-Version", Window.version),
       ("X-Payment-Confirm-Source", "sdk"),
+      ("X-Browser-Name", OrcaLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+      ("X-Browser-Version", OrcaLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+      ("X-Client-Platform", "web"),
     ]->Dict.fromArray
 
   switch (token, uri) {
@@ -1328,4 +1331,3 @@ let handleFailureResponse = (~message, ~errorType) =>
       ]->getJsonFromArrayOfJson,
     ),
   ]->getJsonFromArrayOfJson
-
