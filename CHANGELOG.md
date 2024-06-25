@@ -1,3 +1,10 @@
+# [0.71.0](https://github.com/juspay/hyperswitch-web/compare/v0.70.7...v0.71.0) (2024-06-25)
+
+
+### Features
+
+* add payout widget ([#435](https://github.com/juspay/hyperswitch-web/issues/435)) ([3b1e7f9](https://github.com/juspay/hyperswitch-web/commit/3b1e7f9d8288d392917149693ae5b3b21b664d3f))
+
 ## [0.70.7](https://github.com/juspay/hyperswitch-web/compare/v0.70.6...v0.70.7) (2024-06-25)
 
 
