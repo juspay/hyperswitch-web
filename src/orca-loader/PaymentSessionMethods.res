@@ -12,12 +12,6 @@ let getCustomerSavedPaymentMethods = (
   open GooglePayType
   let applePaySessionRef = ref(Nullable.null)
 
-  let gPayClient = google(
-    {
-      "environment": publishableKey->String.startsWith("pk_prd_") ? "PRODUCTION" : "TEST",
-    }->Identity.anyTypeToJson,
-  )
-
   PaymentHelpers.fetchCustomerPaymentMethodList(
     ~clientSecret,
     ~publishableKey,
@@ -27,6 +21,12 @@ let getCustomerSavedPaymentMethods = (
     ~isPaymentSession=true,
   )
   ->then(customerDetails => {
+    let gPayClient = google(
+      {
+        "environment": publishableKey->String.startsWith("pk_prd_") ? "PRODUCTION" : "TEST",
+      }->Identity.anyTypeToJson,
+    )
+
     let customerDetailsDict = customerDetails->JSON.Decode.object->Option.getOr(Dict.make())
     let (customerPaymentMethods, isGuestCustomer) =
       customerDetailsDict->PaymentType.itemToCustomerObjMapper
