@@ -257,6 +257,7 @@ let make = (
       | "cardNumber"
       | "cardExpiry"
       | "cardCvc"
+      | "paymentMethodCollect"
       | "googlePay"
       | "payPal"
       | "applePay"
@@ -957,7 +958,7 @@ let make = (
             newOptions
             ->getDictFromJson
             ->getBool("displaySavedPaymentMethods", true) &&
-              !(expressCheckoutComponents->Array.includes(componentType))->not
+              !(spmComponents->Array.includes(componentType))->not
           fetchCustomerPaymentMethods(mountedIframeRef, disableSavedPaymentMethods, componentType)
           fetchSessionTokens(mountedIframeRef)
           resolve()

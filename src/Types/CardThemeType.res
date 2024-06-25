@@ -11,6 +11,7 @@ type mode =
   | CardNumberElement
   | CardExpiryElement
   | CardCVCElement
+  | PaymentMethodCollectElement
   | GooglePayElement
   | PayPalElement
   | ApplePayElement
@@ -100,6 +101,7 @@ let getPaymentMode = val => {
   | "googlePay" => GooglePayElement
   | "payPal" => PayPalElement
   | "applePay" => ApplePayElement
+  | "paymentMethodCollect" => PaymentMethodCollectElement
   | "klarna" => KlarnaElement
   | "expressCheckout" => ExpressCheckoutElement
   | _ => NONE
@@ -116,6 +118,7 @@ let getPaymentModeToStrMapper = val => {
   | GooglePayElement => "GooglePayElement"
   | PayPalElement => "PayPalElement"
   | ApplePayElement => "ApplePayElement"
+  | PaymentMethodCollectElement => "PaymentMethodCollectElement"
   | KlarnaElement => "KlarnaElement"
   | ExpressCheckoutElement => "ExpressCheckoutElement"
   | NONE => "None"

@@ -20,6 +20,7 @@ let make = (
   ~className="",
   ~inputRef,
   ~isFocus,
+  ~labelClassName="",
 ) => {
   open ElementType
   let (eleClassName, setEleClassName) = React.useState(_ => "input-base")
@@ -37,7 +38,8 @@ let make = (
     | Card
     | CardCVCElement
     | CardExpiryElement
-    | CardNumberElement =>
+    | CardNumberElement
+    | PaymentMethodCollectElement =>
       setEleClassName(_ => val)
     | _ => ()
     }
@@ -115,7 +117,7 @@ let make = (
 
   <div className={` flex flex-col w-full`}>
     <RenderIf condition={fieldName->String.length > 0}>
-      <div> {React.string(fieldName)} </div>
+      <div className={`${labelClassName}`}> {React.string(fieldName)} </div>
     </RenderIf>
     <div className="flex flex-row " style={direction: direction}>
       <input

@@ -23,6 +23,10 @@ let showCardFieldsAtom = Recoil.atom("showCardFields", false)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")
 let payNowButtonDisable = Recoil.atom("payNowButtonDisable", true)
+let paymentMethodCollectOptionAtom = Recoil.atom(
+  "paymentMethodCollectOptions",
+  PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
+)
 
 let defaultFieldValues = {
   value: "",

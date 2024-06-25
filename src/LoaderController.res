@@ -17,6 +17,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
+  let (_, setPaymentMethodCollectOptions) = Recoil.useRecoilState(paymentMethodCollectOptionAtom)
 
   let divRef = React.useRef(Nullable.null)
 
@@ -79,6 +80,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | CardCVCElement
     | Card =>
       setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
+    | PaymentMethodCollectElement => {
+        let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(
+          optionsDict,
+          logger,
+        )
+        setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
+      }
     | GooglePayElement
     | PayPalElement
     | ApplePayElement

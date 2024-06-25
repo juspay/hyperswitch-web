@@ -142,7 +142,7 @@ let make = (
             id="card-cvc"
             isFocus
           />
-
+        | PaymentMethodCollectElement
         | NONE => React.null
         }}
       </div>

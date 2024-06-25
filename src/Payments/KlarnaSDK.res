@@ -130,7 +130,7 @@ let make = (~sessionObj: SessionsType.token) => {
     None
   }, (status, stateJson, paymentMethodTypes))
 
-  <div style={height: `${height->Belt.Int.toString}px`} id="klarna-payments" className="w-full" />
+  <div style={height: `${height->Int.toString}px`} id="klarna-payments" className="w-full" />
 }
 
 let default = make

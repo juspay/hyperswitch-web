@@ -3,6 +3,7 @@ let make = () => {
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
   let setLoggerState = Recoil.useSetRecoilState(RecoilAtoms.loggerAtom)
+  let {showLoader} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   let paymentMode = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentType = paymentMode->CardThemeType.getPaymentMode
@@ -16,7 +17,17 @@ let make = () => {
     None
   }, [logger])
 
-  let renderFullscreen = {
+  let renderFullscreen = switch paymentMode {
+  | "paymentMethodCollect" =>
+    <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
+      <React.Suspense
+        fallback={<RenderIf condition={showLoader}>
+          <PaymentElementShimmer />
+        </RenderIf>}>
+        <PaymentMethodCollectElementLazy integrateError logger />
+      </React.Suspense>
+    </LoaderController>
+  | _ =>
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
     | "fullscreen" =>

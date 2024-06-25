@@ -357,6 +357,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
     | CardNumberElement
     | CardExpiryElement
     | CardCVCElement
+    | PaymentMethodCollectElement
     | GooglePayElement
     | PayPalElement
     | ApplePayElement
