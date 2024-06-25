@@ -94,7 +94,9 @@ let make = () => {
       let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
       let status = dict->getString("status", "")
 
-      if status === "succeeded" {
+      if (
+        status === "succeeded" || status === "requires_customer_action" || status === "processing"
+      ) {
         postSubmitResponse(~jsonData=json, ~url=return_url)
       } else if status === "failed" {
         postFailedSubmitResponse(

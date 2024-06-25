@@ -1,3 +1,10 @@
+## [0.70.4](https://github.com/juspay/hyperswitch-web/compare/v0.70.3...v0.70.4) (2024-06-25)
+
+
+### Bug Fixes
+
+* handle requires_customer_action and processing status for pix pa… ([#456](https://github.com/juspay/hyperswitch-web/issues/456)) ([a680e71](https://github.com/juspay/hyperswitch-web/commit/a680e71a73a31eef89d66fd1d35666da53294a51))
+
 ## [0.70.3](https://github.com/juspay/hyperswitch-web/compare/v0.70.2...v0.70.3) (2024-06-24)
 
 
