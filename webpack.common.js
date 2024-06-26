@@ -95,7 +95,7 @@ module.exports = (publicPath = "auto") => {
     );
   }
 
-  if (process.env.SENTRY_AUTH_TOKEN) {
+  if (process.env.SENTRY_AUTH_TOKEN && process.env.IS_SENTRY_ENABLED === "true") {
     plugins.push(
       sentryWebpackPlugin({
         org: "sentry",
@@ -127,18 +127,18 @@ module.exports = (publicPath = "auto") => {
       sdkEnv === "local"
         ? {}
         : {
-            sideEffects: true,
-            minimize: true,
-            minimizer: [
-              new TerserPlugin({
-                terserOptions: {
-                  compress: {
-                    drop_console: false,
-                  },
+          sideEffects: true,
+          minimize: true,
+          minimizer: [
+            new TerserPlugin({
+              terserOptions: {
+                compress: {
+                  drop_console: false,
                 },
-              }),
-            ],
-          },
+              },
+            }),
+          ],
+        },
     plugins,
     module: {
       rules: [
