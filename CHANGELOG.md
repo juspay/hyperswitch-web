@@ -1,3 +1,10 @@
+## [0.71.1](https://github.com/juspay/hyperswitch-web/compare/v0.71.0...v0.71.1) (2024-06-26)
+
+
+### Bug Fixes
+
+* added Env to disable sentry by default ([#459](https://github.com/juspay/hyperswitch-web/issues/459)) ([c622e4f](https://github.com/juspay/hyperswitch-web/commit/c622e4f7a80d418112b605d1352d8b88c2baf801))
+
 # [0.71.0](https://github.com/juspay/hyperswitch-web/compare/v0.70.7...v0.71.0) (2024-06-25)
 
 
