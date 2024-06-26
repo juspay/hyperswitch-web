@@ -626,3 +626,26 @@ let useCardDetails = (~cvcNumber, ~isCvcValidValue, ~isCVCValid) => {
     (isCardDetailsEmpty, isCardDetailsValid, isCardDetailsInvalid)
   }, (cvcNumber, isCvcValidValue, isCVCValid))
 }
+
+let getWalletBrandIcon = (customerMethod: PaymentType.customerMethods) => {
+  switch customerMethod.paymentMethodType {
+  | Some("apple_pay") => <Icon size=Utils.brandIconSize name="apple_pay_saved" />
+  | Some("google_pay") => <Icon size=Utils.brandIconSize name="google_pay_saved" />
+  | Some("paypal") => <Icon size=Utils.brandIconSize name="paypal" />
+  | _ => <Icon size=Utils.brandIconSize name="default-card" />
+  }
+}
+
+let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
+  switch customerMethod.paymentMethod {
+  | "wallet" => getWalletBrandIcon(customerMethod)
+  | _ =>
+    getCardBrandIcon(
+      switch customerMethod.card.scheme {
+      | Some(ele) => ele
+      | None => ""
+      }->getCardType,
+      ""->CardThemeType.getPaymentMode,
+    )
+  }
+}

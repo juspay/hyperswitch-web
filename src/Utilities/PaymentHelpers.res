@@ -1719,14 +1719,14 @@ let paymentIntentForPaymentSession = (
 }
 
 let fetchSavedPaymentMethodList = (
-  ~ephimeralKey,
+  ~ephemeralKey,
   ~endpoint,
   ~optLogger,
   ~switchToCustomPod,
   ~isPaymentSession=false,
 ) => {
   open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", ephimeralKey)]
+  let headers = [("Content-Type", "application/json"), ("api-key", ephemeralKey)]
   let uri = `${endpoint}/customers/payment_methods`
   logApi(
     ~optLogger,
@@ -1796,10 +1796,10 @@ let fetchSavedPaymentMethodList = (
   })
 }
 
-let deletePaymentMethod = (~ephimeralKey, ~paymentMethodId, ~logger, ~switchToCustomPod) => {
+let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~switchToCustomPod) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Content-Type", "application/json"), ("api-key", ephimeralKey)]
+  let headers = [("Content-Type", "application/json"), ("api-key", ephemeralKey)]
   let uri = `${endpoint}/payment_methods/${paymentMethodId}`
   logApi(
     ~optLogger=Some(logger),

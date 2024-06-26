@@ -128,7 +128,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           locale: config.locale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
-          ephimeralKey: config.ephimeralKey,
+          ephemeralKey: config.ephemeralKey,
           loader: config.loader,
         },
         themeObj: appearance.variables,
@@ -259,11 +259,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-                let ephimeralKey = getWarningString(paymentOptions, "ephimeralKey", "", ~logger)
+                let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
                 setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
-                  ephimeralKey: Some(ephimeralKey),
+                  ephemeralKey: Some(ephemeralKey),
                 })
                 logger.setClientSecret(clientSecret)
 
@@ -308,11 +308,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             let paymentOptions = dict->getDictFromObj("paymentOptions")
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
-            let ephimeralKey = getWarningString(paymentOptions, "ephimeralKey", "", ~logger)
+            let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
             setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
-              ephimeralKey: Some(ephimeralKey),
+              ephemeralKey: Some(ephemeralKey),
             })
             logger.setClientSecret(clientSecret)
 
@@ -500,7 +500,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("savedPaymentMethods") {
           let savedPaymentMethods = dict->PaymentType.createCustomerObjArr("savedPaymentMethods")
-          Console.log2("loader Controler", savedPaymentMethods)
           setOptionsPayment(prev => {
             ...prev,
             savedPaymentMethods,

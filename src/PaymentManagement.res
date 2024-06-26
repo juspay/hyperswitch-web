@@ -35,7 +35,7 @@ let make = () => {
 
   <>
     <RenderIf condition={!loading}>
-      <SavedPaymentManagement savedMethods />
+      <SavedPaymentManagement savedMethods setSavedMethods />
     </RenderIf>
     <RenderIf condition={loading}>
       <div> {"Loading..."->React.string} </div>

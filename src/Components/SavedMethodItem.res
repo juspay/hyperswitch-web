@@ -1,8 +1,6 @@
 @react.component
-let make = (~brandIcon, ~paymentItem: PaymentType.customerMethods) => {
-  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
-  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+let make = (~brandIcon, ~paymentItem: PaymentType.customerMethods, ~handleDelete) => {
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {hideExpiredPaymentMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let isCard = paymentItem.paymentMethod === "card"
   let expiryMonth = paymentItem.card.expiryMonth
@@ -16,26 +14,6 @@ let make = (~brandIcon, ~paymentItem: PaymentType.customerMethods) => {
   | None => "debit"
   }
 
-  let handleDelete = e => {
-    Console.log2("methodID", paymentItem.paymentMethodId)
-    open Promise
-    PaymentHelpers.deletePaymentMethod(
-      ~ephimeralKey=config.ephimeralKey,
-      ~paymentMethodId=paymentItem.paymentMethodId,
-      ~logger,
-      ~switchToCustomPod,
-    )
-    ->then(res => {
-      Console.log2("deleted paymentId", res)
-      resolve()
-    })
-    ->catch(err => {
-      Console.log2("deleting error ", err)
-      resolve()
-    })
-    ->ignore
-    e->ReactEvent.Mouse.stopPropagation
-  }
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div
       className={`PickerItem ${pickerItemClass} flex flex-row items-stretch`}
@@ -87,20 +65,13 @@ let make = (~brandIcon, ~paymentItem: PaymentType.customerMethods) => {
                 </div>
               </RenderIf>
             </div>
-            <div className={`flex justify-end`} style={width: `25%`}>
-              <button
-                style={
-                  background: themeObj.colorPrimary,
-                  color: "white",
-                  padding: "3px 5px",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                }
-                onClick={handleDelete}>
-                {"Delete"->React.string}
-              </button>
-            </div>
+            <Icon
+              size=18
+              name="delete"
+              style={color: themeObj.colorDanger}
+              className="cursor-pointer ml-4 mb-[6px]"
+              onClick={_ => paymentItem->handleDelete}
+            />
           </div>
           <div className="w-full">
             <div className="flex flex-col items-start mx-8">

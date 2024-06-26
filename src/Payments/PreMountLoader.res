@@ -1,5 +1,12 @@
 @react.component
-let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint, ~ephimeralKey) => {
+let make = (
+  ~sessionId,
+  ~publishableKey,
+  ~clientSecret,
+  ~endpoint,
+  ~ephemeralKey,
+  ~hyperComponentName: Types.hyperComponentName,
+) => {
   open Utils
   let (paymentMethodsResponseSent, setPaymentMethodsResponseSent) = React.useState(_ => false)
   let (
@@ -18,45 +25,67 @@ let make = (~sessionId, ~publishableKey, ~clientSecret, ~endpoint, ~ephimeralKey
     (),
   )
 
-  let paymentMethodsResponse = React.useMemo0(() =>
-    PaymentHelpers.fetchPaymentMethodList(
-      ~clientSecret,
-      ~publishableKey,
-      ~logger,
-      ~switchToCustomPod=false,
-      ~endpoint,
-    )
-  )
+  let (
+    paymentMethodsResponse,
+    customerPaymentMethodsResponse,
+    sessionTokensResponse,
+    savedPaymentMethodsResponse,
+  ) = React.useMemo0(() => {
+    let paymentMethodsResponse = switch hyperComponentName {
+    | Elements =>
+      PaymentHelpers.fetchPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~switchToCustomPod=false,
+        ~endpoint,
+      )
+    | _ => JSON.Encode.null->Promise.resolve
+    }
 
-  let customerPaymentMethodsResponse = React.useMemo0(() =>
-    PaymentHelpers.fetchCustomerPaymentMethodList(
-      ~clientSecret,
-      ~publishableKey,
-      ~optLogger=Some(logger),
-      ~switchToCustomPod=false,
-      ~endpoint,
-    )
-  )
+    let customerPaymentMethodsResponse = switch hyperComponentName {
+    | Elements =>
+      PaymentHelpers.fetchCustomerPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~optLogger=Some(logger),
+        ~switchToCustomPod=false,
+        ~endpoint,
+      )
+    | _ => JSON.Encode.null->Promise.resolve
+    }
 
-  let sessionTokensResponse = React.useMemo0(() =>
-    PaymentHelpers.fetchSessions(
-      ~clientSecret,
-      ~publishableKey,
-      ~optLogger=Some(logger),
-      ~switchToCustomPod=false,
-      ~endpoint,
-      (),
-    )
-  )
+    let sessionTokensResponse = switch hyperComponentName {
+    | Elements =>
+      PaymentHelpers.fetchSessions(
+        ~clientSecret,
+        ~publishableKey,
+        ~optLogger=Some(logger),
+        ~switchToCustomPod=false,
+        ~endpoint,
+        (),
+      )
+    | _ => JSON.Encode.null->Promise.resolve
+    }
 
-  let savedPaymentMethodsResponse = React.useMemo0(() =>
-    PaymentHelpers.fetchSavedPaymentMethodList(
-      ~ephimeralKey,
-      ~optLogger=Some(logger),
-      ~switchToCustomPod=false,
-      ~endpoint,
+    let savedPaymentMethodsResponse = switch hyperComponentName {
+    | PaymentManagementElements =>
+      PaymentHelpers.fetchSavedPaymentMethodList(
+        ~ephemeralKey,
+        ~optLogger=Some(logger),
+        ~switchToCustomPod=false,
+        ~endpoint,
+      )
+    | _ => JSON.Encode.null->Promise.resolve
+    }
+
+    (
+      paymentMethodsResponse,
+      customerPaymentMethodsResponse,
+      sessionTokensResponse,
+      savedPaymentMethodsResponse,
     )
-  )
+  })
 
   let sendPromiseData = (promise, key) => {
     open Promise

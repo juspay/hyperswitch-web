@@ -15,7 +15,6 @@ let make = (
   options,
   setIframeRef,
   ~clientSecret,
-  ~ephimeralKey,
   ~sdkSessionId,
   ~publishableKey,
   ~logger: option<OrcaLogger.loggerMake>,
@@ -71,7 +70,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&ephimeralKey=${ephimeralKey}&sessionId=${sdkSessionId}&endpoint=${endpoint}"
+          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}"
           allow="*"
           name="orca-payment"
         ></iframe>
@@ -203,29 +202,6 @@ let make = (
       preMountLoaderIframeDiv->Window.iframePostMessage(msg)
     }
 
-    let fetchSavedPaymentMethods = (mountedIframeRef, disableSaveCards, componentType) => {
-      if !disableSaveCards {
-        let handleSavedPaymentMethodsLoaded = (event: Types.event) => {
-          let json = event.data->Identity.anyTypeToJson
-          let dict = json->getDictFromJson
-          let isSavedPaymentMethodsData = dict->getString("data", "") === "saved_payment_methods"
-          if isSavedPaymentMethodsData {
-            let json = dict->getJsonFromDict("response", JSON.Encode.null)
-            let msg = [("savedPaymentMethods", json)]->Dict.fromArray
-            mountedIframeRef->Window.iframePostMessage(msg)
-          }
-        }
-        addSmartEventListener(
-          "message",
-          handleSavedPaymentMethodsLoaded,
-          `onSavedPaymentMethodsLoaded-${componentType}`,
-        )
-      }
-      let msg =
-        [("sendSavedPaymentMethodsResponse", !disableSaveCards->JSON.Encode.bool)]->Dict.fromArray
-      preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-    }
-
     !clientSecretReMatch
       ? manageErrorWarning(
           INVALID_FORMAT,
@@ -303,7 +279,6 @@ let make = (
         let widgetOptions =
           [
             ("clientSecret", clientSecret->JSON.Encode.string),
-            ("ephimeralKey", ephimeralKey->JSON.Encode.string),
             ("appearance", appearance),
             ("locale", locale),
             ("loader", loader),
@@ -987,7 +962,6 @@ let make = (
             ->getBool("displaySavedPaymentMethods", true) &&
               !(spmComponents->Array.includes(componentType))->not
           fetchCustomerPaymentMethods(mountedIframeRef, disableSavedPaymentMethods, componentType)
-          fetchSavedPaymentMethods(mountedIframeRef, disableSavedPaymentMethods, componentType)
           fetchSessionTokens(mountedIframeRef)
           resolve()
         })
