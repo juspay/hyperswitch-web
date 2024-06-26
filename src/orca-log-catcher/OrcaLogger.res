@@ -27,6 +27,7 @@ type eventName =
   | CREATE_CUSTOMER_PAYMENT_METHODS_CALL_INIT
   | CREATE_CUSTOMER_PAYMENT_METHODS_CALL
   | TRUSTPAY_SCRIPT
+  | PLAID_SDK_SCRIPT
   | GOOGLE_PAY_SCRIPT
   | APPLE_PAY_FLOW
   | GOOGLE_PAY_FLOW
@@ -507,14 +508,17 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
       switch loggingLevel {
-      | DEBUG => log->Array.push(mainLogFile, _)->ignore
+      | DEBUG => log->(Array.push(mainLogFile, _))->ignore
       | INFO =>
         [INFO, WARNING, ERROR]->Array.includes(log.logType)
-          ? log->Array.push(mainLogFile, _)->ignore
+          ? log->(Array.push(mainLogFile, _))->ignore
           : ()
       | WARNING =>
-        [WARNING, ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
-      | ERROR => [ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
+        [WARNING, ERROR]->Array.includes(log.logType)
+          ? log->(Array.push(mainLogFile, _))->ignore
+          : ()
+      | ERROR =>
+        [ERROR]->Array.includes(log.logType) ? log->(Array.push(mainLogFile, _))->ignore : ()
       | SILENT => ()
       }
     }

@@ -121,6 +121,24 @@ let make = (
         let isPaymentMethodsData = dict->getString("data", "") === "payment_methods"
         if isPaymentMethodsData {
           let json = dict->getJsonFromDict("response", JSON.Encode.null)
+
+          let isPlaidPresent = PaymentMethodsRecord.checkToIntialisePlaid(
+            ~paymentMethodListValue=json,
+          )
+          if isPlaidPresent {
+            Console.log("is----- flow")
+            let plaidSdkScriptUrl = "https://cdn.plaid.com/link/v2/stable/link-initialize.js"
+            let plaidSdkScript = Window.createElement("script")
+            // logger.setLogInfo(~value="Plaid Sdk Script Loading", ~eventName=PLAID_SDK_SCRIPT, ())
+            plaidSdkScript->Window.elementSrc(plaidSdkScriptUrl)
+            plaidSdkScript->Window.elementOnerror(err => {
+              logInfo(Console.log2("ERROR DURING LOADING Plaid", err))
+            })
+            // plaidSdkScript->Window.elementOnload(_ => {
+            //   // logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=PLAID_SDK_SCRIPT, ())
+            // })
+            Window.body->Window.appendChild(plaidSdkScript)
+          }
           let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
             ~paymentMethodListValue=json
             ->getDictFromJson
