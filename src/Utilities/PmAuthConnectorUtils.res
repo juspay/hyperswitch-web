@@ -1,4 +1,4 @@
-type pmAuthConnector = PLAID | ABC
+type pmAuthConnector = PLAID
 
 let pmAuthNameToTypeMapper = authConnectorName => {
   switch authConnectorName {
@@ -43,22 +43,23 @@ let findPmAuthAllPMAuthConnectors = (
   let bankDebitPaymentMethodsArr =
     paymentMethodListValue->Array.filter(item => item.payment_method == "bank_debit")
 
-  let pmAuthConnectorArr = ref([])
+  let pmAuthConnectorDict = Dict.make()
 
   bankDebitPaymentMethodsArr->Array.forEach(item => {
     item.payment_method_types->Array.forEach(item => {
       if item.pm_auth_connector->Option.isSome {
-        pmAuthConnectorArr.contents->Array.push(item.pm_auth_connector)
+        pmAuthConnectorDict->Dict.set(item.payment_method_type, item.pm_auth_connector)
       }
     })
   })
 
-  let pmAuthConnectorArr =
-    pmAuthConnectorArr.contents->Array.filterWithIndex((item, idx) =>
-      idx == pmAuthConnectorArr.contents->Array.indexOf(item)
-    )
-
-  pmAuthConnectorArr
+  pmAuthConnectorDict
 }
 
-// let pmAuthConnectorToScriptUrlMapper = () => {}
+let getAllRequiredPmAuthConnectors = pmAuthConnectorsDict => {
+  let requiredPmAuthConnectorsArr = pmAuthConnectorsDict->Dict.valuesToArray
+
+  requiredPmAuthConnectorsArr->Array.filterWithIndex((item, idx) =>
+    idx == requiredPmAuthConnectorsArr->Array.indexOf(item)
+  )
+}
