@@ -66,7 +66,7 @@ let make = (
         let componentType = "preMountLoader"
         let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
-                     <iframe
+           <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
           src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}"
@@ -121,7 +121,6 @@ let make = (
         let isPaymentMethodsData = dict->getString("data", "") === "payment_methods"
         if isPaymentMethodsData {
           let json = dict->getJsonFromDict("response", JSON.Encode.null)
-
           let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
             ~paymentMethodListValue=json
             ->getDictFromJson
