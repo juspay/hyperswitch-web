@@ -14,28 +14,46 @@ let pmAuthConnectorToScriptUrlMapper = authConnector => {
   }
 }
 
-let mountAuthConnectorScript = (~authConnector, ~onScriptLoaded) => {
+let mountAuthConnectorScript = (
+  ~authConnector,
+  ~onScriptLoaded,
+  ~logger: OrcaLogger.loggerMake,
+) => {
+  let authConnector = authConnector->Option.getOr("")
   let pmAuthConnectorScriptUrl =
-    authConnector->Option.getOr("")->pmAuthNameToTypeMapper->pmAuthConnectorToScriptUrlMapper
+    authConnector->pmAuthNameToTypeMapper->pmAuthConnectorToScriptUrlMapper
   let pmAuthConnectorScript = Window.createElement("script")
-  // logger.setLogInfo(~value="Plaid Sdk Script Loading", ~eventName=PLAID_SDK_SCRIPT, ())
+  logger.setLogInfo(
+    ~value=`Pm Auth Connector ${authConnector} Script Loading`,
+    ~eventName=PM_AUTH_CONNECTOR_SCRIPT,
+    (),
+  )
   pmAuthConnectorScript->Window.elementSrc(pmAuthConnectorScriptUrl)
-  //   plaidSdkScript->Window.elementOnerror(err => {
-
-  //     // logInfo(Console.log2("ERROR DURING LOADING Plaid", err))
-  //   })
+  pmAuthConnectorScript->Window.elementOnerror(err => {
+    logger.setLogInfo(
+      ~value=`Pm Auth Connector ${authConnector} Script Load Failure`,
+      ~eventName=PM_AUTH_CONNECTOR_SCRIPT,
+      (),
+    )
+  })
   pmAuthConnectorScript->Window.elementOnload(_ => {
-    // Console.log2("plaid script loaded!!!!!!!!", authConnector)
-    // let x: RecoilAtoms.pmAuthConnector = {plaid: true}
     onScriptLoaded(authConnector)
-    // logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=PLAID_SDK_SCRIPT, ())
+    logger.setLogInfo(
+      ~value=`Pm Auth Connector ${authConnector} Script Loaded`,
+      ~eventName=PM_AUTH_CONNECTOR_SCRIPT,
+      (),
+    )
   })
   Window.body->Window.appendChild(pmAuthConnectorScript)
 }
 
-let mountAllRequriedAuthConnectorScripts = (~pmAuthConnectorsArr, ~onScriptLoaded) => {
+let mountAllRequriedAuthConnectorScripts = (
+  ~pmAuthConnectorsArr,
+  ~onScriptLoaded,
+  ~logger: OrcaLogger.loggerMake,
+) => {
   pmAuthConnectorsArr->Array.forEach(item => {
-    mountAuthConnectorScript(~authConnector=item, ~onScriptLoaded)
+    mountAuthConnectorScript(~authConnector=item, ~onScriptLoaded, ~logger)
   })
 }
 

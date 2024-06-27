@@ -1,5 +1,5 @@
 @react.component
-let make = (~children) => {
+let make = (~children, ~logger) => {
   let setIsPlaidReady = Recoil.useSetRecoilState(RecoilAtoms.isPlaidScriptReady)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
@@ -14,13 +14,12 @@ let make = (~children) => {
     PmAuthConnectorUtils.mountAllRequriedAuthConnectorScripts(
       ~pmAuthConnectorsArr,
       ~onScriptLoaded=authConnector => {
-        Console.log2("In Script mount", authConnector)
-
-        switch authConnector->Option.getOr("")->PmAuthConnectorUtils.pmAuthNameToTypeMapper {
+        switch authConnector->PmAuthConnectorUtils.pmAuthNameToTypeMapper {
         | PLAID => setIsPlaidReady(_ => true)
         | NONE => ()
         }
       },
+      ~logger,
     )
   }
 
