@@ -49,7 +49,7 @@ let retrievePaymentIntent = (
   ~isForceSync=false,
 ) => {
   open Promise
-  let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+  let paymentIntentID = clientSecret->getPaymentId
   let endpoint = ApiEndpoint.getApiEndPoint()
   let forceSync = isForceSync ? "&force_sync=true" : ""
   let uri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}${forceSync}`
@@ -489,8 +489,7 @@ let rec intentCall = (
                 resolve(failedSubmitResponse)
               }
             } else {
-              let paymentIntentID =
-                String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+              let paymentIntentID = clientSecret->getPaymentId
               let endpoint = ApiEndpoint.getApiEndPoint(
                 ~publishableKey=confirmParam.publishableKey,
                 ~isConfirmCall=isConfirm,
@@ -879,8 +878,7 @@ let rec intentCall = (
             resolve(failedSubmitResponse)
           }
         } else {
-          let paymentIntentID =
-            String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+          let paymentIntentID = clientSecret->getPaymentId
           let endpoint = ApiEndpoint.getApiEndPoint(
             ~publishableKey=confirmParam.publishableKey,
             ~isConfirmCall=isConfirm,
@@ -938,7 +936,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="", ()) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+      let paymentIntentID = clientSecret->getPaymentId
       let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
       let uri = `${endpoint}/payments/${paymentIntentID}?force_sync=true&client_secret=${clientSecret}`
@@ -1020,7 +1018,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+      let paymentIntentID = clientSecret->getPaymentId
       let headers = [
         ("Content-Type", "application/json"),
         ("api-key", confirmParam.publishableKey),
@@ -1201,7 +1199,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+      let paymentIntentID = clientSecret->getPaymentId
       let headers = [
         ("Content-Type", "application/json"),
         ("api-key", confirmParam.publishableKey),
@@ -1263,7 +1261,7 @@ let fetchSessions = (
 ) => {
   open Promise
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-  let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+  let paymentIntentID = clientSecret->getPaymentId
   let body =
     [
       ("payment_id", paymentIntentID->JSON.Encode.string),

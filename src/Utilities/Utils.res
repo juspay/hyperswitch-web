@@ -1333,3 +1333,6 @@ let handleFailureResponse = (~message, ~errorType) =>
       ]->getJsonFromArrayOfJson,
     ),
   ]->getJsonFromArrayOfJson
+
+let getPaymentId = clientSecret =>
+  String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
