@@ -51,7 +51,7 @@ let make = () => {
       <BankTransfersPopup transferType=fullscreenMode />
     | _ =>
       <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-        <ScriptMountHoc>
+        <ScriptMountHoc logger>
           <Payment paymentMode integrateError logger />
         </ScriptMountHoc>
       </LoaderController>
