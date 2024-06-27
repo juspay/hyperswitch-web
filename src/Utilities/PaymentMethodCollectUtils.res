@@ -229,14 +229,43 @@ let getPaymentMethodDataFieldPlaceholder = (key: paymentMethodDataField): string
 let getPaymentMethodDataFieldMaxLength = (key: paymentMethodDataField): int =>
   switch key {
   | CardNumber => 18
-  | CardExpDate => 7
+  | CardExpDate => 5
   | ACHRoutingNumber => 9
   | ACHAccountNumber => 12
   | BacsSortCode => 6
   | BacsAccountNumber => 18
-  | SepaIban => 34
   | SepaBic => 8
+  | SepaIban => 34
   | _ => 32
+  }
+
+let getPaymentMethodDataFieldCharacterPattern = (key: paymentMethodDataField): Js.Re.t =>
+  switch key {
+  | ACHAccountNumber => %re("/^\d{1,17}$/")
+  | ACHRoutingNumber => %re("/^\d{1,9}$/")
+  | BacsAccountNumber => %re("/^\d{1,18}$/")
+  | BacsSortCode => %re("/^\d{1,6}$/")
+  | CardHolderName => %re("/^([a-zA-Z]| ){1,32}$/")
+  | CardNumber => %re("/^\d{1,18}$/")
+  | PaypalMail => %re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/")
+  | PaypalMobNumber => %re("/^[0-9]{1,12}$/")
+  | SepaBic => %re("/^([A-Z0-9]| ){1,8}$/")
+  | SepaIban => %re("/^([A-Z0-9]| ){1,34}$/")
+  | _ => %re("/.*/")
+  }
+
+let getPaymentMethodDataFieldInputType = (key: paymentMethodDataField): string =>
+  switch key {
+  | ACHAccountNumber => "tel"
+  | ACHRoutingNumber => "tel"
+  | BacsAccountNumber => "tel"
+  | BacsSortCode => "tel"
+  | CardExpDate => "tel"
+  | CardNumber => "tel"
+  | PaypalMail => "email"
+  | PaypalMobNumber => "tel"
+  | VenmoMobNumber => "tel"
+  | _ => "text"
   }
 
 let getPayoutImageSource = (payoutStatus: payoutStatus): string => {
@@ -306,6 +335,27 @@ let getPayoutStatusMessage = (payoutStatus: payoutStatus): string =>
   | RequiresConfirmation
   | RequiresPayoutMethodData
   | RequiresVendorAccountCreation => "Failed to process your payout. Please check with your provider for more details."
+  }
+
+let paymentMethodIcon = (paymentMethod: paymentMethod) =>
+  switch paymentMethod {
+  | Card => <Icon name="default-card" size=20 />
+  | BankTransfer => <Icon name="bank" size=20 />
+  | Wallet => <Icon name="wallet_paypal" size=20 />
+  }
+
+let getBankTransferIcon = (bankTransfer: bankTransfer) =>
+  switch bankTransfer {
+  | ACH => <Icon name="ach_bank_transfer" size=20 />
+  | Bacs => <Icon name="bank" size=20 />
+  | Sepa => <Icon name="bank" size=20 />
+  }
+
+let getWalletIcon = (wallet: wallet) =>
+  switch wallet {
+  | Paypal => <Icon name="wallet_paypal" size=20 />
+  | Pix => <Icon name="wallet_pix" size=20 />
+  | Venmo => <Icon name="wallet_venmo" size=20 />
   }
 
 // Defaults
@@ -599,8 +649,8 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
         let split = value->String.split("/")
         switch (split->Array.get(0), split->Array.get(1)) {
         | (Some(month), Some(year)) => {
-            pmdApiFields->Array.push(("card_exp_month", month))
-            pmdApiFields->Array.push(("card_exp_year", year))
+            pmdApiFields->Array.push(("expiry_month", month))
+            pmdApiFields->Array.push(("expiry_year", `20${year}`))
           }
         | _ => ()
         }

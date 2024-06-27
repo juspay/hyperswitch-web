@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 Font Awesome Free 5.15.1 by @fontawesome - https://fontawesome.com
-License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT
+License)
 -->
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
   <symbol id="visa" viewBox="0 0 780 500">
@@ -1705,8 +1706,6 @@ License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL
 
   <symbol
     id="ach_bank_transfer"
-    width="38"
-    height="37"
     viewBox="0 0 38 37"
     fill="none"
   >
@@ -2357,42 +2356,42 @@ License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL
     <defs>
       <style>
         .cls-1 {
-          isolation: isolate;
+        isolation: isolate;
         }
         .cls-2 {
-          fill: url(#linear-gradient);
+        fill: url(#linear-gradient);
         }
         .cls-3 {
-          fill: url(#linear-gradient-2);
+        fill: url(#linear-gradient-2);
         }
         .cls-11,
         .cls-4 {
-          mix-blend-mode: soft-light;
+        mix-blend-mode: soft-light;
         }
         .cls-5 {
-          fill: #e7e6e6;
+        fill: #e7e6e6;
         }
         .cls-6 {
-          fill: url(#linear-gradient-3);
+        fill: url(#linear-gradient-3);
         }
         .cls-7 {
-          fill: url(#linear-gradient-4);
+        fill: url(#linear-gradient-4);
         }
         .cls-8 {
-          mix-blend-mode: multiply;
-          opacity: 0.71;
-          fill: url(#linear-gradient-5);
+        mix-blend-mode: multiply;
+        opacity: 0.71;
+        fill: url(#linear-gradient-5);
         }
         .cls-9 {
-          fill: url(#linear-gradient-6);
+        fill: url(#linear-gradient-6);
         }
         .cls-10 {
-          fill: #1887b2;
-          mix-blend-mode: darken;
-          opacity: 0.57;
+        fill: #1887b2;
+        mix-blend-mode: darken;
+        opacity: 0.57;
         }
         .cls-11 {
-          fill: #fff;
+        fill: #fff;
         }
       </style>
       <linearGradient
@@ -2537,5 +2536,46 @@ License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL
         </g>
       </g>
     </g>
+  </symbol>
+  <symbol
+    id="wallet_paypal"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    viewBox="0 0 154.728 190.5"
+  >
+    <g transform="translate(898.192 276.071)">
+      <path clip-path="none"
+        d="M-837.663-237.968a5.49 5.49 0 0 0-5.423 4.633l-9.013 57.15-8.281 52.514-.005.044.01-.044 8.281-52.514c.421-2.669 2.719-4.633 5.42-4.633h26.404c26.573 0 49.127-19.387 53.246-45.658.314-1.996.482-3.973.52-5.924v-.003h-.003c-6.753-3.543-14.683-5.565-23.372-5.565z"
+        fill="#001c64" />
+      <path clip-path="none"
+        d="M-766.506-232.402c-.037 1.951-.207 3.93-.52 5.926-4.119 26.271-26.673 45.658-53.246 45.658h-26.404c-2.701 0-4.999 1.964-5.42 4.633l-8.281 52.514-5.197 32.947a4.46 4.46 0 0 0 4.405 5.153h28.66a5.49 5.49 0 0 0 5.423-4.633l7.55-47.881c.423-2.669 2.722-4.636 5.423-4.636h16.876c26.573 0 49.124-19.386 53.243-45.655 2.924-18.649-6.46-35.614-22.511-44.026z"
+        fill="#0070e0" />
+      <path clip-path="none"
+        d="M-870.225-276.071a5.49 5.49 0 0 0-5.423 4.636l-22.489 142.608a4.46 4.46 0 0 0 4.405 5.156h33.351l8.281-52.514 9.013-57.15a5.49 5.49 0 0 1 5.423-4.633h47.782c8.691 0 16.621 2.025 23.375 5.563.46-23.917-19.275-43.666-46.412-43.666z"
+        fill="#003087" />
+    </g>
+  </symbol>
+  <symbol
+    id="wallet_pix"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    viewBox="0 0 512 512"
+  >
+    <defs />
+    <g fill="#4BB8A9" fill-rule="evenodd">
+      <path
+        d="M112.57 391.19c20.056 0 38.928-7.808 53.12-22l76.693-76.692c5.385-5.404 14.765-5.384 20.15 0l76.989 76.989c14.191 14.172 33.045 21.98 53.12 21.98h15.098l-97.138 97.139c-30.326 30.344-79.505 30.344-109.85 0l-97.415-97.416h9.232zm280.068-271.294c-20.056 0-38.929 7.809-53.12 22l-76.97 76.99c-5.551 5.53-14.6 5.568-20.15-.02l-76.711-76.693c-14.192-14.191-33.046-21.999-53.12-21.999h-9.234l97.416-97.416c30.344-30.344 79.523-30.344 109.867 0l97.138 97.138h-15.116z" />
+      <path
+        d="M22.758 200.753l58.024-58.024h31.787c13.84 0 27.384 5.605 37.172 15.394l76.694 76.693c7.178 7.179 16.596 10.768 26.033 10.768 9.417 0 18.854-3.59 26.014-10.75l76.989-76.99c9.787-9.787 23.331-15.393 37.171-15.393h37.654l58.3 58.302c30.343 30.344 30.343 79.523 0 109.867l-58.3 58.303H392.64c-13.84 0-27.384-5.605-37.171-15.394l-76.97-76.99c-13.914-13.894-38.172-13.894-52.066.02l-76.694 76.674c-9.788 9.788-23.332 15.413-37.172 15.413H80.782L22.758 310.62c-30.344-30.345-30.344-79.524 0-109.868" />
+    </g>
+  </symbol>
+  <symbol
+    id="wallet_venmo"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    viewBox="0 0 512 512"
+  >
+    <path
+      d="m444.17 32h-373.89c-20.43 0-38.28 14.7-38.28 34.89v374.71c0 20.31 17.85 38.4 38.28 38.4h373.78c20.54 0 35.94-18.2 35.94-38.39v-374.72c.12-20.19-15.4-34.89-35.83-34.89zm-166.17 355h-103.68l-41.57-248.56 90.75-8.62 22 176.87c20.53-33.45 45.88-86 45.88-121.87 0-19.62-3.36-33-8.61-44l82.63-16.72c9.56 15.78 13.86 32 13.86 52.57-.01 65.5-55.92 150.59-101.26 210.33z" />
   </symbol>
 </svg>

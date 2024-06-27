@@ -67,13 +67,100 @@ let make = (
     }
   }
 
-  let setPaymentMethodDataValue = (key: paymentMethodDataField, value) =>
-    setPaymentMethodData(_ => paymentMethodData->setValue(key->getPaymentMethodDataFieldKey, value))
-
   let getPaymentMethodDataValue = (key: paymentMethodDataField) =>
     paymentMethodData
     ->getValue(key->getPaymentMethodDataFieldKey)
     ->Option.getOr("")
+
+  let setPaymentMethodDataValue = (key: paymentMethodDataField, value) =>
+    setPaymentMethodData(_ => paymentMethodData->setValue(key->getPaymentMethodDataFieldKey, value))
+
+  let validateAndSetPaymentMethodDataValue = (key: paymentMethodDataField, event) => {
+    let ev = ReactEvent.Form.target(event)
+    let value = ev["value"]
+    let inputType = ev["type"]
+
+    let (isValidChar, updatedValue) = switch value {
+    // Empty string is valid
+    | "" => (true, value)
+    // Validate in case there's a value present
+    | value =>
+      // Validate based on input's type
+      switch inputType {
+      | "number" | "tel" =>
+        switch key {
+        // Manual validation on card expiry (month + year)
+        | CardExpDate => {
+            let split = value->String.split("/")
+            try {
+              // 1. Fetch from string of format MM/YY
+              // 2. Convert to BigInt and back to string
+              // 3. Perform validation on different cases
+              //    3.1. when only month is present (auto add / delete the slash (/) character)
+              //    3.2. when both month and year is present
+              switch (
+                split
+                ->Array.get(0)
+                ->Option.map(m => Js.BigInt.fromStringExn(m)->Js.BigInt.toString),
+                split
+                ->Array.get(1)
+                ->Option.map(y => Js.BigInt.fromStringExn(y)->Js.BigInt.toString),
+              ) {
+              | (Some(month), Some(year)) => {
+                  let isMonthValid = month->String.length < 3
+                  let isYearValid = year->String.length < 3
+                  (isMonthValid && isYearValid, value)
+                }
+              | (Some(month), None) =>
+                if month->String.length == 2 {
+                  if key->getPaymentMethodDataValue->String.length == 1 {
+                    (true, `${value}/`)
+                  } else {
+                    (true, month->String.substring(~start=0, ~end=1))
+                  }
+                } else if month->String.length < 3 {
+                  (true, value)
+                } else {
+                  (false, value)
+                }
+              | _ => (true, value)
+              }
+            } catch {
+            | _ => (false, value)
+            }
+          }
+        | _ =>
+          try {
+            let value = value->Js.BigInt.fromStringExn->Js.BigInt.toString
+            let regex = key->getPaymentMethodDataFieldCharacterPattern
+            switch regex->RegExp.exec(value) {
+            | Some(_) => (true, value)
+            | None => (false, value)
+            }
+          } catch {
+          | _ => (false, value)
+          }
+        }
+      | "text" =>
+        let value = switch key {
+        | SepaBic
+        | SepaIban =>
+          value->String.toUpperCase
+        | _ => value
+        }
+        let regex = key->getPaymentMethodDataFieldCharacterPattern
+        switch regex->RegExp.exec(value) {
+        | Some(_) => (true, value)
+        | None => (false, value)
+        }
+      | _ => (true, value)
+      }
+    }
+
+    if isValidChar {
+      key->setPaymentMethodDataValue(updatedValue)
+    }
+  }
 
   let setFieldValidity = (key: paymentMethodDataField, value) => {
     let fieldValidityCopy = fieldValidityDict->Dict.copy
@@ -209,9 +296,11 @@ let make = (
       placeholder={field->getPaymentMethodDataFieldPlaceholder}
       maxLength={field->getPaymentMethodDataFieldMaxLength}
       value={field->getPaymentMethodDataValue}
-      onChange={event => field->setPaymentMethodDataValue(ReactEvent.Form.target(event)["value"])}
+      onChange={event => field->validateAndSetPaymentMethodDataValue(event)}
       setIsValid={updatedValidityFn => field->setFieldValidity(updatedValidityFn())}
       onBlur={_ev => field->calculateAndSetValidity}
+      type_={field->getPaymentMethodDataFieldInputType}
+      pattern={field->getPaymentMethodDataFieldCharacterPattern->Js.Re.source}
     />
   }
 
@@ -275,15 +364,19 @@ let make = (
         <button
           key={Int.toString(i)}
           onClick={_ => setSelectedPaymentMethod(_ => Some(pm))}
-          className="text-start border border-solid border-jp-gray-200 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50">
-          {React.string(pm->String.make)}
+          className="flex flex-row items-center border border-solid border-jp-gray-200 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50">
+          {pm->paymentMethodIcon}
+          <label className="text-start ml-[10px] cursor-pointer">
+            {React.string(pm->String.make)}
+          </label>
         </button>
       })
       ->React.array}
     </div>
 
   let renderPMTOptions = () => {
-    let commonClasses = "text-start border border-solid border-jp-gray-200 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50"
+    let commonClasses = "flex flex-row items-center border border-solid border-jp-gray-200 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50"
+    let buttonTextClasses = "text-start ml-[10px]"
     <div className="flex flex-col">
       {switch selectedPaymentMethod {
       | Some(Card) => React.null
@@ -294,7 +387,8 @@ let make = (
             key={Int.toString(i)}
             onClick={_ => setSelectedPaymentMethodType(_ => Some(BankTransfer(pmt)))}
             className=commonClasses>
-            {React.string(pmt->String.make)}
+            {pmt->getBankTransferIcon}
+            <label className={buttonTextClasses}> {React.string(pmt->String.make)} </label>
           </button>
         )
         ->React.array
@@ -305,7 +399,8 @@ let make = (
             key={Int.toString(i)}
             onClick={_ => setSelectedPaymentMethodType(_ => Some(Wallet(pmt)))}
             className=commonClasses>
-            {React.string(pmt->String.make)}
+            {pmt->getWalletIcon}
+            <label className={buttonTextClasses}> {React.string(pmt->String.make)} </label>
           </button>
         )
         ->React.array

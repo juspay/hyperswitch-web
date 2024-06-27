@@ -20,12 +20,7 @@ let make = () => {
   let renderFullscreen = switch paymentMode {
   | "paymentMethodCollect" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-      <React.Suspense
-        fallback={<RenderIf condition={showLoader}>
-          <PaymentElementShimmer />
-        </RenderIf>}>
-        <PaymentMethodCollectElementLazy integrateError logger />
-      </React.Suspense>
+      <PaymentMethodCollectElement integrateError logger />
     </LoaderController>
   | _ =>
     switch fullscreenMode {
