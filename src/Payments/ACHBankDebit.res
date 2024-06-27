@@ -97,6 +97,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
     <FullNamePaymentInput paymentType={paymentType} />
     <EmailPaymentInput paymentType />
+    <VerifyBankDetails />
     <div className="flex flex-col">
       <AddBankAccount modalData setModalData />
       <RenderIf condition={bankError->String.length > 0}>
