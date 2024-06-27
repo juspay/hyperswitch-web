@@ -509,17 +509,14 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
       switch loggingLevel {
-      | DEBUG => log->(Array.push(mainLogFile, _))->ignore
+      | DEBUG => log->Array.push(mainLogFile, _)->ignore
       | INFO =>
         [INFO, WARNING, ERROR]->Array.includes(log.logType)
-          ? log->(Array.push(mainLogFile, _))->ignore
+          ? log->Array.push(mainLogFile, _)->ignore
           : ()
       | WARNING =>
-        [WARNING, ERROR]->Array.includes(log.logType)
-          ? log->(Array.push(mainLogFile, _))->ignore
-          : ()
-      | ERROR =>
-        [ERROR]->Array.includes(log.logType) ? log->(Array.push(mainLogFile, _))->ignore : ()
+        [WARNING, ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
+      | ERROR => [ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
       | SILENT => ()
       }
     }
