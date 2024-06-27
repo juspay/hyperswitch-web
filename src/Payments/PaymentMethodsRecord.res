@@ -745,6 +745,7 @@ type paymentMethodTypes = {
   bank_transfers_connectors: array<string>,
   required_fields: array<required_fields>,
   surcharge_details: option<surchargeDetails>,
+  pm_auth_connector: option<string>,
 }
 
 type methods = {
@@ -788,6 +789,7 @@ let defaultPaymentMethodType = {
   bank_transfers_connectors: [],
   required_fields: [],
   surcharge_details: None,
+  pm_auth_connector: None,
 }
 
 let defaultList = {
@@ -935,6 +937,7 @@ let getPaymentMethodTypes = (dict, str) => {
         paymentMethodType === "bancontact_card",
       ),
       surcharge_details: jsonDict->getSurchargeDetails,
+      pm_auth_connector: getOptionString(jsonDict, "pm_auth_connector"),
     }
   })
 }
@@ -1083,63 +1086,4 @@ let getPaymentExperienceTypeFromPML = (
     ->Some
   )
   ->Option.getOr([])
-}
-
-let checkToIntialisePlaid = (~paymentMethodListValue: Core__JSON.t) => {
-  // Console.log(paymentMethodListValue)
-  // Console.log2("before-----", paymentMethodListValue)
-
-  let bankDebitPaymentMethodsArr =
-    paymentMethodListValue
-    ->JSON.Decode.object
-    ->Option.getOr(Dict.make())
-    ->Dict.get("payment_methods")
-    ->Option.getOr(Js.Json.null)
-    ->JSON.Decode.array
-    ->Option.getOr([])
-    ->Array.filter(item => {
-      item
-      ->JSON.Decode.object
-      ->Option.getOr(Dict.make())
-      ->Dict.get("payment_method")
-      ->Option.getOr(Js.Json.null)
-      ->JSON.Decode.string
-      ->Option.getOr("") == "bank_debit"
-    })
-
-  // Console.log2("before payment methods", bankDebitPaymentMethodsArr)
-
-  bankDebitPaymentMethodsArr->Array.reduce(false, (acc, item) => {
-    let paymentMethodsArr =
-      item
-      ->JSON.Decode.object
-      ->Option.getOr(Dict.make())
-      ->Dict.get("payment_method_types")
-      ->Option.getOr(Js.Json.null)
-      ->JSON.Decode.array
-      ->Option.getOr([])
-    Console.log2("pmArr", paymentMethodsArr)
-
-    acc ||
-    paymentMethodsArr->Array.reduce(false, (isPmAuthConnectorNeeded, item) => {
-      Console.log2(
-        "is---------",
-        item
-        ->JSON.Decode.object
-        ->Option.getOr(Dict.make())
-        ->Dict.get("pm_auth_connector")
-        ->Option.getOr(Js.Json.null)
-        ->JSON.Decode.string
-        ->Option.getOr(""),
-      )
-      isPmAuthConnectorNeeded ||
-      item
-      ->JSON.Decode.object
-      ->Option.getOr(Dict.make())
-      ->Dict.get("pm_auth_connector")
-      ->Option.getOr(Js.Json.null)
-      ->JSON.Decode.string
-      ->Option.getOr("") == "plaid"
-    })
-  })
 }

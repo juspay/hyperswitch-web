@@ -41,21 +41,21 @@ app.get("/urls", (req, res) => {
 
 function createPaymentRequest() {
   return {
-    amount: 6540,
     currency: "USD",
+    amount: 2999,
+    order_details: [
+      {
+        product_name: "Apple iPhone 15",
+        quantity: 1,
+        amount: 2999,
+      },
+    ],
     confirm: false,
     capture_method: "automatic",
-    capture_on: "2022-09-10T10:11:12Z",
-    amount_to_capture: 6540,
-    customer_id: "StripeCustomer",
-    business_country: "US",
-    email: "guest@example.com",
-    name: "John Doe",
-    phone: "999999999",
-    phone_country_code: "+1",
-    description: "Its my first payment request",
-    authentication_type: "no_three_ds",
-    return_url: "https://google.com",
+    authentication_type: "three_ds",
+    customer_id: "hyperswitch_sdk_demo_id",
+    email: "hyperswitch_sdk_demo_id@gmail.com",
+    description: "Hello this is description",
     shipping: {
       address: {
         line1: "1467",
@@ -69,9 +69,14 @@ function createPaymentRequest() {
         last_name: "Doe",
       },
       phone: {
-        number: "8056594430",
+        number: "8056594427",
         country_code: "+91",
       },
+    },
+    metadata: {
+      udf1: "value1",
+      new_customer: "true",
+      login_date: "2019-09-10T10:11:12Z",
     },
     billing: {
       address: {
@@ -89,13 +94,6 @@ function createPaymentRequest() {
         number: "8056594427",
         country_code: "+91",
       },
-    },
-    statement_descriptor_name: "joseph",
-    statement_descriptor_suffix: "JS",
-    metadata: {
-      udf1: "value1",
-      new_customer: "true",
-      login_date: "2019-09-10T10:11:12Z",
     },
   };
 }
