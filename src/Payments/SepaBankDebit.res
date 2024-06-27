@@ -22,6 +22,16 @@ let make = (~paymentType: CardThemeType.mode) => {
   let (postalCode, _) = Recoil.useLoggedRecoilState(userAddressPincode, "postal_code", loggerState)
   let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let pmAuthMapper = React.useMemo1(
+    () =>
+      PmAuthConnectorUtils.findPmAuthAllPMAuthConnectors(paymentMethodListValue.payment_methods),
+    [paymentMethodListValue.payment_methods],
+  )
+
+  let isVerifyPMAuthConnectorConfigured =
+    pmAuthMapper->Dict.keysToArray->Array.find(ele => ele === "sepa")->Option.isSome
 
   let complete =
     email.value != "" &&
@@ -82,21 +92,27 @@ let make = (~paymentType: CardThemeType.mode) => {
     }
   }, (email, fullName, modalData, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
-
-  <div
-    className="flex flex-col animate-slowShow"
-    style={
-      gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
-    }>
-    <EmailPaymentInput paymentType />
-    <FullNamePaymentInput paymentType />
-    <AddBankAccount modalData setModalData />
-    <FullScreenPortal>
-      <BankDebitModal setModalData />
-    </FullScreenPortal>
-    <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
-    <Terms mode=SepaBankDebit />
-  </div>
+  <>
+    <RenderIf condition={isVerifyPMAuthConnectorConfigured}>
+      <VerifyBankDetails paymentMethodType="sepa" />
+    </RenderIf>
+    <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
+      <div
+        className="flex flex-col animate-slowShow"
+        style={
+          gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
+        }>
+        <EmailPaymentInput paymentType />
+        <FullNamePaymentInput paymentType />
+        <AddBankAccount modalData setModalData />
+        <FullScreenPortal>
+          <BankDebitModal setModalData />
+        </FullScreenPortal>
+        <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
+        <Terms mode=SepaBankDebit />
+      </div>
+    </RenderIf>
+  </>
 }
 
 let default = make

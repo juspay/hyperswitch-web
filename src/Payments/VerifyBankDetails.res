@@ -1,17 +1,18 @@
 @react.component
-let make = () => {
+let make = (~paymentMethodType) => {
   open Utils
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   let endpoint = ApiEndpoint.getApiEndPoint()
   let (linkToken, setLinkToken) = React.useState(_ => "")
+  let logger = OrcaLogger.make(~source=Elements(Payment), ())
 
   let body = [
     ("client_secret", keys.clientSecret->Option.getOr("")->JSON.Encode.string),
     ("payment_id", keys.clientSecret->Option.getOr("")->getPaymentId->JSON.Encode.string),
     ("payment_method", "bank_debit"->JSON.Encode.string),
-    ("payment_method_type", "ach"->JSON.Encode.string),
+    ("payment_method_type", paymentMethodType->JSON.Encode.string),
   ]
 
   let callAuthLink = () => {
@@ -76,11 +77,23 @@ let make = () => {
           JSON.Encode.null->resolve
         })
       } else {
-        res
-        ->Fetch.Response.json
-        ->then(data => {
-          setLinkToken(_ => data->getDictFromJson->getString("link_token", ""))
+        PaymentHelpers.fetchCustomerPaymentMethodList(
+          ~clientSecret=keys.clientSecret->Option.getOr(""),
+          ~publishableKey=keys.publishableKey,
+          ~optLogger=Some(logger),
+          ~switchToCustomPod=false,
+          ~endpoint,
+        )
+        ->then(customerListResponse => {
+          Js.log2("customerListResponse", customerListResponse)
           res->Fetch.Response.json
+        })
+        ->catch(e => {
+          Console.log2(
+            "Unable to retrieve customer/payment_methods after auth/exchange because of ",
+            e,
+          )
+          JSON.Encode.null->resolve
         })
       }
     })
@@ -92,7 +105,6 @@ let make = () => {
 
   React.useEffect(() => {
     if linkToken->String.length > 0 {
-      Console.log2("linkToken", linkToken)
       let handler = Plaid.create({
         token: linkToken,
         onSuccess: (publicToken, _) => {
