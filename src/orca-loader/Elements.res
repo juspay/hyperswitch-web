@@ -66,7 +66,7 @@ let make = (
         let componentType = "preMountLoader"
         let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
-           <iframe
+                     <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
           src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}"
@@ -122,23 +122,6 @@ let make = (
         if isPaymentMethodsData {
           let json = dict->getJsonFromDict("response", JSON.Encode.null)
 
-          let isPlaidPresent = PaymentMethodsRecord.checkToIntialisePlaid(
-            ~paymentMethodListValue=json,
-          )
-          if isPlaidPresent {
-            Console.log("is----- flow")
-            let plaidSdkScriptUrl = "https://cdn.plaid.com/link/v2/stable/link-initialize.js"
-            let plaidSdkScript = Window.createElement("script")
-            // logger.setLogInfo(~value="Plaid Sdk Script Loading", ~eventName=PLAID_SDK_SCRIPT, ())
-            plaidSdkScript->Window.elementSrc(plaidSdkScriptUrl)
-            plaidSdkScript->Window.elementOnerror(err => {
-              logInfo(Console.log2("ERROR DURING LOADING Plaid", err))
-            })
-            // plaidSdkScript->Window.elementOnload(_ => {
-            //   // logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=PLAID_SDK_SCRIPT, ())
-            // })
-            Window.body->Window.appendChild(plaidSdkScript)
-          }
           let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
             ~paymentMethodListValue=json
             ->getDictFromJson
