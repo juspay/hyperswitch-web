@@ -1,14 +1,16 @@
-type pmAuthConnector = PLAID
-
+type pmAuthConnector = PLAID | NONE
+type isPmAuthConnectorReady = {plaid: bool}
 let pmAuthNameToTypeMapper = authConnectorName => {
   switch authConnectorName {
   | "plaid" => PLAID
+  | _ => NONE
   }
 }
 
 let pmAuthConnectorToScriptUrlMapper = authConnector => {
   switch authConnector {
   | PLAID => "https://cdn.plaid.com/link/v2/stable/link-initialize.js"
+  | NONE => ""
   }
 }
 
@@ -23,17 +25,17 @@ let mountAuthConnectorScript = (~authConnector, ~onScriptLoaded) => {
   //     // logInfo(Console.log2("ERROR DURING LOADING Plaid", err))
   //   })
   pmAuthConnectorScript->Window.elementOnload(_ => {
-    Console.log("plaid script loaded!!!!!!!!1")
+    // Console.log2("plaid script loaded!!!!!!!!", authConnector)
+    // let x: RecoilAtoms.pmAuthConnector = {plaid: true}
+    onScriptLoaded(authConnector)
     // logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=PLAID_SDK_SCRIPT, ())
   })
   Window.body->Window.appendChild(pmAuthConnectorScript)
 }
 
-let mountAllRequriedAuthConnectorScripts = (~pmAuthConnectorsArr) => {
+let mountAllRequriedAuthConnectorScripts = (~pmAuthConnectorsArr, ~onScriptLoaded) => {
   pmAuthConnectorsArr->Array.forEach(item => {
-    mountAuthConnectorScript(~authConnector=item, ~onScriptLoaded=() => {
-      Console.log("loaded")
-    })
+    mountAuthConnectorScript(~authConnector=item, ~onScriptLoaded)
   })
 }
 
