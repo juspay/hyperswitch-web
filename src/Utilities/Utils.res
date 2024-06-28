@@ -806,6 +806,8 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
       ("X-Payment-Confirm-Source", "sdk"),
       ("X-Browser-Name", OrcaLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
       ("X-Browser-Version", OrcaLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+      ("browsername", OrcaLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+      ("browserversion", OrcaLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
       ("X-Client-Platform", "web"),
     ]->Dict.fromArray
 
