@@ -1,3 +1,10 @@
+## [0.71.5](https://github.com/juspay/hyperswitch-web/compare/v0.71.4...v0.71.5) (2024-06-28)
+
+
+### Bug Fixes
+
+* fixed Appearance and Headless PaymentMethodId ([#462](https://github.com/juspay/hyperswitch-web/issues/462)) ([facda4a](https://github.com/juspay/hyperswitch-web/commit/facda4aca234d82fcbbe55a7543d996d35132606))
+
 ## [0.71.4](https://github.com/juspay/hyperswitch-web/compare/v0.71.3...v0.71.4) (2024-06-27)
 
 
