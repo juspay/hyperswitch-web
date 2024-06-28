@@ -1,3 +1,10 @@
+## [0.71.6](https://github.com/juspay/hyperswitch-web/compare/v0.71.5...v0.71.6) (2024-06-28)
+
+
+### Bug Fixes
+
+* browser name changes - temp ([#463](https://github.com/juspay/hyperswitch-web/issues/463)) ([3f36342](https://github.com/juspay/hyperswitch-web/commit/3f36342fa4c1684856ae811095c3b4e4be08ee5a))
+
 ## [0.71.5](https://github.com/juspay/hyperswitch-web/compare/v0.71.4...v0.71.5) (2024-06-28)
 
 
