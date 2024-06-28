@@ -119,6 +119,7 @@ type customerCard = {
   cardHolderName: option<string>,
   nickname: string,
 }
+type bank = {mask: string}
 type customerMethods = {
   paymentToken: string,
   customerId: string,
@@ -129,6 +130,7 @@ type customerMethods = {
   defaultPaymentMethodSet: bool,
   requiresCvv: bool,
   lastUsedAt: string,
+  bank: bank,
 }
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
@@ -187,6 +189,7 @@ let defaultCustomerMethods = {
   defaultPaymentMethodSet: false,
   requiresCvv: true,
   lastUsedAt: "",
+  bank: {mask: ""},
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -849,6 +852,14 @@ let getPaymentMethodType = dict => {
   dict->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
 }
 
+let getBank = dict => {
+  {
+    mask: dict
+    ->getDictFromDict("bank")
+    ->getString("mask", ""),
+  }
+}
+
 let itemToCustomerObjMapper = customerDict => {
   let customerArr =
     customerDict
@@ -876,6 +887,7 @@ let itemToCustomerObjMapper = customerDict => {
         defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
         requiresCvv: getBool(dict, "requires_cvv", true),
         lastUsedAt: getString(dict, "last_used_at", ""),
+        bank: dict->getBank,
       }
     })
 
@@ -910,6 +922,7 @@ let getCustomerMethods = (dict, str) => {
           defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
           requiresCvv: getBool(dict, "requires_cvv", true),
           lastUsedAt: getString(dict, "last_used_at", ""),
+          bank: dict->getBank,
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)

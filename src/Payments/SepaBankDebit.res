@@ -29,8 +29,7 @@ let make = (~paymentType: CardThemeType.mode) => {
     [paymentMethodListValue.payment_methods],
   )
 
-  let isVerifyPMAuthConnectorConfigured =
-    pmAuthMapper->Dict.keysToArray->Array.find(ele => ele === "sepa")->Option.isSome
+  let isVerifyPMAuthConnectorConfigured = pmAuthMapper->Dict.get("sepa")->Option.isSome
 
   let complete =
     email.value != "" &&

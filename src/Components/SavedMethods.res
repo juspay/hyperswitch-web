@@ -64,6 +64,7 @@ let make = (
     ->Array.mapWithIndex((obj, i) => {
       let brandIcon = switch obj.paymentMethod {
       | "wallet" => getWalletBrandIcon(obj)
+      | "bank_debit" => <Icon size=brandIconSize name="bank" />
       | _ =>
         getCardBrandIcon(
           switch obj.card.scheme {
