@@ -3,12 +3,10 @@ import { useEffect, useState } from "react";
 import React from "react";
 import { HyperElements } from "@juspay-tech/react-hyper-js";
 import CheckoutForm from "./CheckoutForm";
-import { loadSDK } from "./something";
 
 function Payment() {
   const [hyperPromise, setHyperPromise] = useState(null);
   const [clientSecret, setClientSecret] = useState("");
-  const [pubKey, setPublishable] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,27 +72,23 @@ function Payment() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    clientSecret && pubKey && loadSDK(clientSecret, pubKey);
-  }, [pubKey, clientSecret]);
-
   return (
     <div className="mainContainer">
       <div className="heading">
         <h2>Hyperswitch Unified Checkout</h2>
       </div>
       {clientSecret && hyperPromise && (
-        // <HyperElements
-        //   hyper={hyperPromise}
-        //   options={{
-        //     clientSecret,
-        //     appearance: {
-        //       labels: "floating",
-        //     },
-        //   }}
-        // >
-        <CheckoutForm />
-        // </HyperElements>
+        <HyperElements
+          hyper={hyperPromise}
+          options={{
+            clientSecret,
+            appearance: {
+              labels: "floating",
+            },
+          }}
+        >
+          <CheckoutForm />
+        </HyperElements>
       )}
     </div>
   );
