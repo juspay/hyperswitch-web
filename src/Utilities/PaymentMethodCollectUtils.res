@@ -126,8 +126,8 @@ let getPaymentMethodTypeLabel = (paymentMethodType: paymentMethodType): string =
   switch paymentMethodType {
   | Card(cardType) =>
     switch cardType {
-    | Credit => "Credit"
-    | Debit => "Debit"
+    | Credit
+    | Debit => "Card"
     }
   | BankTransfer(bankTransferType) =>
     switch bankTransferType {
@@ -337,11 +337,11 @@ let getPayoutStatusMessage = (payoutStatus: payoutStatus): string =>
   | RequiresVendorAccountCreation => "Failed to process your payout. Please check with your provider for more details."
   }
 
-let paymentMethodIcon = (paymentMethod: paymentMethod) =>
+let getPaymentMethodIcon = (paymentMethod: paymentMethod) =>
   switch paymentMethod {
-  | Card => <Icon name="default-card" size=20 />
+  | Card => <Icon name="card-generic-line" size=20 />
   | BankTransfer => <Icon name="bank" size=20 />
-  | Wallet => <Icon name="wallet_paypal" size=20 />
+  | Wallet => <Icon name="wallet-generic-line" size=20 />
   }
 
 let getBankTransferIcon = (bankTransfer: bankTransfer) =>
@@ -353,12 +353,20 @@ let getBankTransferIcon = (bankTransfer: bankTransfer) =>
 
 let getWalletIcon = (wallet: wallet) =>
   switch wallet {
-  | Paypal => <Icon name="wallet_paypal" size=20 />
-  | Pix => <Icon name="wallet_pix" size=20 />
-  | Venmo => <Icon name="wallet_venmo" size=20 />
+  | Paypal => <Icon name="wallet-paypal" size=20 />
+  | Pix => <Icon name="wallet-pix" size=20 />
+  | Venmo => <Icon name="wallet-venmo" size=20 />
+  }
+
+let getPaymentMethodTypeIcon = (paymentMethodType: paymentMethodType) =>
+  switch paymentMethodType {
+  | Card(_) => Card->getPaymentMethodIcon
+  | BankTransfer(b) => b->getBankTransferIcon
+  | Wallet(w) => w->getWalletIcon
   }
 
 // Defaults
+let defaultLayout: formLayout = Tabs
 let defaultPaymentMethodCollectFlow: paymentMethodCollectFlow = PayoutLinkInitiate
 let defaultAmount = "0.01"
 let defaultCurrency = "EUR"
@@ -383,13 +391,11 @@ let defaultPaymentMethodCollectOptions = {
   currency: defaultCurrency,
   flow: defaultPaymentMethodCollectFlow,
   sessionExpiry: "",
+  formLayout: defaultLayout,
 }
+let defaultOptionsLimitInTabLayout = 2
 let defaultAvailablePaymentMethods: array<paymentMethod> = []
-let defaultAvailablePaymentMethodTypes = {
-  card: [],
-  bankTransfer: [],
-  wallet: [],
-}
+let defaultAvailablePaymentMethodTypes: array<paymentMethodType> = []
 let defaultSelectedPaymentMethod: option<paymentMethod> = None
 let defaultSelectedPaymentMethodType: option<paymentMethodType> = None
 let defaultStatusInfo = {
@@ -416,6 +422,7 @@ let itemToObjMapper = (dict, logger) => {
       "currency",
       "flow",
       "sessionExpiry",
+      "layout",
     ],
     dict,
     "options",
@@ -437,6 +444,7 @@ let itemToObjMapper = (dict, logger) => {
     currency: getString(dict, "currency", defaultCurrency),
     flow: dict->decodeFlow(defaultPaymentMethodCollectFlow),
     sessionExpiry: getString(dict, "sessionExpiry", ""),
+    formLayout: dict->decodeLayout(defaultLayout),
   }
 }
 

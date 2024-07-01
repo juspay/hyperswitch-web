@@ -2538,7 +2538,36 @@ License)
     </g>
   </symbol>
   <symbol
-    id="wallet_paypal"
+    id="wallet-generic-line"
+    viewBox="0 0 16 15"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+  >
+    <path
+      d="M13.6447 1.5H4.2808C2.32783 1.5 1.6001 2.13119 1.6001 3M1.6001 3C1.6001 3.86881 2.4689 4.7302 4.19167 4.7302H12.8353C13.8823 4.7302 14.7288 5.57673 14.7288 6.62376V11.6064C14.7288 12.6535 13.8823 13.5 12.8353 13.5H3.53823C2.4912 13.5 1.64465 12.6535 1.64465 11.6064L1.6001 3Z"
+      stroke="#333333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    <path
+      d="M11.157 8.91803C11.3949 8.91803 11.5877 8.7252 11.5877 8.48733C11.5877 8.24947 11.3949 8.05664 11.157 8.05664C10.9191 8.05664 10.7263 8.24947 10.7263 8.48733C10.7263 8.7252 10.9191 8.91803 11.157 8.91803Z"
+      stroke="#333333" stroke-width="1.5" stroke-miterlimit="10" />
+  </symbol>
+  <symbol
+    id="card-generic-line"
+    viewBox="0 0 18 15"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+  >
+    <path
+      d="M13.6424 1.5H4.01445C2.32361 1.5 0.952881 2.87073 0.952881 4.56156V10.4384C0.952881 12.1293 2.32361 13.5 4.01445 13.5H13.6424C15.3332 13.5 16.7039 12.1293 16.7039 10.4384V4.56977C16.7039 2.87893 15.3332 1.50821 13.6424 1.50821V1.5Z"
+      stroke="#333333" stroke-width="1.5" stroke-miterlimit="10" />
+    <path d="M17.0488 5.875H0.600098" stroke="#333333" stroke-width="1.5" stroke-miterlimit="10" />
+    <path
+      d="M4.5562 10.0357C4.82819 10.0357 5.04868 9.81524 5.04868 9.54326C5.04868 9.27127 4.82819 9.05078 4.5562 9.05078C4.28421 9.05078 4.06372 9.27127 4.06372 9.54326C4.06372 9.81524 4.28421 10.0357 4.5562 10.0357Z"
+      stroke="#333333" stroke-width="1.5" />
+  </symbol>
+  <symbol
+    id="wallet-paypal"
     xmlns="http://www.w3.org/2000/svg"
     xmlns:xlink="http://www.w3.org/1999/xlink"
     viewBox="0 0 154.728 190.5"
@@ -2556,7 +2585,7 @@ License)
     </g>
   </symbol>
   <symbol
-    id="wallet_pix"
+    id="wallet-pix"
     xmlns="http://www.w3.org/2000/svg"
     xmlns:xlink="http://www.w3.org/1999/xlink"
     viewBox="0 0 512 512"
@@ -2570,7 +2599,7 @@ License)
     </g>
   </symbol>
   <symbol
-    id="wallet_venmo"
+    id="wallet-venmo"
     xmlns="http://www.w3.org/2000/svg"
     xmlns:xlink="http://www.w3.org/1999/xlink"
     viewBox="0 0 512 512"

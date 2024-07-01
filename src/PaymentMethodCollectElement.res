@@ -16,6 +16,7 @@ let make = (~integrateError, ~logger) => {
   )
   let (amount, setAmount) = React.useState(_ => options.amount)
   let (currency, setCurrency) = React.useState(_ => options.currency)
+  let (formLayout, setFormLayout) = React.useState(_ => options.formLayout)
   let (flow, setFlow) = React.useState(_ => options.flow)
   let (loader, setLoader) = React.useState(_ => false)
   let (returnUrl, setReturnUrl) = React.useState(_ => options.returnUrl)
@@ -30,38 +31,54 @@ let make = (~integrateError, ~logger) => {
 
   // Form a list of available payment methods
   React.useEffect(() => {
-    let availablePMT = {
-      card: [],
-      bankTransfer: [],
-      wallet: [],
-    }
+    let availablePM: array<paymentMethod> = []
+    let availablePMT: array<paymentMethodType> = []
     let _ = options.enabledPaymentMethods->Array.map(pm => {
       switch pm {
-      | Card(cardType) =>
-        if !(availablePMT.card->Array.includes(cardType)) {
-          availablePMT.card->Array.push(cardType)
+      | Card(_) =>
+        if !(availablePM->Array.includes(Card)) {
+          availablePMT->Array.push(Card(Debit))
+          availablePM->Array.push(Card)
         }
-      | BankTransfer(bankTransferType) =>
-        if !(availablePMT.bankTransfer->Array.includes(bankTransferType)) {
-          availablePMT.bankTransfer->Array.push(bankTransferType)
+      | BankTransfer(_) =>
+        if !(availablePM->Array.includes(BankTransfer)) {
+          availablePM->Array.push(BankTransfer)
         }
-      | Wallet(walletType) =>
-        if !(availablePMT.wallet->Array.includes(walletType)) {
-          availablePMT.wallet->Array.push(walletType)
+        if !(availablePMT->Array.includes(pm)) {
+          availablePMT->Array.push(pm)
+        }
+      | Wallet(_) =>
+        if !(availablePM->Array.includes(Wallet)) {
+          availablePM->Array.push(Wallet)
+        }
+        if !(availablePMT->Array.includes(pm)) {
+          availablePMT->Array.push(pm)
+        }
+        if !(availablePMT->Array.includes(pm)) {
+          availablePMT->Array.push(pm)
         }
       }
     })
 
-    let availablePM: array<paymentMethod> = []
-    if !(availablePM->Array.includes(BankTransfer)) && availablePMT.bankTransfer->Array.length > 0 {
-      availablePM->Array.push(BankTransfer)
-    }
-    if !(availablePM->Array.includes(Card)) && availablePMT.card->Array.length > 0 {
-      availablePM->Array.push(Card)
-    }
-    if !(availablePM->Array.includes(Wallet)) && availablePMT.wallet->Array.length > 0 {
-      availablePM->Array.push(Wallet)
-    }
+    // Sort available PM (cards first)
+    availablePM->Array.sort((a, b) =>
+      switch (a, b) {
+      | (Card, Card) => 0.0
+      | (Card, _) => -1.0
+      | (_, Card) => 1.0
+      | _ => 0.0
+      }
+    )
+
+    // Sort available PMT (card first)
+    availablePMT->Array.sort((a, b) =>
+      switch (a, b) {
+      | (Card(_), Card(_)) => 0.0
+      | (Card(_), _) => -1.0
+      | (_, Card(_)) => 1.0
+      | _ => 0.0
+      }
+    )
 
     setAvailablePaymentMethods(_ => availablePM)
     setAvailablePaymentMethodTypes(_ => availablePMT)
@@ -86,6 +103,12 @@ let make = (~integrateError, ~logger) => {
     setFlow(_ => options.flow)
     None
   }, [options.flow])
+
+  // Update formLayout
+  React.useEffect(() => {
+    setFormLayout(_ => options.formLayout)
+    None
+  }, [options.formLayout])
 
   // Update payoutId
   React.useEffect(() => {
@@ -258,8 +281,8 @@ let make = (~integrateError, ~logger) => {
   }
 
   let renderCollectWidget = () =>
-    <div className="flex flex-row w-6/10 h-min">
-      <div className="relative mx-[50px] my-[80px]">
+    <div className="flex flex-row h-min md:w-6/10">
+      <div className="relative w-full md:w-auto md:mx-[50px] md:my-[80px]">
         {loader
           ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
           : {React.null}}
@@ -268,6 +291,7 @@ let make = (~integrateError, ~logger) => {
           handleSubmit
           availablePaymentMethods
           availablePaymentMethodTypes
+          formLayout
         />
       </div>
     </div>
@@ -297,7 +321,7 @@ let make = (~integrateError, ~logger) => {
     })
     ->ignore
 
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center leading-none">
       <div
         className="flex flex-col self-center items-center justify-center rounded-lg shadow-lg max-w-[500px]">
         <div
@@ -340,7 +364,9 @@ let make = (~integrateError, ~logger) => {
   if integrateError {
     <ErrorOccured />
   } else {
-    <div className="flex h-screen justify-center">
+    <div
+      className="flex flex-col h-screen min-w-[320px]
+      md:justify-center md:flex-row">
       {switch flow {
       | PayoutLinkInitiate =>
         if showStatus {
@@ -349,30 +375,38 @@ let make = (~integrateError, ~logger) => {
           <React.Fragment>
             // Merchant's info
             <div
-              className="flex flex-col w-4/10 px-[50px] py-[80px]"
+              className="flex flex-col w-full h-max items-center p-[25px]
+                md:w-4/10 md:px-[50px] md:py-[80px] md:h-screen md:items-end"
               style={backgroundColor: merchantTheme}>
               <div
-                className="flex flex-col self-end rounded-md shadow-lg min-w-80 w-full max-w-96"
-                style={backgroundColor: "#FEFEFE"}>
-                <div className="mx-[20px] mt-[20px] flex flex-row justify-between">
-                  <div className="font-bold text-[35px]">
+                className="flex flex-col w-full text-white
+                  md:rounded-md md:shadow-lg md:min-w-80 md:max-w-96 md:bg-white md:text-black">
+                <div
+                  className="flex flex-col-reverse
+                    md:mx-[20px] md:mt-[20px] md:flex-row md:justify-between">
+                  <div className="font-bold text-[48px] mt-[20px] md:mt-0 md:text-[35px]">
                     {React.string(`${currency} ${amount}`)}
                   </div>
-                  <img className="h-12 w-auto" src={merchantLogo} alt="O" />
+                  <div
+                    className="flex items-center justify-center h-[64px] w-[64px] bg-white rounded-sm">
+                    <img
+                      className="max-h-[48px] max-w-[64px] h-auto w-auto" src={merchantLogo} alt="O"
+                    />
+                  </div>
                 </div>
-                <div className="mx-[20px]">
+                <div className="md:mx-[20px]">
                   <div className="self-center text-[20px] font-semibold">
                     {React.string("Payout from ")}
                     {React.string(merchantName)}
                   </div>
-                  <div className="flex flex-row mt-[5px]">
+                  <div className="flex flex-row md:mt-[5px]">
                     <div className="font-semibold text-[12px]"> {React.string("Ref Id")} </div>
-                    <div className="ml-[5px] text-[12px] text-gray-800">
-                      {React.string(payoutId)}
-                    </div>
+                    <div className="ml-[5px] text-[12px]"> {React.string(payoutId)} </div>
                   </div>
                 </div>
-                <div className="mt-[10px] px-[20px] py-[5px] bg-gray-200 text-[13px] rounded-b-lg">
+                <div
+                  className="mt-[20px] px-[20px] py-[6px] bg-gray-200 text-[13px] rounded-full w-max text-black
+                  md:w-full md:rounded-none md:rounded-b-lg">
                   {React.string(`Link expires on: ${sessionExpiry}`)}
                 </div>
               </div>
