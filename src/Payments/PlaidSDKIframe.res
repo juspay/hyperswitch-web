@@ -11,29 +11,34 @@ let make = () => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->JSON.parseExn
+
       let metaData = json->getDictFromJson->getDictFromDict("metadata")
       let linkToken = metaData->getString("linkToken", "")
-      let pmAuthConnectorArray =
-        metaData
-        ->getArray("pmAuthConnectorArray")
-        ->Array.map(ele => ele->JSON.Decode.string)
-      setLinkToken(_ => linkToken)
-      setPmAuthConnectorsArr(_ => pmAuthConnectorArray)
+      if linkToken->String.length > 0 {
+        let pmAuthConnectorArray =
+          metaData
+          ->getArray("pmAuthConnectorArray")
+          ->Array.map(ele => ele->JSON.Decode.string)
+
+        setLinkToken(_ => linkToken)
+        setPmAuthConnectorsArr(_ => pmAuthConnectorArray)
+      }
     }
     Window.addEventListener("message", handle)
+
+    PmAuthConnectorUtils.mountAllRequriedAuthConnectorScripts(
+      ~pmAuthConnectorsArr,
+      ~onScriptLoaded=authConnector => {
+        switch authConnector->PmAuthConnectorUtils.pmAuthNameToTypeMapper {
+        | PLAID => setIsReady(_ => true)
+        | NONE => ()
+        }
+      },
+      ~logger,
+    )
+
     Some(() => {Window.removeEventListener("message", handle)})
   })
-
-  PmAuthConnectorUtils.mountAllRequriedAuthConnectorScripts(
-    ~pmAuthConnectorsArr,
-    ~onScriptLoaded=authConnector => {
-      switch authConnector->PmAuthConnectorUtils.pmAuthNameToTypeMapper {
-      | PLAID => setIsReady(_ => true)
-      | NONE => ()
-      }
-    },
-    ~logger,
-  )
 
   React.useEffect(() => {
     if isReady && linkToken->String.length > 0 {
@@ -41,8 +46,16 @@ let make = () => {
         token: linkToken,
         onSuccess: (publicToken, _) => {
           Js.log2("Plaid link token onSuccess", publicToken)
+          handlePostMessage([
+            ("isPlaid", true->JSON.Encode.bool),
+            ("publicToken", publicToken->JSON.Encode.string),
+          ])
         },
         onExit: json => {
+          handlePostMessage([
+            ("isPlaid", true->JSON.Encode.bool),
+            ("publicToken", "sdjbcksdcjsncjsdc"->JSON.Encode.string),
+          ])
           Console.log2("Plaid link token onExit", json)
         },
         onLoad: json => {

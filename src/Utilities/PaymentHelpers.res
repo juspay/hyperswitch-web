@@ -1773,3 +1773,64 @@ let callAuthLink = (
     JSON.Encode.null->resolve
   })
 }
+
+let callAuthExchange = (~publicToken, ~clientSecret, ~paymentMethodType, ~publishableKey) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let logger = OrcaLogger.make(~source=Elements(Payment), ())
+  let uri = `${endpoint}/payment_methods/auth/exchange`
+  let updatedBody = [
+    ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
+    ("payment_id", clientSecret->Option.getOr("")->getPaymentId->JSON.Encode.string),
+    ("payment_method", "bank_debit"->JSON.Encode.string),
+    ("payment_method_type", paymentMethodType->JSON.Encode.string),
+    ("public_token", publicToken->JSON.Encode.string),
+  ]
+
+  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
+
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~bodyStr=updatedBody->getJsonFromArrayOfJson->JSON.stringify,
+    ~headers,
+    (),
+  )
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      fetchCustomerPaymentMethodList(
+        ~clientSecret=clientSecret->Option.getOr(""),
+        ~publishableKey,
+        ~optLogger=Some(logger),
+        ~switchToCustomPod=false,
+        ~endpoint,
+      )
+      ->then(customerListResponse => {
+        let customerPaymentMethodsVal =
+          customerListResponse
+          ->getDictFromJson
+          ->PaymentType.getCustomerMethods("customerPaymentMethods")
+        Js.log2("customerPaymentMethodsVal", customerPaymentMethodsVal)
+        res->Fetch.Response.json
+      })
+      ->catch(e => {
+        Console.log2(
+          "Unable to retrieve customer/payment_methods after auth/exchange because of ",
+          e,
+        )
+        JSON.Encode.null->resolve
+      })
+    }
+  })
+  ->catch(e => {
+    Console.log2("Unable to retrieve payment_methods auth/link because of ", e)
+    JSON.Encode.null->resolve
+  })
+}

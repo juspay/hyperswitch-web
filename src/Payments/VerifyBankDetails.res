@@ -1,5 +1,6 @@
 @react.component
 let make = (~paymentMethodType) => {
+  open Utils
   let {publishableKey, clientSecret, iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -69,7 +70,22 @@ let make = (~paymentMethodType) => {
   //   })
   // }
 
-  // let _ = callAuthExchange(publicToken)
+  React.useEffect0(() => {
+    let onPlaidCallback1 = (ev: Types.event) => {
+      let json = ev.data->Identity.anyTypeToJson
+      let dict = json->getDictFromJson
+      if dict->getBool("isPlaid", false) {
+        Js.log2("PlaidVerifftyddyaydcsdcsh", dict)
+      }
+    }
+
+    EventListenerManager.addSmartEventListener("message", onPlaidCallback1, "onPlaidCallback1")
+    Some(
+      () => {
+        Window.removeEventListener("message", ev => onPlaidCallback1(ev))
+      },
+    )
+  })
 
   <button
     onClick={_ =>
