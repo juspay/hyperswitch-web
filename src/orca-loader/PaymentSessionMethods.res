@@ -9,7 +9,6 @@ let getCustomerSavedPaymentMethods = (
   ~logger,
   ~switchToCustomPod,
 ) => {
-  // open Promise
   open ApplePayTypes
   open GooglePayType
   let applePaySessionRef = ref(Nullable.null)
@@ -479,17 +478,7 @@ let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~switchToCustomPod, ~
     })
     ->catch(err => {
       let exceptionMessage = err->formatException->JSON.stringify
-      let updatedCustomerDetails =
-        [
-          (
-            "error",
-            [
-              ("type", "server_error"->JSON.Encode.string),
-              ("message", exceptionMessage->JSON.Encode.string),
-            ]->getJsonFromArrayOfJson,
-          ),
-        ]->getJsonFromArrayOfJson
-      updatedCustomerDetails->resolve
+      handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
     })
   }
 
@@ -505,18 +494,7 @@ let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~switchToCustomPod, ~
     })
     ->catch(err => {
       let exceptionMessage = err->formatException->JSON.stringify
-      let updatedCustomerDetails =
-        [
-          (
-            "error",
-            [
-              ("type", "server_error"->JSON.Encode.string),
-              ("message", exceptionMessage->JSON.Encode.string),
-            ]->getJsonFromArrayOfJson,
-          ),
-        ]->getJsonFromArrayOfJson
-
-      updatedCustomerDetails->resolve
+      handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
     })
   }
 

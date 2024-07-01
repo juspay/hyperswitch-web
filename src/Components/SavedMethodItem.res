@@ -9,10 +9,7 @@ let make = (~brandIcon, ~paymentItem: PaymentType.customerMethods, ~handleDelete
   let currentDate = Date.make()
   let pickerItemClass = "PickerItem--selected"
   let isCardExpired = isCard && expiryDate < currentDate
-  let paymentMethodType = switch paymentItem.paymentMethodType {
-  | Some(paymentMethodType) => paymentMethodType
-  | None => "debit"
-  }
+  let paymentMethodType = paymentItem.paymentMethodType->Option.getOr("debit")
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <div
@@ -41,15 +38,17 @@ let make = (~brandIcon, ~paymentItem: PaymentType.customerMethods, ~handleDelete
                 <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-4">
-                    {isCard
-                      ? <div className="flex flex-col items-start">
-                          <div> {React.string(paymentItem.card.nickname)} </div>
-                          <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-                            <div className="tracking-widest"> {React.string(`****`)} </div>
-                            <div> {React.string(paymentItem.card.last4Digits)} </div>
-                          </div>
+                    {if isCard {
+                      <div className="flex flex-col items-start">
+                        <div> {React.string(paymentItem.card.nickname)} </div>
+                        <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
+                          <div className="tracking-widest"> {React.string(`****`)} </div>
+                          <div> {React.string(paymentItem.card.last4Digits)} </div>
                         </div>
-                      : <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>}
+                      </div>
+                    } else {
+                      <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>
+                    }}
                   </div>
                 </div>
               </div>

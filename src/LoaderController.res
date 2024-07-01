@@ -480,7 +480,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~latency=finalLoadLatency,
                 (),
               )
-
             | _ => ()
             }
 

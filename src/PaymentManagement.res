@@ -5,6 +5,7 @@ open RecoilAtoms
 let make = () => {
   let {savedPaymentMethods, displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
+  let (isLoading, setIsLoading) = React.useState(_ => false)
 
   React.useEffect(() => {
     switch savedPaymentMethods {
@@ -23,21 +24,20 @@ let make = () => {
         }
 
         setSavedMethods(_ => finalSavedPaymentMethods)
+        setIsLoading(_ => false)
       }
-    | LoadingSavedCards
-    | NoResult(_) => ()
+    | LoadingSavedCards => setIsLoading(_ => true)
+    | NoResult(_) => setIsLoading(_ => false)
     }
 
     None
   }, (savedPaymentMethods, displaySavedPaymentMethods))
 
-  let loading = false
-
   <>
-    <RenderIf condition={!loading}>
+    <RenderIf condition={!isLoading}>
       <SavedPaymentManagement savedMethods setSavedMethods />
     </RenderIf>
-    <RenderIf condition={loading}>
+    <RenderIf condition={isLoading}>
       <div> {"Loading..."->React.string} </div>
     </RenderIf>
     <PoweredBy />
