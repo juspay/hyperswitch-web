@@ -1,6 +1,6 @@
 {
   "name": "orca-payment-page",
-  "version": "0.71.7",
+  "version": "0.71.8",
   "main": "index.js",
   "private": true,
   "dependencies": {
