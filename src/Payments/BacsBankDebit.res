@@ -23,7 +23,7 @@ let cleanSortCode = str => str->String.replaceRegExp(%re("/-/g"), "")
 @react.component
 let make = (~paymentType: CardThemeType.mode) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
@@ -89,7 +89,13 @@ let make = (~paymentType: CardThemeType.mode) => {
           ~country=getCountryCode(country.value).isoAlpha2,
           ~bankAccountHolderName=fullName.value,
         )
-        intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
+        intent(
+          ~bodyArr=body,
+          ~confirmParam=confirm.confirmParams,
+          ~handleUserError=false,
+          ~manualRetry=isManualRetryEnabled,
+          (),
+        )
         ()
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")

@@ -1,3 +1,24 @@
+## [0.71.7](https://github.com/juspay/hyperswitch-web/compare/v0.71.6...v0.71.7) (2024-07-01)
+
+
+### Bug Fixes
+
+* manual retries ([#453](https://github.com/juspay/hyperswitch-web/issues/453)) ([39a51d8](https://github.com/juspay/hyperswitch-web/commit/39a51d8a62b9691b6390dcf27f5fc52e35bc8282))
+
+## [0.71.6](https://github.com/juspay/hyperswitch-web/compare/v0.71.5...v0.71.6) (2024-06-28)
+
+
+### Bug Fixes
+
+* browser name changes - temp ([#463](https://github.com/juspay/hyperswitch-web/issues/463)) ([3f36342](https://github.com/juspay/hyperswitch-web/commit/3f36342fa4c1684856ae811095c3b4e4be08ee5a))
+
+## [0.71.5](https://github.com/juspay/hyperswitch-web/compare/v0.71.4...v0.71.5) (2024-06-28)
+
+
+### Bug Fixes
+
+* fixed Appearance and Headless PaymentMethodId ([#462](https://github.com/juspay/hyperswitch-web/issues/462)) ([facda4a](https://github.com/juspay/hyperswitch-web/commit/facda4aca234d82fcbbe55a7543d996d35132606))
+
 ## [0.71.4](https://github.com/juspay/hyperswitch-web/compare/v0.71.3...v0.71.4) (2024-06-27)
 
 

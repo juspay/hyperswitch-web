@@ -8,6 +8,7 @@ let make = (~paymentType) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let (country, setCountry) = React.useState(_ => "France")
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
@@ -48,13 +49,14 @@ let make = (~paymentType) => {
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~iframeId,
+          ~manualRetry=isManualRetryEnabled,
           (),
         )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, country))
+  }, (email, fullName, country, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
   let updatedOptionsArrayForCountry =

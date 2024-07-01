@@ -6,6 +6,7 @@ let loadPaypalSDK = (
   ~sdkHandleOneClickConfirmPayment,
   ~buttonStyle,
   ~iframeId,
+  ~isManualRetryEnabled,
   ~paymentMethodListValue,
   ~isGuestCustomer,
   ~intent: PaymentHelpers.paymentIntent,
@@ -58,6 +59,7 @@ let loadPaypalSDK = (
               ~handleUserError=true,
               ~intentCallback=val =>
                 val->Utils.getDictFromJson->Utils.getString("orderId", "")->resolve,
+              ~manualRetry=isManualRetryEnabled,
               (),
             )
           })
@@ -136,6 +138,7 @@ let loadBraintreePaypalSdk = (
   ~areOneClickWalletsRendered: (
     RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
   ) => unit,
+  ~isManualRetryEnabled,
 ) => {
   loggerState.setLogInfo(
     ~value="Paypal Braintree SDK Button Clicked",
@@ -213,6 +216,7 @@ let loadBraintreePaypalSdk = (
                                 publishableKey,
                               },
                               ~handleUserError=true,
+                              ~manualRetry=isManualRetryEnabled,
                               (),
                             )
                           },

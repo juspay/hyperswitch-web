@@ -9,6 +9,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
   let phoneNumber = Recoil.useRecoilValueFromAtom(userPhoneNumber)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let optionPaymentMethodDetails =
@@ -92,6 +93,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~iframeId,
+          ~manualRetry=isManualRetryEnabled,
           (),
         )
       } else {
@@ -104,6 +106,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     country,
     blikCode,
     paymentMethodName,
+    isManualRetryEnabled,
     phoneNumber.value,
     (selectedBank, currency, requiredFieldsBody),
   ))
