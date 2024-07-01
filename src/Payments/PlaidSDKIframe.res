@@ -47,7 +47,6 @@ let make = () => {
       let handler = Plaid.create({
         token: linkToken,
         onSuccess: (publicToken, _) => {
-          Js.log2("Plaid link token onSuccess", publicToken)
           handlePostMessage([
             ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
@@ -58,15 +57,8 @@ let make = () => {
           handlePostMessage([
             ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
-            ("publicToken", "sdjbcksdcjsncjsdc"->JSON.Encode.string),
+            ("publicToken", ""->JSON.Encode.string),
           ])
-          Console.log2("Plaid link token onExit", json)
-        },
-        onLoad: json => {
-          Console.log2("Plaid link token onLoad", json)
-        },
-        onEvent: json => {
-          Console.log2("Plaid link token onEvent", json)
         },
       })
 
@@ -76,5 +68,5 @@ let make = () => {
     None
   }, (isReady, linkToken))
 
-  React.null
+  <div className="bg-black/40 backdrop-blur-sm" />
 }

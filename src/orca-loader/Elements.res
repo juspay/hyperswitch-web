@@ -120,9 +120,8 @@ let make = (
         let dict = json->getDictFromJson
         let isPlaidExist = dict->getBool("isPlaid", false)
         if isPlaidExist {
-          Console.log("isPlaid send")
           mountedIframeRef->Window.iframePostMessage(
-            [("isPlaid", true->JSON.Encode.bool), ("publicToken", json)]->Dict.fromArray,
+            [("isPlaid", true->JSON.Encode.bool), ("data", json)]->Dict.fromArray,
           )
         }
       }
