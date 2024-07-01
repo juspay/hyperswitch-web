@@ -1,3 +1,4 @@
+open CardUtils
 open PaymentMethodCollectTypes
 open PaymentMethodCollectUtils
 
@@ -30,7 +31,21 @@ let make = (
   ) = React.useState(_ => None)
   let (submitted, setSubmitted) = React.useState(_ => false)
   let (paymentMethodData, setPaymentMethodData) = React.useState(_ => Dict.make())
+
+  // Input DOM references
   let inputRef = React.useRef(Nullable.null)
+  let cardNumberRef = React.useRef(Nullable.null)
+  let cardExpRef = React.useRef(Nullable.null)
+  let cardHolderRef = React.useRef(Nullable.null)
+  let routingNumberRef = React.useRef(Nullable.null)
+  let achAccNumberRef = React.useRef(Nullable.null)
+  let bacsSortCodeRef = React.useRef(Nullable.null)
+  let bacsAccNumberRef = React.useRef(Nullable.null)
+  let ibanRef = React.useRef(Nullable.null)
+  let sepaBicRef = React.useRef(Nullable.null)
+  let bankNameRef = React.useRef(Nullable.null)
+  let bankCityRef = React.useRef(Nullable.null)
+  let countryCodeRef = React.useRef(Nullable.null)
 
   // Update availablePaymentMethodTypesOrdered
   React.useEffect(() => {
@@ -104,81 +119,65 @@ let make = (
     // Empty string is valid
     | "" => (true, value)
     // Validate in case there's a value present
-    | value =>
-      // Validate based on input's type
-      switch inputType {
-      | "number" | "tel" =>
-        switch key {
-        // Manual validation on card expiry (month + year)
-        | CardExpDate => {
-            let split = value->String.split("/")
-            try {
-              // 1. Fetch from string of format MM/YY
-              // 2. Convert to BigInt and back to string
-              // 3. Perform validation on different cases
-              //    3.1. when only month is present (auto add / delete the slash (/) character)
-              //    3.2. when both month and year is present
-              switch (
-                split
-                ->Array.get(0)
-                ->Option.map(m => Js.BigInt.fromStringExn(m)->Js.BigInt.toString),
-                split
-                ->Array.get(1)
-                ->Option.map(y => Js.BigInt.fromStringExn(y)->Js.BigInt.toString),
-              ) {
-              | (Some(month), Some(year)) => {
-                  let isMonthValid = month->String.length < 3
-                  let isYearValid = year->String.length < 3
-                  (isMonthValid && isYearValid, value)
-                }
-              | (Some(month), None) =>
-                if month->String.length == 2 {
-                  if key->getPaymentMethodDataValue->String.length == 1 {
-                    (true, `${value}/`)
-                  } else {
-                    (true, month->String.substring(~start=0, ~end=1))
-                  }
-                } else if month->String.length < 3 {
-                  (true, value)
-                } else {
-                  (false, value)
-                }
-              | _ => (true, value)
+    | value => {
+        // Validate based on input's type
+        let (isValidChar, updatedValue, shouldContinue) = switch inputType {
+        | "number" | "tel" =>
+          switch key {
+          | CardExpDate => {
+              let formattedExpiry = value->formatCardExpiryNumber
+              if formattedExpiry->isExipryValid {
+                handleInputFocus(~currentRef=cardExpRef, ~destinationRef=cardHolderRef)
               }
+              (true, formattedExpiry, false)
+            }
+          | CardNumber => {
+              let cardType = CardBrand->getPaymentMethodDataValue->getCardType
+              let formattedCardNumber = value->formatCardNumber(cardType)
+              if cardValid(formattedCardNumber->clearSpaces, cardType->getCardStringFromType) {
+                handleInputFocus(~currentRef=cardNumberRef, ~destinationRef=cardExpRef)
+              }
+              (true, formattedCardNumber, false)
+            }
+          | _ =>
+            try {
+              let value = value->Js.BigInt.fromStringExn->Js.BigInt.toString
+              (true, value, true)
             } catch {
-            | _ => (false, value)
+            | _ => (false, value, false)
             }
           }
-        | _ =>
-          try {
-            let value = value->Js.BigInt.fromStringExn->Js.BigInt.toString
-            let regex = key->getPaymentMethodDataFieldCharacterPattern
-            switch regex->RegExp.exec(value) {
-            | Some(_) => (true, value)
-            | None => (false, value)
-            }
-          } catch {
-          | _ => (false, value)
+        | "text" =>
+          let value = switch key {
+          | SepaBic
+          | SepaIban =>
+            value->String.toUpperCase
+          | _ => value
           }
+          (true, value, true)
+        | _ => (true, value, false)
         }
-      | "text" =>
-        let value = switch key {
-        | SepaBic
-        | SepaIban =>
-          value->String.toUpperCase
-        | _ => value
+
+        if shouldContinue {
+          let regex = key->getPaymentMethodDataFieldCharacterPattern
+          switch regex->RegExp.exec(updatedValue) {
+          | Some(_) => (true, updatedValue)
+          | None => (false, updatedValue)
+          }
+        } else {
+          (isValidChar, updatedValue)
         }
-        let regex = key->getPaymentMethodDataFieldCharacterPattern
-        switch regex->RegExp.exec(value) {
-        | Some(_) => (true, value)
-        | None => (false, value)
-        }
-      | _ => (true, value)
       }
     }
 
     if isValidChar {
-      key->setPaymentMethodDataValue(updatedValue)
+      switch key {
+      | CardNumber => {
+          CardBrand->setPaymentMethodDataValue(updatedValue->getCardBrand)
+          key->setPaymentMethodDataValue(updatedValue)
+        }
+      | _ => key->setPaymentMethodDataValue(updatedValue)
+      }
     }
   }
 
@@ -317,14 +316,33 @@ let make = (
 
   let renderInputTemplate = (field: paymentMethodDataField) => {
     let isValid = field->getFieldValidity
-    let labelClasses = `text-[14px] mt-[10px] ${isValid->Option.getOr(true)
-        ? "text-jp-gray-800"
-        : "text-red-950"}`
-    let inputClasses = `min-w-full border mt-[5px] px-[10px] py-[8px] rounded-lg ${isValid->Option.getOr(
-        true,
-      )
-        ? "border-jp-gray-200"
-        : "border-red-950"}`
+    let labelClasses = "text-[14px] mt-[10px] text-jp-gray-800"
+    let inputClasses = "min-w-full border mt-[5px] px-[10px] py-[8px] rounded-md border-jp-gray-200"
+    let inputRef = switch field {
+    | CardNumber => cardNumberRef
+    | CardExpDate => cardExpRef
+    | CardHolderName => cardHolderRef
+    | ACHRoutingNumber => routingNumberRef
+    | ACHAccountNumber => achAccNumberRef
+    | BacsSortCode => bacsSortCodeRef
+    | BacsAccountNumber => bacsAccNumberRef
+    | SepaIban => ibanRef
+    | SepaBic => sepaBicRef
+    // Union
+    | BacsBankName
+    | ACHBankName
+    | SepaBankName => bankNameRef
+    | BacsBankCity
+    | ACHBankCity
+    | SepaBankCity => bankCityRef
+    | SepaCountryCode => countryCodeRef
+    | _ => inputRef
+    }
+    let value = field->getPaymentMethodDataValue
+    let (errorString, errorStringClasses) = switch isValid {
+    | Some(false) => (field->getPaymentMethodDataErrorString(value), "text-[12px] text-red-950")
+    | _ => ("", "")
+    }
     <InputField
       id={field->getPaymentMethodDataFieldKey}
       className=inputClasses
@@ -332,11 +350,13 @@ let make = (
       paymentType={PaymentMethodCollectElement}
       inputRef
       isFocus={true}
-      isValid
+      isValid={None}
+      errorString
+      errorStringClasses
       fieldName={field->getPaymentMethodDataFieldLabel}
       placeholder={field->getPaymentMethodDataFieldPlaceholder}
       maxLength={field->getPaymentMethodDataFieldMaxLength}
-      value={field->getPaymentMethodDataValue}
+      value
       onChange={event => field->validateAndSetPaymentMethodDataValue(event)}
       setIsValid={updatedValidityFn => field->setFieldValidity(updatedValidityFn())}
       onBlur={_ev => field->calculateAndSetValidity}
@@ -350,8 +370,8 @@ let make = (
       {switch pmt {
       | Card(_) =>
         <div className="collect-card">
-          <div> {CardNumber->renderInputTemplate} </div>
-          <div className="w-3/10"> {CardExpDate->renderInputTemplate} </div>
+          {CardNumber->renderInputTemplate}
+          <div className="max-w-80"> {CardExpDate->renderInputTemplate} </div>
           {CardHolderName->renderInputTemplate}
         </div>
       | BankTransfer(bankTransferType) =>
@@ -464,7 +484,7 @@ let make = (
     <React.Fragment>
       <div className="flex flex-row justify-start">
         <div className="flex justify-center items-center"> {renderBackButton()} </div>
-        <div className="text-[20px] md:text-[30px] font-semibold"> {renderContentHeader()} </div>
+        <div className="text-[20px] lg:text-[30px] font-semibold"> {renderContentHeader()} </div>
       </div>
       <div className="text-[16px] text-gray-500"> {renderContentSubHeader()} </div>
       <div className="mt-[10px]">
@@ -510,7 +530,9 @@ let make = (
       color: primaryTheme,
     }
     // tabs
-    <div className="flex flex-col min-w-full md:min-w-[400px]">
+    <div
+      className="flex flex-col w-full min-w-[300px] max-w-[520px]
+      lg:min-w-[400px]">
       <div>
         {switch savedPMD {
         | Some(pmd) => renderFinalizeScreen(pmd)
@@ -585,8 +607,8 @@ let make = (
   }
 
   <div
-    className="h-min p-[25px]
-      md:rounded md:shadow-lg md:p-[40px] md:min-w-[400px]">
+    className="flex flex-col h-min p-[25px] items-center
+      lg:rounded lg:shadow-lg lg:p-[40px] lg:min-w-[400px]">
     {switch formLayout {
     | Journey => renderJourneyScreen()
     | Tabs => renderTabScreen()

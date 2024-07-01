@@ -11,6 +11,7 @@ let make = (
   ~onFocus=?,
   ~rightIcon=React.null,
   ~errorString=?,
+  ~errorStringClasses=?,
   ~fieldName="",
   ~type_="text",
   ~paymentType: CardThemeType.mode,
@@ -145,7 +146,7 @@ let make = (
     {switch errorString {
     | Some(val) =>
       <RenderIf condition={val->String.length > 0}>
-        <div className="py-1"> {React.string(val)} </div>
+        <div className={`py-1 ${errorStringClasses->Option.getOr("")}`}> {React.string(val)} </div>
       </RenderIf>
     | None => React.null
     }}

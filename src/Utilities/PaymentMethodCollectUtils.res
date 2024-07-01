@@ -149,6 +149,7 @@ let getPaymentMethodDataFieldKey = (key: paymentMethodDataField): string =>
   | CardNumber => "card.cardNumber"
   | CardExpDate => "card.cardExp"
   | CardHolderName => "card.cardHolder"
+  | CardBrand => "card.brand"
   | ACHRoutingNumber => "ach.routing"
   | ACHAccountNumber => "ach.account"
   | ACHBankName => "ach.bankName"
@@ -196,6 +197,8 @@ let getPaymentMethodDataFieldLabel = (key: paymentMethodDataField): string =>
   | ACHBankCity
   | BacsBankCity
   | SepaBankCity => "Bank City (Optional)"
+
+  | CardBrand => "Misc."
   }
 
 let getPaymentMethodDataFieldPlaceholder = (key: paymentMethodDataField): string =>
@@ -224,12 +227,14 @@ let getPaymentMethodDataFieldPlaceholder = (key: paymentMethodDataField): string
 
   | PaypalMail => "Your Email"
   | PaypalMobNumber | VenmoMobNumber => "Your Phone"
+
+  | CardBrand => "Misc."
   }
 
 let getPaymentMethodDataFieldMaxLength = (key: paymentMethodDataField): int =>
   switch key {
-  | CardNumber => 18
-  | CardExpDate => 5
+  | CardNumber => 23
+  | CardExpDate => 7
   | ACHRoutingNumber => 9
   | ACHAccountNumber => 12
   | BacsSortCode => 6
@@ -336,6 +341,18 @@ let getPayoutStatusMessage = (payoutStatus: payoutStatus): string =>
   | RequiresPayoutMethodData
   | RequiresVendorAccountCreation => "Failed to process your payout. Please check with your provider for more details."
   }
+
+let getPaymentMethodDataErrorString = (key: paymentMethodDataField, value): string => {
+  let len = value->String.length
+  let notEmptyAndComplete = len <= 0 || len === key->getPaymentMethodDataFieldMaxLength
+  switch (key, notEmptyAndComplete) {
+  | (CardNumber, _) => "Card number is invalid."
+  | (CardExpDate, false) => "Your card's expiration date is incomplete."
+  | (CardExpDate, true) => "Your card's expiration year is in the past."
+  | (ACHRoutingNumber, false) => "Routing number is invalid."
+  | _ => ""
+  }
+}
 
 let getPaymentMethodIcon = (paymentMethod: paymentMethod) =>
   switch paymentMethod {
@@ -680,6 +697,9 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
     // Wallets
     | PaypalMail => pmdApiFields->Array.push(("email", value))
     | PaypalMobNumber | VenmoMobNumber => pmdApiFields->Array.push(("telephone_number", value))
+
+    // Misc.
+    | CardBrand => pmdApiFields->Array.push(("card_brand", value))
     }
   })
 

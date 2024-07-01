@@ -16,6 +16,8 @@ type paymentMethodDataField =
   | CardNumber
   | CardExpDate
   | CardHolderName
+  // Card meta
+  | CardBrand
   // Banks
   | ACHRoutingNumber
   | ACHAccountNumber

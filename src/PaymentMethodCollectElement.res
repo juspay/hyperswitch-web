@@ -281,8 +281,8 @@ let make = (~integrateError, ~logger) => {
   }
 
   let renderCollectWidget = () =>
-    <div className="flex flex-row h-min md:w-6/10">
-      <div className="relative w-full md:w-auto md:mx-[50px] md:my-[80px]">
+    <div className="flex flex-row h-min lg:w-6/10">
+      <div className="relative w-full lg:w-auto lg:mx-[50px] lg:my-[80px]">
         {loader
           ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
           : {React.null}}
@@ -323,7 +323,8 @@ let make = (~integrateError, ~logger) => {
 
     <div className="flex flex-col items-center justify-center leading-none">
       <div
-        className="flex flex-col self-center items-center justify-center rounded-lg shadow-lg max-w-[500px]">
+        className="flex flex-col self-center items-center justify-center rounded-lg max-w-[500px]
+          xs:shadow-lg">
         <div
           className="flex flex-row justify-between items-center w-full px-[40px] py-[20px] border-b border-jp-gray-300">
           <div className="text-[25px] font-semibold"> {React.string(merchantName)} </div>
@@ -335,14 +336,20 @@ let make = (~integrateError, ~logger) => {
           {React.string(statusInfo.message)}
         </div>
         <div className="flex border-t border-bg-jp-gray-300 py-[20px] w-full justify-center">
-          <div className="flex flex-col max-w-[500px] bg-white w-full mx-[40px]">
+          <div
+            className="flex flex-col max-w-[500px] bg-white w-full mx-[10px]
+            xs:mx-[40px]">
             {statusInfoFields
             ->Array.mapWithIndex((info, i) => {
-              <div key={i->Int.toString} className={`flex flex-row items-center`}>
-                <div className="text-[15px] text-jp-gray-900 min-w-[10ch] text-right">
+              <div key={i->Int.toString} className={`flex flex-row items-center mb-[4px]`}>
+                <div
+                  className="text-[14px] text-jp-gray-900 text-right min-w-[12ch]
+                    xs:min-w-[10ch]">
                   {React.string(info.key)}
                 </div>
-                <div className="text-[13px] ml-[10px] pl-[10px] border-l border-jp-gray-300">
+                <div
+                  className="text-[11px] ml-[10px] pl-[10px] border-l border-jp-gray-300
+                    xs:text-[13px]">
                   {React.string(info.value)}
                 </div>
               </div>
@@ -366,7 +373,7 @@ let make = (~integrateError, ~logger) => {
   } else {
     <div
       className="flex flex-col h-screen min-w-[320px]
-      md:justify-center md:flex-row">
+        xs:justify-center lg:flex-row">
       {switch flow {
       | PayoutLinkInitiate =>
         if showStatus {
@@ -376,15 +383,15 @@ let make = (~integrateError, ~logger) => {
             // Merchant's info
             <div
               className="flex flex-col w-full h-max items-center p-[25px]
-                md:w-4/10 md:px-[50px] md:py-[80px] md:h-screen md:items-end"
+                lg:w-4/10 lg:px-[50px] lg:py-[80px] lg:h-screen lg:items-end"
               style={backgroundColor: merchantTheme}>
               <div
-                className="flex flex-col w-full text-white
-                  md:rounded-md md:shadow-lg md:min-w-80 md:max-w-96 md:bg-white md:text-black">
+                className="flex flex-col text-white w-full min-w-[300px] max-w-[520px]
+                  lg:rounded-md lg:shadow-lg lg:min-w-80 lg:max-w-96 lg:bg-white lg:text-black">
                 <div
                   className="flex flex-col-reverse
-                    md:mx-[20px] md:mt-[20px] md:flex-row md:justify-between">
-                  <div className="font-bold text-[48px] mt-[20px] md:mt-0 md:text-[35px]">
+                    lg:mx-[20px] lg:mt-[20px] lg:flex-row lg:justify-between">
+                  <div className="font-bold text-[48px] mt-[20px] lg:mt-0 lg:text-[35px]">
                     {React.string(`${currency} ${amount}`)}
                   </div>
                   <div
@@ -394,19 +401,19 @@ let make = (~integrateError, ~logger) => {
                     />
                   </div>
                 </div>
-                <div className="md:mx-[20px]">
+                <div className="lg:mx-[20px]">
                   <div className="self-center text-[20px] font-semibold">
                     {React.string("Payout from ")}
                     {React.string(merchantName)}
                   </div>
-                  <div className="flex flex-row md:mt-[5px]">
+                  <div className="flex flex-row lg:mt-[5px]">
                     <div className="font-semibold text-[12px]"> {React.string("Ref Id")} </div>
                     <div className="ml-[5px] text-[12px]"> {React.string(payoutId)} </div>
                   </div>
                 </div>
                 <div
                   className="mt-[20px] px-[20px] py-[6px] bg-gray-200 text-[13px] rounded-full w-max text-black
-                  md:w-full md:rounded-none md:rounded-b-lg">
+                    lg:w-full lg:rounded-none lg:rounded-b-lg">
                   {React.string(`Link expires on: ${sessionExpiry}`)}
                 </div>
               </div>
