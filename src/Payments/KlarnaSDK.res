@@ -62,6 +62,11 @@ let make = (~sessionObj: SessionsType.token) => {
               result => {
                 let result = result->JSON.Decode.bool->Option.getOr(false)
                 if result {
+                  UtilityHooks.useHandlePostMessages(
+                    ~complete=true,
+                    ~empty=false,
+                    ~paymentType="klarna",
+                  )
                   Utils.handlePostMessage([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", "paymentloader"->JSON.Encode.string),
