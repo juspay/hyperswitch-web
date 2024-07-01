@@ -25,7 +25,10 @@ let make = () => {
       }
     }
     Window.addEventListener("message", handle)
+    Some(() => {Window.removeEventListener("message", handle)})
+  })
 
+  React.useEffect(() => {
     PmAuthConnectorUtils.mountAllRequriedAuthConnectorScripts(
       ~pmAuthConnectorsArr,
       ~onScriptLoaded=authConnector => {
@@ -36,9 +39,8 @@ let make = () => {
       },
       ~logger,
     )
-
-    Some(() => {Window.removeEventListener("message", handle)})
-  })
+    None
+  }, [pmAuthConnectorsArr])
 
   React.useEffect(() => {
     if isReady && linkToken->String.length > 0 {
@@ -47,12 +49,14 @@ let make = () => {
         onSuccess: (publicToken, _) => {
           Js.log2("Plaid link token onSuccess", publicToken)
           handlePostMessage([
+            ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
             ("publicToken", publicToken->JSON.Encode.string),
           ])
         },
         onExit: json => {
           handlePostMessage([
+            ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
             ("publicToken", "sdjbcksdcjsncjsdc"->JSON.Encode.string),
           ])

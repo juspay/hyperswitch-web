@@ -71,18 +71,18 @@ let make = (~paymentMethodType) => {
   // }
 
   React.useEffect0(() => {
-    let onPlaidCallback1 = (ev: Types.event) => {
-      let json = ev.data->Identity.anyTypeToJson
-      let dict = json->getDictFromJson
+    let onPlaidCallback = (ev: Window.event) => {
+      let json = ev.data->JSON.parseExn
+      let dict = json->Utils.getDictFromJson
       if dict->getBool("isPlaid", false) {
         Js.log2("PlaidVerifftyddyaydcsdcsh", dict)
       }
     }
 
-    EventListenerManager.addSmartEventListener("message", onPlaidCallback1, "onPlaidCallback1")
+    Window.addEventListener("message", onPlaidCallback)
     Some(
       () => {
-        Window.removeEventListener("message", ev => onPlaidCallback1(ev))
+        Window.removeEventListener("message", ev => onPlaidCallback(ev))
       },
     )
   })

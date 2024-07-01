@@ -114,24 +114,27 @@ let make = (
       )
     })
 
+    let onPlaidCallback = mountedIframeRef => {
+      (ev: Types.event) => {
+        let json = ev.data->Identity.anyTypeToJson
+        let dict = json->getDictFromJson
+        let isPlaidExist = dict->getBool("isPlaid", false)
+        if isPlaidExist {
+          Console.log("isPlaid send")
+          mountedIframeRef->Window.iframePostMessage(
+            [("isPlaid", true->JSON.Encode.bool), ("publicToken", json)]->Dict.fromArray,
+          )
+        }
+      }
+    }
+
     let fetchPaymentsList = (mountedIframeRef, componentType) => {
       let handlePaymentMethodsLoaded = (event: Types.event) => {
         let json = event.data->Identity.anyTypeToJson
         let dict = json->getDictFromJson
         let isPaymentMethodsData = dict->getString("data", "") === "payment_methods"
         if isPaymentMethodsData {
-          let onPlaidCallback = (ev: Types.event) => {
-            let json = ev.data->Identity.anyTypeToJson
-            let dict = json->getDictFromJson
-            let isPlaidExist = dict->getBool("isPlaid", false)
-            if isPlaidExist {
-              mountedIframeRef->Window.iframePostMessage(
-                [("isPlaid", true->JSON.Encode.bool), ("publicToken", json)]->Dict.fromArray,
-              )
-            }
-          }
-
-          addSmartEventListener("message", onPlaidCallback, "onPlaidCallback")
+          addSmartEventListener("message", onPlaidCallback(mountedIframeRef), "onPlaidCallback")
 
           let json = dict->getJsonFromDict("response", JSON.Encode.null)
           let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
