@@ -3,6 +3,8 @@ let make = (~paymentMethodType) => {
   open Utils
   let keys = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let setOptionValue = Recoil.useSetRecoilState(RecoilAtoms.optionAtom)
+  let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
 
   let endpoint = ApiEndpoint.getApiEndPoint()
   let (linkToken, setLinkToken) = React.useState(_ => "")
@@ -85,7 +87,17 @@ let make = (~paymentMethodType) => {
           ~endpoint,
         )
         ->then(customerListResponse => {
-          Js.log2("customerListResponse", customerListResponse)
+          let customerPaymentMethodsVal =
+            customerListResponse
+            ->getDictFromJson
+            ->PaymentType.getCustomerMethods("customerPaymentMethods")
+          setOptionValue(
+            prev => {
+              ...prev,
+              customerPaymentMethods: customerPaymentMethodsVal,
+            },
+          )
+          setShowFields(_ => false)
           res->Fetch.Response.json
         })
         ->catch(e => {
