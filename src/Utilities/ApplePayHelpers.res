@@ -38,12 +38,13 @@ let getApplePayFromResponse = (
   ~stateJson,
   ~connectors,
   ~isPaymentSession=false,
+  ~isSavedMethodsFlow=false,
 ) => {
   let billingContact = billingContactDict->ApplePayTypes.billingContactItemToObjMapper
 
   let shippingContact = shippingContactDict->ApplePayTypes.shippingContactItemToObjMapper
 
-  let requiredFieldsBody = if isPaymentSession {
+  let requiredFieldsBody = if isPaymentSession || isSavedMethodsFlow {
     DynamicFieldsUtils.getApplePayRequiredFields(
       ~billingContact,
       ~shippingContact,
@@ -183,6 +184,7 @@ let useHandleApplePayResponse = (
             ~requiredFields=paymentMethodTypes.required_fields,
             ~stateJson,
             ~connectors,
+            ~isSavedMethodsFlow,
           )
 
           processPayment(

@@ -8,6 +8,7 @@ let getGooglePayBodyFromResponse = (
   ~requiredFields=[],
   ~stateJson,
   ~isPaymentSession=false,
+  ~isSavedMethodsFlow=false,
 ) => {
   let obj = gPayResponse->getDictFromJson->GooglePayType.itemToObjMapper
   let gPayBody = PaymentUtils.appendedCustomerAcceptance(
@@ -35,7 +36,7 @@ let getGooglePayBodyFromResponse = (
     ->getDictFromJson
     ->getString("email", "")
 
-  let requiredFieldsBody = if isPaymentSession {
+  let requiredFieldsBody = if isPaymentSession || isSavedMethodsFlow {
     DynamicFieldsUtils.getGooglePayRequiredFields(
       ~billingContact,
       ~shippingContact,
@@ -115,6 +116,7 @@ let useHandleGooglePayResponse = (~connectors, ~intent, ~isSavedMethodsFlow=fals
           ~connectors,
           ~requiredFields=paymentMethodTypes.required_fields,
           ~stateJson,
+          ~isSavedMethodsFlow,
         )
         processPayment(
           ~body,
