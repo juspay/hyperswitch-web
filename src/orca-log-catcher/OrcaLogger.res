@@ -570,6 +570,8 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       DISPLAY_QR_CODE_INFO_PAGE,
       DISPLAY_VOUCHER,
       LOADER_CHANGED,
+      PAYMENT_METHODS_CALL,
+      PAYMENT_METHOD_CHANGED,
       SESSIONS_CALL,
       RETRIEVE_CALL,
       DISPLAY_THREE_DS_SDK,
