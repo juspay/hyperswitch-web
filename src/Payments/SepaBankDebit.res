@@ -6,6 +6,7 @@ open PaymentModeType
 @react.component
 let make = (~paymentType: CardThemeType.mode) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
 
@@ -64,7 +65,13 @@ let make = (~paymentType: CardThemeType.mode) => {
               ~postalCode=postalCode.value,
               ~state=state.value,
             )
-            intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
+            intent(
+              ~bodyArr=body,
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+              (),
+            )
           }
         | None => ()
         }
@@ -73,7 +80,7 @@ let make = (~paymentType: CardThemeType.mode) => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, modalData))
+  }, (email, fullName, modalData, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
   <div

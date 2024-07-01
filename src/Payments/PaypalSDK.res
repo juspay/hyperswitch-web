@@ -12,6 +12,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let completeAuthorize = PaymentHelpers.useCompleteAuthorize(Some(loggerState), Paypal)
   let checkoutScript =
     Window.document(Window.window)->Window.getElementById("braintree-checkout")->Nullable.toOption
@@ -75,6 +76,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
         ~paymentMethodListValue,
         ~isGuestCustomer,
         ~intent,
+        ~isManualRetryEnabled,
         ~options,
         ~publishableKey,
         ~paymentMethodTypes,
@@ -111,6 +113,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
               ~stateJson,
               ~handleCloseLoader,
               ~areOneClickWalletsRendered,
+              ~isManualRetryEnabled,
             )
           | _ => ()
           }

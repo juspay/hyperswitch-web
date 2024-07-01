@@ -27,7 +27,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
-
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let (socialSecurityNumber, setSocialSecurityNumber) = React.useState(_ => "")
@@ -64,13 +64,14 @@ let make = (~paymentType: CardThemeType.mode) => {
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~iframeId,
+          ~manualRetry=isManualRetryEnabled,
           (),
         )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, [socialSecurityNumber])
+  }, (socialSecurityNumber, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
   let changeSocialSecurityNumber = ev => {

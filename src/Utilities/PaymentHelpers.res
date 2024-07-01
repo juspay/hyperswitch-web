@@ -30,6 +30,7 @@ type paymentIntent = (
   ~iframeId: string=?,
   ~isThirdPartyFlow: bool=?,
   ~intentCallback: Core__JSON.t => unit=?,
+  ~manualRetry:bool=?,
   unit,
 ) => unit
 
@@ -1008,7 +1009,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
 
-  let (isManualRetryEnabled, setIsManualRetryEnabled) = Recoil.useRecoilState(isManualRetryEnabled)
+  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (
     ~handleUserError=false,
     ~bodyArr: array<(string, JSON.t)>,
@@ -1016,6 +1017,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~iframeId=keys.iframeId,
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
+    ~manualRetry=false,
     (),
   ) => {
     switch keys.clientSecret {
@@ -1027,7 +1029,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
       ]
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
-      let manual_retry = isManualRetryEnabled
+      let manual_retry = manualRetry
         ? [("retry_action", "manual_retry"->JSON.Encode.string)]
         : []
       let body =

@@ -65,6 +65,7 @@ let processPayment = (
   ~intent: PaymentHelpers.paymentIntent,
   ~options: PaymentType.options,
   ~publishableKey,
+  ~isManualRetryEnabled,
 ) => {
   intent(
     ~bodyArr=body,
@@ -74,6 +75,7 @@ let processPayment = (
     },
     ~handleUserError=true,
     ~isThirdPartyFlow,
+    ~manualRetry=isManualRetryEnabled,
     (),
   )
 }
@@ -81,6 +83,7 @@ let processPayment = (
 let useHandleGooglePayResponse = (~connectors, ~intent, ~isSavedMethodsFlow=false) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
@@ -119,6 +122,7 @@ let useHandleGooglePayResponse = (~connectors, ~intent, ~isSavedMethodsFlow=fals
           ~intent,
           ~options: PaymentType.options,
           ~publishableKey,
+          ~isManualRetryEnabled,
         )
       }
       if dict->Dict.get("gpayError")->Option.isSome {
@@ -130,7 +134,7 @@ let useHandleGooglePayResponse = (~connectors, ~intent, ~isSavedMethodsFlow=fals
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  }, (paymentMethodTypes, stateJson))
+  }, (paymentMethodTypes, stateJson, isManualRetryEnabled))
 }
 
 let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly) => {

@@ -20,6 +20,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   let (postalCode, _) = Recoil.useLoggedRecoilState(userAddressPincode, "postal_code", loggerState)
   let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
   let complete =
     email.value != "" &&
@@ -68,7 +69,13 @@ let make = (~paymentType: CardThemeType.mode) => {
               ~postalCode=postalCode.value,
               ~state=state.value,
             )
-            intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ())
+            intent(
+              ~bodyArr=body,
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+              (),
+            )
           }
         | None => ()
         }
@@ -76,7 +83,7 @@ let make = (~paymentType: CardThemeType.mode) => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, modalData))
+  }, (email, fullName, modalData, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
