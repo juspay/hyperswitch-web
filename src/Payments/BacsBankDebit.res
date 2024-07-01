@@ -89,7 +89,13 @@ let make = (~paymentType: CardThemeType.mode) => {
           ~country=getCountryCode(country.value).isoAlpha2,
           ~bankAccountHolderName=fullName.value,
         )
-        intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ~manualRetry=isManualRetryEnabled,())
+        intent(
+          ~bodyArr=body,
+          ~confirmParam=confirm.confirmParams,
+          ~handleUserError=false,
+          ~manualRetry=isManualRetryEnabled,
+          (),
+        )
         ()
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")

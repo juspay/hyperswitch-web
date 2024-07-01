@@ -44,7 +44,7 @@ let default = (paymentType: CardThemeType.mode) => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (isManualRetryEnabled,email, fullName))
+  }, (isManualRetryEnabled, email, fullName))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>

@@ -54,12 +54,18 @@ let make = (~paymentType) => {
     )
     if confirm.doSubmit {
       if complete {
-        intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false, ~manualRetry=isManualRetryEnabled,())
+        intent(
+          ~bodyArr=body,
+          ~confirmParam=confirm.confirmParams,
+          ~handleUserError=false,
+          ~manualRetry=isManualRetryEnabled,
+          (),
+        )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, country,isManualRetryEnabled))
+  }, (email, fullName, country, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
   <div

@@ -65,7 +65,13 @@ let make = (~paymentType: CardThemeType.mode) => {
               ~postalCode=postalCode.value,
               ~state=state.value,
             )
-            intent(~bodyArr=body, ~confirmParam=confirm.confirmParams, ~handleUserError=false,~manualRetry=isManualRetryEnabled, ())
+            intent(
+              ~bodyArr=body,
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+              (),
+            )
           }
         | None => ()
         }
@@ -74,7 +80,7 @@ let make = (~paymentType: CardThemeType.mode) => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, modalData,isManualRetryEnabled))
+  }, (email, fullName, modalData, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
   <div

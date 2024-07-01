@@ -113,6 +113,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
               ~stateJson,
               ~handleCloseLoader,
               ~areOneClickWalletsRendered,
+              ~isManualRetryEnabled,
             )
           | _ => ()
           }

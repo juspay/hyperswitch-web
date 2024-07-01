@@ -56,7 +56,7 @@ let make = (~paymentType) => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, country,isManualRetryEnabled))
+  }, (email, fullName, country, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
   let updatedOptionsArrayForCountry =

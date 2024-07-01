@@ -71,7 +71,7 @@ let make = (~paymentType: CardThemeType.mode) => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (socialSecurityNumber,isManualRetryEnabled))
+  }, (socialSecurityNumber, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
   let changeSocialSecurityNumber = ev => {

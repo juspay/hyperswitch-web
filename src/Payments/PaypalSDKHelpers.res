@@ -138,6 +138,7 @@ let loadBraintreePaypalSdk = (
   ~areOneClickWalletsRendered: (
     RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
   ) => unit,
+  ~isManualRetryEnabled,
 ) => {
   loggerState.setLogInfo(
     ~value="Paypal Braintree SDK Button Clicked",
@@ -215,6 +216,7 @@ let loadBraintreePaypalSdk = (
                                 publishableKey,
                               },
                               ~handleUserError=true,
+                              ~manualRetry=isManualRetryEnabled,
                               (),
                             )
                           },
