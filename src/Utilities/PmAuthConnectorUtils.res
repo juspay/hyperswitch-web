@@ -29,7 +29,7 @@ let mountAuthConnectorScript = (
     (),
   )
   pmAuthConnectorScript->Window.elementSrc(pmAuthConnectorScriptUrl)
-  pmAuthConnectorScript->Window.elementOnerror(err => {
+  pmAuthConnectorScript->Window.elementOnerror(_ => {
     logger.setLogInfo(
       ~value=`Pm Auth Connector ${authConnector} Script Load Failure`,
       ~eventName=PM_AUTH_CONNECTOR_SCRIPT,

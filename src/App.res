@@ -30,6 +30,7 @@ let make = () => {
   | _ =>
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
+    | "plaidSDK" => <PlaidSDKIframe />
     | "fullscreen" =>
       <div id="fullscreen">
         <FullScreenDivDriver />
@@ -51,9 +52,7 @@ let make = () => {
       <BankTransfersPopup transferType=fullscreenMode />
     | _ =>
       <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
-        <ScriptMountHoc logger>
-          <Payment paymentMode integrateError logger />
-        </ScriptMountHoc>
+        <Payment paymentMode integrateError logger />
       </LoaderController>
     }
   }
