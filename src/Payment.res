@@ -15,6 +15,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
   let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
@@ -220,7 +221,13 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }
 
   let submitAPICall = (body, confirmParam) => {
-    intent(~bodyArr=body, ~confirmParam, ~handleUserError=false, ())
+    intent(
+      ~bodyArr=body,
+      ~confirmParam,
+      ~handleUserError=false,
+      ~manualRetry=isManualRetryEnabled,
+      (),
+    )
   }
   React.useEffect(() => {
     setCvcNumber(_ => "")

@@ -5,6 +5,7 @@ let default = (paymentType: CardThemeType.mode) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
@@ -36,13 +37,14 @@ let default = (paymentType: CardThemeType.mode) => {
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~iframeId,
+          ~manualRetry=isManualRetryEnabled,
           (),
         )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, [email, fullName])
+  }, (isManualRetryEnabled, email, fullName))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>

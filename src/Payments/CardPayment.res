@@ -15,6 +15,7 @@ let make = (
   open UtilityHooks
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let {innerLayout} = config.appearance
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
@@ -174,6 +175,7 @@ let make = (
           },
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
+          ~manualRetry=isManualRetryEnabled,
           (),
         )
       } else {
@@ -206,6 +208,7 @@ let make = (
     isCustomerAcceptanceRequired,
     nickname,
     isCardBrandValid,
+    isManualRetryEnabled
   ))
   useSubmitPaymentData(submitCallback)
 

@@ -9,6 +9,7 @@ let processPayment = (
   ~intent: PaymentHelpers.paymentIntent,
   ~options: PaymentType.options,
   ~publishableKey,
+  ~isManualRetryEnabled,
 ) => {
   let requestBody = PaymentUtils.appendedCustomerAcceptance(
     ~isGuestCustomer,
@@ -24,6 +25,7 @@ let processPayment = (
     },
     ~handleUserError=true,
     ~isThirdPartyFlow,
+    ~manualRetry=isManualRetryEnabled,
     (),
   )
 }
@@ -36,12 +38,13 @@ let getApplePayFromResponse = (
   ~stateJson,
   ~connectors,
   ~isPaymentSession=false,
+  ~isSavedMethodsFlow=false,
 ) => {
   let billingContact = billingContactDict->ApplePayTypes.billingContactItemToObjMapper
 
   let shippingContact = shippingContactDict->ApplePayTypes.shippingContactItemToObjMapper
 
-  let requiredFieldsBody = if isPaymentSession {
+  let requiredFieldsBody = if isPaymentSession || isSavedMethodsFlow {
     DynamicFieldsUtils.getApplePayRequiredFields(
       ~billingContact,
       ~shippingContact,
@@ -155,6 +158,8 @@ let useHandleApplePayResponse = (
     ~paymentMethodType="apple_pay",
   )
 
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+
   React.useEffect(() => {
     let handleApplePayMessages = (ev: Window.event) => {
       let json = try {
@@ -179,6 +184,7 @@ let useHandleApplePayResponse = (
             ~requiredFields=paymentMethodTypes.required_fields,
             ~stateJson,
             ~connectors,
+            ~isSavedMethodsFlow,
           )
 
           processPayment(
@@ -189,6 +195,7 @@ let useHandleApplePayResponse = (
             ~intent,
             ~options,
             ~publishableKey,
+            ~isManualRetryEnabled,
           )
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
@@ -209,7 +216,7 @@ let useHandleApplePayResponse = (
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
-  }, (isInvokeSDKFlow, processPayment, stateJson))
+  }, (isInvokeSDKFlow, processPayment, stateJson, isManualRetryEnabled))
 }
 
 let handleApplePayButtonClicked = (~sessionObj, ~componentName) => {

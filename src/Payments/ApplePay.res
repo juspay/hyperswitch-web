@@ -13,6 +13,7 @@ let make = (~sessionObj: option<JSON.t>) => {
   let (showApplePay, setShowApplePay) = React.useState(() => false)
   let (showApplePayLoader, setShowApplePayLoader) = React.useState(() => false)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Applepay)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Applepay)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
@@ -228,6 +229,7 @@ let make = (~sessionObj: option<JSON.t>) => {
               ~intent,
               ~options,
               ~publishableKey,
+              ~isManualRetryEnabled,
             )
           } else {
             ApplePayHelpers.handleApplePayButtonClicked(~sessionObj, ~componentName)
@@ -241,6 +243,7 @@ let make = (~sessionObj: option<JSON.t>) => {
             ~intent,
             ~options,
             ~publishableKey,
+            ~isManualRetryEnabled,
           )
         }
       } else {

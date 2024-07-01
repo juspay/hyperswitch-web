@@ -13,6 +13,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
   let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Gpay)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let sync = PaymentHelpers.usePaymentSync(Some(loggerState), Gpay)
   let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
@@ -105,6 +106,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
               ~intent,
               ~options,
               ~publishableKey,
+              ~isManualRetryEnabled,
             )
           } else {
             GooglePayHelpers.handleGooglePayClicked(
@@ -116,7 +118,13 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
           }
         } else {
           let bodyDict = PaymentBody.gpayRedirectBody(~connectors)
-          GooglePayHelpers.processPayment(~body=bodyDict, ~intent, ~options, ~publishableKey)
+          GooglePayHelpers.processPayment(
+            ~body=bodyDict,
+            ~intent,
+            ~options,
+            ~publishableKey,
+            ~isManualRetryEnabled,
+          )
         }
       }
       resolve()

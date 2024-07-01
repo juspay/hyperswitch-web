@@ -1,3 +1,59 @@
+## [0.71.9](https://github.com/juspay/hyperswitch-web/compare/v0.71.8...v0.71.9) (2024-07-01)
+
+
+### Bug Fixes
+
+* codeowner changes ([#465](https://github.com/juspay/hyperswitch-web/issues/465)) ([f9a9ff7](https://github.com/juspay/hyperswitch-web/commit/f9a9ff7034c008350ca8f871b149050eb93ebd97))
+
+## [0.71.8](https://github.com/juspay/hyperswitch-web/compare/v0.71.7...v0.71.8) (2024-07-01)
+
+
+### Bug Fixes
+
+* googlePay and applePay billing details not being passed in confirm call for saved methods ([#464](https://github.com/juspay/hyperswitch-web/issues/464)) ([19db1d3](https://github.com/juspay/hyperswitch-web/commit/19db1d398fc77ca99bb6d296da5f39d1b0d1aca3))
+
+## [0.71.7](https://github.com/juspay/hyperswitch-web/compare/v0.71.6...v0.71.7) (2024-07-01)
+
+
+### Bug Fixes
+
+* manual retries ([#453](https://github.com/juspay/hyperswitch-web/issues/453)) ([39a51d8](https://github.com/juspay/hyperswitch-web/commit/39a51d8a62b9691b6390dcf27f5fc52e35bc8282))
+
+## [0.71.6](https://github.com/juspay/hyperswitch-web/compare/v0.71.5...v0.71.6) (2024-06-28)
+
+
+### Bug Fixes
+
+* browser name changes - temp ([#463](https://github.com/juspay/hyperswitch-web/issues/463)) ([3f36342](https://github.com/juspay/hyperswitch-web/commit/3f36342fa4c1684856ae811095c3b4e4be08ee5a))
+
+## [0.71.5](https://github.com/juspay/hyperswitch-web/compare/v0.71.4...v0.71.5) (2024-06-28)
+
+
+### Bug Fixes
+
+* fixed Appearance and Headless PaymentMethodId ([#462](https://github.com/juspay/hyperswitch-web/issues/462)) ([facda4a](https://github.com/juspay/hyperswitch-web/commit/facda4aca234d82fcbbe55a7543d996d35132606))
+
+## [0.71.4](https://github.com/juspay/hyperswitch-web/compare/v0.71.3...v0.71.4) (2024-06-27)
+
+
+### Bug Fixes
+
+* add a console.log ([8026d50](https://github.com/juspay/hyperswitch-web/commit/8026d50d61f7f0db29ff80aa667d3360a36ee160))
+
+## [0.71.3](https://github.com/juspay/hyperswitch-web/compare/v0.71.2...v0.71.3) (2024-06-26)
+
+
+### Bug Fixes
+
+* v0.71.2 ([28f40de](https://github.com/juspay/hyperswitch-web/commit/28f40de551eec4be5302f1ec2ae7a1263038fcc0))
+
+## [0.71.1](https://github.com/juspay/hyperswitch-web/compare/v0.71.0...v0.71.1) (2024-06-26)
+
+
+### Bug Fixes
+
+* added Env to disable sentry by default ([#459](https://github.com/juspay/hyperswitch-web/issues/459)) ([c622e4f](https://github.com/juspay/hyperswitch-web/commit/c622e4f7a80d418112b605d1352d8b88c2baf801))
+
 # [0.71.0](https://github.com/juspay/hyperswitch-web/compare/v0.70.7...v0.71.0) (2024-06-25)
 
 
