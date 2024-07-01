@@ -30,7 +30,7 @@ type paymentIntent = (
   ~iframeId: string=?,
   ~isThirdPartyFlow: bool=?,
   ~intentCallback: Core__JSON.t => unit=?,
-  ~manualRetry:bool=?,
+  ~manualRetry: bool=?,
   unit,
 ) => unit
 
@@ -1027,9 +1027,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
       ]
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
-      let manual_retry = manualRetry
-        ? [("retry_action", "manual_retry"->JSON.Encode.string)]
-        : []
+      let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
       let body =
         [("client_secret", clientSecret->JSON.Encode.string)]->Array.concatMany([
           returnUrlArr,
@@ -1714,4 +1712,64 @@ let paymentIntentForPaymentSession = (
     ~isPaymentSession=true,
     (),
   )
+}
+
+let callAuthLink = (
+  ~publishableKey,
+  ~clientSecret,
+  ~paymentMethodType,
+  ~pmAuthConnectorsArr,
+  ~iframeId,
+) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let uri = `${endpoint}/payment_methods/auth/link`
+  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
+
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~bodyStr=[
+      ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
+      ("payment_id", clientSecret->Option.getOr("")->getPaymentId->JSON.Encode.string),
+      ("payment_method", "bank_debit"->JSON.Encode.string),
+      ("payment_method_type", paymentMethodType->JSON.Encode.string),
+    ]
+    ->getJsonFromArrayOfJson
+    ->JSON.stringify,
+    ~headers,
+    (),
+  )
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        let metaData =
+          [
+            ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
+            ("pmAuthConnectorArray", pmAuthConnectorsArr->Identity.anyTypeToJson),
+          ]->getJsonFromArrayOfJson
+
+        handlePostMessage([
+          ("fullscreen", true->JSON.Encode.bool),
+          ("param", "plaidSDK"->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+          ("metadata", metaData),
+        ])
+        res->Fetch.Response.json
+      })
+    }
+  })
+  ->catch(e => {
+    Console.log2("Unable to retrieve payment_methods auth/link because of ", e)
+    JSON.Encode.null->resolve
+  })
 }
