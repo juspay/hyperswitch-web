@@ -1,19 +1,19 @@
-- @prafulkoppalkar @akash-c-k @ArushKapoorJuspay @PritishBudhiraja @seekshiva
+- @akash-c-k @ArushKapoorJuspay @PritishBudhiraja @seekshiva @vsrivatsa-juspay
 
 docs/ @akash-c-k
 LICENSE @akash-c-k
 README.md @akash-c-k
 SECURITY.md @akash-c-k
-.gitignore @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja
+.gitignore @ArushKapoorJuspay @PritishBudhiraja
 
-Hyperswitch-React-Demo-App/ @prafulkoppalkar @PritishBudhiraja @seekshiva @ArushKapoorJuspay
+Hyperswitch-React-Demo-App/ @PritishBudhiraja @seekshiva @ArushKapoorJuspay @vsrivatsa-juspay
 
-.husky/ @prafulkoppalkar @PritishBudhiraja @seekshiva
-.github/ @prafulkoppalkar @PritishBudhiraja @seekshiva
+.husky/ @PritishBudhiraja @seekshiva
+.github/ @PritishBudhiraja @seekshiva
 
-aws/ @prafulkoppalkar @seekshiva
+aws/ @seekshiva
 
-webpack.dev.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja @seekshiva
-webpack.common.js @prafulkoppalkar @ArushKapoorJuspay @PritishBudhiraja @seekshiva
+webpack.dev.js @ArushKapoorJuspay @PritishBudhiraja @seekshiva
+webpack.common.js @ArushKapoorJuspay @PritishBudhiraja @seekshiva
 
-src/ @seekshiva @PritishBudhiraja @ArushKapoorJuspay @prafulkoppalkar @vsrivatsa-juspay
+src/ @seekshiva @PritishBudhiraja @ArushKapoorJuspay @vsrivatsa-juspay
