@@ -1,3 +1,10 @@
+## [0.71.8](https://github.com/juspay/hyperswitch-web/compare/v0.71.7...v0.71.8) (2024-07-01)
+
+
+### Bug Fixes
+
+* googlePay and applePay billing details not being passed in confirm call for saved methods ([#464](https://github.com/juspay/hyperswitch-web/issues/464)) ([19db1d3](https://github.com/juspay/hyperswitch-web/commit/19db1d398fc77ca99bb6d296da5f39d1b0d1aca3))
+
 ## [0.71.7](https://github.com/juspay/hyperswitch-web/compare/v0.71.6...v0.71.7) (2024-07-01)
 
 
