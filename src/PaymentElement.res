@@ -391,7 +391,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     <RenderIf
       condition={displaySavedPaymentMethods && savedMethods->Array.length > 0 && showFields}>
       <div
-        className="Label flex flex-row gap-3 items-end cursor-pointer my-4"
+        className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
           fontSize: "14px",
           float: "left",
