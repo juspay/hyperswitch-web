@@ -1,3 +1,7 @@
+open Promise
+open Types
+open Utils
+
 let getCustomerSavedPaymentMethods = (
   ~clientSecret,
   ~publishableKey,
@@ -5,9 +9,6 @@ let getCustomerSavedPaymentMethods = (
   ~logger,
   ~switchToCustomPod,
 ) => {
-  open Promise
-  open Types
-  open Utils
   open ApplePayTypes
   open GooglePayType
   let applePaySessionRef = ref(Nullable.null)
@@ -462,4 +463,45 @@ let getCustomerSavedPaymentMethods = (
     let exceptionMessage = err->formatException->JSON.stringify
     handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
   })
+}
+
+let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~switchToCustomPod, ~endpoint) => {
+  let getSavedPaymentManagementMethodsList = _ => {
+    PaymentHelpers.fetchSavedPaymentMethodList(
+      ~ephemeralKey,
+      ~optLogger=Some(logger),
+      ~switchToCustomPod=false,
+      ~endpoint,
+    )
+    ->then(response => {
+      response->resolve
+    })
+    ->catch(err => {
+      let exceptionMessage = err->formatException->JSON.stringify
+      handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
+    })
+  }
+
+  let deleteSavedPaymentMethod = paymentMethodId => {
+    PaymentHelpers.deletePaymentMethod(
+      ~ephemeralKey,
+      ~paymentMethodId={paymentMethodId->JSON.Decode.string->Option.getOr("")},
+      ~logger,
+      ~switchToCustomPod,
+    )
+    ->then(response => {
+      response->resolve
+    })
+    ->catch(err => {
+      let exceptionMessage = err->formatException->JSON.stringify
+      handleFailureResponse(~message=exceptionMessage, ~errorType="server_error")->resolve
+    })
+  }
+
+  {
+    getSavedPaymentManagementMethodsList,
+    deleteSavedPaymentMethod,
+  }
+  ->Identity.anyTypeToJson
+  ->resolve
 }

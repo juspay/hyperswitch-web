@@ -156,6 +156,7 @@ module ErrorCard = {
           paymentMethod: "",
           firstEvent: false,
           metadata: JSON.Encode.null,
+          ephemeralKey: "",
         }
         beaconApiCall([errorLog])
       }

@@ -1241,7 +1241,9 @@ let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "klarna", "e
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
 
 let componentsForPaymentElementCreate =
-  ["payment", "paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
+  ["payment", "paymentMethodCollect", "paymentMethodsManagement"]->Array.concat(
+    expressCheckoutComponents,
+  )
 
 let getIsExpressCheckoutComponent = componentType => {
   expressCheckoutComponents->Array.includes(componentType)

@@ -6,11 +6,24 @@ open Identity
 @val @scope(("navigator", "clipboard"))
 external writeText: string => Promise.t<'a> = "writeText"
 
-let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) => {
+let make = (
+  componentType,
+  options,
+  setIframeRef,
+  iframeRef,
+  mountPostMessage,
+  ~isPaymentManagementElement=false,
+) => {
   try {
     let mountId = ref("")
     let setPaymentIframeRef = ref => {
       setIframeRef(ref)
+    }
+
+    let (elementIframeWrapperDivId, elementIframeId) = if isPaymentManagementElement {
+      ("management-element", "payment-methods-management-element")
+    } else {
+      ("element", "payment-element")
     }
 
     let sdkHandleOneClickConfirmPayment =
@@ -155,7 +168,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
             iframeHeight->Option.getOr(JSON.Encode.null)->Utils.getFloatFromJson(200.0)
           if iframeId === localSelectorString {
             let elem = Window.querySelector(
-              `#orca-payment-element-iframeRef-${localSelectorString}`,
+              `#orca-${elementIframeId}-iframeRef-${localSelectorString}`,
             )
             switch elem->Nullable.toOption {
             | Some(ele) =>
@@ -205,7 +218,9 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           | None => ()
           }
           if id == localSelectorString {
-            let elem = Window.querySelector(`#orca-element-${localSelectorString}`)
+            let elem = Window.querySelector(
+              `#orca-${elementIframeWrapperDivId}-${localSelectorString}`,
+            )
             switch elem->Nullable.toOption {
             | Some(ele) => ele->Window.className(currentClass.contents)
             | None => ()
@@ -236,7 +251,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
           | Some(ele) =>
             ele->Window.innerHTML("")
             let mainElement = Window.querySelector(
-              `#orca-payment-element-iframeRef-${localSelectorString}`,
+              `#orca-${elementIframeId}-iframeRef-${localSelectorString}`,
             )
             let iframeURL =
               fullscreenParam.contents != ""
@@ -291,7 +306,7 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
 
         if iframeMounted->Option.isSome {
           mountPostMessage(
-            Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`),
+            Window.querySelector(`#orca-${elementIframeId}-iframeRef-${localSelectorString}`),
             localSelectorString,
             sdkHandleOneClickConfirmPayment,
           )
@@ -305,11 +320,11 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         componentType->Utils.isOtherElements ? "height: 2rem;" : "height: 0;"
       switch oElement->Nullable.toOption {
       | Some(elem) => {
-          let iframeDiv = `<div id="orca-element-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">
+          let iframeDiv = `<div id="orca-${elementIframeWrapperDivId}-${localSelectorString}" style="height: auto; font-size: 0;" class="${componentType} ${currentClass.contents} ${classesBase}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
            <iframe
-           id ="orca-payment-element-iframeRef-${localSelectorString}"
-           name="orca-payment-element-iframeRef-${localSelectorString}"
+           id ="orca-${elementIframeId}-iframeRef-${localSelectorString}"
+           name="orca-${elementIframeId}-iframeRef-${localSelectorString}"
           src="${ApiEndpoint.sdkDomainUrl}/index.html?componentName=${componentType}"
           allow="payment *"
           name="orca-payment"
@@ -319,10 +334,12 @@ let make = (componentType, options, setIframeRef, iframeRef, mountPostMessage) =
         </div>`
           elem->Window.innerHTML(iframeDiv)
           setPaymentIframeRef(
-            Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`),
+            Window.querySelector(`#orca-${elementIframeId}-iframeRef-${localSelectorString}`),
           )
 
-          let elem = Window.querySelector(`#orca-payment-element-iframeRef-${localSelectorString}`)
+          let elem = Window.querySelector(
+            `#orca-${elementIframeId}-iframeRef-${localSelectorString}`,
+          )
           switch elem->Nullable.toOption {
           | Some(ele) =>
             ele->Window.style->Window.setTransition("height 0.35s ease 0s, opacity 0.4s ease 0.1s")

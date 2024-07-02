@@ -46,7 +46,15 @@ type getCustomerSavedPaymentMethods = {
   confirmWithLastUsedPaymentMethod: JSON.t => Promise.t<JSON.t>,
 }
 
-type initPaymentSession = {getCustomerSavedPaymentMethods: unit => Promise.t<JSON.t>}
+type getPaymentManagementMethods = {
+  getSavedPaymentManagementMethodsList: unit => Promise.t<JSON.t>,
+  deleteSavedPaymentMethod: JSON.t => Promise.t<JSON.t>,
+}
+
+type initPaymentSession = {
+  getCustomerSavedPaymentMethods: unit => Promise.t<JSON.t>,
+  getPaymentManagementMethods: unit => Promise.t<JSON.t>,
+}
 
 type confirmParams = {return_url: string}
 
@@ -64,6 +72,7 @@ type hyperInstance = {
   widgets: JSON.t => element,
   paymentRequest: JSON.t => JSON.t,
   initPaymentSession: JSON.t => initPaymentSession,
+  paymentMethodsManagementElements: JSON.t => element,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -124,6 +133,14 @@ let getCustomerDefaultSavedPaymentMethodData = () => {
   JSON.Encode.null
 }
 
+let getSavedPaymentManagementMethodsList = () => {
+  JSON.Encode.null
+}
+
+let deleteSavedPaymentMethod = () => {
+  JSON.Encode.null
+}
+
 let getCustomerLastUsedPaymentMethodData = () => {
   JSON.Encode.null
 }
@@ -145,8 +162,13 @@ let defaultGetCustomerSavedPaymentMethods = () => {
   Promise.resolve(JSON.Encode.null)
 }
 
+let defaultGetPaymentManagementMethods = () => {
+  Promise.resolve(JSON.Encode.null)
+}
+
 let defaultInitPaymentSession: initPaymentSession = {
   getCustomerSavedPaymentMethods: defaultGetCustomerSavedPaymentMethods,
+  getPaymentManagementMethods: defaultGetPaymentManagementMethods,
 }
 
 let defaultHyperInstance = {
@@ -158,6 +180,7 @@ let defaultHyperInstance = {
   widgets: _ev => defaultElement,
   paymentRequest: _ev => JSON.Encode.null,
   initPaymentSession: _ev => defaultInitPaymentSession,
+  paymentMethodsManagementElements: _ev => defaultElement,
 }
 
 type eventType =
@@ -193,3 +216,20 @@ type rec ele = {
 @scope("document") @val external createElement: string => ele = "createElement"
 
 @send external appendChild: (Dom.element, ele) => unit = "appendChild"
+
+type hyperComponentName = Elements | PaymentMethodsManagementElements
+
+let getStrFromHyperComponentName = hyperComponentName => {
+  switch hyperComponentName {
+  | Elements => "Elements"
+  | PaymentMethodsManagementElements => "PaymentMethodsManagementElements"
+  }
+}
+
+let getHyperComponentNameFromStr = hyperComponentName => {
+  switch hyperComponentName {
+  | "Elements" => Elements
+  | "PaymentMethodsManagementElements" => PaymentMethodsManagementElements
+  | _ => Elements
+  }
+}
