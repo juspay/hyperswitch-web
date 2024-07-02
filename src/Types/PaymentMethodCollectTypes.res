@@ -138,15 +138,15 @@ let decodeFlow = (dict, defaultPaymentMethodCollectFlow) =>
   | None => defaultPaymentMethodCollectFlow
   }
 
-let decodeLayout = (dict, defaultLayout) =>
-  switch dict->Dict.get("flow") {
-  | Some(flow) =>
-    switch flow->JSON.Decode.string {
+let decodeFormLayout = (dict, decodeFormLayout) =>
+  switch dict->Dict.get("formLayout") {
+  | Some(formLayout) =>
+    switch formLayout->JSON.Decode.string {
     | Some("journey") => Journey
     | Some("tabs") => Tabs
-    | _ => defaultLayout
+    | _ => decodeFormLayout
     }
-  | None => defaultLayout
+  | None => decodeFormLayout
   }
 
 let decodeCard = (cardType: string): option<card> =>

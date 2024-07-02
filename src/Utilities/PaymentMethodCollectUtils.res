@@ -383,7 +383,7 @@ let getPaymentMethodTypeIcon = (paymentMethodType: paymentMethodType) =>
   }
 
 // Defaults
-let defaultLayout: formLayout = Tabs
+let defaultFormLayout: formLayout = Tabs
 let defaultPaymentMethodCollectFlow: paymentMethodCollectFlow = PayoutLinkInitiate
 let defaultAmount = "0.01"
 let defaultCurrency = "EUR"
@@ -408,7 +408,7 @@ let defaultPaymentMethodCollectOptions = {
   currency: defaultCurrency,
   flow: defaultPaymentMethodCollectFlow,
   sessionExpiry: "",
-  formLayout: defaultLayout,
+  formLayout: defaultFormLayout,
 }
 let defaultOptionsLimitInTabLayout = 2
 let defaultAvailablePaymentMethods: array<paymentMethod> = []
@@ -439,7 +439,7 @@ let itemToObjMapper = (dict, logger) => {
       "currency",
       "flow",
       "sessionExpiry",
-      "layout",
+      "formLayout",
     ],
     dict,
     "options",
@@ -461,7 +461,7 @@ let itemToObjMapper = (dict, logger) => {
     currency: getString(dict, "currency", defaultCurrency),
     flow: dict->decodeFlow(defaultPaymentMethodCollectFlow),
     sessionExpiry: getString(dict, "sessionExpiry", ""),
-    formLayout: dict->decodeLayout(defaultLayout),
+    formLayout: dict->decodeFormLayout(defaultFormLayout),
   }
 }
 
