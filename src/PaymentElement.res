@@ -89,14 +89,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
         let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
 
-        let sortSavedMethodsBasedOnPriority = switch paymentOrder {
-        | [] => finalSavedPaymentMethods
-        | paymentOrder =>
+        let sortSavedMethodsBasedOnPriority =
           finalSavedPaymentMethods->PaymentUtils.sortCustomerMethodsBasedOnPriority(
             paymentOrder,
             ~displayDefaultSavedPaymentIcon,
           )
-        }
 
         setSavedMethods(_ => sortSavedMethodsBasedOnPriority)
         setLoadSavedCards(_ =>
