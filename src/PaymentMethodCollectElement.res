@@ -182,7 +182,8 @@ let make = (~integrateError, ~logger) => {
 
     switch flow {
     | PayoutLinkInitiate => {
-        let endpoint = ApiEndpoint.getApiEndPoint()
+        // let endpoint = ApiEndpoint.getApiEndPoint()
+        let endpoint = "http://localhost:8080"
         let uri = `${endpoint}/payouts/${payoutId}/confirm`
         // Create payment method
         open Promise
@@ -321,9 +322,12 @@ let make = (~integrateError, ~logger) => {
     })
     ->ignore
 
-    <div className="flex flex-col items-center justify-center leading-none">
+    <div
+      className="flex flex-col items-center justify-center self-center leading-none
+        xs:mt-auto xs:mb-auto
+        lg:ml-auto lg:mr-auto">
       <div
-        className="flex flex-col self-center items-center justify-center rounded-lg max-w-[500px]
+        className="flex flex-col items-center rounded-lg max-w-[500px]
           xs:shadow-lg">
         <div
           className="flex flex-row justify-between items-center w-full px-[40px] py-[20px] border-b border-jp-gray-300">
@@ -358,13 +362,13 @@ let make = (~integrateError, ~logger) => {
           </div>
         </div>
       </div>
-      <div className="mt-[40px]">
-        {switch secondsUntilRedirect {
-        | Some(seconds) =>
-          React.string("Redirecting in " ++ seconds->Int.toString ++ " seconds ...")
-        | None => React.null
-        }}
-      </div>
+      {switch secondsUntilRedirect {
+      | Some(seconds) =>
+        <div className="mt-[40px]">
+          {React.string("Redirecting in " ++ seconds->Int.toString ++ " seconds ...")}
+        </div>
+      | None => React.null
+      }}
     </div>
   }
 
@@ -373,7 +377,7 @@ let make = (~integrateError, ~logger) => {
   } else {
     <div
       className="flex flex-col h-screen min-w-[320px]
-        xs:justify-center lg:flex-row">
+        lg:flex-row">
       {switch flow {
       | PayoutLinkInitiate =>
         if showStatus {
