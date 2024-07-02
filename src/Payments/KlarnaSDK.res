@@ -18,6 +18,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let (complete, setComplete) = React.useState(_ => false)
 
   let setAreOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
   let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
@@ -39,6 +40,8 @@ let make = (~sessionObj: SessionsType.token) => {
   )
 
   PaymentUtils.useStatesJson(setStatesJson)
+
+  UtilityHooks.useHandlePostMessages(~complete, ~empty=!complete, ~paymentType="klarna")
 
   React.useEffect(() => {
     if (
@@ -62,16 +65,12 @@ let make = (~sessionObj: SessionsType.token) => {
               result => {
                 let result = result->JSON.Decode.bool->Option.getOr(false)
                 if result {
-                  UtilityHooks.useHandlePostMessages(
-                    ~complete=true,
-                    ~empty=false,
-                    ~paymentType="klarna",
-                  )
                   Utils.handlePostMessage([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", "paymentloader"->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
                   ])
+                  setComplete(_ => true)
                   authorize(
                     {collect_shipping_address: componentName->getIsExpressCheckoutComponent},
                     Dict.make()->JSON.Encode.object,

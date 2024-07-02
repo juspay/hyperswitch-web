@@ -35,6 +35,11 @@ let make = () => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
+  UtilityHooks.useHandlePostMessages(
+    ~complete=paypalClicked,
+    ~empty=!paypalClicked,
+    ~paymentType="paypal",
+  )
   let onPaypalClick = _ev => {
     loggerState.setLogInfo(
       ~value="Paypal Button Clicked",
@@ -48,7 +53,6 @@ let make = () => {
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
-        UtilityHooks.useHandlePostMessages(~complete=true, ~empty=true, ~paymentType="paypal")
         let (connectors, _) =
           paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
         let body = PaymentBody.paypalRedirectionBody(~connectors)
