@@ -21,7 +21,7 @@ let make = (
     }
 
     let (elementIframeWrapperDivId, elementIframeId) = if isPaymentManagementElement {
-      ("management-element", "payment-management-element")
+      ("management-element", "payment-methods-management-element")
     } else {
       ("element", "payment-element")
     }

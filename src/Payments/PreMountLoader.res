@@ -69,7 +69,7 @@ let make = (
     }
 
     let savedPaymentMethodsResponse = switch hyperComponentName {
-    | PaymentManagementElements =>
+    | PaymentMethodsManagementElements =>
       PaymentHelpers.fetchSavedPaymentMethodList(
         ~ephemeralKey,
         ~optLogger=Some(logger),

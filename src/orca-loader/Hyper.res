@@ -430,23 +430,23 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         )
       }
 
-      let paymentManagementElements = paymentManagementElementsOptions => {
+      let paymentMethodsManagementElements = paymentMethodsManagementElementsOptions => {
         open Promise
-        let paymentManagementElementsOptionsDict =
-          paymentManagementElementsOptions->JSON.Decode.object
-        paymentManagementElementsOptionsDict
+        let paymentMethodsManagementElementsOptionsDict =
+          paymentMethodsManagementElementsOptions->JSON.Decode.object
+        paymentMethodsManagementElementsOptionsDict
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
 
         let ephemeralKeyId =
-          paymentManagementElementsOptionsDict
+          paymentMethodsManagementElementsOptionsDict
           ->Option.flatMap(x => x->Dict.get("ephemeralKey"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 
-        let paymentManagementElementsOptions =
-          paymentManagementElementsOptionsDict->Option.mapOr(
-            paymentManagementElementsOptions,
+        let paymentMethodsManagementElementsOptions =
+          paymentMethodsManagementElementsOptionsDict->Option.mapOr(
+            paymentMethodsManagementElementsOptions,
             JSON.Encode.object,
           )
         ephemeralKey := ephemeralKeyId
@@ -464,8 +464,8 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         })
         ->ignore
 
-        PaymentManagementElements.make(
-          paymentManagementElementsOptions,
+        PaymentMethodsManagementElements.make(
+          paymentMethodsManagementElementsOptions,
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
@@ -627,7 +627,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         retrievePaymentIntent: retrievePaymentIntentFn,
         paymentRequest,
         initPaymentSession,
-        paymentManagementElements,
+        paymentMethodsManagementElements,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

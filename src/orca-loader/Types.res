@@ -72,7 +72,7 @@ type hyperInstance = {
   widgets: JSON.t => element,
   paymentRequest: JSON.t => JSON.t,
   initPaymentSession: JSON.t => initPaymentSession,
-  paymentManagementElements: JSON.t => element,
+  paymentMethodsManagementElements: JSON.t => element,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -180,7 +180,7 @@ let defaultHyperInstance = {
   widgets: _ev => defaultElement,
   paymentRequest: _ev => JSON.Encode.null,
   initPaymentSession: _ev => defaultInitPaymentSession,
-  paymentManagementElements: _ev => defaultElement,
+  paymentMethodsManagementElements: _ev => defaultElement,
 }
 
 type eventType =
@@ -217,19 +217,19 @@ type rec ele = {
 
 @send external appendChild: (Dom.element, ele) => unit = "appendChild"
 
-type hyperComponentName = Elements | PaymentManagementElements
+type hyperComponentName = Elements | PaymentMethodsManagementElements
 
 let getStrFromHyperComponentName = hyperComponentName => {
   switch hyperComponentName {
   | Elements => "Elements"
-  | PaymentManagementElements => "PaymentManagementElements"
+  | PaymentMethodsManagementElements => "PaymentMethodsManagementElements"
   }
 }
 
 let getHyperComponentNameFromStr = hyperComponentName => {
   switch hyperComponentName {
   | "Elements" => Elements
-  | "PaymentManagementElements" => PaymentManagementElements
+  | "PaymentMethodsManagementElements" => PaymentMethodsManagementElements
   | _ => Elements
   }
 }

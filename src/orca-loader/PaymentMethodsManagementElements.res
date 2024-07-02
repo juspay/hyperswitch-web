@@ -13,7 +13,7 @@ let make = (
   ~analyticsMetadata,
   ~customBackendUrl,
 ) => {
-  let hyperComponentName = PaymentManagementElements
+  let hyperComponentName = PaymentMethodsManagementElements
   try {
     let iframeRef = []
     let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
@@ -166,7 +166,7 @@ let make = (
         : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
-      | "paymentManagement" => ()
+      | "paymentMethodsManagement" => ()
       | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger, ())
       }
 

@@ -142,7 +142,7 @@ let make = (
             id="card-cvc"
             isFocus
           />
-        | PaymentManagement =>
+        | PaymentMethodsManagement =>
           <React.Suspense
             fallback={<RenderIf condition={showLoader}>
               <PaymentElementShimmer />

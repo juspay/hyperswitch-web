@@ -363,7 +363,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
     | ApplePayElement
     | KlarnaElement
     | ExpressCheckoutElement
-    | PaymentManagement
+    | PaymentMethodsManagement
     | NONE =>
       <Icon size=brandIconSize name="default-card" />
     }
