@@ -35,6 +35,11 @@ let make = () => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
+  UtilityHooks.useHandlePostMessages(
+    ~complete=paypalClicked,
+    ~empty=!paypalClicked,
+    ~paymentType="paypal",
+  )
   let onPaypalClick = _ev => {
     loggerState.setLogInfo(
       ~value="Paypal Button Clicked",
