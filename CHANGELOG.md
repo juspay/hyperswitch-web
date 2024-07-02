@@ -1,3 +1,10 @@
+## [0.71.10](https://github.com/juspay/hyperswitch-web/compare/v0.71.9...v0.71.10) (2024-07-02)
+
+
+### Bug Fixes
+
+* fixed the ui disparity for more payment methods text and use saved payment methods ([#466](https://github.com/juspay/hyperswitch-web/issues/466)) ([c7ca45c](https://github.com/juspay/hyperswitch-web/commit/c7ca45cb1f97aac865e9cfa146fbf92166c1f175))
+
 ## [0.71.9](https://github.com/juspay/hyperswitch-web/compare/v0.71.8...v0.71.9) (2024-07-01)
 
 
