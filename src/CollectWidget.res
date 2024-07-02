@@ -561,35 +561,42 @@ let make = (
               })
               ->React.array}
               {if availablePaymentMethodTypesOrdered->Array.length > limit {
-                <select
-                  className="relative rounded border border-solid border-jp-gray-700 px-[10px] py-[5px] cursor-pointer bg-white selected:text-[0px]">
-                  {switch selectedPaymentMethodType {
-                  | Some(selectedPaymentMethodType) =>
-                    <option value="pmt->getPaymentMethodTypeLabel" disabled={true}>
-                      {React.string(selectedPaymentMethodType->getPaymentMethodTypeLabel)}
-                    </option>
-                  | None => React.null
-                  }}
-                  {availablePaymentMethodTypesOrdered
-                  ->Array.reduceWithIndex([], (options, pmt, i) => {
-                    if i >= limit {
-                      options->Array.push(
-                        <option
-                          key={i->Int.toString}
-                          value={pmt->getPaymentMethodTypeLabel}
-                          className="flex items-center px-[10px] py-[3px] cursor-pointer hover:bg-jp-gray-50"
-                          onClick={_ => handleTabSelection(pmt)}>
-                          {pmt->getPaymentMethodTypeIcon}
-                          <div className="ml-[10px]">
-                            {React.string(pmt->getPaymentMethodTypeLabel)}
-                          </div>
-                        </option>,
-                      )
-                    }
-                    options
-                  })
-                  ->React.array}
-                </select>
+                <div className="relative">
+                  <Icon
+                    className="absolute z-10 pointer translate-x-2.5 translate-y-3.5 pointer-events-none"
+                    name="arrow-down"
+                    size=10
+                  />
+                  <select
+                    className="h-full relative rounded border border-solid border-jp-gray-700 py-[5px] cursor-pointer bg-white text-transparent w-[30px]
+                    hover:bg-jp-gray-50 focus:border-[2px]">
+                    {switch selectedPaymentMethodType {
+                    | Some(selectedPaymentMethodType) =>
+                      <option value="pmt->getPaymentMethodTypeLabel" disabled={true}>
+                        {React.string(selectedPaymentMethodType->getPaymentMethodTypeLabel)}
+                      </option>
+                    | None => React.null
+                    }}
+                    {availablePaymentMethodTypesOrdered
+                    ->Array.reduceWithIndex([], (options, pmt, i) => {
+                      if i >= limit {
+                        options->Array.push(
+                          <option
+                            key={i->Int.toString}
+                            value={pmt->getPaymentMethodTypeLabel}
+                            className="flex items-center px-[10px] py-[3px] cursor-pointer hover:bg-jp-gray-50"
+                            onClick={_ => handleTabSelection(pmt)}>
+                            <div className="ml-[10px]">
+                              {React.string(pmt->getPaymentMethodTypeLabel)}
+                            </div>
+                          </option>,
+                        )
+                      }
+                      options
+                    })
+                    ->React.array}
+                  </select>
+                </div>
               } else {
                 React.null
               }}
