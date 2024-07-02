@@ -1774,7 +1774,13 @@ let callAuthLink = (
   })
 }
 
-let callAuthExchange = (~publicToken, ~clientSecret, ~paymentMethodType, ~publishableKey) => {
+let callAuthExchange = (
+  ~publicToken,
+  ~clientSecret,
+  ~paymentMethodType,
+  ~publishableKey,
+  ~setOptionValue: (PaymentType.options => PaymentType.options) => unit,
+) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let logger = OrcaLogger.make(~source=Elements(Payment), ())
@@ -1817,7 +1823,12 @@ let callAuthExchange = (~publicToken, ~clientSecret, ~paymentMethodType, ~publis
           customerListResponse
           ->getDictFromJson
           ->PaymentType.getCustomerMethods("customerPaymentMethods")
-        Js.log2("customerPaymentMethodsVal", customerPaymentMethodsVal)
+        setOptionValue(
+          prev => {
+            ...prev,
+            customerPaymentMethods: customerPaymentMethodsVal,
+          },
+        )
         res->Fetch.Response.json
       })
       ->catch(e => {

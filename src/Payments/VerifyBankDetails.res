@@ -15,6 +15,7 @@ let make = (~paymentMethodType) => {
   open Utils
   let {publishableKey, clientSecret, iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let setOptionValue = Recoil.useSetRecoilState(RecoilAtoms.optionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
   let (showLoader, setShowLoader) = React.useState(() => false)
@@ -36,6 +37,7 @@ let make = (~paymentMethodType) => {
             ~clientSecret,
             ~paymentMethodType,
             ~publishableKey,
+            ~setOptionValue,
           )
           ->Promise.then(_ => {
             setShowFields(_ => false)

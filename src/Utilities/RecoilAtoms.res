@@ -43,7 +43,6 @@ let userPhoneNumber = Recoil.atom(
     countryCode: "",
   },
 )
-
 let isGooglePayReady = Recoil.atom("isGooglePayReady", false)
 let isApplePayReady = Recoil.atom("isApplePayReady", false)
 let userCountry = Recoil.atom("userCountry", "")
