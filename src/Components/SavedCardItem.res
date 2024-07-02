@@ -1,3 +1,32 @@
+module RenderSavedPaymentMethodItem = {
+  @react.component
+  let make = (~paymentItem: PaymentType.customerMethods, ~paymentMethodType) => {
+    switch paymentItem.paymentMethod {
+    | "card" =>
+      <div className="flex flex-col items-start">
+        <div> {React.string(paymentItem.card.nickname)} </div>
+        <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
+          <div className="tracking-widest"> {React.string(`****`)} </div>
+          <div> {React.string(paymentItem.card.last4Digits)} </div>
+        </div>
+      </div>
+    | "bank_debit" =>
+      <div className="flex flex-col items-start">
+        <div>
+          {React.string(
+            `${paymentMethodType->String.toUpperCase} ${paymentItem.paymentMethod->Utils.snakeToTitleCase}`,
+          )}
+        </div>
+        <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
+          <div className="tracking-widest"> {React.string(`****`)} </div>
+          <div> {React.string(paymentItem.bank.mask)} </div>
+        </div>
+      </div>
+    | _ => <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>
+    }
+  }
+}
+
 @react.component
 let make = (
   ~setPaymentToken,
@@ -109,15 +138,7 @@ let make = (
               <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-4">
-                  {isCard
-                    ? <div className="flex flex-col items-start">
-                        <div> {React.string(paymentItem.card.nickname)} </div>
-                        <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-                          <div className="tracking-widest"> {React.string(`****`)} </div>
-                          <div> {React.string(paymentItem.card.last4Digits)} </div>
-                        </div>
-                      </div>
-                    : <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>}
+                  <RenderSavedPaymentMethodItem paymentItem={paymentItem} paymentMethodType />
                   <RenderIf
                     condition={displayDefaultSavedPaymentIcon &&
                     paymentItem.defaultPaymentMethodSet}>

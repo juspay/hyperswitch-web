@@ -3,7 +3,6 @@ open Utils
 let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
   open RecoilAtoms
 
-  Console.log("in LoaderController")
   //<...>//
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
   let (keys, setKeys) = Recoil.useRecoilState(keys)

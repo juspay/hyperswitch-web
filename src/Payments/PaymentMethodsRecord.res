@@ -745,6 +745,7 @@ type paymentMethodTypes = {
   bank_transfers_connectors: array<string>,
   required_fields: array<required_fields>,
   surcharge_details: option<surchargeDetails>,
+  pm_auth_connector: option<string>,
 }
 
 type methods = {
@@ -788,6 +789,7 @@ let defaultPaymentMethodType = {
   bank_transfers_connectors: [],
   required_fields: [],
   surcharge_details: None,
+  pm_auth_connector: None,
 }
 
 let defaultList = {
@@ -935,6 +937,7 @@ let getPaymentMethodTypes = (dict, str) => {
         paymentMethodType === "bancontact_card",
       ),
       surcharge_details: jsonDict->getSurchargeDetails,
+      pm_auth_connector: getOptionString(jsonDict, "pm_auth_connector"),
     }
   })
 }
