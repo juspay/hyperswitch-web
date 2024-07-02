@@ -48,7 +48,7 @@ let make = () => {
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
-        UtilityHooks.useHandlePostMessages(~complete=true, ~empty=true, ~paymentType="paypal")
+        UtilityHooks.useHandlePostMessages(~complete=true, ~empty=false, ~paymentType="paypal")
         let (connectors, _) =
           paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
         let body = PaymentBody.paypalRedirectionBody(~connectors)
