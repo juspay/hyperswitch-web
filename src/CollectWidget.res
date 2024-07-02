@@ -47,6 +47,15 @@ let make = (
   let bankCityRef = React.useRef(Nullable.null)
   let countryCodeRef = React.useRef(Nullable.null)
 
+  // Init
+  React.useEffect1(() => {
+    switch formLayout {
+    | Tabs => setSelectedPaymentMethodType(_ => availablePaymentMethodTypes->Array.get(0))
+    | _ => ()
+    }
+    None
+  }, [availablePaymentMethodTypes])
+
   // Update availablePaymentMethodTypesOrdered
   React.useEffect(() => {
     setAvailablePaymentMethodTypesOrdered(_ => availablePaymentMethodTypes)
@@ -63,20 +72,17 @@ let make = (
     None
   }, [selectedPaymentMethod])
 
-  // Init
-  React.useEffect1(() => {
-    switch formLayout {
-    | Tabs => setSelectedPaymentMethodType(_ => availablePaymentMethodTypes->Array.get(0))
-    | _ => ()
-    }
-    None
-  }, [availablePaymentMethodTypes])
-
   // Helpers
   let resetForm = () => {
     setPaymentMethodData(_ => Dict.make())
     setFieldValidityDict(_ => Dict.make())
   }
+
+  // Reset form on PMT updation
+  React.useEffect(() => {
+    resetForm()
+    None
+  }, [selectedPaymentMethodType])
 
   let handleBackClick = () => {
     switch savedPMD {
@@ -86,16 +92,11 @@ let make = (
       | Some(Card(_)) => {
           setSelectedPaymentMethod(_ => None)
           setSelectedPaymentMethodType(_ => None)
-          resetForm()
         }
       | Some(_) => setSelectedPaymentMethodType(_ => None)
       | None =>
         switch selectedPaymentMethod {
-        | Some(_) => {
-            setSelectedPaymentMethod(_ => None)
-            resetForm()
-            ()
-          }
+        | Some(_) => setSelectedPaymentMethod(_ => None)
         | None => ()
         }
       }
@@ -111,72 +112,54 @@ let make = (
     setPaymentMethodData(_ => paymentMethodData->setValue(key->getPaymentMethodDataFieldKey, value))
 
   let validateAndSetPaymentMethodDataValue = (key: paymentMethodDataField, event) => {
-    let ev = ReactEvent.Form.target(event)
-    let value = ev["value"]
-    let inputType = ev["type"]
+    let value = ReactEvent.Form.target(event)["value"]
+    let inputType = ReactEvent.Form.target(event)["type"]
 
-    let (isValidChar, updatedValue) = switch value {
-    // Empty string is valid
-    | "" => (true, value)
-    // Validate in case there's a value present
-    | value => {
-        // Validate based on input's type
-        let (isValidChar, updatedValue, shouldContinue) = switch inputType {
-        | "number" | "tel" =>
-          switch key {
-          | CardExpDate => {
-              let formattedExpiry = value->formatCardExpiryNumber
-              if formattedExpiry->isExipryValid {
-                handleInputFocus(~currentRef=cardExpRef, ~destinationRef=cardHolderRef)
-              }
-              (true, formattedExpiry, false)
-            }
-          | CardNumber => {
-              let cardType = CardBrand->getPaymentMethodDataValue->getCardType
-              let formattedCardNumber = value->formatCardNumber(cardType)
-              if cardValid(formattedCardNumber->clearSpaces, cardType->getCardStringFromType) {
-                handleInputFocus(~currentRef=cardNumberRef, ~destinationRef=cardExpRef)
-              }
-              (true, formattedCardNumber, false)
-            }
-          | _ =>
-            try {
-              let value = value->Js.BigInt.fromStringExn->Js.BigInt.toString
-              (true, value, true)
-            } catch {
-            | _ => (false, value, false)
-            }
-          }
-        | "text" =>
-          let value = switch key {
-          | SepaBic
-          | SepaIban =>
-            value->String.toUpperCase
-          | _ => value
-          }
-          (true, value, true)
-        | _ => (true, value, false)
+    let (isValid, updatedValue) = switch (key, inputType, value) {
+    // Empty string is valid (no error)
+    | (_, _, "") => (true, "")
+    | (CardExpDate, "number" | "tel", _) => {
+        let formattedExpiry = formatCardExpiryNumber(value)
+        if isExipryValid(formattedExpiry) {
+          handleInputFocus(~currentRef=cardExpRef, ~destinationRef=cardHolderRef)
         }
-
-        if shouldContinue {
-          let regex = key->getPaymentMethodDataFieldCharacterPattern
-          switch regex->RegExp.exec(updatedValue) {
-          | Some(_) => (true, updatedValue)
-          | None => (false, updatedValue)
-          }
-        } else {
-          (isValidChar, updatedValue)
-        }
+        (true, formattedExpiry)
       }
+    | (CardNumber, "number" | "tel", _) => {
+        let cardType = getCardType(getPaymentMethodDataValue(CardBrand))
+        let formattedCardNumber = formatCardNumber(value, cardType)
+        if cardValid(clearSpaces(formattedCardNumber), getCardStringFromType(cardType)) {
+          handleInputFocus(~currentRef=cardNumberRef, ~destinationRef=cardExpRef)
+        }
+        (true, formattedCardNumber)
+      }
+    | (SepaBic | SepaIban, "text", _) => (true, String.toUpperCase(value))
+
+    // Default number validation
+    | (_, "number" | "tel", _) =>
+      try {
+        let bigIntValue = Js.BigInt.fromStringExn(value)
+        (true, Js.BigInt.toString(bigIntValue))
+      } catch {
+      | _ => (false, value)
+      }
+
+    // Default validation
+    | (_, _, _) =>
+      getPaymentMethodDataFieldCharacterPattern(key)
+      // valid; in case there is no pattern setup
+      ->Option.mapOr((true, value), regex =>
+        regex->RegExp.test(value) ? (true, value) : (false, value)
+      )
     }
 
-    if isValidChar {
+    if isValid {
       switch key {
       | CardNumber => {
-          CardBrand->setPaymentMethodDataValue(updatedValue->getCardBrand)
-          key->setPaymentMethodDataValue(updatedValue)
+          setPaymentMethodDataValue(CardBrand, getCardBrand(updatedValue))
+          setPaymentMethodDataValue(key, updatedValue)
         }
-      | _ => key->setPaymentMethodDataValue(updatedValue)
+      | _ => setPaymentMethodDataValue(key, updatedValue)
       }
     }
   }
@@ -202,14 +185,14 @@ let make = (
 
   // UI renders
   let renderBackButton = () => {
-    switch (selectedPaymentMethod, selectedPaymentMethodType) {
-    | (Some(_), _) =>
+    switch selectedPaymentMethod {
+    | Some(_) =>
       <button
         className="bg-jp-gray-600 rounded-full h-7 w-7 self-center mr-[20px]"
         onClick={_ => handleBackClick()}>
         {React.string("←")}
       </button>
-    | _ => React.null
+    | None => React.null
     }
   }
 
@@ -338,6 +321,11 @@ let make = (
     | SepaCountryCode => countryCodeRef
     | _ => inputRef
     }
+    let pattern =
+      field
+      ->getPaymentMethodDataFieldCharacterPattern
+      ->Option.getOr(%re("/.*/"))
+      ->Js.Re.source
     let value = field->getPaymentMethodDataValue
     let (errorString, errorStringClasses) = switch isValid {
     | Some(false) => (field->getPaymentMethodDataErrorString(value), "text-[12px] text-red-950")
@@ -361,7 +349,7 @@ let make = (
       setIsValid={updatedValidityFn => field->setFieldValidity(updatedValidityFn())}
       onBlur={_ev => field->calculateAndSetValidity}
       type_={field->getPaymentMethodDataFieldInputType}
-      pattern={field->getPaymentMethodDataFieldCharacterPattern->Js.Re.source}
+      pattern
     />
   }
 
@@ -481,7 +469,7 @@ let make = (
   }
 
   let renderJourneyScreen = () => {
-    <React.Fragment>
+    <div className="w-full">
       <div className="flex flex-row justify-start">
         <div className="flex justify-center items-center"> {renderBackButton()} </div>
         <div className="text-[20px] lg:text-[30px] font-semibold"> {renderContentHeader()} </div>
@@ -497,23 +485,21 @@ let make = (
           }
         }}
       </div>
-    </React.Fragment>
+    </div>
   }
 
   let handleTabSelection = selectedPMT => {
-    if availablePaymentMethodTypes->Array.indexOf(selectedPMT) > 0 {
-      // Insert the selected payment method at top, and
-      // concat rest of the payment method types (removing itself from the array)
-      let start = defaultOptionsLimitInTabLayout - 1
-      let remove = availablePaymentMethodTypes->Array.length - start
-      let insert =
-        [selectedPMT]->Array.concat(
-          availablePaymentMethodTypes->Array.filterWithIndex((pmt, i) =>
-            !(i < start || pmt === selectedPMT)
-          ),
-        )
-      availablePaymentMethodTypes->Array.splice(~start, ~remove, ~insert)
-      setAvailablePaymentMethodTypesOrdered(_ => availablePaymentMethodTypes)
+    if availablePaymentMethodTypes->Array.indexOf(selectedPMT) >= defaultOptionsLimitInTabLayout {
+      // Move the selected payment method at the last tab position
+      let ordList = availablePaymentMethodTypes->Array.reduceWithIndex([], (acc, pmt, i) => {
+        if i === defaultOptionsLimitInTabLayout - 1 {
+          acc->Array.push(selectedPMT)
+        } else if pmt !== selectedPMT {
+          acc->Array.push(pmt)
+        }
+        acc
+      })
+      setAvailablePaymentMethodTypesOrdered(_ => ordList)
     }
     setSelectedPaymentMethodType(_ => Some(selectedPMT))
   }

@@ -244,19 +244,19 @@ let getPaymentMethodDataFieldMaxLength = (key: paymentMethodDataField): int =>
   | _ => 32
   }
 
-let getPaymentMethodDataFieldCharacterPattern = (key: paymentMethodDataField): Js.Re.t =>
+let getPaymentMethodDataFieldCharacterPattern = (key: paymentMethodDataField): option<Js.Re.t> =>
   switch key {
-  | ACHAccountNumber => %re("/^\d{1,17}$/")
-  | ACHRoutingNumber => %re("/^\d{1,9}$/")
-  | BacsAccountNumber => %re("/^\d{1,18}$/")
-  | BacsSortCode => %re("/^\d{1,6}$/")
-  | CardHolderName => %re("/^([a-zA-Z]| ){1,32}$/")
-  | CardNumber => %re("/^\d{1,18}$/")
-  | PaypalMail => %re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/")
-  | PaypalMobNumber => %re("/^[0-9]{1,12}$/")
-  | SepaBic => %re("/^([A-Z0-9]| ){1,8}$/")
-  | SepaIban => %re("/^([A-Z0-9]| ){1,34}$/")
-  | _ => %re("/.*/")
+  | ACHAccountNumber => Some(%re("/^\d{1,17}$/"))
+  | ACHRoutingNumber => Some(%re("/^\d{1,9}$/"))
+  | BacsAccountNumber => Some(%re("/^\d{1,18}$/"))
+  | BacsSortCode => Some(%re("/^\d{1,6}$/"))
+  | CardHolderName => Some(%re("/^([a-zA-Z]| ){1,32}$/"))
+  | CardNumber => Some(%re("/^\d{1,18}$/"))
+  | PaypalMail => Some(%re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/"))
+  | PaypalMobNumber => Some(%re("/^[0-9]{1,12}$/"))
+  | SepaBic => Some(%re("/^([A-Z0-9]| ){1,8}$/"))
+  | SepaIban => Some(%re("/^([A-Z0-9]| ){1,34}$/"))
+  | _ => None
   }
 
 let getPaymentMethodDataFieldInputType = (key: paymentMethodDataField): string =>
