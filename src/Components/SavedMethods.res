@@ -296,11 +296,10 @@ let make = (
     </RenderIf>
     <RenderIf condition={!showFields}>
       <div
-        className="Label flex flex-row gap-3 items-end cursor-pointer"
+        className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
           fontSize: "14px",
           float: "left",
-          marginTop: "14px",
           fontWeight: "500",
           width: "fit-content",
           color: themeObj.colorPrimary,
