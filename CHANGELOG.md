@@ -1,3 +1,10 @@
+## [0.71.11](https://github.com/juspay/hyperswitch-web/compare/v0.71.10...v0.71.11) (2024-07-02)
+
+
+### Bug Fixes
+
+* wallets on top for saved cards flow ([#469](https://github.com/juspay/hyperswitch-web/issues/469)) ([eaaccb0](https://github.com/juspay/hyperswitch-web/commit/eaaccb09427904dda4292bf2d692edecd940a76a))
+
 ## [0.71.10](https://github.com/juspay/hyperswitch-web/compare/v0.71.9...v0.71.10) (2024-07-02)
 
 
