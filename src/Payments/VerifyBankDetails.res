@@ -1,3 +1,15 @@
+module Loader = {
+  @react.component
+  let make = () => {
+    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    <div className="w-full flex items-center justify-center">
+      <div className="w-8 h-8 animate-spin" style={color: themeObj.colorTextSecondary}>
+        <Icon size=32 name="loader" />
+      </div>
+    </div>
+  }
+}
+
 @react.component
 let make = (~paymentMethodType) => {
   open Utils
@@ -5,6 +17,7 @@ let make = (~paymentMethodType) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let (showLoader, setShowLoader) = React.useState(() => false)
 
   let pmAuthConnectorsArr =
     PmAuthConnectorUtils.findPmAuthAllPMAuthConnectors(
@@ -54,15 +67,21 @@ let make = (~paymentMethodType) => {
   }, [])
   useSubmitPaymentData(submitCallback)
 
+  let onClickHandler = () => {
+    setShowLoader(_ => true)
+    PaymentHelpers.callAuthLink(
+      ~publishableKey,
+      ~clientSecret,
+      ~iframeId,
+      ~paymentMethodType,
+      ~pmAuthConnectorsArr,
+    )
+    ->Promise.finally(_ => setShowLoader(_ => false))
+    ->ignore
+  }
+
   <button
-    onClick={_ =>
-      PaymentHelpers.callAuthLink(
-        ~publishableKey,
-        ~clientSecret,
-        ~iframeId,
-        ~paymentMethodType,
-        ~pmAuthConnectorsArr,
-      )->ignore}
+    onClick={_ => onClickHandler()}
     style={
       width: "100%",
       padding: "20px",
@@ -71,6 +90,10 @@ let make = (~paymentMethodType) => {
       borderColor: themeObj.borderColor,
       borderWidth: "2px",
     }>
-    {React.string("Verify Bank Details")}
+    {if showLoader {
+      <Loader />
+    } else {
+      {React.string("Verify Bank Details")}
+    }}
   </button>
 }

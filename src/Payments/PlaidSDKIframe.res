@@ -68,5 +68,11 @@ let make = () => {
     None
   }, (isReady, linkToken))
 
-  <div className="bg-black/40 backdrop-blur-sm" />
+  <div
+    className="PlaidIframe h-screen w-screen bg-black/40 backdrop-blur-sm m-auto"
+    style={
+      transition: "opacity .35s ease .1s,background-color 600ms linear",
+      opacity: "100",
+    }
+  />
 }
