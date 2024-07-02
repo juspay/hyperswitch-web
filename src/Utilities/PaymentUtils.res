@@ -382,11 +382,11 @@ let sortCustomerMethodsBasedOnPriority = (
   priorityArr: array<string>,
   ~displayDefaultSavedPaymentIcon=true,
 ) => {
-  switch priorityArr {
-  | [] => sortArr
-  | _ =>
-    let priorityArr = priorityArr->Array.length > 0 ? priorityArr : PaymentModeType.defaultOrder
-
+  if priorityArr->Array.length === 0 {
+    sortArr
+  } else {
+    // * Need to discuss why this is used.
+    // let priorityArr = priorityArr->Array.length > 0 ? priorityArr : PaymentModeType.defaultOrder
     let getPaymentMethod = (customerMethod: PaymentType.customerMethods) => {
       if customerMethod.paymentMethod === "card" {
         customerMethod.paymentMethod
