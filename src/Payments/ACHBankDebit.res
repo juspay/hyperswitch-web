@@ -5,6 +5,7 @@ open PaymentModeType
 @react.component
 let make = (~paymentType: CardThemeType.mode) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -35,7 +36,8 @@ let make = (~paymentType: CardThemeType.mode) => {
     [paymentMethodListValue.payment_methods],
   )
 
-  let isVerifyPMAuthConnectorConfigured = pmAuthMapper->Dict.get("ach")->Option.isSome
+  let isVerifyPMAuthConnectorConfigured =
+    displaySavedPaymentMethods && pmAuthMapper->Dict.get("ach")->Option.isSome
 
   OutsideClick.useOutsideClick(
     ~refs=ArrayOfRef([toolTipRef]),

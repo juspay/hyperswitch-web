@@ -11,6 +11,8 @@ let make = (~paymentType: CardThemeType.mode) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
 
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
+
   let (modalData, setModalData) = React.useState(_ => None)
 
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
@@ -30,7 +32,8 @@ let make = (~paymentType: CardThemeType.mode) => {
     [paymentMethodListValue.payment_methods],
   )
 
-  let isVerifyPMAuthConnectorConfigured = pmAuthMapper->Dict.get("sepa")->Option.isSome
+  let isVerifyPMAuthConnectorConfigured =
+    displaySavedPaymentMethods && pmAuthMapper->Dict.get("sepa")->Option.isSome
 
   let complete =
     email.value != "" &&
