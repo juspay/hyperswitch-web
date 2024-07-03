@@ -13,6 +13,7 @@ module Loader = {
 @react.component
 let make = (~paymentMethodType) => {
   open Utils
+  open Promise
   let {publishableKey, clientSecret, iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let setOptionValue = Recoil.useSetRecoilState(RecoilAtoms.optionAtom)
@@ -39,11 +40,12 @@ let make = (~paymentMethodType) => {
             ~publishableKey,
             ~setOptionValue,
           )
-          ->Promise.then(_ => {
+          ->then(_ => {
+            handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
             setShowFields(_ => false)
-            JSON.Encode.null->Promise.resolve
+            JSON.Encode.null->resolve
           })
-          ->Promise.catch(_ => JSON.Encode.null->Promise.resolve)
+          ->catch(_ => JSON.Encode.null->resolve)
           ->ignore
         }
       }
@@ -78,7 +80,7 @@ let make = (~paymentMethodType) => {
       ~paymentMethodType,
       ~pmAuthConnectorsArr,
     )
-    ->Promise.finally(_ => setShowLoader(_ => false))
+    ->finally(_ => setShowLoader(_ => false))
     ->ignore
   }
 

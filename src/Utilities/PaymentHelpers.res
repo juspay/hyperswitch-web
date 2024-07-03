@@ -1764,7 +1764,7 @@ let callAuthLink = (
           ("iframeId", iframeId->JSON.Encode.string),
           ("metadata", metaData),
         ])
-        res->Fetch.Response.json
+        JSON.Encode.null->resolve
       })
     }
   })
@@ -1840,7 +1840,7 @@ let callAuthExchange = (
     }
   })
   ->catch(e => {
-    Console.log2("Unable to retrieve payment_methods auth/link because of ", e)
+    Console.log2("Unable to retrieve payment_methods auth/exchange because of ", e)
     JSON.Encode.null->resolve
   })
 }

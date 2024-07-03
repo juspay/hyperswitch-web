@@ -48,12 +48,11 @@ let make = () => {
         token: linkToken,
         onSuccess: (publicToken, _) => {
           handlePostMessage([
-            ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
             ("publicToken", publicToken->JSON.Encode.string),
           ])
         },
-        onExit: json => {
+        onExit: _ => {
           handlePostMessage([
             ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
