@@ -12,19 +12,21 @@ let make = () => {
     stateMetadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "Y"->JSON.Encode.string)
     let metadataDict = stateMetadata->JSON.Decode.object->Option.getOr(Dict.make())
     let iframeId = metadataDict->getString("iframeId", "")
-    LoggerUtils.handleLogging(
-      ~optLogger=Some(logger),
-      ~eventName=THREE_DS_METHOD_RESULT,
-      ~value="Y",
-      ~paymentMethod="CARD",
-      (),
-    )
-    handlePostMessage([
-      ("fullscreen", true->JSON.Encode.bool),
-      ("param", `3dsAuth`->JSON.Encode.string),
-      ("iframeId", iframeId->JSON.Encode.string),
-      ("metadata", stateMetadata),
-    ])
+    if iframeId->String.length > 0 {
+      LoggerUtils.handleLogging(
+        ~optLogger=Some(logger),
+        ~eventName=THREE_DS_METHOD_RESULT,
+        ~value="Y",
+        ~paymentMethod="CARD",
+        (),
+      )
+      handlePostMessage([
+        ("fullscreen", true->JSON.Encode.bool),
+        ("param", `3dsAuth`->JSON.Encode.string),
+        ("iframeId", iframeId->JSON.Encode.string),
+        ("metadata", stateMetadata),
+      ])
+    }
   }
 
   observer.current = Some(
@@ -40,6 +42,17 @@ let make = () => {
   switch (divRef.current->Nullable.toOption, observer.current) {
   | (Some(ref), Some(observer)) => observer.observe(ref)
   | _ => ()
+  }
+
+  let handleOnLoad = _ => {
+    setTimeout(() => {
+      logger.setLogError(
+        ~value="ThreeDS Method Opened for more than 20 seconds",
+        ~eventName=THREE_DS_METHOD_RESULT,
+        ~logType=DEBUG,
+        (),
+      )
+    }, 20000)->ignore
   }
 
   React.useEffect0(() => {
@@ -130,6 +143,7 @@ let make = () => {
       name="threeDsInvisibleIframe"
       className="h-96 invisible"
       ref={divRef->ReactDOM.Ref.domRef}
+      onLoad={handleOnLoad}
     />
   </>
 }
