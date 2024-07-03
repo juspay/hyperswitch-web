@@ -59,6 +59,7 @@ let defaultConfig = {
   locale: "auto",
   fonts: [],
   clientSecret: "",
+  ephemeralKey: "",
   loader: Auto,
 }
 type recoilConfig = {
@@ -382,7 +383,7 @@ let itemToObjMapper = (
   logger,
 ) => {
   unknownKeysWarning(
-    ["appearance", "fonts", "locale", "clientSecret", "loader"],
+    ["appearance", "fonts", "locale", "clientSecret", "loader", "ephemeralKey"],
     dict,
     "elements",
     ~logger,
@@ -392,6 +393,7 @@ let itemToObjMapper = (
     locale: getWarningString(dict, "locale", "auto", ~logger),
     fonts: getFonts("fonts", dict, logger),
     clientSecret: getWarningString(dict, "clientSecret", "", ~logger),
+    ephemeralKey: getWarningString(dict, "ephemeralKey", "", ~logger),
     loader: getWarningString(dict, "loader", "auto", ~logger)->getShowLoader(logger),
   }
 }

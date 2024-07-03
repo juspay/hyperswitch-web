@@ -45,15 +45,6 @@ let make = (
 
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
-  let getWalletBrandIcon = (obj: PaymentType.customerMethods) => {
-    switch obj.paymentMethodType {
-    | Some("apple_pay") => <Icon size=brandIconSize name="apple_pay_saved" />
-    | Some("google_pay") => <Icon size=brandIconSize name="google_pay_saved" />
-    | Some("paypal") => <Icon size=brandIconSize name="paypal" />
-    | _ => <Icon size=brandIconSize name="default-card" />
-    }
-  }
-
   let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
     ~displaySavedPaymentMethodsCheckbox,
     ~isSaveCardsChecked,
@@ -63,18 +54,7 @@ let make = (
   let bottomElement = {
     savedMethods
     ->Array.mapWithIndex((obj, i) => {
-      let brandIcon = switch obj.paymentMethod {
-      | "wallet" => getWalletBrandIcon(obj)
-      | "bank_debit" => <Icon size=brandIconSize name="bank" />
-      | _ =>
-        getCardBrandIcon(
-          switch obj.card.scheme {
-          | Some(ele) => ele
-          | None => ""
-          }->getCardType,
-          ""->CardThemeType.getPaymentMode,
-        )
-      }
+      let brandIcon = obj->getPaymentMethodBrand
       let isActive = paymentTokenVal == obj.paymentToken
       <SavedCardItem
         key={i->Int.toString}
@@ -266,14 +246,7 @@ let make = (
           fontWeight: "400",
           marginTop: "25px",
         }>
-        <PaymentElementShimmer.Shimmer>
-          <div className="animate-pulse w-full h-12 rounded bg-slate-200">
-            <div className="flex flex-row my-auto">
-              <div className="w-10 h-5 rounded-full m-3 bg-white bg-opacity-70" />
-              <div className="my-auto w-24 h-2 rounded m-3 bg-white bg-opacity-70" />
-            </div>
-          </div>
-        </PaymentElementShimmer.Shimmer>
+        <PaymentElementShimmer.SavedPaymentShimmer />
       </div>
     } else {
       <RenderIf condition={!showFields}> {bottomElement} </RenderIf>

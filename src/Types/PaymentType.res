@@ -152,6 +152,7 @@ type options = {
   layout: layoutType,
   business: business,
   customerPaymentMethods: savedCardsLoadState,
+  savedPaymentMethods: savedCardsLoadState,
   paymentMethodOrder: option<array<string>>,
   displaySavedPaymentMethodsCheckbox: bool,
   displaySavedPaymentMethods: bool,
@@ -289,6 +290,7 @@ let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
   customerPaymentMethods: LoadingSavedCards,
+  savedPaymentMethods: LoadingSavedCards,
   layout: ObjectLayout(defaultLayout),
   paymentMethodOrder: None,
   fields: defaultFields,
@@ -889,10 +891,10 @@ let itemToCustomerObjMapper = customerDict => {
   (customerPaymentMethods, isGuestCustomer)
 }
 
-let createCustomerObjArr = dict => {
+let createCustomerObjArr = (dict, key) => {
   let customerDict =
     dict
-    ->Dict.get("customerPaymentMethods")
+    ->Dict.get(key)
     ->Option.flatMap(JSON.Decode.object)
     ->Option.getOr(Dict.make())
   let (customerPaymentMethods, isGuestCustomer) = customerDict->itemToCustomerObjMapper
@@ -1013,6 +1015,7 @@ let itemToObjMapper = (dict, logger) => {
     business: getBusiness(dict, "business", logger),
     layout: getLayout(dict, "layout", logger),
     customerPaymentMethods: getCustomerMethods(dict, "customerPaymentMethods"),
+    savedPaymentMethods: getCustomerMethods(dict, "customerPaymentMethods"),
     paymentMethodOrder: getOptionalStrArray(dict, "paymentMethodOrder"),
     fields: getFields(dict, "fields", logger),
     branding: getWarningString(dict, "branding", "auto", ~logger)->getShowType(
