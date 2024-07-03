@@ -1820,7 +1820,8 @@ let callAuthExchange = (
         ~endpoint,
       )
       ->then(customerListResponse => {
-        let customerListResponse = customerListResponse->getDictFromJson
+        let customerListResponse =
+          [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
         setOptionValue(
           prev => {
             ...prev,
