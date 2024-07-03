@@ -1,3 +1,10 @@
+# [0.72.0](https://github.com/juspay/hyperswitch-web/compare/v0.71.11...v0.72.0) (2024-07-03)
+
+
+### Features
+
+* pm auth connector integration - Plaid ([#461](https://github.com/juspay/hyperswitch-web/issues/461)) ([222b322](https://github.com/juspay/hyperswitch-web/commit/222b3227d7bf6f555fe8016975348d050162d91a))
+
 ## [0.71.11](https://github.com/juspay/hyperswitch-web/compare/v0.71.10...v0.71.11) (2024-07-02)
 
 
