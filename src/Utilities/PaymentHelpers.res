@@ -1820,37 +1820,11 @@ let callAuthExchange = (
         ~endpoint,
       )
       ->then(customerListResponse => {
-        let isGuestCustomer =
-          customerListResponse
-          ->getDictFromJson
-          ->getBool("is_guest_customer", false)
-
-        let customerPaymentMethodsVal =
-          customerListResponse
-          ->getDictFromJson
-          ->getArray("customer_payment_methods")
-          ->Belt.Array.keepMap(JSON.Decode.object)
-          ->Array.map(
-            dict => {
-              {
-                paymentToken: getString(dict, "payment_token", ""),
-                customerId: getString(dict, "customer_id", ""),
-                paymentMethod: getString(dict, "payment_method", ""),
-                paymentMethodId: getString(dict, "payment_method_id", ""),
-                paymentMethodIssuer: getOptionString(dict, "payment_method_issuer"),
-                card: getCardDetails(dict, "card"),
-                paymentMethodType: getPaymentMethodType(dict),
-                defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
-                requiresCvv: getBool(dict, "requires_cvv", true),
-                lastUsedAt: getString(dict, "last_used_at", ""),
-                bank: dict->getBank,
-              }
-            },
-          )
+        let customerListResponse = customerListResponse->getDictFromJson
         setOptionValue(
           prev => {
             ...prev,
-            customerPaymentMethods: LoadedSavedCards(customerPaymentMethodsVal, isGuestCustomer),
+            customerPaymentMethods: createCustomerObjArr(customerListResponse),
           },
         )
         JSON.Encode.null->resolve
