@@ -863,17 +863,9 @@ let getBank = dict => {
 }
 
 let itemToCustomerObjMapper = customerDict => {
-  let customerArr =
-    customerDict
-    ->Dict.get("customer_payment_methods")
-    ->Option.flatMap(JSON.Decode.array)
-    ->Option.getOr([])
+  let customerArr = customerDict->getArray("customer_payment_methods")
 
-  let isGuestCustomer =
-    customerDict
-    ->Dict.get("is_guest_customer")
-    ->Option.flatMap(JSON.Decode.bool)
-    ->Option.getOr(false)
+  let isGuestCustomer = customerDict->getBool("is_guest_customer", false)
 
   let customerPaymentMethods =
     customerArr

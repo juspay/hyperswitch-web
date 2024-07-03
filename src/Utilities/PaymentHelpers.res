@@ -1782,6 +1782,7 @@ let callAuthExchange = (
   ~setOptionValue: (PaymentType.options => PaymentType.options) => unit,
 ) => {
   open Promise
+  open PaymentType
   let endpoint = ApiEndpoint.getApiEndPoint()
   let logger = OrcaLogger.make(~source=Elements(Payment), ())
   let uri = `${endpoint}/payment_methods/auth/exchange`
@@ -1819,17 +1820,40 @@ let callAuthExchange = (
         ~endpoint,
       )
       ->then(customerListResponse => {
+        let isGuestCustomer =
+          customerListResponse
+          ->getDictFromJson
+          ->getBool("is_guest_customer", false)
+
         let customerPaymentMethodsVal =
           customerListResponse
           ->getDictFromJson
-          ->PaymentType.getCustomerMethods("customer_payment_methods")
+          ->getArray("customer_payment_methods")
+          ->Belt.Array.keepMap(JSON.Decode.object)
+          ->Array.map(
+            dict => {
+              {
+                paymentToken: getString(dict, "payment_token", ""),
+                customerId: getString(dict, "customer_id", ""),
+                paymentMethod: getString(dict, "payment_method", ""),
+                paymentMethodId: getString(dict, "payment_method_id", ""),
+                paymentMethodIssuer: getOptionString(dict, "payment_method_issuer"),
+                card: getCardDetails(dict, "card"),
+                paymentMethodType: getPaymentMethodType(dict),
+                defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
+                requiresCvv: getBool(dict, "requires_cvv", true),
+                lastUsedAt: getString(dict, "last_used_at", ""),
+                bank: dict->getBank,
+              }
+            },
+          )
         setOptionValue(
           prev => {
             ...prev,
-            customerPaymentMethods: customerPaymentMethodsVal,
+            customerPaymentMethods: LoadedSavedCards(customerPaymentMethodsVal, isGuestCustomer),
           },
         )
-        res->Fetch.Response.json
+        JSON.Encode.null->resolve
       })
       ->catch(e => {
         Console.log2(
