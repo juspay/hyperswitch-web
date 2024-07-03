@@ -56,6 +56,7 @@ let make = () => {
           handlePostMessage([
             ("fullscreen", false->JSON.Encode.bool),
             ("isPlaid", true->JSON.Encode.bool),
+            ("isExited", true->JSON.Encode.bool),
             ("publicToken", ""->JSON.Encode.string),
           ])
         },

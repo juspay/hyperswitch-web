@@ -32,6 +32,8 @@ let make = (~paymentMethodType) => {
       let dict = json->Utils.getDictFromJson
       if dict->getBool("isPlaid", false) {
         let publicToken = dict->getDictFromDict("data")->getString("publicToken", "")
+        let isExited = dict->getDictFromDict("data")->getBool("isExited", false)
+        setShowLoader(_ => !isExited)
         if publicToken->String.length > 0 {
           PaymentHelpers.callAuthExchange(
             ~publicToken,
@@ -79,9 +81,7 @@ let make = (~paymentMethodType) => {
       ~iframeId,
       ~paymentMethodType,
       ~pmAuthConnectorsArr,
-    )
-    ->finally(_ => setShowLoader(_ => false))
-    ->ignore
+    )->ignore
   }
 
   <button
