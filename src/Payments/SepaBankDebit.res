@@ -96,7 +96,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   useSubmitPaymentData(submitCallback)
   <>
     <RenderIf condition={isVerifyPMAuthConnectorConfigured}>
-      <VerifyBankDetails paymentMethodType="sepa" />
+      <AddBankDetails paymentMethodType="sepa" />
     </RenderIf>
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div

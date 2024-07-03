@@ -67,7 +67,7 @@ let make = (~paymentMethodType) => {
     if confirm.doSubmit {
       postFailedSubmitResponse(
         ~errortype="validation_error",
-        ~message="Payment cannot be performed. Please go to saved PM Screen to update your payment method.",
+        ~message="Please add Bank Details and then confirm payment with the added payment methods.",
       )
     }
   }, [])
@@ -98,7 +98,7 @@ let make = (~paymentMethodType) => {
     {if showLoader {
       <Loader />
     } else {
-      {React.string("Verify Bank Details")}
+      {React.string("Add Bank Details")}
     }}
   </button>
 }

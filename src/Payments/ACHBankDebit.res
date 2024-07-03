@@ -106,7 +106,7 @@ let make = (~paymentType: CardThemeType.mode) => {
 
   <>
     <RenderIf condition={isVerifyPMAuthConnectorConfigured}>
-      <VerifyBankDetails paymentMethodType="ach" />
+      <AddBankDetails paymentMethodType="ach" />
     </RenderIf>
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
