@@ -1822,7 +1822,7 @@ let callAuthExchange = (
         let customerPaymentMethodsVal =
           customerListResponse
           ->getDictFromJson
-          ->PaymentType.getCustomerMethods("customerPaymentMethods")
+          ->PaymentType.getCustomerMethods("customer_payment_methods")
         setOptionValue(
           prev => {
             ...prev,
