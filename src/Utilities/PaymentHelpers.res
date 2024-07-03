@@ -1782,6 +1782,7 @@ let callAuthExchange = (
   ~setOptionValue: (PaymentType.options => PaymentType.options) => unit,
 ) => {
   open Promise
+  open PaymentType
   let endpoint = ApiEndpoint.getApiEndPoint()
   let logger = OrcaLogger.make(~source=Elements(Payment), ())
   let uri = `${endpoint}/payment_methods/auth/exchange`
@@ -1819,17 +1820,15 @@ let callAuthExchange = (
         ~endpoint,
       )
       ->then(customerListResponse => {
-        let customerPaymentMethodsVal =
-          customerListResponse
-          ->getDictFromJson
-          ->PaymentType.getCustomerMethods("customer_payment_methods")
+        let customerListResponse =
+          [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
         setOptionValue(
           prev => {
             ...prev,
-            customerPaymentMethods: customerPaymentMethodsVal,
+            customerPaymentMethods: createCustomerObjArr(customerListResponse),
           },
         )
-        res->Fetch.Response.json
+        JSON.Encode.null->resolve
       })
       ->catch(e => {
         Console.log2(
