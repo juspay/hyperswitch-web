@@ -86,6 +86,7 @@ let make = (~paymentMethodType) => {
 
   <button
     onClick={_ => onClickHandler()}
+    disabled={showLoader}
     style={
       width: "100%",
       padding: "20px",
