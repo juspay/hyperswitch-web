@@ -1,3 +1,10 @@
+## [0.72.1](https://github.com/juspay/hyperswitch-web/compare/v0.72.0...v0.72.1) (2024-07-03)
+
+
+### Bug Fixes
+
+* fixed netcetra 3ds not opening and added fallback log ([#470](https://github.com/juspay/hyperswitch-web/issues/470)) ([c686b1b](https://github.com/juspay/hyperswitch-web/commit/c686b1b3588b3128aab63de470bb55633154bd95))
+
 # [0.72.0](https://github.com/juspay/hyperswitch-web/compare/v0.71.11...v0.72.0) (2024-07-03)
 
 
