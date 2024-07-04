@@ -626,6 +626,8 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     | SESSIONS_CALL
     | PAYMENT_METHODS_CALL
     | CUSTOMER_PAYMENT_METHODS_CALL
+    | PAYMENT_METHODS_AUTH_EXCHANGE_CALL
+    | PAYMENT_METHODS_AUTH_LINK_CALL
     | CREATE_CUSTOMER_PAYMENT_METHODS_CALL => {
         let logRequestTimestamp =
           events.contents->Dict.get(eventName->eventNameToStrMapper ++ "_INIT")
