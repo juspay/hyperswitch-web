@@ -8,7 +8,7 @@ const sdkEnv = process.env.sdkEnv ?? "local";
 const endpointMap = {
   prod: "https://api.hyperswitch.io/payments",
   sandbox: "https://sandbox.hyperswitch.io/payments",
-  integ: "https://integ-api.hyperswitch.io/payments",
+  integ: "https://integ.hyperswitch.io/api/payments",
   local: "https://sandbox.hyperswitch.io/payments", // Default or local environment endpoint
 };
 
