@@ -1,3 +1,10 @@
+## [0.72.3](https://github.com/juspay/hyperswitch-web/compare/v0.72.2...v0.72.3) (2024-07-04)
+
+
+### Bug Fixes
+
+* payment data filled event logs for few payment methods ([#467](https://github.com/juspay/hyperswitch-web/issues/467)) ([c1610d5](https://github.com/juspay/hyperswitch-web/commit/c1610d59fc4abc4bbce4d98bef7fb8c0ac8625a5))
+
 ## [0.72.2](https://github.com/juspay/hyperswitch-web/compare/v0.72.1...v0.72.2) (2024-07-04)
 
 
