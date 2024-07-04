@@ -1720,6 +1720,7 @@ let callAuthLink = (
   ~paymentMethodType,
   ~pmAuthConnectorsArr,
   ~iframeId,
+  ~optLogger,
 ) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
@@ -1745,7 +1746,18 @@ let callAuthLink = (
     if statusCode->String.charAt(0) !== "2" {
       res
       ->Fetch.Response.json
-      ->then(_ => {
+      ->then(data => {
+        logApi(
+          ~optLogger,
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=PAYMENT_METHODS_AUTH_LINK,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
         JSON.Encode.null->resolve
       })
     } else {
@@ -1756,6 +1768,8 @@ let callAuthLink = (
           [
             ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
             ("pmAuthConnectorArray", pmAuthConnectorsArr->Identity.anyTypeToJson),
+            ("payment_id", clientSecret->Option.getOr("")->getPaymentId->JSON.Encode.string),
+            ("publishableKey", publishableKey->JSON.Encode.string),
           ]->getJsonFromArrayOfJson
 
         handlePostMessage([
@@ -1764,11 +1778,31 @@ let callAuthLink = (
           ("iframeId", iframeId->JSON.Encode.string),
           ("metadata", metaData),
         ])
+        logApi(
+          ~optLogger,
+          ~url=uri,
+          ~statusCode,
+          ~apiLogType=Response,
+          ~eventName=PAYMENT_METHODS_AUTH_LINK,
+          ~logType=INFO,
+          ~logCategory=API,
+          (),
+        )
         JSON.Encode.null->resolve
       })
     }
   })
   ->catch(e => {
+    logApi(
+      ~optLogger,
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=PAYMENT_METHODS_AUTH_LINK,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data={e->formatException},
+      (),
+    )
     Console.log2("Unable to retrieve payment_methods auth/link because of ", e)
     JSON.Encode.null->resolve
   })
@@ -1780,6 +1814,7 @@ let callAuthExchange = (
   ~paymentMethodType,
   ~publishableKey,
   ~setOptionValue: (PaymentType.options => PaymentType.options) => unit,
+  ~optLogger,
 ) => {
   open Promise
   open PaymentType
@@ -1808,10 +1843,31 @@ let callAuthExchange = (
     if statusCode->String.charAt(0) !== "2" {
       res
       ->Fetch.Response.json
-      ->then(_ => {
+      ->then(data => {
+        logApi(
+          ~optLogger,
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
         JSON.Encode.null->resolve
       })
     } else {
+      logApi(
+        ~optLogger,
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE,
+        ~logType=INFO,
+        ~logCategory=API,
+        (),
+      )
       fetchCustomerPaymentMethodList(
         ~clientSecret=clientSecret->Option.getOr(""),
         ~publishableKey,
@@ -1831,6 +1887,16 @@ let callAuthExchange = (
         JSON.Encode.null->resolve
       })
       ->catch(e => {
+        logApi(
+          ~optLogger,
+          ~url=uri,
+          ~apiLogType=NoResponse,
+          ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          ~data={e->formatException},
+          (),
+        )
         Console.log2(
           "Unable to retrieve customer/payment_methods after auth/exchange because of ",
           e,
@@ -1840,6 +1906,16 @@ let callAuthExchange = (
     }
   })
   ->catch(e => {
+    logApi(
+      ~optLogger,
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data={e->formatException},
+      (),
+    )
     Console.log2("Unable to retrieve payment_methods auth/exchange because of ", e)
     JSON.Encode.null->resolve
   })

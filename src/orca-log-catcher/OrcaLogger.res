@@ -72,6 +72,9 @@ type eventName =
   | POLL_STATUS_CALL
   | COMPLETE_AUTHORIZE_CALL_INIT
   | COMPLETE_AUTHORIZE_CALL
+  | PLAID_SDK_LOADED
+  | PAYMENT_METHODS_AUTH_EXCHANGE
+  | PAYMENT_METHODS_AUTH_LINK
 
 let eventNameToStrMapper = eventName => {
   switch eventName {
@@ -144,6 +147,9 @@ let eventNameToStrMapper = eventName => {
   | POLL_STATUS_CALL => "POLL_STATUS_CALL"
   | COMPLETE_AUTHORIZE_CALL_INIT => "COMPLETE_AUTHORIZE_CALL_INIT"
   | COMPLETE_AUTHORIZE_CALL => "COMPLETE_AUTHORIZE_CALL"
+  | PLAID_SDK_LOADED => "PLAID_SDK_LOADED"
+  | PAYMENT_METHODS_AUTH_EXCHANGE => "PAYMENT_METHODS_AUTH_EXCHANGE"
+  | PAYMENT_METHODS_AUTH_LINK => "PAYMENT_METHODS_AUTH_LINK"
   }
 }
 
@@ -576,6 +582,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       RETRIEVE_CALL,
       DISPLAY_THREE_DS_SDK,
       APPLE_PAY_FLOW,
+      PLAID_SDK_LOADED,
     ]
     arrayOfLogs
     ->Array.find(log => {

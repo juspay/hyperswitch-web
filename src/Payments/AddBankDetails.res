@@ -20,6 +20,7 @@ let make = (~paymentMethodType) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
   let (showLoader, setShowLoader) = React.useState(() => false)
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let pmAuthConnectorsArr =
     PmAuthConnectorUtils.findPmAuthAllPMAuthConnectors(
@@ -41,6 +42,7 @@ let make = (~paymentMethodType) => {
             ~paymentMethodType,
             ~publishableKey,
             ~setOptionValue,
+            ~optLogger=Some(logger),
           )
           ->then(_ => {
             handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
@@ -81,6 +83,7 @@ let make = (~paymentMethodType) => {
       ~iframeId,
       ~paymentMethodType,
       ~pmAuthConnectorsArr,
+      ~optLogger=Some(logger),
     )->ignore
   }
 
