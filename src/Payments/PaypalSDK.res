@@ -8,7 +8,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(RecoilAtoms.loggerAtom)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let (complete, setComplete) = React.useState(_ => false)
+  let (isCompleted, setIsCompleted) = React.useState(_ => false)
 
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
@@ -52,7 +52,11 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   )
 
   PaymentUtils.useStatesJson(setStatesJson)
-  UtilityHooks.useHandlePostMessages(~complete, ~empty=!complete, ~paymentType="paypal")
+  UtilityHooks.useHandlePostMessages(
+    ~complete=isCompleted,
+    ~empty=!isCompleted,
+    ~paymentType="paypal",
+  )
 
   let mountPaypalSDK = () => {
     let clientId = sessionObj.token
@@ -86,7 +90,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
         ~completeAuthorize,
         ~handleCloseLoader,
         ~areOneClickWalletsRendered,
-        ~setComplete,
+        ~setIsCompleted,
       )
     })
     Window.body->Window.appendChild(paypalScript)

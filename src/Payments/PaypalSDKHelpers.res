@@ -19,7 +19,7 @@ let loadPaypalSDK = (
   ~areOneClickWalletsRendered: (
     RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
   ) => unit,
-  ~setComplete,
+  ~setIsCompleted,
 ) => {
   loggerState.setLogInfo(
     ~value="Paypal SDK Button Clicked",
@@ -33,7 +33,7 @@ let loadPaypalSDK = (
     if result {
       let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
       paypalWrapper.innerHTML = ""
-      setComplete(_ => true)
+      setIsCompleted(_ => true)
       paypal["Buttons"]({
         style: buttonStyle,
         fundingSource: paypal["FUNDING"]["PAYPAL"],
