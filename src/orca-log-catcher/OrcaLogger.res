@@ -613,7 +613,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
         let appRenderedTimestamp = events.contents->Dict.get(APP_RENDERED->eventNameToStrMapper)
         switch appRenderedTimestamp {
         | Some(float) => currentTimestamp -. float
-        | _ => -1.
+        | _ => 0.
         }
       }
     | AUTHENTICATION_CALL
