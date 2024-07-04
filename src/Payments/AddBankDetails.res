@@ -116,7 +116,7 @@ let make = (~paymentMethodType) => {
         </li>
         <li>
           {React.string(
-            "Post verification, you will see your account added. You can select the account that you want to pay with and click on the pay button.",
+            "Post verification, you will see your account(s) added. You can select the account that you want to pay with and click on the pay button.",
           )}
         </li>
       </ul>

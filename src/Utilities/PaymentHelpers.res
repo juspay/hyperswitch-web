@@ -1727,6 +1727,16 @@ let callAuthLink = (
   let uri = `${endpoint}/payment_methods/auth/link`
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
 
+  logApi(
+    ~optLogger,
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+
   fetchApi(
     uri,
     ~method=#POST,
@@ -1753,7 +1763,7 @@ let callAuthLink = (
           ~data,
           ~statusCode,
           ~apiLogType=Err,
-          ~eventName=PAYMENT_METHODS_AUTH_LINK,
+          ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
           ~logType=ERROR,
           ~logCategory=API,
           (),
@@ -1783,7 +1793,7 @@ let callAuthLink = (
           ~url=uri,
           ~statusCode,
           ~apiLogType=Response,
-          ~eventName=PAYMENT_METHODS_AUTH_LINK,
+          ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
           ~logType=INFO,
           ~logCategory=API,
           (),
@@ -1797,7 +1807,7 @@ let callAuthLink = (
       ~optLogger,
       ~url=uri,
       ~apiLogType=NoResponse,
-      ~eventName=PAYMENT_METHODS_AUTH_LINK,
+      ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
       ~logType=ERROR,
       ~logCategory=API,
       ~data={e->formatException},
@@ -1831,6 +1841,16 @@ let callAuthExchange = (
 
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
 
+  logApi(
+    ~optLogger,
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+
   fetchApi(
     uri,
     ~method=#POST,
@@ -1850,7 +1870,7 @@ let callAuthExchange = (
           ~data,
           ~statusCode,
           ~apiLogType=Err,
-          ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE,
+          ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
           ~logType=ERROR,
           ~logCategory=API,
           (),
@@ -1863,7 +1883,7 @@ let callAuthExchange = (
         ~url=uri,
         ~statusCode,
         ~apiLogType=Response,
-        ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE,
+        ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
         ~logType=INFO,
         ~logCategory=API,
         (),
@@ -1887,16 +1907,6 @@ let callAuthExchange = (
         JSON.Encode.null->resolve
       })
       ->catch(e => {
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~apiLogType=NoResponse,
-          ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-          ~data={e->formatException},
-          (),
-        )
         Console.log2(
           "Unable to retrieve customer/payment_methods after auth/exchange because of ",
           e,
@@ -1910,7 +1920,7 @@ let callAuthExchange = (
       ~optLogger,
       ~url=uri,
       ~apiLogType=NoResponse,
-      ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE,
+      ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
       ~logType=ERROR,
       ~logCategory=API,
       ~data={e->formatException},
