@@ -72,6 +72,11 @@ type eventName =
   | POLL_STATUS_CALL
   | COMPLETE_AUTHORIZE_CALL_INIT
   | COMPLETE_AUTHORIZE_CALL
+  | PLAID_SDK
+  | PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT
+  | PAYMENT_METHODS_AUTH_EXCHANGE_CALL
+  | PAYMENT_METHODS_AUTH_LINK_CALL_INIT
+  | PAYMENT_METHODS_AUTH_LINK_CALL
 
 let eventNameToStrMapper = eventName => {
   switch eventName {
@@ -144,6 +149,11 @@ let eventNameToStrMapper = eventName => {
   | POLL_STATUS_CALL => "POLL_STATUS_CALL"
   | COMPLETE_AUTHORIZE_CALL_INIT => "COMPLETE_AUTHORIZE_CALL_INIT"
   | COMPLETE_AUTHORIZE_CALL => "COMPLETE_AUTHORIZE_CALL"
+  | PLAID_SDK => "PLAID_SDK"
+  | PAYMENT_METHODS_AUTH_EXCHANGE_CALL => "PAYMENT_METHODS_AUTH_EXCHANGE_CALL"
+  | PAYMENT_METHODS_AUTH_LINK_CALL => "PAYMENT_METHODS_AUTH_LINK_CALL"
+  | PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT => "PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT"
+  | PAYMENT_METHODS_AUTH_LINK_CALL_INIT => "PAYMENT_METHODS_AUTH_LINK_CALL_INIT"
   }
 }
 
@@ -576,6 +586,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       RETRIEVE_CALL,
       DISPLAY_THREE_DS_SDK,
       APPLE_PAY_FLOW,
+      PLAID_SDK,
     ]
     arrayOfLogs
     ->Array.find(log => {
@@ -606,7 +617,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
         let appRenderedTimestamp = events.contents->Dict.get(APP_RENDERED->eventNameToStrMapper)
         switch appRenderedTimestamp {
         | Some(float) => currentTimestamp -. float
-        | _ => -1.
+        | _ => 0.
         }
       }
     | AUTHENTICATION_CALL
@@ -615,6 +626,8 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     | SESSIONS_CALL
     | PAYMENT_METHODS_CALL
     | CUSTOMER_PAYMENT_METHODS_CALL
+    | PAYMENT_METHODS_AUTH_EXCHANGE_CALL
+    | PAYMENT_METHODS_AUTH_LINK_CALL
     | CREATE_CUSTOMER_PAYMENT_METHODS_CALL => {
         let logRequestTimestamp =
           events.contents->Dict.get(eventName->eventNameToStrMapper ++ "_INIT")

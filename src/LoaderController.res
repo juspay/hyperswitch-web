@@ -148,7 +148,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | x => x
     }
     let finalLoadLatency = if launchTime <= 0.0 {
-      -1.0
+      0.0
     } else {
       Date.now() -. launchTime
     }
@@ -389,7 +389,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
           }
           let finalLoadLatency = if launchTime <= 0.0 {
-            -1.0
+            0.0
           } else {
             Date.now() -. launchTime
           }
@@ -452,7 +452,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             customerPaymentMethods,
           })
           let finalLoadLatency = if launchTime <= 0.0 {
-            -1.0
+            0.0
           } else {
             Date.now() -. launchTime
           }
