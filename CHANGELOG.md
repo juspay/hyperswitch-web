@@ -1,3 +1,10 @@
+## [0.72.6](https://github.com/juspay/hyperswitch-web/compare/v0.72.5...v0.72.6) (2024-07-04)
+
+
+### Bug Fixes
+
+* integ api change ([#474](https://github.com/juspay/hyperswitch-web/issues/474)) ([7636470](https://github.com/juspay/hyperswitch-web/commit/76364705d4ecc4eabd8e52a699697e1fd4872eae))
+
 ## [0.72.5](https://github.com/juspay/hyperswitch-web/compare/v0.72.4...v0.72.5) (2024-07-04)
 
 
