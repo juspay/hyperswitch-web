@@ -8,7 +8,12 @@ let make = () => {
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
   let (paymentId, setPaymentId) = React.useState(_ => "")
   let logger = React.useMemo(() => {
-    OrcaLogger.make(~source=Loader, ~clientSecret=paymentId, ~merchantId=publishableKey, ())
+    OrcaLogger.make(
+      ~source=Elements(Payment),
+      ~clientSecret=paymentId,
+      ~merchantId=publishableKey,
+      (),
+    )
   }, (publishableKey, paymentId))
 
   React.useEffect0(() => {
@@ -52,7 +57,7 @@ let make = () => {
       let handler = Plaid.create({
         token: linkToken,
         onLoad: _ => {
-          logger.setLogInfo(~value="Plaid SDK Loaded", ~eventName=PLAID_SDK_LOADED, ())
+          logger.setLogInfo(~value="Plaid SDK Loaded", ~eventName=PLAID_SDK, ())
         },
         onSuccess: (publicToken, _) => {
           handlePostMessage([
