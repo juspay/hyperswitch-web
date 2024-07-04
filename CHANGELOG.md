@@ -1,3 +1,17 @@
+## [0.72.1](https://github.com/juspay/hyperswitch-web/compare/v0.72.0...v0.72.1) (2024-07-03)
+
+
+### Bug Fixes
+
+* fixed netcetra 3ds not opening and added fallback log ([#470](https://github.com/juspay/hyperswitch-web/issues/470)) ([c686b1b](https://github.com/juspay/hyperswitch-web/commit/c686b1b3588b3128aab63de470bb55633154bd95))
+
+# [0.72.0](https://github.com/juspay/hyperswitch-web/compare/v0.71.11...v0.72.0) (2024-07-03)
+
+
+### Features
+
+* pm auth connector integration - Plaid ([#461](https://github.com/juspay/hyperswitch-web/issues/461)) ([222b322](https://github.com/juspay/hyperswitch-web/commit/222b3227d7bf6f555fe8016975348d050162d91a))
+
 ## [0.71.11](https://github.com/juspay/hyperswitch-web/compare/v0.71.10...v0.71.11) (2024-07-02)
 
 
