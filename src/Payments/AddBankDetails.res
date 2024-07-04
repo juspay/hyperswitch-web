@@ -4,7 +4,7 @@ module Loader = {
     let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     <div className="w-full flex items-center justify-center">
       <div className="w-8 h-8 animate-spin" style={color: themeObj.colorTextSecondary}>
-        <Icon size=32 name="loader" />
+        <Icon size=28 name="loader" />
       </div>
     </div>
   }
@@ -20,6 +20,7 @@ let make = (~paymentMethodType) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
   let (showLoader, setShowLoader) = React.useState(() => false)
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let pmAuthConnectorsArr =
     PmAuthConnectorUtils.findPmAuthAllPMAuthConnectors(
@@ -41,6 +42,7 @@ let make = (~paymentMethodType) => {
             ~paymentMethodType,
             ~publishableKey,
             ~setOptionValue,
+            ~optLogger=Some(logger),
           )
           ->then(_ => {
             handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
@@ -81,24 +83,43 @@ let make = (~paymentMethodType) => {
       ~iframeId,
       ~paymentMethodType,
       ~pmAuthConnectorsArr,
+      ~optLogger=Some(logger),
     )->ignore
   }
 
-  <button
-    onClick={_ => onClickHandler()}
-    disabled={showLoader}
-    style={
-      width: "100%",
-      padding: "20px",
-      cursor: "pointer",
-      borderRadius: themeObj.borderRadius,
-      borderColor: themeObj.borderColor,
-      borderWidth: "2px",
-    }>
-    {if showLoader {
-      <Loader />
-    } else {
-      {React.string("Add Bank Details")}
-    }}
-  </button>
+  <>
+    <button
+      onClick={_ => onClickHandler()}
+      disabled={showLoader}
+      style={
+        width: "100%",
+        padding: "10px",
+        borderRadius: themeObj.borderRadius,
+        borderColor: themeObj.borderColor,
+        borderWidth: "2px",
+      }>
+      {if showLoader {
+        <Loader />
+      } else {
+        {React.string("Add Bank Details")}
+      }}
+    </button>
+    <div className="opacity-50 text-xs mb-2 text-left mt-8" style={color: themeObj.colorText}>
+      {React.string(
+        `${paymentMethodType->String.toUpperCase} Bank Debit has 2 steps to pay. Please follow the instructions:`,
+      )}
+      <ul className="list-disc px-5 py-2">
+        <li>
+          {React.string(
+            "Please Click on Add Bank Details and proceed to add your bank account details.",
+          )}
+        </li>
+        <li>
+          {React.string(
+            "Post verification, you will see your account(s) added. You can select the account that you want to pay with and click on the pay button.",
+          )}
+        </li>
+      </ul>
+    </div>
+  </>
 }
