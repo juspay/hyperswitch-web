@@ -8,7 +8,10 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
   let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
-  let removeSavedMethod = paymentMethodId => {
+  let removeSavedMethod = (
+    savedMethods: array<OrcaPaymentPage.PaymentType.customerMethods>,
+    paymentMethodId,
+  ) => {
     savedMethods->Array.filter(savedMethod => {
       savedMethod.paymentMethodId !== paymentMethodId
     })
@@ -38,13 +41,9 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
           ~eventName=DELETE_SAVED_PAYMENT_METHOD,
           (),
         )
-        setSavedMethods(_ => paymentMethodId->removeSavedMethod)
+        setSavedMethods(prev => prev->removeSavedMethod(paymentMethodId))
       } else {
-        logger.setLogError(
-          ~value=res->JSON.stringify,
-          ~eventName=DELETE_SAVED_PAYMENT_METHOD,
-          (),
-        )
+        logger.setLogError(~value=res->JSON.stringify, ~eventName=DELETE_SAVED_PAYMENT_METHOD, ())
       }
       handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
       resolve()

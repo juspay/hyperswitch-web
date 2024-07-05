@@ -10,7 +10,7 @@ type element = {
 }
 type keys = {
   clientSecret: option<string>,
-  ephemeralKey: option<string>,
+  ephemeralKey?: string,
   publishableKey: string,
   iframeId: string,
   parentURL: string,
@@ -95,7 +95,6 @@ let updateKeys = (dict, keyPair, setKeys) => {
 }
 let defaultkeys = {
   clientSecret: None,
-  ephemeralKey: None,
   publishableKey: "",
   iframeId: "",
   parentURL: "*",

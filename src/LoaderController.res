@@ -262,7 +262,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
-                  ephemeralKey: Some(ephemeralKey),
+                  ephemeralKey,
                 })
                 logger.setClientSecret(clientSecret)
 
@@ -311,7 +311,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
-              ephemeralKey: Some(ephemeralKey),
+              ephemeralKey,
             })
             logger.setClientSecret(clientSecret)
 
@@ -485,14 +485,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           switch optionsPayment.customerPaymentMethods {
           | LoadingSavedCards => ()
           | LoadedSavedCards(list, _) =>
-            list->Array.length > 0
-              ? logger.setLogInfo(
-                  ~value="Loaded",
-                  ~eventName=LOADER_CHANGED,
-                  ~latency=finalLoadLatency,
-                  (),
-                )
-              : evalMethodsList()
+            if list->Array.length > 0 {
+              logger.setLogInfo(
+                ~value="Loaded",
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadLatency,
+                (),
+              )
+            } else {
+              evalMethodsList()
+            }
           | NoResult(_) => evalMethodsList()
           }
         }
@@ -531,14 +533,16 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           switch optionsPayment.customerPaymentMethods {
           | LoadingSavedCards => ()
           | LoadedSavedCards(list, _) =>
-            list->Array.length > 0
-              ? logger.setLogInfo(
-                  ~value="Loaded",
-                  ~eventName=LOADER_CHANGED,
-                  ~latency=finalLoadLatency,
-                  (),
-                )
-              : evalMethodsList()
+            if list->Array.length > 0 {
+              logger.setLogInfo(
+                ~value="Loaded",
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadLatency,
+                (),
+              )
+            } else {
+              evalMethodsList()
+            }
           | NoResult(_) => evalMethodsList()
           }
         }
