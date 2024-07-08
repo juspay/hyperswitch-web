@@ -25,6 +25,7 @@ let make = () => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (selectedDate, setSelectedDate) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
   let (error, setError) = React.useState(_ => false)
+  let (isNotEligible, setIsNotEligible) = React.useState(_ => false)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
@@ -32,12 +33,21 @@ let make = () => {
     if confirm.doSubmit {
       switch selectedDate->Nullable.toOption {
       | Some(_) => setError(_ => false)
-      | None => setError(_ => true)
+      | None => setError(_ => !isNotEligible)
       }
     }
-  }, [selectedDate])
+  }, (selectedDate, isNotEligible))
 
   useSubmitPaymentData(submitCallback)
+
+  let onChange = date => {
+    let isAbove18 = switch date->Nullable.toOption {
+    | Some(val) => val->check18AboveOrNot
+    | None => false
+    }
+    setSelectedDate(_ => date)
+    setIsNotEligible(_ => !isAbove18)
+  }
 
   <div className="flex flex-col gap-1">
     <div
@@ -54,7 +64,7 @@ let make = () => {
       icon={<Icon name="calander" size=13 className="!px-[6px] !py-[10px]" />}
       className="w-full border border-gray-300 rounded p-2"
       selected={selectedDate}
-      onChange={date => setSelectedDate(_ => date)}
+      onChange={date => onChange(date)}
       dateFormat="dd-MM-yyyy"
       wrapperClassName="datepicker"
       shouldCloseOnSelect=true
@@ -102,6 +112,18 @@ let make = () => {
           textAlign: "left",
         }>
         {React.string("Date of birth is required")}
+      </div>
+    </RenderIf>
+    <RenderIf condition={isNotEligible}>
+      <div
+        className="Error pt-1"
+        style={
+          color: themeObj.colorDangerText,
+          fontSize: themeObj.fontSizeSm,
+          alignSelf: "start",
+          textAlign: "left",
+        }>
+        {React.string("Age should be greater than 18 years")}
       </div>
     </RenderIf>
   </div>
