@@ -228,7 +228,6 @@ let getStrFromHyperComponentName = hyperComponentName => {
 
 let getHyperComponentNameFromStr = hyperComponentName => {
   switch hyperComponentName {
-  | "Elements" => Elements
   | "PaymentMethodsManagementElements" => PaymentMethodsManagementElements
   | _ => Elements
   }

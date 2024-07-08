@@ -132,6 +132,7 @@ type customerMethods = {
   requiresCvv: bool,
   lastUsedAt: string,
   bank: bank,
+  recurringEnabled: bool,
 }
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
@@ -193,6 +194,7 @@ let defaultCustomerMethods = {
   requiresCvv: true,
   lastUsedAt: "",
   bank: {mask: ""},
+  recurringEnabled: false,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -885,6 +887,7 @@ let itemToCustomerObjMapper = customerDict => {
         requiresCvv: getBool(dict, "requires_cvv", true),
         lastUsedAt: getString(dict, "last_used_at", ""),
         bank: dict->getBank,
+        recurringEnabled: getBool(dict, "recurring_enabled", false),
       }
     })
 
@@ -921,6 +924,7 @@ let getCustomerMethods = (dict, str) => {
           requiresCvv: getBool(dict, "requires_cvv", true),
           lastUsedAt: getString(dict, "last_used_at", ""),
           bank: dict->getBank,
+          recurringEnabled: getBool(dict, "recurring_enabled", false),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)

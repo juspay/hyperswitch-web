@@ -1,3 +1,10 @@
+## [0.72.7](https://github.com/juspay/hyperswitch-web/compare/v0.72.6...v0.72.7) (2024-07-08)
+
+
+### Bug Fixes
+
+* passing customer acceptance if recurring_enabled is false in saved methods list ([#476](https://github.com/juspay/hyperswitch-web/issues/476)) ([27c132e](https://github.com/juspay/hyperswitch-web/commit/27c132e0dbad9102ec7b9e9cfbf4d6d886b33bdd))
+
 ## [0.72.6](https://github.com/juspay/hyperswitch-web/compare/v0.72.5...v0.72.6) (2024-07-04)
 
 

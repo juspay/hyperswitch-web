@@ -33,13 +33,6 @@ let make = (
       ->Option.getOr([])
       ->JSON.Encode.array
 
-    let blockConfirm =
-      GlobalVars.isInteg &&
-      options
-      ->JSON.Decode.object
-      ->Option.flatMap(x => x->Dict.get("blockConfirm"))
-      ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(false)
     let switchToCustomPod =
       GlobalVars.isInteg &&
       options
@@ -199,7 +192,6 @@ let make = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-            ("blockConfirm", blockConfirm->JSON.Encode.bool),
             ("switchToCustomPod", switchToCustomPod->JSON.Encode.bool),
             ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
             ("parentURL", "*"->JSON.Encode.string),
