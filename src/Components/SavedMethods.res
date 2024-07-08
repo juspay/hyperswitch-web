@@ -54,17 +54,12 @@ let make = (
     }
   }
 
-  let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
-    ~displaySavedPaymentMethodsCheckbox,
-    ~isSaveCardsChecked,
-    ~isGuestCustomer,
-  )
-
   let bottomElement = {
     savedMethods
     ->Array.mapWithIndex((obj, i) => {
       let brandIcon = switch obj.paymentMethod {
       | "wallet" => getWalletBrandIcon(obj)
+      | "bank_debit" => <Icon size=brandIconSize name="bank" />
       | _ =>
         getCardBrandIcon(
           switch obj.card.scheme {
@@ -124,6 +119,8 @@ let make = (
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+
+    let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not
 
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>
@@ -234,7 +231,6 @@ let make = (
     empty,
     complete,
     customerMethod,
-    isCustomerAcceptanceRequired,
     applePayToken,
     gPayToken,
     isManualRetryEnabled,
@@ -296,11 +292,10 @@ let make = (
     </RenderIf>
     <RenderIf condition={!showFields}>
       <div
-        className="Label flex flex-row gap-3 items-end cursor-pointer"
+        className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
           fontSize: "14px",
           float: "left",
-          marginTop: "14px",
           fontWeight: "500",
           width: "fit-content",
           color: themeObj.colorPrimary,

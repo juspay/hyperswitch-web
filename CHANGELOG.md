@@ -1,3 +1,66 @@
+## [0.72.7](https://github.com/juspay/hyperswitch-web/compare/v0.72.6...v0.72.7) (2024-07-08)
+
+
+### Bug Fixes
+
+* passing customer acceptance if recurring_enabled is false in saved methods list ([#476](https://github.com/juspay/hyperswitch-web/issues/476)) ([27c132e](https://github.com/juspay/hyperswitch-web/commit/27c132e0dbad9102ec7b9e9cfbf4d6d886b33bdd))
+
+## [0.72.6](https://github.com/juspay/hyperswitch-web/compare/v0.72.5...v0.72.6) (2024-07-04)
+
+
+### Bug Fixes
+
+* integ api change ([#474](https://github.com/juspay/hyperswitch-web/issues/474)) ([7636470](https://github.com/juspay/hyperswitch-web/commit/76364705d4ecc4eabd8e52a699697e1fd4872eae))
+
+## [0.72.5](https://github.com/juspay/hyperswitch-web/compare/v0.72.4...v0.72.5) (2024-07-04)
+
+
+### Bug Fixes
+
+* version change ([df29391](https://github.com/juspay/hyperswitch-web/commit/df29391159941b18e16c0ddb4a9d39f8e045f726))
+
+## [0.72.3](https://github.com/juspay/hyperswitch-web/compare/v0.72.2...v0.72.3) (2024-07-04)
+
+
+### Bug Fixes
+
+* payment data filled event logs for few payment methods ([#467](https://github.com/juspay/hyperswitch-web/issues/467)) ([c1610d5](https://github.com/juspay/hyperswitch-web/commit/c1610d59fc4abc4bbce4d98bef7fb8c0ac8625a5))
+
+## [0.72.2](https://github.com/juspay/hyperswitch-web/compare/v0.72.1...v0.72.2) (2024-07-04)
+
+
+### Bug Fixes
+
+* info element added & logs addition ([#471](https://github.com/juspay/hyperswitch-web/issues/471)) ([53b3961](https://github.com/juspay/hyperswitch-web/commit/53b3961a1e8aae1699a9393b9cda4e60551f0ca1))
+
+## [0.72.1](https://github.com/juspay/hyperswitch-web/compare/v0.72.0...v0.72.1) (2024-07-03)
+
+
+### Bug Fixes
+
+* fixed netcetra 3ds not opening and added fallback log ([#470](https://github.com/juspay/hyperswitch-web/issues/470)) ([c686b1b](https://github.com/juspay/hyperswitch-web/commit/c686b1b3588b3128aab63de470bb55633154bd95))
+
+# [0.72.0](https://github.com/juspay/hyperswitch-web/compare/v0.71.11...v0.72.0) (2024-07-03)
+
+
+### Features
+
+* pm auth connector integration - Plaid ([#461](https://github.com/juspay/hyperswitch-web/issues/461)) ([222b322](https://github.com/juspay/hyperswitch-web/commit/222b3227d7bf6f555fe8016975348d050162d91a))
+
+## [0.71.11](https://github.com/juspay/hyperswitch-web/compare/v0.71.10...v0.71.11) (2024-07-02)
+
+
+### Bug Fixes
+
+* wallets on top for saved cards flow ([#469](https://github.com/juspay/hyperswitch-web/issues/469)) ([eaaccb0](https://github.com/juspay/hyperswitch-web/commit/eaaccb09427904dda4292bf2d692edecd940a76a))
+
+## [0.71.10](https://github.com/juspay/hyperswitch-web/compare/v0.71.9...v0.71.10) (2024-07-02)
+
+
+### Bug Fixes
+
+* fixed the ui disparity for more payment methods text and use saved payment methods ([#466](https://github.com/juspay/hyperswitch-web/issues/466)) ([c7ca45c](https://github.com/juspay/hyperswitch-web/commit/c7ca45cb1f97aac865e9cfa146fbf92166c1f175))
+
 ## [0.71.9](https://github.com/juspay/hyperswitch-web/compare/v0.71.8...v0.71.9) (2024-07-01)
 
 

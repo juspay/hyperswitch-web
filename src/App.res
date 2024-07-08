@@ -24,6 +24,7 @@ let make = () => {
   | _ =>
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
+    | "plaidSDK" => <PlaidSDKIframe />
     | "fullscreen" =>
       <div id="fullscreen">
         <FullScreenDivDriver />

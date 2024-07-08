@@ -119,6 +119,7 @@ type customerCard = {
   cardHolderName: option<string>,
   nickname: string,
 }
+type bank = {mask: string}
 type customerMethods = {
   paymentToken: string,
   customerId: string,
@@ -130,6 +131,8 @@ type customerMethods = {
   defaultPaymentMethodSet: bool,
   requiresCvv: bool,
   lastUsedAt: string,
+  bank: bank,
+  recurringEnabled: bool,
 }
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
@@ -189,6 +192,8 @@ let defaultCustomerMethods = {
   defaultPaymentMethodSet: false,
   requiresCvv: true,
   lastUsedAt: "",
+  bank: {mask: ""},
+  recurringEnabled: false,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -851,18 +856,18 @@ let getPaymentMethodType = dict => {
   dict->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
 }
 
-let itemToCustomerObjMapper = customerDict => {
-  let customerArr =
-    customerDict
-    ->Dict.get("customer_payment_methods")
-    ->Option.flatMap(JSON.Decode.array)
-    ->Option.getOr([])
+let getBank = dict => {
+  {
+    mask: dict
+    ->getDictFromDict("bank")
+    ->getString("mask", ""),
+  }
+}
 
-  let isGuestCustomer =
-    customerDict
-    ->Dict.get("is_guest_customer")
-    ->Option.flatMap(JSON.Decode.bool)
-    ->Option.getOr(false)
+let itemToCustomerObjMapper = customerDict => {
+  let customerArr = customerDict->getArray("customer_payment_methods")
+
+  let isGuestCustomer = customerDict->getBool("is_guest_customer", false)
 
   let customerPaymentMethods =
     customerArr
@@ -879,6 +884,8 @@ let itemToCustomerObjMapper = customerDict => {
         defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
         requiresCvv: getBool(dict, "requires_cvv", true),
         lastUsedAt: getString(dict, "last_used_at", ""),
+        bank: dict->getBank,
+        recurringEnabled: getBool(dict, "recurring_enabled", false),
       }
     })
 
@@ -914,6 +921,8 @@ let getCustomerMethods = (dict, str) => {
           defaultPaymentMethodSet: getBool(dict, "default_payment_method_set", false),
           requiresCvv: getBool(dict, "requires_cvv", true),
           lastUsedAt: getString(dict, "last_used_at", ""),
+          bank: dict->getBank,
+          recurringEnabled: getBool(dict, "recurring_enabled", false),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)

@@ -30,7 +30,7 @@ type paymentIntent = (
   ~iframeId: string=?,
   ~isThirdPartyFlow: bool=?,
   ~intentCallback: Core__JSON.t => unit=?,
-  ~manualRetry:bool=?,
+  ~manualRetry: bool=?,
   unit,
 ) => unit
 
@@ -50,7 +50,7 @@ let retrievePaymentIntent = (
   ~isForceSync=false,
 ) => {
   open Promise
-  let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+  let paymentIntentID = clientSecret->getPaymentId
   let endpoint = ApiEndpoint.getApiEndPoint()
   let forceSync = isForceSync ? "&force_sync=true" : ""
   let uri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}${forceSync}`
@@ -490,8 +490,7 @@ let rec intentCall = (
                 resolve(failedSubmitResponse)
               }
             } else {
-              let paymentIntentID =
-                String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+              let paymentIntentID = clientSecret->getPaymentId
               let endpoint = ApiEndpoint.getApiEndPoint(
                 ~publishableKey=confirmParam.publishableKey,
                 ~isConfirmCall=isConfirm,
@@ -880,8 +879,7 @@ let rec intentCall = (
             resolve(failedSubmitResponse)
           }
         } else {
-          let paymentIntentID =
-            String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+          let paymentIntentID = clientSecret->getPaymentId
           let endpoint = ApiEndpoint.getApiEndPoint(
             ~publishableKey=confirmParam.publishableKey,
             ~isConfirmCall=isConfirm,
@@ -939,7 +937,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="", ()) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+      let paymentIntentID = clientSecret->getPaymentId
       let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey, ())
       let uri = `${endpoint}/payments/${paymentIntentID}?force_sync=true&client_secret=${clientSecret}`
@@ -1022,16 +1020,14 @@ let usePaymentIntent = (optLogger, paymentType) => {
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+      let paymentIntentID = clientSecret->getPaymentId
       let headers = [
         ("Content-Type", "application/json"),
         ("api-key", confirmParam.publishableKey),
         ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
       ]
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
-      let manual_retry = manualRetry
-        ? [("retry_action", "manual_retry"->JSON.Encode.string)]
-        : []
+      let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
       let body =
         [("client_secret", clientSecret->JSON.Encode.string)]->Array.concatMany([
           returnUrlArr,
@@ -1203,7 +1199,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
-      let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+      let paymentIntentID = clientSecret->getPaymentId
       let headers = [
         ("Content-Type", "application/json"),
         ("api-key", confirmParam.publishableKey),
@@ -1265,7 +1261,7 @@ let fetchSessions = (
 ) => {
   open Promise
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-  let paymentIntentID = String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+  let paymentIntentID = clientSecret->getPaymentId
   let body =
     [
       ("payment_id", paymentIntentID->JSON.Encode.string),
@@ -1716,4 +1712,221 @@ let paymentIntentForPaymentSession = (
     ~isPaymentSession=true,
     (),
   )
+}
+
+let callAuthLink = (
+  ~publishableKey,
+  ~clientSecret,
+  ~paymentMethodType,
+  ~pmAuthConnectorsArr,
+  ~iframeId,
+  ~optLogger,
+) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let uri = `${endpoint}/payment_methods/auth/link`
+  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
+
+  logApi(
+    ~optLogger,
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~bodyStr=[
+      ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
+      ("payment_id", clientSecret->Option.getOr("")->getPaymentId->JSON.Encode.string),
+      ("payment_method", "bank_debit"->JSON.Encode.string),
+      ("payment_method_type", paymentMethodType->JSON.Encode.string),
+    ]
+    ->getJsonFromArrayOfJson
+    ->JSON.stringify,
+    ~headers,
+    (),
+  )
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger,
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        let metaData =
+          [
+            ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
+            ("pmAuthConnectorArray", pmAuthConnectorsArr->Identity.anyTypeToJson),
+            ("payment_id", clientSecret->Option.getOr("")->getPaymentId->JSON.Encode.string),
+            ("publishableKey", publishableKey->JSON.Encode.string),
+          ]->getJsonFromArrayOfJson
+
+        handlePostMessage([
+          ("fullscreen", true->JSON.Encode.bool),
+          ("param", "plaidSDK"->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+          ("metadata", metaData),
+        ])
+        logApi(
+          ~optLogger,
+          ~url=uri,
+          ~statusCode,
+          ~apiLogType=Response,
+          ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
+          ~logType=INFO,
+          ~logCategory=API,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    }
+  })
+  ->catch(e => {
+    logApi(
+      ~optLogger,
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data={e->formatException},
+      (),
+    )
+    Console.log2("Unable to retrieve payment_methods auth/link because of ", e)
+    JSON.Encode.null->resolve
+  })
+}
+
+let callAuthExchange = (
+  ~publicToken,
+  ~clientSecret,
+  ~paymentMethodType,
+  ~publishableKey,
+  ~setOptionValue: (PaymentType.options => PaymentType.options) => unit,
+  ~optLogger,
+) => {
+  open Promise
+  open PaymentType
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let logger = OrcaLogger.make(~source=Elements(Payment), ())
+  let uri = `${endpoint}/payment_methods/auth/exchange`
+  let updatedBody = [
+    ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
+    ("payment_id", clientSecret->Option.getOr("")->getPaymentId->JSON.Encode.string),
+    ("payment_method", "bank_debit"->JSON.Encode.string),
+    ("payment_method_type", paymentMethodType->JSON.Encode.string),
+    ("public_token", publicToken->JSON.Encode.string),
+  ]
+
+  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
+
+  logApi(
+    ~optLogger,
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+    (),
+  )
+
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~bodyStr=updatedBody->getJsonFromArrayOfJson->JSON.stringify,
+    ~headers,
+    (),
+  )
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger,
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+          (),
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger,
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
+        ~logType=INFO,
+        ~logCategory=API,
+        (),
+      )
+      fetchCustomerPaymentMethodList(
+        ~clientSecret=clientSecret->Option.getOr(""),
+        ~publishableKey,
+        ~optLogger=Some(logger),
+        ~switchToCustomPod=false,
+        ~endpoint,
+      )
+      ->then(customerListResponse => {
+        let customerListResponse =
+          [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
+        setOptionValue(
+          prev => {
+            ...prev,
+            customerPaymentMethods: createCustomerObjArr(customerListResponse),
+          },
+        )
+        JSON.Encode.null->resolve
+      })
+      ->catch(e => {
+        Console.log2(
+          "Unable to retrieve customer/payment_methods after auth/exchange because of ",
+          e,
+        )
+        JSON.Encode.null->resolve
+      })
+    }
+  })
+  ->catch(e => {
+    logApi(
+      ~optLogger,
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data={e->formatException},
+      (),
+    )
+    Console.log2("Unable to retrieve payment_methods auth/exchange because of ", e)
+    JSON.Encode.null->resolve
+  })
 }

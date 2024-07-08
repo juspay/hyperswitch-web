@@ -278,11 +278,16 @@ let getCustomerSavedPaymentMethods = (
           let paymentMethod = lastUsedPaymentMethod.paymentMethod
           let paymentMethodType = lastUsedPaymentMethod.paymentMethodType->Option.getOr("")
           let paymentType = paymentMethodType->PaymentHelpers.getPaymentType
+          let isCustomerAcceptanceRequired = lastUsedPaymentMethod.recurringEnabled->not
 
           let body = [
             ("payment_method", paymentMethod->JSON.Encode.string),
             ("payment_token", paymentToken->JSON.Encode.string),
           ]
+
+          if isCustomerAcceptanceRequired {
+            body->Array.push(("customer_acceptance", PaymentBody.customerAcceptanceBody))->ignore
+          }
 
           if paymentMethodType !== "" {
             body->Array.push(("payment_method_type", paymentMethodType->JSON.Encode.string))->ignore
