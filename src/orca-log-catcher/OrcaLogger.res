@@ -21,7 +21,9 @@ type eventName =
   | SESSIONS_CALL_INIT
   | SESSIONS_CALL
   | PAYMENT_METHODS_CALL_INIT
+  | SAVED_PAYMENT_METHODS_CALL_INIT
   | PAYMENT_METHODS_CALL
+  | SAVED_PAYMENT_METHODS_CALL
   | CUSTOMER_PAYMENT_METHODS_CALL_INIT
   | CUSTOMER_PAYMENT_METHODS_CALL
   | CREATE_CUSTOMER_PAYMENT_METHODS_CALL_INIT
@@ -77,6 +79,10 @@ type eventName =
   | PAYMENT_METHODS_AUTH_EXCHANGE_CALL
   | PAYMENT_METHODS_AUTH_LINK_CALL_INIT
   | PAYMENT_METHODS_AUTH_LINK_CALL
+  | PAYMENT_MANAGEMENT_ELEMENTS_CALLED
+  | DELETE_SAVED_PAYMENT_METHOD
+  | DELETE_PAYMENT_METHODS_CALL_INIT
+  | DELETE_PAYMENT_METHODS_CALL
 
 let eventNameToStrMapper = eventName => {
   switch eventName {
@@ -154,6 +160,12 @@ let eventNameToStrMapper = eventName => {
   | PAYMENT_METHODS_AUTH_LINK_CALL => "PAYMENT_METHODS_AUTH_LINK_CALL"
   | PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT => "PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT"
   | PAYMENT_METHODS_AUTH_LINK_CALL_INIT => "PAYMENT_METHODS_AUTH_LINK_CALL_INIT"
+  | SAVED_PAYMENT_METHODS_CALL => "SAVED_PAYMENT_METHODS_CALL"
+  | SAVED_PAYMENT_METHODS_CALL_INIT => "SAVED_PAYMENT_METHODS_CALL_INIT"
+  | PAYMENT_MANAGEMENT_ELEMENTS_CALLED => "PAYMENT_MANAGEMENT_ELEMENTS_CALLED"
+  | DELETE_SAVED_PAYMENT_METHOD => "DELETE_SAVED_PAYMENT_METHOD"
+  | DELETE_PAYMENT_METHODS_CALL_INIT => "DELETE_PAYMENT_METHODS_CALL_INIT"
+  | DELETE_PAYMENT_METHODS_CALL => "DELETE_PAYMENT_METHODS_CALL"
   }
 }
 
@@ -194,6 +206,7 @@ type logFile = {
   firstEvent: bool,
   paymentMethod: string,
   metadata: JSON.t,
+  ephemeralKey: string,
 }
 
 type setlogApiValueType =
@@ -235,11 +248,13 @@ type loggerMake = {
   setMerchantId: string => unit,
   setMetadata: JSON.t => unit,
   setSource: string => unit,
+  setEphemeralKey: string => unit,
 }
 
 let defaultLoggerConfig = {
   sendLogs: () => (),
   setClientSecret: _x => (),
+  setEphemeralKey: _x => (),
   setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
   setLogError: (
     ~value as _,
@@ -466,7 +481,15 @@ let browserDetect = content => {
 
 let arrayOfNameAndVersion = String.split(Window.userAgent->browserDetect, "-")
 
-let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~metadata=?, ()) => {
+let make = (
+  ~sessionId=?,
+  ~source: source,
+  ~clientSecret=?,
+  ~merchantId=?,
+  ~metadata=?,
+  ~ephemeralKey=?,
+  (),
+) => {
   let loggingLevel = switch GlobalVars.loggingLevelStr {
   | "DEBUG" => DEBUG
   | "INFO" => INFO
@@ -540,8 +563,14 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
   }
 
   let clientSecret = getRefFromOption(clientSecret)
+  let ephemeralKey = getRefFromOption(ephemeralKey)
+
   let setClientSecret = value => {
     clientSecret := value
+  }
+
+  let setEphemeralKey = value => {
+    ephemeralKey := value
   }
 
   let sourceRef = ref(source->getSourceString)
@@ -682,6 +711,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       paymentMethod,
       firstEvent,
       metadata: metadata.contents,
+      ephemeralKey: ephemeralKey.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -739,6 +769,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       paymentMethod,
       firstEvent,
       metadata: metadata.contents,
+      ephemeralKey: ephemeralKey.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -786,6 +817,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       paymentMethod,
       firstEvent,
       metadata: metadata.contents,
+      ephemeralKey: ephemeralKey.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -819,6 +851,7 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
       paymentMethod: "",
       firstEvent,
       metadata: metadata.contents,
+      ephemeralKey: ephemeralKey.contents,
     }
     ->conditionalLogPush
     ->ignore
@@ -848,5 +881,6 @@ let make = (~sessionId=?, ~source: source, ~clientSecret=?, ~merchantId=?, ~meta
     setLogApi,
     setLogError,
     setSource,
+    setEphemeralKey,
   }
 }

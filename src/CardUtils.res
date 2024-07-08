@@ -363,6 +363,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
     | ApplePayElement
     | KlarnaElement
     | ExpressCheckoutElement
+    | PaymentMethodsManagement
     | NONE =>
       <Icon size=brandIconSize name="default-card" />
     }
@@ -624,4 +625,29 @@ let useCardDetails = (~cvcNumber, ~isCvcValidValue, ~isCVCValid) => {
     let isCardDetailsInvalid = isCvcValidValue == "invalid"
     (isCardDetailsEmpty, isCardDetailsValid, isCardDetailsInvalid)
   }, (cvcNumber, isCvcValidValue, isCVCValid))
+}
+
+let getWalletBrandIcon = (customerMethod: PaymentType.customerMethods) => {
+  let iconName = switch customerMethod.paymentMethodType {
+  | Some("apple_pay") => "apple_pay_saved"
+  | Some("google_pay") => "google_pay_saved"
+  | Some("paypal") => "paypal"
+  | _ => "default-card"
+  }
+
+  <Icon size=Utils.brandIconSize name=iconName />
+}
+
+let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
+  switch customerMethod.paymentMethod {
+  | "wallet" => getWalletBrandIcon(customerMethod)
+  | _ =>
+    getCardBrandIcon(
+      switch customerMethod.card.scheme {
+      | Some(ele) => ele
+      | None => ""
+      }->getCardType,
+      ""->CardThemeType.getPaymentMode,
+    )
+  }
 }
