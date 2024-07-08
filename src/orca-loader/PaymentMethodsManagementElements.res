@@ -166,7 +166,7 @@ let make = (
       let mountPostMessage = (
         mountedIframeRef,
         selectorString,
-        sdkHandleOneClickConfirmPayment,
+        _sdkHandleOneClickConfirmPayment,
       ) => {
         open Promise
 
@@ -193,7 +193,6 @@ let make = (
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
             ("switchToCustomPod", switchToCustomPod->JSON.Encode.bool),
-            ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),
