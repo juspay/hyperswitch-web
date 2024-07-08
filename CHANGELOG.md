@@ -1,3 +1,10 @@
+# [0.73.0](https://github.com/juspay/hyperswitch-web/compare/v0.72.7...v0.73.0) (2024-07-08)
+
+
+### Features
+
+* payment-management added ([#392](https://github.com/juspay/hyperswitch-web/issues/392)) ([ef1c605](https://github.com/juspay/hyperswitch-web/commit/ef1c605cb3300b28ec4ca41b56ee320a85945fe8))
+
 ## [0.72.7](https://github.com/juspay/hyperswitch-web/compare/v0.72.6...v0.72.7) (2024-07-08)
 
 
