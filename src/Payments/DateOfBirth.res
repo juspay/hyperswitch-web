@@ -33,7 +33,7 @@ let make = () => {
     if confirm.doSubmit {
       switch selectedDate->Nullable.toOption {
       | Some(_) => setError(_ => false)
-      | None => setError(_ => !isNotEligible)
+      | None => ()
       }
     }
   }, (selectedDate, isNotEligible))
@@ -42,13 +42,15 @@ let make = () => {
 
   let onChange = date => {
     let isAbove18 = switch date->Nullable.toOption {
-    | Some(val) => val->check18AboveOrNot
+    | Some(val) => val->checkIs18OrAbove
     | None => false
     }
     setSelectedDate(_ => date)
     setIsNotEligible(_ => !isAbove18)
   }
-  let errorString = error ? "Date of birth is required" : "Age should be greater than 18 years"
+  let errorString = error
+    ? "Date of birth is required"
+    : "Age should be equal or greater than 18 years"
 
   <div className="flex flex-col gap-1">
     <div

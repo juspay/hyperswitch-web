@@ -162,7 +162,7 @@ let useRequiredFieldsEmptyAndValid = (
       | CardExpiryAndCvc => isExpiryValid->Option.getOr(false) && isCVCValid->Option.getOr(false)
       | DateOfBirth =>
         switch dateOfBirth->Nullable.toOption {
-        | Some(val) => val->Utils.check18AboveOrNot
+        | Some(val) => val->Utils.checkIs18OrAbove
         | None => false
         }
       | _ => true
