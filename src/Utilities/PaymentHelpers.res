@@ -227,7 +227,7 @@ let retrieveStatus = (~headers, ~switchToCustomPod, pollID, logger) => {
     ~optLogger=Some(logger),
     ~url=uri,
     ~apiLogType=Request,
-    ~eventName=POLL_STATUS_INIT,
+    ~eventName=POLL_STATUS_CALL_INIT,
     ~logType=INFO,
     ~logCategory=API,
     (),
