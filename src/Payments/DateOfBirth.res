@@ -21,8 +21,23 @@ let years = Array.fromInitializer(~length=currentYear - startYear, i => currentY
 
 @react.component
 let make = () => {
+  open Utils
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (selectedDate, setSelectedDate) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
+  let (error, setError) = React.useState(_ => false)
+
+  let submitCallback = React.useCallback((ev: Window.event) => {
+    let json = ev.data->JSON.parseExn
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+    if confirm.doSubmit {
+      switch selectedDate->Nullable.toOption {
+      | Some(_) => setError(_ => false)
+      | None => setError(_ => true)
+      }
+    }
+  }, [selectedDate])
+
+  useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col gap-1">
     <div
@@ -42,6 +57,7 @@ let make = () => {
       onChange={date => setSelectedDate(_ => date)}
       dateFormat="dd-MM-yyyy"
       wrapperClassName="datepicker"
+      placeholderText="Enter Date of Birth"
       renderCustomHeader={val => {
         <div className="flex gap-4 items-center justify-center m-2">
           <select
@@ -75,5 +91,17 @@ let make = () => {
         </div>
       }}
     />
+    <RenderIf condition={error}>
+      <div
+        className="Error pt-1"
+        style={
+          color: themeObj.colorDangerText,
+          fontSize: themeObj.fontSizeSm,
+          alignSelf: "start",
+          textAlign: "left",
+        }>
+        {React.string("Date of birth is required")}
+      </div>
+    </RenderIf>
   </div>
 }

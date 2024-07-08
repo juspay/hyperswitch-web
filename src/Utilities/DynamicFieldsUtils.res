@@ -382,8 +382,12 @@ let useSetInitialRequiredFields = (
           setCryptoCurrencyNetworks(_ => value)
         }
       | DateOfBirth =>
-        if value !== "" && dateOfBirth->Date.toDateString === "" {
-          setDateOfBirth(_ => dateOfBirth)
+        switch dateOfBirth->Nullable.toOption {
+        | Some(x) =>
+          if value !== "" && x->Date.toDateString === "" {
+            setDateOfBirth(_ => Nullable.make(x))
+          }
+        | None => ()
         }
       | SpecialField(_)
       | InfoElement
@@ -470,7 +474,11 @@ let useRequiredFieldsBody = (
       let (_, year) = CardUtils.getExpiryDates(cardExpiry)
       year
     | CryptoCurrencyNetworks => cryptoCurrencyNetworks
-    | DateOfBirth => dateOfBirth->Date.toISOString->String.slice(~start=0, ~end=10)
+    | DateOfBirth =>
+      switch dateOfBirth->Nullable.toOption {
+      | Some(x) => x->Date.toISOString->String.slice(~start=0, ~end=10)
+      | None => ""
+      }
     | CardCvc => cvcNumber
     | StateAndCity
     | CountryAndPincode(_)

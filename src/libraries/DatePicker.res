@@ -18,8 +18,8 @@ type customHeaderProps = {
 
 @module("react-datepicker") @react.component
 external make: (
-  ~selected: Date.t,
-  ~onChange: Date.t => unit,
+  ~selected: Nullable.t<Date.t>,
+  ~onChange: Nullable.t<Date.t> => unit,
   ~showIcon: bool=?,
   ~icon: React.element=?,
   ~dateFormat: string=?,
