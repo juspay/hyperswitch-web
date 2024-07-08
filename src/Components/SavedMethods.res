@@ -54,12 +54,6 @@ let make = (
     }
   }
 
-  let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
-    ~displaySavedPaymentMethodsCheckbox,
-    ~isSaveCardsChecked,
-    ~isGuestCustomer,
-  )
-
   let bottomElement = {
     savedMethods
     ->Array.mapWithIndex((obj, i) => {
@@ -125,6 +119,8 @@ let make = (
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+
+    let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not
 
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>
@@ -235,7 +231,6 @@ let make = (
     empty,
     complete,
     customerMethod,
-    isCustomerAcceptanceRequired,
     applePayToken,
     gPayToken,
     isManualRetryEnabled,
