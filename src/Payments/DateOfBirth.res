@@ -57,6 +57,7 @@ let make = () => {
       onChange={date => setSelectedDate(_ => date)}
       dateFormat="dd-MM-yyyy"
       wrapperClassName="datepicker"
+      shouldCloseOnSelect=true
       placeholderText="Enter Date of Birth"
       renderCustomHeader={val => {
         <div className="flex gap-4 items-center justify-center m-2">

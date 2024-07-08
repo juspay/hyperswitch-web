@@ -31,4 +31,5 @@ external make: (
   ~className: string=?,
   ~wrapperClassName: string=?,
   ~closeOnScroll: bool=?,
+  ~shouldCloseOnSelect: bool=?,
 ) => React.element = "default"
