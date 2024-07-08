@@ -48,6 +48,7 @@ let make = () => {
     setSelectedDate(_ => date)
     setIsNotEligible(_ => !isAbove18)
   }
+  let errorString = error ? "Date of birth is required" : "Age should be greater than 18 years"
 
   <div className="flex flex-col gap-1">
     <div
@@ -102,7 +103,7 @@ let make = () => {
         </div>
       }}
     />
-    <RenderIf condition={error}>
+    <RenderIf condition={error || isNotEligible}>
       <div
         className="Error pt-1"
         style={
@@ -111,19 +112,7 @@ let make = () => {
           alignSelf: "start",
           textAlign: "left",
         }>
-        {React.string("Date of birth is required")}
-      </div>
-    </RenderIf>
-    <RenderIf condition={isNotEligible}>
-      <div
-        className="Error pt-1"
-        style={
-          color: themeObj.colorDangerText,
-          fontSize: themeObj.fontSizeSm,
-          alignSelf: "start",
-          textAlign: "left",
-        }>
-        {React.string("Age should be greater than 18 years")}
+        {React.string(errorString)}
       </div>
     </RenderIf>
   </div>
