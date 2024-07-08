@@ -47,17 +47,12 @@ let make = (
   let bankCityRef = React.useRef(Nullable.null)
   let countryCodeRef = React.useRef(Nullable.null)
 
-  // Init
+  // Update formLayout and availablePaymentMethodTypesOrdered
   React.useEffect1(() => {
     switch formLayout {
     | Tabs => setSelectedPaymentMethodType(_ => availablePaymentMethodTypes->Array.get(0))
     | _ => ()
     }
-    None
-  }, [availablePaymentMethodTypes])
-
-  // Update availablePaymentMethodTypesOrdered
-  React.useEffect(() => {
     setAvailablePaymentMethodTypesOrdered(_ => availablePaymentMethodTypes)
     None
   }, [availablePaymentMethodTypes])
@@ -155,12 +150,10 @@ let make = (
 
     if isValid {
       switch key {
-      | CardNumber => {
-          setPaymentMethodDataValue(CardBrand, getCardBrand(updatedValue))
-          setPaymentMethodDataValue(key, updatedValue)
-        }
-      | _ => setPaymentMethodDataValue(key, updatedValue)
+      | CardNumber => setPaymentMethodDataValue(CardBrand, getCardBrand(updatedValue))
+      | _ => ()
       }
+      setPaymentMethodDataValue(key, updatedValue)
     }
   }
 
@@ -222,11 +215,9 @@ let make = (
       switch pmd {
       | (Card, _, _) => React.string("Your card details")
       | (pm, pmt, _) =>
-        React.string(
-          `Your ${pmt->getPaymentMethodTypeLabel} ${pm
-            ->getPaymentMethodLabel
-            ->String.toLowerCase}`,
-        )
+        let pmtLabelString =
+          pmt->getPaymentMethodTypeLabel ++ " " ++ pm->getPaymentMethodLabel->String.toLowerCase
+        React.string(`Your ${pmtLabelString}`)
       }
     | None =>
       switch selectedPaymentMethod {
