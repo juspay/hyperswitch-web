@@ -44,7 +44,14 @@ let make = () => {
         let sessionId = CardUtils.getQueryParamsDictforKey(url.search, "sessionId")
         let publishableKey = CardUtils.getQueryParamsDictforKey(url.search, "publishableKey")
         let endpoint = CardUtils.getQueryParamsDictforKey(url.search, "endpoint")
-        <PreMountLoader publishableKey sessionId clientSecret endpoint />
+        let ephemeralKey = CardUtils.getQueryParamsDictforKey(url.search, "ephemeralKey")
+        let hyperComponentName =
+          CardUtils.getQueryParamsDictforKey(
+            url.search,
+            "hyperComponentName",
+          )->Types.getHyperComponentNameFromStr
+
+        <PreMountLoader publishableKey sessionId clientSecret endpoint ephemeralKey hyperComponentName />
       }
     | "achBankTransfer"
     | "bacsBankTransfer"

@@ -206,6 +206,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
       let iframeRef = ref([])
       let clientSecret = ref("")
+      let ephemeralKey = ref("")
       let setIframeRef = ref => {
         iframeRef.contents->Array.push(ref)->ignore
       }
@@ -428,6 +429,56 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->getString("customBackendUrl", ""),
         )
       }
+
+      let paymentMethodsManagementElements = paymentMethodsManagementElementsOptions => {
+        open Promise
+        let paymentMethodsManagementElementsOptionsDict =
+          paymentMethodsManagementElementsOptions->JSON.Decode.object
+        paymentMethodsManagementElementsOptionsDict
+        ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
+        ->ignore
+
+        let ephemeralKeyId =
+          paymentMethodsManagementElementsOptionsDict
+          ->Option.flatMap(x => x->Dict.get("ephemeralKey"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+
+        let paymentMethodsManagementElementsOptions =
+          paymentMethodsManagementElementsOptionsDict->Option.mapOr(
+            paymentMethodsManagementElementsOptions,
+            JSON.Encode.object,
+          )
+        ephemeralKey := ephemeralKeyId
+        Promise.make((resolve, _) => {
+          logger.setEphemeralKey(ephemeralKeyId)
+          resolve(JSON.Encode.null)
+        })
+        ->then(_ => {
+          logger.setLogInfo(
+            ~value=Window.hrefWithoutSearch,
+            ~eventName=PAYMENT_MANAGEMENT_ELEMENTS_CALLED,
+            (),
+          )
+          resolve()
+        })
+        ->ignore
+
+        PaymentMethodsManagementElements.make(
+          paymentMethodsManagementElementsOptions,
+          setIframeRef,
+          ~sdkSessionId=sessionID,
+          ~publishableKey,
+          ~ephemeralKey={ephemeralKeyId},
+          ~logger=Some(logger),
+          ~analyticsMetadata,
+          ~customBackendUrl=options
+          ->Option.getOr(JSON.Encode.null)
+          ->getDictFromJson
+          ->getString("customBackendUrl", ""),
+        )
+      }
+
       let confirmCardPaymentFn = (
         clientSecretId: string,
         data: option<JSON.t>,
@@ -563,6 +614,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~clientSecret={clientSecretId},
           ~publishableKey,
           ~logger=Some(logger),
+          ~ephemeralKey=ephemeralKey.contents,
         )
       }
 
@@ -575,6 +627,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         retrievePaymentIntent: retrievePaymentIntentFn,
         paymentRequest,
         initPaymentSession,
+        paymentMethodsManagementElements,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

@@ -10,6 +10,7 @@ type element = {
 }
 type keys = {
   clientSecret: option<string>,
+  ephemeralKey?: string,
   publishableKey: string,
   iframeId: string,
   parentURL: string,
