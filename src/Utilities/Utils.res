@@ -1342,10 +1342,11 @@ let handleFailureResponse = (~message, ~errorType) =>
 let getPaymentId = clientSecret =>
   String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
 
-let checkIs18OrAbove = date => {
+let checkIs18OrAbove = dateOfBirth => {
   let currentDate = Date.make()
   let year = currentDate->Date.getFullYear - 18
   let month = currentDate->Date.getMonth
-  let compareDate = Date.makeWithYMD(~year, ~month, ~date=currentDate->Date.getDate)
-  date <= compareDate
+  let date = currentDate->Date.getDate
+  let compareDate = Date.makeWithYMD(~year, ~month, ~date)
+  dateOfBirth <= compareDate
 }

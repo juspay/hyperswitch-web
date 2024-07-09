@@ -25,7 +25,13 @@ let make = () => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (selectedDate, setSelectedDate) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
   let (error, setError) = React.useState(_ => false)
-  let (isNotEligible, setIsNotEligible) = React.useState(_ => false)
+  let isNotEligible = React.useMemo(() => {
+    let isAbove18 = switch selectedDate->Nullable.toOption {
+    | Some(val) => val->checkIs18OrAbove
+    | None => false
+    }
+    !isAbove18
+  }, [selectedDate])
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
@@ -41,12 +47,7 @@ let make = () => {
   useSubmitPaymentData(submitCallback)
 
   let onChange = date => {
-    let isAbove18 = switch date->Nullable.toOption {
-    | Some(val) => val->checkIs18OrAbove
-    | None => false
-    }
     setSelectedDate(_ => date)
-    setIsNotEligible(_ => !isAbove18)
   }
   let errorString = error
     ? "Date of birth is required"
