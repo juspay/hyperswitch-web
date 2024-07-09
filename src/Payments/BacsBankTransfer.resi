@@ -1,1 +1,2 @@
-let default: CardThemeType.mode => React.element
+@react.component
+let default: (~paymentType: CardThemeType.mode) => React.element
