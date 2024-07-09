@@ -27,6 +27,7 @@ let make = (
     let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
+
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
     let redirect = ref("if_required")
 
@@ -278,6 +279,7 @@ let make = (
       | "applePay"
       | "klarna"
       | "expressCheckout"
+      | "paymentMethodsManagement"
       | "payment" => ()
       | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger, ())
       }
