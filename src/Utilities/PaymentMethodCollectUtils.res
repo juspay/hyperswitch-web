@@ -183,21 +183,16 @@ let getPaymentMethodDataFieldLabel = (key: paymentMethodDataField): string =>
   | SepaBic => "Bank Identifier Code (BIC)"
   | PixId => "Pix ID"
   | PixBankAccountNumber => "Bank Account Number"
-
   | PaypalMail => "Email"
   | PaypalMobNumber | VenmoMobNumber => "Phone Number"
-
   | SepaCountryCode => "Country Code (Optional)"
-
   | ACHBankName
   | BacsBankName
   | PixBankName
   | SepaBankName => "Bank Name (Optional)"
-
   | ACHBankCity
   | BacsBankCity
   | SepaBankCity => "Bank City (Optional)"
-
   | CardBrand => "Misc."
   }
 
@@ -215,19 +210,15 @@ let getPaymentMethodDataFieldPlaceholder = (key: paymentMethodDataField): string
   | SepaCountryCode => "Country"
   | PixId => "**** 3251"
   | PixBankAccountNumber => "**** 1232"
-
   | ACHBankName
   | BacsBankName
   | PixBankName
   | SepaBankName => "Bank Name"
-
   | ACHBankCity
   | BacsBankCity
   | SepaBankCity => "Bank City"
-
   | PaypalMail => "Your Email"
   | PaypalMobNumber | VenmoMobNumber => "Your Phone"
-
   | CardBrand => "Misc."
   }
 

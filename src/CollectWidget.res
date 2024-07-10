@@ -181,7 +181,7 @@ let make = (
     switch selectedPaymentMethod {
     | Some(_) =>
       <button
-        className="bg-jp-gray-600 rounded-full h-7 w-7 self-center mr-[20px]"
+        className="bg-jp-gray-600 rounded-full h-7 w-7 self-center mr-5"
         onClick={_ => handleBackClick()}>
         {React.string("←")}
       </button>
@@ -227,11 +227,11 @@ let make = (
     }
 
   let renderInfoTemplate = (label, value, uniqueKey) => {
-    let labelClasses = "w-4/10 text-jp-gray-800 text-[14px] min-w-40 text-end"
-    let valueClasses = "w-6/10 text-[14px] min-w-40"
+    let labelClasses = "w-4/10 text-jp-gray-800 text-sm min-w-40 text-end"
+    let valueClasses = "w-6/10 text-sm min-w-40"
     <div key={uniqueKey} className="flex flex-row items-center">
       <div className={labelClasses}> {React.string(label)} </div>
-      <div className="mx-[10px] h-[15px] w-[2px] bg-jp-gray-300"> {React.string("")} </div>
+      <div className="mx-2.5 h-4 w-0.5 bg-jp-gray-300"> {React.string("")} </div>
       <div className={valueClasses}> {React.string(value)} </div>
     </div>
   }
@@ -242,9 +242,9 @@ let make = (
       <div className="flex flex-col">
         {switch formLayout {
         | Tabs =>
-          <div className="flex flex-row items-center mb-[10px] text-[20px] font-semibold">
-            <img src={"merchantLogo"} alt="" className="h-[25px] w-auto" />
-            <div className="ml-[5px]">
+          <div className="flex flex-row items-center mb-2.5 text-xl font-semibold">
+            <img src={"merchantLogo"} alt="" className="h-6 w-auto" />
+            <div className="ml-1.5">
               {React.string(`Review your ${paymentMethodType->getPaymentMethodTypeLabel} details`)}
             </div>
           </div>
@@ -258,19 +258,19 @@ let make = (
         ->React.array}
       </div>
       <div
-        className="flex flex-row items-center min-w-full mt-[20px] py-[5px] px-[10px] text-[13px] border border-solid border-blue-200 rounded bg-blue-50">
-        <img src={"merchantLogo"} alt="" className="h-[12px] w-auto mr-[5px]" />
+        className="flex flex-row items-center min-w-full m5 py-1.5 px-2.5 text-xs border border-solid border-blue-200 rounded bg-blue-50">
+        <img src={"merchantLogo"} alt="" className="h-3 w-auto mr-1.5" />
         {React.string(
           `Your funds will be deposited in the selected ${paymentMethod
             ->getPaymentMethodLabel
             ->String.toLowerCase}.`,
         )}
       </div>
-      <div className="flex mt-[20px] text-[18px] font-semibold w-full">
+      <div className="flex m5 text-lg font-semibold w-full">
         <button
           onClick={_ => setSavedPMD(_ => None)}
           disabled={submitted}
-          className="w-full px-[10px] py-[5px] rounded border border-solid"
+          className="w-full px-2.5 py-1.5 rounded border border-solid"
           style={color: primaryTheme, borderColor: primaryTheme}>
           {React.string("Edit")}
         </button>
@@ -280,7 +280,7 @@ let make = (
             handleSubmit(pmd)
           }}
           disabled={submitted}
-          className="w-full px-[10px] py-[5px] text-white rounded ml-[10px]"
+          className="w-full px-2.5 py-1.5 text-white rounded ml-2.5"
           style={backgroundColor: primaryTheme}>
           {React.string(submitted ? "Submitting ..." : "Submit")}
         </button>
@@ -290,8 +290,8 @@ let make = (
 
   let renderInputTemplate = (field: paymentMethodDataField) => {
     let isValid = field->getFieldValidity
-    let labelClasses = "text-[14px] mt-[10px] text-jp-gray-800"
-    let inputClasses = "min-w-full border mt-[5px] px-[10px] py-[8px] rounded-md border-jp-gray-200"
+    let labelClasses = "text-sm mt-2.5 text-jp-gray-800"
+    let inputClasses = "min-w-full border mt-1.5 px-2.5 py-2 rounded-md border-jp-gray-200"
     let inputRef = switch field {
     | CardNumber => cardNumberRef
     | CardExpDate => cardExpRef
@@ -319,7 +319,7 @@ let make = (
       ->Js.Re.source
     let value = field->getPaymentMethodDataValue
     let (errorString, errorStringClasses) = switch isValid {
-    | Some(false) => (field->getPaymentMethodDataErrorString(value), "text-[12px] text-red-950")
+    | Some(false) => (field->getPaymentMethodDataErrorString(value), "text-xs text-red-950")
     | _ => ("", "")
     }
     <InputField
@@ -387,7 +387,7 @@ let make = (
         </div>
       }}
       <button
-        className="min-w-full mt-[40px] text-[18px] font-semibold px-[10px] py-[5px] text-white rounded"
+        className="min-w-full mt-10 text-lg font-semibold px-2.5 py-1.5 text-white rounded"
         style={backgroundColor: primaryTheme}
         onClick={handleSave}>
         {React.string("Save")}
@@ -396,15 +396,15 @@ let make = (
   }
 
   let renderPMOptions = () =>
-    <div className="flex flex-col mt-[10px]">
+    <div className="flex flex-col mt-2.5">
       {availablePaymentMethods
       ->Array.mapWithIndex((pm, i) => {
         <button
           key={Int.toString(i)}
           onClick={_ => setSelectedPaymentMethod(_ => Some(pm))}
-          className="flex flex-row items-center border border-solid border-jp-gray-200 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50">
+          className="flex flex-row items-center border border-solid border-jp-gray-200 px-5 py-2.5 rounded mt-2.5 hover:bg-jp-gray-50">
           {pm->getPaymentMethodIcon}
-          <label className="text-start ml-[10px] cursor-pointer">
+          <label className="text-start ml-2.5 cursor-pointer">
             {React.string(pm->String.make)}
           </label>
         </button>
@@ -413,8 +413,8 @@ let make = (
     </div>
 
   let renderPMTOptions = () => {
-    let commonClasses = "flex flex-row items-center border border-solid border-jp-gray-200 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50"
-    let buttonTextClasses = "text-start ml-[10px]"
+    let commonClasses = "flex flex-row items-center border border-solid border-jp-gray-200 px-5 py-2.5 rounded mt-2.5 hover:bg-jp-gray-50"
+    let buttonTextClasses = "text-start ml-2.5"
     <div className="flex flex-col">
       {switch selectedPaymentMethod {
       | Some(Card) => React.null
@@ -463,10 +463,10 @@ let make = (
     <div className="w-full">
       <div className="flex flex-row justify-start">
         <div className="flex justify-center items-center"> {renderBackButton()} </div>
-        <div className="text-[20px] lg:text-[30px] font-semibold"> {renderContentHeader()} </div>
+        <div className="text-xl lg:text-3xl font-semibold"> {renderContentHeader()} </div>
       </div>
-      <div className="text-[16px] text-gray-500"> {renderContentSubHeader()} </div>
-      <div className="mt-[10px]">
+      <div className="text-base text-gray-500"> {renderContentSubHeader()} </div>
+      <div className="mt-2.5">
         {switch savedPMD {
         | Some(pmd) => renderFinalizeScreen(pmd)
         | None =>
@@ -523,14 +523,12 @@ let make = (
                     <div
                       key={i->Int.toString}
                       onClick={_ => setSelectedPaymentMethodType(_ => Some(pmt))}
-                      className="flex w-full items-center rounded border border-solid border-jp-gray-700 px-[10px] py-[5px] mr-[10px] cursor-pointer hover:bg-jp-gray-50"
+                      className="flex w-full items-center rounded border border-solid border-jp-gray-700 px-2.5 py-1.5 mr-2.5 cursor-pointer hover:bg-jp-gray-50"
                       style={selectedPaymentMethodType === Some(pmt)
                         ? activeStyles
                         : defaultStyles}>
                       {pmt->getPaymentMethodTypeIcon}
-                      <div className="ml-[10px]">
-                        {React.string(pmt->getPaymentMethodTypeLabel)}
-                      </div>
+                      <div className="ml-2.5"> {React.string(pmt->getPaymentMethodTypeLabel)} </div>
                     </div>,
                   )
                 }
@@ -545,8 +543,8 @@ let make = (
                     size=10
                   />
                   <select
-                    className="h-full relative rounded border border-solid border-jp-gray-700 py-[5px] cursor-pointer bg-white text-transparent w-[30px]
-                    hover:bg-jp-gray-50 focus:border-[2px]">
+                    className="h-full relative rounded border border-solid border-jp-gray-700 py-1.5 cursor-pointer bg-white text-transparent w-8
+                    hover:bg-jp-gray-50 focus:border-0.5">
                     {switch selectedPaymentMethodType {
                     | Some(selectedPaymentMethodType) =>
                       <option value="pmt->getPaymentMethodTypeLabel" disabled={true}>
@@ -561,9 +559,9 @@ let make = (
                           <option
                             key={i->Int.toString}
                             value={pmt->getPaymentMethodTypeLabel}
-                            className="flex items-center px-[10px] py-[3px] cursor-pointer hover:bg-jp-gray-50"
+                            className="flex items-center px-2.5 py-0.5 cursor-pointer hover:bg-jp-gray-50"
                             onClick={_ => handleTabSelection(pmt)}>
-                            <div className="ml-[10px]">
+                            <div className="ml-2.5">
                               {React.string(pmt->getPaymentMethodTypeLabel)}
                             </div>
                           </option>,
@@ -578,7 +576,7 @@ let make = (
                 React.null
               }}
             </div>
-            <div className="mt-[20px]">
+            <div className="mt-5">
               {switch selectedPaymentMethodType {
               | Some(pmt) => renderInputs(pmt)
               | None => React.null
@@ -591,8 +589,8 @@ let make = (
   }
 
   <div
-    className="flex flex-col h-min p-[25px] items-center
-      lg:rounded lg:shadow-lg lg:p-[40px] lg:min-w-[400px]">
+    className="flex flex-col h-min p-6 items-center
+      lg:rounded lg:shadow-lg lg:p-10 lg:min-w-[400px]">
     {switch formLayout {
     | Journey => renderJourneyScreen()
     | Tabs => renderTabScreen()
