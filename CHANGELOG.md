@@ -1,3 +1,10 @@
+# [0.74.0](https://github.com/juspay/hyperswitch-web/compare/v0.73.2...v0.74.0) (2024-07-10)
+
+
+### Features
+
+* added upi collect payment method type ([#491](https://github.com/juspay/hyperswitch-web/issues/491)) ([8b87fc4](https://github.com/juspay/hyperswitch-web/commit/8b87fc458546924918ac05f0cd6c8a28f879e89f))
+
 ## [0.73.2](https://github.com/juspay/hyperswitch-web/compare/v0.73.1...v0.73.2) (2024-07-09)
 
 
