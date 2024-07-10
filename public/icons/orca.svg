@@ -2543,4 +2543,8 @@ License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL
     <line stroke="currentColor" style="fill:none;stroke-width:3;stroke-linecap:round;stroke-miterlimit:10;" x1="6.5" y1="11.5" x2="41.5" y2="11.5"/>
     <path fill="currentColor" d="M8.493,11.5l2.664,27.53c0.274,2.833,2.628,4.97,5.475,4.97h14.736c2.847,0,5.2-2.137,5.475-4.97l2.664-27.53H8.493z M21,34.5c0,0.829-0.672,1.5-1.5,1.5S18,35.329,18,34.5v-15c0-0.829,0.672-1.5,1.5-1.5s1.5,0.671,1.5,1.5V34.5z M30,34.5 c0,0.829-0.672,1.5-1.5,1.5S27,35.329,27,34.5v-15c0-0.829,0.672-1.5,1.5-1.5s1.5,0.671,1.5,1.5V34.5z"/>
   </symbol>
+  <symbol id="bhim_upi" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" baseProfile="basic">
+    <polygon fill="#388e3c" points="29,4 18,45 40,24"/>
+    <polygon fill="#f57c00" points="21,3 10,44 32,23"/>
+  </symbol>
 </svg>

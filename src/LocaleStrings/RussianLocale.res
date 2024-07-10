@@ -89,4 +89,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   currencyNetwork: `Валютные сети`,
   expiryPlaceholder: `MM / ГГ`,
   dateOfBirth: `Дата рождения`,
+  vpaIdLabel: `Идентификатор ВПА`,
+  vpaIdEmptyText: `Идентификатор VPA не может быть пустым.`,
+  vpaIdInvalidText: `Неверный идентификатор VPA`,
 }

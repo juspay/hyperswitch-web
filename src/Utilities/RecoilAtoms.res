@@ -63,6 +63,7 @@ let areRequiredFieldsValid = Recoil.atom("areRequiredFieldsValid", true)
 let areRequiredFieldsEmpty = Recoil.atom("areRequiredFieldsEmpty", false)
 let dateOfBirth = Recoil.atom("dateOfBirth", Nullable.null)
 let userBillingName = Recoil.atom("userBillingName", defaultFieldValues)
+let userVpaId = Recoil.atom("userVpaId", defaultFieldValues)
 
 type areOneClickWalletsRendered = {
   isGooglePay: bool,

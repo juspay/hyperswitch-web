@@ -393,6 +393,15 @@ let isEmailValid = email => {
   }
 }
 
+let isVpaIdValid = vpaId => {
+  switch vpaId->String.match(
+    %re("/^[a-zA-Z0-9]([a-zA-Z0-9.-]{1,50})[a-zA-Z0-9]@[a-zA-Z0-9]{2,}$/"),
+  ) {
+  | Some(_match) => Some(true)
+  | None => vpaId->String.length > 0 ? Some(false) : None
+  }
+}
+
 let checkEmailValid = (
   email: RecoilAtomTypes.field,
   fn: (RecoilAtomTypes.field => RecoilAtomTypes.field) => unit,
