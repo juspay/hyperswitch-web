@@ -1,4 +1,1 @@
-open LazyUtils
-
-type props = {}
-let make: props => React.element = reactLazy(() => import_("./PaymentManagement.bs.js"))
+let make = React.lazy_(() => Js.import(PaymentManagement.default))

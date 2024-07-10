@@ -1,3 +1,12 @@
+## [0.73.2](https://github.com/juspay/hyperswitch-web/compare/v0.73.1...v0.73.2) (2024-07-09)
+
+
+### Bug Fixes
+
+* date of birth validations ([#480](https://github.com/juspay/hyperswitch-web/issues/480)) ([8d9c620](https://github.com/juspay/hyperswitch-web/commit/8d9c6202fd479c24a01673997bd8d8ab372cf496))
+
+## [0.73.1](https://github.com/juspay/hyperswitch-web/compare/v0.73.0...v0.73.1) (2024-07-09)
+
 # [0.73.0](https://github.com/juspay/hyperswitch-web/compare/v0.72.7...v0.73.0) (2024-07-08)
 
 

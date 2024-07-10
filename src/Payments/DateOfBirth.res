@@ -21,8 +21,37 @@ let years = Array.fromInitializer(~length=currentYear - startYear, i => currentY
 
 @react.component
 let make = () => {
+  open Utils
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (selectedDate, setSelectedDate) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
+  let (error, setError) = React.useState(_ => false)
+  let isNotEligible = React.useMemo(() => {
+    let isAbove18 = switch selectedDate->Nullable.toOption {
+    | Some(val) => val->checkIs18OrAbove
+    | None => false
+    }
+    !isAbove18
+  }, [selectedDate])
+
+  let submitCallback = React.useCallback((ev: Window.event) => {
+    let json = ev.data->JSON.parseExn
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+    if confirm.doSubmit {
+      switch selectedDate->Nullable.toOption {
+      | Some(_) => setError(_ => false)
+      | None => ()
+      }
+    }
+  }, (selectedDate, isNotEligible))
+
+  useSubmitPaymentData(submitCallback)
+
+  let onChange = date => {
+    setSelectedDate(_ => date)
+  }
+  let errorString = error
+    ? "Date of birth is required"
+    : "Age should be equal or greater than 18 years"
 
   <div className="flex flex-col gap-1">
     <div
@@ -39,9 +68,11 @@ let make = () => {
       icon={<Icon name="calander" size=13 className="!px-[6px] !py-[10px]" />}
       className="w-full border border-gray-300 rounded p-2"
       selected={selectedDate}
-      onChange={date => setSelectedDate(_ => date)}
+      onChange={date => onChange(date)}
       dateFormat="dd-MM-yyyy"
       wrapperClassName="datepicker"
+      shouldCloseOnSelect=true
+      placeholderText="Enter Date of Birth"
       renderCustomHeader={val => {
         <div className="flex gap-4 items-center justify-center m-2">
           <select
@@ -75,5 +106,17 @@ let make = () => {
         </div>
       }}
     />
+    <RenderIf condition={error || isNotEligible}>
+      <div
+        className="Error pt-1"
+        style={
+          color: themeObj.colorDangerText,
+          fontSize: themeObj.fontSizeSm,
+          alignSelf: "start",
+          textAlign: "left",
+        }>
+        {React.string(errorString)}
+      </div>
+    </RenderIf>
   </div>
 }

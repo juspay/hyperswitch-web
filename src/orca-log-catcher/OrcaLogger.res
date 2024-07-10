@@ -70,7 +70,7 @@ type eventName =
   | PAYMENT_METHODS_RESPONSE
   | LOADER_CHANGED
   | PAYMENT_SESSION_INITIATED
-  | POLL_STATUS_INIT
+  | POLL_STATUS_CALL_INIT
   | POLL_STATUS_CALL
   | COMPLETE_AUTHORIZE_CALL_INIT
   | COMPLETE_AUTHORIZE_CALL
@@ -151,7 +151,7 @@ let eventNameToStrMapper = eventName => {
   | PAYMENT_METHODS_RESPONSE => "PAYMENT_METHODS_RESPONSE"
   | LOADER_CHANGED => "LOADER_CHANGED"
   | PAYMENT_SESSION_INITIATED => "PAYMENT_SESSION_INITIATED"
-  | POLL_STATUS_INIT => "POLL_STATUS_INIT"
+  | POLL_STATUS_CALL_INIT => "POLL_STATUS_CALL_INIT"
   | POLL_STATUS_CALL => "POLL_STATUS_CALL"
   | COMPLETE_AUTHORIZE_CALL_INIT => "COMPLETE_AUTHORIZE_CALL_INIT"
   | COMPLETE_AUTHORIZE_CALL => "COMPLETE_AUTHORIZE_CALL"
@@ -649,15 +649,7 @@ let make = (
         | _ => 0.
         }
       }
-    | AUTHENTICATION_CALL
-    | RETRIEVE_CALL
-    | CONFIRM_CALL
-    | SESSIONS_CALL
-    | PAYMENT_METHODS_CALL
-    | CUSTOMER_PAYMENT_METHODS_CALL
-    | PAYMENT_METHODS_AUTH_EXCHANGE_CALL
-    | PAYMENT_METHODS_AUTH_LINK_CALL
-    | CREATE_CUSTOMER_PAYMENT_METHODS_CALL => {
+    | _ => {
         let logRequestTimestamp =
           events.contents->Dict.get(eventName->eventNameToStrMapper ++ "_INIT")
         switch (logRequestTimestamp, apiLogType) {
@@ -666,7 +658,6 @@ let make = (
         | _ => 0.
         }
       }
-    | _ => 0.
     }
     latency > 0. ? latency->Float.toString : ""
   }

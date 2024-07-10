@@ -1,7 +1,8 @@
 open RecoilAtoms
 open Utils
 
-let default = (paymentType: CardThemeType.mode) => {
+@react.component
+let default = (~paymentType: CardThemeType.mode) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)

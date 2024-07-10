@@ -126,6 +126,7 @@ let useRequiredFieldsEmptyAndValid = (
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
+  let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
@@ -159,6 +160,11 @@ let useRequiredFieldsEmptyAndValid = (
         isExpiryValid->Option.getOr(false)
       | CardCvc => isCVCValid->Option.getOr(false)
       | CardExpiryAndCvc => isExpiryValid->Option.getOr(false) && isCVCValid->Option.getOr(false)
+      | DateOfBirth =>
+        switch dateOfBirth->Nullable.toOption {
+        | Some(val) => val->Utils.checkIs18OrAbove
+        | None => false
+        }
       | _ => true
       }
     })
@@ -203,6 +209,7 @@ let useRequiredFieldsEmptyAndValid = (
       | CardExpiryAndCvc =>
         let (month, year) = getExpiryDates(cardExpiry)
         month === "" || year === "" || cvcNumber === ""
+      | DateOfBirth => dateOfBirth->Js.Nullable.isNullable
       | _ => false
       }
     })
@@ -215,6 +222,7 @@ let useRequiredFieldsEmptyAndValid = (
     country,
     billingName.value,
     line1.value,
+    dateOfBirth,
     (
       email,
       line2.value,
@@ -382,8 +390,12 @@ let useSetInitialRequiredFields = (
           setCryptoCurrencyNetworks(_ => value)
         }
       | DateOfBirth =>
-        if value !== "" && dateOfBirth->Date.toDateString === "" {
-          setDateOfBirth(_ => dateOfBirth)
+        switch dateOfBirth->Nullable.toOption {
+        | Some(x) =>
+          if value !== "" && x->Date.toDateString === "" {
+            setDateOfBirth(_ => Nullable.make(x))
+          }
+        | None => ()
         }
       | SpecialField(_)
       | InfoElement
@@ -470,7 +482,11 @@ let useRequiredFieldsBody = (
       let (_, year) = CardUtils.getExpiryDates(cardExpiry)
       year
     | CryptoCurrencyNetworks => cryptoCurrencyNetworks
-    | DateOfBirth => dateOfBirth->Date.toISOString->String.slice(~start=0, ~end=10)
+    | DateOfBirth =>
+      switch dateOfBirth->Nullable.toOption {
+      | Some(x) => x->Date.toISOString->String.slice(~start=0, ~end=10)
+      | None => ""
+      }
     | CardCvc => cvcNumber
     | StateAndCity
     | CountryAndPincode(_)
