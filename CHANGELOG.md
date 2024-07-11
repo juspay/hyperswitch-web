@@ -1,3 +1,10 @@
+## [0.74.3](https://github.com/juspay/hyperswitch-web/compare/v0.74.2...v0.74.3) (2024-07-11)
+
+
+### Bug Fixes
+
+* premount loader fix ([#492](https://github.com/juspay/hyperswitch-web/issues/492)) ([f9d973c](https://github.com/juspay/hyperswitch-web/commit/f9d973cd19a54d73dfcbc664f9ec093ecefd3798))
+
 ## [0.74.2](https://github.com/juspay/hyperswitch-web/compare/v0.74.1...v0.74.2) (2024-07-10)
 
 
