@@ -37,6 +37,7 @@ type paymentMethodsFields =
   | ShippingAddressCountry(array<string>)
   | CryptoCurrencyNetworks
   | DateOfBirth
+  | VpaId
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -524,6 +525,13 @@ let paymentMethodsFields = [
     displayName: "Mifinity",
     miniIcon: None,
   },
+  {
+    paymentMethodName: "upi_collect",
+    fields: [InfoElement],
+    icon: Some(icon("bhim_upi", ~size=19)),
+    displayName: "UPI Collect",
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
@@ -560,6 +568,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_crypto_currency_network", _) => CryptoCurrencyNetworks
   | ("user_date_of_birth", _) => DateOfBirth
   | ("user_phone_number_country_code", _) => PhoneCountryCode
+  | ("user_vpa_id", _) => VpaId
   | _ => None
   }
 }
@@ -637,6 +646,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "local_bank_transfer_transfer",
   "afterpay_clearpay",
   "mifinity",
+  "upi_collect",
 ]
 
 let getIsBillingField = requiredFieldType => {

@@ -76,4 +76,7 @@ type localeStrings = {
   currencyNetwork: string,
   expiryPlaceholder: string,
   dateOfBirth: string,
+  vpaIdLabel: string,
+  vpaIdEmptyText: string,
+  vpaIdInvalidText: string,
 }

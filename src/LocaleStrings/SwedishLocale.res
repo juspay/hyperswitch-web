@@ -85,4 +85,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   currencyNetwork: `Valutanätverk`,
   expiryPlaceholder: `MM / ÅÅ`,
   dateOfBirth: `Födelsedatum`,
+  vpaIdLabel: `Vpa-id`,
+  vpaIdEmptyText: `Vpa-id får inte vara tomt`,
+  vpaIdInvalidText: `Ogiltigt Vpa-ID`,
 }
