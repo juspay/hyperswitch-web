@@ -88,4 +88,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   vpaIdLabel: `מזהה VPA`,
   vpaIdEmptyText: `מזהה VPA לא יכול להיות ריק`,
   vpaIdInvalidText: `מזהה VPA לא חוקי`,
+  dateofBirthRequiredText: `תאריך לידה נדרש`,
+  dateOfBirthInvalidText: `הגיל צריך להיות גדול או שווה ל-18 שנים`,
 }

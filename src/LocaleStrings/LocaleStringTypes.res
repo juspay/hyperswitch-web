@@ -79,4 +79,6 @@ type localeStrings = {
   vpaIdLabel: string,
   vpaIdEmptyText: string,
   vpaIdInvalidText: string,
+  dateofBirthRequiredText: string,
+  dateOfBirthInvalidText: string,
 }

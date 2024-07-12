@@ -50,8 +50,8 @@ let make = () => {
   }
 
   let errorString = error
-    ? "Date of birth is required"
-    : "Age should be greater than or equal to 18 years"
+    ? localeString.dateofBirthRequiredText
+    : localeString.dateOfBirthInvalidText
 
   <div className="flex flex-col gap-1">
     <div

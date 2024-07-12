@@ -88,4 +88,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   vpaIdLabel: `ID VPA`,
   vpaIdEmptyText: `O ID Vpa não pode ficar vazio`,
   vpaIdInvalidText: `ID Vpa inválido`,
+  dateofBirthRequiredText: `Data de nascimento é obrigatória`,
+  dateOfBirthInvalidText: `A idade deve ser maior ou igual a 18 anos`,
 }
