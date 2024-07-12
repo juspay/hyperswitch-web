@@ -25,13 +25,7 @@ let make = () => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (selectedDate, setSelectedDate) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
   let (error, setError) = React.useState(_ => false)
-  let isNotEligible = React.useMemo(() => {
-    let isAbove18 = switch selectedDate->Nullable.toOption {
-    | Some(val) => val->checkIs18OrAbove
-    | None => false
-    }
-    !isAbove18
-  }, [selectedDate])
+  let (isNotEligible, setIsNotEligible) = React.useState(_ => false)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->JSON.parseExn
@@ -47,11 +41,17 @@ let make = () => {
   useSubmitPaymentData(submitCallback)
 
   let onChange = date => {
+    let isAbove18 = switch date->Nullable.toOption {
+    | Some(val) => val->checkIs18OrAbove
+    | None => false
+    }
     setSelectedDate(_ => date)
+    setIsNotEligible(_ => !isAbove18)
   }
+
   let errorString = error
-    ? "Date of birth is required"
-    : "Age should be equal or greater than 18 years"
+    ? localeString.dateofBirthRequiredText
+    : localeString.dateOfBirthInvalidText
 
   <div className="flex flex-col gap-1">
     <div
@@ -68,11 +68,11 @@ let make = () => {
       icon={<Icon name="calander" size=13 className="!px-[6px] !py-[10px]" />}
       className="w-full border border-gray-300 rounded p-2"
       selected={selectedDate}
-      onChange={date => onChange(date)}
+      onChange
       dateFormat="dd-MM-yyyy"
       wrapperClassName="datepicker"
       shouldCloseOnSelect=true
-      placeholderText="Enter Date of Birth"
+      placeholderText={localeString.dateOfBirthPlaceholderText}
       renderCustomHeader={val => {
         <div className="flex gap-4 items-center justify-center m-2">
           <select
