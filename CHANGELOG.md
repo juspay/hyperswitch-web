@@ -1,3 +1,10 @@
+## [0.74.5](https://github.com/juspay/hyperswitch-web/compare/v0.74.4...v0.74.5) (2024-07-12)
+
+
+### Bug Fixes
+
+* error string ([#498](https://github.com/juspay/hyperswitch-web/issues/498)) ([213daf7](https://github.com/juspay/hyperswitch-web/commit/213daf793498b7e23d0da74a1e17975c8591bc9e))
+
 ## [0.74.4](https://github.com/juspay/hyperswitch-web/compare/v0.74.3...v0.74.4) (2024-07-12)
 
 ## [0.74.3](https://github.com/juspay/hyperswitch-web/compare/v0.74.2...v0.74.3) (2024-07-11)
