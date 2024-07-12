@@ -68,11 +68,11 @@ let make = () => {
       icon={<Icon name="calander" size=13 className="!px-[6px] !py-[10px]" />}
       className="w-full border border-gray-300 rounded p-2"
       selected={selectedDate}
-      onChange={date => onChange(date)}
+      onChange
       dateFormat="dd-MM-yyyy"
       wrapperClassName="datepicker"
       shouldCloseOnSelect=true
-      placeholderText="Enter Date of Birth"
+      placeholderText={localeString.dateOfBirthPlaceholderText}
       renderCustomHeader={val => {
         <div className="flex gap-4 items-center justify-center m-2">
           <select

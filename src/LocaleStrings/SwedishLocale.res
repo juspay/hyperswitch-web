@@ -90,4 +90,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   vpaIdInvalidText: `Ogiltigt Vpa-ID`,
   dateofBirthRequiredText: `Födelsedatum krävs`,
   dateOfBirthInvalidText: `Åldern bör vara större än eller lika med 18 år`,
+  dateOfBirthPlaceholderText: `Ange födelsedatum`,
 }

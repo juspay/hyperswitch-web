@@ -90,4 +90,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   vpaIdInvalidText: `無効な VPA ID`,
   dateofBirthRequiredText: `生年月日が必要です`,
   dateOfBirthInvalidText: `年齢は18歳以上である必要があります`,
+  dateOfBirthPlaceholderText: `生年月日を入力してください`,
 }

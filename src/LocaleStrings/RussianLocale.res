@@ -94,4 +94,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   vpaIdInvalidText: `Неверный идентификатор VPA`,
   dateofBirthRequiredText: `Дата рождения обязательна`,
   dateOfBirthInvalidText: `Возраст должен быть не меньше 18 лет`,
+  dateOfBirthPlaceholderText: `Введите дату рождения`,
 }

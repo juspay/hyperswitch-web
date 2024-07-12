@@ -81,4 +81,5 @@ type localeStrings = {
   vpaIdInvalidText: string,
   dateofBirthRequiredText: string,
   dateOfBirthInvalidText: string,
+  dateOfBirthPlaceholderText: string,
 }

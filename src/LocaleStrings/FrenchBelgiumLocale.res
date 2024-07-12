@@ -90,4 +90,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   vpaIdInvalidText: `Identifiant Vpa invalide`,
   dateofBirthRequiredText: `La date de naissance est requise`,
   dateOfBirthInvalidText: `L'âge doit être supérieur ou égal à 18 ans`,
+  dateOfBirthPlaceholderText: `Entrez la date de naissance`,
 }
