@@ -137,15 +137,26 @@ let make = (
   })
 
   React.useEffect4(() => {
-    if (
-      paymentMethodsResponseSent &&
-      customerPaymentMethodsResponseSent &&
-      sessionTokensResponseSent &&
-      savedPaymentMethodsResponseSent
-    ) {
+    let handleUnmount = () => {
       handlePostMessage([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
       Window.removeEventListener("message", handle)
     }
+
+    switch hyperComponentName {
+    | Elements =>
+      if (
+        paymentMethodsResponseSent &&
+        customerPaymentMethodsResponseSent &&
+        sessionTokensResponseSent
+      ) {
+        handleUnmount()
+      }
+    | PaymentMethodsManagementElements =>
+      if savedPaymentMethodsResponseSent {
+        handleUnmount()
+      }
+    }
+
     None
   }, (
     paymentMethodsResponseSent,

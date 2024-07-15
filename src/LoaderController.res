@@ -3,7 +3,6 @@ open Utils
 let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
   open RecoilAtoms
 
-  //<...>//
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
@@ -579,7 +578,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     ])
     None
   }, (divH, iframeId))
-  //<...>//
 
   <div ref={divRef->ReactDOM.Ref.domRef}> children </div>
 }
