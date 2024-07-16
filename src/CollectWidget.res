@@ -357,31 +357,31 @@ let make = (
         <div className="collect-bank">
           {switch bankTransferType {
           | ACH =>
-            <React.Fragment>
+            <>
               {ACHRoutingNumber->renderInputTemplate}
               {ACHAccountNumber->renderInputTemplate}
-            </React.Fragment>
+            </>
           | Bacs =>
-            <React.Fragment>
+            <>
               {BacsSortCode->renderInputTemplate}
               {BacsAccountNumber->renderInputTemplate}
-            </React.Fragment>
+            </>
           | Sepa =>
-            <React.Fragment>
+            <>
               {SepaIban->renderInputTemplate}
               {SepaBic->renderInputTemplate}
-            </React.Fragment>
+            </>
           }}
         </div>
       | Wallet(walletType) =>
         <div className="collect-wallet">
           {switch walletType {
           | Paypal =>
-            <React.Fragment>
+            <>
               {PaypalMail->renderInputTemplate}
               {PaypalMobNumber->renderInputTemplate}
-            </React.Fragment>
-          | Venmo => <React.Fragment> {VenmoMobNumber->renderInputTemplate} </React.Fragment>
+            </>
+          | Venmo => VenmoMobNumber->renderInputTemplate
           | Pix => PixId->renderInputTemplate
           }}
         </div>
@@ -507,9 +507,7 @@ let make = (
       color: primaryTheme,
     }
     // tabs
-    <div
-      className="flex flex-col w-full min-w-[300px] max-w-[520px]
-      lg:min-w-[400px]">
+    <div className="flex flex-col w-full min-w-[300px] max-w-[520px] lg:min-w-[400px]">
       <div>
         {
           let hiddenTabs = availablePaymentMethodTypesOrdered->Array.reduceWithIndex([], (
@@ -563,8 +561,7 @@ let make = (
                       size=10
                     />
                     <select
-                      className="h-full relative rounded border border-solid border-jp-gray-700 py-1.5 cursor-pointer bg-white text-transparent w-8
-                    hover:bg-jp-gray-50 focus:border-0.5">
+                      className="h-full relative rounded border border-solid border-jp-gray-700 py-1.5 cursor-pointer bg-white text-transparent w-8 hover:bg-jp-gray-50 focus:border-0.5">
                       {switch selectedPaymentMethodType {
                       | Some(selectedPaymentMethodType) =>
                         <option
@@ -593,8 +590,7 @@ let make = (
   }
 
   <div
-    className="flex flex-col h-min p-6 items-center
-      lg:rounded lg:shadow-lg lg:p-10 lg:min-w-[400px]">
+    className="flex flex-col h-min p-6 items-center lg:rounded lg:shadow-lg lg:p-10 lg:min-w-[400px]">
     {switch formLayout {
     | Journey => renderJourneyScreen()
     | Tabs => renderTabScreen()

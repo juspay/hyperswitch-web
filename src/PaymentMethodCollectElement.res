@@ -298,7 +298,7 @@ let make = (~integrateError, ~logger) => {
           if showStatus {
             renderPayoutStatus()
           } else {
-            <React.Fragment>
+            <>
               // Merchant's info
               <div
                 className="flex flex-col w-full h-max items-center p-6
@@ -336,11 +336,11 @@ let make = (~integrateError, ~logger) => {
               </div>
               // Collect widget
               {renderCollectWidget()}
-            </React.Fragment>
+            </>
           }
 
         | PayoutMethodCollect =>
-          <React.Fragment>
+          <>
             // Merchant's info
             <div className="flex flex-col w-3/10 p-12" style={backgroundColor: merchantTheme}>
               <div className="flex flex-row">
@@ -352,7 +352,7 @@ let make = (~integrateError, ~logger) => {
             </div>
             // Collect widget
             {renderCollectWidget()}
-          </React.Fragment>
+          </>
         }
       }
     </div>
