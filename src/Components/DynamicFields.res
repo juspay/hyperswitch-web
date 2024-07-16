@@ -483,6 +483,7 @@ let make = (
           | ShippingAddressPincode
           | ShippingAddressState
           | PhoneCountryCode
+          | LanguagePreference(_)
           | ShippingAddressCountry(_) => React.null
           }}
         </div>
@@ -767,6 +768,7 @@ let make = (
                 | DateOfBirth
                 | PhoneCountryCode
                 | VpaId
+                | LanguagePreference(_)
                 | None => React.null
                 }}
               </div>

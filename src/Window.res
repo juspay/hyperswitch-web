@@ -118,6 +118,9 @@ external userAgent: string = "userAgent"
 @val @scope("navigator")
 external sendBeacon: (string, string) => unit = "sendBeacon"
 
+@val @scope("navigator")
+external language: string = "language"
+
 @val @scope(("window", "location"))
 external hostname: string = "hostname"
 
