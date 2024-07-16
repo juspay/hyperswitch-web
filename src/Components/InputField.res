@@ -11,6 +11,7 @@ let make = (
   ~onFocus=?,
   ~rightIcon=React.null,
   ~errorString=?,
+  ~errorStringClasses=?,
   ~fieldName="",
   ~type_="text",
   ~paymentType: CardThemeType.mode,
@@ -142,12 +143,15 @@ let make = (
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>
     </div>
-    {switch errorString {
-    | Some(val) =>
-      <RenderIf condition={val->String.length > 0}>
-        <div className="py-1"> {React.string(val)} </div>
-      </RenderIf>
-    | None => React.null
-    }}
+    {
+      let errorClases = errorStringClasses->Option.getOr("")
+      switch errorString {
+      | Some(val) =>
+        <RenderIf condition={val->String.length > 0}>
+          <div className={`py-1 ${errorClases}`}> {React.string(val)} </div>
+        </RenderIf>
+      | None => React.null
+      }
+    }
   </div>
 }
