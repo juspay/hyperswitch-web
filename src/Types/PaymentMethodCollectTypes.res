@@ -11,17 +11,13 @@ type paymentMethodType =
   | BankTransfer(bankTransfer)
   | Wallet(wallet)
 
-type paymentMethodTypes = {
-  card: array<card>,
-  bankTransfer: array<bankTransfer>,
-  wallet: array<wallet>,
-}
-
 type paymentMethodDataField =
   // Cards
   | CardNumber
   | CardExpDate
   | CardHolderName
+  // Card meta
+  | CardBrand
   // Banks
   | ACHRoutingNumber
   | ACHAccountNumber
@@ -46,6 +42,8 @@ type paymentMethodDataField =
 
 type paymentMethodData = (paymentMethod, paymentMethodType, array<(paymentMethodDataField, string)>)
 
+type formLayout = Journey | Tabs
+
 type paymentMethodCollectFlow = PayoutLinkInitiate | PayoutMethodCollect
 
 type paymentMethodCollectOptions = {
@@ -61,6 +59,7 @@ type paymentMethodCollectOptions = {
   currency: string,
   flow: paymentMethodCollectFlow,
   sessionExpiry: string,
+  formLayout: formLayout,
 }
 
 // API TYPES
@@ -137,6 +136,17 @@ let decodeFlow = (dict, defaultPaymentMethodCollectFlow) =>
     | _ => defaultPaymentMethodCollectFlow
     }
   | None => defaultPaymentMethodCollectFlow
+  }
+
+let decodeFormLayout = (dict, decodeFormLayout) =>
+  switch dict->Dict.get("formLayout") {
+  | Some(formLayout) =>
+    switch formLayout->JSON.Decode.string {
+    | Some("journey") => Journey
+    | Some("tabs") => Tabs
+    | _ => decodeFormLayout
+    }
+  | None => decodeFormLayout
   }
 
 let decodeCard = (cardType: string): option<card> =>
