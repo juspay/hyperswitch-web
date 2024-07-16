@@ -1,3 +1,10 @@
+# [0.75.0](https://github.com/juspay/hyperswitch-web/compare/v0.74.5...v0.75.0) (2024-07-16)
+
+
+### Features
+
+* **payout-link:** add input validations for payment methods in CollectWidget ([#460](https://github.com/juspay/hyperswitch-web/issues/460)) ([c2686cf](https://github.com/juspay/hyperswitch-web/commit/c2686cf046a41176ba93afb0625d6adf5625ccdc))
+
 ## [0.74.5](https://github.com/juspay/hyperswitch-web/compare/v0.74.4...v0.74.5) (2024-07-12)
 
 
