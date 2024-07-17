@@ -1,3 +1,10 @@
+# [0.76.0](https://github.com/juspay/hyperswitch-web/compare/v0.75.0...v0.76.0) (2024-07-17)
+
+
+### Features
+
+* language preference for mifinity added ([#502](https://github.com/juspay/hyperswitch-web/issues/502)) ([f9f15ca](https://github.com/juspay/hyperswitch-web/commit/f9f15cacbda9d1b02e778e6606c209f5233b6553))
+
 # [0.75.0](https://github.com/juspay/hyperswitch-web/compare/v0.74.5...v0.75.0) (2024-07-16)
 
 
