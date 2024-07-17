@@ -400,6 +400,7 @@ let useSetInitialRequiredFields = (
           }
         | None => ()
         }
+      | LanguagePreference(_)
       | SpecialField(_)
       | InfoElement
       | CardNumber
@@ -433,6 +434,7 @@ let useRequiredFieldsBody = (
   ~isAllStoredCardsHaveName,
   ~setRequiredFieldsBody,
 ) => {
+  let configValue = Recoil.useRecoilValueFromAtom(configAtom)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
@@ -464,6 +466,12 @@ let useRequiredFieldsBody = (
     | PhoneCountryCode => phone.countryCode->Option.getOr("")
     | Currency(_) => currency
     | Country => country
+    | LanguagePreference(languageOptions) =>
+      languageOptions->Array.includes(
+        configValue.config.locale->String.toUpperCase->String.split("-")->Array.joinWith("_"),
+      )
+        ? configValue.config.locale
+        : "en"
     | Bank =>
       (
         Bank.getBanks(paymentMethodType)

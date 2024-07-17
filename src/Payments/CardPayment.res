@@ -208,7 +208,7 @@ let make = (
     isCustomerAcceptanceRequired,
     nickname,
     isCardBrandValid,
-    isManualRetryEnabled
+    isManualRetryEnabled,
   ))
   useSubmitPaymentData(submitCallback)
 

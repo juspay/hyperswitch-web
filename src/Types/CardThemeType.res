@@ -2,7 +2,6 @@ type theme = Default | Brutal | Midnight | Soft | Charcoal | NONE
 
 type innerLayout = Spaced | Compressed
 
-@val external navigator: 'a = "navigator"
 type showLoader = Auto | Always | Never
 
 type mode =
