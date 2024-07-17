@@ -1257,10 +1257,15 @@ let fetchSessions = (
   ~switchToCustomPod,
   ~endpoint,
   ~isPaymentSession=false,
+  ~merchantHostname=Window.Location.hostname,
   (),
 ) => {
   open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("api-key", publishableKey),
+    ("X-Merchant-Domain", merchantHostname),
+  ]
   let paymentIntentID = clientSecret->getPaymentId
   let body =
     [
