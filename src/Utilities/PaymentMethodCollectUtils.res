@@ -126,8 +126,8 @@ let getPaymentMethodTypeLabel = (paymentMethodType: paymentMethodType): string =
   switch paymentMethodType {
   | Card(cardType) =>
     switch cardType {
-    | Credit => "Credit"
-    | Debit => "Debit"
+    | Credit
+    | Debit => "Card"
     }
   | BankTransfer(bankTransferType) =>
     switch bankTransferType {
@@ -149,6 +149,7 @@ let getPaymentMethodDataFieldKey = (key: paymentMethodDataField): string =>
   | CardNumber => "card.cardNumber"
   | CardExpDate => "card.cardExp"
   | CardHolderName => "card.cardHolder"
+  | CardBrand => "card.brand"
   | ACHRoutingNumber => "ach.routing"
   | ACHAccountNumber => "ach.account"
   | ACHBankName => "ach.bankName"
@@ -182,20 +183,17 @@ let getPaymentMethodDataFieldLabel = (key: paymentMethodDataField): string =>
   | SepaBic => "Bank Identifier Code (BIC)"
   | PixId => "Pix ID"
   | PixBankAccountNumber => "Bank Account Number"
-
   | PaypalMail => "Email"
   | PaypalMobNumber | VenmoMobNumber => "Phone Number"
-
   | SepaCountryCode => "Country Code (Optional)"
-
   | ACHBankName
   | BacsBankName
   | PixBankName
   | SepaBankName => "Bank Name (Optional)"
-
   | ACHBankCity
   | BacsBankCity
   | SepaBankCity => "Bank City (Optional)"
+  | CardBrand => "Misc."
   }
 
 let getPaymentMethodDataFieldPlaceholder = (key: paymentMethodDataField): string =>
@@ -212,31 +210,58 @@ let getPaymentMethodDataFieldPlaceholder = (key: paymentMethodDataField): string
   | SepaCountryCode => "Country"
   | PixId => "**** 3251"
   | PixBankAccountNumber => "**** 1232"
-
   | ACHBankName
   | BacsBankName
   | PixBankName
   | SepaBankName => "Bank Name"
-
   | ACHBankCity
   | BacsBankCity
   | SepaBankCity => "Bank City"
-
   | PaypalMail => "Your Email"
   | PaypalMobNumber | VenmoMobNumber => "Your Phone"
+  | CardBrand => "Misc."
   }
 
 let getPaymentMethodDataFieldMaxLength = (key: paymentMethodDataField): int =>
   switch key {
-  | CardNumber => 18
+  | CardNumber => 23
   | CardExpDate => 7
   | ACHRoutingNumber => 9
   | ACHAccountNumber => 12
   | BacsSortCode => 6
   | BacsAccountNumber => 18
-  | SepaIban => 34
   | SepaBic => 8
+  | SepaIban => 34
   | _ => 32
+  }
+
+let getPaymentMethodDataFieldCharacterPattern = (key: paymentMethodDataField): option<Js.Re.t> =>
+  switch key {
+  | ACHAccountNumber => Some(%re("/^\d{1,17}$/"))
+  | ACHRoutingNumber => Some(%re("/^\d{1,9}$/"))
+  | BacsAccountNumber => Some(%re("/^\d{1,18}$/"))
+  | BacsSortCode => Some(%re("/^\d{1,6}$/"))
+  | CardHolderName => Some(%re("/^([a-zA-Z]| ){1,32}$/"))
+  | CardNumber => Some(%re("/^\d{1,18}$/"))
+  | PaypalMail => Some(%re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/"))
+  | PaypalMobNumber => Some(%re("/^[0-9]{1,12}$/"))
+  | SepaBic => Some(%re("/^([A-Z0-9]| ){1,8}$/"))
+  | SepaIban => Some(%re("/^([A-Z0-9]| ){1,34}$/"))
+  | _ => None
+  }
+
+let getPaymentMethodDataFieldInputType = (key: paymentMethodDataField): string =>
+  switch key {
+  | ACHAccountNumber => "tel"
+  | ACHRoutingNumber => "tel"
+  | BacsAccountNumber => "tel"
+  | BacsSortCode => "tel"
+  | CardExpDate => "tel"
+  | CardNumber => "tel"
+  | PaypalMail => "email"
+  | PaypalMobNumber => "tel"
+  | VenmoMobNumber => "tel"
+  | _ => "text"
   }
 
 let getPayoutImageSource = (payoutStatus: payoutStatus): string => {
@@ -308,7 +333,48 @@ let getPayoutStatusMessage = (payoutStatus: payoutStatus): string =>
   | RequiresVendorAccountCreation => "Failed to process your payout. Please check with your provider for more details."
   }
 
+let getPaymentMethodDataErrorString = (key: paymentMethodDataField, value): string => {
+  let len = value->String.length
+  let notEmptyAndComplete = len <= 0 || len === key->getPaymentMethodDataFieldMaxLength
+  switch (key, notEmptyAndComplete) {
+  | (CardNumber, _) => "Card number is invalid."
+  | (CardExpDate, false) => "Your card's expiration date is incomplete."
+  | (CardExpDate, true) => "Your card's expiration year is in the past."
+  | (ACHRoutingNumber, false) => "Routing number is invalid."
+  | _ => ""
+  }
+}
+
+let getPaymentMethodIcon = (paymentMethod: paymentMethod) =>
+  switch paymentMethod {
+  | Card => <Icon name="card-generic-line" size=20 />
+  | BankTransfer => <Icon name="bank" size=20 />
+  | Wallet => <Icon name="wallet-generic-line" size=20 />
+  }
+
+let getBankTransferIcon = (bankTransfer: bankTransfer) =>
+  switch bankTransfer {
+  | ACH => <Icon name="ach_bank_transfer" size=20 />
+  | Bacs => <Icon name="bank" size=20 />
+  | Sepa => <Icon name="bank" size=20 />
+  }
+
+let getWalletIcon = (wallet: wallet) =>
+  switch wallet {
+  | Paypal => <Icon name="wallet-paypal" size=20 />
+  | Pix => <Icon name="wallet-pix" size=20 />
+  | Venmo => <Icon name="wallet-venmo" size=20 />
+  }
+
+let getPaymentMethodTypeIcon = (paymentMethodType: paymentMethodType) =>
+  switch paymentMethodType {
+  | Card(_) => Card->getPaymentMethodIcon
+  | BankTransfer(b) => b->getBankTransferIcon
+  | Wallet(w) => w->getWalletIcon
+  }
+
 // Defaults
+let defaultFormLayout: formLayout = Tabs
 let defaultPaymentMethodCollectFlow: paymentMethodCollectFlow = PayoutLinkInitiate
 let defaultAmount = "0.01"
 let defaultCurrency = "EUR"
@@ -333,13 +399,11 @@ let defaultPaymentMethodCollectOptions = {
   currency: defaultCurrency,
   flow: defaultPaymentMethodCollectFlow,
   sessionExpiry: "",
+  formLayout: defaultFormLayout,
 }
+let defaultOptionsLimitInTabLayout = 2
 let defaultAvailablePaymentMethods: array<paymentMethod> = []
-let defaultAvailablePaymentMethodTypes = {
-  card: [],
-  bankTransfer: [],
-  wallet: [],
-}
+let defaultAvailablePaymentMethodTypes: array<paymentMethodType> = []
 let defaultSelectedPaymentMethod: option<paymentMethod> = None
 let defaultSelectedPaymentMethodType: option<paymentMethodType> = None
 let defaultStatusInfo = {
@@ -366,6 +430,7 @@ let itemToObjMapper = (dict, logger) => {
       "currency",
       "flow",
       "sessionExpiry",
+      "formLayout",
     ],
     dict,
     "options",
@@ -387,6 +452,7 @@ let itemToObjMapper = (dict, logger) => {
     currency: getString(dict, "currency", defaultCurrency),
     flow: dict->decodeFlow(defaultPaymentMethodCollectFlow),
     sessionExpiry: getString(dict, "sessionExpiry", ""),
+    formLayout: dict->decodeFormLayout(defaultFormLayout),
   }
 }
 
@@ -599,8 +665,8 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
         let split = value->String.split("/")
         switch (split->Array.get(0), split->Array.get(1)) {
         | (Some(month), Some(year)) => {
-            pmdApiFields->Array.push(("card_exp_month", month))
-            pmdApiFields->Array.push(("card_exp_year", year))
+            pmdApiFields->Array.push(("expiry_month", month))
+            pmdApiFields->Array.push(("expiry_year", `20${year}`))
           }
         | _ => ()
         }
@@ -622,6 +688,9 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
     // Wallets
     | PaypalMail => pmdApiFields->Array.push(("email", value))
     | PaypalMobNumber | VenmoMobNumber => pmdApiFields->Array.push(("telephone_number", value))
+
+    // Misc.
+    | CardBrand => pmdApiFields->Array.push(("card_brand", value))
     }
   })
 
