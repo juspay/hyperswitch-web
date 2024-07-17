@@ -29,8 +29,6 @@ external querySelector: string => Nullable.t<Dom.element> = "querySelector"
 @val @scope("document")
 external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
 
-Js.log(" dcd")
-
 type eventData = {
   elementType: string,
   clickTriggered: bool,
