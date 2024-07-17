@@ -1,6 +1,3 @@
-@val @scope("window")
-external btoa: string => string = "btoa"
-
 let billingDetailsTuple = (
   ~fullName,
   ~email,
@@ -502,7 +499,7 @@ let applePayBody = (~token, ~connectors) => {
     ->Dict.get("paymentData")
     ->Option.getOr(Dict.make()->JSON.Encode.object)
     ->JSON.stringify
-    ->btoa
+    ->Window.btoa
   dict->Dict.set("paymentData", paymentDataString->JSON.Encode.string)
 
   let applePayBody = [
