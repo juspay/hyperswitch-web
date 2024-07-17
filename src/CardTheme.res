@@ -72,7 +72,7 @@ type recoilConfig = {
 let getLocaleObject = async string => {
   try {
     let locale = if string == "auto" {
-      navigator["language"]
+      Window.language
     } else {
       string
     }

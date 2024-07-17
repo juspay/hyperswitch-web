@@ -123,7 +123,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       setConfig(_ => {
         config: {
           appearance,
-          locale: config.locale,
+          locale: config.locale === "auto" ? Window.language : config.locale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
           ephemeralKey: config.ephemeralKey,

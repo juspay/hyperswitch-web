@@ -45,7 +45,9 @@ let make = () => {
             "hyperComponentName",
           )->Types.getHyperComponentNameFromStr
 
-        <PreMountLoader publishableKey sessionId clientSecret endpoint ephemeralKey hyperComponentName />
+        <PreMountLoader
+          publishableKey sessionId clientSecret endpoint ephemeralKey hyperComponentName
+        />
       }
     | "achBankTransfer"
     | "bacsBankTransfer"
