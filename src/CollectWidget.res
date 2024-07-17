@@ -480,12 +480,16 @@ let make = (
   }
 
   let handleTabSelection = selectedPMT => {
-    if availablePaymentMethodTypes->Array.indexOf(selectedPMT) >= defaultOptionsLimitInTabLayout {
+    if (
+      availablePaymentMethodTypesOrdered->Array.indexOf(selectedPMT) >=
+        defaultOptionsLimitInTabLayout
+    ) {
       // Move the selected payment method at the last tab position
       let ordList = availablePaymentMethodTypes->Array.reduceWithIndex([], (acc, pmt, i) => {
         if i === defaultOptionsLimitInTabLayout - 1 {
           acc->Array.push(selectedPMT)
-        } else if pmt !== selectedPMT {
+        }
+        if pmt !== selectedPMT {
           acc->Array.push(pmt)
         }
         acc
