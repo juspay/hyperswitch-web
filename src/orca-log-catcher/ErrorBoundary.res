@@ -127,7 +127,7 @@ module ErrorCard = {
     let beaconApiCall = data => {
       if data->Array.length > 0 {
         let logData = data->Array.map(OrcaLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
-        Window.sendBeacon(GlobalVars.logEndpoint, logData)
+        Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
       }
     }
 
@@ -148,8 +148,8 @@ module ErrorCard = {
           merchantId: "",
           browserName: OrcaLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
           browserVersion: OrcaLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
-          platform: Window.platform,
-          userAgent: Window.userAgent,
+          platform: Window.Navigator.platform,
+          userAgent: Window.Navigator.userAgent,
           appId: "",
           eventName: SDK_CRASH,
           latency: "",

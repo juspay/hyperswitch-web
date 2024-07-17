@@ -479,7 +479,7 @@ let browserDetect = content => {
   }
 }
 
-let arrayOfNameAndVersion = String.split(Window.userAgent->browserDetect, "-")
+let arrayOfNameAndVersion = String.split(Window.Navigator.userAgent->browserDetect, "-")
 
 let make = (
   ~sessionId=?,
@@ -542,14 +542,17 @@ let make = (
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
       switch loggingLevel {
-      | DEBUG => log->Array.push(mainLogFile, _)->ignore
+      | DEBUG => log->(Array.push(mainLogFile, _))->ignore
       | INFO =>
         [INFO, WARNING, ERROR]->Array.includes(log.logType)
-          ? log->Array.push(mainLogFile, _)->ignore
+          ? log->(Array.push(mainLogFile, _))->ignore
           : ()
       | WARNING =>
-        [WARNING, ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
-      | ERROR => [ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
+        [WARNING, ERROR]->Array.includes(log.logType)
+          ? log->(Array.push(mainLogFile, _))->ignore
+          : ()
+      | ERROR =>
+        [ERROR]->Array.includes(log.logType) ? log->(Array.push(mainLogFile, _))->ignore : ()
       | SILENT => ()
       }
     }
@@ -558,7 +561,7 @@ let make = (
   let beaconApiCall = data => {
     if data->Array.length > 0 {
       let logData = data->Array.map(logFileToObj)->JSON.Encode.array->JSON.stringify
-      Window.sendBeacon(GlobalVars.logEndpoint, logData)
+      Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
     }
   }
 
@@ -694,8 +697,8 @@ let make = (
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
-      platform: Window.platform,
-      userAgent: Window.userAgent,
+      platform: Window.Navigator.platform,
+      userAgent: Window.Navigator.userAgent,
       appId: "",
       eventName,
       latency,
@@ -752,8 +755,8 @@ let make = (
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
-      platform: Window.platform,
-      userAgent: Window.userAgent,
+      platform: Window.Navigator.platform,
+      userAgent: Window.Navigator.userAgent,
       appId: "",
       eventName,
       latency,
@@ -800,8 +803,8 @@ let make = (
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
-      platform: Window.platform,
-      userAgent: Window.userAgent,
+      platform: Window.Navigator.platform,
+      userAgent: Window.Navigator.userAgent,
       appId: "",
       eventName,
       latency,
@@ -835,8 +838,8 @@ let make = (
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
-      platform: Window.platform,
-      userAgent: Window.userAgent,
+      platform: Window.Navigator.platform,
+      userAgent: Window.Navigator.userAgent,
       appId: "",
       latency,
       paymentMethod: "",
