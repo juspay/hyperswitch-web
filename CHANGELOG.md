@@ -1,3 +1,10 @@
+# [0.77.0](https://github.com/juspay/hyperswitch-web/compare/v0.76.2...v0.77.0) (2024-07-18)
+
+
+### Features
+
+* passing X-Merchant-Domain in the headers for Sessions Call ([#504](https://github.com/juspay/hyperswitch-web/issues/504)) ([cd001c5](https://github.com/juspay/hyperswitch-web/commit/cd001c554b0ccf68f2eca08304e6d30abdca85b3))
+
 ## [0.76.2](https://github.com/juspay/hyperswitch-web/compare/v0.76.1...v0.76.2) (2024-07-18)
 
 
