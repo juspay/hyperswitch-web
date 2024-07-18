@@ -1,3 +1,10 @@
+## [0.76.2](https://github.com/juspay/hyperswitch-web/compare/v0.76.1...v0.76.2) (2024-07-18)
+
+
+### Bug Fixes
+
+* **payout:** handle tab order updates ([#505](https://github.com/juspay/hyperswitch-web/issues/505)) ([5bdbd74](https://github.com/juspay/hyperswitch-web/commit/5bdbd744570ebf34acf1bb00036383722ad4a73c))
+
 ## [0.76.1](https://github.com/juspay/hyperswitch-web/compare/v0.76.0...v0.76.1) (2024-07-17)
 
 # [0.76.0](https://github.com/juspay/hyperswitch-web/compare/v0.75.0...v0.76.0) (2024-07-17)
