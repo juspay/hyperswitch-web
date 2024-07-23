@@ -578,8 +578,8 @@ let formPaymentMethodData = (
       | false => None
       | true =>
         let pmd = [(ACHRoutingNumber, routingNumber), (ACHAccountNumber, accountNumber)]
-        let _ = bankName->Option.map(bankName => pmd->Array.push((ACHBankName, bankName)))
-        let _ = city->Option.map(city => pmd->Array.push((ACHBankCity, city)))
+        bankName->Option.forEach(bankName => pmd->Array.push((ACHBankName, bankName)))
+        city->Option.forEach(city => pmd->Array.push((ACHBankCity, city)))
         Some(BankTransfer, BankTransfer(ACH), pmd)
       }
     | _ => None
@@ -603,8 +603,8 @@ let formPaymentMethodData = (
       | false => None
       | true =>
         let pmd = [(BacsSortCode, sortCode), (BacsAccountNumber, accountNumber)]
-        let _ = bankName->Option.map(bankName => pmd->Array.push((BacsBankName, bankName)))
-        let _ = city->Option.map(city => pmd->Array.push((BacsBankCity, city)))
+        bankName->Option.forEach(bankName => pmd->Array.push((BacsBankName, bankName)))
+        city->Option.forEach(city => pmd->Array.push((BacsBankCity, city)))
         Some(BankTransfer, BankTransfer(Bacs), pmd)
       }
     | _ => None
@@ -630,11 +630,10 @@ let formPaymentMethodData = (
       | false => None
       | true =>
         let pmd = [(SepaIban, iban)]
-        let _ = bic->Option.map(bic => pmd->Array.push((SepaBic, bic)))
-        let _ = bankName->Option.map(bankName => pmd->Array.push((SepaBankName, bankName)))
-        let _ = city->Option.map(city => pmd->Array.push((SepaBankCity, city)))
-        let _ =
-          countryCode->Option.map(countryCode => pmd->Array.push((SepaCountryCode, countryCode)))
+        bic->Option.forEach(bic => pmd->Array.push((SepaBic, bic)))
+        bankName->Option.forEach(bankName => pmd->Array.push((SepaBankName, bankName)))
+        city->Option.forEach(city => pmd->Array.push((SepaBankCity, city)))
+        countryCode->Option.forEach(countryCode => pmd->Array.push((SepaCountryCode, countryCode)))
         Some(BankTransfer, BankTransfer(Sepa), pmd)
       }
     | _ => None
@@ -656,7 +655,7 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
   let (paymentMethod, paymentMethodType, fields) = paymentMethodData
   let pmdApiFields = []
 
-  let _ = fields->Array.map(field => {
+  fields->Array.forEach(field => {
     let (key, value) = field
     switch key {
     // Card

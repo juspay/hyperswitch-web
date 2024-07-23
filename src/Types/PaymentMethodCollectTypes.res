@@ -182,9 +182,9 @@ let decodePaymentMethodType = (json: JSON.t): option<array<paymentMethodType>> =
         ->Dict.get("payment_method_types")
         ->Option.flatMap(JSON.Decode.array)
         ->Option.flatMap(pmts => {
-          let _ = pmts->Array.map(pmt => {
+          pmts->Array.forEach(pmt => {
             let payment_method_type = pmt->JSON.Decode.string
-            let _ = switch (payment_method, payment_method_type) {
+            switch (payment_method, payment_method_type) {
             | (Some("card"), Some(cardType)) =>
               switch decodeCard(cardType) {
               | Some(card) => payment_methods->Array.push(Card(card))
