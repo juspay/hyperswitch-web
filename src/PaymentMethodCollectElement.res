@@ -24,7 +24,7 @@ let make = (~integrateError, ~logger) => {
   React.useEffect(() => {
     let availablePM: array<paymentMethod> = []
     let availablePMT: array<paymentMethodType> = []
-    let _ = options.enabledPaymentMethods->Array.map(pm => {
+    options.enabledPaymentMethods->Array.forEach(pm => {
       switch pm {
       | Card(_) =>
         if !(availablePM->Array.includes(Card)) {

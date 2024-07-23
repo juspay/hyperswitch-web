@@ -1095,8 +1095,7 @@ let rec flatten = (obj, addIndicatorForObject) => {
             let arrayArray = []
             dictArray->Array.forEachWithIndex((item, index) => {
               switch item->JSON.Classify.classify {
-              | String(_str) =>
-                let _ = stringArray->Array.push(item)
+              | String(_str) => stringArray->Array.push(item)
               | Object(_obj) => {
                   let flattenedSubObj = flatten(item, addIndicatorForObject)
                   flattenedSubObj
@@ -1109,8 +1108,7 @@ let rec flatten = (obj, addIndicatorForObject) => {
                   )
                 }
 
-              | _ =>
-                let _ = arrayArray->Array.push(item)
+              | _ => arrayArray->Array.push(item)
               }
             })
             if stringArray->Array.length > 0 {
