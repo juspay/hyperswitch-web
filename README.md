@@ -20,16 +20,15 @@ Web unified checkout SDK is an inclusive, consistent and blended payment experie
 
 <p align="center">
   <a href="#%EF%B8%8F-quick-start-guide">Quick Start Guide</a> •
-  <a href="#-setup-instructions">Setup Instructions</a> •
-  <a href="#-fast-integration-for-stripe-users">Fast Integration for Stripe Users</a> •
+  <a href="#%EF%B8%8F-try-it-in-local">Local Setup Instructions</a> •
+  <!-- <a href="#fast-integration-for-stripe-users">Fast Integration for Stripe Users</a> • -->
   <!-- <a href="#-supported-features">Supported Features</a> • -->
-  <a href="#-Connect-your-Hyperswitch-self-hosted-Server">Connect your Hyperswitch self Hosted Server</a> •
-  <a href="#-FAQs">FAQs</a>
+  <a href="#-self-hosted-backend-server">Self Hosted Backend Server</a> •
+  <a href="#-faqs">FAQs</a>
   <br>
   <a href="#-join-us-in-building-hyperswitch">Join us in building HyperSwitch</a> •
   <a href="#-community">Community</a> •
   <a href="#-bugs-and-feature-requests">Bugs and feature requests</a> •
-  <a href="#-versioning">Versioning</a> •
   <a href="#%EF%B8%8F-copyright-and-license">Copyright and License</a>
 </p>
 
@@ -53,120 +52,125 @@ While the Unified Checkout is pre-optimized for maximum conversions, it does not
 - 💳 **Prioritizing payment methods** by 90% to add & maintain integrations
 - 🎨 **Switching themes and layouts of checkout page** with full visibility and control
 
-<br>
-
-<a href="#Quick Start Guide">
-  <h2 id="Quick Start Guide">⚡️ Quick Start Guide</h2>
-</a>
+## ⚡️ Quick Start Guide
 
 Ways to get started with Hyperswitch:
 
 ### Try it in our Sandbox Environment: Fast and easy to start.
 
-- To integrate Hyperswitch into your project, follow these steps:
+&nbsp; &nbsp; To integrate Hyperswitch into your project, follow these steps:
 
-  1. **Register**: Begin by registering at [Hyperswitch](https://app.hyperswitch.io/register) to gain access to your dashboard.
+1.  **Register**: Begin by registering at [Hyperswitch](https://app.hyperswitch.io/register) to gain access to your dashboard.
 
-  2. **Access Your Dashboard**: Once logged in, navigate to your dashboard's home page.
+1.  **Access Your Dashboard**: Once logged in, navigate to your dashboard's home page.
 
-  3. **Find Your Keys**: In the sidebar, locate the "Developers" section, then click on [API Keys](https://app.hyperswitch.io/developer-api-keys). Here, you can generate your API Key. Additionally, your Publishable Key is available within the same section.
+1.  **Find Your Keys**: In the sidebar, you can find your [API Keys](https://app.hyperswitch.io/developer-api-keys). Here, you can also generate your API Key. Additionally, your Publishable Key is available within the same section.
 
-  4. **Integration**: After obtaining your Keys add them to your project's environment variables or configuration file for seamless integration.
+1.  **Integration**: After obtaining your Keys add them to your project's environment variables or configuration file for seamless integration.
 
-### For local setup
+### 🛠️ Try it in Local
 
-- Install in your local system: Configurations and setup required in your system. Suitable if you like to customise the core offering, [learn more](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md)
+&nbsp; &nbsp; Before you start the local setup, you need to understand a few configs -
 
-- If you are running our backend locally, you can use our [Postman Collection](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md#try-out-our-apis) for generating the API Key and Publishable Key.
+- #### Env Configs for Demo App
 
-<a href="#Setup-Instructions">
-  <h2 id="Setup Instructions">🛠️ Setup Instructions</h2>
-</a>
+  - **`HYPERSWITCH_PUBLISHABLE_KEY`:** The publishable key of your Hyperswitch account. This key will start with `pk_dev_` for local development, `pk_snd_` for sandbox, and `pk_prd_` for production.
 
-Before you start the local setup, you will need an understanding of few keys -
+  - **`HYPERSWITCH_SECRET_KEY`:** The API key of your Hyperswitch account that is used to authenticate API requests from your merchant server. On the Hyperswitch Dashboard, locate the "Developers" section, then click on [API Keys](https://app.hyperswitch.io/developer-api-keys). Here, you can generate your API Key.
 
-### About Env Configs for Demo App
+  - **`HYPERSWITCH_SERVER_URL`:** The URL of your hosted Hyperswitch backend server. Alternatively, you can use our Sandbox URL (https://sandbox.hyperswitch.io) or specify your backend running locally (e.g., http://localhost:8080).
 
-- **`HYPERSWITCH_PUBLISHABLE_KEY`:** The publishable key of your Hyperswitch account. This key will start with `pk_dev_` for local development, `pk_snd_` for sandbox, and `pk_prd_` for production.
+  - **`HYPERSWITCH_CLIENT_URL`:** The URL of your hosted Hyperswitch SDK. You can also use our Sandbox URL (https://beta.hyperswitch.io/v1) or specify your app running locally (e.g., http://localhost:9050).
 
-- **`HYPERSWITCH_SECRET_KEY`:** The API key of your Hyperswitch account.
+  - **`SELF_SERVER_URL`:** The URL of the hosted server file for generating client-secret and for fetching urls & configs. (eg: http://localhost:9060/payments)
 
-- **`HYPERSWITCH_SERVER_URL`:** The URL of your hosted Hyperswitch backend server. Alternatively, you can use our Sandbox URL (https://sandbox.hyperswitch.io) or specify your backend running locally (e.g., http://localhost:8080).
+- #### Env Configs for SDK
 
-- **`HYPERSWITCH_CLIENT_URL`:** The URL of your hosted Hyperswitch SDK. You can also use our Sandbox URL (https://beta.hyperswitch.io/v1) or specify your app running locally (e.g., http://localhost:9050).
+  - **`ENV_BACKEND_URL`:** Sets the endpoint for all the APIs used within the SDK to interact with the backend service. If you are running your own backend service, you can configure and specify its endpoint here for local setups.
 
-- **`SELF_SERVER_URL`:** The URL of the hosted server file for generating client-secret and for fetching urls & configs. (eg: http://localhost:9060/payments)
+  - **`ENV_LOGGING_URL`:** Specifies a custom logging endpoint where logs generated by the SDK can be sent. This allows you to view and manage logs according to your requirements.
 
-### About Env Configs for SDK
+  ### Setup Node
 
-- **`ENV_BACKEND_URL`:** Sets the endpoint for all the APIs used within the SDK to interact with the backend service. If you are running your own backend service, you can configure and specify its endpoint here for local setups.
+  Check if your machine has node already installed by running the below command on your local machine.
 
-- **`ENV_LOGGING_URL`:** Specifies a custom logging endpoint where logs generated by the SDK can be sent. This allows you to view and manage logs according to your requirements.
+  ```bash
+  node -v
+  ```
 
-### Setup Node
+  If your machine does not have node installed in it, you can install it from [here](https://nodejs.org/en/download)
 
-Check if your machine has node already installed by running the below command on your local machine.
+    <h3>Clone the repo</h3>
 
-```bash
-node -v
-```
+  Clone the repository from Bitbucket and save in your folder.
 
-If your machine does not have node installed in it, you can install it from [here](https://nodejs.org/en/download)
+  ```bash
+  git clone https://github.com/juspay/hyperswitch-web.git
+  cd hyperswitch-web
+  ```
 
-### Clone the repository
+  ### Setup the repo
 
-Clone the repository from Bitbucket and save in your folder.
+  1. First install all the node modules by running the following command
 
-```bash
-git clone https://github.com/juspay/hyperswitch-web.git
-cd hyperswitch-web
-```
+     ```bash
+     npm install
+     ```
 
-### Setup the repository
+  2. Once the installation is successful, you can open two terminals.<br>
 
-First install all the node modules by running the following command
+     - On the first terminal run the following command for generating the build:
 
-```bash
-npm install
-```
+       ```bash
+       npm run re:start
+       ```
 
-Once the installation is successful, you can run the app with the following command in one terminal - `npm run re:start` and `npm run start` on the other terminal for starting the server.
+     - On the second terminal, run the following command for starting the server.
 
-This will trigger a build of the project. On a successful build, you should see a message 'Compiled successfully' in your terminal.
+       ```bash
+         npm run start
+       ```
 
-Now you can proceed with launching the playground. The playground is a demo app where you can test your payments. In a separate terminal, run the following command to start the app on your local machine.
+     Upon success, you should see a message _Compiled successfully_ message on both of your terminals.
 
-```bash
-npm run start:playground
-```
+  3. Now that the build is generated successfully, on a third terminal, launch the playground.
 
-**NOTE** - Alternatively, you can update `.env` file and use these commands
+     ```bash
+     cd Hyperswitch-React-Demo-App
+     npm install
+     npm run start
+     ```
 
-```bash
-cd Hyperswitch-React-Demo-App
-npm install
-npm run start
-```
+     This will open a demo app where you can test your payments.
 
-<a href="#Custom_backend">
-  <h2 id="Custom_backend">⛁ Custom Backend</h2>
-</a>
+  > 💡 Alternatively, you can update `.env` file and use the commands
+  > above
 
-For configuring `customBackendUrl`, when calling Hyper function you can pass the customBackendUrl in props
+## ⛁ Self Hosted Backend Server
 
-In Payment.js file -
+There are two ways to set up the backend:
 
-```javascript
-window.Hyper(publishableKey, {
-  customBackendUrl: `CUSTOM_BACKEND_URL`,
-});
-```
+- ### Local Setup
 
-**Warning:** Please maintain API compatibility of your server and web app. If any API contracts are manually changed without the corresponding handling in the SDK, there is a possibility of the application not working as expected. Please ensure that you use the compatible versions. The latest [releases](https://github.com/juspay/hyperswitch/releases) will have the additional details of the compatible versions of the app server, web app, and the control center.
+  - Install in your local system: Configurations and setup required in your system. Suitable if you like to customise the core offering, [learn more](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md)
 
-<a href="#Custom_logging">
-  <h2 id="Custom_logging">📊 Custom Logging</h2>
-</a>
+  - If you are running our backend locally, you can use our [Postman Collection](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md#try-out-our-apis) for generating the API Key and Publishable Key.
+
+- ### Custom Backend
+
+  For configuring `customBackendUrl`, when calling Hyper function you can pass the customBackendUrl in props
+
+  In Payment.js file -
+
+  ```javascript
+  window.Hyper(publishableKey, {
+    customBackendUrl: `CUSTOM_BACKEND_URL`,
+  });
+  ```
+
+  **Warning:** Please maintain API compatibility of your server and web app. If any API contracts are manually changed without the corresponding handling in the SDK, there is a possibility of the application not working as expected. Please ensure that you use the compatible versions. The latest [releases](https://github.com/juspay/hyperswitch/releases) will have the additional details of the compatible versions of the app server, web app, and the control center.
+
+## 📊 Custom Logging
 
 Logging from the payment checkout web client is crucial for tracking and monitoring the flow of payments. It provides a transparent record of events, errors, and user interactions, aiding developers and support teams in identifying issues, debugging, and ensuring the security and reliability of payment processes. Well-implemented logging enhances traceability and facilitates a more efficient resolution of potential problems in the payment checkout experience.
 
@@ -198,9 +202,7 @@ let loggingLevel = "DEBUG";
 
 Now let's test the integration by making a payment from your web client!
 
-<a href="#Integrate Hyperswitch on your App">
-  <h2 id="Integrate Hyperswitch on your App">🔌 Integrate Hyperswitch on your App</h2>
-</a>
+## 🔌 Integrate Hyperswitch on your App
 
 Now that the project is up and running, integrating Hyperswitch on your web-app is fast &
 easy.
@@ -211,9 +213,7 @@ Follow the instructions detailed on our
 [dashboard]: https://app.hyperswitch.io/register
 [hyperswitch-docs]: https://hyperswitch.io/docs/sdkIntegrations/unifiedCheckoutWeb/
 
-<a href="#FAQs">
-  <h2 id="FAQs">🤔 FAQs</h2>
-</a>
+## 🤔 FAQs
 
 Got more questions?
 Please refer to our [FAQs page][faqs].
@@ -241,10 +241,12 @@ Please refer to the following documentation pages:
 - Installation Support [Link]
 - Router Architecture [Link]
  -->
-
+<!--
 <a href="#Join-us-in-building-Hyperswitch">
   <h2 id="Join-us-in-building-Hyperswitch">💪 Join us in building Hyperswitch</h2>
-</a>
+</a> -->
+
+## 💪 Join us in building Hyperswitch
 
 ### 🤝 Our Belief
 
@@ -309,17 +311,17 @@ Get updates on Hyperswitch development and chat with the community:
 
 <div style="display: flex;  justify-content: center;">
     <div style="margin-right:10px">
-    <a href="https://www.producthunt.com/posts/hyperswitch-2?utm_source=badge-top-post-badge&utm_medium=badge&utm_souce=badge-hyperswitch&#0045;2" target="_blank">
+    <a href="https://www.producthunt.com/posts/hyperswitch-2?utm_source=badge-top-post-badge&utm_medium=badge&utm_souce=badge-hyperswitch&#0045;2">
         <img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=375220&theme=light&period=weekly" alt="Hyperswitch - Fast, reliable, and affordable open source payments switch | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" />
     </a>
     </div>
     <div style="margin-right:10px">
-    <a href="https://www.producthunt.com/posts/hyperswitch-2?utm_source=badge-top-post-topic-badge&utm_medium=badge&utm_souce=badge-hyperswitch&#0045;2" target="_blank">
+    <a href="https://www.producthunt.com/posts/hyperswitch-2?utm_source=badge-top-post-topic-badge&utm_medium=badge&utm_souce=badge-hyperswitch&#0045;2">
         <img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-topic-badge.svg?post_id=375220&theme=light&period=weekly&topic_id=267" alt="Hyperswitch - Fast, reliable, and affordable open source payments switch | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" />
     </a>
   </div>
   <div style="margin-right:10px">
-    <a href="https://www.producthunt.com/posts/hyperswitch-2?utm_source=badge-top-post-topic-badge&utm_medium=badge&utm_souce=badge-hyperswitch&#0045;2" target="_blank">
+    <a href="https://www.producthunt.com/posts/hyperswitch-2?utm_source=badge-top-post-topic-badge&utm_medium=badge&utm_souce=badge-hyperswitch&#0045;2">
         <img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-topic-badge.svg?post_id=375220&theme=light&period=weekly&topic_id=93" alt="Hyperswitch - Fast, reliable, and affordable open source payments switch | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" />
     </a>
   </div>
