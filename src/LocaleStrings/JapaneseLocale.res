@@ -85,4 +85,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   currencyNetwork: `通貨ネットワーク`,
   expiryPlaceholder: `MM / YY`,
   dateOfBirth: `生年月日`,
+  vpaIdLabel: `VPA ID`,
+  vpaIdEmptyText: `VPA ID を空にすることはできません`,
+  vpaIdInvalidText: `無効な VPA ID`,
+  dateofBirthRequiredText: `生年月日が必要です`,
+  dateOfBirthInvalidText: `年齢は18歳以上である必要があります`,
+  dateOfBirthPlaceholderText: `生年月日を入力してください`,
 }

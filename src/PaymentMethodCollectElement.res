@@ -4,6 +4,7 @@ open RecoilAtoms
 
 @react.component
 let make = (~integrateError, ~logger) => {
+  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(paymentMethodCollectOptionAtom)
 
@@ -14,54 +15,38 @@ let make = (~integrateError, ~logger) => {
   let (availablePaymentMethodTypes, setAvailablePaymentMethodTypes) = React.useState(_ =>
     defaultAvailablePaymentMethodTypes
   )
-  let (amount, setAmount) = React.useState(_ => options.amount)
-  let (currency, setCurrency) = React.useState(_ => options.currency)
-  let (flow, setFlow) = React.useState(_ => options.flow)
   let (loader, setLoader) = React.useState(_ => false)
-  let (returnUrl, setReturnUrl) = React.useState(_ => options.returnUrl)
   let (secondsUntilRedirect, setSecondsUntilRedirect) = React.useState(_ => None)
-  let (sessionExpiry, setSessionExpiry) = React.useState(_ => options.sessionExpiry)
   let (showStatus, setShowStatus) = React.useState(_ => false)
   let (statusInfo, setStatusInfo) = React.useState(_ => defaultStatusInfo)
-  let (payoutId, setPayoutId) = React.useState(_ => options.payoutId)
-  let (merchantLogo, setMerchantLogo) = React.useState(_ => options.logo)
-  let (merchantName, setMerchantName) = React.useState(_ => options.collectorName)
-  let (merchantTheme, setMerchantTheme) = React.useState(_ => options.theme)
 
   // Form a list of available payment methods
   React.useEffect(() => {
-    let availablePMT = {
-      card: [],
-      bankTransfer: [],
-      wallet: [],
-    }
-    let _ = options.enabledPaymentMethods->Array.map(pm => {
+    let availablePM: array<paymentMethod> = []
+    let availablePMT: array<paymentMethodType> = []
+    options.enabledPaymentMethods->Array.forEach(pm => {
       switch pm {
-      | Card(cardType) =>
-        if !(availablePMT.card->Array.includes(cardType)) {
-          availablePMT.card->Array.push(cardType)
+      | Card(_) =>
+        if !(availablePM->Array.includes(Card)) {
+          availablePMT->Array.push(Card(Debit))
+          availablePM->Array.push(Card)
         }
-      | BankTransfer(bankTransferType) =>
-        if !(availablePMT.bankTransfer->Array.includes(bankTransferType)) {
-          availablePMT.bankTransfer->Array.push(bankTransferType)
+      | BankTransfer(_) =>
+        if !(availablePM->Array.includes(BankTransfer)) {
+          availablePM->Array.push(BankTransfer)
         }
-      | Wallet(walletType) =>
-        if !(availablePMT.wallet->Array.includes(walletType)) {
-          availablePMT.wallet->Array.push(walletType)
+        if !(availablePMT->Array.includes(pm)) {
+          availablePMT->Array.push(pm)
+        }
+      | Wallet(_) =>
+        if !(availablePM->Array.includes(Wallet)) {
+          availablePM->Array.push(Wallet)
+        }
+        if !(availablePMT->Array.includes(pm)) {
+          availablePMT->Array.push(pm)
         }
       }
     })
-
-    let availablePM: array<paymentMethod> = []
-    if !(availablePM->Array.includes(BankTransfer)) && availablePMT.bankTransfer->Array.length > 0 {
-      availablePM->Array.push(BankTransfer)
-    }
-    if !(availablePM->Array.includes(Card)) && availablePMT.card->Array.length > 0 {
-      availablePM->Array.push(Card)
-    }
-    if !(availablePM->Array.includes(Wallet)) && availablePMT.wallet->Array.length > 0 {
-      availablePM->Array.push(Wallet)
-    }
 
     setAvailablePaymentMethods(_ => availablePM)
     setAvailablePaymentMethodTypes(_ => availablePMT)
@@ -69,63 +54,9 @@ let make = (~integrateError, ~logger) => {
     None
   }, [options.enabledPaymentMethods])
 
-  // Update amount
-  React.useEffect(() => {
-    setAmount(_ => options.amount)
-    None
-  }, [options.amount])
-
-  // Update currency
-  React.useEffect(() => {
-    setCurrency(_ => options.currency)
-    None
-  }, [options.currency])
-
-  // Update flow
-  React.useEffect(() => {
-    setFlow(_ => options.flow)
-    None
-  }, [options.flow])
-
-  // Update payoutId
-  React.useEffect(() => {
-    setPayoutId(_ => options.payoutId)
-    None
-  }, [options.payoutId])
-
-  // Update merchant's name
-  React.useEffect(() => {
-    setMerchantName(_ => options.collectorName)
-    None
-  }, [options.collectorName])
-
-  // Update merchant's logo
-  React.useEffect(() => {
-    setMerchantLogo(_ => options.logo)
-    None
-  }, [options.logo])
-
-  // Update merchant's primary theme
-  React.useEffect(() => {
-    setMerchantTheme(_ => options.theme)
-    None
-  }, [options.theme])
-
-  // Update returnUrl
-  React.useEffect(() => {
-    setReturnUrl(_ => options.returnUrl)
-    None
-  }, [options.returnUrl])
-
-  // Update sessionExpiry
-  React.useEffect(() => {
-    setSessionExpiry(_ => options.sessionExpiry)
-    None
-  }, [options.sessionExpiry])
-
   // Start a timer for redirecting to return_url
   React.useEffect(() => {
-    switch (returnUrl, showStatus) {
+    switch (options.returnUrl, showStatus) {
     | (Some(returnUrl), true) => {
         setSecondsUntilRedirect(_ => Some(5))
         // Start a interval to update redirect text every second
@@ -143,7 +74,7 @@ let make = (~integrateError, ~logger) => {
           clearInterval(interval)
           // Append query params and redirect
           let url = PaymentHelpers.urlSearch(returnUrl)
-          url.searchParams.set("payout_id", payoutId)
+          url.searchParams.set("payout_id", options.payoutId)
           url.searchParams.set("status", statusInfo.status->getPayoutStatusString)
           Utils.openUrl(url.href)
         }, 5010)->ignore
@@ -155,12 +86,13 @@ let make = (~integrateError, ~logger) => {
 
   let handleSubmit = pmd => {
     setLoader(_ => true)
+    let flow = options.flow
     let pmdBody = flow->formBody(pmd)
 
     switch flow {
     | PayoutLinkInitiate => {
         let endpoint = ApiEndpoint.getApiEndPoint()
-        let uri = `${endpoint}/payouts/${payoutId}/confirm`
+        let uri = `${endpoint}/payouts/${options.payoutId}/confirm`
         // Create payment method
         open Promise
         PaymentHelpers.confirmPayout(
@@ -187,7 +119,7 @@ let make = (~integrateError, ~logger) => {
             }
           | Some(ErrorResponse(err)) => {
               let updatedStatusInfo = {
-                payoutId,
+                payoutId: options.payoutId,
                 status: Failed,
                 message: "Failed to process your payout. Please check with your provider for more details.",
                 code: Some(err.code),
@@ -198,7 +130,7 @@ let make = (~integrateError, ~logger) => {
             }
           | None => {
               let updatedStatusInfo = {
-                payoutId,
+                payoutId: options.payoutId,
                 status: Failed,
                 message: "Failed to process your payout. Please check with your provider for more details.",
                 code: None,
@@ -213,7 +145,7 @@ let make = (~integrateError, ~logger) => {
         ->catch(err => {
           Console.error2("CRITICAL - Payouts confirm failed with unknown error", err)
           let updatedStatusInfo = {
-            payoutId,
+            payoutId: options.payoutId,
             status: Failed,
             message: "Failed to process your payout. Please check with your provider for more details.",
             code: None,
@@ -258,16 +190,17 @@ let make = (~integrateError, ~logger) => {
   }
 
   let renderCollectWidget = () =>
-    <div className="flex flex-row w-6/10 h-min">
-      <div className="relative mx-[50px] my-[80px]">
+    <div className="flex flex-row h-min lg:w-6/10">
+      <div className="relative w-full lg:w-auto lg:mx-12 lg:my-20">
         {loader
           ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
           : {React.null}}
         <CollectWidget
-          primaryTheme={merchantTheme}
+          primaryTheme={options.theme}
           handleSubmit
           availablePaymentMethods
           availablePaymentMethodTypes
+          formLayout={options.formLayout}
         />
       </div>
     </div>
@@ -276,7 +209,7 @@ let make = (~integrateError, ~logger) => {
     let status = statusInfo.status
     let imageSource = getPayoutImageSource(status)
     let readableStatus = getPayoutReadableStatus(status)
-    let statusInfoFields: array<statusInfoField> = [{key: "Ref Id", value: payoutId}]
+    let statusInfoFields: array<statusInfoField> = [{key: "Ref Id", value: options.payoutId}]
 
     statusInfo.code
     ->Option.flatMap(code => {
@@ -297,28 +230,41 @@ let make = (~integrateError, ~logger) => {
     })
     ->ignore
 
-    <div className="flex flex-col items-center justify-center">
+    <div
+      style={
+        color: themeObj.colorText,
+        fontFamily: themeObj.fontFamily,
+        fontSize: themeObj.fontSizeBase,
+      }
+      className="flex flex-col items-center justify-center self-center leading-none
+        xs:mt-auto xs:mb-auto
+        lg:ml-auto lg:mr-auto">
       <div
-        className="flex flex-col self-center items-center justify-center rounded-lg shadow-lg max-w-[500px]">
+        className="flex flex-col items-center rounded-lg max-w-[500px]
+          xs:shadow-lg">
         <div
-          className="flex flex-row justify-between items-center w-full px-[40px] py-[20px] border-b border-jp-gray-300">
-          <div className="text-[25px] font-semibold"> {React.string(merchantName)} </div>
-          <img className="h-[30px] w-auto" src={merchantLogo} alt="o" />
+          className="flex flex-row justify-between items-center w-full px-10 py-5 border-b border-jp-gray-300">
+          <div className="text-2xl font-semibold"> {React.string(options.collectorName)} </div>
+          <img className="h-7 w-auto" src={options.logo} alt="o" />
         </div>
-        <img className="h-[160px] w-[160px] mt-[30px]" src={imageSource} alt="o" />
-        <div className="text-[20px] font-semibold mt-[10px]"> {React.string(readableStatus)} </div>
-        <div className="text-jp-gray-800 m text-center mx-[40px] mb-[40px]">
+        <img className="h-40 w-40 mt-7" src={imageSource} alt="o" />
+        <div className="text-5 font-semibold mt-2.5"> {React.string(readableStatus)} </div>
+        <div className="text-jp-gray-800 m text-center mx-10 mb-10">
           {React.string(statusInfo.message)}
         </div>
-        <div className="flex border-t border-bg-jp-gray-300 py-[20px] w-full justify-center">
-          <div className="flex flex-col max-w-[500px] bg-white w-full mx-[40px]">
+        <div className="flex border-t border-bg-jp-gray-300 py-5 w-full justify-center">
+          <div
+            className="flex flex-col max-w-[500px] bg-white w-full mx-2.5
+            xs:mx-10">
             {statusInfoFields
             ->Array.mapWithIndex((info, i) => {
-              <div key={i->Int.toString} className={`flex flex-row items-center`}>
-                <div className="text-[15px] text-jp-gray-900 min-w-[10ch] text-right">
+              <div key={i->Int.toString} className={`flex flex-row items-center mb-0.5`}>
+                <div className="text-sm text-jp-gray-900 text-right min-w-20">
                   {React.string(info.key)}
                 </div>
-                <div className="text-[13px] ml-[10px] pl-[10px] border-l border-jp-gray-300">
+                <div
+                  className="text-[11px] ml-2.5 pl-2.5 border-l border-jp-gray-300
+                    xs:text-xs">
                   {React.string(info.value)}
                 </div>
               </div>
@@ -327,76 +273,88 @@ let make = (~integrateError, ~logger) => {
           </div>
         </div>
       </div>
-      <div className="mt-[40px]">
-        {switch secondsUntilRedirect {
-        | Some(seconds) =>
-          React.string("Redirecting in " ++ seconds->Int.toString ++ " seconds ...")
-        | None => React.null
-        }}
-      </div>
+      {switch secondsUntilRedirect {
+      | Some(seconds) =>
+        <div className="mt-10">
+          {React.string("Redirecting in " ++ seconds->Int.toString ++ " seconds ...")}
+        </div>
+      | None => React.null
+      }}
     </div>
   }
 
   if integrateError {
     <ErrorOccured />
   } else {
-    <div className="flex h-screen justify-center">
-      {switch flow {
-      | PayoutLinkInitiate =>
-        if showStatus {
-          renderPayoutStatus()
-        } else {
-          <React.Fragment>
-            // Merchant's info
-            <div
-              className="flex flex-col w-4/10 px-[50px] py-[80px]"
-              style={backgroundColor: merchantTheme}>
+    <div
+      className="flex flex-col h-screen min-w-[320px]
+        lg:flex-row">
+      {
+        let merchantLogo = options.logo
+        let merchantName = options.collectorName
+        let merchantTheme = options.theme
+        switch options.flow {
+        | PayoutLinkInitiate =>
+          if showStatus {
+            renderPayoutStatus()
+          } else {
+            <>
+              // Merchant's info
               <div
-                className="flex flex-col self-end rounded-md shadow-lg min-w-80 w-full max-w-96"
-                style={backgroundColor: "#FEFEFE"}>
-                <div className="mx-[20px] mt-[20px] flex flex-row justify-between">
-                  <div className="font-bold text-[35px]">
-                    {React.string(`${currency} ${amount}`)}
-                  </div>
-                  <img className="h-12 w-auto" src={merchantLogo} alt="O" />
-                </div>
-                <div className="mx-[20px]">
-                  <div className="self-center text-[20px] font-semibold">
-                    {React.string("Payout from ")}
-                    {React.string(merchantName)}
-                  </div>
-                  <div className="flex flex-row mt-[5px]">
-                    <div className="font-semibold text-[12px]"> {React.string("Ref Id")} </div>
-                    <div className="ml-[5px] text-[12px] text-gray-800">
-                      {React.string(payoutId)}
+                className="flex flex-col w-full h-max items-center p-6
+                lg:w-4/10 lg:px-12 lg:py-20 lg:h-screen lg:items-end"
+                style={backgroundColor: merchantTheme}>
+                <div
+                  className="flex flex-col text-white w-full min-w-[300px] max-w-[520px]
+                  lg:rounded-md lg:shadow-lg lg:min-w-80 lg:max-w-96 lg:bg-white lg:text-black">
+                  <div
+                    className="flex flex-col-reverse
+                    lg:mx-5 lg:mt-5 lg:flex-row lg:justify-between">
+                    <div className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl">
+                      {React.string(`${options.currency} ${options.amount}`)}
+                    </div>
+                    <div className="flex items-center justify-center h-16 w-16 bg-white rounded-sm">
+                      <img className="max-h-12 max-w-16 h-auto w-auto" src={merchantLogo} alt="O" />
                     </div>
                   </div>
+                  <div className="lg:mx-5">
+                    <div className="self-center text-xl font-semibold">
+                      {React.string("Payout from ")}
+                      {React.string(merchantName)}
+                    </div>
+                    <div className="flex flex-row lg:mt-1">
+                      <div className="font-semibold text-xs"> {React.string("Ref Id")} </div>
+                      <div className="ml-1 text-xs"> {React.string(options.payoutId)} </div>
+                    </div>
+                  </div>
+                  <div
+                    className="mt-4 px-4 py-1.5 bg-gray-200 text-[13px] rounded-full w-max text-black
+                    lg:w-full lg:rounded-none lg:rounded-b-lg">
+                    {React.string(`Link expires on: ${options.sessionExpiry}`)}
+                  </div>
                 </div>
-                <div className="mt-[10px] px-[20px] py-[5px] bg-gray-200 text-[13px] rounded-b-lg">
-                  {React.string(`Link expires on: ${sessionExpiry}`)}
+              </div>
+              // Collect widget
+              {renderCollectWidget()}
+            </>
+          }
+
+        | PayoutMethodCollect =>
+          <>
+            // Merchant's info
+            <div className="flex flex-col w-3/10 p-12" style={backgroundColor: merchantTheme}>
+              <div className="flex flex-row">
+                <img className="h-12 w-auto" src={merchantLogo} alt="O" />
+                <div className="ml-4 text-white self-center text-2xl font-bold">
+                  {React.string(merchantName)}
                 </div>
               </div>
             </div>
             // Collect widget
             {renderCollectWidget()}
-          </React.Fragment>
+          </>
         }
-
-      | PayoutMethodCollect =>
-        <React.Fragment>
-          // Merchant's info
-          <div className="flex flex-col w-3/10 p-[50px]" style={backgroundColor: merchantTheme}>
-            <div className="flex flex-row">
-              <img className="h-12 w-auto" src={merchantLogo} alt="O" />
-              <div className="ml-[15px] text-white self-center text-[25px] font-bold">
-                {React.string(merchantName)}
-              </div>
-            </div>
-          </div>
-          // Collect widget
-          {renderCollectWidget()}
-        </React.Fragment>
-      }}
+      }
     </div>
   }
 }

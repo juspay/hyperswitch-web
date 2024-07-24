@@ -110,6 +110,7 @@ let useRequiredFieldsEmptyAndValid = (
   ~cvcNumber,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
+  let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
   let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
@@ -165,6 +166,7 @@ let useRequiredFieldsEmptyAndValid = (
         | Some(val) => val->Utils.checkIs18OrAbove
         | None => false
         }
+      | VpaId => vpaId.isValid->Option.getOr(false)
       | _ => true
       }
     })
@@ -225,6 +227,7 @@ let useRequiredFieldsEmptyAndValid = (
     dateOfBirth,
     (
       email,
+      vpaId,
       line2.value,
       selectedBank,
       phone.value,
@@ -397,6 +400,7 @@ let useSetInitialRequiredFields = (
           }
         | None => ()
         }
+      | LanguagePreference(_)
       | SpecialField(_)
       | InfoElement
       | CardNumber
@@ -412,6 +416,7 @@ let useSetInitialRequiredFields = (
       | ShippingAddressPincode
       | ShippingAddressState
       | ShippingAddressCountry(_)
+      | VpaId
       | None => ()
       }
     })
@@ -429,7 +434,9 @@ let useRequiredFieldsBody = (
   ~isAllStoredCardsHaveName,
   ~setRequiredFieldsBody,
 ) => {
+  let configValue = Recoil.useRecoilValueFromAtom(configAtom)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
+  let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
   let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
@@ -459,6 +466,12 @@ let useRequiredFieldsBody = (
     | PhoneCountryCode => phone.countryCode->Option.getOr("")
     | Currency(_) => currency
     | Country => country
+    | LanguagePreference(languageOptions) =>
+      languageOptions->Array.includes(
+        configValue.config.locale->String.toUpperCase->String.split("-")->Array.joinWith("_"),
+      )
+        ? configValue.config.locale
+        : "en"
     | Bank =>
       (
         Bank.getBanks(paymentMethodType)
@@ -488,6 +501,7 @@ let useRequiredFieldsBody = (
       | None => ""
       }
     | CardCvc => cvcNumber
+    | VpaId => vpaId.value
     | StateAndCity
     | CountryAndPincode(_)
     | SpecialField(_)
@@ -565,6 +579,7 @@ let useRequiredFieldsBody = (
   }, (
     fullName.value,
     email.value,
+    vpaId.value,
     line1.value,
     line2.value,
     city.value,
@@ -596,7 +611,8 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | CardExpiryAndCvc
   | CryptoCurrencyNetworks
   | DateOfBirth
-  | Currency(_) => true
+  | Currency(_)
+  | VpaId => true
   | _ => false
   }
 }

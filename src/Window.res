@@ -103,45 +103,55 @@ external setHyper: (window, Types.hyperInstance) => unit = "HyperMethod"
 type packageJson = {version: string}
 @module("/package.json") @val external packageJson: packageJson = "default"
 let version = packageJson.version
-@val @scope("navigator")
-external browserName: string = "appName"
 
-@val @scope("navigator")
-external browserVersion: string = "appVersion"
+module Navigator = {
+  @val @scope("navigator")
+  external browserName: string = "appName"
 
-@val @scope("navigator")
-external platform: string = "platform"
+  @val @scope("navigator")
+  external browserVersion: string = "appVersion"
 
-@val @scope("navigator")
-external userAgent: string = "userAgent"
+  @val @scope(("window", "navigator"))
+  external language: string = "language"
 
-@val @scope("navigator")
-external sendBeacon: (string, string) => unit = "sendBeacon"
+  @val @scope(("window", "navigator"))
+  external platform: string = "platform"
 
-@val @scope(("window", "location"))
-external hostname: string = "hostname"
+  @val @scope(("window", "navigator"))
+  external userAgent: string = "userAgent"
 
-@val @scope(("window", "location"))
-external origin: string = "origin"
-
-@val @scope(("window", "location"))
-external protocol: string = "protocol"
-
-@val @scope(("window", "location"))
-external pathname: string = "pathname"
-
-let isSandbox = hostname === "beta.hyperswitch.io"
-
-let isInteg = hostname === "dev.hyperswitch.io"
-
-let isProd = hostname === "checkout.hyperswitch.io"
+  @val @scope("navigator")
+  external sendBeacon: (string, string) => unit = "sendBeacon"
+}
 
 module Location = {
-  @val @scope(("window", "location")) external replace: string => unit = "replace"
+  @val @scope(("window", "location"))
+  external replace: string => unit = "replace"
+
+  @val @scope(("window", "location"))
+  external hostname: string = "hostname"
+
+  @val @scope(("window", "location"))
+  external origin: string = "origin"
+
+  @val @scope(("window", "location"))
+  external protocol: string = "protocol"
+
+  @val @scope(("window", "location"))
+  external pathname: string = "pathname"
 }
 
 module Element = {
   @get external clientWidth: Dom.element => int = "clientWidth"
 }
 
-let hrefWithoutSearch = origin ++ pathname
+@val @scope("window")
+external btoa: string => string = "btoa"
+
+let hrefWithoutSearch = Location.origin ++ Location.pathname
+
+let isSandbox = Location.hostname === "beta.hyperswitch.io"
+
+let isInteg = Location.hostname === "dev.hyperswitch.io"
+
+let isProd = Location.hostname === "checkout.hyperswitch.io"

@@ -1,3 +1,65 @@
+## [0.77.1](https://github.com/juspay/hyperswitch-web/compare/v0.77.0...v0.77.1) (2024-07-23)
+
+# [0.77.0](https://github.com/juspay/hyperswitch-web/compare/v0.76.2...v0.77.0) (2024-07-18)
+
+
+### Features
+
+* passing X-Merchant-Domain in the headers for Sessions Call ([#504](https://github.com/juspay/hyperswitch-web/issues/504)) ([cd001c5](https://github.com/juspay/hyperswitch-web/commit/cd001c554b0ccf68f2eca08304e6d30abdca85b3))
+
+## [0.76.2](https://github.com/juspay/hyperswitch-web/compare/v0.76.1...v0.76.2) (2024-07-18)
+
+
+### Bug Fixes
+
+* **payout:** handle tab order updates ([#505](https://github.com/juspay/hyperswitch-web/issues/505)) ([5bdbd74](https://github.com/juspay/hyperswitch-web/commit/5bdbd744570ebf34acf1bb00036383722ad4a73c))
+
+## [0.76.1](https://github.com/juspay/hyperswitch-web/compare/v0.76.0...v0.76.1) (2024-07-17)
+
+# [0.76.0](https://github.com/juspay/hyperswitch-web/compare/v0.75.0...v0.76.0) (2024-07-17)
+
+
+### Features
+
+* language preference for mifinity added ([#502](https://github.com/juspay/hyperswitch-web/issues/502)) ([f9f15ca](https://github.com/juspay/hyperswitch-web/commit/f9f15cacbda9d1b02e778e6606c209f5233b6553))
+
+# [0.75.0](https://github.com/juspay/hyperswitch-web/compare/v0.74.5...v0.75.0) (2024-07-16)
+
+
+### Features
+
+* **payout-link:** add input validations for payment methods in CollectWidget ([#460](https://github.com/juspay/hyperswitch-web/issues/460)) ([c2686cf](https://github.com/juspay/hyperswitch-web/commit/c2686cf046a41176ba93afb0625d6adf5625ccdc))
+
+## [0.74.5](https://github.com/juspay/hyperswitch-web/compare/v0.74.4...v0.74.5) (2024-07-12)
+
+
+### Bug Fixes
+
+* error string ([#498](https://github.com/juspay/hyperswitch-web/issues/498)) ([213daf7](https://github.com/juspay/hyperswitch-web/commit/213daf793498b7e23d0da74a1e17975c8591bc9e))
+
+## [0.74.4](https://github.com/juspay/hyperswitch-web/compare/v0.74.3...v0.74.4) (2024-07-12)
+
+## [0.74.3](https://github.com/juspay/hyperswitch-web/compare/v0.74.2...v0.74.3) (2024-07-11)
+
+
+### Bug Fixes
+
+* premount loader fix ([#492](https://github.com/juspay/hyperswitch-web/issues/492)) ([f9d973c](https://github.com/juspay/hyperswitch-web/commit/f9d973cd19a54d73dfcbc664f9ec093ecefd3798))
+
+## [0.74.2](https://github.com/juspay/hyperswitch-web/compare/v0.74.1...v0.74.2) (2024-07-10)
+
+
+### Bug Fixes
+
+* version: 0.74.1 ([00a71cc](https://github.com/juspay/hyperswitch-web/commit/00a71cca2b2d7207ff41c02ec6c1b8a99bd28c98))
+
+# [0.74.0](https://github.com/juspay/hyperswitch-web/compare/v0.73.2...v0.74.0) (2024-07-10)
+
+
+### Features
+
+* added upi collect payment method type ([#491](https://github.com/juspay/hyperswitch-web/issues/491)) ([8b87fc4](https://github.com/juspay/hyperswitch-web/commit/8b87fc458546924918ac05f0cd6c8a28f879e89f))
+
 ## [0.73.2](https://github.com/juspay/hyperswitch-web/compare/v0.73.1...v0.73.2) (2024-07-09)
 
 

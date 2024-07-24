@@ -1,3 +1,5 @@
+open Utils
+
 type paymentFlow = InvokeSDK | RedirectToURL | QrFlow
 
 type paymentFlowWithConnector = array<(paymentFlow, array<string>)>
@@ -37,6 +39,8 @@ type paymentMethodsFields =
   | ShippingAddressCountry(array<string>)
   | CryptoCurrencyNetworks
   | DateOfBirth
+  | VpaId
+  | LanguagePreference(array<string>)
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -524,6 +528,13 @@ let paymentMethodsFields = [
     displayName: "Mifinity",
     miniIcon: None,
   },
+  {
+    paymentMethodName: "upi_collect",
+    fields: [InfoElement],
+    icon: Some(icon("bhim_upi", ~size=19)),
+    displayName: "UPI Collect",
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
@@ -560,12 +571,13 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_crypto_currency_network", _) => CryptoCurrencyNetworks
   | ("user_date_of_birth", _) => DateOfBirth
   | ("user_phone_number_country_code", _) => PhoneCountryCode
+  | ("user_vpa_id", _) => VpaId
   | _ => None
   }
 }
 
 let getOptionsFromPaymentMethodFieldType = (dict, key, ~isAddressCountry=true) => {
-  let options = dict->Utils.getArrayValFromJsonDict(key, "options")
+  let options = dict->getArrayValFromJsonDict(key, "options")
   switch options->Array.get(0)->Option.getOr("") {
   | "" => None
   | "ALL" => {
@@ -589,7 +601,7 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
   let key = keysArr->Array.get(0)->Option.getOr("")
   switch key {
   | "user_currency" => {
-      let options = dict->Utils.getArrayValFromJsonDict("user_currency", "options")
+      let options = dict->getArrayValFromJsonDict("user_currency", "options")
       Currency(options)
     }
   | "user_country" => dict->getOptionsFromPaymentMethodFieldType("user_country")
@@ -599,6 +611,10 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
       "user_shipping_address_country",
       ~isAddressCountry=false,
     )
+  | "language_preference" => {
+      let options = dict->getArrayValFromJsonDict("language_preference", "options")
+      LanguagePreference(options)
+    }
   | _ => None
   }
 }
@@ -637,6 +653,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "local_bank_transfer_transfer",
   "afterpay_clearpay",
   "mifinity",
+  "upi_collect",
 ]
 
 let getIsBillingField = requiredFieldType => {
@@ -778,8 +795,6 @@ type paymentMethodList = {
   merchant_name: string,
 }
 
-open Utils
-
 let defaultPaymentMethodType = {
   payment_method_type: "",
   payment_experience: [],
@@ -903,17 +918,17 @@ let getAchConnectors = (dict, str) => {
 
 let getDynamicFieldsFromJsonDict = (dict, isBancontact) => {
   let requiredFields =
-    Utils.getJsonFromDict(dict, "required_fields", JSON.Encode.null)
-    ->Utils.getDictFromJson
+    getJsonFromDict(dict, "required_fields", JSON.Encode.null)
+    ->getDictFromJson
     ->Dict.valuesToArray
 
   requiredFields->Array.map(requiredField => {
-    let requiredFieldsDict = requiredField->Utils.getDictFromJson
+    let requiredFieldsDict = requiredField->getDictFromJson
     {
-      required_field: requiredFieldsDict->Utils.getString("required_field", ""),
-      display_name: requiredFieldsDict->Utils.getString("display_name", ""),
+      required_field: requiredFieldsDict->getString("required_field", ""),
+      display_name: requiredFieldsDict->getString("display_name", ""),
       field_type: requiredFieldsDict->getFieldType(isBancontact),
-      value: requiredFieldsDict->Utils.getString("value", ""),
+      value: requiredFieldsDict->getString("value", ""),
     }
   })
 }

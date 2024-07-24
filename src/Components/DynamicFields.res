@@ -458,6 +458,7 @@ let make = (
             </>
           | CryptoCurrencyNetworks => <CryptoCurrencyNetworks />
           | DateOfBirth => <DateOfBirth />
+          | VpaId => <VpaIdPaymentInput paymentType />
           | Email
           | InfoElement
           | Country
@@ -482,6 +483,7 @@ let make = (
           | ShippingAddressPincode
           | ShippingAddressState
           | PhoneCountryCode
+          | LanguagePreference(_)
           | ShippingAddressCountry(_) => React.null
           }}
         </div>
@@ -765,6 +767,8 @@ let make = (
                 | CryptoCurrencyNetworks
                 | DateOfBirth
                 | PhoneCountryCode
+                | VpaId
+                | LanguagePreference(_)
                 | None => React.null
                 }}
               </div>

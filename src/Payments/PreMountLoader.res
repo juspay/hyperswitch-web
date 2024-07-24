@@ -6,6 +6,7 @@ let make = (
   ~endpoint,
   ~ephemeralKey,
   ~hyperComponentName: Types.hyperComponentName,
+  ~merchantHostname,
 ) => {
   open Utils
   let (paymentMethodsResponseSent, setPaymentMethodsResponseSent) = React.useState(_ => false)
@@ -63,6 +64,7 @@ let make = (
         ~optLogger=Some(logger),
         ~switchToCustomPod=false,
         ~endpoint,
+        ~merchantHostname,
         (),
       )
     | _ => JSON.Encode.null->Promise.resolve
@@ -137,15 +139,26 @@ let make = (
   })
 
   React.useEffect4(() => {
-    if (
-      paymentMethodsResponseSent &&
-      customerPaymentMethodsResponseSent &&
-      sessionTokensResponseSent &&
-      savedPaymentMethodsResponseSent
-    ) {
+    let handleUnmount = () => {
       handlePostMessage([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
       Window.removeEventListener("message", handle)
     }
+
+    switch hyperComponentName {
+    | Elements =>
+      if (
+        paymentMethodsResponseSent &&
+        customerPaymentMethodsResponseSent &&
+        sessionTokensResponseSent
+      ) {
+        handleUnmount()
+      }
+    | PaymentMethodsManagementElements =>
+      if savedPaymentMethodsResponseSent {
+        handleUnmount()
+      }
+    }
+
     None
   }, (
     paymentMethodsResponseSent,

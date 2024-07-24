@@ -1,3 +1,4 @@
+open CardUtils
 open PaymentMethodCollectTypes
 open PaymentMethodCollectUtils
 
@@ -7,6 +8,7 @@ let make = (
   ~availablePaymentMethodTypes,
   ~primaryTheme,
   ~handleSubmit,
+  ~formLayout,
 ) => {
   // Component states
   let (selectedPaymentMethod, setSelectedPaymentMethod) = React.useState(_ =>
@@ -15,6 +17,10 @@ let make = (
   let (selectedPaymentMethodType, setSelectedPaymentMethodType) = React.useState(_ =>
     defaultSelectedPaymentMethodType
   )
+  let (
+    availablePaymentMethodTypesOrdered,
+    setAvailablePaymentMethodTypesOrdered,
+  ) = React.useState(_ => availablePaymentMethodTypes)
   let (fieldValidityDict, setFieldValidityDict): (
     Dict.t<option<bool>>,
     (Dict.t<option<bool>> => Dict.t<option<bool>>) => unit,
@@ -25,7 +31,31 @@ let make = (
   ) = React.useState(_ => None)
   let (submitted, setSubmitted) = React.useState(_ => false)
   let (paymentMethodData, setPaymentMethodData) = React.useState(_ => Dict.make())
+
+  // Input DOM references
   let inputRef = React.useRef(Nullable.null)
+  let cardNumberRef = React.useRef(Nullable.null)
+  let cardExpRef = React.useRef(Nullable.null)
+  let cardHolderRef = React.useRef(Nullable.null)
+  let routingNumberRef = React.useRef(Nullable.null)
+  let achAccNumberRef = React.useRef(Nullable.null)
+  let bacsSortCodeRef = React.useRef(Nullable.null)
+  let bacsAccNumberRef = React.useRef(Nullable.null)
+  let ibanRef = React.useRef(Nullable.null)
+  let sepaBicRef = React.useRef(Nullable.null)
+  let bankNameRef = React.useRef(Nullable.null)
+  let bankCityRef = React.useRef(Nullable.null)
+  let countryCodeRef = React.useRef(Nullable.null)
+
+  // Update formLayout and availablePaymentMethodTypesOrdered
+  React.useEffect1(() => {
+    switch formLayout {
+    | Tabs => setSelectedPaymentMethodType(_ => availablePaymentMethodTypes->Array.get(0))
+    | _ => ()
+    }
+    setAvailablePaymentMethodTypesOrdered(_ => availablePaymentMethodTypes)
+    None
+  }, [availablePaymentMethodTypes])
 
   // Reset payment method type
   React.useEffect(() => {
@@ -43,6 +73,12 @@ let make = (
     setFieldValidityDict(_ => Dict.make())
   }
 
+  // Reset form on PMT updation
+  React.useEffect(() => {
+    resetForm()
+    None
+  }, [selectedPaymentMethodType])
+
   let handleBackClick = () => {
     switch savedPMD {
     | Some(_) => setSavedPMD(_ => None)
@@ -51,29 +87,75 @@ let make = (
       | Some(Card(_)) => {
           setSelectedPaymentMethod(_ => None)
           setSelectedPaymentMethodType(_ => None)
-          resetForm()
         }
       | Some(_) => setSelectedPaymentMethodType(_ => None)
       | None =>
         switch selectedPaymentMethod {
-        | Some(_) => {
-            setSelectedPaymentMethod(_ => None)
-            resetForm()
-            ()
-          }
+        | Some(_) => setSelectedPaymentMethod(_ => None)
         | None => ()
         }
       }
     }
   }
 
-  let setPaymentMethodDataValue = (key: paymentMethodDataField, value) =>
-    setPaymentMethodData(_ => paymentMethodData->setValue(key->getPaymentMethodDataFieldKey, value))
-
   let getPaymentMethodDataValue = (key: paymentMethodDataField) =>
     paymentMethodData
     ->getValue(key->getPaymentMethodDataFieldKey)
     ->Option.getOr("")
+
+  let setPaymentMethodDataValue = (key: paymentMethodDataField, value) =>
+    setPaymentMethodData(_ => paymentMethodData->setValue(key->getPaymentMethodDataFieldKey, value))
+
+  let validateAndSetPaymentMethodDataValue = (key: paymentMethodDataField, event) => {
+    let value = ReactEvent.Form.target(event)["value"]
+    let inputType = ReactEvent.Form.target(event)["type"]
+
+    let (isValid, updatedValue) = switch (key, inputType, value) {
+    // Empty string is valid (no error)
+    | (_, _, "") => (true, "")
+    | (CardExpDate, "number" | "tel", _) => {
+        let formattedExpiry = formatCardExpiryNumber(value)
+        if isExipryValid(formattedExpiry) {
+          handleInputFocus(~currentRef=cardExpRef, ~destinationRef=cardHolderRef)
+        }
+        (true, formattedExpiry)
+      }
+    | (CardNumber, "number" | "tel", _) => {
+        let cardType = getCardType(getPaymentMethodDataValue(CardBrand))
+        let formattedCardNumber = formatCardNumber(value, cardType)
+        if cardValid(clearSpaces(formattedCardNumber), getCardStringFromType(cardType)) {
+          handleInputFocus(~currentRef=cardNumberRef, ~destinationRef=cardExpRef)
+        }
+        (true, formattedCardNumber)
+      }
+    | (SepaBic | SepaIban, "text", _) => (true, String.toUpperCase(value))
+
+    // Default number validation
+    | (_, "number" | "tel", _) =>
+      try {
+        let bigIntValue = Js.BigInt.fromStringExn(value)
+        (true, Js.BigInt.toString(bigIntValue))
+      } catch {
+      | _ => (false, value)
+      }
+
+    // Default validation
+    | (_, _, _) =>
+      getPaymentMethodDataFieldCharacterPattern(key)
+      // valid; in case there is no pattern setup
+      ->Option.mapOr((true, value), regex =>
+        regex->RegExp.test(value) ? (true, value) : (false, value)
+      )
+    }
+
+    if isValid {
+      switch key {
+      | CardNumber => setPaymentMethodDataValue(CardBrand, getCardBrand(updatedValue))
+      | _ => ()
+      }
+      setPaymentMethodDataValue(key, updatedValue)
+    }
+  }
 
   let setFieldValidity = (key: paymentMethodDataField, value) => {
     let fieldValidityCopy = fieldValidityDict->Dict.copy
@@ -96,14 +178,14 @@ let make = (
 
   // UI renders
   let renderBackButton = () => {
-    switch (selectedPaymentMethod, selectedPaymentMethodType) {
-    | (Some(_), _) =>
+    switch selectedPaymentMethod {
+    | Some(_) =>
       <button
-        className="bg-jp-gray-600 rounded-full h-7 w-7 self-center mr-[20px]"
+        className="bg-jp-gray-600 rounded-full h-7 w-7 self-center mr-5"
         onClick={_ => handleBackClick()}>
         {React.string("←")}
       </button>
-    | _ => React.null
+    | None => React.null
     }
   }
 
@@ -129,7 +211,14 @@ let make = (
 
   let renderContentSubHeader = () =>
     switch savedPMD {
-    | Some(_) => React.string("Your payout method details")
+    | Some(pmd) =>
+      switch pmd {
+      | (Card, _, _) => React.string("Your card details")
+      | (pm, pmt, _) =>
+        let pmtLabelString =
+          pmt->getPaymentMethodTypeLabel ++ " " ++ pm->getPaymentMethodLabel->String.toLowerCase
+        React.string(`Your ${pmtLabelString}`)
+      }
     | None =>
       switch selectedPaymentMethod {
       | Some(_) => React.null
@@ -138,11 +227,11 @@ let make = (
     }
 
   let renderInfoTemplate = (label, value, uniqueKey) => {
-    let labelClasses = "w-4/10 text-jp-gray-800 text-[14px] min-w-40 text-end"
-    let valueClasses = "w-6/10 text-[14px] min-w-40"
+    let labelClasses = "w-4/10 text-jp-gray-800 text-sm min-w-40 text-end"
+    let valueClasses = "w-6/10 text-sm min-w-40"
     <div key={uniqueKey} className="flex flex-row items-center">
       <div className={labelClasses}> {React.string(label)} </div>
-      <div className="mx-[10px] h-[15px] w-[2px] bg-jp-gray-300"> {React.string("")} </div>
+      <div className="mx-2.5 h-4 w-0.5 bg-jp-gray-300"> {React.string("")} </div>
       <div className={valueClasses}> {React.string(value)} </div>
     </div>
   }
@@ -151,13 +240,16 @@ let make = (
     let (paymentMethod, paymentMethodType, fields) = pmd
     <div>
       <div className="flex flex-col">
-        <div className="flex flex-row items-center mt-[10px] mb-[10px] text-[20px]">
-          <img src={"merchantLogo"} alt="" className="h-[25px] w-auto" />
-          <div className="ml-[10px]">
-            {React.string(paymentMethodType->getPaymentMethodTypeLabel)}
+        {switch formLayout {
+        | Tabs =>
+          <div className="flex flex-row items-center mb-2.5 text-xl font-semibold">
+            <img src={"merchantLogo"} alt="" className="h-6 w-auto" />
+            <div className="ml-1.5">
+              {React.string(`Review your ${paymentMethodType->getPaymentMethodTypeLabel} details`)}
+            </div>
           </div>
-          <div className="ml-[5px]"> {React.string(paymentMethod->String.make)} </div>
-        </div>
+        | Journey => React.null
+        }}
         {fields
         ->Array.mapWithIndex((field, i) => {
           let (field, value) = field
@@ -166,37 +258,70 @@ let make = (
         ->React.array}
       </div>
       <div
-        className="flex flex-row items-center min-w-full mt-[20px] py-[5px] px-[10px] text-[13px] border border-solid border-blue-200 rounded bg-blue-50">
-        <img src={"merchantLogo"} alt="" className="h-[12px] w-auto mr-[5px]" />
+        className="flex flex-row items-center min-w-full my-5 px-2.5 py-1.5 text-xs border border-solid border-blue-200 rounded bg-blue-50">
+        <img src={"merchantLogo"} alt="" className="h-3 w-auto mr-1.5" />
         {React.string(
           `Your funds will be deposited in the selected ${paymentMethod
             ->getPaymentMethodLabel
-            ->String.toLowerCase}`,
+            ->String.toLowerCase}.`,
         )}
       </div>
-      <button
-        onClick={_ => {
-          setSubmitted(_ => true)
-          handleSubmit(pmd)
-        }}
-        disabled={submitted}
-        className="min-w-full mt-[20px] text-[18px] font-semibold px-[10px] py-[5px] text-white rounded"
-        style={backgroundColor: primaryTheme}>
-        {React.string(submitted ? "SUBMITTING" : "SUBMIT")}
-      </button>
+      <div className="flex my-5 text-lg font-semibold w-full">
+        <button
+          onClick={_ => setSavedPMD(_ => None)}
+          disabled={submitted}
+          className="w-full px-2.5 py-1.5 rounded border border-solid"
+          style={color: primaryTheme, borderColor: primaryTheme}>
+          {React.string("Edit")}
+        </button>
+        <button
+          onClick={_ => {
+            setSubmitted(_ => true)
+            handleSubmit(pmd)
+          }}
+          disabled={submitted}
+          className="w-full px-2.5 py-1.5 text-white rounded ml-2.5"
+          style={backgroundColor: primaryTheme}>
+          {React.string(submitted ? "Submitting ..." : "Submit")}
+        </button>
+      </div>
     </div>
   }
 
   let renderInputTemplate = (field: paymentMethodDataField) => {
     let isValid = field->getFieldValidity
-    let labelClasses = `text-[14px] mt-[10px] ${isValid->Option.getOr(true)
-        ? "text-jp-gray-800"
-        : "text-red-950"}`
-    let inputClasses = `min-w-full border mt-[5px] px-[10px] py-[8px] rounded-lg ${isValid->Option.getOr(
-        true,
-      )
-        ? "border-jp-gray-200"
-        : "border-red-950"}`
+    let labelClasses = "text-sm mt-2.5 text-jp-gray-800"
+    let inputClasses = "min-w-full border mt-1.5 px-2.5 py-2 rounded-md border-jp-gray-200"
+    let inputRef = switch field {
+    | CardNumber => cardNumberRef
+    | CardExpDate => cardExpRef
+    | CardHolderName => cardHolderRef
+    | ACHRoutingNumber => routingNumberRef
+    | ACHAccountNumber => achAccNumberRef
+    | BacsSortCode => bacsSortCodeRef
+    | BacsAccountNumber => bacsAccNumberRef
+    | SepaIban => ibanRef
+    | SepaBic => sepaBicRef
+    // Union
+    | BacsBankName
+    | ACHBankName
+    | SepaBankName => bankNameRef
+    | BacsBankCity
+    | ACHBankCity
+    | SepaBankCity => bankCityRef
+    | SepaCountryCode => countryCodeRef
+    | _ => inputRef
+    }
+    let pattern =
+      field
+      ->getPaymentMethodDataFieldCharacterPattern
+      ->Option.getOr(%re("/.*/"))
+      ->Js.Re.source
+    let value = field->getPaymentMethodDataValue
+    let (errorString, errorStringClasses) = switch isValid {
+    | Some(false) => (field->getPaymentMethodDataErrorString(value), "text-xs text-red-950")
+    | _ => ("", "")
+    }
     <InputField
       id={field->getPaymentMethodDataFieldKey}
       className=inputClasses
@@ -204,14 +329,18 @@ let make = (
       paymentType={PaymentMethodCollectElement}
       inputRef
       isFocus={true}
-      isValid
+      isValid={None}
+      errorString
+      errorStringClasses
       fieldName={field->getPaymentMethodDataFieldLabel}
       placeholder={field->getPaymentMethodDataFieldPlaceholder}
       maxLength={field->getPaymentMethodDataFieldMaxLength}
-      value={field->getPaymentMethodDataValue}
-      onChange={event => field->setPaymentMethodDataValue(ReactEvent.Form.target(event)["value"])}
+      value
+      onChange={event => field->validateAndSetPaymentMethodDataValue(event)}
       setIsValid={updatedValidityFn => field->setFieldValidity(updatedValidityFn())}
       onBlur={_ev => field->calculateAndSetValidity}
+      type_={field->getPaymentMethodDataFieldInputType}
+      pattern
     />
   }
 
@@ -220,92 +349,108 @@ let make = (
       {switch pmt {
       | Card(_) =>
         <div className="collect-card">
-          <div className="flex flex-row">
-            <div className="w-5/10"> {CardNumber->renderInputTemplate} </div>
-            <div className="w-3/10 ml-[30px]"> {CardExpDate->renderInputTemplate} </div>
-          </div>
+          {CardNumber->renderInputTemplate}
+          <div className="max-w-80"> {CardExpDate->renderInputTemplate} </div>
           {CardHolderName->renderInputTemplate}
         </div>
       | BankTransfer(bankTransferType) =>
         <div className="collect-bank">
           {switch bankTransferType {
           | ACH =>
-            <React.Fragment>
+            <>
               {ACHRoutingNumber->renderInputTemplate}
               {ACHAccountNumber->renderInputTemplate}
-            </React.Fragment>
+            </>
           | Bacs =>
-            <React.Fragment>
+            <>
               {BacsSortCode->renderInputTemplate}
               {BacsAccountNumber->renderInputTemplate}
-            </React.Fragment>
+            </>
           | Sepa =>
-            <React.Fragment>
+            <>
               {SepaIban->renderInputTemplate}
               {SepaBic->renderInputTemplate}
-            </React.Fragment>
+            </>
           }}
         </div>
       | Wallet(walletType) =>
         <div className="collect-wallet">
           {switch walletType {
           | Paypal =>
-            <React.Fragment>
+            <>
               {PaypalMail->renderInputTemplate}
               {PaypalMobNumber->renderInputTemplate}
-            </React.Fragment>
-          | Venmo => <React.Fragment> {VenmoMobNumber->renderInputTemplate} </React.Fragment>
+            </>
+          | Venmo => VenmoMobNumber->renderInputTemplate
           | Pix => PixId->renderInputTemplate
           }}
         </div>
       }}
       <button
-        className="min-w-full mt-[40px] text-[18px] font-semibold px-[10px] py-[5px] text-white rounded"
+        className="min-w-full mt-10 text-lg font-semibold px-2.5 py-1.5 text-white rounded"
         style={backgroundColor: primaryTheme}
         onClick={handleSave}>
-        {React.string("SAVE")}
+        {React.string("Save")}
       </button>
     </div>
   }
 
   let renderPMOptions = () =>
-    <div className="flex flex-col mt-[10px]">
+    <div className="flex flex-col mt-2.5">
       {availablePaymentMethods
       ->Array.mapWithIndex((pm, i) => {
         <button
           key={Int.toString(i)}
           onClick={_ => setSelectedPaymentMethod(_ => Some(pm))}
-          className="text-start border border-solid border-jp-gray-200 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50">
-          {React.string(pm->String.make)}
+          className="flex flex-row items-center border border-solid border-jp-gray-200 px-5 py-2.5 rounded mt-2.5 hover:bg-jp-gray-50">
+          {pm->getPaymentMethodIcon}
+          <label className="text-start ml-2.5 cursor-pointer">
+            {React.string(pm->String.make)}
+          </label>
         </button>
       })
       ->React.array}
     </div>
 
   let renderPMTOptions = () => {
-    let commonClasses = "text-start border border-solid border-jp-gray-200 px-[20px] py-[10px] rounded mt-[10px] hover:bg-jp-gray-50"
+    let commonClasses = "flex flex-row items-center border border-solid border-jp-gray-200 px-5 py-2.5 rounded mt-2.5 hover:bg-jp-gray-50"
+    let buttonTextClasses = "text-start ml-2.5"
     <div className="flex flex-col">
       {switch selectedPaymentMethod {
       | Some(Card) => React.null
       | Some(BankTransfer) =>
-        availablePaymentMethodTypes.bankTransfer
+        availablePaymentMethodTypes
+        ->Array.filterMap(pmt =>
+          switch pmt {
+          | BankTransfer(bank) => Some(bank)
+          | _ => None
+          }
+        )
         ->Array.mapWithIndex((pmt, i) =>
           <button
             key={Int.toString(i)}
             onClick={_ => setSelectedPaymentMethodType(_ => Some(BankTransfer(pmt)))}
             className=commonClasses>
-            {React.string(pmt->String.make)}
+            {pmt->getBankTransferIcon}
+            <label className={buttonTextClasses}> {React.string(pmt->String.make)} </label>
           </button>
         )
         ->React.array
       | Some(Wallet) =>
-        availablePaymentMethodTypes.wallet
+        availablePaymentMethodTypes
+        ->Array.filterMap(pmt =>
+          switch pmt {
+          | Wallet(wallet) => Some(wallet)
+          | _ => None
+          }
+        )
         ->Array.mapWithIndex((pmt, i) =>
           <button
             key={Int.toString(i)}
             onClick={_ => setSelectedPaymentMethodType(_ => Some(Wallet(pmt)))}
             className=commonClasses>
-            {React.string(pmt->String.make)}
+            {pmt->getWalletIcon}
+            <label className={buttonTextClasses}> {React.string(pmt->String.make)} </label>
           </button>
         )
         ->React.array
@@ -314,22 +459,146 @@ let make = (
     </div>
   }
 
-  <div className="shadow-lg rounded p-[40px] h-min min-w-96">
-    <div className="flex flex-row justify-start">
-      <div className="flex justify-center items-center"> {renderBackButton()} </div>
-      <div className="text-[30px] font-semibold"> {renderContentHeader()} </div>
+  let renderJourneyScreen = () => {
+    <div className="w-full">
+      <div className="flex flex-row justify-start">
+        <div className="flex justify-center items-center"> {renderBackButton()} </div>
+        <div className="text-xl lg:text-3xl font-semibold"> {renderContentHeader()} </div>
+      </div>
+      <div className="text-base text-gray-500"> {renderContentSubHeader()} </div>
+      <div className="mt-2.5">
+        {switch savedPMD {
+        | Some(pmd) => renderFinalizeScreen(pmd)
+        | None =>
+          switch selectedPaymentMethodType {
+          | Some(pmt) => renderInputs(pmt)
+          | None => renderPMTOptions()
+          }
+        }}
+      </div>
     </div>
-    <div className="text-[16px] text-gray-500"> {renderContentSubHeader()} </div>
-    <div className="mt-[10px]">
-      {switch savedPMD {
-      | Some(pmd) => renderFinalizeScreen(pmd)
-      | None =>
-        switch selectedPaymentMethodType {
-        | Some(pmt) => renderInputs(pmt)
-        | None => renderPMTOptions()
+  }
+
+  let handleTabSelection = selectedPMT => {
+    if (
+      availablePaymentMethodTypesOrdered->Array.indexOf(selectedPMT) >=
+        defaultOptionsLimitInTabLayout
+    ) {
+      // Move the selected payment method at the last tab position
+      let ordList = availablePaymentMethodTypes->Array.reduceWithIndex([], (acc, pmt, i) => {
+        if i === defaultOptionsLimitInTabLayout - 1 {
+          acc->Array.push(selectedPMT)
         }
-      }}
+        if pmt !== selectedPMT {
+          acc->Array.push(pmt)
+        }
+        acc
+      })
+      setAvailablePaymentMethodTypesOrdered(_ => ordList)
+    }
+    setSelectedPaymentMethodType(_ => Some(selectedPMT))
+  }
+
+  let renderTabScreen = (~limit=defaultOptionsLimitInTabLayout) => {
+    let activeStyles: JsxDOM.style = {
+      borderColor: primaryTheme,
+      borderWidth: "2px",
+      color: primaryTheme,
+    }
+    let defaultStyles: JsxDOM.style = {
+      borderColor: "#9A9FA8",
+      borderWidth: "1px",
+      color: primaryTheme,
+    }
+    // tabs
+    <div className="flex flex-col w-full min-w-[300px] max-w-[520px] lg:min-w-[400px]">
+      <div>
+        {
+          let hiddenTabs = availablePaymentMethodTypesOrdered->Array.reduceWithIndex([], (
+            options,
+            pmt,
+            i,
+          ) => {
+            if i >= limit {
+              options->Array.push(
+                <option
+                  key={i->Int.toString}
+                  value={pmt->getPaymentMethodTypeLabel}
+                  className="flex items-center px-2.5 py-0.5 cursor-pointer hover:bg-jp-gray-50"
+                  onClick={_ => handleTabSelection(pmt)}>
+                  <div className="ml-2.5"> {React.string(pmt->getPaymentMethodTypeLabel)} </div>
+                </option>,
+              )
+            }
+            options
+          })
+          let visibleTabs = availablePaymentMethodTypesOrdered->Array.reduceWithIndex([], (
+            items,
+            pmt,
+            i,
+          ) => {
+            if i < limit {
+              items->Array.push(
+                <div
+                  key={i->Int.toString}
+                  onClick={_ => setSelectedPaymentMethodType(_ => Some(pmt))}
+                  className="flex w-full items-center rounded border border-solid border-jp-gray-700 px-2.5 py-1.5 mr-2.5 cursor-pointer hover:bg-jp-gray-50"
+                  style={selectedPaymentMethodType === Some(pmt) ? activeStyles : defaultStyles}>
+                  {pmt->getPaymentMethodTypeIcon}
+                  <div className="ml-2.5"> {React.string(pmt->getPaymentMethodTypeLabel)} </div>
+                </div>,
+              )
+            }
+            items
+          })
+          switch savedPMD {
+          | Some(pmd) => renderFinalizeScreen(pmd)
+          | None =>
+            <div>
+              <div className="flex flex-row w-full">
+                {visibleTabs->React.array}
+                {<RenderIf condition={availablePaymentMethodTypesOrdered->Array.length > limit}>
+                  <div className="relative">
+                    <Icon
+                      className="absolute z-10 pointer translate-x-2.5 translate-y-3.5 pointer-events-none"
+                      name="arrow-down"
+                      size=10
+                    />
+                    <select
+                      className="h-full relative rounded border border-solid border-jp-gray-700 py-1.5 cursor-pointer bg-white text-transparent w-8 hover:bg-jp-gray-50 focus:border-0.5">
+                      {switch selectedPaymentMethodType {
+                      | Some(selectedPaymentMethodType) =>
+                        <option
+                          value={selectedPaymentMethodType->getPaymentMethodTypeLabel}
+                          disabled={true}>
+                          {React.string(selectedPaymentMethodType->getPaymentMethodTypeLabel)}
+                        </option>
+                      | None => React.null
+                      }}
+                      {hiddenTabs->React.array}
+                    </select>
+                  </div>
+                </RenderIf>}
+              </div>
+              <div className="mt-5">
+                {switch selectedPaymentMethodType {
+                | Some(pmt) => renderInputs(pmt)
+                | None => React.null
+                }}
+              </div>
+            </div>
+          }
+        }
+      </div>
     </div>
+  }
+
+  <div
+    className="flex flex-col h-min p-6 items-center lg:rounded lg:shadow-lg lg:p-10 lg:min-w-[400px]">
+    {switch formLayout {
+    | Journey => renderJourneyScreen()
+    | Tabs => renderTabScreen()
+    }}
   </div>
 }
 let default = make

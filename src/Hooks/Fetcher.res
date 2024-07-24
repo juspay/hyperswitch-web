@@ -1,4 +1,3 @@
-@val @scope(("window", "location")) external hostname: string = "hostname"
 type match
 type pathname = {match: match}
 type url = {pathname: pathname}
@@ -9,7 +8,7 @@ let useFetcher = fileName => {
   let (optionalJson, setJson) = React.useState(() => None)
   React.useEffect(() => {
     open Promise
-    Fetch.get(`${hostname}/json/${fileName}.json`)
+    Fetch.get(`${Window.Location.hostname}/json/${fileName}.json`)
     ->then(Fetch.Response.json)
     ->thenResolve(json => {
       setJson(_ => Some(json))

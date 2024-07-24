@@ -85,4 +85,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   currencyNetwork: `Valutanetwerken`,
   expiryPlaceholder: `MM / JJ`,
   dateOfBirth: `Geboortedatum`,
+  vpaIdLabel: `Vpa-id`,
+  vpaIdEmptyText: `Vpa-ID mag niet leeg zijn`,
+  vpaIdInvalidText: `Ongeldige Vpa-ID`,
+  dateofBirthRequiredText: `Geboortedatum is vereist`,
+  dateOfBirthInvalidText: `De leeftijd moet groter of gelijk zijn aan 18 jaar`,
+  dateOfBirthPlaceholderText: `Voer geboortedatum in`,
 }

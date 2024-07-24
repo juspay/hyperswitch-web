@@ -3,7 +3,6 @@ open Utils
 let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
   open RecoilAtoms
 
-  //<...>//
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
@@ -124,7 +123,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       setConfig(_ => {
         config: {
           appearance,
-          locale: config.locale,
+          locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
           fonts: config.fonts,
           clientSecret: config.clientSecret,
           ephemeralKey: config.ephemeralKey,
@@ -579,7 +578,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     ])
     None
   }, (divH, iframeId))
-  //<...>//
 
   <div ref={divRef->ReactDOM.Ref.domRef}> children </div>
 }

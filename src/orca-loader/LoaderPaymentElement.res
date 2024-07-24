@@ -186,7 +186,6 @@ let make = (
             }
           }
         }
-        //<...>//
 
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {

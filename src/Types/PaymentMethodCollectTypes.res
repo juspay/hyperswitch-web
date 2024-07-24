@@ -11,17 +11,13 @@ type paymentMethodType =
   | BankTransfer(bankTransfer)
   | Wallet(wallet)
 
-type paymentMethodTypes = {
-  card: array<card>,
-  bankTransfer: array<bankTransfer>,
-  wallet: array<wallet>,
-}
-
 type paymentMethodDataField =
   // Cards
   | CardNumber
   | CardExpDate
   | CardHolderName
+  // Card meta
+  | CardBrand
   // Banks
   | ACHRoutingNumber
   | ACHAccountNumber
@@ -46,6 +42,8 @@ type paymentMethodDataField =
 
 type paymentMethodData = (paymentMethod, paymentMethodType, array<(paymentMethodDataField, string)>)
 
+type formLayout = Journey | Tabs
+
 type paymentMethodCollectFlow = PayoutLinkInitiate | PayoutMethodCollect
 
 type paymentMethodCollectOptions = {
@@ -61,6 +59,7 @@ type paymentMethodCollectOptions = {
   currency: string,
   flow: paymentMethodCollectFlow,
   sessionExpiry: string,
+  formLayout: formLayout,
 }
 
 // API TYPES
@@ -139,6 +138,17 @@ let decodeFlow = (dict, defaultPaymentMethodCollectFlow) =>
   | None => defaultPaymentMethodCollectFlow
   }
 
+let decodeFormLayout = (dict, decodeFormLayout) =>
+  switch dict->Dict.get("formLayout") {
+  | Some(formLayout) =>
+    switch formLayout->JSON.Decode.string {
+    | Some("journey") => Journey
+    | Some("tabs") => Tabs
+    | _ => decodeFormLayout
+    }
+  | None => decodeFormLayout
+  }
+
 let decodeCard = (cardType: string): option<card> =>
   switch cardType {
   | "credit" => Some(Credit)
@@ -172,9 +182,9 @@ let decodePaymentMethodType = (json: JSON.t): option<array<paymentMethodType>> =
         ->Dict.get("payment_method_types")
         ->Option.flatMap(JSON.Decode.array)
         ->Option.flatMap(pmts => {
-          let _ = pmts->Array.map(pmt => {
+          pmts->Array.forEach(pmt => {
             let payment_method_type = pmt->JSON.Decode.string
-            let _ = switch (payment_method, payment_method_type) {
+            switch (payment_method, payment_method_type) {
             | (Some("card"), Some(cardType)) =>
               switch decodeCard(cardType) {
               | Some(card) => payment_methods->Array.push(Card(card))
