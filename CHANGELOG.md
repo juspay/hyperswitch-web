@@ -1,3 +1,10 @@
+## [0.77.2](https://github.com/juspay/hyperswitch-web/compare/v0.77.1...v0.77.2) (2024-07-24)
+
+
+### Bug Fixes
+
+* customer acceptance issue for bank debits ([#516](https://github.com/juspay/hyperswitch-web/issues/516)) ([e797149](https://github.com/juspay/hyperswitch-web/commit/e797149d2737232c1fd20c39a95413208a685a91))
+
 ## [0.77.1](https://github.com/juspay/hyperswitch-web/compare/v0.77.0...v0.77.1) (2024-07-23)
 
 # [0.77.0](https://github.com/juspay/hyperswitch-web/compare/v0.76.2...v0.77.0) (2024-07-18)
