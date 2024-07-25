@@ -1,3 +1,10 @@
+## [0.77.4](https://github.com/juspay/hyperswitch-web/compare/v0.77.3...v0.77.4) (2024-07-25)
+
+
+### Reverts
+
+* passing initiativeContext to TrustPay ApplePay ([#522](https://github.com/juspay/hyperswitch-web/issues/522)) ([1ceefe1](https://github.com/juspay/hyperswitch-web/commit/1ceefe15d7943ac02b678b116c4058b4830f5b52))
+
 ## [0.77.3](https://github.com/juspay/hyperswitch-web/compare/v0.77.2...v0.77.3) (2024-07-24)
 
 
