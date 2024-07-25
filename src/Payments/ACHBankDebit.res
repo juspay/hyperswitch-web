@@ -85,7 +85,6 @@ let make = (~paymentType: CardThemeType.mode) => {
             ~city=city.value,
             ~postalCode=postalCode.value,
             ~state=state.value,
-            ~paymentType=paymentMethodListValue.payment_type,
           )
           intent(
             ~bodyArr=body,
