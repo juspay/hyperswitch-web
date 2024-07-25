@@ -171,54 +171,64 @@ let getPaymentMethodDataFieldKey = (key: paymentMethodDataField): string =>
   | VenmoMobNumber => "venmo.phoneNumber"
   }
 
-let getPaymentMethodDataFieldLabel = (key: paymentMethodDataField): string =>
+let getPaymentMethodDataFieldLabel = (
+  key: paymentMethodDataField,
+  localeString: LocaleStringTypes.localeStrings,
+): string =>
   switch key {
-  | CardNumber => "Card Number"
-  | CardExpDate => "Expiry Date"
-  | CardHolderName => "Cardholder Name"
-  | ACHRoutingNumber => "Routing Number"
-  | ACHAccountNumber | BacsAccountNumber => "Account Number"
-  | BacsSortCode => "Sort Code"
-  | SepaIban => "International Bank Account Number (IBAN)"
-  | SepaBic => "Bank Identifier Code (Optional)"
-  | PixId => "Pix ID"
-  | PixBankAccountNumber => "Bank Account Number"
-  | PaypalMail => "Email"
-  | PaypalMobNumber | VenmoMobNumber => "Phone Number"
-  | SepaCountryCode => "Country Code (Optional)"
+  | CardNumber => localeString.cardNumberLabel
+  | CardExpDate => localeString.formFieldCardExpDateLabel
+  | CardHolderName => localeString.cardHolderName
+  | ACHRoutingNumber => localeString.formFieldACHRoutingNumberLabel
+  | ACHAccountNumber | BacsAccountNumber => localeString.accountNumberText
+  | BacsSortCode => localeString.sortCodeText
+  | SepaIban => localeString.formFieldSepaIbanLabel
+  | SepaBic => localeString.formFieldSepaBicLabel
+  | PixId => localeString.formFieldPixIdLabel
+  | PixBankAccountNumber => localeString.formFieldBankAccountNumberLabel
+  | PaypalMail => localeString.emailLabel
+  | PaypalMobNumber | VenmoMobNumber => localeString.formFieldPhoneNumberLabel
+  | SepaCountryCode => localeString.formFieldCountryCodeLabel
   | ACHBankName
   | BacsBankName
   | PixBankName
-  | SepaBankName => "Bank Name (Optional)"
+  | SepaBankName =>
+    localeString.formFieldBankNameLabel
   | ACHBankCity
   | BacsBankCity
-  | SepaBankCity => "Bank City (Optional)"
+  | SepaBankCity =>
+    localeString.formFieldBankCityLabel
   | CardBrand => "Misc."
   }
 
-let getPaymentMethodDataFieldPlaceholder = (key: paymentMethodDataField): string =>
+let getPaymentMethodDataFieldPlaceholder = (
+  key: paymentMethodDataField,
+  localeString: LocaleStringTypes.localeStrings,
+): string =>
   switch key {
-  | CardNumber => "****** 4242"
-  | CardExpDate => "MM / YY"
-  | CardHolderName => "Your Name"
-  | ACHRoutingNumber => "110000000"
-  | ACHAccountNumber => "**** 6789"
-  | BacsSortCode => "11000"
-  | BacsAccountNumber => "**** 1822"
-  | SepaIban => "NL **** 6789"
-  | SepaBic => "ABNANL2A"
-  | SepaCountryCode => "Country"
-  | PixId => "**** 3251"
-  | PixBankAccountNumber => "**** 1232"
+  | CardNumber => localeString.formFieldCardNumberPlaceholder
+  | CardExpDate => localeString.formFieldCardExpDatePlaceholder
+  | CardHolderName => localeString.formFieldCardHoldernamePlaceholder
+  | ACHRoutingNumber => localeString.formFieldACHRoutingNumberPlaceholder
+  | ACHAccountNumber => localeString.formFieldAccountNumberPlaceholder
+  | BacsSortCode => localeString.formFieldSortCodePlaceholder
+  | BacsAccountNumber => localeString.formFieldAccountNumberPlaceholder
+  | SepaIban => localeString.formFieldSepaIbanPlaceholder
+  | SepaBic => localeString.formFieldSepaBicPlaceholder
+  | SepaCountryCode => localeString.formFieldCountryCodePlaceholder
+  | PixId => localeString.formFieldPixIdPlaceholder
+  | PixBankAccountNumber => localeString.formFieldBankAccountNumberPlaceholder
   | ACHBankName
   | BacsBankName
   | PixBankName
-  | SepaBankName => "Bank Name"
+  | SepaBankName =>
+    localeString.formFieldBankNamePlaceholder
   | ACHBankCity
   | BacsBankCity
-  | SepaBankCity => "Bank City"
-  | PaypalMail => "Your Email"
-  | PaypalMobNumber | VenmoMobNumber => "Your Phone"
+  | SepaBankCity =>
+    localeString.formFieldBankCityPlaceholder
+  | PaypalMail => localeString.formFieldEmailPlaceholder
+  | PaypalMobNumber | VenmoMobNumber => localeString.formFieldPhoneNumberPlaceholder
   | CardBrand => "Misc."
   }
 
@@ -282,12 +292,16 @@ let getPayoutImageSource = (payoutStatus: payoutStatus): string => {
   }
 }
 
-let getPayoutReadableStatus = (payoutStatus: payoutStatus): string =>
+let getPayoutReadableStatus = (
+  payoutStatus: payoutStatus,
+  localeString: LocaleStringTypes.localeStrings,
+): string =>
   switch payoutStatus {
-  | Success => "Payout Successful"
+  | Success => localeString.payoutStatusSuccessText
   | Initiated
   | Pending
-  | RequiresFulfillment => "Payout Processing"
+  | RequiresFulfillment =>
+    localeString.payoutStatusPendingText
   | Cancelled
   | Failed
   | Ineligible
@@ -296,7 +310,8 @@ let getPayoutReadableStatus = (payoutStatus: payoutStatus): string =>
   | Reversed
   | RequiresConfirmation
   | RequiresPayoutMethodData
-  | RequiresVendorAccountCreation => "Payout Failed"
+  | RequiresVendorAccountCreation =>
+    localeString.payoutStatusFailedText
   }
 
 let getPayoutStatusString = (payoutStatus: payoutStatus): string =>
@@ -316,12 +331,16 @@ let getPayoutStatusString = (payoutStatus: payoutStatus): string =>
   | RequiresVendorAccountCreation => "requires_vendor_account_creation"
   }
 
-let getPayoutStatusMessage = (payoutStatus: payoutStatus): string =>
+let getPayoutStatusMessage = (
+  payoutStatus: payoutStatus,
+  localeString: LocaleStringTypes.localeStrings,
+): string =>
   switch payoutStatus {
-  | Success => "Your payout was made to selected payment method."
+  | Success => localeString.payoutStatusSuccessMessage
   | Initiated
   | Pending
-  | RequiresFulfillment => "Your payout should be processed within 2-3 business days."
+  | RequiresFulfillment =>
+    localeString.payoutStatusPendingMessage
   | Cancelled
   | Failed
   | Ineligible
@@ -330,17 +349,22 @@ let getPayoutStatusMessage = (payoutStatus: payoutStatus): string =>
   | Reversed
   | RequiresConfirmation
   | RequiresPayoutMethodData
-  | RequiresVendorAccountCreation => "Failed to process your payout. Please check with your provider for more details."
+  | RequiresVendorAccountCreation =>
+    localeString.payoutStatusFailedMessage
   }
 
-let getPaymentMethodDataErrorString = (key: paymentMethodDataField, value): string => {
+let getPaymentMethodDataErrorString = (
+  key: paymentMethodDataField,
+  value,
+  localeString: LocaleStringTypes.localeStrings,
+): string => {
   let len = value->String.length
   let notEmptyAndComplete = len <= 0 || len === key->getPaymentMethodDataFieldMaxLength
   switch (key, notEmptyAndComplete) {
-  | (CardNumber, _) => "Card number is invalid."
-  | (CardExpDate, false) => "Your card's expiration date is incomplete."
-  | (CardExpDate, true) => "Your card's expiration year is in the past."
-  | (ACHRoutingNumber, false) => "Routing number is invalid."
+  | (CardNumber, _) => localeString.inValidCardErrorText
+  | (CardExpDate, false) => localeString.inCompleteExpiryErrorText
+  | (CardExpDate, true) => localeString.pastExpiryErrorText
+  | (ACHRoutingNumber, false) => localeString.formFieldInvalidRoutingNumber
   | _ => ""
   }
 }
@@ -409,7 +433,7 @@ let defaultSelectedPaymentMethodType: option<paymentMethodType> = None
 let defaultStatusInfo = {
   status: Success,
   payoutId: "",
-  message: "Your payout was successful. Funds were deposited in your selected payment mode.",
+  message: EnglishLocale.localeStrings.payoutStatusSuccessMessage,
   code: None,
   errorMessage: None,
   reason: None,

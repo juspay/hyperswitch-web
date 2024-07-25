@@ -1,6 +1,7 @@
 open CardUtils
 open PaymentMethodCollectTypes
 open PaymentMethodCollectUtils
+open RecoilAtoms
 
 @react.component
 let make = (
@@ -10,6 +11,7 @@ let make = (
   ~handleSubmit,
   ~formLayout,
 ) => {
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   // Component states
   let (selectedPaymentMethod, setSelectedPaymentMethod) = React.useState(_ =>
     defaultSelectedPaymentMethod
@@ -191,21 +193,21 @@ let make = (
 
   let renderContentHeader = () =>
     switch (savedPMD, selectedPaymentMethodType) {
-    | (Some(_), _) => React.string("Review")
+    | (Some(_), _) => React.string(localeString.formHeaderReviewText)
     | (None, Some(pmt)) =>
       switch pmt {
-      | Card(_) => React.string("Enter card details")
+      | Card(_) => React.string(localeString.formHeaderEnterCardText)
       | BankTransfer(bankTransferType) =>
-        React.string("Enter " ++ bankTransferType->String.make ++ " bank details ")
+        React.string(bankTransferType->String.make->localeString.formHeaderBankText)
       | Wallet(walletTransferType) =>
-        React.string("Enter " ++ walletTransferType->String.make ++ " wallet details ")
+        React.string(walletTransferType->String.make->localeString.formHeaderWalletText)
       }
     | (None, None) =>
       switch selectedPaymentMethod {
-      | Some(Card) => React.string("Enter card details")
-      | Some(BankTransfer) => React.string("Select a bank method")
-      | Some(Wallet) => React.string("Select a wallet")
-      | None => React.string("Select an account for payouts")
+      | Some(Card) => React.string(localeString.formHeaderEnterCardText)
+      | Some(BankTransfer) => React.string(localeString.formHeaderSelectBankText)
+      | Some(Wallet) => React.string(localeString.formHeaderSelectWalletText)
+      | None => React.string(localeString.formHeaderSelectAccountText)
       }
     }
 
@@ -213,16 +215,16 @@ let make = (
     switch savedPMD {
     | Some(pmd) =>
       switch pmd {
-      | (Card, _, _) => React.string("Your card details")
+      | (Card, _, _) => React.string(localeString.formSubheaderCardText)
       | (pm, pmt, _) =>
         let pmtLabelString =
           pmt->getPaymentMethodTypeLabel ++ " " ++ pm->getPaymentMethodLabel->String.toLowerCase
-        React.string(`Your ${pmtLabelString}`)
+        React.string(pmtLabelString->localeString.formSubheaderAccountText)
       }
     | None =>
       switch selectedPaymentMethod {
       | Some(_) => React.null
-      | None => React.string("Funds will be credited to this account")
+      | None => React.string(localeString.formFundsInfoText)
       }
     }
 
@@ -245,7 +247,11 @@ let make = (
           <div className="flex flex-row items-center mb-2.5 text-xl font-semibold">
             <img src={"merchantLogo"} alt="" className="h-6 w-auto" />
             <div className="ml-1.5">
-              {React.string(`Review your ${paymentMethodType->getPaymentMethodTypeLabel} details`)}
+              {React.string(
+                paymentMethodType
+                ->getPaymentMethodTypeLabel
+                ->localeString.formHeaderReviewTabLayoutText,
+              )}
             </div>
           </div>
         | Journey => React.null
@@ -253,7 +259,14 @@ let make = (
         {fields
         ->Array.mapWithIndex((field, i) => {
           let (field, value) = field
-          {renderInfoTemplate(field->getPaymentMethodDataFieldLabel, value, i->Int.toString)}
+
+          {
+            renderInfoTemplate(
+              field->getPaymentMethodDataFieldLabel(localeString),
+              value,
+              i->Int.toString,
+            )
+          }
         })
         ->React.array}
       </div>
@@ -261,9 +274,10 @@ let make = (
         className="flex flex-row items-center min-w-full my-5 px-2.5 py-1.5 text-xs border border-solid border-blue-200 rounded bg-blue-50">
         <img src={"merchantLogo"} alt="" className="h-3 w-auto mr-1.5" />
         {React.string(
-          `Your funds will be deposited in the selected ${paymentMethod
-            ->getPaymentMethodLabel
-            ->String.toLowerCase}.`,
+          paymentMethod
+          ->getPaymentMethodLabel
+          ->String.toLowerCase
+          ->localeString.formFundsCreditInfoText,
         )}
       </div>
       <div className="flex my-5 text-lg font-semibold w-full">
@@ -272,7 +286,7 @@ let make = (
           disabled={submitted}
           className="w-full px-2.5 py-1.5 rounded border border-solid"
           style={color: primaryTheme, borderColor: primaryTheme}>
-          {React.string("Edit")}
+          {React.string(localeString.formEditText)}
         </button>
         <button
           onClick={_ => {
@@ -282,7 +296,7 @@ let make = (
           disabled={submitted}
           className="w-full px-2.5 py-1.5 text-white rounded ml-2.5"
           style={backgroundColor: primaryTheme}>
-          {React.string(submitted ? "Submitting ..." : "Submit")}
+          {React.string(submitted ? localeString.formSubmittingText : localeString.formSubmitText)}
         </button>
       </div>
     </div>
@@ -319,7 +333,10 @@ let make = (
       ->Js.Re.source
     let value = field->getPaymentMethodDataValue
     let (errorString, errorStringClasses) = switch isValid {
-    | Some(false) => (field->getPaymentMethodDataErrorString(value), "text-xs text-red-950")
+    | Some(false) => (
+        field->getPaymentMethodDataErrorString(value, localeString),
+        "text-xs text-red-950",
+      )
     | _ => ("", "")
     }
     <InputField
@@ -332,8 +349,8 @@ let make = (
       isValid={None}
       errorString
       errorStringClasses
-      fieldName={field->getPaymentMethodDataFieldLabel}
-      placeholder={field->getPaymentMethodDataFieldPlaceholder}
+      fieldName={field->getPaymentMethodDataFieldLabel(localeString)}
+      placeholder={field->getPaymentMethodDataFieldPlaceholder(localeString)}
       maxLength={field->getPaymentMethodDataFieldMaxLength}
       value
       onChange={event => field->validateAndSetPaymentMethodDataValue(event)}
@@ -390,7 +407,7 @@ let make = (
         className="min-w-full mt-10 text-lg font-semibold px-2.5 py-1.5 text-white rounded"
         style={backgroundColor: primaryTheme}
         onClick={handleSave}>
-        {React.string("Save")}
+        {React.string(localeString.formSaveText)}
       </button>
     </div>
   }
