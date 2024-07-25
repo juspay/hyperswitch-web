@@ -23,13 +23,13 @@ Web unified checkout SDK is an inclusive, consistent and blended payment experie
   <a href="#%EF%B8%8F-try-it-in-local">Local Setup Instructions</a> •
   <!-- <a href="#fast-integration-for-stripe-users">Fast Integration for Stripe Users</a> • -->
   <!-- <a href="#-supported-features">Supported Features</a> • -->
-  <a href="#-self-hosted-backend-server">Self Hosted Backend Server</a> •
+  <a href="#-backend-server">Backend Server</a> •
   <a href="#-faqs">FAQs</a>
   <br>
   <a href="#-join-us-in-building-hyperswitch">Join us in building HyperSwitch</a> •
-  <a href="#-community">Community</a> •
-  <a href="#-bugs-and-feature-requests">Bugs and feature requests</a> •
-  <a href="#%EF%B8%8F-copyright-and-license">Copyright and License</a>
+  <a href="#community">Community</a> •
+  <a href="#bugs-and-feature-requests">Bugs and feature requests</a> •
+  <a href="#-copyright-and-license">Copyright and License</a>
 </p>
 
 <p align="center">
@@ -146,7 +146,7 @@ Ways to get started with Hyperswitch:
   > 💡 Alternatively, you can update `.env` file and use the commands
   > above
 
-## ⛁ Self Hosted Backend Server
+## ⛁ Backend Server
 
 There are two ways to set up the backend:
 
@@ -293,9 +293,7 @@ We welcome contributions from the community.
 Included are directions for opening issues, coding standards, and notes on
 development. -->
 
-<a href="#Community">
-  <h2 id="Community">👥 Community</h2>
-</a>
+## Community
 
 Get updates on Hyperswitch development and chat with the community:
 
@@ -327,9 +325,7 @@ Get updates on Hyperswitch development and chat with the community:
   </div>
 </div>
 
-<a href="#Bugs and feature requests">
-  <h2 id="Bugs and feature requests">🐞 Bugs and feature requests</h2>
-</a>
+## Bugs and feature requests
 
 Please read the issue guidelines and search for [existing and closed issues].
 If your problem or idea is not addressed yet, please [open a new issue].
@@ -343,15 +339,11 @@ If your problem or idea is not addressed yet, please [open a new issue].
 
 Check the [CHANGELOG.md](./CHANGELOG.md) file for details. -->
 
-<a href="#©Copyright and License">
-  <h2 id="©Copyright and License">©️ Copyright and License</h2>
-</a>
+## © Copyright and License
 
 This product is licensed under the [Apache 2.0 License](LICENSE).
 
-<a href="#Thanks to all contributors">
-  <h2 id="Thanks to all contributors">✨ Thanks to all contributors</h2>
-</a>
+## Thanks to all contributors
 
 Thank you for your support in hyperswitch's growth. Keep up the great work! 🥂
 
