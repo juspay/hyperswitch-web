@@ -459,6 +459,9 @@ let make = (
           | CryptoCurrencyNetworks => <CryptoCurrencyNetworks />
           | DateOfBirth => <DateOfBirth />
           | VpaId => <VpaIdPaymentInput paymentType />
+          | PixKey => <PixPaymentInput label="pixKey" />
+          | PixCPF => <PixPaymentInput label="pixCPF" />
+          | PixCNPJ => <PixPaymentInput label="pixCNPJ" />
           | Email
           | InfoElement
           | Country
@@ -749,6 +752,9 @@ let make = (
                       <Block bottomElement />
                     }}
                   </>
+                | PixKey
+                | PixCPF
+                | PixCNPJ
                 | CardNumber
                 | CardExpiryMonth
                 | CardExpiryYear
