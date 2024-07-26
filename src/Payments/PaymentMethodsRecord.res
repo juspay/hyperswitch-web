@@ -40,6 +40,9 @@ type paymentMethodsFields =
   | CryptoCurrencyNetworks
   | DateOfBirth
   | VpaId
+  | PixKey
+  | PixCPF
+  | PixCNPJ
   | LanguagePreference(array<string>)
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
@@ -57,8 +60,11 @@ let getPaymentMethodsFieldsOrder = paymentMethodField => {
   | StateAndCity => 7
   | AddressCountry(_) => 8
   | CountryAndPincode(_) => 8
+  | PixKey => 8
   | AddressPincode => 9
+  | PixCPF => 9
   | CryptoCurrencyNetworks => 10
+  | PixCNPJ => 10
   | InfoElement => 99
   | _ => 3
   }
@@ -572,6 +578,9 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_date_of_birth", _) => DateOfBirth
   | ("user_phone_number_country_code", _) => PhoneCountryCode
   | ("user_vpa_id", _) => VpaId
+  | ("user_cpf", _) => PixCPF
+  | ("user_cnpj", _) => PixCNPJ
+  | ("user_pix_key", _) => PixKey
   | _ => None
   }
 }
