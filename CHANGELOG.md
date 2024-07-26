@@ -1,3 +1,15 @@
+# [0.78.0](https://github.com/juspay/hyperswitch-web/compare/v0.77.4...v0.78.0) (2024-07-26)
+
+
+### Bug Fixes
+
+* log payment data filled and payment method changed event if missed ([#514](https://github.com/juspay/hyperswitch-web/issues/514)) ([61655c2](https://github.com/juspay/hyperswitch-web/commit/61655c2e540c3f73af010c3c75d62486033a8010))
+
+
+### Features
+
+* pix-ItauBank api contract changes ([#527](https://github.com/juspay/hyperswitch-web/issues/527)) ([fdd692e](https://github.com/juspay/hyperswitch-web/commit/fdd692e4a4a34e5b91cc9008337faad81e03c506))
+
 ## [0.77.4](https://github.com/juspay/hyperswitch-web/compare/v0.77.3...v0.77.4) (2024-07-25)
 
 
