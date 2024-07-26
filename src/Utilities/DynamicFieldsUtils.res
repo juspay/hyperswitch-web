@@ -111,6 +111,9 @@ let useRequiredFieldsEmptyAndValid = (
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
+  let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
+  let pixCPF = Recoil.useRecoilValueFromAtom(userPixCPF)
+  let pixKey = Recoil.useRecoilValueFromAtom(userPixKey)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
   let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
@@ -167,6 +170,9 @@ let useRequiredFieldsEmptyAndValid = (
         | None => false
         }
       | VpaId => vpaId.isValid->Option.getOr(false)
+      | PixCNPJ => pixCNPJ.isValid->Option.getOr(false)
+      | PixCPF => pixCPF.isValid->Option.getOr(false)
+      | PixKey => pixKey.isValid->Option.getOr(false)
       | _ => true
       }
     })
@@ -195,6 +201,9 @@ let useRequiredFieldsEmptyAndValid = (
       | AddressPincode => postalCode.value === ""
       | AddressState => state.value === ""
       | BlikCode => blikCode.value === ""
+      | PixCNPJ => pixCNPJ.value === ""
+      | PixCPF => pixCPF.value === ""
+      | PixKey => pixKey.value === ""
       | CryptoCurrencyNetworks => cryptoCurrencyNetworks === ""
       | Currency(currencyArr) => currency === "" && currencyArr->Array.length > 0
       | CardNumber => cardNumber === ""
@@ -235,6 +244,9 @@ let useRequiredFieldsEmptyAndValid = (
       postalCode,
       state.value,
       blikCode.value,
+      pixCNPJ.value,
+      pixKey.value,
+      pixCPF.value,
       isCardValid,
       isExpiryValid,
       isCVCValid,
@@ -268,6 +280,10 @@ let useSetInitialRequiredFields = (
     logger,
   )
   let (blikCode, setBlikCode) = Recoil.useLoggedRecoilState(userBlikCode, "blikCode", logger)
+  let (pixCNPJ, setPixCNPJ) = Recoil.useLoggedRecoilState(userPixCNPJ, "pixCNPJ", logger)
+  let (pixCPF, setPixCPF) = Recoil.useLoggedRecoilState(userPixCPF, "pixCPF", logger)
+  let (pixKey, setPixKey) = Recoil.useLoggedRecoilState(userPixKey, "pixKey", logger)
+
   let (country, setCountry) = Recoil.useLoggedRecoilState(userCountry, "country", logger)
   let (selectedBank, setSelectedBank) = Recoil.useLoggedRecoilState(
     userBank,
@@ -369,6 +385,9 @@ let useSetInitialRequiredFields = (
       | AddressPincode => setFields(setPostalCode, postalCode, requiredField, false)
       | PhoneNumber => setFields(setPhone, phone, requiredField, false)
       | BlikCode => setFields(setBlikCode, blikCode, requiredField, false)
+      | PixKey => setFields(setPixKey, pixKey, requiredField, false)
+      | PixCNPJ => setFields(setPixCNPJ, pixCNPJ, requiredField, false)
+      | PixCPF => setFields(setPixCPF, pixCPF, requiredField, false)
       | BillingName => setFields(setBillingName, billingName, requiredField, true)
       | Country
       | AddressCountry(_) =>
@@ -437,6 +456,9 @@ let useRequiredFieldsBody = (
   let configValue = Recoil.useRecoilValueFromAtom(configAtom)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
+  let pixCNPJ = Recoil.useRecoilValueFromAtom(userPixCNPJ)
+  let pixCPF = Recoil.useRecoilValueFromAtom(userPixCPF)
+  let pixKey = Recoil.useRecoilValueFromAtom(userPixKey)
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let billingName = Recoil.useRecoilValueFromAtom(userBillingName)
   let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
@@ -502,6 +524,9 @@ let useRequiredFieldsBody = (
       }
     | CardCvc => cvcNumber
     | VpaId => vpaId.value
+    | PixCNPJ => pixCNPJ.value
+    | PixCPF => pixCPF.value
+    | PixKey => pixKey.value
     | StateAndCity
     | CountryAndPincode(_)
     | SpecialField(_)
@@ -582,6 +607,9 @@ let useRequiredFieldsBody = (
     vpaId.value,
     line1.value,
     line2.value,
+    pixCNPJ.value,
+    pixCPF.value,
+    pixKey.value,
     city.value,
     postalCode.value,
     state.value,
@@ -610,6 +638,9 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | CardCvc
   | CardExpiryAndCvc
   | CryptoCurrencyNetworks
+  | PixKey
+  | PixCPF
+  | PixCNPJ
   | DateOfBirth
   | Currency(_)
   | VpaId => true
