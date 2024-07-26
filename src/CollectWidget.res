@@ -258,7 +258,7 @@ let make = (
         ->React.array}
       </div>
       <div
-        className="flex flex-row items-center min-w-full m5 py-1.5 px-2.5 text-xs border border-solid border-blue-200 rounded bg-blue-50">
+        className="flex flex-row items-center min-w-full my-5 px-2.5 py-1.5 text-xs border border-solid border-blue-200 rounded bg-blue-50">
         <img src={"merchantLogo"} alt="" className="h-3 w-auto mr-1.5" />
         {React.string(
           `Your funds will be deposited in the selected ${paymentMethod
@@ -266,7 +266,7 @@ let make = (
             ->String.toLowerCase}.`,
         )}
       </div>
-      <div className="flex m5 text-lg font-semibold w-full">
+      <div className="flex my-5 text-lg font-semibold w-full">
         <button
           onClick={_ => setSavedPMD(_ => None)}
           disabled={submitted}
@@ -480,12 +480,16 @@ let make = (
   }
 
   let handleTabSelection = selectedPMT => {
-    if availablePaymentMethodTypes->Array.indexOf(selectedPMT) >= defaultOptionsLimitInTabLayout {
+    if (
+      availablePaymentMethodTypesOrdered->Array.indexOf(selectedPMT) >=
+        defaultOptionsLimitInTabLayout
+    ) {
       // Move the selected payment method at the last tab position
       let ordList = availablePaymentMethodTypes->Array.reduceWithIndex([], (acc, pmt, i) => {
         if i === defaultOptionsLimitInTabLayout - 1 {
           acc->Array.push(selectedPMT)
-        } else if pmt !== selectedPMT {
+        }
+        if pmt !== selectedPMT {
           acc->Array.push(pmt)
         }
         acc

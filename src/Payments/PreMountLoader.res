@@ -6,6 +6,7 @@ let make = (
   ~endpoint,
   ~ephemeralKey,
   ~hyperComponentName: Types.hyperComponentName,
+  ~merchantHostname,
 ) => {
   open Utils
   let (paymentMethodsResponseSent, setPaymentMethodsResponseSent) = React.useState(_ => false)
@@ -63,6 +64,7 @@ let make = (
         ~optLogger=Some(logger),
         ~switchToCustomPod=false,
         ~endpoint,
+        ~merchantHostname,
         (),
       )
     | _ => JSON.Encode.null->Promise.resolve

@@ -180,7 +180,7 @@ let getPaymentMethodDataFieldLabel = (key: paymentMethodDataField): string =>
   | ACHAccountNumber | BacsAccountNumber => "Account Number"
   | BacsSortCode => "Sort Code"
   | SepaIban => "International Bank Account Number (IBAN)"
-  | SepaBic => "Bank Identifier Code (BIC)"
+  | SepaBic => "Bank Identifier Code (Optional)"
   | PixId => "Pix ID"
   | PixBankAccountNumber => "Bank Account Number"
   | PaypalMail => "Email"
@@ -347,7 +347,7 @@ let getPaymentMethodDataErrorString = (key: paymentMethodDataField, value): stri
 
 let getPaymentMethodIcon = (paymentMethod: paymentMethod) =>
   switch paymentMethod {
-  | Card => <Icon name="card-generic-line" size=20 />
+  | Card => <Icon name="default-card" size=20 />
   | BankTransfer => <Icon name="bank" size=20 />
   | Wallet => <Icon name="wallet-generic-line" size=20 />
   }
@@ -578,8 +578,8 @@ let formPaymentMethodData = (
       | false => None
       | true =>
         let pmd = [(ACHRoutingNumber, routingNumber), (ACHAccountNumber, accountNumber)]
-        let _ = bankName->Option.map(bankName => pmd->Array.push((ACHBankName, bankName)))
-        let _ = city->Option.map(city => pmd->Array.push((ACHBankCity, city)))
+        bankName->Option.forEach(bankName => pmd->Array.push((ACHBankName, bankName)))
+        city->Option.forEach(city => pmd->Array.push((ACHBankCity, city)))
         Some(BankTransfer, BankTransfer(ACH), pmd)
       }
     | _ => None
@@ -603,8 +603,8 @@ let formPaymentMethodData = (
       | false => None
       | true =>
         let pmd = [(BacsSortCode, sortCode), (BacsAccountNumber, accountNumber)]
-        let _ = bankName->Option.map(bankName => pmd->Array.push((BacsBankName, bankName)))
-        let _ = city->Option.map(city => pmd->Array.push((BacsBankCity, city)))
+        bankName->Option.forEach(bankName => pmd->Array.push((BacsBankName, bankName)))
+        city->Option.forEach(city => pmd->Array.push((BacsBankCity, city)))
         Some(BankTransfer, BankTransfer(Bacs), pmd)
       }
     | _ => None
@@ -619,7 +619,7 @@ let formPaymentMethodData = (
       paymentMethodDataDict->getValue(SepaBankCity->getPaymentMethodDataFieldKey),
       paymentMethodDataDict->getValue(SepaCountryCode->getPaymentMethodDataFieldKey),
     ) {
-    | (Some(iban), Some(bic), bankName, city, countryCode) =>
+    | (Some(iban), bic, bankName, city, countryCode) =>
       switch [
         SepaIban->getPaymentMethodDataFieldKey,
         SepaBic->getPaymentMethodDataFieldKey,
@@ -629,11 +629,11 @@ let formPaymentMethodData = (
       ]->checkValidity(fieldValidityDict) {
       | false => None
       | true =>
-        let pmd = [(SepaIban, iban), (SepaBic, bic)]
-        let _ = bankName->Option.map(bankName => pmd->Array.push((SepaBankName, bankName)))
-        let _ = city->Option.map(city => pmd->Array.push((SepaBankCity, city)))
-        let _ =
-          countryCode->Option.map(countryCode => pmd->Array.push((SepaCountryCode, countryCode)))
+        let pmd = [(SepaIban, iban)]
+        bic->Option.forEach(bic => pmd->Array.push((SepaBic, bic)))
+        bankName->Option.forEach(bankName => pmd->Array.push((SepaBankName, bankName)))
+        city->Option.forEach(city => pmd->Array.push((SepaBankCity, city)))
+        countryCode->Option.forEach(countryCode => pmd->Array.push((SepaCountryCode, countryCode)))
         Some(BankTransfer, BankTransfer(Sepa), pmd)
       }
     | _ => None
@@ -655,7 +655,7 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
   let (paymentMethod, paymentMethodType, fields) = paymentMethodData
   let pmdApiFields = []
 
-  let _ = fields->Array.map(field => {
+  fields->Array.forEach(field => {
     let (key, value) = field
     switch key {
     // Card
