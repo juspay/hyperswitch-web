@@ -1,8 +1,8 @@
-open RecoilAtoms
-open Utils
-
 @react.component
 let make = (~label="") => {
+  open RecoilAtoms
+  open Utils
+
   let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
@@ -18,6 +18,7 @@ let make = (~label="") => {
       value: val,
     })
   }
+
   let changePixCNPJ = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
     setPixCNPJ(prev => {
@@ -25,6 +26,7 @@ let make = (~label="") => {
       value: val,
     })
   }
+
   let changePixCPF = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
     setPixCPF(prev => {
@@ -32,6 +34,7 @@ let make = (~label="") => {
       value: val,
     })
   }
+
   let onBlurPixCNPJ = _ => {
     if pixCNPJ.value->String.length === 14 && pixCNPJ.isValid->Option.getOr(false) {
       setPixCNPJ(prev => {
@@ -53,6 +56,7 @@ let make = (~label="") => {
       })
     }
   }
+
   let onBlurPixCPF = _ => {
     if pixCPF.value->String.length === 11 && pixCPF.isValid->Option.getOr(false) {
       setPixCPF(prev => {
@@ -134,26 +138,27 @@ let make = (~label="") => {
       }
     }
   }, [pixCNPJ.value, pixKey.value, pixCPF.value])
+
   useSubmitPaymentData(submitCallback)
 
   <>
     <RenderIf condition={label === "pixKey"}>
       <PaymentField
         fieldName="Pix key"
-        setValue={setPixKey}
+        setValue=setPixKey
         value=pixKey
         onChange=changePixKey
         paymentType=Payment
         type_="pixKey"
         name="pixKey"
         inputRef=pixKeyRef
-        placeholder="Enter pix key"
+        placeholder="Enter Pix key"
       />
     </RenderIf>
     <RenderIf condition={label === "pixCPF"}>
       <PaymentField
         fieldName="Pix CPF"
-        setValue={setPixCPF}
+        setValue=setPixCPF
         value=pixCPF
         onChange=changePixCPF
         onBlur=onBlurPixCPF
@@ -161,14 +166,14 @@ let make = (~label="") => {
         type_="pixCPF"
         name="pixCPF"
         inputRef=pixCPFRef
-        placeholder="Enter pix CPF"
+        placeholder="Enter Pix CPF"
         maxLength=11
       />
     </RenderIf>
     <RenderIf condition={label === "pixCNPJ"}>
       <PaymentField
         fieldName="Pix CNPJ"
-        setValue={setPixCNPJ}
+        setValue=setPixCNPJ
         value=pixCNPJ
         onChange=changePixCNPJ
         onBlur=onBlurPixCNPJ
@@ -176,7 +181,7 @@ let make = (~label="") => {
         type_="pixCNPJ"
         name="pixCNPJ"
         inputRef=pixCNPJRef
-        placeholder="Enter pix CNPJ"
+        placeholder="Enter Pix CNPJ"
         maxLength=14
       />
     </RenderIf>
