@@ -1,3 +1,52 @@
+# [0.78.0](https://github.com/juspay/hyperswitch-web/compare/v0.77.4...v0.78.0) (2024-07-26)
+
+
+### Bug Fixes
+
+* log payment data filled and payment method changed event if missed ([#514](https://github.com/juspay/hyperswitch-web/issues/514)) ([61655c2](https://github.com/juspay/hyperswitch-web/commit/61655c2e540c3f73af010c3c75d62486033a8010))
+
+
+### Features
+
+* pix-ItauBank api contract changes ([#527](https://github.com/juspay/hyperswitch-web/issues/527)) ([fdd692e](https://github.com/juspay/hyperswitch-web/commit/fdd692e4a4a34e5b91cc9008337faad81e03c506))
+
+## [0.77.4](https://github.com/juspay/hyperswitch-web/compare/v0.77.3...v0.77.4) (2024-07-25)
+
+
+### Reverts
+
+* passing initiativeContext to TrustPay ApplePay ([#522](https://github.com/juspay/hyperswitch-web/issues/522)) ([1ceefe1](https://github.com/juspay/hyperswitch-web/commit/1ceefe15d7943ac02b678b116c4058b4830f5b52))
+
+## [0.77.3](https://github.com/juspay/hyperswitch-web/compare/v0.77.2...v0.77.3) (2024-07-24)
+
+
+### Bug Fixes
+
+* passing initiativeContext to TrustPay ApplePay ([#519](https://github.com/juspay/hyperswitch-web/issues/519)) ([b74c816](https://github.com/juspay/hyperswitch-web/commit/b74c81656c92e6e917872eccb490944c195b1d47))
+
+## [0.77.2](https://github.com/juspay/hyperswitch-web/compare/v0.77.1...v0.77.2) (2024-07-24)
+
+
+### Bug Fixes
+
+* customer acceptance issue for bank debits ([#516](https://github.com/juspay/hyperswitch-web/issues/516)) ([e797149](https://github.com/juspay/hyperswitch-web/commit/e797149d2737232c1fd20c39a95413208a685a91))
+
+## [0.77.1](https://github.com/juspay/hyperswitch-web/compare/v0.77.0...v0.77.1) (2024-07-23)
+
+# [0.77.0](https://github.com/juspay/hyperswitch-web/compare/v0.76.2...v0.77.0) (2024-07-18)
+
+
+### Features
+
+* passing X-Merchant-Domain in the headers for Sessions Call ([#504](https://github.com/juspay/hyperswitch-web/issues/504)) ([cd001c5](https://github.com/juspay/hyperswitch-web/commit/cd001c554b0ccf68f2eca08304e6d30abdca85b3))
+
+## [0.76.2](https://github.com/juspay/hyperswitch-web/compare/v0.76.1...v0.76.2) (2024-07-18)
+
+
+### Bug Fixes
+
+* **payout:** handle tab order updates ([#505](https://github.com/juspay/hyperswitch-web/issues/505)) ([5bdbd74](https://github.com/juspay/hyperswitch-web/commit/5bdbd744570ebf34acf1bb00036383722ad4a73c))
+
 ## [0.76.1](https://github.com/juspay/hyperswitch-web/compare/v0.76.0...v0.76.1) (2024-07-17)
 
 # [0.76.0](https://github.com/juspay/hyperswitch-web/compare/v0.75.0...v0.76.0) (2024-07-17)

@@ -169,6 +169,9 @@ let eventNameToStrMapper = eventName => {
   }
 }
 
+let getPaymentId = clientSecret =>
+  String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+
 let convertToScreamingSnakeCase = text => {
   text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
 }
@@ -665,6 +668,78 @@ let make = (
     latency > 0. ? latency->Float.toString : ""
   }
 
+  let checkAndPushMissedEvents = (eventName, paymentMethod) => {
+    switch eventName {
+    | PAYMENT_ATTEMPT => {
+        let paymentMethodChangedEventStr = PAYMENT_METHOD_CHANGED->eventNameToStrMapper
+        let paymentDataFilledEventStr = PAYMENT_DATA_FILLED->eventNameToStrMapper
+        let localTimestamp = Date.now()->Float.toString
+        let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
+        let paymentMethodChangedEvent =
+          events.contents->Dict.get(paymentMethodChangedEventStr)->Option.isNone
+        let paymentDataFilledEvent =
+          events.contents->Dict.get(paymentDataFilledEventStr)->Option.isNone
+        if paymentMethodChangedEvent {
+          {
+            logType: INFO,
+            timestamp: localTimestamp,
+            sessionId: sessionId.contents,
+            source: sourceString,
+            version: GlobalVars.repoVersion,
+            value: "",
+            internalMetadata: "",
+            category: USER_EVENT,
+            paymentId: clientSecret.contents->getPaymentId,
+            merchantId: merchantId.contents,
+            browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+            browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+            platform: Window.Navigator.platform,
+            userAgent: Window.Navigator.userAgent,
+            appId: "",
+            eventName: PAYMENT_METHOD_CHANGED,
+            latency: "",
+            paymentMethod,
+            firstEvent: true,
+            metadata: metadata.contents,
+            ephemeralKey: ephemeralKey.contents,
+          }
+          ->conditionalLogPush
+          ->ignore
+          events.contents->Dict.set(paymentMethodChangedEventStr, localTimestampFloat)
+        }
+        if paymentDataFilledEvent {
+          {
+            logType: INFO,
+            timestamp: localTimestamp,
+            sessionId: sessionId.contents,
+            source: sourceString,
+            version: GlobalVars.repoVersion,
+            value: "",
+            internalMetadata: "",
+            category: USER_EVENT,
+            paymentId: clientSecret.contents->getPaymentId,
+            merchantId: merchantId.contents,
+            browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+            browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+            platform: Window.Navigator.platform,
+            userAgent: Window.Navigator.userAgent,
+            appId: "",
+            eventName: PAYMENT_DATA_FILLED,
+            latency: "",
+            paymentMethod,
+            firstEvent: true,
+            metadata: metadata.contents,
+            ephemeralKey: ephemeralKey.contents,
+          }
+          ->conditionalLogPush
+          ->ignore
+          events.contents->Dict.set(paymentDataFilledEventStr, localTimestampFloat)
+        }
+      }
+    | _ => ()
+    }
+  }
+
   let setLogInfo = (
     ~value,
     ~internalMetadata="",
@@ -676,6 +751,7 @@ let make = (
     ~paymentMethod="",
     (),
   ) => {
+    checkAndPushMissedEvents(eventName, paymentMethod)
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = switch latency {
@@ -693,7 +769,7 @@ let make = (
       value,
       internalMetadata,
       category: logCategory,
-      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
+      paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -751,7 +827,7 @@ let make = (
       | StringValue(a) => a
       },
       category: logCategory,
-      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
+      paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -799,7 +875,7 @@ let make = (
       value,
       internalMetadata,
       category: logCategory,
-      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
+      paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
@@ -834,7 +910,7 @@ let make = (
       category: USER_EVENT,
       value: "log initiated",
       internalMetadata: "",
-      paymentId: String.split(clientSecret.contents, "_secret_")->Array.get(0)->Option.getOr(""),
+      paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
