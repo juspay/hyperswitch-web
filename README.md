@@ -21,8 +21,6 @@ Web unified checkout SDK is an inclusive, consistent and blended payment experie
 <p align="center">
   <a href="#%EF%B8%8F-quick-start-guide">Quick Start Guide</a> •
   <a href="#%EF%B8%8F-try-it-in-local">Local Setup Instructions</a> •
-  <!-- <a href="#fast-integration-for-stripe-users">Fast Integration for Stripe Users</a> • -->
-  <!-- <a href="#-supported-features">Supported Features</a> • -->
   <a href="#-backend-server">Backend Server</a> •
   <a href="#-faqs">FAQs</a>
   <br>
@@ -33,9 +31,6 @@ Web unified checkout SDK is an inclusive, consistent and blended payment experie
 </p>
 
 <p align="center">
-  <!-- <a href="https://github.com/juspay/hyperswitch-web/actions?query=workflow%3ACI+branch%3Amain">
-    <img src="https://github.com/juspay/hyperswitch-web/workflows/CI/badge.svg" />
-  </a> -->
   <a href="https://github.com/juspay/hyperswitch-web/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/juspay/hyperswitch-web" />
   </a>
@@ -230,22 +225,6 @@ Please refer to our [FAQs page][faqs].
 - Klarna
 - Kount
 
-<!--
-## Documentation
-
-Please refer to the following documentation pages:
-
-- Getting Started Guide [Link]
-- API Reference [Link]
-- Payments Fundamentals [Link]
-- Installation Support [Link]
-- Router Architecture [Link]
- -->
-<!--
-<a href="#Join-us-in-building-Hyperswitch">
-  <h2 id="Join-us-in-building-Hyperswitch">💪 Join us in building Hyperswitch</h2>
-</a> -->
-
 ## 💪 Join us in building Hyperswitch
 
 ### 🤝 Our Belief
@@ -289,10 +268,6 @@ The product roadmap is open for the community's feedback.
 We shall evolve a prioritisation process that is open and community-driven.
 We welcome contributions from the community.
 
-<!-- Please read through our [contributing guidelines](/docs/CONTRIBUTING.md).
-Included are directions for opening issues, coding standards, and notes on
-development. -->
-
 ## Community
 
 Get updates on Hyperswitch development and chat with the community:
@@ -300,7 +275,6 @@ Get updates on Hyperswitch development and chat with the community:
 - Read and subscribe to [the official Hyperswitch blog][blog].
 - Join our [Discord server][discord].
 - Join our [Slack workspace][slack].
-<!-- - Ask and explore our [GitHub Discussions][github-discussions]. -->
 
 [blog]: https://hyperswitch.io/blog
 [discord]: https://discord.gg/wJZ7DVW8mm
@@ -332,12 +306,6 @@ If your problem or idea is not addressed yet, please [open a new issue].
 
 [existing and closed issues]: https://github.com/juspay/hyperswitch-web/issues
 [open a new issue]: https://github.com/juspay/hyperswitch-web/issues/new/choose
-
-<!-- <a href="#Versioning">
-  <h2 id="Versioning">🔖 Versioning</h2>
-</a>
-
-Check the [CHANGELOG.md](./CHANGELOG.md) file for details. -->
 
 ## © Copyright and License
 
