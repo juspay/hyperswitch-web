@@ -148,6 +148,17 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~sessions,
   )
 
+  let dict = sessions->getDictFromJson
+  let sessionObj = SessionsType.itemToObjMapper(dict, Others)
+  let applePaySessionObj = SessionsType.itemToObjMapper(dict, ApplePayObject)
+  let applePayToken = SessionsType.getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
+  let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
+  let googlePayThirdPartySessionObj = SessionsType.itemToObjMapper(dict, GooglePayThirdPartyObject)
+  let googlePayThirdPartyToken = SessionsType.getPaymentSessionObj(
+    googlePayThirdPartySessionObj.sessionsToken,
+    Gpay,
+  )
+
   React.useEffect(() => {
     switch paymentMethodList {
     | Loaded(paymentlist) =>
@@ -317,6 +328,30 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <React.Suspense fallback={loader()}>
           <BoletoLazy paymentType />
         </React.Suspense>
+      | ApplePay =>
+        switch applePayToken {
+        | ApplePayTokenOptional(optToken) =>
+          <ApplePayLazy sessionObj=optToken walletOptions paymentType />
+        | _ => React.null
+        }
+      | GooglePay =>
+        <SessionPaymentWrapper type_={Wallet}>
+          {switch gPayToken {
+          | OtherTokenOptional(optToken) =>
+            switch googlePayThirdPartyToken {
+            | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
+              <GPayLazy
+                sessionObj=optToken
+                thirdPartySessionObj=googlePayThirdPartyOptToken
+                walletOptions
+                paymentType
+              />
+            | _ =>
+              <GPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions paymentType />
+            }
+          | _ => React.null
+          }}
+        </SessionPaymentWrapper>
       | _ =>
         <React.Suspense fallback={loader()}>
           <PaymentMethodsWrapperLazy paymentType paymentMethodName=selectedOption />

@@ -7,6 +7,10 @@ let paymentListLookupNew = (
   ~isShowKlarnaOneClick,
   ~isKlarnaSDKFlow,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+  ~areAllApplePayRequiredFieldsPrefilled,
+  ~areAllGooglePayRequiredFieldsPrefilled,
+  ~isApplePayReady,
+  ~isGooglePayReady,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
@@ -28,6 +32,22 @@ let paymentListLookupNew = (
     "mifinity",
   ]
   let otherPaymentList = []
+
+  if (
+    !paymentMethodListValue.collect_billing_details_from_wallets &&
+    !areAllApplePayRequiredFieldsPrefilled &&
+    isApplePayReady
+  ) {
+    walletToBeDisplayedInTabs->Array.push("apple_pay")
+  }
+
+  if (
+    !paymentMethodListValue.collect_billing_details_from_wallets &&
+    !areAllGooglePayRequiredFieldsPrefilled &&
+    isGooglePayReady
+  ) {
+    walletToBeDisplayedInTabs->Array.push("google_pay")
+  }
 
   pmList->Array.forEach(item => {
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodName) {
@@ -303,6 +323,23 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
 
   let isKlarnaSDKFlow = getIsKlarnaSDKFlow(sessions)
 
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(paymentMethodListValue)
+
+  let areAllApplePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
+    ~paymentMethodListValue,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="apple_pay",
+  )
+
+  let areAllGooglePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
+    ~paymentMethodListValue,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="google_pay",
+  )
+
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
+  let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+
   React.useMemo(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
@@ -316,6 +353,10 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
           ~isShowKlarnaOneClick=optionAtomValue.wallets.klarna === Auto,
           ~isKlarnaSDKFlow,
           ~paymentMethodListValue=plist,
+          ~areAllApplePayRequiredFieldsPrefilled,
+          ~areAllGooglePayRequiredFieldsPrefilled,
+          ~isApplePayReady,
+          ~isGooglePayReady,
         )
 
       let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
@@ -353,6 +394,10 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     optionAtomValue.wallets.klarna,
     paymentType,
     isKlarnaSDKFlow,
+    areAllApplePayRequiredFieldsPrefilled,
+    areAllGooglePayRequiredFieldsPrefilled,
+    isApplePayReady,
+    isGooglePayReady,
   ))
 }
 

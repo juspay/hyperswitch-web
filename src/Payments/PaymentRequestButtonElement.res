@@ -77,9 +77,15 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
                   switch googlePayThirdPartyToken {
                   | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
                     <GPayLazy
-                      sessionObj=optToken thirdPartySessionObj=googlePayThirdPartyOptToken
+                      sessionObj=optToken
+                      thirdPartySessionObj=googlePayThirdPartyOptToken
+                      walletOptions
+                      paymentType
                     />
-                  | _ => <GPayLazy sessionObj=optToken thirdPartySessionObj=None />
+                  | _ =>
+                    <GPayLazy
+                      sessionObj=optToken thirdPartySessionObj=None walletOptions paymentType
+                    />
                   }
                 | _ => React.null
                 }}
@@ -97,7 +103,8 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
               </SessionPaymentWrapper>
             | ApplePayWallet =>
               switch applePayToken {
-              | ApplePayTokenOptional(optToken) => <ApplePayLazy sessionObj=optToken />
+              | ApplePayTokenOptional(optToken) =>
+                <ApplePayLazy sessionObj=optToken walletOptions paymentType />
               | _ => React.null
               }
             | KlarnaWallet =>

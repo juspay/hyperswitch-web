@@ -5,7 +5,12 @@ open GooglePayType
 open Promise
 
 @react.component
-let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: option<JSON.t>) => {
+let make = (
+  ~sessionObj: option<SessionsType.token>,
+  ~thirdPartySessionObj: option<JSON.t>,
+  ~walletOptions,
+  ~paymentType: CardThemeType.mode,
+) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -27,6 +32,17 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
+
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let isWallet = walletOptions->Array.includes("google_pay")
+
+  UtilityHooks.useHandlePostMessages(
+    ~complete=areRequiredFieldsValid,
+    ~empty=areRequiredFieldsEmpty,
+    ~paymentType="google_pay",
+  )
 
   let googlePayPaymentMethodType = switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
     ~paymentMethodListValue,
@@ -58,7 +74,7 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
     ->Option.getOr(false)
   }, [thirdPartySessionObj])
 
-  GooglePayHelpers.useHandleGooglePayResponse(~connectors, ~intent)
+  GooglePayHelpers.useHandleGooglePayResponse(~connectors, ~intent, ~isWallet, ~requiredFieldsBody)
 
   let (_, buttonType, _) = options.wallets.style.type_
   let (_, heightType, _, _) = options.wallets.style.height
@@ -155,9 +171,10 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
   React.useEffect(() => {
     if (
       status == "ready" &&
-        (isGPayReady ||
-        isDelayedSessionToken ||
-        paymentExperience == PaymentMethodsRecord.RedirectToURL)
+      (isGPayReady ||
+      isDelayedSessionToken ||
+      paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
+      isWallet
     ) {
       setIsShowOrPayUsing(_ => true)
       addGooglePayButton()
@@ -190,7 +207,9 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
   })
 
   let isRenderGooglePayButton =
-    isGPayReady || paymentExperience == PaymentMethodsRecord.RedirectToURL || isDelayedSessionToken
+    (isGPayReady ||
+    paymentExperience == PaymentMethodsRecord.RedirectToURL ||
+    isDelayedSessionToken) && isWallet
 
   React.useEffect(() => {
     areOneClickWalletsRendered(prev => {
@@ -200,13 +219,22 @@ let make = (~sessionObj: option<SessionsType.token>, ~thirdPartySessionObj: opti
     None
   }, [isRenderGooglePayButton])
 
-  <RenderIf condition={isRenderGooglePayButton}>
-    <div
-      style={height: `${height->Int.toString}px`}
-      id="google-pay-button"
-      className={`w-full flex flex-row justify-center rounded-md`}
+  let submitCallback = GooglePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
+  useSubmitPaymentData(submitCallback)
+
+  if isWallet {
+    <RenderIf condition={isRenderGooglePayButton}>
+      <div
+        style={height: `${height->Int.toString}px`}
+        id="google-pay-button"
+        className={`w-full flex flex-row justify-center rounded-md`}
+      />
+    </RenderIf>
+  } else {
+    <DynamicFields
+      paymentType paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody
     />
-  </RenderIf>
+  }
 }
 
 let default = make

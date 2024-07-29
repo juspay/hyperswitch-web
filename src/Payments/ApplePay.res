@@ -1,7 +1,7 @@
 open Utils
 open Promise
 @react.component
-let make = (~sessionObj: option<JSON.t>) => {
+let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardThemeType.mode) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
@@ -20,6 +20,17 @@ let make = (~sessionObj: option<JSON.t>) => {
   let isApplePaySDKFlow = sessionObj->Option.isSome
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let isWallet = walletOptions->Array.includes("apple_pay")
+
+  UtilityHooks.useHandlePostMessages(
+    ~complete=areRequiredFieldsValid,
+    ~empty=areRequiredFieldsEmpty,
+    ~paymentType="apple_pay",
+  )
 
   let applePayPaymentMethodType = React.useMemo(() => {
     switch PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -260,12 +271,15 @@ let make = (~sessionObj: option<JSON.t>) => {
     ~setApplePayClicked,
     ~syncPayment,
     ~isInvokeSDKFlow,
+    ~isWallet,
+    ~requiredFieldsBody,
   )
 
   React.useEffect(() => {
     if (
       (isInvokeSDKFlow || paymentExperience == PaymentMethodsRecord.RedirectToURL) &&
-        isApplePayReady
+      isApplePayReady &&
+      isWallet
     ) {
       setShowApplePay(_ => true)
       areOneClickWalletsRendered(prev => {
@@ -275,26 +289,35 @@ let make = (~sessionObj: option<JSON.t>) => {
       setIsShowOrPayUsing(_ => true)
     }
     None
-  }, (isApplePayReady, isInvokeSDKFlow, paymentExperience))
+  }, (isApplePayReady, isInvokeSDKFlow, paymentExperience, isWallet))
 
-  <RenderIf condition={showApplePay}>
-    <div>
-      <style> {React.string(css)} </style>
-      {if showApplePayLoader {
-        <div className="apple-pay-loader-div">
-          <div className="apple-pay-loader" />
-        </div>
-      } else {
-        <button
-          disabled=applePayClicked
-          className="apple-pay-button-with-text apple-pay-button-black-with-text"
-          onClick={_ => onApplePayButtonClicked()}>
-          <span className="text"> {React.string("Pay with")} </span>
-          <span className="logo" />
-        </button>
-      }}
-    </div>
-  </RenderIf>
+  let submitCallback = ApplePayHelpers.useSubmitCallback(~isWallet, ~sessionObj, ~componentName)
+  useSubmitPaymentData(submitCallback)
+
+  if isWallet {
+    <RenderIf condition={showApplePay}>
+      <div>
+        <style> {React.string(css)} </style>
+        {if showApplePayLoader {
+          <div className="apple-pay-loader-div">
+            <div className="apple-pay-loader" />
+          </div>
+        } else {
+          <button
+            disabled=applePayClicked
+            className="apple-pay-button-with-text apple-pay-button-black-with-text"
+            onClick={_ => onApplePayButtonClicked()}>
+            <span className="text"> {React.string("Pay with")} </span>
+            <span className="logo" />
+          </button>
+        }}
+      </div>
+    </RenderIf>
+  } else {
+    <DynamicFields
+      paymentType paymentMethod="wallet" paymentMethodType="apple_pay" setRequiredFieldsBody
+    />
+  }
 }
 
 let default = make
