@@ -177,7 +177,7 @@ let getPaymentMethodDataFieldLabel = (
 ): string =>
   switch key {
   | CardNumber => localeString.cardNumberLabel
-  | CardExpDate => localeString.formFieldCardExpDateLabel
+  | CardExpDate => localeString.validThruText
   | CardHolderName => localeString.cardHolderName
   | ACHRoutingNumber => localeString.formFieldACHRoutingNumberLabel
   | ACHAccountNumber | BacsAccountNumber => localeString.accountNumberText
@@ -207,7 +207,7 @@ let getPaymentMethodDataFieldPlaceholder = (
 ): string =>
   switch key {
   | CardNumber => localeString.formFieldCardNumberPlaceholder
-  | CardExpDate => localeString.formFieldCardExpDatePlaceholder
+  | CardExpDate => localeString.expiryPlaceholder
   | CardHolderName => localeString.formFieldCardHoldernamePlaceholder
   | ACHRoutingNumber => localeString.formFieldACHRoutingNumberPlaceholder
   | ACHAccountNumber => localeString.formFieldAccountNumberPlaceholder
@@ -215,7 +215,7 @@ let getPaymentMethodDataFieldPlaceholder = (
   | BacsAccountNumber => localeString.formFieldAccountNumberPlaceholder
   | SepaIban => localeString.formFieldSepaIbanPlaceholder
   | SepaBic => localeString.formFieldSepaBicPlaceholder
-  | SepaCountryCode => localeString.formFieldCountryCodePlaceholder
+  | SepaCountryCode => localeString.countryLabel
   | PixId => localeString.formFieldPixIdPlaceholder
   | PixBankAccountNumber => localeString.formFieldBankAccountNumberPlaceholder
   | ACHBankName
