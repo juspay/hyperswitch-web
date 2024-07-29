@@ -107,7 +107,7 @@ let make = (~label="") => {
       setPixCNPJ(prev => {
         ...prev,
         isValid: Some(false),
-        errorString: localeString.pixCPFEmptyText,
+        errorString: localeString.pixCNPJInvalidText,
       })
     }
     None
