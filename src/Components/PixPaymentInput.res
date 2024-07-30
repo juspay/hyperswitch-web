@@ -37,7 +37,7 @@ let make = (~label="") => {
   }
 
   let onBlurPixKey = _ => {
-    if pixKey.value->String.length > 0 && pixKey.isValid->Option.getOr(true) {
+    if pixKey.value->String.length > 0 {
       setPixKey(prev => {
         ...prev,
         isValid: Some(true),
@@ -52,14 +52,16 @@ let make = (~label="") => {
     }
   }
 
-  let onBlurPixCNPJ = _ => {
-    if pixCNPJ.value->String.length === 14 && pixCNPJ.isValid->Option.getOr(true) {
+  let onBlurPixCNPJ = ev => {
+    let pixCNPJNumber = ReactEvent.Focus.target(ev)["value"]
+
+    if %re("/^\d*$/")->RegExp.test(pixCNPJNumber) && pixCNPJNumber->String.length === 14 {
       setPixCNPJ(prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
-    } else if pixCNPJ.value->String.length === 0 {
+    } else if pixCNPJNumber->String.length == 0 {
       setPixCNPJ(prev => {
         ...prev,
         isValid: None,
@@ -74,14 +76,16 @@ let make = (~label="") => {
     }
   }
 
-  let onBlurPixCPF = _ => {
-    if pixCPF.value->String.length === 11 && pixCPF.isValid->Option.getOr(true) {
+  let onBlurPixCPF = ev => {
+    let pixCPFNumber = ReactEvent.Focus.target(ev)["value"]
+
+    if %re("/^\d*$/")->RegExp.test(pixCPFNumber) && pixCPFNumber->String.length === 11 {
       setPixCPF(prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
-    } else if pixCPF.value->String.length === 0 {
+    } else if pixCPFNumber->String.length == 0 {
       setPixCPF(prev => {
         ...prev,
         isValid: None,
