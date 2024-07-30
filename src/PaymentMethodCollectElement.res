@@ -4,7 +4,7 @@ open RecoilAtoms
 
 @react.component
 let make = (~integrateError, ~logger) => {
-  let {stringConfig: {locale}} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {strings: {locale}} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(paymentMethodCollectOptionAtom)

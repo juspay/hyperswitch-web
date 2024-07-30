@@ -11,8 +11,8 @@ let make = (
   ~handleSubmit,
   ~formLayout,
 ) => {
-  let {stringConfig} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {locale} = stringConfig
+  let {strings} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {locale} = strings
   // Component states
   let (selectedPaymentMethod, setSelectedPaymentMethod) = React.useState(_ =>
     defaultSelectedPaymentMethod
@@ -348,7 +348,7 @@ let make = (
       errorString
       errorStringClasses
       fieldName={field->getPaymentMethodDataFieldLabel(locale)}
-      placeholder={field->getPaymentMethodDataFieldPlaceholder(stringConfig)}
+      placeholder={field->getPaymentMethodDataFieldPlaceholder(strings)}
       maxLength={field->getPaymentMethodDataFieldMaxLength}
       value
       onChange={event => field->validateAndSetPaymentMethodDataValue(event)}

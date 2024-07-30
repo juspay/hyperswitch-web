@@ -66,7 +66,7 @@ type recoilConfig = {
   config: configClass,
   themeObj: themeClass,
   localeString: LocaleStringTypes.localeStrings,
-  stringConfig: LocaleStringTypes.strings,
+  strings: LocaleStringTypes.strings,
   showLoader: bool,
 }
 
@@ -125,7 +125,7 @@ let getStringObject = async string => {
   }
 }
 
-let defaultStringConfig: LocaleStringTypes.strings = {
+let defaultStringsConfig: LocaleStringTypes.strings = {
   locale: EnglishLocale.localeStrings,
   constant: ConstantStrings.constantStrings,
 }
@@ -134,7 +134,7 @@ let defaultRecoilConfig: recoilConfig = {
   config: defaultConfig,
   themeObj: defaultConfig.appearance.variables,
   localeString: EnglishLocale.localeStrings,
-  stringConfig: defaultStringConfig,
+  strings: defaultStringsConfig,
   showLoader: false,
 }
 
