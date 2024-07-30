@@ -1,3 +1,10 @@
+## [0.78.1](https://github.com/juspay/hyperswitch-web/compare/v0.78.0...v0.78.1) (2024-07-30)
+
+
+### Bug Fixes
+
+* pix confirm call and added locale support ([#528](https://github.com/juspay/hyperswitch-web/issues/528)) ([382e1c1](https://github.com/juspay/hyperswitch-web/commit/382e1c1eca0560863be5a489d78ec8f9fef5e0a7))
+
 # [0.78.0](https://github.com/juspay/hyperswitch-web/compare/v0.77.4...v0.78.0) (2024-07-26)
 
 
