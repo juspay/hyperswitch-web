@@ -107,15 +107,7 @@ type localeStrings = {
   formFieldCountryCodeLabel: string,
   formFieldBankNameLabel: string,
   formFieldBankCityLabel: string,
-  formFieldCardNumberPlaceholder: string,
   formFieldCardHoldernamePlaceholder: string,
-  formFieldACHRoutingNumberPlaceholder: string,
-  formFieldAccountNumberPlaceholder: string,
-  formFieldSortCodePlaceholder: string,
-  formFieldSepaIbanPlaceholder: string,
-  formFieldSepaBicPlaceholder: string,
-  formFieldPixIdPlaceholder: string,
-  formFieldBankAccountNumberPlaceholder: string,
   formFieldBankNamePlaceholder: string,
   formFieldBankCityPlaceholder: string,
   formFieldEmailPlaceholder: string,
@@ -134,4 +126,20 @@ type localeStrings = {
   payoutStatusFailedText: string,
   payoutStatusPendingText: string,
   payoutStatusSuccessText: string,
+}
+
+type constantStrings = {
+  formFieldCardNumberPlaceholder: string,
+  formFieldACHRoutingNumberPlaceholder: string,
+  formFieldAccountNumberPlaceholder: string,
+  formFieldSortCodePlaceholder: string,
+  formFieldSepaIbanPlaceholder: string,
+  formFieldSepaBicPlaceholder: string,
+  formFieldPixIdPlaceholder: string,
+  formFieldBankAccountNumberPlaceholder: string,
+}
+
+type strings = {
+  locale: localeStrings,
+  constant: constantStrings,
 }

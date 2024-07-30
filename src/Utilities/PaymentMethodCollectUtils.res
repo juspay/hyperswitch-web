@@ -203,34 +203,36 @@ let getPaymentMethodDataFieldLabel = (
 
 let getPaymentMethodDataFieldPlaceholder = (
   key: paymentMethodDataField,
-  localeString: LocaleStringTypes.localeStrings,
-): string =>
+  stringsConfig: LocaleStringTypes.strings,
+): string => {
+  let {locale, constant} = stringsConfig
   switch key {
-  | CardNumber => localeString.formFieldCardNumberPlaceholder
-  | CardExpDate => localeString.expiryPlaceholder
-  | CardHolderName => localeString.formFieldCardHoldernamePlaceholder
-  | ACHRoutingNumber => localeString.formFieldACHRoutingNumberPlaceholder
-  | ACHAccountNumber => localeString.formFieldAccountNumberPlaceholder
-  | BacsSortCode => localeString.formFieldSortCodePlaceholder
-  | BacsAccountNumber => localeString.formFieldAccountNumberPlaceholder
-  | SepaIban => localeString.formFieldSepaIbanPlaceholder
-  | SepaBic => localeString.formFieldSepaBicPlaceholder
-  | SepaCountryCode => localeString.countryLabel
-  | PixId => localeString.formFieldPixIdPlaceholder
-  | PixBankAccountNumber => localeString.formFieldBankAccountNumberPlaceholder
+  | CardNumber => constant.formFieldCardNumberPlaceholder
+  | CardExpDate => locale.expiryPlaceholder
+  | CardHolderName => locale.formFieldCardHoldernamePlaceholder
+  | ACHRoutingNumber => constant.formFieldACHRoutingNumberPlaceholder
+  | ACHAccountNumber => constant.formFieldAccountNumberPlaceholder
+  | BacsSortCode => constant.formFieldSortCodePlaceholder
+  | BacsAccountNumber => constant.formFieldAccountNumberPlaceholder
+  | SepaIban => constant.formFieldSepaIbanPlaceholder
+  | SepaBic => constant.formFieldSepaBicPlaceholder
+  | SepaCountryCode => locale.countryLabel
+  | PixId => constant.formFieldPixIdPlaceholder
+  | PixBankAccountNumber => constant.formFieldBankAccountNumberPlaceholder
   | ACHBankName
   | BacsBankName
   | PixBankName
   | SepaBankName =>
-    localeString.formFieldBankNamePlaceholder
+    locale.formFieldBankNamePlaceholder
   | ACHBankCity
   | BacsBankCity
   | SepaBankCity =>
-    localeString.formFieldBankCityPlaceholder
-  | PaypalMail => localeString.formFieldEmailPlaceholder
-  | PaypalMobNumber | VenmoMobNumber => localeString.formFieldPhoneNumberPlaceholder
+    locale.formFieldBankCityPlaceholder
+  | PaypalMail => locale.formFieldEmailPlaceholder
+  | PaypalMobNumber | VenmoMobNumber => locale.formFieldPhoneNumberPlaceholder
   | CardBrand => "Misc."
   }
+}
 
 let getPaymentMethodDataFieldMaxLength = (key: paymentMethodDataField): int =>
   switch key {
