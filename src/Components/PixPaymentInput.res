@@ -3,6 +3,7 @@ let make = (~label="") => {
   open RecoilAtoms
   open Utils
 
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
@@ -35,36 +36,56 @@ let make = (~label="") => {
     })
   }
 
-  let onBlurPixCNPJ = _ => {
-    if pixCNPJ.value->String.length === 14 && pixCNPJ.isValid->Option.getOr(false) {
-      setPixCNPJ(prev => {
+  let onBlurPixKey = _ => {
+    if pixKey.value->String.length > 0 {
+      setPixKey(prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
-    } else if pixCNPJ.value->String.length === 0 {
-      setPixCNPJ(prev => {
+    } else {
+      setPixKey(prev => {
         ...prev,
         isValid: None,
         errorString: "",
-      })
-    } else {
-      setPixCNPJ(prev => {
-        ...prev,
-        isValid: Some(false),
-        errorString: "Invalid Pix CNPJ",
       })
     }
   }
 
-  let onBlurPixCPF = _ => {
-    if pixCPF.value->String.length === 11 && pixCPF.isValid->Option.getOr(false) {
+  let onBlurPixCNPJ = ev => {
+    let pixCNPJNumber = ReactEvent.Focus.target(ev)["value"]
+
+    if %re("/^\d*$/")->RegExp.test(pixCNPJNumber) && pixCNPJNumber->String.length === 14 {
+      setPixCNPJ(prev => {
+        ...prev,
+        isValid: Some(true),
+        errorString: "",
+      })
+    } else if pixCNPJNumber->String.length == 0 {
+      setPixCNPJ(prev => {
+        ...prev,
+        isValid: None,
+        errorString: "",
+      })
+    } else {
+      setPixCNPJ(prev => {
+        ...prev,
+        isValid: Some(false),
+        errorString: localeString.pixCNPJInvalidText,
+      })
+    }
+  }
+
+  let onBlurPixCPF = ev => {
+    let pixCPFNumber = ReactEvent.Focus.target(ev)["value"]
+
+    if %re("/^\d*$/")->RegExp.test(pixCPFNumber) && pixCPFNumber->String.length === 11 {
       setPixCPF(prev => {
         ...prev,
         isValid: Some(true),
         errorString: "",
       })
-    } else if pixCPF.value->String.length === 0 {
+    } else if pixCPFNumber->String.length == 0 {
       setPixCPF(prev => {
         ...prev,
         isValid: None,
@@ -74,7 +95,7 @@ let make = (~label="") => {
       setPixCPF(prev => {
         ...prev,
         isValid: Some(false),
-        errorString: "Invalid Pix CPF",
+        errorString: localeString.pixCPFInvalidText,
       })
     }
   }
@@ -90,7 +111,7 @@ let make = (~label="") => {
       setPixCNPJ(prev => {
         ...prev,
         isValid: Some(false),
-        errorString: "Invalid Pix CPNJ",
+        errorString: localeString.pixCNPJInvalidText,
       })
     }
     None
@@ -107,7 +128,7 @@ let make = (~label="") => {
       setPixCPF(prev => {
         ...prev,
         isValid: Some(false),
-        errorString: "Invalid Pix CPF",
+        errorString: localeString.pixCPFInvalidText,
       })
     }
 
@@ -121,19 +142,19 @@ let make = (~label="") => {
       if pixKey.value == "" {
         setPixKey(prev => {
           ...prev,
-          errorString: "Pix key cannot be empty",
+          errorString: localeString.pixKeyEmptyText,
         })
       }
       if pixCNPJ.value == "" {
         setPixCNPJ(prev => {
           ...prev,
-          errorString: "Pix CNPJ cannot be empty",
+          errorString: localeString.pixCNPJEmptyText,
         })
       }
       if pixCPF.value == "" {
         setPixCPF(prev => {
           ...prev,
-          errorString: "Pix CPF cannot be empty",
+          errorString: localeString.pixCPFEmptyText,
         })
       }
     }
@@ -144,20 +165,21 @@ let make = (~label="") => {
   <>
     <RenderIf condition={label === "pixKey"}>
       <PaymentField
-        fieldName="Pix key"
+        fieldName={localeString.pixKeyLabel}
         setValue=setPixKey
         value=pixKey
         onChange=changePixKey
+        onBlur=onBlurPixKey
         paymentType=Payment
         type_="pixKey"
         name="pixKey"
         inputRef=pixKeyRef
-        placeholder="Enter Pix key"
+        placeholder={localeString.pixKeyPlaceholder}
       />
     </RenderIf>
     <RenderIf condition={label === "pixCPF"}>
       <PaymentField
-        fieldName="Pix CPF"
+        fieldName={localeString.pixCPFLabel}
         setValue=setPixCPF
         value=pixCPF
         onChange=changePixCPF
@@ -166,13 +188,13 @@ let make = (~label="") => {
         type_="pixCPF"
         name="pixCPF"
         inputRef=pixCPFRef
-        placeholder="Enter Pix CPF"
+        placeholder={localeString.pixCPFPlaceholder}
         maxLength=11
       />
     </RenderIf>
     <RenderIf condition={label === "pixCNPJ"}>
       <PaymentField
-        fieldName="Pix CNPJ"
+        fieldName={localeString.pixCNPJLabel}
         setValue=setPixCNPJ
         value=pixCNPJ
         onChange=changePixCNPJ
@@ -181,7 +203,7 @@ let make = (~label="") => {
         type_="pixCNPJ"
         name="pixCNPJ"
         inputRef=pixCNPJRef
-        placeholder="Enter Pix CNPJ"
+        placeholder={localeString.pixCNPJPlaceholder}
         maxLength=14
       />
     </RenderIf>

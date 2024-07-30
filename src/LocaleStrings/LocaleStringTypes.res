@@ -1,4 +1,5 @@
-type locale = EN | HE | FR | EN_GB | AR | JA | DE | FR_BE | ES | CA | PT | IT | PL | NL | SV | RU
+type locale =
+  EN | HE | FR | EN_GB | AR | JA | DE | FR_BE | ES | CA | PT | IT | PL | NL | SV | RU | ZH
 
 type localeStrings = {
   locale: string,
@@ -82,4 +83,15 @@ type localeStrings = {
   dateofBirthRequiredText: string,
   dateOfBirthInvalidText: string,
   dateOfBirthPlaceholderText: string,
+  pixCNPJInvalidText: string,
+  pixCNPJEmptyText: string,
+  pixCNPJLabel: string,
+  pixCNPJPlaceholder: string,
+  pixCPFInvalidText: string,
+  pixCPFEmptyText: string,
+  pixCPFLabel: string,
+  pixCPFPlaceholder: string,
+  pixKeyEmptyText: string,
+  pixKeyLabel: string,
+  pixKeyPlaceholder: string,
 }
