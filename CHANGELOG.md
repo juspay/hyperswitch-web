@@ -1,3 +1,29 @@
+## [0.78.1](https://github.com/juspay/hyperswitch-web/compare/v0.78.0...v0.78.1) (2024-07-30)
+
+
+### Bug Fixes
+
+* pix confirm call and added locale support ([#528](https://github.com/juspay/hyperswitch-web/issues/528)) ([382e1c1](https://github.com/juspay/hyperswitch-web/commit/382e1c1eca0560863be5a489d78ec8f9fef5e0a7))
+
+# [0.78.0](https://github.com/juspay/hyperswitch-web/compare/v0.77.4...v0.78.0) (2024-07-26)
+
+
+### Bug Fixes
+
+* log payment data filled and payment method changed event if missed ([#514](https://github.com/juspay/hyperswitch-web/issues/514)) ([61655c2](https://github.com/juspay/hyperswitch-web/commit/61655c2e540c3f73af010c3c75d62486033a8010))
+
+
+### Features
+
+* pix-ItauBank api contract changes ([#527](https://github.com/juspay/hyperswitch-web/issues/527)) ([fdd692e](https://github.com/juspay/hyperswitch-web/commit/fdd692e4a4a34e5b91cc9008337faad81e03c506))
+
+## [0.77.4](https://github.com/juspay/hyperswitch-web/compare/v0.77.3...v0.77.4) (2024-07-25)
+
+
+### Reverts
+
+* passing initiativeContext to TrustPay ApplePay ([#522](https://github.com/juspay/hyperswitch-web/issues/522)) ([1ceefe1](https://github.com/juspay/hyperswitch-web/commit/1ceefe15d7943ac02b678b116c4058b4830f5b52))
+
 ## [0.77.3](https://github.com/juspay/hyperswitch-web/compare/v0.77.2...v0.77.3) (2024-07-24)
 
 
