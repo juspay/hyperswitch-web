@@ -11,7 +11,8 @@ let make = (
   ~handleSubmit,
   ~formLayout,
 ) => {
-  let {stringConfig: {locale}} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {stringConfig} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {locale} = stringConfig
   // Component states
   let (selectedPaymentMethod, setSelectedPaymentMethod) = React.useState(_ =>
     defaultSelectedPaymentMethod
