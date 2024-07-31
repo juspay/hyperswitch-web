@@ -1,3 +1,10 @@
+# [0.80.0](https://github.com/juspay/hyperswitch-web/compare/v0.79.0...v0.80.0) (2024-07-31)
+
+
+### Features
+
+* added support for collecting_billing_details_from_wallets ([#529](https://github.com/juspay/hyperswitch-web/issues/529)) ([4193d85](https://github.com/juspay/hyperswitch-web/commit/4193d85554630affafde70ece98ff3df70cf8762))
+
 # [0.79.0](https://github.com/juspay/hyperswitch-web/compare/v0.78.1...v0.79.0) (2024-07-31)
 
 
