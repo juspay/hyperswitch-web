@@ -142,6 +142,8 @@ let useHandleApplePayResponse = (
   ~syncPayment=() => (),
   ~isInvokeSDKFlow=true,
   ~isSavedMethodsFlow=false,
+  ~isWallet=true,
+  ~requiredFieldsBody=Dict.make(),
 ) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -187,8 +189,18 @@ let useHandleApplePayResponse = (
             ~isSavedMethodsFlow,
           )
 
+          let bodyArr = if isWallet {
+            applePayBody
+          } else {
+            applePayBody
+            ->getJsonFromArrayOfJson
+            ->flattenObject(true)
+            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+            ->getArrayOfTupleFromDict
+          }
+
           processPayment(
-            ~bodyArr=applePayBody,
+            ~bodyArr,
             ~isThirdPartyFlow=false,
             ~isGuestCustomer,
             ~paymentMethodListValue,
@@ -199,7 +211,7 @@ let useHandleApplePayResponse = (
           )
         } else if dict->Dict.get("showApplePayButton")->Option.isSome {
           setApplePayClicked(_ => false)
-          if isSavedMethodsFlow {
+          if isSavedMethodsFlow || !isWallet {
             postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
           }
         } else if dict->Dict.get("applePaySyncPayment")->Option.isSome {
@@ -216,7 +228,14 @@ let useHandleApplePayResponse = (
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
-  }, (isInvokeSDKFlow, processPayment, stateJson, isManualRetryEnabled))
+  }, (
+    isInvokeSDKFlow,
+    processPayment,
+    stateJson,
+    isManualRetryEnabled,
+    isWallet,
+    requiredFieldsBody,
+  ))
 }
 
 let handleApplePayButtonClicked = (~sessionObj, ~componentName) => {
@@ -226,4 +245,31 @@ let handleApplePayButtonClicked = (~sessionObj, ~componentName) => {
     ("applePayPaymentRequest", paymentRequest),
   ]
   handlePostMessage(message)
+}
+
+let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+
+  React.useCallback((ev: Window.event) => {
+    if !isWallet {
+      let json = ev.data->JSON.parseExn
+      let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+      if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
+        options.readOnly ? () : handleApplePayButtonClicked(~sessionObj, ~componentName)
+      } else if areRequiredFieldsEmpty {
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterFieldsText,
+        )
+      } else if !areRequiredFieldsValid {
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterValidDetailsText,
+        )
+      }
+    }
+  }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, sessionObj, componentName))
 }

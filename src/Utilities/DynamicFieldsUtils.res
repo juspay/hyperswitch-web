@@ -580,20 +580,22 @@ let useRequiredFieldsBody = (
         | FullName => getName(item, fullName)
         | _ => item.field_type->getFieldValueFromFieldType
         }
-        if (
-          isSavedCardFlow &&
-          (item.field_type === BillingName || item.field_type === FullName) &&
-          item.display_name === "card_holder_name" &&
-          item.required_field === "payment_method_data.card.card_holder_name"
-        ) {
-          if !isAllStoredCardsHaveName {
-            acc->Dict.set(
-              "payment_method_data.card_token.card_holder_name",
-              value->JSON.Encode.string,
-            )
+        if value != "" {
+          if (
+            isSavedCardFlow &&
+            (item.field_type === BillingName || item.field_type === FullName) &&
+            item.display_name === "card_holder_name" &&
+            item.required_field === "payment_method_data.card.card_holder_name"
+          ) {
+            if !isAllStoredCardsHaveName {
+              acc->Dict.set(
+                "payment_method_data.card_token.card_holder_name",
+                value->JSON.Encode.string,
+              )
+            }
+          } else {
+            acc->Dict.set(item.required_field, value->JSON.Encode.string)
           }
-        } else {
-          acc->Dict.set(item.required_field, value->JSON.Encode.string)
         }
         acc
       })
@@ -820,22 +822,6 @@ let usePaymentMethodTypeFromList = (
       ),
     )->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodType)
   }, (paymentMethodListValue, paymentMethod, paymentMethodType))
-}
-
-let useAreAllRequiredFieldsPrefilled = (
-  ~paymentMethodListValue,
-  ~paymentMethod,
-  ~paymentMethodType,
-) => {
-  let paymentMethodTypes = usePaymentMethodTypeFromList(
-    ~paymentMethodListValue,
-    ~paymentMethod,
-    ~paymentMethodType,
-  )
-
-  paymentMethodTypes.required_fields->Array.reduce(true, (acc, requiredField) => {
-    acc && requiredField.value != ""
-  })
 }
 
 let removeRequiredFieldsDuplicates = (
