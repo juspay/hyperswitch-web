@@ -120,6 +120,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       let localeString = await CardTheme.getLocaleObject(
         optionsLocaleString == "" ? config.locale : optionsLocaleString,
       )
+      let constantString = await CardTheme.getConstantStringsObject()
       setConfig(_ => {
         config: {
           appearance,
@@ -131,6 +132,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         },
         themeObj: appearance.variables,
         localeString,
+        constantString,
         showLoader: config.loader == Auto || config.loader == Always,
       })
     } catch {
