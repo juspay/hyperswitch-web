@@ -4,7 +4,7 @@ open RecoilAtoms
 
 @react.component
 let make = (~integrateError, ~logger) => {
-  let {strings: {locale}} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(paymentMethodCollectOptionAtom)
@@ -111,7 +111,7 @@ let make = (~integrateError, ~logger) => {
               let updatedStatusInfo = {
                 payoutId: res.payoutId,
                 status: res.status,
-                message: res.status->getPayoutStatusMessage(locale),
+                message: res.status->getPayoutStatusMessage(localeString),
                 code: res.errorCode,
                 errorMessage: res.errorMessage,
                 reason: None,
@@ -122,7 +122,7 @@ let make = (~integrateError, ~logger) => {
               let updatedStatusInfo = {
                 payoutId: options.payoutId,
                 status: Failed,
-                message: locale.payoutStatusFailedMessage,
+                message: localeString.payoutStatusFailedMessage,
                 code: Some(err.code),
                 errorMessage: Some(err.message),
                 reason: err.reason,
@@ -133,7 +133,7 @@ let make = (~integrateError, ~logger) => {
               let updatedStatusInfo = {
                 payoutId: options.payoutId,
                 status: Failed,
-                message: locale.payoutStatusFailedMessage,
+                message: localeString.payoutStatusFailedMessage,
                 code: None,
                 errorMessage: None,
                 reason: None,
@@ -148,7 +148,7 @@ let make = (~integrateError, ~logger) => {
           let updatedStatusInfo = {
             payoutId: options.payoutId,
             status: Failed,
-            message: locale.payoutStatusFailedMessage,
+            message: localeString.payoutStatusFailedMessage,
             code: None,
             errorMessage: None,
             reason: None,
@@ -209,26 +209,26 @@ let make = (~integrateError, ~logger) => {
   let renderPayoutStatus = () => {
     let status = statusInfo.status
     let imageSource = getPayoutImageSource(status)
-    let readableStatus = status->getPayoutReadableStatus(locale)
+    let readableStatus = status->getPayoutReadableStatus(localeString)
     let statusInfoFields: array<statusInfoField> = [
-      {key: locale.infoCardRefId, value: options.payoutId},
+      {key: localeString.infoCardRefId, value: options.payoutId},
     ]
 
     statusInfo.code
     ->Option.flatMap(code => {
-      statusInfoFields->Array.push({key: locale.infoCardErrCode, value: code})
+      statusInfoFields->Array.push({key: localeString.infoCardErrCode, value: code})
       None
     })
     ->ignore
     statusInfo.errorMessage
     ->Option.flatMap(errorMessage => {
-      statusInfoFields->Array.push({key: locale.infoCardErrMsg, value: errorMessage})
+      statusInfoFields->Array.push({key: localeString.infoCardErrMsg, value: errorMessage})
       None
     })
     ->ignore
     statusInfo.reason
     ->Option.flatMap(reason => {
-      statusInfoFields->Array.push({key: locale.infoCardErrReason, value: reason})
+      statusInfoFields->Array.push({key: localeString.infoCardErrReason, value: reason})
       None
     })
     ->ignore
@@ -278,7 +278,7 @@ let make = (~integrateError, ~logger) => {
       </div>
       {switch secondsUntilRedirect {
       | Some(seconds) =>
-        <div className="mt-10"> {React.string(seconds->locale.linkRedirectionText)} </div>
+        <div className="mt-10"> {React.string(seconds->localeString.linkRedirectionText)} </div>
       | None => React.null
       }}
     </div>
@@ -320,11 +320,11 @@ let make = (~integrateError, ~logger) => {
                   </div>
                   <div className="lg:mx-5">
                     <div className="self-center text-xl font-semibold">
-                      {React.string(merchantName->locale.payoutFromText)}
+                      {React.string(merchantName->localeString.payoutFromText)}
                     </div>
                     <div className="flex flex-row lg:mt-1">
                       <div className="font-semibold text-xs">
-                        {React.string(locale.infoCardRefId)}
+                        {React.string(localeString.infoCardRefId)}
                       </div>
                       <div className="ml-1 text-xs"> {React.string(options.payoutId)} </div>
                     </div>
@@ -332,7 +332,7 @@ let make = (~integrateError, ~logger) => {
                   <div
                     className="mt-4 px-4 py-1.5 bg-gray-200 text-[13px] rounded-full w-max text-black
                     lg:w-full lg:rounded-none lg:rounded-b-lg">
-                    {React.string(options.sessionExpiry->locale.linkExpiryInfo)}
+                    {React.string(options.sessionExpiry->localeString.linkExpiryInfo)}
                   </div>
                 </div>
               </div>

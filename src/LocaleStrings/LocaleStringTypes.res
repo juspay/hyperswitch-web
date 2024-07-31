@@ -150,8 +150,3 @@ type constantStrings = {
   formFieldPixIdPlaceholder: string,
   formFieldBankAccountNumberPlaceholder: string,
 }
-
-type strings = {
-  locale: localeStrings,
-  constant: constantStrings,
-}

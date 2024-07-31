@@ -203,9 +203,9 @@ let getPaymentMethodDataFieldLabel = (
 
 let getPaymentMethodDataFieldPlaceholder = (
   key: paymentMethodDataField,
-  stringsConfig: LocaleStringTypes.strings,
+  locale: LocaleStringTypes.localeStrings,
+  constant: LocaleStringTypes.constantStrings,
 ): string => {
-  let {locale, constant} = stringsConfig
   switch key {
   | CardNumber => constant.formFieldCardNumberPlaceholder
   | CardExpDate => locale.expiryPlaceholder

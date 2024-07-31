@@ -117,9 +117,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       )
       let appearance =
         optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
-      let strings = await CardTheme.getStringObject(
+      let localeString = await CardTheme.getLocaleObject(
         optionsLocaleString == "" ? config.locale : optionsLocaleString,
       )
+      let constantString = await CardTheme.getConstantStringsObject()
       setConfig(_ => {
         config: {
           appearance,
@@ -130,8 +131,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           loader: config.loader,
         },
         themeObj: appearance.variables,
-        localeString: strings.locale,
-        strings,
+        localeString,
+        constantString,
         showLoader: config.loader == Auto || config.loader == Always,
       })
     } catch {
