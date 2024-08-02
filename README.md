@@ -223,7 +223,6 @@ Please refer to our [FAQs page][faqs].
 - ApplePay
 - GooglePay
 - Klarna
-- Kount
 
 ## 💪 Join us in building Hyperswitch
 
