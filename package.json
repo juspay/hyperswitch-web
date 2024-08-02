@@ -4,8 +4,6 @@
   "main": "index.js",
   "private": true,
   "dependencies": {
-    "@aws-sdk/client-cloudfront": "^3.414.0",
-    "@aws-sdk/client-s3": "^3.417.0",
     "@glennsl/rescript-fetch": "^0.2.0",
     "@kount/kount-web-client-sdk": "^1.1.6",
     "@rescript/core": "^0.7.0",
@@ -13,7 +11,6 @@
     "@ryyppy/rescript-promise": "^2.1.0",
     "@sentry/react": "^7.64.0",
     "@sentry/webpack-plugin": "^2.7.0",
-    "fast-glob": "^3.3.2",
     "react": "^18.2.0",
     "react-datepicker": "^6.9.0",
     "react-dom": "^18.2.0",
