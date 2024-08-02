@@ -214,25 +214,6 @@ let make = (~integrateError, ~logger) => {
       {key: localeString.infoCardRefId, value: options.payoutId},
     ]
 
-    statusInfo.code
-    ->Option.flatMap(code => {
-      statusInfoFields->Array.push({key: localeString.infoCardErrCode, value: code})
-      None
-    })
-    ->ignore
-    statusInfo.errorMessage
-    ->Option.flatMap(errorMessage => {
-      statusInfoFields->Array.push({key: localeString.infoCardErrMsg, value: errorMessage})
-      None
-    })
-    ->ignore
-    statusInfo.reason
-    ->Option.flatMap(reason => {
-      statusInfoFields->Array.push({key: localeString.infoCardErrReason, value: reason})
-      None
-    })
-    ->ignore
-
     <div
       style={
         color: themeObj.colorText,
