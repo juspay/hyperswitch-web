@@ -1,3 +1,10 @@
+## [0.80.1](https://github.com/juspay/hyperswitch-web/compare/v0.80.0...v0.80.1) (2024-08-02)
+
+
+### Bug Fixes
+
+* removal of unnecessary package ([#532](https://github.com/juspay/hyperswitch-web/issues/532)) ([d9ae21f](https://github.com/juspay/hyperswitch-web/commit/d9ae21f37e4503e27b866ed1249f2ea59e2ef0d5))
+
 # [0.80.0](https://github.com/juspay/hyperswitch-web/compare/v0.79.0...v0.80.0) (2024-07-31)
 
 
