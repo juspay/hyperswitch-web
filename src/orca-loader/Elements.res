@@ -496,6 +496,34 @@ let make = (
           }
         }
 
+        let handleOpenBankingPlaidSessionToken = (event: Types.event) => {
+          let json = event.data->anyTypeToJson
+          let dict = json->getDictFromJson
+          switch dict->Dict.get("openBankingPlaid") {
+          | Some(openBankingTokenJson) =>
+            let metaData = [
+              (
+                "linkToken",
+                openBankingTokenJson
+                ->getDictFromJson
+                ->getString("open_banking_session_token", "")
+                ->JSON.Encode.string,
+              ),
+              ("pmAuthConnectorArray", ["plaid"]->Identity.anyTypeToJson),
+              ("payment_id", clientSecret->getPaymentId->JSON.Encode.string),
+              ("publishableKey", publishableKey->JSON.Encode.string),
+            ]->getJsonFromArrayOfJson
+
+            handlePostMessage([
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", "plaidSDK"->JSON.Encode.string),
+              ("iframeId", selectorString->JSON.Encode.string),
+              ("metadata", metaData),
+            ])
+          | _ => ()
+          }
+        }
+
         let handleApplePayThirdPartyFlow = (event: Types.event) => {
           let json = event.data->Identity.anyTypeToJson
           let dict = json->getDictFromJson
@@ -729,6 +757,7 @@ let make = (
         addSmartEventListener("message", handlePollStatusMessage, "onPollStatusMsg")
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
         addSmartEventListener("message", handleApplePayThirdPartyFlow, "onApplePayThirdParty")
+        addSmartEventListener("message", handleOpenBankingPlaidSessionToken, "onOpenBankingPlaid")
 
         let fetchSessionTokens = mountedIframeRef => {
           let handleSessionTokensLoaded = (event: Types.event) => {

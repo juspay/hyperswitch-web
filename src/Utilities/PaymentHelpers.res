@@ -742,6 +742,7 @@ let rec intentCall = (
                     ("applePayPresent", session_token->anyTypeToJson),
                   ]
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
+                | "open_banking" => [("openBankingPlaid", session_token->anyTypeToJson)]
                 | _ => []
                 }
 
