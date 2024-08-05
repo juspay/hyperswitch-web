@@ -413,7 +413,7 @@ let rec intentCall = (
               | Card => "CARD"
               | _ =>
                 bodyStr
-                ->JSON.parseExn
+                ->safeParse
                 ->getDictFromJson
                 ->getString("payment_method_type", "")
               }
@@ -1085,7 +1085,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
           })
         }
         if blockConfirm && Window.isInteg {
-          Console.log3("CONFIRM IS BLOCKED", body->JSON.parseExn, headers)
+          Console.log3("CONFIRM IS BLOCKED", body->safeParse, headers)
         } else {
           intentCall(
             ~fetchApi,
