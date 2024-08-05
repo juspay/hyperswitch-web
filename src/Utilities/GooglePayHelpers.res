@@ -107,11 +107,7 @@ let useHandleGooglePayResponse = (
 
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
-      let json = try {
-        ev.data->safeParse
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
+      let json = ev.data->JSON.parseExn
       let dict = json->getDictFromJson
       if dict->Dict.get("gpayResponse")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("gpayResponse")

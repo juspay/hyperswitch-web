@@ -318,12 +318,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   React.useEffect0(() => {
     open Utils
     let handleFun = (ev: Window.event) => {
-      let json = try {
-        ev.data->safeParse
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
-      let dict = json->getDictFromJson
+      let json = ev.data->JSON.parseExn
+      let dict = json->Utils.getDictFromJson
       if dict->Dict.get("doBlur")->Option.isSome {
         logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR, ())
         setBlurState(_ => true)

@@ -164,12 +164,7 @@ let useHandleApplePayResponse = (
 
   React.useEffect(() => {
     let handleApplePayMessages = (ev: Window.event) => {
-      let json = try {
-        ev.data->safeParse
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
-
+      let json = ev.data->JSON.parseExn
       try {
         let dict = json->getDictFromJson
         if dict->Dict.get("applePayProcessPayment")->Option.isSome {
