@@ -243,6 +243,7 @@ let make = (
           headers,
           ~optLogger=Some(logger),
           ~switchToCustomPod=switchToCustomPodValue,
+          ~isForceSync=true,
         )
         ->then(json => {
           let dict = json->JSON.Decode.object->Option.getOr(Dict.make())

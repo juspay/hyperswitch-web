@@ -502,7 +502,7 @@ let paymentMethodsFields = [
   {
     paymentMethodName: "open_banking_pis",
     icon: Some(icon("bank", ~size=19)),
-    displayName: "Plaid",
+    displayName: "Open Banking",
     fields: [InfoElement],
     miniIcon: Some(icon("bank", ~size=19)),
   },
