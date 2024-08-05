@@ -985,7 +985,7 @@ let getSdkHandleConfirmPaymentProps = dict => {
   handleConfirm: dict->getBool("handleConfirm", false),
   buttonText: ?dict->getOptionString("buttonText"),
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
-  allowButtonBeforeValidation: dict->getBool("allowButtonBeforeValidation", true),
+  allowButtonBeforeValidation: dict->getBool("allowButtonBeforeValidation", false),
 }
 
 let itemToObjMapper = (dict, logger) => {
