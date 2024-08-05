@@ -15,25 +15,29 @@ const endpointMap = {
 const backendEndPoint = endpointMap[sdkEnv] || endpointMap.local;
 
 const devServer = {
-  contentBase: path.join(__dirname, "dist"),
+  static: {
+    directory: path.join(__dirname, "dist"),
+  },
   hot: true,
   host: "0.0.0.0",
   port: 9050,
   historyApiFallback: true,
-  proxy: {
-    "/payments": {
+  proxy: [
+    {
+      context: ["/payments"],
       target: backendEndPoint,
       changeOrigin: true,
       secure: true,
       pathRewrite: { "^/payments": "" },
     },
-    // * Uncomment the following if needed for 3DS method proxying
-    // "/3dsmethod": {
+    // Uncomment the following if needed for 3DS method proxying
+    // {
+    //   context: ["/3dsmethod"],
     //   target: "https://acs40.sandbox.3dsecure.io",
     //   changeOrigin: true,
     //   secure: false,
     // },
-  },
+  ],
   headers: {
     "Cache-Control": "must-revalidate",
   },
