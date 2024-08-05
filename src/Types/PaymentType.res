@@ -287,7 +287,7 @@ let defaultBillingAddress = {
 let defaultSdkHandleConfirmPayment = {
   handleConfirm: false,
   confirmParams: ConfirmType.defaultConfirm,
-  allowButtonBeforeValidation: true,
+  allowButtonBeforeValidation: false,
 }
 
 let defaultOptions = {
