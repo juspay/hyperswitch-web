@@ -111,7 +111,7 @@ let make = (
   }
 
   let handle = (ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
+    let json = ev.data->safeParse
     let dict = json->Utils.getDictFromJson
     if dict->Dict.get("sendPaymentMethodsResponse")->Option.isSome {
       paymentMethodsResponse->sendPromiseData("payment_methods")
