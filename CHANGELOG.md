@@ -1,3 +1,10 @@
+## [0.80.4](https://github.com/juspay/hyperswitch-web/compare/v0.80.3...v0.80.4) (2024-08-05)
+
+
+### Bug Fixes
+
+* webpack upgraded to new version for removing vulnerability ([#536](https://github.com/juspay/hyperswitch-web/issues/536)) ([c109c7d](https://github.com/juspay/hyperswitch-web/commit/c109c7d81f3e1cb9738c90e49e358ab53d7b6886))
+
 ## [0.80.3](https://github.com/juspay/hyperswitch-web/compare/v0.80.2...v0.80.3) (2024-08-05)
 
 
