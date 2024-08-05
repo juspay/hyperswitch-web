@@ -17,8 +17,7 @@ let make = (~paymentOption: PaymentMethodsRecord.paymentFieldsInfo, ~isActive: b
     paymentOption.icon,
   )
   let onClick = _ => {
-    setIsPayNowButtonDisable(_ => true)
-    setIsPayNowButtonDisable(_ => sdkHandleConfirmPayment.allowButtonBeforeValidation)
+    setIsPayNowButtonDisable(_ => !sdkHandleConfirmPayment.allowButtonBeforeValidation)
     setSelectedOption(_ => paymentOption.paymentMethodName)
   }
   <button

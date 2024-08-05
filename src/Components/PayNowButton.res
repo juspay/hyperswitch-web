@@ -22,7 +22,7 @@ let make = () => {
   let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
 
   React.useEffect1(() => {
-    setIsPayNowButtonDisable(_ => sdkHandleConfirmPayment.allowButtonBeforeValidation)
+    setIsPayNowButtonDisable(_ => !sdkHandleConfirmPayment.allowButtonBeforeValidation)
     None
   }, [sdkHandleConfirmPayment.allowButtonBeforeValidation])
 
