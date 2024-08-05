@@ -81,7 +81,13 @@ let processPayment = (
   )
 }
 
-let useHandleGooglePayResponse = (~connectors, ~intent, ~isSavedMethodsFlow=false) => {
+let useHandleGooglePayResponse = (
+  ~connectors,
+  ~intent,
+  ~isSavedMethodsFlow=false,
+  ~isWallet=true,
+  ~requiredFieldsBody=Dict.make(),
+) => {
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
@@ -118,8 +124,19 @@ let useHandleGooglePayResponse = (~connectors, ~intent, ~isSavedMethodsFlow=fals
           ~stateJson,
           ~isSavedMethodsFlow,
         )
+
+        let googlePayBody = if isWallet {
+          body
+        } else {
+          body
+          ->getJsonFromArrayOfJson
+          ->flattenObject(true)
+          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->getArrayOfTupleFromDict
+        }
+
         processPayment(
-          ~body,
+          ~body=googlePayBody,
           ~isThirdPartyFlow=false,
           ~intent,
           ~options: PaymentType.options,
@@ -129,14 +146,14 @@ let useHandleGooglePayResponse = (~connectors, ~intent, ~isSavedMethodsFlow=fals
       }
       if dict->Dict.get("gpayError")->Option.isSome {
         handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
-        if isSavedMethodsFlow {
+        if isSavedMethodsFlow || !isWallet {
           postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
         }
       }
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  }, (paymentMethodTypes, stateJson, isManualRetryEnabled))
+  }, (paymentMethodTypes, stateJson, isManualRetryEnabled, requiredFieldsBody, isWallet))
 }
 
 let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly) => {
@@ -152,4 +169,39 @@ let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly)
       ("GpayPaymentDataRequest", paymentDataRequest->Identity.anyTypeToJson),
     ])
   }
+}
+
+let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+
+  React.useCallback((ev: Window.event) => {
+    if !isWallet {
+      let json = ev.data->JSON.parseExn
+      let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+      if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
+        handleGooglePayClicked(~sessionObj, ~componentName, ~iframeId, ~readOnly=options.readOnly)
+      } else if areRequiredFieldsEmpty {
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterFieldsText,
+        )
+      } else if !areRequiredFieldsValid {
+        postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterValidDetailsText,
+        )
+      }
+    }
+  }, (
+    areRequiredFieldsValid,
+    areRequiredFieldsEmpty,
+    isWallet,
+    sessionObj,
+    componentName,
+    iframeId,
+  ))
 }
