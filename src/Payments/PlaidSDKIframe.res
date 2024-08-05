@@ -18,7 +18,7 @@ let make = () => {
 
   React.useEffect0(() => {
     let handle = (ev: Window.event) => {
-      let json = ev.data->JSON.parseExn
+      let json = ev.data->safeParse
       let metaData = json->getDictFromJson->getDictFromDict("metadata")
       let linkToken = metaData->getString("linkToken", "")
       if linkToken->String.length > 0 {

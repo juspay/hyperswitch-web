@@ -108,7 +108,7 @@ let useHandleGooglePayResponse = (
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
       let json = try {
-        ev.data->JSON.parseExn
+        ev.data->safeParse
       } catch {
       | _ => Dict.make()->JSON.Encode.object
       }
@@ -180,7 +180,7 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
 
   React.useCallback((ev: Window.event) => {
     if !isWallet {
-      let json = ev.data->JSON.parseExn
+      let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
         handleGooglePayClicked(~sessionObj, ~componentName, ~iframeId, ~readOnly=options.readOnly)

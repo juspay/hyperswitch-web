@@ -219,7 +219,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     open Promise
     let handleFun = (ev: Window.event) => {
       let json = try {
-        ev.data->JSON.parseExn
+        ev.data->safeParse
       } catch {
       | _ => Dict.make()->JSON.Encode.object
       }

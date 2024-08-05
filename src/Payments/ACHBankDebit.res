@@ -65,7 +65,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="ach_bank_debit")
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
+    let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {

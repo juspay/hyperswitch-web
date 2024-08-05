@@ -112,7 +112,7 @@ let make = (
 
   let handle = (ev: Window.event) => {
     let json = try {
-      ev.data->JSON.parseExn
+      ev.data->safeParse
     } catch {
     | _ => JSON.Encode.null
     }
