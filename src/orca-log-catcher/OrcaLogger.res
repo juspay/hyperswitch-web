@@ -225,7 +225,6 @@ type setLogInfo = (
   ~logType: logType=?,
   ~logCategory: logCategory=?,
   ~paymentMethod: string=?,
-  unit,
 ) => unit
 
 type loggerMake = {
@@ -241,7 +240,6 @@ type loggerMake = {
     ~paymentMethod: string=?,
     ~apiLogType: apiLogType=?,
     ~isPaymentSession: bool=?,
-    unit,
   ) => unit,
   setLogInitiated: unit => unit,
   setConfirmPaymentValue: (~paymentType: string) => JSON.t,
@@ -268,7 +266,6 @@ let defaultLoggerConfig = {
     ~logType as _=?,
     ~logCategory as _=?,
     ~paymentMethod as _=?,
-    (),
   ) => (),
   setLogApi: (
     ~value as _,
@@ -280,7 +277,6 @@ let defaultLoggerConfig = {
     ~paymentMethod as _=?,
     ~apiLogType as _=?,
     ~isPaymentSession as _=?,
-    (),
   ) => (),
   setLogInfo: (
     ~value as _,
@@ -291,7 +287,6 @@ let defaultLoggerConfig = {
     ~logType as _=?,
     ~logCategory as _=?,
     ~paymentMethod as _=?,
-    (),
   ) => (),
   setLogInitiated: () => (),
   setMerchantId: _x => (),
@@ -491,7 +486,6 @@ let make = (
   ~merchantId=?,
   ~metadata=?,
   ~ephemeralKey=?,
-  (),
 ) => {
   let loggingLevel = switch GlobalVars.loggingLevelStr {
   | "DEBUG" => DEBUG
@@ -545,17 +539,14 @@ let make = (
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
       switch loggingLevel {
-      | DEBUG => log->(Array.push(mainLogFile, _))->ignore
+      | DEBUG => log->Array.push(mainLogFile, _)->ignore
       | INFO =>
         [INFO, WARNING, ERROR]->Array.includes(log.logType)
-          ? log->(Array.push(mainLogFile, _))->ignore
+          ? log->Array.push(mainLogFile, _)->ignore
           : ()
       | WARNING =>
-        [WARNING, ERROR]->Array.includes(log.logType)
-          ? log->(Array.push(mainLogFile, _))->ignore
-          : ()
-      | ERROR =>
-        [ERROR]->Array.includes(log.logType) ? log->(Array.push(mainLogFile, _))->ignore : ()
+        [WARNING, ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
+      | ERROR => [ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
       | SILENT => ()
       }
     }
@@ -645,7 +636,7 @@ let make = (
     }
   }
 
-  let calculateLatencyHook = (~eventName, ~apiLogType=Method, ()) => {
+  let calculateLatencyHook = (~eventName, ~apiLogType=Method) => {
     let currentTimestamp = Date.now()
     let latency = switch eventName {
     | PAYMENT_ATTEMPT => {
@@ -749,14 +740,13 @@ let make = (
     ~logType=INFO,
     ~logCategory=USER_EVENT,
     ~paymentMethod="",
-    (),
   ) => {
     checkAndPushMissedEvents(eventName, paymentMethod)
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = switch latency {
     | Some(lat) => lat->Float.toString
-    | None => calculateLatencyHook(~eventName, ())
+    | None => calculateLatencyHook(~eventName)
     }
     let localTimestamp = timestamp->Option.getOr(Date.now()->Float.toString)
     let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
@@ -805,11 +795,10 @@ let make = (
     ~paymentMethod="",
     ~apiLogType=Request,
     ~isPaymentSession=false,
-    (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
-    let latency = calculateLatencyHook(~eventName, ~apiLogType, ())
+    let latency = calculateLatencyHook(~eventName, ~apiLogType)
     let localTimestamp = timestamp->Option.getOr(Date.now()->Float.toString)
     let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
     {
@@ -856,13 +845,12 @@ let make = (
     ~logType=ERROR,
     ~logCategory=USER_ERROR,
     ~paymentMethod="",
-    (),
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
     let latency = switch latency {
     | Some(lat) => lat->Float.toString
-    | None => calculateLatencyHook(~eventName, ())
+    | None => calculateLatencyHook(~eventName)
     }
     let localTimestamp = timestamp->Option.getOr(Date.now()->Float.toString)
     let localTimestampFloat = localTimestamp->Float.fromString->Option.getOr(Date.now())
@@ -899,7 +887,7 @@ let make = (
     let eventName: eventName = LOG_INITIATED
     let eventNameStr = eventName->eventNameToStrMapper
     let firstEvent = events.contents->Dict.get(eventNameStr)->Option.isNone
-    let latency = calculateLatencyHook(~eventName, ())
+    let latency = calculateLatencyHook(~eventName)
     {
       logType: INFO,
       eventName,

@@ -20,7 +20,7 @@ let make = (
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
-    let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
+    let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
 
     let appearance =
       localOptions->Dict.get("appearance")->Option.getOr(Dict.make()->JSON.Encode.object)
@@ -154,13 +154,11 @@ let make = (
     }
 
     let create = (componentType, newOptions) => {
-      componentType == ""
-        ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger, ())
-        : ()
+      componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
       | "paymentMethodsManagement" => ()
-      | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger, ())
+      | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger)
       }
 
       let mountPostMessage = (

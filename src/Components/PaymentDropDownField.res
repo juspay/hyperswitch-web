@@ -39,7 +39,7 @@ let make = (
   }, [options])
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
+    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
   }
   let focusClass = if inputFocused || value.value->String.length > 0 {
     `mb-7 pb-1 pt-2 ${themeObj.fontSizeXs} transition-all ease-in duration-75`

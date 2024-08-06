@@ -83,7 +83,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   }, [complete])
 
   let submitCallback = (ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
+    let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
@@ -105,7 +105,6 @@ let make = (~paymentType: CardThemeType.mode) => {
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~manualRetry=isManualRetryEnabled,
-          (),
         )
         ()
       } else {

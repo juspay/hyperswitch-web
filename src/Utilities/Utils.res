@@ -21,11 +21,11 @@ let handlePostMessage = (~targetOrigin="*", messageArr) => {
   iframeParent->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
 }
 
-let handleOnFocusPostMessage = (~targetOrigin="*", ()) => {
+let handleOnFocusPostMessage = (~targetOrigin="*") => {
   handlePostMessage([("focus", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
-let handleOnBlurPostMessage = (~targetOrigin="*", ()) => {
+let handleOnBlurPostMessage = (~targetOrigin="*") => {
   handlePostMessage([("blur", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
@@ -35,7 +35,7 @@ let handleOnClickPostMessage = (~targetOrigin="*", ev) => {
     ~targetOrigin,
   )
 }
-let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false, ()) => {
+let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false) => {
   let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
   handlePostMessage([(message, true->JSON.Encode.bool)], ~targetOrigin)
 }
@@ -111,11 +111,11 @@ let getRequiredString = (dict, key, default, ~logger) => {
   let optionalStr = getOptionString(dict, key)
   switch optionalStr {
   | Some(val) => {
-      val == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr=key, ~logger, ()) : ()
+      val == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr=key, ~logger) : ()
       val
     }
   | None => {
-      manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr=key, ~logger, ())
+      manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr=key, ~logger)
       optionalStr->Option.getOr(default)
     }
   }
@@ -127,7 +127,7 @@ let getWarningString = (dict, key, default, ~logger) => {
     switch val->JSON.Decode.string {
     | Some(val) => val
     | None =>
-      manageErrorWarning(TYPE_STRING_ERROR, ~dynamicStr=key, ~logger, ())
+      manageErrorWarning(TYPE_STRING_ERROR, ~dynamicStr=key, ~logger)
       default
     }
   | None => default
@@ -162,7 +162,7 @@ let getBoolWithWarning = (dict, key, default, ~logger) => {
     switch val->JSON.Decode.bool {
     | Some(val) => val
     | None =>
-      manageErrorWarning(TYPE_BOOL_ERROR, ~dynamicStr=key, ~logger, ())
+      manageErrorWarning(TYPE_BOOL_ERROR, ~dynamicStr=key, ~logger)
       default
     }
   | None => default
@@ -174,7 +174,7 @@ let getNumberWithWarning = (dict, key, ~logger, default) => {
     switch val->JSON.Decode.float {
     | Some(val) => val->Float.toInt
     | None =>
-      manageErrorWarning(TYPE_INT_ERROR, ~dynamicStr=key, ~logger, ())
+      manageErrorWarning(TYPE_INT_ERROR, ~dynamicStr=key, ~logger)
       default
     }
   | None => default
@@ -676,7 +676,7 @@ let handlePostMessageEvents = (
   if complete && paymentType !== "" {
     let value =
       "Payment Data Filled" ++ (savedMethod ? ": Saved Payment Method" : ": New Payment Method")
-    loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType, ())
+    loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
   }
   handlePostMessage([
     ("elementType", "payment"->JSON.Encode.string),
@@ -807,7 +807,7 @@ let delay = timeOut => {
     }, timeOut)->ignore
   })
 }
-let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
+let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
   let headerObj =
     [
       ("Content-Type", "application/json"),
@@ -829,7 +829,7 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make(), ()) => {
   })
   Fetch.Headers.fromObject(headerObj->dictToObj)
 }
-let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method, ()) => {
+let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method) => {
   open Promise
   let body = switch method {
   | #GET => resolve(None)
@@ -841,7 +841,7 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
       {
         method,
         ?body,
-        headers: getHeaders(~headers, ~uri, ()),
+        headers: getHeaders(~headers, ~uri),
       },
     )
     ->catch(err => {
@@ -1215,7 +1215,7 @@ let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
         }
       }
       addSmartEventListener("message", handleMessage, "onOneClickHandlerPaymentConfirm")
-      handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true, ())
+      handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true)
     }
   })
 }

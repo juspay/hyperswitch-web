@@ -63,7 +63,7 @@ let make = (
     }
     setFocus(true)
     setIsValid(_ => None)
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
+    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
   }
 
   let handleBlur = ev => {
@@ -74,7 +74,7 @@ let make = (
     }
     setFocus(false)
     onBlur(ev)
-    Utils.handleOnBlurPostMessage(~targetOrigin=parentURL, ())
+    Utils.handleOnBlurPostMessage(~targetOrigin=parentURL)
   }
   React.useEffect(() => {
     if value->String.length > 0 {

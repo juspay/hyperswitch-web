@@ -26,7 +26,6 @@ let processPayment = (
     ~handleUserError=true,
     ~isThirdPartyFlow,
     ~manualRetry=isManualRetryEnabled,
-    (),
   )
 }
 
@@ -105,7 +104,7 @@ let startApplePaySession = (
     ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson)
     applePaySessionRef := Nullable.null
     let value = "Payment Data Filled: New Payment Method"
-    logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="APPLE_PAY", ())
+    logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="APPLE_PAY")
 
     let payment = event.payment
     payment->callBackFunc
@@ -117,7 +116,6 @@ let startApplePaySession = (
       ~value="Apple Pay Payment Cancelled",
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
-      (),
     )
     switch (applePayEvent, resolvePromise) {
     | (Some(applePayEvent), _) => {
@@ -164,12 +162,7 @@ let useHandleApplePayResponse = (
 
   React.useEffect(() => {
     let handleApplePayMessages = (ev: Window.event) => {
-      let json = try {
-        ev.data->JSON.parseExn
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
-
+      let json = ev.data->safeParse
       try {
         let dict = json->getDictFromJson
         if dict->Dict.get("applePayProcessPayment")->Option.isSome {
@@ -255,7 +248,7 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
 
   React.useCallback((ev: Window.event) => {
     if !isWallet {
-      let json = ev.data->JSON.parseExn
+      let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
         options.readOnly ? () : handleApplePayButtonClicked(~sessionObj, ~componentName)

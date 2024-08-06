@@ -597,7 +597,7 @@ let getAllBanknames = obj => {
 let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
 let clientCountry = Utils.getClientCountry(clientTimeZone)
 
-let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?, ()) => {
+let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?) => {
   let country = country->Option.getOr(clientCountry.isoAlpha2)
   let countryPostal = Utils.getCountryPostal(country, postalCodes)
   countryPostal.regex

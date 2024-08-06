@@ -742,7 +742,6 @@ let combineCardExpiryAndCvc = arr => {
 let updateDynamicFields = (
   arr: array<PaymentMethodsRecord.paymentMethodsFields>,
   billingAddress,
-  (),
 ) => {
   arr
   ->Utils.removeDuplicate
@@ -770,7 +769,7 @@ let useSubmitCallback = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   React.useCallback((ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
+    let json = ev.data->Utils.safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if line1.value == "" {
