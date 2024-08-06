@@ -10,7 +10,6 @@ let logApi = (
   ~logType: OrcaLogger.logType=INFO,
   ~logCategory: OrcaLogger.logCategory=API,
   ~isPaymentSession: bool=false,
-  (),
 ) => {
   let (value, internalMetadata) = switch apiLogType {
   | Request => ([("url", url->JSON.Encode.string)], [])
@@ -46,14 +45,13 @@ let logApi = (
       ~logCategory,
       ~apiLogType,
       ~isPaymentSession,
-      (),
     )
   | None => ()
   }
 }
 
 let logInputChangeInfo = (text, logger: OrcaLogger.loggerMake) => {
-  logger.setLogInfo(~value=text, ~eventName=INPUT_FIELD_CHANGED, ())
+  logger.setLogInfo(~value=text, ~eventName=INPUT_FIELD_CHANGED)
 }
 
 let handleLogging = (
@@ -63,11 +61,10 @@ let handleLogging = (
   ~eventName,
   ~paymentMethod,
   ~logType: OrcaLogger.logType=INFO,
-  (),
 ) => {
   switch optLogger {
   | Some(logger) =>
-    logger.setLogInfo(~value, ~internalMetadata, ~eventName, ~paymentMethod, ~logType, ())
+    logger.setLogInfo(~value, ~internalMetadata, ~eventName, ~paymentMethod, ~logType)
   | _ => ()
   }
 }

@@ -34,7 +34,6 @@ let make = (~paymentType: CardThemeType.mode) => {
           ~handleUserError=false,
           ~iframeId,
           ~manualRetry=isManualRetryEnabled,
-          (),
         )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")

@@ -28,7 +28,7 @@ let make = (
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
-    let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
+    let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
     let redirect = ref("if_required")
 
     let appearance =
@@ -165,13 +165,13 @@ let make = (
                   ? "https://tpgw.trustpay.eu/js/v1.js"
                   : "https://test-tpgw.trustpay.eu/js/v1.js"
               let trustPayScript = Window.createElement("script")
-              logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT, ())
+              logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT)
               trustPayScript->Window.elementSrc(trustPayScriptURL)
               trustPayScript->Window.elementOnerror(err => {
                 logInfo(Console.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
               })
               trustPayScript->Window.elementOnload(_ => {
-                logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT, ())
+                logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT)
               })
               Window.body->Window.appendChild(trustPayScript)
             }
@@ -224,7 +224,6 @@ let make = (
           INVALID_FORMAT,
           ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
           ~logger,
-          (),
         )
       : ()
 
@@ -266,9 +265,7 @@ let make = (
     }
 
     let create = (componentType, newOptions) => {
-      componentType == ""
-        ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger, ())
-        : ()
+      componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
       let otherElements = componentType->isOtherElements
       switch componentType {
       | "card"
@@ -283,7 +280,7 @@ let make = (
       | "expressCheckout"
       | "paymentMethodsManagement"
       | "payment" => ()
-      | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger, ())
+      | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger)
       }
 
       let mountPostMessage = (
@@ -345,7 +342,6 @@ let make = (
                       ~eventName=APPLE_PAY_FLOW,
                       ~paymentMethod="APPLE_PAY",
                       ~logType=ERROR,
-                      (),
                     )
                   }
                 } catch {
@@ -357,7 +353,6 @@ let make = (
                       ~eventName=APPLE_PAY_FLOW,
                       ~paymentMethod="APPLE_PAY",
                       ~logType=ERROR,
-                      (),
                     )
                   }
                 }
@@ -369,7 +364,6 @@ let make = (
                 ~eventName=APPLE_PAY_FLOW,
                 ~paymentMethod="APPLE_PAY",
                 ~logType=INFO,
-                (),
               )
             }
           }
@@ -445,14 +439,12 @@ let make = (
                         ~internalMetadata=res->JSON.stringify,
                         ~eventName=GOOGLE_PAY_FLOW,
                         ~paymentMethod="GOOGLE_PAY",
-                        (),
                       )
                       let value = "Payment Data Filled: New Payment Method"
                       logger.setLogInfo(
                         ~value,
                         ~eventName=PAYMENT_DATA_FILLED,
                         ~paymentMethod="GOOGLE_PAY",
-                        (),
                       )
                       let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                       event.source->Window.sendPostMessage(msg)
@@ -466,7 +458,6 @@ let make = (
                         ~paymentMethod="GOOGLE_PAY",
                         ~logType=ERROR,
                         ~logCategory=USER_ERROR,
-                        (),
                       )
                       let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                       event.source->Window.sendPostMessage(msg)
@@ -485,7 +476,6 @@ let make = (
                     ~paymentMethod="GOOGLE_PAY",
                     ~logType=ERROR,
                     ~logCategory=USER_ERROR,
-                    (),
                   )
                   let msg = [("googlePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                   event.source->Window.sendPostMessage(msg)
@@ -520,7 +510,6 @@ let make = (
                   ~value="Delayed Session Token Flow",
                   ~eventName=APPLE_PAY_FLOW,
                   ~paymentMethod="APPLE_PAY",
-                  (),
                 )
 
                 let connector =
@@ -536,7 +525,6 @@ let make = (
                     ~value="TrustPay Connector Flow",
                     ~eventName=APPLE_PAY_FLOW,
                     ~paymentMethod="APPLE_PAY",
-                    (),
                   )
                   let secrets =
                     applePaySessionTokenData
@@ -572,14 +560,12 @@ let make = (
                         ~value,
                         ~eventName=PAYMENT_DATA_FILLED,
                         ~paymentMethod="APPLE_PAY",
-                        (),
                       )
                       logger.setLogInfo(
                         ~value="TrustPay ApplePay Success Response",
                         ~internalMetadata=res->JSON.stringify,
                         ~eventName=APPLE_PAY_FLOW,
                         ~paymentMethod="APPLE_PAY",
-                        (),
                       )
                       let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                       event.source->Window.sendPostMessage(msg)
@@ -591,7 +577,6 @@ let make = (
                         ~eventName=APPLE_PAY_FLOW,
                         ~paymentMethod="APPLE_PAY",
                         ~value=exceptionMessage,
-                        (),
                       )
                       let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                       event.source->Window.sendPostMessage(msg)
@@ -604,7 +589,6 @@ let make = (
                         ~value=exn->formatException->JSON.stringify,
                         ~eventName=APPLE_PAY_FLOW,
                         ~paymentMethod="APPLE_PAY",
-                        (),
                       )
                       let msg = [("applePaySyncPayment", true->JSON.Encode.bool)]->Dict.fromArray
                       event.source->Window.sendPostMessage(msg)
@@ -803,7 +787,6 @@ let make = (
                             ~value="Normal Session Token Flow",
                             ~eventName=APPLE_PAY_FLOW,
                             ~paymentMethod="APPLE_PAY",
-                            (),
                           )
 
                           let callBackFunc = payment => {
@@ -884,7 +867,6 @@ let make = (
                         ~eventName=GOOGLE_PAY_FLOW,
                         ~paymentMethod="GOOGLE_PAY",
                         ~logType=DEBUG,
-                        (),
                       )
                       resolve()
                     })
@@ -914,7 +896,6 @@ let make = (
                                 ~value,
                                 ~eventName=PAYMENT_DATA_FILLED,
                                 ~paymentMethod="GOOGLE_PAY",
-                                (),
                               )
                               resolve()
                             },
@@ -926,7 +907,6 @@ let make = (
                                 ~eventName=GOOGLE_PAY_FLOW,
                                 ~paymentMethod="GOOGLE_PAY",
                                 ~logType=DEBUG,
-                                (),
                               )
 
                               let msg = [("gpayError", err->anyTypeToJson)]->Dict.fromArray
@@ -948,7 +928,6 @@ let make = (
                     ~eventName=GOOGLE_PAY_FLOW,
                     ~paymentMethod="GOOGLE_PAY",
                     ~logType=INFO,
-                    (),
                   )
                 }
 

@@ -23,7 +23,6 @@ let make = (
     ~source=Loader,
     ~merchantId=publishableKey,
     ~clientSecret,
-    (),
   )
 
   let (
@@ -65,7 +64,6 @@ let make = (
         ~switchToCustomPod=false,
         ~endpoint,
         ~merchantHostname,
-        (),
       )
     | _ => JSON.Encode.null->Promise.resolve
     }

@@ -115,7 +115,6 @@ let make = (~sessionObj: SessionsType.token) => {
                             },
                             ~handleUserError=false,
                             ~manualRetry=isManualRetryEnabled,
-                            (),
                           )
                         : handleCloseLoader()
                     },

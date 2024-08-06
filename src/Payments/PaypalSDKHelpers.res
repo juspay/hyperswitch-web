@@ -25,7 +25,6 @@ let loadPaypalSDK = (
     ~value="Paypal SDK Button Clicked",
     ~eventName=PAYPAL_SDK_FLOW,
     ~paymentMethod="PAYPAL",
-    (),
   )
   Utils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
   ->then(result => {
@@ -62,7 +61,6 @@ let loadPaypalSDK = (
               ~intentCallback=val =>
                 val->Utils.getDictFromJson->Utils.getString("orderId", "")->resolve,
               ~manualRetry=isManualRetryEnabled,
-              (),
             )
           })
         },
@@ -97,7 +95,6 @@ let loadPaypalSDK = (
                   publishableKey,
                 },
                 ~handleUserError=true,
-                (),
               )
 
               resolve()
@@ -146,7 +143,6 @@ let loadBraintreePaypalSdk = (
     ~value="Paypal Braintree SDK Button Clicked",
     ~eventName=PAYPAL_SDK_FLOW,
     ~paymentMethod="PAYPAL",
-    (),
   )
   Utils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
   ->then(result => {
@@ -219,7 +215,6 @@ let loadBraintreePaypalSdk = (
                               },
                               ~handleUserError=true,
                               ~manualRetry=isManualRetryEnabled,
-                              (),
                             )
                           },
                         )

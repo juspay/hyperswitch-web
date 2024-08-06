@@ -149,7 +149,6 @@ let make = (
       ~cvcNumber,
       ~cardBrand=cardNetwork,
       ~nickname,
-      (),
     )
     let banContactBody = PaymentBody.bancontactBody()
     let cardBody = if isCustomerAcceptanceRequired {
@@ -176,7 +175,6 @@ let make = (
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~manualRetry=isManualRetryEnabled,
-          (),
         )
       } else {
         if cardNumber === "" {

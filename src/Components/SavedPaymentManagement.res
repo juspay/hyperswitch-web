@@ -39,11 +39,10 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
         logger.setLogInfo(
           ~value="Successfully Deleted Saved Payment Method",
           ~eventName=DELETE_SAVED_PAYMENT_METHOD,
-          (),
         )
         setSavedMethods(prev => prev->removeSavedMethod(paymentMethodId))
       } else {
-        logger.setLogError(~value=res->JSON.stringify, ~eventName=DELETE_SAVED_PAYMENT_METHOD, ())
+        logger.setLogError(~value=res->JSON.stringify, ~eventName=DELETE_SAVED_PAYMENT_METHOD)
       }
       handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
       resolve()
@@ -53,7 +52,6 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
       logger.setLogError(
         ~value=`Error Deleting Saved Payment Method: ${exceptionMessage}`,
         ~eventName=DELETE_SAVED_PAYMENT_METHOD,
-        (),
       )
       handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
       resolve()

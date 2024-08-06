@@ -82,7 +82,6 @@ let make = (~paymentType: CardThemeType.mode) => {
               ~confirmParam=confirm.confirmParams,
               ~handleUserError=false,
               ~manualRetry=isManualRetryEnabled,
-              (),
             )
           }
         | None => ()

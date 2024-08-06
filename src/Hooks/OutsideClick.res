@@ -10,7 +10,6 @@ let useOutsideClick = (
   ~isActive,
   ~events=["click"],
   ~callback,
-  (),
 ) => {
   let useEvent0 = callback => {
     let callbackRef = React.useRef(callback)

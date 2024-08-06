@@ -64,7 +64,6 @@ let make = () => {
                   ~value=downloadCounter->Int.toString,
                   ~eventName=DISPLAY_VOUCHER,
                   ~paymentMethod,
-                  (),
                 )
               }}>
               {React.string("here")}

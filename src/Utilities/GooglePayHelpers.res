@@ -77,7 +77,6 @@ let processPayment = (
     ~handleUserError=true,
     ~isThirdPartyFlow,
     ~manualRetry=isManualRetryEnabled,
-    (),
   )
 }
 
