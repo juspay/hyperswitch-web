@@ -90,9 +90,9 @@ export default function CheckoutForm() {
       return;
     }
     hyper.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
-      console.log("-retrieve called", paymentIntent.status);
-      handlePaymentStatus(paymentIntent.status);
-    });
+      console.log("-retrieve called", paymentIntent);
+      handlePaymentStatus(paymentIntent?.status);
+    }).catch(err => console.log(err));
   }, [hyper, navigate]);
 
   const options = {
@@ -105,6 +105,14 @@ export default function CheckoutForm() {
         type: "default",
         height: 55,
       },
+    },
+    sdkHandleConfirmPayment: {
+      handleConfirm: true,
+      buttonText: "SDK Pay Now",
+      confirmParams: {
+        return_url: "http://localhost:9060",
+      },
+      allowButtonBeforeValidation: true,
     },
   };
 

@@ -1,0 +1,23 @@
+{
+  "name": "cypress-tests",
+  "version": "1.0.0",
+  "description": "Test cases in cypress",
+  "main": "cypress.config.js",
+  "scripts": {
+    "lint": "./node_modules/.bin/tslint -c tslint.json -p cypress/**/*.ts -t stylish",
+    "test": "npm test",
+    "cypress": "cypress open",
+    "cypress:ci": "npx cypress run --record --key 698b8766-019d-4271-9316-504287f50eaa"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juspay/hyperswitch-web/cypress-tests"
+  },
+  "author": "juspay/hyperswitch-web-sdk",
+  "license": "ISC",
+  "devDependencies": {
+    "cypress": "^13.13.2",
+    "cypress-iframe": "^1.0.1",
+    "typescript": "^5.5.4"
+  }
+}

@@ -273,6 +273,7 @@ let make = (
           width: "fit-content",
           color: themeObj.colorPrimary,
         }
+        dataTestId={TestUtils.addNewCardIcon}
         onClick={_ => setShowFields(_ => true)}>
         <Icon name="circle-plus" size=22 />
         {React.string(localeString.morePaymentMethods)}

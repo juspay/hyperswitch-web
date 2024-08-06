@@ -102,6 +102,7 @@ let make = (
             width: fieldWidth,
             height,
           }
+          dataTestId={name}
           disabled=readOnly
           ref={inputRef->ReactDOM.Ref.domRef}
           type_

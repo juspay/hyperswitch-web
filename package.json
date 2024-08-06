@@ -25,7 +25,7 @@
     "build": "webpack --config webpack.common.js",
     "build:sandbox": "sdkEnv=sandbox webpack --config webpack.common.js",
     "build:integ": "sdkEnv=integ webpack --config webpack.common.js",
-    "test": "react-scripts test",
+    "test": "cd cypress-tests && npm run cypress",
     "eject": "react-scripts eject",
     "re:build": "rescript",
     "re:clean": "rescript clean",

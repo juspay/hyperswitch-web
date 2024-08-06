@@ -259,6 +259,7 @@ let make = (
               className={innerLayout === Compressed && cardError->String.length > 0
                 ? "border-b-0"
                 : ""}
+              name=TestUtils.cardNoInputTestId
             />
             <div
               className="flex flex-row w-full place-content-between"
@@ -280,6 +281,7 @@ let make = (
                   maxLength=7
                   inputRef=expiryRef
                   placeholder=localeString.expiryPlaceholder
+                  name=TestUtils.expiryInputTestId
                 />
               </div>
               <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
@@ -304,6 +306,7 @@ let make = (
                   maxLength=4
                   inputRef=cvcRef
                   placeholder="123"
+                  name=TestUtils.cardCVVInputTestId
                 />
               </div>
             </div>

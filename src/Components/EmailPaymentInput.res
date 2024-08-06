@@ -63,9 +63,9 @@ let make = (~paymentType) => {
       onBlur
       paymentType
       type_="email"
-      name="email"
       inputRef=emailRef
       placeholder="Eg: johndoe@gmail.com"
+      name=TestUtils.emailInputTestId
     />
   </RenderIf>
 }
