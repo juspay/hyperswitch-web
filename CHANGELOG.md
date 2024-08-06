@@ -1,3 +1,10 @@
+## [0.80.5](https://github.com/juspay/hyperswitch-web/compare/v0.80.4...v0.80.5) (2024-08-06)
+
+
+### Bug Fixes
+
+* semantic package update ([#538](https://github.com/juspay/hyperswitch-web/issues/538)) ([8ab2730](https://github.com/juspay/hyperswitch-web/commit/8ab27309993eac1d19427e2b41820f5244ca5ae9))
+
 ## [0.80.4](https://github.com/juspay/hyperswitch-web/compare/v0.80.3...v0.80.4) (2024-08-05)
 
 
