@@ -1,3 +1,10 @@
+## [0.80.6](https://github.com/juspay/hyperswitch-web/compare/v0.80.5...v0.80.6) (2024-08-06)
+
+
+### Bug Fixes
+
+* parse exn error handle ([#542](https://github.com/juspay/hyperswitch-web/issues/542)) ([79ed07a](https://github.com/juspay/hyperswitch-web/commit/79ed07a829ae2c5f62959b8acb929edaab1f42c2))
+
 ## [0.80.5](https://github.com/juspay/hyperswitch-web/compare/v0.80.4...v0.80.5) (2024-08-06)
 
 
