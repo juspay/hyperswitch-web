@@ -317,15 +317,15 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 postSubmitMessage(dict)
 
                 if isSdkButton {
-                  if !(val->JSON.Decode.bool->Option.getOr(false)) {
+                  if !(val->getBoolFromJson(false)) {
                     resolve1(json)
                   } else {
                     resolve1(data)
                     Window.replace(returnUrl)
                   }
-                } else if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
+                } else if val->getBoolFromJson(false) && redirect === "always" {
                   Window.replace(returnUrl)
-                } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
+                } else if !(val->getBoolFromJson(false)) {
                   resolve1(json)
                 } else {
                   resolve1(data)
@@ -500,7 +500,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                   ~eventName=CONFIRM_CARD_PAYMENT,
                 )
                 let url = decodedData->getString("return_url", "/")
-                if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
+                if val->getBoolFromJson(false) && url !== "/" {
                   Window.replace(url)
                 } else {
                   resolve(json)

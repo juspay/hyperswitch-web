@@ -13,9 +13,9 @@ let useIsGuestCustomer = () => {
 let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false) => {
   open RecoilAtoms
 
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let setIsPayNowButtonDisable = RecoilAtoms.payNowButtonDisable->Recoil.useSetRecoilState
-  let {sdkHandleConfirmPayment} = optionAtom->Recoil.useRecoilValueFromAtom
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let setIsPayNowButtonDisable = Recoil.useSetRecoilState(payNowButtonDisable)
+  let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   React.useEffect(() => {
     if !sdkHandleConfirmPayment.allowButtonBeforeValidation {
