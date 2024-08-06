@@ -34,7 +34,6 @@ let cardPaymentBody = (
   ~cvcNumber,
   ~cardBrand,
   ~nickname="",
-  (),
 ) => {
   let cardBody = [
     ("card_number", cardNumber->CardUtils.clearSpaces->JSON.Encode.string),
@@ -587,7 +586,7 @@ let afterpayRedirectionBody = () => [
   ),
 ]
 
-let giroPayBody = (~name, ~iban="", ()) => [
+let giroPayBody = (~name, ~iban="") => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "giropay"->JSON.Encode.string),
   (
@@ -1089,7 +1088,7 @@ let getPaymentBody = (
     | _ =>
       dynamicPaymentBody(paymentMethod, paymentMethodType)
     }
-  | "giropay" => giroPayBody(~name=fullName, ())
+  | "giropay" => giroPayBody(~name=fullName)
   | "trustly" => trustlyBody(~country)
   | "online_banking_poland" => polandOB(~bank)
   | "online_banking_czech_republic" => czechOB(~bank)

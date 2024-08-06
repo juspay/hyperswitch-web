@@ -120,6 +120,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       let localeString = await CardTheme.getLocaleObject(
         optionsLocaleString == "" ? config.locale : optionsLocaleString,
       )
+      let constantString = await CardTheme.getConstantStringsObject()
       setConfig(_ => {
         config: {
           appearance,
@@ -131,6 +132,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         },
         themeObj: appearance.variables,
         localeString,
+        constantString,
         showLoader: config.loader == Auto || config.loader == Always,
       })
     } catch {
@@ -154,24 +156,18 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
     switch updatedState {
     | Loaded(_) =>
-      logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
+      logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
     | Loading =>
-      logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
+      logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
     | SemiLoaded => {
         setPaymentMethodList(_ => updatedState)
-        logger.setLogInfo(
-          ~value="SemiLoaded",
-          ~eventName=LOADER_CHANGED,
-          ~latency=finalLoadLatency,
-          (),
-        )
+        logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
       }
     | LoadError(x) =>
       logger.setLogError(
         ~value="LoadError: " ++ x->JSON.stringify,
         ~eventName=LOADER_CHANGED,
         ~latency=finalLoadLatency,
-        (),
       )
     }
     Window.addEventListener("click", ev =>
@@ -216,11 +212,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   React.useEffect(() => {
     open Promise
     let handleFun = (ev: Window.event) => {
-      let json = try {
-        ev.data->JSON.parseExn
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
+      let json = ev.data->safeParse
       try {
         let dict = json->getDictFromJson
         if dict->getDictIsSome("paymentElementCreate") {
@@ -284,7 +276,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value=Window.hrefWithoutSearch,
                 ~eventName=APP_RENDERED,
                 ~latency=initLoadlatency,
-                (),
               )
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
@@ -299,7 +290,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~eventName=PAYMENT_OPTIONS_PROVIDED,
                 ~latency=renderLatency,
                 ~value="",
-                (),
               )
             }
           } else if dict->getDictIsSome("paymentOptions") {
@@ -417,14 +407,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             | LoadError(x) =>
               logger.setLogError(
                 ~value="LoadError: " ++ x->JSON.stringify,
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             | _ => ()
             }
@@ -440,7 +428,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                     ~value="Loaded",
                     ~eventName=LOADER_CHANGED,
                     ~latency=finalLoadLatency,
-                    (),
                   )
                 : evalMethodsList()
             | NoResult(_) => evalMethodsList()
@@ -469,14 +456,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             | LoadError(x) =>
               logger.setLogError(
                 ~value="LoadError: " ++ x->JSON.stringify,
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             | _ => ()
             }
@@ -489,7 +474,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             } else {
               evalMethodsList()
@@ -516,14 +500,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             | LoadError(x) =>
               logger.setLogError(
                 ~value="LoadError: " ++ x->JSON.stringify,
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
 
             | _ => ()
@@ -537,7 +519,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             } else {
               evalMethodsList()

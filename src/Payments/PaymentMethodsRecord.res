@@ -692,7 +692,6 @@ let getPaymentMethodFields = (
   requiredFields: array<required_fields>,
   ~isSavedCardFlow=false,
   ~isAllStoredCardsHaveName=false,
-  (),
 ) => {
   let isAnyBillingDetailEmpty = requiredFields->getIsAnyBillingDetailEmpty
   let requiredFieldsArr = requiredFields->Array.map(requiredField => {
@@ -802,6 +801,7 @@ type paymentMethodList = {
   mandate_payment: option<mandate>,
   payment_type: payment_type,
   merchant_name: string,
+  collect_billing_details_from_wallets: bool,
 }
 
 let defaultPaymentMethodType = {
@@ -823,6 +823,7 @@ let defaultList = {
   mandate_payment: None,
   payment_type: NONE,
   merchant_name: "",
+  collect_billing_details_from_wallets: true,
 }
 let getMethod = str => {
   switch str {
@@ -1030,6 +1031,11 @@ let itemToObjMapper = dict => {
     mandate_payment: getMandate(dict, "mandate_payment"),
     payment_type: getString(dict, "payment_type", "")->paymentTypeMapper,
     merchant_name: getString(dict, "merchant_name", ""),
+    collect_billing_details_from_wallets: getBool(
+      dict,
+      "collect_billing_details_from_wallets",
+      true,
+    ),
   }
 }
 
@@ -1050,11 +1056,7 @@ let buildFromPaymentList = (plist: paymentMethodList) => {
       )
       {
         paymentMethodName,
-        fields: getPaymentMethodFields(
-          paymentMethodName,
-          individualPaymentMethod.required_fields,
-          (),
-        ),
+        fields: getPaymentMethodFields(paymentMethodName, individualPaymentMethod.required_fields),
         paymentFlow: paymentExperience,
         handleUserError,
         methodType,

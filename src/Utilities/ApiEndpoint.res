@@ -8,7 +8,7 @@ let setApiEndPoint = str => {
   apiEndPoint := Some(str)
 }
 
-let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false, ()) => {
+let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false) => {
   let testMode = publishableKey->String.startsWith("pk_snd_")
   switch apiEndPoint.contents {
   | Some(str) => str
@@ -18,7 +18,7 @@ let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false, ()) => {
   }
 }
 
-let addCustomPodHeader = (arr: array<(string, string)>, ~switchToCustomPod=?, ()) => {
+let addCustomPodHeader = (arr: array<(string, string)>, ~switchToCustomPod=?) => {
   let customPod = switch switchToCustomPod {
   | Some(val) => val
   | None => false

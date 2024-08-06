@@ -148,6 +148,17 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~sessions,
   )
 
+  let dict = sessions->getDictFromJson
+  let sessionObj = SessionsType.itemToObjMapper(dict, Others)
+  let applePaySessionObj = SessionsType.itemToObjMapper(dict, ApplePayObject)
+  let applePayToken = SessionsType.getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
+  let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
+  let googlePayThirdPartySessionObj = SessionsType.itemToObjMapper(dict, GooglePayThirdPartyObject)
+  let googlePayThirdPartyToken = SessionsType.getPaymentSessionObj(
+    googlePayThirdPartySessionObj.sessionsToken,
+    Gpay,
+  )
+
   React.useEffect(() => {
     switch paymentMethodList {
     | Loaded(paymentlist) =>
@@ -164,7 +175,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
               SDK_CONNECTOR_WARNING,
               ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
               ~logger=loggerState,
-              (),
             )
           } else if !checkPriorityList(paymentMethodOrder) {
             ErrorUtils.manageErrorWarning(
@@ -174,7 +184,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
                   ", ",
                 )} . Please enable Card Payment as 1st priority to show it as default.`,
               ~logger=loggerState,
-              (),
             )
           }
         : ()
@@ -213,7 +222,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     cardsToRender(cardsContainerWidth)
   }, [cardsContainerWidth])
   let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
+    let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
       postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
@@ -257,7 +266,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         ~value="",
         ~eventName=PAYMENT_METHOD_CHANGED,
         ~paymentMethod=selectedOption->String.toUpperCase,
-        (),
       )
     }
     None
@@ -317,6 +325,30 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <React.Suspense fallback={loader()}>
           <BoletoLazy paymentType />
         </React.Suspense>
+      | ApplePay =>
+        switch applePayToken {
+        | ApplePayTokenOptional(optToken) =>
+          <ApplePayLazy sessionObj=optToken walletOptions paymentType />
+        | _ => React.null
+        }
+      | GooglePay =>
+        <SessionPaymentWrapper type_={Wallet}>
+          {switch gPayToken {
+          | OtherTokenOptional(optToken) =>
+            switch googlePayThirdPartyToken {
+            | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
+              <GPayLazy
+                sessionObj=optToken
+                thirdPartySessionObj=googlePayThirdPartyOptToken
+                walletOptions
+                paymentType
+              />
+            | _ =>
+              <GPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions paymentType />
+            }
+          | _ => React.null
+          }}
+        </SessionPaymentWrapper>
       | _ =>
         <React.Suspense fallback={loader()}>
           <PaymentMethodsWrapperLazy paymentType paymentMethodName=selectedOption />

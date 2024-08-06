@@ -1,3 +1,56 @@
+## [0.80.7](https://github.com/juspay/hyperswitch-web/compare/v0.80.6...v0.80.7) (2024-08-06)
+
+## [0.80.6](https://github.com/juspay/hyperswitch-web/compare/v0.80.5...v0.80.6) (2024-08-06)
+
+
+### Bug Fixes
+
+* parse exn error handle ([#542](https://github.com/juspay/hyperswitch-web/issues/542)) ([79ed07a](https://github.com/juspay/hyperswitch-web/commit/79ed07a829ae2c5f62959b8acb929edaab1f42c2))
+
+## [0.80.5](https://github.com/juspay/hyperswitch-web/compare/v0.80.4...v0.80.5) (2024-08-06)
+
+
+### Bug Fixes
+
+* semantic package update ([#538](https://github.com/juspay/hyperswitch-web/issues/538)) ([8ab2730](https://github.com/juspay/hyperswitch-web/commit/8ab27309993eac1d19427e2b41820f5244ca5ae9))
+
+## [0.80.4](https://github.com/juspay/hyperswitch-web/compare/v0.80.3...v0.80.4) (2024-08-05)
+
+
+### Bug Fixes
+
+* webpack upgraded to new version for removing vulnerability ([#536](https://github.com/juspay/hyperswitch-web/issues/536)) ([c109c7d](https://github.com/juspay/hyperswitch-web/commit/c109c7d81f3e1cb9738c90e49e358ab53d7b6886))
+
+## [0.80.3](https://github.com/juspay/hyperswitch-web/compare/v0.80.2...v0.80.3) (2024-08-05)
+
+
+### Bug Fixes
+
+* package removal ([#534](https://github.com/juspay/hyperswitch-web/issues/534)) ([179a9a7](https://github.com/juspay/hyperswitch-web/commit/179a9a7986825df5b58739ee303888da4a312666))
+
+## [0.80.2](https://github.com/juspay/hyperswitch-web/compare/v0.80.1...v0.80.2) (2024-08-02)
+
+## [0.80.1](https://github.com/juspay/hyperswitch-web/compare/v0.80.0...v0.80.1) (2024-08-02)
+
+
+### Bug Fixes
+
+* removal of unnecessary package ([#532](https://github.com/juspay/hyperswitch-web/issues/532)) ([d9ae21f](https://github.com/juspay/hyperswitch-web/commit/d9ae21f37e4503e27b866ed1249f2ea59e2ef0d5))
+
+# [0.80.0](https://github.com/juspay/hyperswitch-web/compare/v0.79.0...v0.80.0) (2024-07-31)
+
+
+### Features
+
+* added support for collecting_billing_details_from_wallets ([#529](https://github.com/juspay/hyperswitch-web/issues/529)) ([4193d85](https://github.com/juspay/hyperswitch-web/commit/4193d85554630affafde70ece98ff3df70cf8762))
+
+# [0.79.0](https://github.com/juspay/hyperswitch-web/compare/v0.78.1...v0.79.0) (2024-07-31)
+
+
+### Features
+
+* **payout:** add localisation for payout widget ([#520](https://github.com/juspay/hyperswitch-web/issues/520)) ([56edd9e](https://github.com/juspay/hyperswitch-web/commit/56edd9e7486c1f0187c10e6fc4d9440b6966f73b))
+
 ## [0.78.1](https://github.com/juspay/hyperswitch-web/compare/v0.78.0...v0.78.1) (2024-07-30)
 
 

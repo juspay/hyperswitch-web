@@ -110,7 +110,6 @@ let manageErrorWarning = (
   key: OrcaLogger.eventName,
   ~dynamicStr="",
   ~logger: OrcaLogger.loggerMake,
-  (),
 ) => {
   let entry = errorWarning->Array.find(((value, _, _)) => value == key)
   switch entry {
@@ -126,7 +125,7 @@ let manageErrorWarning = (
       | Error => ERROR
       }
 
-      logger.setLogError(~value, ~eventName, ~logType, ~logCategory=USER_ERROR, ())
+      logger.setLogError(~value, ~eventName, ~logType, ~logCategory=USER_ERROR)
 
       switch type_ {
       | Warning => Console.warn(value)
@@ -146,7 +145,7 @@ let unknownKeysWarning = (validKeysArr, dict: Dict.t<JSON.t>, dictType: string, 
     if validKeysArr->Array.includes(key) {
       ()
     } else {
-      manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`'${key}' key in ${dictType}`, ~logger, ())
+      manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`'${key}' key in ${dictType}`, ~logger)
     }
   })
 }
@@ -167,7 +166,6 @@ let unknownPropValueWarning = (
     UNKNOWN_VALUE,
     ~dynamicStr=`'${inValidValue}' value in ${dictType}, Expected ${expectedValues}`,
     ~logger,
-    (),
   )
 }
 let valueOutRangeWarning = (num: int, dictType, range, ~logger: OrcaLogger.loggerMake) => {
@@ -175,6 +173,5 @@ let valueOutRangeWarning = (num: int, dictType, range, ~logger: OrcaLogger.logge
     VALUE_OUT_OF_RANGE,
     ~dynamicStr=`${num->Int.toString} value in ${dictType} Expected value between ${range}`,
     ~logger: OrcaLogger.loggerMake,
-    (),
   )
 }

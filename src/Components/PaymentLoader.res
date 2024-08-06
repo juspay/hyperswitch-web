@@ -1,13 +1,14 @@
 @react.component
 let make = () => {
+  open Utils
   let (branding, setBranding) = React.useState(_ => "auto")
 
   React.useEffect0(() => {
-    Utils.handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
+    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->JSON.parseExn
-      let dict = json->Utils.getDictFromJson
-      setBranding(_ => dict->Utils.getDictFromDict("options")->Utils.getString("branding", "auto"))
+      let json = ev.data->safeParse
+      let dict = json->getDictFromJson
+      setBranding(_ => dict->getDictFromDict("options")->getString("branding", "auto"))
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})

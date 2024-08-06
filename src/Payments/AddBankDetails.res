@@ -29,7 +29,7 @@ let make = (~paymentMethodType) => {
 
   React.useEffect0(() => {
     let onPlaidCallback = (ev: Window.event) => {
-      let json = ev.data->JSON.parseExn
+      let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson
       if dict->getBool("isPlaid", false) {
         let publicToken = dict->getDictFromDict("data")->getString("publicToken", "")
@@ -64,7 +64,7 @@ let make = (~paymentMethodType) => {
   })
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
+    let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       postFailedSubmitResponse(

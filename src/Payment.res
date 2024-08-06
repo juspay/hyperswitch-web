@@ -221,13 +221,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }
 
   let submitAPICall = (body, confirmParam) => {
-    intent(
-      ~bodyArr=body,
-      ~confirmParam,
-      ~handleUserError=false,
-      ~manualRetry=isManualRetryEnabled,
-      (),
-    )
+    intent(~bodyArr=body, ~confirmParam, ~handleUserError=false, ~manualRetry=isManualRetryEnabled)
   }
   React.useEffect(() => {
     setCvcNumber(_ => "")
@@ -269,7 +263,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardHolderName="",
           ~cvcNumber,
           ~cardBrand=cardNetwork,
-          (),
         )
       | CardNumberElement =>
         let (month, year) = getExpiryDates(getCardElementValue(iframeId, "card-expiry"))
@@ -281,7 +274,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardHolderName="",
           ~cvcNumber=localCvcNumber,
           ~cardBrand=cardNetwork,
-          (),
         )
       | _ => []
       }
@@ -316,21 +308,18 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, [paymentMode])
 
   React.useEffect0(() => {
+    open Utils
     let handleFun = (ev: Window.event) => {
-      let json = try {
-        ev.data->JSON.parseExn
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
+      let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson
       if dict->Dict.get("doBlur")->Option.isSome {
-        logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR, ())
+        logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR)
         setBlurState(_ => true)
       } else if dict->Dict.get("doFocus")->Option.isSome {
-        logger.setLogInfo(~value="doFocus Triggered", ~eventName=FOCUS, ())
+        logger.setLogInfo(~value="doFocus Triggered", ~eventName=FOCUS)
         cardRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
       } else if dict->Dict.get("doClearValues")->Option.isSome {
-        logger.setLogInfo(~value="doClearValues Triggered", ~eventName=CLEAR, ())
+        logger.setLogInfo(~value="doClearValues Triggered", ~eventName=CLEAR)
         //clear all values
         setCardNumber(_ => "")
         setCardExpiry(_ => "")
@@ -343,19 +332,20 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
         setIsCVCValid(_ => None)
       }
     }
-    Utils.handleMessage(handleFun, "Error in parsing sent Data")
+    handleMessage(handleFun, "Error in parsing sent Data")
   })
 
   React.useEffect(() => {
+    open Utils
     let handleDoSubmit = (ev: Window.event) => {
-      let json = ev.data->JSON.parseExn
-      let jsonDict = json->Utils.getDictFromJson
+      let json = ev.data->safeParse
+      let jsonDict = json->getDictFromJson
       let confirm = jsonDict->ConfirmType.itemToObjMapper
       if confirm.doSubmit {
         submitValue(ev, confirm.confirmParams)
       }
     }
-    Utils.handleMessage(handleDoSubmit, "")
+    handleMessage(handleDoSubmit, "")
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
   React.useEffect(() => {
