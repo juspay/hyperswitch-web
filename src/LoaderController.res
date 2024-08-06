@@ -218,11 +218,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   React.useEffect(() => {
     open Promise
     let handleFun = (ev: Window.event) => {
-      let json = try {
-        ev.data->JSON.parseExn
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
+      let json = ev.data->safeParse
       try {
         let dict = json->getDictFromJson
         if dict->getDictIsSome("paymentElementCreate") {

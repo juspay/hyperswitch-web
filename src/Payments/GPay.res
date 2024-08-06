@@ -184,11 +184,7 @@ let make = (
 
   React.useEffect0(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
-      let json = try {
-        ev.data->JSON.parseExn
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
+      let json = ev.data->safeParse
       let dict = json->getDictFromJson
       try {
         if dict->Dict.get("googlePaySyncPayment")->Option.isSome {

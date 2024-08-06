@@ -316,12 +316,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, [paymentMode])
 
   React.useEffect0(() => {
+    open Utils
     let handleFun = (ev: Window.event) => {
-      let json = try {
-        ev.data->JSON.parseExn
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
+      let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson
       if dict->Dict.get("doBlur")->Option.isSome {
         logger.setLogInfo(~value="doBlur Triggered", ~eventName=BLUR, ())
@@ -343,19 +340,20 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
         setIsCVCValid(_ => None)
       }
     }
-    Utils.handleMessage(handleFun, "Error in parsing sent Data")
+    handleMessage(handleFun, "Error in parsing sent Data")
   })
 
   React.useEffect(() => {
+    open Utils
     let handleDoSubmit = (ev: Window.event) => {
-      let json = ev.data->JSON.parseExn
-      let jsonDict = json->Utils.getDictFromJson
+      let json = ev.data->safeParse
+      let jsonDict = json->getDictFromJson
       let confirm = jsonDict->ConfirmType.itemToObjMapper
       if confirm.doSubmit {
         submitValue(ev, confirm.confirmParams)
       }
     }
-    Utils.handleMessage(handleDoSubmit, "")
+    handleMessage(handleDoSubmit, "")
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
   React.useEffect(() => {
