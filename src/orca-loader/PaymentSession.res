@@ -15,7 +15,7 @@ let make = (
     ->Option.flatMap(x => x->Dict.get("switchToCustomPod"))
     ->Option.flatMap(JSON.Decode.bool)
     ->Option.getOr(false)
-  let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
+  let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
 
   let defaultInitPaymentSession = {
     getCustomerSavedPaymentMethods: _ =>

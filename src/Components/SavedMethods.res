@@ -19,7 +19,7 @@ let make = (
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
-    loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT, ())
+    loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT)
   }
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
   let {displaySavedPaymentMethodsCheckbox, readOnly} = Recoil.useRecoilValueFromAtom(
@@ -155,7 +155,6 @@ let make = (
               ~confirmParam=confirm.confirmParams,
               ~handleUserError=false,
               ~manualRetry=isManualRetryEnabled,
-              (),
             )
           }
         | Some("apple_pay") =>
@@ -173,7 +172,6 @@ let make = (
               ~confirmParam=confirm.confirmParams,
               ~handleUserError=false,
               ~manualRetry=isManualRetryEnabled,
-              (),
             )
           }
         | _ =>
@@ -186,7 +184,6 @@ let make = (
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
             ~manualRetry=isManualRetryEnabled,
-            (),
           )
         }
       } else {

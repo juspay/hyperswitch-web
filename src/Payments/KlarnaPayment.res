@@ -59,7 +59,6 @@ let make = (~paymentType) => {
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~manualRetry=isManualRetryEnabled,
-          (),
         )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")

@@ -742,7 +742,6 @@ let combineCardExpiryAndCvc = arr => {
 let updateDynamicFields = (
   arr: array<PaymentMethodsRecord.paymentMethodsFields>,
   billingAddress,
-  (),
 ) => {
   arr
   ->Utils.removeDuplicate

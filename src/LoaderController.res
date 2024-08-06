@@ -156,24 +156,18 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
     switch updatedState {
     | Loaded(_) =>
-      logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
+      logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
     | Loading =>
-      logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency, ())
+      logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
     | SemiLoaded => {
         setPaymentMethodList(_ => updatedState)
-        logger.setLogInfo(
-          ~value="SemiLoaded",
-          ~eventName=LOADER_CHANGED,
-          ~latency=finalLoadLatency,
-          (),
-        )
+        logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
       }
     | LoadError(x) =>
       logger.setLogError(
         ~value="LoadError: " ++ x->JSON.stringify,
         ~eventName=LOADER_CHANGED,
         ~latency=finalLoadLatency,
-        (),
       )
     }
     Window.addEventListener("click", ev =>
@@ -286,7 +280,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value=Window.hrefWithoutSearch,
                 ~eventName=APP_RENDERED,
                 ~latency=initLoadlatency,
-                (),
               )
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
@@ -301,7 +294,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~eventName=PAYMENT_OPTIONS_PROVIDED,
                 ~latency=renderLatency,
                 ~value="",
-                (),
               )
             }
           } else if dict->getDictIsSome("paymentOptions") {
@@ -419,14 +411,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             | LoadError(x) =>
               logger.setLogError(
                 ~value="LoadError: " ++ x->JSON.stringify,
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             | _ => ()
             }
@@ -442,7 +432,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                     ~value="Loaded",
                     ~eventName=LOADER_CHANGED,
                     ~latency=finalLoadLatency,
-                    (),
                   )
                 : evalMethodsList()
             | NoResult(_) => evalMethodsList()
@@ -471,14 +460,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             | LoadError(x) =>
               logger.setLogError(
                 ~value="LoadError: " ++ x->JSON.stringify,
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             | _ => ()
             }
@@ -491,7 +478,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             } else {
               evalMethodsList()
@@ -518,14 +504,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             | LoadError(x) =>
               logger.setLogError(
                 ~value="LoadError: " ++ x->JSON.stringify,
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
 
             | _ => ()
@@ -539,7 +523,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ~value="Loaded",
                 ~eventName=LOADER_CHANGED,
                 ~latency=finalLoadLatency,
-                (),
               )
             } else {
               evalMethodsList()

@@ -173,13 +173,12 @@ let getCustomerSavedPaymentMethods = (
             ~value="States Loaded",
             ~eventName=APPLE_PAY_FLOW,
             ~paymentMethod="APPLE_PAY",
-            (),
           )
           stateJson->completeApplePayPayment
         })
         ->catch(err => {
           let value = "Error Loading States : " ++ err->Identity.anyTypeToJson->JSON.stringify
-          logger.setLogInfo(~value, ~eventName=APPLE_PAY_FLOW, ~paymentMethod="APPLE_PAY", ())
+          logger.setLogInfo(~value, ~eventName=APPLE_PAY_FLOW, ~paymentMethod="APPLE_PAY")
           completeApplePayPayment(JSON.Encode.null)
         })
         ->ignore
@@ -205,7 +204,7 @@ let getCustomerSavedPaymentMethods = (
         let metadata = json->Identity.anyTypeToJson
 
         let value = "Payment Data Filled: New Payment Method"
-        logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="GOOGLE_PAY", ())
+        logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="GOOGLE_PAY")
 
         let completeGooglePayPayment = stateJson => {
           let body = GooglePayHelpers.getGooglePayBodyFromResponse(
@@ -236,7 +235,6 @@ let getCustomerSavedPaymentMethods = (
               ~value="States Loaded",
               ~eventName=GOOGLE_PAY_FLOW,
               ~paymentMethod="GOOGLE_PAY",
-              (),
             )
             stateJson->completeGooglePayPayment
           },
@@ -244,7 +242,7 @@ let getCustomerSavedPaymentMethods = (
         ->catch(
           err => {
             let value = "Error Loading States : " ++ err->Identity.anyTypeToJson->JSON.stringify
-            logger.setLogInfo(~value, ~eventName=GOOGLE_PAY_FLOW, ~paymentMethod="GOOGLE_PAY", ())
+            logger.setLogInfo(~value, ~eventName=GOOGLE_PAY_FLOW, ~paymentMethod="GOOGLE_PAY")
             completeGooglePayPayment(JSON.Encode.null)
           },
         )
@@ -255,7 +253,6 @@ let getCustomerSavedPaymentMethods = (
           ~eventName=GOOGLE_PAY_FLOW,
           ~paymentMethod="GOOGLE_PAY",
           ~logType=DEBUG,
-          (),
         )
 
         handleFailureResponse(
@@ -336,7 +333,6 @@ let getCustomerSavedPaymentMethods = (
         ~optLogger=Some(logger),
         ~switchToCustomPod=false,
         ~endpoint,
-        (),
       )
       ->then(sessionDetails => {
         let componentName = "headless"
@@ -384,7 +380,6 @@ let getCustomerSavedPaymentMethods = (
                 ~eventName=GOOGLE_PAY_FLOW,
                 ~paymentMethod="GOOGLE_PAY",
                 ~logType=DEBUG,
-                (),
               )
               false->resolve
             },
@@ -396,7 +391,6 @@ let getCustomerSavedPaymentMethods = (
               ~eventName=GOOGLE_PAY_FLOW,
               ~paymentMethod="GOOGLE_PAY",
               ~logType=DEBUG,
-              (),
             )
             false->resolve
           }

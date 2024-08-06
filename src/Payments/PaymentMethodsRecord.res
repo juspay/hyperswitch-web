@@ -692,7 +692,6 @@ let getPaymentMethodFields = (
   requiredFields: array<required_fields>,
   ~isSavedCardFlow=false,
   ~isAllStoredCardsHaveName=false,
-  (),
 ) => {
   let isAnyBillingDetailEmpty = requiredFields->getIsAnyBillingDetailEmpty
   let requiredFieldsArr = requiredFields->Array.map(requiredField => {
@@ -1057,11 +1056,7 @@ let buildFromPaymentList = (plist: paymentMethodList) => {
       )
       {
         paymentMethodName,
-        fields: getPaymentMethodFields(
-          paymentMethodName,
-          individualPaymentMethod.required_fields,
-          (),
-        ),
+        fields: getPaymentMethodFields(paymentMethodName, individualPaymentMethod.required_fields),
         paymentFlow: paymentExperience,
         handleUserError,
         methodType,

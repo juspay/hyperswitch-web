@@ -45,7 +45,6 @@ let make = () => {
       ~value="Paypal Button Clicked",
       ~eventName=PAYPAL_FLOW,
       ~paymentMethod="PAYPAL",
-      (),
     )
     setPaypalClicked(_ => true)
     open Promise
@@ -71,7 +70,6 @@ let make = () => {
           },
           ~handleUserError=true,
           ~manualRetry=isManualRetryEnabled,
-          (),
         )
       } else {
         setPaypalClicked(_ => false)

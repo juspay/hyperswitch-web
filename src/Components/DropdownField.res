@@ -37,7 +37,7 @@ let make = (
 
   let handleFocus = _ => {
     setInputFocused(_ => true)
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
+    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
   }
 
   let handleChange = ev => {

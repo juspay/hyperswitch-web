@@ -8,7 +8,7 @@ let make = () => {
   let threeDsAuthoriseUrl = React.useRef("")
   let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
-  let logger = OrcaLogger.make(~source=Elements(Payment), ())
+  let logger = OrcaLogger.make(~source=Elements(Payment))
 
   let handleFrictionLess = () => {
     let ele = Window.querySelector("#threeDsAuthDiv")
@@ -82,7 +82,6 @@ let make = () => {
               ~eventName=DISPLAY_THREE_DS_SDK,
               ~value=transStatus,
               ~paymentMethod="CARD",
-              (),
             )
 
             switch ele->Nullable.toOption {
@@ -112,7 +111,6 @@ let make = () => {
             ~value=exceptionMessage->JSON.stringify,
             ~paymentMethod="CARD",
             ~logType=ERROR,
-            (),
           )
           let errorObj = PaymentError.itemToObjMapper(dict)
           postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)

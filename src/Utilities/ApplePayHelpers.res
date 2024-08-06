@@ -26,7 +26,6 @@ let processPayment = (
     ~handleUserError=true,
     ~isThirdPartyFlow,
     ~manualRetry=isManualRetryEnabled,
-    (),
   )
 }
 
@@ -105,7 +104,7 @@ let startApplePaySession = (
     ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson)
     applePaySessionRef := Nullable.null
     let value = "Payment Data Filled: New Payment Method"
-    logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="APPLE_PAY", ())
+    logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="APPLE_PAY")
 
     let payment = event.payment
     payment->callBackFunc
@@ -117,7 +116,6 @@ let startApplePaySession = (
       ~value="Apple Pay Payment Cancelled",
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
-      (),
     )
     switch (applePayEvent, resolvePromise) {
     | (Some(applePayEvent), _) => {
