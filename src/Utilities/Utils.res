@@ -1355,3 +1355,16 @@ let checkIs18OrAbove = dateOfBirth => {
   let compareDate = Date.makeWithYMD(~year, ~month, ~date)
   dateOfBirth <= compareDate
 }
+
+let getFirstAndLastNameFromFullName = fullName => {
+  let nameStrings = fullName->String.split(" ")
+  let firstName =
+    nameStrings
+    ->Array.get(0)
+    ->Option.flatMap(x => Some(x->JSON.Encode.string))
+    ->Option.getOr(JSON.Encode.null)
+  let lastNameStr = nameStrings->Array.sliceToEnd(~start=1)->Array.joinWith(" ")->String.trim
+  let lastNameJson = lastNameStr === "" ? JSON.Encode.null : lastNameStr->JSON.Encode.string
+
+  (firstName, lastNameJson)
+}

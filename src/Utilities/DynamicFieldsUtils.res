@@ -42,12 +42,12 @@ let isBillingAddressFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsF
 
 let getBillingAddressPathFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
   switch fieldType {
-  | AddressLine1 => "billing.address.line1"
-  | AddressLine2 => "billing.address.line2"
-  | AddressCity => "billing.address.city"
-  | AddressState => "billing.address.state"
-  | AddressCountry(_) => "billing.address.country"
-  | AddressPincode => "billing.address.zip"
+  | AddressLine1 => "payment_method_data.billing.address.line1"
+  | AddressLine2 => "payment_method_data.billing.address.line2"
+  | AddressCity => "payment_method_data.billing.address.city"
+  | AddressState => "payment_method_data.billing.address.state"
+  | AddressCountry(_) => "payment_method_data.billing.address.country"
+  | AddressPincode => "payment_method_data.billing.address.zip"
   | _ => ""
   }
 }
@@ -552,11 +552,11 @@ let useRequiredFieldsBody = (
         if item === BillingName {
           let arr = value->String.split(" ")
           acc->Dict.set(
-            "billing.address.first_name",
+            "payment_method_data.billing.address.first_name",
             arr->Array.get(0)->Option.getOr("")->JSON.Encode.string,
           )
           acc->Dict.set(
-            "billing.address.last_name",
+            "payment_method_data.billing.address.last_name",
             arr->Array.get(1)->Option.getOr("")->JSON.Encode.string,
           )
         } else {

@@ -7,24 +7,29 @@ let billingDetailsTuple = (
   ~state,
   ~postalCode,
   ~country,
-) => (
-  "billing_details",
-  [
-    ("name", fullName->JSON.Encode.string),
-    ("email", email->JSON.Encode.string),
-    (
-      "address",
-      [
-        ("line1", line1->JSON.Encode.string),
-        ("line2", line2->JSON.Encode.string),
-        ("city", city->JSON.Encode.string),
-        ("state", state->JSON.Encode.string),
-        ("zip", postalCode->JSON.Encode.string),
-        ("country", country->JSON.Encode.string),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ]->Utils.getJsonFromArrayOfJson,
-)
+) => {
+  let (firstName, lastName) = fullName->Utils.getFirstAndLastNameFromFullName
+
+  (
+    "billing",
+    [
+      ("email", email->JSON.Encode.string),
+      (
+        "address",
+        [
+          ("first_name", firstName),
+          ("last_name", lastName),
+          ("line1", line1->JSON.Encode.string),
+          ("line2", line2->JSON.Encode.string),
+          ("city", city->JSON.Encode.string),
+          ("state", state->JSON.Encode.string),
+          ("zip", postalCode->JSON.Encode.string),
+          ("country", country->JSON.Encode.string),
+        ]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]->Utils.getJsonFromArrayOfJson,
+  )
+}
 
 let cardPaymentBody = (
   ~cardNumber,
@@ -191,22 +196,22 @@ let achBankDebitBody = (
     (
       "payment_method_data",
       [
+        billingDetailsTuple(
+          ~fullName=cardHolderName,
+          ~email,
+          ~line1,
+          ~line2,
+          ~city,
+          ~state,
+          ~postalCode,
+          ~country,
+        ),
         (
           "bank_debit",
           [
             (
               "ach_bank_debit",
               [
-                billingDetailsTuple(
-                  ~fullName=cardHolderName,
-                  ~email,
-                  ~line1,
-                  ~line2,
-                  ~city,
-                  ~state,
-                  ~postalCode,
-                  ~country,
-                ),
                 ("account_number", bank.accountNumber->JSON.Encode.string),
                 ("bank_account_holder_name", bank.accountHolderName->JSON.Encode.string),
                 ("routing_number", bank.routingNumber->JSON.Encode.string),
@@ -234,22 +239,22 @@ let sepaBankDebitBody = (
     (
       "payment_method_data",
       [
+        billingDetailsTuple(
+          ~fullName,
+          ~email,
+          ~line1,
+          ~line2,
+          ~city,
+          ~state,
+          ~postalCode,
+          ~country,
+        ),
         (
           "bank_debit",
           [
             (
               "sepa_bank_debit",
               [
-                billingDetailsTuple(
-                  ~fullName,
-                  ~email,
-                  ~line1,
-                  ~line2,
-                  ~city,
-                  ~state,
-                  ~postalCode,
-                  ~country,
-                ),
                 ("iban", data.iban->JSON.Encode.string),
                 ("bank_account_holder_name", data.accountHolderName->JSON.Encode.string),
               ]->Utils.getJsonFromArrayOfJson,
@@ -276,22 +281,22 @@ let bacsBankDebitBody = (
     (
       "payment_method_data",
       [
+        billingDetailsTuple(
+          ~fullName=bankAccountHolderName,
+          ~email,
+          ~line1,
+          ~line2,
+          ~city,
+          ~state,
+          ~postalCode=zip,
+          ~country,
+        ),
         (
           "bank_debit",
           [
             (
               "bacs_bank_debit",
               [
-                billingDetailsTuple(
-                  ~fullName=bankAccountHolderName,
-                  ~email,
-                  ~line1,
-                  ~line2,
-                  ~city,
-                  ~state,
-                  ~postalCode=zip,
-                  ~country,
-                ),
                 ("bank_account_holder_name", bankAccountHolderName->JSON.Encode.string),
                 ("sort_code", sortCode->JSON.Encode.string),
                 ("account_number", accNum->JSON.Encode.string),
@@ -318,22 +323,22 @@ let becsBankDebitBody = (
     (
       "payment_method_data",
       [
+        billingDetailsTuple(
+          ~fullName,
+          ~email,
+          ~line1,
+          ~line2,
+          ~city,
+          ~state,
+          ~postalCode,
+          ~country,
+        ),
         (
           "bank_debit",
           [
             (
               "becs_bank_debit",
               [
-                billingDetailsTuple(
-                  ~fullName,
-                  ~email,
-                  ~line1,
-                  ~line2,
-                  ~city,
-                  ~state,
-                  ~postalCode,
-                  ~country,
-                ),
                 ("bsb_number", data.sortCode->JSON.Encode.string),
                 ("account_number", data.accountNumber->JSON.Encode.string),
                 ("bank_account_holder_name", data.accountHolderName->JSON.Encode.string),
@@ -697,78 +702,75 @@ let achBankTransferBody = (~email, ~connectors) => [
   (
     "payment_method_data",
     [
+      ("billing", [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
       (
         "bank_transfer",
-        [
-          (
-            "ach_bank_transfer",
-            [
-              (
-                "billing_details",
-                [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-              ),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
+        [("ach_bank_transfer", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
       ),
     ]->Utils.getJsonFromArrayOfJson,
   ),
 ]
-let bacsBankTransferBody = (~email, ~name, ~connectors) => [
-  ("payment_method", "bank_transfer"->JSON.Encode.string),
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  ("payment_method_type", "bacs"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "bank_transfer",
-        [
-          (
-            "bacs_bank_transfer",
-            [
-              (
-                "billing_details",
-                [
-                  ("email", email->JSON.Encode.string),
-                  ("name", name->JSON.Encode.string),
-                ]->Utils.getJsonFromArrayOfJson,
-              ),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
-let sepaBankTransferBody = (~email, ~name, ~country, ~connectors) => [
-  ("payment_method", "bank_transfer"->JSON.Encode.string),
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  ("payment_method_type", "sepa"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "bank_transfer",
-        [
-          (
-            "sepa_bank_transfer",
-            [
-              (
-                "billing_details",
-                [
-                  ("email", email->JSON.Encode.string),
-                  ("name", name->JSON.Encode.string),
-                ]->Utils.getJsonFromArrayOfJson,
-              ),
-              ("country", country->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
+let bacsBankTransferBody = (~email, ~name, ~connectors) => {
+  let (firstName, lastName) = name->Utils.getFirstAndLastNameFromFullName
+
+  [
+    ("payment_method", "bank_transfer"->JSON.Encode.string),
+    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+    ("payment_method_type", "bacs"->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [
+        (
+          "billing",
+          [
+            ("email", email->JSON.Encode.string),
+            (
+              "address",
+              [("first_name", firstName), ("last_name", lastName)]->Utils.getJsonFromArrayOfJson,
+            ),
+          ]->Utils.getJsonFromArrayOfJson,
+        ),
+        (
+          "bank_transfer",
+          [("bacs_bank_transfer", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
+        ),
+      ]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]
+}
+
+let sepaBankTransferBody = (~email, ~name, ~country, ~connectors) => {
+  let (firstName, lastName) = name->Utils.getFirstAndLastNameFromFullName
+
+  [
+    ("payment_method", "bank_transfer"->JSON.Encode.string),
+    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+    ("payment_method_type", "sepa"->JSON.Encode.string),
+    (
+      "payment_method_data",
+      [
+        (
+          "billing",
+          [
+            ("email", email->JSON.Encode.string),
+            (
+              "address",
+              [
+                ("first_name", firstName),
+                ("last_name", lastName),
+                ("country", country->JSON.Encode.string),
+              ]->Utils.getJsonFromArrayOfJson,
+            ),
+          ]->Utils.getJsonFromArrayOfJson,
+        ),
+        (
+          "bank_transfer",
+          [("sepa_bank_transfer", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
+        ),
+      ]->Utils.getJsonFromArrayOfJson,
+    ),
+  ]
+}
 let blikBody = (~blikCode) => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "blik"->JSON.Encode.string),
@@ -791,19 +793,10 @@ let p24Body = (~email) => [
   (
     "payment_method_data",
     [
+      ("billing", [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
       (
         "bank_redirect",
-        [
-          (
-            "przelewy24",
-            [
-              (
-                "billing_details",
-                [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-              ),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
+        [("przelewy24", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
       ),
     ]->Utils.getJsonFromArrayOfJson,
   ),
@@ -972,18 +965,11 @@ let multibancoBody = (~email) => [
   (
     "payment_method_data",
     [
+      ("billing", [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
       (
         "bank_transfer",
         [
-          (
-            "multibanco_bank_transfer",
-            [
-              (
-                "billing_details",
-                [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-              ),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
+          ("multibanco_bank_transfer", Dict.make()->JSON.Encode.object),
         ]->Utils.getJsonFromArrayOfJson,
       ),
     ]->Utils.getJsonFromArrayOfJson,
@@ -1098,7 +1084,7 @@ let getPaymentBody = (
   | "przelewy24" => p24Body(~email)
   | "online_banking_fpx" => fpxOBBody(~bank)
   | "online_banking_thailand" => thailandOBBody(~bank)
-  | "multibanco" => multibancoBody(~email)
+  | "multibanco_transfer" => multibancoBody(~email)
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)
