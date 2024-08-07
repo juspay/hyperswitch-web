@@ -176,7 +176,7 @@ let rec pollRetrievePaymentIntent = (
   open Promise
   retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod, ~isForceSync)
   ->then(json => {
-    let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+    let dict = json->getDictFromJson
     let status = dict->getString("status", "")
 
     if status === "succeeded" || status === "failed" {
@@ -261,7 +261,7 @@ let rec pollStatus = (
   open Promise
   retrieveStatus(~headers, ~switchToCustomPod, pollId, logger)
   ->then(json => {
-    let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+    let dict = json->getDictFromJson
     let status = dict->getString("status", "")
     Promise.make((resolve, _) => {
       if status === "completed" {

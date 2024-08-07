@@ -61,7 +61,7 @@ let make = () => {
       ~isForceSync=true,
     )
     ->then(json => {
-      let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+      let dict = json->getDictFromJson
       let status = dict->getString("status", "")
       let return_url = dict->getString("return_url", "")
 

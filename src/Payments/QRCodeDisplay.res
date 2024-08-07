@@ -91,7 +91,7 @@ let make = () => {
       ~switchToCustomPod,
     )
     ->then(json => {
-      let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+      let dict = json->getDictFromJson
       let status = dict->getString("status", "")
 
       if (
