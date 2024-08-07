@@ -1,3 +1,10 @@
+## [0.81.1](https://github.com/juspay/hyperswitch-web/compare/v0.81.0...v0.81.1) (2024-08-07)
+
+
+### Bug Fixes
+
+* fixed structure of billing details in payment body ([#546](https://github.com/juspay/hyperswitch-web/issues/546)) ([1e63aad](https://github.com/juspay/hyperswitch-web/commit/1e63aad43e7de2cfca8bd8127395445fbb43e109))
+
 # [0.81.0](https://github.com/juspay/hyperswitch-web/compare/v0.80.7...v0.81.0) (2024-08-07)
 
 
