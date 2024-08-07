@@ -195,7 +195,8 @@ let make = (
         | None => ()
         }
 
-        let isCopy = eventDataObject->getOptionalJsonFromJson("copy")->getBoolFromJson(false)
+        let isCopy =
+          eventDataObject->getOptionalJsonFromJson("copy")->getBoolFromOptionalJson(false)
         let text =
           eventDataObject->getOptionalJsonFromJson("copyDetails")->getStringFromOptionalJson("")
         if isCopy {
@@ -235,7 +236,7 @@ let make = (
           eventDataObject->getOptionalJsonFromJson("iframeId")->getStringFromOptionalJson("")
 
         if fullscreenIframe->Option.isSome {
-          fullscreen := fullscreenIframe->getBoolFromJson(false)
+          fullscreen := fullscreenIframe->getBoolFromOptionalJson(false)
           fullscreenParam := param->getStringFromOptionalJson("")
           fullscreenMetadata :=
             metadata
