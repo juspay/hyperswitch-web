@@ -291,43 +291,43 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             let handleMessage = (event: Types.event) => {
               let json = event.data->anyTypeToJson
               let dict = json->getDictFromJson
-              switch dict->Dict.get("submitSuccessful")->getBoolFromOptionalJson(false) {
-              | submitSuccessful =>
-                logApi(
-                  ~apiLogType=Method,
-                  ~optLogger=Some(logger),
-                  ~result=JSON.Encode.bool(submitSuccessful),
-                  ~paymentMethod="confirmPayment",
-                  ~eventName=CONFIRM_PAYMENT,
+              let submitSuccessful =
+                dict->Dict.get("submitSuccessful")->getBoolFromOptionalJson(false)
+
+              logApi(
+                ~apiLogType=Method,
+                ~optLogger=Some(logger),
+                ~result=JSON.Encode.bool(submitSuccessful),
+                ~paymentMethod="confirmPayment",
+                ~eventName=CONFIRM_PAYMENT,
+              )
+              let data = dict->getDictFromDict("data")->JSON.Encode.object
+              let returnUrl = dict->getString("url", url)
+
+              if isOneClick {
+                iframeRef.contents->Array.forEach(
+                  ifR => {
+                    // to unset one click button loader
+                    ifR->Window.iframePostMessage(
+                      [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
+                    )
+                  },
                 )
-                let data = dict->getDictFromDict("data")->JSON.Encode.object
-                let returnUrl = dict->getString("url", url)
+              }
+              postSubmitMessage(dict)
 
-                if isOneClick {
-                  iframeRef.contents->Array.forEach(
-                    ifR => {
-                      // to unset one click button loader
-                      ifR->Window.iframePostMessage(
-                        [("oneClickDoSubmit", false->JSON.Encode.bool)]->Dict.fromArray,
-                      )
-                    },
-                  )
-                }
-                postSubmitMessage(dict)
-
-                if isSdkButton {
-                  if !submitSuccessful {
-                    resolve1(json)
-                  } else {
-                    Window.replace(returnUrl)
-                  }
-                } else if submitSuccessful && redirect === "always" {
-                  Window.replace(returnUrl)
-                } else if !submitSuccessful {
+              if isSdkButton {
+                if !submitSuccessful {
                   resolve1(json)
                 } else {
-                  resolve1(data)
+                  Window.replace(returnUrl)
                 }
+              } else if submitSuccessful && redirect === "always" {
+                Window.replace(returnUrl)
+              } else if !submitSuccessful {
+                resolve1(json)
+              } else {
+                resolve1(data)
               }
             }
             let message = isOneClick
