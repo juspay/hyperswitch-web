@@ -320,7 +320,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                   if !(val->getBoolFromJson(false)) {
                     resolve1(json)
                   } else {
-                    resolve1(data)
                     Window.replace(returnUrl)
                   }
                 } else if val->getBoolFromJson(false) && redirect === "always" {
