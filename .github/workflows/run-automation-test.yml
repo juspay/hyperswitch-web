@@ -1,4 +1,4 @@
-name: Run Automation tests
+name: Run Cypress Tests
 
 on:
   push:
@@ -9,19 +9,27 @@ on:
       - main
 
 jobs:
-  build:
+  cypress:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20" # Specify your Node.js version
 
       - name: Install dependencies
-        working-directory: ./cypress-tests
-        run: npm install
+        run: npm install && npm postinstall
 
-      - name: Cypress run
+      - name: Build and start local server
+        run: npm run re:build && npm start &
+          echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
+          echo "Demo App started started"
+
+      - name: Run Cypress
         uses: cypress-io/github-action@v6
         with:
-          build: npm run re:build
-          start: npm start && cd Hyperswitch-React-Demo-App && npm start
+          working-directory: ./cypress-tests
