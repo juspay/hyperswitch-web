@@ -24,7 +24,7 @@ let default = (~paymentType: CardThemeType.mode) => {
   }, [complete])
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
+    let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if complete {
@@ -39,7 +39,6 @@ let default = (~paymentType: CardThemeType.mode) => {
           ~handleUserError=false,
           ~iframeId,
           ~manualRetry=isManualRetryEnabled,
-          (),
         )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")

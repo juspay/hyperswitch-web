@@ -129,7 +129,7 @@ let make = (
   )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
+    let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let (month, year) = CardUtils.getExpiryDates(cardExpiry)
 
@@ -149,7 +149,6 @@ let make = (
       ~cvcNumber,
       ~cardBrand=cardNetwork,
       ~nickname,
-      (),
     )
     let banContactBody = PaymentBody.bancontactBody()
     let cardBody = if isCustomerAcceptanceRequired {
@@ -176,7 +175,6 @@ let make = (
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~manualRetry=isManualRetryEnabled,
-          (),
         )
       } else {
         if cardNumber === "" {

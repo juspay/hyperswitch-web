@@ -3,7 +3,7 @@ let loadHyper = (str, option) => {
 }
 
 let loadStripe = (str, option) => {
-  ErrorUtils.manageErrorWarning(DEPRECATED_LOADSTRIPE, (), ~logger=OrcaLogger.defaultLoggerConfig)
+  ErrorUtils.manageErrorWarning(DEPRECATED_LOADSTRIPE, ~logger=OrcaLogger.defaultLoggerConfig)
   loadHyper(str, option)
 }
 

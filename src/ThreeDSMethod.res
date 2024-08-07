@@ -1,7 +1,7 @@
 open Utils
 @react.component
 let make = () => {
-  let logger = OrcaLogger.make(~source=Elements(Payment), ())
+  let logger = OrcaLogger.make(~source=Elements(Payment))
 
   let (stateMetadata, setStateMetadata) = React.useState(_ => Dict.make()->JSON.Encode.object)
 
@@ -18,7 +18,6 @@ let make = () => {
         ~eventName=THREE_DS_METHOD_RESULT,
         ~value="Y",
         ~paymentMethod="CARD",
-        (),
       )
       handlePostMessage([
         ("fullscreen", true->JSON.Encode.bool),
@@ -50,7 +49,6 @@ let make = () => {
         ~value="ThreeDS Method Opened for more than 20 seconds",
         ~eventName=THREE_DS_METHOD_RESULT,
         ~logType=DEBUG,
-        (),
       )
     }, 20000)->ignore
   }
@@ -58,7 +56,7 @@ let make = () => {
   React.useEffect0(() => {
     handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->JSON.parseExn
+      let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson
       if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         let metadata = dict->getJsonObjectFromDict("metadata")
@@ -97,7 +95,6 @@ let make = () => {
             ~value,
             ~paymentMethod="CARD",
             ~logType=ERROR,
-            (),
           )
           metadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
           handlePostMessage([

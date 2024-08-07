@@ -94,7 +94,6 @@ let make = (
         publishableKey,
       },
       ~handleUserError=true,
-      (),
     )
   }
 
@@ -103,7 +102,6 @@ let make = (
       ~value="GooglePay Button Clicked",
       ~eventName=GOOGLE_PAY_FLOW,
       ~paymentMethod="GOOGLE_PAY",
-      (),
     )
     makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
@@ -184,11 +182,7 @@ let make = (
 
   React.useEffect0(() => {
     let handleGooglePayMessages = (ev: Window.event) => {
-      let json = try {
-        ev.data->JSON.parseExn
-      } catch {
-      | _ => Dict.make()->JSON.Encode.object
-      }
+      let json = ev.data->safeParse
       let dict = json->getDictFromJson
       try {
         if dict->Dict.get("googlePaySyncPayment")->Option.isSome {

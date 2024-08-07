@@ -67,7 +67,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
         publishableKey,
       },
       ~handleUserError=true,
-      (),
     )
   }
 
@@ -211,7 +210,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
       ~value="Apple Pay Button Clicked",
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
-      (),
     )
     setApplePayClicked(_ => true)
     makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)

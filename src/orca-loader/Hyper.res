@@ -32,7 +32,7 @@ if (
   }
 }
 
-let preloadFile = (~type_, ~href=``, ()) => {
+let preloadFile = (~type_, ~href=``) => {
   let link = CommonHooks.createElement("link")
   link.href = href
   link.\"as" = type_
@@ -42,29 +42,22 @@ let preloadFile = (~type_, ~href=``, ()) => {
 }
 
 let preloader = () => {
-  preloadFile(~type_="script", ~href=`${ApiEndpoint.sdkDomainUrl}/app.js`, ())
-  preloadFile(~type_="style", ~href=`${ApiEndpoint.sdkDomainUrl}/app.css`, ())
-  preloadFile(~type_="image", ~href=`${ApiEndpoint.sdkDomainUrl}/icons/orca.svg`, ())
+  preloadFile(~type_="script", ~href=`${ApiEndpoint.sdkDomainUrl}/app.js`)
+  preloadFile(~type_="style", ~href=`${ApiEndpoint.sdkDomainUrl}/app.css`)
+  preloadFile(~type_="image", ~href=`${ApiEndpoint.sdkDomainUrl}/icons/orca.svg`)
   preloadFile(
     ~type_="style",
     ~href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700;800&display=swap",
-    (),
   )
   preloadFile(
     ~type_="style",
     ~href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Qwitcher+Grypen:wght@400;700&display=swap",
-    (),
   )
   preloadFile(
     ~type_="script",
     ~href="https://js.braintreegateway.com/web/3.88.4/js/paypal-checkout.min.js",
-    (),
   )
-  preloadFile(
-    ~type_="script",
-    ~href="https://js.braintreegateway.com/web/3.88.4/js/client.min.js",
-    (),
-  )
+  preloadFile(~type_="script", ~href="https://js.braintreegateway.com/web/3.88.4/js/client.min.js")
 }
 
 let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
@@ -93,7 +86,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ~source=Loader,
       ~merchantId=publishableKey,
       ~metadata=analyticsMetadata,
-      (),
     )
     let isReadyPromise = Promise.make((resolve, _) => {
       let handleOnReady = (event: Types.event) => {
@@ -132,7 +124,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~value=Window.hrefWithoutSearch,
           ~eventName=APP_INITIATED,
           ~timestamp=sdkTimestamp,
-          (),
         )
       }
     }->Sentry.sentryLogger
@@ -142,7 +133,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ->Array.find(url => Window.Location.hostname->String.includes(url))
       ->Option.isSome
     if !isSecure && !isLocal {
-      manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.hrefWithoutSearch, ~logger, ())
+      manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.hrefWithoutSearch, ~logger)
       Exn.raiseError("Insecure domain: " ++ Window.hrefWithoutSearch)
     }
     switch Window.getHyper->Nullable.toOption {
@@ -151,7 +142,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~value="orca-sdk initiated",
           ~eventName=APP_REINITIATED,
           ~timestamp=sdkTimestamp,
-          (),
         )
         hyperMethod
       }
@@ -164,7 +154,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             ~value="loadHyper has been called",
             ~eventName=LOADER_CALLED,
             ~timestamp=loaderTimestamp,
-            (),
           )
           if (
             publishableKey == "" ||
@@ -174,7 +163,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 publishableKey->String.startsWith("pk_prd_")
               )
           ) {
-            manageErrorWarning(INVALID_PK, (), ~logger)
+            manageErrorWarning(INVALID_PK, ~logger)
           }
 
           if (
@@ -201,7 +190,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           Utils.logInfo(Console.log2("ERROR DURING LOADING GOOGLE PAY SCRIPT", err))
         })
         Window.body->Window.appendChild(googlePayScript)
-        logger.setLogInfo(~value="GooglePay Script Loaded", ~eventName=GOOGLE_PAY_SCRIPT, ())
+        logger.setLogInfo(~value="GooglePay Script Loaded", ~eventName=GOOGLE_PAY_SCRIPT)
       }
 
       let iframeRef = ref([])
@@ -216,7 +205,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           "Accept": "application/json",
           "api-key": publishableKey,
         }
-        let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey, ())
+        let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
         let paymentIntentID = clientSecret->getPaymentId
         let retrievePaymentUrl = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
         open Promise
@@ -227,7 +216,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~eventName=RETRIEVE_CALL_INIT,
           ~logType=INFO,
           ~logCategory=API,
-          (),
         )
         Fetch.fetch(
           retrievePaymentUrl,
@@ -251,7 +239,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 ~eventName=RETRIEVE_CALL,
                 ~logType=ERROR,
                 ~logCategory=API,
-                (),
               )
               resolve()
             })
@@ -265,7 +252,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               ~eventName=RETRIEVE_CALL,
               ~logType=INFO,
               ~logCategory=API,
-              (),
             )
           }
           Fetch.Response.json(resp)
@@ -313,7 +299,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                   ~result=val,
                   ~paymentMethod="confirmPayment",
                   ~eventName=CONFIRM_PAYMENT,
-                  (),
                 )
                 let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
                 let returnUrl =
@@ -410,7 +395,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
-          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=ORCA_ELEMENTS_CALLED, ())
+          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=ORCA_ELEMENTS_CALLED)
           resolve()
         })
         ->ignore
@@ -458,7 +443,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           logger.setLogInfo(
             ~value=Window.hrefWithoutSearch,
             ~eventName=PAYMENT_MANAGEMENT_ELEMENTS_CALLED,
-            (),
           )
           resolve()
         })
@@ -510,7 +494,6 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                   ~result=val,
                   ~paymentMethod="confirmCardPayment",
                   ~eventName=CONFIRM_CARD_PAYMENT,
-                  (),
                 )
                 let url = decodedData->getString("return_url", "/")
                 if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
@@ -600,11 +583,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
-          logger.setLogInfo(
-            ~value=Window.hrefWithoutSearch,
-            ~eventName=PAYMENT_SESSION_INITIATED,
-            (),
-          )
+          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=PAYMENT_SESSION_INITIATED)
           resolve()
         })
         ->ignore

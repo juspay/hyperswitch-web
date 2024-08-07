@@ -175,7 +175,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
               SDK_CONNECTOR_WARNING,
               ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
               ~logger=loggerState,
-              (),
             )
           } else if !checkPriorityList(paymentMethodOrder) {
             ErrorUtils.manageErrorWarning(
@@ -185,7 +184,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
                   ", ",
                 )} . Please enable Card Payment as 1st priority to show it as default.`,
               ~logger=loggerState,
-              (),
             )
           }
         : ()
@@ -224,7 +222,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     cardsToRender(cardsContainerWidth)
   }, [cardsContainerWidth])
   let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
+    let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit && selectedOption == "" {
       postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
@@ -268,7 +266,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         ~value="",
         ~eventName=PAYMENT_METHOD_CHANGED,
         ~paymentMethod=selectedOption->String.toUpperCase,
-        (),
       )
     }
     None
