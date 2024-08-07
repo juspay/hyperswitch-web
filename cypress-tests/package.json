@@ -7,7 +7,7 @@
     "lint": "./node_modules/.bin/tslint -c tslint.json -p cypress/**/*.ts -t stylish",
     "test": "npm test",
     "cypress": "cypress open",
-    "cypress:run": "cypress run",
+    "cypress:run": "cypress run"
   },
   "repository": {
     "type": "git",
