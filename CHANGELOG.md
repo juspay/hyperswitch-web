@@ -1,3 +1,10 @@
+## [0.82.1](https://github.com/juspay/hyperswitch-web/compare/v0.82.0...v0.82.1) (2024-08-07)
+
+
+### Bug Fixes
+
+* revert changes for hyper.res ([#548](https://github.com/juspay/hyperswitch-web/issues/548)) ([373cd40](https://github.com/juspay/hyperswitch-web/commit/373cd40860f31cc201be41b2706e9c14c6eb771a))
+
 # [0.82.0](https://github.com/juspay/hyperswitch-web/compare/v0.81.1...v0.82.0) (2024-08-07)
 
 
