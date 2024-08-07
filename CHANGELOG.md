@@ -1,3 +1,10 @@
+# [0.81.0](https://github.com/juspay/hyperswitch-web/compare/v0.80.7...v0.81.0) (2024-08-07)
+
+
+### Features
+
+* sdk pay now button enable prop added ([#543](https://github.com/juspay/hyperswitch-web/issues/543)) ([bf7a505](https://github.com/juspay/hyperswitch-web/commit/bf7a50518d74a5cd0d5e74b420d49d5320b515d0))
+
 ## [0.80.7](https://github.com/juspay/hyperswitch-web/compare/v0.80.6...v0.80.7) (2024-08-06)
 
 ## [0.80.6](https://github.com/juspay/hyperswitch-web/compare/v0.80.5...v0.80.6) (2024-08-06)
