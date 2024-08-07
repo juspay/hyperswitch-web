@@ -693,33 +693,33 @@ let rec intentCall = (
                 | None => Dict.make()
                 }
                 let walletName = session_token->getString("wallet_name", "")
-                if walletName === "open_banking" {
-                  let metaData = [
-                    (
-                      "linkToken",
-                      session_token
-                      ->getString("open_banking_session_token", "")
-                      ->JSON.Encode.string,
-                    ),
-                    ("pmAuthConnectorArray", ["plaid"]->Identity.anyTypeToJson),
-                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
-                    ("clientSecret", clientSecret->JSON.Encode.string),
-                    ("isForceSync", true->JSON.Encode.bool),
-                  ]->getJsonFromArrayOfJson
 
-                  handlePostMessage([
-                    ("fullscreen", true->JSON.Encode.bool),
-                    ("param", "plaidSDK"->JSON.Encode.string),
-                    ("iframeId", iframeId->JSON.Encode.string),
-                    ("metadata", metaData),
-                  ])
-                }
                 let message = switch walletName {
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
                     ("applePayPresent", session_token->anyTypeToJson),
                   ]
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
+                | "open_banking" => {
+                    let metaData = [
+                      (
+                        "linkToken",
+                        session_token
+                        ->getString("open_banking_session_token", "")
+                        ->JSON.Encode.string,
+                      ),
+                      ("pmAuthConnectorArray", ["plaid"]->Identity.anyTypeToJson),
+                      ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
+                      ("clientSecret", clientSecret->JSON.Encode.string),
+                      ("isForceSync", true->JSON.Encode.bool),
+                    ]->getJsonFromArrayOfJson
+                    [
+                      ("fullscreen", true->JSON.Encode.bool),
+                      ("param", "plaidSDK"->JSON.Encode.string),
+                      ("iframeId", iframeId->JSON.Encode.string),
+                      ("metadata", metaData),
+                    ]
+                  }
                 | _ => []
                 }
 

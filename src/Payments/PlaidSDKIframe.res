@@ -87,7 +87,7 @@ let make = () => {
       resolve(Nullable.null)
     })
     ->catch(e => {
-      Console.log2("Retrieve Failed", e)
+      logInfo(Console.log2("Retrieve Failed", e))
       resolve(Nullable.null)
     })
     ->ignore
