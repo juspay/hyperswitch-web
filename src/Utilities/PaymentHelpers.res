@@ -702,8 +702,9 @@ let rec intentCall = (
                       ->JSON.Encode.string,
                     ),
                     ("pmAuthConnectorArray", ["plaid"]->Identity.anyTypeToJson),
-                    ("payment_id", clientSecret->getPaymentId->JSON.Encode.string),
                     ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
+                    ("clientSecret", clientSecret->JSON.Encode.string),
+                    ("isForceSync", true->JSON.Encode.bool),
                   ]->getJsonFromArrayOfJson
 
                   handlePostMessage([
@@ -1707,8 +1708,9 @@ let callAuthLink = (
           [
             ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
             ("pmAuthConnectorArray", pmAuthConnectorsArr->Identity.anyTypeToJson),
-            ("payment_id", clientSecret->Option.getOr("")->getPaymentId->JSON.Encode.string),
             ("publishableKey", publishableKey->JSON.Encode.string),
+            ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
+            ("isForceSync", false->JSON.Encode.bool),
           ]->getJsonFromArrayOfJson
 
         handlePostMessage([

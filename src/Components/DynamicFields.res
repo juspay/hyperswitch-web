@@ -230,65 +230,6 @@ let make = (
     None
   })
 
-  React.useEffect0(() => {
-    open Promise
-    let onPlaidCallback = (ev: Window.event) => {
-      let json = ev.data->JSON.parseExn
-      let dict = json->Utils.getDictFromJson
-      if dict->getBool("isPlaid", false) {
-        let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-        PaymentHelpers.retrievePaymentIntent(
-          config.clientSecret,
-          headers,
-          ~optLogger=Some(logger),
-          ~switchToCustomPod=switchToCustomPodValue,
-          ~isForceSync=true,
-        )
-        ->then(json => {
-          let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
-          let status = dict->getString("status", "")
-          let return_url = dict->getString("return_url", "")
-
-          // TODO: NEED TO DISCUSS WHAT TO DO IN THIS CASE
-          if (
-            status === "succeeded" ||
-            status === "requires_customer_action" ||
-            status === "processing"
-          ) {
-            handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
-            postSubmitResponse(~jsonData=json, ~url=return_url)
-          } else if status === "failed" {
-            postFailedSubmitResponse(
-              ~errortype="confirm_payment_failed",
-              ~message="Payment failed. Try again!",
-            )
-          } else {
-            postFailedSubmitResponse(
-              ~errortype="sync_payment_failed",
-              ~message="Payment is processing. Try again later!",
-            )
-          }
-          resolve(json)
-        })
-        ->then(_ => {
-          resolve(Nullable.null)
-        })
-        ->catch(e => {
-          Console.log2("Retrieve Failed", e)
-          resolve(Nullable.null)
-        })
-        ->ignore
-      }
-    }
-
-    Window.addEventListener("message", onPlaidCallback)
-    Some(
-      () => {
-        Window.removeEventListener("message", ev => onPlaidCallback(ev))
-      },
-    )
-  })
-
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
 
