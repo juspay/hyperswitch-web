@@ -7,7 +7,6 @@
     "lint": "./node_modules/.bin/tslint -c tslint.json -p cypress/**/*.ts -t stylish",
     "test": "npm test",
     "cypress": "cypress open",
-    "cypress:ci": "npx cypress run --record --key 698b8766-019d-4271-9316-504287f50eaa"
   },
   "repository": {
     "type": "git",
