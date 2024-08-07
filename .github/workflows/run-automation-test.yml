@@ -1,0 +1,24 @@
+name: Run Automation tests
+
+# on:
+#   pull_request:
+#   merge_group:
+#   push:
+#     branches:
+#       - main
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          build: npm run re:build
+          start: npm start && cd Hyperswitch-React-Demo-App && npm start
