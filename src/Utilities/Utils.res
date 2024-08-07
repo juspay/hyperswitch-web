@@ -918,8 +918,12 @@ let getStringFromOptionalJson = (json, default) => {
   json->Option.flatMap(JSON.Decode.string)->Option.getOr(default)
 }
 
-let getBoolFromJson = (json, default) => {
+let getBoolFromOptionalJson = (json, default) => {
   json->Option.flatMap(JSON.Decode.bool)->Option.getOr(default)
+}
+
+let getBoolFromJson = (json, default) => {
+  json->JSON.Decode.bool->Option.getOr(default)
 }
 
 let getOptionalJson = (json, str) => {

@@ -877,7 +877,7 @@ let make = (
                       let gpayClicked =
                         evJson
                         ->getOptionalJsonFromJson("GpayClicked")
-                        ->getBoolFromJson(false)
+                        ->getBoolFromOptionalJson(false)
 
                       let paymentDataRequest =
                         evJson
