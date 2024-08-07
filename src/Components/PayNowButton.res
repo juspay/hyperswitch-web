@@ -21,6 +21,11 @@ let make = () => {
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
   let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
 
+  React.useEffect1(() => {
+    setIsPayNowButtonDisable(_ => !sdkHandleConfirmPayment.allowButtonBeforeValidation)
+    None
+  }, [sdkHandleConfirmPayment.allowButtonBeforeValidation])
+
   let handleMessage = (event: Types.event) => {
     let json = event.data->Identity.anyTypeToJson->getStringFromJson("")->safeParse
     let dict = json->getDictFromJson

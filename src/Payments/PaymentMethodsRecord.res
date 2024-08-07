@@ -479,7 +479,7 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
-    paymentMethodName: "multibanco",
+    paymentMethodName: "multibanco_transfer",
     icon: Some(icon("multibanco", ~size=19)),
     displayName: "Multibanco",
     fields: [Email, InfoElement],
