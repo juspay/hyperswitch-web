@@ -22,7 +22,7 @@ jobs:
           node-version: "20" # Specify your Node.js version
 
       - name: Install dependencies
-        run: npm install && npm postinstall
+        run: npm install && npm run postinstall
 
       - name: Build and start local server
         run: npm run re:build && npm start &
