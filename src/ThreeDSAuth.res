@@ -61,7 +61,7 @@ let make = () => {
           ~headers,
         )
         ->then(json => {
-          let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+          let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
             handlePostMessage([("fullscreen", false->JSON.Encode.bool)])

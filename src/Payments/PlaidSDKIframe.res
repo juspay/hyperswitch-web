@@ -6,10 +6,11 @@ let make = () => {
   let (isReady, setIsReady) = React.useState(_ => false)
   let (pmAuthConnectorsArr, setPmAuthConnectorsArr) = React.useState(_ => [])
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
-  let (paymentId, setPaymentId) = React.useState(_ => "")
+  let (clientSecret, setClientSecret) = React.useState(_ => "")
+  let (isForceSync, setIsForceSync) = React.useState(_ => false)
   let logger = React.useMemo(() => {
-    OrcaLogger.make(~source=Elements(Payment), ~clientSecret=paymentId, ~merchantId=publishableKey)
-  }, (publishableKey, paymentId))
+    OrcaLogger.make(~source=Elements(Payment), ~clientSecret, ~merchantId=publishableKey)
+  }, (publishableKey, clientSecret))
 
   React.useEffect0(() => {
     let handle = (ev: Window.event) => {
@@ -24,8 +25,9 @@ let make = () => {
 
         setLinkToken(_ => linkToken)
         setPmAuthConnectorsArr(_ => pmAuthConnectorArray)
-        setPublishableKey(_ => metaData->getString("payment_id", ""))
-        setPaymentId(_ => metaData->getString("publishableKey", ""))
+        setPublishableKey(_ => metaData->getString("publishableKey", ""))
+        setClientSecret(_ => metaData->getString("clientSecret", ""))
+        setIsForceSync(_ => metaData->getBool("isForceSync", false))
       }
     }
     Window.addEventListener("message", handle)
@@ -47,6 +49,50 @@ let make = () => {
     None
   }, [pmAuthConnectorsArr])
 
+  let callbackOnSuccessOfPlaidPaymentsFlow = () => {
+    open Promise
+    let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+
+    PaymentHelpers.retrievePaymentIntent(
+      clientSecret,
+      headers,
+      ~optLogger=Some(logger),
+      ~switchToCustomPod=false,
+      ~isForceSync=true,
+    )
+    ->then(json => {
+      let dict = json->getDictFromJson
+      let status = dict->getString("status", "")
+      let return_url = dict->getString("return_url", "")
+
+      if (
+        status === "succeeded" || status === "requires_customer_action" || status === "processing"
+      ) {
+        postSubmitResponse(~jsonData=json, ~url=return_url)
+      } else if status === "failed" {
+        postFailedSubmitResponse(
+          ~errortype="confirm_payment_failed",
+          ~message="Payment failed. Try again!",
+        )
+      } else {
+        postFailedSubmitResponse(
+          ~errortype="sync_payment_failed",
+          ~message="Payment is processing. Try again later!",
+        )
+      }
+      handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+      resolve(json)
+    })
+    ->then(_ => {
+      resolve(Nullable.null)
+    })
+    ->catch(e => {
+      logInfo(Console.log2("Retrieve Failed", e))
+      resolve(Nullable.null)
+    })
+    ->ignore
+  }
+
   React.useEffect(() => {
     if isReady && linkToken->String.length > 0 {
       let handler = Plaid.create({
@@ -59,14 +105,21 @@ let make = () => {
             ("isPlaid", true->JSON.Encode.bool),
             ("publicToken", publicToken->JSON.Encode.string),
           ])
+          if isForceSync {
+            callbackOnSuccessOfPlaidPaymentsFlow()
+          }
         },
         onExit: _ => {
-          handlePostMessage([
-            ("fullscreen", false->JSON.Encode.bool),
-            ("isPlaid", true->JSON.Encode.bool),
-            ("isExited", true->JSON.Encode.bool),
-            ("publicToken", ""->JSON.Encode.string),
-          ])
+          if isForceSync {
+            callbackOnSuccessOfPlaidPaymentsFlow()
+          } else {
+            handlePostMessage([
+              ("fullscreen", false->JSON.Encode.bool),
+              ("isPlaid", true->JSON.Encode.bool),
+              ("isExited", true->JSON.Encode.bool),
+              ("publicToken", ""->JSON.Encode.string),
+            ])
+          }
         },
       })
 
