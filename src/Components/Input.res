@@ -41,7 +41,7 @@ let make = (
     setFocus(true)
     setValid(None)
     setInputFocused(_ => true)
-    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL, ())
+    Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
   }
 
   let handleBlur = ev => {

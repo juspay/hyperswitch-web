@@ -61,7 +61,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   let mountPaypalSDK = () => {
     let clientId = sessionObj.token
     let paypalScriptURL = `https://www.paypal.com/sdk/js?client-id=${clientId}&components=buttons,hosted-fields`
-    loggerState.setLogInfo(~value="PayPal SDK Script Loading", ~eventName=PAYPAL_SDK_FLOW, ())
+    loggerState.setLogInfo(~value="PayPal SDK Script Loading", ~eventName=PAYPAL_SDK_FLOW)
     let paypalScript = Window.createElement("script")
     paypalScript->Window.elementSrc(paypalScriptURL)
     paypalScript->Window.elementOnerror(exn => {
@@ -69,11 +69,10 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
       loggerState.setLogError(
         ~value=`Error During Loading PayPal SDK Script: ${err}`,
         ~eventName=PAYPAL_SDK_FLOW,
-        (),
       )
     })
     paypalScript->Window.elementOnload(_ => {
-      loggerState.setLogInfo(~value="PayPal SDK Script Loaded", ~eventName=PAYPAL_SDK_FLOW, ())
+      loggerState.setLogInfo(~value="PayPal SDK Script Loaded", ~eventName=PAYPAL_SDK_FLOW)
       PaypalSDKHelpers.loadPaypalSDK(
         ~loggerState,
         ~sdkHandleOneClickConfirmPayment,

@@ -68,9 +68,8 @@ let make = (
       requiredFields,
       ~isSavedCardFlow,
       ~isAllStoredCardsHaveName,
-      (),
     )
-    ->DynamicFieldsUtils.updateDynamicFields(billingAddress, ())
+    ->DynamicFieldsUtils.updateDynamicFields(billingAddress)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))

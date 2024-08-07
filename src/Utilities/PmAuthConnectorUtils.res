@@ -26,14 +26,12 @@ let mountAuthConnectorScript = (
   logger.setLogInfo(
     ~value=`Pm Auth Connector ${authConnector} Script Loading`,
     ~eventName=PM_AUTH_CONNECTOR_SCRIPT,
-    (),
   )
   pmAuthConnectorScript->Window.elementSrc(pmAuthConnectorScriptUrl)
   pmAuthConnectorScript->Window.elementOnerror(_ => {
     logger.setLogInfo(
       ~value=`Pm Auth Connector ${authConnector} Script Load Failure`,
       ~eventName=PM_AUTH_CONNECTOR_SCRIPT,
-      (),
     )
   })
   pmAuthConnectorScript->Window.elementOnload(_ => {
@@ -41,7 +39,6 @@ let mountAuthConnectorScript = (
     logger.setLogInfo(
       ~value=`Pm Auth Connector ${authConnector} Script Loaded`,
       ~eventName=PM_AUTH_CONNECTOR_SCRIPT,
-      (),
     )
   })
   Window.body->Window.appendChild(pmAuthConnectorScript)

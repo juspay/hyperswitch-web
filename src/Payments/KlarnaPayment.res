@@ -42,7 +42,7 @@ let make = (~paymentType) => {
   }, [complete])
 
   let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->JSON.parseExn
+    let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     let (connectors, _) =
       paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
@@ -59,7 +59,6 @@ let make = (~paymentType) => {
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~manualRetry=isManualRetryEnabled,
-          (),
         )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
