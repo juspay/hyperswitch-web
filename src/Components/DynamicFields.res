@@ -75,8 +75,6 @@ let make = (
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
-  let switchToCustomPodValue = Recoil.useRecoilValueFromAtom(switchToCustomPod)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
