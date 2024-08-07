@@ -90,8 +90,8 @@ export default function CheckoutForm() {
       return;
     }
     hyper.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
-      console.log("-retrieve called", paymentIntent.status);
-      handlePaymentStatus(paymentIntent.status);
+      console.log("-retrieve called", paymentIntent?.status);
+      handlePaymentStatus(paymentIntent?.status);
     });
   }, [hyper, navigate]);
 
