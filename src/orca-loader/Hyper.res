@@ -291,18 +291,17 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             let handleMessage = (event: Types.event) => {
               let json = event.data->anyTypeToJson
               let dict = json->getDictFromJson
-              switch dict->Dict.get("submitSuccessful") {
-              | Some(val) =>
+              switch dict->Dict.get("submitSuccessful")->getBoolFromOptionalJson(false) {
+              | submitSuccessful =>
                 logApi(
                   ~apiLogType=Method,
                   ~optLogger=Some(logger),
-                  ~result=val,
+                  ~result=JSON.Encode.bool(submitSuccessful),
                   ~paymentMethod="confirmPayment",
                   ~eventName=CONFIRM_PAYMENT,
                 )
-                let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
-                let returnUrl =
-                  dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
+                let data = dict->getDictFromDict("data")->JSON.Encode.object
+                let returnUrl = dict->getString("url", url)
 
                 if isOneClick {
                   iframeRef.contents->Array.forEach(
@@ -317,19 +316,18 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 postSubmitMessage(dict)
 
                 if isSdkButton {
-                  if !(val->getBoolFromJson(false)) {
+                  if !submitSuccessful {
                     resolve1(json)
                   } else {
                     Window.replace(returnUrl)
                   }
-                } else if val->getBoolFromJson(false) && redirect === "always" {
+                } else if submitSuccessful && redirect === "always" {
                   Window.replace(returnUrl)
-                } else if !(val->getBoolFromJson(false)) {
+                } else if !submitSuccessful {
                   resolve1(json)
                 } else {
                   resolve1(data)
                 }
-              | None => ()
               }
             }
             let message = isOneClick
@@ -490,16 +488,16 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               let json = event.data->anyTypeToJson
               let dict = json->getDictFromJson
               switch dict->Dict.get("submitSuccessful") {
-              | Some(val) =>
+              | Some(submitSuccessful) =>
                 logApi(
                   ~apiLogType=Method,
                   ~optLogger=Some(logger),
-                  ~result=val,
+                  ~result=submitSuccessful,
                   ~paymentMethod="confirmCardPayment",
                   ~eventName=CONFIRM_CARD_PAYMENT,
                 )
                 let url = decodedData->getString("return_url", "/")
-                if val->getBoolFromJson(false) && url !== "/" {
+                if submitSuccessful->getBoolFromJson(false) && url !== "/" {
                   Window.replace(url)
                 } else {
                   resolve(json)
