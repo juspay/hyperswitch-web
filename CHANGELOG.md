@@ -1,3 +1,10 @@
+# [0.82.0](https://github.com/juspay/hyperswitch-web/compare/v0.81.1...v0.82.0) (2024-08-07)
+
+
+### Features
+
+* open banking PIS integration ([#541](https://github.com/juspay/hyperswitch-web/issues/541)) ([25e24b6](https://github.com/juspay/hyperswitch-web/commit/25e24b614e616104057d1ece77a18d7f841dbc89))
+
 ## [0.81.1](https://github.com/juspay/hyperswitch-web/compare/v0.81.0...v0.81.1) (2024-08-07)
 
 
