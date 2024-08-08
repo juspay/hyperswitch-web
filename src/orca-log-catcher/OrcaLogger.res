@@ -39,7 +39,7 @@ type eventName =
   | APP_REINITIATED
   | LOG_INITIATED
   | LOADER_CALLED
-  | ORCA_ELEMENTS_CALLED
+  | WEB_SDK_IFRAME_MOUNTED
   | PAYMENT_OPTIONS_PROVIDED
   | BLUR
   | FOCUS
@@ -120,7 +120,7 @@ let eventNameToStrMapper = eventName => {
   | APP_REINITIATED => "APP_REINITIATED"
   | LOG_INITIATED => "LOG_INITIATED"
   | LOADER_CALLED => "LOADER_CALLED"
-  | ORCA_ELEMENTS_CALLED => "ORCA_ELEMENTS_CALLED"
+  | WEB_SDK_IFRAME_MOUNTED => "WEB_SDK_IFRAME_MOUNTED"
   | PAYMENT_OPTIONS_PROVIDED => "PAYMENT_OPTIONS_PROVIDED"
   | BLUR => "BLUR"
   | FOCUS => "FOCUS"
@@ -539,14 +539,17 @@ let make = (
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
       switch loggingLevel {
-      | DEBUG => log->Array.push(mainLogFile, _)->ignore
+      | DEBUG => log->(Array.push(mainLogFile, _))->ignore
       | INFO =>
         [INFO, WARNING, ERROR]->Array.includes(log.logType)
-          ? log->Array.push(mainLogFile, _)->ignore
+          ? log->(Array.push(mainLogFile, _))->ignore
           : ()
       | WARNING =>
-        [WARNING, ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
-      | ERROR => [ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
+        [WARNING, ERROR]->Array.includes(log.logType)
+          ? log->(Array.push(mainLogFile, _))->ignore
+          : ()
+      | ERROR =>
+        [ERROR]->Array.includes(log.logType) ? log->(Array.push(mainLogFile, _))->ignore : ()
       | SILENT => ()
       }
     }
@@ -594,7 +597,7 @@ let make = (
   let checkForPriorityEvents = (arrayOfLogs: array<logFile>) => {
     let priorityEventNames = [
       APP_RENDERED,
-      ORCA_ELEMENTS_CALLED,
+      WEB_SDK_IFRAME_MOUNTED,
       PAYMENT_DATA_FILLED,
       PAYMENT_ATTEMPT,
       CONFIRM_CALL,
