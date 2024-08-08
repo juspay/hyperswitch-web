@@ -6,7 +6,8 @@ Steps to get started with Hyperswitch-web sdk testing locally:
 
 1. Set up hyperswitch web following the [Docs](https://github.com/juspay/hyperswitch-web?tab=readme-ov-file#hyperswitch-unified-checkout).
 
-2. Now that you have three terminals open,opena a fourth terminal run `npm test` in the main repo terminal (hyperswitch-web)
+2. Now that you have three terminals open, spin up a fourth terminal and do `cd cypress-test && npm start` in the main repo terminal (hyperswitch-web)
+   (Note: In case Cypress is running for the first time, and cypress script runs into an error, uninstall and re install cypress as a dev module inside the cypress-tests folder)
 
 3. Cypress should open the window to test separate flows.
 
