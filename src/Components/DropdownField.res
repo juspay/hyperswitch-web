@@ -101,7 +101,6 @@ let make = (
         </div>
       </RenderIf>
       <div className="relative">
-        // <div className={`Input ${className} appearance-none relative`}>
         <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
           <div
             className="absolute top-1 left-1 right-0 bottom-0  pointer-events-none rounded-sm z-20 whitespace-nowrap"
@@ -136,7 +135,6 @@ let make = (
           })
           ->React.array}
         </select>
-        // </div>
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass}`}
