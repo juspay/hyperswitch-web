@@ -5,9 +5,8 @@
   "main": "cypress.config.js",
   "scripts": {
     "lint": "./node_modules/.bin/tslint -c tslint.json -p cypress/**/*.ts -t stylish",
-    "test": "npm test",
-    "cypress": "cypress open",
-    "cypress:run": "cypress run"
+    "start": "cypress open",
+    "test": "cypress run"
   },
   "repository": {
     "type": "git",
