@@ -500,6 +500,13 @@ let paymentMethodsFields = [
     miniIcon: Some(icon("bank", ~size=19)),
   },
   {
+    paymentMethodName: "open_banking_pis",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Open Banking",
+    fields: [InfoElement],
+    miniIcon: Some(icon("bank", ~size=19)),
+  },
+  {
     paymentMethodName: "evoucher",
     icon: Some(icon("cashtocode", ~size=50)),
     displayName: "E-Voucher",
@@ -739,9 +746,6 @@ let getPaymentDetails = (arr: array<string>) => {
   finalArr
 }
 
-type paymentMethod =
-  Cards | Wallets | PayLater | BankRedirect | BankTransfer | BankDebit | Crypto | Voucher | NONE
-
 type cardType = Credit | Debit
 
 type paymentExperience = {
@@ -824,19 +828,6 @@ let defaultList = {
   payment_type: NONE,
   merchant_name: "",
   collect_billing_details_from_wallets: true,
-}
-let getMethod = str => {
-  switch str {
-  | "card" => Cards
-  | "wallet" => Wallets
-  | "pay_later" => PayLater
-  | "bank_redirect" => BankRedirect
-  | "bank_transfer" => BankTransfer
-  | "bank_debit" => BankDebit
-  | "crypto" => Crypto
-  | "voucher" => Voucher
-  | _ => NONE
-  }
 }
 
 let getPaymentExperienceType = str => {

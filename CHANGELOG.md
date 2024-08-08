@@ -1,3 +1,17 @@
+## [0.82.1](https://github.com/juspay/hyperswitch-web/compare/v0.82.0...v0.82.1) (2024-08-07)
+
+
+### Bug Fixes
+
+* revert changes for hyper.res ([#548](https://github.com/juspay/hyperswitch-web/issues/548)) ([373cd40](https://github.com/juspay/hyperswitch-web/commit/373cd40860f31cc201be41b2706e9c14c6eb771a))
+
+# [0.82.0](https://github.com/juspay/hyperswitch-web/compare/v0.81.1...v0.82.0) (2024-08-07)
+
+
+### Features
+
+* open banking PIS integration ([#541](https://github.com/juspay/hyperswitch-web/issues/541)) ([25e24b6](https://github.com/juspay/hyperswitch-web/commit/25e24b614e616104057d1ece77a18d7f841dbc89))
+
 ## [0.81.1](https://github.com/juspay/hyperswitch-web/compare/v0.81.0...v0.81.1) (2024-08-07)
 
 
