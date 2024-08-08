@@ -493,13 +493,14 @@ let make = (
       ->React.array}
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
         <div
-          className={`${spacedStylesForBiilingDetails} w-full text-left`}
+          className={`billing__section ${spacedStylesForBiilingDetails} w-full text-left`}
           style={
             border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
             borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
             margin: {isSpacedInnerLayout ? `10px 0` : ""},
           }>
           <div
+            className="billing__details__text"
             style={
               marginBottom: "5px",
               fontSize: themeObj.fontSizeLg,
