@@ -398,7 +398,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           resolve(JSON.Encode.null)
         })
         ->then(_ => {
-          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=ORCA_ELEMENTS_CALLED)
+          logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=WEB_SDK_IFRAME_MOUNTED)
           resolve()
         })
         ->ignore
