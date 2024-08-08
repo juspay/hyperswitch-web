@@ -10,19 +10,21 @@ let useIsGuestCustomer = () => {
   }, [customerPaymentMethods])
 }
 
-let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false) => {
+let useHandlePostMessages = (
+  ~complete,
+  ~empty,
+  ~paymentType,
+  ~savedMethod=false,
+  ~isWallet=false,
+) => {
   open RecoilAtoms
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let setIsPayNowButtonDisable = Recoil.useSetRecoilState(payNowButtonDisable)
   let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let showMainScreen = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
 
   React.useEffect(() => {
-    let isPaymentMethodScreenAndWallet =
-      showMainScreen &&
-      (paymentType === "google_pay" || paymentType === "paypal" || paymentType === "apple_pay")
-    if !sdkHandleConfirmPayment.allowButtonBeforeValidation && !isPaymentMethodScreenAndWallet {
+    if !sdkHandleConfirmPayment.allowButtonBeforeValidation && !isWallet {
       let isCompletelyFilled = complete && paymentType !== ""
       setIsPayNowButtonDisable(_ => !isCompletelyFilled)
     }
