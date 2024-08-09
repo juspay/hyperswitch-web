@@ -69,14 +69,14 @@ let make = (
         let componentType = "preMountLoader"
         let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
-           <iframe
-           id ="orca-payment-element-iframeRef-${localSelectorString}"
-           name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}"
-          allow="*"
-          name="orca-payment"
-        ></iframe>
-        </div>`
+            <iframe
+              id="orca-payment-element-iframeRef-${localSelectorString}"
+              name="orca-payment-element-iframeRef-${localSelectorString}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}"
+              allow="*"
+              name="orca-payment"
+            ></iframe>
+          </div>`
         let iframeDiv = Window.createElement("div")
         iframeDiv->Window.innerHTML(iframeDivHtml)
         Window.body->Window.appendChild(iframeDiv)
@@ -646,7 +646,7 @@ let make = (
                     let dict = json->getDictFromJson
                     let status = dict->getString("status", "")
                     let returnUrl = dict->getString("return_url", "")
-                    Window.Location.replace(
+                    Window.replaceRootHref(
                       `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
                     )
                     resolve(JSON.Encode.null)
@@ -661,7 +661,7 @@ let make = (
                 })
                 ->catch(err => {
                   if redirect.contents === "always" {
-                    Window.Location.replace(url)
+                    Window.replaceRootHref(url)
                   }
                   handlePostMessage([
                     ("submitSuccessful", false->JSON.Encode.bool),

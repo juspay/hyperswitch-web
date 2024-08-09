@@ -543,7 +543,7 @@ let make = (
                   value={pmt->getPaymentMethodTypeLabel}
                   className="flex items-center px-2.5 py-0.5 cursor-pointer hover:bg-jp-gray-50"
                   onClick={_ => handleTabSelection(pmt)}>
-                  <div className="ml-2.5"> {React.string(pmt->getPaymentMethodTypeLabel)} </div>
+                  {React.string(pmt->getPaymentMethodTypeLabel)}
                 </option>,
               )
             }

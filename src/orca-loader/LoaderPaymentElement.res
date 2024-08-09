@@ -190,7 +190,7 @@ let make = (
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
             let url = val->getStringFromJson("")
-            Window.Location.replace(url)
+            Window.replaceRootHref(url)
           }
         | None => ()
         }
