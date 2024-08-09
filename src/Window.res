@@ -132,6 +132,9 @@ module Location = {
   external hostname: string = "hostname"
 
   @val @scope(("window", "location"))
+  external href: string = "href"
+
+  @val @scope(("window", "location"))
   external origin: string = "origin"
 
   @val @scope(("window", "location"))
@@ -139,6 +142,50 @@ module Location = {
 
   @val @scope(("window", "location"))
   external pathname: string = "pathname"
+}
+
+module Parent = {
+  module Location = {
+    @val @scope(("window", "parent", "location"))
+    external replace: string => unit = "replace"
+
+    @val @scope(("window", "parent", "location"))
+    external hostname: string = "hostname"
+
+    @val @scope(("window", "parent", "location"))
+    external href: string = "href"
+
+    @val @scope(("window", "parent", "location"))
+    external origin: string = "origin"
+
+    @val @scope(("window", "parent", "location"))
+    external protocol: string = "protocol"
+
+    @val @scope(("window", "parent", "location"))
+    external pathname: string = "pathname"
+  }
+}
+
+module Top = {
+  module Location = {
+    @val @scope(("window", "top", "location"))
+    external replace: string => unit = "replace"
+
+    @val @scope(("window", "top", "location"))
+    external hostname: string = "hostname"
+
+    @val @scope(("window", "top", "location"))
+    external href: string = "href"
+
+    @val @scope(("window", "top", "location"))
+    external origin: string = "origin"
+
+    @val @scope(("window", "top", "location"))
+    external protocol: string = "protocol"
+
+    @val @scope(("window", "top", "location"))
+    external pathname: string = "pathname"
+  }
 }
 
 module Element = {
@@ -155,3 +202,19 @@ let isSandbox = Location.hostname === "beta.hyperswitch.io"
 let isInteg = Location.hostname === "dev.hyperswitch.io"
 
 let isProd = Location.hostname === "checkout.hyperswitch.io"
+
+let isIframed = Location.href !== Top.Location.href
+
+let isParentAndTopSame = Parent.Location.href === Top.Location.href
+
+let getHostName = () => {
+  switch isIframed {
+  | true =>
+    if isParentAndTopSame {
+      Parent.Location.hostname
+    } else {
+      Top.Location.hostname
+    }
+  | false => Location.hostname
+  }
+}
