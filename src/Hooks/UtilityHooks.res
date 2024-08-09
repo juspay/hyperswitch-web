@@ -10,7 +10,13 @@ let useIsGuestCustomer = () => {
   }, [customerPaymentMethods])
 }
 
-let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false) => {
+let useHandlePostMessages = (
+  ~complete,
+  ~empty,
+  ~paymentType,
+  ~savedMethod=false,
+  ~isWallet=false,
+) => {
   open RecoilAtoms
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -18,7 +24,7 @@ let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false
   let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   React.useEffect(() => {
-    if !sdkHandleConfirmPayment.allowButtonBeforeValidation {
+    if !sdkHandleConfirmPayment.allowButtonBeforeValidation && !isWallet {
       let isCompletelyFilled = complete && paymentType !== ""
       setIsPayNowButtonDisable(_ => !isCompletelyFilled)
     }

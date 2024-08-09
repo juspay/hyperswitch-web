@@ -292,11 +292,11 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               let json = event.data->anyTypeToJson
               let dict = json->getDictFromJson
               switch dict->Dict.get("submitSuccessful") {
-              | Some(val) =>
+              | Some(submitSuccessful) =>
                 logApi(
                   ~apiLogType=Method,
                   ~optLogger=Some(logger),
-                  ~result=val,
+                  ~result=submitSuccessful,
                   ~paymentMethod="confirmPayment",
                   ~eventName=CONFIRM_PAYMENT,
                 )
@@ -317,14 +317,16 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 postSubmitMessage(dict)
 
                 if isSdkButton {
-                  if !(val->JSON.Decode.bool->Option.getOr(false)) {
+                  if !(submitSuccessful->JSON.Decode.bool->Option.getOr(false)) {
                     resolve1(json)
                   } else {
                     Window.replace(returnUrl)
                   }
-                } else if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
+                } else if (
+                  submitSuccessful->JSON.Decode.bool->Option.getOr(false) && redirect === "always"
+                ) {
                   Window.replace(returnUrl)
-                } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
+                } else if !(submitSuccessful->JSON.Decode.bool->Option.getOr(false)) {
                   resolve1(json)
                 } else {
                   resolve1(data)
@@ -490,16 +492,16 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               let json = event.data->anyTypeToJson
               let dict = json->getDictFromJson
               switch dict->Dict.get("submitSuccessful") {
-              | Some(val) =>
+              | Some(submitSuccessful) =>
                 logApi(
                   ~apiLogType=Method,
                   ~optLogger=Some(logger),
-                  ~result=val,
+                  ~result=submitSuccessful,
                   ~paymentMethod="confirmCardPayment",
                   ~eventName=CONFIRM_CARD_PAYMENT,
                 )
                 let url = decodedData->getString("return_url", "/")
-                if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
+                if submitSuccessful->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
                   Window.replace(url)
                 } else {
                   resolve(json)
