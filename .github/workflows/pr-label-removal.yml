@@ -16,10 +16,6 @@ jobs:
       - name: Remove all labels
         run: |
           PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          TOKEN=$GITHUB_TOKEN
-
-          # Add your repository name if it's not the default branch
-          REPO_NAME=$GITHUB_REPOSITORY
 
           curl -L \
           -X DELETE \
