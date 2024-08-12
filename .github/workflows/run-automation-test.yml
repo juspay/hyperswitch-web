@@ -13,45 +13,46 @@ jobs:
     runs-on: ubuntu-latest
     environment: Testing
     env:
-      Pub_Key: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
-      Sec_Key: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
-      Prof_Id: ${{ secrets.PROFILE_ID }}
+      HS_Pub_Key: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
+      HS_Sec_Key: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
+      HS_Prof_Id: ${{ secrets.PROFILE_ID }}
+      HS_Server_Url: "https://sandbox.hyperswitch.io"
+      HS_Client_Url: "http://localhost:9050"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # - name: Set up Node.js
-      #   uses: actions/setup-node@v3
-      #   with:
-      #     node-version: "20" # Specify your Node.js version
-      #     cache: "npm"
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: "npm"
 
-      # - name: Install dependencies
-      #   run: npm install && npm run postinstall
-      #
-      # - name: Create .env file
-      #   working-directory: ./Hyperswitch-React-Demo-App
-      #   run: |
-      #     touch .env
-      #     echo STATIC_DIR = ./dist >> .env
-      #     echo HYPERSWITCH_PUBLISHABLE_KEY = $Pub_Key >> .env
-      #     echo HYPERSWITCH_SECRET_KEY = $Sec_Key >> .env
-      #     echo PROFILE_ID = $Prof_Id >> .env
-      #     echo HYPERSWITCH_SERVER_URL = "https://sandbox.hyperswitch.io" >> .env
-      #     echo HYPERSWITCH_CLIENT_URL = "http://localhost:9050" >> .env
-      #     cat .env
+      - name: Install dependencies
+        run: npm install && npm run postinstall
+
+      - name: Create .env file
+        working-directory: ./Hyperswitch-React-Demo-App
+        run: |
+          touch .env
+          echo STATIC_DIR = ./dist >> .env
+          echo HYPERSWITCH_PUBLISHABLE_KEY = $HS_Pub_Key >> .env
+          echo HYPERSWITCH_SECRET_KEY = $HS_Sec_Key >> .env
+          echo PROFILE_ID = $HS_Prof_Id >> .env
+          echo HYPERSWITCH_SERVER_URL = $HS_Server_Url >> .env
+          echo HYPERSWITCH_CLIENT_URL = $HS_Client_Url >> .env
 
       - name: Create .env file
         working-directory: ./Hyperswitch-React-Demo-App
         run: echo "My HYPERSWITCH_PUBLISHABLE_KEY is $Pub_Key"
 
-      # - name: Build and start local server
-      #   run: npm run re:build && npm start &
-      #     echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
-      #     echo "Demo App started started"
+      - name: Build and start local server
+        run: npm run re:build && npm start &
+          echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
+          echo "Demo App started started"
 
-      # - name: Run Cypress
-      #   uses: cypress-io/github-action@v6
-      #   with:
-      #     working-directory: ./cypress-tests
+      - name: Run Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: ./cypress-tests
