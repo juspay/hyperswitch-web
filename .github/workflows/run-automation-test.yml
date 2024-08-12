@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - swamu/526-web-testing-automation
-  pull_request:
-    branches:
-      - main
+  # pull_request:
+  #   branches:
+  #     - main
 
 jobs:
   cypress:
@@ -29,6 +29,18 @@ jobs:
         run: npm run re:build && npm start &
           echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
           echo "Demo App started started"
+
+      - name: Run Cypress
+        run: touch .env
+          echo HYPERSWITCH_PUBLISHABLE_KEY=${{ vars.HYPERSWITCH_PUBLISHABLE_KEY }} > .env
+          echo HYPERSWITCH_SECRET_KEY=${{ vars.HYPERSWITCH_SECRET_KEY }} > .env
+          echo PROFILE_ID=${{ vars.PROFILE_ID }} > .env
+          echo HYPERSWITCH_SERVER_URL=$HYPERSWITCH_SERVER_URL > .env
+          echo HYPERSWITCH_CLIENT_URL=$HYPERSWITCH_CLIENT_URL > .env
+          cat .env
+        env:
+          HYPERSWITCH_SERVER_URL: "https://sandbox.hyperswitch.io"
+          HYPERSWITCH_CLIENT_URL: "http://localhost:9050"
 
       - name: Run Cypress
         uses: cypress-io/github-action@v6
