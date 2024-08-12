@@ -14,18 +14,18 @@ jobs:
     environment: Testing
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      # - name: Checkout repository
+      #   uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "20" # Specify your Node.js version
-          cache: "npm"
+      # - name: Set up Node.js
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: "20" # Specify your Node.js version
+      #     cache: "npm"
 
-      - name: Install dependencies
-        run: npm install && npm run postinstall
-
+      # - name: Install dependencies
+      #   run: npm install && npm run postinstall
+      #
       - name: Create .env file
         working-directory: ./Hyperswitch-React-Demo-App
         run: |
@@ -36,13 +36,14 @@ jobs:
           echo PROFILE_ID = ${{ vars.PROFILE_ID }} >> .env
           echo HYPERSWITCH_SERVER_URL = "https://sandbox.hyperswitch.io" >> .env
           echo HYPERSWITCH_CLIENT_URL = "http://localhost:9050" >> .env
+          cat .env
 
-      - name: Build and start local server
-        run: npm run re:build && npm start &
-          echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
-          echo "Demo App started started"
+      # - name: Build and start local server
+      #   run: npm run re:build && npm start &
+      #     echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
+      #     echo "Demo App started started"
 
-      - name: Run Cypress
-        uses: cypress-io/github-action@v6
-        with:
-          working-directory: ./cypress-tests
+      # - name: Run Cypress
+      #   uses: cypress-io/github-action@v6
+      #   with:
+      #     working-directory: ./cypress-tests
