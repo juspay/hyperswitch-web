@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: Testing
     env:
-      Pub_Key: ${{ vars.HYPERSWITCH_PUBLISHABLE_KEY }}
-      Sec_Key: ${{ vars.HYPERSWITCH_SECRET_KEY }}
-      Prof_Id: ${{ vars.PROFILE_ID }}
+      Pub_Key: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
+      Sec_Key: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
+      Prof_Id: ${{ secrets.PROFILE_ID }}
 
     steps:
       - name: Checkout repository
