@@ -1,9 +1,11 @@
 name: Run Cypress Tests
 
 on:
+  # Comment the lines below to trigger this workflow on pull requests to the main branch
   push:
     branches:
       - swamu/526-web-testing-automation
+  # Uncomment the lines below to trigger this workflow on pull requests to the main branch
   # pull_request:
   #   branches:
   #     - main
@@ -13,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: Testing
     env:
+      # Environment variables for Hyperswitch credentials and URLs
       HS_Pub_Key: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
       HS_Sec_Key: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
       HS_Prof_Id: ${{ secrets.PROFILE_ID }}
@@ -22,15 +25,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        # Checks out the repository so that the workflow can access the code
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: "20" # Specifies the version of Node.js to use
+          cache: "npm" # Caches npm dependencies to speed up subsequent installs
 
       - name: Install dependencies
-        run: npm install && npm run postinstall
+        run: npm install
+        # Installs the necessary npm dependencies for the project
 
       - name: Create .env file
         working-directory: ./Hyperswitch-React-Demo-App
@@ -42,17 +47,22 @@ jobs:
           echo PROFILE_ID = $HS_Prof_Id >> .env
           echo HYPERSWITCH_SERVER_URL = $HS_Server_Url >> .env
           echo HYPERSWITCH_CLIENT_URL = $HS_Client_Url >> .env
+        # Creates a .env file with environment variables needed for the application
 
       - name: Create .env file
         working-directory: ./Hyperswitch-React-Demo-App
         run: echo "My HYPERSWITCH_PUBLISHABLE_KEY is $Pub_Key"
+        # Prints the Hyperswitch publishable key (This step seems redundant and might be removed if not needed)
 
       - name: Build and start local server
-        run: npm run re:build && npm start &
+        run: |
+          npm run re:build && npm start &
           echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
-          echo "Demo App started started"
+          echo "Demo App started"
+        # Builds the project and starts both the Hyperswitch Web and Demo App servers in the background
 
       - name: Run Cypress
         uses: cypress-io/github-action@v6
         with:
           working-directory: ./cypress-tests
+        # Runs Cypress tests located in the specified directory

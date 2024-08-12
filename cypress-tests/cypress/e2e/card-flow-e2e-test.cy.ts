@@ -35,7 +35,6 @@ describe("Card payment flow test", () => {
     getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`)
     .then($element => {
       if ($element.length > 0) {
-        cy.log('----------------------------card exists----------------------------');
         getIframeBody().find('[data-testid=cvvInput]').type('123');
         getIframeBody().get("#submit").click();
         cy.wait(2000);
