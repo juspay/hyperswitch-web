@@ -12,6 +12,10 @@ jobs:
   cypress:
     runs-on: ubuntu-latest
     environment: Testing
+    env:
+      Pub_Key: ${{ vars.HYPERSWITCH_PUBLISHABLE_KEY }}
+      Sec_Key: ${{ vars.HYPERSWITCH_SECRET_KEY }}
+      Prof_Id: ${{ vars.PROFILE_ID }}
 
     steps:
       - name: Checkout repository
@@ -31,9 +35,9 @@ jobs:
         run: |
           touch .env
           echo STATIC_DIR = ./dist >> .env
-          echo HYPERSWITCH_PUBLISHABLE_KEY = ${{ vars.HYPERSWITCH_PUBLISHABLE_KEY }} >> .env
-          echo HYPERSWITCH_SECRET_KEY = ${{ vars.HYPERSWITCH_SECRET_KEY }} >> .env
-          echo PROFILE_ID = ${{ vars.PROFILE_ID }} >> .env
+          echo HYPERSWITCH_PUBLISHABLE_KEY = $Pub_Key >> .env
+          echo HYPERSWITCH_SECRET_KEY = $Sec_Key >> .env
+          echo PROFILE_ID = $Prof_Id >> .env
           echo HYPERSWITCH_SERVER_URL = "https://sandbox.hyperswitch.io" >> .env
           echo HYPERSWITCH_CLIENT_URL = "http://localhost:9050" >> .env
           cat .env
