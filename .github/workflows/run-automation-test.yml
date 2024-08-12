@@ -25,17 +25,16 @@ jobs:
       - name: Install dependencies
         run: npm install && npm run postinstall
 
-      - name: Configure environment file
-        run: touch .env
-          echo HYPERSWITCH_PUBLISHABLE_KEY=${{ vars.HYPERSWITCH_PUBLISHABLE_KEY }} > .env
-          echo HYPERSWITCH_SECRET_KEY=${{ vars.HYPERSWITCH_SECRET_KEY }} > .env
-          echo PROFILE_ID=${{ vars.PROFILE_ID }} > .env
-          echo HYPERSWITCH_SERVER_URL=$HYPERSWITCH_SERVER_URL > .env
-          echo HYPERSWITCH_CLIENT_URL=$HYPERSWITCH_CLIENT_URL > .env
-          cat .env
-        env:
-          HYPERSWITCH_SERVER_URL: "https://sandbox.hyperswitch.io"
-          HYPERSWITCH_CLIENT_URL: "http://localhost:9050"
+      - name: Create .env file
+        working-directory: ./Hyperswitch-React-Demo-App
+        run: |
+          touch .env
+          echo STATIC_DIR = ./dist >> .env
+          echo HYPERSWITCH_PUBLISHABLE_KEY = ${{ vars.HYPERSWITCH_PUBLISHABLE_KEY }} >> .env
+          echo HYPERSWITCH_SECRET_KEY = ${{ vars.HYPERSWITCH_SECRET_KEY }} >> .env
+          echo PROFILE_ID = ${{ vars.PROFILE_ID }} >> .env
+          echo HYPERSWITCH_SERVER_URL = "https://sandbox.hyperswitch.io" >> .env
+          echo HYPERSWITCH_CLIENT_URL = "http://localhost:9050" >> .env
 
       - name: Build and start local server
         run: npm run re:build && npm start &
