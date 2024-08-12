@@ -106,14 +106,6 @@ export default function CheckoutForm() {
         height: 55,
       },
     },
-    sdkHandleConfirmPayment: {
-      handleConfirm: true,
-      buttonText: "SDK Pay Now",
-      confirmParams: {
-        return_url: "http://localhost:9060",
-      },
-      allowButtonBeforeValidation: true,
-    },
   };
 
   return (
