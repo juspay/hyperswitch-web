@@ -11,6 +11,7 @@ on:
 jobs:
   cypress:
     runs-on: ubuntu-latest
+    environment: Testing
 
     steps:
       - name: Checkout repository
@@ -27,7 +28,6 @@ jobs:
 
       - name: Create .env file
         working-directory: ./Hyperswitch-React-Demo-App
-        environment: Testing
         run: |
           touch .env
           echo STATIC_DIR = ./dist >> .env
