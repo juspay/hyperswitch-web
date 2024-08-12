@@ -1,3 +1,10 @@
+# [0.84.0](https://github.com/juspay/hyperswitch-web/compare/v0.83.0...v0.84.0) (2024-08-12)
+
+
+### Features
+
+* Web Automation Testing Setup ([#556](https://github.com/juspay/hyperswitch-web/issues/556)) ([0a03fcb](https://github.com/juspay/hyperswitch-web/commit/0a03fcbfd31993f54688e1db4443cb7d2fe21ace))
+
 # [0.83.0](https://github.com/juspay/hyperswitch-web/compare/v0.82.3...v0.83.0) (2024-08-12)
 
 
