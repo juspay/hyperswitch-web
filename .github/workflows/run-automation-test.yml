@@ -25,12 +25,7 @@ jobs:
       - name: Install dependencies
         run: npm install && npm run postinstall
 
-      - name: Build and start local server
-        run: npm run re:build && npm start &
-          echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
-          echo "Demo App started started"
-
-      - name: Run Cypress
+      - name: Configure environment file
         run: touch .env
           echo HYPERSWITCH_PUBLISHABLE_KEY=${{ vars.HYPERSWITCH_PUBLISHABLE_KEY }} > .env
           echo HYPERSWITCH_SECRET_KEY=${{ vars.HYPERSWITCH_SECRET_KEY }} > .env
@@ -41,6 +36,11 @@ jobs:
         env:
           HYPERSWITCH_SERVER_URL: "https://sandbox.hyperswitch.io"
           HYPERSWITCH_CLIENT_URL: "http://localhost:9050"
+
+      - name: Build and start local server
+        run: npm run re:build && npm start &
+          echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
+          echo "Demo App started started"
 
       - name: Run Cypress
         uses: cypress-io/github-action@v6
