@@ -643,7 +643,7 @@ let make = (
                 )
                 ->then(json => {
                   if redirect.contents === "always" {
-                    let dict = json->JSON.Decode.object->Option.getOr(Dict.make())
+                    let dict = json->getDictFromJson
                     let status = dict->getString("status", "")
                     let returnUrl = dict->getString("return_url", "")
                     Window.Location.replace(
@@ -877,7 +877,7 @@ let make = (
                       let gpayClicked =
                         evJson
                         ->getOptionalJsonFromJson("GpayClicked")
-                        ->getBoolFromJson(false)
+                        ->getBoolFromOptionalJson(false)
 
                       let paymentDataRequest =
                         evJson

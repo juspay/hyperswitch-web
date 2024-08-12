@@ -1,3 +1,35 @@
+## [0.82.3](https://github.com/juspay/hyperswitch-web/compare/v0.82.2...v0.82.3) (2024-08-12)
+
+## [0.82.2](https://github.com/juspay/hyperswitch-web/compare/v0.82.1...v0.82.2) (2024-08-09)
+
+## [0.82.1](https://github.com/juspay/hyperswitch-web/compare/v0.82.0...v0.82.1) (2024-08-07)
+
+
+### Bug Fixes
+
+* revert changes for hyper.res ([#548](https://github.com/juspay/hyperswitch-web/issues/548)) ([373cd40](https://github.com/juspay/hyperswitch-web/commit/373cd40860f31cc201be41b2706e9c14c6eb771a))
+
+# [0.82.0](https://github.com/juspay/hyperswitch-web/compare/v0.81.1...v0.82.0) (2024-08-07)
+
+
+### Features
+
+* open banking PIS integration ([#541](https://github.com/juspay/hyperswitch-web/issues/541)) ([25e24b6](https://github.com/juspay/hyperswitch-web/commit/25e24b614e616104057d1ece77a18d7f841dbc89))
+
+## [0.81.1](https://github.com/juspay/hyperswitch-web/compare/v0.81.0...v0.81.1) (2024-08-07)
+
+
+### Bug Fixes
+
+* fixed structure of billing details in payment body ([#546](https://github.com/juspay/hyperswitch-web/issues/546)) ([1e63aad](https://github.com/juspay/hyperswitch-web/commit/1e63aad43e7de2cfca8bd8127395445fbb43e109))
+
+# [0.81.0](https://github.com/juspay/hyperswitch-web/compare/v0.80.7...v0.81.0) (2024-08-07)
+
+
+### Features
+
+* sdk pay now button enable prop added ([#543](https://github.com/juspay/hyperswitch-web/issues/543)) ([bf7a505](https://github.com/juspay/hyperswitch-web/commit/bf7a50518d74a5cd0d5e74b420d49d5320b515d0))
+
 ## [0.80.7](https://github.com/juspay/hyperswitch-web/compare/v0.80.6...v0.80.7) (2024-08-06)
 
 ## [0.80.6](https://github.com/juspay/hyperswitch-web/compare/v0.80.5...v0.80.6) (2024-08-06)

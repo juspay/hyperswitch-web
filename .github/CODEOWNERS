@@ -1,4 +1,4 @@
-- @akash-c-k @ArushKapoorJuspay @PritishBudhiraja @seekshiva @vsrivatsa-juspay
+- @akash-c-k @ArushKapoorJuspay @PritishBudhiraja @seekshiva @vsrivatsa-edinburgh @swamu
 
 docs/ @akash-c-k
 LICENSE @akash-c-k
@@ -6,7 +6,7 @@ README.md @akash-c-k
 SECURITY.md @akash-c-k
 .gitignore @ArushKapoorJuspay @PritishBudhiraja
 
-Hyperswitch-React-Demo-App/ @PritishBudhiraja @seekshiva @ArushKapoorJuspay @vsrivatsa-juspay
+Hyperswitch-React-Demo-App/ @PritishBudhiraja @seekshiva @ArushKapoorJuspay @vsrivatsa-edinburgh
 
 .husky/ @PritishBudhiraja @seekshiva
 .github/ @PritishBudhiraja @seekshiva
@@ -16,4 +16,4 @@ aws/ @seekshiva
 webpack.dev.js @ArushKapoorJuspay @PritishBudhiraja @seekshiva
 webpack.common.js @ArushKapoorJuspay @PritishBudhiraja @seekshiva
 
-src/ @seekshiva @PritishBudhiraja @ArushKapoorJuspay @vsrivatsa-juspay
+src/ @seekshiva @PritishBudhiraja @ArushKapoorJuspay @vsrivatsa-edinburgh @swamu
