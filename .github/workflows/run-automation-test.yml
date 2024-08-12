@@ -1,22 +1,23 @@
 name: Run Cypress Tests
 
-# Uncomment the lines below to trigger this workflow on pull requests to the main branch
-# on:
-# pull_request:
-#   branches:
-#     - main
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
 
 jobs:
   cypress:
     runs-on: ubuntu-latest
     environment: Testing
     env:
-      # Environment variables for Hyperswitch credentials and URLs
       HS_Pub_Key: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
       HS_Sec_Key: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
       HS_Prof_Id: ${{ secrets.PROFILE_ID }}
       HS_Server_Url: "https://sandbox.hyperswitch.io"
       HS_Client_Url: "http://localhost:9050"
+      # Environment variables for Hyperswitch credentials and URLs
 
     steps:
       - name: Checkout repository
