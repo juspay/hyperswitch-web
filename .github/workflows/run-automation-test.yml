@@ -1,0 +1,60 @@
+name: Run Cypress Tests
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
+
+jobs:
+  cypress:
+    runs-on: ubuntu-latest
+    environment: Testing
+    env:
+      HS_Pub_Key: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
+      HS_Sec_Key: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
+      HS_Prof_Id: ${{ secrets.PROFILE_ID }}
+      HS_Server_Url: "https://sandbox.hyperswitch.io"
+      HS_Client_Url: "http://localhost:9050"
+      # Environment variables for Hyperswitch credentials and URLs
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        # Checks out the repository so that the workflow can access the code
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20" # Specifies the version of Node.js to use
+          cache: "npm" # Caches npm dependencies to speed up subsequent installs
+
+      - name: Install dependencies
+        run: npm install
+        # Installs the necessary npm dependencies for the project
+
+      - name: Create .env file
+        working-directory: ./Hyperswitch-React-Demo-App
+        run: |
+          touch .env
+          echo STATIC_DIR = ./dist >> .env
+          echo HYPERSWITCH_PUBLISHABLE_KEY = $HS_Pub_Key >> .env
+          echo HYPERSWITCH_SECRET_KEY = $HS_Sec_Key >> .env
+          echo PROFILE_ID = $HS_Prof_Id >> .env
+          echo HYPERSWITCH_SERVER_URL = $HS_Server_Url >> .env
+          echo HYPERSWITCH_CLIENT_URL = $HS_Client_Url >> .env
+        # Creates a .env file with environment variables needed for the application
+
+      - name: Build and start local server
+        run: |
+          npm run re:build && npm start &
+          echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
+          echo "Demo App started"
+        # Builds the project and starts both the Hyperswitch Web and Demo App servers in the background
+
+      - name: Run Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: ./cypress-tests
+        # Runs Cypress tests located in the specified directory
