@@ -11,6 +11,8 @@ public/app.css
 /dist/
 **/*.bs.js
 .github/CODEOWNERS
+screenshots
+!cypress-tests/package-lock.json
 
 # yarn
 .pnp.*

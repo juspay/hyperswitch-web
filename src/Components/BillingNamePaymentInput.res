@@ -71,10 +71,10 @@ let make = (~paymentType, ~customFieldName=None, ~requiredFields as optionalRequ
       paymentType
       onBlur
       type_="text"
-      name="name"
       inputRef=nameRef
       placeholder
       className={config.appearance.innerLayout === Spaced ? "" : "!border-b-0"}
+      name=TestUtils.cardHolderNameInputTestId
     />
   </RenderIf>
 }

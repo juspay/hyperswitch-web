@@ -108,6 +108,7 @@ let make = (
     <div
       ref={payOptionsRef->ReactDOM.Ref.domRef}
       className="flex flex-row overflow-auto no-scrollbar"
+      dataTestId={TestUtils.paymentMethodListTestId}
       style={
         columnGap: themeObj.spacingTab,
         marginBottom: themeObj.spacingGridColumn,
@@ -145,6 +146,7 @@ let make = (
             className={`TabMore place-items-start outline-none`}
             onChange=handleChange
             disabled=readOnly
+            dataTestId=TestUtils.paymentMethodDropDownTestId
             style={
               width: "40px",
               paddingLeft: themeObj.spacingUnit,

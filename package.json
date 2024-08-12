@@ -1,6 +1,6 @@
 {
   "name": "orca-payment-page",
-  "version": "0.82.1",
+  "version": "0.84.0",
   "main": "index.js",
   "private": true,
   "dependencies": {
@@ -23,6 +23,7 @@
     "build": "webpack --config webpack.common.js",
     "build:sandbox": "sdkEnv=sandbox webpack --config webpack.common.js",
     "build:integ": "sdkEnv=integ webpack --config webpack.common.js",
+    "test": "cd cypress-tests && npm run cypress:run",
     "re:build": "rescript",
     "re:clean": "rescript clean",
     "re:start": "rescript -w",
