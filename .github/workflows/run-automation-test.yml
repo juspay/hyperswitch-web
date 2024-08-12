@@ -35,6 +35,7 @@ jobs:
           echo PROFILE_ID = ${{ vars.PROFILE_ID }} >> .env
           echo HYPERSWITCH_SERVER_URL = "https://sandbox.hyperswitch.io" >> .env
           echo HYPERSWITCH_CLIENT_URL = "http://localhost:9050" >> .env
+          cat .env
 
       - name: Build and start local server
         run: npm run re:build && npm start &
