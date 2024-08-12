@@ -101,42 +101,40 @@ let make = (
         </div>
       </RenderIf>
       <div className="relative">
-        <div className={`Input ${className} appearance-none relative`}>
-          <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
-            <div
-              className="absolute top-1 left-1 right-0 bottom-0  pointer-events-none rounded-sm z-20 whitespace-nowrap"
-              style={
-                background: disabled ? disbaledBG : themeObj.colorBackground,
-                opacity: disabled ? "35%" : "",
-                padding: themeObj.spacingUnit,
-                width: "95%",
-              }>
-              {React.string(displayValue->Option.getOr(""))}
-            </div>
-          </RenderIf>
-          <select
-            ref={dropdownRef->ReactDOM.Ref.domRef}
+        <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
+          <div
+            className="absolute top-1 left-1 right-0 bottom-0  pointer-events-none rounded-sm z-20 whitespace-nowrap"
             style={
               background: disabled ? disbaledBG : themeObj.colorBackground,
               opacity: disabled ? "35%" : "",
               padding: themeObj.spacingUnit,
-              width: "100%",
-            }
-            name=""
-            value
-            disabled={readOnly || disabled}
-            onChange=handleChange
-            onFocus=handleFocus
-            className={`${inputClassStyles} ${className} w-full appearance-none outline-none ${cursorClass}`}>
-            {options
-            ->Array.mapWithIndex((item, index) => {
-              <option key={Int.toString(index)} value=item.value>
-                {React.string(item.label->Option.getOr(item.value))}
-              </option>
-            })
-            ->React.array}
-          </select>
-        </div>
+              width: "95%",
+            }>
+            {React.string(displayValue->Option.getOr(""))}
+          </div>
+        </RenderIf>
+        <select
+          ref={dropdownRef->ReactDOM.Ref.domRef}
+          style={
+            background: disabled ? disbaledBG : themeObj.colorBackground,
+            opacity: disabled ? "35%" : "",
+            padding: themeObj.spacingUnit,
+            width: "100%",
+          }
+          name=""
+          value
+          disabled={readOnly || disabled}
+          onChange=handleChange
+          onFocus=handleFocus
+          className={`${inputClassStyles} ${className} w-full appearance-none outline-none ${cursorClass}`}>
+          {options
+          ->Array.mapWithIndex((item, index) => {
+            <option key={Int.toString(index)} value=item.value>
+              {React.string(item.label->Option.getOr(item.value))}
+            </option>
+          })
+          ->React.array}
+        </select>
         <RenderIf condition={config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} absolute bottom-0 ml-3 ${focusClass}`}
