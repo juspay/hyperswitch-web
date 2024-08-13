@@ -69,9 +69,9 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
       paymentType
       onBlur
       type_="text"
-      name="name"
       inputRef=nameRef
       placeholder
+      name=TestUtils.fullNameInputTestId
     />
   </RenderIf>
 }

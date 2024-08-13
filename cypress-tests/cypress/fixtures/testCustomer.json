@@ -1,0 +1,15 @@
+{
+  "cardNo": "4242 4242 4242 4242",
+  "threeDSCardNo": "4000000000003220",
+  "cardExpiry": "04/24",
+  "cardCVV": "424",
+  "billingName": "John Doe",
+  "cardHolderName": "John Doe",
+  "email": "arun@gmail.com",
+  "address": "123 Main Street Apt 4B",
+  "city": "New York",
+  "country": "United States",
+  "state": "New York",
+  "postalCode": "10001",
+  "paymentSuccessfulText": "Payment successful"
+}

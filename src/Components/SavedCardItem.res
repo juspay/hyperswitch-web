@@ -184,6 +184,7 @@ let make = (
                       inputRef=cvcRef
                       placeholder="123"
                       height="2.2rem"
+                      name={TestUtils.cardCVVInputTestId}
                     />
                   </div>
                 </div>
