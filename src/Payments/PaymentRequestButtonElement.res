@@ -59,7 +59,7 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
       )
     | _ => []
     }
-  }, methodslist)
+  }, [methodslist])
   let gPayToken = getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
   let applePaySessionObj = itemToObjMapper(dict, ApplePayObject)
   let applePayToken = getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
