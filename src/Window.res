@@ -142,28 +142,6 @@ module Location = {
   external pathname: string = "pathname"
 }
 
-module Parent = {
-  module Location = {
-    @val @scope(("window", "parent", "location"))
-    external replace: string => unit = "replace"
-
-    @val @scope(("window", "parent", "location"))
-    external hostname: string = "hostname"
-
-    @val @scope(("window", "parent", "location"))
-    external href: string = "href"
-
-    @val @scope(("window", "parent", "location"))
-    external origin: string = "origin"
-
-    @val @scope(("window", "parent", "location"))
-    external protocol: string = "protocol"
-
-    @val @scope(("window", "parent", "location"))
-    external pathname: string = "pathname"
-  }
-}
-
 module Top = {
   module Location = {
     @val @scope(("window", "top", "location"))
@@ -216,30 +194,11 @@ let isIframed = () =>
     }
   }
 
-let isParentAndTopSame = () =>
-  try {
-    Parent.Location.href === Top.Location.href
-  } catch {
-  | e => {
-      let default = false
-      Js.Console.error3(
-        "Failed to check whether or not parent and top were same",
-        e,
-        `Using "${default->String.make}" as default (due to DOMException)`,
-      )
-      default
-    }
-  }
-
 let getRootHostName = () =>
   switch isIframed() {
   | true =>
     try {
-      if isParentAndTopSame() {
-        Parent.Location.hostname
-      } else {
-        Top.Location.hostname
-      }
+      Top.Location.hostname
     } catch {
     | e => {
         let default = Location.hostname
@@ -258,11 +217,7 @@ let replaceRootHref = (href: string) => {
   switch isIframed() {
   | true =>
     try {
-      if isParentAndTopSame() {
-        Parent.Location.replace(href)
-      } else {
-        Top.Location.replace(href)
-      }
+      Top.Location.replace(href)
     } catch {
     | e => {
         Js.Console.error3(
