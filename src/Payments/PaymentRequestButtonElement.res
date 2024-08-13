@@ -39,6 +39,7 @@ module WalletsSaveDetailsText = {
 @react.component
 let make = (~sessions, ~walletOptions, ~paymentType) => {
   open SessionsType
+  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
   let dict = sessions->Utils.getDictFromJson
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
@@ -47,6 +48,18 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
     () => getPaymentSessionObj(sessionObj.sessionsToken, Paypal),
     [sessionObj],
   )
+  let paypalPaymentMethodExperience = React.useMemo(() => {
+    switch methodslist {
+    | Loaded(paymentlist) =>
+      let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+      PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
+        ~paymentMethodList=plist,
+        ~paymentMethodName="wallet",
+        ~paymentMethodType="paypal",
+      )
+    | _ => []
+    }
+  }, methodslist)
   let gPayToken = getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
   let applePaySessionObj = itemToObjMapper(dict, ApplePayObject)
   let applePayToken = getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
@@ -60,6 +73,8 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
   let klarnaTokenObj = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
 
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let isPaypalSDKFlow = paypalPaymentMethodExperience->Array.includes(InvokeSDK)
+  let isPaypalRedirectFlow = paypalPaymentMethodExperience->Array.includes(RedirectToURL)
 
   <div className="flex flex-col gap-2 h-auto w-full">
     {walletOptions
@@ -94,11 +109,15 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
               <SessionPaymentWrapper type_={Wallet}>
                 {switch paypalToken {
                 | OtherTokenOptional(optToken) =>
-                  switch optToken {
-                  | Some(token) => <PaypalSDKLazy sessionObj=token paymentType />
-                  | None => <PayPalLazy />
+                  switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
+                  | (Some(token), true, _) => <PaypalSDKLazy sessionObj=token paymentType />
+                  | (_, _, true) => <PayPalLazy />
+                  | (_, _, _) => React.null
                   }
-                | _ => <PayPalLazy />
+                | _ =>
+                  <RenderIf condition={isPaypalRedirectFlow}>
+                    <PayPalLazy />
+                  </RenderIf>
                 }}
               </SessionPaymentWrapper>
             | ApplePayWallet =>
