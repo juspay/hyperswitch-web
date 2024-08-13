@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "ES2022",
+    "lib": ["ES2015", "dom"],
+    "types": ["cypress", "node"]
+  },
+  "include": ["**/*.ts", "./cypress.d.ts"]
+}

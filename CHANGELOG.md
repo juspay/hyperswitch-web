@@ -1,3 +1,26 @@
+## [0.84.1](https://github.com/juspay/hyperswitch-web/compare/v0.84.0...v0.84.1) (2024-08-13)
+
+
+### Bug Fixes
+
+* john doe name added ([b46dce2](https://github.com/juspay/hyperswitch-web/commit/b46dce2102ba99d83e4a367f82660e0c61d01f02))
+
+# [0.84.0](https://github.com/juspay/hyperswitch-web/compare/v0.83.0...v0.84.0) (2024-08-12)
+
+
+### Features
+
+* Web Automation Testing Setup ([#556](https://github.com/juspay/hyperswitch-web/issues/556)) ([0a03fcb](https://github.com/juspay/hyperswitch-web/commit/0a03fcbfd31993f54688e1db4443cb7d2fe21ace))
+
+# [0.83.0](https://github.com/juspay/hyperswitch-web/compare/v0.82.3...v0.83.0) (2024-08-12)
+
+
+### Features
+
+* dockerize the hyperswitch-web ([#555](https://github.com/juspay/hyperswitch-web/issues/555)) ([e7588f3](https://github.com/juspay/hyperswitch-web/commit/e7588f3243dddba56d938b93545c19095ae45077))
+
+## [0.82.3](https://github.com/juspay/hyperswitch-web/compare/v0.82.2...v0.82.3) (2024-08-12)
+
 ## [0.82.2](https://github.com/juspay/hyperswitch-web/compare/v0.82.1...v0.82.2) (2024-08-09)
 
 ## [0.82.1](https://github.com/juspay/hyperswitch-web/compare/v0.82.0...v0.82.1) (2024-08-07)
