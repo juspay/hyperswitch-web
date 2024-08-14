@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          require_assignee: true
 
       - name: Store PR title in a file
         shell: bash
@@ -27,8 +29,5 @@ jobs:
         with:
           files: ./pr_title.txt
 
-      - name: Check assignee
-        uses: actions/checkout@v4
-        with:
-          require_assignee: true
+        
 
