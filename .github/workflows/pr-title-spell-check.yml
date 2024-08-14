@@ -27,7 +27,7 @@ jobs:
         with:
           files: ./pr_title.txt
 
-      - name: Assign
+      - name: Assign to author
         run: |
           PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
 
