@@ -31,5 +31,4 @@ jobs:
         uses: actions/checkout@v4
         with:
           require_assignee: true
-        run: echo "${{ github.event.pull_request.title }}"
 
