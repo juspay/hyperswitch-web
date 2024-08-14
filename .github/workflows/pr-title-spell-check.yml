@@ -29,8 +29,6 @@ jobs:
 
   check-assignee:
     runs-on: ubuntu-latest
-    with:
-      require_assignee: true
     steps:
       - name: Check assignee
         run: |
