@@ -1,8 +1,6 @@
 name: Check Assignee
 
 on:
-  issues:
-    types: [opened, edited, assigned]
   pull_request:
     types: [opened, edited, assigned]
 
