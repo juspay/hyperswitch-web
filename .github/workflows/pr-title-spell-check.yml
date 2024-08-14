@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          require_assignee: true
+          require_assignee: repository
 
       - name: Store PR title in a file
         shell: bash
