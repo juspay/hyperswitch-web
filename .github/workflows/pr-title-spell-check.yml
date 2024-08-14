@@ -32,4 +32,5 @@ jobs:
       - uses: ./
         with:
           require_assignee: true
+        run: echo "${{ github.event.pull_request.title }}"
 
