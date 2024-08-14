@@ -65,7 +65,9 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
     {walletOptions
     ->Array.mapWithIndex((item, i) => {
       <ErrorBoundary
-        level={ErrorBoundary.RequestButton} key={`${item}-${i->Int.toString}-request-button`}>
+        level={ErrorBoundary.RequestButton}
+        key={`${item}-${i->Int.toString}-request-button`}
+        componentName="PaymentRequestButtonElement">
         <ReusableReactSuspense
           loaderComponent={<WalletShimmer />}
           componentName="PaymentRequestButtonElement"

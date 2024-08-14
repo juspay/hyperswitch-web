@@ -284,7 +284,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     <PaymentShimmer />
   }
   let checkoutEle = {
-    <ErrorBoundary key={selectedOption}>
+    <ErrorBoundary key={selectedOption} componentName="PaymentElement">
       {switch selectedOption->PaymentModeType.paymentMode {
       | Card => <CardPayment cardProps expiryProps cvcProps paymentType />
       | Klarna =>
@@ -402,7 +402,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
         showFields}>
       <div className="flex flex-col place-items-center">
-        <ErrorBoundary key="payment_request_buttons_all" level={ErrorBoundary.RequestButton}>
+        <ErrorBoundary
+          key="payment_request_buttons_all"
+          level={ErrorBoundary.RequestButton}
+          componentName="PaymentRequestButtonElement">
           <PaymentRequestButtonElement sessions walletOptions paymentType />
         </ErrorBoundary>
         <RenderIf

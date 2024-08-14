@@ -123,7 +123,7 @@ module ErrorTextAndImage = {
 
 module ErrorCard = {
   @react.component
-  let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level) => {
+  let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level, ~componentName) => {
     let beaconApiCall = data => {
       if data->Array.length > 0 {
         let logData = data->Array.map(OrcaLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
@@ -157,6 +157,7 @@ module ErrorCard = {
           firstEvent: false,
           metadata: JSON.Encode.null,
           ephemeralKey: "",
+          componentName,
         }
         beaconApiCall([errorLog])
       }
@@ -200,10 +201,12 @@ module ErrorCard = {
   }
 }
 
-let defaultFallback = (e, level) => {
-  <ErrorCard error=e level />
+let defaultFallback = (e, level, componentName) => {
+  <ErrorCard error=e level componentName />
 }
 @react.component
-let make = (~children, ~renderFallback=defaultFallback, ~level=PaymentMethod) => {
-  <Sentry.ErrorBoundary fallback={e => renderFallback(e, level)}> children </Sentry.ErrorBoundary>
+let make = (~children, ~renderFallback=defaultFallback, ~level=PaymentMethod, ~componentName) => {
+  <Sentry.ErrorBoundary fallback={e => renderFallback(e, level, componentName)}>
+    children
+  </Sentry.ErrorBoundary>
 }
