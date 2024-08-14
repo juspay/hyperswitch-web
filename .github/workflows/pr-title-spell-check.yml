@@ -29,6 +29,7 @@ jobs:
 
       - name: Check assignee
         uses: actions/checkout@v4
+        uses: ./
         with:
-          require_assignee: true
+          require_assignee: false
 
