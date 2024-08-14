@@ -28,5 +28,7 @@ jobs:
           files: ./pr_title.txt
 
       - name: Check assignee
-      - uses: augustohp/github-action-pr-assignee
+        uses: actions/checkout@v4
+        with:
+          require_assignee: true
 
