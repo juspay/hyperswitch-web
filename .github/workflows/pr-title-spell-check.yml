@@ -28,12 +28,8 @@ jobs:
           files: ./pr_title.txt
 
       - name: Check assignee
-        run: |
-          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-
-          response=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Accept: application/vnd.github+json" \
-          https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER})
-
-          echo "$response"
+      - uses: actions/checkout@v1
+      - uses: ./
+        with:
+          require_assignee: true
 
