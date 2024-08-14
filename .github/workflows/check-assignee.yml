@@ -2,9 +2,9 @@ name: Check Assignee
 
 on:
   issues:
-    types: [opened, edited]
+    types: [opened, edited, assigned]
   pull_request:
-    types: [opened, edited]
+    types: [opened, edited, assigned]
 
 jobs:
   check-assignee:
@@ -15,6 +15,9 @@ jobs:
         with:
           script: |
             const assignees = context.payload.issue ? context.payload.issue.assignees : context.payload.pull_request.assignees;
+            console.log("Assignees:", assignees);
             if (assignees.length === 0) {
               throw new Error('No assignee added. Please add an assignee to this issue or pull request.');
+            } else {
+              console.log("Assignee check passed.");
             }
