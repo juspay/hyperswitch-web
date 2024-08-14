@@ -28,7 +28,7 @@ jobs:
           files: ./pr_title.txt
 
       - name: Check assignee
-      - uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           require_assignee: true
         run: echo "${{ github.event.pull_request.title }}"
