@@ -28,7 +28,6 @@ jobs:
           files: ./pr_title.txt
 
   check-assignee:
-    name: Check assignee
     runs-on: ubuntu-latest
     steps:
       - name: Check assignee
