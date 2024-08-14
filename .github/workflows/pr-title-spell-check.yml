@@ -1,4 +1,4 @@
-name: PR Title Spell Check
+name: PR Validations
 
 on:
   merge_group:
