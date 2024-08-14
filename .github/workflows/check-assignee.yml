@@ -1,0 +1,20 @@
+name: Check Assignee
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  check-assignee:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if assignee is added
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const assignees = context.payload.issue ? context.payload.issue.assignees : context.payload.pull_request.assignees;
+            if (assignees.length === 0) {
+              throw new Error('No assignee added. Please add an assignee to this issue or pull request.');
+            }
