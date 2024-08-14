@@ -26,3 +26,19 @@ jobs:
         uses: crate-ci/typos@master
         with:
           files: ./pr_title.txt
+
+  check-assignee:
+    name: Check Assignee
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if assignee is added
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const assignees = context.payload.issue ? context.payload.issue.assignees : context.payload.pull_request.assignees;
+            console.log("Assignees:", assignees);
+            if (assignees.length === 0) {
+              throw new Error('No assignee added. Please add an assignee to this issue or pull request.');
+            } else {
+              console.log("Assignee check passed.");
+            }
