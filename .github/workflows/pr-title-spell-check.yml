@@ -29,7 +29,6 @@ jobs:
 
       - name: Check assignee
       - uses: actions/checkout@v1
-      - uses: ./
         with:
           require_assignee: true
         run: echo "${{ github.event.pull_request.title }}"
