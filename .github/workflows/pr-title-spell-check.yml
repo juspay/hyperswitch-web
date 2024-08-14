@@ -29,10 +29,10 @@ jobs:
 
   check-assignee:
     runs-on: ubuntu-latest
+    with:
+      require_assignee: true
     steps:
       - name: Check assignee
-        with:
-          require_assignee: true
         run: |
           response=$(curl -L \
           -H "Accept: application/vnd.github+json" \
