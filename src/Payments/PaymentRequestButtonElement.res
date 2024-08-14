@@ -66,7 +66,10 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
     ->Array.mapWithIndex((item, i) => {
       <ErrorBoundary
         level={ErrorBoundary.RequestButton} key={`${item}-${i->Int.toString}-request-button`}>
-        <React.Suspense fallback={<WalletShimmer />} key={i->Int.toString}>
+        <ReusableReactSuspense
+          loaderComponent={<WalletShimmer />}
+          componentName="PaymentRequestButtonElement"
+          key={i->Int.toString}>
           {switch clientSecret {
           | Some(_) =>
             switch item->paymentMode {
@@ -123,7 +126,7 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
             }
           | None => React.null
           }}
-        </React.Suspense>
+        </ReusableReactSuspense>
       </ErrorBoundary>
     })
     ->React.array}
