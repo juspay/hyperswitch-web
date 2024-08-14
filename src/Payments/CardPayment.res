@@ -35,11 +35,8 @@ let make = (
     cardError,
     setCardError,
     maxCardLength,
+    cardBrand,
   ) = cardProps
-
-  let cardBrand = React.useMemo(() => {
-    cardNumber->CardUtils.getCardBrand
-  }, [cardNumber])
 
   let (
     isExpiryValid,
@@ -207,6 +204,7 @@ let make = (
     nickname,
     isCardBrandValid,
     isManualRetryEnabled,
+    cardProps,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -258,6 +256,7 @@ let make = (
                 ? "border-b-0"
                 : ""}
               name=TestUtils.cardNoInputTestId
+              rightIconClassName="-ml-12"
             />
             <div
               className="flex flex-row w-full place-content-between"

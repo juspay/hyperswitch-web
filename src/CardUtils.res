@@ -26,6 +26,7 @@ type cardProps = (
   string,
   (string => string) => unit,
   int,
+  string,
 )
 
 type expiryProps = (
@@ -654,4 +655,13 @@ let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
       ""->CardThemeType.getPaymentMode,
     )
   }
+}
+
+let getCoBadgesCardSchemes = cardNumber => {
+  CardPattern.cardPatterns->Array.reduce([], (acc, item) => {
+    if String.match(cardNumber, item.pattern)->Option.isSome {
+      acc->Array.push(item.issuer)
+    }
+    acc
+  })
 }
