@@ -27,11 +27,7 @@ jobs:
         with:
           files: ./pr_title.txt
 
-  check-assignee:
-    runs-on: ubuntu-latest
-    steps:
       - name: Check assignee
-      - uses: ./
         with:
           require_assignee: true
         run: |
@@ -42,3 +38,4 @@ jobs:
           https://api.github.com/repos/${{ github.repository }}/assignees)
 
           echo "$response"
+
