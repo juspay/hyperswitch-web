@@ -1,8 +1,13 @@
 name: Check for Label
 
 on:
-  issues:
-    types: [labeled]
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - reopened
+      - ready_for_review
+      - synchronize
 
 jobs:
   check-label:
@@ -14,11 +19,17 @@ jobs:
         with:
           script: |
             const label = 'your-label-name';
-            const labels = context.payload.issue.labels.map(l => l.name);
-            return labels.includes(label);
+            console.log(`Looking for label: ${label}`);
+
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            console.log('Labels on this pull request:', labels);
+
+            const labelExists = labels.includes(label);
+            console.log(`Does the label "${label}" exist?`, labelExists);
+
+            return labelExists;
 
       - name: Set output
-        id: set_output
         run: echo "LABEL_EXISTS=${{ steps.check_label.outputs.result }}" >> $GITHUB_ENV
 
       - name: Label exists
