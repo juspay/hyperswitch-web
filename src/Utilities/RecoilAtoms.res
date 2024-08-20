@@ -22,6 +22,7 @@ let paymentTokenAtom = Recoil.atom(
 let showCardFieldsAtom = Recoil.atom("showCardFields", false)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")
+let payNowButtonDisable = Recoil.atom("payNowButtonDisable", false)
 let paymentMethodCollectOptionAtom = Recoil.atom(
   "paymentMethodCollectOptions",
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
