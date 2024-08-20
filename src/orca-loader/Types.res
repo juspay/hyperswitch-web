@@ -13,7 +13,7 @@ type eventData = {
 type event = {key: string, data: eventData, source: Dom.element}
 type eventParam = Event(event) | EventData(eventData) | Empty
 type eventHandler = option<JSON.t> => unit
-@send external onload: (Dom.element, unit => Promise.t<'a>) => Promise.t<'a> = "onload"
+@send external onload: (Dom.element, unit => promise<'a>) => promise<'a> = "onload"
 module This = {
   type t
   @get
@@ -35,25 +35,25 @@ type paymentElement = {
 type element = {
   getElement: string => option<paymentElement>,
   update: JSON.t => unit,
-  fetchUpdates: unit => Promise.t<JSON.t>,
+  fetchUpdates: unit => promise<JSON.t>,
   create: (string, JSON.t) => paymentElement,
 }
 
 type getCustomerSavedPaymentMethods = {
   getCustomerDefaultSavedPaymentMethodData: unit => JSON.t,
   getCustomerLastUsedPaymentMethodData: unit => JSON.t,
-  confirmWithCustomerDefaultPaymentMethod: JSON.t => Promise.t<JSON.t>,
-  confirmWithLastUsedPaymentMethod: JSON.t => Promise.t<JSON.t>,
+  confirmWithCustomerDefaultPaymentMethod: JSON.t => promise<JSON.t>,
+  confirmWithLastUsedPaymentMethod: JSON.t => promise<JSON.t>,
 }
 
 type getPaymentManagementMethods = {
-  getSavedPaymentManagementMethodsList: unit => Promise.t<JSON.t>,
-  deleteSavedPaymentMethod: JSON.t => Promise.t<JSON.t>,
+  getSavedPaymentManagementMethodsList: unit => promise<JSON.t>,
+  deleteSavedPaymentMethod: JSON.t => promise<JSON.t>,
 }
 
 type initPaymentSession = {
-  getCustomerSavedPaymentMethods: unit => Promise.t<JSON.t>,
-  getPaymentManagementMethods: unit => Promise.t<JSON.t>,
+  getCustomerSavedPaymentMethods: unit => promise<JSON.t>,
+  getPaymentManagementMethods: unit => promise<JSON.t>,
 }
 
 type confirmParams = {return_url: string}
@@ -64,11 +64,11 @@ type confirmPaymentParams = {
 }
 
 type hyperInstance = {
-  confirmOneClickPayment: (JSON.t, bool) => Promise.t<JSON.t>,
-  confirmPayment: JSON.t => Promise.t<JSON.t>,
+  confirmOneClickPayment: (JSON.t, bool) => promise<JSON.t>,
+  confirmPayment: JSON.t => promise<JSON.t>,
   elements: JSON.t => element,
-  confirmCardPayment: (string, option<JSON.t>, option<JSON.t>) => Promise.t<JSON.t>,
-  retrievePaymentIntent: string => Promise.t<JSON.t>,
+  confirmCardPayment: (string, option<JSON.t>, option<JSON.t>) => promise<JSON.t>,
+  retrievePaymentIntent: string => promise<JSON.t>,
   widgets: JSON.t => element,
   paymentRequest: JSON.t => JSON.t,
   initPaymentSession: JSON.t => initPaymentSession,

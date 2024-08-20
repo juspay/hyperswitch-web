@@ -313,7 +313,7 @@ let rec intentCall = (
     ~bodyStr: string=?,
     ~headers: Dict.t<string>=?,
     ~method: Fetch.method,
-  ) => Promise.t<Fetch.Response.t>,
+  ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,
   ~bodyStr,

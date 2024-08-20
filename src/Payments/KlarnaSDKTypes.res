@@ -37,7 +37,7 @@ type loadType = {
   payment_method_category?: string,
   theme?: string,
   shape?: string,
-  on_click?: authorize => Promise.t<unit>,
+  on_click?: authorize => promise<unit>,
 }
 type some = {
   init: token => unit,

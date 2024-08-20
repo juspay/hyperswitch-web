@@ -4,7 +4,7 @@ open EventListenerManager
 open Identity
 
 @val @scope(("navigator", "clipboard"))
-external writeText: string => Promise.t<'a> = "writeText"
+external writeText: string => promise<'a> = "writeText"
 
 let make = (
   componentType,
