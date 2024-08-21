@@ -221,7 +221,7 @@ let make = (
       <div
         style={height: `${height->Int.toString}px`}
         id="google-pay-button"
-        className={`w-full flex flex-row justify-center rounded-md border-2 border-white`}
+        className={`w-full flex flex-row justify-center rounded-md`}
       />
     </RenderIf>
   } else {
