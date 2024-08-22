@@ -1,3 +1,10 @@
+## [0.84.2](https://github.com/juspay/hyperswitch-web/compare/v0.84.1...v0.84.2) (2024-08-22)
+
+
+### Bug Fixes
+
+* google pay button border ([#570](https://github.com/juspay/hyperswitch-web/issues/570)) ([44be5b6](https://github.com/juspay/hyperswitch-web/commit/44be5b69ed95d081d178d9dbed74e9ddcc336a56))
+
 ## [0.84.1](https://github.com/juspay/hyperswitch-web/compare/v0.84.0...v0.84.1) (2024-08-13)
 
 
