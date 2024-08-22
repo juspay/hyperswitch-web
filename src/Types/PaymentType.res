@@ -146,7 +146,6 @@ type sdkHandleConfirmPayment = {
   handleConfirm: bool,
   buttonText?: string,
   confirmParams: ConfirmType.confirmParams,
-  allowButtonBeforeValidation: bool,
 }
 
 type options = {
@@ -287,7 +286,6 @@ let defaultBillingAddress = {
 let defaultSdkHandleConfirmPayment = {
   handleConfirm: false,
   confirmParams: ConfirmType.defaultConfirm,
-  allowButtonBeforeValidation: false,
 }
 
 let defaultOptions = {
@@ -985,7 +983,6 @@ let getSdkHandleConfirmPaymentProps = dict => {
   handleConfirm: dict->getBool("handleConfirm", false),
   buttonText: ?dict->getOptionString("buttonText"),
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
-  allowButtonBeforeValidation: dict->getBool("allowButtonBeforeValidation", false),
 }
 
 let itemToObjMapper = (dict, logger) => {
