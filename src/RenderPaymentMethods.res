@@ -60,6 +60,7 @@ let make = (
       background: "transparent",
       marginLeft: "4px",
       marginRight: "4px",
+      marginTop: "4px",
       fontFamily: themeObj.fontFamily,
       fontSize: themeObj.fontSizeBase,
       filter: blur,
