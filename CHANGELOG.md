@@ -1,3 +1,10 @@
+## [0.84.4](https://github.com/juspay/hyperswitch-web/compare/v0.84.3...v0.84.4) (2024-08-23)
+
+
+### Bug Fixes
+
+* **payout:** dropdown for selecting payment methods, UI updates ([#581](https://github.com/juspay/hyperswitch-web/issues/581)) ([78bc958](https://github.com/juspay/hyperswitch-web/commit/78bc9580b21006fb8522e86e0c2e19f9777586e6))
+
 ## [0.84.3](https://github.com/juspay/hyperswitch-web/compare/v0.84.2...v0.84.3) (2024-08-22)
 
 ## [0.84.2](https://github.com/juspay/hyperswitch-web/compare/v0.84.1...v0.84.2) (2024-08-22)
