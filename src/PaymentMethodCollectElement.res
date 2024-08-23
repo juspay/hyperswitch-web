@@ -229,10 +229,10 @@ let make = (~integrateError, ~logger) => {
         <div
           className="flex flex-row justify-between items-center w-full px-10 py-5 border-b border-jp-gray-300">
           <div className="text-2xl font-semibold"> {React.string(options.collectorName)} </div>
-          <img className="h-7 w-auto" src={options.logo} alt="o" />
+          <img className="h-12 w-auto max-w-21" src={options.logo} alt="o" />
         </div>
         <img className="h-40 w-40 mt-7" src={imageSource} alt="o" />
-        <div className="text-5 font-semibold mt-2.5"> {React.string(readableStatus)} </div>
+        <div className="text-xl font-semibold mt-2.5"> {React.string(readableStatus)} </div>
         <div className="text-jp-gray-800 m text-center mx-10 mb-10">
           {React.string(statusInfo.message)}
         </div>
@@ -292,11 +292,12 @@ let make = (~integrateError, ~logger) => {
                   <div
                     className="flex flex-col-reverse
                     lg:mx-5 lg:mt-5 lg:flex-row lg:justify-between">
-                    <div className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl">
-                      {React.string(`${options.currency} ${options.amount}`)}
+                    <div
+                      className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl flex justify-center items-center">
+                      <p> {React.string(`${options.currency} ${options.amount}`)} </p>
                     </div>
-                    <div className="flex items-center justify-center h-16 w-16 bg-white rounded-sm">
-                      <img className="max-h-12 max-w-16 h-auto w-auto" src={merchantLogo} alt="O" />
+                    <div className="flex items-center justify-center h-12 w-auto bg-white rounded-sm">
+                      <img className="max-h-12 w-auto max-w-21 h-auto w-auto" src={merchantLogo} alt="O" />
                     </div>
                   </div>
                   <div className="lg:mx-5">
