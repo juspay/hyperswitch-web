@@ -14,7 +14,7 @@
   "namespace": true,
   "ppx-flags": [],
   "package-specs": {
-    "module": "es6",
+    "module": "esmodule",
     "in-source": true
   },
   "bs-dependencies": [

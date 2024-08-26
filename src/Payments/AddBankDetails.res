@@ -45,7 +45,7 @@ let make = (~paymentMethodType) => {
             ~optLogger=Some(logger),
           )
           ->then(_ => {
-            handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+            messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
             setShowFields(_ => false)
             JSON.Encode.null->resolve
           })

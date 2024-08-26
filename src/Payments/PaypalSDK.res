@@ -42,7 +42,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
     | _ => 48
     },
   }
-  let handleCloseLoader = () => Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+  let handleCloseLoader = () => Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(

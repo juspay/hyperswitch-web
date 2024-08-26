@@ -217,7 +217,7 @@ let useHandleApplePayResponse = (
     Window.addEventListener("message", handleApplePayMessages)
     Some(
       () => {
-        handlePostMessage([("applePaySessionAbort", true->JSON.Encode.bool)])
+        messageParentWindow([("applePaySessionAbort", true->JSON.Encode.bool)])
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
@@ -237,7 +237,7 @@ let handleApplePayButtonClicked = (~sessionObj, ~componentName) => {
     ("applePayButtonClicked", true->JSON.Encode.bool),
     ("applePayPaymentRequest", paymentRequest),
   ]
-  handlePostMessage(message)
+  messageParentWindow(message)
 }
 
 let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {

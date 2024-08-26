@@ -7,7 +7,7 @@ type addressType = Line1 | Line2 | City | Postal | State | Country
 type dataModule = {states: JSON.t}
 
 @val
-external importStates: string => Promise.t<dataModule> = "import"
+external importStates: string => promise<dataModule> = "import"
 
 let getShowType = str => {
   switch str {

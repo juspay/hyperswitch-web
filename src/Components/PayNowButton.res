@@ -39,7 +39,7 @@ let make = () => {
     setIsPayNowButtonDisable(_ => true)
     setShowLoader(_ => true)
     EventListenerManager.addSmartEventListener("message", handleMessage, "onSubmitSuccessful")
-    handlePostMessage([("handleSdkConfirm", confirmPayload)])
+    messageParentWindow([("handleSdkConfirm", confirmPayload)])
   }
 
   <div className="flex flex-col gap-1 h-auto w-full items-center">

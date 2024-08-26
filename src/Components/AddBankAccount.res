@@ -36,7 +36,7 @@ let make = (~modalData, ~setModalData) => {
   let toolTipRef = React.useRef(Nullable.null)
 
   let openModal = () => {
-    handlePostMessage([
+    messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("iframeId", iframeId->JSON.Encode.string),
     ])

@@ -140,7 +140,7 @@ let useHandleGooglePayResponse = (
         )
       }
       if dict->Dict.get("gpayError")->Option.isSome {
-        handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+        messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         if isSavedMethodsFlow || !isWallet {
           postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
         }
@@ -153,13 +153,13 @@ let useHandleGooglePayResponse = (
 
 let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly) => {
   let paymentDataRequest = GooglePayType.getPaymentDataFromSession(~sessionObj, ~componentName)
-  handlePostMessage([
+  messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
     ("param", "paymentloader"->JSON.Encode.string),
     ("iframeId", iframeId->JSON.Encode.string),
   ])
   if !readOnly {
-    handlePostMessage([
+    messageParentWindow([
       ("GpayClicked", true->JSON.Encode.bool),
       ("GpayPaymentDataRequest", paymentDataRequest->Identity.anyTypeToJson),
     ])
