@@ -2,7 +2,7 @@ let sendPromiseData = (promise, key) => {
   open Promise
   promise
   ->then(res => resolve(res))
-  ->catch(_err => resolve(JSON.Encode.null))
+  ->catch(_ => resolve(JSON.Encode.null))
   ->thenResolve(response => {
     Utils.messageParentWindow([("response", response), ("data", key->JSON.Encode.string)])
   })
@@ -90,7 +90,7 @@ module PreMountLoaderForPMMElements = {
       let messageHandler = (ev: Window.event) => {
         let json = ev.data->Utils.safeParse
         let dict = json->Utils.getDictFromJson
-        if dict->Dict.get("sendSavedPaymentMethodsResponse")->Belt.Option.isSome {
+        if dict->Dict.get("sendSavedPaymentMethodsResponse")->Option.isSome {
           savedPaymentMethodsPromise->sendPromiseData("saved_payment_methods")
         }
       }
