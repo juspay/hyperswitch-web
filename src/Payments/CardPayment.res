@@ -20,6 +20,7 @@ let make = (
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let isCardCoBadged = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCardCoBadged)
 
   let (nickname, setNickname) = React.useState(_ => "")
 
@@ -218,6 +219,7 @@ let make = (
     !isBancontact
 
   let nicknameFieldClassName = conditionsForShowingSaveCardCheckbox ? "pt-2" : "pt-5"
+  let cardInputRightIconClassName = isCardCoBadged ? "-ml-12" : "-ml-10"
 
   let compressedLayoutStyleForCvcError =
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
@@ -256,7 +258,7 @@ let make = (
                 ? "border-b-0"
                 : ""}
               name=TestUtils.cardNoInputTestId
-              rightIconClassName="-ml-12"
+              rightIconClassName=cardInputRightIconClassName
             />
             <div
               className="flex flex-row w-full place-content-between"

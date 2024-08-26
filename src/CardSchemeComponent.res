@@ -2,7 +2,7 @@ module CoBadgeCardSchemeDropDown = {
   @react.component
   let make = (~cardNumber, ~setCardBrand) => {
     <select
-      className="w-[15px]"
+      className="w-4"
       onChange={ev => {
         let target = ev->ReactEvent.Form.target
         let value = target["value"]
@@ -11,7 +11,7 @@ module CoBadgeCardSchemeDropDown = {
       <option disabled=true> {"Select a card brand"->React.string} </option>
       {cardNumber
       ->CardUtils.getCoBadgesCardSchemes
-      ->Array.mapWithIndex((item: string, i) => {
+      ->Array.mapWithIndex((item, i) => {
         <option key={Int.toString(i)} value=item className="opacity-0 w-0 h-0">
           {item->React.string}
         </option>
@@ -32,6 +32,8 @@ let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand, ~isCardCoBadge
   )
   <div className={`${animate} flex items-center`}>
     cardBrandIcon
-    {isCardCoBadged ? <CoBadgeCardSchemeDropDown cardNumber setCardBrand /> : React.null}
+    <RenderIf condition={isCardCoBadged}>
+      <CoBadgeCardSchemeDropDown cardNumber setCardBrand />
+    </RenderIf>
   </div>
 }
