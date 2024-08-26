@@ -185,7 +185,7 @@ module ErrorCard = {
     React.useEffect(() => {
       switch level {
       | Top =>
-        Utils.handlePostMessage([
+        Utils.messageParentWindow([
           ("iframeHeight", (divH +. 1.0)->JSON.Encode.float),
           ("iframeId", iframeId->JSON.Encode.string),
         ])

@@ -19,7 +19,7 @@ let make = () => {
         ~value="Y",
         ~paymentMethod="CARD",
       )
-      handlePostMessage([
+      messageParentWindow([
         ("fullscreen", true->JSON.Encode.bool),
         ("param", `3dsAuth`->JSON.Encode.string),
         ("iframeId", iframeId->JSON.Encode.string),
@@ -54,7 +54,7 @@ let make = () => {
   }
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
+    messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson
@@ -97,7 +97,7 @@ let make = () => {
             ~logType=ERROR,
           )
           metadata->Utils.getDictFromJson->Dict.set("3dsMethodComp", "N"->JSON.Encode.string)
-          handlePostMessage([
+          messageParentWindow([
             ("fullscreen", true->JSON.Encode.bool),
             ("param", `3dsAuth`->JSON.Encode.string),
             ("iframeId", iframeId->JSON.Encode.string),

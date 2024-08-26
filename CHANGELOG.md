@@ -1,3 +1,21 @@
+## [0.84.5](https://github.com/juspay/hyperswitch-web/compare/v0.84.4...v0.84.5) (2024-08-26)
+
+## [0.84.4](https://github.com/juspay/hyperswitch-web/compare/v0.84.3...v0.84.4) (2024-08-23)
+
+
+### Bug Fixes
+
+* **payout:** dropdown for selecting payment methods, UI updates ([#581](https://github.com/juspay/hyperswitch-web/issues/581)) ([78bc958](https://github.com/juspay/hyperswitch-web/commit/78bc9580b21006fb8522e86e0c2e19f9777586e6))
+
+## [0.84.3](https://github.com/juspay/hyperswitch-web/compare/v0.84.2...v0.84.3) (2024-08-22)
+
+## [0.84.2](https://github.com/juspay/hyperswitch-web/compare/v0.84.1...v0.84.2) (2024-08-22)
+
+
+### Bug Fixes
+
+* google pay button border ([#570](https://github.com/juspay/hyperswitch-web/issues/570)) ([44be5b6](https://github.com/juspay/hyperswitch-web/commit/44be5b69ed95d081d178d9dbed74e9ddcc336a56))
+
 ## [0.84.1](https://github.com/juspay/hyperswitch-web/compare/v0.84.0...v0.84.1) (2024-08-13)
 
 

@@ -37,7 +37,7 @@ let loadPaypalSDK = (
         style: buttonStyle,
         fundingSource: paypal["FUNDING"]["PAYPAL"],
         createOrder: () => {
-          Utils.handlePostMessage([
+          Utils.messageParentWindow([
             ("fullscreen", true->JSON.Encode.bool),
             ("param", "paymentloader"->JSON.Encode.string),
             ("iframeId", iframeId->JSON.Encode.string),
@@ -169,7 +169,7 @@ let loadBraintreePaypalSdk = (
                   fundingSource: paypal["FUNDING"]["PAYPAL"],
                   createBillingAgreement: () => {
                     //Paypal Clicked
-                    Utils.handlePostMessage([
+                    Utils.messageParentWindow([
                       ("fullscreen", true->JSON.Encode.bool),
                       ("param", "paymentloader"->JSON.Encode.string),
                       ("iframeId", iframeId->JSON.Encode.string),

@@ -2,7 +2,7 @@ type clientErr = bool
 type clientInstance
 type paypalCheckoutErr = {message: string}
 type data
-type order = {get: unit => RescriptCore.Promise.t<JSON.t>}
+type order = {get: unit => promise<JSON.t>}
 type actions = {order: order}
 type err
 type vault = {vault: bool}
@@ -75,7 +75,7 @@ type buttons = {
   style: style,
   fundingSource: string,
   createBillingAgreement?: unit => unit,
-  createOrder?: unit => RescriptCore.Promise.t<string>,
+  createOrder?: unit => promise<string>,
   onApprove: (data, actions) => unit,
   onCancel: data => unit,
   onError?: err => unit,

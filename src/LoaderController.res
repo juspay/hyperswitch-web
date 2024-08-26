@@ -24,7 +24,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let {config} = configAtom
   let {iframeId} = keys
 
-  let handlePostMessage = data => handlePostMessage(data, ~targetOrigin=keys.parentURL)
+  let messageParentWindow = data => messageParentWindow(data, ~targetOrigin=keys.parentURL)
 
   let setUserFullName = Recoil.useLoggedSetRecoilState(userFullName, "fullName", logger)
   let setUserEmail = Recoil.useLoggedSetRecoilState(userEmailAddress, "email", logger)
@@ -141,8 +141,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   }
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMounted", true->JSON.Encode.bool)])
-    handlePostMessage([("applePayMounted", true->JSON.Encode.bool)])
+    messageParentWindow([("iframeMounted", true->JSON.Encode.bool)])
+    messageParentWindow([("applePayMounted", true->JSON.Encode.bool)])
     logger.setLogInitiated()
     let updatedState: PaymentType.loadType = switch paymentMethodList {
     | Loading =>
@@ -553,7 +553,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   React.useEffect(() => {
     let iframeHeight = divH->Float.equal(0.0) ? divH : divH +. 1.0
-    handlePostMessage([
+    messageParentWindow([
       ("iframeHeight", iframeHeight->JSON.Encode.float),
       ("iframeId", iframeId->JSON.Encode.string),
     ])

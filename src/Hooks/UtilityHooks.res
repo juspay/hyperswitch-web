@@ -14,14 +14,8 @@ let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false
   open RecoilAtoms
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let setIsPayNowButtonDisable = Recoil.useSetRecoilState(payNowButtonDisable)
-  let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   React.useEffect(() => {
-    if !sdkHandleConfirmPayment.allowButtonBeforeValidation {
-      let isCompletelyFilled = complete && paymentType !== ""
-      setIsPayNowButtonDisable(_ => !isCompletelyFilled)
-    }
     Utils.handlePostMessageEvents(~complete, ~empty, ~paymentType, ~loggerState, ~savedMethod)
     None
   }, (complete, empty, paymentType))
