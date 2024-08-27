@@ -6,8 +6,8 @@ open EventListenerManager
 open ApplePayTypes
 
 type trustPayFunctions = {
-  finishApplePaymentV2: (string, paymentRequestData) => Promise.t<JSON.t>,
-  executeGooglePayment: (string, GooglePayType.paymentDataRequest) => Promise.t<JSON.t>,
+  finishApplePaymentV2: (string, paymentRequestData) => promise<JSON.t>,
+  executeGooglePayment: (string, GooglePayType.paymentDataRequest) => promise<JSON.t>,
 }
 @new external trustPayApi: JSON.t => trustPayFunctions = "TrustPayApi"
 
@@ -613,7 +613,7 @@ let make = (
           }
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
           | Some(val) => {
-              handlePostMessage([
+              messageParentWindow([
                 ("fullscreen", true->JSON.Encode.bool),
                 ("param", "paymentloader"->JSON.Encode.string),
                 ("iframeId", selectorString->JSON.Encode.string),
@@ -651,7 +651,7 @@ let make = (
                     )
                     resolve(JSON.Encode.null)
                   } else {
-                    handlePostMessage([
+                    messageParentWindow([
                       ("fullscreen", false->JSON.Encode.bool),
                       ("submitSuccessful", true->JSON.Encode.bool),
                       ("data", json),
@@ -663,7 +663,7 @@ let make = (
                   if redirect.contents === "always" {
                     Window.replaceRootHref(url)
                   }
-                  handlePostMessage([
+                  messageParentWindow([
                     ("submitSuccessful", false->JSON.Encode.bool),
                     ("error", err->Identity.anyTypeToJson),
                   ])
@@ -692,17 +692,17 @@ let make = (
                 ~isForceSync=true,
               )
               ->then(json => {
-                handlePostMessage([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
+                messageParentWindow([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
                 resolve(json)
               })
               ->catch(err => {
-                handlePostMessage([
+                messageParentWindow([
                   ("submitSuccessful", false->JSON.Encode.bool),
                   ("error", err->Identity.anyTypeToJson),
                 ])
                 resolve(err->Identity.anyTypeToJson)
               })
-              ->finally(_ => handlePostMessage([("fullscreen", false->JSON.Encode.bool)]))
+              ->finally(_ => messageParentWindow([("fullscreen", false->JSON.Encode.bool)]))
             }->ignore
 
           | None => ()

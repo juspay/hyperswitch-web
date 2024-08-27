@@ -31,7 +31,7 @@ let make = () => {
       }
     }
     Window.addEventListener("message", handle)
-    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
+    messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     Some(() => {Window.removeEventListener("message", handle)})
   })
 
@@ -80,7 +80,7 @@ let make = () => {
           ~message="Payment is processing. Try again later!",
         )
       }
-      handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+      messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       resolve(json)
     })
     ->then(_ => {
@@ -101,7 +101,7 @@ let make = () => {
           logger.setLogInfo(~value="Plaid SDK Loaded", ~eventName=PLAID_SDK)
         },
         onSuccess: (publicToken, _) => {
-          handlePostMessage([
+          messageParentWindow([
             ("isPlaid", true->JSON.Encode.bool),
             ("publicToken", publicToken->JSON.Encode.string),
           ])
@@ -113,7 +113,7 @@ let make = () => {
           if isForceSync {
             callbackOnSuccessOfPlaidPaymentsFlow()
           } else {
-            handlePostMessage([
+            messageParentWindow([
               ("fullscreen", false->JSON.Encode.bool),
               ("isPlaid", true->JSON.Encode.bool),
               ("isExited", true->JSON.Encode.bool),

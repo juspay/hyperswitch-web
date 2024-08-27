@@ -30,7 +30,7 @@ let make = (~sessionObj: SessionsType.token) => {
   }
 
   let handleCloseLoader = () => {
-    Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+    Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }
 
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
@@ -69,7 +69,7 @@ let make = (~sessionObj: SessionsType.token) => {
               result => {
                 let result = result->JSON.Decode.bool->Option.getOr(false)
                 if result {
-                  Utils.handlePostMessage([
+                  Utils.messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", "paymentloader"->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),

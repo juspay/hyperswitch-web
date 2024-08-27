@@ -22,7 +22,7 @@ let make = () => {
   }
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
+    messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
@@ -64,7 +64,7 @@ let make = () => {
           let dict = json->getDictFromJson
           if dict->Dict.get("error")->Option.isSome {
             let errorObj = PaymentError.itemToObjMapper(dict)
-            handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+            messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
             postFailedSubmitResponse(
               ~errortype=errorObj.error.type_,
               ~message=errorObj.error.message,

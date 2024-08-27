@@ -21,7 +21,7 @@ let getPaymentType = paymentMethodType =>
   | _ => Other
   }
 
-let closePaymentLoaderIfAny = () => handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
 
 type paymentIntent = (
   ~handleUserError: bool=?,
@@ -267,7 +267,7 @@ let rec pollStatus = (
       if status === "completed" {
         resolve(json)
       } else if count === 0 {
-        handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+        messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         openUrl(returnUrl)
       } else {
         delay(interval)
@@ -313,7 +313,7 @@ let rec intentCall = (
     ~bodyStr: string=?,
     ~headers: Dict.t<string>=?,
     ~method: Fetch.method,
-  ) => Promise.t<Fetch.Response.t>,
+  ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,
   ~bodyStr,
@@ -368,7 +368,7 @@ let rec intentCall = (
     let url = urlSearch(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
-    handlePostMessage([("confirmParams", confirmParam->Identity.anyTypeToJson)])
+    messageParentWindow([("confirmParams", confirmParam->Identity.anyTypeToJson)])
 
     if statusCode->String.charAt(0) !== "2" {
       res
@@ -557,7 +557,7 @@ let rec intentCall = (
                   ~paymentMethod,
                 )
                 if !isPaymentSession {
-                  handlePostMessage([
+                  messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `${intent.payment_method_type}BankTransfer`->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
@@ -592,7 +592,7 @@ let rec intentCall = (
                   ~paymentMethod,
                 )
                 if !isPaymentSession {
-                  handlePostMessage([
+                  messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `qrData`->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
@@ -639,7 +639,7 @@ let rec intentCall = (
                 )
 
                 if do3dsMethodCall {
-                  handlePostMessage([
+                  messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `3ds`->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
@@ -647,7 +647,7 @@ let rec intentCall = (
                   ])
                 } else {
                   metaData->Dict.set("3dsMethodComp", "U"->JSON.Encode.string)
-                  handlePostMessage([
+                  messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `3dsAuth`->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
@@ -681,7 +681,7 @@ let rec intentCall = (
                   ~eventName=DISPLAY_VOUCHER,
                   ~paymentMethod,
                 )
-                handlePostMessage([
+                messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
                   ("param", `voucherData`->JSON.Encode.string),
                   ("iframeId", iframeId->JSON.Encode.string),
@@ -724,7 +724,7 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  handlePostMessage(message)
+                  messageParentWindow(message)
                 }
                 resolve(data)
               } else if intent.nextAction.type_ === "invoke_sdk_client" {
@@ -778,7 +778,7 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  handlePostMessage(message)
+                  messageParentWindow(message)
                 }
               } else {
                 handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
@@ -1713,7 +1713,7 @@ let callAuthLink = (
             ("isForceSync", false->JSON.Encode.bool),
           ]->getJsonFromArrayOfJson
 
-        handlePostMessage([
+        messageParentWindow([
           ("fullscreen", true->JSON.Encode.bool),
           ("param", "plaidSDK"->JSON.Encode.string),
           ("iframeId", iframeId->JSON.Encode.string),

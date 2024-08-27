@@ -1,7 +1,7 @@
 let close = setOpenModal => {
   setOpenModal(_ => false)
   setTimeout(() => {
-    Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+    Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }, 450)->ignore
 }
 
@@ -21,7 +21,7 @@ let make = (
     switch closeCallback {
     | Some(fn) => fn()
     | None => setTimeout(() => {
-        Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+        Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       }, 450)->ignore
     }
   }

@@ -497,23 +497,28 @@ let make = (
   }
 
   let handleTabSelection = selectedPMT => {
-    if (
-      availablePaymentMethodTypesOrdered->Array.indexOf(selectedPMT) >=
-        defaultOptionsLimitInTabLayout
-    ) {
-      // Move the selected payment method at the last tab position
-      let ordList = availablePaymentMethodTypes->Array.reduceWithIndex([], (acc, pmt, i) => {
-        if i === defaultOptionsLimitInTabLayout - 1 {
-          acc->Array.push(selectedPMT)
-        }
-        if pmt !== selectedPMT {
-          acc->Array.push(pmt)
-        }
-        acc
-      })
-      setAvailablePaymentMethodTypesOrdered(_ => ordList)
-    }
-    setSelectedPaymentMethodType(_ => Some(selectedPMT))
+    availablePaymentMethodTypesOrdered
+    ->Array.find(pmt => pmt->getPaymentMethodTypeLabel === selectedPMT)
+    ->Option.map(selectedPaymentMethod => {
+      if (
+        availablePaymentMethodTypesOrdered->Array.indexOf(selectedPaymentMethod) >=
+          defaultOptionsLimitInTabLayout
+      ) {
+        // Move the selected payment method at the last tab position
+        let ordList = availablePaymentMethodTypes->Array.reduceWithIndex([], (acc, pmt, i) => {
+          if i === defaultOptionsLimitInTabLayout - 1 {
+            acc->Array.push(selectedPaymentMethod)
+          }
+          if pmt !== selectedPaymentMethod {
+            acc->Array.push(pmt)
+          }
+          acc
+        })
+        setAvailablePaymentMethodTypesOrdered(_ => ordList)
+      }
+      setSelectedPaymentMethodType(_ => Some(selectedPaymentMethod))
+    })
+    ->ignore
   }
 
   let renderTabScreen = (~limit=defaultOptionsLimitInTabLayout) => {
@@ -541,8 +546,7 @@ let make = (
                 <option
                   key={i->Int.toString}
                   value={pmt->getPaymentMethodTypeLabel}
-                  className="flex items-center px-2.5 py-0.5 cursor-pointer hover:bg-jp-gray-50"
-                  onClick={_ => handleTabSelection(pmt)}>
+                  className="text-black bg-white hover:bg-gray-100">
                   {React.string(pmt->getPaymentMethodTypeLabel)}
                 </option>,
               )
@@ -559,7 +563,7 @@ let make = (
                 <div
                   key={i->Int.toString}
                   onClick={_ => setSelectedPaymentMethodType(_ => Some(pmt))}
-                  className="flex w-full items-center rounded border border-solid border-jp-gray-700 px-2.5 py-1.5 mr-2.5 cursor-pointer hover:bg-jp-gray-50"
+                  className="flex w-full items-center rounded border-0 px-2.5 py-1.5 mr-2.5 cursor-pointer hover:bg-jp-gray-50"
                   style={selectedPaymentMethodType === Some(pmt) ? activeStyles : defaultStyles}>
                   {pmt->getPaymentMethodTypeIcon}
                   <div className="ml-2.5"> {React.string(pmt->getPaymentMethodTypeLabel)} </div>
@@ -582,7 +586,8 @@ let make = (
                       size=10
                     />
                     <select
-                      className="h-full relative rounded border border-solid border-jp-gray-700 py-1.5 cursor-pointer bg-white text-transparent w-8 hover:bg-jp-gray-50 focus:border-0.5">
+                      onChange={ev => handleTabSelection(ReactEvent.Form.target(ev)["value"])}
+                      className="h-full relative rounded border border-solid border-jp-gray-700 py-1.5 cursor-pointer bg-white text-transparent w-8 hover:bg-jp-gray-50">
                       {switch selectedPaymentMethodType {
                       | Some(selectedPaymentMethodType) =>
                         <option

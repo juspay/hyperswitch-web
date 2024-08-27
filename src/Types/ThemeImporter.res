@@ -4,4 +4,4 @@ type themeDataModule = {
 }
 
 @val
-external importTheme: string => Promise.t<themeDataModule> = "import"
+external importTheme: string => promise<themeDataModule> = "import"
