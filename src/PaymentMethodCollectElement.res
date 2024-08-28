@@ -27,9 +27,9 @@ let make = (~integrateError, ~logger) => {
     let availablePMT: array<paymentMethodType> = []
     options.enabledPaymentMethods->Array.forEach(pm => {
       switch pm {
-      | Card(_) =>
+      | Card((_, requiredField)) =>
         if !(availablePM->Array.includes(Card)) {
-          availablePMT->Array.push(Card(Debit))
+          availablePMT->Array.push(Card((Debit, requiredField)))
           availablePM->Array.push(Card)
         }
       | BankTransfer(_) =>
@@ -89,6 +89,8 @@ let make = (~integrateError, ~logger) => {
     setLoader(_ => true)
     let flow = options.flow
     let pmdBody = flow->formBody(pmd)
+
+    Js.Console.log3("DEBFABSJHFGSA", flow, pmdBody)
 
     switch flow {
     | PayoutLinkInitiate => {
@@ -290,14 +292,19 @@ let make = (~integrateError, ~logger) => {
                   className="flex flex-col text-white w-full min-w-[300px] max-w-[520px]
                   lg:rounded-md lg:shadow-lg lg:min-w-80 lg:max-w-96 lg:bg-white lg:text-black">
                   <div
-                    className="flex flex-col-reverse
+                    className="flex flex-col-reverse justify-end
                     lg:mx-5 lg:mt-5 lg:flex-row lg:justify-between">
                     <div
-                      className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl flex justify-center items-center">
+                      className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl flex justify-start items-center">
                       <p> {React.string(`${options.currency} ${options.amount}`)} </p>
                     </div>
-                    <div className="flex items-center justify-center h-12 w-auto bg-white rounded-sm">
-                      <img className="max-h-12 w-auto max-w-21 h-auto w-auto" src={merchantLogo} alt="O" />
+                    <div
+                      className="flex self-start h-12 w-auto bg-white rounded-sm">
+                      <img
+                        className="max-h-12 w-auto max-w-21 h-auto w-auto"
+                        src={merchantLogo}
+                        alt="O"
+                      />
                     </div>
                   </div>
                   <div className="lg:mx-5">

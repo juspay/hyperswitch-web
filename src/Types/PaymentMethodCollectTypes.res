@@ -6,15 +6,14 @@ type paymentMethod =
 type card = Credit | Debit
 type bankTransfer = ACH | Bacs | Sepa
 type wallet = Paypal | Pix | Venmo
-type paymentMethodType =
-  | Card(card)
-  | BankTransfer(bankTransfer)
-  | Wallet(wallet)
+type cardExpDate =
+  | CardExpMonth
+  | CardExpYear
 
 type paymentMethodDataField =
   // Cards
   | CardNumber
-  | CardExpDate
+  | CardExpDate(cardExpDate)
   | CardHolderName
   // Card meta
   | CardBrand
@@ -40,9 +39,71 @@ type paymentMethodDataField =
   | PixBankName
   | VenmoMobNumber
 
-type paymentMethodData = (paymentMethod, paymentMethodType, array<(paymentMethodDataField, string)>)
+type userFullNameForAddress =
+  | FirstName
+  | LastName
+
+type addressField =
+  | Email
+  | FullName(userFullNameForAddress)
+  | CountryCode
+  | PhoneNumber
+  | PhoneCountryCode
+  | AddressLine1
+  | AddressLine2
+  | AddressCity
+  | AddressState
+  | AddressPincode
+  | AddressCountry
+
+type requiredFieldsForAddress = {
+  pmdMap: string,
+  displayName: string,
+  fieldType: addressField,
+  value: option<string>,
+}
+
+type requiredFieldsForPaymentMethodData = {
+  pmdMap: string,
+  displayName: string,
+  fieldType: paymentMethodDataField,
+  value: option<string>,
+}
+
+type requiredFieldInfo =
+  | BillingAddress(requiredFieldsForAddress)
+  | PayoutMethodData(requiredFieldsForPaymentMethodData)
+
+type requiredFieldType =
+  | BillingAddress(addressField)
+  | PayoutMethodData(paymentMethodDataField)
+
+type requiredFields = {
+  address: option<array<requiredFieldsForAddress>>,
+  payoutMethodData: option<array<requiredFieldsForPaymentMethodData>>,
+}
+
+type paymentMethodType =
+  | Card((card, requiredFields))
+  | BankTransfer((bankTransfer, requiredFields))
+  | Wallet((wallet, requiredFields))
+
+type paymentMethodData = (paymentMethod, paymentMethodType, array<(requiredFieldInfo, string)>)
 
 type formLayout = Journey | Tabs
+
+type journeyViews =
+  | SelectPM
+  | SelectPMType(paymentMethod)
+  | AddressForm(paymentMethod, paymentMethodType, array<requiredFieldsForAddress>)
+  | PMDForm(paymentMethod, paymentMethodType, array<requiredFieldsForPaymentMethodData>)
+  | FinalizeView(paymentMethod, paymentMethodType, paymentMethodData)
+
+type tabViews =
+  | DetailsForm(paymentMethod, paymentMethodType)
+  | FinalizeView(paymentMethod, paymentMethodType, paymentMethodData)
+
+type views = Journey(journeyViews) | Tabs(tabViews)
 
 type paymentMethodCollectFlow = PayoutLinkInitiate | PayoutMethodCollect
 
@@ -138,15 +199,15 @@ let decodeFlow = (dict, defaultPaymentMethodCollectFlow) =>
   | None => defaultPaymentMethodCollectFlow
   }
 
-let decodeFormLayout = (dict, decodeFormLayout) =>
+let decodeFormLayout = (dict, defaultFormLayout): formLayout =>
   switch dict->Dict.get("formLayout") {
   | Some(formLayout) =>
     switch formLayout->JSON.Decode.string {
     | Some("journey") => Journey
     | Some("tabs") => Tabs
-    | _ => decodeFormLayout
+    | _ => defaultFormLayout
     }
-  | None => decodeFormLayout
+  | None => defaultFormLayout
   }
 
 let decodeCard = (cardType: string): option<card> =>
@@ -172,44 +233,127 @@ let decodeWallet = (methodType: string): option<wallet> =>
   | _ => None
   }
 
-let decodePaymentMethodType = (json: JSON.t): option<array<paymentMethodType>> => {
-  switch JSON.Decode.object(json) {
-  | Some(obj) => {
-      let payment_method = obj->Dict.get("payment_method")->Option.flatMap(JSON.Decode.string)
-      let payment_methods: array<paymentMethodType> = []
-      let _ =
-        obj
-        ->Dict.get("payment_method_types")
-        ->Option.flatMap(JSON.Decode.array)
-        ->Option.flatMap(pmts => {
-          pmts->Array.forEach(pmt => {
-            let payment_method_type = pmt->JSON.Decode.string
-            switch (payment_method, payment_method_type) {
-            | (Some("card"), Some(cardType)) =>
-              switch decodeCard(cardType) {
-              | Some(card) => payment_methods->Array.push(Card(card))
-              | None => ()
-              }
-            | (Some("bank_transfer"), Some(transferType)) =>
-              switch decodeTransfer(transferType) {
-              | Some(transfer) => payment_methods->Array.push(BankTransfer(transfer))
-              | None => ()
-              }
-            | (Some("wallet"), Some(walletType)) =>
-              switch decodeWallet(walletType) {
-              | Some(wallet) => payment_methods->Array.push(Wallet(wallet))
-              | None => ()
-              }
-            | _ => ()
-            }
-          })
-          None
-        })
-      Some(payment_methods)
-    }
-  | None => None
+let decodeFieldType = (key: string): option<requiredFieldType> => {
+  switch key {
+  // Card details
+  | "payout_method_data.card.card_number" => Some(PayoutMethodData(CardNumber))
+  | "payout_method_data.card.expiry_month" => Some(PayoutMethodData(CardExpDate(CardExpMonth)))
+  | "payout_method_data.card.expiry_year" => Some(PayoutMethodData(CardExpDate(CardExpYear)))
+  | "payout_method_data.card.card_holder_name" => Some(PayoutMethodData(CardHolderName))
+
+  // SEPA
+  | "payout_method_data.bank.iban" => Some(PayoutMethodData(SepaIban))
+  | "payout_method_data.bank.bic" => Some(PayoutMethodData(SepaBic))
+
+  // Billing address
+  | "billing.address.first_name" => Some(BillingAddress(FullName(FirstName)))
+  | "billing.address.last_name" => Some(BillingAddress(FullName(LastName)))
+  | "billing.address.line1" => Some(BillingAddress(AddressLine1))
+  | "billing.address.line2" => Some(BillingAddress(AddressLine2))
+  | "billing.address.city" => Some(BillingAddress(AddressCity))
+  | "billing.address.zip" => Some(BillingAddress(AddressPincode))
+  | "billing.address.state" => Some(BillingAddress(AddressState))
+  | "billing.address.country" => Some(BillingAddress(AddressCountry))
+  | "billing.phone.country_code" => Some(BillingAddress(PhoneCountryCode))
+  | "billing.phone.number" => Some(BillingAddress(PhoneNumber))
+
+  | _ => None
   }
 }
+
+let decodeRequiredFields = (json: JSON.t): option<requiredFields> =>
+  json
+  ->JSON.Decode.object
+  ->Option.map(obj => {
+    let (addressFields, payoutMethodDataFields) =
+      obj
+      ->Js.Dict.entries
+      ->Array.reduce(([], []), ((addressFields, payoutMethodDataFields), (key, value)) => {
+        switch JSON.Decode.object(value) {
+        | Some(fieldObj) => {
+            let getString = key => fieldObj->Dict.get(key)->Option.flatMap(JSON.Decode.string)
+            switch (getString("required_field"), getString("display_name"), getString("value")) {
+            | (Some(pmdMap), Some(displayName), value) =>
+              switch decodeFieldType(key) {
+              | Some(BillingAddress(fieldType)) =>
+                let addressField: requiredFieldsForAddress = {
+                  pmdMap,
+                  displayName,
+                  fieldType,
+                  value,
+                }
+                ([addressField, ...addressFields], payoutMethodDataFields)
+              | Some(PayoutMethodData(fieldType)) =>
+                let payoutMethodDataField = {
+                  pmdMap,
+                  displayName,
+                  fieldType,
+                  value,
+                }
+                (addressFields, [payoutMethodDataField, ...payoutMethodDataFields])
+              | None => (addressFields, payoutMethodDataFields)
+              }
+            | _ => (addressFields, payoutMethodDataFields)
+            }
+          }
+        | None => (addressFields, payoutMethodDataFields)
+        }
+      })
+
+    {
+      address: Some(addressFields),
+      payoutMethodData: Some(payoutMethodDataFields),
+    }
+  })
+
+let decodePaymentMethodType = (json: JSON.t): option<array<paymentMethodType>> =>
+  json
+  ->JSON.Decode.object
+  ->Option.flatMap(obj => {
+    let paymentMethod = obj->Dict.get("payment_method")->Option.flatMap(JSON.Decode.string)
+    obj
+    ->Dict.get("payment_method_types_info")
+    ->Option.flatMap(JSON.Decode.array)
+    ->Option.map(pmtInfoArr =>
+      Array.filterMap(
+        pmtInfoArr,
+        pmtInfo =>
+          pmtInfo
+          ->JSON.Decode.object
+          ->Option.flatMap(
+            obj => {
+              let paymentMethodType =
+                obj->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
+              let requiredFields =
+                obj
+                ->Dict.get("required_fields")
+                ->Option.flatMap(decodeRequiredFields)
+                ->Option.getOr({address: None, payoutMethodData: None})
+              switch (paymentMethod, paymentMethodType) {
+              | (Some("card"), Some(cardType)) =>
+                cardType
+                ->decodeCard
+                ->Option.map(
+                  card => {
+                    Js.Console.log3("SETTIONG CARD", Card(card, requiredFields), obj)
+                    Card(card, requiredFields)
+                  },
+                )
+              | (Some("bank_transfer"), Some(transferType)) =>
+                transferType
+                ->decodeTransfer
+                ->Option.map(transfer => BankTransfer(transfer, requiredFields))
+              | (Some("wallet"), Some(walletType)) =>
+                walletType
+                ->decodeWallet
+                ->Option.map(wallet => Wallet(wallet, requiredFields))
+              | _ => None
+              }
+            },
+          ),
+      )
+    )
+  })
 
 let decodePayoutConfirmResponse = (json: JSON.t): option<payoutConfirmResponse> => {
   switch json->JSON.Decode.object {
@@ -304,11 +448,31 @@ let decodePayoutConfirmResponse = (json: JSON.t): option<payoutConfirmResponse> 
  * [
  *    {
  *      "payment_method": "bank_transfer",
- *      "payment_method_types": ["ach", "bacs"]
+ *      "payment_method_types": [
+          {
+            "payment_method_type": "ach",
+            "required_fields": {
+              ""
+            }
+          },
+          {
+            "payment_method_type": "bacs"
+          }
+        ]
  *    },
  *    {
  *      "payment_method": "wallet",
- *      "payment_method_types": ["paypal", "venmo"]
+ *      "payment_method_types": [
+          {
+            "payment_method_type": "paypal",
+            "required_fields": {
+              ""
+            }
+          },
+          {
+            "payment_method_type": "venmo"
+          }
+        ]
  *    },
  * ]
  *
