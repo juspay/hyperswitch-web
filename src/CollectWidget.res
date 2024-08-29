@@ -94,14 +94,68 @@ let make = (
   }, [selectedPaymentMethod])
 
   // Helpers
-  let resetForm = () => {
-    setPaymentMethodData(_ => Dict.make())
+  let getPaymentMethodDataValue = (key: requiredFieldType) =>
+    paymentMethodData
+    ->getValue(key->getPaymentMethodDataFieldKey)
+    ->Option.getOr("")
+
+  let setPaymentMethodDataValue = (key: requiredFieldType, value) =>
+    setPaymentMethodData(_ => paymentMethodData->setValue(key->getPaymentMethodDataFieldKey, value))
+
+  let loadDefaultRequiredFields = selectedPaymentMethodType =>
+    switch selectedPaymentMethodType {
+    | Card((_, requiredFields))
+    | BankTransfer((_, requiredFields))
+    | Wallet((_, requiredFields)) => {
+        let defaultValues =
+          requiredFields.address
+          ->Option.map(address =>
+            address->Array.reduce(Dict.make(), (defaultValues, field) =>
+              field.value
+              ->Option.map(
+                val =>
+                  defaultValues->setValue(
+                    BillingAddress(field.fieldType)->getPaymentMethodDataFieldKey,
+                    val,
+                  ),
+              )
+              ->Option.getOr(defaultValues)
+            )
+          )
+          ->Option.flatMap(defaultAddressValues => {
+            requiredFields.payoutMethodData->Option.map(payoutMethodData => {
+              payoutMethodData->Array.reduce(
+                defaultAddressValues,
+                (defaultValues, field) => {
+                  field.value
+                  ->Option.map(
+                    val =>
+                      defaultValues->setValue(
+                        PayoutMethodData(field.fieldType)->getPaymentMethodDataFieldKey,
+                        val,
+                      ),
+                  )
+                  ->Option.getOr(defaultValues)
+                },
+              )
+            })
+          })
+        switch defaultValues {
+        | Some(defaultValues) => setPaymentMethodData(_ => defaultValues)
+        | None => setPaymentMethodData(_ => Dict.make())
+        }
+      }
+    }
+
+  let resetForm = selectedPaymentMethodType => {
+    // Load defaults in current selected payment method type
+    selectedPaymentMethodType->Option.map(loadDefaultRequiredFields)->ignore
     setFieldValidityDict(_ => Dict.make())
   }
 
   // Reset form on PMT updation
   React.useEffect(() => {
-    resetForm()
+    resetForm(selectedPaymentMethodType)
     None
   }, [selectedPaymentMethodType])
 
@@ -111,41 +165,44 @@ let make = (
       switch pmt {
       | Card((_, requiredFields))
       | BankTransfer((_, requiredFields))
-      | Wallet((_, requiredFields)) =>
-        if requiredFields.address->Option.isSome {
-          requiredFields.address
-          ->Option.map(address => {
-            setCurrentView(_ => Journey(AddressForm(pm, pmt, address)))
+      | Wallet((_, requiredFields)) => {
+          let newView =
+            requiredFields.address
+            ->Option.flatMap(requiredFields => {
+              let addressFields =
+                requiredFields->Array.filter(addressField => addressField.value->Option.isNone)
+              if addressFields->Array.length > 0 {
+                Some(Journey(AddressForm(pm, pmt, addressFields)))
+              } else {
+                None
+              }
+            })
+            ->Option.mapOr(
+              requiredFields.payoutMethodData->Option.flatMap(requiredFields => {
+                let pmdFields =
+                  requiredFields->Array.filter(addressField => addressField.value->Option.isNone)
+                if pmdFields->Array.length > 0 {
+                  Some(Journey(PMDForm(pm, pmt, pmdFields)))
+                } else {
+                  None
+                }
+              }),
+              newView => {
+                Some(newView)
+              },
+            )
+
+          Js.Console.log2("NEW VIEW!", newView)
+          newView
+          ->Option.map(newView => {
+            setCurrentView(_ => newView)
           })
           ->ignore
-        } else if requiredFields.payoutMethodData->Option.isSome {
-          requiredFields.payoutMethodData
-          ->Option.map(payoutMethodData => {
-            setCurrentView(_ => Journey(PMDForm(pm, pmt, payoutMethodData)))
-          })
-          ->ignore
-        } else {
-          ()
         }
       }
     | Tabs(_) => setCurrentView(_ => Tabs(DetailsForm(pm, pmt)))
     }
   }
-
-  let getFieldTypeForFieldInfo = (key: requiredFieldInfo) => {
-    switch key {
-    | BillingAddress(fields) => BillingAddress(fields.fieldType)
-    | PayoutMethodData(fields) => PayoutMethodData(fields.fieldType)
-    }
-  }
-
-  let getPaymentMethodDataValue = (key: requiredFieldType) =>
-    paymentMethodData
-    ->getValue(key->getPaymentMethodDataFieldKey)
-    ->Option.getOr("")
-
-  let setPaymentMethodDataValue = (key: requiredFieldType, value) =>
-    setPaymentMethodData(_ => paymentMethodData->setValue(key->getPaymentMethodDataFieldKey, value))
 
   let validateAndSetPaymentMethodDataValue = (key: requiredFieldType, event) => {
     let value = ReactEvent.Form.target(event)["value"]
@@ -224,6 +281,13 @@ let make = (
       <div className="mx-2.5 h-4 w-0.5 bg-jp-gray-300"> {React.string("")} </div>
       <div className={valueClasses}> {React.string(value)} </div>
     </div>
+  }
+
+  let getFieldTypeForFieldInfo = (key: requiredFieldInfo) => {
+    switch key {
+    | BillingAddress(fields) => BillingAddress(fields.fieldType)
+    | PayoutMethodData(fields) => PayoutMethodData(fields.fieldType)
+    }
   }
 
   let renderFinalizeScreen = (
@@ -378,10 +442,7 @@ let make = (
           })
           ->ignore
         }
-      | Tabs(_) =>
-        setCurrentView(_ => Tabs(
-          FinalizeView(selectedPaymentMethod, selectedPaymentMethodType, payoutMethodData),
-        ))
+      | Tabs(_) => ()
       }
     })
     ->ignore
@@ -389,33 +450,30 @@ let make = (
   let handlePayoutMethodDataSave = (selectedPaymentMethod, selectedPaymentMethodType) =>
     formPaymentMethodData(selectedPaymentMethodType, paymentMethodData, fieldValidityDict)
     ->Option.map(pmd => {
-      switch currentView {
-      | Journey(_) =>
-        setCurrentView(_ => Journey(
-          FinalizeView(selectedPaymentMethod, selectedPaymentMethodType, pmd),
-        ))
-      | Tabs(_) => ()
-      }
+      setCurrentView(_ => Journey(
+        FinalizeView(selectedPaymentMethod, selectedPaymentMethodType, pmd),
+      ))
     })
     ->ignore
 
   let renderAddressForm = (addressFields: array<requiredFieldsForAddress>) =>
     addressFields
     ->Array.map(addressRequiredField => {
-      switch addressRequiredField.fieldType {
-      | Email => BillingAddress(Email)->renderInputTemplate
-      | FullName(FirstName) => BillingAddress(FullName(FirstName))->renderInputTemplate
+      switch (addressRequiredField.fieldType, addressRequiredField.value) {
+      | (Email, None) => BillingAddress(Email)->renderInputTemplate
+      | (FullName(FirstName), None) => BillingAddress(FullName(FirstName))->renderInputTemplate
       // first_name and last_name are stored in fullName
-      | FullName(LastName) => React.null
-      | CountryCode => BillingAddress(CountryCode)->renderInputTemplate
-      | PhoneNumber => BillingAddress(PhoneNumber)->renderInputTemplate
-      | PhoneCountryCode => BillingAddress(PhoneCountryCode)->renderInputTemplate
-      | AddressLine1 => BillingAddress(AddressLine1)->renderInputTemplate
-      | AddressLine2 => BillingAddress(AddressLine2)->renderInputTemplate
-      | AddressCity => BillingAddress(AddressCity)->renderInputTemplate
-      | AddressState => BillingAddress(AddressState)->renderInputTemplate
-      | AddressPincode => BillingAddress(AddressPincode)->renderInputTemplate
-      | AddressCountry => BillingAddress(AddressCountry)->renderInputTemplate
+      | (FullName(LastName), _) => React.null
+      | (CountryCode, None) => BillingAddress(CountryCode)->renderInputTemplate
+      | (PhoneNumber, None) => BillingAddress(PhoneNumber)->renderInputTemplate
+      | (PhoneCountryCode, None) => BillingAddress(PhoneCountryCode)->renderInputTemplate
+      | (AddressLine1, None) => BillingAddress(AddressLine1)->renderInputTemplate
+      | (AddressLine2, None) => BillingAddress(AddressLine2)->renderInputTemplate
+      | (AddressCity, None) => BillingAddress(AddressCity)->renderInputTemplate
+      | (AddressState, None) => BillingAddress(AddressState)->renderInputTemplate
+      | (AddressPincode, None) => BillingAddress(AddressPincode)->renderInputTemplate
+      | (AddressCountry, None) => BillingAddress(AddressCountry)->renderInputTemplate
+      | _ => React.null
       }
     })
     ->React.array
@@ -423,42 +481,42 @@ let make = (
   let renderPayoutMethodForm = (payoutMethodFields: array<requiredFieldsForPaymentMethodData>) =>
     payoutMethodFields
     ->Array.map(payoutMethodField => {
-      switch payoutMethodField.fieldType {
+      switch (payoutMethodField.fieldType, payoutMethodField.value) {
       // Card
-      | CardNumber => PayoutMethodData(CardNumber)->renderInputTemplate
-      | CardExpDate(CardExpMonth) =>
+      | (CardNumber, _) => PayoutMethodData(CardNumber)->renderInputTemplate
+      | (CardExpDate(CardExpMonth), _) =>
         PayoutMethodData(CardExpDate(CardExpMonth))->renderInputTemplate
       // expiry_month and expiry_year are store in cardExp
-      | CardExpDate(CardExpYear) => React.null
-      | CardHolderName => PayoutMethodData(CardHolderName)->renderInputTemplate
+      | (CardExpDate(CardExpYear), _) => React.null
+      | (CardHolderName, None) => PayoutMethodData(CardHolderName)->renderInputTemplate
       // ACH
-      | ACHRoutingNumber => PayoutMethodData(ACHRoutingNumber)->renderInputTemplate
-      | ACHAccountNumber => PayoutMethodData(ACHAccountNumber)->renderInputTemplate
+      | (ACHRoutingNumber, _) => PayoutMethodData(ACHRoutingNumber)->renderInputTemplate
+      | (ACHAccountNumber, _) => PayoutMethodData(ACHAccountNumber)->renderInputTemplate
       // Bacs
-      | BacsSortCode => PayoutMethodData(BacsSortCode)->renderInputTemplate
-      | BacsAccountNumber => PayoutMethodData(BacsAccountNumber)->renderInputTemplate
+      | (BacsSortCode, _) => PayoutMethodData(BacsSortCode)->renderInputTemplate
+      | (BacsAccountNumber, _) => PayoutMethodData(BacsAccountNumber)->renderInputTemplate
       // Sepa
-      | SepaIban => PayoutMethodData(SepaIban)->renderInputTemplate
-      | SepaBic => PayoutMethodData(SepaBic)->renderInputTemplate
+      | (SepaIban, _) => PayoutMethodData(SepaIban)->renderInputTemplate
+      | (SepaBic, _) => PayoutMethodData(SepaBic)->renderInputTemplate
       // Paypal
-      | PaypalMail => PayoutMethodData(PaypalMail)->renderInputTemplate
-      | PaypalMobNumber => PayoutMethodData(PaypalMobNumber)->renderInputTemplate
+      | (PaypalMail, _) => PayoutMethodData(PaypalMail)->renderInputTemplate
+      | (PaypalMobNumber, _) => PayoutMethodData(PaypalMobNumber)->renderInputTemplate
       // Venmo
-      | VenmoMobNumber => PayoutMethodData(VenmoMobNumber)->renderInputTemplate
+      | (VenmoMobNumber, _) => PayoutMethodData(VenmoMobNumber)->renderInputTemplate
       // Pix
-      | PixId => PayoutMethodData(PixId)->renderInputTemplate
+      | (PixId, _) => PayoutMethodData(PixId)->renderInputTemplate
 
       // TODO: Add these later
-      | CardBrand
-      | ACHBankName
-      | ACHBankCity
-      | BacsBankName
-      | BacsBankCity
-      | SepaBankName
-      | SepaBankCity
-      | SepaCountryCode
-      | PixBankAccountNumber
-      | PixBankName => React.null
+      | (CardBrand, _)
+      | (ACHBankName, _)
+      | (ACHBankCity, _)
+      | (BacsBankName, _)
+      | (BacsBankCity, _)
+      | (SepaBankName, _)
+      | (SepaBankCity, _)
+      | (SepaCountryCode, _)
+      | (PixBankAccountNumber, _)
+      | (PixBankName, _) => React.null
       }
     })
     ->React.array
@@ -648,19 +706,45 @@ let make = (
                       switch selectedPaymentMethodType {
                       | Card((_, requiredFields)) =>
                         switch requiredFields.address {
-                        | Some(address) =>
-                          Journey(
-                            AddressForm(selectedPaymentMethod, selectedPaymentMethodType, address),
-                          )
+                        | Some(address) => {
+                            let addressFields =
+                              address->Array.filter(addressField =>
+                                addressField.value->Option.isNone
+                              )
+                            if addressFields->Array.length > 0 {
+                              Journey(
+                                AddressForm(
+                                  selectedPaymentMethod,
+                                  selectedPaymentMethodType,
+                                  addressFields,
+                                ),
+                              )
+                            } else {
+                              Journey(SelectPM)
+                            }
+                          }
                         | None => Journey(SelectPM)
                         }
                       | BankTransfer((_, requiredFields))
                       | Wallet((_, requiredFields)) =>
                         switch requiredFields.address {
-                        | Some(address) =>
-                          Journey(
-                            AddressForm(selectedPaymentMethod, selectedPaymentMethodType, address),
-                          )
+                        | Some(address) => {
+                            let addressFields =
+                              address->Array.filter(addressField =>
+                                addressField.value->Option.isNone
+                              )
+                            if addressFields->Array.length > 0 {
+                              Journey(
+                                AddressForm(
+                                  selectedPaymentMethod,
+                                  selectedPaymentMethodType,
+                                  addressFields,
+                                ),
+                              )
+                            } else {
+                              Journey(SelectPMType(selectedPaymentMethod))
+                            }
+                          }
                         | None => Journey(SelectPMType(selectedPaymentMethod))
                         }
                       }

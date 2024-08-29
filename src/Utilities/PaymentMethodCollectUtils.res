@@ -666,15 +666,55 @@ let processAddressFields = (
     (dataArr, keys),
     requiredFieldInfo,
   ) => {
-    let key = BillingAddress(requiredFieldInfo.fieldType)
-    let info: requiredFieldInfo = BillingAddress(requiredFieldInfo)
-    let fieldKey = key->getPaymentMethodDataFieldKey
-    paymentMethodDataDict
-    ->getValue(fieldKey)
-    ->Option.map(value => dataArr->Array.push((info, value)))
-    ->ignore
-    keys->Array.push(fieldKey)
-    (dataArr, keys)
+    switch requiredFieldInfo.fieldType {
+    | FullName(FirstName) => {
+        let key = BillingAddress(FullName(FirstName))
+        let info: requiredFieldInfo = BillingAddress(requiredFieldInfo)
+        let fieldKey = key->getPaymentMethodDataFieldKey
+        paymentMethodDataDict
+        ->getValue(fieldKey)
+        ->Option.map(value => {
+          value
+          ->String.split(" ")
+          ->Array.get(0)
+          ->Option.map(firstName => dataArr->Array.push((info, firstName)))
+        })
+        ->ignore
+        keys->Array.push(fieldKey)
+        (dataArr, keys)
+      }
+    | FullName(LastName) => {
+        let key = BillingAddress(FullName(FirstName))
+        let info: requiredFieldInfo = BillingAddress(requiredFieldInfo)
+        let fieldKey = key->getPaymentMethodDataFieldKey
+        paymentMethodDataDict
+        ->getValue(fieldKey)
+        ->Option.map(value => {
+          let nameSplits = value->String.split(" ")
+          let lastName =
+            nameSplits
+            ->Array.slice(~start=1, ~end=nameSplits->Array.length)
+            ->Array.joinWith(" ")
+          if lastName->String.length > 0 {
+            dataArr->Array.push((info, lastName))
+          }
+        })
+        ->ignore
+        keys->Array.push(fieldKey)
+        (dataArr, keys)
+      }
+    | _ => {
+        let key = BillingAddress(requiredFieldInfo.fieldType)
+        let info: requiredFieldInfo = BillingAddress(requiredFieldInfo)
+        let fieldKey = key->getPaymentMethodDataFieldKey
+        paymentMethodDataDict
+        ->getValue(fieldKey)
+        ->Option.map(value => dataArr->Array.push((info, value)))
+        ->ignore
+        keys->Array.push(fieldKey)
+        (dataArr, keys)
+      }
+    }
   })
 
   requiredFieldKeys->checkValidity(fieldValidityDict) ? Some(requiredFieldsData) : None
