@@ -5,7 +5,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
 
   let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
+  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let removeSavedMethod = (
@@ -28,7 +28,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
       ~ephemeralKey=config.ephemeralKey,
       ~paymentMethodId=paymentItem.paymentMethodId,
       ~logger,
-      ~switchToCustomPod,
+      ~customPodUri,
     )
     ->then(res => {
       let dict = res->getDictFromJson

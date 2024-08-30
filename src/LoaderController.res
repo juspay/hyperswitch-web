@@ -11,7 +11,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
-  let setSwitchToCustomPod = Recoil.useSetRecoilState(switchToCustomPod)
+  let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let (divH, setDivH) = React.useState(_ => 0.0)
@@ -231,8 +231,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               logger.setSessionId(sdkSessionId)
               if Window.isInteg {
                 setBlockConfirm(_ => dict->getBool("blockConfirm", false))
-                setSwitchToCustomPod(_ => dict->getBool("switchToCustomPod", false))
               }
+              setCustomPodUri(_ => dict->getString("customPodUri", ""))
               updateOptions(dict)
               setSessionId(_ => {
                 sdkSessionId

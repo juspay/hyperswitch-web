@@ -100,7 +100,7 @@ let make = (~integrateError, ~logger) => {
           ~clientSecret=keys.clientSecret->Option.getOr(""),
           ~publishableKey=keys.publishableKey,
           ~logger,
-          ~switchToCustomPod=false,
+          ~customPodUri="",
           ~uri,
           ~body=pmdBody,
         )
@@ -171,7 +171,7 @@ let make = (~integrateError, ~logger) => {
         ~clientSecret=keys.clientSecret->Option.getOr(""),
         ~publishableKey=keys.publishableKey,
         ~logger,
-        ~switchToCustomPod=false,
+        ~customPodUri="",
         ~endpoint=ApiEndpoint.getApiEndPoint(),
         ~body=pmdBody,
       )
@@ -296,8 +296,13 @@ let make = (~integrateError, ~logger) => {
                       className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl flex justify-center items-center">
                       <p> {React.string(`${options.currency} ${options.amount}`)} </p>
                     </div>
-                    <div className="flex items-center justify-center h-12 w-auto bg-white rounded-sm">
-                      <img className="max-h-12 w-auto max-w-21 h-auto w-auto" src={merchantLogo} alt="O" />
+                    <div
+                      className="flex items-center justify-center h-12 w-auto bg-white rounded-sm">
+                      <img
+                        className="max-h-12 w-auto max-w-21 h-auto w-auto"
+                        src={merchantLogo}
+                        alt="O"
+                      />
                     </div>
                   </div>
                   <div className="lg:mx-5">

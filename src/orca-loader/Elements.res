@@ -49,13 +49,12 @@ let make = (
       ->Option.flatMap(x => x->Dict.get("blockConfirm"))
       ->Option.flatMap(JSON.Decode.bool)
       ->Option.getOr(false)
-    let switchToCustomPod =
-      GlobalVars.isInteg &&
+    let customPodUri =
       options
       ->JSON.Decode.object
-      ->Option.flatMap(x => x->Dict.get("switchToCustomPod"))
-      ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(false)
+      ->Option.flatMap(x => x->Dict.get("customPodUri"))
+      ->Option.flatMap(JSON.Decode.string)
+      ->Option.getOr("")
 
     let merchantHostname = Window.Location.hostname
 
@@ -72,7 +71,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}"
+          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"
           allow="*"
           name="orca-payment"
         ></iframe>
@@ -313,7 +312,7 @@ let make = (
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
             ("blockConfirm", blockConfirm->JSON.Encode.bool),
-            ("switchToCustomPod", switchToCustomPod->JSON.Encode.bool),
+            ("customPodUri", customPodUri->JSON.Encode.string),
             ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
@@ -418,7 +417,7 @@ let make = (
                           clientSecret,
                           headers,
                           ~optLogger=Some(logger),
-                          ~switchToCustomPod,
+                          ~customPodUri,
                           ~isForceSync=true,
                         )
                       )
@@ -626,7 +625,7 @@ let make = (
               let url = dict->getString("return_url_with_query_params", "")
               PaymentHelpers.pollStatus(
                 ~headers,
-                ~switchToCustomPod,
+                ~customPodUri,
                 ~pollId,
                 ~interval,
                 ~count,
@@ -638,7 +637,7 @@ let make = (
                   clientSecret,
                   headers,
                   ~optLogger=Some(logger),
-                  ~switchToCustomPod,
+                  ~customPodUri,
                   ~isForceSync=true,
                 )
                 ->then(json => {
@@ -688,7 +687,7 @@ let make = (
                 clientSecret,
                 headers,
                 ~optLogger=Some(logger),
-                ~switchToCustomPod,
+                ~customPodUri,
                 ~isForceSync=true,
               )
               ->then(json => {
