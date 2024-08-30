@@ -33,13 +33,12 @@ let make = (
       ->Option.getOr([])
       ->JSON.Encode.array
 
-    let switchToCustomPod =
-      GlobalVars.isInteg &&
+    let customPodUri =
       options
       ->JSON.Decode.object
-      ->Option.flatMap(x => x->Dict.get("switchToCustomPod"))
-      ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(false)
+      ->Option.flatMap(x => x->Dict.get("customPodUri"))
+      ->Option.flatMap(JSON.Decode.string)
+      ->Option.getOr("")
 
     let localSelectorString = "hyper-preMountLoader-iframe"
     let mountPreMountLoaderIframe = () => {
@@ -190,7 +189,7 @@ let make = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-            ("switchToCustomPod", switchToCustomPod->JSON.Encode.bool),
+            ("customPodUri", customPodUri->JSON.Encode.string),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),

@@ -7,6 +7,7 @@ let make = (
   ~ephemeralKey,
   ~hyperComponentName: Types.hyperComponentName,
   ~merchantHostname,
+  ~customPodUri,
 ) => {
   open Utils
   let (paymentMethodsResponseSent, setPaymentMethodsResponseSent) = React.useState(_ => false)
@@ -37,7 +38,7 @@ let make = (
         ~clientSecret,
         ~publishableKey,
         ~logger,
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
     | _ => JSON.Encode.null->Promise.resolve
@@ -49,7 +50,7 @@ let make = (
         ~clientSecret,
         ~publishableKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
     | _ => JSON.Encode.null->Promise.resolve
@@ -61,7 +62,7 @@ let make = (
         ~clientSecret,
         ~publishableKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
         ~merchantHostname,
       )
@@ -73,7 +74,7 @@ let make = (
       PaymentHelpers.fetchSavedPaymentMethodList(
         ~ephemeralKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
     | _ => JSON.Encode.null->Promise.resolve
