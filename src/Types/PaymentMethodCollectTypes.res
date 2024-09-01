@@ -4,8 +4,8 @@ type paymentMethod =
   | Wallet
 
 type card = Credit | Debit
-type bankTransfer = ACH | Bacs | Sepa
-type wallet = Paypal | Pix | Venmo
+type bankTransfer = ACH | Bacs | Pix | Sepa
+type wallet = Paypal | Venmo
 type cardExpDate =
   | CardExpMonth
   | CardExpYear
@@ -34,7 +34,7 @@ type paymentMethodDataField =
   // Wallets
   | PaypalMail
   | PaypalMobNumber
-  | PixId
+  | PixKey
   | PixBankAccountNumber
   | PixBankName
   | VenmoMobNumber
@@ -54,54 +54,59 @@ type addressField =
   | AddressCity
   | AddressState
   | AddressPincode
-  | AddressCountry
+  | AddressCountry(array<string>)
 
-type requiredFieldsForAddress = {
+type dynamicFieldForAddress = {
   pmdMap: string,
   displayName: string,
   fieldType: addressField,
   value: option<string>,
 }
 
-type requiredFieldsForPaymentMethodData = {
+type dynamicFieldForPaymentMethodData = {
   pmdMap: string,
   displayName: string,
   fieldType: paymentMethodDataField,
   value: option<string>,
 }
 
-type requiredFieldInfo =
-  | BillingAddress(requiredFieldsForAddress)
-  | PayoutMethodData(requiredFieldsForPaymentMethodData)
+type dynamicFieldInfo =
+  | BillingAddress(dynamicFieldForAddress)
+  | PayoutMethodData(dynamicFieldForPaymentMethodData)
 
-type requiredFieldType =
+type dynamicFieldType =
   | BillingAddress(addressField)
   | PayoutMethodData(paymentMethodDataField)
 
-type requiredFields = {
-  address: option<array<requiredFieldsForAddress>>,
-  payoutMethodData: option<array<requiredFieldsForPaymentMethodData>>,
+type dynamicFields = {
+  address: option<array<dynamicFieldForAddress>>,
+  payoutMethodData: array<dynamicFieldForPaymentMethodData>,
 }
 
-type paymentMethodType =
-  | Card((card, requiredFields))
-  | BankTransfer((bankTransfer, requiredFields))
-  | Wallet((wallet, requiredFields))
+type paymentMethodTypeWithDynamicFields =
+  | Card((card, dynamicFields))
+  | BankTransfer((bankTransfer, dynamicFields))
+  | Wallet((wallet, dynamicFields))
 
-type paymentMethodData = (paymentMethod, paymentMethodType, array<(requiredFieldInfo, string)>)
+type paymentMethodType =
+  | Card(card)
+  | BankTransfer(bankTransfer)
+  | Wallet(wallet)
+
+type paymentMethodData = (paymentMethodType, array<(dynamicFieldInfo, string)>)
 
 type formLayout = Journey | Tabs
 
 type journeyViews =
   | SelectPM
   | SelectPMType(paymentMethod)
-  | AddressForm(paymentMethod, paymentMethodType, array<requiredFieldsForAddress>)
-  | PMDForm(paymentMethod, paymentMethodType, array<requiredFieldsForPaymentMethodData>)
-  | FinalizeView(paymentMethod, paymentMethodType, paymentMethodData)
+  | AddressForm(array<dynamicFieldForAddress>)
+  | PMDForm(paymentMethodType, array<dynamicFieldForPaymentMethodData>)
+  | FinalizeView(paymentMethodData)
 
 type tabViews =
-  | DetailsForm(paymentMethod, paymentMethodType)
-  | FinalizeView(paymentMethod, paymentMethodType, paymentMethodData)
+  | DetailsForm
+  | FinalizeView(paymentMethodData)
 
 type views = Journey(journeyViews) | Tabs(tabViews)
 
@@ -109,6 +114,7 @@ type paymentMethodCollectFlow = PayoutLinkInitiate | PayoutMethodCollect
 
 type paymentMethodCollectOptions = {
   enabledPaymentMethods: array<paymentMethodType>,
+  enabledPaymentMethodsWithDynamicFields: array<paymentMethodTypeWithDynamicFields>,
   linkId: string,
   payoutId: string,
   customerId: string,
@@ -222,61 +228,133 @@ let decodeTransfer = (value: string): option<bankTransfer> =>
   | "ach" => Some(ACH)
   | "sepa" => Some(Sepa)
   | "bacs" => Some(Bacs)
+  | "pix" => Some(Pix)
   | _ => None
   }
 
 let decodeWallet = (methodType: string): option<wallet> =>
   switch methodType {
   | "paypal" => Some(Paypal)
-  | "pix" => Some(Pix)
   | "venmo" => Some(Venmo)
   | _ => None
   }
 
-let decodeFieldType = (key: string): option<requiredFieldType> => {
-  switch key {
-  // Card details
-  | "payout_method_data.card.card_number" => Some(PayoutMethodData(CardNumber))
-  | "payout_method_data.card.expiry_month" => Some(PayoutMethodData(CardExpDate(CardExpMonth)))
-  | "payout_method_data.card.expiry_year" => Some(PayoutMethodData(CardExpDate(CardExpYear)))
-  | "payout_method_data.card.card_holder_name" => Some(PayoutMethodData(CardHolderName))
-
-  // SEPA
-  | "payout_method_data.bank.iban" => Some(PayoutMethodData(SepaIban))
-  | "payout_method_data.bank.bic" => Some(PayoutMethodData(SepaBic))
-
-  // Billing address
-  | "billing.address.first_name" => Some(BillingAddress(FullName(FirstName)))
-  | "billing.address.last_name" => Some(BillingAddress(FullName(LastName)))
-  | "billing.address.line1" => Some(BillingAddress(AddressLine1))
-  | "billing.address.line2" => Some(BillingAddress(AddressLine2))
-  | "billing.address.city" => Some(BillingAddress(AddressCity))
-  | "billing.address.zip" => Some(BillingAddress(AddressPincode))
-  | "billing.address.state" => Some(BillingAddress(AddressState))
-  | "billing.address.country" => Some(BillingAddress(AddressCountry))
-  | "billing.phone.country_code" => Some(BillingAddress(PhoneCountryCode))
-  | "billing.phone.number" => Some(BillingAddress(PhoneNumber))
-
+let getFieldOptions = dict => {
+  switch dict
+  ->Dict.get("field_type")
+  ->Option.getOr(Dict.make()->JSON.Encode.object)
+  ->JSON.Classify.classify {
+  | Object(dict) =>
+    dict
+    ->Dict.get("user_address_country")
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.flatMap(obj =>
+      obj
+      ->Dict.get("options")
+      ->Option.flatMap(JSON.Decode.array)
+      ->Option.map(options => BillingAddress(
+        AddressCountry(options->Array.filterMap(option => option->JSON.Decode.string)),
+      ))
+    )
   | _ => None
   }
 }
 
-let decodeRequiredFields = (json: JSON.t): option<requiredFields> =>
+let decodeFieldType = (key: string, fieldType: option<dynamicFieldType>): option<
+  dynamicFieldType,
+> => {
+  switch (key, fieldType) {
+  // Card details
+  | ("payout_method_data.card.card_number", _) => Some(PayoutMethodData(CardNumber))
+  | ("payout_method_data.card.expiry_month", _) => Some(PayoutMethodData(CardExpDate(CardExpMonth)))
+  | ("payout_method_data.card.expiry_year", _) => Some(PayoutMethodData(CardExpDate(CardExpYear)))
+  | ("payout_method_data.card.card_holder_name", _) => Some(PayoutMethodData(CardHolderName))
+
+  // SEPA
+  | ("payout_method_data.bank.iban", _) => Some(PayoutMethodData(SepaIban))
+  | ("payout_method_data.bank.bic", _) => Some(PayoutMethodData(SepaBic))
+
+  // Billing address
+  | ("billing.address.first_name", _) => Some(BillingAddress(FullName(FirstName)))
+  | ("billing.address.last_name", _) => Some(BillingAddress(FullName(LastName)))
+  | ("billing.address.line1", _) => Some(BillingAddress(AddressLine1))
+  | ("billing.address.line2", _) => Some(BillingAddress(AddressLine2))
+  | ("billing.address.city", _) => Some(BillingAddress(AddressCity))
+  | ("billing.address.zip", _) => Some(BillingAddress(AddressPincode))
+  | ("billing.address.state", _) => Some(BillingAddress(AddressState))
+  | ("billing.address.country", Some(BillingAddress(AddressCountry(countries)))) =>
+    Some(BillingAddress(AddressCountry(countries)))
+  | ("billing.phone.country_code", _) => Some(BillingAddress(PhoneCountryCode))
+  | ("billing.phone.number", _) => Some(BillingAddress(PhoneNumber))
+
+  | _ => fieldType
+  }
+}
+
+let customAddressOrder = [
+  "billing.address.first_name",
+  "billing.address.last_name",
+  "billing.address.line1",
+  "billing.address.line2",
+  "billing.address.city",
+  "billing.address.zip",
+  "billing.address.state",
+  "billing.address.country",
+  "billing.phone.country_code",
+  "billing.phone.number",
+]
+
+let customPmdOrder = [
+  "payout_method_data.card.card_number",
+  "payout_method_data.card.expiry_month",
+  "payout_method_data.card.expiry_year",
+  "payout_method_data.card.card_holder_name",
+  "payout_method_data.bank.iban",
+  "payout_method_data.bank.bic",
+]
+
+let createCustomOrderMap = (customOrder: array<string>): Map.t<string, int> => {
+  customOrder->Array.reduceWithIndex(Map.make(), (map, item, index) => {
+    map->Map.set(item, index)
+    map
+  })
+}
+
+let getCustomIndex = (key: string, customOrderMap, defaultIndex) => {
+  switch customOrderMap->Map.get(key) {
+  | Some(index) => index
+  | None => defaultIndex
+  }
+}
+
+let sortByCustomOrder = (arr: array<'a>, getKey: 'a => string, customOrder: array<string>) => {
+  let customOrderMap = createCustomOrderMap(customOrder)
+  let defaultIndex = customOrder->Array.length
+
+  arr->Js.Array2.sortInPlaceWith((a, b) => {
+    let indexA = getCustomIndex(getKey(a), customOrderMap, defaultIndex)
+    let indexB = getCustomIndex(getKey(b), customOrderMap, defaultIndex)
+    indexA - indexB
+  })
+}
+
+let decodeDynamicFields = (json: JSON.t): option<dynamicFields> =>
   json
   ->JSON.Decode.object
   ->Option.map(obj => {
-    let (addressFields, payoutMethodDataFields) =
+    let (address, pmd) =
       obj
       ->Js.Dict.entries
       ->Array.reduce(([], []), ((addressFields, payoutMethodDataFields), (key, value)) => {
         switch JSON.Decode.object(value) {
         | Some(fieldObj) => {
             let getString = key => fieldObj->Dict.get(key)->Option.flatMap(JSON.Decode.string)
+            let fieldType = getFieldOptions(fieldObj)
             switch (getString("required_field"), getString("display_name"), getString("value")) {
             | (Some(pmdMap), Some(displayName), value) =>
-              switch decodeFieldType(key) {
+              switch decodeFieldType(key, fieldType) {
               | Some(BillingAddress(fieldType)) =>
-                let addressField: requiredFieldsForAddress = {
+                let addressField: dynamicFieldForAddress = {
                   pmdMap,
                   displayName,
                   fieldType,
@@ -301,12 +379,17 @@ let decodeRequiredFields = (json: JSON.t): option<requiredFields> =>
       })
 
     {
-      address: Some(addressFields),
-      payoutMethodData: Some(payoutMethodDataFields),
+      address: address->Array.length > 0
+        ? Some(sortByCustomOrder(address, item => item.pmdMap, customAddressOrder))
+        : None,
+      payoutMethodData: sortByCustomOrder(pmd, item => item.pmdMap, customPmdOrder),
     }
   })
 
-let decodePaymentMethodType = (json: JSON.t): option<array<paymentMethodType>> =>
+let decodePaymentMethodTypeWithRequiredFields = (
+  json: JSON.t,
+  defaultDynamicPmdFields: (~pmt: paymentMethodType=?) => array<dynamicFieldForPaymentMethodData>,
+): option<(array<paymentMethodType>, array<paymentMethodTypeWithDynamicFields>)> =>
   json
   ->JSON.Decode.object
   ->Option.flatMap(obj => {
@@ -315,42 +398,65 @@ let decodePaymentMethodType = (json: JSON.t): option<array<paymentMethodType>> =
     ->Dict.get("payment_method_types_info")
     ->Option.flatMap(JSON.Decode.array)
     ->Option.map(pmtInfoArr =>
-      Array.filterMap(
-        pmtInfoArr,
-        pmtInfo =>
+      pmtInfoArr->Array.reduce(
+        ([], []),
+        ((pmta, pmtr), pmtInfo) =>
           pmtInfo
           ->JSON.Decode.object
-          ->Option.flatMap(
+          ->Option.map(
             obj => {
               let paymentMethodType =
                 obj->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
-              let requiredFields =
-                obj
-                ->Dict.get("required_fields")
-                ->Option.flatMap(decodeRequiredFields)
-                ->Option.getOr({address: None, payoutMethodData: None})
               switch (paymentMethod, paymentMethodType) {
               | (Some("card"), Some(cardType)) =>
                 cardType
                 ->decodeCard
-                ->Option.map(
-                  card => {
-                    Js.Console.log3("SETTIONG CARD", Card(card, requiredFields), obj)
-                    Card(card, requiredFields)
-                  },
-                )
+                ->Option.map(card => Card(card))
               | (Some("bank_transfer"), Some(transferType)) =>
                 transferType
                 ->decodeTransfer
-                ->Option.map(transfer => BankTransfer(transfer, requiredFields))
+                ->Option.map(transfer => BankTransfer(transfer))
               | (Some("wallet"), Some(walletType)) =>
                 walletType
                 ->decodeWallet
-                ->Option.map(wallet => Wallet(wallet, requiredFields))
+                ->Option.map(wallet => Wallet(wallet))
               | _ => None
               }
+              ->Option.map(
+                pmt => {
+                  let dynamicFields =
+                    obj
+                    ->Dict.get("required_fields")
+                    ->Option.flatMap(decodeDynamicFields)
+                    ->Option.getOr({
+                      address: None,
+                      payoutMethodData: defaultDynamicPmdFields(~pmt),
+                    })
+                  switch pmt {
+                  | Card(card) => {
+                      pmta->Array.push(Card(card))
+                      let pmtwr: paymentMethodTypeWithDynamicFields = Card(card, dynamicFields)
+                      pmtr->Array.push(pmtwr)
+                      (pmta, pmtr)
+                    }
+                  | BankTransfer(transfer) => {
+                      pmta->Array.push(BankTransfer(transfer))
+                      pmtr->Array.push(BankTransfer(transfer, dynamicFields))
+                      (pmta, pmtr)
+                    }
+                  | Wallet(wallet) => {
+                      let pmt: paymentMethodType = Wallet(wallet)
+                      pmta->Array.push(pmt)
+                      pmtr->Array.push(Wallet(wallet, dynamicFields))
+                      (pmta, pmtr)
+                    }
+                  }
+                },
+              )
+              ->Option.getOr(([], []))
             },
-          ),
+          )
+          ->Option.getOr(([], [])),
       )
     )
   })
@@ -478,11 +584,17 @@ let decodePayoutConfirmResponse = (json: JSON.t): option<payoutConfirmResponse> 
  *
  * Decoded format - array<paymentMethodType>
  */
-let decodePaymentMethodTypeArray = (jsonArray: JSON.t): array<paymentMethodType> =>
+let decodePaymentMethodTypeArray = (
+  jsonArray: JSON.t,
+  defaultDynamicPmdFields: (~pmt: paymentMethodType=?) => array<dynamicFieldForPaymentMethodData>,
+): (array<paymentMethodType>, array<paymentMethodTypeWithDynamicFields>) =>
   switch JSON.Decode.array(jsonArray) {
   | Some(items) =>
     items
-    ->Belt.Array.keepMap(decodePaymentMethodType)
-    ->Array.reduce([], (acc, pm) => acc->Array.concat(pm))
-  | None => []
+    ->Belt.Array.keepMap(decodePaymentMethodTypeWithRequiredFields(_, defaultDynamicPmdFields))
+    ->Array.reduce(([], []), ((acc, accr), (pm, pmr)) => (
+      acc->Array.concat(pm),
+      accr->Array.concat(pmr),
+    ))
+  | None => ([], [])
   }

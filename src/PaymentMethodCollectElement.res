@@ -27,10 +27,10 @@ let make = (~integrateError, ~logger) => {
     let availablePMT: array<paymentMethodType> = []
     options.enabledPaymentMethods->Array.forEach(pm => {
       switch pm {
-      | Card((_, requiredField)) =>
+      | Card(_) =>
         if !(availablePM->Array.includes(Card)) {
-          availablePMT->Array.push(Card((Debit, requiredField)))
           availablePM->Array.push(Card)
+          availablePMT->Array.push(Card(Debit))
         }
       | BankTransfer(_) =>
         if !(availablePM->Array.includes(BankTransfer)) {
@@ -89,8 +89,6 @@ let make = (~integrateError, ~logger) => {
     setLoader(_ => true)
     let flow = options.flow
     let pmdBody = flow->formBody(pmd)
-
-    Js.Console.log3("DEBFABSJHFGSA", flow, pmdBody)
 
     switch flow {
     | PayoutLinkInitiate => {
@@ -193,8 +191,8 @@ let make = (~integrateError, ~logger) => {
   }
 
   let renderCollectWidget = () =>
-    <div className="flex flex-row h-min lg:w-6/10">
-      <div className="relative w-full lg:w-auto lg:mx-12 lg:my-20">
+    <div className="flex flex-row overflow-scroll lg:w-6/10">
+      <div className="relative w-full h-auto lg:w-auto lg:mx-12 lg:mt-20 lg-mb-10">
         {loader
           ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
           : {React.null}}
@@ -271,7 +269,7 @@ let make = (~integrateError, ~logger) => {
     <ErrorOccured />
   } else {
     <div
-      className="flex flex-col h-screen min-w-[320px]
+      className="flex flex-col h-screen min-w-[320px] overflow-hidden
         lg:flex-row">
       {
         let merchantLogo = options.logo
@@ -298,8 +296,7 @@ let make = (~integrateError, ~logger) => {
                       className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl flex justify-start items-center">
                       <p> {React.string(`${options.currency} ${options.amount}`)} </p>
                     </div>
-                    <div
-                      className="flex self-start h-12 w-auto bg-white rounded-sm">
+                    <div className="flex self-start h-12 w-auto bg-white rounded-sm">
                       <img
                         className="max-h-12 w-auto max-w-21 h-auto w-auto"
                         src={merchantLogo}
