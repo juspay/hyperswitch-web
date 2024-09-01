@@ -10,7 +10,7 @@ let paymentMethodList = Recoil.atom("paymentMethodList", PaymentType.Loading)
 let loggerAtom = Recoil.atom("component", OrcaLogger.defaultLoggerConfig)
 let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
-let switchToCustomPod = Recoil.atom("switchToCustomPod", false)
+let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
 let paymentTokenAtom = Recoil.atom(
   "paymentToken",

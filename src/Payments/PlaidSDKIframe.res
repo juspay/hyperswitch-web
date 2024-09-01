@@ -57,7 +57,7 @@ let make = () => {
       clientSecret,
       headers,
       ~optLogger=Some(logger),
-      ~switchToCustomPod=false,
+      ~customPodUri="",
       ~isForceSync=true,
     )
     ->then(json => {

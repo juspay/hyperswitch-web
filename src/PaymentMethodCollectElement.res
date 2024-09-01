@@ -100,7 +100,7 @@ let make = (~integrateError, ~logger) => {
           ~clientSecret=keys.clientSecret->Option.getOr(""),
           ~publishableKey=keys.publishableKey,
           ~logger,
-          ~switchToCustomPod=false,
+          ~customPodUri="",
           ~uri,
           ~body=pmdBody,
         )
@@ -171,7 +171,7 @@ let make = (~integrateError, ~logger) => {
         ~clientSecret=keys.clientSecret->Option.getOr(""),
         ~publishableKey=keys.publishableKey,
         ~logger,
-        ~switchToCustomPod=false,
+        ~customPodUri="",
         ~endpoint=ApiEndpoint.getApiEndPoint(),
         ~body=pmdBody,
       )
