@@ -45,6 +45,7 @@ let make = () => {
             "hyperComponentName",
           )->Types.getHyperComponentNameFromStr
         let merchantHostname = CardUtils.getQueryParamsDictforKey(url.search, "merchantHostname")
+        let customPodUri = CardUtils.getQueryParamsDictforKey(url.search, "customPodUri")
 
         <PreMountLoader
           publishableKey
@@ -54,6 +55,7 @@ let make = () => {
           ephemeralKey
           hyperComponentName
           merchantHostname
+          customPodUri
         />
       }
     | "achBankTransfer"

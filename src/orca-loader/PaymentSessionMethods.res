@@ -7,7 +7,7 @@ let getCustomerSavedPaymentMethods = (
   ~publishableKey,
   ~endpoint,
   ~logger,
-  ~switchToCustomPod,
+  ~customPodUri,
 ) => {
   open ApplePayTypes
   open GooglePayType
@@ -17,7 +17,7 @@ let getCustomerSavedPaymentMethods = (
     ~clientSecret,
     ~publishableKey,
     ~endpoint,
-    ~switchToCustomPod,
+    ~customPodUri,
     ~optLogger=Some(logger),
     ~isPaymentSession=true,
   )
@@ -114,6 +114,7 @@ let getCustomerSavedPaymentMethods = (
             ~publishableKey,
             ~clientSecret,
             ~logger,
+            ~customPodUri,
           )
         }
       | None =>
@@ -161,6 +162,7 @@ let getCustomerSavedPaymentMethods = (
             ~publishableKey,
             ~clientSecret,
             ~logger,
+            ~customPodUri,
           )->then(val => {
             val->resolvePromise
             resolve()
@@ -225,6 +227,7 @@ let getCustomerSavedPaymentMethods = (
             ~publishableKey,
             ~clientSecret,
             ~logger,
+            ~customPodUri,
           )
         }
 
@@ -298,6 +301,7 @@ let getCustomerSavedPaymentMethods = (
             ~publishableKey,
             ~clientSecret,
             ~logger,
+            ~customPodUri,
           )
         }
       | None =>
@@ -331,7 +335,7 @@ let getCustomerSavedPaymentMethods = (
         ~clientSecret,
         ~publishableKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
       ->then(sessionDetails => {
@@ -464,12 +468,12 @@ let getCustomerSavedPaymentMethods = (
   })
 }
 
-let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~switchToCustomPod, ~endpoint) => {
+let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~customPodUri, ~endpoint) => {
   let getSavedPaymentManagementMethodsList = _ => {
     PaymentHelpers.fetchSavedPaymentMethodList(
       ~ephemeralKey,
       ~optLogger=Some(logger),
-      ~switchToCustomPod=false,
+      ~customPodUri,
       ~endpoint,
     )
     ->then(response => {
@@ -486,7 +490,7 @@ let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~switchToCustomPod, ~
       ~ephemeralKey,
       ~paymentMethodId={paymentMethodId->JSON.Decode.string->Option.getOr("")},
       ~logger,
-      ~switchToCustomPod,
+      ~customPodUri,
     )
     ->then(response => {
       response->resolve
