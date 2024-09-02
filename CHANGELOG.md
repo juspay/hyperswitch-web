@@ -1,3 +1,10 @@
+## [0.84.8](https://github.com/juspay/hyperswitch-web/compare/v0.84.7...v0.84.8) (2024-09-02)
+
+
+### Bug Fixes
+
+* added customization for padding inside accordion item rule ([#595](https://github.com/juspay/hyperswitch-web/issues/595)) ([a251de5](https://github.com/juspay/hyperswitch-web/commit/a251de52d70b0389bc5b0e789bcc1982cf343344))
+
 ## [0.84.7](https://github.com/juspay/hyperswitch-web/compare/v0.84.6...v0.84.7) (2024-09-02)
 
 ## [0.84.6](https://github.com/juspay/hyperswitch-web/compare/v0.84.5...v0.84.6) (2024-08-30)
