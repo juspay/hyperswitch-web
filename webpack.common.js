@@ -8,6 +8,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
+const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
 
 const getEnvVariable = (variable, defaultValue) =>
   process.env[variable] ?? defaultValue;
@@ -138,6 +139,10 @@ module.exports = (publicPath = "auto") => {
                   compress: {
                     drop_console: false,
                   },
+                  mangle: {
+                    keep_fnames: true, // Prevent function names from being mangled
+                    keep_classnames: true, // Prevent class names from being mangled
+                  },
                 },
               }),
             ],
@@ -161,17 +166,21 @@ module.exports = (publicPath = "auto") => {
           ],
         },
         {
-          test: /\.js$/,
+          test: /\.jsx?$/, // Matches both .js and .jsx files
           exclude: /node_modules/,
           use: {
             loader: "babel-loader",
             options: {
-              presets: ["@babel/preset-env"],
+              presets: ["@babel/preset-env", "@babel/preset-react"],
+              plugins: [AddReactDisplayNamePlugin],
             },
           },
         },
       ],
     },
     entry: entries,
+    resolve: {
+      extensions: [".js", ".jsx"],
+    },
   };
 };
