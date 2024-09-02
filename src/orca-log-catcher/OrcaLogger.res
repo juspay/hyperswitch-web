@@ -210,7 +210,6 @@ type logFile = {
   paymentMethod: string,
   metadata: JSON.t,
   ephemeralKey: string,
-  componentName?: string,
 }
 
 type setlogApiValueType =

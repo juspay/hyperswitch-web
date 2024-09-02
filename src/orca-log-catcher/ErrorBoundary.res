@@ -135,13 +135,20 @@ module ErrorCard = {
       let loggingLevel = GlobalVars.loggingLevelStr
       let enableLogging = GlobalVars.enableLogging
       if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Array.includes(loggingLevel) {
+        let errorDict =
+          error
+          ->Identity.anyTypeToJson
+          ->Utils.getDictFromJson
+
+        errorDict->Dict.set("componentName", componentName->JSON.Encode.string)
+
         let errorLog: OrcaLogger.logFile = {
           logType: ERROR,
           timestamp: Date.now()->Float.toString,
           sessionId: "",
           source: "orca-elements",
           version: GlobalVars.repoVersion,
-          value: error->Identity.anyTypeToJson->JSON.stringify,
+          value: errorDict->JSON.Encode.object->JSON.stringify,
           internalMetadata: "",
           category: USER_ERROR,
           paymentId: "",
@@ -157,7 +164,6 @@ module ErrorCard = {
           firstEvent: false,
           metadata: JSON.Encode.null,
           ephemeralKey: "",
-          componentName,
         }
         beaconApiCall([errorLog])
       }
