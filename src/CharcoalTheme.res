@@ -137,6 +137,7 @@ let charcoalRules = theme =>
       "backgroundColor": theme.colorBackground,
       "color": theme.colorTextSecondary,
       "transition": "height 1s ease",
+      "padding": "20px",
     },
     ".AccordionMore": {
       "backgroundColor": theme.colorBackground,
