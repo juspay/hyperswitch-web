@@ -469,9 +469,15 @@ let defaultCardFields: array<dynamicFieldForPaymentMethodData> = [
 ]
 let defaultAchFields = [
   {
-    pmdMap: "payout_method_data.bank.iban",
-    displayName: "user_iban",
-    fieldType: SepaIban,
+    pmdMap: "payout_method_data.ach.bank_routing_number",
+    displayName: "user_routing_number",
+    fieldType: ACHRoutingNumber,
+    value: None,
+  },
+  {
+    pmdMap: "payout_method_data.ach.bank_account_number",
+    displayName: "user_bank_account_number",
+    fieldType: ACHAccountNumber,
     value: None,
   },
 ]
