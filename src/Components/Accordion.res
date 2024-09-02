@@ -39,7 +39,6 @@ let make = (
     style={
       minHeight: "60px",
       width: "-webkit-fill-available",
-      padding: "20px",
       cursor: "pointer",
       marginBottom: layoutClass.spacedAccordionItems ? themeObj.spacingAccordionItem : "",
       border: `1px solid ${themeObj.borderColor}`,
