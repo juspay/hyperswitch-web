@@ -1,3 +1,10 @@
+## [0.84.6](https://github.com/juspay/hyperswitch-web/compare/v0.84.5...v0.84.6) (2024-08-30)
+
+
+### Bug Fixes
+
+* added support for customPodUri instead of switchToCustomPod ([#591](https://github.com/juspay/hyperswitch-web/issues/591)) ([f9fed51](https://github.com/juspay/hyperswitch-web/commit/f9fed5117e74c63f813117d5eceafc4a000e17dc))
+
 ## [0.84.5](https://github.com/juspay/hyperswitch-web/compare/v0.84.4...v0.84.5) (2024-08-26)
 
 ## [0.84.4](https://github.com/juspay/hyperswitch-web/compare/v0.84.3...v0.84.4) (2024-08-23)

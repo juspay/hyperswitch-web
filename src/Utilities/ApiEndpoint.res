@@ -18,14 +18,11 @@ let getApiEndPoint = (~publishableKey="", ~isConfirmCall=false) => {
   }
 }
 
-let addCustomPodHeader = (arr: array<(string, string)>, ~switchToCustomPod=?) => {
-  let customPod = switch switchToCustomPod {
-  | Some(val) => val
-  | None => false
+let addCustomPodHeader = (arr: array<(string, string)>, ~customPodUri=?) => {
+  switch customPodUri {
+  | Some("")
+  | None => ()
+  | Some(customPodVal) => arr->Array.push(("x-feature", customPodVal))
   }
-  if customPod {
-    arr->Array.concat([("x-feature", "router-custom-dbd")])->Dict.fromArray
-  } else {
-    arr->Dict.fromArray
-  }
+  arr->Dict.fromArray
 }
