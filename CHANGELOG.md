@@ -1,3 +1,10 @@
+## [0.84.13](https://github.com/juspay/hyperswitch-web/compare/v0.84.12...v0.84.13) (2024-09-03)
+
+
+### Bug Fixes
+
+* console log removal ([94f47e1](https://github.com/juspay/hyperswitch-web/commit/94f47e128a74f51fecaf28e72dd9f9c410296e0d))
+
 ## [0.84.12](https://github.com/juspay/hyperswitch-web/compare/v0.84.11...v0.84.12) (2024-09-03)
 
 ## [0.84.11](https://github.com/juspay/hyperswitch-web/compare/v0.84.10...v0.84.11) (2024-09-03)
