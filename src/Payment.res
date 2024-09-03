@@ -55,42 +55,11 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cardNumber, cardScheme, showFields))
 
   let supportedCardBrands = React.useMemo(() => {
-    let cardPaymentMethod =
-      paymentMethodListValue.payment_methods->Array.find(ele => ele.payment_method === "card")
-
-    switch cardPaymentMethod {
-    | Some(cardPaymentMethod) =>
-      let cardNetworks = cardPaymentMethod.payment_method_types->Array.map(ele => ele.card_networks)
-      let cardNetworkNames =
-        cardNetworks->Array.map(ele =>
-          ele->Array.map(
-            val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase,
-          )
-        )
-      Some(
-        cardNetworkNames
-        ->Array.reduce([], (acc, ele) => acc->Array.concat(ele))
-        ->Utils.getUniqueArray,
-      )
-    | None => None
-    }
+    paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
 
-  let checkIsCardSupported = cardNumber => {
-    let cardBrand = cardNumber->CardUtils.getCardBrand
-    let clearValue = cardNumber->clearSpaces
-    if cardValid(clearValue, cardBrand) {
-      switch supportedCardBrands {
-      | Some(brands) => Some(brands->Array.includes(cardBrand->String.toLowerCase))
-      | None => Some(true)
-      }
-    } else {
-      None
-    }
-  }
-
   React.useEffect(() => {
-    setIsCardSupported(_ => checkIsCardSupported(cardNumber))
+    setIsCardSupported(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
     None
   }, (supportedCardBrands, cardNumber))
 
@@ -116,7 +85,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let card = val->formatCardNumber(cardType)
     let clearValue = card->clearSpaces
     setCardValid(clearValue, setIsCardValid)
-    if cardValid(clearValue, cardBrand) && checkIsCardSupported(clearValue)->Option.getOr(false) {
+    if (
+      cardValid(clearValue, cardBrand) &&
+      PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false)
+    ) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
     if card->String.length > 6 && cardNumber->pincodeVisibility {
@@ -173,7 +145,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
     if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
-      setIsCardValid(_ => checkIsCardSupported(cardNumber))
+      setIsCardValid(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
     } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => None)
     } else {
