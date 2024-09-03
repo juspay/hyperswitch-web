@@ -1,3 +1,10 @@
+## [0.84.10](https://github.com/juspay/hyperswitch-web/compare/v0.84.9...v0.84.10) (2024-09-03)
+
+
+### Bug Fixes
+
+* zsl fix ([#596](https://github.com/juspay/hyperswitch-web/issues/596)) ([55b6a9f](https://github.com/juspay/hyperswitch-web/commit/55b6a9f61068a105dc2b948078571ebd755831a9))
+
 ## [0.84.9](https://github.com/juspay/hyperswitch-web/compare/v0.84.8...v0.84.9) (2024-09-03)
 
 
