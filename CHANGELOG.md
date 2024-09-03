@@ -1,3 +1,10 @@
+## [0.84.11](https://github.com/juspay/hyperswitch-web/compare/v0.84.10...v0.84.11) (2024-09-03)
+
+
+### Bug Fixes
+
+* added support to send post messages to parent iframe ([#594](https://github.com/juspay/hyperswitch-web/issues/594)) ([638ccfc](https://github.com/juspay/hyperswitch-web/commit/638ccfca91625db8cb14ee74593b6fb09d1fe3fc))
+
 ## [0.84.10](https://github.com/juspay/hyperswitch-web/compare/v0.84.9...v0.84.10) (2024-09-03)
 
 
