@@ -1,3 +1,10 @@
+## [0.84.9](https://github.com/juspay/hyperswitch-web/compare/v0.84.8...v0.84.9) (2024-09-03)
+
+
+### Bug Fixes
+
+* added loader for netecetera when openurl_if_required is sent post otp submission ([#589](https://github.com/juspay/hyperswitch-web/issues/589)) ([bf04562](https://github.com/juspay/hyperswitch-web/commit/bf0456234bb6746a4e8c44fd7f9cd364c914e665))
+
 ## [0.84.8](https://github.com/juspay/hyperswitch-web/compare/v0.84.7...v0.84.8) (2024-09-02)
 
 
