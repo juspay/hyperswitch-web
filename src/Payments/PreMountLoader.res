@@ -57,13 +57,13 @@ module PreMountLoaderForElements = {
       )
 
       let messageHandler = (ev: Window.event) => {
-        let json = ev.data->Utils.safeParse
-        let dict = json->Utils.getDictFromJson
-        if dict->Dict.get("sendPaymentMethodsResponse")->Option.isSome {
+        open Utils
+        let dict = ev.data->safeParse->getDictFromJson
+        if dict->isKeyPresentInDict("sendPaymentMethodsResponse") {
           paymentMethodsPromise->sendPromiseData("payment_methods")
-        } else if dict->Dict.get("sendCustomerPaymentMethodsResponse")->Option.isSome {
+        } else if dict->isKeyPresentInDict("sendCustomerPaymentMethodsResponse") {
           customerPaymentMethodsPromise->sendPromiseData("customer_payment_methods")
-        } else if dict->Dict.get("sendSessionTokensResponse")->Option.isSome {
+        } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
           sessionTokensPromise->sendPromiseData("session_tokens")
         }
       }
@@ -88,9 +88,9 @@ module PreMountLoaderForPMMElements = {
       )
 
       let messageHandler = (ev: Window.event) => {
-        let json = ev.data->Utils.safeParse
-        let dict = json->Utils.getDictFromJson
-        if dict->Dict.get("sendSavedPaymentMethodsResponse")->Option.isSome {
+        open Utils
+        let dict = ev.data->safeParse->getDictFromJson
+        if dict->isKeyPresentInDict("sendSavedPaymentMethodsResponse") {
           savedPaymentMethodsPromise->sendPromiseData("saved_payment_methods")
         }
       }

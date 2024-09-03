@@ -1372,3 +1372,5 @@ let getFirstAndLastNameFromFullName = fullName => {
 
   (firstName, lastNameJson)
 }
+
+let isKeyPresentInDict = (dict, key) => dict->Dict.get(key)->Option.isSome
