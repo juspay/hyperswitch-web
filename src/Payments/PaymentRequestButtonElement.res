@@ -39,7 +39,6 @@ module WalletsSaveDetailsText = {
 @react.component
 let make = (~sessions, ~walletOptions, ~paymentType) => {
   open SessionsType
-  let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
   let dict = sessions->Utils.getDictFromJson
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
@@ -49,17 +48,12 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
     [sessionObj],
   )
   let paypalPaymentMethodExperience = React.useMemo(() => {
-    switch methodslist {
-    | Loaded(paymentlist) =>
-      let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
-      PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
-        ~paymentMethodList=plist,
-        ~paymentMethodName="wallet",
-        ~paymentMethodType="paypal",
-      )
-    | _ => []
-    }
-  }, [methodslist])
+    PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
+      ~paymentMethodList=paymentMethodListValue,
+      ~paymentMethodName="wallet",
+      ~paymentMethodType="paypal",
+    )
+  }, [paymentMethodListValue])
   let gPayToken = getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
   let applePaySessionObj = itemToObjMapper(dict, ApplePayObject)
   let applePayToken = getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
@@ -112,7 +106,7 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
                   switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
                   | (Some(token), true, _) => <PaypalSDKLazy sessionObj=token paymentType />
                   | (_, _, true) => <PayPalLazy />
-                  | (_, _, _) => React.null
+                  | _ => React.null
                   }
                 | _ =>
                   <RenderIf condition={isPaypalRedirectFlow}>
