@@ -21,6 +21,10 @@ let make = () => {
     }
   }
 
+  let eventsToSendToParent = ["confirmParams", "poll_status", "openurl_if_required"]
+
+  eventsToSendToParent->UtilityHooks.useSendEventsToParent
+
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
