@@ -679,6 +679,11 @@ let make = (
 
           switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
           | Some(val) =>
+            messageParentWindow([
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", "paymentloader"->JSON.Encode.string),
+              ("iframeId", selectorString->JSON.Encode.string),
+            ])
             if redirect.contents === "always" {
               Window.Location.replace(val->JSON.Decode.string->Option.getOr(""))
               resolve(JSON.Encode.null)
