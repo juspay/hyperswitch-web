@@ -3,7 +3,7 @@ export const CLIENT_URL = "http://localhost:9060"
 export const request = {
   currency: "USD",
   amount: 6500,
-  authentication_type: "three_ds",
+  authentication_type: "no_three_ds",
   description: "Joseph First Crypto",
   email: "hyperswitch_sdk_demo_id@gmail.com",
   connector_metadata: {

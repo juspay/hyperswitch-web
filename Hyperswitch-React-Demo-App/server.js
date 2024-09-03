@@ -51,7 +51,7 @@ const paymentData = {
   ],
   confirm: false,
   capture_method: "automatic",
-  authentication_type: "three_ds",
+  authentication_type: "no_three_ds",
   customer_id: "hyperswitch_sdk_demo_id",
   email: "hyperswitch_sdk_demo_id@gmail.com",
   description: "Hello this is description",
