@@ -1,3 +1,10 @@
+## [0.84.14](https://github.com/juspay/hyperswitch-web/compare/v0.84.13...v0.84.14) (2024-09-04)
+
+
+### Bug Fixes
+
+* changed post message from parent window to current window ([#598](https://github.com/juspay/hyperswitch-web/issues/598)) ([46b0ef4](https://github.com/juspay/hyperswitch-web/commit/46b0ef46f7af2aa8fbd5ac59c4fa8b0903b21c03))
+
 ## [0.84.13](https://github.com/juspay/hyperswitch-web/compare/v0.84.12...v0.84.13) (2024-09-03)
 
 
