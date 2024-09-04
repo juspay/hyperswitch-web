@@ -72,7 +72,6 @@ Cypress.Commands.add(
     if (isThreeDSEnabled) {
       mapping[testIds.cardNoInputTestId] = customerData.threeDSCardNo;
     }
-    let publishableKey = "pk_snd_3dbcd4a313b248f78f046dfe0090636e";
     let clientSecret:string;
     cy.request({
       method: "GET",
@@ -173,7 +172,6 @@ Cypress.Commands.add("createPaymentIntent", () => {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        "api-key": "snd_6jXxdUbFxGW4EulF5hl0fWpJ3ABRuSDyI1vFfGaG26SdR43k6MYisvvWIqoSeKJh",
       },
       body: JSON.stringify(request),
     })
