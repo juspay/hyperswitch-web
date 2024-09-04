@@ -657,11 +657,17 @@ let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
   }
 }
 
-let getCoBadgesCardSchemes = cardNumber => {
+let getAllMatchedCardSchemes = cardNumber => {
   CardPattern.cardPatterns->Array.reduce([], (acc, item) => {
     if String.match(cardNumber, item.pattern)->Option.isSome {
       acc->Array.push(item.issuer)
     }
     acc
+  })
+}
+
+let getEligibleCoBadgedCardSchemes = (~matchedCardSchemes, ~enabledCardSchemes) => {
+  matchedCardSchemes->Array.filter(ele => {
+    enabledCardSchemes->Array.includes(ele->String.toLowerCase)
   })
 }

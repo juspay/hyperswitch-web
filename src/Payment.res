@@ -18,7 +18,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let isCardCoBadged = Recoil.useRecoilValueFromAtom(isCardCoBadged)
 
   let {iframeId} = keys
 
@@ -359,7 +358,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, [cardNumber])
 
   let icon = React.useMemo(() => {
-    <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand isCardCoBadged />
+    <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand />
   }, (cardType, paymentType, cardBrand, cardNumber))
 
   let cardProps: CardUtils.cardProps = (
