@@ -458,8 +458,12 @@ let maxCardLength = cardBrand => {
 
 let cardValid = (cardNumber, cardBrand) => {
   let clearValueLength = cardNumber->clearSpaces->String.length
-  (clearValueLength == maxCardLength(cardBrand) ||
-    (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)
+  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
+    Utils.checkIsTestCardWildcard(cardNumber)
+  } else {
+    (clearValueLength == maxCardLength(cardBrand) ||
+      (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)
+  }
 }
 let blurRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
   ref.current->Nullable.toOption->Option.forEach(input => input->blur)->ignore

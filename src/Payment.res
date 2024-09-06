@@ -87,7 +87,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     setCardValid(clearValue, setIsCardValid)
     if (
       cardValid(clearValue, cardBrand) &&
-      PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false)
+      (PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false) ||
+        Utils.checkIsTestCardWildcard(clearValue))
     ) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }

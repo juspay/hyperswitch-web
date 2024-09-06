@@ -1375,3 +1375,8 @@ let getFirstAndLastNameFromFullName = fullName => {
 
   (firstName, lastNameJson)
 }
+
+let checkIsTestCardWildcard = val => {
+  let wildcards = ["1111222233334444"]
+  wildcards->Array.includes(val)
+}
