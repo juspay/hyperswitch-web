@@ -1,3 +1,10 @@
+## [0.84.15](https://github.com/juspay/hyperswitch-web/compare/v0.84.14...v0.84.15) (2024-09-09)
+
+
+### Bug Fixes
+
+* integ env in webpack ([#602](https://github.com/juspay/hyperswitch-web/issues/602)) ([1f3cc6b](https://github.com/juspay/hyperswitch-web/commit/1f3cc6bd44cfb0e1086920cb7631e6ba416ec74b))
+
 ## [0.84.14](https://github.com/juspay/hyperswitch-web/compare/v0.84.13...v0.84.14) (2024-09-04)
 
 
