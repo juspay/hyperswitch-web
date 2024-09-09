@@ -36,15 +36,36 @@ const getSdkUrl = (env, customUrl) => {
 };
 
 const sdkUrl = getSdkUrl(sdkEnv, envSdkUrl);
+const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
+  switch (sdkEnv) {
+    case "prod":
+      return prodDomain;
+    case "integ":
+      return integDomain;
+    default:
+      return defaultDomain;
+  }
+};
+
+const backendDomain = getEnvironmentDomain("checkout", "dev", "beta");
+const confirmDomain = getEnvironmentDomain("api", "integ-api", "sandbox");
+const logDomain = getEnvironmentDomain("api", "integ-api", "sandbox");
+
 const backendEndPoint =
-  envBackendUrl ||
-  `https://${sdkEnv === "prod" ? "checkout" : "beta"}.hyperswitch.io/api`;
+  envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
+
 const confirmEndPoint =
-  envBackendUrl ||
-  `https://${sdkEnv === "prod" ? "api" : "sandbox"}.hyperswitch.io`;
+  envBackendUrl || `https://${confirmDomain}.hyperswitch.io`;
+
 const logEndpoint =
-  envLoggingUrl ||
-  `https://${sdkEnv === "prod" ? "api" : "sandbox"}.hyperswitch.io/logs/sdk`;
+  envLoggingUrl || `https://${logDomain}.hyperswitch.io/logs/sdk`;
+
+console.log("Test SDK values ===>", {
+  sdkEnv,
+  sdkUrl,
+  backendEndPoint,
+  confirmEndPoint,
+});
 
 const enableLogging = true;
 const loggingLevel = "DEBUG";
