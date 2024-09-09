@@ -154,6 +154,7 @@ let midnightRules = theme =>
       "transition": "height 1s ease",
       "color": "#e0e0e0",
       "boxShadow": "0px 2px 4px rgb(0 0 0 / 50%), 0px 1px 6px rgb(0 0 0 / 25%)",
+      "padding": "20px",
     },
     ".AccordionItem:hover": {
       "color": theme.colorTextSecondary,

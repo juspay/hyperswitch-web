@@ -123,9 +123,7 @@ let defaultPaymentMethodFields = {
   miniIcon: None,
 }
 
-let icon = (~size=22, ~width=size, name) => {
-  <Icon size width name />
-}
+let icon = (~size=22, ~width=size, name) => <Icon size width name />
 
 let paymentMethodsFields = [
   {
@@ -530,8 +528,8 @@ let paymentMethodsFields = [
   {
     paymentMethodName: "local_bank_transfer_transfer",
     fields: [InfoElement],
-    icon: Some(icon("bank", ~size=19)),
-    displayName: "Local Bank Transfer",
+    icon: Some(icon("union-pay", ~size=19, ~width=30)),
+    displayName: "Union Pay",
     miniIcon: None,
   },
   {

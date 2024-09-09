@@ -1,3 +1,65 @@
+## [0.84.17](https://github.com/juspay/hyperswitch-web/compare/v0.84.16...v0.84.17) (2024-09-09)
+
+## [0.84.16](https://github.com/juspay/hyperswitch-web/compare/v0.84.15...v0.84.16) (2024-09-09)
+
+
+### Bug Fixes
+
+* added wild cards support ([#601](https://github.com/juspay/hyperswitch-web/issues/601)) ([54e613c](https://github.com/juspay/hyperswitch-web/commit/54e613cc4e992f760543c1be796cf7563c5c78cf))
+
+## [0.84.15](https://github.com/juspay/hyperswitch-web/compare/v0.84.14...v0.84.15) (2024-09-09)
+
+
+### Bug Fixes
+
+* integ env in webpack ([#602](https://github.com/juspay/hyperswitch-web/issues/602)) ([1f3cc6b](https://github.com/juspay/hyperswitch-web/commit/1f3cc6bd44cfb0e1086920cb7631e6ba416ec74b))
+
+## [0.84.14](https://github.com/juspay/hyperswitch-web/compare/v0.84.13...v0.84.14) (2024-09-04)
+
+
+### Bug Fixes
+
+* changed post message from parent window to current window ([#598](https://github.com/juspay/hyperswitch-web/issues/598)) ([46b0ef4](https://github.com/juspay/hyperswitch-web/commit/46b0ef46f7af2aa8fbd5ac59c4fa8b0903b21c03))
+
+## [0.84.13](https://github.com/juspay/hyperswitch-web/compare/v0.84.12...v0.84.13) (2024-09-03)
+
+
+### Bug Fixes
+
+* console log removal ([94f47e1](https://github.com/juspay/hyperswitch-web/commit/94f47e128a74f51fecaf28e72dd9f9c410296e0d))
+
+## [0.84.12](https://github.com/juspay/hyperswitch-web/compare/v0.84.11...v0.84.12) (2024-09-03)
+
+## [0.84.11](https://github.com/juspay/hyperswitch-web/compare/v0.84.10...v0.84.11) (2024-09-03)
+
+
+### Bug Fixes
+
+* added support to send post messages to parent iframe ([#594](https://github.com/juspay/hyperswitch-web/issues/594)) ([638ccfc](https://github.com/juspay/hyperswitch-web/commit/638ccfca91625db8cb14ee74593b6fb09d1fe3fc))
+
+## [0.84.10](https://github.com/juspay/hyperswitch-web/compare/v0.84.9...v0.84.10) (2024-09-03)
+
+
+### Bug Fixes
+
+* zsl fix ([#596](https://github.com/juspay/hyperswitch-web/issues/596)) ([55b6a9f](https://github.com/juspay/hyperswitch-web/commit/55b6a9f61068a105dc2b948078571ebd755831a9))
+
+## [0.84.9](https://github.com/juspay/hyperswitch-web/compare/v0.84.8...v0.84.9) (2024-09-03)
+
+
+### Bug Fixes
+
+* added loader for netecetera when openurl_if_required is sent post otp submission ([#589](https://github.com/juspay/hyperswitch-web/issues/589)) ([bf04562](https://github.com/juspay/hyperswitch-web/commit/bf0456234bb6746a4e8c44fd7f9cd364c914e665))
+
+## [0.84.8](https://github.com/juspay/hyperswitch-web/compare/v0.84.7...v0.84.8) (2024-09-02)
+
+
+### Bug Fixes
+
+* added customization for padding inside accordion item rule ([#595](https://github.com/juspay/hyperswitch-web/issues/595)) ([a251de5](https://github.com/juspay/hyperswitch-web/commit/a251de52d70b0389bc5b0e789bcc1982cf343344))
+
+## [0.84.7](https://github.com/juspay/hyperswitch-web/compare/v0.84.6...v0.84.7) (2024-09-02)
+
 ## [0.84.6](https://github.com/juspay/hyperswitch-web/compare/v0.84.5...v0.84.6) (2024-08-30)
 
 

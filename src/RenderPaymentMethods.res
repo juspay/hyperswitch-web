@@ -72,28 +72,30 @@ let make = (
       <div className="w-full font-medium">
         {switch paymentType {
         | Card =>
-          <React.Suspense
-            fallback={<RenderIf condition={showLoader}>
+          <ReusableReactSuspense
+            loaderComponent={<RenderIf condition={showLoader}>
               <CardElementShimmer />
-            </RenderIf>}>
+            </RenderIf>}
+            componentName="SingleLineCardPaymentLazy">
             <SingleLineCardPaymentLazy
               paymentType cardProps expiryProps cvcProps zipProps handleElementFocus isFocus
             />
-          </React.Suspense>
+          </ReusableReactSuspense>
         | GooglePayElement
         | PayPalElement
         | ApplePayElement
         | KlarnaElement
         | ExpressCheckoutElement
         | Payment =>
-          <React.Suspense
-            fallback={<RenderIf condition={showLoader}>
+          <ReusableReactSuspense
+            loaderComponent={<RenderIf condition={showLoader}>
               {paymentType->Utils.getIsWalletElementPaymentType
                 ? <WalletShimmer />
                 : <PaymentElementShimmer />}
-            </RenderIf>}>
+            </RenderIf>}
+            componentName="PaymentElementRendererLazy">
             <PaymentElementRendererLazy paymentType cardProps expiryProps cvcProps />
-          </React.Suspense>
+          </ReusableReactSuspense>
         | CardNumberElement =>
           <InputField
             isValid=isCardValid
@@ -144,12 +146,13 @@ let make = (
             isFocus
           />
         | PaymentMethodsManagement =>
-          <React.Suspense
-            fallback={<RenderIf condition={showLoader}>
+          <ReusableReactSuspense
+            loaderComponent={<RenderIf condition={showLoader}>
               <PaymentElementShimmer />
-            </RenderIf>}>
+            </RenderIf>}
+            componentName="PaymentManagementLazy">
             <PaymentManagementLazy />
-          </React.Suspense>
+          </ReusableReactSuspense>
         | PaymentMethodCollectElement
         | NONE => React.null
         }}
