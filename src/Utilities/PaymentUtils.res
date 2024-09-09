@@ -498,7 +498,9 @@ let getSupportedCardBrands = (
 let checkIsCardSupported = (cardNumber, supportedCardBrands) => {
   let cardBrand = cardNumber->CardUtils.getCardBrand
   let clearValue = cardNumber->CardUtils.clearSpaces
-  if CardUtils.cardValid(clearValue, cardBrand) {
+  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
+    Some(CardUtils.cardValid(clearValue, cardBrand))
+  } else if CardUtils.cardValid(clearValue, cardBrand) {
     switch supportedCardBrands {
     | Some(brands) => Some(brands->Array.includes(cardBrand->String.toLowerCase))
     | None => Some(true)
