@@ -41,3 +41,23 @@ let useIsCustomerAcceptanceRequired = (
     displaySavedPaymentMethodsCheckbox,
   ))
 }
+
+let useSendEventsToParent = eventsToSendToParent => {
+  React.useEffect0(() => {
+    let handle = (ev: Window.event) => {
+      let eventDataObject = ev.data->Identity.anyTypeToJson
+      let eventsDict = eventDataObject->Utils.getDictFromJson
+
+      let events = eventsDict->Dict.keysToArray
+
+      let shouldSendToParent =
+        events->Array.some(event => eventsToSendToParent->Array.includes(event))
+
+      if shouldSendToParent {
+        Utils.messageParentWindow(eventsDict->Dict.toArray)
+      }
+    }
+    Window.addEventListener("message", handle)
+    Some(() => {Window.removeEventListener("message", handle)})
+  })
+}

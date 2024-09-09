@@ -8,6 +8,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
+const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
 
 const getEnvVariable = (variable, defaultValue) =>
   process.env[variable] ?? defaultValue;
@@ -35,15 +36,29 @@ const getSdkUrl = (env, customUrl) => {
 };
 
 const sdkUrl = getSdkUrl(sdkEnv, envSdkUrl);
+const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
+  switch (sdkEnv) {
+    case "prod":
+      return prodDomain;
+    case "integ":
+      return integDomain;
+    default:
+      return defaultDomain;
+  }
+};
+
+const backendDomain = getEnvironmentDomain("checkout", "dev", "beta");
+const confirmDomain = getEnvironmentDomain("api", "integ-api", "sandbox");
+const logDomain = getEnvironmentDomain("api", "integ-api", "sandbox");
+
 const backendEndPoint =
-  envBackendUrl ||
-  `https://${sdkEnv === "prod" ? "checkout" : "beta"}.hyperswitch.io/api`;
+  envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
+
 const confirmEndPoint =
-  envBackendUrl ||
-  `https://${sdkEnv === "prod" ? "api" : "sandbox"}.hyperswitch.io`;
+  envBackendUrl || `https://${confirmDomain}.hyperswitch.io`;
+
 const logEndpoint =
-  envLoggingUrl ||
-  `https://${sdkEnv === "prod" ? "api" : "sandbox"}.hyperswitch.io/logs/sdk`;
+  envLoggingUrl || `https://${logDomain}.hyperswitch.io/logs/sdk`;
 
 const enableLogging = true;
 const loggingLevel = "DEBUG";
@@ -138,6 +153,10 @@ module.exports = (publicPath = "auto") => {
                   compress: {
                     drop_console: false,
                   },
+                  mangle: {
+                    keep_fnames: true, // Prevent function names from being mangled
+                    keep_classnames: true, // Prevent class names from being mangled
+                  },
                 },
               }),
             ],
@@ -161,17 +180,21 @@ module.exports = (publicPath = "auto") => {
           ],
         },
         {
-          test: /\.js$/,
+          test: /\.jsx?$/, // Matches both .js and .jsx files
           exclude: /node_modules/,
           use: {
             loader: "babel-loader",
             options: {
-              presets: ["@babel/preset-env"],
+              presets: ["@babel/preset-env", "@babel/preset-react"],
+              plugins: [AddReactDisplayNamePlugin],
             },
           },
         },
       ],
     },
     entry: entries,
+    resolve: {
+      extensions: [".js", ".jsx"],
+    },
   };
 };

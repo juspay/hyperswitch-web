@@ -472,3 +472,40 @@ let sortCustomerMethodsBasedOnPriority = (
     sortArr->Belt.SortArray.stableSortBy(handleCustomerMethodsSort)
   }
 }
+
+let getSupportedCardBrands = (
+  paymentMethodListValue: OrcaPaymentPage.PaymentMethodsRecord.paymentMethodList,
+) => {
+  let cardPaymentMethod =
+    paymentMethodListValue.payment_methods->Array.find(ele => ele.payment_method === "card")
+
+  switch cardPaymentMethod {
+  | Some(cardPaymentMethod) =>
+    let cardNetworks = cardPaymentMethod.payment_method_types->Array.map(ele => ele.card_networks)
+    let cardNetworkNames =
+      cardNetworks->Array.map(ele =>
+        ele->Array.map(val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase)
+      )
+    Some(
+      cardNetworkNames
+      ->Array.reduce([], (acc, ele) => acc->Array.concat(ele))
+      ->Utils.getUniqueArray,
+    )
+  | None => None
+  }
+}
+
+let checkIsCardSupported = (cardNumber, supportedCardBrands) => {
+  let cardBrand = cardNumber->CardUtils.getCardBrand
+  let clearValue = cardNumber->CardUtils.clearSpaces
+  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
+    Some(CardUtils.cardValid(clearValue, cardBrand))
+  } else if CardUtils.cardValid(clearValue, cardBrand) {
+    switch supportedCardBrands {
+    | Some(brands) => Some(brands->Array.includes(cardBrand->String.toLowerCase))
+    | None => Some(true)
+    }
+  } else {
+    None
+  }
+}

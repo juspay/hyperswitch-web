@@ -147,6 +147,7 @@ let defaultRules = theme =>
       "color": theme.colorTextSecondary,
       "transition": "height 1s ease",
       "boxShadow": "0px 1px 1px rgb(0 0 0 / 3%), 0px 3px 6px rgb(0 0 0 / 2%)",
+      "padding": "20px",
     },
     ".AccordionMore": {
       "backgroundColor": theme.colorBackground,

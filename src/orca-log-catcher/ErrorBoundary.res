@@ -123,7 +123,7 @@ module ErrorTextAndImage = {
 
 module ErrorCard = {
   @react.component
-  let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level) => {
+  let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level, ~componentName) => {
     let beaconApiCall = data => {
       if data->Array.length > 0 {
         let logData = data->Array.map(OrcaLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
@@ -135,13 +135,20 @@ module ErrorCard = {
       let loggingLevel = GlobalVars.loggingLevelStr
       let enableLogging = GlobalVars.enableLogging
       if enableLogging && ["DEBUG", "INFO", "WARN", "ERROR"]->Array.includes(loggingLevel) {
+        let errorDict =
+          error
+          ->Identity.anyTypeToJson
+          ->Utils.getDictFromJson
+
+        errorDict->Dict.set("componentName", componentName->JSON.Encode.string)
+
         let errorLog: OrcaLogger.logFile = {
           logType: ERROR,
           timestamp: Date.now()->Float.toString,
           sessionId: "",
           source: "orca-elements",
           version: GlobalVars.repoVersion,
-          value: error->Identity.anyTypeToJson->JSON.stringify,
+          value: errorDict->JSON.Encode.object->JSON.stringify,
           internalMetadata: "",
           category: USER_ERROR,
           paymentId: "",
@@ -200,10 +207,12 @@ module ErrorCard = {
   }
 }
 
-let defaultFallback = (e, level) => {
-  <ErrorCard error=e level />
+let defaultFallback = (e, level, componentName) => {
+  <ErrorCard error=e level componentName />
 }
 @react.component
-let make = (~children, ~renderFallback=defaultFallback, ~level=PaymentMethod) => {
-  <Sentry.ErrorBoundary fallback={e => renderFallback(e, level)}> children </Sentry.ErrorBoundary>
+let make = (~children, ~renderFallback=defaultFallback, ~level=PaymentMethod, ~componentName) => {
+  <Sentry.ErrorBoundary fallback={e => renderFallback(e, level, componentName)}>
+    children
+  </Sentry.ErrorBoundary>
 }
