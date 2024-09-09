@@ -1,3 +1,12 @@
+## [0.84.17](https://github.com/juspay/hyperswitch-web/compare/v0.84.16...v0.84.17) (2024-09-09)
+
+## [0.84.16](https://github.com/juspay/hyperswitch-web/compare/v0.84.15...v0.84.16) (2024-09-09)
+
+
+### Bug Fixes
+
+* added wild cards support ([#601](https://github.com/juspay/hyperswitch-web/issues/601)) ([54e613c](https://github.com/juspay/hyperswitch-web/commit/54e613cc4e992f760543c1be796cf7563c5c78cf))
+
 ## [0.84.15](https://github.com/juspay/hyperswitch-web/compare/v0.84.14...v0.84.15) (2024-09-09)
 
 

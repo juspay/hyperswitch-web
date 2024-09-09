@@ -60,13 +60,6 @@ const confirmEndPoint =
 const logEndpoint =
   envLoggingUrl || `https://${logDomain}.hyperswitch.io/logs/sdk`;
 
-console.log("Test SDK values ===>", {
-  sdkEnv,
-  sdkUrl,
-  backendEndPoint,
-  confirmEndPoint,
-});
-
 const enableLogging = true;
 const loggingLevel = "DEBUG";
 const maxLogsPushedPerEventName = 100;
