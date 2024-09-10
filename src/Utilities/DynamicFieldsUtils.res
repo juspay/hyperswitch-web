@@ -294,7 +294,11 @@ let useSetInitialRequiredFields = (
   let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
     cryptoCurrencyNetworks,
   )
-  let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
+  let (dateOfBirth, setDateOfBirth) = Recoil.useLoggedRecoilState(
+    dateOfBirth,
+    "dateOfBirth",
+    logger,
+  )
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {

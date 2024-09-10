@@ -320,10 +320,10 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                   if !(val->JSON.Decode.bool->Option.getOr(false)) {
                     resolve1(json)
                   } else {
-                    Window.replace(returnUrl)
+                    Window.replaceRootHref(returnUrl)
                   }
                 } else if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
-                  Window.replace(returnUrl)
+                  Window.replaceRootHref(returnUrl)
                 } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
                   resolve1(json)
                 } else {
@@ -500,7 +500,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 )
                 let url = decodedData->getString("return_url", "/")
                 if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
-                  Window.replace(url)
+                  Window.replaceRootHref(url)
                 } else {
                   resolve(json)
                 }
