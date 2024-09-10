@@ -205,98 +205,100 @@ let make = (
       )
     | _ => ("", "")
     }
-    <div key>
-      <InputField
-        id=key
-        className=inputClasses
-        labelClassName=labelClasses
-        paymentType={PaymentMethodCollectElement}
-        inputRef
-        isFocus={true}
-        isValid={None}
-        errorString
-        errorStringClasses
-        fieldName={field->getPaymentMethodDataFieldLabel(localeString)}
-        placeholder={field->getPaymentMethodDataFieldPlaceholder(localeString, constantString)}
-        maxLength={field->getPaymentMethodDataFieldMaxLength}
-        value
-        onChange={event => field->validateAndSetPaymentMethodDataValue(event)}
-        setIsValid={updatedValidityFn => key->setValidityDictVal(updatedValidityFn())}
-        onBlur={ev => {
-          let value = ReactEvent.Focus.target(ev)["value"]
-          let isValid = calculateValidity(field, value, ~default=None)
-          setValidityDictVal(key, isValid)
-        }}
-        type_={field->getPaymentMethodDataFieldInputType}
-        pattern
-      />
-    </div>
+    <InputField
+      id=key
+      className=inputClasses
+      labelClassName=labelClasses
+      paymentType={PaymentMethodCollectElement}
+      inputRef
+      isFocus={true}
+      isValid={None}
+      errorString
+      errorStringClasses
+      fieldName={field->getPaymentMethodDataFieldLabel(localeString)}
+      placeholder={field->getPaymentMethodDataFieldPlaceholder(localeString, constantString)}
+      maxLength={field->getPaymentMethodDataFieldMaxLength}
+      value
+      onChange={event => field->validateAndSetPaymentMethodDataValue(event)}
+      setIsValid={updatedValidityFn => key->setValidityDictVal(updatedValidityFn())}
+      onBlur={ev => {
+        let value = ReactEvent.Focus.target(ev)["value"]
+        let isValid = calculateValidity(field, value, ~default=None)
+        setValidityDictVal(key, isValid)
+      }}
+      type_={field->getPaymentMethodDataFieldInputType}
+      pattern
+    />
   }
   let renderAddressForm = (addressFields: array<dynamicFieldForAddress>) =>
     addressFields
-    ->Array.map(field => {
-      switch (field.fieldType, field.value) {
-      | (Email, None) => BillingAddress(Email)->renderInputTemplate
-      | (FullName(FirstName), None) => BillingAddress(FullName(FirstName))->renderInputTemplate
-      // first_name and last_name are stored in fullName
-      | (FullName(LastName), _) => React.null
-      | (CountryCode, None) => BillingAddress(CountryCode)->renderInputTemplate
-      | (PhoneNumber, None) => BillingAddress(PhoneNumber)->renderInputTemplate
-      | (PhoneCountryCode, None) => BillingAddress(PhoneCountryCode)->renderInputTemplate
-      | (AddressLine1, None) => BillingAddress(AddressLine1)->renderInputTemplate
-      | (AddressLine2, None) => BillingAddress(AddressLine2)->renderInputTemplate
-      | (AddressCity, None) => BillingAddress(AddressCity)->renderInputTemplate
-      | (AddressState, None) => BillingAddress(AddressState)->renderInputTemplate
-      | (AddressPincode, None) => BillingAddress(AddressPincode)->renderInputTemplate
-      | (AddressCountry(countries), None) =>
-        renderDropdownTemplate(BillingAddress(AddressCountry(countries)))
-      | _ => React.null
-      }
-    })
+    ->Array.mapWithIndex((field, index) =>
+      <React.Fragment key={index->Int.toString}>
+        {switch (field.fieldType, field.value) {
+        | (Email, None) => BillingAddress(Email)->renderInputTemplate
+        | (FullName(FirstName), None) => BillingAddress(FullName(FirstName))->renderInputTemplate
+        // first_name and last_name are stored in fullName
+        | (FullName(LastName), _) => React.null
+        | (CountryCode, None) => BillingAddress(CountryCode)->renderInputTemplate
+        | (PhoneNumber, None) => BillingAddress(PhoneNumber)->renderInputTemplate
+        | (PhoneCountryCode, None) => BillingAddress(PhoneCountryCode)->renderInputTemplate
+        | (AddressLine1, None) => BillingAddress(AddressLine1)->renderInputTemplate
+        | (AddressLine2, None) => BillingAddress(AddressLine2)->renderInputTemplate
+        | (AddressCity, None) => BillingAddress(AddressCity)->renderInputTemplate
+        | (AddressState, None) => BillingAddress(AddressState)->renderInputTemplate
+        | (AddressPincode, None) => BillingAddress(AddressPincode)->renderInputTemplate
+        | (AddressCountry(countries), None) =>
+          renderDropdownTemplate(BillingAddress(AddressCountry(countries)))
+        | _ => React.null
+        }}
+      </React.Fragment>
+    )
     ->Array.filter(ele => ele !== React.null)
 
   let renderPayoutMethodForm = (payoutMethodFields: array<dynamicFieldForPaymentMethodData>) =>
     payoutMethodFields
-    ->Array.map(payoutMethodField => {
-      switch (payoutMethodField.fieldType, payoutMethodField.value) {
-      // Card
-      | (CardNumber, _) => PayoutMethodData(CardNumber)->renderInputTemplate
-      | (CardExpDate(CardExpMonth), _) =>
-        PayoutMethodData(CardExpDate(CardExpMonth))->renderInputTemplate
-      // expiry_month and expiry_year are store in cardExp
-      | (CardExpDate(CardExpYear), _) => React.null
-      | (CardHolderName, None) => PayoutMethodData(CardHolderName)->renderInputTemplate
-      // ACH
-      | (ACHRoutingNumber, _) => PayoutMethodData(ACHRoutingNumber)->renderInputTemplate
-      | (ACHAccountNumber, _) => PayoutMethodData(ACHAccountNumber)->renderInputTemplate
-      // Bacs
-      | (BacsSortCode, _) => PayoutMethodData(BacsSortCode)->renderInputTemplate
-      | (BacsAccountNumber, _) => PayoutMethodData(BacsAccountNumber)->renderInputTemplate
-      // Sepa
-      | (SepaIban, _) => PayoutMethodData(SepaIban)->renderInputTemplate
-      | (SepaBic, _) => PayoutMethodData(SepaBic)->renderInputTemplate
-      // Paypal
-      | (PaypalMail, _) => PayoutMethodData(PaypalMail)->renderInputTemplate
-      | (PaypalMobNumber, _) => PayoutMethodData(PaypalMobNumber)->renderInputTemplate
-      // Venmo
-      | (VenmoMobNumber, _) => PayoutMethodData(VenmoMobNumber)->renderInputTemplate
-      // Pix
-      | (PixKey, _) => PayoutMethodData(PixKey)->renderInputTemplate
+    ->Array.mapWithIndex((payoutMethodField, index) =>
+      <React.Fragment key={index->Int.toString}>
+        {switch (payoutMethodField.fieldType, payoutMethodField.value) {
+        // Card
+        | (CardNumber, _) => PayoutMethodData(CardNumber)->renderInputTemplate
+        | (CardExpDate(CardExpMonth), _) =>
+          PayoutMethodData(CardExpDate(CardExpMonth))->renderInputTemplate
+        // expiry_month and expiry_year are store in cardExp
+        | (CardExpDate(CardExpYear), _) => React.null
+        | (CardHolderName, None) => PayoutMethodData(CardHolderName)->renderInputTemplate
+        // ACH
+        | (ACHRoutingNumber, _) => PayoutMethodData(ACHRoutingNumber)->renderInputTemplate
+        | (ACHAccountNumber, _) => PayoutMethodData(ACHAccountNumber)->renderInputTemplate
+        // Bacs
+        | (BacsSortCode, _) => PayoutMethodData(BacsSortCode)->renderInputTemplate
+        | (BacsAccountNumber, _) => PayoutMethodData(BacsAccountNumber)->renderInputTemplate
+        // Sepa
+        | (SepaIban, _) => PayoutMethodData(SepaIban)->renderInputTemplate
+        | (SepaBic, _) => PayoutMethodData(SepaBic)->renderInputTemplate
+        // Paypal
+        | (PaypalMail, _) => PayoutMethodData(PaypalMail)->renderInputTemplate
+        | (PaypalMobNumber, _) => PayoutMethodData(PaypalMobNumber)->renderInputTemplate
+        // Venmo
+        | (VenmoMobNumber, _) => PayoutMethodData(VenmoMobNumber)->renderInputTemplate
+        // Pix
+        | (PixKey, _) => PayoutMethodData(PixKey)->renderInputTemplate
 
-      // TODO: Add these later
-      | (CardBrand, _)
-      | (ACHBankName, _)
-      | (ACHBankCity, _)
-      | (BacsBankName, _)
-      | (BacsBankCity, _)
-      | (SepaBankName, _)
-      | (SepaBankCity, _)
-      | (SepaCountryCode, _)
-      | (PixBankAccountNumber, _)
-      | (PixBankName, _)
-      | (CardHolderName, Some(_)) => React.null
-      }
-    })
+        // TODO: Add these later
+        | (CardBrand, _)
+        | (ACHBankName, _)
+        | (ACHBankCity, _)
+        | (BacsBankName, _)
+        | (BacsBankCity, _)
+        | (SepaBankName, _)
+        | (SepaBankCity, _)
+        | (SepaCountryCode, _)
+        | (PixBankAccountNumber, _)
+        | (PixBankName, _)
+        | (CardHolderName, Some(_)) => React.null
+        }}
+      </React.Fragment>
+    )
     ->Array.filter(ele => ele !== React.null)
 
   <div
