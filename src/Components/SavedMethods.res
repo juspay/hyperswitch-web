@@ -228,7 +228,7 @@ let make = (
     savedMethods,
   ))
 
-  <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
+  <div className="flex flex-col overflow-auto h-auto animate-slowShow">
     {if savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields) {
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer"
