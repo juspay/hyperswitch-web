@@ -110,6 +110,4 @@ let getPaymentMode = val => {
   }
 }
 
-let getPaymentModeToStrMapper = (val: mode) => {
-  (val :> string)
-}
+let getPaymentModeToStrMapper = (val: mode) => (val :> string)

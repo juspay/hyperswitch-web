@@ -84,9 +84,7 @@ type eventName =
   | DELETE_PAYMENT_METHODS_CALL_INIT
   | DELETE_PAYMENT_METHODS_CALL
 
-let eventNameToStrMapper = (eventName: eventName) => {
-  (eventName :> string)
-}
+let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
 
 let getPaymentId = clientSecret =>
   String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
