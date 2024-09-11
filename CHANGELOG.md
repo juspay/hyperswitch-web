@@ -1,3 +1,10 @@
+## [0.84.20](https://github.com/juspay/hyperswitch-web/compare/v0.84.19...v0.84.20) (2024-09-11)
+
+
+### Bug Fixes
+
+* double scroll bar fix ([#608](https://github.com/juspay/hyperswitch-web/issues/608)) ([a371b4f](https://github.com/juspay/hyperswitch-web/commit/a371b4f86fef245ad8180f3af00b93b1a674b4f3))
+
 ## [0.84.19](https://github.com/juspay/hyperswitch-web/compare/v0.84.18...v0.84.19) (2024-09-10)
 
 ## [0.84.18](https://github.com/juspay/hyperswitch-web/compare/v0.84.17...v0.84.18) (2024-09-09)
