@@ -804,6 +804,7 @@ type paymentMethodList = {
   payment_type: payment_type,
   merchant_name: string,
   collect_billing_details_from_wallets: bool,
+  is_tax_calculation_enabled: bool,
 }
 
 let defaultPaymentMethodType = {
@@ -826,6 +827,7 @@ let defaultList = {
   payment_type: NONE,
   merchant_name: "",
   collect_billing_details_from_wallets: true,
+  is_tax_calculation_enabled: false,
 }
 
 let getPaymentExperienceType = str => {
@@ -1025,6 +1027,7 @@ let itemToObjMapper = dict => {
       "collect_billing_details_from_wallets",
       true,
     ),
+    is_tax_calculation_enabled: getBool(dict,"is_tax_calculation_enabled",false)
   }
 }
 

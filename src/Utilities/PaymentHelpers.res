@@ -1972,3 +1972,81 @@ let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodU
     JSON.Encode.null->resolve
   })
 }
+
+let calculateTax = (
+  ~apiKey,
+  ~paymentId,
+  ~clientSecret,
+  ~paymentMethodType,
+  ~shippingAddress,
+  ~logger,
+  ~customPodUri,
+) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let headers = [("Content-Type", "application/json"), ("api-key", apiKey)]
+  let uri = `${endpoint}/payments/${paymentId}/calculate_tax`
+  let body = [
+    ("client_secret", clientSecret),
+    ("shipping", shippingAddress),
+    ("payment_method_type", paymentMethodType),
+  ]
+  logApi(
+    ~optLogger=Some(logger),
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=EXTERNAL_TAX_CALCULATION,
+    ~logType=INFO,
+    ~logCategory=API,
+  )
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~bodyStr=body->getJsonFromArrayOfJson->JSON.stringify,
+  )
+  ->then(resp => {
+    let statusCode = resp->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      resp
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger=Some(logger),
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=EXTERNAL_TAX_CALCULATION,
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger=Some(logger),
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=EXTERNAL_TAX_CALCULATION,
+        ~logType=INFO,
+        ~logCategory=API,
+      )
+      resp->Fetch.Response.json
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    logApi(
+      ~optLogger=Some(logger),
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=EXTERNAL_TAX_CALCULATION,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data=exceptionMessage,
+    )
+    JSON.Encode.null->resolve
+  })
+}
