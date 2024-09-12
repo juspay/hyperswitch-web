@@ -78,15 +78,15 @@ type dynamicFieldType =
   | BillingAddress(addressField)
   | PayoutMethodData(paymentMethodDataField)
 
-type dynamicFields = {
+type payoutDynamicFields = {
   address: option<array<dynamicFieldForAddress>>,
   payoutMethodData: array<dynamicFieldForPaymentMethodData>,
 }
 
 type paymentMethodTypeWithDynamicFields =
-  | Card((card, dynamicFields))
-  | BankTransfer((bankTransfer, dynamicFields))
-  | Wallet((wallet, dynamicFields))
+  | Card((card, payoutDynamicFields))
+  | BankTransfer((bankTransfer, payoutDynamicFields))
+  | Wallet((wallet, payoutDynamicFields))
 
 type paymentMethodType =
   | Card(card)
@@ -338,7 +338,7 @@ let sortByCustomOrder = (arr: array<'a>, getKey: 'a => string, customOrder: arra
   })
 }
 
-let decodeDynamicFields = (json: JSON.t): option<dynamicFields> =>
+let decodePayoutDynamicFields = (json: JSON.t): option<payoutDynamicFields> =>
   json
   ->JSON.Decode.object
   ->Option.map(obj => {
@@ -424,10 +424,10 @@ let decodePaymentMethodTypeWithRequiredFields = (
               }
               ->Option.map(
                 pmt => {
-                  let dynamicFields =
+                  let payoutDynamicFields =
                     obj
                     ->Dict.get("required_fields")
-                    ->Option.flatMap(decodeDynamicFields)
+                    ->Option.flatMap(decodePayoutDynamicFields)
                     ->Option.getOr({
                       address: None,
                       payoutMethodData: defaultDynamicPmdFields(~pmt),
@@ -435,19 +435,19 @@ let decodePaymentMethodTypeWithRequiredFields = (
                   switch pmt {
                   | Card(card) => {
                       pmta->Array.push(Card(card))
-                      let pmtwr: paymentMethodTypeWithDynamicFields = Card(card, dynamicFields)
+                      let pmtwr: paymentMethodTypeWithDynamicFields = Card(card, payoutDynamicFields)
                       pmtr->Array.push(pmtwr)
                       (pmta, pmtr)
                     }
                   | BankTransfer(transfer) => {
                       pmta->Array.push(BankTransfer(transfer))
-                      pmtr->Array.push(BankTransfer(transfer, dynamicFields))
+                      pmtr->Array.push(BankTransfer(transfer, payoutDynamicFields))
                       (pmta, pmtr)
                     }
                   | Wallet(wallet) => {
                       let pmt: paymentMethodType = Wallet(wallet)
                       pmta->Array.push(pmt)
-                      pmtr->Array.push(Wallet(wallet, dynamicFields))
+                      pmtr->Array.push(Wallet(wallet, payoutDynamicFields))
                       (pmta, pmtr)
                     }
                   }

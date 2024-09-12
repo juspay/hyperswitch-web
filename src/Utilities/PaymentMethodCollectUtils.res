@@ -538,7 +538,7 @@ let defaultDynamicPmdFields = (~pmt: paymentMethodType=defaultPmt()): array<
   | Wallet(Venmo) => []
   }
 }
-let defaultDynamicFields = (~pmt: paymentMethodType=defaultPmt()): dynamicFields => {
+let defaultPayoutDynamicFields = (~pmt: paymentMethodType=defaultPmt()): payoutDynamicFields => {
   {
     address: None,
     payoutMethodData: defaultDynamicPmdFields(~pmt),
@@ -565,12 +565,12 @@ let defaultEnabledPaymentMethods: array<paymentMethodType> = [
   Wallet(Paypal),
 ]
 let defaultEnabledPaymentMethodsWithDynamicFields: array<paymentMethodTypeWithDynamicFields> = [
-  Card((Credit, defaultDynamicFields())),
-  Card((Debit, defaultDynamicFields())),
-  BankTransfer((ACH, defaultDynamicFields())),
-  BankTransfer((Bacs, defaultDynamicFields())),
-  BankTransfer((Sepa, defaultDynamicFields())),
-  Wallet((Paypal, defaultDynamicFields())),
+  Card((Credit, defaultPayoutDynamicFields())),
+  Card((Debit, defaultPayoutDynamicFields())),
+  BankTransfer((ACH, defaultPayoutDynamicFields())),
+  BankTransfer((Bacs, defaultPayoutDynamicFields())),
+  BankTransfer((Sepa, defaultPayoutDynamicFields())),
+  Wallet((Paypal, defaultPayoutDynamicFields())),
 ]
 let defaultPaymentMethodCollectOptions = {
   enabledPaymentMethods: defaultEnabledPaymentMethods,
@@ -763,7 +763,6 @@ let processPaymentMethodDataFields = (
         ->Option.map(value => dataArr->Array.push((info, value->String.trim)))
         ->ignore
         keys->Array.push(fieldKey)
-        Js.Console.log2("FORMING PMD DATA", (key, dataArr, keys))
         (dataArr, keys)
       }
     }
@@ -937,10 +936,10 @@ let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethod
   body
 }
 
-let getDynamicFields = (
+let getPayoutDynamicFields = (
   enabledPaymentMethodsWithDynamicFields: array<paymentMethodTypeWithDynamicFields>,
   reqPmt,
-): option<dynamicFields> =>
+): option<payoutDynamicFields> =>
   enabledPaymentMethodsWithDynamicFields
   ->Array.find(pmtr => {
     switch (pmtr, reqPmt) {
@@ -956,14 +955,14 @@ let getDynamicFields = (
   })
   ->Option.map(pmt => {
     switch pmt {
-    | Card(_, dynamicFields)
-    | BankTransfer(_, dynamicFields)
-    | Wallet(_, dynamicFields) => dynamicFields
+    | Card(_, payoutDynamicFields)
+    | BankTransfer(_, payoutDynamicFields)
+    | Wallet(_, payoutDynamicFields) => payoutDynamicFields
     }
   })
 
-let getDefaultsAndValidity = dynamicFields => {
-  dynamicFields.address
+let getDefaultsAndValidity = payoutDynamicFields => {
+  payoutDynamicFields.address
   ->Option.map(address => {
     address->Array.reduce((Dict.make(), Dict.make()), ((values, validity), field) => {
       switch (field.fieldType, field.value) {
@@ -984,7 +983,7 @@ let getDefaultsAndValidity = dynamicFields => {
     })
   })
   ->Option.map(((addressValues, addressValidity)) => {
-    dynamicFields.payoutMethodData->Array.reduce((addressValues, addressValidity), (
+    payoutDynamicFields.payoutMethodData->Array.reduce((addressValues, addressValidity), (
       (values, validity),
       field,
     ) => {

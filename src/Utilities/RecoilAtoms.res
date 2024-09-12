@@ -26,9 +26,9 @@ let paymentMethodCollectOptionAtom = Recoil.atom(
   "paymentMethodCollectOptions",
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
 )
-let dynamicFieldsAtom = Recoil.atom(
-  "dynamicFields",
-  PaymentMethodCollectUtils.defaultDynamicFields(),
+let payoutDynamicFieldsAtom = Recoil.atom(
+  "payoutDynamicFields",
+  PaymentMethodCollectUtils.defaultPayoutDynamicFields(),
 )
 let paymentMethodTypeAtom = Recoil.atom("paymentMethodType", PaymentMethodCollectUtils.defaultPmt())
 let formDataAtom = Recoil.atom("formData", PaymentMethodCollectUtils.defaultFormDataDict)

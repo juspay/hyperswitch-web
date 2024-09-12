@@ -15,7 +15,7 @@ let make = (
 ) => {
   // Recoil states
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let dynamicFields = Recoil.useRecoilValueFromAtom(dynamicFieldsAtom)
+  let payoutDynamicFields = Recoil.useRecoilValueFromAtom(payoutDynamicFieldsAtom)
   let formData = Recoil.useRecoilValueFromAtom(formDataAtom)
   let (activePmt, setActivePmt) = Recoil.useRecoilState(paymentMethodTypeAtom)
   let (validityDict, setValidityDict) = Recoil.useRecoilState(validityDictAtom)
@@ -106,22 +106,22 @@ let make = (
           let newView = switch newPm {
           | Card => {
               let newPmt = Card(Debit)
-              let dynamicFields =
-                getDynamicFields(enabledPaymentMethodsWithDynamicFields, newPmt)->Option.getOr(
-                  defaultDynamicFields(~pmt=newPmt),
+              let payoutDynamicFields =
+                getPayoutDynamicFields(enabledPaymentMethodsWithDynamicFields, newPmt)->Option.getOr(
+                  defaultPayoutDynamicFields(~pmt=newPmt),
                 )
               setActivePmt(_ => newPmt)
-              dynamicFields.address
+              payoutDynamicFields.address
               ->Option.map(address => {
                 let fieldsToCollect =
                   address->Array.filter(addressField => addressField.value == None)
                 if fieldsToCollect->Array.length > 0 {
                   AddressForm(address)
                 } else {
-                  PMDForm(newPmt, dynamicFields.payoutMethodData)
+                  PMDForm(newPmt, payoutDynamicFields.payoutMethodData)
                 }
               })
-              ->Option.getOr(PMDForm(newPmt, dynamicFields.payoutMethodData))
+              ->Option.getOr(PMDForm(newPmt, payoutDynamicFields.payoutMethodData))
             }
           | _ => SelectPMType(newPm)
           }
@@ -167,23 +167,23 @@ let make = (
           setActivePmt(_ => newPmt)
 
           // Update view
-          let dynamicFields =
-            getDynamicFields(enabledPaymentMethodsWithDynamicFields, newPmt)->Option.getOr(
-              defaultDynamicFields(~pmt=newPmt),
+          let payoutDynamicFields =
+            getPayoutDynamicFields(enabledPaymentMethodsWithDynamicFields, newPmt)->Option.getOr(
+              defaultPayoutDynamicFields(~pmt=newPmt),
             )
 
           let newView =
-            dynamicFields.address
+            payoutDynamicFields.address
             ->Option.map(address => {
               let fieldsToCollect =
                 address->Array.filter(addressField => addressField.value == None)
               if fieldsToCollect->Array.length > 0 {
                 AddressForm(address)
               } else {
-                PMDForm(newPmt, dynamicFields.payoutMethodData)
+                PMDForm(newPmt, payoutDynamicFields.payoutMethodData)
               }
             })
-            ->Option.getOr(PMDForm(newPmt, dynamicFields.payoutMethodData))
+            ->Option.getOr(PMDForm(newPmt, payoutDynamicFields.payoutMethodData))
 
           View.setView(newView)
         }
@@ -247,7 +247,7 @@ let make = (
 
           setValidityDict(_ => fieldValidity)
           if isAddressValid {
-            View.setView(PMDForm(activePmt, dynamicFields.payoutMethodData))
+            View.setView(PMDForm(activePmt, payoutDynamicFields.payoutMethodData))
           }
         }
         <>
@@ -282,8 +282,7 @@ let make = (
 
           setValidityDict(_ => fieldValidity)
           if isPmdValid {
-            Js.Console.info2("formPaymentMethodData", (formData, fieldValidity, dynamicFields))
-            formPaymentMethodData(formData, fieldValidity, dynamicFields)
+            formPaymentMethodData(formData, fieldValidity, payoutDynamicFields)
             ->Option.map(pmd => View.setView(FinalizeView((activePmt, pmd))))
             ->ignore
           }

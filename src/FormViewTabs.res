@@ -14,7 +14,7 @@ let make = (
 ) => {
   // Recoil states
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let dynamicFields = Recoil.useRecoilValueFromAtom(dynamicFieldsAtom)
+  let payoutDynamicFields = Recoil.useRecoilValueFromAtom(payoutDynamicFieldsAtom)
   let formData = Recoil.useRecoilValueFromAtom(formDataAtom)
   let (activePmt, setActivePmt) = Recoil.useRecoilState(paymentMethodTypeAtom)
   let validityDict = Recoil.useRecoilValueFromAtom(validityDictAtom)
@@ -179,7 +179,7 @@ let make = (
 
         let onSaveHandler = () => {
           let (fieldValidity, isAddressValid) =
-            dynamicFields.address
+            payoutDynamicFields.address
             ->Option.map(addressFields => {
               addressFields->Array.reduce((Dict.make(), true), (
                 (fieldValidity, isAddressValid),
@@ -195,7 +195,7 @@ let make = (
             })
             ->Option.getOr((validityDict->Dict.copy, true))
 
-          let (fieldValidity, isPmdValid) = dynamicFields.payoutMethodData->Array.reduce(
+          let (fieldValidity, isPmdValid) = payoutDynamicFields.payoutMethodData->Array.reduce(
             (fieldValidity, isAddressValid),
             ((fieldValidity, isPmdValid), field) => {
               let key = PayoutMethodData(field.fieldType)->getPaymentMethodDataFieldKey
@@ -208,7 +208,7 @@ let make = (
           )
 
           if isPmdValid {
-            formPaymentMethodData(formData, fieldValidity, dynamicFields)
+            formPaymentMethodData(formData, fieldValidity, payoutDynamicFields)
             ->Option.map(pmd => View.setView(FinalizeView(activePmt, pmd)))
             ->ignore
           }
@@ -223,8 +223,8 @@ let make = (
             | Wallet(_) => key->localeString.formHeaderWalletText
             }->React.string}
           </div>
-          {dynamicFields.payoutMethodData->renderPayoutMethodForm->React.array}
-          {dynamicFields.address
+          {payoutDynamicFields.payoutMethodData->renderPayoutMethodForm->React.array}
+          {payoutDynamicFields.address
           ->Option.map(addressFields => {
             let formFields = addressFields->renderAddressForm
             if formFields->Array.length > 0 {

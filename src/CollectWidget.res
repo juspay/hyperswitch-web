@@ -16,7 +16,7 @@ let make = (
   let {enabledPaymentMethodsWithDynamicFields} = Recoil.useRecoilValueFromAtom(
     paymentMethodCollectOptionAtom,
   )
-  let (_, setDynamicFields) = Recoil.useRecoilState(dynamicFieldsAtom)
+  let (_, setPayoutDynamicFields) = Recoil.useRecoilState(payoutDynamicFieldsAtom)
   let (formData, setFormData) = Recoil.useRecoilState(formDataAtom)
   let (activePmt, _) = Recoil.useRecoilState(paymentMethodTypeAtom)
   let (validityDict, setValidityDict) = Recoil.useRecoilState(validityDictAtom)
@@ -32,10 +32,10 @@ let make = (
 
   // Hook for fetching dynamic fields, and default values and their validity for payment method type update
   React.useEffect(() => {
-    getDynamicFields(enabledPaymentMethodsWithDynamicFields, activePmt)
-    ->Option.flatMap(dynamicFields => {
-      setDynamicFields(_ => dynamicFields)
-      getDefaultsAndValidity(dynamicFields)
+    getPayoutDynamicFields(enabledPaymentMethodsWithDynamicFields, activePmt)
+    ->Option.flatMap(payoutDynamicFields => {
+      setPayoutDynamicFields(_ => payoutDynamicFields)
+      getDefaultsAndValidity(payoutDynamicFields)
     })
     ->Option.map(((values, validity)) => {
       setFormData(_ => values)
@@ -56,7 +56,6 @@ let make = (
 
   let setValidityDictVal = (key, value) => {
     setValidityDict(prevDict => {
-      Js.Console.info2("SETTING", (key, value, prevDict))
       let copy = prevDict->Dict.copy
       copy->Dict.set(key, value)
       copy
