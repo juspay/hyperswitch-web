@@ -1,3 +1,10 @@
+# [0.85.0](https://github.com/juspay/hyperswitch-web/compare/v0.84.20...v0.85.0) (2024-09-12)
+
+
+### Features
+
+* **payout:** add dynamic fields for payout widget ([#590](https://github.com/juspay/hyperswitch-web/issues/590)) ([c647dee](https://github.com/juspay/hyperswitch-web/commit/c647dee5dbe190d87949a5b90052ca7468a7805e))
+
 ## [0.84.20](https://github.com/juspay/hyperswitch-web/compare/v0.84.19...v0.84.20) (2024-09-11)
 
 
