@@ -97,6 +97,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formSaveText: `保存`,
   formSubmitText: `提出`,
   formSubmittingText: `提出中`,
+  formSubheaderBillingDetailsText: `請輸入您的帳單地址`,
   formSubheaderCardText: `カードの詳細`,
   formSubheaderAccountText: pmLabel => `あなたの${pmLabel}`,
   formHeaderReviewText: `レビュー`,
