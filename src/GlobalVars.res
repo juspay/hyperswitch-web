@@ -12,5 +12,5 @@
 @val external maxLogsPushedPerEventName: int = "maxLogsPushedPerEventName"
 let targetOrigin: string = "*"
 let isInteg = sdkUrl === "https://dev.hyperswitch.io"
-let isSandbox = sdkUrl === "https://beta.hyperswitch.io"
+let isSandbox = sdkUrl === "https://beta.hyperswitch.io" || sdkUrl === "http://localhost:9050"
 let isProd = sdkUrl === "https://checkout.hyperswitch.io"

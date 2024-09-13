@@ -1,3 +1,44 @@
+# [0.85.0](https://github.com/juspay/hyperswitch-web/compare/v0.84.20...v0.85.0) (2024-09-12)
+
+
+### Features
+
+* **payout:** add dynamic fields for payout widget ([#590](https://github.com/juspay/hyperswitch-web/issues/590)) ([c647dee](https://github.com/juspay/hyperswitch-web/commit/c647dee5dbe190d87949a5b90052ca7468a7805e))
+
+## [0.84.20](https://github.com/juspay/hyperswitch-web/compare/v0.84.19...v0.84.20) (2024-09-11)
+
+
+### Bug Fixes
+
+* double scroll bar fix ([#608](https://github.com/juspay/hyperswitch-web/issues/608)) ([a371b4f](https://github.com/juspay/hyperswitch-web/commit/a371b4f86fef245ad8180f3af00b93b1a674b4f3))
+
+## [0.84.19](https://github.com/juspay/hyperswitch-web/compare/v0.84.18...v0.84.19) (2024-09-10)
+
+## [0.84.18](https://github.com/juspay/hyperswitch-web/compare/v0.84.17...v0.84.18) (2024-09-09)
+
+## [0.84.17](https://github.com/juspay/hyperswitch-web/compare/v0.84.16...v0.84.17) (2024-09-09)
+
+## [0.84.16](https://github.com/juspay/hyperswitch-web/compare/v0.84.15...v0.84.16) (2024-09-09)
+
+
+### Bug Fixes
+
+* added wild cards support ([#601](https://github.com/juspay/hyperswitch-web/issues/601)) ([54e613c](https://github.com/juspay/hyperswitch-web/commit/54e613cc4e992f760543c1be796cf7563c5c78cf))
+
+## [0.84.15](https://github.com/juspay/hyperswitch-web/compare/v0.84.14...v0.84.15) (2024-09-09)
+
+
+### Bug Fixes
+
+* integ env in webpack ([#602](https://github.com/juspay/hyperswitch-web/issues/602)) ([1f3cc6b](https://github.com/juspay/hyperswitch-web/commit/1f3cc6bd44cfb0e1086920cb7631e6ba416ec74b))
+
+## [0.84.14](https://github.com/juspay/hyperswitch-web/compare/v0.84.13...v0.84.14) (2024-09-04)
+
+
+### Bug Fixes
+
+* changed post message from parent window to current window ([#598](https://github.com/juspay/hyperswitch-web/issues/598)) ([46b0ef4](https://github.com/juspay/hyperswitch-web/commit/46b0ef46f7af2aa8fbd5ac59c4fa8b0903b21c03))
+
 ## [0.84.13](https://github.com/juspay/hyperswitch-web/compare/v0.84.12...v0.84.13) (2024-09-03)
 
 

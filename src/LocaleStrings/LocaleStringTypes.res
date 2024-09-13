@@ -89,6 +89,7 @@ type localeStrings = {
   formSaveText: string,
   formSubmitText: string,
   formSubmittingText: string,
+  formSubheaderBillingDetailsText: string,
   formSubheaderCardText: string,
   formSubheaderAccountText: string => string,
   formHeaderReviewText: string,

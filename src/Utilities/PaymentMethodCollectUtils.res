@@ -65,16 +65,13 @@ let setNestedValue = (dict: t, key: string, value: JSON.t): unit => {
   traverse(dict, 0)
 }
 
-let setValue = (dict, key, value): Dict.t<JSON.t> => {
-  let pmdCopy = Dict.copy(dict)
-  pmdCopy->setNestedValue(key, value->JSON.Encode.string)
-  pmdCopy
+let getPaymentMethodForPmt = (paymentMethodType: paymentMethodType): paymentMethod => {
+  switch paymentMethodType {
+  | Card(_) => Card
+  | BankTransfer(_) => BankTransfer
+  | Wallet(_) => Wallet
+  }
 }
-
-let getValue = (dict, key) =>
-  dict
-  ->getNestedValue(key)
-  ->Option.flatMap(JSON.Decode.string)
 
 let getPaymentMethod = (paymentMethod: paymentMethod): string => {
   switch paymentMethod {
@@ -103,12 +100,12 @@ let getPaymentMethodType = (paymentMethodType: paymentMethodType): string => {
     switch bankTransferType {
     | ACH => "ach"
     | Bacs => "bacs"
+    | Pix => "pix"
     | Sepa => "sepa"
     }
   | Wallet(walletType) =>
     switch walletType {
     | Paypal => "paypal"
-    | Pix => "pix"
     | Venmo => "venmo"
     }
   }
@@ -132,147 +129,183 @@ let getPaymentMethodTypeLabel = (paymentMethodType: paymentMethodType): string =
   | BankTransfer(bankTransferType) =>
     switch bankTransferType {
     | ACH => "ACH"
-    | Bacs => "Bacs"
+    | Bacs => "BACS"
+    | Pix => "Pix"
     | Sepa => "SEPA"
     }
   | Wallet(walletType) =>
     switch walletType {
     | Paypal => "PayPal"
-    | Pix => "Pix"
     | Venmo => "Venmo"
     }
   }
 }
 
-let getPaymentMethodDataFieldKey = (key: paymentMethodDataField): string =>
+let getPaymentMethodDataFieldKey = (key): string =>
   switch key {
-  | CardNumber => "card.cardNumber"
-  | CardExpDate => "card.cardExp"
-  | CardHolderName => "card.cardHolder"
-  | CardBrand => "card.brand"
-  | ACHRoutingNumber => "ach.routing"
-  | ACHAccountNumber => "ach.account"
-  | ACHBankName => "ach.bankName"
-  | ACHBankCity => "ach.bankCity"
-  | BacsSortCode => "bacs.sort"
-  | BacsAccountNumber => "bacs.account"
-  | BacsBankName => "bacs.bankName"
-  | BacsBankCity => "bacs.bankCity"
-  | SepaIban => "sepa.iban"
-  | SepaBic => "sepa.bic"
-  | SepaBankName => "sepa.bankName"
-  | SepaBankCity => "sepa.bankCity"
-  | SepaCountryCode => "sepa.countryCode"
-  | PaypalMail => "paypal.email"
-  | PaypalMobNumber => "paypal.phoneNumber"
-  | PixId => "pix.id"
-  | PixBankAccountNumber => "pix.account"
-  | PixBankName => "pix.bankName"
-  | VenmoMobNumber => "venmo.phoneNumber"
+  | PayoutMethodData(p) =>
+    switch p {
+    | CardNumber => "card.cardNumber"
+    | CardExpDate(_) => "card.cardExp"
+    | CardHolderName => "card.cardHolder"
+    | CardBrand => "card.brand"
+    | ACHRoutingNumber => "ach.routing"
+    | ACHAccountNumber => "ach.account"
+    | ACHBankName => "ach.bankName"
+    | ACHBankCity => "ach.bankCity"
+    | BacsSortCode => "bacs.sort"
+    | BacsAccountNumber => "bacs.account"
+    | BacsBankName => "bacs.bankName"
+    | BacsBankCity => "bacs.bankCity"
+    | SepaIban => "sepa.iban"
+    | SepaBic => "sepa.bic"
+    | SepaBankName => "sepa.bankName"
+    | SepaBankCity => "sepa.bankCity"
+    | SepaCountryCode => "sepa.countryCode"
+    | PaypalMail => "paypal.email"
+    | PaypalMobNumber => "paypal.phoneNumber"
+    | PixKey => "pix.key"
+    | PixBankAccountNumber => "pix.account"
+    | PixBankName => "pix.bankName"
+    | VenmoMobNumber => "venmo.phoneNumber"
+    }
+  | BillingAddress(b) =>
+    switch b {
+    | Email => "billing.address.email"
+    | FullName(_) => "billing.address.fullName"
+    | CountryCode => "billing.address.countryCode"
+    | PhoneNumber => "billing.address.phoneNumber"
+    | PhoneCountryCode => "billing.address.phoneCountryCode"
+    | AddressLine1 => "billing.address.addressLine1"
+    | AddressLine2 => "billing.address.addressLine2"
+    | AddressCity => "billing.address.addressCity"
+    | AddressState => "billing.address.addressState"
+    | AddressPincode => "billing.address.addressPincode"
+    | AddressCountry(_) => "billing.address.addressCountry"
+    }
   }
 
-let getPaymentMethodDataFieldLabel = (
-  key: paymentMethodDataField,
-  localeString: LocaleStringTypes.localeStrings,
-): string =>
+let getPaymentMethodDataFieldLabel = (key, localeString: LocaleStringTypes.localeStrings): string =>
   switch key {
-  | CardNumber => localeString.cardNumberLabel
-  | CardExpDate => localeString.validThruText
-  | CardHolderName => localeString.cardHolderName
-  | ACHRoutingNumber => localeString.formFieldACHRoutingNumberLabel
-  | ACHAccountNumber | BacsAccountNumber => localeString.accountNumberText
-  | BacsSortCode => localeString.sortCodeText
-  | SepaIban => localeString.formFieldSepaIbanLabel
-  | SepaBic => localeString.formFieldSepaBicLabel
-  | PixId => localeString.formFieldPixIdLabel
-  | PixBankAccountNumber => localeString.formFieldBankAccountNumberLabel
-  | PaypalMail => localeString.emailLabel
-  | PaypalMobNumber | VenmoMobNumber => localeString.formFieldPhoneNumberLabel
-  | SepaCountryCode => localeString.formFieldCountryCodeLabel
-  | ACHBankName
-  | BacsBankName
-  | PixBankName
-  | SepaBankName =>
+  | PayoutMethodData(CardNumber) => localeString.cardNumberLabel
+  | PayoutMethodData(CardExpDate(_)) => localeString.validThruText
+  | PayoutMethodData(CardHolderName) => localeString.cardHolderName
+  | PayoutMethodData(ACHRoutingNumber) => localeString.formFieldACHRoutingNumberLabel
+  | PayoutMethodData(ACHAccountNumber) | PayoutMethodData(BacsAccountNumber) =>
+    localeString.accountNumberText
+  | PayoutMethodData(BacsSortCode) => localeString.sortCodeText
+  | PayoutMethodData(SepaIban) => localeString.formFieldSepaIbanLabel
+  | PayoutMethodData(SepaBic) => localeString.formFieldSepaBicLabel
+  | PayoutMethodData(PixKey) => localeString.formFieldPixIdLabel
+  | PayoutMethodData(PixBankAccountNumber) => localeString.formFieldBankAccountNumberLabel
+  | PayoutMethodData(PaypalMail) => localeString.emailLabel
+  | PayoutMethodData(PaypalMobNumber) | PayoutMethodData(VenmoMobNumber) =>
+    localeString.formFieldPhoneNumberLabel
+  | PayoutMethodData(SepaCountryCode) => localeString.formFieldCountryCodeLabel
+  | PayoutMethodData(ACHBankName)
+  | PayoutMethodData(BacsBankName)
+  | PayoutMethodData(PixBankName)
+  | PayoutMethodData(SepaBankName) =>
     localeString.formFieldBankNameLabel
-  | ACHBankCity
-  | BacsBankCity
-  | SepaBankCity =>
+  | PayoutMethodData(ACHBankCity)
+  | PayoutMethodData(BacsBankCity)
+  | PayoutMethodData(SepaBankCity) =>
     localeString.formFieldBankCityLabel
-  | CardBrand => "Misc."
+  | PayoutMethodData(CardBrand) => "Misc."
+
+  // Address details
+  | BillingAddress(Email) => localeString.emailLabel
+  | BillingAddress(FullName(_)) => localeString.fullNameLabel
+  | BillingAddress(CountryCode) => localeString.countryLabel
+  | BillingAddress(PhoneNumber) => localeString.formFieldPhoneNumberLabel
+  | BillingAddress(PhoneCountryCode) => localeString.formFieldCountryCodeLabel
+  | BillingAddress(AddressLine1) => localeString.line1Label
+  | BillingAddress(AddressLine2) => localeString.line2Label
+  | BillingAddress(AddressCity) => localeString.cityLabel
+  | BillingAddress(AddressState) => localeString.stateLabel
+  | BillingAddress(AddressPincode) => localeString.postalCodeLabel
+  | BillingAddress(AddressCountry(_)) => localeString.countryLabel
   }
 
 let getPaymentMethodDataFieldPlaceholder = (
-  key: paymentMethodDataField,
+  key,
   locale: LocaleStringTypes.localeStrings,
   constant: LocaleStringTypes.constantStrings,
 ): string => {
   switch key {
-  | CardNumber => constant.formFieldCardNumberPlaceholder
-  | CardExpDate => locale.expiryPlaceholder
-  | CardHolderName => locale.formFieldCardHoldernamePlaceholder
-  | ACHRoutingNumber => constant.formFieldACHRoutingNumberPlaceholder
-  | ACHAccountNumber => constant.formFieldAccountNumberPlaceholder
-  | BacsSortCode => constant.formFieldSortCodePlaceholder
-  | BacsAccountNumber => constant.formFieldAccountNumberPlaceholder
-  | SepaIban => constant.formFieldSepaIbanPlaceholder
-  | SepaBic => constant.formFieldSepaBicPlaceholder
-  | SepaCountryCode => locale.countryLabel
-  | PixId => constant.formFieldPixIdPlaceholder
-  | PixBankAccountNumber => constant.formFieldBankAccountNumberPlaceholder
-  | ACHBankName
-  | BacsBankName
-  | PixBankName
-  | SepaBankName =>
+  | PayoutMethodData(CardNumber) => constant.formFieldCardNumberPlaceholder
+  | PayoutMethodData(CardExpDate(_)) => locale.expiryPlaceholder
+  | PayoutMethodData(CardHolderName) => locale.formFieldCardHoldernamePlaceholder
+  | PayoutMethodData(ACHRoutingNumber) => constant.formFieldACHRoutingNumberPlaceholder
+  | PayoutMethodData(ACHAccountNumber) => constant.formFieldAccountNumberPlaceholder
+  | PayoutMethodData(BacsSortCode) => constant.formFieldSortCodePlaceholder
+  | PayoutMethodData(BacsAccountNumber) => constant.formFieldAccountNumberPlaceholder
+  | PayoutMethodData(SepaIban) => constant.formFieldSepaIbanPlaceholder
+  | PayoutMethodData(SepaBic) => constant.formFieldSepaBicPlaceholder
+  | PayoutMethodData(SepaCountryCode) => locale.countryLabel
+  | PayoutMethodData(PixKey) => constant.formFieldPixIdPlaceholder
+  | PayoutMethodData(PixBankAccountNumber) => constant.formFieldBankAccountNumberPlaceholder
+  | PayoutMethodData(ACHBankName)
+  | PayoutMethodData(BacsBankName)
+  | PayoutMethodData(PixBankName)
+  | PayoutMethodData(SepaBankName) =>
     locale.formFieldBankNamePlaceholder
-  | ACHBankCity
-  | BacsBankCity
-  | SepaBankCity =>
+  | PayoutMethodData(ACHBankCity)
+  | PayoutMethodData(BacsBankCity)
+  | PayoutMethodData(SepaBankCity) =>
     locale.formFieldBankCityPlaceholder
-  | PaypalMail => locale.formFieldEmailPlaceholder
-  | PaypalMobNumber | VenmoMobNumber => locale.formFieldPhoneNumberPlaceholder
-  | CardBrand => "Misc."
+  | PayoutMethodData(PaypalMail) => locale.formFieldEmailPlaceholder
+  | PayoutMethodData(PaypalMobNumber) | PayoutMethodData(VenmoMobNumber) =>
+    locale.formFieldPhoneNumberPlaceholder
+  | PayoutMethodData(CardBrand) => "Misc."
+  // TODO: handle billing address locales this
+  | _ => ""
   }
 }
 
-let getPaymentMethodDataFieldMaxLength = (key: paymentMethodDataField): int =>
+let getPaymentMethodDataFieldMaxLength = (key): int =>
   switch key {
-  | CardNumber => 23
-  | CardExpDate => 7
-  | ACHRoutingNumber => 9
-  | ACHAccountNumber => 12
-  | BacsSortCode => 6
-  | BacsAccountNumber => 18
-  | SepaBic => 8
-  | SepaIban => 34
+  | PayoutMethodData(CardNumber) => 23
+  | PayoutMethodData(CardExpDate(_)) => 7
+  | PayoutMethodData(ACHRoutingNumber) => 9
+  | PayoutMethodData(ACHAccountNumber) => 12
+  | PayoutMethodData(BacsSortCode) => 6
+  | PayoutMethodData(BacsAccountNumber) => 18
+  | PayoutMethodData(SepaBic) => 8
+  | PayoutMethodData(SepaIban) => 34
   | _ => 32
   }
 
-let getPaymentMethodDataFieldCharacterPattern = (key: paymentMethodDataField): option<Js.Re.t> =>
+let getPaymentMethodDataFieldCharacterPattern = (key): option<Js.Re.t> =>
   switch key {
-  | ACHAccountNumber => Some(%re("/^\d{1,17}$/"))
-  | ACHRoutingNumber => Some(%re("/^\d{1,9}$/"))
-  | BacsAccountNumber => Some(%re("/^\d{1,18}$/"))
-  | BacsSortCode => Some(%re("/^\d{1,6}$/"))
-  | CardHolderName => Some(%re("/^([a-zA-Z]| ){1,32}$/"))
-  | CardNumber => Some(%re("/^\d{1,18}$/"))
-  | PaypalMail => Some(%re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/"))
-  | PaypalMobNumber => Some(%re("/^[0-9]{1,12}$/"))
-  | SepaBic => Some(%re("/^([A-Z0-9]| ){1,8}$/"))
-  | SepaIban => Some(%re("/^([A-Z0-9]| ){1,34}$/"))
+  | PayoutMethodData(ACHAccountNumber) => Some(%re("/^\d{1,17}$/"))
+  | PayoutMethodData(ACHRoutingNumber) => Some(%re("/^\d{1,9}$/"))
+  | PayoutMethodData(BacsAccountNumber) => Some(%re("/^\d{1,18}$/"))
+  | PayoutMethodData(BacsSortCode) => Some(%re("/^\d{1,6}$/"))
+  | PayoutMethodData(CardHolderName) => Some(%re("/^([a-zA-Z]| ){1,32}$/"))
+  | PayoutMethodData(CardNumber) => Some(%re("/^\d{1,18}$/"))
+  | PayoutMethodData(PaypalMail) =>
+    Some(%re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/"))
+  | PayoutMethodData(PaypalMobNumber) => Some(%re("/^[0-9]{1,12}$/"))
+  | PayoutMethodData(SepaBic) => Some(%re("/^([A-Z0-9]| ){1,8}$/"))
+  | PayoutMethodData(SepaIban) => Some(%re("/^([A-Z0-9]| ){1,34}$/"))
+  | BillingAddress(AddressPincode) => Some(%re("/^[0-9]{1,8}$/"))
+  | BillingAddress(PhoneNumber) => Some(%re("/^[0-9]{1,12}$/"))
+  | BillingAddress(PhoneCountryCode) => Some(%re("/^[0-9]{1,2}$/"))
   | _ => None
   }
 
-let getPaymentMethodDataFieldInputType = (key: paymentMethodDataField): string =>
+let getPaymentMethodDataFieldInputType = (key): string =>
   switch key {
-  | ACHAccountNumber => "tel"
-  | ACHRoutingNumber => "tel"
-  | BacsAccountNumber => "tel"
-  | BacsSortCode => "tel"
-  | CardExpDate => "tel"
-  | CardNumber => "tel"
-  | PaypalMail => "email"
-  | PaypalMobNumber => "tel"
-  | VenmoMobNumber => "tel"
+  | PayoutMethodData(PaypalMail) => "email"
+  | PayoutMethodData(ACHAccountNumber)
+  | PayoutMethodData(ACHRoutingNumber)
+  | PayoutMethodData(BacsAccountNumber)
+  | PayoutMethodData(BacsSortCode)
+  | PayoutMethodData(CardExpDate(_))
+  | PayoutMethodData(CardNumber)
+  | PayoutMethodData(PaypalMobNumber)
+  | PayoutMethodData(VenmoMobNumber) => "tel"
   | _ => "text"
   }
 
@@ -356,17 +389,18 @@ let getPayoutStatusMessage = (
   }
 
 let getPaymentMethodDataErrorString = (
-  key: paymentMethodDataField,
+  key,
   value,
   localeString: LocaleStringTypes.localeStrings,
 ): string => {
   let len = value->String.length
-  let notEmptyAndComplete = len <= 0 || len === key->getPaymentMethodDataFieldMaxLength
+  let notEmptyAndComplete = len >= 0 && len === key->getPaymentMethodDataFieldMaxLength
   switch (key, notEmptyAndComplete) {
-  | (CardNumber, _) => localeString.inValidCardErrorText
-  | (CardExpDate, false) => localeString.inCompleteExpiryErrorText
-  | (CardExpDate, true) => localeString.pastExpiryErrorText
-  | (ACHRoutingNumber, false) => localeString.formFieldInvalidRoutingNumber
+  | (PayoutMethodData(CardNumber), _) => localeString.inValidCardErrorText
+  | (PayoutMethodData(CardExpDate(_)), false) => localeString.inCompleteExpiryErrorText
+  | (PayoutMethodData(CardExpDate(_)), true) => localeString.pastExpiryErrorText
+  | (PayoutMethodData(ACHRoutingNumber), false) => localeString.formFieldInvalidRoutingNumber
+  | (BillingAddress(AddressState), _) => "Invalid state"
   | _ => ""
   }
 }
@@ -382,13 +416,13 @@ let getBankTransferIcon = (bankTransfer: bankTransfer) =>
   switch bankTransfer {
   | ACH => <Icon name="ach_bank_transfer" size=20 />
   | Bacs => <Icon name="bank" size=20 />
+  | Pix => <Icon name="wallet-pix" size=20 />
   | Sepa => <Icon name="bank" size=20 />
   }
 
 let getWalletIcon = (wallet: wallet) =>
   switch wallet {
   | Paypal => <Icon name="wallet-paypal" size=20 />
-  | Pix => <Icon name="wallet-pix" size=20 />
   | Venmo => <Icon name="wallet-venmo" size=20 />
   }
 
@@ -400,7 +434,125 @@ let getPaymentMethodTypeIcon = (paymentMethodType: paymentMethodType) =>
   }
 
 // Defaults
+let defaultFormDataDict: Dict.t<string> = Dict.make()
+let defaultValidityDict: Dict.t<option<bool>> = Dict.make()
+let defaultOptionsLimitInTabLayout = 2
+let defaultAvailablePaymentMethods: array<paymentMethod> = []
+let defaultAvailablePaymentMethodTypes: array<paymentMethodType> = []
+let defaultPm: paymentMethod = Card
+let defaultPmt = (~pm=defaultPm): paymentMethodType => {
+  switch pm {
+  | Card => Card(Debit)
+  | BankTransfer => BankTransfer(ACH)
+  | Wallet => Wallet(Paypal)
+  }
+}
+let defaultCardFields: array<dynamicFieldForPaymentMethodData> = [
+  {
+    pmdMap: "payout_method_data.card.card_number",
+    displayName: "user_card_number",
+    fieldType: CardNumber,
+    value: None,
+  },
+  {
+    pmdMap: "payout_method_data.card.expiry_month",
+    displayName: "user_card_exp_month",
+    fieldType: CardExpDate(CardExpMonth),
+    value: None,
+  },
+  {
+    pmdMap: "payout_method_data.card.expiry_year",
+    displayName: "user_card_exp_year",
+    fieldType: CardExpDate(CardExpYear),
+    value: None,
+  },
+]
+let defaultAchFields = [
+  {
+    pmdMap: "payout_method_data.ach.bank_routing_number",
+    displayName: "user_routing_number",
+    fieldType: ACHRoutingNumber,
+    value: None,
+  },
+  {
+    pmdMap: "payout_method_data.ach.bank_account_number",
+    displayName: "user_bank_account_number",
+    fieldType: ACHAccountNumber,
+    value: None,
+  },
+]
+let defaultBacsFields = [
+  {
+    pmdMap: "payout_method_data.bank.bank_sort_code",
+    displayName: "user_sort_code",
+    fieldType: BacsSortCode,
+    value: None,
+  },
+  {
+    pmdMap: "payout_method_data.bank.bank_account_number",
+    displayName: "user_bank_account_number",
+    fieldType: BacsAccountNumber,
+    value: None,
+  },
+]
+let defaultPixTransferFields = [
+  {
+    pmdMap: "payout_method_data.bank.bank_account_number",
+    displayName: "user_bank_account_number",
+    fieldType: PixBankAccountNumber,
+    value: None,
+  },
+  {
+    pmdMap: "payout_method_data.bank.pix_key",
+    displayName: "user_pix_key",
+    fieldType: PixKey,
+    value: None,
+  },
+]
+let defaultSepaFields = [
+  {
+    pmdMap: "payout_method_data.bank.iban",
+    displayName: "user_iban",
+    fieldType: SepaIban,
+    value: None,
+  },
+]
+let defaultPaypalFields = [
+  {
+    pmdMap: "payout_method_data.wallet.telephone_number",
+    displayName: "user_phone_number",
+    fieldType: SepaIban,
+    value: None,
+  },
+]
+let defaultDynamicPmdFields = (~pmt: paymentMethodType=defaultPmt()): array<
+  dynamicFieldForPaymentMethodData,
+> => {
+  switch pmt {
+  | Card(_) => defaultCardFields
+  | BankTransfer(ACH) => defaultAchFields
+  | BankTransfer(Bacs) => defaultBacsFields
+  | BankTransfer(Pix) => defaultPixTransferFields
+  | BankTransfer(Sepa) => defaultSepaFields
+  | Wallet(Paypal) => defaultPaypalFields
+  | Wallet(Venmo) => []
+  }
+}
+let defaultPayoutDynamicFields = (~pmt: paymentMethodType=defaultPmt()): payoutDynamicFields => {
+  {
+    address: None,
+    payoutMethodData: defaultDynamicPmdFields(~pmt),
+  }
+}
 let defaultFormLayout: formLayout = Tabs
+let defaultJourneyView: journeyViews = SelectPM
+let defaultTabView: tabViews = DetailsForm
+let defaultView = (layout: formLayout) => {
+  switch layout {
+  | Journey => Journey(SelectPM)
+  | Tabs => Tabs(defaultTabView)
+  }
+}
 let defaultPaymentMethodCollectFlow: paymentMethodCollectFlow = PayoutLinkInitiate
 let defaultAmount = "0.01"
 let defaultCurrency = "EUR"
@@ -412,8 +564,17 @@ let defaultEnabledPaymentMethods: array<paymentMethodType> = [
   BankTransfer(Sepa),
   Wallet(Paypal),
 ]
+let defaultEnabledPaymentMethodsWithDynamicFields: array<paymentMethodTypeWithDynamicFields> = [
+  Card((Credit, defaultPayoutDynamicFields())),
+  Card((Debit, defaultPayoutDynamicFields())),
+  BankTransfer((ACH, defaultPayoutDynamicFields())),
+  BankTransfer((Bacs, defaultPayoutDynamicFields())),
+  BankTransfer((Sepa, defaultPayoutDynamicFields())),
+  Wallet((Paypal, defaultPayoutDynamicFields())),
+]
 let defaultPaymentMethodCollectOptions = {
   enabledPaymentMethods: defaultEnabledPaymentMethods,
+  enabledPaymentMethodsWithDynamicFields: defaultEnabledPaymentMethodsWithDynamicFields,
   linkId: "",
   payoutId: "",
   customerId: "",
@@ -427,11 +588,6 @@ let defaultPaymentMethodCollectOptions = {
   sessionExpiry: "",
   formLayout: defaultFormLayout,
 }
-let defaultOptionsLimitInTabLayout = 2
-let defaultAvailablePaymentMethods: array<paymentMethod> = []
-let defaultAvailablePaymentMethodTypes: array<paymentMethodType> = []
-let defaultSelectedPaymentMethod: option<paymentMethod> = None
-let defaultSelectedPaymentMethodType: option<paymentMethodType> = None
 let defaultStatusInfo = {
   status: Success,
   payoutId: "",
@@ -462,11 +618,15 @@ let itemToObjMapper = (dict, logger) => {
     "options",
     ~logger,
   )
+  let (enabledPaymentMethods, enabledPaymentMethodsWithDynamicFields) = switch dict->Dict.get(
+    "enabledPaymentMethods",
+  ) {
+  | Some(json) => json->decodePaymentMethodTypeArray(defaultDynamicPmdFields)
+  | None => (defaultEnabledPaymentMethods, defaultEnabledPaymentMethodsWithDynamicFields)
+  }
   {
-    enabledPaymentMethods: switch dict->Dict.get("enabledPaymentMethods") {
-    | Some(json) => json->decodePaymentMethodTypeArray
-    | None => defaultEnabledPaymentMethods
-    },
+    enabledPaymentMethodsWithDynamicFields,
+    enabledPaymentMethods,
     linkId: getString(dict, "linkId", ""),
     payoutId: getString(dict, "payoutId", ""),
     customerId: getString(dict, "customerId", ""),
@@ -482,30 +642,25 @@ let itemToObjMapper = (dict, logger) => {
   }
 }
 
-let calculateValidity = (dict, key) => {
-  let value =
-    dict
-    ->getValue(key->getPaymentMethodDataFieldKey)
-    ->Option.getOr("")
-
+let calculateValidity = (key, value, ~default=None) => {
   switch key {
-  | CardNumber =>
+  | PayoutMethodData(CardNumber) =>
     if cardNumberInRange(value)->Array.includes(true) && calculateLuhn(value) {
       Some(true)
     } else if value->String.length == 0 {
-      None
+      default
     } else {
       Some(false)
     }
-  | CardExpDate =>
+  | PayoutMethodData(CardExpDate(_)) =>
     if value->String.length > 0 && getExpiryValidity(value) {
       Some(true)
     } else if value->String.length == 0 {
-      None
+      default
     } else {
       Some(false)
     }
-  | ACHRoutingNumber =>
+  | PayoutMethodData(ACHRoutingNumber) =>
     if value->String.length === 9 {
       let p1 = switch (
         value->String.charAt(0)->Int.fromString,
@@ -541,213 +696,308 @@ let calculateValidity = (dict, key) => {
     } else {
       Some(false)
     }
-  | _ => None
+  // Defaults
+  | PayoutMethodData(_)
+  | BillingAddress(_) =>
+    value->String.length > 0 ? Some(true) : Some(false)
   }
 }
 
-let checkValidity = (keys, fieldValidityDict) => {
+let checkValidity = (keys, fieldValidityDict, ~defaultValidity=true) => {
   keys->Array.reduce(true, (acc, key) => {
     switch fieldValidityDict->Dict.get(key) {
-    | Some(validity) => acc && validity->Option.getOr(true)
-    | None => acc
+    | Some(validity) => acc && validity->Option.getOr(defaultValidity)
+    | None => defaultValidity
     }
   })
 }
 
-let formPaymentMethodData = (
-  paymentMethodType: option<paymentMethodType>,
+let processPaymentMethodDataFields = (
+  dynamicFieldsInfo: array<dynamicFieldForPaymentMethodData>,
   paymentMethodDataDict,
   fieldValidityDict,
-): option<paymentMethodData> => {
-  switch paymentMethodType {
-  | None => None
-  // Card
-  | Some(Card(_)) =>
-    switch (
-      paymentMethodDataDict->getValue(CardHolderName->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(CardNumber->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(CardExpDate->getPaymentMethodDataFieldKey),
-    ) {
-    | (Some(nameOnCard), Some(cardNumber), Some(expiryDate)) =>
-      switch [
-        CardHolderName->getPaymentMethodDataFieldKey,
-        CardNumber->getPaymentMethodDataFieldKey,
-        CardExpDate->getPaymentMethodDataFieldKey,
-      ]->checkValidity(fieldValidityDict) {
-      | false => None
-      | true =>
-        Some((
-          Card,
-          Card(Debit),
-          [(CardHolderName, nameOnCard), (CardNumber, cardNumber), (CardExpDate, expiryDate)],
-        ))
+) => {
+  let (dynamicFieldsData, dynamicFieldKeys) = dynamicFieldsInfo->Array.reduce(([], []), (
+    (dataArr, keys),
+    dynamicFieldInfo,
+  ) => {
+    switch dynamicFieldInfo.fieldType {
+    | CardExpDate(CardExpMonth) => {
+        let key = PayoutMethodData(CardExpDate(CardExpMonth))
+        let info: dynamicFieldInfo = PayoutMethodData(dynamicFieldInfo)
+        let fieldKey = key->getPaymentMethodDataFieldKey
+        paymentMethodDataDict
+        ->Dict.get(fieldKey)
+        ->Option.map(value => {
+          value
+          ->String.split("/")
+          ->Array.get(0)
+          ->Option.map(month => dataArr->Array.push((info, month->String.trim)))
+        })
+        ->ignore
+        keys->Array.push(fieldKey)
+        (dataArr, keys)
       }
-    | _ => None
-    }
-
-  // Banks
-  // ACH
-  | Some(BankTransfer(ACH)) =>
-    switch (
-      paymentMethodDataDict->getValue(ACHRoutingNumber->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(ACHAccountNumber->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(ACHBankName->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(ACHBankCity->getPaymentMethodDataFieldKey),
-    ) {
-    | (Some(routingNumber), Some(accountNumber), bankName, city) =>
-      switch [
-        ACHRoutingNumber->getPaymentMethodDataFieldKey,
-        ACHAccountNumber->getPaymentMethodDataFieldKey,
-        ACHBankName->getPaymentMethodDataFieldKey,
-        ACHBankCity->getPaymentMethodDataFieldKey,
-      ]->checkValidity(fieldValidityDict) {
-      | false => None
-      | true =>
-        let pmd = [(ACHRoutingNumber, routingNumber), (ACHAccountNumber, accountNumber)]
-        bankName->Option.forEach(bankName => pmd->Array.push((ACHBankName, bankName)))
-        city->Option.forEach(city => pmd->Array.push((ACHBankCity, city)))
-        Some(BankTransfer, BankTransfer(ACH), pmd)
+    | CardExpDate(CardExpYear) => {
+        let key = PayoutMethodData(CardExpDate(CardExpMonth))
+        let info: dynamicFieldInfo = PayoutMethodData(dynamicFieldInfo)
+        let fieldKey = key->getPaymentMethodDataFieldKey
+        paymentMethodDataDict
+        ->Dict.get(fieldKey)
+        ->Option.map(value => {
+          value
+          ->String.split("/")
+          ->Array.get(1)
+          ->Option.map(year => dataArr->Array.push((info, `20${year->String.trim}`)))
+        })
+        ->ignore
+        keys->Array.push(fieldKey)
+        (dataArr, keys)
       }
-    | _ => None
-    }
-
-  // Bacs
-  | Some(BankTransfer(Bacs)) =>
-    switch (
-      paymentMethodDataDict->getValue(BacsSortCode->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(BacsAccountNumber->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(BacsBankName->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(BacsBankCity->getPaymentMethodDataFieldKey),
-    ) {
-    | (Some(sortCode), Some(accountNumber), bankName, city) =>
-      switch [
-        BacsSortCode->getPaymentMethodDataFieldKey,
-        BacsAccountNumber->getPaymentMethodDataFieldKey,
-        BacsBankName->getPaymentMethodDataFieldKey,
-        BacsBankCity->getPaymentMethodDataFieldKey,
-      ]->checkValidity(fieldValidityDict) {
-      | false => None
-      | true =>
-        let pmd = [(BacsSortCode, sortCode), (BacsAccountNumber, accountNumber)]
-        bankName->Option.forEach(bankName => pmd->Array.push((BacsBankName, bankName)))
-        city->Option.forEach(city => pmd->Array.push((BacsBankCity, city)))
-        Some(BankTransfer, BankTransfer(Bacs), pmd)
+    | _ => {
+        let key = PayoutMethodData(dynamicFieldInfo.fieldType)
+        let info: dynamicFieldInfo = PayoutMethodData(dynamicFieldInfo)
+        let fieldKey = key->getPaymentMethodDataFieldKey
+        paymentMethodDataDict
+        ->Dict.get(fieldKey)
+        ->Option.map(value => dataArr->Array.push((info, value->String.trim)))
+        ->ignore
+        keys->Array.push(fieldKey)
+        (dataArr, keys)
       }
-    | _ => None
     }
+  })
 
-  // Sepa
-  | Some(BankTransfer(Sepa)) =>
-    switch (
-      paymentMethodDataDict->getValue(SepaIban->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(SepaBic->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(SepaBankName->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(SepaBankCity->getPaymentMethodDataFieldKey),
-      paymentMethodDataDict->getValue(SepaCountryCode->getPaymentMethodDataFieldKey),
-    ) {
-    | (Some(iban), bic, bankName, city, countryCode) =>
-      switch [
-        SepaIban->getPaymentMethodDataFieldKey,
-        SepaBic->getPaymentMethodDataFieldKey,
-        SepaBankName->getPaymentMethodDataFieldKey,
-        SepaBankCity->getPaymentMethodDataFieldKey,
-        SepaCountryCode->getPaymentMethodDataFieldKey,
-      ]->checkValidity(fieldValidityDict) {
-      | false => None
-      | true =>
-        let pmd = [(SepaIban, iban)]
-        bic->Option.forEach(bic => pmd->Array.push((SepaBic, bic)))
-        bankName->Option.forEach(bankName => pmd->Array.push((SepaBankName, bankName)))
-        city->Option.forEach(city => pmd->Array.push((SepaBankCity, city)))
-        countryCode->Option.forEach(countryCode => pmd->Array.push((SepaCountryCode, countryCode)))
-        Some(BankTransfer, BankTransfer(Sepa), pmd)
+  dynamicFieldKeys->checkValidity(fieldValidityDict, ~defaultValidity=false)
+    ? Some(dynamicFieldsData)
+    : None
+}
+
+let processAddressFields = (
+  dynamicFieldsInfo: array<dynamicFieldForAddress>,
+  paymentMethodDataDict,
+  fieldValidityDict,
+) => {
+  let (dynamicFieldsData, dynamicFieldKeys) = dynamicFieldsInfo->Array.reduce(([], []), (
+    (dataArr, keys),
+    dynamicFieldInfo,
+  ) => {
+    switch dynamicFieldInfo.fieldType {
+    | FullName(FirstName) => {
+        let key = BillingAddress(FullName(FirstName))
+        let info: dynamicFieldInfo = BillingAddress(dynamicFieldInfo)
+        let fieldKey = key->getPaymentMethodDataFieldKey
+        paymentMethodDataDict
+        ->Dict.get(fieldKey)
+        ->Option.map(value => {
+          value
+          ->String.split(" ")
+          ->Array.get(0)
+          ->Option.map(firstName => dataArr->Array.push((info, firstName)))
+        })
+        ->ignore
+        keys->Array.push(fieldKey)
+        (dataArr, keys)
       }
-    | _ => None
+    | FullName(LastName) => {
+        let key = BillingAddress(FullName(FirstName))
+        let info: dynamicFieldInfo = BillingAddress(dynamicFieldInfo)
+        let fieldKey = key->getPaymentMethodDataFieldKey
+        paymentMethodDataDict
+        ->Dict.get(fieldKey)
+        ->Option.map(value => {
+          let nameSplits = value->String.split(" ")
+          let lastName =
+            nameSplits
+            ->Array.slice(~start=1, ~end=nameSplits->Array.length)
+            ->Array.joinWith(" ")
+          if lastName->String.length > 0 {
+            dataArr->Array.push((info, lastName))
+            // Use first name as last name ?
+          } else {
+            nameSplits
+            ->Array.get(0)
+            ->Option.map(
+              firstName => {
+                dataArr->Array.push((info, firstName))
+              },
+            )
+            ->ignore
+          }
+        })
+        ->ignore
+        keys->Array.push(fieldKey)
+        (dataArr, keys)
+      }
+    | _ => {
+        let key = BillingAddress(dynamicFieldInfo.fieldType)
+        let info: dynamicFieldInfo = BillingAddress(dynamicFieldInfo)
+        let fieldKey = key->getPaymentMethodDataFieldKey
+        paymentMethodDataDict
+        ->Dict.get(fieldKey)
+        ->Option.map(value => dataArr->Array.push((info, value)))
+        ->ignore
+        keys->Array.push(fieldKey)
+        (dataArr, keys)
+      }
     }
+  })
 
-  // Wallets
-  // PayPal
-  | Some(Wallet(Paypal)) =>
-    switch paymentMethodDataDict->getValue(PaypalMail->getPaymentMethodDataFieldKey) {
-    | Some(email) => Some(Wallet, Wallet(Paypal), [(PaypalMail, email)])
-    | _ => None
-    }
-  // TODO: handle Pix and Venmo
-  | _ => None
+  dynamicFieldKeys->checkValidity(fieldValidityDict, ~defaultValidity=false)
+    ? Some(dynamicFieldsData)
+    : None
+}
+
+let formPaymentMethodData = (paymentMethodDataDict, fieldValidityDict, requiredFields): option<
+  array<(dynamicFieldInfo, string)>,
+> => {
+  let collectedFields = {
+    let addressFields =
+      requiredFields.address->Option.flatMap(address =>
+        processAddressFields(address, paymentMethodDataDict, fieldValidityDict)
+      )
+    processPaymentMethodDataFields(
+      requiredFields.payoutMethodData,
+      paymentMethodDataDict,
+      fieldValidityDict,
+    )->Option.flatMap(fields => {
+      addressFields
+      ->Option.map(address => address->Array.concat(fields))
+      ->Option.orElse(Some(fields))
+    })
   }
+
+  collectedFields
 }
 
 let formBody = (flow: paymentMethodCollectFlow, paymentMethodData: paymentMethodData) => {
-  let (paymentMethod, paymentMethodType, fields) = paymentMethodData
-  let pmdApiFields = []
+  let (paymentMethodType, fields) = paymentMethodData
 
-  fields->Array.forEach(field => {
-    let (key, value) = field
-    switch key {
-    // Card
-    | CardHolderName => pmdApiFields->Array.push(("card_holder_name", value))
-    | CardNumber => pmdApiFields->Array.push(("card_number", value))
-    | CardExpDate => {
-        let split = value->String.split("/")
-        switch (split->Array.get(0), split->Array.get(1)) {
-        | (Some(month), Some(year)) => {
-            pmdApiFields->Array.push(("expiry_month", month))
-            pmdApiFields->Array.push(("expiry_year", `20${year}`))
+  // Helper function to create nested structure from pmdMap
+  let createNestedStructure = (dict, key, value) => {
+    let keys = key->String.split(".")
+    let rec addToDict = (dict, keys) => {
+      switch keys {
+      | [] => ()
+      | [lastKey] => dict->Dict.set(lastKey, JSON.Encode.string(value))
+      | _ => {
+          let head = keys->Array.get(0)->Option.getOr("")
+          let nestedDict = dict->Dict.get(head)->Option.getOr(Dict.make()->JSON.Encode.object)
+          let newNestedDict = switch nestedDict {
+          | Object(d) => d
+          | _ => Dict.make()
           }
-        | _ => ()
+          addToDict(newNestedDict, keys->Array.sliceToEnd(~start=1))
+          dict->Dict.set(head, newNestedDict->JSON.Encode.object)
         }
       }
+    }
+    addToDict(dict, keys)
+  }
 
-    // Banks
-    | ACHRoutingNumber => pmdApiFields->Array.push(("bank_routing_number", value))
-    | ACHAccountNumber | BacsAccountNumber | PixBankAccountNumber =>
-      pmdApiFields->Array.push(("bank_account_number", value))
-    | ACHBankName | BacsBankName | PixBankName | SepaBankName =>
-      pmdApiFields->Array.push(("bank_name", value))
-    | ACHBankCity | BacsBankCity | SepaBankCity => pmdApiFields->Array.push(("bank_city", value))
-    | BacsSortCode => pmdApiFields->Array.push(("bank_sort_code", value))
-    | PixId => pmdApiFields->Array.push(("pix_key", value))
-    | SepaIban => pmdApiFields->Array.push(("iban", value))
-    | SepaBic => pmdApiFields->Array.push(("bic", value))
-    | SepaCountryCode => pmdApiFields->Array.push(("bank_country_code", value))
-
-    // Wallets
-    | PaypalMail => pmdApiFields->Array.push(("email", value))
-    | PaypalMobNumber | VenmoMobNumber => pmdApiFields->Array.push(("telephone_number", value))
-
-    // Misc.
-    | CardBrand => pmdApiFields->Array.push(("card_brand", value))
+  // Process fields
+  let pmdDict = Dict.make()
+  fields->Array.forEach(((fieldInfo, value)) => {
+    switch fieldInfo {
+    | BillingAddress(addressInfo) => createNestedStructure(pmdDict, addressInfo.pmdMap, value)
+    | PayoutMethodData(paymentMethodInfo) =>
+      createNestedStructure(pmdDict, paymentMethodInfo.pmdMap, value)
     }
   })
 
-  let paymentMethod = paymentMethod->switch flow {
-  | PayoutLinkInitiate => getPaymentMethodForPayoutsConfirm
-  | PayoutMethodCollect => getPaymentMethod
-  }
-  let pmdBody =
-    pmdApiFields
-    ->Array.map(((k, v)) => (k, v->JSON.Encode.string))
-    ->getJsonFromArrayOfJson
-
   let body: array<(string, JSON.t)> = []
 
+  // Required fields
+  pmdDict
+  ->Dict.toArray
+  ->Array.map(((key, val)) => {
+    body->Array.push((key, val))
+  })
+  ->ignore
+
+  let paymentMethod = paymentMethodType->getPaymentMethodForPmt
+
+  // Flow specific fields
   switch flow {
   | PayoutMethodCollect => {
-      body->Array.push(("payment_method", paymentMethod->JSON.Encode.string))
+      body->Array.push(("payment_method", paymentMethod->getPaymentMethod->JSON.Encode.string))
       body->Array.push((
         "payment_method_type",
         paymentMethodType->getPaymentMethodType->JSON.Encode.string,
       ))
-      body->Array.push((paymentMethod, pmdBody))
     }
-  | PayoutLinkInitiate => {
-      let pmd = Dict.make()
-      pmd->Dict.set(paymentMethod, pmdBody)
-      let pmd = pmd->JSON.Encode.object
-      body->Array.push(("payout_type", paymentMethod->JSON.Encode.string))
-      body->Array.push(("payout_method_data", pmd))
-    }
+  | PayoutLinkInitiate =>
+    body->Array.push((
+      "payout_type",
+      paymentMethod->getPaymentMethodForPayoutsConfirm->JSON.Encode.string,
+    ))
   }
 
   body
+}
+
+let getPayoutDynamicFields = (
+  enabledPaymentMethodsWithDynamicFields: array<paymentMethodTypeWithDynamicFields>,
+  reqPmt,
+): option<payoutDynamicFields> =>
+  enabledPaymentMethodsWithDynamicFields
+  ->Array.find(pmtr => {
+    switch (pmtr, reqPmt) {
+    | (Card(_), Card(_))
+    | (BankTransfer(ACH, _), BankTransfer(ACH))
+    | (BankTransfer(Bacs, _), BankTransfer(Bacs))
+    | (BankTransfer(Pix, _), BankTransfer(Pix))
+    | (BankTransfer(Sepa, _), BankTransfer(Sepa))
+    | (Wallet(Paypal, _), Wallet(Paypal))
+    | (Wallet(Venmo, _), Wallet(Venmo)) => true
+    | _ => false
+    }
+  })
+  ->Option.map(pmt => {
+    switch pmt {
+    | Card(_, payoutDynamicFields)
+    | BankTransfer(_, payoutDynamicFields)
+    | Wallet(_, payoutDynamicFields) => payoutDynamicFields
+    }
+  })
+
+let getDefaultsAndValidity = payoutDynamicFields => {
+  payoutDynamicFields.address
+  ->Option.map(address => {
+    address->Array.reduce((Dict.make(), Dict.make()), ((values, validity), field) => {
+      switch (field.fieldType, field.value) {
+      | (AddressCountry(countries), None) => countries->Array.get(0)
+      | _ => field.value
+      }
+      ->Option.map(
+        value => {
+          let key = BillingAddress(field.fieldType)
+          let isValid = calculateValidity(key, value)
+          let keyStr = key->getPaymentMethodDataFieldKey
+          values->Dict.set(keyStr, value)
+          validity->Dict.set(keyStr, isValid)
+          (values, validity)
+        },
+      )
+      ->Option.getOr({(values, validity)})
+    })
+  })
+  ->Option.map(((addressValues, addressValidity)) => {
+    payoutDynamicFields.payoutMethodData->Array.reduce((addressValues, addressValidity), (
+      (values, validity),
+      field,
+    ) => {
+      switch field.value {
+      | Some(value) => {
+          let key = PayoutMethodData(field.fieldType)
+          let isValid = calculateValidity(key, value)
+          let keyStr = key->getPaymentMethodDataFieldKey
+          values->Dict.set(keyStr, value)
+          validity->Dict.set(keyStr, isValid)
+        }
+      | None => ()
+      }
+      (values, validity)
+    })
+  })
 }

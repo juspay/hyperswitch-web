@@ -68,14 +68,13 @@ let make = (
         let componentType = "preMountLoader"
         let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
-           <iframe
-           id ="orca-payment-element-iframeRef-${localSelectorString}"
-           name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"
-          allow="*"
-          name="orca-payment"
-        ></iframe>
-        </div>`
+            <iframe
+              id="orca-payment-element-iframeRef-${localSelectorString}"
+              name="orca-payment-element-iframeRef-${localSelectorString}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"              allow="*"
+              name="orca-payment"
+            ></iframe>
+          </div>`
         let iframeDiv = Window.createElement("div")
         iframeDiv->Window.innerHTML(iframeDivHtml)
         Window.body->Window.appendChild(iframeDiv)
@@ -612,7 +611,7 @@ let make = (
           }
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
           | Some(val) => {
-              messageParentWindow([
+              messageCurrentWindow([
                 ("fullscreen", true->JSON.Encode.bool),
                 ("param", "paymentloader"->JSON.Encode.string),
                 ("iframeId", selectorString->JSON.Encode.string),
@@ -645,12 +644,12 @@ let make = (
                     let dict = json->getDictFromJson
                     let status = dict->getString("status", "")
                     let returnUrl = dict->getString("return_url", "")
-                    Window.Location.replace(
+                    Window.replaceRootHref(
                       `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
                     )
                     resolve(JSON.Encode.null)
                   } else {
-                    messageParentWindow([
+                    messageCurrentWindow([
                       ("fullscreen", false->JSON.Encode.bool),
                       ("submitSuccessful", true->JSON.Encode.bool),
                       ("data", json),
@@ -660,9 +659,9 @@ let make = (
                 })
                 ->catch(err => {
                   if redirect.contents === "always" {
-                    Window.Location.replace(url)
+                    Window.replaceRootHref(url)
                   }
-                  messageParentWindow([
+                  messageCurrentWindow([
                     ("submitSuccessful", false->JSON.Encode.bool),
                     ("error", err->Identity.anyTypeToJson),
                   ])
@@ -679,7 +678,7 @@ let make = (
 
           switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
           | Some(val) =>
-            messageParentWindow([
+            messageCurrentWindow([
               ("fullscreen", true->JSON.Encode.bool),
               ("param", "paymentloader"->JSON.Encode.string),
               ("iframeId", selectorString->JSON.Encode.string),
@@ -696,17 +695,17 @@ let make = (
                 ~isForceSync=true,
               )
               ->then(json => {
-                messageParentWindow([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
+                messageCurrentWindow([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
                 resolve(json)
               })
               ->catch(err => {
-                messageParentWindow([
+                messageCurrentWindow([
                   ("submitSuccessful", false->JSON.Encode.bool),
                   ("error", err->Identity.anyTypeToJson),
                 ])
                 resolve(err->Identity.anyTypeToJson)
               })
-              ->finally(_ => messageParentWindow([("fullscreen", false->JSON.Encode.bool)]))
+              ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
             }->ignore
 
           | None => ()

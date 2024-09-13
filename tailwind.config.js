@@ -286,6 +286,9 @@ module.exports = {
         ".no-scrollbar::-webkit-scrollbar": {
           display: "none",
         },
+        "*": {
+          scrollbarWidth: "none", // firefox
+        },
         ".show-scrollbar::-webkit-scrollbar": {
           overflow: "scroll",
           height: "4px",

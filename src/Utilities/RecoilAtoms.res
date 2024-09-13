@@ -26,6 +26,13 @@ let paymentMethodCollectOptionAtom = Recoil.atom(
   "paymentMethodCollectOptions",
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
 )
+let payoutDynamicFieldsAtom = Recoil.atom(
+  "payoutDynamicFields",
+  PaymentMethodCollectUtils.defaultPayoutDynamicFields(),
+)
+let paymentMethodTypeAtom = Recoil.atom("paymentMethodType", PaymentMethodCollectUtils.defaultPmt())
+let formDataAtom = Recoil.atom("formData", PaymentMethodCollectUtils.defaultFormDataDict)
+let validityDictAtom = Recoil.atom("validityDict", PaymentMethodCollectUtils.defaultValidityDict)
 
 let defaultFieldValues = {
   value: "",

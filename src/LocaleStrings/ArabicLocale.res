@@ -98,6 +98,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formSaveText: `حفظ`,
   formSubmitText: `إرسال`,
   formSubmittingText: `جاري الإرسال`,
+  formSubheaderBillingDetailsText: `أدخل عنوان الفوترة الخاص بك`,
   formSubheaderCardText: `تفاصيل بطاقتك`,
   formSubheaderAccountText: pmLabel => ` ${pmLabel} الخاصة بك`,
   formHeaderReviewText: `مراجعة`,

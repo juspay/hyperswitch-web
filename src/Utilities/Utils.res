@@ -1,8 +1,6 @@
 @val external document: 'a = "document"
-type window
-type parent
-@val external window: window = "window"
-@val @scope("window") external iframeParent: parent = "parent"
+@val external window: Dom.element = "window"
+@val @scope("window") external iframeParent: Dom.element = "parent"
 type event = {data: string}
 external dictToObj: Dict.t<'a> => {..} = "%identity"
 
@@ -15,10 +13,15 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external remove: Dom.element => unit = "remove"
 
-@send external postMessage: (parent, JSON.t, string) => unit = "postMessage"
+@send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
+
 open ErrorUtils
 let messageParentWindow = (~targetOrigin="*", messageArr) => {
   iframeParent->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+}
+
+let messageCurrentWindow = (~targetOrigin="*", messageArr) => {
+  window->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
 }
 
 let handleOnFocusPostMessage = (~targetOrigin="*") => {
@@ -1372,3 +1375,5 @@ let getFirstAndLastNameFromFullName = fullName => {
 
   (firstName, lastNameJson)
 }
+
+let checkIsTestCardWildcard = val => ["1111222233334444"]->Array.includes(val)
