@@ -1,5 +1,6 @@
 open ApplePayTypes
 open Utils
+open TaxCalculation
 
 let processPayment = (
   ~bodyArr,
@@ -75,7 +76,11 @@ let startApplePaySession = (
   ~applePayEvent: option<Types.event>=None,
   ~callBackFunc,
   ~resolvePromise: option<Core__JSON.t => unit>=None,
+  ~clientSecret,
+  ~publishableKey,
+  ~isTaxCalculationEnabled=false,
 ) => {
+  open Promise
   let ssn = applePaySession(3, paymentRequest)
   switch applePaySessionRef.contents->Nullable.toOption {
   | Some(session) =>
@@ -98,6 +103,67 @@ let startApplePaySession = (
       ->Option.getOr(Dict.make()->JSON.Encode.object)
       ->transformKeys(CamelCase)
     ssn.completeMerchantValidation(merchantSession)
+  }
+
+  ssn.onshippingcontactselected = shippingAddressChangeEvent => {
+    if isTaxCalculationEnabled {
+      let newShippingContact =
+        shippingAddressChangeEvent.shippingContact
+        ->getDictFromJson
+        ->shippingContactItemToObjMapper
+      let newShippingAddress =
+        [
+          ("state", newShippingContact.locality->JSON.Encode.string),
+          ("country", newShippingContact.countryCode->JSON.Encode.string),
+          ("zip", newShippingContact.postalCode->JSON.Encode.string),
+        ]->getJsonFromArrayOfJson
+
+      let paymentMethodType = "apple_pay"->JSON.Encode.string
+
+      calculateTax(
+        ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
+        ~logger,
+        ~publishableKey,
+        ~clientSecret,
+        ~paymentMethodType,
+      )
+      ->then(response => {
+        let taxCalculationResponse = response->getDictFromJson->taxResponseToObjMapper
+        let (netAmount, ordertaxAmount, shippingCost) = (
+          taxCalculationResponse.net_amount,
+          taxCalculationResponse.order_tax_amount,
+          taxCalculationResponse.shipping_cost,
+        )
+        let newTotal: lineItem = {
+          label: "Net Amount",
+          amount: netAmount->Int.toString,
+          \"type": "final",
+        }
+        let newLineItems: array<lineItem> = [
+          {
+            label: "Bag Subtotal",
+            amount: (netAmount - ordertaxAmount - shippingCost)->Int.toString,
+            \"type": "final",
+          },
+          {
+            label: "Order Tax Amount",
+            amount: ordertaxAmount->Int.toString,
+            \"type": "final",
+          },
+          {
+            label: "Shipping Cost",
+            amount: shippingCost->Int.toString,
+            \"type": "final",
+          },
+        ]
+        let updatedOrderDetails: updatedOrderDetails = {
+          newTotal,
+          newLineItems,
+        }
+        ssn.completeShippingContactSelection(updatedOrderDetails)->resolve
+      })
+      ->ignore
+    }
   }
 
   ssn.onpaymentauthorized = event => {
@@ -231,11 +297,19 @@ let useHandleApplePayResponse = (
   ))
 }
 
-let handleApplePayButtonClicked = (~sessionObj, ~componentName) => {
+let handleApplePayButtonClicked = (
+  ~sessionObj,
+  ~componentName,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+) => {
   let paymentRequest = ApplePayTypes.getPaymentRequestFromSession(~sessionObj, ~componentName)
   let message = [
     ("applePayButtonClicked", true->JSON.Encode.bool),
     ("applePayPaymentRequest", paymentRequest),
+    (
+      "isTaxCalculationEnabled",
+      paymentMethodListValue.is_tax_calculation_enabled->JSON.Encode.bool,
+    ),
   ]
   messageParentWindow(message)
 }
@@ -245,13 +319,16 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   React.useCallback((ev: Window.event) => {
     if !isWallet {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-        options.readOnly ? () : handleApplePayButtonClicked(~sessionObj, ~componentName)
+        if !options.readOnly {
+          handleApplePayButtonClicked(~sessionObj, ~componentName, ~paymentMethodListValue)
+        }
       } else if areRequiredFieldsEmpty {
         postFailedSubmitResponse(
           ~errortype="validation_error",

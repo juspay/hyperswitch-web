@@ -774,8 +774,9 @@ let make = (
                     switch (
                       dict->Dict.get("applePayButtonClicked"),
                       dict->Dict.get("applePayPaymentRequest"),
+                      dict->Dict.get("isTaxCalculationEnabled")->Option.flatMap(JSON.Decode.bool)->Option.getOr(false),
                     ) {
-                    | (Some(val), Some(paymentRequest)) =>
+                    | (Some(val), Some(paymentRequest), isTaxCalculationEnabled) =>
                       if val->JSON.Decode.bool->Option.getOr(false) {
                         let isDelayedSessionToken =
                           applePayPresent
@@ -809,6 +810,9 @@ let make = (
                             ~logger,
                             ~applePayEvent=Some(applePayEvent),
                             ~callBackFunc,
+                            ~clientSecret,
+                            ~publishableKey,
+                            ~isTaxCalculationEnabled,
                           )
                         }
                       } else {

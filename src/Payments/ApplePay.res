@@ -241,7 +241,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
               ~isManualRetryEnabled,
             )
           } else {
-            ApplePayHelpers.handleApplePayButtonClicked(~sessionObj, ~componentName)
+            ApplePayHelpers.handleApplePayButtonClicked(~sessionObj, ~componentName, ~paymentMethodListValue)
           }
         } else {
           let bodyDict = PaymentBody.applePayRedirectBody(~connectors)

@@ -192,6 +192,8 @@ let getCustomerSavedPaymentMethods = (
         ~applePayPresent=Some(applePayTokenRef.contents),
         ~logger,
         ~callBackFunc=processPayment,
+        ~clientSecret,
+        ~publishableKey,
       )
     }
 
