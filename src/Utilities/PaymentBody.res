@@ -1041,23 +1041,6 @@ let dynamicPaymentBody = (paymentMethod, paymentMethodType, ~isQrPaymentMethod=f
   ]->appendPaymentExperience(paymentMethodType)
 }
 
-let duitNowBody = (paymentMethod, paymentMethodType, ~isQrPaymentMethod=false) => {
-  let paymentMethodType = paymentMethod->getPaymentMethodType(paymentMethodType)
-  [
-    ("payment_method", paymentMethod->JSON.Encode.string),
-    ("payment_method_type", paymentMethodType->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          paymentMethod,
-          [(paymentMethodType, Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ]->appendPaymentExperience(paymentMethodType)
-}
-
 let getPaymentBody = (
   ~paymentMethod,
   ~paymentMethodType,
@@ -1091,7 +1074,13 @@ let getPaymentBody = (
     | _ =>
       dynamicPaymentBody(paymentMethod, paymentMethodType)
     }
-  | "duit_now" => duitNowBody(paymentMethod, paymentMethodType, ~isQrPaymentMethod=true)
+  | "duit_now" =>
+    switch paymentExperience {
+    | QrFlow => dynamicPaymentBody(paymentMethod, paymentMethodType, ~isQrPaymentMethod=true)
+    | RedirectToURL
+    | _ =>
+      dynamicPaymentBody(paymentMethod, paymentMethodType)
+    }
   | "giropay" => giroPayBody(~name=fullName)
   | "trustly" => trustlyBody(~country)
   | "online_banking_poland" => polandOB(~bank)
