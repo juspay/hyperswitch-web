@@ -1,3 +1,10 @@
+## [0.86.1](https://github.com/juspay/hyperswitch-web/compare/v0.86.0...v0.86.1) (2024-09-13)
+
+
+### Reverts
+
+* handle redirections for iframed content ([#557](https://github.com/juspay/hyperswitch-web/issues/557)) ([#611](https://github.com/juspay/hyperswitch-web/issues/611)) ([6e203e4](https://github.com/juspay/hyperswitch-web/commit/6e203e42e4e689f2802eb1af2191af9cf3ef945f))
+
 # [0.86.0](https://github.com/juspay/hyperswitch-web/compare/v0.85.0...v0.86.0) (2024-09-13)
 
 
