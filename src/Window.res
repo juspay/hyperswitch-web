@@ -214,20 +214,21 @@ let getRootHostName = () =>
   }
 
 let replaceRootHref = (href: string) => {
-  switch isIframed() {
-  | true =>
-    try {
-      Top.Location.replace(href)
-    } catch {
-    | e => {
-        Js.Console.error3(
-          "Failed to redirect root document",
-          e,
-          `Using [window.location.replace] for redirection`,
-        )
-        Location.replace(href)
-      }
-    }
-  | false => Location.replace(href)
-  }
+  Location.replace(href)
+  // switch isIframed() {
+  // | true =>
+  //   try {
+  //     Top.Location.replace(href)
+  //   } catch {
+  //   | e => {
+  //       Js.Console.error3(
+  //         "Failed to redirect root document",
+  //         e,
+  //         `Using [window.location.replace] for redirection`,
+  //       )
+  //       Location.replace(href)
+  //     }
+  //   }
+  // | false => Location.replace(href)
+  // }
 }
