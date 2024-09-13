@@ -1,3 +1,10 @@
+# [0.86.0](https://github.com/juspay/hyperswitch-web/compare/v0.85.0...v0.86.0) (2024-09-13)
+
+
+### Features
+
+* **applepay:** calculate tax amount dynamically while changing shipping address in apple pay sdk ([#610](https://github.com/juspay/hyperswitch-web/issues/610)) ([0804823](https://github.com/juspay/hyperswitch-web/commit/08048237dbee8cfff26a7c8e7a6d8940ab913227))
+
 # [0.85.0](https://github.com/juspay/hyperswitch-web/compare/v0.84.20...v0.85.0) (2024-09-12)
 
 
