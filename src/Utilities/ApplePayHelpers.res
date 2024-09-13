@@ -113,12 +113,10 @@ let startApplePaySession = (
         ->shippingContactItemToObjMapper
       let newShippingAddress =
         [
-          ("state", newShippingContact.locality),
-          ("country", newShippingContact.countryCode),
-          ("zip", newShippingContact.postalCode),
-        ]
-        ->Array.map(((key, val)) => (key, val->Js.Json.string))
-        ->getJsonFromArrayOfJson
+          ("state", newShippingContact.locality->JSON.Encode.string),
+          ("country", newShippingContact.countryCode->JSON.Encode.string),
+          ("zip", newShippingContact.postalCode->JSON.Encode.string),
+        ]->getJsonFromArrayOfJson
 
       let paymentMethodType = "apple_pay"->JSON.Encode.string
 
@@ -328,9 +326,9 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-        options.readOnly
-          ? ()
-          : handleApplePayButtonClicked(~sessionObj, ~componentName, ~paymentMethodListValue)
+        if !options.readOnly {
+          handleApplePayButtonClicked(~sessionObj, ~componentName, ~paymentMethodListValue)
+        }
       } else if areRequiredFieldsEmpty {
         postFailedSubmitResponse(
           ~errortype="validation_error",

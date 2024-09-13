@@ -28,7 +28,7 @@ type event = {validationURL: string, payment: paymentResult}
 type lineItem = {
   label: string,
   amount: string,
-  @optional \"type": string,
+  \"type": string,
 }
 type shippingAddressChangeEvent = {shippingContact: JSON.t}
 type updatedOrderDetails = {newTotal: lineItem, newLineItems: array<lineItem>}

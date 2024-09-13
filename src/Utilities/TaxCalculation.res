@@ -16,7 +16,7 @@ let taxResponseToObjMapper = dict => {
 
 let calculateTax = (~shippingAddress, ~logger, ~clientSecret, ~publishableKey, ~paymentMethodType) => {
   PaymentHelpers.calculateTax(
-    ~clientSecret=clientSecret->Js.Json.string,
+    ~clientSecret=clientSecret->JSON.Encode.string,
     ~apiKey=publishableKey,
     ~paymentId=clientSecret->getPaymentId,
     ~paymentMethodType,
