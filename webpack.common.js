@@ -114,20 +114,29 @@ module.exports = (publicPath = "auto") => {
     process.env.SENTRY_AUTH_TOKEN &&
     process.env.IS_SENTRY_ENABLED === "true"
   ) {
-    plugins.push(
-      sentryWebpackPlugin({
-        org: "sentry",
-        project: "hyperswitch-react-sdk",
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-        url: process.env.SENTRY_URL,
-        release: {
-          name: "0.2",
-          uploadLegacySourcemaps: {
-            paths: ["dist"],
-          },
-        },
-      })
-    );
+    if (
+      process.env.SENTRY_AUTH_TOKEN &&
+      process.env.IS_SENTRY_ENABLED === "true"
+    ) {
+      try {
+        plugins.push(
+          sentryWebpackPlugin({
+            org: "sentry",
+            project: "hyperswitch-react-sdk",
+            authToken: process.env.SENTRY_AUTH_TOKEN,
+            url: process.env.SENTRY_URL,
+            release: {
+              name: "0.2",
+              uploadLegacySourcemaps: {
+                paths: ["dist"],
+              },
+            },
+          })
+        );
+      } catch (error) {
+        console.warn("Sentry Webpack Plugin initialization failed:", error);
+      }
+    }
   }
 
   return {
