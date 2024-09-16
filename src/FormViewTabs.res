@@ -226,8 +226,10 @@ let make = (
           {payoutDynamicFields.payoutMethodData->renderPayoutMethodForm->React.array}
           {payoutDynamicFields.address
           ->Option.map(addressFields => {
-            let formFields = addressFields->renderAddressForm
-            if formFields->Array.length > 0 {
+            let fieldsToCollect =
+              addressFields->Array.filter(addressField => addressField.value == None)
+            if fieldsToCollect->Array.length > 0 {
+              let formFields = addressFields->renderAddressForm
               <>
                 <div className={`mb-2.5 ${contentHeaderClasses}`}>
                   {React.string(localeString.billingDetailsText)}

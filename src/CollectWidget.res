@@ -152,8 +152,12 @@ let make = (
               fieldName={field->getPaymentMethodDataFieldLabel(localeString)}
               value
               setValue={getVal => {
-                let isValid = calculateValidity(field, getVal(), ~default=Some(false))
+                let updatedValue = getVal()
+                let isValid = calculateValidity(field, updatedValue, ~default=Some(false))
                 setValidityDictVal(key, isValid)
+                if isValid->Option.getOr(false) {
+                  setFormData(key, updatedValue)
+                }
               }}
               options={countries->DropdownField.updateArrayOfStringToOptionsTypeArray}
               disabled=false
