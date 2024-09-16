@@ -83,6 +83,7 @@ function Payment() {
           options={{
             clientSecret,
             appearance: {
+              // theme: "midnight",
               labels: "floating",
             },
           }}

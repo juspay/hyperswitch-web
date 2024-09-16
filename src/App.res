@@ -16,6 +16,50 @@ let make = () => {
     None
   }, [logger])
 
+  React.useEffect0(() => {
+    let handleApplePayMessages = (ev: Window.event) => {
+      let json = ev.data->Utils.safeParse
+      let dict = json->Utils.getDictFromJson
+
+      if dict->Dict.get("metadata")->Option.isSome {
+        let metadata = dict->Utils.getJsonObjectFromDict("metadata")
+        let config = metadata->Utils.getDictFromJson->Dict.get("config")
+
+        switch config {
+        | Some(config) => {
+            let config = CardTheme.itemToObjMapper(
+              config->Utils.getDictFromJson,
+              DefaultTheme.default,
+              DefaultTheme.defaultRules,
+              logger,
+            )
+
+            CardUtils.generateFontsLink(config.fonts)
+            let dict = config.appearance.rules->Utils.getDictFromJson
+            if dict->Dict.toArray->Array.length > 0 {
+              Utils.generateStyleSheet("", dict, "mystyle")
+            }
+          }
+        | None => ()
+        }
+      }
+
+      // if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+      //   let metadata = dict->getJsonObjectFromDict("metadata")
+      //   setStateMetadata(_ => metadata)
+      //   let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+
+      // let metadata = dict->getJsonObjectFromDict("metadata")
+      // if dict->
+    }
+    Window.addEventListener("message", handleApplePayMessages)
+    Some(
+      () => {
+        Window.removeEventListener("message", handleApplePayMessages)
+      },
+    )
+  })
+
   let renderFullscreen = switch paymentMode {
   | "paymentMethodCollect" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>

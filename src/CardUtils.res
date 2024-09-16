@@ -423,7 +423,7 @@ let cvcNumberInRange = (val, cardBrand) => {
   })
   cvcLengthInRange
 }
-let genreateFontsLink = (fonts: array<CardThemeType.fonts>) => {
+let generateFontsLink = (fonts: array<CardThemeType.fonts>) => {
   if fonts->Array.length > 0 {
     fonts
     ->Array.map(item =>

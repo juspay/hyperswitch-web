@@ -44,6 +44,7 @@ type paymentMethodsFields =
   | PixCPF
   | PixCNPJ
   | LanguagePreference(array<string>)
+  | BankAccountNumber
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -586,6 +587,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_cpf", _) => PixCPF
   | ("user_cnpj", _) => PixCNPJ
   | ("user_pix_key", _) => PixKey
+  | ("user_bank_account_number", _) => BankAccountNumber
   | _ => None
   }
 }
@@ -668,6 +670,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "afterpay_clearpay",
   "mifinity",
   "upi_collect",
+  "sepa",
 ]
 
 let getIsBillingField = requiredFieldType => {

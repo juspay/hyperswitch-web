@@ -93,11 +93,11 @@ let make = (~paymentType: CardThemeType.mode) => {
     }
   }, (email, fullName, modalData, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
-  <>
-    <RenderIf condition={isVerifyPMAuthConnectorConfigured}>
+
+  {
+    if isVerifyPMAuthConnectorConfigured {
       <AddBankDetails paymentMethodType="sepa" />
-    </RenderIf>
-    <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
+    } else {
       <div
         className="flex flex-col animate-slowShow"
         style={
@@ -107,13 +107,13 @@ let make = (~paymentType: CardThemeType.mode) => {
         <FullNamePaymentInput paymentType />
         <AddBankAccount modalData setModalData />
         <FullScreenPortal>
-          <BankDebitModal setModalData />
+          <BankDebitModal setModalData paymentType />
         </FullScreenPortal>
         <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
         <Terms mode=SepaBankDebit />
       </div>
-    </RenderIf>
-  </>
+    }
+  }
 }
 
 let default = make

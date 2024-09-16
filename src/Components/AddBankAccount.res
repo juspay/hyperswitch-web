@@ -30,15 +30,18 @@ module ToolTip = {
 @react.component
 let make = (~modalData, ~setModalData) => {
   let isDataAvailable = modalData->Option.isSome
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let (openToolTip, setOpenToolTip) = React.useState(_ => false)
   let toolTipRef = React.useRef(Nullable.null)
 
   let openModal = () => {
+    let metaData = [("config", config->Identity.anyTypeToJson)]->getJsonFromArrayOfJson
+
     messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("iframeId", iframeId->JSON.Encode.string),
+      ("metadata", metaData),
     ])
   }
   <div

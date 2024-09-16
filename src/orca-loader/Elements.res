@@ -93,7 +93,7 @@ let make = (
 
     let unMountPreMountLoaderIframe = () => {
       switch preMountLoaderIframeDiv->Nullable.toOption {
-      | Some(iframe) => iframe->remove
+      | Some(iframe) => () //iframe->remove
       | None => ()
       }
     }

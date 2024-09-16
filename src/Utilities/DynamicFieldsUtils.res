@@ -131,6 +131,7 @@ let useRequiredFieldsEmptyAndValid = (
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
+  let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
@@ -173,6 +174,7 @@ let useRequiredFieldsEmptyAndValid = (
       | PixCNPJ => pixCNPJ.isValid->Option.getOr(false)
       | PixCPF => pixCPF.isValid->Option.getOr(false)
       | PixKey => pixKey.isValid->Option.getOr(false)
+      | BankAccountNumber => bankAccountNumber.value !== ""
       | _ => true
       }
     })
@@ -221,6 +223,7 @@ let useRequiredFieldsEmptyAndValid = (
         let (month, year) = getExpiryDates(cardExpiry)
         month === "" || year === "" || cvcNumber === ""
       | DateOfBirth => dateOfBirth->Js.Nullable.isNullable
+      | BankAccountNumber => bankAccountNumber.value === ""
       | _ => false
       }
     })
@@ -297,6 +300,11 @@ let useSetInitialRequiredFields = (
   let (dateOfBirth, setDateOfBirth) = Recoil.useLoggedRecoilState(
     dateOfBirth,
     "dateOfBirth",
+    logger,
+  )
+  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
+    userBankAccountNumber,
+    "bankAccountNumber",
     logger,
   )
 
@@ -423,6 +431,8 @@ let useSetInitialRequiredFields = (
           }
         | None => ()
         }
+      | BankAccountNumber =>
+        setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
       | LanguagePreference(_)
       | SpecialField(_)
       | InfoElement
@@ -478,6 +488,7 @@ let useRequiredFieldsBody = (
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
+  let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -531,6 +542,7 @@ let useRequiredFieldsBody = (
     | PixCNPJ => pixCNPJ.value
     | PixCPF => pixCPF.value
     | PixKey => pixKey.value
+    | BankAccountNumber => bankAccountNumber.value
     | StateAndCity
     | CountryAndPincode(_)
     | SpecialField(_)
@@ -545,6 +557,7 @@ let useRequiredFieldsBody = (
     | ShippingAddressPincode
     | ShippingAddressState
     | ShippingAddressCountry(_)
+    | BankAccountNumber
     | None => ""
     }
   }
@@ -649,7 +662,8 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | PixCNPJ
   | DateOfBirth
   | Currency(_)
-  | VpaId => true
+  | VpaId
+  | BankAccountNumber => true
   | _ => false
   }
 }
@@ -768,6 +782,11 @@ let useSubmitCallback = () => {
     logger,
   )
   let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
+  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
+    userBankAccountNumber,
+    "bankAccountNumber",
+    logger,
+  )
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -801,6 +820,12 @@ let useSubmitCallback = () => {
         })
       }
       if city.value == "" {
+        setCity(prev => {
+          ...prev,
+          errorString: localeString.cityEmptyText,
+        })
+      }
+      if bankAccountNumber.value === "" {
         setCity(prev => {
           ...prev,
           errorString: localeString.cityEmptyText,
