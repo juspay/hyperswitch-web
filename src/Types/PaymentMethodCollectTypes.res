@@ -252,9 +252,15 @@ let getFieldOptions = dict => {
       obj
       ->Dict.get("options")
       ->Option.flatMap(JSON.Decode.array)
-      ->Option.map(options => BillingAddress(
-        AddressCountry(options->Array.filterMap(option => option->JSON.Decode.string)),
-      ))
+      ->Option.map(options => {
+        let countries = options->Array.filterMap(option => option->JSON.Decode.string)
+        countries->Array.sort(
+          (c1, c2) =>
+            (c1->String.charCodeAt(0)->Float.toInt - c2->String.charCodeAt(0)->Float.toInt)
+              ->Int.toFloat,
+        )
+        BillingAddress(AddressCountry(countries))
+      })
     )
   | _ => None
   }
