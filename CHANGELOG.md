@@ -1,3 +1,10 @@
+## [0.87.1](https://github.com/juspay/hyperswitch-web/compare/v0.87.0...v0.87.1) (2024-09-16)
+
+
+### Bug Fixes
+
+* dynamic tax calculation fix ([#618](https://github.com/juspay/hyperswitch-web/issues/618)) ([9a321fd](https://github.com/juspay/hyperswitch-web/commit/9a321fdac759407bf5c4881e057ced60cbc8b169))
+
 # [0.87.0](https://github.com/juspay/hyperswitch-web/compare/v0.86.2...v0.87.0) (2024-09-16)
 
 
