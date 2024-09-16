@@ -289,7 +289,7 @@ let getPaymentMethodDataFieldCharacterPattern = (key): option<Js.Re.t> =>
   | PayoutMethodData(PaypalMobNumber) => Some(%re("/^[0-9]{1,12}$/"))
   | PayoutMethodData(SepaBic) => Some(%re("/^([A-Z0-9]| ){1,8}$/"))
   | PayoutMethodData(SepaIban) => Some(%re("/^([A-Z0-9]| ){1,34}$/"))
-  | BillingAddress(AddressPincode) => Some(%re("/^[0-9]{1,8}$/"))
+  | BillingAddress(AddressPincode) => Some(%re("/^([0-9A-Z]| ){1,10}$/"))
   | BillingAddress(PhoneNumber) => Some(%re("/^[0-9]{1,12}$/"))
   | BillingAddress(PhoneCountryCode) => Some(%re("/^[0-9]{1,2}$/"))
   | _ => None
