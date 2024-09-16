@@ -1,3 +1,10 @@
+# [0.87.0](https://github.com/juspay/hyperswitch-web/compare/v0.86.2...v0.87.0) (2024-09-16)
+
+
+### Features
+
+* added duit now payment method ([#612](https://github.com/juspay/hyperswitch-web/issues/612)) ([3237bb5](https://github.com/juspay/hyperswitch-web/commit/3237bb52c24ff788b8b6445e9786acd59484569c))
+
 ## [0.86.2](https://github.com/juspay/hyperswitch-web/compare/v0.86.1...v0.86.2) (2024-09-16)
 
 
