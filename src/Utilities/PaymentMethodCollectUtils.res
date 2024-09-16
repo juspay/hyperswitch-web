@@ -521,7 +521,7 @@ let defaultPaypalFields = [
   {
     pmdMap: "payout_method_data.wallet.telephone_number",
     displayName: "user_phone_number",
-    fieldType: SepaIban,
+    fieldType: PaypalMobNumber,
     value: None,
   },
 ]
