@@ -128,7 +128,7 @@ let startApplePaySession = (
         ~paymentMethodType,
       )
       ->then(response => {
-        let taxCalculationResponse = response->getDictFromJson->taxResponseToObjMapper
+        let taxCalculationResponse = response->taxResponseToObjMapper
         let (netAmount, ordertaxAmount, shippingCost) = (
           taxCalculationResponse.net_amount,
           taxCalculationResponse.order_tax_amount,
@@ -136,23 +136,23 @@ let startApplePaySession = (
         )
         let newTotal: lineItem = {
           label: "Net Amount",
-          amount: netAmount->Int.toString,
+          amount: netAmount->Float.toString,
           \"type": "final",
         }
         let newLineItems: array<lineItem> = [
           {
             label: "Bag Subtotal",
-            amount: (netAmount - ordertaxAmount - shippingCost)->Int.toString,
+            amount: (netAmount -. ordertaxAmount -. shippingCost)->Float.toString,
             \"type": "final",
           },
           {
             label: "Order Tax Amount",
-            amount: ordertaxAmount->Int.toString,
+            amount: ordertaxAmount->Float.toString,
             \"type": "final",
           },
           {
             label: "Shipping Cost",
-            amount: shippingCost->Int.toString,
+            amount: shippingCost->Float.toString,
             \"type": "final",
           },
         ]
