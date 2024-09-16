@@ -192,7 +192,7 @@ let make = (~integrateError, ~logger) => {
 
   let renderCollectWidget = () =>
     <div className="flex flex-row overflow-scroll lg:w-6/10">
-      <div className="relative w-full h-auto lg:w-auto lg:mx-12 lg:mt-20 lg-mb-10">
+      <div className="relative w-full h-min lg:w-auto lg:mx-12 lg:mt-20 lg-mb-10">
         {loader
           ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
           : {React.null}}

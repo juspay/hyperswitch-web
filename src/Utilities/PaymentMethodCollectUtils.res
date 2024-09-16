@@ -565,12 +565,12 @@ let defaultEnabledPaymentMethods: array<paymentMethodType> = [
   Wallet(Paypal),
 ]
 let defaultEnabledPaymentMethodsWithDynamicFields: array<paymentMethodTypeWithDynamicFields> = [
-  Card((Credit, defaultPayoutDynamicFields())),
-  Card((Debit, defaultPayoutDynamicFields())),
-  BankTransfer((ACH, defaultPayoutDynamicFields())),
-  BankTransfer((Bacs, defaultPayoutDynamicFields())),
-  BankTransfer((Sepa, defaultPayoutDynamicFields())),
-  Wallet((Paypal, defaultPayoutDynamicFields())),
+  Card((Credit, defaultPayoutDynamicFields(~pmt=Card(Credit)))),
+  Card((Debit, defaultPayoutDynamicFields(~pmt=Card(Debit)))),
+  BankTransfer((ACH, defaultPayoutDynamicFields(~pmt=BankTransfer(ACH)))),
+  BankTransfer((Bacs, defaultPayoutDynamicFields(~pmt=BankTransfer(Bacs)))),
+  BankTransfer((Sepa, defaultPayoutDynamicFields(~pmt=BankTransfer(Sepa)))),
+  Wallet((Paypal, defaultPayoutDynamicFields(~pmt=Wallet(Paypal)))),
 ]
 let defaultPaymentMethodCollectOptions = {
   enabledPaymentMethods: defaultEnabledPaymentMethods,
@@ -696,6 +696,11 @@ let calculateValidity = (key, value, ~default=None) => {
     } else {
       Some(false)
     }
+  | PayoutMethodData(SepaIban) => Some(value->String.length > 13 && value->String.length < 34)
+
+  // Sepa BIC is optional
+  | PayoutMethodData(SepaBic) => Some(true)
+
   // Defaults
   | PayoutMethodData(_)
   | BillingAddress(_) =>

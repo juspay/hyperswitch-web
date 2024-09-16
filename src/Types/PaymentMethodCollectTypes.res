@@ -338,7 +338,9 @@ let sortByCustomOrder = (arr: array<'a>, getKey: 'a => string, customOrder: arra
   })
 }
 
-let decodePayoutDynamicFields = (json: JSON.t): option<payoutDynamicFields> =>
+let decodePayoutDynamicFields = (json: JSON.t, defaultDynamicPmdFields): option<
+  payoutDynamicFields,
+> =>
   json
   ->JSON.Decode.object
   ->Option.map(obj => {
@@ -382,7 +384,9 @@ let decodePayoutDynamicFields = (json: JSON.t): option<payoutDynamicFields> =>
       address: address->Array.length > 0
         ? Some(sortByCustomOrder(address, item => item.pmdMap, customAddressOrder))
         : None,
-      payoutMethodData: sortByCustomOrder(pmd, item => item.pmdMap, customPmdOrder),
+      payoutMethodData: pmd->Array.length > 0
+        ? sortByCustomOrder(pmd, item => item.pmdMap, customPmdOrder)
+        : defaultDynamicPmdFields,
     }
   })
 
@@ -427,7 +431,9 @@ let decodePaymentMethodTypeWithRequiredFields = (
                   let payoutDynamicFields =
                     obj
                     ->Dict.get("required_fields")
-                    ->Option.flatMap(decodePayoutDynamicFields)
+                    ->Option.flatMap(
+                      json => json->decodePayoutDynamicFields(defaultDynamicPmdFields(~pmt)),
+                    )
                     ->Option.getOr({
                       address: None,
                       payoutMethodData: defaultDynamicPmdFields(~pmt),
@@ -435,7 +441,10 @@ let decodePaymentMethodTypeWithRequiredFields = (
                   switch pmt {
                   | Card(card) => {
                       pmta->Array.push(Card(card))
-                      let pmtwr: paymentMethodTypeWithDynamicFields = Card(card, payoutDynamicFields)
+                      let pmtwr: paymentMethodTypeWithDynamicFields = Card(
+                        card,
+                        payoutDynamicFields,
+                      )
                       pmtr->Array.push(pmtwr)
                       (pmta, pmtr)
                     }
