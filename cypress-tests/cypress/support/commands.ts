@@ -24,6 +24,7 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 import "cypress-iframe";
+import {createPaymentBody} from "./utils"
 import * as testIds from "../../../src/Utilities/TestUtils.bs";
 // commands.js or your custom support file
 const  iframeSelector =
@@ -145,27 +146,8 @@ Cypress.Commands.add(
   }
 );
 
-const request = {
-  currency: "USD",
-  amount: 6500,
-  authentication_type: "three_ds",
-  description: "Joseph First Crypto",
-  email: "hyperswitch_sdk_demo_id@gmail.com",
-  connector_metadata: {
-    noon: {
-      order_category: "applepay",
-    },
-  },
-  metadata: {
-    udf1: "value1",
-    new_customer: "true",
-    login_date: "2019-09-10T10:11:12Z",
-  },
-  //   customer_id: "hyperswitch_sdk_demo_test_id",
-  business_country: "US",
-  business_label: "default",
-};
-Cypress.Commands.add("createPaymentIntent", () => {
+
+Cypress.Commands.add("createPaymentIntent", (secretKey:string) => {
   return cy
     .request({
       method: "POST",
@@ -173,9 +155,9 @@ Cypress.Commands.add("createPaymentIntent", () => {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        "api-key": "snd_c691ade6995743bd88c166ba509ff5da",
+        "api-key": secretKey,
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify(createPaymentBody),
     })
     .then((response) => {
       expect(response.headers["content-type"]).to.include("application/json");
@@ -188,6 +170,6 @@ Cypress.Commands.add("createPaymentIntent", () => {
     });
 });
 
-Cypress.Commands.add("getGlobalState", (key: number) => {
+Cypress.Commands.add("getGlobalState", (key: any) => {
   return globalState[key];
 });

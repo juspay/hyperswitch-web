@@ -1,19 +1,27 @@
 import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { CLIENT_URL } from "../support/utils";
+import { getClientURL } from "../support/utils";
+
 
 describe("Card payment flow test", () => {
+
+  const publishableKey=Cypress.env('HYPERSWITCH_PUBLISHABLE_KEY')
+  const secretKey=Cypress.env('HYPERSWITCH_SECRET_KEY')
   let getIframeBody : () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
       "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
   beforeEach(() => {
     getIframeBody = () => cy.iframe(iframeSelector);
 
-    cy.visit(CLIENT_URL);
+
+    cy.createPaymentIntent(secretKey).then(()=>{
+     cy.getGlobalState("clientSecret").then((clientSecret)=>{
+
+      cy.visit(getClientURL(clientSecret,publishableKey));
+      });
+     
+    })
   });
 
-  it("page loaded successfully", () => {
-    cy.visit(CLIENT_URL);
-  });
 
   it("title rendered correctly", () => {
     cy.contains("Hyperswitch Unified Checkout").should("be.visible");
@@ -30,8 +38,6 @@ describe("Card payment flow test", () => {
 
   it('should check if cards are saved', () => {
     // Visit the page where the test will be performed
-    cy.visit(CLIENT_URL);
-
     getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`)
     .then($element => {
       if ($element.length > 0) {

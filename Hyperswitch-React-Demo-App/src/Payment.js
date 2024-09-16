@@ -8,6 +8,11 @@ function Payment() {
   const [hyperPromise, setHyperPromise] = useState(null);
   const [clientSecret, setClientSecret] = useState("");
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const isCypressTestMode = queryParams.get("isCypressTestMode");
+  const publishableKeyQueryParam = queryParams.get("publishableKey");
+  const clientSecretQueryParam = queryParams.get("clientSecret");
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -45,9 +50,12 @@ function Payment() {
           setHyperPromise(
             new Promise((resolve) => {
               resolve(
-                window.Hyper(publishableKey, {
-                  customBackendUrl: serverUrl,
-                })
+                window.Hyper(
+                  isCypressTestMode ? publishableKeyQueryParam : publishableKey,
+                  {
+                    customBackendUrl: serverUrl,
+                  }
+                )
               );
             })
           );
@@ -81,7 +89,9 @@ function Payment() {
         <HyperElements
           hyper={hyperPromise}
           options={{
-            clientSecret,
+            clientSecret: isCypressTestMode
+              ? clientSecretQueryParam
+              : clientSecret,
             appearance: {
               labels: "floating",
             },
