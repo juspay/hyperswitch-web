@@ -183,6 +183,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "duit_now",
+    fields: [InfoElement],
+    icon: Some(icon("duitNow", ~size=20)),
+    displayName: "DuitNow",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "affirm",
     fields: [InfoElement],
     icon: Some(icon("affirm", ~size=20)),
@@ -1027,7 +1034,7 @@ let itemToObjMapper = dict => {
       "collect_billing_details_from_wallets",
       true,
     ),
-    is_tax_calculation_enabled: getBool(dict,"is_tax_calculation_enabled",false)
+    is_tax_calculation_enabled: getBool(dict, "is_tax_calculation_enabled", false),
   }
 }
 
