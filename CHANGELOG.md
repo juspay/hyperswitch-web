@@ -1,3 +1,10 @@
+## [0.86.2](https://github.com/juspay/hyperswitch-web/compare/v0.86.1...v0.86.2) (2024-09-16)
+
+
+### Bug Fixes
+
+* **payout:** on change handler for dropdown ([#615](https://github.com/juspay/hyperswitch-web/issues/615)) ([750b8c6](https://github.com/juspay/hyperswitch-web/commit/750b8c62eb1f31dc5dd7d406893b63132ea8aae2))
+
 ## [0.86.1](https://github.com/juspay/hyperswitch-web/compare/v0.86.0...v0.86.1) (2024-09-13)
 
 
