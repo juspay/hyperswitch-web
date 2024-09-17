@@ -25,5 +25,3 @@ let make = (
       : <PaymentElement cardProps expiryProps cvcProps paymentType />
   }
 }
-
-let default = make
