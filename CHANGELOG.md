@@ -1,3 +1,10 @@
+# [0.88.0](https://github.com/juspay/hyperswitch-web/compare/v0.87.2...v0.88.0) (2024-09-17)
+
+
+### Features
+
+* added support for cobadged cards ([#564](https://github.com/juspay/hyperswitch-web/issues/564)) ([9deb94b](https://github.com/juspay/hyperswitch-web/commit/9deb94b20b3336ded849f4d079f1d7352dad7e46))
+
 ## [0.87.2](https://github.com/juspay/hyperswitch-web/compare/v0.87.1...v0.87.2) (2024-09-17)
 
 
