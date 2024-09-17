@@ -18,3 +18,4 @@ webpack.common.js @ArushKapoorJuspay @PritishBudhiraja @seekshiva
 
 src/ @seekshiva @PritishBudhiraja @ArushKapoorJuspay
 src/orca-log-catcher @Sanskar2001
+cypress-tests/ @seekshiva @Sanskar2001
