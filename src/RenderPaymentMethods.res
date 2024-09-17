@@ -87,15 +87,7 @@ let make = (
         | KlarnaElement
         | ExpressCheckoutElement
         | Payment =>
-          <ReusableReactSuspense
-            loaderComponent={<RenderIf condition={showLoader}>
-              {paymentType->Utils.getIsWalletElementPaymentType
-                ? <WalletShimmer />
-                : <PaymentElementShimmer />}
-            </RenderIf>}
-            componentName="PaymentElementRendererLazy">
-            <PaymentElementRendererLazy paymentType cardProps expiryProps cvcProps />
-          </ReusableReactSuspense>
+          <PaymentElementRenderer paymentType cardProps expiryProps cvcProps />
         | CardNumberElement =>
           <InputField
             isValid=isCardValid
