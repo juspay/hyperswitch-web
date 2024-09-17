@@ -29,3 +29,4 @@ Steps to get started with Hyperswitch-web sdk testing locally:
    2. Add the key in: `dataTestId={TestUtils.paymentMethodListTestId}` as the property for the tag to be tested.
 
    💡 Note: Either run the `re:build` command or keep the `re:start` command server running to generate the necessary js code
+   testing
