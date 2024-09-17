@@ -11,9 +11,7 @@ module CoBadgeCardSchemeDropDown = {
       <option disabled=true> {"Select a card brand"->React.string} </option>
       {eligibleCardSchemes
       ->Array.mapWithIndex((item, i) => {
-        <option key={Int.toString(i)} value=item className="opacity-0 w-0 h-0">
-          {item->React.string}
-        </option>
+        <option key={Int.toString(i)} value=item> {item->React.string} </option>
       })
       ->React.array}
     </select>
@@ -24,8 +22,6 @@ module CoBadgeCardSchemeDropDown = {
 let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand) => {
   let cardType = React.useMemo1(_ => cardBrand->CardUtils.getCardType, [cardBrand])
   let animate = cardType == NOTFOUND ? "animate-slideLeft" : "animate-slideRight"
-  let isCardCoBadged = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCardCoBadged)
-  let setIsCardCoBadged = Recoil.useSetRecoilState(RecoilAtoms.isCardCoBadged)
   let cardBrandIcon = React.useMemo1(
     _ => CardUtils.getCardBrandIcon(cardType, paymentType),
     [cardBrand],
@@ -42,12 +38,11 @@ let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand) => {
     ~enabledCardSchemes,
   )
 
-  React.useEffect1(() => {
-    setIsCardCoBadged(_ => eligibleCardSchemes->Array.length > 1)
-    None
-  }, [[eligibleCardSchemes]])
+  let isCardCoBadged = eligibleCardSchemes->Array.length > 1
 
-  <div className={`${animate} flex items-center`}>
+  let marginLeft = isCardCoBadged ? "-ml-2" : ""
+
+  <div className={`${animate} flex items-center ${marginLeft} hellow-rodl`}>
     cardBrandIcon
     <RenderIf condition={isCardCoBadged}>
       <CoBadgeCardSchemeDropDown eligibleCardSchemes setCardBrand />

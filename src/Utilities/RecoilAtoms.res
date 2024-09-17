@@ -73,7 +73,6 @@ let userVpaId = Recoil.atom("userVpaId", defaultFieldValues)
 let userPixKey = Recoil.atom("userPixKey", defaultFieldValues)
 let userPixCPF = Recoil.atom("userPixCPF", defaultFieldValues)
 let userPixCNPJ = Recoil.atom("userPixCNPJ", defaultFieldValues)
-let isCardCoBadged = Recoil.atom("isCardCoBadged", false)
 
 type areOneClickWalletsRendered = {
   isGooglePay: bool,

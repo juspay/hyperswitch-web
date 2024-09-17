@@ -20,7 +20,6 @@ let make = (
   ~placeholder="",
   ~appearance: CardThemeType.appearance,
   ~className="",
-  ~rightIconClassName="-ml-10",
   ~inputRef,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -132,7 +131,7 @@ let make = (
           </div>
         </RenderIf>
       </div>
-      <div className={`relative flex ${rightIconClassName} items-center`}> {rightIcon} </div>
+      <div className="relative flex -ml-10 items-center"> {rightIcon} </div>
     </div>
     <RenderIf condition={innerLayout === Spaced}>
       {switch errorString {
