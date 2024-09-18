@@ -147,7 +147,7 @@ Cypress.Commands.add(
 );
 
 
-Cypress.Commands.add("createPaymentIntent", (secretKey:string) => {
+Cypress.Commands.add("createPaymentIntent", (secretKey:string,createPaymentBody:any) => {
   return cy
     .request({
       method: "POST",

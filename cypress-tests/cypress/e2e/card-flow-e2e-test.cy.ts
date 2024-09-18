@@ -1,6 +1,7 @@
 import * as testIds from "../../../src/Utilities/TestUtils.bs";
 import { getClientURL } from "../support/utils";
-
+import { createPaymentBody } from "../support/utils";
+import { changeObjectKeyValue } from "../support/utils";
 
 describe("Card payment flow test", () => {
 
@@ -9,11 +10,13 @@ describe("Card payment flow test", () => {
   let getIframeBody : () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
       "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
+
+      // changeObjectKeyValue(createPaymentBody,"profile_id","YOUR_PROFILE_ID")
+
+
   beforeEach(() => {
     getIframeBody = () => cy.iframe(iframeSelector);
-
-
-    cy.createPaymentIntent(secretKey).then(()=>{
+    cy.createPaymentIntent(secretKey,createPaymentBody).then(()=>{
      cy.getGlobalState("clientSecret").then((clientSecret)=>{
 
       cy.visit(getClientURL(clientSecret,publishableKey));

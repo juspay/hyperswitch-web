@@ -65,6 +65,11 @@ export const createPaymentBody ={
       country_code: "+91",
     },
   },
+
+}
+
+export const changeObjectKeyValue=(object:Record<string, any> ,key:string,value:string)=>{
+  object[key]=value
 }
 
 export const confirmBody = {
