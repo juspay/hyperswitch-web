@@ -116,6 +116,7 @@ let make = (
     "",
     _ => (),
     0,
+    "",
   )
 
   let defaultExpiryProps = (
@@ -170,6 +171,7 @@ let make = (
     cardError,
     _,
     maxCardLength,
+    cardScheme,
   ) = switch cardProps {
   | Some(cardProps) => cardProps
   | None => defaultCardProps

@@ -131,7 +131,7 @@ let make = (
           </div>
         </RenderIf>
       </div>
-      <div className={`relative flex -ml-10 items-center`}> {rightIcon} </div>
+      <div className="relative flex -ml-10 items-center"> {rightIcon} </div>
     </div>
     <RenderIf condition={innerLayout === Spaced}>
       {switch errorString {

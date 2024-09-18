@@ -24,6 +24,7 @@ let make = (
     _,
     _,
     maxCardLength,
+    _,
   ) = cardProps
 
   let (
@@ -93,8 +94,8 @@ let make = (
                 ? <WalletShimmer />
                 : <PaymentElementShimmer />}
             </RenderIf>}
-            componentName="PaymentElementRendererLazy">
-            <PaymentElementRendererLazy paymentType cardProps expiryProps cvcProps />
+            componentName="PaymentElementRenderer">
+            <PaymentElementRenderer paymentType cardProps expiryProps cvcProps />
           </ReusableReactSuspense>
         | CardNumberElement =>
           <InputField

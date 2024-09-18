@@ -1,3 +1,38 @@
+# [0.88.0](https://github.com/juspay/hyperswitch-web/compare/v0.87.2...v0.88.0) (2024-09-17)
+
+
+### Features
+
+* added support for cobadged cards ([#564](https://github.com/juspay/hyperswitch-web/issues/564)) ([9deb94b](https://github.com/juspay/hyperswitch-web/commit/9deb94b20b3336ded849f4d079f1d7352dad7e46))
+
+## [0.87.2](https://github.com/juspay/hyperswitch-web/compare/v0.87.1...v0.87.2) (2024-09-17)
+
+
+### Bug Fixes
+
+* chunk loading issue - 1 ([#623](https://github.com/juspay/hyperswitch-web/issues/623)) ([06e7fab](https://github.com/juspay/hyperswitch-web/commit/06e7fab244e49fe1f448db25f3f5af54eaddf2c7))
+
+## [0.87.1](https://github.com/juspay/hyperswitch-web/compare/v0.87.0...v0.87.1) (2024-09-16)
+
+
+### Bug Fixes
+
+* dynamic tax calculation fix ([#618](https://github.com/juspay/hyperswitch-web/issues/618)) ([9a321fd](https://github.com/juspay/hyperswitch-web/commit/9a321fdac759407bf5c4881e057ced60cbc8b169))
+
+# [0.87.0](https://github.com/juspay/hyperswitch-web/compare/v0.86.2...v0.87.0) (2024-09-16)
+
+
+### Features
+
+* added duit now payment method ([#612](https://github.com/juspay/hyperswitch-web/issues/612)) ([3237bb5](https://github.com/juspay/hyperswitch-web/commit/3237bb52c24ff788b8b6445e9786acd59484569c))
+
+## [0.86.2](https://github.com/juspay/hyperswitch-web/compare/v0.86.1...v0.86.2) (2024-09-16)
+
+
+### Bug Fixes
+
+* **payout:** on change handler for dropdown ([#615](https://github.com/juspay/hyperswitch-web/issues/615)) ([750b8c6](https://github.com/juspay/hyperswitch-web/commit/750b8c62eb1f31dc5dd7d406893b63132ea8aae2))
+
 ## [0.86.1](https://github.com/juspay/hyperswitch-web/compare/v0.86.0...v0.86.1) (2024-09-13)
 
 

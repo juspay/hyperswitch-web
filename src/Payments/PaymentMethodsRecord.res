@@ -184,6 +184,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "duit_now",
+    fields: [InfoElement],
+    icon: Some(icon("duitNow", ~size=20)),
+    displayName: "DuitNow",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "affirm",
     fields: [InfoElement],
     icon: Some(icon("affirm", ~size=20)),
