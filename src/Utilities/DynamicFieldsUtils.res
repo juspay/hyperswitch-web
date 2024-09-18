@@ -557,7 +557,6 @@ let useRequiredFieldsBody = (
     | ShippingAddressPincode
     | ShippingAddressState
     | ShippingAddressCountry(_)
-    | BankAccountNumber
     | None => ""
     }
   }

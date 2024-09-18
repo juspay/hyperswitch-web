@@ -1978,7 +1978,7 @@ let fetchPaymentMethodList = (
             "payment_method": "bank_debit",
             "payment_method_types": [
               {
-                "payment_method_type": "sepa",
+                "payment_method_type": "becs",
                 "payment_experience": [
                   {
                     "payment_experience_type": "redirect_to_url",
@@ -1994,26 +1994,65 @@ let fetchPaymentMethodList = (
                     "required_field": "payment_method_data.billing.address.first_name",
                     "display_name": "owner_name",
                     "field_type": "user_billing_name",
-                    // "value": "joseph",
+                    "value": null,
+                  },
+                  "payment_method_data.bank_debit.bacs.account_number": {
+                    "required_field": "payment_method_data.bank_debit.bacs.account_number",
+                    "display_name": "bank_account_number",
+                    "field_type": "user_bank_account_number",
                     "value": null,
                   },
                   "billing.address.last_name": {
                     "required_field": "payment_method_data.billing.address.last_name",
                     "display_name": "owner_name",
                     "field_type": "user_billing_name",
-                    // "value": "Doe",
                     "value": null,
                   },
-                  "payment_method_data.bank_debit.sepa.iban": {
-                    "required_field": "payment_method_data.bank_debit.bacs.iban",
-                    "display_name": "bank_account_number",
-                    "field_type": "user_bank_account_number",
+                  "payment_method_data.bank_debit.bacs.sort_code": {
+                    "required_field": "payment_method_data.bank_debit.bacs.sort_code",
+                    "display_name": "bank_sort_code",
+                    "field_type": "text",
                     "value": null,
                   },
                 },
                 "surcharge_details": null,
                 "pm_auth_connector": null,
-              },
+              }->Identity.anyTypeToJson,
+              {
+                "payment_method_type": "sepa",
+                "payment_experience": [
+                  {
+                    "payment_experience_type": "redirect_to_url",
+                    "eligible_connectors": ["adyen"],
+                  },
+                ],
+                "card_networks": null,
+                "bank_names": null,
+                "bank_debits": null,
+                "bank_transfers": null,
+                "required_fields": {
+                  "payment_method_data.bank_debit.sepa.iban": {
+                    "required_field": "payment_method_data.bank_debit.sepa.iban",
+                    "display_name": "iban",
+                    "field_type": "user_bank_account_number",
+                    "value": null,
+                  },
+                  "billing.address.first_name": {
+                    "required_field": "payment_method_data.billing.address.first_name",
+                    "display_name": "owner_name",
+                    "field_type": "user_billing_name",
+                    "value": null,
+                  },
+                  "billing.address.last_name": {
+                    "required_field": "payment_method_data.billing.address.last_name",
+                    "display_name": "owner_name",
+                    "field_type": "user_billing_name",
+                    "value": null,
+                  },
+                },
+                "surcharge_details": null,
+                "pm_auth_connector": null,
+              }->Identity.anyTypeToJson,
             ],
           }->Identity.anyTypeToJson,
         ],

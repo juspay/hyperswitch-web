@@ -94,17 +94,15 @@ let make = (~paymentType: CardThemeType.mode) => {
   }, (email, fullName, modalData, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
-  {
-    if isVerifyPMAuthConnectorConfigured {
-      <AddBankDetails paymentMethodType="sepa" />
-    } else {
-      <div
+  isVerifyPMAuthConnectorConfigured
+    ? <AddBankDetails paymentMethodType="sepa" />
+    : <div
         className="flex flex-col animate-slowShow"
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
         }>
-        <EmailPaymentInput paymentType />
-        <FullNamePaymentInput paymentType />
+        // <EmailPaymentInput paymentType />
+        // <FullNamePaymentInput paymentType />
         <AddBankAccount modalData setModalData />
         <FullScreenPortal>
           <BankDebitModal setModalData paymentType />
@@ -112,8 +110,6 @@ let make = (~paymentType: CardThemeType.mode) => {
         <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
         <Terms mode=SepaBankDebit />
       </div>
-    }
-  }
 }
 
 let default = make

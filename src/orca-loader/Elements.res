@@ -774,7 +774,10 @@ let make = (
                     switch (
                       dict->Dict.get("applePayButtonClicked"),
                       dict->Dict.get("applePayPaymentRequest"),
-                      dict->Dict.get("isTaxCalculationEnabled")->Option.flatMap(JSON.Decode.bool)->Option.getOr(false),
+                      dict
+                      ->Dict.get("isTaxCalculationEnabled")
+                      ->Option.flatMap(JSON.Decode.bool)
+                      ->Option.getOr(false),
                     ) {
                     | (Some(val), Some(paymentRequest), isTaxCalculationEnabled) =>
                       if val->JSON.Decode.bool->Option.getOr(false) {
