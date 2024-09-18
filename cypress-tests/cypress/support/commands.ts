@@ -24,10 +24,10 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 import "cypress-iframe";
-import {createPaymentBody} from "./utils"
+import { createPaymentBody } from "./utils"
 import * as testIds from "../../../src/Utilities/TestUtils.bs";
 // commands.js or your custom support file
-const  iframeSelector =
+const iframeSelector =
   "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
 let globalState = {};
@@ -74,11 +74,11 @@ Cypress.Commands.add(
       mapping[testIds.cardNoInputTestId] = customerData.threeDSCardNo;
     }
     let publishableKey = "pk_snd_3b33cd9404234113804aa1accaabe22f";
-    let clientSecret:string;
+    let clientSecret: string;
     cy.request({
       method: "GET",
       url: "http://localhost:5252/create-payment-intent",
-    }).then((response: {body: { clientSecret: string }}) => {
+    }).then((response: { body: { clientSecret: string } }) => {
       clientSecret = response.body.clientSecret;
 
       cy.request({
@@ -147,7 +147,7 @@ Cypress.Commands.add(
 );
 
 
-Cypress.Commands.add("createPaymentIntent", (secretKey:string,createPaymentBody:any) => {
+Cypress.Commands.add("createPaymentIntent", (secretKey: string, createPaymentBody: any) => {
   return cy
     .request({
       method: "POST",

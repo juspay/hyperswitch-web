@@ -2,12 +2,12 @@ export const CLIENT_BASE_URL = "http://localhost:9060"
 
 
 
-export const getClientURL=(clientSecret,publishableKey)=>{
+export const getClientURL = (clientSecret, publishableKey) => {
   return `${CLIENT_BASE_URL}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
 }
 
 
-export const createPaymentBody ={
+export const createPaymentBody = {
   currency: "USD",
   amount: 2999,
   order_details: [
@@ -68,8 +68,8 @@ export const createPaymentBody ={
 
 }
 
-export const changeObjectKeyValue=(object:Record<string, any> ,key:string,value:string)=>{
-  object[key]=value
+export const changeObjectKeyValue = (object: Record<string, any>, key: string, value: string) => {
+  object[key] = value
 }
 
 export const confirmBody = {
