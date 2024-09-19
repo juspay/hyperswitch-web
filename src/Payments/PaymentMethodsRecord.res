@@ -45,6 +45,7 @@ type paymentMethodsFields =
   | PixCNPJ
   | LanguagePreference(array<string>)
   | BankAccountNumber
+  | IBAN
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -595,6 +596,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_cnpj", _) => PixCNPJ
   | ("user_pix_key", _) => PixKey
   | ("user_bank_account_number", _) => BankAccountNumber
+  | ("user_iban", _) => BankAccountNumber
   | _ => None
   }
 }

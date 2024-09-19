@@ -174,7 +174,9 @@ let useRequiredFieldsEmptyAndValid = (
       | PixCNPJ => pixCNPJ.isValid->Option.getOr(false)
       | PixCPF => pixCPF.isValid->Option.getOr(false)
       | PixKey => pixKey.isValid->Option.getOr(false)
-      | BankAccountNumber => bankAccountNumber.value !== ""
+      | BankAccountNumber
+      | IBAN =>
+        bankAccountNumber.value !== ""
       | _ => true
       }
     })
@@ -223,7 +225,9 @@ let useRequiredFieldsEmptyAndValid = (
         let (month, year) = getExpiryDates(cardExpiry)
         month === "" || year === "" || cvcNumber === ""
       | DateOfBirth => dateOfBirth->Js.Nullable.isNullable
-      | BankAccountNumber => bankAccountNumber.value === ""
+      | BankAccountNumber
+      | IBAN =>
+        bankAccountNumber.value === ""
       | _ => false
       }
     })
@@ -237,26 +241,25 @@ let useRequiredFieldsEmptyAndValid = (
     billingName.value,
     line1.value,
     dateOfBirth,
-    (
-      email,
-      vpaId,
-      line2.value,
-      selectedBank,
-      phone.value,
-      city.value,
-      postalCode,
-      state.value,
-      blikCode.value,
-      pixCNPJ.value,
-      pixKey.value,
-      pixCPF.value,
-      isCardValid,
-      isExpiryValid,
-      isCVCValid,
-      cardNumber,
-      cardExpiry,
-      cvcNumber,
-    ),
+    email,
+    vpaId,
+    line2.value,
+    selectedBank,
+    phone.value,
+    city.value,
+    postalCode,
+    state.value,
+    blikCode.value,
+    pixCNPJ.value,
+    pixKey.value,
+    pixCPF.value,
+    isCardValid,
+    isExpiryValid,
+    isCVCValid,
+    cardNumber,
+    cardExpiry,
+    cvcNumber,
+    bankAccountNumber,
   ))
 }
 
@@ -431,6 +434,7 @@ let useSetInitialRequiredFields = (
           }
         | None => ()
         }
+      | IBAN
       | BankAccountNumber =>
         setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
       | LanguagePreference(_)
@@ -542,7 +546,9 @@ let useRequiredFieldsBody = (
     | PixCNPJ => pixCNPJ.value
     | PixCPF => pixCPF.value
     | PixKey => pixKey.value
-    | BankAccountNumber => bankAccountNumber.value
+    | IBAN
+    | BankAccountNumber =>
+      bankAccountNumber.value
     | StateAndCity
     | CountryAndPincode(_)
     | SpecialField(_)
@@ -643,6 +649,7 @@ let useRequiredFieldsBody = (
     selectedBank,
     cryptoCurrencyNetworks,
     dateOfBirth,
+    bankAccountNumber,
   ))
 }
 
@@ -662,6 +669,7 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | DateOfBirth
   | Currency(_)
   | VpaId
+  | IBAN
   | BankAccountNumber => true
   | _ => false
   }

@@ -470,7 +470,7 @@ let make = (
           | PixKey => <PixPaymentInput label="pixKey" />
           | PixCPF => <PixPaymentInput label="pixCPF" />
           | PixCNPJ => <PixPaymentInput label="pixCNPJ" />
-          | BankAccountNumber =>
+          | BankAccountNumber | IBAN =>
             <PaymentField
               fieldName="IBAN"
               setValue={setBankAccountNumber}
@@ -478,7 +478,7 @@ let make = (
               onChange={ev => {
                 let value = ReactEvent.Form.target(ev)["value"]
                 setBankAccountNumber(prev => {
-                  isValid: value !== "" ? Some(true) : Some(false),
+                  isValid: Some(value !== ""),
                   value,
                   errorString: value !== "" ? "" : prev.errorString,
                 })
@@ -812,6 +812,7 @@ let make = (
                 | VpaId
                 | LanguagePreference(_)
                 | BankAccountNumber
+                | IBAN
                 | None => React.null
                 }}
               </div>
