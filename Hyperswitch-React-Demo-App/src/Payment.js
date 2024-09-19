@@ -12,32 +12,40 @@ function Payment() {
   const isCypressTestMode = queryParams.get("isCypressTestMode");
   const publishableKeyQueryParam = queryParams.get("publishableKey");
   const clientSecretQueryParam = queryParams.get("clientSecret");
+  const url = SELF_SERVER_URL === "" ? ENDPOINT : SELF_SERVER_URL;
+
+  const getPaymentData = async () => {
+    try {
+      const [configResponse, urlsResponse] = await Promise.all([
+        fetch(`${url}/config`),
+        fetch(`${url}/urls`),
+      ]);
+
+      const paymentIntentResponse = isCypressTestMode
+        ? { clientSecret: clientSecretQueryParam }
+        : await (await fetch(`${url}/create-payment-intent`)).json();
+
+      if (!configResponse.ok || !urlsResponse.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const paymentDataArray = await Promise.all([
+        configResponse.json(),
+        urlsResponse.json(),
+      ]);
+
+      return [...paymentDataArray, paymentIntentResponse];
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const url = SELF_SERVER_URL === "" ? ENDPOINT : SELF_SERVER_URL;
-
-        const [configResponse, urlsResponse, paymentIntentResponse] =
-          await Promise.all([
-            fetch(`${url}/config`),
-            fetch(`${url}/urls`),
-            fetch(`${url}/create-payment-intent`),
-          ]);
-
-        if (
-          !configResponse.ok ||
-          !urlsResponse.ok ||
-          !paymentIntentResponse.ok
-        ) {
-          throw new Error("Network response was not ok");
-        }
-
-        const [configData, urlsData, paymentIntentData] = await Promise.all([
-          configResponse.json(),
-          urlsResponse.json(),
-          paymentIntentResponse.json(),
-        ]);
+        const [configData, urlsData, paymentIntentData] = await getPaymentData(
+          url
+        );
 
         const { publishableKey } = configData;
         const { serverUrl, clientUrl } = urlsData;
