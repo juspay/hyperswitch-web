@@ -1,5 +1,5 @@
 @react.component
-let make: (
+let default: (
   ~paymentType: CardThemeType.mode,
   ~cardProps: CardUtils.cardProps,
   ~expiryProps: CardUtils.expiryProps,
