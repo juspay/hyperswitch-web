@@ -127,40 +127,44 @@ let startApplePaySession = (
         ~clientSecret,
         ~paymentMethodType,
       )
-      ->then(response => {
-        let taxCalculationResponse = response->taxResponseToObjMapper
-        let (netAmount, ordertaxAmount, shippingCost) = (
-          taxCalculationResponse.net_amount,
-          taxCalculationResponse.order_tax_amount,
-          taxCalculationResponse.shipping_cost,
-        )
-        let newTotal: lineItem = {
-          label: "Net Amount",
-          amount: netAmount->Float.toString,
-          \"type": "final",
+      ->thenResolve(response => {
+        switch response->taxResponseToObjMapper {
+        | Some(taxCalculationResponse) => {
+            let (netAmount, ordertaxAmount, shippingCost) = (
+              taxCalculationResponse.net_amount,
+              taxCalculationResponse.order_tax_amount,
+              taxCalculationResponse.shipping_cost,
+            )
+            let newTotal: lineItem = {
+              label: "Net Amount",
+              amount: netAmount->minorUnitToString,
+              \"type": "final",
+            }
+            let newLineItems: array<lineItem> = [
+              {
+                label: "Bag Subtotal",
+                amount: (netAmount - ordertaxAmount - shippingCost)->minorUnitToString,
+                \"type": "final",
+              },
+              {
+                label: "Order Tax Amount",
+                amount: ordertaxAmount->minorUnitToString,
+                \"type": "final",
+              },
+              {
+                label: "Shipping Cost",
+                amount: shippingCost->minorUnitToString,
+                \"type": "final",
+              },
+            ]
+            let updatedOrderDetails: updatedOrderDetails = {
+              newTotal,
+              newLineItems,
+            }
+            ssn.completeShippingContactSelection(updatedOrderDetails)
+          }
+        | None => ssn.abort()
         }
-        let newLineItems: array<lineItem> = [
-          {
-            label: "Bag Subtotal",
-            amount: (netAmount -. ordertaxAmount -. shippingCost)->Float.toString,
-            \"type": "final",
-          },
-          {
-            label: "Order Tax Amount",
-            amount: ordertaxAmount->Float.toString,
-            \"type": "final",
-          },
-          {
-            label: "Shipping Cost",
-            amount: shippingCost->Float.toString,
-            \"type": "final",
-          },
-        ]
-        let updatedOrderDetails: updatedOrderDetails = {
-          newTotal,
-          newLineItems,
-        }
-        ssn.completeShippingContactSelection(updatedOrderDetails)->resolve
       })
       ->ignore
     }
