@@ -1,3 +1,10 @@
+## [0.88.3](https://github.com/juspay/hyperswitch-web/compare/v0.88.2...v0.88.3) (2024-09-20)
+
+
+### Bug Fixes
+
+* added suspense and error boundary for apple pay and google pay in tabs ([#632](https://github.com/juspay/hyperswitch-web/issues/632)) ([209f8e9](https://github.com/juspay/hyperswitch-web/commit/209f8e96be744c4c49e05c10700d839e3dd957f3))
+
 ## [0.88.2](https://github.com/juspay/hyperswitch-web/compare/v0.88.1...v0.88.2) (2024-09-20)
 
 
