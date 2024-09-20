@@ -1,3 +1,10 @@
+## [0.88.1](https://github.com/juspay/hyperswitch-web/compare/v0.88.0...v0.88.1) (2024-09-20)
+
+
+### Bug Fixes
+
+* Invalid shipping address and taxjar api failing case handle in apple pay ([#628](https://github.com/juspay/hyperswitch-web/issues/628)) ([d4f3c41](https://github.com/juspay/hyperswitch-web/commit/d4f3c41ff3ccc1253f4c19613ead0be60cd98fc3))
+
 # [0.88.0](https://github.com/juspay/hyperswitch-web/compare/v0.87.2...v0.88.0) (2024-09-17)
 
 
