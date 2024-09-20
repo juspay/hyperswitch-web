@@ -623,6 +623,7 @@ let useRequiredFieldsBody = (
       })
       ->addBillingDetailsIfUseBillingAddress
 
+    Js.log2("requiredFieldsBody", requiredFieldsBody)
     setRequiredFieldsBody(_ => requiredFieldsBody)
     None
   }, (

@@ -15,6 +15,8 @@ let make = (~paymentType: CardThemeType.mode) => {
 
   let (modalData, setModalData) = React.useState(_ => None)
 
+  Js.log2("modalDatamodalData", modalData)
+
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let (line1, _) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
@@ -25,6 +27,10 @@ let make = (~paymentType: CardThemeType.mode) => {
   let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let requiredFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+
+  Js.log2("requiredFields", requiredFields)
 
   let pmAuthMapper = React.useMemo1(
     () =>
@@ -54,7 +60,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="sepa_bank_debit")
 
   React.useEffect(() => {
-    setComplete(_ => complete)
+    setComplete(_ => true)
     None
   }, [complete])
 
@@ -63,30 +69,27 @@ let make = (~paymentType: CardThemeType.mode) => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      if complete {
+      if true {
         switch modalData {
-        | Some(data: ACHTypes.data) => {
-            let body = PaymentBody.sepaBankDebitBody(
-              ~fullName=fullName.value,
-              ~email=email.value,
-              ~data,
-              ~line1=line1.value,
-              ~line2=line2.value,
-              ~country=getCountryCode(country.value).isoAlpha2,
-              ~city=city.value,
-              ~postalCode=postalCode.value,
-              ~state=state.value,
-            )
-            intent(
-              ~bodyArr=body,
-              ~confirmParam=confirm.confirmParams,
-              ~handleUserError=false,
-              ~manualRetry=isManualRetryEnabled,
-            )
-          }
+        | Some(data: ACHTypes.data) => // let body = PaymentBody.sepaBankDebitBody(
+          //   ~fullName=fullName.value,
+          //   ~email=email.value,
+          //   ~data,
+          //   ~line1=line1.value,
+          //   ~line2=line2.value,
+          //   ~country=getCountryCode(country.value).isoAlpha2,
+          //   ~city=city.value,
+          //   ~postalCode=postalCode.value,
+          //   ~state=state.value,
+          // )
+          intent(
+            ~bodyArr=[],
+            ~confirmParam=confirm.confirmParams,
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
         | None => ()
         }
-        ()
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }

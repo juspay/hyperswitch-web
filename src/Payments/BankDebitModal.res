@@ -189,6 +189,18 @@ let make = (~setModalData, ~paymentType: CardThemeType.mode) => {
     iban !== "" ||
     (accountNum->String.length > 0 && sortCode->String.length > 0)
 
+  let onClickHandler = () => {
+    setModalData(_ => Some({
+      routingNumber,
+      accountNumber: accountNum,
+      accountHolderName,
+      accountType: accountType->String.toLowerCase,
+      iban,
+      sortCode,
+    }))
+    Modal.close(setOpenModal)
+  }
+
   <Modal loader=false testMode=true openModal setOpenModal>
     <div className="flex flex-col w-full h-auto overflow-scroll">
       <div className={`flex flex-col`}>
@@ -197,7 +209,7 @@ let make = (~setModalData, ~paymentType: CardThemeType.mode) => {
             <DynamicFields
               paymentType paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody
             />
-            <PayNowButton />
+            <PayNowButton onClickHandler />
           </>
         } else {
           <>

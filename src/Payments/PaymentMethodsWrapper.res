@@ -40,6 +40,8 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
 
+  Js.log2("requiredFieldsBodyrequiredFieldsBodyrequiredFieldsBody", requiredFieldsBody)
+
   let complete = areRequiredFieldsValid
 
   React.useEffect(() => {
@@ -59,7 +61,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if complete {
+      if true {
         let countryCode =
           Country.getCountry(paymentMethodName)
           ->Array.filter(item => item.countryName == country)
@@ -71,8 +73,8 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
           ->Array.filter(item => item.displayName == selectedBank)
           ->Array.get(0)
           ->Option.getOr(Bank.defaultBank)
-        intent(
-          ~bodyArr=PaymentBody.getPaymentBody(
+        let body =
+          PaymentBody.getPaymentBody(
             ~paymentMethod=paymentMethodDetails.methodType,
             ~paymentMethodType=paymentMethodName,
             ~country=countryCode.isoAlpha2,
@@ -89,7 +91,11 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
           ->JSON.Encode.object
           ->flattenObject(true)
           ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->getArrayOfTupleFromDict,
+          ->getArrayOfTupleFromDict
+
+        Js.log3("dcsidcksdncsdjcusd", body, requiredFieldsBody)
+        intent(
+          ~bodyArr=body,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~iframeId,
