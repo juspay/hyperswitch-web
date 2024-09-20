@@ -5,7 +5,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
 
   let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
+  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let removeSavedMethod = (
@@ -18,7 +18,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
   }
 
   let handleDelete = (paymentItem: PaymentType.customerMethods) => {
-    handlePostMessage([
+    messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("param", "paymentloader"->JSON.Encode.string),
       ("iframeId", iframeId->JSON.Encode.string),
@@ -28,7 +28,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
       ~ephemeralKey=config.ephemeralKey,
       ~paymentMethodId=paymentItem.paymentMethodId,
       ~logger,
-      ~switchToCustomPod,
+      ~customPodUri,
     )
     ->then(res => {
       let dict = res->getDictFromJson
@@ -44,7 +44,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
       } else {
         logger.setLogError(~value=res->JSON.stringify, ~eventName=DELETE_SAVED_PAYMENT_METHOD)
       }
-      handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+      messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       resolve()
     })
     ->catch(err => {
@@ -53,7 +53,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
         ~value=`Error Deleting Saved Payment Method: ${exceptionMessage}`,
         ~eventName=DELETE_SAVED_PAYMENT_METHOD,
       )
-      handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+      messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       resolve()
     })
     ->ignore

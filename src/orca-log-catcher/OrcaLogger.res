@@ -83,6 +83,7 @@ type eventName =
   | DELETE_SAVED_PAYMENT_METHOD
   | DELETE_PAYMENT_METHODS_CALL_INIT
   | DELETE_PAYMENT_METHODS_CALL
+  | EXTERNAL_TAX_CALCULATION
 
 let eventNameToStrMapper = eventName => {
   switch eventName {
@@ -166,6 +167,7 @@ let eventNameToStrMapper = eventName => {
   | DELETE_SAVED_PAYMENT_METHOD => "DELETE_SAVED_PAYMENT_METHOD"
   | DELETE_PAYMENT_METHODS_CALL_INIT => "DELETE_PAYMENT_METHODS_CALL_INIT"
   | DELETE_PAYMENT_METHODS_CALL => "DELETE_PAYMENT_METHODS_CALL"
+  | EXTERNAL_TAX_CALCULATION => "EXTERNAL_TAX_CALCULATION"
   }
 }
 
@@ -539,14 +541,17 @@ let make = (
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
       switch loggingLevel {
-      | DEBUG => log->Array.push(mainLogFile, _)->ignore
+      | DEBUG => log->(Array.push(mainLogFile, _))->ignore
       | INFO =>
         [INFO, WARNING, ERROR]->Array.includes(log.logType)
-          ? log->Array.push(mainLogFile, _)->ignore
+          ? log->(Array.push(mainLogFile, _))->ignore
           : ()
       | WARNING =>
-        [WARNING, ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
-      | ERROR => [ERROR]->Array.includes(log.logType) ? log->Array.push(mainLogFile, _)->ignore : ()
+        [WARNING, ERROR]->Array.includes(log.logType)
+          ? log->(Array.push(mainLogFile, _))->ignore
+          : ()
+      | ERROR =>
+        [ERROR]->Array.includes(log.logType) ? log->(Array.push(mainLogFile, _))->ignore : ()
       | SILENT => ()
       }
     }

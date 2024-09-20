@@ -21,7 +21,7 @@ let getPaymentType = paymentMethodType =>
   | _ => Other
   }
 
-let closePaymentLoaderIfAny = () => handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
 
 type paymentIntent = (
   ~handleUserError: bool=?,
@@ -44,7 +44,7 @@ let retrievePaymentIntent = (
   clientSecret,
   headers,
   ~optLogger,
-  ~switchToCustomPod,
+  ~customPodUri,
   ~isForceSync=false,
 ) => {
   open Promise
@@ -61,7 +61,7 @@ let retrievePaymentIntent = (
     ~logType=INFO,
     ~logCategory=API,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod))
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
@@ -170,11 +170,11 @@ let rec pollRetrievePaymentIntent = (
   clientSecret,
   headers,
   ~optLogger,
-  ~switchToCustomPod,
+  ~customPodUri,
   ~isForceSync=false,
 ) => {
   open Promise
-  retrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod, ~isForceSync)
+  retrievePaymentIntent(clientSecret, headers, ~optLogger, ~customPodUri, ~isForceSync)
   ->then(json => {
     let dict = json->getDictFromJson
     let status = dict->getString("status", "")
@@ -183,23 +183,17 @@ let rec pollRetrievePaymentIntent = (
       resolve(json)
     } else {
       delay(2000)->then(_val => {
-        pollRetrievePaymentIntent(
-          clientSecret,
-          headers,
-          ~optLogger,
-          ~switchToCustomPod,
-          ~isForceSync,
-        )
+        pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~customPodUri, ~isForceSync)
       })
     }
   })
   ->catch(e => {
     Console.log2("Unable to retrieve payment due to following error", e)
-    pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~switchToCustomPod, ~isForceSync)
+    pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~customPodUri, ~isForceSync)
   })
 }
 
-let retrieveStatus = (~headers, ~switchToCustomPod, pollID, logger) => {
+let retrieveStatus = (~headers, ~customPodUri, pollID, logger) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let uri = `${endpoint}/poll/status/${pollID}`
@@ -211,7 +205,7 @@ let retrieveStatus = (~headers, ~switchToCustomPod, pollID, logger) => {
     ~logType=INFO,
     ~logCategory=API,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod))
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
@@ -249,17 +243,9 @@ let retrieveStatus = (~headers, ~switchToCustomPod, pollID, logger) => {
   })
 }
 
-let rec pollStatus = (
-  ~headers,
-  ~switchToCustomPod,
-  ~pollId,
-  ~interval,
-  ~count,
-  ~returnUrl,
-  ~logger,
-) => {
+let rec pollStatus = (~headers, ~customPodUri, ~pollId, ~interval, ~count, ~returnUrl, ~logger) => {
   open Promise
-  retrieveStatus(~headers, ~switchToCustomPod, pollId, logger)
+  retrieveStatus(~headers, ~customPodUri, pollId, logger)
   ->then(json => {
     let dict = json->getDictFromJson
     let status = dict->getString("status", "")
@@ -267,7 +253,7 @@ let rec pollStatus = (
       if status === "completed" {
         resolve(json)
       } else if count === 0 {
-        handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+        messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         openUrl(returnUrl)
       } else {
         delay(interval)
@@ -275,7 +261,7 @@ let rec pollStatus = (
           _ => {
             pollStatus(
               ~headers,
-              ~switchToCustomPod,
+              ~customPodUri,
               ~pollId,
               ~interval,
               ~count=count - 1,
@@ -297,7 +283,7 @@ let rec pollStatus = (
     Console.log2("Unable to retrieve payment due to following error", e)
     pollStatus(
       ~headers,
-      ~switchToCustomPod,
+      ~customPodUri,
       ~pollId,
       ~interval,
       ~count=count - 1,
@@ -313,7 +299,7 @@ let rec intentCall = (
     ~bodyStr: string=?,
     ~headers: Dict.t<string>=?,
     ~method: Fetch.method,
-  ) => Promise.t<Fetch.Response.t>,
+  ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,
   ~bodyStr,
@@ -325,7 +311,7 @@ let rec intentCall = (
   ~iframeId,
   ~fetchMethod,
   ~setIsManualRetryEnabled,
-  ~switchToCustomPod,
+  ~customPodUri,
   ~sdkHandleOneClickConfirmPayment,
   ~counter,
   ~isPaymentSession=false,
@@ -352,7 +338,7 @@ let rec intentCall = (
   )
   let handleOpenUrl = url => {
     if isPaymentSession {
-      Window.Location.replace(url)
+      Window.replaceRootHref(url)
     } else {
       openUrl(url)
     }
@@ -360,7 +346,7 @@ let rec intentCall = (
   fetchApi(
     uri,
     ~method=fetchMethod,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod),
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
     ~bodyStr,
   )
   ->then(res => {
@@ -368,7 +354,7 @@ let rec intentCall = (
     let url = urlSearch(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
-    handlePostMessage([("confirmParams", confirmParam->Identity.anyTypeToJson)])
+    messageParentWindow([("confirmParams", confirmParam->Identity.anyTypeToJson)])
 
     if statusCode->String.charAt(0) !== "2" {
       res
@@ -474,7 +460,7 @@ let rec intentCall = (
                 ~iframeId,
                 ~fetchMethod=#GET,
                 ~setIsManualRetryEnabled,
-                ~switchToCustomPod,
+                ~customPodUri,
                 ~sdkHandleOneClickConfirmPayment,
                 ~counter=counter + 1,
               )
@@ -557,7 +543,7 @@ let rec intentCall = (
                   ~paymentMethod,
                 )
                 if !isPaymentSession {
-                  handlePostMessage([
+                  messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `${intent.payment_method_type}BankTransfer`->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
@@ -592,7 +578,7 @@ let rec intentCall = (
                   ~paymentMethod,
                 )
                 if !isPaymentSession {
-                  handlePostMessage([
+                  messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `qrData`->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
@@ -639,7 +625,7 @@ let rec intentCall = (
                 )
 
                 if do3dsMethodCall {
-                  handlePostMessage([
+                  messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `3ds`->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
@@ -647,7 +633,7 @@ let rec intentCall = (
                   ])
                 } else {
                   metaData->Dict.set("3dsMethodComp", "U"->JSON.Encode.string)
-                  handlePostMessage([
+                  messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", `3dsAuth`->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),
@@ -681,7 +667,7 @@ let rec intentCall = (
                   ~eventName=DISPLAY_VOUCHER,
                   ~paymentMethod,
                 )
-                handlePostMessage([
+                messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
                   ("param", `voucherData`->JSON.Encode.string),
                   ("iframeId", iframeId->JSON.Encode.string),
@@ -724,7 +710,7 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  handlePostMessage(message)
+                  messageParentWindow(message)
                 }
                 resolve(data)
               } else if intent.nextAction.type_ === "invoke_sdk_client" {
@@ -778,7 +764,7 @@ let rec intentCall = (
                 }
 
                 if !isPaymentSession {
-                  handlePostMessage(message)
+                  messageParentWindow(message)
                 }
               } else {
                 handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
@@ -872,7 +858,7 @@ let rec intentCall = (
             ~iframeId,
             ~fetchMethod=#GET,
             ~setIsManualRetryEnabled,
-            ~switchToCustomPod,
+            ~customPodUri,
             ~sdkHandleOneClickConfirmPayment,
             ~counter=counter + 1,
             ~isPaymentSession,
@@ -904,7 +890,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
   open RecoilAtoms
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="") => {
     switch keys.clientSecret {
@@ -928,7 +914,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           ~iframeId,
           ~fetchMethod=#GET,
           ~setIsManualRetryEnabled,
-          ~switchToCustomPod,
+          ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
         )->ignore
@@ -974,7 +960,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let paymentTypeFromUrl =
     CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
 
@@ -1067,7 +1053,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~iframeId,
             ~fetchMethod=#POST,
             ~setIsManualRetryEnabled,
-            ~switchToCustomPod,
+            ~customPodUri,
             ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
             ~counter=0,
           )
@@ -1151,7 +1137,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
   open RecoilAtoms
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(switchToCustomPod)
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   let url = RescriptReactRouter.useUrl()
   let paymentTypeFromUrl =
@@ -1194,7 +1180,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
           ~iframeId,
           ~fetchMethod=#POST,
           ~setIsManualRetryEnabled,
-          ~switchToCustomPod,
+          ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
         )->ignore
@@ -1218,7 +1204,7 @@ let fetchSessions = (
   ~wallets=[],
   ~isDelayedSessionToken=false,
   ~optLogger,
-  ~switchToCustomPod,
+  ~customPodUri,
   ~endpoint,
   ~isPaymentSession=false,
   ~merchantHostname=Window.Location.hostname,
@@ -1251,7 +1237,7 @@ let fetchSessions = (
     uri,
     ~method=#POST,
     ~bodyStr=body->JSON.stringify,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod),
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
   )
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status->Int.toString
@@ -1302,7 +1288,7 @@ let fetchSessions = (
   })
 }
 
-let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~switchToCustomPod, ~uri, ~body) => {
+let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~uri, ~body) => {
   open Promise
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
   logApi(
@@ -1322,7 +1308,7 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~switchToCustomPod
     uri,
     ~method=#POST,
     ~bodyStr=body->JSON.stringify,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod),
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
   )
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status->Int.toString
@@ -1374,7 +1360,7 @@ let createPaymentMethod = (
   ~clientSecret,
   ~publishableKey,
   ~logger,
-  ~switchToCustomPod,
+  ~customPodUri,
   ~endpoint,
   ~body,
 ) => {
@@ -1398,7 +1384,7 @@ let createPaymentMethod = (
     uri,
     ~method=#POST,
     ~bodyStr=body->JSON.stringify,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod),
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
   )
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status->Int.toString
@@ -1450,7 +1436,7 @@ let fetchPaymentMethodList = (
   ~clientSecret,
   ~publishableKey,
   ~logger,
-  ~switchToCustomPod,
+  ~customPodUri,
   ~endpoint,
 ) => {
   open Promise
@@ -1464,7 +1450,7 @@ let fetchPaymentMethodList = (
     ~logType=INFO,
     ~logCategory=API,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod))
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
@@ -1516,7 +1502,7 @@ let fetchCustomerPaymentMethodList = (
   ~publishableKey,
   ~endpoint,
   ~optLogger,
-  ~switchToCustomPod,
+  ~customPodUri,
   ~isPaymentSession=false,
 ) => {
   open Promise
@@ -1531,7 +1517,7 @@ let fetchCustomerPaymentMethodList = (
     ~logCategory=API,
     ~isPaymentSession,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod))
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
@@ -1588,6 +1574,7 @@ let paymentIntentForPaymentSession = (
   ~publishableKey,
   ~clientSecret,
   ~logger,
+  ~customPodUri,
 ) => {
   let confirmParams =
     payload
@@ -1640,7 +1627,7 @@ let paymentIntentForPaymentSession = (
     ~iframeId="",
     ~fetchMethod=#POST,
     ~setIsManualRetryEnabled={_ => ()},
-    ~switchToCustomPod=false,
+    ~customPodUri,
     ~sdkHandleOneClickConfirmPayment=false,
     ~counter=0,
     ~isPaymentSession=true,
@@ -1713,7 +1700,7 @@ let callAuthLink = (
             ("isForceSync", false->JSON.Encode.bool),
           ]->getJsonFromArrayOfJson
 
-        handlePostMessage([
+        messageParentWindow([
           ("fullscreen", true->JSON.Encode.bool),
           ("param", "plaidSDK"->JSON.Encode.string),
           ("iframeId", iframeId->JSON.Encode.string),
@@ -1817,7 +1804,7 @@ let callAuthExchange = (
         ~clientSecret=clientSecret->Option.getOr(""),
         ~publishableKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri="",
         ~endpoint,
       )
       ->then(customerListResponse => {
@@ -1861,7 +1848,7 @@ let fetchSavedPaymentMethodList = (
   ~ephemeralKey,
   ~endpoint,
   ~optLogger,
-  ~switchToCustomPod,
+  ~customPodUri,
   ~isPaymentSession=false,
 ) => {
   open Promise
@@ -1876,7 +1863,7 @@ let fetchSavedPaymentMethodList = (
     ~logCategory=API,
     ~isPaymentSession,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod))
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
@@ -1926,7 +1913,7 @@ let fetchSavedPaymentMethodList = (
   })
 }
 
-let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~switchToCustomPod) => {
+let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodUri) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [("Content-Type", "application/json"), ("api-key", ephemeralKey)]
@@ -1939,11 +1926,7 @@ let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~switchToCu
     ~logType=INFO,
     ~logCategory=API,
   )
-  fetchApi(
-    uri,
-    ~method=#DELETE,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~switchToCustomPod),
-  )
+  fetchApi(uri, ~method=#DELETE, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
@@ -1982,6 +1965,84 @@ let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~switchToCu
       ~url=uri,
       ~apiLogType=NoResponse,
       ~eventName=DELETE_PAYMENT_METHODS_CALL,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data=exceptionMessage,
+    )
+    JSON.Encode.null->resolve
+  })
+}
+
+let calculateTax = (
+  ~apiKey,
+  ~paymentId,
+  ~clientSecret,
+  ~paymentMethodType,
+  ~shippingAddress,
+  ~logger,
+  ~customPodUri,
+) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let headers = [("Content-Type", "application/json"), ("api-key", apiKey)]
+  let uri = `${endpoint}/payments/${paymentId}/calculate_tax`
+  let body = [
+    ("client_secret", clientSecret),
+    ("shipping", shippingAddress),
+    ("payment_method_type", paymentMethodType),
+  ]
+  logApi(
+    ~optLogger=Some(logger),
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=EXTERNAL_TAX_CALCULATION,
+    ~logType=INFO,
+    ~logCategory=API,
+  )
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~bodyStr=body->getJsonFromArrayOfJson->JSON.stringify,
+  )
+  ->then(resp => {
+    let statusCode = resp->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      resp
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger=Some(logger),
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=EXTERNAL_TAX_CALCULATION,
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger=Some(logger),
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=EXTERNAL_TAX_CALCULATION,
+        ~logType=INFO,
+        ~logCategory=API,
+      )
+      resp->Fetch.Response.json
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    logApi(
+      ~optLogger=Some(logger),
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=EXTERNAL_TAX_CALCULATION,
       ~logType=ERROR,
       ~logCategory=API,
       ~data=exceptionMessage,

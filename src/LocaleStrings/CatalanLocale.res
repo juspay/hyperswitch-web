@@ -98,6 +98,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formSaveText: `Desar`,
   formSubmitText: `Enviar`,
   formSubmittingText: `Enviant`,
+  formSubheaderBillingDetailsText: `Introdueix la teva adreça de facturació`,
   formSubheaderCardText: `Detalls de la teva targeta`,
   formSubheaderAccountText: pmLabel => `El teu ${pmLabel}`,
   formHeaderReviewText: `Revisar`,

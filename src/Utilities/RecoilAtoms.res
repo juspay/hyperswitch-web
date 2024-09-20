@@ -10,7 +10,7 @@ let paymentMethodList = Recoil.atom("paymentMethodList", PaymentType.Loading)
 let loggerAtom = Recoil.atom("component", OrcaLogger.defaultLoggerConfig)
 let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
-let switchToCustomPod = Recoil.atom("switchToCustomPod", false)
+let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
 let paymentTokenAtom = Recoil.atom(
   "paymentToken",
@@ -22,11 +22,17 @@ let paymentTokenAtom = Recoil.atom(
 let showCardFieldsAtom = Recoil.atom("showCardFields", false)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")
-let payNowButtonDisable = Recoil.atom("payNowButtonDisable", true)
 let paymentMethodCollectOptionAtom = Recoil.atom(
   "paymentMethodCollectOptions",
   PaymentMethodCollectUtils.defaultPaymentMethodCollectOptions,
 )
+let payoutDynamicFieldsAtom = Recoil.atom(
+  "payoutDynamicFields",
+  PaymentMethodCollectUtils.defaultPayoutDynamicFields(),
+)
+let paymentMethodTypeAtom = Recoil.atom("paymentMethodType", PaymentMethodCollectUtils.defaultPmt())
+let formDataAtom = Recoil.atom("formData", PaymentMethodCollectUtils.defaultFormDataDict)
+let validityDictAtom = Recoil.atom("validityDict", PaymentMethodCollectUtils.defaultValidityDict)
 
 let defaultFieldValues = {
   value: "",

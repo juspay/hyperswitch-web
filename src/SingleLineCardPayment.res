@@ -26,6 +26,7 @@ let make = (
     _,
     _,
     maxCardLength,
+    _,
   ) = cardProps
 
   let (
@@ -106,7 +107,7 @@ let make = (
   let concatString = Array.joinWith([cardEmpty, cardComplete, cardInvalid, cardFocused], "")
 
   React.useEffect(() => {
-    Utils.handlePostMessage([
+    Utils.messageParentWindow([
       ("id", iframeId->JSON.Encode.string),
       ("concatedString", concatString->JSON.Encode.string),
     ])

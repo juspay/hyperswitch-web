@@ -29,8 +29,8 @@ let make = (~integrateError, ~logger) => {
       switch pm {
       | Card(_) =>
         if !(availablePM->Array.includes(Card)) {
-          availablePMT->Array.push(Card(Debit))
           availablePM->Array.push(Card)
+          availablePMT->Array.push(Card(Debit))
         }
       | BankTransfer(_) =>
         if !(availablePM->Array.includes(BankTransfer)) {
@@ -100,7 +100,7 @@ let make = (~integrateError, ~logger) => {
           ~clientSecret=keys.clientSecret->Option.getOr(""),
           ~publishableKey=keys.publishableKey,
           ~logger,
-          ~switchToCustomPod=false,
+          ~customPodUri="",
           ~uri,
           ~body=pmdBody,
         )
@@ -171,7 +171,7 @@ let make = (~integrateError, ~logger) => {
         ~clientSecret=keys.clientSecret->Option.getOr(""),
         ~publishableKey=keys.publishableKey,
         ~logger,
-        ~switchToCustomPod=false,
+        ~customPodUri="",
         ~endpoint=ApiEndpoint.getApiEndPoint(),
         ~body=pmdBody,
       )
@@ -191,8 +191,8 @@ let make = (~integrateError, ~logger) => {
   }
 
   let renderCollectWidget = () =>
-    <div className="flex flex-row h-min lg:w-6/10">
-      <div className="relative w-full lg:w-auto lg:mx-12 lg:my-20">
+    <div className="flex flex-row overflow-scroll lg:w-6/10">
+      <div className="relative w-full h-min lg:w-auto lg:mx-12 lg:mt-20 lg-mb-10">
         {loader
           ? <div className="absolute h-full w-full bg-jp-gray-600 bg-opacity-80" />
           : {React.null}}
@@ -229,10 +229,10 @@ let make = (~integrateError, ~logger) => {
         <div
           className="flex flex-row justify-between items-center w-full px-10 py-5 border-b border-jp-gray-300">
           <div className="text-2xl font-semibold"> {React.string(options.collectorName)} </div>
-          <img className="h-7 w-auto" src={options.logo} alt="o" />
+          <img className="h-12 w-auto max-w-21" src={options.logo} alt="o" />
         </div>
         <img className="h-40 w-40 mt-7" src={imageSource} alt="o" />
-        <div className="text-5 font-semibold mt-2.5"> {React.string(readableStatus)} </div>
+        <div className="text-xl font-semibold mt-2.5"> {React.string(readableStatus)} </div>
         <div className="text-jp-gray-800 m text-center mx-10 mb-10">
           {React.string(statusInfo.message)}
         </div>
@@ -269,7 +269,7 @@ let make = (~integrateError, ~logger) => {
     <ErrorOccured />
   } else {
     <div
-      className="flex flex-col h-screen min-w-[320px]
+      className="flex flex-col h-screen min-w-[320px] overflow-hidden
         lg:flex-row">
       {
         let merchantLogo = options.logo
@@ -290,13 +290,18 @@ let make = (~integrateError, ~logger) => {
                   className="flex flex-col text-white w-full min-w-[300px] max-w-[520px]
                   lg:rounded-md lg:shadow-lg lg:min-w-80 lg:max-w-96 lg:bg-white lg:text-black">
                   <div
-                    className="flex flex-col-reverse
+                    className="flex flex-col-reverse justify-end
                     lg:mx-5 lg:mt-5 lg:flex-row lg:justify-between">
-                    <div className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl">
-                      {React.string(`${options.currency} ${options.amount}`)}
+                    <div
+                      className="font-bold text-5xl mt-5 lg:mt-0 lg:text-3xl flex justify-start items-center">
+                      <p> {React.string(`${options.currency} ${options.amount}`)} </p>
                     </div>
-                    <div className="flex items-center justify-center h-16 w-16 bg-white rounded-sm">
-                      <img className="max-h-12 max-w-16 h-auto w-auto" src={merchantLogo} alt="O" />
+                    <div className="flex self-start h-12 w-auto bg-white rounded-sm">
+                      <img
+                        className="max-h-12 w-auto max-w-21 h-auto w-auto"
+                        src={merchantLogo}
+                        alt="O"
+                      />
                     </div>
                   </div>
                   <div className="lg:mx-5">

@@ -1,8 +1,6 @@
 @val external document: 'a = "document"
-type window
-type parent
-@val external window: window = "window"
-@val @scope("window") external iframeParent: parent = "parent"
+@val external window: Dom.element = "window"
+@val @scope("window") external iframeParent: Dom.element = "parent"
 type event = {data: string}
 external dictToObj: Dict.t<'a> => {..} = "%identity"
 
@@ -15,29 +13,34 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external remove: Dom.element => unit = "remove"
 
-@send external postMessage: (parent, JSON.t, string) => unit = "postMessage"
+@send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
+
 open ErrorUtils
-let handlePostMessage = (~targetOrigin="*", messageArr) => {
+let messageParentWindow = (~targetOrigin="*", messageArr) => {
   iframeParent->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
 }
 
+let messageCurrentWindow = (~targetOrigin="*", messageArr) => {
+  window->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+}
+
 let handleOnFocusPostMessage = (~targetOrigin="*") => {
-  handlePostMessage([("focus", true->JSON.Encode.bool)], ~targetOrigin)
+  messageParentWindow([("focus", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnBlurPostMessage = (~targetOrigin="*") => {
-  handlePostMessage([("blur", true->JSON.Encode.bool)], ~targetOrigin)
+  messageParentWindow([("blur", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnClickPostMessage = (~targetOrigin="*", ev) => {
-  handlePostMessage(
+  messageParentWindow(
     [("clickTriggered", true->JSON.Encode.bool), ("event", ev->JSON.stringify->JSON.Encode.string)],
     ~targetOrigin,
   )
 }
 let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false) => {
   let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
-  handlePostMessage([(message, true->JSON.Encode.bool)], ~targetOrigin)
+  messageParentWindow([(message, true->JSON.Encode.bool)], ~targetOrigin)
 }
 let getOptionString = (dict, key) => {
   dict->Dict.get(key)->Option.flatMap(JSON.Decode.string)
@@ -281,13 +284,13 @@ let postFailedSubmitResponse = (~errortype, ~message) => {
       ("type", errortype->JSON.Encode.string),
       ("message", message->JSON.Encode.string),
     ]->Dict.fromArray
-  handlePostMessage([
+  messageParentWindow([
     ("submitSuccessful", false->JSON.Encode.bool),
     ("error", errorDict->JSON.Encode.object),
   ])
 }
 let postSubmitResponse = (~jsonData, ~url) => {
-  handlePostMessage([
+  messageParentWindow([
     ("submitSuccessful", true->JSON.Encode.bool),
     ("data", jsonData),
     ("url", url->JSON.Encode.string),
@@ -593,7 +596,7 @@ let generateStyleSheet = (classname, dict, id) => {
   }
 }
 let openUrl = url => {
-  handlePostMessage([("openurl", url->JSON.Encode.string)])
+  messageParentWindow([("openurl", url->JSON.Encode.string)])
 }
 
 let getArrofJsonString = (arr: array<string>) => {
@@ -678,7 +681,7 @@ let handlePostMessageEvents = (
       "Payment Data Filled" ++ (savedMethod ? ": Saved Payment Method" : ": New Payment Method")
     loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
   }
-  handlePostMessage([
+  messageParentWindow([
     ("elementType", "payment"->JSON.Encode.string),
     ("complete", complete->JSON.Encode.bool),
     ("empty", empty->JSON.Encode.bool),
@@ -1372,3 +1375,5 @@ let getFirstAndLastNameFromFullName = fullName => {
 
   (firstName, lastNameJson)
 }
+
+let checkIsTestCardWildcard = val => ["1111222233334444"]->Array.includes(val)

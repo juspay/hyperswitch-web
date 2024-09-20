@@ -108,7 +108,7 @@ let make = (
       if result {
         if isInvokeSDKFlow {
           if isDelayedSessionToken {
-            handlePostMessage([
+            messageParentWindow([
               ("fullscreen", true->JSON.Encode.bool),
               ("param", "paymentloader"->JSON.Encode.string),
               ("iframeId", iframeId->JSON.Encode.string),

@@ -97,6 +97,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formSaveText: `Opslaan`,
   formSubmitText: `Indienen`,
   formSubmittingText: `Indienen`,
+  formSubheaderBillingDetailsText: `Voer uw factuuradres in`,
   formSubheaderCardText: `Uw kaartgegevens`,
   formSubheaderAccountText: pmLabel => `Uw ${pmLabel}`,
   formHeaderReviewText: `Beoordelen`,

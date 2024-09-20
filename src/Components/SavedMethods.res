@@ -160,7 +160,7 @@ let make = (
         | Some("apple_pay") =>
           switch applePayToken {
           | ApplePayTokenOptional(optToken) =>
-            ApplePayHelpers.handleApplePayButtonClicked(~sessionObj=optToken, ~componentName)
+            ApplePayHelpers.handleApplePayButtonClicked(~sessionObj=optToken, ~componentName, ~paymentMethodListValue)
           | _ =>
             // TODO - To be replaced with proper error message
             intent(

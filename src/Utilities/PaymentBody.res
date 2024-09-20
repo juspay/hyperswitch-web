@@ -1074,6 +1074,13 @@ let getPaymentBody = (
     | _ =>
       dynamicPaymentBody(paymentMethod, paymentMethodType)
     }
+  | "duit_now" =>
+    switch paymentExperience {
+    | QrFlow => dynamicPaymentBody(paymentMethod, paymentMethodType, ~isQrPaymentMethod=true)
+    | RedirectToURL
+    | _ =>
+      dynamicPaymentBody(paymentMethod, paymentMethodType)
+    }
   | "giropay" => giroPayBody(~name=fullName)
   | "trustly" => trustlyBody(~country)
   | "online_banking_poland" => polandOB(~bank)

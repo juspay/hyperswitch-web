@@ -136,6 +136,7 @@ let softRules = theme =>
       "color": theme.colorTextSecondary,
       "transition": "background .15s ease, border .15s ease, box-shadow .15s ease",
       "boxShadow": `4px 4px 5px #353637, -4px -4px 5px #434445`,
+      "padding": "20px",
     },
     ".AccordionItem--selected": {
       "color": theme.colorPrimary,

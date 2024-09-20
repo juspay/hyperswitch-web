@@ -43,7 +43,7 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
-    setValue(value)
+    setValue(_ => value)
     if isDisplayValueVisible {
       let findDisplayValue =
         options

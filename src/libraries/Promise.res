@@ -1,4 +1,4 @@
-type t<+'a> = Promise.t<'a>
+type t<+'a> = promise<'a>
 
 exception JsError(Exn.t)
 

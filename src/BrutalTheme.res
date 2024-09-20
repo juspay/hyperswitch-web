@@ -138,6 +138,7 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
       "color": theme.colorBackgroundText,
       "transition": "height 1s ease",
       "borderColor": `#000000 !important`,
+      "padding": "20px",
     },
     ".AccordionMore": {
       "backgroundColor": theme.colorBackground,

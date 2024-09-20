@@ -284,47 +284,47 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     <PaymentShimmer />
   }
   let checkoutEle = {
-    <ErrorBoundary key={selectedOption}>
+    <ErrorBoundary key={selectedOption} componentName="PaymentElement">
       {switch selectedOption->PaymentModeType.paymentMode {
       | Card => <CardPayment cardProps expiryProps cvcProps paymentType />
       | Klarna =>
-        <React.Suspense fallback={loader()}>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="KlarnaPaymentLazy">
           <KlarnaPaymentLazy paymentType />
-        </React.Suspense>
+        </ReusableReactSuspense>
       | ACHTransfer =>
-        <React.Suspense fallback={loader()}>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="ACHBankTransferLazy">
           <ACHBankTransferLazy paymentType />
-        </React.Suspense>
+        </ReusableReactSuspense>
       | SepaTransfer =>
-        <React.Suspense fallback={loader()}>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankTransferLazy">
           <SepaBankTransferLazy paymentType />
-        </React.Suspense>
+        </ReusableReactSuspense>
       | BacsTransfer =>
-        <React.Suspense fallback={loader()}>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="BacsBankTransferLazy">
           <BacsBankTransferLazy paymentType />
-        </React.Suspense>
+        </ReusableReactSuspense>
       | ACHBankDebit =>
-        <React.Suspense fallback={loader()}>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="ACHBankDebitLazy">
           <ACHBankDebitLazy paymentType />
-        </React.Suspense>
+        </ReusableReactSuspense>
       | SepaBankDebit =>
-        <React.Suspense fallback={loader()}>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
           <SepaBankDebitLazy paymentType />
-        </React.Suspense>
+        </ReusableReactSuspense>
       | BacsBankDebit =>
-        <React.Suspense fallback={loader()}>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="BacsBankDebitLazy">
           <BacsBankDebitLazy paymentType />
-        </React.Suspense>
+        </ReusableReactSuspense>
       | BanContactCard =>
         <CardPayment cardProps expiryProps cvcProps paymentType isBancontact=true />
       | BecsBankDebit =>
-        <React.Suspense fallback={loader()}>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="BecsBankDebitLazy">
           <BecsBankDebitLazy paymentType />
-        </React.Suspense>
+        </ReusableReactSuspense>
       | Boleto =>
-        <React.Suspense fallback={loader()}>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="BoletoLazy">
           <BoletoLazy paymentType />
-        </React.Suspense>
+        </ReusableReactSuspense>
       | ApplePay =>
         switch applePayToken {
         | ApplePayTokenOptional(optToken) =>
@@ -350,9 +350,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           }}
         </SessionPaymentWrapper>
       | _ =>
-        <React.Suspense fallback={loader()}>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentType paymentMethodName=selectedOption />
-        </React.Suspense>
+        </ReusableReactSuspense>
       }}
     </ErrorBoundary>
   }
@@ -369,7 +369,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     let evalMethodsList = () =>
       switch paymentMethodList {
       | SemiLoaded | LoadError(_) | Loaded(_) =>
-        handlePostMessage([("ready", true->JSON.Encode.bool)])
+        messageParentWindow([("ready", true->JSON.Encode.bool)])
       | _ => ()
       }
     if !displaySavedPaymentMethods {
@@ -379,7 +379,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | LoadingSavedCards => ()
       | LoadedSavedCards(list, _) =>
         list->Array.length > 0
-          ? handlePostMessage([("ready", true->JSON.Encode.bool)])
+          ? messageParentWindow([("ready", true->JSON.Encode.bool)])
           : evalMethodsList()
       | NoResult(_) => evalMethodsList()
       }
@@ -402,7 +402,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
         showFields}>
       <div className="flex flex-col place-items-center">
-        <ErrorBoundary key="payment_request_buttons_all" level={ErrorBoundary.RequestButton}>
+        <ErrorBoundary
+          key="payment_request_buttons_all"
+          level={ErrorBoundary.RequestButton}
+          componentName="PaymentRequestButtonElement">
           <PaymentRequestButtonElement sessions walletOptions paymentType />
         </ErrorBoundary>
         <RenderIf

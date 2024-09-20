@@ -97,6 +97,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formSaveText: `שמור`,
   formSubmitText: `שלח`,
   formSubmittingText: `שולח`,
+  formSubheaderBillingDetailsText: `הזן את כתובת החיוב שלך`,
   formSubheaderCardText: `פרטי הכרטיס שלך`,
   formSubheaderAccountText: pmLabel => `ה-${pmLabel} שלך`,
   formHeaderReviewText: `סקירה`,

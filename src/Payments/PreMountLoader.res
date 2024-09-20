@@ -7,6 +7,7 @@ let make = (
   ~ephemeralKey,
   ~hyperComponentName: Types.hyperComponentName,
   ~merchantHostname,
+  ~customPodUri,
 ) => {
   open Utils
   let (paymentMethodsResponseSent, setPaymentMethodsResponseSent) = React.useState(_ => false)
@@ -37,7 +38,7 @@ let make = (
         ~clientSecret,
         ~publishableKey,
         ~logger,
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
     | _ => JSON.Encode.null->Promise.resolve
@@ -49,7 +50,7 @@ let make = (
         ~clientSecret,
         ~publishableKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
     | _ => JSON.Encode.null->Promise.resolve
@@ -61,7 +62,7 @@ let make = (
         ~clientSecret,
         ~publishableKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
         ~merchantHostname,
       )
@@ -73,7 +74,7 @@ let make = (
       PaymentHelpers.fetchSavedPaymentMethodList(
         ~ephemeralKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
     | _ => JSON.Encode.null->Promise.resolve
@@ -91,7 +92,7 @@ let make = (
     open Promise
     promise
     ->then(res => {
-      handlePostMessage([("response", res), ("data", key->JSON.Encode.string)])
+      messageParentWindow([("response", res), ("data", key->JSON.Encode.string)])
       switch key {
       | "payment_methods" => setPaymentMethodsResponseSent(_ => true)
       | "session_tokens" => setSessionTokensResponseSent(_ => true)
@@ -102,7 +103,7 @@ let make = (
       resolve()
     })
     ->catch(_err => {
-      handlePostMessage([("response", JSON.Encode.null), ("data", key->JSON.Encode.string)])
+      messageParentWindow([("response", JSON.Encode.null), ("data", key->JSON.Encode.string)])
       resolve()
     })
     ->ignore
@@ -124,7 +125,7 @@ let make = (
 
   React.useEffect0(() => {
     Window.addEventListener("message", handle)
-    handlePostMessage([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
+    messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
     Some(
       () => {
         Window.removeEventListener("message", handle)
@@ -134,7 +135,7 @@ let make = (
 
   React.useEffect4(() => {
     let handleUnmount = () => {
-      handlePostMessage([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
+      messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
       Window.removeEventListener("message", handle)
     }
 

@@ -54,6 +54,7 @@ const paymentData = {
   authentication_type: "three_ds",
   customer_id: "hyperswitch_sdk_demo_id",
   email: "hyperswitch_sdk_demo_id@gmail.com",
+  request_external_three_ds_authentication: false,
   description: "Hello this is description",
   shipping: {
     address: {
@@ -97,7 +98,7 @@ const paymentData = {
 }
 
 const profileId = process.env.PROFILE_ID;
-if(profileId) {
+if (profileId) {
   paymentData.profile_id = profileId;
 }
 

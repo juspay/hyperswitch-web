@@ -6,8 +6,8 @@ open EventListenerManager
 open ApplePayTypes
 
 type trustPayFunctions = {
-  finishApplePaymentV2: (string, paymentRequestData) => Promise.t<JSON.t>,
-  executeGooglePayment: (string, GooglePayType.paymentDataRequest) => Promise.t<JSON.t>,
+  finishApplePaymentV2: (string, paymentRequestData) => promise<JSON.t>,
+  executeGooglePayment: (string, GooglePayType.paymentDataRequest) => promise<JSON.t>,
 }
 @new external trustPayApi: JSON.t => trustPayFunctions = "TrustPayApi"
 
@@ -49,13 +49,12 @@ let make = (
       ->Option.flatMap(x => x->Dict.get("blockConfirm"))
       ->Option.flatMap(JSON.Decode.bool)
       ->Option.getOr(false)
-    let switchToCustomPod =
-      GlobalVars.isInteg &&
+    let customPodUri =
       options
       ->JSON.Decode.object
-      ->Option.flatMap(x => x->Dict.get("switchToCustomPod"))
-      ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(false)
+      ->Option.flatMap(x => x->Dict.get("customPodUri"))
+      ->Option.flatMap(JSON.Decode.string)
+      ->Option.getOr("")
 
     let merchantHostname = Window.Location.hostname
 
@@ -69,14 +68,13 @@ let make = (
         let componentType = "preMountLoader"
         let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
-           <iframe
-           id ="orca-payment-element-iframeRef-${localSelectorString}"
-           name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}"
-          allow="*"
-          name="orca-payment"
-        ></iframe>
-        </div>`
+            <iframe
+              id="orca-payment-element-iframeRef-${localSelectorString}"
+              name="orca-payment-element-iframeRef-${localSelectorString}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"              allow="*"
+              name="orca-payment"
+            ></iframe>
+          </div>`
         let iframeDiv = Window.createElement("div")
         iframeDiv->Window.innerHTML(iframeDivHtml)
         Window.body->Window.appendChild(iframeDiv)
@@ -313,7 +311,7 @@ let make = (
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
             ("blockConfirm", blockConfirm->JSON.Encode.bool),
-            ("switchToCustomPod", switchToCustomPod->JSON.Encode.bool),
+            ("customPodUri", customPodUri->JSON.Encode.string),
             ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
@@ -418,7 +416,7 @@ let make = (
                           clientSecret,
                           headers,
                           ~optLogger=Some(logger),
-                          ~switchToCustomPod,
+                          ~customPodUri,
                           ~isForceSync=true,
                         )
                       )
@@ -613,7 +611,7 @@ let make = (
           }
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
           | Some(val) => {
-              handlePostMessage([
+              messageCurrentWindow([
                 ("fullscreen", true->JSON.Encode.bool),
                 ("param", "paymentloader"->JSON.Encode.string),
                 ("iframeId", selectorString->JSON.Encode.string),
@@ -626,7 +624,7 @@ let make = (
               let url = dict->getString("return_url_with_query_params", "")
               PaymentHelpers.pollStatus(
                 ~headers,
-                ~switchToCustomPod,
+                ~customPodUri,
                 ~pollId,
                 ~interval,
                 ~count,
@@ -638,7 +636,7 @@ let make = (
                   clientSecret,
                   headers,
                   ~optLogger=Some(logger),
-                  ~switchToCustomPod,
+                  ~customPodUri,
                   ~isForceSync=true,
                 )
                 ->then(json => {
@@ -646,12 +644,12 @@ let make = (
                     let dict = json->getDictFromJson
                     let status = dict->getString("status", "")
                     let returnUrl = dict->getString("return_url", "")
-                    Window.Location.replace(
+                    Window.replaceRootHref(
                       `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
                     )
                     resolve(JSON.Encode.null)
                   } else {
-                    handlePostMessage([
+                    messageCurrentWindow([
                       ("fullscreen", false->JSON.Encode.bool),
                       ("submitSuccessful", true->JSON.Encode.bool),
                       ("data", json),
@@ -661,9 +659,9 @@ let make = (
                 })
                 ->catch(err => {
                   if redirect.contents === "always" {
-                    Window.Location.replace(url)
+                    Window.replaceRootHref(url)
                   }
-                  handlePostMessage([
+                  messageCurrentWindow([
                     ("submitSuccessful", false->JSON.Encode.bool),
                     ("error", err->Identity.anyTypeToJson),
                   ])
@@ -680,6 +678,11 @@ let make = (
 
           switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
           | Some(val) =>
+            messageCurrentWindow([
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", "paymentloader"->JSON.Encode.string),
+              ("iframeId", selectorString->JSON.Encode.string),
+            ])
             if redirect.contents === "always" {
               Window.Location.replace(val->JSON.Decode.string->Option.getOr(""))
               resolve(JSON.Encode.null)
@@ -688,21 +691,21 @@ let make = (
                 clientSecret,
                 headers,
                 ~optLogger=Some(logger),
-                ~switchToCustomPod,
+                ~customPodUri,
                 ~isForceSync=true,
               )
               ->then(json => {
-                handlePostMessage([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
+                messageCurrentWindow([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
                 resolve(json)
               })
               ->catch(err => {
-                handlePostMessage([
+                messageCurrentWindow([
                   ("submitSuccessful", false->JSON.Encode.bool),
                   ("error", err->Identity.anyTypeToJson),
                 ])
                 resolve(err->Identity.anyTypeToJson)
               })
-              ->finally(_ => handlePostMessage([("fullscreen", false->JSON.Encode.bool)]))
+              ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
             }->ignore
 
           | None => ()
@@ -771,8 +774,9 @@ let make = (
                     switch (
                       dict->Dict.get("applePayButtonClicked"),
                       dict->Dict.get("applePayPaymentRequest"),
+                      dict->Dict.get("isTaxCalculationEnabled")->Option.flatMap(JSON.Decode.bool)->Option.getOr(false),
                     ) {
-                    | (Some(val), Some(paymentRequest)) =>
+                    | (Some(val), Some(paymentRequest), isTaxCalculationEnabled) =>
                       if val->JSON.Decode.bool->Option.getOr(false) {
                         let isDelayedSessionToken =
                           applePayPresent
@@ -806,6 +810,9 @@ let make = (
                             ~logger,
                             ~applePayEvent=Some(applePayEvent),
                             ~callBackFunc,
+                            ~clientSecret,
+                            ~publishableKey,
+                            ~isTaxCalculationEnabled,
                           )
                         }
                       } else {

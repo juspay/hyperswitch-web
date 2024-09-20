@@ -1,7 +1,7 @@
 @react.component
 let make = () => {
   React.useEffect0(() => {
-    Utils.handlePostMessage([("driverMounted", true->JSON.Encode.bool)])
+    Utils.messageParentWindow([("driverMounted", true->JSON.Encode.bool)])
     None
   })
   <div />

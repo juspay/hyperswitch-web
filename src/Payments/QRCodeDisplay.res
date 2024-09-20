@@ -16,10 +16,10 @@ let make = () => {
   let (clientSecret, setClientSecret) = React.useState(_ => "")
   let (headers, setHeaders) = React.useState(_ => [])
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
+  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
 
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
+    messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson
@@ -55,7 +55,7 @@ let make = () => {
           paymentIntentId,
           headers->Dict.toArray,
           ~optLogger=Some(logger),
-          ~switchToCustomPod,
+          ~customPodUri,
         )
         ->then(res => {
           Modal.close(setOpenModal)
@@ -88,7 +88,7 @@ let make = () => {
       clientSecret,
       headers,
       ~optLogger=Some(logger),
-      ~switchToCustomPod,
+      ~customPodUri,
     )
     ->then(json => {
       let dict = json->getDictFromJson
