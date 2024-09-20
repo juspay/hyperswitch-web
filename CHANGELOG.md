@@ -1,3 +1,10 @@
+## [0.88.2](https://github.com/juspay/hyperswitch-web/compare/v0.88.1...v0.88.2) (2024-09-20)
+
+
+### Reverts
+
+* chunk loading issue - 1 ([#623](https://github.com/juspay/hyperswitch-web/issues/623)) ([#631](https://github.com/juspay/hyperswitch-web/issues/631)) ([f719ff5](https://github.com/juspay/hyperswitch-web/commit/f719ff5472bd844125c97eae412c3afa1ec114ed))
+
 ## [0.88.1](https://github.com/juspay/hyperswitch-web/compare/v0.88.0...v0.88.1) (2024-09-20)
 
 
