@@ -1377,3 +1377,5 @@ let getFirstAndLastNameFromFullName = fullName => {
 }
 
 let checkIsTestCardWildcard = val => ["1111222233334444"]->Array.includes(val)
+
+let minorUnitToString = val => (val->Int.toFloat /. 100.)->Float.toString
