@@ -57,5 +57,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           working-directory: ./cypress-tests
-          env: HYPERSWITCH_PUBLISHABLE_KEY=$HS_Pub_Key,HYPERSWITCH_SECRET_KEY=$HS_Sec_Key
+          env:
+          CYPRESS_HYPERSWITCH_PUBLISHABLE_KEY: $HS_Pub_Key
+          CYPRESS_HYPERSWITCH_SECRET_KEY: $HS_Sec_Key
         # Runs Cypress tests located in the specified directory
