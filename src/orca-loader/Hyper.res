@@ -317,11 +317,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 postSubmitMessage(dict)
 
                 if isSdkButton {
-                  if !(val->JSON.Decode.bool->Option.getOr(false)) {
-                    resolve1(json)
-                  } else {
-                    Window.replaceRootHref(returnUrl)
-                  }
+                  Window.replaceRootHref(returnUrl)
                 } else if val->JSON.Decode.bool->Option.getOr(false) && redirect === "always" {
                   Window.replaceRootHref(returnUrl)
                 } else if !(val->JSON.Decode.bool->Option.getOr(false)) {
