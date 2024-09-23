@@ -23,7 +23,7 @@ function Payment() {
 
       const paymentIntentResponse = isCypressTestMode
         ? { clientSecret: clientSecretQueryParam }
-        : await (await fetch(`${url}/create-payment-intent`)).json();
+        : await fetch(`${url}/create-payment-intent`).then((res) => res.json());
 
       if (!configResponse.ok || !urlsResponse.ok) {
         throw new Error("Network response was not ok");
