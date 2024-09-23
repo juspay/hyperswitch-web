@@ -1,3 +1,10 @@
+## [0.88.4](https://github.com/juspay/hyperswitch-web/compare/v0.88.3...v0.88.4) (2024-09-23)
+
+
+### Bug Fixes
+
+* added support for redirectUrl for netcetera flow ([#636](https://github.com/juspay/hyperswitch-web/issues/636)) ([205054f](https://github.com/juspay/hyperswitch-web/commit/205054ff0dd1083c28c3ef5eb159e70440715efc))
+
 ## [0.88.3](https://github.com/juspay/hyperswitch-web/compare/v0.88.2...v0.88.3) (2024-09-20)
 
 
