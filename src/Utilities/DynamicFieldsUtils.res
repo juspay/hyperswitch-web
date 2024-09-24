@@ -1051,6 +1051,7 @@ let getGooglePayRequiredFields = (
 
 let getPaypalRequiredFields = (
   ~details: PaypalSDKTypes.details,
+  ~payerDetails: PaymentType.payerDetails=PaymentType.defaultPayerDetails,
   ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
   ~statesList,
 ) => {
@@ -1072,12 +1073,23 @@ let getPaypalRequiredFields = (
       }
     | ShippingAddressCountry(_) => details.shippingAddress.countryCode->Option.getOr("")
     | ShippingAddressPincode => details.shippingAddress.postalCode->Option.getOr("")
-    | Email => details.email
+    | Email =>
+      switch item.required_field {
+      | "payment_method_data.billing.email"
+      | "shipping.email" =>
+        payerDetails.email->Option.getOr("")
+      | _ => details.email
+      }
     | PhoneNumber =>
-      switch (details.phone->Option.getOr(""), details.shippingAddress.phone->Option.getOr("")) {
-      | (phone, "") => phone
-      | ("", phone) => phone
-      | _ => ""
+      switch item.required_field {
+      | "payment_method_data.billing.phone.number" | "shipping.phone.number" =>
+        payerDetails.phone->Option.getOr("")
+      | _ =>
+        switch (details.phone, details.shippingAddress.phone) {
+        | (Some(phone), None) => phone
+        | (None, Some(phone)) => phone
+        | _ => ""
+        }
       }
     | _ => ""
     }

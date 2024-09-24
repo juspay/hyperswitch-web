@@ -173,6 +173,12 @@ type options = {
   displayDefaultSavedPaymentIcon: bool,
   hideCardNicknameField: bool,
 }
+
+type payerDetails = {
+  email: option<string>,
+  phone: option<string>,
+}
+
 let defaultCardDetails = {
   scheme: None,
   last4Digits: "",
@@ -311,6 +317,12 @@ let defaultOptions = {
   displayDefaultSavedPaymentIcon: true,
   hideCardNicknameField: false,
 }
+
+let defaultPayerDetails = {
+  email: None,
+  phone: None,
+}
+
 let getLayout = (str, logger) => {
   switch str {
   | "tabs" => Tabs
@@ -1060,4 +1072,15 @@ type loadType = Loading | Loaded(JSON.t) | SemiLoaded | LoadError(JSON.t)
 
 let getIsStoredPaymentMethodHasName = (savedMethod: customerMethods) => {
   savedMethod.card.cardHolderName->Option.getOr("")->String.length > 0
+}
+
+let itemToPayerDetailsObjectMapper = dict => {
+  email: dict->Dict.get("email_address")->Option.flatMap(JSON.Decode.string),
+  phone: dict
+  ->Dict.get("phone")
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.flatMap(Dict.get(_, "phone_number"))
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.flatMap(Dict.get(_, "national_number"))
+  ->Option.flatMap(JSON.Decode.string),
 }

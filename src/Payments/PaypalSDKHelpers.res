@@ -76,8 +76,16 @@ let loadPaypalSDK = (
                 ->Option.flatMap(JSON.Decode.object)
                 ->Option.getOr(Dict.make())
               let details = purchaseUnit->paypalShippingDetails
+              let payerDetails =
+                val
+                ->Utils.getDictFromJson
+                ->Dict.get("payer")
+                ->Option.flatMap(JSON.Decode.object)
+                ->Option.getOr(Dict.make())
+                ->PaymentType.itemToPayerDetailsObjectMapper
               let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
                 ~details,
+                ~payerDetails,
                 ~paymentMethodTypes,
                 ~statesList=stateJson,
               )
