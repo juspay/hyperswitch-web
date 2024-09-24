@@ -164,7 +164,7 @@ let make = (
     cardError,
     _,
     maxCardLength,
-    cardScheme,
+    _,
   ) = switch cardProps {
   | Some(cardProps) => cardProps
   | None => defaultCardProps
