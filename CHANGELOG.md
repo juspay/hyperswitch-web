@@ -1,3 +1,10 @@
+# [0.89.0](https://github.com/juspay/hyperswitch-web/compare/v0.88.5...v0.89.0) (2024-09-24)
+
+
+### Features
+
+* added support to change create payment and added env to cypress ([#616](https://github.com/juspay/hyperswitch-web/issues/616)) ([2e27f98](https://github.com/juspay/hyperswitch-web/commit/2e27f98cf63e408627bd18c9184973ebc38438f5))
+
 ## [0.88.5](https://github.com/juspay/hyperswitch-web/compare/v0.88.4...v0.88.5) (2024-09-24)
 
 
