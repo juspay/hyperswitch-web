@@ -72,7 +72,6 @@ Cypress.Commands.add(
     if (isThreeDSEnabled) {
       mapping[testIds.cardNoInputTestId] = customerData.threeDSCardNo;
     }
-    let publishableKey = "pk_snd_3b33cd9404234113804aa1accaabe22f";
     let clientSecret:string;
     cy.request({
       method: "GET",
@@ -148,7 +147,7 @@ Cypress.Commands.add(
 const request = {
   currency: "USD",
   amount: 6500,
-  authentication_type: "three_ds",
+  authentication_type: "no_three_ds",
   description: "Joseph First Crypto",
   email: "hyperswitch_sdk_demo_id@gmail.com",
   connector_metadata: {
@@ -173,7 +172,6 @@ Cypress.Commands.add("createPaymentIntent", () => {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        "api-key": "snd_c691ade6995743bd88c166ba509ff5da",
       },
       body: JSON.stringify(request),
     })

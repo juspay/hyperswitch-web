@@ -1,6 +1,7 @@
 const { defineConfig } = require("cypress");
 
 module.exports = defineConfig({
+  watchForFileChanges:true,
   projectId: "6r9ayw",
   chromeWebSecurity: false,
   e2e: {
