@@ -1,3 +1,10 @@
+## [0.88.5](https://github.com/juspay/hyperswitch-web/compare/v0.88.4...v0.88.5) (2024-09-24)
+
+
+### Bug Fixes
+
+* dependant bot alerts ([#637](https://github.com/juspay/hyperswitch-web/issues/637)) ([dcc351d](https://github.com/juspay/hyperswitch-web/commit/dcc351db09f2416e5647360129f1253e2d8bb702))
+
 ## [0.88.4](https://github.com/juspay/hyperswitch-web/compare/v0.88.3...v0.88.4) (2024-09-23)
 
 
