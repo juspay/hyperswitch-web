@@ -509,7 +509,11 @@ let make = (
             }>
             {React.string(localeString.billingDetailsText)}
           </div>
-          <div className={`flex flex-col ${isSpacedInnerLayout ? "gap-2" : ""}`}>
+          <div
+            className={`flex flex-col`}
+            style={
+              gap: isSpacedInnerLayout ? themeObj.spacingGridRow : "",
+            }>
             {dynamicFieldsToRenderInsideBilling
             ->Array.mapWithIndex((item, index) => {
               <div
@@ -520,7 +524,7 @@ let make = (
                 | Email => <EmailPaymentInput paymentType />
                 | PhoneNumber => <PhoneNumberPaymentInput />
                 | StateAndCity =>
-                  <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""}`}>
                     <PaymentField
                       fieldName=localeString.cityLabel
                       setValue={setCity}
@@ -528,7 +532,7 @@ let make = (
                       onChange={ev => {
                         let value = ReactEvent.Form.target(ev)["value"]
                         setCity(prev => {
-                          isValid: value !== "" ? Some(true) : Some(false),
+                          isValid: Some(value !== ""),
                           value,
                           errorString: value !== "" ? "" : prev.errorString,
                         })
@@ -565,7 +569,7 @@ let make = (
                 | CountryAndPincode(countryArr) =>
                   let updatedCountryArray =
                     countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
-                  <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""}`}>
                     <DropdownField
                       appearance=config.appearance
                       fieldName=localeString.countryLabel
@@ -602,7 +606,7 @@ let make = (
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
                       setLine1(prev => {
-                        isValid: value !== "" ? Some(true) : Some(false),
+                        isValid: Some(value !== ""),
                         value,
                         errorString: value !== "" ? "" : prev.errorString,
                       })
@@ -629,7 +633,7 @@ let make = (
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
                       setLine2(prev => {
-                        isValid: value !== "" ? Some(true) : Some(false),
+                        isValid: Some(value !== ""),
                         value,
                         errorString: value !== "" ? "" : prev.errorString,
                       })
@@ -655,7 +659,7 @@ let make = (
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
                       setCity(prev => {
-                        isValid: value !== "" ? Some(true) : Some(false),
+                        isValid: Some(value !== ""),
                         value,
                         errorString: value !== "" ? "" : prev.errorString,
                       })
