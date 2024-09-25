@@ -317,7 +317,6 @@ let make = (
       (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
-  let spacedStylesForCity = isSpacedInnerLayout ? "p-2" : ""
 
   <RenderIf condition={fieldsArr->Array.length > 0}>
     {<>
@@ -510,10 +509,7 @@ let make = (
             }>
             {React.string(localeString.billingDetailsText)}
           </div>
-          <div
-            className={`${spacedStylesForCity} flex flex-col ${isSpacedInnerLayout
-                ? "gap-2"
-                : ""}`}>
+          <div className={`flex flex-col ${isSpacedInnerLayout ? "gap-2" : ""}`}>
             {dynamicFieldsToRenderInsideBilling
             ->Array.mapWithIndex((item, index) => {
               <div
