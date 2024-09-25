@@ -1,3 +1,10 @@
+## [0.89.2](https://github.com/juspay/hyperswitch-web/compare/v0.89.1...v0.89.2) (2024-09-25)
+
+
+### Bug Fixes
+
+* styling issues ([#696](https://github.com/juspay/hyperswitch-web/issues/696)) ([764d526](https://github.com/juspay/hyperswitch-web/commit/764d526c69b7b9ec9b79b084fa0b6a50aab8e86a))
+
 ## [0.89.1](https://github.com/juspay/hyperswitch-web/compare/v0.89.0...v0.89.1) (2024-09-24)
 
 # [0.89.0](https://github.com/juspay/hyperswitch-web/compare/v0.88.5...v0.89.0) (2024-09-24)
