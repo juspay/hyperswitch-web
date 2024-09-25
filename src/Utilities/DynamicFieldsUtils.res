@@ -1051,7 +1051,6 @@ let getGooglePayRequiredFields = (
 
 let getPaypalRequiredFields = (
   ~details: PaypalSDKTypes.details,
-  ~payerDetails: PaymentType.payerDetails=PaymentType.defaultPayerDetails,
   ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
   ~statesList,
 ) => {
@@ -1060,43 +1059,27 @@ let getPaypalRequiredFields = (
 
     let fieldVal = switch item.field_type {
     | ShippingName => {
-        let name = details.shippingAddress.recipientName->Option.getOr("")
-        name->getNameFromString(requiredFieldsArr)
+        let name = details.shippingAddress.recipientName
+        name->Option.map(getNameFromString(_, requiredFieldsArr))
       }
-    | ShippingAddressLine1 => details.shippingAddress.line1->Option.getOr("")
-    | ShippingAddressLine2 => details.shippingAddress.line2->Option.getOr("")
-    | ShippingAddressCity => details.shippingAddress.city->Option.getOr("")
+    | ShippingAddressLine1 => details.shippingAddress.line1
+    | ShippingAddressLine2 => details.shippingAddress.line2
+    | ShippingAddressCity => details.shippingAddress.city
     | ShippingAddressState => {
         let administrativeArea = details.shippingAddress.state->Option.getOr("")
         let countryCode = details.shippingAddress.countryCode->Option.getOr("")
-        Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+        Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)->Some
       }
-    | ShippingAddressCountry(_) => details.shippingAddress.countryCode->Option.getOr("")
-    | ShippingAddressPincode => details.shippingAddress.postalCode->Option.getOr("")
-    | Email =>
-      switch item.required_field {
-      | "payment_method_data.billing.email"
-      | "shipping.email" =>
-        payerDetails.email->Option.getOr("")
-      | _ => details.email
-      }
-    | PhoneNumber =>
-      switch item.required_field {
-      | "payment_method_data.billing.phone.number" | "shipping.phone.number" =>
-        payerDetails.phone->Option.getOr("")
-      | _ =>
-        switch (details.phone, details.shippingAddress.phone) {
-        | (Some(phone), None) => phone
-        | (None, Some(phone)) => phone
-        | _ => ""
-        }
-      }
-    | _ => ""
+    | ShippingAddressCountry(_) => details.shippingAddress.countryCode
+    | ShippingAddressPincode => details.shippingAddress.postalCode
+    | Email => details.email->Some
+    | PhoneNumber => details.phone
+    | _ => None
     }
 
-    if fieldVal !== "" {
+    fieldVal->Option.mapOr((), fieldVal =>
       acc->Dict.set(item.required_field, fieldVal->JSON.Encode.string)
-    }
+    )
 
     acc
   })

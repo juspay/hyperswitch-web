@@ -318,11 +318,6 @@ let defaultOptions = {
   hideCardNicknameField: false,
 }
 
-let defaultPayerDetails = {
-  email: None,
-  phone: None,
-}
-
 let getLayout = (str, logger) => {
   switch str {
   | "tabs" => Tabs
