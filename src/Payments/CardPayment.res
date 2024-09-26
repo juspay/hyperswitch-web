@@ -262,7 +262,7 @@ let make = (
               style={
                 gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
               }>
-              <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
+              <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.validThruText
                   isValid=isExpiryValid
@@ -280,7 +280,7 @@ let make = (
                   name=TestUtils.expiryInputTestId
                 />
               </div>
-              <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
+              <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.cvcTextLabel
                   isValid=isCVCValid

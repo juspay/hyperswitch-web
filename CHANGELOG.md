@@ -1,3 +1,19 @@
+## [0.90.1](https://github.com/juspay/hyperswitch-web/compare/v0.90.0...v0.90.1) (2024-09-26)
+
+# [0.90.0](https://github.com/juspay/hyperswitch-web/compare/v0.89.2...v0.90.0) (2024-09-26)
+
+
+### Features
+
+* customMessageForCardTerms prop added ([#705](https://github.com/juspay/hyperswitch-web/issues/705)) ([c30558f](https://github.com/juspay/hyperswitch-web/commit/c30558f8d772e54d7bf68aaff89d52dad89e73e9))
+
+## [0.89.2](https://github.com/juspay/hyperswitch-web/compare/v0.89.1...v0.89.2) (2024-09-25)
+
+
+### Bug Fixes
+
+* styling issues ([#696](https://github.com/juspay/hyperswitch-web/issues/696)) ([764d526](https://github.com/juspay/hyperswitch-web/commit/764d526c69b7b9ec9b79b084fa0b6a50aab8e86a))
+
 ## [0.89.1](https://github.com/juspay/hyperswitch-web/compare/v0.89.0...v0.89.1) (2024-09-24)
 
 # [0.89.0](https://github.com/juspay/hyperswitch-web/compare/v0.88.5...v0.89.0) (2024-09-24)

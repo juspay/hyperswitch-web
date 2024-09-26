@@ -172,6 +172,7 @@ type options = {
   hideExpiredPaymentMethods: bool,
   displayDefaultSavedPaymentIcon: bool,
   hideCardNicknameField: bool,
+  customMessageForCardTerms: string,
 }
 
 type payerDetails = {
@@ -316,6 +317,7 @@ let defaultOptions = {
   hideExpiredPaymentMethods: false,
   displayDefaultSavedPaymentIcon: true,
   hideCardNicknameField: false,
+  customMessageForCardTerms: "",
 }
 
 let getLayout = (str, logger) => {
@@ -1016,6 +1018,7 @@ let itemToObjMapper = (dict, logger) => {
       "branding",
       "displayDefaultSavedPaymentIcon",
       "hideCardNicknameField",
+      "customMessageForCardTerms",
     ],
     dict,
     "options",
@@ -1060,6 +1063,7 @@ let itemToObjMapper = (dict, logger) => {
     hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
     displayDefaultSavedPaymentIcon: getBool(dict, "displayDefaultSavedPaymentIcon", true),
     hideCardNicknameField: getBool(dict, "hideCardNicknameField", false),
+    customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
   }
 }
 
