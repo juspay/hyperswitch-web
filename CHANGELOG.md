@@ -1,3 +1,10 @@
+## [0.91.1](https://github.com/juspay/hyperswitch-web/compare/v0.91.0...v0.91.1) (2024-09-26)
+
+
+### Bug Fixes
+
+* added fix for google_pay and apple_pay ([#630](https://github.com/juspay/hyperswitch-web/issues/630)) ([95d7bb3](https://github.com/juspay/hyperswitch-web/commit/95d7bb32164611bdcc76fb1232e17b4d22fe220a))
+
 # [0.91.0](https://github.com/juspay/hyperswitch-web/compare/v0.90.1...v0.91.0) (2024-09-26)
 
 
