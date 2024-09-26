@@ -125,9 +125,8 @@ let getShippingDetails = shippingAddressOverrideObj => {
   }
 }
 
-let paypalShippingDetails = purchaseUnit => {
+let paypalShippingDetails = (purchaseUnit, payerDetails: PaymentType.payerDetails) => {
   let shippingAddress = purchaseUnit->Utils.getDictFromDict("shipping")
-  let payee = purchaseUnit->Utils.getDictFromDict("payee")
 
   let address = shippingAddress->Utils.getDictFromDict("address")
   let name = shippingAddress->Utils.getDictFromDict("name")
@@ -139,10 +138,7 @@ let paypalShippingDetails = purchaseUnit => {
   let countryCode = address->Utils.getOptionString("country_code")
   let postalCode = address->Utils.getOptionString("postal_code")
   let state = address->Utils.getOptionString("admin_area_1")
-  let email = payee->Utils.getString("email_address", "")
-
-  let payeePhone = payee->Utils.getOptionString("phone")
-  let shippingAddressPhone = address->Utils.getOptionString("phone")
+  let email = payerDetails.email->Option.getOr("")
 
   {
     email,
@@ -154,9 +150,9 @@ let paypalShippingDetails = purchaseUnit => {
       countryCode,
       postalCode,
       state,
-      phone: shippingAddressPhone,
+      phone: payerDetails.phone,
     },
-    phone: payeePhone,
+    phone: payerDetails.phone,
   }
 }
 
