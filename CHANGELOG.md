@@ -1,3 +1,10 @@
+# [0.91.0](https://github.com/juspay/hyperswitch-web/compare/v0.90.1...v0.91.0) (2024-09-26)
+
+
+### Features
+
+* pass email and phone number to confirm call ([#681](https://github.com/juspay/hyperswitch-web/issues/681)) ([412ba68](https://github.com/juspay/hyperswitch-web/commit/412ba68b0c32698cc6de8b0e5e2dcfeec2741d15))
+
 ## [0.90.1](https://github.com/juspay/hyperswitch-web/compare/v0.90.0...v0.90.1) (2024-09-26)
 
 # [0.90.0](https://github.com/juspay/hyperswitch-web/compare/v0.89.2...v0.90.0) (2024-09-26)
