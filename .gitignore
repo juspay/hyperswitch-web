@@ -3,6 +3,7 @@ node_modules
 .merlin
 .netlify
 lib/bs
+lib/shared-code
 public/*.LICENSE.txt
 package-lock.json
 public/app.js
