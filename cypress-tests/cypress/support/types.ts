@@ -1,5 +1,5 @@
 
-export {}; // indicate that file is a module
+export { }; // indicate that file is a module
 
 export type CustomerData = {
     cardNo: string
@@ -24,8 +24,8 @@ declare global {
             testDynamicFields(
                 customerData: CustomerData, testIdsToRemoveArr: string[], isThreeDSEnabled: boolean
             ): Chainable<JQuery<HTMLElement>>
-            createPaymentIntent(): Chainable<Response<any>>
-            getGlobalState(key: number): Chainable<Response<any>>
+            createPaymentIntent(secretKey: string, createPaymentBody: Record<string, any>): Chainable<Response<any>>
+            getGlobalState(key: string): Chainable<Response<any>>
         }
     }
 }

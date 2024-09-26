@@ -328,24 +328,28 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | ApplePay =>
         switch applePayToken {
         | ApplePayTokenOptional(optToken) =>
-          <ApplePayLazy sessionObj=optToken walletOptions paymentType />
+          <ReusableReactSuspense loaderComponent={loader()} componentName="ApplePayLazy">
+            <ApplePayLazy sessionObj=optToken walletOptions paymentType />
+          </ReusableReactSuspense>
         | _ => React.null
         }
       | GooglePay =>
         <SessionPaymentWrapper type_={Wallet}>
           {switch gPayToken {
           | OtherTokenOptional(optToken) =>
-            switch googlePayThirdPartyToken {
-            | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
-              <GPayLazy
-                sessionObj=optToken
-                thirdPartySessionObj=googlePayThirdPartyOptToken
-                walletOptions
-                paymentType
-              />
-            | _ =>
-              <GPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions paymentType />
-            }
+            <ReusableReactSuspense loaderComponent={loader()} componentName="GPayLazy">
+              {switch googlePayThirdPartyToken {
+              | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
+                <GPayLazy
+                  sessionObj=optToken
+                  thirdPartySessionObj=googlePayThirdPartyOptToken
+                  walletOptions
+                  paymentType
+                />
+              | _ =>
+                <GPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions paymentType />
+              }}
+            </ReusableReactSuspense>
           | _ => React.null
           }}
         </SessionPaymentWrapper>

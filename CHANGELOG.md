@@ -1,3 +1,61 @@
+# [0.90.0](https://github.com/juspay/hyperswitch-web/compare/v0.89.2...v0.90.0) (2024-09-26)
+
+
+### Features
+
+* customMessageForCardTerms prop added ([#705](https://github.com/juspay/hyperswitch-web/issues/705)) ([c30558f](https://github.com/juspay/hyperswitch-web/commit/c30558f8d772e54d7bf68aaff89d52dad89e73e9))
+
+## [0.89.2](https://github.com/juspay/hyperswitch-web/compare/v0.89.1...v0.89.2) (2024-09-25)
+
+
+### Bug Fixes
+
+* styling issues ([#696](https://github.com/juspay/hyperswitch-web/issues/696)) ([764d526](https://github.com/juspay/hyperswitch-web/commit/764d526c69b7b9ec9b79b084fa0b6a50aab8e86a))
+
+## [0.89.1](https://github.com/juspay/hyperswitch-web/compare/v0.89.0...v0.89.1) (2024-09-24)
+
+# [0.89.0](https://github.com/juspay/hyperswitch-web/compare/v0.88.5...v0.89.0) (2024-09-24)
+
+
+### Features
+
+* added support to change create payment and added env to cypress ([#616](https://github.com/juspay/hyperswitch-web/issues/616)) ([2e27f98](https://github.com/juspay/hyperswitch-web/commit/2e27f98cf63e408627bd18c9184973ebc38438f5))
+
+## [0.88.5](https://github.com/juspay/hyperswitch-web/compare/v0.88.4...v0.88.5) (2024-09-24)
+
+
+### Bug Fixes
+
+* dependant bot alerts ([#637](https://github.com/juspay/hyperswitch-web/issues/637)) ([dcc351d](https://github.com/juspay/hyperswitch-web/commit/dcc351db09f2416e5647360129f1253e2d8bb702))
+
+## [0.88.4](https://github.com/juspay/hyperswitch-web/compare/v0.88.3...v0.88.4) (2024-09-23)
+
+
+### Bug Fixes
+
+* added support for redirectUrl for netcetera flow ([#636](https://github.com/juspay/hyperswitch-web/issues/636)) ([205054f](https://github.com/juspay/hyperswitch-web/commit/205054ff0dd1083c28c3ef5eb159e70440715efc))
+
+## [0.88.3](https://github.com/juspay/hyperswitch-web/compare/v0.88.2...v0.88.3) (2024-09-20)
+
+
+### Bug Fixes
+
+* added suspense and error boundary for apple pay and google pay in tabs ([#632](https://github.com/juspay/hyperswitch-web/issues/632)) ([209f8e9](https://github.com/juspay/hyperswitch-web/commit/209f8e96be744c4c49e05c10700d839e3dd957f3))
+
+## [0.88.2](https://github.com/juspay/hyperswitch-web/compare/v0.88.1...v0.88.2) (2024-09-20)
+
+
+### Reverts
+
+* chunk loading issue - 1 ([#623](https://github.com/juspay/hyperswitch-web/issues/623)) ([#631](https://github.com/juspay/hyperswitch-web/issues/631)) ([f719ff5](https://github.com/juspay/hyperswitch-web/commit/f719ff5472bd844125c97eae412c3afa1ec114ed))
+
+## [0.88.1](https://github.com/juspay/hyperswitch-web/compare/v0.88.0...v0.88.1) (2024-09-20)
+
+
+### Bug Fixes
+
+* Invalid shipping address and taxjar api failing case handle in apple pay ([#628](https://github.com/juspay/hyperswitch-web/issues/628)) ([d4f3c41](https://github.com/juspay/hyperswitch-web/commit/d4f3c41ff3ccc1253f4c19613ead0be60cd98fc3))
+
 # [0.88.0](https://github.com/juspay/hyperswitch-web/compare/v0.87.2...v0.88.0) (2024-09-17)
 
 

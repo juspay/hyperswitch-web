@@ -609,6 +609,25 @@ let make = (
           | Some(obj) => redirect := obj->getDictFromJson->getString("redirect", "if_required")
           | None => ()
           }
+
+          let handleRetrievePaymentResponse = json => {
+            let dict = json->getDictFromJson
+            let status = dict->getString("status", "")
+            let returnUrl = dict->getString("return_url", "")
+            let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`
+            if redirect.contents === "always" {
+              Window.replaceRootHref(redirectUrl)
+              resolve(JSON.Encode.null)
+            } else {
+              messageCurrentWindow([
+                ("submitSuccessful", true->JSON.Encode.bool),
+                ("data", json),
+                ("url", redirectUrl->JSON.Encode.string),
+              ])
+              resolve(json)
+            }
+          }
+
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
           | Some(val) => {
               messageCurrentWindow([
@@ -622,6 +641,18 @@ let make = (
                 dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
               let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
               let url = dict->getString("return_url_with_query_params", "")
+
+              let handleErrorResponse = err => {
+                if redirect.contents === "always" {
+                  Window.replaceRootHref(url)
+                }
+                messageCurrentWindow([
+                  ("submitSuccessful", false->JSON.Encode.bool),
+                  ("error", err->Identity.anyTypeToJson),
+                  ("url", url->JSON.Encode.string),
+                ])
+              }
+
               PaymentHelpers.pollStatus(
                 ~headers,
                 ~customPodUri,
@@ -639,74 +670,54 @@ let make = (
                   ~customPodUri,
                   ~isForceSync=true,
                 )
-                ->then(json => {
-                  if redirect.contents === "always" {
-                    let dict = json->getDictFromJson
-                    let status = dict->getString("status", "")
-                    let returnUrl = dict->getString("return_url", "")
-                    Window.replaceRootHref(
-                      `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
-                    )
-                    resolve(JSON.Encode.null)
-                  } else {
-                    messageCurrentWindow([
-                      ("fullscreen", false->JSON.Encode.bool),
-                      ("submitSuccessful", true->JSON.Encode.bool),
-                      ("data", json),
-                    ])
-                    resolve(json)
-                  }
-                })
+                ->then(json => json->handleRetrievePaymentResponse)
                 ->catch(err => {
-                  if redirect.contents === "always" {
-                    Window.replaceRootHref(url)
-                  }
-                  messageCurrentWindow([
-                    ("submitSuccessful", false->JSON.Encode.bool),
-                    ("error", err->Identity.anyTypeToJson),
-                  ])
+                  err->handleErrorResponse
                   resolve(err->Identity.anyTypeToJson)
                 })
                 ->ignore
                 ->resolve
               })
-              ->catch(e => Console.log2("POLL_STATUS ERROR -", e)->resolve)
+              ->catch(err => {
+                err->handleErrorResponse
+                resolve()
+              })
+              ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
               ->ignore
             }
           | None => ()
           }
 
           switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
-          | Some(val) =>
+          | Some(redirectUrl) =>
             messageCurrentWindow([
               ("fullscreen", true->JSON.Encode.bool),
               ("param", "paymentloader"->JSON.Encode.string),
               ("iframeId", selectorString->JSON.Encode.string),
             ])
-            if redirect.contents === "always" {
-              Window.Location.replace(val->JSON.Decode.string->Option.getOr(""))
-              resolve(JSON.Encode.null)
-            } else {
-              PaymentHelpers.retrievePaymentIntent(
-                clientSecret,
-                headers,
-                ~optLogger=Some(logger),
-                ~customPodUri,
-                ~isForceSync=true,
-              )
-              ->then(json => {
-                messageCurrentWindow([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
-                resolve(json)
-              })
-              ->catch(err => {
+            PaymentHelpers.retrievePaymentIntent(
+              clientSecret,
+              headers,
+              ~optLogger=Some(logger),
+              ~customPodUri,
+              ~isForceSync=true,
+            )
+            ->then(json => json->handleRetrievePaymentResponse)
+            ->catch(err => {
+              if redirect.contents === "always" {
+                Window.replaceRootHref(redirectUrl->JSON.Decode.string->Option.getOr(""))
+                resolve(JSON.Encode.null)
+              } else {
                 messageCurrentWindow([
                   ("submitSuccessful", false->JSON.Encode.bool),
                   ("error", err->Identity.anyTypeToJson),
+                  ("url", redirectUrl),
                 ])
                 resolve(err->Identity.anyTypeToJson)
-              })
-              ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
-            }->ignore
+              }
+            })
+            ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+            ->ignore
 
           | None => ()
           }
@@ -774,7 +785,10 @@ let make = (
                     switch (
                       dict->Dict.get("applePayButtonClicked"),
                       dict->Dict.get("applePayPaymentRequest"),
-                      dict->Dict.get("isTaxCalculationEnabled")->Option.flatMap(JSON.Decode.bool)->Option.getOr(false),
+                      dict
+                      ->Dict.get("isTaxCalculationEnabled")
+                      ->Option.flatMap(JSON.Decode.bool)
+                      ->Option.getOr(false),
                     ) {
                     | (Some(val), Some(paymentRequest), isTaxCalculationEnabled) =>
                       if val->JSON.Decode.bool->Option.getOr(false) {
