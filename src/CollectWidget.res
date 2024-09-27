@@ -2,6 +2,7 @@ open CardUtils
 open PaymentMethodCollectTypes
 open PaymentMethodCollectUtils
 open RecoilAtoms
+open CardValidationWeb
 
 @react.component
 let make = (
