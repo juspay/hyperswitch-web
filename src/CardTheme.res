@@ -77,7 +77,6 @@ let getLocaleObject = async string => {
     } else {
       string
     }
-
     let promiseLocale = switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
     | EN => Js.import(EnglishLocale.localeStrings)
     | HE => Js.import(HebrewLocale.localeStrings)
@@ -96,6 +95,20 @@ let getLocaleObject = async string => {
     | NL => Js.import(DutchLocale.localeStrings)
     | SV => Js.import(SwedishLocale.localeStrings)
     | RU => Js.import(RussianLocale.localeStrings)
+    | NI_BE => Js.import(DutchBelgiumLocale.localeStrings)
+    | LT => Js.import(LithuanianLocale.localeStrings)
+    | CS => Js.import(CzechLocale.localeStrings)
+    | SK => Js.import(SlovakLocale.localeStrings)
+    | LS => Js.import(IcelandicLocale.localeStrings)
+    | CY => Js.import(WelshLocale.localeStrings)
+    | EL => Js.import(GreekLocale.localeStrings)
+    | ET => Js.import(EstonianLocale.localeStrings)
+    | FI => Js.import(FinnishLocale.localeStrings)
+    | NB => Js.import(NorwegianLocale.localeStrings)
+    | BS => Js.import(BosnianLocale.localeStrings)
+    | DA => Js.import(DanishLocale.localeStrings)
+    | MS => Js.import(MalayLocale.localeStrings)
+    | TR_C => Js.import(TurkishLocale.localeStrings)
     }
 
     let awaitedLocaleValue = await promiseLocale
