@@ -8,31 +8,44 @@ function Payment() {
   const [hyperPromise, setHyperPromise] = useState(null);
   const [clientSecret, setClientSecret] = useState("");
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const isCypressTestMode = queryParams.get("isCypressTestMode");
+  const publishableKeyQueryParam = queryParams.get("publishableKey");
+  const clientSecretQueryParam = queryParams.get("clientSecret");
+  const url = SELF_SERVER_URL === "" ? ENDPOINT : SELF_SERVER_URL;
+
+  const getPaymentData = async () => {
+    try {
+      const [configResponse, urlsResponse] = await Promise.all([
+        fetch(`${url}/config`),
+        fetch(`${url}/urls`),
+      ]);
+
+      const paymentIntentResponse = isCypressTestMode
+        ? { clientSecret: clientSecretQueryParam }
+        : await fetch(`${url}/create-payment-intent`).then((res) => res.json());
+
+      if (!configResponse.ok || !urlsResponse.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const paymentDataArray = await Promise.all([
+        configResponse.json(),
+        urlsResponse.json(),
+      ]);
+
+      return [...paymentDataArray, paymentIntentResponse];
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const url = SELF_SERVER_URL === "" ? ENDPOINT : SELF_SERVER_URL;
-
-        const [configResponse, urlsResponse, paymentIntentResponse] =
-          await Promise.all([
-            fetch(`${url}/config`),
-            fetch(`${url}/urls`),
-            fetch(`${url}/create-payment-intent`),
-          ]);
-
-        if (
-          !configResponse.ok ||
-          !urlsResponse.ok ||
-          !paymentIntentResponse.ok
-        ) {
-          throw new Error("Network response was not ok");
-        }
-
-        const [configData, urlsData, paymentIntentData] = await Promise.all([
-          configResponse.json(),
-          urlsResponse.json(),
-          paymentIntentResponse.json(),
-        ]);
+        const [configData, urlsData, paymentIntentData] = await getPaymentData(
+          url
+        );
 
         const { publishableKey } = configData;
         const { serverUrl, clientUrl } = urlsData;
@@ -45,9 +58,12 @@ function Payment() {
           setHyperPromise(
             new Promise((resolve) => {
               resolve(
-                window.Hyper(publishableKey, {
-                  customBackendUrl: serverUrl,
-                })
+                window.Hyper(
+                  isCypressTestMode ? publishableKeyQueryParam : publishableKey,
+                  {
+                    customBackendUrl: serverUrl,
+                  }
+                )
               );
             })
           );
@@ -81,7 +97,9 @@ function Payment() {
         <HyperElements
           hyper={hyperPromise}
           options={{
-            clientSecret,
+            clientSecret: isCypressTestMode
+              ? clientSecretQueryParam
+              : clientSecret,
             appearance: {
               // theme: "midnight",
               labels: "floating",

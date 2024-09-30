@@ -203,6 +203,30 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
     None
   }, [sessionsObj])
+
+  React.useEffect(() => {
+    if layoutClass.\"type" == Tabs {
+      let isCard = cardOptions->Array.includes(selectedOption)
+      if !isCard {
+        let (cardArr, dropdownArr) = CardUtils.swapCardOption(
+          cardOptions,
+          dropDownOptions,
+          selectedOption,
+        )
+        setCardOptions(_ => cardArr)
+        setDropDownOptions(_ => dropdownArr)
+      }
+    }
+    if selectedOption !== "" {
+      loggerState.setLogInfo(
+        ~value="",
+        ~eventName=PAYMENT_METHOD_CHANGED,
+        ~paymentMethod=selectedOption->String.toUpperCase,
+      )
+    }
+    None
+  }, (selectedOption, cardOptions, dropDownOptions))
+
   React.useEffect(() => {
     let cardsCount: int = cardsToRender(cardsContainerWidth)
     let cardOpts = Array.slice(~start=0, ~end=cardsCount, paymentOptions)
@@ -248,28 +272,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     )
     None
   }, (layoutClass.defaultCollapsed, paymentOptions, paymentMethodList, selectedOption))
-  React.useEffect(() => {
-    if layoutClass.\"type" == Tabs {
-      let isCard: bool = cardOptions->Array.includes(selectedOption)
-      if !isCard {
-        let (cardArr, dropdownArr) = CardUtils.swapCardOption(
-          cardOptions,
-          dropDownOptions,
-          selectedOption,
-        )
-        setCardOptions(_ => cardArr)
-        setDropDownOptions(_ => dropdownArr)
-      }
-    }
-    if selectedOption !== "" {
-      loggerState.setLogInfo(
-        ~value="",
-        ~eventName=PAYMENT_METHOD_CHANGED,
-        ~paymentMethod=selectedOption->String.toUpperCase,
-      )
-    }
-    None
-  }, [selectedOption])
   let checkRenderOrComp = () => {
     walletOptions->Array.includes("paypal") || isShowOrPayUsing
   }
@@ -328,24 +330,28 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | ApplePay =>
         switch applePayToken {
         | ApplePayTokenOptional(optToken) =>
-          <ApplePayLazy sessionObj=optToken walletOptions paymentType />
+          <ReusableReactSuspense loaderComponent={loader()} componentName="ApplePayLazy">
+            <ApplePayLazy sessionObj=optToken walletOptions paymentType />
+          </ReusableReactSuspense>
         | _ => React.null
         }
       | GooglePay =>
         <SessionPaymentWrapper type_={Wallet}>
           {switch gPayToken {
           | OtherTokenOptional(optToken) =>
-            switch googlePayThirdPartyToken {
-            | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
-              <GPayLazy
-                sessionObj=optToken
-                thirdPartySessionObj=googlePayThirdPartyOptToken
-                walletOptions
-                paymentType
-              />
-            | _ =>
-              <GPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions paymentType />
-            }
+            <ReusableReactSuspense loaderComponent={loader()} componentName="GPayLazy">
+              {switch googlePayThirdPartyToken {
+              | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
+                <GPayLazy
+                  sessionObj=optToken
+                  thirdPartySessionObj=googlePayThirdPartyOptToken
+                  walletOptions
+                  paymentType
+                />
+              | _ =>
+                <GPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions paymentType />
+              }}
+            </ReusableReactSuspense>
           | _ => React.null
           }}
         </SessionPaymentWrapper>

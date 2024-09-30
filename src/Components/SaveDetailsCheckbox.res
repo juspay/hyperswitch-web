@@ -2,7 +2,7 @@
 let make = (~isChecked, ~setIsChecked) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
-  let {business} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {business, customMessageForCardTerms} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
   let css = `.container {
   display: flex;
@@ -50,6 +50,8 @@ let make = (~isChecked, ~setIsChecked) => {
 
   let saveCardCheckboxLabel = if showFields {
     localeString.saveCardDetails
+  } else if customMessageForCardTerms->String.length > 0 {
+    customMessageForCardTerms
   } else {
     localeString.cardTerms(business.name)
   }

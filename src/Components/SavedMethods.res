@@ -46,24 +46,24 @@ let make = (
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
   let bottomElement = {
-    savedMethods
-    ->Array.mapWithIndex((obj, i) => {
-      let brandIcon = obj->getPaymentMethodBrand
-      let isActive = paymentTokenVal == obj.paymentToken
-      <SavedCardItem
-        key={i->Int.toString}
-        setPaymentToken
-        isActive
-        paymentItem=obj
-        brandIcon
-        index=i
-        savedCardlength
-        cvcProps
-        paymentType
-        setRequiredFieldsBody
-      />
-    })
-    ->React.array
+    <div className="PickerItemContainer">
+      {savedMethods
+      ->Array.mapWithIndex((obj, i) =>
+        <SavedCardItem
+          key={i->Int.toString}
+          setPaymentToken
+          isActive={paymentTokenVal == obj.paymentToken}
+          paymentItem=obj
+          brandIcon={obj->getPaymentMethodBrand}
+          index=i
+          savedCardlength
+          cvcProps
+          paymentType
+          setRequiredFieldsBody
+        />
+      )
+      ->React.array}
+    </div>
   }
 
   let (isCVCValid, _, cvcNumber, _, _, _, _, _, _, setCvcError) = cvcProps
@@ -160,7 +160,11 @@ let make = (
         | Some("apple_pay") =>
           switch applePayToken {
           | ApplePayTokenOptional(optToken) =>
-            ApplePayHelpers.handleApplePayButtonClicked(~sessionObj=optToken, ~componentName, ~paymentMethodListValue)
+            ApplePayHelpers.handleApplePayButtonClicked(
+              ~sessionObj=optToken,
+              ~componentName,
+              ~paymentMethodListValue,
+            )
           | _ =>
             // TODO - To be replaced with proper error message
             intent(
