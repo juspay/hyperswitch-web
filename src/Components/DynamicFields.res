@@ -100,7 +100,7 @@ let make = (
 
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
     userBankAccountNumber,
-    "city",
+    "bankAccountNumber",
     logger,
   )
 
