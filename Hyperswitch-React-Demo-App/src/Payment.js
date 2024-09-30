@@ -101,7 +101,6 @@ function Payment() {
               ? clientSecretQueryParam
               : clientSecret,
             appearance: {
-              // theme: "midnight",
               labels: "floating",
             },
           }}

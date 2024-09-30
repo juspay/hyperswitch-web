@@ -21,7 +21,7 @@ let make = (~onClickHandler=?, ~label=?) => {
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
   let buttonText = switch label {
   | Some(val) => val
-  | _ => sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
+  | None => sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
   }
 
   let handleMessage = (event: Types.event) => {

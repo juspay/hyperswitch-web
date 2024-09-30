@@ -17,7 +17,7 @@ let make = () => {
   }, [logger])
 
   React.useEffect0(() => {
-    let handleApplePayMessages = (ev: Window.event) => {
+    let handleMetaDataPostMessage = (ev: Window.event) => {
       let json = ev.data->Utils.safeParse
       let dict = json->Utils.getDictFromJson
 
@@ -43,21 +43,9 @@ let make = () => {
         | None => ()
         }
       }
-
-      // if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
-      //   let metadata = dict->getJsonObjectFromDict("metadata")
-      //   setStateMetadata(_ => metadata)
-      //   let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
-
-      // let metadata = dict->getJsonObjectFromDict("metadata")
-      // if dict->
     }
-    Window.addEventListener("message", handleApplePayMessages)
-    Some(
-      () => {
-        Window.removeEventListener("message", handleApplePayMessages)
-      },
-    )
+    Window.addEventListener("message", handleMetaDataPostMessage)
+    Some(() => Window.removeEventListener("message", handleMetaDataPostMessage))
   })
 
   let renderFullscreen = switch paymentMode {

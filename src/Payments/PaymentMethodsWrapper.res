@@ -59,7 +59,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if true {
+      if complete {
         let countryCode =
           Country.getCountry(paymentMethodName)
           ->Array.filter(item => item.countryName == country)
@@ -91,7 +91,6 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
           ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
           ->getArrayOfTupleFromDict
 
-        Js.log3("dcsidcksdncsdjcusd", body, requiredFieldsBody)
         intent(
           ~bodyArr=body,
           ~confirmParam=confirm.confirmParams,

@@ -17,16 +17,9 @@ let make = (~paymentType: CardThemeType.mode) => {
 
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
-  let (line1, _) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
-  let (line2, _) = Recoil.useLoggedRecoilState(userAddressline2, "line2", loggerState)
-  let (country, _) = Recoil.useLoggedRecoilState(userAddressCountry, "country", loggerState)
-  let (city, _) = Recoil.useLoggedRecoilState(userAddressCity, "city", loggerState)
-  let (postalCode, _) = Recoil.useLoggedRecoilState(userAddressPincode, "postal_code", loggerState)
-  let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
+
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-
-  let requiredFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
 
   let pmAuthMapper = React.useMemo1(
     () =>
@@ -56,7 +49,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="sepa_bank_debit")
 
   React.useEffect(() => {
-    setComplete(_ => true)
+    setComplete(_ => complete)
     None
   }, [complete])
 
@@ -65,7 +58,7 @@ let make = (~paymentType: CardThemeType.mode) => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
-      if true {
+      if complete {
         switch modalData {
         | Some(data: ACHTypes.data) =>
           let bodyFields = data.requiredFieldsBody->Option.getOr(Dict.make())
@@ -137,8 +130,6 @@ let make = (~paymentType: CardThemeType.mode) => {
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
         }>
-        // <EmailPaymentInput paymentType />
-        // <FullNamePaymentInput paymentType />
         <AddBankAccount modalData setModalData />
         <FullScreenPortal>
           <BankDebitModal setModalData paymentType />

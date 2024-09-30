@@ -833,7 +833,7 @@ let useSubmitCallback = () => {
         })
       }
       if bankAccountNumber.value === "" {
-        setCity(prev => {
+        setBankAccountNumber(prev => {
           ...prev,
           errorString: localeString.cityEmptyText,
         })
