@@ -53,63 +53,56 @@ let make = (~paymentType: CardThemeType.mode) => {
     None
   }, [complete])
 
+  let makeSepaBody = bodyFields => {
+    let address =
+      [
+        (
+          "address",
+          [
+            (
+              "first_name",
+              bodyFields->getJsonObjectFromDict("payment_method_data.billing.address.first_name"),
+            ),
+            (
+              "last_name",
+              bodyFields->getJsonObjectFromDict("payment_method_data.billing.address.last_name"),
+            ),
+          ]->getJsonFromArrayOfJson,
+        ),
+      ]->getJsonFromArrayOfJson
+
+    let bankDebitBody =
+      [
+        (
+          "sepa_bank_debit",
+          [
+            ("iban", bodyFields->getJsonObjectFromDict("payment_method_data.bank_debit.sepa.iban")),
+          ]->getJsonFromArrayOfJson,
+        ),
+      ]->getJsonFromArrayOfJson
+
+    let sepaBankBody = [
+      (
+        "payment_method_data",
+        [("billing", address), ("bank_debit", bankDebitBody)]->getJsonFromArrayOfJson,
+      ),
+    ]
+
+    PaymentBody.bankDebitsCommonBody("sepa")->Array.concat(sepaBankBody)
+  }
+
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
-    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
     if confirm.doSubmit {
       if complete {
         switch modalData {
         | Some(data: ACHTypes.data) =>
           let bodyFields = data.requiredFieldsBody->Option.getOr(Dict.make())
-          let sepaBody =
-            PaymentBody.bankDebitsCommonBody("sepa")->Array.concat([
-              (
-                "payment_method_data",
-                [
-                  (
-                    "billing",
-                    [
-                      (
-                        "address",
-                        [
-                          (
-                            "first_name",
-                            bodyFields->getJsonObjectFromDict(
-                              "payment_method_data.billing.address.first_name",
-                            ),
-                          ),
-                          (
-                            "last_name",
-                            bodyFields->getJsonObjectFromDict(
-                              "payment_method_data.billing.address.last_name",
-                            ),
-                          ),
-                        ]->Utils.getJsonFromArrayOfJson,
-                      ),
-                    ]->Utils.getJsonFromArrayOfJson,
-                  ),
-                  (
-                    "bank_debit",
-                    [
-                      (
-                        "sepa_bank_debit",
-                        [
-                          (
-                            "iban",
-                            bodyFields->getJsonObjectFromDict(
-                              "payment_method_data.bank_debit.sepa.iban",
-                            ),
-                          ),
-                        ]->Utils.getJsonFromArrayOfJson,
-                      ),
-                    ]->Utils.getJsonFromArrayOfJson,
-                  ),
-                ]->Utils.getJsonFromArrayOfJson,
-              ),
-            ])
+
           intent(
-            ~bodyArr=sepaBody,
+            ~bodyArr=makeSepaBody(bodyFields),
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
             ~manualRetry=isManualRetryEnabled,
