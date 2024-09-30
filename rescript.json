@@ -12,7 +12,7 @@
       "subdirs": true
     },
     {
-      "dir": "../shared-code",
+      "dir": "shared-code",
       "subdirs": true
     }
   ],
