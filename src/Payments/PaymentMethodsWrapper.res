@@ -40,8 +40,6 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
 
-  Js.log2("requiredFieldsBodyrequiredFieldsBodyrequiredFieldsBody", requiredFieldsBody)
-
   let complete = areRequiredFieldsValid
 
   React.useEffect(() => {

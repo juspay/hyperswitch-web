@@ -197,6 +197,7 @@ let make = (~setModalData, ~paymentType: CardThemeType.mode) => {
       accountType: accountType->String.toLowerCase,
       iban,
       sortCode,
+      requiredFieldsBody,
     }))
     Modal.close(setOpenModal)
   }
@@ -209,7 +210,7 @@ let make = (~setModalData, ~paymentType: CardThemeType.mode) => {
             <DynamicFields
               paymentType paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody
             />
-            <PayNowButton onClickHandler />
+            <PayNowButton onClickHandler label="Done" />
           </>
         } else {
           <>

@@ -15,8 +15,6 @@ let make = (~paymentType: CardThemeType.mode) => {
 
   let (modalData, setModalData) = React.useState(_ => None)
 
-  Js.log2("modalDatamodalData", modalData)
-
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let (line1, _) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
@@ -29,8 +27,6 @@ let make = (~paymentType: CardThemeType.mode) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let requiredFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-
-  Js.log2("requiredFields", requiredFields)
 
   let pmAuthMapper = React.useMemo1(
     () =>
@@ -71,19 +67,56 @@ let make = (~paymentType: CardThemeType.mode) => {
     if confirm.doSubmit {
       if true {
         switch modalData {
-        | Some(data: ACHTypes.data) => // let body = PaymentBody.sepaBankDebitBody(
-          //   ~fullName=fullName.value,
-          //   ~email=email.value,
-          //   ~data,
-          //   ~line1=line1.value,
-          //   ~line2=line2.value,
-          //   ~country=getCountryCode(country.value).isoAlpha2,
-          //   ~city=city.value,
-          //   ~postalCode=postalCode.value,
-          //   ~state=state.value,
-          // )
+        | Some(data: ACHTypes.data) =>
+          let bodyFields = data.requiredFieldsBody->Option.getOr(Dict.make())
+          let sepaBody =
+            PaymentBody.bankDebitsCommonBody("sepa")->Array.concat([
+              (
+                "payment_method_data",
+                [
+                  (
+                    "billing",
+                    [
+                      (
+                        "address",
+                        [
+                          (
+                            "first_name",
+                            bodyFields->getJsonObjectFromDict(
+                              "payment_method_data.billing.address.first_name",
+                            ),
+                          ),
+                          (
+                            "last_name",
+                            bodyFields->getJsonObjectFromDict(
+                              "payment_method_data.billing.address.last_name",
+                            ),
+                          ),
+                        ]->Utils.getJsonFromArrayOfJson,
+                      ),
+                    ]->Utils.getJsonFromArrayOfJson,
+                  ),
+                  (
+                    "bank_debit",
+                    [
+                      (
+                        "sepa_bank_debit",
+                        [
+                          (
+                            "iban",
+                            bodyFields->getJsonObjectFromDict(
+                              "payment_method_data.bank_debit.sepa.iban",
+                            ),
+                          ),
+                        ]->Utils.getJsonFromArrayOfJson,
+                      ),
+                    ]->Utils.getJsonFromArrayOfJson,
+                  ),
+                ]->Utils.getJsonFromArrayOfJson,
+              ),
+            ])
           intent(
-            ~bodyArr=[],
+            ~bodyArr=sepaBody,
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
             ~manualRetry=isManualRetryEnabled,

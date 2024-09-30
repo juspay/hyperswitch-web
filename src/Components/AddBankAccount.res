@@ -6,7 +6,7 @@ module ToolTip = {
     let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
     <RenderIf condition={openTip}>
       <button
-        className="h-auto max-w-20 w-auto cursor-pointer absolute m-1 px-1 py-2 top-[-3rem] right-[1em]"
+        className="h-auto max-w-30 w-auto cursor-pointer absolute m-1 px-1 py-2 top-[-3rem] right-[1em]"
         style={
           background: themeObj.colorBackground,
           color: themeObj.colorDanger,

@@ -10,7 +10,7 @@ module Loader = {
   }
 }
 @react.component
-let make = (~onClickHandler=?) => {
+let make = (~onClickHandler=?, ~label=?) => {
   open RecoilAtoms
   open Utils
   let (showLoader, setShowLoader) = React.useState(() => false)
@@ -19,7 +19,10 @@ let make = (~onClickHandler=?) => {
   let {sdkHandleConfirmPayment} = optionAtom->Recoil.useRecoilValueFromAtom
 
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
-  let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
+  let buttonText = switch label {
+  | Some(val) => val
+  | _ => sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
+  }
 
   let handleMessage = (event: Types.event) => {
     let json = event.data->Identity.anyTypeToJson->getStringFromJson("")->safeParse
