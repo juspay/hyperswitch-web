@@ -479,13 +479,14 @@ let make = (
                 setBankAccountNumber(prev => {
                   isValid: Some(value !== ""),
                   value,
-                  errorString: value !== "" ? "" : prev.errorString,
+                  errorString: value !== "" ? "" : "IBAN cannot be empty.",
                 })
               }}
               onBlur={ev => {
                 let value = ReactEvent.Focus.target(ev)["value"]
                 setBankAccountNumber(prev => {
                   ...prev,
+                  errorString: value !== "" ? "" : "IBAN cannot be empty.",
                   isValid: Some(value !== ""),
                 })
               }}

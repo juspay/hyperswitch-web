@@ -30,21 +30,23 @@ let make = (~paymentType: CardThemeType.mode) => {
   let isVerifyPMAuthConnectorConfigured =
     displaySavedPaymentMethods && pmAuthMapper->Dict.get("sepa")->Option.isSome
 
-  let complete =
-    email.value != "" &&
-    fullName.value != "" &&
-    email.isValid->Option.getOr(false) &&
-    switch modalData {
-    | Some(val: ACHTypes.data) => val.iban !== "" || val.accountHolderName !== ""
-    | None => false
-    }
-  let empty =
-    email.value == "" ||
-    fullName.value == "" ||
-    switch modalData {
-    | Some(val: ACHTypes.data) => val.iban === "" || val.accountHolderName === ""
-    | None => true
-    }
+  let complete = switch modalData {
+  | Some(data: ACHTypes.data) =>
+    data.requiredFieldsBody
+    ->Option.getOr(Dict.make())
+    ->Dict.valuesToArray
+    ->Array.reduce(true, (acc, ele) => acc && ele !== ""->JSON.Encode.string)
+  | None => false
+  }
+
+  let empty = switch modalData {
+  | Some(data: ACHTypes.data) =>
+    data.requiredFieldsBody
+    ->Option.getOr(Dict.make())
+    ->Dict.valuesToArray
+    ->Array.reduce(true, (acc, ele) => acc && ele !== ""->JSON.Encode.string)
+  | None => true
+  }
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="sepa_bank_debit")
 
@@ -52,44 +54,6 @@ let make = (~paymentType: CardThemeType.mode) => {
     setComplete(_ => complete)
     None
   }, [complete])
-
-  let makeSepaBody = bodyFields => {
-    let address =
-      [
-        (
-          "address",
-          [
-            (
-              "first_name",
-              bodyFields->getJsonObjectFromDict("payment_method_data.billing.address.first_name"),
-            ),
-            (
-              "last_name",
-              bodyFields->getJsonObjectFromDict("payment_method_data.billing.address.last_name"),
-            ),
-          ]->getJsonFromArrayOfJson,
-        ),
-      ]->getJsonFromArrayOfJson
-
-    let bankDebitBody =
-      [
-        (
-          "sepa_bank_debit",
-          [
-            ("iban", bodyFields->getJsonObjectFromDict("payment_method_data.bank_debit.sepa.iban")),
-          ]->getJsonFromArrayOfJson,
-        ),
-      ]->getJsonFromArrayOfJson
-
-    let sepaBankBody = [
-      (
-        "payment_method_data",
-        [("billing", address), ("bank_debit", bankDebitBody)]->getJsonFromArrayOfJson,
-      ),
-    ]
-
-    PaymentBody.bankDebitsCommonBody("sepa")->Array.concat(sepaBankBody)
-  }
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -100,9 +64,15 @@ let make = (~paymentType: CardThemeType.mode) => {
         switch modalData {
         | Some(data: ACHTypes.data) =>
           let bodyFields = data.requiredFieldsBody->Option.getOr(Dict.make())
-
+          let sepaBody =
+            PaymentBody.dynamicPaymentBody("bank_debit", "sepa")
+            ->Dict.fromArray
+            ->JSON.Encode.object
+            ->flattenObject(true)
+            ->mergeTwoFlattenedJsonDicts(bodyFields)
+            ->getArrayOfTupleFromDict
           intent(
-            ~bodyArr=makeSepaBody(bodyFields),
+            ~bodyArr=sepaBody,
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
             ~manualRetry=isManualRetryEnabled,
