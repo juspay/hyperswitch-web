@@ -12,7 +12,6 @@ let make = (
   open Utils
   open UtilityHooks
 
-  Js.log2("paymentTokenpaymentToken", paymentToken)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
