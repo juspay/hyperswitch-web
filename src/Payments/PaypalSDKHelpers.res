@@ -26,17 +26,16 @@ let loadPaypalSDK = (
     ~eventName=PAYPAL_SDK_FLOW,
     ~paymentMethod="PAYPAL",
   )
-  Utils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
-  ->then(result => {
-    let result = result->JSON.Decode.bool->Option.getOr(false)
-    if result {
-      let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
-      paypalWrapper.innerHTML = ""
-      setIsCompleted(_ => true)
-      paypal["Buttons"]({
-        style: buttonStyle,
-        fundingSource: paypal["FUNDING"]["PAYPAL"],
-        createOrder: () => {
+  let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
+  paypalWrapper.innerHTML = ""
+  setIsCompleted(_ => true)
+  paypal["Buttons"]({
+    style: buttonStyle,
+    fundingSource: paypal["FUNDING"]["PAYPAL"],
+    createOrder: () => {
+      Utils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
+        let result = result->JSON.Decode.bool->Option.getOr(false)
+        if result {
           Utils.messageParentWindow([
             ("fullscreen", true->JSON.Encode.bool),
             ("param", "paymentloader"->JSON.Encode.string),
@@ -63,68 +62,69 @@ let loadPaypalSDK = (
               ~manualRetry=isManualRetryEnabled,
             )
           })
-        },
-        onApprove: (_data, actions) => {
-          if !options.readOnly {
-            actions.order.get()
-            ->then(val => {
-              let purchaseUnit =
-                val
-                ->Utils.getDictFromJson
-                ->Utils.getArray("purchase_units")
-                ->Array.get(0)
-                ->Option.flatMap(JSON.Decode.object)
-                ->Option.getOr(Dict.make())
-              let payerDetails =
-                val
-                ->Utils.getDictFromJson
-                ->Dict.get("payer")
-                ->Option.flatMap(JSON.Decode.object)
-                ->Option.getOr(Dict.make())
-                ->PaymentType.itemToPayerDetailsObjectMapper
-
-              let details = purchaseUnit->paypalShippingDetails(payerDetails)
-              let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
-                ~details,
-                ~paymentMethodTypes,
-                ~statesList=stateJson,
-              )
-
-              let bodyArr =
-                requiredFieldsBody
-                ->JSON.Encode.object
-                ->Utils.unflattenObject
-                ->Utils.getArrayOfTupleFromDict
-
-              completeAuthorize(
-                ~bodyArr,
-                ~confirmParam={
-                  return_url: options.wallets.walletReturnUrl,
-                  publishableKey,
-                },
-                ~handleUserError=true,
-              )
-
-              resolve()
-            })
-            ->ignore
-          }
-        },
-        onCancel: _data => {
-          handleCloseLoader()
-        },
-        onError: _err => {
-          handleCloseLoader()
-        },
-      }).render("#paypal-button")
-      areOneClickWalletsRendered(prev => {
-        ...prev,
-        isPaypal: true,
+        } else {
+          resolve("")
+        }
       })
-    }
-    resolve()
+    },
+    onApprove: (_data, actions) => {
+      if !options.readOnly {
+        actions.order.get()
+        ->then(val => {
+          let purchaseUnit =
+            val
+            ->Utils.getDictFromJson
+            ->Utils.getArray("purchase_units")
+            ->Array.get(0)
+            ->Option.flatMap(JSON.Decode.object)
+            ->Option.getOr(Dict.make())
+          let payerDetails =
+            val
+            ->Utils.getDictFromJson
+            ->Dict.get("payer")
+            ->Option.flatMap(JSON.Decode.object)
+            ->Option.getOr(Dict.make())
+            ->PaymentType.itemToPayerDetailsObjectMapper
+
+          let details = purchaseUnit->paypalShippingDetails(payerDetails)
+          let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
+            ~details,
+            ~paymentMethodTypes,
+            ~statesList=stateJson,
+          )
+
+          let bodyArr =
+            requiredFieldsBody
+            ->JSON.Encode.object
+            ->Utils.unflattenObject
+            ->Utils.getArrayOfTupleFromDict
+
+          completeAuthorize(
+            ~bodyArr,
+            ~confirmParam={
+              return_url: options.wallets.walletReturnUrl,
+              publishableKey,
+            },
+            ~handleUserError=true,
+          )
+
+          resolve()
+        })
+        ->ignore
+      }
+    },
+    onCancel: _data => {
+      handleCloseLoader()
+    },
+    onError: _err => {
+      handleCloseLoader()
+    },
+  }).render("#paypal-button")
+  areOneClickWalletsRendered(prev => {
+    ...prev,
+    isPaypal: true,
   })
-  ->ignore
+  resolve()->ignore
 }
 
 let loadBraintreePaypalSdk = (
