@@ -1,3 +1,10 @@
+## [0.91.2](https://github.com/juspay/hyperswitch-web/compare/v0.91.1...v0.91.2) (2024-10-03)
+
+
+### Bug Fixes
+
+* customer-acceptance for saved pm ([#709](https://github.com/juspay/hyperswitch-web/issues/709)) ([a569dac](https://github.com/juspay/hyperswitch-web/commit/a569dacede738ba4f7464966a323e14d19170028))
+
 ## [0.91.1](https://github.com/juspay/hyperswitch-web/compare/v0.91.0...v0.91.1) (2024-09-26)
 
 
