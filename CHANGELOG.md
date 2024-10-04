@@ -1,3 +1,10 @@
+## [0.91.3](https://github.com/juspay/hyperswitch-web/compare/v0.91.2...v0.91.3) (2024-10-04)
+
+
+### Bug Fixes
+
+* sdk pay now redirect fix ([#715](https://github.com/juspay/hyperswitch-web/issues/715)) ([2bdf260](https://github.com/juspay/hyperswitch-web/commit/2bdf260f2c1fbfce6627db7c9eb5a519987cabfa))
+
 ## [0.91.2](https://github.com/juspay/hyperswitch-web/compare/v0.91.1...v0.91.2) (2024-10-03)
 
 
