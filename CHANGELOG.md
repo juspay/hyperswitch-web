@@ -1,3 +1,10 @@
+## [0.91.7](https://github.com/juspay/hyperswitch-web/compare/v0.91.6...v0.91.7) (2024-10-04)
+
+
+### Bug Fixes
+
+* paypal flow fixed for one click handler ([#711](https://github.com/juspay/hyperswitch-web/issues/711)) ([09a8470](https://github.com/juspay/hyperswitch-web/commit/09a8470a3b16c410636c1544033aa0f2e76a59b1))
+
 ## [0.91.6](https://github.com/juspay/hyperswitch-web/compare/v0.91.5...v0.91.6) (2024-10-04)
 
 ## [0.91.5](https://github.com/juspay/hyperswitch-web/compare/v0.91.4...v0.91.5) (2024-10-04)
