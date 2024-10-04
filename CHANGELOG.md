@@ -1,3 +1,26 @@
+## [0.91.6](https://github.com/juspay/hyperswitch-web/compare/v0.91.5...v0.91.6) (2024-10-04)
+
+## [0.91.5](https://github.com/juspay/hyperswitch-web/compare/v0.91.4...v0.91.5) (2024-10-04)
+
+
+### Bug Fixes
+
+* sentry dependent bot alerts ([#716](https://github.com/juspay/hyperswitch-web/issues/716)) ([6bc1fb4](https://github.com/juspay/hyperswitch-web/commit/6bc1fb4372c27f6fc021585f69791a0dadca62d5))
+
+## [0.91.4](https://github.com/juspay/hyperswitch-web/compare/v0.91.3...v0.91.4) (2024-10-04)
+
+
+### Bug Fixes
+
+* add cross env script support for windows ([#714](https://github.com/juspay/hyperswitch-web/issues/714)) ([318b5c2](https://github.com/juspay/hyperswitch-web/commit/318b5c294cc670988204f40ed427f56c4902d163))
+
+## [0.91.3](https://github.com/juspay/hyperswitch-web/compare/v0.91.2...v0.91.3) (2024-10-04)
+
+
+### Bug Fixes
+
+* sdk pay now redirect fix ([#715](https://github.com/juspay/hyperswitch-web/issues/715)) ([2bdf260](https://github.com/juspay/hyperswitch-web/commit/2bdf260f2c1fbfce6627db7c9eb5a519987cabfa))
+
 ## [0.91.2](https://github.com/juspay/hyperswitch-web/compare/v0.91.1...v0.91.2) (2024-10-03)
 
 
