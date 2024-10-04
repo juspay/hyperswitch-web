@@ -1,3 +1,10 @@
+## [0.91.4](https://github.com/juspay/hyperswitch-web/compare/v0.91.3...v0.91.4) (2024-10-04)
+
+
+### Bug Fixes
+
+* add cross env script support for windows ([#714](https://github.com/juspay/hyperswitch-web/issues/714)) ([318b5c2](https://github.com/juspay/hyperswitch-web/commit/318b5c294cc670988204f40ed427f56c4902d163))
+
 ## [0.91.3](https://github.com/juspay/hyperswitch-web/compare/v0.91.2...v0.91.3) (2024-10-04)
 
 
