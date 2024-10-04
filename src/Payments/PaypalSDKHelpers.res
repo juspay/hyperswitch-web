@@ -63,6 +63,11 @@ let loadPaypalSDK = (
             )
           })
         } else {
+          loggerState.setLogInfo(
+            ~value="Paypal SDK oneClickDoSubmit - false",
+            ~eventName=PAYPAL_SDK_FLOW,
+            ~paymentMethod="PAYPAL",
+          )
           resolve("")
         }
       })
@@ -124,7 +129,6 @@ let loadPaypalSDK = (
     ...prev,
     isPaypal: true,
   })
-  resolve()->ignore
 }
 
 let loadBraintreePaypalSdk = (
