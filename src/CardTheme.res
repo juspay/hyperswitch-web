@@ -76,7 +76,7 @@ let getLocaleObject = async string => {
   } else {
     string
   }
-  let resultedLocale = await LocalStringHelperWeb.getLocaleWeb(Some(locale->LocaleStringHelper.mapLocalStringToTypeLocale))
+  let resultedLocale = await LocalehelperWeb.getLocaleWeb(locale)
   resultedLocale
 }
 
