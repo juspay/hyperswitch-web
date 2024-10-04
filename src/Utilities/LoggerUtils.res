@@ -2,7 +2,7 @@ let logApi = (
   ~eventName,
   ~statusCode="",
   ~data: JSON.t=Dict.make()->JSON.Encode.object,
-  ~apiLogType: OrcaLogger.apiLogType,
+  ~apiLogType: LogUtils.apiLogType,
   ~url="",
   ~paymentMethod="",
   ~result: JSON.t=Dict.make()->JSON.Encode.object,
@@ -11,30 +11,8 @@ let logApi = (
   ~logCategory: OrcaLogger.logCategory=API,
   ~isPaymentSession: bool=false,
 ) => {
-  let (value, internalMetadata) = switch apiLogType {
-  | Request => ([("url", url->JSON.Encode.string)], [])
-  | Response => (
-      [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.string)],
-      [("response", data)],
-    )
-  | NoResponse => (
-      [
-        ("url", url->JSON.Encode.string),
-        ("statusCode", "504"->JSON.Encode.string),
-        ("response", data),
-      ],
-      [("response", data)],
-    )
-  | Err => (
-      [
-        ("url", url->JSON.Encode.string),
-        ("statusCode", statusCode->JSON.Encode.string),
-        ("response", data),
-      ],
-      [("response", data)],
-    )
-  | Method => ([("method", paymentMethod->JSON.Encode.string)], [("result", result)])
-  }
+  let (value, internalMetadata) = LogUtils.getApiLogValues(apiLogType, url, statusCode, data)
+
   switch optLogger {
   | Some(logger) =>
     logger.setLogApi(

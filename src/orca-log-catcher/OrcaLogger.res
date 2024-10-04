@@ -1,4 +1,4 @@
-type apiLogType = Request | Response | NoResponse | Method | Err
+// type apiLogType = Request | Response | NoResponse | Method | Err
 type logType = DEBUG | INFO | ERROR | WARNING | SILENT
 type logCategory = API | USER_ERROR | USER_EVENT | MERCHANT_EVENT
 
@@ -240,7 +240,7 @@ type loggerMake = {
     ~logType: logType=?,
     ~logCategory: logCategory=?,
     ~paymentMethod: string=?,
-    ~apiLogType: apiLogType=?,
+    ~apiLogType: LogUtils.apiLogType=?,
     ~isPaymentSession: bool=?,
   ) => unit,
   setLogInitiated: unit => unit,
@@ -641,7 +641,7 @@ let make = (
     }
   }
 
-  let calculateLatencyHook = (~eventName, ~apiLogType=Method) => {
+  let calculateLatencyHook = (~eventName, ~apiLogType=LogUtils.Method) => {
     let currentTimestamp = Date.now()
     let latency = switch eventName {
     | PAYMENT_ATTEMPT => {
@@ -798,7 +798,7 @@ let make = (
     ~logType=INFO,
     ~logCategory=API,
     ~paymentMethod="",
-    ~apiLogType=Request,
+    ~apiLogType=LogUtils.Request,
     ~isPaymentSession=false,
   ) => {
     let eventNameStr = eventName->eventNameToStrMapper
