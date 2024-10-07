@@ -1,3 +1,10 @@
+## [0.91.9](https://github.com/juspay/hyperswitch-web/compare/v0.91.8...v0.91.9) (2024-10-07)
+
+
+### Bug Fixes
+
+* cypress env fix ([#719](https://github.com/juspay/hyperswitch-web/issues/719)) ([95eabc0](https://github.com/juspay/hyperswitch-web/commit/95eabc0242094cedb2c48af19c41e2fa0fa72b33))
+
 ## [0.91.8](https://github.com/juspay/hyperswitch-web/compare/v0.91.7...v0.91.8) (2024-10-07)
 
 
