@@ -1,3 +1,10 @@
+## [0.91.8](https://github.com/juspay/hyperswitch-web/compare/v0.91.7...v0.91.8) (2024-10-07)
+
+
+### Bug Fixes
+
+* workflow indentation fix ([#713](https://github.com/juspay/hyperswitch-web/issues/713)) ([bf00bb3](https://github.com/juspay/hyperswitch-web/commit/bf00bb3859ec5b0156b71e543d693e01ee7b1c2d))
+
 ## [0.91.7](https://github.com/juspay/hyperswitch-web/compare/v0.91.6...v0.91.7) (2024-10-04)
 
 
