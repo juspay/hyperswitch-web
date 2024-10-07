@@ -12,8 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: Testing
     env:
-      HS_Pub_Key: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
-      HS_Sec_Key: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
       HS_Prof_Id: ${{ secrets.PROFILE_ID }}
       HS_Server_Url: "https://sandbox.hyperswitch.io"
       HS_Client_Url: "http://localhost:9050"
@@ -58,6 +56,6 @@ jobs:
         with:
           working-directory: ./cypress-tests
         env:
-          CYPRESS_HYPERSWITCH_PUBLISHABLE_KEY: $HS_Pub_Key
-          CYPRESS_HYPERSWITCH_SECRET_KEY: $HS_Sec_Key
+          CYPRESS_HYPERSWITCH_PUBLISHABLE_KEY: ${{ secrets.HYPERSWITCH_PUBLISHABLE_KEY }}
+          CYPRESS_HYPERSWITCH_SECRET_KEY: ${{ secrets.HYPERSWITCH_SECRET_KEY }}
         # Runs Cypress tests located in the specified directory
