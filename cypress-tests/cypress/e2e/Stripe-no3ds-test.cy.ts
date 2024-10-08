@@ -13,6 +13,7 @@ describe("Card payment flow test", () => {
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
   // changeObjectKeyValue(createPaymentBody,"profile_id","YOUR_PROFILE_ID")
+   changeObjectKeyValue(createPaymentBody,"customer_id","new_user")
 
 
   beforeEach(() => {
