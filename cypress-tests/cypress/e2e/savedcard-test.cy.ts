@@ -11,9 +11,9 @@ describe("Card payment flow test", () => {
   let iframeSelector =
     "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
 
-  // changeObjectKeyValue(createPaymentBody,"profile_id","YOUR_PROFILE_ID")
+  changeObjectKeyValue(createPaymentBody,"customer_id","hyperswitch_sdk_demo_id")
 
-
+  
   beforeEach(() => {
     getIframeBody = () => cy.iframe(iframeSelector);
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
