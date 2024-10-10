@@ -1,3 +1,10 @@
+## [0.91.10](https://github.com/juspay/hyperswitch-web/compare/v0.91.9...v0.91.10) (2024-10-10)
+
+
+### Bug Fixes
+
+* fixed applePay for headless fow ([#725](https://github.com/juspay/hyperswitch-web/issues/725)) ([6e513a3](https://github.com/juspay/hyperswitch-web/commit/6e513a3bab9444a75dbc976945ab3113ced76b51))
+
 ## [0.91.9](https://github.com/juspay/hyperswitch-web/compare/v0.91.8...v0.91.9) (2024-10-07)
 
 
