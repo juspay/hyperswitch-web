@@ -100,4 +100,12 @@ let cardPatterns = [
     length: [16],
     pincodeRequired: false,
   },
+  {
+    issuer: "CartesBancaires",
+    pattern: %re("/^4/"),
+    cvcLength: [3],
+    length: [16],
+    maxCVCLenth: 3,
+    pincodeRequired: true,
+  },
 ]
