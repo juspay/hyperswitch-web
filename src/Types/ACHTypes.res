@@ -5,4 +5,5 @@ type data = {
   accountType: string,
   iban: string,
   sortCode: string,
+  requiredFieldsBody?: Dict.t<JSON.t>,
 }

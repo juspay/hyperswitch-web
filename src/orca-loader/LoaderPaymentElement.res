@@ -281,6 +281,10 @@ let make = (
                             ("options", options),
                           ]->Dict.fromArray,
                         )
+                        let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
+                        fullScreenEle->Window.iframePostMessage(
+                          [("metadata", fullscreenMetadata.contents)]->Dict.fromArray,
+                        )
                       }
                     }
                     addSmartEventListener(

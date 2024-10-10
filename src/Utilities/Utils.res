@@ -1,6 +1,8 @@
 @val external document: 'a = "document"
 @val external window: Dom.element = "window"
 @val @scope("window") external iframeParent: Dom.element = "parent"
+@send external body: ('a, Dom.element) => Dom.element = "body"
+
 type event = {data: string}
 external dictToObj: Dict.t<'a> => {..} = "%identity"
 
@@ -582,10 +584,12 @@ let constructClass = (~classname, ~dict) => {
 let generateStyleSheet = (classname, dict, id) => {
   let createStyle = () => {
     let style = document["createElement"]("style")
-    style["type"] = "text/css"
+    let style1 = Window.createElement("style")
+    // style["type"] = "text/css"
     style["id"] = id
     style["appendChild"](document["createTextNode"](constructClass(~classname, ~dict)))->ignore
-    document["body"]["appendChild"](style)->ignore
+    let obj = document["body"]
+    obj["appendChild"](style)->ignore
   }
   switch Window.window->Window.document->Window.getElementById(id)->Nullable.toOption {
   | Some(val) => {

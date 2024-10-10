@@ -90,7 +90,7 @@ let make = (~paymentType: CardThemeType.mode) => {
     <FullNamePaymentInput paymentType />
     <AddBankAccount modalData setModalData />
     <FullScreenPortal>
-      <BankDebitModal setModalData />
+      <BankDebitModal setModalData paymentType />
     </FullScreenPortal>
     <Surcharge paymentMethod="bank_debit" paymentMethodType="becs" />
     <Terms mode=PaymentModeType.BecsBankDebit />

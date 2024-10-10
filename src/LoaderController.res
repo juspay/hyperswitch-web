@@ -183,7 +183,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   })
 
   React.useEffect(() => {
-    CardUtils.genreateFontsLink(config.fonts)
+    CardUtils.generateFontsLink(config.fonts)
     let dict = config.appearance.rules->getDictFromJson
     if dict->Dict.toArray->Array.length > 0 {
       generateStyleSheet("", dict, "themestyle")

@@ -6,7 +6,7 @@ module ToolTip = {
     let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
     <RenderIf condition={openTip}>
       <button
-        className="h-auto max-w-20 w-auto cursor-pointer absolute m-1 px-1 py-2 top-[-3rem] right-[1em]"
+        className="h-auto max-w-30 w-auto cursor-pointer absolute m-1 px-1 py-2 top-[-3rem] right-[1em]"
         style={
           background: themeObj.colorBackground,
           color: themeObj.colorDanger,
@@ -30,15 +30,18 @@ module ToolTip = {
 @react.component
 let make = (~modalData, ~setModalData) => {
   let isDataAvailable = modalData->Option.isSome
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let (openToolTip, setOpenToolTip) = React.useState(_ => false)
   let toolTipRef = React.useRef(Nullable.null)
 
   let openModal = () => {
+    let metaData = [("config", config->Identity.anyTypeToJson)]->getJsonFromArrayOfJson
+
     messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("iframeId", iframeId->JSON.Encode.string),
+      ("metadata", metaData),
     ])
   }
   <div
