@@ -1203,7 +1203,11 @@ let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
       resolve(JSON.Encode.bool(true))
     } else {
       let handleMessage = (event: Types.event) => {
-        let json = event.data->anyTypeToJson->getStringFromJson("")->safeParse
+        let json = try {
+          event.data->anyTypeToJson
+        } catch {
+        | _ => JSON.Encode.null
+        }
 
         let dict = json->getDictFromJson
         if dict->Dict.get("oneClickDoSubmit")->Option.isSome {

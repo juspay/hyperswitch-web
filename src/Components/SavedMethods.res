@@ -11,6 +11,7 @@ let make = (
   open CardUtils
   open Utils
   open UtilityHooks
+
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
@@ -72,13 +73,12 @@ let make = (
   | _ => false
   }
   let empty = cvcNumber == ""
-  let customerMethod =
+  let customerMethod = React.useMemo(_ =>
     savedMethods
-    ->Array.filter(savedMethod => {
-      savedMethod.paymentToken === paymentTokenVal
-    })
+    ->Array.filter(savedMethod => savedMethod.paymentToken === paymentTokenVal)
     ->Array.get(0)
     ->Option.getOr(PaymentType.defaultCustomerMethods)
+  , [paymentTokenVal])
   let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
   let isCardPaymentMethod = customerMethod.paymentMethod === "card"
   let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
@@ -100,7 +100,7 @@ let make = (
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
-    let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not
+    let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not || isSaveCardsChecked
 
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>

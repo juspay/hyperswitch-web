@@ -19,7 +19,7 @@ export const createPaymentBody = {
   ],
   confirm: false,
   capture_method: "automatic",
-  authentication_type: "three_ds",
+  authentication_type: "no_three_ds",
   customer_id: "hyperswitch_sdk_demo_id",
   email: "hyperswitch_sdk_demo_id@gmail.com",
   request_external_three_ds_authentication: false,
@@ -46,7 +46,7 @@ export const createPaymentBody = {
     new_customer: "true",
     login_date: "2019-09-10T10:11:12Z",
   },
-  profile_id: "pro_xsQ7wTCP89OLqmWNcnRq",
+  profile_id: "pro_5fVcCxU8MFTYozgtf0P8",
   billing: {
     email: "hyperswitch_sdk_demo_id@gmail.com",
     address: {

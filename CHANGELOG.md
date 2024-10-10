@@ -1,3 +1,75 @@
+## [0.92.1](https://github.com/juspay/hyperswitch-web/compare/v0.92.0...v0.92.1) (2024-10-10)
+
+
+### Bug Fixes
+
+* web package added ([#726](https://github.com/juspay/hyperswitch-web/issues/726)) ([ecf0db3](https://github.com/juspay/hyperswitch-web/commit/ecf0db3d2fdb811f572bdffb5a61e468284a1c51))
+
+# [0.92.0](https://github.com/juspay/hyperswitch-web/compare/v0.91.10...v0.92.0) (2024-10-10)
+
+
+### Features
+
+* added bubblegum theme ([#723](https://github.com/juspay/hyperswitch-web/issues/723)) ([7df22f3](https://github.com/juspay/hyperswitch-web/commit/7df22f3f9c0dd1c8687d67e64faf7a0591e3e59b))
+
+## [0.91.10](https://github.com/juspay/hyperswitch-web/compare/v0.91.9...v0.91.10) (2024-10-10)
+
+
+### Bug Fixes
+
+* fixed applePay for headless fow ([#725](https://github.com/juspay/hyperswitch-web/issues/725)) ([6e513a3](https://github.com/juspay/hyperswitch-web/commit/6e513a3bab9444a75dbc976945ab3113ced76b51))
+
+## [0.91.9](https://github.com/juspay/hyperswitch-web/compare/v0.91.8...v0.91.9) (2024-10-07)
+
+
+### Bug Fixes
+
+* cypress env fix ([#719](https://github.com/juspay/hyperswitch-web/issues/719)) ([95eabc0](https://github.com/juspay/hyperswitch-web/commit/95eabc0242094cedb2c48af19c41e2fa0fa72b33))
+
+## [0.91.8](https://github.com/juspay/hyperswitch-web/compare/v0.91.7...v0.91.8) (2024-10-07)
+
+
+### Bug Fixes
+
+* workflow indentation fix ([#713](https://github.com/juspay/hyperswitch-web/issues/713)) ([bf00bb3](https://github.com/juspay/hyperswitch-web/commit/bf00bb3859ec5b0156b71e543d693e01ee7b1c2d))
+
+## [0.91.7](https://github.com/juspay/hyperswitch-web/compare/v0.91.6...v0.91.7) (2024-10-04)
+
+
+### Bug Fixes
+
+* paypal flow fixed for one click handler ([#711](https://github.com/juspay/hyperswitch-web/issues/711)) ([09a8470](https://github.com/juspay/hyperswitch-web/commit/09a8470a3b16c410636c1544033aa0f2e76a59b1))
+
+## [0.91.6](https://github.com/juspay/hyperswitch-web/compare/v0.91.5...v0.91.6) (2024-10-04)
+
+## [0.91.5](https://github.com/juspay/hyperswitch-web/compare/v0.91.4...v0.91.5) (2024-10-04)
+
+
+### Bug Fixes
+
+* sentry dependent bot alerts ([#716](https://github.com/juspay/hyperswitch-web/issues/716)) ([6bc1fb4](https://github.com/juspay/hyperswitch-web/commit/6bc1fb4372c27f6fc021585f69791a0dadca62d5))
+
+## [0.91.4](https://github.com/juspay/hyperswitch-web/compare/v0.91.3...v0.91.4) (2024-10-04)
+
+
+### Bug Fixes
+
+* add cross env script support for windows ([#714](https://github.com/juspay/hyperswitch-web/issues/714)) ([318b5c2](https://github.com/juspay/hyperswitch-web/commit/318b5c294cc670988204f40ed427f56c4902d163))
+
+## [0.91.3](https://github.com/juspay/hyperswitch-web/compare/v0.91.2...v0.91.3) (2024-10-04)
+
+
+### Bug Fixes
+
+* sdk pay now redirect fix ([#715](https://github.com/juspay/hyperswitch-web/issues/715)) ([2bdf260](https://github.com/juspay/hyperswitch-web/commit/2bdf260f2c1fbfce6627db7c9eb5a519987cabfa))
+
+## [0.91.2](https://github.com/juspay/hyperswitch-web/compare/v0.91.1...v0.91.2) (2024-10-03)
+
+
+### Bug Fixes
+
+* customer-acceptance for saved pm ([#709](https://github.com/juspay/hyperswitch-web/issues/709)) ([a569dac](https://github.com/juspay/hyperswitch-web/commit/a569dacede738ba4f7464966a323e14d19170028))
+
 ## [0.91.1](https://github.com/juspay/hyperswitch-web/compare/v0.91.0...v0.91.1) (2024-09-26)
 
 

@@ -74,6 +74,16 @@ type paymentRequestData = {
   @optional merchantIdentifier: string,
 }
 
+type headlessApplePayToken = {
+  paymentRequestData: JSON.t,
+  sessionTokenData: option<JSON.t>,
+}
+
+let defaultHeadlessApplePayToken: headlessApplePayToken = {
+  paymentRequestData: JSON.Encode.null,
+  sessionTokenData: None,
+}
+
 let jsonToPaymentRequestDataType: Dict.t<JSON.t> => paymentRequestData = jsonDict => {
   let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = getClientCountry(clientTimeZone)
