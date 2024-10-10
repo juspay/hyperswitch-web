@@ -1,3 +1,10 @@
+# [0.92.0](https://github.com/juspay/hyperswitch-web/compare/v0.91.10...v0.92.0) (2024-10-10)
+
+
+### Features
+
+* added bubblegum theme ([#723](https://github.com/juspay/hyperswitch-web/issues/723)) ([7df22f3](https://github.com/juspay/hyperswitch-web/commit/7df22f3f9c0dd1c8687d67e64faf7a0591e3e59b))
+
 ## [0.91.10](https://github.com/juspay/hyperswitch-web/compare/v0.91.9...v0.91.10) (2024-10-10)
 
 
