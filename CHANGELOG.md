@@ -1,3 +1,10 @@
+## [0.92.1](https://github.com/juspay/hyperswitch-web/compare/v0.92.0...v0.92.1) (2024-10-10)
+
+
+### Bug Fixes
+
+* web package added ([#726](https://github.com/juspay/hyperswitch-web/issues/726)) ([ecf0db3](https://github.com/juspay/hyperswitch-web/commit/ecf0db3d2fdb811f572bdffb5a61e468284a1c51))
+
 # [0.92.0](https://github.com/juspay/hyperswitch-web/compare/v0.91.10...v0.92.0) (2024-10-10)
 
 
