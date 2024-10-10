@@ -2,6 +2,7 @@ open CardUtils
 open ErrorUtils
 open PaymentMethodCollectTypes
 open Utils
+open CardExpiryValidation
 
 type t = Dict.t<JSON.t>
 
@@ -645,7 +646,7 @@ let itemToObjMapper = (dict, logger) => {
 let calculateValidity = (key, value, ~default=None) => {
   switch key {
   | PayoutMethodData(CardNumber) =>
-    if cardNumberInRange(value)->Array.includes(true) && calculateLuhn(value) {
+    if cardNumberInRange(value)->Array.includes(true) && ValidationUtils.calculateLuhn(value) {
       Some(true)
     } else if value->String.length == 0 {
       default

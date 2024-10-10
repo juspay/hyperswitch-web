@@ -1,5 +1,6 @@
 open Utils
 open Identity
+open SharedUtils
 
 @val @scope(("window", "parent", "location")) external href: string = "href"
 
@@ -896,7 +897,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->getPaymentId
-      let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
+      let headers = getHeader(~apiKey=confirmParam.publishableKey)
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/payments/${paymentIntentID}?force_sync=true&client_secret=${clientSecret}`
 
@@ -977,11 +978,11 @@ let usePaymentIntent = (optLogger, paymentType) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->getPaymentId
-      let headers = [
-        ("Content-Type", "application/json"),
-        ("api-key", confirmParam.publishableKey),
-        ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
-      ]
+      let headers = getHeader(
+        ~apiKey=confirmParam.publishableKey,
+        ~clientSource=paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper,
+      )
+
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
       let body =
@@ -1151,11 +1152,10 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->getPaymentId
-      let headers = [
-        ("Content-Type", "application/json"),
-        ("api-key", confirmParam.publishableKey),
-        ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
-      ]
+      let headers = getHeader(
+        ~apiKey=confirmParam.publishableKey,
+        ~clientSource=paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper,
+      )
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
       let uri = `${endpoint}/payments/${paymentIntentID}/complete_authorize`
 
@@ -1210,11 +1210,8 @@ let fetchSessions = (
   ~merchantHostname=Window.Location.hostname,
 ) => {
   open Promise
-  let headers = [
-    ("Content-Type", "application/json"),
-    ("api-key", publishableKey),
-    ("X-Merchant-Domain", merchantHostname),
-  ]
+  let uri = `${endpoint}/payments/session_tokens`
+  let headers = getHeader(~apiKey=publishableKey, ~merchantHostname)
   let paymentIntentID = clientSecret->getPaymentId
   let body =
     [
@@ -1223,7 +1220,6 @@ let fetchSessions = (
       ("wallets", wallets->JSON.Encode.array),
       ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
     ]->getJsonFromArrayOfJson
-  let uri = `${endpoint}/payments/session_tokens`
   logApi(
     ~optLogger,
     ~url=uri,
@@ -1290,7 +1286,7 @@ let fetchSessions = (
 
 let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~uri, ~body) => {
   open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+  let headers = getHeader(~apiKey=publishableKey)
   logApi(
     ~optLogger=Some(logger),
     ~url=uri,
@@ -1365,7 +1361,7 @@ let createPaymentMethod = (
   ~body,
 ) => {
   open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+  let headers = getHeader(~apiKey=publishableKey)
   let uri = `${endpoint}/payment_methods`
   logApi(
     ~optLogger=Some(logger),
@@ -1440,7 +1436,7 @@ let fetchPaymentMethodList = (
   ~endpoint,
 ) => {
   open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+  let headers = getHeader(~apiKey=publishableKey)
   let uri = `${endpoint}/account/payment_methods?client_secret=${clientSecret}`
   logApi(
     ~optLogger=Some(logger),
@@ -1506,7 +1502,7 @@ let fetchCustomerPaymentMethodList = (
   ~isPaymentSession=false,
 ) => {
   open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
+  let headers = getHeader(~apiKey=publishableKey)
   let uri = `${endpoint}/customers/payment_methods?client_secret=${clientSecret}`
   logApi(
     ~optLogger,
@@ -1598,10 +1594,8 @@ let paymentIntentForPaymentSession = (
     ~isConfirmCall=true,
   )
   let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
-  let headers = [("Content-Type", "application/json"), ("api-key", confirmParam.publishableKey)]
-
+  let headers = getHeader(~apiKey=confirmParam.publishableKey)
   let broswerInfo = BrowserSpec.broswerInfo()
-
   let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
 
   let bodyStr =
@@ -1645,8 +1639,7 @@ let callAuthLink = (
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let uri = `${endpoint}/payment_methods/auth/link`
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
-
+  let headers = getHeader(~apiKey=publishableKey)->Dict.fromArray
   logApi(
     ~optLogger,
     ~url=uri,
@@ -1754,9 +1747,7 @@ let callAuthExchange = (
     ("payment_method_type", paymentMethodType->JSON.Encode.string),
     ("public_token", publicToken->JSON.Encode.string),
   ]
-
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
-
+  let headers = getHeader(~apiKey=publishableKey)->Dict.fromArray
   logApi(
     ~optLogger,
     ~url=uri,
@@ -1852,7 +1843,7 @@ let fetchSavedPaymentMethodList = (
   ~isPaymentSession=false,
 ) => {
   open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", ephemeralKey)]
+  let headers = getHeader(~apiKey=ephemeralKey)
   let uri = `${endpoint}/customers/payment_methods`
   logApi(
     ~optLogger,
@@ -1916,7 +1907,7 @@ let fetchSavedPaymentMethodList = (
 let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodUri) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Content-Type", "application/json"), ("api-key", ephemeralKey)]
+  let headers = getHeader(~apiKey=ephemeralKey)
   let uri = `${endpoint}/payment_methods/${paymentMethodId}`
   logApi(
     ~optLogger=Some(logger),
@@ -1984,7 +1975,7 @@ let calculateTax = (
 ) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Content-Type", "application/json"), ("api-key", apiKey)]
+  let headers = getHeader(~apiKey)
   let uri = `${endpoint}/payments/${paymentId}/calculate_tax`
   let body = [
     ("client_secret", clientSecret),

@@ -4,7 +4,7 @@ open LoggerUtils
 open Utils
 open EventListenerManager
 open Identity
-
+open SharedUtils
 let checkAndAppend = (selector, child) => {
   if Nullable.toOption(CommonHooks.querySelector(selector)) == None {
     CommonHooks.appendChild(child)

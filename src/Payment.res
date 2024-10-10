@@ -3,6 +3,9 @@ open CardThemeType
 open CardTheme
 open LoggerUtils
 open RecoilAtoms
+open CardCvcValidation
+open CardExpiryValidation
+open CardValidationWeb
 
 let setUserError = message => {
   Utils.postFailedSubmitResponse(~errortype="validation_error", ~message)
@@ -72,10 +75,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   React.useEffect(() => {
     let obj = getobjFromCardPattern(cardBrand)
     let cvcLength = obj.maxCVCLenth
-    if (
-      cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true) &&
-        cvcNumber->String.length == cvcLength
-    ) {
+    if cvcNumberInRange(cvcNumber, cardBrand) && cvcNumber->String.length == cvcLength {
       blurRef(cvcRef)
     }
     None
@@ -118,11 +118,11 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     logInputChangeInfo("cardCVC", logger)
     let cvc = val->formatCVCNumber(cardBrand)
     setCvcNumber(_ => cvc)
-    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
+    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand) {
       zipRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
     }
 
-    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
+    if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand) {
       setIsCVCValid(_ => Some(true))
     } else {
       setIsCVCValid(_ => None)
@@ -147,7 +147,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
-    if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
+    if (
+      cardNumberInRange(cardNumber)->Array.includes(true) &&
+        ValidationUtils.calculateLuhn(cardNumber)
+    ) {
       setIsCardValid(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
     } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => None)
@@ -175,9 +178,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let handleCVCBlur = ev => {
     let cvcNumber = ReactEvent.Focus.target(ev)["value"]
-    if (
-      cvcNumber->String.length > 0 && cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
-    ) {
+    if cvcNumber->String.length > 0 && cvcNumberInRange(cvcNumber, cardBrand) {
       setIsCVCValid(_ => Some(true))
     } else if cvcNumber->String.length == 0 {
       setIsCVCValid(_ => None)

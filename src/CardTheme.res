@@ -72,38 +72,13 @@ type recoilConfig = {
 }
 
 let getLocaleObject = async string => {
-  try {
-    let locale = if string == "auto" {
-      Window.Navigator.language
-    } else {
-      string
-    }
-
-    let promiseLocale = switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
-    | EN => Js.import(EnglishLocale.localeStrings)
-    | HE => Js.import(HebrewLocale.localeStrings)
-    | FR => Js.import(FrenchLocale.localeStrings)
-    | EN_GB => Js.import(EnglishGBLocale.localeStrings)
-    | AR => Js.import(ArabicLocale.localeStrings)
-    | JA => Js.import(JapaneseLocale.localeStrings)
-    | DE => Js.import(DeutschLocale.localeStrings)
-    | FR_BE => Js.import(FrenchBelgiumLocale.localeStrings)
-    | ES => Js.import(SpanishLocale.localeStrings)
-    | CA => Js.import(CatalanLocale.localeStrings)
-    | ZH => Js.import(ChineseLocale.localeStrings)
-    | PT => Js.import(PortugueseLocale.localeStrings)
-    | IT => Js.import(ItalianLocale.localeStrings)
-    | PL => Js.import(PolishLocale.localeStrings)
-    | NL => Js.import(DutchLocale.localeStrings)
-    | SV => Js.import(SwedishLocale.localeStrings)
-    | RU => Js.import(RussianLocale.localeStrings)
-    }
-
-    let awaitedLocaleValue = await promiseLocale
-    awaitedLocaleValue
-  } catch {
-  | _ => EnglishLocale.localeStrings
+  let locale = if string == "auto" {
+    Window.Navigator.language
+  } else {
+    string
   }
+  let resultedLocale = await LocalehelperWeb.getLocaleWeb(locale)
+  resultedLocale
 }
 
 let getConstantStringsObject = async () => {

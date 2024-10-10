@@ -128,7 +128,7 @@ let make = (
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    let (month, year) = CardUtils.getExpiryDates(cardExpiry)
+    let (month, year) = CardExpiryValidation.getExpiryDates(cardExpiry)
 
     let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
     let cardNetwork = {

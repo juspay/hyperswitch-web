@@ -1,6 +1,7 @@
 open RecoilAtoms
 open PaymentType
 open Utils
+open EmailValidation
 
 @react.component
 let make = (~paymentType) => {
