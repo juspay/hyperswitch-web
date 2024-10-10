@@ -35,7 +35,7 @@ let getCustomerSavedPaymentMethods = (
     customerPaymentMethods->Array.sort((a, b) => compareLogic(a.lastUsedAt, b.lastUsedAt))
 
     let customerPaymentMethodsRef = ref(customerPaymentMethods)
-    let applePayTokenRef = ref(JSON.Encode.null)
+    let applePayTokenRef = ref(defaultHeadlessApplePayToken)
     let googlePayTokenRef = ref(JSON.Encode.null)
 
     let isApplePayPresent =
@@ -187,9 +187,9 @@ let getCustomerSavedPaymentMethods = (
       }
 
       ApplePayHelpers.startApplePaySession(
-        ~paymentRequest=applePayTokenRef.contents,
+        ~paymentRequest=applePayTokenRef.contents.paymentRequestData,
         ~applePaySessionRef,
-        ~applePayPresent=Some(applePayTokenRef.contents),
+        ~applePayPresent=applePayTokenRef.contents.sessionTokenData,
         ~logger,
         ~callBackFunc=processPayment,
         ~clientSecret,
@@ -425,7 +425,10 @@ let getCustomerSavedPaymentMethods = (
               ~sessionObj=optToken,
               ~componentName,
             )
-            applePayTokenRef := paymentRequest
+            applePayTokenRef := {
+                paymentRequestData: paymentRequest,
+                sessionTokenData: optToken,
+              }
           }
         | _ => updateCustomerPaymentMethodsRef(~isFilterApplePay=true)
         }
