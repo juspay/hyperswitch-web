@@ -7,6 +7,7 @@ open Identity
 external writeText: string => promise<'a> = "writeText"
 
 let onCompleteDoThisUsed = ref(false)
+let onSDKHandleClickIsUsed = ref(false)
 let make = (
   componentType,
   options,
@@ -32,6 +33,46 @@ let make = (
         callbackFuncForExtractingValFromDict("sdkHandleOneClickConfirmPayment"),
         true,
       )
+
+    let asyncWrapper = async fn => {
+      try {
+        await fn()
+      } catch {
+      | err => Console.log2("Async function call failure", err)
+      }
+    }
+
+    let meraEvHandler = ref(Some(() => Promise.make((_, _) => {()})))
+    let walletOneClickEventHandler = (event: Types.event) => {
+      let json = try {
+        event.data->anyTypeToJson
+      } catch {
+      | _ => JSON.Encode.null
+      }
+
+      let dict = json->getDictFromJson
+      if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
+        switch meraEvHandler.contents {
+        | Some(eH) =>
+          asyncWrapper(eH)
+          ->Promise.then(() => {
+            let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
+            event.source->Window.sendPostMessage(msg)
+            Promise.resolve()
+          })
+          ->ignore
+
+        | None => ()
+        }
+      }
+    }
+
+    Window.addEventListener("message", walletOneClickEventHandler)
+
+    let onSDKHandleClick = (eventHandler: option<unit => RescriptCore.Promise.t<'a>>) => {
+      meraEvHandler := eventHandler
+      onSDKHandleClickIsUsed := true
+    }
 
     let on = (eventType, eventHandler) => {
       switch eventType->eventTypeMapper {
@@ -371,6 +412,7 @@ let make = (
       destroy,
       update,
       mount,
+      onSDKHandleClick,
     }
   } catch {
   | e => {

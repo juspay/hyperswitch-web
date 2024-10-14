@@ -21,6 +21,7 @@ let loadPaypalSDK = (
   ) => unit,
   ~setIsCompleted,
   ~isCallbackUsedVal: bool,
+  ~sdkHandleIsThere: bool,
 ) => {
   loggerState.setLogInfo(
     ~value="Paypal SDK Button Clicked",
@@ -34,7 +35,7 @@ let loadPaypalSDK = (
     style: buttonStyle,
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: () => {
-      Utils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
+      Utils.makeOneClickHandlerPromise(sdkHandleIsThere)->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
           Utils.messageParentWindow([

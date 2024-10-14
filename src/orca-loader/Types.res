@@ -31,6 +31,7 @@ type paymentElement = {
   mount: string => unit,
   focus: unit => unit,
   clear: unit => unit,
+  onSDKHandleClick: option<unit => Promise.t<unit>> => unit,
 }
 
 type element = {
@@ -107,6 +108,8 @@ let fetchUpdates = () => {
     setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
   })
 }
+
+let fnArgument = Some(() => Promise.make((_, _) => {()}))
 let defaultPaymentElement = {
   on: (_str, _func) => (),
   collapse: () => (),
@@ -117,6 +120,7 @@ let defaultPaymentElement = {
   mount: _string => (),
   focus: () => (),
   clear: () => (),
+  onSDKHandleClick: fnArgument => (),
 }
 
 let create = (_componentType, _options) => {

@@ -321,6 +321,10 @@ let make = (
               "onCompleteDoThisUsed",
               LoaderPaymentElement.onCompleteDoThisUsed.contents->JSON.Encode.bool,
             ),
+            (
+              "onSDKHandleClickIsUsed",
+              LoaderPaymentElement.onSDKHandleClickIsUsed.contents->JSON.Encode.bool,
+            ),
           ]->Dict.fromArray
 
         let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)

@@ -11,7 +11,8 @@ let make = (~sessionObj: SessionsType.token) => {
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
-  let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
+  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(RecoilAtoms.isSDKHandleClick)
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
@@ -65,7 +66,7 @@ let make = (~sessionObj: SessionsType.token) => {
           theme: options.wallets.style.theme == Dark ? "default" : "outlined",
           shape: "default",
           on_click: authorize => {
-            makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(
+            makeOneClickHandlerPromise(sdkHandleIsThere)->then(
               result => {
                 let result = result->JSON.Decode.bool->Option.getOr(false)
                 if result {

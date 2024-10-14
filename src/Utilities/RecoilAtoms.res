@@ -74,6 +74,7 @@ let userPixKey = Recoil.atom("userPixKey", defaultFieldValues)
 let userPixCPF = Recoil.atom("userPixCPF", defaultFieldValues)
 let userPixCNPJ = Recoil.atom("userPixCNPJ", defaultFieldValues)
 let isCompleteCallbackUsed = Recoil.atom("isCompleteCallbackUsed", false)
+let isSDKHandleClick = Recoil.atom("isSDKHandleClick", false)
 
 type areOneClickWalletsRendered = {
   isGooglePay: bool,
