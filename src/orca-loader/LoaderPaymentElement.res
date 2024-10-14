@@ -6,6 +6,7 @@ open Identity
 @val @scope(("navigator", "clipboard"))
 external writeText: string => promise<'a> = "writeText"
 
+let onCompleteDoThisUsed = ref(false)
 let make = (
   componentType,
   options,
@@ -47,6 +48,15 @@ let make = (
           },
           "onEscape",
         )
+      | CompleteDoThis => {
+          onCompleteDoThisUsed := true
+          eventHandlerFunc(
+            ev => ev.data.completeDoThis,
+            eventHandler,
+            CompleteDoThis,
+            "onCompleteDoThis",
+          )
+        }
       | Change =>
         eventHandlerFunc(
           ev => ev.data.elementType === componentType,

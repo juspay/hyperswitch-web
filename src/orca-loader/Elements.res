@@ -317,6 +317,10 @@ let make = (
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),
             ("customBackendUrl", customBackendUrl->JSON.Encode.string),
+            (
+              "onCompleteDoThisUsed",
+              LoaderPaymentElement.onCompleteDoThisUsed.contents->JSON.Encode.bool,
+            ),
           ]->Dict.fromArray
 
         let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)

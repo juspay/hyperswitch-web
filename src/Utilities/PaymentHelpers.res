@@ -315,9 +315,11 @@ let rec intentCall = (
   ~sdkHandleOneClickConfirmPayment,
   ~counter,
   ~isPaymentSession=false,
+  ~isCallbackUsedVal=?,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
+
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
   let (eventName: OrcaLogger.eventName, initEventName: OrcaLogger.eventName) = switch (
     isConfirm,
@@ -506,14 +508,28 @@ let rec intentCall = (
               | (Applepay, false)
               | (Paypal, false) =>
                 if !isPaymentSession {
-                  closePaymentLoaderIfAny()
+                  if isCallbackUsedVal->Option.getOr(false) {
+                    Utils.handleOnCompleteDoThisMessage()
+                  } else {
+                    closePaymentLoaderIfAny()
+                  }
+
                   postSubmitResponse(~jsonData=data, ~url=url.href)
                 } else if confirmParam.redirect === Some("always") {
-                  handleOpenUrl(url.href)
+                  if isCallbackUsedVal->Option.getOr(false) {
+                    Utils.handleOnCompleteDoThisMessage()
+                  } else {
+                    handleOpenUrl(url.href)
+                  }
                 } else {
                   resolve(data)
                 }
-              | _ => handleOpenUrl(url.href)
+              | _ =>
+                if isCallbackUsedVal->Option.getOr(false) {
+                  Utils.handleOnCompleteDoThisMessage()
+                } else {
+                  handleOpenUrl(url.href)
+                }
               }
             }
 
@@ -890,6 +906,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
   open RecoilAtoms
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="") => {
@@ -917,6 +934,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
+          ~isCallbackUsedVal,
         )->ignore
       }
       switch paymentMethodList {
@@ -963,6 +981,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (
@@ -1056,6 +1075,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~customPodUri,
             ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
             ~counter=0,
+            ~isCallbackUsedVal,
           )
           ->then(val => {
             intentCallback(val)
@@ -1140,6 +1160,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   let url = RescriptReactRouter.useUrl()
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let paymentTypeFromUrl =
     CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
   (
@@ -1183,6 +1204,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
+          ~isCallbackUsedVal,
         )->ignore
       }
       switch paymentMethodList {
