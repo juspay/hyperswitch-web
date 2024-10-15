@@ -1,3 +1,10 @@
+# [0.94.0](https://github.com/juspay/hyperswitch-web/compare/v0.93.0...v0.94.0) (2024-10-15)
+
+
+### Features
+
+* added click handler ([#732](https://github.com/juspay/hyperswitch-web/issues/732)) ([9c09ff2](https://github.com/juspay/hyperswitch-web/commit/9c09ff2d90ece78583c897c9cb29f2f45f346f90))
+
 # [0.93.0](https://github.com/juspay/hyperswitch-web/compare/v0.92.1...v0.93.0) (2024-10-15)
 
 
