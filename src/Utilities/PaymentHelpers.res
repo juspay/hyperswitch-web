@@ -321,12 +321,15 @@ let rec intentCall = (
   let isConfirm = uri->String.includes("/confirm")
 
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
+  let isPostSessionTokens = uri->String.includes("/post_session_tokens")
   let (eventName: OrcaLogger.eventName, initEventName: OrcaLogger.eventName) = switch (
     isConfirm,
     isCompleteAuthorize,
+    isPostSessionTokens,
   ) {
-  | (true, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
-  | (_, true) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
+  | (true, _, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
+  | (_, true, _) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
+  | (_, _, true) => (POST_SESSION_TOKENS_CALL, POST_SESSION_TOKENS_CALL_INIT)
   | _ => (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
   }
   logApi(
@@ -762,6 +765,17 @@ let rec intentCall = (
                   )
                   resolve(failedSubmitResponse)
                 }
+              }
+            } else if intent.status == "requires_payment_method" {
+              if intent.nextAction.type_ === "invoke_sdk_client" {
+                let nextActionData =
+                  intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
+                let response =
+                  [
+                    ("orderId", intent.connectorTransactionId->JSON.Encode.string),
+                    ("nextActionData", nextActionData),
+                  ]->getJsonFromArrayOfJson
+                resolve(response)
               }
             } else if intent.status == "processing" {
               if intent.nextAction.type_ == "third_party_sdk_session_token" {
@@ -2071,4 +2085,184 @@ let calculateTax = (
     )
     JSON.Encode.null->resolve
   })
+}
+
+let usePostSessionTokens = (
+  optLogger,
+  paymentType: payment,
+  paymentMethod: PaymentMethodCollectTypes.paymentMethod,
+) => {
+  open RecoilAtoms
+  open Promise
+  let url = RescriptReactRouter.useUrl()
+  let paymentTypeFromUrl =
+    CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
+
+  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  (
+    ~handleUserError=false,
+    ~bodyArr: array<(string, JSON.t)>,
+    ~confirmParam: ConfirmType.confirmParams,
+    ~iframeId=keys.iframeId,
+    ~isThirdPartyFlow=false,
+    ~intentCallback=_ => (),
+    ~manualRetry as _=false,
+  ) => {
+    switch keys.clientSecret {
+    | Some(clientSecret) =>
+      let paymentIntentID = clientSecret->getPaymentId
+      let headers = [
+        ("Content-Type", "application/json"),
+        ("api-key", confirmParam.publishableKey),
+        ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+      ]
+      let body = [
+        ("client_secret", clientSecret->JSON.Encode.string),
+        ("payment_id", paymentIntentID->JSON.Encode.string),
+        ("payment_method_type", (paymentType :> string)->JSON.Encode.string),
+        ("payment_method", (paymentMethod :> string)->JSON.Encode.string),
+      ]
+
+      let endpoint = ApiEndpoint.getApiEndPoint(
+        ~publishableKey=confirmParam.publishableKey,
+        ~isConfirmCall=isThirdPartyFlow,
+      )
+      let uri = `${endpoint}/payments/${paymentIntentID}/post_session_tokens`
+
+      let callIntent = body => {
+        let contentLength = body->String.length->Int.toString
+        let maskedPayload =
+          body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
+        let loggerPayload =
+          [
+            ("payload", maskedPayload->JSON.Encode.string),
+            (
+              "headers",
+              headers
+              ->Array.map(header => {
+                let (key, value) = header
+                (key, value->JSON.Encode.string)
+              })
+              ->Utils.getJsonFromArrayOfJson,
+            ),
+          ]
+          ->Utils.getJsonFromArrayOfJson
+          ->JSON.stringify
+        switch paymentType {
+        | Card =>
+          handleLogging(
+            ~optLogger,
+            ~internalMetadata=loggerPayload,
+            ~value=contentLength,
+            ~eventName=PAYMENT_ATTEMPT,
+            ~paymentMethod="CARD",
+          )
+        | _ =>
+          bodyArr->Array.forEach(((str, json)) => {
+            if str === "payment_method_type" {
+              handleLogging(
+                ~optLogger,
+                ~value=contentLength,
+                ~internalMetadata=loggerPayload,
+                ~eventName=PAYMENT_ATTEMPT,
+                ~paymentMethod=json->getStringFromJson(""),
+              )
+            }
+            ()
+          })
+        }
+
+        intentCall(
+          ~fetchApi,
+          ~uri,
+          ~headers,
+          ~bodyStr=body,
+          ~confirmParam: ConfirmType.confirmParams,
+          ~clientSecret,
+          ~optLogger,
+          ~handleUserError,
+          ~paymentType,
+          ~iframeId,
+          ~fetchMethod=#POST,
+          ~setIsManualRetryEnabled,
+          ~customPodUri,
+          ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
+          ~counter=0,
+        )
+        ->then(val => {
+          intentCallback(val)
+          resolve()
+        })
+        ->ignore
+      }
+
+      let broswerInfo = BrowserSpec.broswerInfo
+      let intentWithoutMandate = mandatePaymentType => {
+        let bodyStr =
+          body
+          ->Array.concatMany([
+            bodyArr->Array.concat(broswerInfo()),
+            mandatePaymentType->PaymentBody.paymentTypeBody,
+          ])
+          ->Utils.getJsonFromArrayOfJson
+          ->JSON.stringify
+        callIntent(bodyStr)
+      }
+
+      let intentWithMandate = mandatePaymentType => {
+        let bodyStr =
+          body
+          ->Array.concat(
+            bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
+          )
+          ->Utils.getJsonFromArrayOfJson
+          ->JSON.stringify
+        callIntent(bodyStr)
+      }
+
+      switch paymentMethodList {
+      | LoadError(data)
+      | Loaded(data) =>
+        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+        let mandatePaymentType =
+          paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
+        if paymentList.payment_methods->Array.length > 0 {
+          switch paymentList.mandate_payment {
+          | Some(_) =>
+            switch paymentType {
+            | Card
+            | Gpay
+            | Applepay
+            | KlarnaRedirect
+            | Paypal
+            | BankDebits =>
+              intentWithMandate(mandatePaymentType)
+            | _ => intentWithoutMandate(mandatePaymentType)
+            }
+          | None => intentWithoutMandate(mandatePaymentType)
+          }
+        } else {
+          postFailedSubmitResponse(
+            ~errortype="payment_methods_empty",
+            ~message="Payment Failed. Try again!",
+          )
+          Console.warn("Please enable atleast one Payment method.")
+        }
+      | SemiLoaded => intentWithoutMandate("")
+      | _ =>
+        postFailedSubmitResponse(
+          ~errortype="payment_methods_loading",
+          ~message="Please wait. Try again!",
+        )
+      }
+    | None =>
+      postFailedSubmitResponse(
+        ~errortype="post_session_tokens_failed",
+        ~message="Post Session Tokens failed. Try again!",
+      )
+    }
+  }
 }

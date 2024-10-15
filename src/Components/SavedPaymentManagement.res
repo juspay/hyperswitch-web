@@ -9,7 +9,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let removeSavedMethod = (
-    savedMethods: array<OrcaPaymentPage.PaymentType.customerMethods>,
+    savedMethods: array<PaymentType.customerMethods>,
     paymentMethodId,
   ) => {
     savedMethods->Array.filter(savedMethod => {
