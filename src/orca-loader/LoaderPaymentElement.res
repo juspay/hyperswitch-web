@@ -42,7 +42,7 @@ let make = (
       }
     }
 
-    let meraEvHandler = ref(Some(() => Promise.make((_, _) => {()})))
+    let currEventHandler = ref(Some(() => Promise.make((_, _) => {()})))
     let walletOneClickEventHandler = (event: Types.event) => {
       let json = try {
         event.data->anyTypeToJson
@@ -52,7 +52,7 @@ let make = (
 
       let dict = json->getDictFromJson
       if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
-        switch meraEvHandler.contents {
+        switch currEventHandler.contents {
         | Some(eH) =>
           asyncWrapper(eH)
           ->Promise.then(() => {
@@ -70,7 +70,7 @@ let make = (
     Window.addEventListener("message", walletOneClickEventHandler)
 
     let onSDKHandleClick = (eventHandler: option<unit => RescriptCore.Promise.t<'a>>) => {
-      meraEvHandler := eventHandler
+      currEventHandler := eventHandler
       onSDKHandleClickIsUsed := true
     }
 
