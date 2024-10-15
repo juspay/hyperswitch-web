@@ -20,6 +20,7 @@ let loadPaypalSDK = (
     RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
   ) => unit,
   ~setIsCompleted,
+  ~isCallbackUsedVal: bool,
 ) => {
   loggerState.setLogInfo(
     ~value="Paypal SDK Button Clicked",

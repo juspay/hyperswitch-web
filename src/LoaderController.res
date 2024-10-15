@@ -35,6 +35,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setUserAddressState = Recoil.useLoggedSetRecoilState(userAddressState, "state", logger)
   let setUserAddressCountry = Recoil.useLoggedSetRecoilState(userAddressCountry, "country", logger)
   let (_country, setCountry) = Recoil.useRecoilState(userCountry)
+  let (isCompleteCallbackUsed, setIsCompleteCallbackUsed) = Recoil.useRecoilState(
+    isCompleteCallbackUsed,
+  )
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -244,6 +247,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               if dict->getDictIsSome("analyticsMetadata") {
                 let metadata = dict->getJsonObjectFromDict("analyticsMetadata")
                 logger.setMetadata(metadata)
+              }
+              if dict->getDictIsSome("onCompleteDoThisUsed") {
+                let isCallbackUsedVal = dict->Utils.getBool("onCompleteDoThisUsed", false)
+                setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
               }
               if dict->getDictIsSome("paymentOptions") {
                 let paymentOptions = dict->getDictFromObj("paymentOptions")
