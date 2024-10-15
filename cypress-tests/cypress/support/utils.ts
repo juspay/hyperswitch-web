@@ -6,6 +6,16 @@ export const getClientURL = (clientSecret, publishableKey) => {
   return `${CLIENT_BASE_URL}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
 }
 
+export const enum connectorEnum{
+  TRUSTPAY,
+  ADYEN,
+  STRIPE
+}
+export const connectorProfileIdMapping = new Map<connectorEnum, string>([
+  [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
+  [connectorEnum.ADYEN, "pro_Kvqzu8WqBZsT1OjHlCj4"],
+  [connectorEnum.STRIPE, "pro_5fVcCxU8MFTYozgtf0P8"],
+]);
 
 export const createPaymentBody = {
   currency: "USD",
