@@ -92,12 +92,14 @@ let make = (
           "onEscape",
         )
       | CompleteDoThis =>
-        eventHandlerFunc(
-          ev => ev.data.completeDoThis,
-          eventHandler,
-          CompleteDoThis,
-          "onCompleteDoThis",
-        )
+        if eventHandler->Option.isSome {
+          eventHandlerFunc(
+            ev => ev.data.completeDoThis,
+            eventHandler,
+            CompleteDoThis,
+            "onCompleteDoThis",
+          )
+        }
       | Change =>
         eventHandlerFunc(
           ev => ev.data.elementType === componentType,
