@@ -14,7 +14,7 @@ let payPalIcon = <Icon size=35 width=90 name="paypal" />
 let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
-  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(RecoilAtoms.isSDKHandleClick)
+  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)

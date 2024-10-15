@@ -5,7 +5,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(RecoilAtoms.isSDKHandleClick)
+  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
+  )
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)

@@ -317,8 +317,8 @@ let make = (
           ("launchTime", launchTime->JSON.Encode.float),
           ("customBackendUrl", customBackendUrl->JSON.Encode.string),
           (
-            "onSDKHandleClickIsUsed",
-            LoaderPaymentElement.onSDKHandleClickIsUsed.contents->JSON.Encode.bool,
+            "isPaymentButtonHandlerProvided",
+            LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
           ),
           (
             "onCompleteDoThisUsed",

@@ -7,7 +7,7 @@ open Identity
 external writeText: string => promise<'a> = "writeText"
 
 let onCompleteDoThisUsed = ref(false)
-let onSDKHandleClickIsUsed = ref(false)
+let isPaymentButtonHandlerProvided = ref(false)
 let make = (
   componentType,
   options,
@@ -53,7 +53,8 @@ let make = (
       let dict = json->getDictFromJson
       if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
         switch currEventHandler.contents {
-        | Some(eH) => asyncWrapper(eH)
+        | Some(eH) =>
+          asyncWrapper(eH)
           ->Promise.then(() => {
             let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
             event.source->Window.sendPostMessage(msg)
@@ -71,7 +72,7 @@ let make = (
     let onSDKHandleClick = (eventHandler: option<unit => RescriptCore.Promise.t<'a>>) => {
       currEventHandler := eventHandler
       if eventHandler->Option.isSome {
-        onSDKHandleClickIsUsed := true
+        isPaymentButtonHandlerProvided := true
       }
     }
 

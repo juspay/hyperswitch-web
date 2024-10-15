@@ -38,7 +38,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (isCompleteCallbackUsed, setIsCompleteCallbackUsed) = Recoil.useRecoilState(
     isCompleteCallbackUsed,
   )
-  let (isSDKHandleClickUsed, setIsSDKHandleClickUsed) = Recoil.useRecoilState(isSDKHandleClick)
+  let (isPaymentButtonHandlerProvided, setIsPaymentButtonHandlerProvided) = Recoil.useRecoilState(
+    isPaymentButtonHandlerProvidedAtom,
+  )
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -254,9 +256,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let isCallbackUsedVal = dict->Utils.getBool("onCompleteDoThisUsed", false)
                 setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
               }
-              if dict->getDictIsSome("onSDKHandleClickIsUsed") {
-                let isSDKClick = dict->Utils.getBool("onSDKHandleClickIsUsed", false)
-                setIsSDKHandleClickUsed(_ => isSDKClick)
+              if dict->getDictIsSome("isPaymentButtonHandlerProvided") {
+                let isSDKClick = dict->Utils.getBool("isPaymentButtonHandlerProvided", false)
+                setIsPaymentButtonHandlerProvided(_ => isSDKClick)
               }
               if dict->getDictIsSome("paymentOptions") {
                 let paymentOptions = dict->getDictFromObj("paymentOptions")

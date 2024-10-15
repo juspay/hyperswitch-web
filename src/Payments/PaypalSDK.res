@@ -5,7 +5,9 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   let {iframeId, publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.keys,
   )
-  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(RecoilAtoms.isSDKHandleClick)
+  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
+  )
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(RecoilAtoms.loggerAtom)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
