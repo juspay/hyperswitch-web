@@ -1,27 +1,30 @@
 open PaypalSDKTypes
 open Promise
+open Utils
 
 let loadPaypalSDK = (
   ~loggerState: OrcaLogger.loggerMake,
-  ~sdkHandleOneClickConfirmPayment,
+  ~sdkHandleOneClickConfirmPayment as _,
   ~buttonStyle,
   ~iframeId,
   ~isManualRetryEnabled,
   ~paymentMethodListValue,
   ~isGuestCustomer,
-  ~intent: PaymentHelpers.paymentIntent,
+  ~postSessionTokens: PaymentHelpers.paymentIntent,
   ~options: PaymentType.options,
   ~publishableKey,
   ~paymentMethodTypes,
   ~stateJson,
+  ~confirm: PaymentHelpers.paymentIntent,
   ~completeAuthorize: PaymentHelpers.completeAuthorize,
   ~handleCloseLoader,
   ~areOneClickWalletsRendered: (
     RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
   ) => unit,
   ~setIsCompleted,
-  ~isCallbackUsedVal: bool,
+  ~isCallbackUsedVal as _: bool,
   ~sdkHandleIsThere: bool,
+  ~sessions: PaymentType.loadType,
 ) => {
   loggerState.setLogInfo(
     ~value="Paypal SDK Button Clicked",
@@ -31,6 +34,23 @@ let loadPaypalSDK = (
   let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
   paypalWrapper.innerHTML = ""
   setIsCompleted(_ => true)
+  let paypalNextAction = switch sessions {
+  | Loaded(data) =>
+    data
+    ->getDictFromJson
+    ->getOptionalArrayFromDict("session_token")
+    ->Option.flatMap(arr => {
+      arr->Array.find(ele => ele->getDictFromJson->getString("connector", "") == "paypal")
+    })
+    ->Option.flatMap(ele => {
+      ele
+      ->getDictFromJson
+      ->getDictFromDict("sdk_next_action")
+      ->getOptionString("next_action")
+    })
+    ->Option.getOr("")
+  | _ => ""
+  }
   paypal["Buttons"]({
     style: buttonStyle,
     fundingSource: paypal["FUNDING"]["PAYPAL"],
@@ -52,17 +72,36 @@ let loadPaypalSDK = (
             ~body,
           )
           Promise.make((resolve, _) => {
-            intent(
-              ~bodyArr=modifiedPaymentBody,
-              ~confirmParam={
-                return_url: options.wallets.walletReturnUrl,
-                publishableKey,
-              },
-              ~handleUserError=true,
-              ~intentCallback=val =>
-                val->Utils.getDictFromJson->Utils.getString("orderId", "")->resolve,
-              ~manualRetry=isManualRetryEnabled,
-            )
+            if paypalNextAction == "post_session_tokens" {
+              postSessionTokens(
+                ~bodyArr=modifiedPaymentBody,
+                ~confirmParam={
+                  return_url: options.wallets.walletReturnUrl,
+                  publishableKey,
+                },
+                ~handleUserError=true,
+                ~intentCallback=val => {
+                  val
+                  ->Utils.getDictFromJson
+                  ->Utils.getDictFromDict("nextActionData")
+                  ->Utils.getString("order_id", "")
+                  ->resolve
+                },
+                ~manualRetry=isManualRetryEnabled,
+              )
+            } else {
+              confirm(
+                ~bodyArr=modifiedPaymentBody,
+                ~confirmParam={
+                  return_url: options.wallets.walletReturnUrl,
+                  publishableKey,
+                },
+                ~handleUserError=true,
+                ~intentCallback=val =>
+                  val->Utils.getDictFromJson->Utils.getString("orderId", "")->resolve,
+                ~manualRetry=isManualRetryEnabled,
+              )
+            }
           })
         } else {
           loggerState.setLogInfo(
@@ -100,22 +139,46 @@ let loadPaypalSDK = (
             ~statesList=stateJson,
           )
 
+          let (connectors, _) =
+            paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
+
+          let orderId = val->Utils.getDictFromJson->Utils.getString("id", "")
+          let body = PaymentBody.paypalSdkBody(~token=orderId, ~connectors)
+          let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
+            ~isGuestCustomer,
+            ~paymentType=paymentMethodListValue.payment_type,
+            ~body,
+          )
+
           let bodyArr =
             requiredFieldsBody
             ->JSON.Encode.object
             ->Utils.unflattenObject
             ->Utils.getArrayOfTupleFromDict
 
-          completeAuthorize(
-            ~bodyArr,
-            ~confirmParam={
-              return_url: options.wallets.walletReturnUrl,
-              publishableKey,
-            },
-            ~handleUserError=true,
-          )
-
-          resolve()
+          let confirmBody = bodyArr->Array.concatMany([modifiedPaymentBody])
+          Promise.make((_resolve, _) => {
+            if paypalNextAction == "post_session_tokens" {
+              confirm(
+                ~bodyArr=confirmBody,
+                ~confirmParam={
+                  return_url: options.wallets.walletReturnUrl,
+                  publishableKey,
+                },
+                ~handleUserError=true,
+                ~manualRetry=true,
+              )
+            } else {
+              completeAuthorize(
+                ~bodyArr,
+                ~confirmParam={
+                  return_url: options.wallets.walletReturnUrl,
+                  publishableKey,
+                },
+                ~handleUserError=true,
+              )
+            }
+          })
         })
         ->ignore
       }
