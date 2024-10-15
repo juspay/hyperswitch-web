@@ -319,7 +319,10 @@ let make = (
             ("customBackendUrl", customBackendUrl->JSON.Encode.string),
             (
               "onCompleteDoThisUsed",
-              LoaderPaymentElement.onCompleteDoThisUsed.contents->JSON.Encode.bool,
+              EventListenerManager.eventListenerMap
+              ->Dict.get("onCompleteDoThis")
+              ->Option.isSome
+              ->JSON.Encode.bool,
             ),
           ]->Dict.fromArray
 
