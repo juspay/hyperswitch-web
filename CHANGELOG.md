@@ -1,3 +1,10 @@
+# [0.93.0](https://github.com/juspay/hyperswitch-web/compare/v0.92.1...v0.93.0) (2024-10-15)
+
+
+### Features
+
+* added confirm handler ([#731](https://github.com/juspay/hyperswitch-web/issues/731)) ([4f65ecb](https://github.com/juspay/hyperswitch-web/commit/4f65ecbeb48022dbe9da507d98344e43c308b691))
+
 ## [0.92.1](https://github.com/juspay/hyperswitch-web/compare/v0.92.0...v0.92.1) (2024-10-10)
 
 
