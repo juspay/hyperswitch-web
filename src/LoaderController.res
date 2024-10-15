@@ -38,6 +38,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (isCompleteCallbackUsed, setIsCompleteCallbackUsed) = Recoil.useRecoilState(
     isCompleteCallbackUsed,
   )
+  let (isPaymentButtonHandlerProvided, setIsPaymentButtonHandlerProvided) = Recoil.useRecoilState(
+    isPaymentButtonHandlerProvidedAtom,
+  )
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -248,9 +251,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let metadata = dict->getJsonObjectFromDict("analyticsMetadata")
                 logger.setMetadata(metadata)
               }
+
               if dict->getDictIsSome("onCompleteDoThisUsed") {
                 let isCallbackUsedVal = dict->Utils.getBool("onCompleteDoThisUsed", false)
                 setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
+              }
+              if dict->getDictIsSome("isPaymentButtonHandlerProvided") {
+                let isSDKClick = dict->Utils.getBool("isPaymentButtonHandlerProvided", false)
+                setIsPaymentButtonHandlerProvided(_ => isSDKClick)
               }
               if dict->getDictIsSome("paymentOptions") {
                 let paymentOptions = dict->getDictFromObj("paymentOptions")

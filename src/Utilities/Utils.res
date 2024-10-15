@@ -1212,25 +1212,25 @@ let getThemePromise = dict => {
   }
 }
 
-let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
-  open EventListenerManager
+let makeOneClickHandlerPromise = sdkHandleIsThere => {
   Promise.make((resolve, _) => {
-    if sdkHandleOneClickConfirmPayment {
+    if !sdkHandleIsThere {
       resolve(JSON.Encode.bool(true))
     } else {
-      let handleMessage = (event: Types.event) => {
+      let handleMessage = (event: Window.event) => {
         let json = try {
-          event.data->anyTypeToJson
+          event.data->safeParse
         } catch {
         | _ => JSON.Encode.null
         }
 
         let dict = json->getDictFromJson
-        if dict->Dict.get("oneClickDoSubmit")->Option.isSome {
-          resolve(dict->Dict.get("oneClickDoSubmit")->Option.getOr(true->JSON.Encode.bool))
+
+        if dict->Dict.get("walletClickEvent")->Option.isSome {
+          resolve(dict->Dict.get("walletClickEvent")->Option.getOr(true->JSON.Encode.bool))
         }
       }
-      addSmartEventListener("message", handleMessage, "onOneClickHandlerPaymentConfirm")
+      Window.addEventListener("message", handleMessage)
       handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true)
     }
   })

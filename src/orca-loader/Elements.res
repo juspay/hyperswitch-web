@@ -296,35 +296,38 @@ let make = (
             ("loader", loader),
             ("fonts", fonts),
           ]->getJsonFromArrayOfJson
-        let message =
-          [
-            (
-              "paymentElementCreate",
-              componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
-            ),
-            ("otherElements", otherElements->JSON.Encode.bool),
-            ("options", newOptions),
-            ("componentType", componentType->JSON.Encode.string),
-            ("paymentOptions", widgetOptions),
-            ("iframeId", selectorString->JSON.Encode.string),
-            ("publishableKey", publishableKey->JSON.Encode.string),
-            ("endpoint", endpoint->JSON.Encode.string),
-            ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-            ("blockConfirm", blockConfirm->JSON.Encode.bool),
-            ("customPodUri", customPodUri->JSON.Encode.string),
-            ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
-            ("parentURL", "*"->JSON.Encode.string),
-            ("analyticsMetadata", analyticsMetadata),
-            ("launchTime", launchTime->JSON.Encode.float),
-            ("customBackendUrl", customBackendUrl->JSON.Encode.string),
-            (
-              "onCompleteDoThisUsed",
-              EventListenerManager.eventListenerMap
-              ->Dict.get("onCompleteDoThis")
-              ->Option.isSome
-              ->JSON.Encode.bool,
-            ),
-          ]->Dict.fromArray
+        let message = [
+          (
+            "paymentElementCreate",
+            componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
+          ),
+          ("otherElements", otherElements->JSON.Encode.bool),
+          ("options", newOptions),
+          ("componentType", componentType->JSON.Encode.string),
+          ("paymentOptions", widgetOptions),
+          ("iframeId", selectorString->JSON.Encode.string),
+          ("publishableKey", publishableKey->JSON.Encode.string),
+          ("endpoint", endpoint->JSON.Encode.string),
+          ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+          ("blockConfirm", blockConfirm->JSON.Encode.bool),
+          ("customPodUri", customPodUri->JSON.Encode.string),
+          ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
+          ("parentURL", "*"->JSON.Encode.string),
+          ("analyticsMetadata", analyticsMetadata),
+          ("launchTime", launchTime->JSON.Encode.float),
+          ("customBackendUrl", customBackendUrl->JSON.Encode.string),
+          (
+            "isPaymentButtonHandlerProvided",
+            LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
+          ),
+          (
+            "onCompleteDoThisUsed",
+            EventListenerManager.eventListenerMap
+            ->Dict.get("onCompleteDoThis")
+            ->Option.isSome
+            ->JSON.Encode.bool,
+          ),
+        ]->Dict.fromArray
 
         let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)
 
