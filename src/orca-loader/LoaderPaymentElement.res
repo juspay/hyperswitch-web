@@ -35,8 +35,10 @@ let make = (
       )
 
     let asyncWrapper = async fn => {
+      Console.log("Trying to execute OUTER>>>>>>>>>>>>>>>>!!!!!!!!!!!!!")
       try {
         await fn()
+        Console.log("Trying to execute!!!!!!!!!!!!!")
       } catch {
       | err => Console.log2("Async function call failure", err)
       }
@@ -52,15 +54,19 @@ let make = (
 
       let dict = json->getDictFromJson
       if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
+        Console.log("1 Click msg recieved from iframe")
         switch currEventHandler.contents {
-        | Some(eH) =>
-          asyncWrapper(eH)
-          ->Promise.then(() => {
-            let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
-            event.source->Window.sendPostMessage(msg)
-            Promise.resolve()
-          })
-          ->ignore
+        | Some(eH) => {
+            Console.log("SOME EVENT=-------------")
+            asyncWrapper(eH)
+            ->Promise.then(() => {
+              Console.log("SENDING MSG BACK TO IFRAME")
+              let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
+              event.source->Window.sendPostMessage(msg)
+              Promise.resolve()
+            })
+            ->ignore
+          }
 
         | None => ()
         }
@@ -70,6 +76,7 @@ let make = (
     Window.addEventListener("message", walletOneClickEventHandler)
 
     let onSDKHandleClick = (eventHandler: option<unit => RescriptCore.Promise.t<'a>>) => {
+      Console.log("FLOW XXXXXXXXXXXXXXXX")
       currEventHandler := eventHandler
       onSDKHandleClickIsUsed := true
     }
@@ -89,15 +96,13 @@ let make = (
           },
           "onEscape",
         )
-      | CompleteDoThis => {
-          onCompleteDoThisUsed := true
-          eventHandlerFunc(
-            ev => ev.data.completeDoThis,
-            eventHandler,
-            CompleteDoThis,
-            "onCompleteDoThis",
-          )
-        }
+      | CompleteDoThis =>
+        eventHandlerFunc(
+          ev => ev.data.completeDoThis,
+          eventHandler,
+          CompleteDoThis,
+          "onCompleteDoThis",
+        )
       | Change =>
         eventHandlerFunc(
           ev => ev.data.elementType === componentType,
