@@ -1,3 +1,10 @@
+## [0.94.1](https://github.com/juspay/hyperswitch-web/compare/v0.94.0...v0.94.1) (2024-10-15)
+
+
+### Bug Fixes
+
+* callback fix ([5b7e78b](https://github.com/juspay/hyperswitch-web/commit/5b7e78b49fe4ce7e05fafb4e259dfa6a3f71919e))
+
 # [0.94.0](https://github.com/juspay/hyperswitch-web/compare/v0.93.0...v0.94.0) (2024-10-15)
 
 
