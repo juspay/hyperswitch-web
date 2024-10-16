@@ -2,9 +2,12 @@ open PaypalSDKTypes
 
 @react.component
 let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) => {
-  let {iframeId, publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.keys,
-  )
+  let {
+    iframeId,
+    publishableKey,
+    sdkHandleOneClickConfirmPayment,
+    clientSecret,
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
   )
@@ -100,6 +103,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
         ~isCallbackUsedVal,
         ~sdkHandleIsThere,
         ~sessions,
+        ~clientSecret,
       )
     })
     Window.body->Window.appendChild(paypalScript)
