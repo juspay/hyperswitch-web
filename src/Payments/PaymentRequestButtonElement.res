@@ -66,6 +66,7 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
   )
 
   let klarnaTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
+  let pazeTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Paze)
 
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isPaypalSDKFlow = paypalPaymentMethodExperience->Array.includes(InvokeSDK)
@@ -140,7 +141,14 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
 
             | PazeWallet =>
               <SessionPaymentWrapper type_={Wallet}>
-                <PazeButton />
+                {switch pazeTokenObj {
+                | OtherTokenOptional(optToken) =>
+                  switch optToken {
+                  | Some(token) => <PazeButton token />
+                  | None => React.null
+                  }
+                | _ => React.null
+                }}
               </SessionPaymentWrapper>
             | NONE => React.null
             }
@@ -150,7 +158,6 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
       </ErrorBoundary>
     })
     ->React.array}
-    <PazeButton />
     <Surcharge paymentMethod="wallet" paymentMethodType="google_pay" isForWallets=true />
     <WalletsSaveDetailsText paymentType=paymentMethodListValue.payment_type />
   </div>

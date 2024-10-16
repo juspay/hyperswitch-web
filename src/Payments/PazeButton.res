@@ -1,5 +1,5 @@
 @react.component
-let make = () => {
+let make = (~token: SessionsType.token) => {
   open Utils
   open RecoilAtoms
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
@@ -8,19 +8,21 @@ let make = () => {
   let (showLoader, setShowLoader) = React.useState(() => false)
 
   let onClick = _ => {
-    Console.log("Button clicked")
     setIsDisabled(_ => true)
     setShowLoader(_ => true)
-
-    let metaData = [("isForceSync", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
-    let message = [
+    messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("param", "pazeWallet"->JSON.Encode.string),
       ("iframeId", iframeId->JSON.Encode.string),
-      ("metadata", metaData),
-    ]
-
-    messageParentWindow(message)
+      (
+        "metadata",
+        [
+          ("clientId", token.clientId->JSON.Encode.string),
+          ("clientName", token.clientName->JSON.Encode.string),
+          ("clientProfileId", token.clientProfileId->JSON.Encode.string),
+        ]->getJsonFromArrayOfJson,
+      ),
+    ])
   }
 
   <button

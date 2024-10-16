@@ -4,15 +4,38 @@ external digitalWalletSdk: PazeTypes.digitalWalletSdk = "DIGITAL_WALLET_SDK"
 @react.component
 let make = () => {
   open Promise
+  open Utils
+
+  let (clientId, setClientId) = React.useState(() => "")
+  let (clientName, setClientName) = React.useState(() => "")
+  let (clientProfileId, setClientProfileId) = React.useState(() => "")
+
+  React.useEffect0(() => {
+    let handle = (ev: Window.event) => {
+      let json = ev.data->safeParse
+      let metaData = json->getDictFromJson->getDictFromDict("metadata")
+      setClientId(_ => metaData->getString("clientId", ""))
+      setClientName(_ => metaData->getString("clientName", ""))
+      setClientProfileId(_ => metaData->getString("clientProfileId", ""))
+    }
+    Window.addEventListener("message", handle)
+    messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
+    Some(() => {Window.removeEventListener("message", handle)})
+  })
+
+  Js.log2("PAZE --- clientId: ", clientId)
+  Js.log2("PAZE --- clientName: ", clientName)
+  Js.log2("PAZE --- clientProfileId: ", clientProfileId)
+
   let mountPazeSDK = () => {
     let pazeScriptURL = `https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js`
 
     let loadPazeSDK = _ => {
       digitalWalletSdk.initialize({
         client: {
-          id: "YK2L1TY5GL0Y1UYLYM9O13oRBRPaMPqYO20N34ByCkwn-c6Is",
-          name: "Hyperswitch",
-          profileId: "Getin",
+          id: clientId,
+          name: clientName,
+          profileId: clientProfileId,
         },
       })->then(val => {
         Console.log2("PAZE --- init completed", val)
