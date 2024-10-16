@@ -529,6 +529,7 @@ let rec intentCall = (
                 }
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
+                  closePaymentLoaderIfAny()
                   Utils.handleOnCompleteDoThisMessage()
                 } else {
                   handleOpenUrl(url.href)
