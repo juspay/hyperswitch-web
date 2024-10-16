@@ -1,5 +1,8 @@
-type wallet = Gpay | Paypal | Klarna | ApplePay | NONE
-type tokenCategory = ApplePayObject | GooglePayThirdPartyObject | Others
+open Utils
+
+type wallet = Gpay | Paypal | Klarna | ApplePay | Paze | NONE
+
+type tokenCategory = ApplePayObject | GooglePayThirdPartyObject | PazeObject | Others
 
 type paymentType = Wallet | Others
 
@@ -15,15 +18,21 @@ type token = {
   shippingAddressParameters: JSON.t,
   orderDetails: JSON.t,
   connector: string,
+  clientId: string,
+  clientName: string,
+  clientProfileId: string,
 }
 
 type tokenType =
   | ApplePayToken(array<JSON.t>)
   | GooglePayThirdPartyToken(array<JSON.t>)
+  | PazeToken(array<JSON.t>)
   | OtherToken(array<token>)
+
 type optionalTokenType =
   | ApplePayTokenOptional(option<JSON.t>)
   | GooglePayThirdPartyTokenOptional(option<JSON.t>)
+  | PazeTokenOptional(option<JSON.t>)
   | OtherTokenOptional(option<token>)
 
 type sessions = {
@@ -43,6 +52,9 @@ let defaultToken = {
   shippingAddressParameters: Dict.make()->JSON.Encode.object,
   orderDetails: Dict.make()->JSON.Encode.object,
   connector: "",
+  clientId: "",
+  clientName: "",
+  clientProfileId: "",
 }
 let getWallet = str => {
   switch str {
@@ -50,12 +62,12 @@ let getWallet = str => {
   | "paypal" => Paypal
   | "klarna" => Klarna
   | "google_pay" => Gpay
+  | "paze" => Paze
   | _ => NONE
   }
 }
-open Utils
 
-let getSessionsToken = (dict, str) => {
+let getSessionsToken = (dict, str) =>
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.array)
@@ -74,14 +86,15 @@ let getSessionsToken = (dict, str) => {
         shippingAddressParameters: getJsonObjectFromDict(dict, "shipping_address_parameters"),
         orderDetails: getJsonObjectFromDict(dict, "order_details"),
         connector: getString(dict, "connector", ""),
+        clientId: getString(dict, "client_id", ""),
+        clientName: getString(dict, "client_name", ""),
+        clientProfileId: getString(dict, "client_profile_id", ""),
       }
     })
   })
   ->Option.getOr([defaultToken])
-}
-let getSessionsTokenJson = (dict, str) => {
+let getSessionsTokenJson = (dict, str) =>
   dict->Dict.get(str)->Option.flatMap(JSON.Decode.array)->Option.getOr([])
-}
 
 let itemToObjMapper = (dict, returnType) => {
   switch returnType {
@@ -97,6 +110,12 @@ let itemToObjMapper = (dict, returnType) => {
       sessionsToken: GooglePayThirdPartyToken(getSessionsTokenJson(dict, "session_token")),
     }
 
+  | PazeObject => {
+      paymentId: getString(dict, "payment_id", ""),
+      clientSecret: getString(dict, "client_secret", ""),
+      sessionsToken: PazeToken(getSessionsTokenJson(dict, "session_token")),
+    }
+
   | Others => {
       paymentId: getString(dict, "payment_id", ""),
       clientSecret: getString(dict, "client_secret", ""),
@@ -105,27 +124,21 @@ let itemToObjMapper = (dict, returnType) => {
   }
 }
 
-let getWalletFromTokenType = (arr, val: wallet) => {
-  let x = arr->Array.find(item =>
+let getWalletFromTokenType = (arr, val) =>
+  arr->Array.find(item =>
     item
     ->JSON.Decode.object
-    ->Option.flatMap(x => {
-      x->Dict.get("wallet_name")
-    })
+    ->Option.flatMap(x => x->Dict.get("wallet_name"))
     ->Option.flatMap(JSON.Decode.string)
     ->Option.getOr("")
     ->getWallet === val
   )
-  x
-}
 
-let getPaymentSessionObj = (tokenType: tokenType, val: wallet) => {
+let getPaymentSessionObj = (tokenType, val) =>
   switch tokenType {
   | ApplePayToken(arr) => ApplePayTokenOptional(getWalletFromTokenType(arr, val))
-
   | GooglePayThirdPartyToken(arr) =>
     GooglePayThirdPartyTokenOptional(getWalletFromTokenType(arr, val))
-
+  | PazeToken(arr) => PazeTokenOptional(getWalletFromTokenType(arr, val))
   | OtherToken(arr) => OtherTokenOptional(arr->Array.find(item => item.walletName == val))
   }
-}
