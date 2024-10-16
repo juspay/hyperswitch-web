@@ -1,3 +1,10 @@
+## [0.95.1](https://github.com/juspay/hyperswitch-web/compare/v0.95.0...v0.95.1) (2024-10-16)
+
+
+### Bug Fixes
+
+* closed loader before calling merchant callback ([#741](https://github.com/juspay/hyperswitch-web/issues/741)) ([c0d4e15](https://github.com/juspay/hyperswitch-web/commit/c0d4e157e133d6c1f0a867ef2b9a8480eb314488))
+
 # [0.95.0](https://github.com/juspay/hyperswitch-web/compare/v0.94.2...v0.95.0) (2024-10-16)
 
 
