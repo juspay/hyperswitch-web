@@ -1,3 +1,10 @@
+# [0.95.0](https://github.com/juspay/hyperswitch-web/compare/v0.94.2...v0.95.0) (2024-10-16)
+
+
+### Features
+
+* dynamic tax calculation in paypal ([#739](https://github.com/juspay/hyperswitch-web/issues/739)) ([9a5b87d](https://github.com/juspay/hyperswitch-web/commit/9a5b87d2f0f60c152a861d1f6e9837e49ef6a0ba))
+
 ## [0.94.2](https://github.com/juspay/hyperswitch-web/compare/v0.94.1...v0.94.2) (2024-10-15)
 
 ## [0.94.1](https://github.com/juspay/hyperswitch-web/compare/v0.94.0...v0.94.1) (2024-10-15)
