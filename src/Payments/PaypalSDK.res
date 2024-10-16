@@ -5,16 +5,22 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   let {iframeId, publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.keys,
   )
+  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
+  )
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(RecoilAtoms.loggerAtom)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
 
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let intent = PaymentHelpers.usePostSessionTokens(Some(loggerState), Paypal, Wallet)
+  let confirm = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
+  let sessions = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let completeAuthorize = PaymentHelpers.useCompleteAuthorize(Some(loggerState), Paypal)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let checkoutScript =
     Window.document(Window.window)->Window.getElementById("braintree-checkout")->Nullable.toOption
   let clientScript =
@@ -80,16 +86,20 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
         ~iframeId,
         ~paymentMethodListValue,
         ~isGuestCustomer,
-        ~intent,
+        ~postSessionTokens=intent,
         ~isManualRetryEnabled,
         ~options,
         ~publishableKey,
         ~paymentMethodTypes,
         ~stateJson,
+        ~confirm,
         ~completeAuthorize,
         ~handleCloseLoader,
         ~areOneClickWalletsRendered,
         ~setIsCompleted,
+        ~isCallbackUsedVal,
+        ~sdkHandleIsThere,
+        ~sessions,
       )
     })
     Window.body->Window.appendChild(paypalScript)

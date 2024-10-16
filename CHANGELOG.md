@@ -1,3 +1,26 @@
+## [0.94.2](https://github.com/juspay/hyperswitch-web/compare/v0.94.1...v0.94.2) (2024-10-15)
+
+## [0.94.1](https://github.com/juspay/hyperswitch-web/compare/v0.94.0...v0.94.1) (2024-10-15)
+
+
+### Bug Fixes
+
+* callback fix ([5b7e78b](https://github.com/juspay/hyperswitch-web/commit/5b7e78b49fe4ce7e05fafb4e259dfa6a3f71919e))
+
+# [0.94.0](https://github.com/juspay/hyperswitch-web/compare/v0.93.0...v0.94.0) (2024-10-15)
+
+
+### Features
+
+* added click handler ([#732](https://github.com/juspay/hyperswitch-web/issues/732)) ([9c09ff2](https://github.com/juspay/hyperswitch-web/commit/9c09ff2d90ece78583c897c9cb29f2f45f346f90))
+
+# [0.93.0](https://github.com/juspay/hyperswitch-web/compare/v0.92.1...v0.93.0) (2024-10-15)
+
+
+### Features
+
+* added confirm handler ([#731](https://github.com/juspay/hyperswitch-web/issues/731)) ([4f65ecb](https://github.com/juspay/hyperswitch-web/commit/4f65ecbeb48022dbe9da507d98344e43c308b691))
+
 ## [0.92.1](https://github.com/juspay/hyperswitch-web/compare/v0.92.0...v0.92.1) (2024-10-10)
 
 
