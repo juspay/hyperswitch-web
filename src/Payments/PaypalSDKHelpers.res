@@ -1,6 +1,7 @@
 open PaypalSDKTypes
 open Promise
 open Utils
+open TaxCalculation
 
 let loadPaypalSDK = (
   ~loggerState: OrcaLogger.loggerMake,
@@ -25,6 +26,7 @@ let loadPaypalSDK = (
   ~isCallbackUsedVal as _: bool,
   ~sdkHandleIsThere: bool,
   ~sessions: PaymentType.loadType,
+  ~clientSecret,
 ) => {
   loggerState.setLogInfo(
     ~value="Paypal SDK Button Clicked",
@@ -113,6 +115,35 @@ let loadPaypalSDK = (
         }
       })
     },
+    onShippingAddressChange: data => {
+      let isTaxCalculationEnabled = paymentMethodListValue.is_tax_calculation_enabled
+      if isTaxCalculationEnabled {
+        let newShippingAddressObj =
+          data
+          ->getDictFromJson
+          ->getDictFromObj("shippingAddress")
+          ->shippingAddressItemToObjMapper
+        let newShippingAddress =
+          [
+            ("state", newShippingAddressObj.state->Option.getOr("")->JSON.Encode.string),
+            ("country", newShippingAddressObj.countryCode->Option.getOr("")->JSON.Encode.string),
+            ("zip", newShippingAddressObj.postalCode->Option.getOr("")->JSON.Encode.string),
+          ]->getJsonFromArrayOfJson
+
+        let paymentMethodType = "paypal"->JSON.Encode.string
+
+        calculateTax(
+          ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
+          ~logger=loggerState,
+          ~publishableKey,
+          ~clientSecret=clientSecret->Option.getOr(""),
+          ~paymentMethodType,
+          ~sessionId=data->getDictFromJson->Dict.get("orderID"),
+        )
+      } else {
+        Js.Json.null->Js.Promise.resolve
+      }
+    },
     onApprove: (_data, actions) => {
       if !options.readOnly {
         actions.order.get()
@@ -141,8 +172,7 @@ let loadPaypalSDK = (
 
           let (connectors, _) =
             paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
-
-          let orderId = val->Utils.getDictFromJson->Utils.getString("id", "")
+          let orderId = val->getDictFromJson->Utils.getString("id", "")
           let body = PaymentBody.paypalSdkBody(~token=orderId, ~connectors)
           let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
             ~isGuestCustomer,

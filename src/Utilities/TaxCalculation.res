@@ -24,6 +24,7 @@ let calculateTax = (
   ~clientSecret,
   ~publishableKey,
   ~paymentMethodType,
+  ~sessionId=None,
 ) => {
   PaymentHelpers.calculateTax(
     ~clientSecret=clientSecret->JSON.Encode.string,
@@ -33,5 +34,6 @@ let calculateTax = (
     ~shippingAddress,
     ~logger,
     ~customPodUri="",
+    ~sessionId,
   )
 }
