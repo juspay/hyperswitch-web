@@ -1,4 +1,4 @@
-type wallet = GPayWallet | PaypalWallet | ApplePayWallet | KlarnaWallet | NONE
+type wallet = GPayWallet | PaypalWallet | ApplePayWallet | KlarnaWallet | PazeWallet | NONE
 let paymentMode = str => {
   switch str {
   | "gpay"
@@ -9,6 +9,7 @@ let paymentMode = str => {
   | "apple_pay" =>
     ApplePayWallet
   | "klarna" => KlarnaWallet
+  | "paze" => PazeWallet
   | _ => NONE
   }
 }
@@ -64,7 +65,8 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
     Gpay,
   )
 
-  let klarnaTokenObj = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
+  let klarnaTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
+  let pazeTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Paze)
 
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isPaypalSDKFlow = paypalPaymentMethodExperience->Array.includes(InvokeSDK)
@@ -137,6 +139,17 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
                 }}
               </SessionPaymentWrapper>
 
+            | PazeWallet =>
+              <SessionPaymentWrapper type_={Wallet}>
+                {switch pazeTokenObj {
+                | OtherTokenOptional(optToken) =>
+                  switch optToken {
+                  | Some(token) => <PazeButton token />
+                  | None => React.null
+                  }
+                | _ => React.null
+                }}
+              </SessionPaymentWrapper>
             | NONE => React.null
             }
           | None => React.null
