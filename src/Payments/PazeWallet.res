@@ -1,5 +1,7 @@
+open PazeTypes
+
 @val @scope("window")
-external digitalWalletSdk: PazeTypes.digitalWalletSdk = "DIGITAL_WALLET_SDK"
+external digitalWalletSdk: digitalWalletSdk = "DIGITAL_WALLET_SDK"
 
 @react.component
 let make = () => {
@@ -9,23 +11,25 @@ let make = () => {
   let (clientId, setClientId) = React.useState(() => "")
   let (clientName, setClientName) = React.useState(() => "")
   let (clientProfileId, setClientProfileId) = React.useState(() => "")
+  let (sessionId, setSessionId) = React.useState(() => "")
+  let (currency, setCurrency) = React.useState(() => "")
 
   React.useEffect0(() => {
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let metaData = json->getDictFromJson->getDictFromDict("metadata")
-      setClientId(_ => metaData->getString("clientId", ""))
-      setClientName(_ => metaData->getString("clientName", ""))
-      setClientProfileId(_ => metaData->getString("clientProfileId", ""))
+      if metaData->getString("wallet", "") === "Paze" {
+        setClientId(_ => metaData->getString("clientId", ""))
+        setClientName(_ => metaData->getString("clientName", ""))
+        setClientProfileId(_ => metaData->getString("clientProfileId", ""))
+        setSessionId(_ => metaData->getString("sessionId", ""))
+        setCurrency(_ => metaData->getString("currency", ""))
+      }
     }
     Window.addEventListener("message", handle)
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     Some(() => {Window.removeEventListener("message", handle)})
   })
-
-  Js.log2("PAZE --- clientId: ", clientId)
-  Js.log2("PAZE --- clientName: ", clientName)
-  Js.log2("PAZE --- clientProfileId: ", clientProfileId)
 
   let mountPazeSDK = () => {
     let pazeScriptURL = `https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js`
@@ -45,35 +49,35 @@ let make = () => {
           Console.log("PAZE --- canCheckout completed")
           Console.log2("PAZE --- consumerPresent: ", consumerPresent)
           let transactionValue = {
-            "transactionAmount": "50.21",
-            "transactionCurrencyCode": "USD",
-          }->Identity.anyTypeToJson
+            transactionAmount: "50.21",
+            transactionCurrencyCode: currency,
+          }
 
           let transactionOptions = {
-            "billingPreference": "ALL",
-            "merchantCategoryCode": "US",
-            "payloadTypeIndicator": "PAYMENT",
-          }->Identity.anyTypeToJson
+            billingPreference: "ALL",
+            merchantCategoryCode: "US",
+            payloadTypeIndicator: "PAYMENT",
+          }
 
           digitalWalletSdk.checkout({
             acceptedPaymentCardNetworks: ["VISA", "MASTERCARD"],
-            // emailAddress: "samraat.bansal@juspay.in",
             emailAddress: "returninguser@paze.com",
-            sessionId: "m206xe0zacyslo1lsj",
+            sessionId: "m2cxrizr6scgriug1pg",
             actionCode: "START_FLOW",
             transactionValue,
             shippingPreference: "ALL",
-          })->then(
+          })
+          ->then(
             checkoutResponse => {
               Console.log2("PAZE --- Checkout Response Object: ", checkoutResponse)
-              digitalWalletSdk.complete({
+              let completeObj = {
                 transactionOptions,
                 transactionId: "",
-                emailAddress: "returninguser@paze.com",
-                sessionId: "m206xe0zacyslo1lsj",
+                sessionId: "m2cxrizr6scgriug1pg",
                 transactionType: "PURCHASE",
                 transactionValue,
-              })->then(
+              }
+              digitalWalletSdk.complete(completeObj)->then(
                 completeResponse => {
                   Console.log2("PAZE --- Complete Response Object: ", completeResponse)
                   resolve()
@@ -81,6 +85,7 @@ let make = () => {
               )
             },
           )
+          ->finally(_ => messageParentWindow([("fullscreen", false->JSON.Encode.bool)]))
         })
       })
     }
@@ -96,9 +101,17 @@ let make = () => {
   }
 
   React.useEffect(() => {
-    mountPazeSDK()
+    if (
+      clientId != "" &&
+      clientName != "" &&
+      clientProfileId != "" &&
+      // sessionId != "" &&
+      currency != ""
+    ) {
+      mountPazeSDK()
+    }
     None
-  }, [])
+  }, [clientId, clientName, clientProfileId, sessionId, currency])
 
   <div id="paze-button" className="w-full flex flex-row justify-center rounded-md h-auto" />
 }

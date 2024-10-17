@@ -7,22 +7,33 @@ type initialize = {client: client}
 
 type canCheckout = {emailAddress: string}
 
+type transactionValue = {
+  transactionAmount: string,
+  transactionCurrencyCode: string,
+}
+
+type transactionOptions = {
+  billingPreference: string,
+  merchantCategoryCode: string,
+  payloadTypeIndicator: string,
+}
+
 type checkout = {
   acceptedPaymentCardNetworks: array<string>,
-  emailAddress: string,
+  emailAddress?: string,
   sessionId: string,
   actionCode: string,
-  transactionValue: JSON.t,
+  transactionValue: transactionValue,
   shippingPreference: string,
 }
 
 type complete = {
-  transactionOptions: JSON.t,
+  transactionOptions: transactionOptions,
   transactionId: string,
-  emailAddress: string,
+  emailAddress?: string,
   sessionId: string,
   transactionType: string,
-  transactionValue: JSON.t,
+  transactionValue: transactionValue,
 }
 
 type digitalWalletSdk = {
