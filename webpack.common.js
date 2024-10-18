@@ -22,7 +22,7 @@ const repoVersion = require("./package.json").version;
 const majorVersion = "v" + repoVersion.split(".")[0];
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  sdkEnv === "local" ? "" : `/${repoVersion}/${majorVersion}`;
+  sdkEnv === "local" ? "" : `/web/${repoVersion}/${majorVersion}`;
 
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
