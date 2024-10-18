@@ -24,7 +24,6 @@ let make = (
     _,
     _,
     maxCardLength,
-    _,
   ) = cardProps
 
   let (

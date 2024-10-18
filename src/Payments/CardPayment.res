@@ -35,8 +35,11 @@ let make = (
     cardError,
     setCardError,
     maxCardLength,
-    cardBrand,
   ) = cardProps
+
+  let cardBrand = React.useMemo(() => {
+    cardNumber->CardUtils.getCardBrand
+  }, [cardNumber])
 
   let (
     isExpiryValid,
@@ -204,7 +207,6 @@ let make = (
     nickname,
     isCardBrandValid,
     isManualRetryEnabled,
-    cardProps,
   ))
   useSubmitPaymentData(submitCallback)
 
