@@ -1,3 +1,31 @@
+## [0.95.3](https://github.com/juspay/hyperswitch-web/compare/v0.95.2...v0.95.3) (2024-10-21)
+
+
+### Bug Fixes
+
+* add text overflow with ellipsis in dropdown ([#745](https://github.com/juspay/hyperswitch-web/issues/745)) ([9061306](https://github.com/juspay/hyperswitch-web/commit/90613062e9bcc1f19e538117d7aebddd3bd5fb76))
+
+## [0.95.2](https://github.com/juspay/hyperswitch-web/compare/v0.95.1...v0.95.2) (2024-10-21)
+
+
+### Bug Fixes
+
+* extra scroll in safari ([#744](https://github.com/juspay/hyperswitch-web/issues/744)) ([5254446](https://github.com/juspay/hyperswitch-web/commit/52544466899116be2222c5a4db1da16241f4fa4b))
+
+## [0.95.1](https://github.com/juspay/hyperswitch-web/compare/v0.95.0...v0.95.1) (2024-10-16)
+
+
+### Bug Fixes
+
+* closed loader before calling merchant callback ([#741](https://github.com/juspay/hyperswitch-web/issues/741)) ([c0d4e15](https://github.com/juspay/hyperswitch-web/commit/c0d4e157e133d6c1f0a867ef2b9a8480eb314488))
+
+# [0.95.0](https://github.com/juspay/hyperswitch-web/compare/v0.94.2...v0.95.0) (2024-10-16)
+
+
+### Features
+
+* dynamic tax calculation in paypal ([#739](https://github.com/juspay/hyperswitch-web/issues/739)) ([9a5b87d](https://github.com/juspay/hyperswitch-web/commit/9a5b87d2f0f60c152a861d1f6e9837e49ef6a0ba))
+
 ## [0.94.2](https://github.com/juspay/hyperswitch-web/compare/v0.94.1...v0.94.2) (2024-10-15)
 
 ## [0.94.1](https://github.com/juspay/hyperswitch-web/compare/v0.94.0...v0.94.1) (2024-10-15)
