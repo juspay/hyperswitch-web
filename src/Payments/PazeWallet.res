@@ -46,7 +46,8 @@ let make = () => {
           name: clientName,
           profileId: clientProfileId,
         },
-      })->then(val => {
+      })
+      ->then(val => {
         Console.log2("PAZE --- init completed", val)
         digitalWalletSdk.canCheckout({
           emailAddress: "returninguser@paze.com",
@@ -71,8 +72,7 @@ let make = () => {
             actionCode: "START_FLOW",
             transactionValue,
             shippingPreference: "ALL",
-          })
-          ->then(
+          })->then(
             checkoutResponse => {
               Console.log2("PAZE --- Checkout Response Object: ", checkoutResponse)
               let completeObj = {
@@ -85,20 +85,31 @@ let make = () => {
               digitalWalletSdk.complete(completeObj)->then(
                 completeResponse => {
                   Console.log2("PAZE --- Complete Response Object: ", completeResponse)
+                  messageParentWindow([
+                    ("fullscreen", false->JSON.Encode.bool),
+                    ("isPaze", true->JSON.Encode.bool),
+                    (
+                      "completeResponse",
+                      completeResponse
+                      ->getDictFromJson
+                      ->getString("completeResponse", "")
+                      ->JSON.Encode.string,
+                    ),
+                  ])
                   resolve()
                 },
               )
             },
           )
-          ->finally(
-            _ =>
-              messageParentWindow([
-                ("fullscreen", false->JSON.Encode.bool),
-                ("isPaze", true->JSON.Encode.bool),
-                ("publicToken", "shdchdbdc"->JSON.Encode.string),
-              ]),
-          )
         })
+      })
+      ->catch(_ => {
+        messageParentWindow([
+          ("fullscreen", false->JSON.Encode.bool),
+          ("isPaze", true->JSON.Encode.bool),
+          ("flowExited", "stop"->JSON.Encode.string),
+        ])
+        resolve()
       })
     }
 

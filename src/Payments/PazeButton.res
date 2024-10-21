@@ -6,6 +6,12 @@ let make = (~token: SessionsType.token) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let (showLoader, setShowLoader) = React.useState(() => false)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
+
+  React.useEffect0(() => {
+    setIsShowOrPayUsing(_ => true)
+    None
+  })
 
   let onClick = _ => {
     setShowLoader(_ => true)
@@ -29,12 +35,18 @@ let make = (~token: SessionsType.token) => {
   }
 
   React.useEffect0(() => {
+    // open Promise
     let onPazeCallback = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson->getDictFromDict("data")
       let isPaze = dict->getBool("isPaze", false)
       if isPaze {
         setShowLoader(_ => false)
+        Js.log2("PAZE --- onPazeCallback", dict)
+
+        // if dict->getOptionString("completeResponse")->Option.isSome {
+        // confirm call need to be done over here
+        // }
       }
     }
     Window.addEventListener("message", onPazeCallback)
