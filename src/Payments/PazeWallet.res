@@ -13,6 +13,7 @@ let make = () => {
   let (clientProfileId, setClientProfileId) = React.useState(() => "")
   let (sessionId, setSessionId) = React.useState(() => "")
   let (currency, setCurrency) = React.useState(() => "")
+  let (publishableKey, setPublishableKey) = React.useState(() => "")
 
   React.useEffect0(() => {
     let handle = (ev: Window.event) => {
@@ -24,6 +25,7 @@ let make = () => {
         setClientProfileId(_ => metaData->getString("clientProfileId", ""))
         setSessionId(_ => metaData->getString("sessionId", ""))
         setCurrency(_ => metaData->getString("currency", ""))
+        setPublishableKey(_ => metaData->getString("publishableKey", ""))
       }
     }
     Window.addEventListener("message", handle)
@@ -32,7 +34,10 @@ let make = () => {
   })
 
   let mountPazeSDK = () => {
-    let pazeScriptURL = `https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js`
+    let pazeScriptURL =
+      publishableKey->String.startsWith("pk_snd")
+        ? `https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js`
+        : `https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js`
 
     let loadPazeSDK = _ => {
       digitalWalletSdk.initialize({
@@ -85,7 +90,14 @@ let make = () => {
               )
             },
           )
-          ->finally(_ => messageParentWindow([("fullscreen", false->JSON.Encode.bool)]))
+          ->finally(
+            _ =>
+              messageParentWindow([
+                ("fullscreen", false->JSON.Encode.bool),
+                ("isPaze", true->JSON.Encode.bool),
+                ("publicToken", "shdchdbdc"->JSON.Encode.string),
+              ]),
+          )
         })
       })
     }
