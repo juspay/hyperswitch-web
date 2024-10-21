@@ -1,3 +1,10 @@
+## [0.95.2](https://github.com/juspay/hyperswitch-web/compare/v0.95.1...v0.95.2) (2024-10-21)
+
+
+### Bug Fixes
+
+* extra scroll in safari ([#744](https://github.com/juspay/hyperswitch-web/issues/744)) ([5254446](https://github.com/juspay/hyperswitch-web/commit/52544466899116be2222c5a4db1da16241f4fa4b))
+
 ## [0.95.1](https://github.com/juspay/hyperswitch-web/compare/v0.95.0...v0.95.1) (2024-10-16)
 
 
