@@ -194,6 +194,7 @@ let getCustomerSavedPaymentMethods = (
         ~callBackFunc=processPayment,
         ~clientSecret,
         ~publishableKey,
+        ~resolvePromise,
       )
     }
 
