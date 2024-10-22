@@ -976,6 +976,22 @@ let multibancoBody = (~email) => [
   ),
 ]
 
+let pazeBody = (~completeResponse) => {
+  open Utils
+  let pazeCompleteResponse =
+    [("complete_response", completeResponse->JSON.Encode.string)]->getJsonFromArrayOfJson
+
+  let pazeWalletData = [("paze", pazeCompleteResponse)]->getJsonFromArrayOfJson
+
+  let paymentMethodData = [("wallet", pazeWalletData)]->getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "paze"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")

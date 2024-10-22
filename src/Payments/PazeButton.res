@@ -7,6 +7,10 @@ let make = (~token: SessionsType.token) => {
   let (showLoader, setShowLoader) = React.useState(() => false)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let options = Recoil.useRecoilValueFromAtom(optionAtom)
 
   React.useEffect0(() => {
     setIsShowOrPayUsing(_ => true)
@@ -35,18 +39,24 @@ let make = (~token: SessionsType.token) => {
   }
 
   React.useEffect0(() => {
-    // open Promise
     let onPazeCallback = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson->getDictFromDict("data")
       let isPaze = dict->getBool("isPaze", false)
       if isPaze {
         setShowLoader(_ => false)
-        Js.log2("PAZE --- onPazeCallback", dict)
-
-        // if dict->getOptionString("completeResponse")->Option.isSome {
-        // confirm call need to be done over here
-        // }
+        if dict->getOptionString("completeResponse")->Option.isSome {
+          let completeResponse = dict->getString("completeResponse", "")
+          intent(
+            ~bodyArr=PaymentBody.pazeBody(~completeResponse),
+            ~confirmParam={
+              return_url: options.wallets.walletReturnUrl,
+              publishableKey,
+            },
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
+        }
       }
     }
     Window.addEventListener("message", onPazeCallback)
