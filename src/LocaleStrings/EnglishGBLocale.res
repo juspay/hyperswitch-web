@@ -11,6 +11,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   sortCodeText: "Sort Code",
   cvcTextLabel: "CVC",
   emailLabel: "Email",
+  ibanEmptyText: "IBAN cannot be empty",
   emailEmptyText: "Email cannot be empty",
   emailInvalidText: "Invalid email address",
   line1Label: "Address line 1",

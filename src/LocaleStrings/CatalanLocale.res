@@ -49,6 +49,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardHolderName: `Nom del titular de la targeta`,
   cardNickname: `Sobrenom de la targeta`,
   billingNamePlaceholder: `Nom i cognom`,
+  ibanEmptyText: `L'IBAN no pot estar buit`,
   emailEmptyText: `El correu electrònic no pot estar buit`,
   emailInvalidText: `adressa de correu invàlida`,
   line1EmptyText: `La línia d'adreça 1 no pot estar buida`,

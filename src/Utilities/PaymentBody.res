@@ -960,11 +960,15 @@ let appendRedirectPaymentMethods = [
   "ali_pay_hk",
 ]
 
+let appendBankeDebitMethods = ["sepa"]
+
 let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) =>
   if isQrPaymentMethod {
     paymentMethodType ++ "_qr"
   } else if appendRedirectPaymentMethods->Array.includes(paymentMethodType) {
     paymentMethodType ++ "_redirect"
+  } else if appendBankeDebitMethods->Array.includes(paymentMethodType) {
+    paymentMethodType ++ "_bank_debit"
   } else {
     paymentMethodType
   }
