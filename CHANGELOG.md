@@ -1,3 +1,10 @@
+# [0.96.0](https://github.com/juspay/hyperswitch-web/compare/v0.95.3...v0.96.0) (2024-10-23)
+
+
+### Features
+
+* added apple pay support inside an iframe ([#743](https://github.com/juspay/hyperswitch-web/issues/743)) ([44ed3a8](https://github.com/juspay/hyperswitch-web/commit/44ed3a83b9686b140470575f7aa15c516cac1cc8))
+
 ## [0.95.3](https://github.com/juspay/hyperswitch-web/compare/v0.95.2...v0.95.3) (2024-10-21)
 
 
