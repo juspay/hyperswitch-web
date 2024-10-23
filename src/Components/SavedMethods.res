@@ -46,13 +46,6 @@ let make = (
 
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
-  let setSdKScreenType = Recoil.useSetRecoilState(RecoilAtoms.sdkScreenType)
-
-  React.useEffect1(() => {
-    setSdKScreenType(_ => RecoilAtomTypes.SAVEDCARD)
-    None
-  }, [])
-
   let bottomElement = {
     <div className="PickerItemContainer">
       {savedMethods

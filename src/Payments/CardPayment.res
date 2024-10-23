@@ -22,11 +22,6 @@ let make = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let (nickname, setNickname) = React.useState(_ => "")
-  let setSdKScreenType = Recoil.useSetRecoilState(RecoilAtoms.sdkScreenType)
-  React.useEffect1(() => {
-    setSdKScreenType(_ => RecoilAtomTypes.CARDFORM)
-    None
-  }, [])
 
   let (
     isCardValid,

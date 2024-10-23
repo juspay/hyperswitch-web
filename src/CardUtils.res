@@ -672,16 +672,10 @@ let getEligibleCoBadgedCardSchemes = (~matchedCardSchemes, ~enabledCardSchemes) 
   })
 }
 
-let getCardBrandFromStates = (
-  sdkScreenType,
-  cardBrand,
-  cardScheme,
-  showFields,
-  isNotBancontact,
-) => {
-  switch (sdkScreenType, showFields, isNotBancontact) {
-  | (RecoilAtomTypes.SAVEDCARD, _, _) => cardScheme
-  | (_, false, true) => cardScheme
+let getCardBrandFromStates = (cardBrand, cardScheme, showFields, isNotBancontact) => {
+  switch (showFields, isNotBancontact) {
+  | (false, _) => cardScheme
+  | (_, true) => cardBrand
   | _ => cardBrand
   }
 }
