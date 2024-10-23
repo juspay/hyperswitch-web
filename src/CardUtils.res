@@ -671,3 +671,11 @@ let getEligibleCoBadgedCardSchemes = (~matchedCardSchemes, ~enabledCardSchemes) 
     enabledCardSchemes->Array.includes(ele->String.toLowerCase)
   })
 }
+
+let getCardBrandFromStates = (cardBrand, cardScheme, showFields, isNotBancontact) => {
+  switch (showFields, isNotBancontact) {
+  | (false, _) => cardScheme
+  | (_, true) => cardBrand
+  | _ => cardBrand
+  }
+}
