@@ -73,7 +73,7 @@ Cypress.Commands.add(
     if (isThreeDSEnabled) {
       mapping[testIds.cardNoInputTestId] = customerData.threeDSCardNo;
     }
-    let publishableKey = "pk_snd_3b33cd9404234113804aa1accaabe22f";
+   
     let clientSecret: string;
     cy.request({
       method: "GET",
