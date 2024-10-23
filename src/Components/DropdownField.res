@@ -119,6 +119,7 @@ let make = (
             background: disabled ? disbaledBG : themeObj.colorBackground,
             opacity: disabled ? "35%" : "",
             padding: themeObj.spacingUnit,
+            paddingRight: "22px",
             width: "100%",
           }
           name=""
@@ -126,7 +127,7 @@ let make = (
           disabled={readOnly || disabled}
           onChange=handleChange
           onFocus=handleFocus
-          className={`${inputClassStyles} ${className} w-full appearance-none outline-none ${cursorClass}`}>
+          className={`${inputClassStyles} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}>
           {options
           ->Array.mapWithIndex((item, index) => {
             <option key={Int.toString(index)} value=item.value>
