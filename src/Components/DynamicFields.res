@@ -476,7 +476,7 @@ let make = (
               value=bankAccountNumber
               onChange={ev => {
                 let value = ReactEvent.Form.target(ev)["value"]
-                setBankAccountNumber(prev => {
+                setBankAccountNumber(_ => {
                   isValid: Some(value !== ""),
                   value,
                   errorString: value !== "" ? "" : localeString.ibanEmptyText,

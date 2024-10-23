@@ -34,11 +34,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setUserAddressPincode = Recoil.useLoggedSetRecoilState(userAddressPincode, "pin", logger)
   let setUserAddressState = Recoil.useLoggedSetRecoilState(userAddressState, "state", logger)
   let setUserAddressCountry = Recoil.useLoggedSetRecoilState(userAddressCountry, "country", logger)
-  let (_country, setCountry) = Recoil.useRecoilState(userCountry)
-  let (isCompleteCallbackUsed, setIsCompleteCallbackUsed) = Recoil.useRecoilState(
-    isCompleteCallbackUsed,
-  )
-  let (isPaymentButtonHandlerProvided, setIsPaymentButtonHandlerProvided) = Recoil.useRecoilState(
+  let setCountry = Recoil.useSetRecoilState(userCountry)
+  let setIsCompleteCallbackUsed = Recoil.useSetRecoilState(isCompleteCallbackUsed)
+  let setIsPaymentButtonHandlerProvided = Recoil.useSetRecoilState(
     isPaymentButtonHandlerProvidedAtom,
   )
 

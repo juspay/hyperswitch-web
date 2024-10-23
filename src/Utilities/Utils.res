@@ -588,12 +588,10 @@ let constructClass = (~classname, ~dict) => {
 let generateStyleSheet = (classname, dict, id) => {
   let createStyle = () => {
     let style = document["createElement"]("style")
-    let style1 = Window.createElement("style")
-    // style["type"] = "text/css"
+    style["type"] = "text/css"
     style["id"] = id
     style["appendChild"](document["createTextNode"](constructClass(~classname, ~dict)))->ignore
-    let obj = document["body"]
-    obj["appendChild"](style)->ignore
+    document["body"]["appendChild"](style)->ignore
   }
   switch Window.window->Window.document->Window.getElementById(id)->Nullable.toOption {
   | Some(val) => {
