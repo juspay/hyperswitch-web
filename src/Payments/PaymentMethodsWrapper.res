@@ -71,8 +71,8 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
           ->Array.filter(item => item.displayName == selectedBank)
           ->Array.get(0)
           ->Option.getOr(Bank.defaultBank)
-        intent(
-          ~bodyArr=PaymentBody.getPaymentBody(
+        let body =
+          PaymentBody.getPaymentBody(
             ~paymentMethod=paymentMethodDetails.methodType,
             ~paymentMethodType=paymentMethodName,
             ~country=countryCode.isoAlpha2,
@@ -89,7 +89,10 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
           ->JSON.Encode.object
           ->flattenObject(true)
           ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->getArrayOfTupleFromDict,
+          ->getArrayOfTupleFromDict
+
+        intent(
+          ~bodyArr=body,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~iframeId,

@@ -25,6 +25,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   stateEmptyText: `Der Status darf nicht leer sein`,
   accountNumberText: `Accountnummer`,
   emailLabel: `Email`,
+  ibanEmptyText: `IBAN darf nicht leer sein`,
   emailEmptyText: `E-Mail darf nicht leer sein`,
   emailInvalidText: `Ungültige E-Mail-Adresse`,
   fullNameLabel: `Vollständiger Name`,

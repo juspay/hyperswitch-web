@@ -10,7 +10,7 @@ module Loader = {
   }
 }
 @react.component
-let make = () => {
+let make = (~onClickHandler=?, ~label=?) => {
   open RecoilAtoms
   open Utils
   let (showLoader, setShowLoader) = React.useState(() => false)
@@ -19,8 +19,10 @@ let make = () => {
   let {sdkHandleConfirmPayment} = optionAtom->Recoil.useRecoilValueFromAtom
 
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
-  let buttonText = sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
-
+  let buttonText = switch label {
+  | Some(val) => val
+  | None => sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
+  }
 
   let handleMessage = (event: Types.event) => {
     let json = event.data->Identity.anyTypeToJson->getStringFromJson("")->safeParse
@@ -35,6 +37,13 @@ let make = () => {
     }
   }
 
+  let onClickHandlerFunc = _ => {
+    switch onClickHandler {
+    | Some(fn) => fn()
+    | None => ()
+    }
+  }
+
   let handleOnClick = _ => {
     setIsPayNowButtonDisable(_ => true)
     setShowLoader(_ => true)
@@ -45,7 +54,7 @@ let make = () => {
   <div className="flex flex-col gap-1 h-auto w-full items-center">
     <button
       disabled=isPayNowButtonDisable
-      onClick=handleOnClick
+      onClick={onClickHandler->Option.isNone ? handleOnClick : onClickHandlerFunc}
       className={`w-full flex flex-row justify-center items-center`}
       style={
         borderRadius: themeObj.buttonBorderRadius,

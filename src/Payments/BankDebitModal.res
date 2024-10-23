@@ -106,7 +106,7 @@ module AccountNumberCard = {
 
 let clearSpaces = str => str->String.replaceRegExp(%re("/\D+/g"), "")
 @react.component
-let make = (~setModalData) => {
+let make = (~setModalData, ~paymentType: CardThemeType.mode) => {
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
   let (routingNumber, setRoutingNumber) = React.useState(_ => "")
   let (iban, setIban) = React.useState(_ => "")
@@ -115,6 +115,8 @@ let make = (~setModalData) => {
   let (routingError, setRoutingError) = React.useState(_ => "")
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (accountType, setAccountType) = React.useState(() => "Savings")
+
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let (openModal, setOpenModal) = React.useState(_ => false)
 
@@ -183,25 +185,66 @@ let make = (~setModalData) => {
     iban !== "" ||
     (accountNum->String.length > 0 && sortCode->String.length > 0)
 
-  <Modal loader=false testMode=true openModal setOpenModal>
-    <div className="flex flex-col w-full h-auto overflow-scroll">
-      <div className={`flex flex-col`}>
-        <div
-          style={color: themeObj.colorPrimary, marginBottom: "5px"}
-          className="self-start font-semibold text-lg text-[#151A1F]">
-          {React.string(localeString.billingDetailsText)}
-        </div>
-        <div className="my-4">
-          <AddressPaymentInput
-            paymentType=CardThemeType.Payment
-            className=" focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
-          />
-        </div>
-        <div
-          style={color: themeObj.colorPrimary, marginBottom: "5px"}
-          className="self-start font-semibold text-lg text-[#151A1F]">
-          {React.string("Bank Details")}
-        </div>
+  let onClickHandler = () => {
+    setModalData(_ => Some({
+      routingNumber,
+      accountNumber: accountNum,
+      accountHolderName,
+      accountType: accountType->String.toLowerCase,
+      iban,
+      sortCode,
+      requiredFieldsBody,
+    }))
+    Modal.close(setOpenModal)
+  }
+
+  let dynamicFieldsModalBody =
+    <>
+      <DynamicFields
+        paymentType paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody
+      />
+      <PayNowButton onClickHandler label="Done" />
+    </>
+
+  let nonDynamicFieldsModalBody =
+    <>
+      <div
+        style={color: themeObj.colorPrimary, marginBottom: "5px"}
+        className="self-start font-semibold text-lg text-[#151A1F]">
+        {React.string(localeString.billingDetailsText)}
+      </div>
+      <div className="my-4">
+        <AddressPaymentInput
+          paymentType=CardThemeType.Payment
+          className="focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
+        />
+      </div>
+      <div
+        style={color: themeObj.colorPrimary, marginBottom: "5px"}
+        className="self-start font-semibold text-lg text-[#151A1F]">
+        {React.string("Bank Details")}
+      </div>
+      <div
+        className={`Label mb-1 mt-5`}
+        style={
+          fontWeight: themeObj.fontWeightNormal,
+          fontSize: themeObj.fontSizeLg,
+          color: themeObj.colorText,
+          marginBottom: "5px",
+        }>
+        {React.string("Account Holder Name")}
+      </div>
+      <Input
+        value=accountHolderName
+        inputRef=nameRef
+        onChange=handleAccountHolderNameChange
+        type_="tel"
+        className={`p-2 text-base px-4`}
+        maxLength=17
+        placeholder="eg: John Doe"
+        onBlur={_ => setInputFocus(_ => NONE)}
+      />
+      <RenderIf condition={isSepaDebit}>
         <div
           className={`Label mb-1 mt-5`}
           style={
@@ -210,155 +253,140 @@ let make = (~setModalData) => {
             color: themeObj.colorText,
             marginBottom: "5px",
           }>
-          {React.string("Account Holder Name")}
+          {React.string("IBAN")}
         </div>
         <Input
-          value=accountHolderName
-          inputRef=nameRef
-          onChange=handleAccountHolderNameChange
-          type_="tel"
-          className={`p-2 text-base px-4`}
-          maxLength=17
-          placeholder="eg: John Doe"
-          onBlur={_ => setInputFocus(_ => NONE)}
+          value=iban
+          onChange=changeIBAN
+          type_="text"
+          maxLength=42
+          inputRef=ibanRef
+          placeholder="eg: DE00 0000 0000 0000 0000 00"
         />
-        <RenderIf condition={isSepaDebit}>
-          <div
-            className={`Label mb-1 mt-5`}
-            style={
-              fontWeight: themeObj.fontWeightNormal,
-              fontSize: themeObj.fontSizeLg,
-              color: themeObj.colorText,
-              marginBottom: "5px",
-            }>
-            {React.string("IBAN")}
-          </div>
-          <Input
-            value=iban
-            onChange=changeIBAN
-            type_="text"
-            maxLength=42
-            inputRef=ibanRef
-            placeholder="eg: DE00 0000 0000 0000 0000 00"
-          />
-        </RenderIf>
-        <div className="flex flex-row items-center w-full justify-between">
-          <RenderIf condition={isAchDebit}>
-            <div className="w-full" style={marginRight: "1rem"}>
-              <div
-                className={`Label mb-1 mt-5`}
-                style={
-                  fontWeight: themeObj.fontWeightNormal,
-                  fontSize: themeObj.fontSizeLg,
-                  color: themeObj.colorText,
-                  marginBottom: "5px",
-                }>
-                {React.string("Routing number")}
-              </div>
-              <Input
-                value=routingNumber
-                inputRef=routeref
-                isValid=isRoutingValid
-                setIsValid=setIsRoutingValid
-                onChange=handleRoutingChange
-                type_="tel"
-                className={` p-2 text-base px-4`}
-                maxLength=9
-                placeholder="123456789"
-                errorString=routingError
-                onBlur=routingBlur
-                onFocus={_ => setInputFocus(_ => Routing)}
-              />
-            </div>
-          </RenderIf>
-          <RenderIf condition={isAchDebit || isBecsDebit}>
-            <div className="w-full ">
-              <div
-                className={`Label mb-1 mt-5`}
-                style={
-                  fontWeight: themeObj.fontWeightNormal,
-                  fontSize: themeObj.fontSizeLg,
-                  color: themeObj.colorText,
-                  marginBottom: "5px",
-                }>
-                {React.string("Account number")}
-              </div>
-              <Input
-                value=accountNum
-                inputRef=accountRef
-                onChange=handleAccountNumChange
-                type_="tel"
-                className={`p-2 text-base px-4`}
-                maxLength={isBecsDebit ? 9 : 17}
-                placeholder="000123456789"
-                onFocus={_ => setInputFocus(_ => Account)}
-                onBlur={_ => setInputFocus(_ => NONE)}
-              />
-            </div>
-          </RenderIf>
-        </div>
+      </RenderIf>
+      <div className="flex flex-row items-center w-full justify-between">
         <RenderIf condition={isAchDebit}>
-          <div
-            className="w-full mb-1 mt-5"
-            style={
-              fontWeight: themeObj.fontWeightNormal,
-              fontSize: themeObj.fontSizeLg,
-              color: themeObj.colorText,
-              marginBottom: "5px",
-            }>
-            <DropdownField
-              appearance=config.appearance
-              fieldName="Account type"
-              value=accountType
-              setValue=setAccountType
-              disabled=false
-              options=[
-                {
-                  value: "Savings",
-                },
-                {
-                  value: "Checking",
-                },
-              ]
-              className=" focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
+          <div className="w-full" style={marginRight: "1rem"}>
+            <div
+              className={`Label mb-1 mt-5`}
+              style={
+                fontWeight: themeObj.fontWeightNormal,
+                fontSize: themeObj.fontSizeLg,
+                color: themeObj.colorText,
+                marginBottom: "5px",
+              }>
+              {React.string("Routing number")}
+            </div>
+            <Input
+              value=routingNumber
+              inputRef=routeref
+              isValid=isRoutingValid
+              setIsValid=setIsRoutingValid
+              onChange=handleRoutingChange
+              type_="tel"
+              className={` p-2 text-base px-4`}
+              maxLength=9
+              placeholder="123456789"
+              errorString=routingError
+              onBlur=routingBlur
+              onFocus={_ => setInputFocus(_ => Routing)}
             />
           </div>
         </RenderIf>
-        <RenderIf condition={isBecsDebit}>
-          <div
-            className={`Label mb-1 mt-5`}
-            style={
-              fontWeight: themeObj.fontWeightNormal,
-              fontSize: themeObj.fontSizeLg,
-              color: themeObj.colorText,
-              marginBottom: "5px",
-            }>
-            {React.string("BSB")}
+        <RenderIf condition={isAchDebit || isBecsDebit}>
+          <div className="w-full ">
+            <div
+              className={`Label mb-1 mt-5`}
+              style={
+                fontWeight: themeObj.fontWeightNormal,
+                fontSize: themeObj.fontSizeLg,
+                color: themeObj.colorText,
+                marginBottom: "5px",
+              }>
+              {React.string("Account number")}
+            </div>
+            <Input
+              value=accountNum
+              inputRef=accountRef
+              onChange=handleAccountNumChange
+              type_="tel"
+              className={`p-2 text-base px-4`}
+              maxLength={isBecsDebit ? 9 : 17}
+              placeholder="000123456789"
+              onFocus={_ => setInputFocus(_ => Account)}
+              onBlur={_ => setInputFocus(_ => NONE)}
+            />
           </div>
-          <Input
-            value=sortCode
-            inputRef=sortCodeRef
-            onChange=changeSortCode
-            type_="tel"
-            className={`p-2 text-base px-4`}
-            maxLength=7
-            placeholder="eg: 000-000"
-          />
         </RenderIf>
-        <Button
-          active=submitActive
-          onclick={_ => {
-            setModalData(_ => Some({
-              routingNumber,
-              accountNumber: accountNum,
-              accountHolderName,
-              accountType: accountType->String.toLowerCase,
-              iban,
-              sortCode,
-            }))
-            Modal.close(setOpenModal)
-          }}
+      </div>
+      <RenderIf condition={isAchDebit}>
+        <div
+          className="w-full mb-1 mt-5"
+          style={
+            fontWeight: themeObj.fontWeightNormal,
+            fontSize: themeObj.fontSizeLg,
+            color: themeObj.colorText,
+            marginBottom: "5px",
+          }>
+          <DropdownField
+            appearance=config.appearance
+            fieldName="Account type"
+            value=accountType
+            setValue=setAccountType
+            disabled=false
+            options=[
+              {
+                value: "Savings",
+              },
+              {
+                value: "Checking",
+              },
+            ]
+            className=" focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
+          />
+        </div>
+      </RenderIf>
+      <RenderIf condition={isBecsDebit}>
+        <div
+          className={`Label mb-1 mt-5`}
+          style={
+            fontWeight: themeObj.fontWeightNormal,
+            fontSize: themeObj.fontSizeLg,
+            color: themeObj.colorText,
+            marginBottom: "5px",
+          }>
+          {React.string("BSB")}
+        </div>
+        <Input
+          value=sortCode
+          inputRef=sortCodeRef
+          onChange=changeSortCode
+          type_="tel"
+          className={`p-2 text-base px-4`}
+          maxLength=7
+          placeholder="eg: 000-000"
         />
+      </RenderIf>
+      <Button
+        active=submitActive
+        onclick={_ => {
+          setModalData(_ => Some({
+            routingNumber,
+            accountNumber: accountNum,
+            accountHolderName,
+            accountType: accountType->String.toLowerCase,
+            iban,
+            sortCode,
+          }))
+          Modal.close(setOpenModal)
+        }}
+      />
+    </>
+
+  <Modal loader=false testMode=true openModal setOpenModal>
+    <div className="flex flex-col w-full h-auto overflow-scroll">
+      <div className={`flex flex-col`}>
+        {isSepaDebit ? dynamicFieldsModalBody : nonDynamicFieldsModalBody}
         <PoweredBy className="mt-5" />
       </div>
     </div>

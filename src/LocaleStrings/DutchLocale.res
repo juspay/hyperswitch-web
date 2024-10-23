@@ -49,6 +49,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardHolderName: `Naam van de kaarthouder`,
   cardNickname: `Kaartbijnaam`,
   billingNamePlaceholder: `Voornaam en achternaam`,
+  ibanEmptyText: `IBAN mag niet leeg zijn`,
   emailEmptyText: `E-mail mag niet leeg zijn`,
   emailInvalidText: `Ongeldig e-mailadres`,
   line1EmptyText: `Adresregel 1 mag niet leeg zijn`,
