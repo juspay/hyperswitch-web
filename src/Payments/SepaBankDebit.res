@@ -1,5 +1,4 @@
 open RecoilAtoms
-open RecoilAtomTypes
 open Utils
 open PaymentModeType
 

@@ -835,7 +835,7 @@ let useSubmitCallback = () => {
       if bankAccountNumber.value === "" {
         setBankAccountNumber(prev => {
           ...prev,
-          errorString: "IBAN cannnot be empty.",
+          errorString: localeString.ibanEmptyText,
         })
       }
     }
