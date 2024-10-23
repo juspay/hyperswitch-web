@@ -18,6 +18,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let sdkScreenType = Recoil.useRecoilValueFromAtom(RecoilAtoms.sdkScreenType)
 
   let {iframeId} = keys
 
@@ -55,6 +56,13 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let isNotBancontact = selectedOption !== "bancontact_card" && cardBrand == ""
   let (cardBrand, setCardBrand) = React.useState(_ =>
     !showFields && isNotBancontact ? cardScheme : cardBrand
+  )
+  let cardBrand = CardUtils.getCardBrandFromStates(
+    sdkScreenType,
+    cardBrand,
+    cardScheme,
+    showFields,
+    isNotBancontact,
   )
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands

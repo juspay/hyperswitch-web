@@ -6,6 +6,8 @@ type field = {
 }
 
 type load = Loading | Loaded(JSON.t) | LoadError
+type screenType = CARDFORM | SAVEDCARD | NONE
+let defaultScreenValues = NONE
 
 type paymentToken = {
   paymentToken: string,
