@@ -106,6 +106,20 @@ let startApplePaySession = (
   }
 
   ssn.onshippingcontactselected = shippingAddressChangeEvent => {
+    let currentTotal = paymentRequest->getDictFromJson->getDictFromDict("total")
+    let label = currentTotal->getString("label", "apple")
+    let currentAmount = currentTotal->getString("amount", "0.00")
+    let \"type" = currentTotal->getString("type", "final")
+
+    let oldTotal: lineItem = {
+      label,
+      amount: currentAmount,
+      \"type",
+    }
+    let currentOrderDetails: orderDetails = {
+      newTotal: oldTotal,
+      newLineItems: [oldTotal],
+    }
     if isTaxCalculationEnabled {
       let newShippingContact =
         shippingAddressChangeEvent.shippingContact
@@ -113,7 +127,7 @@ let startApplePaySession = (
         ->shippingContactItemToObjMapper
       let newShippingAddress =
         [
-          ("state", newShippingContact.locality->JSON.Encode.string),
+          ("state", newShippingContact.administrativeArea->JSON.Encode.string),
           ("country", newShippingContact.countryCode->JSON.Encode.string),
           ("zip", newShippingContact.postalCode->JSON.Encode.string),
         ]->getJsonFromArrayOfJson
@@ -126,8 +140,7 @@ let startApplePaySession = (
         ~publishableKey,
         ~clientSecret,
         ~paymentMethodType,
-      )
-      ->thenResolve(response => {
+      )->thenResolve(response => {
         switch response->taxResponseToObjMapper {
         | Some(taxCalculationResponse) => {
             let (netAmount, ordertaxAmount, shippingCost) = (
@@ -136,13 +149,13 @@ let startApplePaySession = (
               taxCalculationResponse.shipping_cost,
             )
             let newTotal: lineItem = {
-              label: "Net Amount",
+              label,
               amount: netAmount->minorUnitToString,
-              \"type": "final",
+              \"type",
             }
             let newLineItems: array<lineItem> = [
               {
-                label: "Bag Subtotal",
+                label: "Subtotal",
                 amount: (netAmount - ordertaxAmount - shippingCost)->minorUnitToString,
                 \"type": "final",
               },
@@ -157,16 +170,18 @@ let startApplePaySession = (
                 \"type": "final",
               },
             ]
-            let updatedOrderDetails: updatedOrderDetails = {
+            let updatedOrderDetails: orderDetails = {
               newTotal,
               newLineItems,
             }
             ssn.completeShippingContactSelection(updatedOrderDetails)
           }
-        | None => ssn.abort()
+        | None => ssn.completeShippingContactSelection(currentOrderDetails)
         }
       })
-      ->ignore
+    } else {
+      ssn.completeShippingContactSelection(currentOrderDetails)
+      resolve()
     }
   }
 

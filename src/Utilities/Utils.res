@@ -30,6 +30,10 @@ let handleOnFocusPostMessage = (~targetOrigin="*") => {
   messageParentWindow([("focus", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
+let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
+  messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
+}
+
 let handleOnBlurPostMessage = (~targetOrigin="*") => {
   messageParentWindow([("blur", true->JSON.Encode.bool)], ~targetOrigin)
 }
@@ -1152,6 +1156,7 @@ let eventHandlerFunc = (
       | Click
       | Ready
       | Focus
+      | CompleteDoThis
       | ConfirmPayment
       | OneClickConfirmPayment
       | Blur =>
@@ -1211,21 +1216,25 @@ let getThemePromise = dict => {
   }
 }
 
-let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
-  open EventListenerManager
+let makeOneClickHandlerPromise = sdkHandleIsThere => {
   Promise.make((resolve, _) => {
-    if sdkHandleOneClickConfirmPayment {
+    if !sdkHandleIsThere {
       resolve(JSON.Encode.bool(true))
     } else {
-      let handleMessage = (event: Types.event) => {
-        let json = event.data->anyTypeToJson->getStringFromJson("")->safeParse
+      let handleMessage = (event: Window.event) => {
+        let json = try {
+          event.data->safeParse
+        } catch {
+        | _ => JSON.Encode.null
+        }
 
         let dict = json->getDictFromJson
-        if dict->Dict.get("oneClickDoSubmit")->Option.isSome {
-          resolve(dict->Dict.get("oneClickDoSubmit")->Option.getOr(true->JSON.Encode.bool))
+
+        if dict->Dict.get("walletClickEvent")->Option.isSome {
+          resolve(dict->Dict.get("walletClickEvent")->Option.getOr(true->JSON.Encode.bool))
         }
       }
-      addSmartEventListener("message", handleMessage, "onOneClickHandlerPaymentConfirm")
+      Window.addEventListener("message", handleMessage)
       handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true)
     }
   })

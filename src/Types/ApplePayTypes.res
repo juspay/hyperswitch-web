@@ -31,7 +31,7 @@ type lineItem = {
   \"type": string,
 }
 type shippingAddressChangeEvent = {shippingContact: JSON.t}
-type updatedOrderDetails = {newTotal: lineItem, newLineItems: array<lineItem>}
+type orderDetails = {newTotal: lineItem, newLineItems: array<lineItem>}
 type innerSession
 type session = {
   begin: unit => unit,
@@ -41,8 +41,8 @@ type session = {
   mutable onvalidatemerchant: event => unit,
   completeMerchantValidation: JSON.t => unit,
   mutable onpaymentauthorized: event => unit,
-  mutable onshippingcontactselected: shippingAddressChangeEvent => unit,
-  completeShippingContactSelection: updatedOrderDetails => unit,
+  mutable onshippingcontactselected: shippingAddressChangeEvent => promise<unit>,
+  completeShippingContactSelection: orderDetails => unit,
   completePayment: JSON.t => unit,
   \"STATUS_SUCCESS": string,
   \"STATUS_FAILURE": string,
@@ -72,6 +72,16 @@ type paymentRequestData = {
   merchantCapabilities: array<string>,
   supportedNetworks: array<string>,
   @optional merchantIdentifier: string,
+}
+
+type headlessApplePayToken = {
+  paymentRequestData: JSON.t,
+  sessionTokenData: option<JSON.t>,
+}
+
+let defaultHeadlessApplePayToken: headlessApplePayToken = {
+  paymentRequestData: JSON.Encode.null,
+  sessionTokenData: None,
 }
 
 let jsonToPaymentRequestDataType: Dict.t<JSON.t> => paymentRequestData = jsonDict => {

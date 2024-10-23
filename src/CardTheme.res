@@ -9,10 +9,11 @@ let getTheme = (val, logger) => {
   | "midnight" => Midnight
   | "charcoal" => Charcoal
   | "soft" => Soft
+  | "bubblegum" => Bubblegum
   | "none" => NONE
   | str => {
       str->unknownPropValueWarning(
-        ["default", "midnight", "brutal", "charcoal", "soft", "none"],
+        ["default", "midnight", "brutal", "charcoal", "soft", "bubblegum", "none"],
         "appearance.theme",
         ~logger,
       )
