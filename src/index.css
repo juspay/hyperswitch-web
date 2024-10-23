@@ -7,3 +7,9 @@
     outline: transparent !important;
   }
 }
+
+/* Remove contact and password icon in safari */
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-contacts-auto-fill-button {
+  width: 0 !important;
+}
