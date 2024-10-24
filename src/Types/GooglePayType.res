@@ -14,6 +14,7 @@ type paymentDataRequest = {
   mutable shippingAddressRequired: bool,
   mutable emailRequired: bool,
   mutable shippingAddressParameters: JSON.t,
+  mutable callbackIntents: array<JSON.t>,
 }
 @val @scope("Object") external assign2: (JSON.t, JSON.t) => paymentDataRequest = "assign"
 type element = {
@@ -180,6 +181,7 @@ let getPaymentDataFromSession = (~sessionObj, ~componentName) => {
     paymentDataRequest.shippingAddressRequired = gpayobj.shippingAddressRequired
     paymentDataRequest.shippingAddressParameters =
       gpayobj.shippingAddressParameters->transformKeys(CamelCase)
+    paymentDataRequest.callbackIntents = ["SHIPPING_ADDRESS"->JSON.Encode.string]
   }
 
   paymentDataRequest

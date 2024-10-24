@@ -151,7 +151,13 @@ let useHandleGooglePayResponse = (
   }, (paymentMethodTypes, stateJson, isManualRetryEnabled, requiredFieldsBody, isWallet))
 }
 
-let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly) => {
+let handleGooglePayClicked = (
+  ~sessionObj,
+  ~componentName,
+  ~iframeId,
+  ~readOnly,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+) => {
   let paymentDataRequest = GooglePayType.getPaymentDataFromSession(~sessionObj, ~componentName)
   messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
@@ -162,6 +168,10 @@ let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly)
     messageParentWindow([
       ("GpayClicked", true->JSON.Encode.bool),
       ("GpayPaymentDataRequest", paymentDataRequest->Identity.anyTypeToJson),
+      (
+        "IsTaxCalculationEnabled",
+        paymentMethodListValue.is_tax_calculation_enabled->JSON.Encode.bool,
+      ),
     ])
   }
 }
@@ -169,6 +179,7 @@ let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly)
 let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -178,7 +189,13 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-        handleGooglePayClicked(~sessionObj, ~componentName, ~iframeId, ~readOnly=options.readOnly)
+        handleGooglePayClicked(
+          ~sessionObj,
+          ~componentName,
+          ~paymentMethodListValue,
+          ~iframeId,
+          ~readOnly=options.readOnly,
+        )
       } else if areRequiredFieldsEmpty {
         postFailedSubmitResponse(
           ~errortype="validation_error",
