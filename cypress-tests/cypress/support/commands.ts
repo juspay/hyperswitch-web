@@ -46,6 +46,13 @@ Cypress.Commands.add("selectValueInIframe", (selector, value) => {
     .select(value);
 });
 
+Cypress.Commands.add("clickElementInIframe", (selector) => {
+  cy.iframe(iframeSelector)
+    .find(`[data-testid=${selector}]`)
+    .should("be.visible")
+    .click();
+});
+
 Cypress.Commands.add("hardReload", () => {
   cy.wrap(
     Cypress.automation("remote:debugger:protocol", {
@@ -176,15 +183,6 @@ Cypress.Commands.add("getGlobalState", (key: any) => {
   return globalState[key];
 });
 
-Cypress.Commands.add(
-  "getIframeElement",
-  (iframeSelector, elementSelector) => {
-    return cy
-      .get(iframeSelector)
-      .its("0.contentDocument.body")
-      .should("not.be.empty")
-      .then(cy.wrap)
-      .find(elementSelector)
-      .should("be.visible");
-  }
-);
+Cypress.Commands.add("getIframeElement", (iframeSelector, elementSelector) => {
+  return cy.iframe(iframeSelector).find(elementSelector).should("be.visible");
+});

@@ -25,6 +25,7 @@ declare global {
         selector: string,
         value: string
       ): Chainable<JQuery<HTMLElement>>;
+      clickElementInIframe(selector: string): Chainable<JQuery<HTMLElement>>;
       hardReload(): Chainable<JQuery<HTMLElement>>;
       testDynamicFields(
         customerData: CustomerData,
