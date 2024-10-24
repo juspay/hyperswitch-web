@@ -38,10 +38,13 @@ describe("Adyen Card payment flow test", () => {
   });
 
   it("submit payment form and make successful payment", () => {
-    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-    cy.enterValueInIframe(testIds.cardNoInputTestId, "4917 6100 0000 0000");
-    cy.enterValueInIframe(testIds.expiryInputTestId, "03/30");
-    cy.enterValueInIframe(testIds.cardCVVInputTestId, "737");
+    cy.clickElementInIframe(testIds.addNewCardIcon);
+
+    cy.fixture("adyen3DSCardDetails").then((cardDetails) => {
+      cy.enterValueInIframe(testIds.cardNoInputTestId, cardDetails.cardNumber);
+      cy.enterValueInIframe(testIds.expiryInputTestId, cardDetails.expiryDate);
+      cy.enterValueInIframe(testIds.cardCVVInputTestId, cardDetails.cvv);
+    });
 
     cy.intercept("**/payments/redirect/**").as("hyperswitchRedriect");
     cy.intercept("**/checkoutshopper/threeDS2.shtml*").as("adyenCheckout");
@@ -58,9 +61,7 @@ describe("Adyen Card payment flow test", () => {
 
     //adyen checkout page
     cy.wait("@adyenCheckout").then(() => {
-      //not using cy.iframe as it can only be applied to exactly one iframe at a time
-      cy.get(adyenIframeSelector).should("be.visible");
-
+      cy.frameLoaded(adyenIframeSelector);
       cy.getIframeElement(adyenIframeSelector, ".input-field").type("password");
       cy.getIframeElement(adyenIframeSelector, "#buttonSubmit").click();
 
