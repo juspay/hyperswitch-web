@@ -25,6 +25,7 @@ let make = () => {
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
     | "plaidSDK" => <PlaidSDKIframe />
+    | "pazeWallet" => <PazeWallet />
     | "fullscreen" =>
       <div id="fullscreen">
         <FullScreenDivDriver />
