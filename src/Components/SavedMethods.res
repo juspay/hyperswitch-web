@@ -141,6 +141,7 @@ let make = (
             GooglePayHelpers.handleGooglePayClicked(
               ~sessionObj=optToken,
               ~componentName,
+              ~paymentMethodListValue,
               ~iframeId,
               ~readOnly,
             )
