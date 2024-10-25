@@ -672,10 +672,6 @@ let getEligibleCoBadgedCardSchemes = (~matchedCardSchemes, ~enabledCardSchemes) 
   })
 }
 
-let getCardBrandFromStates = (cardBrand, cardScheme, showFields, isNotBancontact) => {
-  switch (showFields, isNotBancontact) {
-  | (false, _) => cardScheme
-  | (_, true) => cardBrand
-  | _ => cardBrand
-  }
+let getCardBrandFromStates = (cardBrand, cardScheme, showFields) => {
+  !showFields ? cardScheme : cardBrand
 }

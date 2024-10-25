@@ -56,12 +56,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     !showFields && isNotBancontact ? cardScheme : cardBrand
   )
 
-  let cardBrand = CardUtils.getCardBrandFromStates(
-    cardBrand,
-    cardScheme,
-    showFields,
-    isNotBancontact,
-  )
+  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showFields)
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
