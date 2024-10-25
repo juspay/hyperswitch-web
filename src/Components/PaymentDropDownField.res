@@ -88,7 +88,7 @@ let make = (
           style={
             background: disabled ? disbaledBG : themeObj.colorBackground,
             opacity: disabled ? "35%" : "",
-            padding: "11px 20px 11px 11px",
+            padding: "11px 22px 11px 11px",
             width: "100%",
           }
           name=""
@@ -96,7 +96,7 @@ let make = (
           disabled={readOnly || disabled}
           onFocus={handleFocus}
           onChange=handleChange
-          className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none ${cursorClass}`}>
+          className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>

@@ -1,3 +1,31 @@
+## [0.96.1](https://github.com/juspay/hyperswitch-web/compare/v0.96.0...v0.96.1) (2024-10-25)
+
+
+### Bug Fixes
+
+* card cvc bug fix ([#748](https://github.com/juspay/hyperswitch-web/issues/748)) ([6122d9d](https://github.com/juspay/hyperswitch-web/commit/6122d9d200b934969ee8643e598754d724a786a4))
+
+# [0.96.0](https://github.com/juspay/hyperswitch-web/compare/v0.95.3...v0.96.0) (2024-10-23)
+
+
+### Features
+
+* added apple pay support inside an iframe ([#743](https://github.com/juspay/hyperswitch-web/issues/743)) ([44ed3a8](https://github.com/juspay/hyperswitch-web/commit/44ed3a83b9686b140470575f7aa15c516cac1cc8))
+
+## [0.95.3](https://github.com/juspay/hyperswitch-web/compare/v0.95.2...v0.95.3) (2024-10-21)
+
+
+### Bug Fixes
+
+* add text overflow with ellipsis in dropdown ([#745](https://github.com/juspay/hyperswitch-web/issues/745)) ([9061306](https://github.com/juspay/hyperswitch-web/commit/90613062e9bcc1f19e538117d7aebddd3bd5fb76))
+
+## [0.95.2](https://github.com/juspay/hyperswitch-web/compare/v0.95.1...v0.95.2) (2024-10-21)
+
+
+### Bug Fixes
+
+* extra scroll in safari ([#744](https://github.com/juspay/hyperswitch-web/issues/744)) ([5254446](https://github.com/juspay/hyperswitch-web/commit/52544466899116be2222c5a4db1da16241f4fa4b))
+
 ## [0.95.1](https://github.com/juspay/hyperswitch-web/compare/v0.95.0...v0.95.1) (2024-10-16)
 
 
