@@ -1,3 +1,10 @@
+## [0.96.1](https://github.com/juspay/hyperswitch-web/compare/v0.96.0...v0.96.1) (2024-10-25)
+
+
+### Bug Fixes
+
+* card cvc bug fix ([#748](https://github.com/juspay/hyperswitch-web/issues/748)) ([6122d9d](https://github.com/juspay/hyperswitch-web/commit/6122d9d200b934969ee8643e598754d724a786a4))
+
 # [0.96.0](https://github.com/juspay/hyperswitch-web/compare/v0.95.3...v0.96.0) (2024-10-23)
 
 
