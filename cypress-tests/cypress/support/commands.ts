@@ -173,3 +173,17 @@ Cypress.Commands.add("createPaymentIntent", (secretKey: string, createPaymentBod
 Cypress.Commands.add("getGlobalState", (key: any) => {
   return globalState[key];
 });
+
+Cypress.Commands.add("fillCardDetails", (iframeSelector: string, cardData: any) => {
+  const getIframeBody = () => cy.iframe(iframeSelector);
+
+  // Find and interact with card details input fields within the iframe
+  getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
+  getIframeBody().find("[data-testid=cardNoInput]").type(cardData.cardNo);
+  getIframeBody().find("[data-testid=expiryInput]").type(cardData.expiryDate);
+  getIframeBody().find("[data-testid=cvvInput]").should("be.ok").type(cardData.cvc);
+
+  // Submit the payment details
+  getIframeBody().get("#submit").click();
+});
+

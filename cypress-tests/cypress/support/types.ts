@@ -15,6 +15,12 @@ export type CustomerData = {
     threeDSCardNo: string
 }
 
+export type CardData = {
+    cardNo: string;
+    cvc: string;
+    expiryDate: string;
+  };
+
 declare global {
     namespace Cypress {
         interface Chainable {
@@ -26,6 +32,10 @@ declare global {
             ): Chainable<JQuery<HTMLElement>>
             createPaymentIntent(secretKey: string, createPaymentBody: Record<string, any>): Chainable<Response<any>>
             getGlobalState(key: string): Chainable<Response<any>>
+            fillCardDetails(
+                selector: string,
+                cardData: CardData
+              ): Chainable<Response<any>>
         }
     }
 }
