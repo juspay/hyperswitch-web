@@ -24,7 +24,7 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 import "cypress-iframe";
-import { createPaymentBody } from "./utils"
+import { createPaymentBody } from "./utils";
 import * as testIds from "../../../src/Utilities/TestUtils.bs";
 // commands.js or your custom support file
 const iframeSelector =
@@ -146,44 +146,55 @@ Cypress.Commands.add(
   }
 );
 
+Cypress.Commands.add(
+  "createPaymentIntent",
+  (secretKey: string, createPaymentBody: any) => {
+    return cy
+      .request({
+        method: "POST",
+        url: "https://sandbox.hyperswitch.io/payments",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "api-key": secretKey,
+        },
+        body: JSON.stringify(createPaymentBody),
+      })
+      .then((response) => {
+        expect(response.headers["content-type"]).to.include("application/json");
+        expect(response.body).to.have.property("client_secret");
+        const clientSecret = response.body.client_secret;
+        cy.log(clientSecret);
+        cy.log(response.toString());
 
-Cypress.Commands.add("createPaymentIntent", (secretKey: string, createPaymentBody: any) => {
-  return cy
-    .request({
-      method: "POST",
-      url: "https://sandbox.hyperswitch.io/payments",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "api-key": secretKey,
-      },
-      body: JSON.stringify(createPaymentBody),
-    })
-    .then((response) => {
-      expect(response.headers["content-type"]).to.include("application/json");
-      expect(response.body).to.have.property("client_secret");
-      const clientSecret = response.body.client_secret;
-      cy.log(clientSecret);
-      cy.log(response.toString());
-
-      globalState["clientSecret"] = clientSecret;
-    });
-});
+        globalState["clientSecret"] = clientSecret;
+      });
+  }
+);
 
 Cypress.Commands.add("getGlobalState", (key: any) => {
   return globalState[key];
 });
 
-Cypress.Commands.add("fillCardDetails", (iframeSelector: string, cardData: any) => {
-  const getIframeBody = () => cy.iframe(iframeSelector);
+Cypress.Commands.add(
+  "fillCardDetails",
+  (iframeSelector: string, cardData: any) => {
+    const getIframeBody = () => cy.iframe(iframeSelector);
 
-  // Find and interact with card details input fields within the iframe
-  getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
-  getIframeBody().find("[data-testid=cardNoInput]").type(cardData.cardNo);
-  getIframeBody().find("[data-testid=expiryInput]").type(cardData.expiryDate);
-  getIframeBody().find("[data-testid=cvvInput]").should("be.ok").type(cardData.cvc);
+    // Find and interact with card details input fields within the iframe
+    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
+    getIframeBody()
+      .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+      .type(cardData.cardNo);
+    getIframeBody()
+      .find(`[data-testid=${testIds.expiryInputTestId}]`)
+      .type(cardData.expiryDate);
+    getIframeBody()
+      .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+      .should("be.ok")
+      .type(cardData.cvc);
 
-  // Submit the payment details
-  getIframeBody().get("#submit").click();
-});
-
+    // Submit the payment details
+    getIframeBody().get("#submit").click();
+  }
+);
