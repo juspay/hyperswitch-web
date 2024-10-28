@@ -318,6 +318,7 @@ let rec intentCall = (
   ~counter,
   ~isPaymentSession=false,
   ~isCallbackUsedVal=?,
+  ~componentName="payment",
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -470,6 +471,7 @@ let rec intentCall = (
                 ~customPodUri,
                 ~sdkHandleOneClickConfirmPayment,
                 ~counter=counter + 1,
+                ~componentName,
               )
               ->then(
                 res => {
@@ -706,6 +708,7 @@ let rec intentCall = (
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
                     ("applePayPresent", session_token->anyTypeToJson),
+                    ("componentName", componentName->JSON.Encode.string),
                   ]
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | "open_banking" => {
@@ -895,6 +898,7 @@ let rec intentCall = (
             ~sdkHandleOneClickConfirmPayment,
             ~counter=counter + 1,
             ~isPaymentSession,
+            ~componentName,
           )
           ->then(
             res => {
@@ -992,8 +996,8 @@ let usePaymentIntent = (optLogger, paymentType) => {
   open RecoilAtoms
   open Promise
   let url = RescriptReactRouter.useUrl()
-  let paymentTypeFromUrl =
-    CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+  let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
@@ -1093,6 +1097,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
             ~counter=0,
             ~isCallbackUsedVal,
+            ~componentName,
           )
           ->then(val => {
             intentCallback(val)

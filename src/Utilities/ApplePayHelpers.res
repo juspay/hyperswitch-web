@@ -73,9 +73,8 @@ let startApplePaySession = (
   ~applePaySessionRef,
   ~applePayPresent,
   ~logger: OrcaLogger.loggerMake,
-  ~applePayEvent: option<Types.event>=None,
   ~callBackFunc,
-  ~resolvePromise: option<Core__JSON.t => unit>=None,
+  ~resolvePromise,
   ~clientSecret,
   ~publishableKey,
   ~isTaxCalculationEnabled=false,
@@ -202,18 +201,10 @@ let startApplePaySession = (
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
     )
-    switch (applePayEvent, resolvePromise) {
-    | (Some(applePayEvent), _) => {
-        let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
-        applePayEvent.source->Window.sendPostMessage(msg)
-      }
-    | (_, Some(resolvePromise)) =>
-      handleFailureResponse(
-        ~message="ApplePay Session Cancelled",
-        ~errorType="apple_pay",
-      )->resolvePromise
-    | _ => ()
-    }
+    handleFailureResponse(
+      ~message="ApplePay Session Cancelled",
+      ~errorType="apple_pay",
+    )->resolvePromise
   }
   ssn.begin()
 }
@@ -250,9 +241,9 @@ let useHandleApplePayResponse = (
       let json = ev.data->safeParse
       try {
         let dict = json->getDictFromJson
-        if dict->Dict.get("applePayProcessPayment")->Option.isSome {
+        if dict->Dict.get("applePayPaymentToken")->Option.isSome {
           let token =
-            dict->Dict.get("applePayProcessPayment")->Option.getOr(Dict.make()->JSON.Encode.object)
+            dict->Dict.get("applePayPaymentToken")->Option.getOr(Dict.make()->JSON.Encode.object)
 
           let billingContactDict = dict->getDictFromDict("applePayBillingContact")
           let shippingContactDict = dict->getDictFromDict("applePayShippingContact")
@@ -329,6 +320,7 @@ let handleApplePayButtonClicked = (
       "isTaxCalculationEnabled",
       paymentMethodListValue.is_tax_calculation_enabled->JSON.Encode.bool,
     ),
+    ("componentName", componentName->JSON.Encode.string),
   ]
   messageParentWindow(message)
 }
