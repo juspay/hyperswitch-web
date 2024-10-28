@@ -15,7 +15,7 @@ let getPaymentType = paymentMethodType =>
   switch paymentMethodType {
   | "apple_pay" => Applepay
   | "google_pay" => Gpay
-  | "paze" => Gpay
+  | "paze" => Paze
   | "debit"
   | "credit"
   | "" =>
