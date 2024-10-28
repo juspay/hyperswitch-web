@@ -21,6 +21,9 @@ type token = {
   clientId: string,
   clientName: string,
   clientProfileId: string,
+  email_address: string,
+  transaction_amount: string,
+  transaction_currency_code: string,
 }
 
 type tokenType =
@@ -55,6 +58,9 @@ let defaultToken = {
   clientId: "",
   clientName: "",
   clientProfileId: "",
+  email_address: "",
+  transaction_amount: "",
+  transaction_currency_code: "",
 }
 let getWallet = str => {
   switch str {
@@ -89,6 +95,9 @@ let getSessionsToken = (dict, str) =>
         clientId: getString(dict, "client_id", ""),
         clientName: getString(dict, "client_name", ""),
         clientProfileId: getString(dict, "client_profile_id", ""),
+        email_address: getString(dict, "email_address", ""),
+        transaction_amount: getString(dict, "transaction_amount", ""),
+        transaction_currency_code: getString(dict, "transaction_currency_code", ""),
       }
     })
   })

@@ -2,15 +2,15 @@
 let make = (~token: SessionsType.token) => {
   open Utils
   open RecoilAtoms
-  let {iframeId, publishableKey} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, publishableKey, clientSecret} = Recoil.useRecoilValueFromAtom(keys)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
-  let options = Recoil.useRecoilValueFromAtom(optionAtom)
+  let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
 
   React.useEffect0(() => {
     setIsShowOrPayUsing(_ => true)
@@ -30,9 +30,11 @@ let make = (~token: SessionsType.token) => {
           ("clientId", token.clientId->JSON.Encode.string),
           ("clientName", token.clientName->JSON.Encode.string),
           ("clientProfileId", token.clientProfileId->JSON.Encode.string),
-          ("sessionId", token.sessionId->JSON.Encode.string),
-          ("currency", paymentMethodListValue.currency->JSON.Encode.string),
+          ("sessionId", paymentIntentID->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
+          ("emailAddress", token.email_address->JSON.Encode.string),
+          ("transactionAmount", token.transaction_amount->JSON.Encode.string),
+          ("transactionCurrencyCode", token.transaction_currency_code->JSON.Encode.string),
         ]->getJsonFromArrayOfJson,
       ),
     ])

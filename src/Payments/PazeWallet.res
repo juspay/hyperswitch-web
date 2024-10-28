@@ -12,8 +12,10 @@ let make = () => {
   let (clientName, setClientName) = React.useState(() => "")
   let (clientProfileId, setClientProfileId) = React.useState(() => "")
   let (sessionId, setSessionId) = React.useState(() => "")
-  let (currency, setCurrency) = React.useState(() => "")
   let (publishableKey, setPublishableKey) = React.useState(() => "")
+  let (emailAddress, setEmailAddress) = React.useState(() => "")
+  let (transactionAmount, setTransactionAmount) = React.useState(() => "")
+  let (transactionCurrencyCode, setTransactionCurrencyCode) = React.useState(() => "")
 
   React.useEffect0(() => {
     let handle = (ev: Window.event) => {
@@ -24,8 +26,10 @@ let make = () => {
         setClientName(_ => metaData->getString("clientName", ""))
         setClientProfileId(_ => metaData->getString("clientProfileId", ""))
         setSessionId(_ => metaData->getString("sessionId", ""))
-        setCurrency(_ => metaData->getString("currency", ""))
         setPublishableKey(_ => metaData->getString("publishableKey", ""))
+        setEmailAddress(_ => metaData->getString("emailAddress", ""))
+        setTransactionAmount(_ => metaData->getString("transactionAmount", ""))
+        setTransactionCurrencyCode(_ => metaData->getString("transactionCurrencyCode", ""))
       }
     }
     Window.addEventListener("message", handle)
@@ -50,13 +54,13 @@ let make = () => {
       ->then(val => {
         Console.log2("PAZE --- init completed", val)
         digitalWalletSdk.canCheckout({
-          emailAddress: "returninguser@paze.com",
+          emailAddress: emailAddress,
         })->then(consumerPresent => {
           Console.log("PAZE --- canCheckout completed")
           Console.log2("PAZE --- consumerPresent: ", consumerPresent)
           let transactionValue = {
-            transactionAmount: "50.21",
-            transactionCurrencyCode: currency,
+            transactionAmount,
+            transactionCurrencyCode,
           }
 
           let transactionOptions = {
@@ -67,8 +71,8 @@ let make = () => {
 
           digitalWalletSdk.checkout({
             acceptedPaymentCardNetworks: ["VISA", "MASTERCARD"],
-            emailAddress: "returninguser@paze.com",
-            sessionId: "m2cxrizr6scgriug1pg",
+            emailAddress,
+            sessionId,
             actionCode: "START_FLOW",
             transactionValue,
             shippingPreference: "ALL",
@@ -78,7 +82,7 @@ let make = () => {
               let completeObj = {
                 transactionOptions,
                 transactionId: "",
-                sessionId: "m2cxrizr6scgriug1pg",
+                sessionId,
                 transactionType: "PURCHASE",
                 transactionValue,
               }
@@ -128,13 +132,13 @@ let make = () => {
       clientId != "" &&
       clientName != "" &&
       clientProfileId != "" &&
-      // sessionId != "" &&
-      currency != ""
+      sessionId != "" &&
+      transactionCurrencyCode != ""
     ) {
       mountPazeSDK()
     }
     None
-  }, [clientId, clientName, clientProfileId, sessionId, currency])
+  }, [clientId, clientName, clientProfileId, sessionId, transactionCurrencyCode])
 
   <div id="paze-button" className="w-full flex flex-row justify-center rounded-md h-auto" />
 }
