@@ -1,3 +1,10 @@
+# [0.97.0](https://github.com/juspay/hyperswitch-web/compare/v0.96.3...v0.97.0) (2024-10-29)
+
+
+### Features
+
+* tax calculation in google pay ([#750](https://github.com/juspay/hyperswitch-web/issues/750)) ([0039fbe](https://github.com/juspay/hyperswitch-web/commit/0039fbe65ec7ff958d637d00c58aed710fed5b1f))
+
 ## [0.96.3](https://github.com/juspay/hyperswitch-web/compare/v0.96.2...v0.96.3) (2024-10-29)
 
 
