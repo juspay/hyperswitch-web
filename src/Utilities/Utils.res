@@ -78,6 +78,8 @@ let getInt = (dict, key, default: int) => {
   ->Float.toInt
 }
 
+let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
+
 let getFloatFromString = (str, default) => str->Float.fromString->Option.getOr(default)
 
 let getFloatFromJson = (json, default) => {
@@ -864,9 +866,11 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
       },
     )
     ->catch(err => {
+      Js.log2("errerrerrerrerrerrerr", err)
       reject(err)
     })
     ->then(resp => {
+      Js.log2("resprespresprespresp", resp)
       resolve(resp)
     })
   })
@@ -877,9 +881,29 @@ let arrayJsonToCamelCase = arr => {
     item->transformKeys(CamelCase)
   })
 }
-let formatException = exc => {
-  exc->Identity.anyTypeToJson
-}
+
+let formatException = exc =>
+  switch exc {
+  | Exn.Error(obj) =>
+    let (message, name, stack, fileName) = (
+      Exn.message(obj),
+      Exn.name(obj),
+      Exn.stack(obj),
+      Exn.fileName(obj),
+    )
+    [
+      ("message", message->Identity.anyTypeToJson),
+      ("type", name->Identity.anyTypeToJson),
+      ("stack", stack->Identity.anyTypeToJson),
+      ("fileName", fileName->Identity.anyTypeToJson),
+    ]
+  | _ => [
+      ("message", "Unknown error"->Identity.anyTypeToJson),
+      ("type", "Unknown"->Identity.anyTypeToJson),
+      ("stack", "Unknown"->Identity.anyTypeToJson),
+      ("fileName", "Unknown"->Identity.anyTypeToJson),
+    ]
+  }->getJsonFromArrayOfJson
 
 let getArrayValFromJsonDict = (dict, key, arrayKey) => {
   dict
@@ -1299,8 +1323,6 @@ let getIsWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
 }
 
 let getUniqueArray = arr => arr->Array.map(item => (item, ""))->Dict.fromArray->Dict.keysToArray
-
-let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
 
 let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, country: string) => {
   let options =
