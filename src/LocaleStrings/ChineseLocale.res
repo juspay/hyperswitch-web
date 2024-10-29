@@ -25,6 +25,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   stateEmptyText: `省/州不能为空`,
   accountNumberText: `账户号码`,
   emailLabel: `电子邮箱`,
+  ibanEmptyText: `IBAN 不能为空`,
   emailEmptyText: `电子邮箱不能为空`,
   emailInvalidText: `无效的电子邮箱地址`,
   fullNameLabel: `全名`,

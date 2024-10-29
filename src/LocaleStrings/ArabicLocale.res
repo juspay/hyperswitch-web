@@ -12,6 +12,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   accountNumberText: `رقم حساب`,
   cvcTextLabel: `رمز الحماية`,
   emailLabel: `البريد الإلكتروني`,
+  ibanEmptyText: `لا يمكن أن يكون رقم IBAN فارغًا`,
   emailEmptyText: `لا يمكن أن يكون البريد الإلكتروني فارغًا`,
   emailInvalidText: `عنوان البريد الإلكتروني غير صالح`,
   fullNameLabel: `الاسم الكامل`,
