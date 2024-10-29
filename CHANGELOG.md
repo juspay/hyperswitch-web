@@ -1,3 +1,10 @@
+## [0.96.3](https://github.com/juspay/hyperswitch-web/compare/v0.96.2...v0.96.3) (2024-10-29)
+
+
+### Bug Fixes
+
+* remove blue border in firefox ([#746](https://github.com/juspay/hyperswitch-web/issues/746)) ([40ef7a5](https://github.com/juspay/hyperswitch-web/commit/40ef7a5578b3a687c9b596a27818f4533758f136))
+
 ## [0.96.2](https://github.com/juspay/hyperswitch-web/compare/v0.96.1...v0.96.2) (2024-10-28)
 
 ## [0.96.1](https://github.com/juspay/hyperswitch-web/compare/v0.96.0...v0.96.1) (2024-10-25)
