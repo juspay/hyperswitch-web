@@ -864,11 +864,9 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
       },
     )
     ->catch(err => {
-      Js.log2("errerrerrerrerrerrerr", err)
       reject(err)
     })
     ->then(resp => {
-      Js.log2("resprespresprespresp", resp)
       resolve(resp)
     })
   })
