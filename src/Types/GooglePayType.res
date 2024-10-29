@@ -14,6 +14,7 @@ type paymentDataRequest = {
   mutable shippingAddressRequired: bool,
   mutable emailRequired: bool,
   mutable shippingAddressParameters: JSON.t,
+  mutable callbackIntents: array<JSON.t>,
 }
 @val @scope("Object") external assign2: (JSON.t, JSON.t) => paymentDataRequest = "assign"
 type element = {
@@ -26,9 +27,9 @@ type document
 @val external document: document = "document"
 @send external getElementById: (document, string) => element = "getElementById"
 type client = {
-  isReadyToPay: JSON.t => Promise.t<JSON.t>,
+  isReadyToPay: JSON.t => promise<JSON.t>,
   createButton: JSON.t => Dom.element,
-  loadPaymentData: JSON.t => Promise.t<Fetch.Response.t>,
+  loadPaymentData: JSON.t => promise<Fetch.Response.t>,
 }
 @new external google: JSON.t => client = "google.payments.api.PaymentsClient"
 let getLabel = (var: PaymentType.googlePayStyleType) => {
@@ -180,6 +181,7 @@ let getPaymentDataFromSession = (~sessionObj, ~componentName) => {
     paymentDataRequest.shippingAddressRequired = gpayobj.shippingAddressRequired
     paymentDataRequest.shippingAddressParameters =
       gpayobj.shippingAddressParameters->transformKeys(CamelCase)
+    paymentDataRequest.callbackIntents = ["SHIPPING_ADDRESS"->JSON.Encode.string]
   }
 
   paymentDataRequest

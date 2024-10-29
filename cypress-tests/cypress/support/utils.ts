@@ -1,14 +1,54 @@
-export const CLIENT_URL = "http://localhost:9060"
+export const CLIENT_BASE_URL = "http://localhost:9060"
 
-export const request = {
+
+
+export const getClientURL = (clientSecret, publishableKey) => {
+  return `${CLIENT_BASE_URL}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
+}
+
+export const enum connectorEnum{
+  TRUSTPAY,
+  ADYEN,
+  STRIPE
+}
+export const connectorProfileIdMapping = new Map<connectorEnum, string>([
+  [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
+  [connectorEnum.ADYEN, "pro_Kvqzu8WqBZsT1OjHlCj4"],
+  [connectorEnum.STRIPE, "pro_5fVcCxU8MFTYozgtf0P8"],
+]);
+
+export const createPaymentBody = {
   currency: "USD",
-  amount: 6500,
-  authentication_type: "three_ds",
-  description: "Joseph First Crypto",
+  amount: 2999,
+  order_details: [
+    {
+      product_name: "Apple iPhone 15",
+      quantity: 1,
+      amount: 2999,
+    },
+  ],
+  confirm: false,
+  capture_method: "automatic",
+  authentication_type: "no_three_ds",
+  customer_id: "hyperswitch_sdk_demo_id",
   email: "hyperswitch_sdk_demo_id@gmail.com",
-  connector_metadata: {
-    noon: {
-      order_category: "applepay",
+  request_external_three_ds_authentication: false,
+  description: "Hello this is description",
+  shipping: {
+    address: {
+      line1: "1467",
+      line2: "Harrison Street",
+      line3: "Harrison Street",
+      city: "San Fransico",
+      state: "California",
+      zip: "94122",
+      country: "US",
+      first_name: "joseph",
+      last_name: "Doe",
+    },
+    phone: {
+      number: "8056594427",
+      country_code: "+91",
     },
   },
   metadata: {
@@ -16,10 +56,31 @@ export const request = {
     new_customer: "true",
     login_date: "2019-09-10T10:11:12Z",
   },
-  //   customer_id: "hyperswitch_sdk_demo_test_id",
-  business_country: "US",
-  business_label: "default",
-};
+  profile_id: "pro_5fVcCxU8MFTYozgtf0P8",
+  billing: {
+    email: "hyperswitch_sdk_demo_id@gmail.com",
+    address: {
+      line1: "1467",
+      line2: "Harrison Street",
+      line3: "Harrison Street",
+      city: "San Fransico",
+      state: "California",
+      zip: "94122",
+      country: "US",
+      first_name: "joseph",
+      last_name: "Doe",
+    },
+    phone: {
+      number: "8056594427",
+      country_code: "+91",
+    },
+  },
+
+}
+
+export const changeObjectKeyValue = (object: Record<string, any>, key: string, value: string) => {
+  object[key] = value
+}
 
 export const confirmBody = {
   client_secret: "",
@@ -65,3 +126,5 @@ export const confirmBody = {
 export const stripeTestCard = "4000000000003220";
 export const adyenTestCard = "4917610000000000";
 export const bluesnapTestCard = "4000000000001091";
+export const amexTestCard = "378282246310005"
+export const visaTestCard = "4242424242424242";

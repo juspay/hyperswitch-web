@@ -7,7 +7,7 @@ let getCustomerSavedPaymentMethods = (
   ~publishableKey,
   ~endpoint,
   ~logger,
-  ~switchToCustomPod,
+  ~customPodUri,
 ) => {
   open ApplePayTypes
   open GooglePayType
@@ -17,7 +17,7 @@ let getCustomerSavedPaymentMethods = (
     ~clientSecret,
     ~publishableKey,
     ~endpoint,
-    ~switchToCustomPod,
+    ~customPodUri,
     ~optLogger=Some(logger),
     ~isPaymentSession=true,
   )
@@ -35,7 +35,7 @@ let getCustomerSavedPaymentMethods = (
     customerPaymentMethods->Array.sort((a, b) => compareLogic(a.lastUsedAt, b.lastUsedAt))
 
     let customerPaymentMethodsRef = ref(customerPaymentMethods)
-    let applePayTokenRef = ref(JSON.Encode.null)
+    let applePayTokenRef = ref(defaultHeadlessApplePayToken)
     let googlePayTokenRef = ref(JSON.Encode.null)
 
     let isApplePayPresent =
@@ -114,6 +114,7 @@ let getCustomerSavedPaymentMethods = (
             ~publishableKey,
             ~clientSecret,
             ~logger,
+            ~customPodUri,
           )
         }
       | None =>
@@ -161,6 +162,7 @@ let getCustomerSavedPaymentMethods = (
             ~publishableKey,
             ~clientSecret,
             ~logger,
+            ~customPodUri,
           )->then(val => {
             val->resolvePromise
             resolve()
@@ -185,11 +187,14 @@ let getCustomerSavedPaymentMethods = (
       }
 
       ApplePayHelpers.startApplePaySession(
-        ~paymentRequest=applePayTokenRef.contents,
+        ~paymentRequest=applePayTokenRef.contents.paymentRequestData,
         ~applePaySessionRef,
-        ~applePayPresent=Some(applePayTokenRef.contents),
+        ~applePayPresent=applePayTokenRef.contents.sessionTokenData,
         ~logger,
         ~callBackFunc=processPayment,
+        ~clientSecret,
+        ~publishableKey,
+        ~resolvePromise,
       )
     }
 
@@ -225,6 +230,7 @@ let getCustomerSavedPaymentMethods = (
             ~publishableKey,
             ~clientSecret,
             ~logger,
+            ~customPodUri,
           )
         }
 
@@ -298,6 +304,7 @@ let getCustomerSavedPaymentMethods = (
             ~publishableKey,
             ~clientSecret,
             ~logger,
+            ~customPodUri,
           )
         }
       | None =>
@@ -331,7 +338,7 @@ let getCustomerSavedPaymentMethods = (
         ~clientSecret,
         ~publishableKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
       ->then(sessionDetails => {
@@ -419,7 +426,10 @@ let getCustomerSavedPaymentMethods = (
               ~sessionObj=optToken,
               ~componentName,
             )
-            applePayTokenRef := paymentRequest
+            applePayTokenRef := {
+                paymentRequestData: paymentRequest,
+                sessionTokenData: optToken,
+              }
           }
         | _ => updateCustomerPaymentMethodsRef(~isFilterApplePay=true)
         }
@@ -464,12 +474,12 @@ let getCustomerSavedPaymentMethods = (
   })
 }
 
-let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~switchToCustomPod, ~endpoint) => {
+let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~customPodUri, ~endpoint) => {
   let getSavedPaymentManagementMethodsList = _ => {
     PaymentHelpers.fetchSavedPaymentMethodList(
       ~ephemeralKey,
       ~optLogger=Some(logger),
-      ~switchToCustomPod=false,
+      ~customPodUri,
       ~endpoint,
     )
     ->then(response => {
@@ -486,7 +496,7 @@ let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~switchToCustomPod, ~
       ~ephemeralKey,
       ~paymentMethodId={paymentMethodId->JSON.Decode.string->Option.getOr("")},
       ~logger,
-      ~switchToCustomPod,
+      ~customPodUri,
     )
     ->then(response => {
       response->resolve

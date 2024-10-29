@@ -140,7 +140,7 @@ let useHandleGooglePayResponse = (
         )
       }
       if dict->Dict.get("gpayError")->Option.isSome {
-        handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+        messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
         if isSavedMethodsFlow || !isWallet {
           postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
         }
@@ -151,17 +151,27 @@ let useHandleGooglePayResponse = (
   }, (paymentMethodTypes, stateJson, isManualRetryEnabled, requiredFieldsBody, isWallet))
 }
 
-let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly) => {
+let handleGooglePayClicked = (
+  ~sessionObj,
+  ~componentName,
+  ~iframeId,
+  ~readOnly,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+) => {
   let paymentDataRequest = GooglePayType.getPaymentDataFromSession(~sessionObj, ~componentName)
-  handlePostMessage([
+  messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
     ("param", "paymentloader"->JSON.Encode.string),
     ("iframeId", iframeId->JSON.Encode.string),
   ])
   if !readOnly {
-    handlePostMessage([
+    messageParentWindow([
       ("GpayClicked", true->JSON.Encode.bool),
       ("GpayPaymentDataRequest", paymentDataRequest->Identity.anyTypeToJson),
+      (
+        "IsTaxCalculationEnabled",
+        paymentMethodListValue.is_tax_calculation_enabled->JSON.Encode.bool,
+      ),
     ])
   }
 }
@@ -169,6 +179,7 @@ let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly)
 let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -178,7 +189,13 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-        handleGooglePayClicked(~sessionObj, ~componentName, ~iframeId, ~readOnly=options.readOnly)
+        handleGooglePayClicked(
+          ~sessionObj,
+          ~componentName,
+          ~paymentMethodListValue,
+          ~iframeId,
+          ~readOnly=options.readOnly,
+        )
       } else if areRequiredFieldsEmpty {
         postFailedSubmitResponse(
           ~errortype="validation_error",

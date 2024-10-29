@@ -1,5 +1,6 @@
 open ApplePayTypes
 open Utils
+open TaxCalculation
 
 let processPayment = (
   ~bodyArr,
@@ -72,10 +73,13 @@ let startApplePaySession = (
   ~applePaySessionRef,
   ~applePayPresent,
   ~logger: OrcaLogger.loggerMake,
-  ~applePayEvent: option<Types.event>=None,
   ~callBackFunc,
-  ~resolvePromise: option<Core__JSON.t => unit>=None,
+  ~resolvePromise,
+  ~clientSecret,
+  ~publishableKey,
+  ~isTaxCalculationEnabled=false,
 ) => {
+  open Promise
   let ssn = applePaySession(3, paymentRequest)
   switch applePaySessionRef.contents->Nullable.toOption {
   | Some(session) =>
@@ -100,6 +104,86 @@ let startApplePaySession = (
     ssn.completeMerchantValidation(merchantSession)
   }
 
+  ssn.onshippingcontactselected = shippingAddressChangeEvent => {
+    let currentTotal = paymentRequest->getDictFromJson->getDictFromDict("total")
+    let label = currentTotal->getString("label", "apple")
+    let currentAmount = currentTotal->getString("amount", "0.00")
+    let \"type" = currentTotal->getString("type", "final")
+
+    let oldTotal: lineItem = {
+      label,
+      amount: currentAmount,
+      \"type",
+    }
+    let currentOrderDetails: orderDetails = {
+      newTotal: oldTotal,
+      newLineItems: [oldTotal],
+    }
+    if isTaxCalculationEnabled {
+      let newShippingContact =
+        shippingAddressChangeEvent.shippingContact
+        ->getDictFromJson
+        ->shippingContactItemToObjMapper
+      let newShippingAddress =
+        [
+          ("state", newShippingContact.administrativeArea->JSON.Encode.string),
+          ("country", newShippingContact.countryCode->JSON.Encode.string),
+          ("zip", newShippingContact.postalCode->JSON.Encode.string),
+        ]->getJsonFromArrayOfJson
+
+      let paymentMethodType = "apple_pay"->JSON.Encode.string
+
+      calculateTax(
+        ~shippingAddress=[("address", newShippingAddress)]->getJsonFromArrayOfJson,
+        ~logger,
+        ~publishableKey,
+        ~clientSecret,
+        ~paymentMethodType,
+      )->thenResolve(response => {
+        switch response->taxResponseToObjMapper {
+        | Some(taxCalculationResponse) => {
+            let (netAmount, ordertaxAmount, shippingCost) = (
+              taxCalculationResponse.net_amount,
+              taxCalculationResponse.order_tax_amount,
+              taxCalculationResponse.shipping_cost,
+            )
+            let newTotal: lineItem = {
+              label,
+              amount: netAmount->minorUnitToString,
+              \"type",
+            }
+            let newLineItems: array<lineItem> = [
+              {
+                label: "Subtotal",
+                amount: (netAmount - ordertaxAmount - shippingCost)->minorUnitToString,
+                \"type": "final",
+              },
+              {
+                label: "Order Tax Amount",
+                amount: ordertaxAmount->minorUnitToString,
+                \"type": "final",
+              },
+              {
+                label: "Shipping Cost",
+                amount: shippingCost->minorUnitToString,
+                \"type": "final",
+              },
+            ]
+            let updatedOrderDetails: orderDetails = {
+              newTotal,
+              newLineItems,
+            }
+            ssn.completeShippingContactSelection(updatedOrderDetails)
+          }
+        | None => ssn.completeShippingContactSelection(currentOrderDetails)
+        }
+      })
+    } else {
+      ssn.completeShippingContactSelection(currentOrderDetails)
+      resolve()
+    }
+  }
+
   ssn.onpaymentauthorized = event => {
     ssn.completePayment({"status": ssn.\"STATUS_SUCCESS"}->Identity.anyTypeToJson)
     applePaySessionRef := Nullable.null
@@ -117,18 +201,10 @@ let startApplePaySession = (
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
     )
-    switch (applePayEvent, resolvePromise) {
-    | (Some(applePayEvent), _) => {
-        let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
-        applePayEvent.source->Window.sendPostMessage(msg)
-      }
-    | (_, Some(resolvePromise)) =>
-      handleFailureResponse(
-        ~message="ApplePay Session Cancelled",
-        ~errorType="apple_pay",
-      )->resolvePromise
-    | _ => ()
-    }
+    handleFailureResponse(
+      ~message="ApplePay Session Cancelled",
+      ~errorType="apple_pay",
+    )->resolvePromise
   }
   ssn.begin()
 }
@@ -165,9 +241,9 @@ let useHandleApplePayResponse = (
       let json = ev.data->safeParse
       try {
         let dict = json->getDictFromJson
-        if dict->Dict.get("applePayProcessPayment")->Option.isSome {
+        if dict->Dict.get("applePayPaymentToken")->Option.isSome {
           let token =
-            dict->Dict.get("applePayProcessPayment")->Option.getOr(Dict.make()->JSON.Encode.object)
+            dict->Dict.get("applePayPaymentToken")->Option.getOr(Dict.make()->JSON.Encode.object)
 
           let billingContactDict = dict->getDictFromDict("applePayBillingContact")
           let shippingContactDict = dict->getDictFromDict("applePayShippingContact")
@@ -217,7 +293,7 @@ let useHandleApplePayResponse = (
     Window.addEventListener("message", handleApplePayMessages)
     Some(
       () => {
-        handlePostMessage([("applePaySessionAbort", true->JSON.Encode.bool)])
+        messageParentWindow([("applePaySessionAbort", true->JSON.Encode.bool)])
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
@@ -231,13 +307,22 @@ let useHandleApplePayResponse = (
   ))
 }
 
-let handleApplePayButtonClicked = (~sessionObj, ~componentName) => {
+let handleApplePayButtonClicked = (
+  ~sessionObj,
+  ~componentName,
+  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
+) => {
   let paymentRequest = ApplePayTypes.getPaymentRequestFromSession(~sessionObj, ~componentName)
   let message = [
     ("applePayButtonClicked", true->JSON.Encode.bool),
     ("applePayPaymentRequest", paymentRequest),
+    (
+      "isTaxCalculationEnabled",
+      paymentMethodListValue.is_tax_calculation_enabled->JSON.Encode.bool,
+    ),
+    ("componentName", componentName->JSON.Encode.string),
   ]
-  handlePostMessage(message)
+  messageParentWindow(message)
 }
 
 let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
@@ -245,13 +330,16 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   React.useCallback((ev: Window.event) => {
     if !isWallet {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-        options.readOnly ? () : handleApplePayButtonClicked(~sessionObj, ~componentName)
+        if !options.readOnly {
+          handleApplePayButtonClicked(~sessionObj, ~componentName, ~paymentMethodListValue)
+        }
       } else if areRequiredFieldsEmpty {
         postFailedSubmitResponse(
           ~errortype="validation_error",

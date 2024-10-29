@@ -11,6 +11,8 @@ Steps to get started with Hyperswitch-web sdk testing locally:
 
 3. Cypress should open the window to test separate flows.
 
+4. To run cypress in headless mode, put publishable key and secret key to be used for tests in `cypress.env.json` and then spin a terminal window and run `npm run test`
+
 💡 Note: Incase you are setting cypress for the first time and run into a cypress error, try to uninstall and re-install cypress inside cypress-tests folder by running the following commands :
 
 ```

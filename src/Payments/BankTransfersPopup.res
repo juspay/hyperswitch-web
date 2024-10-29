@@ -44,11 +44,14 @@ let make = (~transferType) => {
       keys
       ->Array.map(item => `${item->snakeToTitleCase} : ${getKeyValue(json, item)}`)
       ->Array.joinWith(`\n`)
-    handlePostMessage([("copy", true->JSON.Encode.bool), ("copyDetails", text->JSON.Encode.string)])
+    messageParentWindow([
+      ("copy", true->JSON.Encode.bool),
+      ("copyDetails", text->JSON.Encode.string),
+    ])
     setIsCopied(_ => true)
   }
   React.useEffect0(() => {
-    handlePostMessage([("iframeMountedCallback", true->JSON.Encode.bool)])
+    messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson

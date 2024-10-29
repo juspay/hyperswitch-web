@@ -8,13 +8,12 @@ let make = (
   ~ephemeralKey,
 ) => {
   let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
-  let switchToCustomPod =
-    GlobalVars.isInteg &&
+  let customPodUri =
     options
     ->JSON.Decode.object
-    ->Option.flatMap(x => x->Dict.get("switchToCustomPod"))
-    ->Option.flatMap(JSON.Decode.bool)
-    ->Option.getOr(false)
+    ->Option.flatMap(x => x->Dict.get("customPodUri"))
+    ->Option.flatMap(JSON.Decode.string)
+    ->Option.getOr("")
   let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
 
   let defaultInitPaymentSession = {
@@ -24,13 +23,13 @@ let make = (
         ~publishableKey,
         ~endpoint,
         ~logger,
-        ~switchToCustomPod,
+        ~customPodUri,
       ),
     getPaymentManagementMethods: _ =>
       PaymentSessionMethods.getPaymentManagementMethods(
         ~ephemeralKey,
         ~logger,
-        ~switchToCustomPod,
+        ~customPodUri,
         ~endpoint,
       ),
   }

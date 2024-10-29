@@ -11,6 +11,7 @@ let make = (
   open CardUtils
   open Utils
   open UtilityHooks
+
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
@@ -46,24 +47,24 @@ let make = (
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
   let bottomElement = {
-    savedMethods
-    ->Array.mapWithIndex((obj, i) => {
-      let brandIcon = obj->getPaymentMethodBrand
-      let isActive = paymentTokenVal == obj.paymentToken
-      <SavedCardItem
-        key={i->Int.toString}
-        setPaymentToken
-        isActive
-        paymentItem=obj
-        brandIcon
-        index=i
-        savedCardlength
-        cvcProps
-        paymentType
-        setRequiredFieldsBody
-      />
-    })
-    ->React.array
+    <div className="PickerItemContainer">
+      {savedMethods
+      ->Array.mapWithIndex((obj, i) =>
+        <SavedCardItem
+          key={i->Int.toString}
+          setPaymentToken
+          isActive={paymentTokenVal == obj.paymentToken}
+          paymentItem=obj
+          brandIcon={obj->getPaymentMethodBrand}
+          index=i
+          savedCardlength
+          cvcProps
+          paymentType
+          setRequiredFieldsBody
+        />
+      )
+      ->React.array}
+    </div>
   }
 
   let (isCVCValid, _, cvcNumber, _, _, _, _, _, _, setCvcError) = cvcProps
@@ -72,13 +73,12 @@ let make = (
   | _ => false
   }
   let empty = cvcNumber == ""
-  let customerMethod =
+  let customerMethod = React.useMemo(_ =>
     savedMethods
-    ->Array.filter(savedMethod => {
-      savedMethod.paymentToken === paymentTokenVal
-    })
+    ->Array.filter(savedMethod => savedMethod.paymentToken === paymentTokenVal)
     ->Array.get(0)
     ->Option.getOr(PaymentType.defaultCustomerMethods)
+  , [paymentTokenVal])
   let isUnknownPaymentMethod = customerMethod.paymentMethod === ""
   let isCardPaymentMethod = customerMethod.paymentMethod === "card"
   let isCardPaymentMethodValid = !customerMethod.requiresCvv || (complete && !empty)
@@ -100,7 +100,7 @@ let make = (
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
 
-    let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not
+    let isCustomerAcceptanceRequired = customerMethod.recurringEnabled->not || isSaveCardsChecked
 
     let savedPaymentMethodBody = switch customerMethod.paymentMethod {
     | "card" =>
@@ -141,6 +141,7 @@ let make = (
             GooglePayHelpers.handleGooglePayClicked(
               ~sessionObj=optToken,
               ~componentName,
+              ~paymentMethodListValue,
               ~iframeId,
               ~readOnly,
             )
@@ -160,7 +161,11 @@ let make = (
         | Some("apple_pay") =>
           switch applePayToken {
           | ApplePayTokenOptional(optToken) =>
-            ApplePayHelpers.handleApplePayButtonClicked(~sessionObj=optToken, ~componentName)
+            ApplePayHelpers.handleApplePayButtonClicked(
+              ~sessionObj=optToken,
+              ~componentName,
+              ~paymentMethodListValue,
+            )
           | _ =>
             // TODO - To be replaced with proper error message
             intent(

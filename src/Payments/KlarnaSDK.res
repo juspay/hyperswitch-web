@@ -9,11 +9,12 @@ open KlarnaSDKTypes
 let make = (~sessionObj: SessionsType.token) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
-  let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
+  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let status = CommonHooks.useScript("https://x.klarnacdn.net/kp/lib/v1/api.js") // Klarna SDK script
@@ -30,7 +31,7 @@ let make = (~sessionObj: SessionsType.token) => {
   }
 
   let handleCloseLoader = () => {
-    Utils.handlePostMessage([("fullscreen", false->JSON.Encode.bool)])
+    Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }
 
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
@@ -65,11 +66,11 @@ let make = (~sessionObj: SessionsType.token) => {
           theme: options.wallets.style.theme == Dark ? "default" : "outlined",
           shape: "default",
           on_click: authorize => {
-            makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(
+            makeOneClickHandlerPromise(sdkHandleIsThere)->then(
               result => {
                 let result = result->JSON.Decode.bool->Option.getOr(false)
                 if result {
-                  Utils.handlePostMessage([
+                  Utils.messageParentWindow([
                     ("fullscreen", true->JSON.Encode.bool),
                     ("param", "paymentloader"->JSON.Encode.string),
                     ("iframeId", iframeId->JSON.Encode.string),

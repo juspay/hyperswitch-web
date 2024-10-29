@@ -18,7 +18,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-
   let {iframeId} = keys
 
   let (cardNumber, setCardNumber) = React.useState(_ => "")
@@ -47,50 +46,23 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let (isZipValid, setIsZipValid) = React.useState(_ => None)
   let (isCardSupported, setIsCardSupported) = React.useState(_ => None)
 
-  let (cardBrand, maxCardLength) = React.useMemo(() => {
-    let brand = getCardBrand(cardNumber)
-    let maxLength = getMaxLength(cardNumber)
-    let isNotBancontact = selectedOption !== "bancontact_card" && brand == ""
-    !showFields && isNotBancontact ? (cardScheme, maxLength) : (brand, maxLength)
+  let maxCardLength = React.useMemo(() => {
+    getMaxLength(cardNumber)
   }, (cardNumber, cardScheme, showFields))
 
-  let supportedCardBrands = React.useMemo(() => {
-    let cardPaymentMethod =
-      paymentMethodListValue.payment_methods->Array.find(ele => ele.payment_method === "card")
+  let cardBrand = getCardBrand(cardNumber)
+  let isNotBancontact = selectedOption !== "bancontact_card" && cardBrand == ""
+  let (cardBrand, setCardBrand) = React.useState(_ =>
+    !showFields && isNotBancontact ? cardScheme : cardBrand
+  )
 
-    switch cardPaymentMethod {
-    | Some(cardPaymentMethod) =>
-      let cardNetworks = cardPaymentMethod.payment_method_types->Array.map(ele => ele.card_networks)
-      let cardNetworkNames =
-        cardNetworks->Array.map(ele =>
-          ele->Array.map(
-            val => val.card_network->CardUtils.getCardStringFromType->String.toLowerCase,
-          )
-        )
-      Some(
-        cardNetworkNames
-        ->Array.reduce([], (acc, ele) => acc->Array.concat(ele))
-        ->Utils.getUniqueArray,
-      )
-    | None => None
-    }
+  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showFields)
+  let supportedCardBrands = React.useMemo(() => {
+    paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
 
-  let checkIsCardSupported = cardNumber => {
-    let cardBrand = cardNumber->CardUtils.getCardBrand
-    let clearValue = cardNumber->clearSpaces
-    if cardValid(clearValue, cardBrand) {
-      switch supportedCardBrands {
-      | Some(brands) => Some(brands->Array.includes(cardBrand->String.toLowerCase))
-      | None => Some(true)
-      }
-    } else {
-      None
-    }
-  }
-
   React.useEffect(() => {
-    setIsCardSupported(_ => checkIsCardSupported(cardNumber))
+    setIsCardSupported(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
     None
   }, (supportedCardBrands, cardNumber))
 
@@ -116,7 +88,11 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let card = val->formatCardNumber(cardType)
     let clearValue = card->clearSpaces
     setCardValid(clearValue, setIsCardValid)
-    if cardValid(clearValue, cardBrand) && checkIsCardSupported(clearValue)->Option.getOr(false) {
+    if (
+      cardValid(clearValue, cardBrand) &&
+      (PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false) ||
+        Utils.checkIsTestCardWildcard(clearValue))
+    ) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
     if card->String.length > 6 && cardNumber->pincodeVisibility {
@@ -173,7 +149,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
     if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
-      setIsCardValid(_ => checkIsCardSupported(cardNumber))
+      setIsCardValid(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
     } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => None)
     } else {
@@ -246,7 +222,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     }
     let cardNetwork = {
       if cardBrand != "" {
-        [("card_network", cardNumber->CardUtils.getCardBrand->JSON.Encode.string)]
+        [("card_network", cardBrand->JSON.Encode.string)]
       } else {
         []
       }
@@ -377,11 +353,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, (isExpiryValid, isExpiryComplete(cardExpiry)))
 
+  React.useEffect(() => {
+    setCardBrand(_ => cardNumber->CardUtils.getCardBrand)
+    None
+  }, [cardNumber])
+
   let icon = React.useMemo(() => {
-    let animate = cardType == NOTFOUND ? "animate-slideLeft" : "animate-slideRight"
-    let cardBrandIcon = getCardBrandIcon(cardType, paymentType)
-    <div className=animate> cardBrandIcon </div>
-  }, (cardType, paymentType))
+    <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand />
+  }, (cardType, paymentType, cardBrand, cardNumber))
 
   let cardProps: CardUtils.cardProps = (
     isCardValid,
@@ -395,6 +374,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     cardError,
     setCardError,
     maxCardLength,
+    cardBrand,
   )
 
   let expiryProps: CardUtils.expiryProps = (

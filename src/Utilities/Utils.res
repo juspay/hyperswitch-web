@@ -1,8 +1,9 @@
 @val external document: 'a = "document"
-type window
-type parent
-@val external window: window = "window"
-@val @scope("window") external iframeParent: parent = "parent"
+@val external window: Dom.element = "window"
+@val @scope("window") external iframeParent: Dom.element = "parent"
+@send external body: ('a, Dom.element) => Dom.element = "body"
+
+@val @scope("window") external topParent: Dom.element = "top"
 type event = {data: string}
 external dictToObj: Dict.t<'a> => {..} = "%identity"
 
@@ -15,29 +16,47 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external remove: Dom.element => unit = "remove"
 
-@send external postMessage: (parent, JSON.t, string) => unit = "postMessage"
+@send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
+
 open ErrorUtils
-let handlePostMessage = (~targetOrigin="*", messageArr) => {
-  iframeParent->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+
+let messageWindow = (window, ~targetOrigin="*", messageArr) => {
+  window->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+}
+
+let messageTopWindow = (~targetOrigin="*", messageArr) => {
+  topParent->messageWindow(~targetOrigin, messageArr)
+}
+
+let messageParentWindow = (~targetOrigin="*", messageArr) => {
+  iframeParent->messageWindow(~targetOrigin, messageArr)
+}
+
+let messageCurrentWindow = (~targetOrigin="*", messageArr) => {
+  window->messageWindow(~targetOrigin, messageArr)
 }
 
 let handleOnFocusPostMessage = (~targetOrigin="*") => {
-  handlePostMessage([("focus", true->JSON.Encode.bool)], ~targetOrigin)
+  messageParentWindow([("focus", true->JSON.Encode.bool)], ~targetOrigin)
+}
+
+let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
+  messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnBlurPostMessage = (~targetOrigin="*") => {
-  handlePostMessage([("blur", true->JSON.Encode.bool)], ~targetOrigin)
+  messageParentWindow([("blur", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnClickPostMessage = (~targetOrigin="*", ev) => {
-  handlePostMessage(
+  messageParentWindow(
     [("clickTriggered", true->JSON.Encode.bool), ("event", ev->JSON.stringify->JSON.Encode.string)],
     ~targetOrigin,
   )
 }
 let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false) => {
   let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
-  handlePostMessage([(message, true->JSON.Encode.bool)], ~targetOrigin)
+  messageParentWindow([(message, true->JSON.Encode.bool)], ~targetOrigin)
 }
 let getOptionString = (dict, key) => {
   dict->Dict.get(key)->Option.flatMap(JSON.Decode.string)
@@ -281,13 +300,13 @@ let postFailedSubmitResponse = (~errortype, ~message) => {
       ("type", errortype->JSON.Encode.string),
       ("message", message->JSON.Encode.string),
     ]->Dict.fromArray
-  handlePostMessage([
+  messageParentWindow([
     ("submitSuccessful", false->JSON.Encode.bool),
     ("error", errorDict->JSON.Encode.object),
   ])
 }
 let postSubmitResponse = (~jsonData, ~url) => {
-  handlePostMessage([
+  messageParentWindow([
     ("submitSuccessful", true->JSON.Encode.bool),
     ("data", jsonData),
     ("url", url->JSON.Encode.string),
@@ -593,7 +612,7 @@ let generateStyleSheet = (classname, dict, id) => {
   }
 }
 let openUrl = url => {
-  handlePostMessage([("openurl", url->JSON.Encode.string)])
+  messageParentWindow([("openurl", url->JSON.Encode.string)])
 }
 
 let getArrofJsonString = (arr: array<string>) => {
@@ -678,7 +697,7 @@ let handlePostMessageEvents = (
       "Payment Data Filled" ++ (savedMethod ? ": Saved Payment Method" : ": New Payment Method")
     loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
   }
-  handlePostMessage([
+  messageParentWindow([
     ("elementType", "payment"->JSON.Encode.string),
     ("complete", complete->JSON.Encode.bool),
     ("empty", empty->JSON.Encode.bool),
@@ -1145,6 +1164,7 @@ let eventHandlerFunc = (
       | Click
       | Ready
       | Focus
+      | CompleteDoThis
       | ConfirmPayment
       | OneClickConfirmPayment
       | Blur =>
@@ -1204,21 +1224,25 @@ let getThemePromise = dict => {
   }
 }
 
-let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
-  open EventListenerManager
+let makeOneClickHandlerPromise = sdkHandleIsThere => {
   Promise.make((resolve, _) => {
-    if sdkHandleOneClickConfirmPayment {
+    if !sdkHandleIsThere {
       resolve(JSON.Encode.bool(true))
     } else {
-      let handleMessage = (event: Types.event) => {
-        let json = event.data->anyTypeToJson->getStringFromJson("")->safeParse
+      let handleMessage = (event: Window.event) => {
+        let json = try {
+          event.data->safeParse
+        } catch {
+        | _ => JSON.Encode.null
+        }
 
         let dict = json->getDictFromJson
-        if dict->Dict.get("oneClickDoSubmit")->Option.isSome {
-          resolve(dict->Dict.get("oneClickDoSubmit")->Option.getOr(true->JSON.Encode.bool))
+
+        if dict->Dict.get("walletClickEvent")->Option.isSome {
+          resolve(dict->Dict.get("walletClickEvent")->Option.getOr(true->JSON.Encode.bool))
         }
       }
-      addSmartEventListener("message", handleMessage, "onOneClickHandlerPaymentConfirm")
+      Window.addEventListener("message", handleMessage)
       handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true)
     }
   })
@@ -1283,21 +1307,21 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
     list
     ->getDictFromJson
     ->getOptionalArrayFromDict(country)
-    ->Option.getOr([])
 
-  let val = options->Array.find(item =>
-    item
-    ->getDictFromJson
-    ->getString("code", "") === stateCode
+  options
+  ->Option.flatMap(
+    Array.find(_, item =>
+      item
+      ->getDictFromJson
+      ->getString("code", "") === stateCode
+    ),
   )
-
-  switch val {
-  | Some(stateObj) =>
+  ->Option.flatMap(stateObj =>
     stateObj
     ->getDictFromJson
-    ->getString("name", stateCode)
-  | None => stateCode
-  }
+    ->getOptionString("name")
+  )
+  ->Option.getOr(stateCode)
 }
 
 let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")
@@ -1372,3 +1396,7 @@ let getFirstAndLastNameFromFullName = fullName => {
 
   (firstName, lastNameJson)
 }
+
+let checkIsTestCardWildcard = val => ["1111222233334444"]->Array.includes(val)
+
+let minorUnitToString = val => (val->Int.toFloat /. 100.)->Float.toString
