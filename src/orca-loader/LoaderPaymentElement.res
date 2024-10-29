@@ -6,6 +6,8 @@ open Identity
 @val @scope(("navigator", "clipboard"))
 external writeText: string => promise<'a> = "writeText"
 
+let onCompleteDoThisUsed = ref(false)
+let isPaymentButtonHandlerProvided = ref(false)
 let make = (
   componentType,
   options,
@@ -32,6 +34,48 @@ let make = (
         true,
       )
 
+    let asyncWrapper = async fn => {
+      try {
+        await fn()
+      } catch {
+      | err => Console.log2("Async function call failure", err)
+      }
+    }
+
+    let currEventHandler = ref(Some(() => Promise.make((_, _) => {()})))
+    let walletOneClickEventHandler = (event: Types.event) => {
+      let json = try {
+        event.data->anyTypeToJson
+      } catch {
+      | _ => JSON.Encode.null
+      }
+
+      let dict = json->getDictFromJson
+      if dict->Dict.get("oneClickConfirmTriggered")->Option.isSome {
+        switch currEventHandler.contents {
+        | Some(eH) =>
+          asyncWrapper(eH)
+          ->Promise.then(() => {
+            let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
+            event.source->Window.sendPostMessage(msg)
+            Promise.resolve()
+          })
+          ->ignore
+
+        | None => ()
+        }
+      }
+    }
+
+    Window.addEventListener("message", walletOneClickEventHandler)
+
+    let onSDKHandleClick = (eventHandler: option<unit => RescriptCore.Promise.t<'a>>) => {
+      currEventHandler := eventHandler
+      if eventHandler->Option.isSome {
+        isPaymentButtonHandlerProvided := true
+      }
+    }
+
     let on = (eventType, eventHandler) => {
       switch eventType->eventTypeMapper {
       | Escape =>
@@ -47,6 +91,15 @@ let make = (
           },
           "onEscape",
         )
+      | CompleteDoThis =>
+        if eventHandler->Option.isSome {
+          eventHandlerFunc(
+            ev => ev.data.completeDoThis,
+            eventHandler,
+            CompleteDoThis,
+            "onCompleteDoThis",
+          )
+        }
       | Change =>
         eventHandlerFunc(
           ev => ev.data.elementType === componentType,
@@ -281,6 +334,10 @@ let make = (
                             ("options", options),
                           ]->Dict.fromArray,
                         )
+                        let fullScreenEle = Window.querySelector(`#orca-fullscreen`)
+                        fullScreenEle->Window.iframePostMessage(
+                          [("metadata", fullscreenMetadata.contents)]->Dict.fromArray,
+                        )
                       }
                     }
                     addSmartEventListener(
@@ -361,6 +418,7 @@ let make = (
       destroy,
       update,
       mount,
+      onSDKHandleClick,
     }
   } catch {
   | e => {

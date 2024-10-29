@@ -12,6 +12,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cvcTextLabel: `セキュリティコード`,
   accountNumberText: `口座番号`,
   emailLabel: `Eメール`,
+  ibanEmptyText: `IBANは空にできません`,
   emailEmptyText: `電子メールを空にすることはできません`,
   emailInvalidText: `無効なメールアドレス`,
   fullNameLabel: `フルネーム`,

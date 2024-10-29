@@ -79,6 +79,7 @@ type buttons = {
   onApprove: (data, actions) => unit,
   onCancel: data => unit,
   onError?: err => unit,
+  onShippingAddressChange?: JSON.t => promise<JSON.t>,
 }
 let getLabel = (var: PaymentType.paypalStyleType) => {
   switch var {
@@ -176,4 +177,15 @@ let getOrderDetails = (orderDetails, paymentType) => {
     shippingAddressEditable: None,
     shippingAddressOverride,
   }
+}
+
+let shippingAddressItemToObjMapper=dict=>{
+  recipientName: dict->Utils.getOptionString("recipientName"),
+  line1: dict->Utils.getOptionString("line1"),
+  line2: dict->Utils.getOptionString("line2"),
+  city: dict->Utils.getOptionString("city"),
+  countryCode: dict->Utils.getOptionString("countryCode"),
+  postalCode: dict->Utils.getOptionString("postalCode"),
+  state: dict->Utils.getOptionString("state"),
+  phone: dict->Utils.getOptionString("phone"),
 }

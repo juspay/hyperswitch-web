@@ -14,6 +14,7 @@ const getEnvVariable = (variable, defaultValue) =>
   process.env[variable] ?? defaultValue;
 
 const sdkEnv = getEnvVariable("sdkEnv", "local");
+const enableLogging = getEnvVariable("enableLogging", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
@@ -22,7 +23,7 @@ const repoVersion = require("./package.json").version;
 const majorVersion = "v" + repoVersion.split(".")[0];
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  sdkEnv === "local" ? "" : `/${repoVersion}/${majorVersion}`;
+  sdkEnv === "local" ? "" : `/web/${repoVersion}/${majorVersion}`;
 
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
@@ -60,7 +61,6 @@ const confirmEndPoint =
 const logEndpoint =
   envLoggingUrl || `https://${logDomain}.hyperswitch.io/logs/sdk`;
 
-const enableLogging = true;
 const loggingLevel = "DEBUG";
 const maxLogsPushedPerEventName = 100;
 
@@ -84,7 +84,7 @@ module.exports = (publicPath = "auto") => {
       logEndpoint: JSON.stringify(logEndpoint),
       sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
       sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
-      enableLogging: JSON.stringify(enableLogging),
+      enableLogging: enableLogging,
       loggingLevel: JSON.stringify(loggingLevel),
       maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
     }),

@@ -15,7 +15,8 @@ let make = (
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
-  let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(keys)
+  let isSDKHandleClick = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Gpay)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
@@ -103,7 +104,7 @@ let make = (
       ~eventName=GOOGLE_PAY_FLOW,
       ~paymentMethod="GOOGLE_PAY",
     )
-    makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)->then(result => {
+    makeOneClickHandlerPromise(isSDKHandleClick)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         if isInvokeSDKFlow {
@@ -126,6 +127,7 @@ let make = (
             GooglePayHelpers.handleGooglePayClicked(
               ~sessionObj,
               ~componentName,
+              ~paymentMethodListValue,
               ~iframeId,
               ~readOnly=options.readOnly,
             )

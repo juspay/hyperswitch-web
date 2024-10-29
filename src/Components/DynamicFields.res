@@ -93,9 +93,16 @@ let make = (
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
+  let bankAccountNumberRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
+
+  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
+    userBankAccountNumber,
+    "bankAccountNumber",
+    logger,
+  )
 
   let defaultCardProps = (
     None,
@@ -462,6 +469,34 @@ let make = (
           | PixKey => <PixPaymentInput label="pixKey" />
           | PixCPF => <PixPaymentInput label="pixCPF" />
           | PixCNPJ => <PixPaymentInput label="pixCNPJ" />
+          | BankAccountNumber | IBAN =>
+            <PaymentField
+              fieldName="IBAN"
+              setValue={setBankAccountNumber}
+              value=bankAccountNumber
+              onChange={ev => {
+                let value = ReactEvent.Form.target(ev)["value"]
+                setBankAccountNumber(_ => {
+                  isValid: Some(value !== ""),
+                  value,
+                  errorString: value !== "" ? "" : localeString.ibanEmptyText,
+                })
+              }}
+              onBlur={ev => {
+                let value = ReactEvent.Focus.target(ev)["value"]
+                setBankAccountNumber(prev => {
+                  ...prev,
+                  errorString: value !== "" ? "" : localeString.ibanEmptyText,
+                  isValid: Some(value !== ""),
+                })
+              }}
+              paymentType
+              type_="text"
+              name="bankAccountNumber"
+              maxLength=42
+              inputRef=bankAccountNumberRef
+              placeholder="DE00 0000 0000 0000 0000 00"
+            />
           | Email
           | InfoElement
           | Country
@@ -524,7 +559,7 @@ let make = (
                 | Email => <EmailPaymentInput paymentType />
                 | PhoneNumber => <PhoneNumberPaymentInput />
                 | StateAndCity =>
-                  <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""}`}>
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""} overflow-hidden`}>
                     <PaymentField
                       fieldName=localeString.cityLabel
                       setValue={setCity}
@@ -777,6 +812,8 @@ let make = (
                 | PhoneCountryCode
                 | VpaId
                 | LanguagePreference(_)
+                | BankAccountNumber
+                | IBAN
                 | None => React.null
                 }}
               </div>

@@ -1,6 +1,9 @@
 @val external document: 'a = "document"
 @val external window: Dom.element = "window"
 @val @scope("window") external iframeParent: Dom.element = "parent"
+@send external body: ('a, Dom.element) => Dom.element = "body"
+
+@val @scope("window") external topParent: Dom.element = "top"
 type event = {data: string}
 external dictToObj: Dict.t<'a> => {..} = "%identity"
 
@@ -16,16 +19,29 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
 open ErrorUtils
+
+let messageWindow = (window, ~targetOrigin="*", messageArr) => {
+  window->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+}
+
+let messageTopWindow = (~targetOrigin="*", messageArr) => {
+  topParent->messageWindow(~targetOrigin, messageArr)
+}
+
 let messageParentWindow = (~targetOrigin="*", messageArr) => {
-  iframeParent->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+  iframeParent->messageWindow(~targetOrigin, messageArr)
 }
 
 let messageCurrentWindow = (~targetOrigin="*", messageArr) => {
-  window->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+  window->messageWindow(~targetOrigin, messageArr)
 }
 
 let handleOnFocusPostMessage = (~targetOrigin="*") => {
   messageParentWindow([("focus", true->JSON.Encode.bool)], ~targetOrigin)
+}
+
+let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
+  messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnBlurPostMessage = (~targetOrigin="*") => {
@@ -1148,6 +1164,7 @@ let eventHandlerFunc = (
       | Click
       | Ready
       | Focus
+      | CompleteDoThis
       | ConfirmPayment
       | OneClickConfirmPayment
       | Blur =>
@@ -1207,25 +1224,25 @@ let getThemePromise = dict => {
   }
 }
 
-let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
-  open EventListenerManager
+let makeOneClickHandlerPromise = sdkHandleIsThere => {
   Promise.make((resolve, _) => {
-    if sdkHandleOneClickConfirmPayment {
+    if !sdkHandleIsThere {
       resolve(JSON.Encode.bool(true))
     } else {
-      let handleMessage = (event: Types.event) => {
+      let handleMessage = (event: Window.event) => {
         let json = try {
-          event.data->anyTypeToJson
+          event.data->safeParse
         } catch {
         | _ => JSON.Encode.null
         }
 
         let dict = json->getDictFromJson
-        if dict->Dict.get("oneClickDoSubmit")->Option.isSome {
-          resolve(dict->Dict.get("oneClickDoSubmit")->Option.getOr(true->JSON.Encode.bool))
+
+        if dict->Dict.get("walletClickEvent")->Option.isSome {
+          resolve(dict->Dict.get("walletClickEvent")->Option.getOr(true->JSON.Encode.bool))
         }
       }
-      addSmartEventListener("message", handleMessage, "onOneClickHandlerPaymentConfirm")
+      Window.addEventListener("message", handleMessage)
       handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true)
     }
   })

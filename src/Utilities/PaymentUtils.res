@@ -478,7 +478,7 @@ let sortCustomerMethodsBasedOnPriority = (
 }
 
 let getSupportedCardBrands = (
-  paymentMethodListValue: OrcaPaymentPage.PaymentMethodsRecord.paymentMethodList,
+  paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
 ) => {
   let cardPaymentMethod =
     paymentMethodListValue.payment_methods->Array.find(ele => ele.payment_method === "card")

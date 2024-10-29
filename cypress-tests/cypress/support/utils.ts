@@ -126,3 +126,5 @@ export const confirmBody = {
 export const stripeTestCard = "4000000000003220";
 export const adyenTestCard = "4917610000000000";
 export const bluesnapTestCard = "4000000000001091";
+export const amexTestCard = "378282246310005"
+export const visaTestCard = "4242424242424242";

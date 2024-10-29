@@ -1,3 +1,112 @@
+# [0.98.0](https://github.com/juspay/hyperswitch-web/compare/v0.97.0...v0.98.0) (2024-10-29)
+
+
+### Features
+
+* added dynamic fields for SEPA ([#624](https://github.com/juspay/hyperswitch-web/issues/624)) ([63f536e](https://github.com/juspay/hyperswitch-web/commit/63f536ef22dc0304b01d703a232ce99819743608))
+
+# [0.97.0](https://github.com/juspay/hyperswitch-web/compare/v0.96.3...v0.97.0) (2024-10-29)
+
+
+### Features
+
+* tax calculation in google pay ([#750](https://github.com/juspay/hyperswitch-web/issues/750)) ([0039fbe](https://github.com/juspay/hyperswitch-web/commit/0039fbe65ec7ff958d637d00c58aed710fed5b1f))
+
+## [0.96.3](https://github.com/juspay/hyperswitch-web/compare/v0.96.2...v0.96.3) (2024-10-29)
+
+
+### Bug Fixes
+
+* remove blue border in firefox ([#746](https://github.com/juspay/hyperswitch-web/issues/746)) ([40ef7a5](https://github.com/juspay/hyperswitch-web/commit/40ef7a5578b3a687c9b596a27818f4533758f136))
+
+## [0.96.2](https://github.com/juspay/hyperswitch-web/compare/v0.96.1...v0.96.2) (2024-10-28)
+
+## [0.96.1](https://github.com/juspay/hyperswitch-web/compare/v0.96.0...v0.96.1) (2024-10-25)
+
+
+### Bug Fixes
+
+* card cvc bug fix ([#748](https://github.com/juspay/hyperswitch-web/issues/748)) ([6122d9d](https://github.com/juspay/hyperswitch-web/commit/6122d9d200b934969ee8643e598754d724a786a4))
+
+# [0.96.0](https://github.com/juspay/hyperswitch-web/compare/v0.95.3...v0.96.0) (2024-10-23)
+
+
+### Features
+
+* added apple pay support inside an iframe ([#743](https://github.com/juspay/hyperswitch-web/issues/743)) ([44ed3a8](https://github.com/juspay/hyperswitch-web/commit/44ed3a83b9686b140470575f7aa15c516cac1cc8))
+
+## [0.95.3](https://github.com/juspay/hyperswitch-web/compare/v0.95.2...v0.95.3) (2024-10-21)
+
+
+### Bug Fixes
+
+* add text overflow with ellipsis in dropdown ([#745](https://github.com/juspay/hyperswitch-web/issues/745)) ([9061306](https://github.com/juspay/hyperswitch-web/commit/90613062e9bcc1f19e538117d7aebddd3bd5fb76))
+
+## [0.95.2](https://github.com/juspay/hyperswitch-web/compare/v0.95.1...v0.95.2) (2024-10-21)
+
+
+### Bug Fixes
+
+* extra scroll in safari ([#744](https://github.com/juspay/hyperswitch-web/issues/744)) ([5254446](https://github.com/juspay/hyperswitch-web/commit/52544466899116be2222c5a4db1da16241f4fa4b))
+
+## [0.95.1](https://github.com/juspay/hyperswitch-web/compare/v0.95.0...v0.95.1) (2024-10-16)
+
+
+### Bug Fixes
+
+* closed loader before calling merchant callback ([#741](https://github.com/juspay/hyperswitch-web/issues/741)) ([c0d4e15](https://github.com/juspay/hyperswitch-web/commit/c0d4e157e133d6c1f0a867ef2b9a8480eb314488))
+
+# [0.95.0](https://github.com/juspay/hyperswitch-web/compare/v0.94.2...v0.95.0) (2024-10-16)
+
+
+### Features
+
+* dynamic tax calculation in paypal ([#739](https://github.com/juspay/hyperswitch-web/issues/739)) ([9a5b87d](https://github.com/juspay/hyperswitch-web/commit/9a5b87d2f0f60c152a861d1f6e9837e49ef6a0ba))
+
+## [0.94.2](https://github.com/juspay/hyperswitch-web/compare/v0.94.1...v0.94.2) (2024-10-15)
+
+## [0.94.1](https://github.com/juspay/hyperswitch-web/compare/v0.94.0...v0.94.1) (2024-10-15)
+
+
+### Bug Fixes
+
+* callback fix ([5b7e78b](https://github.com/juspay/hyperswitch-web/commit/5b7e78b49fe4ce7e05fafb4e259dfa6a3f71919e))
+
+# [0.94.0](https://github.com/juspay/hyperswitch-web/compare/v0.93.0...v0.94.0) (2024-10-15)
+
+
+### Features
+
+* added click handler ([#732](https://github.com/juspay/hyperswitch-web/issues/732)) ([9c09ff2](https://github.com/juspay/hyperswitch-web/commit/9c09ff2d90ece78583c897c9cb29f2f45f346f90))
+
+# [0.93.0](https://github.com/juspay/hyperswitch-web/compare/v0.92.1...v0.93.0) (2024-10-15)
+
+
+### Features
+
+* added confirm handler ([#731](https://github.com/juspay/hyperswitch-web/issues/731)) ([4f65ecb](https://github.com/juspay/hyperswitch-web/commit/4f65ecbeb48022dbe9da507d98344e43c308b691))
+
+## [0.92.1](https://github.com/juspay/hyperswitch-web/compare/v0.92.0...v0.92.1) (2024-10-10)
+
+
+### Bug Fixes
+
+* web package added ([#726](https://github.com/juspay/hyperswitch-web/issues/726)) ([ecf0db3](https://github.com/juspay/hyperswitch-web/commit/ecf0db3d2fdb811f572bdffb5a61e468284a1c51))
+
+# [0.92.0](https://github.com/juspay/hyperswitch-web/compare/v0.91.10...v0.92.0) (2024-10-10)
+
+
+### Features
+
+* added bubblegum theme ([#723](https://github.com/juspay/hyperswitch-web/issues/723)) ([7df22f3](https://github.com/juspay/hyperswitch-web/commit/7df22f3f9c0dd1c8687d67e64faf7a0591e3e59b))
+
+## [0.91.10](https://github.com/juspay/hyperswitch-web/compare/v0.91.9...v0.91.10) (2024-10-10)
+
+
+### Bug Fixes
+
+* fixed applePay for headless fow ([#725](https://github.com/juspay/hyperswitch-web/issues/725)) ([6e513a3](https://github.com/juspay/hyperswitch-web/commit/6e513a3bab9444a75dbc976945ab3113ced76b51))
+
 ## [0.91.9](https://github.com/juspay/hyperswitch-web/compare/v0.91.8...v0.91.9) (2024-10-07)
 
 

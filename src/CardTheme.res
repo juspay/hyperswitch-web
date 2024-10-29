@@ -3,16 +3,17 @@ open Utils
 open ErrorUtils
 
 let getTheme = (val, logger) => {
-  switch val {
+  switch val->String.toLowerCase {
   | "default" => Default
   | "brutal" => Brutal
   | "midnight" => Midnight
   | "charcoal" => Charcoal
   | "soft" => Soft
+  | "bubblegum" => Bubblegum
   | "none" => NONE
   | str => {
       str->unknownPropValueWarning(
-        ["default", "midnight", "brutal", "charcoal", "soft", "none"],
+        ["default", "midnight", "brutal", "charcoal", "soft", "bubblegum", "none"],
         "appearance.theme",
         ~logger,
       )
@@ -359,7 +360,7 @@ let getAppearance = (
       variables: getVariables("variables", json, default, logger),
       rules: mergeJsons(rulesJson, getJsonObjectFromDict(json, "rules")),
       innerLayout: getWarningString(json, "innerLayout", "spaced", ~logger)->getInnerLayout,
-      labels: switch getWarningString(json, "labels", "above", ~logger) {
+      labels: switch getWarningString(json, "labels", "above", ~logger)->String.toLowerCase {
       | "above" => Above
       | "floating" => Floating
       | "none" => Never
