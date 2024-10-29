@@ -20,8 +20,10 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 open ErrorUtils
 
+let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
+
 let messageWindow = (window, ~targetOrigin="*", messageArr) => {
-  window->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+  window->postMessage(messageArr->getJsonFromArrayOfJson, targetOrigin)
 }
 
 let messageTopWindow = (~targetOrigin="*", messageArr) => {
@@ -77,8 +79,6 @@ let getInt = (dict, key, default: int) => {
   ->Option.getOr(default->Int.toFloat)
   ->Float.toInt
 }
-
-let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
 
 let getFloatFromString = (str, default) => str->Float.fromString->Option.getOr(default)
 
@@ -319,13 +319,12 @@ let getFailedSubmitResponse = (~errorType, ~message) => {
   [
     (
       "error",
-      [("type", errorType->JSON.Encode.string), ("message", message->JSON.Encode.string)]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
+      [
+        ("type", errorType->JSON.Encode.string),
+        ("message", message->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson,
     ),
-  ]
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ]->getJsonFromArrayOfJson
 }
 
 let toCamelCase = str => {
@@ -387,8 +386,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
     }
     x
   })
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ->getJsonFromArrayOfJson
 }
 
 let getClientCountry = clientTimeZone => {
@@ -703,7 +701,7 @@ let handlePostMessageEvents = (
     ("elementType", "payment"->JSON.Encode.string),
     ("complete", complete->JSON.Encode.bool),
     ("empty", empty->JSON.Encode.bool),
-    ("value", [("type", paymentType->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object),
+    ("value", [("type", paymentType->JSON.Encode.string)]->getJsonFromArrayOfJson),
   ])
 }
 
@@ -1023,8 +1021,7 @@ let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
   dict1
   ->Dict.toArray
   ->Array.concat(dict2->Dict.toArray)
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ->getJsonFromArrayOfJson
   ->unflattenObject
 }
 
