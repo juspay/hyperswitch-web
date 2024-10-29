@@ -18,6 +18,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
   let (_, setPaymentMethodCollectOptions) = Recoil.useRecoilState(paymentMethodCollectOptionAtom)
+  let url = RescriptReactRouter.useUrl()
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
   let divRef = React.useRef(Nullable.null)
 
@@ -146,7 +148,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMounted", true->JSON.Encode.bool)])
-    messageParentWindow([("applePayMounted", true->JSON.Encode.bool)])
+    messageParentWindow([
+      ("applePayMounted", true->JSON.Encode.bool),
+      ("componentName", componentName->JSON.Encode.string),
+    ])
     logger.setLogInitiated()
     let updatedState: PaymentType.loadType = switch paymentMethodList {
     | Loading =>
