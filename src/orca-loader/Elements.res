@@ -915,35 +915,106 @@ let make = (
                   )
 
                   try {
-                    let gPayClient = GooglePayType.google(
-                      {
-                        "environment": publishableKey->String.startsWith("pk_prd_")
-                          ? "PRODUCTION"
-                          : "TEST",
-                      }->Identity.anyTypeToJson,
-                    )
-
-                    gPayClient.isReadyToPay(payRequest)
-                    ->then(res => {
-                      let dict = res->getDictFromJson
-                      let isReadyToPay = getBool(dict, "result", false)
-                      let msg = [("isReadyToPay", isReadyToPay->JSON.Encode.bool)]->Dict.fromArray
-                      mountedIframeRef->Window.iframePostMessage(msg)
-                      resolve()
-                    })
-                    ->catch(err => {
-                      logger.setLogInfo(
-                        ~value=err->Identity.anyTypeToJson->JSON.stringify,
-                        ~eventName=GOOGLE_PAY_FLOW,
-                        ~paymentMethod="GOOGLE_PAY",
-                        ~logType=DEBUG,
-                      )
-                      resolve()
-                    })
-                    ->ignore
+                    let transactionInfo = gpayobj.transaction_info->getDictFromJson
 
                     let handleGooglePayMessages = (event: Types.event) => {
                       let evJson = event.data->anyTypeToJson
+                      let isTaxCalculationEnabled =
+                        evJson
+                        ->getOptionalJsonFromJson("IsTaxCalculationEnabled")
+                        ->Option.flatMap(JSON.Decode.bool)
+                        ->Option.getOr(false)
+
+                      let onPaymentDataChanged = intermediatePaymentData => {
+                        let shippingAddress =
+                          intermediatePaymentData
+                          ->getDictFromJson
+                          ->getDictFromDict("shippingAddress")
+                          ->billingContactItemToObjMapper
+                        let newShippingAddress =
+                          [
+                            ("state", shippingAddress.administrativeArea->JSON.Encode.string),
+                            ("country", shippingAddress.countryCode->JSON.Encode.string),
+                            ("zip", shippingAddress.postalCode->JSON.Encode.string),
+                          ]->getJsonFromArrayOfJson
+
+                        let paymentMethodType = "google_pay"->JSON.Encode.string
+
+                        if isTaxCalculationEnabled {
+                          TaxCalculation.calculateTax(
+                            ~shippingAddress=[
+                              ("address", newShippingAddress),
+                            ]->getJsonFromArrayOfJson,
+                            ~logger,
+                            ~publishableKey,
+                            ~clientSecret,
+                            ~paymentMethodType,
+                          )->then(resp => {
+                            switch resp->TaxCalculation.taxResponseToObjMapper {
+                            | Some(taxCalculationResponse) => {
+                                let updatePaymentRequest =
+                                  [
+                                    (
+                                      "newTransactionInfo",
+                                      [
+                                        (
+                                          "countryCode",
+                                          shippingAddress.countryCode->JSON.Encode.string,
+                                        ),
+                                        (
+                                          "currencyCode",
+                                          transactionInfo
+                                          ->getString("currency_code", "")
+                                          ->JSON.Encode.string,
+                                        ),
+                                        ("totalPriceStatus", "FINAL"->JSON.Encode.string),
+                                        (
+                                          "totalPrice",
+                                          taxCalculationResponse.net_amount
+                                          ->minorUnitToString
+                                          ->JSON.Encode.string,
+                                        ),
+                                      ]->getJsonFromArrayOfJson,
+                                    ),
+                                  ]->getJsonFromArrayOfJson
+                                updatePaymentRequest->resolve
+                              }
+                            | None => JSON.Encode.null->resolve
+                            }
+                          })
+                        } else {
+                          JSON.Encode.null->resolve
+                        }
+                      }
+                      let gPayClient = GooglePayType.google(
+                        {
+                          "environment": publishableKey->String.startsWith("pk_prd_")
+                            ? "PRODUCTION"
+                            : "TEST",
+                          "paymentDataCallbacks": {
+                            "onPaymentDataChanged": onPaymentDataChanged,
+                          },
+                        }->Identity.anyTypeToJson,
+                      )
+
+                      gPayClient.isReadyToPay(payRequest)
+                      ->then(res => {
+                        let dict = res->getDictFromJson
+                        let isReadyToPay = getBool(dict, "result", false)
+                        let msg = [("isReadyToPay", isReadyToPay->JSON.Encode.bool)]->Dict.fromArray
+                        mountedIframeRef->Window.iframePostMessage(msg)
+                        resolve()
+                      })
+                      ->catch(err => {
+                        logger.setLogInfo(
+                          ~value=err->Identity.anyTypeToJson->JSON.stringify,
+                          ~eventName=GOOGLE_PAY_FLOW,
+                          ~paymentMethod="GOOGLE_PAY",
+                          ~logType=DEBUG,
+                        )
+                        resolve()
+                      })
+                      ->ignore
                       let gpayClicked =
                         evJson
                         ->getOptionalJsonFromJson("GpayClicked")
