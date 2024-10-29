@@ -1,6 +1,8 @@
 @val external document: 'a = "document"
 @val external window: Dom.element = "window"
 @val @scope("window") external iframeParent: Dom.element = "parent"
+@send external body: ('a, Dom.element) => Dom.element = "body"
+
 @val @scope("window") external topParent: Dom.element = "top"
 type event = {data: string}
 external dictToObj: Dict.t<'a> => {..} = "%identity"
