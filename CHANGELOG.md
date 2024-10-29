@@ -1,3 +1,10 @@
+## [0.98.1](https://github.com/juspay/hyperswitch-web/compare/v0.98.0...v0.98.1) (2024-10-29)
+
+
+### Bug Fixes
+
+* remove contact and password icon in safari ([#747](https://github.com/juspay/hyperswitch-web/issues/747)) ([ebeca6e](https://github.com/juspay/hyperswitch-web/commit/ebeca6e1380c8b76830aa81b0df9e3bd07d4c880))
+
 # [0.98.0](https://github.com/juspay/hyperswitch-web/compare/v0.97.0...v0.98.0) (2024-10-29)
 
 
