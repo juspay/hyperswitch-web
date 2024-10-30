@@ -177,6 +177,14 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
+        } else if isCardSupported->Option.getOr(true)->not {
+          if cardBrand == "" {
+            setCardError(_ => "Please enter valid card number")
+            setUserError(localeString.enterValidDetailsText)
+          } else {
+            setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
+            setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+          }
         }
         if cardExpiry === "" {
           setExpiryError(_ => localeString.cardExpiryDateEmptyText)
@@ -185,10 +193,6 @@ let make = (
         if !isBancontact && cvcNumber === "" {
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
-        }
-        if isCardSupported->Option.getOr(true)->not {
-          setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
-          setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
         }
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)
