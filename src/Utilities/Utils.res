@@ -888,16 +888,16 @@ let formatException = exc =>
       Exn.fileName(obj),
     )
     [
-      ("message", message->Identity.anyTypeToJson),
-      ("type", name->Identity.anyTypeToJson),
-      ("stack", stack->Identity.anyTypeToJson),
-      ("fileName", fileName->Identity.anyTypeToJson),
+      ("message", message->Option.getOr("Unknown Error")->JSON.Encode.string),
+      ("type", name->Option.getOr("Unknown")->JSON.Encode.string),
+      ("stack", stack->Option.getOr("Unknown")->JSON.Encode.string),
+      ("fileName", fileName->Option.getOr("Unknown")->JSON.Encode.string),
     ]
   | _ => [
-      ("message", "Unknown error"->Identity.anyTypeToJson),
-      ("type", "Unknown"->Identity.anyTypeToJson),
-      ("stack", "Unknown"->Identity.anyTypeToJson),
-      ("fileName", "Unknown"->Identity.anyTypeToJson),
+      ("message", "Unknown error"->JSON.Encode.string),
+      ("type", "Unknown"->JSON.Encode.string),
+      ("stack", "Unknown"->JSON.Encode.string),
+      ("fileName", "Unknown"->JSON.Encode.string),
     ]
   }->getJsonFromArrayOfJson
 
