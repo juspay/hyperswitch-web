@@ -1,3 +1,33 @@
+## [0.98.1](https://github.com/juspay/hyperswitch-web/compare/v0.98.0...v0.98.1) (2024-10-29)
+
+
+### Bug Fixes
+
+* remove contact and password icon in safari ([#747](https://github.com/juspay/hyperswitch-web/issues/747)) ([ebeca6e](https://github.com/juspay/hyperswitch-web/commit/ebeca6e1380c8b76830aa81b0df9e3bd07d4c880))
+
+# [0.98.0](https://github.com/juspay/hyperswitch-web/compare/v0.97.0...v0.98.0) (2024-10-29)
+
+
+### Features
+
+* added dynamic fields for SEPA ([#624](https://github.com/juspay/hyperswitch-web/issues/624)) ([63f536e](https://github.com/juspay/hyperswitch-web/commit/63f536ef22dc0304b01d703a232ce99819743608))
+
+# [0.97.0](https://github.com/juspay/hyperswitch-web/compare/v0.96.3...v0.97.0) (2024-10-29)
+
+
+### Features
+
+* tax calculation in google pay ([#750](https://github.com/juspay/hyperswitch-web/issues/750)) ([0039fbe](https://github.com/juspay/hyperswitch-web/commit/0039fbe65ec7ff958d637d00c58aed710fed5b1f))
+
+## [0.96.3](https://github.com/juspay/hyperswitch-web/compare/v0.96.2...v0.96.3) (2024-10-29)
+
+
+### Bug Fixes
+
+* remove blue border in firefox ([#746](https://github.com/juspay/hyperswitch-web/issues/746)) ([40ef7a5](https://github.com/juspay/hyperswitch-web/commit/40ef7a5578b3a687c9b596a27818f4533758f136))
+
+## [0.96.2](https://github.com/juspay/hyperswitch-web/compare/v0.96.1...v0.96.2) (2024-10-28)
+
 ## [0.96.1](https://github.com/juspay/hyperswitch-web/compare/v0.96.0...v0.96.1) (2024-10-25)
 
 

@@ -14,6 +14,7 @@ type localeStrings = {
   sortCodeText: string,
   cvcTextLabel: string,
   emailLabel: string,
+  ibanEmptyText: string,
   emailEmptyText: string,
   emailInvalidText: string,
   accountNumberText: string,
