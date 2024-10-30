@@ -952,31 +952,30 @@ let make = (
                           )->then(resp => {
                             switch resp->TaxCalculation.taxResponseToObjMapper {
                             | Some(taxCalculationResponse) => {
-                                let updatePaymentRequest =
-                                  [
-                                    (
-                                      "newTransactionInfo",
-                                      [
-                                        (
-                                          "countryCode",
-                                          shippingAddress.countryCode->JSON.Encode.string,
-                                        ),
-                                        (
-                                          "currencyCode",
-                                          transactionInfo
-                                          ->getString("currency_code", "")
-                                          ->JSON.Encode.string,
-                                        ),
-                                        ("totalPriceStatus", "FINAL"->JSON.Encode.string),
-                                        (
-                                          "totalPrice",
-                                          taxCalculationResponse.net_amount
-                                          ->minorUnitToString
-                                          ->JSON.Encode.string,
-                                        ),
-                                      ]->getJsonFromArrayOfJson,
-                                    ),
-                                  ]->getJsonFromArrayOfJson
+                                let updatePaymentRequest = [
+                                  (
+                                    "newTransactionInfo",
+                                    [
+                                      (
+                                        "countryCode",
+                                        shippingAddress.countryCode->JSON.Encode.string,
+                                      ),
+                                      (
+                                        "currencyCode",
+                                        transactionInfo
+                                        ->getString("currency_code", "")
+                                        ->JSON.Encode.string,
+                                      ),
+                                      ("totalPriceStatus", "FINAL"->JSON.Encode.string),
+                                      (
+                                        "totalPrice",
+                                        taxCalculationResponse.net_amount
+                                        ->minorUnitToString
+                                        ->JSON.Encode.string,
+                                      ),
+                                    ]->getJsonFromArrayOfJson,
+                                  ),
+                                ]->getJsonFromArrayOfJson
                                 updatePaymentRequest->resolve
                               }
                             | None => JSON.Encode.null->resolve
@@ -986,7 +985,7 @@ let make = (
                           JSON.Encode.null->resolve
                         }
                       }
-                      let gPayClient = GooglePayType.google(
+                      let gpayClientRequest = if componentType->getIsExpressCheckoutComponent {
                         {
                           "environment": publishableKey->String.startsWith("pk_prd_")
                             ? "PRODUCTION"
@@ -994,8 +993,15 @@ let make = (
                           "paymentDataCallbacks": {
                             "onPaymentDataChanged": onPaymentDataChanged,
                           },
-                        }->Identity.anyTypeToJson,
-                      )
+                        }->Identity.anyTypeToJson
+                      } else {
+                        {
+                          "environment": publishableKey->String.startsWith("pk_prd_")
+                            ? "PRODUCTION"
+                            : "TEST",
+                        }->Identity.anyTypeToJson
+                      }
+                      let gPayClient = GooglePayType.google(gpayClientRequest)
 
                       gPayClient.isReadyToPay(payRequest)
                       ->then(res => {
