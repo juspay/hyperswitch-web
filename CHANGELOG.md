@@ -1,3 +1,10 @@
+## [0.98.2](https://github.com/juspay/hyperswitch-web/compare/v0.98.1...v0.98.2) (2024-10-30)
+
+
+### Reverts
+
+* remove changes of pr [#746](https://github.com/juspay/hyperswitch-web/issues/746) ([#758](https://github.com/juspay/hyperswitch-web/issues/758)) ([cdae75e](https://github.com/juspay/hyperswitch-web/commit/cdae75ec21525e21aa2049f7bbfd513adebfef89))
+
 ## [0.98.1](https://github.com/juspay/hyperswitch-web/compare/v0.98.0...v0.98.1) (2024-10-29)
 
 
