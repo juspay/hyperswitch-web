@@ -156,7 +156,6 @@ let handleGooglePayClicked = (
   ~componentName,
   ~iframeId,
   ~readOnly,
-  ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
 ) => {
   let paymentDataRequest = GooglePayType.getPaymentDataFromSession(~sessionObj, ~componentName)
   messageParentWindow([
@@ -168,10 +167,6 @@ let handleGooglePayClicked = (
     messageParentWindow([
       ("GpayClicked", true->JSON.Encode.bool),
       ("GpayPaymentDataRequest", paymentDataRequest->Identity.anyTypeToJson),
-      (
-        "IsTaxCalculationEnabled",
-        paymentMethodListValue.is_tax_calculation_enabled->JSON.Encode.bool,
-      ),
     ])
   }
 }
@@ -179,7 +174,6 @@ let handleGooglePayClicked = (
 let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -192,7 +186,6 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
         handleGooglePayClicked(
           ~sessionObj,
           ~componentName,
-          ~paymentMethodListValue,
           ~iframeId,
           ~readOnly=options.readOnly,
         )
