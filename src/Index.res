@@ -1,4 +1,5 @@
 %%raw(`require("tailwindcss/tailwind.css")`)
+%%raw("import './index.css'")
 
 Sentry.initiateSentry(~dsn=GlobalVars.sentryDSN)
 
