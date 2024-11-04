@@ -28,80 +28,81 @@ let make = () => {
               ? `https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js`
               : `https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js`
 
-          let loadPazeSDK = _ => {
-            digitalWalletSdk.initialize({
-              client: {
-                id: clientId,
-                name: clientName,
-                profileId: clientProfileId,
-              },
-            })
-            ->then(val => {
-              Console.log2("PAZE --- init completed", val)
-              digitalWalletSdk.canCheckout({
-                emailAddress: emailAddress,
-              })->then(
-                consumerPresent => {
-                  Console.log("PAZE --- canCheckout completed")
-                  Console.log2("PAZE --- consumerPresent: ", consumerPresent)
-                  let transactionValue = {
-                    transactionAmount,
-                    transactionCurrencyCode,
-                  }
-
-                  let transactionOptions = {
-                    billingPreference: "ALL",
-                    merchantCategoryCode: "US",
-                    payloadTypeIndicator: "PAYMENT",
-                  }
-
-                  digitalWalletSdk.checkout({
-                    acceptedPaymentCardNetworks: ["VISA", "MASTERCARD"],
-                    emailAddress,
-                    sessionId,
-                    actionCode: "START_FLOW",
-                    transactionValue,
-                    shippingPreference: "ALL",
-                  })->then(
-                    checkoutResponse => {
-                      Console.log2("PAZE --- Checkout Response Object: ", checkoutResponse)
-                      let completeObj = {
-                        transactionOptions,
-                        transactionId: "",
-                        sessionId,
-                        transactionType: "PURCHASE",
-                        transactionValue,
-                      }
-                      digitalWalletSdk.complete(completeObj)->then(
-                        completeResponse => {
-                          Console.log2("PAZE --- Complete Response Object: ", completeResponse)
-                          messageParentWindow([
-                            ("fullscreen", false->JSON.Encode.bool),
-                            ("isPaze", true->JSON.Encode.bool),
-                            (
-                              "completeResponse",
-                              completeResponse
-                              ->getDictFromJson
-                              ->getString("completeResponse", "")
-                              ->JSON.Encode.string,
-                            ),
-                          ])
-                          resolve()
-                        },
-                      )
-                    },
-                  )
+          let loadPazeSDK = async _ => {
+            try {
+              let val = await digitalWalletSdk.initialize({
+                client: {
+                  id: clientId,
+                  name: clientName,
+                  profileId: clientProfileId,
                 },
-              )
-            })
-            ->catch(_ => {
+              })
+
+              Console.log2("PAZE --- init completed", val)
+
+              let consumerPresent = await digitalWalletSdk.canCheckout({
+                emailAddress: emailAddress,
+              })
+
+              Console.log("PAZE --- canCheckout completed")
+              Console.log2("PAZE --- consumerPresent: ", consumerPresent)
+
+              let transactionValue = {
+                transactionAmount,
+                transactionCurrencyCode,
+              }
+
+              let transactionOptions = {
+                billingPreference: "ALL",
+                merchantCategoryCode: "US",
+                payloadTypeIndicator: "PAYMENT",
+              }
+
+              let checkoutResponse = await digitalWalletSdk.checkout({
+                acceptedPaymentCardNetworks: ["VISA", "MASTERCARD"],
+                emailAddress,
+                sessionId,
+                actionCode: "START_FLOW",
+                transactionValue,
+                shippingPreference: "ALL",
+              })
+
+              Console.log2("PAZE --- Checkout Response Object: ", checkoutResponse)
+
+              let completeObj = {
+                transactionOptions,
+                transactionId: "",
+                sessionId,
+                transactionType: "PURCHASE",
+                transactionValue,
+              }
+
+              let completeResponse = await digitalWalletSdk.complete(completeObj)
+
+              Console.log2("PAZE --- Complete Response Object: ", completeResponse)
+
+              messageParentWindow([
+                ("fullscreen", false->JSON.Encode.bool),
+                ("isPaze", true->JSON.Encode.bool),
+                (
+                  "completeResponse",
+                  completeResponse
+                  ->getDictFromJson
+                  ->getString("completeResponse", "")
+                  ->JSON.Encode.string,
+                ),
+              ])
+
+              resolve()
+            } catch {
+            | _ =>
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),
                 ("isPaze", true->JSON.Encode.bool),
                 ("flowExited", "stop"->JSON.Encode.string),
               ])
               resolve()
-            })
+            }
           }
 
           let pazeScript = Window.createElement("script")
