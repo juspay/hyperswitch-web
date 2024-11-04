@@ -1,3 +1,10 @@
+## [0.99.1](https://github.com/juspay/hyperswitch-web/compare/v0.99.0...v0.99.1) (2024-11-04)
+
+
+### Bug Fixes
+
+* card input error text correction ([#759](https://github.com/juspay/hyperswitch-web/issues/759)) ([f426662](https://github.com/juspay/hyperswitch-web/commit/f426662c04e78d170c303fa01193eb37934c7636))
+
 # [0.99.0](https://github.com/juspay/hyperswitch-web/compare/v0.98.6...v0.99.0) (2024-11-04)
 
 
