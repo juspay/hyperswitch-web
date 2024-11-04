@@ -849,11 +849,6 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
   })
   Fetch.Headers.fromObject(headerObj->dictToObj)
 }
-let arrayJsonToCamelCase = arr => {
-  arr->Array.map(item => {
-    item->transformKeys(CamelCase)
-  })
-}
 
 let formatException = exc =>
   switch exc {
@@ -923,6 +918,11 @@ let fetchApi = async (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: F
       Error.raise(networkError)
     }
   }
+}
+let arrayJsonToCamelCase = arr => {
+  arr->Array.map(item => {
+    item->transformKeys(CamelCase)
+  })
 }
 
 let getArrayValFromJsonDict = (dict, key, arrayKey) => {
