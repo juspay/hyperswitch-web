@@ -864,19 +864,23 @@ let formatException = exc =>
       Exn.stack(obj),
       Exn.fileName(obj),
     )
-    [
-      ("message", message->Option.getOr("Unknown Error")->JSON.Encode.string),
-      ("type", name->Option.getOr("Unknown")->JSON.Encode.string),
-      ("stack", stack->Option.getOr("Unknown")->JSON.Encode.string),
-      ("fileName", fileName->Option.getOr("Unknown")->JSON.Encode.string),
-    ]
-  | _ => [
-      ("message", "Unknown error"->JSON.Encode.string),
-      ("type", "Unknown"->JSON.Encode.string),
-      ("stack", "Unknown"->JSON.Encode.string),
-      ("fileName", "Unknown"->JSON.Encode.string),
-    ]
-  }->getJsonFromArrayOfJson
+    if (
+      message->Option.isSome ||
+      name->Option.isSome ||
+      stack->Option.isSome ||
+      fileName->Option.isSome
+    ) {
+      [
+        ("message", message->Option.getOr("Unknown Error")->JSON.Encode.string),
+        ("type", name->Option.getOr("Unknown")->JSON.Encode.string),
+        ("stack", stack->Option.getOr("Unknown")->JSON.Encode.string),
+        ("fileName", fileName->Option.getOr("Unknown")->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson
+    } else {
+      exc->Identity.anyTypeToJson
+    }
+  | _ => exc->Identity.anyTypeToJson
+  }
 
 let fetchApi = async (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method) => {
   try {
