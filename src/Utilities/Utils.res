@@ -892,6 +892,7 @@ let fetchApi = async (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: F
       },
     )
 
+    //*  Fetch.Response.ok - Response status code - 200-299
     if !(response->Fetch.Response.ok) {
       let errorText = await response->Fetch.Response.text
       let status = response->Fetch.Response.status
