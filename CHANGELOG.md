@@ -1,3 +1,10 @@
+# [0.99.0](https://github.com/juspay/hyperswitch-web/compare/v0.98.6...v0.99.0) (2024-11-04)
+
+
+### Features
+
+* paze integration ([#738](https://github.com/juspay/hyperswitch-web/issues/738)) ([64fab0a](https://github.com/juspay/hyperswitch-web/commit/64fab0aac5323613f77c92537973e43f89a165d2))
+
 ## [0.98.6](https://github.com/juspay/hyperswitch-web/compare/v0.98.5...v0.98.6) (2024-11-04)
 
 ## [0.98.5](https://github.com/juspay/hyperswitch-web/compare/v0.98.4...v0.98.5) (2024-11-04)
