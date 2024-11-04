@@ -20,8 +20,10 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 open ErrorUtils
 
+let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
+
 let messageWindow = (window, ~targetOrigin="*", messageArr) => {
-  window->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+  window->postMessage(messageArr->getJsonFromArrayOfJson, targetOrigin)
 }
 
 let messageTopWindow = (~targetOrigin="*", messageArr) => {
@@ -317,13 +319,12 @@ let getFailedSubmitResponse = (~errorType, ~message) => {
   [
     (
       "error",
-      [("type", errorType->JSON.Encode.string), ("message", message->JSON.Encode.string)]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
+      [
+        ("type", errorType->JSON.Encode.string),
+        ("message", message->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson,
     ),
-  ]
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ]->getJsonFromArrayOfJson
 }
 
 let toCamelCase = str => {
@@ -385,8 +386,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
     }
     x
   })
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ->getJsonFromArrayOfJson
 }
 
 let getClientCountry = clientTimeZone => {
@@ -701,7 +701,7 @@ let handlePostMessageEvents = (
     ("elementType", "payment"->JSON.Encode.string),
     ("complete", complete->JSON.Encode.bool),
     ("empty", empty->JSON.Encode.bool),
-    ("value", [("type", paymentType->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object),
+    ("value", [("type", paymentType->JSON.Encode.string)]->getJsonFromArrayOfJson),
   ])
 }
 
@@ -826,6 +826,7 @@ let delay = timeOut => {
     }, timeOut)->ignore
   })
 }
+
 let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
   let headerObj =
     [
@@ -848,14 +849,41 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
   })
   Fetch.Headers.fromObject(headerObj->dictToObj)
 }
-let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method) => {
-  open Promise
-  let body = switch method {
-  | #GET => resolve(None)
-  | _ => resolve(Some(Fetch.Body.string(bodyStr)))
+
+let formatException = exc =>
+  switch exc {
+  | Exn.Error(obj) =>
+    let message = Exn.message(obj)
+    let name = Exn.name(obj)
+    let stack = Exn.stack(obj)
+    let fileName = Exn.fileName(obj)
+
+    if (
+      message->Option.isSome ||
+      name->Option.isSome ||
+      stack->Option.isSome ||
+      fileName->Option.isSome
+    ) {
+      [
+        ("message", message->Option.getOr("Unknown Error")->JSON.Encode.string),
+        ("type", name->Option.getOr("Unknown")->JSON.Encode.string),
+        ("stack", stack->Option.getOr("Unknown")->JSON.Encode.string),
+        ("fileName", fileName->Option.getOr("Unknown")->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson
+    } else {
+      exc->Identity.anyTypeToJson
+    }
+  | _ => exc->Identity.anyTypeToJson
   }
-  body->then(body => {
-    Fetch.fetch(
+
+let fetchApi = async (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method) => {
+  try {
+    let body = switch method {
+    | #GET => None
+    | _ => Some(Fetch.Body.string(bodyStr))
+    }
+
+    let response = await Fetch.fetch(
       uri,
       {
         method,
@@ -863,22 +891,39 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
         headers: getHeaders(~headers, ~uri),
       },
     )
-    ->catch(err => {
-      reject(err)
-    })
-    ->then(resp => {
-      resolve(resp)
-    })
-  })
-}
 
+    //*  Fetch.Response.ok - Response status code - 200-299
+    if !(response->Fetch.Response.ok) {
+      let errorText = await response->Fetch.Response.text
+      let status = response->Fetch.Response.status
+      let errorMessage = `FetchError: Failed to fetch (${status->Int.toString}): ${errorText}`
+      Error.raise(Error.make(errorMessage))
+    }
+
+    response
+  } catch {
+  | Exn.Error(error) => {
+      let errorMessage = switch Exn.message(error) {
+      | Some(msg) => msg
+      | None => "Unknown error occurred"
+      }
+
+      let enhancedError = Error.make(`APIError: ${errorMessage} (URL: ${uri})`)
+      Error.raise(enhancedError)
+    }
+  | err => {
+      let exceptionVal = err->formatException->getDictFromJson
+      let errorMessage = exceptionVal->getString("message", "Unknown error")
+      let errorType = exceptionVal->getString("type", "Unknown")
+      let networkError = Error.make(`${errorType}: ${errorMessage} (URL: ${uri})`)
+      Error.raise(networkError)
+    }
+  }
+}
 let arrayJsonToCamelCase = arr => {
   arr->Array.map(item => {
     item->transformKeys(CamelCase)
   })
-}
-let formatException = exc => {
-  exc->Identity.anyTypeToJson
 }
 
 let getArrayValFromJsonDict = (dict, key, arrayKey) => {
@@ -999,8 +1044,7 @@ let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
   dict1
   ->Dict.toArray
   ->Array.concat(dict2->Dict.toArray)
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ->getJsonFromArrayOfJson
   ->unflattenObject
 }
 
@@ -1299,8 +1343,6 @@ let getIsWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
 }
 
 let getUniqueArray = arr => arr->Array.map(item => (item, ""))->Dict.fromArray->Dict.keysToArray
-
-let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
 
 let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, country: string) => {
   let options =
