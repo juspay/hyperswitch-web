@@ -1,3 +1,5 @@
+## [0.98.6](https://github.com/juspay/hyperswitch-web/compare/v0.98.5...v0.98.6) (2024-11-04)
+
 ## [0.98.5](https://github.com/juspay/hyperswitch-web/compare/v0.98.4...v0.98.5) (2024-11-04)
 
 
