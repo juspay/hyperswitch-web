@@ -5,6 +5,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   inValidCardErrorText: `رقم البطاقة غير صالحة`,
   inCompleteCVCErrorText: `رمز أمان بطاقتك غير مكتمل`,
   inCompleteExpiryErrorText: `تاريخ انتهاء صلاحية بطاقتك غير مكتمل`,
+  enterValidCardNumberErrorText: `الرجاء إدخال رقم بطاقة صالح.`,
   pastExpiryErrorText: `انقضت سنة انتهاء صلاحية بطاقتك`,
   poweredBy: `مدعوم من هيبيرسويتش`,
   validThruText: `صالحة من خلال`,
