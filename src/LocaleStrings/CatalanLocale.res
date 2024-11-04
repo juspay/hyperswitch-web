@@ -5,6 +5,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   inValidCardErrorText: `El número de targeta no és vàlid.`,
   inCompleteCVCErrorText: `El codi de seguretat de la targeta està incomplet.`,
   inCompleteExpiryErrorText: `La data de venciment de la targeta està incompleta.`,
+  enterValidCardNumberErrorText: `Introduïu un número de targeta vàlid.`,
   pastExpiryErrorText: `La data de venciment de la targeta ja ha passat.`,
   poweredBy: `Amb tecnologia de Hyperswitch`,
   validThruText: `Venciment`,

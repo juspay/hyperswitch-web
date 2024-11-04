@@ -179,7 +179,7 @@ let make = (
           setUserError(localeString.enterFieldsText)
         } else if isCardSupported->Option.getOr(true)->not {
           if cardBrand == "" {
-            setCardError(_ => "Please enter valid card number")
+            setCardError(_ => localeString.enterValidCardNumberErrorText)
             setUserError(localeString.enterValidDetailsText)
           } else {
             setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
