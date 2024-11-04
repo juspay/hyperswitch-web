@@ -826,6 +826,7 @@ let delay = timeOut => {
     }, timeOut)->ignore
   })
 }
+
 let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
   let headerObj =
     [
@@ -847,35 +848,6 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
     Dict.set(headerObj, x, val)
   })
   Fetch.Headers.fromObject(headerObj->dictToObj)
-}
-let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method) => {
-  open Promise
-  let body = switch method {
-  | #GET => resolve(None)
-  | _ => resolve(Some(Fetch.Body.string(bodyStr)))
-  }
-  body->then(body => {
-    Fetch.fetch(
-      uri,
-      {
-        method,
-        ?body,
-        headers: getHeaders(~headers, ~uri),
-      },
-    )
-    ->catch(err => {
-      reject(err)
-    })
-    ->then(resp => {
-      resolve(resp)
-    })
-  })
-}
-
-let arrayJsonToCamelCase = arr => {
-  arr->Array.map(item => {
-    item->transformKeys(CamelCase)
-  })
 }
 
 let formatException = exc =>
@@ -903,6 +875,56 @@ let formatException = exc =>
     }
   | _ => exc->Identity.anyTypeToJson
   }
+
+let fetchApi = async (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method) => {
+  try {
+    let body = switch method {
+    | #GET => None
+    | _ => Some(Fetch.Body.string(bodyStr))
+    }
+
+    let response = await Fetch.fetch(
+      uri,
+      {
+        method,
+        ?body,
+        headers: getHeaders(~headers, ~uri),
+      },
+    )
+
+    //*  Fetch.Response.ok - Response status code - 200-299
+    if !(response->Fetch.Response.ok) {
+      let errorText = await response->Fetch.Response.text
+      let status = response->Fetch.Response.status
+      let errorMessage = `FetchError: Failed to fetch (${status->Int.toString}): ${errorText}`
+      Error.raise(Error.make(errorMessage))
+    }
+
+    response
+  } catch {
+  | Exn.Error(error) => {
+      let errorMessage = switch Exn.message(error) {
+      | Some(msg) => msg
+      | None => "Unknown error occurred"
+      }
+
+      let enhancedError = Error.make(`APIError: ${errorMessage} (URL: ${uri})`)
+      Error.raise(enhancedError)
+    }
+  | err => {
+      let exceptionVal = err->formatException->getDictFromJson
+      let errorMessage = exceptionVal->getString("message", "Unknown error")
+      let errorType = exceptionVal->getString("type", "Unknown")
+      let networkError = Error.make(`${errorType}: ${errorMessage} (URL: ${uri})`)
+      Error.raise(networkError)
+    }
+  }
+}
+let arrayJsonToCamelCase = arr => {
+  arr->Array.map(item => {
+    item->transformKeys(CamelCase)
+  })
+}
 
 let getArrayValFromJsonDict = (dict, key, arrayKey) => {
   dict
