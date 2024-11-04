@@ -858,12 +858,11 @@ let arrayJsonToCamelCase = arr => {
 let formatException = exc =>
   switch exc {
   | Exn.Error(obj) =>
-    let (message, name, stack, fileName) = (
-      Exn.message(obj),
-      Exn.name(obj),
-      Exn.stack(obj),
-      Exn.fileName(obj),
-    )
+    let message = Exn.message(obj)
+    let name = Exn.name(obj)
+    let stack = Exn.stack(obj)
+    let fileName = Exn.fileName(obj)
+
     if (
       message->Option.isSome ||
       name->Option.isSome ||
