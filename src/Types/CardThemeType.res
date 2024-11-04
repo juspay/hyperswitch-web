@@ -1,4 +1,4 @@
-type theme = Default | Brutal | Midnight | Soft | Charcoal | NONE
+type theme = Default | Brutal | Midnight | Soft | Charcoal| Bubblegum | NONE
 
 type innerLayout = Spaced | Compressed
 

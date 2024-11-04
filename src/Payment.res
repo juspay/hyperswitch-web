@@ -18,7 +18,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-
   let {iframeId} = keys
 
   let (cardNumber, setCardNumber) = React.useState(_ => "")
@@ -47,13 +46,17 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let (isZipValid, setIsZipValid) = React.useState(_ => None)
   let (isCardSupported, setIsCardSupported) = React.useState(_ => None)
 
-  let (cardBrand, maxCardLength) = React.useMemo(() => {
-    let brand = getCardBrand(cardNumber)
-    let maxLength = getMaxLength(cardNumber)
-    let isNotBancontact = selectedOption !== "bancontact_card" && brand == ""
-    !showFields && isNotBancontact ? (cardScheme, maxLength) : (brand, maxLength)
+  let maxCardLength = React.useMemo(() => {
+    getMaxLength(cardNumber)
   }, (cardNumber, cardScheme, showFields))
 
+  let cardBrand = getCardBrand(cardNumber)
+  let isNotBancontact = selectedOption !== "bancontact_card" && cardBrand == ""
+  let (cardBrand, setCardBrand) = React.useState(_ =>
+    !showFields && isNotBancontact ? cardScheme : cardBrand
+  )
+
+  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showFields)
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
@@ -219,7 +222,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     }
     let cardNetwork = {
       if cardBrand != "" {
-        [("card_network", cardNumber->CardUtils.getCardBrand->JSON.Encode.string)]
+        [("card_network", cardBrand->JSON.Encode.string)]
       } else {
         []
       }
@@ -350,11 +353,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, (isExpiryValid, isExpiryComplete(cardExpiry)))
 
+  React.useEffect(() => {
+    setCardBrand(_ => cardNumber->CardUtils.getCardBrand)
+    None
+  }, [cardNumber])
+
   let icon = React.useMemo(() => {
-    let animate = cardType == NOTFOUND ? "animate-slideLeft" : "animate-slideRight"
-    let cardBrandIcon = getCardBrandIcon(cardType, paymentType)
-    <div className=animate> cardBrandIcon </div>
-  }, (cardType, paymentType))
+    <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand />
+  }, (cardType, paymentType, cardBrand, cardNumber))
 
   let cardProps: CardUtils.cardProps = (
     isCardValid,
@@ -368,6 +374,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     cardError,
     setCardError,
     maxCardLength,
+    cardBrand,
   )
 
   let expiryProps: CardUtils.expiryProps = (

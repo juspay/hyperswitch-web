@@ -224,47 +224,6 @@ let achBankDebitBody = (
     ),
   ])
 
-let sepaBankDebitBody = (
-  ~fullName,
-  ~email,
-  ~data: ACHTypes.data,
-  ~line1,
-  ~line2,
-  ~country,
-  ~city,
-  ~postalCode,
-  ~state,
-) =>
-  bankDebitsCommonBody("sepa")->Array.concat([
-    (
-      "payment_method_data",
-      [
-        billingDetailsTuple(
-          ~fullName,
-          ~email,
-          ~line1,
-          ~line2,
-          ~city,
-          ~state,
-          ~postalCode,
-          ~country,
-        ),
-        (
-          "bank_debit",
-          [
-            (
-              "sepa_bank_debit",
-              [
-                ("iban", data.iban->JSON.Encode.string),
-                ("bank_account_holder_name", data.accountHolderName->JSON.Encode.string),
-              ]->Utils.getJsonFromArrayOfJson,
-            ),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ])
-
 let bacsBankDebitBody = (
   ~email,
   ~accNum,
@@ -976,6 +935,22 @@ let multibancoBody = (~email) => [
   ),
 ]
 
+let pazeBody = (~completeResponse) => {
+  open Utils
+  let pazeCompleteResponse =
+    [("complete_response", completeResponse->JSON.Encode.string)]->getJsonFromArrayOfJson
+
+  let pazeWalletData = [("paze", pazeCompleteResponse)]->getJsonFromArrayOfJson
+
+  let paymentMethodData = [("wallet", pazeWalletData)]->getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "paze"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
@@ -1001,11 +976,15 @@ let appendRedirectPaymentMethods = [
   "ali_pay_hk",
 ]
 
+let appendBankeDebitMethods = ["sepa"]
+
 let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) =>
   if isQrPaymentMethod {
     paymentMethodType ++ "_qr"
   } else if appendRedirectPaymentMethods->Array.includes(paymentMethodType) {
     paymentMethodType ++ "_redirect"
+  } else if appendBankeDebitMethods->Array.includes(paymentMethodType) {
+    paymentMethodType ++ "_bank_debit"
   } else {
     paymentMethodType
   }
@@ -1068,6 +1047,13 @@ let getPaymentBody = (
       dynamicPaymentBody(paymentMethod, paymentMethodType)
     }
   | "we_chat_pay" =>
+    switch paymentExperience {
+    | QrFlow => dynamicPaymentBody(paymentMethod, paymentMethodType, ~isQrPaymentMethod=true)
+    | RedirectToURL
+    | _ =>
+      dynamicPaymentBody(paymentMethod, paymentMethodType)
+    }
+  | "duit_now" =>
     switch paymentExperience {
     | QrFlow => dynamicPaymentBody(paymentMethod, paymentMethodType, ~isQrPaymentMethod=true)
     | RedirectToURL

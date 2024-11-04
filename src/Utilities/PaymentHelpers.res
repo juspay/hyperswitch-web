@@ -8,12 +8,14 @@ type url = {searchParams: searchParams, href: string}
 @new external urlSearch: string => url = "URL"
 
 open LoggerUtils
-type payment = Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Other
+type payment =
+  Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Paze | Other
 
 let getPaymentType = paymentMethodType =>
   switch paymentMethodType {
   | "apple_pay" => Applepay
   | "google_pay" => Gpay
+  | "paze" => Paze
   | "debit"
   | "credit"
   | "" =>
@@ -315,16 +317,22 @@ let rec intentCall = (
   ~sdkHandleOneClickConfirmPayment,
   ~counter,
   ~isPaymentSession=false,
+  ~isCallbackUsedVal=?,
+  ~componentName="payment",
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
+
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
+  let isPostSessionTokens = uri->String.includes("/post_session_tokens")
   let (eventName: OrcaLogger.eventName, initEventName: OrcaLogger.eventName) = switch (
     isConfirm,
     isCompleteAuthorize,
+    isPostSessionTokens,
   ) {
-  | (true, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
-  | (_, true) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
+  | (true, _, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
+  | (_, true, _) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
+  | (_, _, true) => (POST_SESSION_TOKENS_CALL, POST_SESSION_TOKENS_CALL_INIT)
   | _ => (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
   }
   logApi(
@@ -463,6 +471,7 @@ let rec intentCall = (
                 ~customPodUri,
                 ~sdkHandleOneClickConfirmPayment,
                 ~counter=counter + 1,
+                ~componentName,
               )
               ->then(
                 res => {
@@ -506,14 +515,29 @@ let rec intentCall = (
               | (Applepay, false)
               | (Paypal, false) =>
                 if !isPaymentSession {
-                  closePaymentLoaderIfAny()
+                  if isCallbackUsedVal->Option.getOr(false) {
+                    Utils.handleOnCompleteDoThisMessage()
+                  } else {
+                    closePaymentLoaderIfAny()
+                  }
+
                   postSubmitResponse(~jsonData=data, ~url=url.href)
                 } else if confirmParam.redirect === Some("always") {
-                  handleOpenUrl(url.href)
+                  if isCallbackUsedVal->Option.getOr(false) {
+                    Utils.handleOnCompleteDoThisMessage()
+                  } else {
+                    handleOpenUrl(url.href)
+                  }
                 } else {
                   resolve(data)
                 }
-              | _ => handleOpenUrl(url.href)
+              | _ =>
+                if isCallbackUsedVal->Option.getOr(false) {
+                  closePaymentLoaderIfAny()
+                  Utils.handleOnCompleteDoThisMessage()
+                } else {
+                  handleOpenUrl(url.href)
+                }
               }
             }
 
@@ -684,6 +708,7 @@ let rec intentCall = (
                 | "apple_pay" => [
                     ("applePayButtonClicked", true->JSON.Encode.bool),
                     ("applePayPresent", session_token->anyTypeToJson),
+                    ("componentName", componentName->JSON.Encode.string),
                   ]
                 | "google_pay" => [("googlePayThirdPartyFlow", session_token->anyTypeToJson)]
                 | "open_banking" => {
@@ -746,6 +771,17 @@ let rec intentCall = (
                   )
                   resolve(failedSubmitResponse)
                 }
+              }
+            } else if intent.status == "requires_payment_method" {
+              if intent.nextAction.type_ === "invoke_sdk_client" {
+                let nextActionData =
+                  intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
+                let response =
+                  [
+                    ("orderId", intent.connectorTransactionId->JSON.Encode.string),
+                    ("nextActionData", nextActionData),
+                  ]->getJsonFromArrayOfJson
+                resolve(response)
               }
             } else if intent.status == "processing" {
               if intent.nextAction.type_ == "third_party_sdk_session_token" {
@@ -862,6 +898,7 @@ let rec intentCall = (
             ~sdkHandleOneClickConfirmPayment,
             ~counter=counter + 1,
             ~isPaymentSession,
+            ~componentName,
           )
           ->then(
             res => {
@@ -890,6 +927,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
   open RecoilAtoms
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="") => {
@@ -917,6 +955,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
+          ~isCallbackUsedVal,
         )->ignore
       }
       switch paymentMethodList {
@@ -957,12 +996,13 @@ let usePaymentIntent = (optLogger, paymentType) => {
   open RecoilAtoms
   open Promise
   let url = RescriptReactRouter.useUrl()
-  let paymentTypeFromUrl =
-    CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+  let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (
@@ -1056,6 +1096,8 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~customPodUri,
             ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
             ~counter=0,
+            ~isCallbackUsedVal,
+            ~componentName,
           )
           ->then(val => {
             intentCallback(val)
@@ -1140,6 +1182,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   let url = RescriptReactRouter.useUrl()
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let paymentTypeFromUrl =
     CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
   (
@@ -1183,6 +1226,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
+          ~isCallbackUsedVal,
         )->ignore
       }
       switch paymentMethodList {
@@ -1971,4 +2015,265 @@ let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodU
     )
     JSON.Encode.null->resolve
   })
+}
+
+let calculateTax = (
+  ~apiKey,
+  ~paymentId,
+  ~clientSecret,
+  ~paymentMethodType,
+  ~shippingAddress,
+  ~logger,
+  ~customPodUri,
+  ~sessionId,
+) => {
+  open Promise
+  let endpoint = ApiEndpoint.getApiEndPoint()
+  let headers = [("Content-Type", "application/json"), ("api-key", apiKey)]
+  let uri = `${endpoint}/payments/${paymentId}/calculate_tax`
+  let body = [
+    ("client_secret", clientSecret),
+    ("shipping", shippingAddress),
+    ("payment_method_type", paymentMethodType),
+  ]
+  sessionId->Option.mapOr((), id => body->Array.push(("session_id", id))->ignore)
+
+  logApi(
+    ~optLogger=Some(logger),
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=EXTERNAL_TAX_CALCULATION,
+    ~logType=INFO,
+    ~logCategory=API,
+  )
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~bodyStr=body->getJsonFromArrayOfJson->JSON.stringify,
+  )
+  ->then(resp => {
+    let statusCode = resp->Fetch.Response.status->Int.toString
+    if statusCode->String.charAt(0) !== "2" {
+      resp
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger=Some(logger),
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=EXTERNAL_TAX_CALCULATION,
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger=Some(logger),
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=EXTERNAL_TAX_CALCULATION,
+        ~logType=INFO,
+        ~logCategory=API,
+      )
+      resp->Fetch.Response.json
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    logApi(
+      ~optLogger=Some(logger),
+      ~url=uri,
+      ~apiLogType=NoResponse,
+      ~eventName=EXTERNAL_TAX_CALCULATION,
+      ~logType=ERROR,
+      ~logCategory=API,
+      ~data=exceptionMessage,
+    )
+    JSON.Encode.null->resolve
+  })
+}
+
+let usePostSessionTokens = (
+  optLogger,
+  paymentType: payment,
+  paymentMethod: PaymentMethodCollectTypes.paymentMethod,
+) => {
+  open RecoilAtoms
+  open Promise
+  let url = RescriptReactRouter.useUrl()
+  let paymentTypeFromUrl =
+    CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
+
+  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  (
+    ~handleUserError=false,
+    ~bodyArr: array<(string, JSON.t)>,
+    ~confirmParam: ConfirmType.confirmParams,
+    ~iframeId=keys.iframeId,
+    ~isThirdPartyFlow=false,
+    ~intentCallback=_ => (),
+    ~manualRetry as _=false,
+  ) => {
+    switch keys.clientSecret {
+    | Some(clientSecret) =>
+      let paymentIntentID = clientSecret->getPaymentId
+      let headers = [
+        ("Content-Type", "application/json"),
+        ("api-key", confirmParam.publishableKey),
+        ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+      ]
+      let body = [
+        ("client_secret", clientSecret->JSON.Encode.string),
+        ("payment_id", paymentIntentID->JSON.Encode.string),
+        ("payment_method_type", (paymentType :> string)->JSON.Encode.string),
+        ("payment_method", (paymentMethod :> string)->JSON.Encode.string),
+      ]
+
+      let endpoint = ApiEndpoint.getApiEndPoint(
+        ~publishableKey=confirmParam.publishableKey,
+        ~isConfirmCall=isThirdPartyFlow,
+      )
+      let uri = `${endpoint}/payments/${paymentIntentID}/post_session_tokens`
+
+      let callIntent = body => {
+        let contentLength = body->String.length->Int.toString
+        let maskedPayload =
+          body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
+        let loggerPayload =
+          [
+            ("payload", maskedPayload->JSON.Encode.string),
+            (
+              "headers",
+              headers
+              ->Array.map(header => {
+                let (key, value) = header
+                (key, value->JSON.Encode.string)
+              })
+              ->Utils.getJsonFromArrayOfJson,
+            ),
+          ]
+          ->Utils.getJsonFromArrayOfJson
+          ->JSON.stringify
+        switch paymentType {
+        | Card =>
+          handleLogging(
+            ~optLogger,
+            ~internalMetadata=loggerPayload,
+            ~value=contentLength,
+            ~eventName=PAYMENT_ATTEMPT,
+            ~paymentMethod="CARD",
+          )
+        | _ =>
+          bodyArr->Array.forEach(((str, json)) => {
+            if str === "payment_method_type" {
+              handleLogging(
+                ~optLogger,
+                ~value=contentLength,
+                ~internalMetadata=loggerPayload,
+                ~eventName=PAYMENT_ATTEMPT,
+                ~paymentMethod=json->getStringFromJson(""),
+              )
+            }
+            ()
+          })
+        }
+
+        intentCall(
+          ~fetchApi,
+          ~uri,
+          ~headers,
+          ~bodyStr=body,
+          ~confirmParam: ConfirmType.confirmParams,
+          ~clientSecret,
+          ~optLogger,
+          ~handleUserError,
+          ~paymentType,
+          ~iframeId,
+          ~fetchMethod=#POST,
+          ~setIsManualRetryEnabled,
+          ~customPodUri,
+          ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
+          ~counter=0,
+        )
+        ->then(val => {
+          intentCallback(val)
+          resolve()
+        })
+        ->ignore
+      }
+
+      let broswerInfo = BrowserSpec.broswerInfo
+      let intentWithoutMandate = mandatePaymentType => {
+        let bodyStr =
+          body
+          ->Array.concatMany([
+            bodyArr->Array.concat(broswerInfo()),
+            mandatePaymentType->PaymentBody.paymentTypeBody,
+          ])
+          ->Utils.getJsonFromArrayOfJson
+          ->JSON.stringify
+        callIntent(bodyStr)
+      }
+
+      let intentWithMandate = mandatePaymentType => {
+        let bodyStr =
+          body
+          ->Array.concat(
+            bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
+          )
+          ->Utils.getJsonFromArrayOfJson
+          ->JSON.stringify
+        callIntent(bodyStr)
+      }
+
+      switch paymentMethodList {
+      | LoadError(data)
+      | Loaded(data) =>
+        let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+        let mandatePaymentType =
+          paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
+        if paymentList.payment_methods->Array.length > 0 {
+          switch paymentList.mandate_payment {
+          | Some(_) =>
+            switch paymentType {
+            | Card
+            | Gpay
+            | Applepay
+            | KlarnaRedirect
+            | Paypal
+            | BankDebits =>
+              intentWithMandate(mandatePaymentType)
+            | _ => intentWithoutMandate(mandatePaymentType)
+            }
+          | None => intentWithoutMandate(mandatePaymentType)
+          }
+        } else {
+          postFailedSubmitResponse(
+            ~errortype="payment_methods_empty",
+            ~message="Payment Failed. Try again!",
+          )
+          Console.warn("Please enable atleast one Payment method.")
+        }
+      | SemiLoaded => intentWithoutMandate("")
+      | _ =>
+        postFailedSubmitResponse(
+          ~errortype="payment_methods_loading",
+          ~message="Please wait. Try again!",
+        )
+      }
+    | None =>
+      postFailedSubmitResponse(
+        ~errortype="post_session_tokens_failed",
+        ~message="Post Session Tokens failed. Try again!",
+      )
+    }
+  }
 }

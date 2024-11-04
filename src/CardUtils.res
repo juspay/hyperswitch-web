@@ -26,6 +26,7 @@ type cardProps = (
   string,
   (string => string) => unit,
   int,
+  string,
 )
 
 type expiryProps = (
@@ -423,7 +424,7 @@ let cvcNumberInRange = (val, cardBrand) => {
   })
   cvcLengthInRange
 }
-let genreateFontsLink = (fonts: array<CardThemeType.fonts>) => {
+let generateFontsLink = (fonts: array<CardThemeType.fonts>) => {
   if fonts->Array.length > 0 {
     fonts
     ->Array.map(item =>
@@ -654,4 +655,23 @@ let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
       ""->CardThemeType.getPaymentMode,
     )
   }
+}
+
+let getAllMatchedCardSchemes = cardNumber => {
+  CardPattern.cardPatterns->Array.reduce([], (acc, item) => {
+    if String.match(cardNumber, item.pattern)->Option.isSome {
+      acc->Array.push(item.issuer)
+    }
+    acc
+  })
+}
+
+let getEligibleCoBadgedCardSchemes = (~matchedCardSchemes, ~enabledCardSchemes) => {
+  matchedCardSchemes->Array.filter(ele => {
+    enabledCardSchemes->Array.includes(ele->String.toLowerCase)
+  })
+}
+
+let getCardBrandFromStates = (cardBrand, cardScheme, showFields) => {
+  !showFields ? cardScheme : cardBrand
 }
