@@ -7,7 +7,7 @@ let processPayment = (
   ~isThirdPartyFlow=false,
   ~isGuestCustomer,
   ~paymentMethodListValue=PaymentMethodsRecord.defaultList,
-  ~intent: PaymentHelpers.paymentIntent,
+  ~intent: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
   ~publishableKey,
   ~isManualRetryEnabled,

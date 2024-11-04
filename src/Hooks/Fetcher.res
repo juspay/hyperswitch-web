@@ -8,7 +8,8 @@ let useFetcher = fileName => {
   let (optionalJson, setJson) = React.useState(() => None)
   React.useEffect(() => {
     open Promise
-    Fetch.get(`${Window.Location.hostname}/json/${fileName}.json`)
+    let jsonUrl = URLModule.makeUrl(`${Window.Location.hostname}/json/${fileName}.json`)
+    Fetch.get(jsonUrl.href)
     ->then(Fetch.Response.json)
     ->thenResolve(json => {
       setJson(_ => Some(json))
