@@ -5,8 +5,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   inValidCardErrorText: `Kortnummeret er ugyldigt.`,
   inCompleteCVCErrorText: `Dit korts sikkerhedskode er ufuldstændig.`,
   inCompleteExpiryErrorText: `Dit korts udløbsdato er ufuldstændig.`,
-  enterValidCardNumberErrorText: `Voer een geldig kaartnummer in.
-`,
+  enterValidCardNumberErrorText: `Voer een geldig kaartnummer in.`,
   pastExpiryErrorText: `Dit korts udløbsår er i fortiden`,
   poweredBy: `Drevet af Hyperswitch`,
   validThruText: `Udløbsdato`,
