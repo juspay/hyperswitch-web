@@ -1,3 +1,10 @@
+## [0.98.5](https://github.com/juspay/hyperswitch-web/compare/v0.98.4...v0.98.5) (2024-11-04)
+
+
+### Bug Fixes
+
+* format function refactor for better logs readability ([#757](https://github.com/juspay/hyperswitch-web/issues/757)) ([4f4ee6b](https://github.com/juspay/hyperswitch-web/commit/4f4ee6be28975b3060c955388f0536d2f6cea7ea))
+
 ## [0.98.4](https://github.com/juspay/hyperswitch-web/compare/v0.98.3...v0.98.4) (2024-10-30)
 
 
