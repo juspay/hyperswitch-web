@@ -20,8 +20,10 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 open ErrorUtils
 
+let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
+
 let messageWindow = (window, ~targetOrigin="*", messageArr) => {
-  window->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+  window->postMessage(messageArr->getJsonFromArrayOfJson, targetOrigin)
 }
 
 let messageTopWindow = (~targetOrigin="*", messageArr) => {
@@ -317,13 +319,12 @@ let getFailedSubmitResponse = (~errorType, ~message) => {
   [
     (
       "error",
-      [("type", errorType->JSON.Encode.string), ("message", message->JSON.Encode.string)]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
+      [
+        ("type", errorType->JSON.Encode.string),
+        ("message", message->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson,
     ),
-  ]
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ]->getJsonFromArrayOfJson
 }
 
 let toCamelCase = str => {
@@ -385,8 +386,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
     }
     x
   })
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ->getJsonFromArrayOfJson
 }
 
 let getClientCountry = clientTimeZone => {
@@ -701,7 +701,7 @@ let handlePostMessageEvents = (
     ("elementType", "payment"->JSON.Encode.string),
     ("complete", complete->JSON.Encode.bool),
     ("empty", empty->JSON.Encode.bool),
-    ("value", [("type", paymentType->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object),
+    ("value", [("type", paymentType->JSON.Encode.string)]->getJsonFromArrayOfJson),
   ])
 }
 
@@ -877,9 +877,32 @@ let arrayJsonToCamelCase = arr => {
     item->transformKeys(CamelCase)
   })
 }
-let formatException = exc => {
-  exc->Identity.anyTypeToJson
-}
+
+let formatException = exc =>
+  switch exc {
+  | Exn.Error(obj) =>
+    let message = Exn.message(obj)
+    let name = Exn.name(obj)
+    let stack = Exn.stack(obj)
+    let fileName = Exn.fileName(obj)
+
+    if (
+      message->Option.isSome ||
+      name->Option.isSome ||
+      stack->Option.isSome ||
+      fileName->Option.isSome
+    ) {
+      [
+        ("message", message->Option.getOr("Unknown Error")->JSON.Encode.string),
+        ("type", name->Option.getOr("Unknown")->JSON.Encode.string),
+        ("stack", stack->Option.getOr("Unknown")->JSON.Encode.string),
+        ("fileName", fileName->Option.getOr("Unknown")->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson
+    } else {
+      exc->Identity.anyTypeToJson
+    }
+  | _ => exc->Identity.anyTypeToJson
+  }
 
 let getArrayValFromJsonDict = (dict, key, arrayKey) => {
   dict
@@ -999,8 +1022,7 @@ let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
   dict1
   ->Dict.toArray
   ->Array.concat(dict2->Dict.toArray)
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ->getJsonFromArrayOfJson
   ->unflattenObject
 }
 
@@ -1299,8 +1321,6 @@ let getIsWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
 }
 
 let getUniqueArray = arr => arr->Array.map(item => (item, ""))->Dict.fromArray->Dict.keysToArray
-
-let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
 
 let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, country: string) => {
   let options =
