@@ -1,3 +1,24 @@
+## [0.98.4](https://github.com/juspay/hyperswitch-web/compare/v0.98.3...v0.98.4) (2024-10-30)
+
+
+### Bug Fixes
+
+* Google pay log issue fix ([#762](https://github.com/juspay/hyperswitch-web/issues/762)) ([df629e9](https://github.com/juspay/hyperswitch-web/commit/df629e9d053f6e2fd443c833a9e343b3cf841f90))
+
+## [0.98.3](https://github.com/juspay/hyperswitch-web/compare/v0.98.2...v0.98.3) (2024-10-30)
+
+
+### Bug Fixes
+
+* Gpay unified checkout fix ([#761](https://github.com/juspay/hyperswitch-web/issues/761)) ([45ee508](https://github.com/juspay/hyperswitch-web/commit/45ee50849c1d048e3dba0b35c5252bd4e2ffac89))
+
+## [0.98.2](https://github.com/juspay/hyperswitch-web/compare/v0.98.1...v0.98.2) (2024-10-30)
+
+
+### Reverts
+
+* remove changes of pr [#746](https://github.com/juspay/hyperswitch-web/issues/746) ([#758](https://github.com/juspay/hyperswitch-web/issues/758)) ([cdae75e](https://github.com/juspay/hyperswitch-web/commit/cdae75ec21525e21aa2049f7bbfd513adebfef89))
+
 ## [0.98.1](https://github.com/juspay/hyperswitch-web/compare/v0.98.0...v0.98.1) (2024-10-29)
 
 
