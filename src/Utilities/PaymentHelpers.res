@@ -8,12 +8,14 @@ type url = {searchParams: searchParams, href: string}
 @new external urlSearch: string => url = "URL"
 
 open LoggerUtils
-type payment = Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Other
+type payment =
+  Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Paze | Other
 
 let getPaymentType = paymentMethodType =>
   switch paymentMethodType {
   | "apple_pay" => Applepay
   | "google_pay" => Gpay
+  | "paze" => Paze
   | "debit"
   | "credit"
   | "" =>
