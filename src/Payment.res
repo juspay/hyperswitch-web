@@ -101,6 +101,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       setDisplayPincode(_ => false)
     }
     setCardNumber(_ => card)
+    if card->String.length == 0 {
+      setIsCardValid(_ => Some(false))
+    }
   }
 
   let changeCardExpiry = ev => {
@@ -151,7 +154,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
       setIsCardValid(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
     } else if cardNumber->String.length == 0 {
-      setIsCardValid(_ => None)
+      setIsCardValid(_ => Some(false))
     } else {
       setIsCardValid(_ => Some(false))
     }
@@ -325,10 +328,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
   React.useEffect(() => {
-    let cardError = if isCardSupported->Option.getOr(true) && isCardValid->Option.getOr(true) {
+    let cardError = if isCardValid == None || cardNumber->String.length == 0 {
+      ""
+    } else if isCardSupported->Option.getOr(true) && isCardValid->Option.getOr(true) {
       ""
     } else if isCardSupported->Option.getOr(true) {
       localeString.inValidCardErrorText
+    } else if cardBrand == "" {
+      localeString.enterValidCardNumberErrorText
     } else {
       localeString.cardBrandConfiguredErrorText(cardBrand)
     }

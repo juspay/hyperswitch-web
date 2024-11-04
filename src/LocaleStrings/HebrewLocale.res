@@ -5,6 +5,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   inValidCardErrorText: `אינו תקין`,
   inCompleteCVCErrorText: `קוד האבטחה של הכרטיס שלך אינו שלם`,
   inCompleteExpiryErrorText: `פרטי תוקף של הכרטיס שלך אינם מלאים`,
+  enterValidCardNumberErrorText: `נא להזין מספר כרטיס תקף.`,
   pastExpiryErrorText: `שנת תוקף של הכרטיס שלך עברה.`,
   poweredBy: `מופעל על ידי Hyperswitch`,
   validThruText: `תוקף`,
