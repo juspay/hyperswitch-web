@@ -1,3 +1,10 @@
+## [0.99.4](https://github.com/juspay/hyperswitch-web/compare/v0.99.3...v0.99.4) (2024-11-05)
+
+
+### Bug Fixes
+
+* card brand update to prevent multiple error messages ([#767](https://github.com/juspay/hyperswitch-web/issues/767)) ([17892d9](https://github.com/juspay/hyperswitch-web/commit/17892d9ff7470ac12e251e878afe9ae9affffd50))
+
 ## [0.99.3](https://github.com/juspay/hyperswitch-web/compare/v0.99.2...v0.99.3) (2024-11-05)
 
 
