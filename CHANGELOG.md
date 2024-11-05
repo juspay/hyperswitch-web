@@ -1,3 +1,10 @@
+## [0.99.3](https://github.com/juspay/hyperswitch-web/compare/v0.99.2...v0.99.3) (2024-11-05)
+
+
+### Bug Fixes
+
+* remove blue border of iframe in firefox ([#766](https://github.com/juspay/hyperswitch-web/issues/766)) ([f629219](https://github.com/juspay/hyperswitch-web/commit/f629219492ef234c2df76a52a99fb135def7b428))
+
 ## [0.99.2](https://github.com/juspay/hyperswitch-web/compare/v0.99.1...v0.99.2) (2024-11-04)
 
 
