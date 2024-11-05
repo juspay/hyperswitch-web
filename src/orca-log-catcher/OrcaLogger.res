@@ -114,8 +114,8 @@ type logFile = {
   category: logCategory,
   source: string,
   version: string,
-  value: string,
-  internalMetadata: string,
+  value?: string,
+  internalMetadata?: string,
   sessionId: string,
   merchantId: string,
   paymentId: string,
@@ -125,9 +125,9 @@ type logFile = {
   browserVersion: string,
   userAgent: string,
   eventName: eventName,
-  latency: string,
+  latency?: string,
   firstEvent: bool,
-  paymentMethod: string,
+  paymentMethod?: string,
   metadata: JSON.t,
   ephemeralKey: string,
 }
@@ -240,8 +240,8 @@ let logFileToObj = logFile => {
     ),
     ("source", logFile.source->convertToScreamingSnakeCase->JSON.Encode.string),
     ("version", logFile.version->JSON.Encode.string), // repoversion of orca-android
-    ("value", logFile.value->JSON.Encode.string),
-    ("internal_metadata", logFile.internalMetadata->JSON.Encode.string),
+    ("value", logFile.value->Option.getOr("")->JSON.Encode.string),
+    ("internal_metadata", logFile.internalMetadata->Option.getOr("")->JSON.Encode.string),
     ("session_id", logFile.sessionId->JSON.Encode.string),
     ("merchant_id", logFile.merchantId->JSON.Encode.string),
     ("payment_id", logFile.paymentId->JSON.Encode.string),
@@ -251,9 +251,12 @@ let logFileToObj = logFile => {
     ("event_name", logFile.eventName->eventNameToStrMapper->JSON.Encode.string),
     ("browser_name", logFile.browserName->convertToScreamingSnakeCase->JSON.Encode.string),
     ("browser_version", logFile.browserVersion->JSON.Encode.string),
-    ("latency", logFile.latency->JSON.Encode.string),
+    ("latency", logFile.latency->Option.getOr("")->JSON.Encode.string),
     ("first_event", (logFile.firstEvent ? "true" : "false")->JSON.Encode.string),
-    ("payment_method", logFile.paymentMethod->convertToScreamingSnakeCase->JSON.Encode.string),
+    (
+      "payment_method",
+      logFile.paymentMethod->Option.getOr("")->convertToScreamingSnakeCase->JSON.Encode.string,
+    ),
   ]
   ->Dict.fromArray
   ->JSON.Encode.object
@@ -452,9 +455,9 @@ let make = (
     let maxLogsPushedPerEventName = GlobalVars.maxLogsPushedPerEventName
     let conditionalEventName = switch log.eventName {
     | INPUT_FIELD_CHANGED => log.value // to enforce rate limiting for each input field independently
-    | _ => ""
+    | _ => Some("")
     }
-    let eventName = log.eventName->eventNameToStrMapper ++ conditionalEventName
+    let eventName = log.eventName->eventNameToStrMapper ++ conditionalEventName->Option.getOr("")
 
     let counter = eventName->calculateAndUpdateCounterHook
     if GlobalVars.enableLogging && counter <= maxLogsPushedPerEventName {
@@ -600,8 +603,6 @@ let make = (
             sessionId: sessionId.contents,
             source: sourceString,
             version: GlobalVars.repoVersion,
-            value: "",
-            internalMetadata: "",
             category: USER_EVENT,
             paymentId: clientSecret.contents->getPaymentId,
             merchantId: merchantId.contents,
@@ -609,9 +610,8 @@ let make = (
             browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
             platform: Window.Navigator.platform,
             userAgent: Window.Navigator.userAgent,
-            appId: "",
+            appId: Window.Location.hostname,
             eventName: PAYMENT_METHOD_CHANGED,
-            latency: "",
             paymentMethod,
             firstEvent: true,
             metadata: metadata.contents,
@@ -628,8 +628,6 @@ let make = (
             sessionId: sessionId.contents,
             source: sourceString,
             version: GlobalVars.repoVersion,
-            value: "",
-            internalMetadata: "",
             category: USER_EVENT,
             paymentId: clientSecret.contents->getPaymentId,
             merchantId: merchantId.contents,
@@ -637,9 +635,8 @@ let make = (
             browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
             platform: Window.Navigator.platform,
             userAgent: Window.Navigator.userAgent,
-            appId: "",
+            appId: Window.Location.hostname,
             eventName: PAYMENT_DATA_FILLED,
-            latency: "",
             paymentMethod,
             firstEvent: true,
             metadata: metadata.contents,
@@ -688,7 +685,7 @@ let make = (
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.Navigator.platform,
       userAgent: Window.Navigator.userAgent,
-      appId: "",
+      appId: Window.Location.hostname,
       eventName,
       latency,
       paymentMethod,
@@ -745,7 +742,7 @@ let make = (
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.Navigator.platform,
       userAgent: Window.Navigator.userAgent,
-      appId: "",
+      appId: Window.Location.hostname,
       eventName,
       latency,
       paymentMethod,
@@ -792,7 +789,7 @@ let make = (
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.Navigator.platform,
       userAgent: Window.Navigator.userAgent,
-      appId: "",
+      appId: Window.Location.hostname,
       eventName,
       latency,
       paymentMethod,
@@ -820,16 +817,14 @@ let make = (
       version: GlobalVars.repoVersion,
       category: USER_EVENT,
       value: "log initiated",
-      internalMetadata: "",
       paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
       browserVersion: arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
       platform: Window.Navigator.platform,
       userAgent: Window.Navigator.userAgent,
-      appId: "",
+      appId: Window.Location.hostname,
       latency,
-      paymentMethod: "",
       firstEvent,
       metadata: metadata.contents,
       ephemeralKey: ephemeralKey.contents,
