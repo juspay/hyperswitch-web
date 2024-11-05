@@ -72,6 +72,7 @@ let make = (
               name="orca-payment-element-iframeRef-${localSelectorString}"
               src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"              allow="*"
               name="orca-payment"
+              style="outline: none;"
             ></iframe>
           </div>`
         let iframeDiv = Window.createElement("div")
