@@ -1,3 +1,10 @@
+## [0.99.2](https://github.com/juspay/hyperswitch-web/compare/v0.99.1...v0.99.2) (2024-11-04)
+
+
+### Reverts
+
+* reverting fetchAPI changes ([3108148](https://github.com/juspay/hyperswitch-web/commit/31081488d47d81590a980cc147efdb918b2a8235))
+
 ## [0.99.1](https://github.com/juspay/hyperswitch-web/compare/v0.99.0...v0.99.1) (2024-11-04)
 
 
