@@ -337,7 +337,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     } else {
       switch cardNumber->CardUtils.getCardBrand {
       | "" => localeString.inValidCardErrorText
-      | cardBrand_ => localeString.cardBrandConfiguredErrorText(cardBrand_)
+      | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)
       }
     }
     setCardError(_ => cardError)
