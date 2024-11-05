@@ -334,10 +334,11 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       ""
     } else if isCardSupported->Option.getOr(true) {
       localeString.inValidCardErrorText
-    } else if cardBrand == "" {
-      localeString.enterValidCardNumberErrorText
     } else {
-      localeString.cardBrandConfiguredErrorText(cardBrand)
+      switch cardNumber->CardUtils.getCardBrand {
+      | "" => localeString.inValidCardErrorText
+      | cardBrand_ => localeString.cardBrandConfiguredErrorText(cardBrand_)
+      }
     }
     setCardError(_ => cardError)
     None
