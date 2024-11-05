@@ -406,24 +406,30 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
 }
 
 let useStatesJson = setStatesJson => {
-  open Promise
-  React.useEffect0(() => {
-    AddressPaymentInput.importStates("./../States.json")
-    ->then(res => {
-      setStatesJson(_ => res.states)
-      resolve()
-    })
-    ->ignore
+  React.useEffect0(_ => {
+    let fetchStates = async () => {
+      try {
+        let res = await AddressPaymentInput.importStates("./../States.json")
+        setStatesJson(_ => res.states)
+      } catch {
+      | err => Console.error2("Error importing states:", err)
+      }
+    }
 
+    fetchStates()->ignore
     None
   })
 }
 
-let getStateJson = () => {
-  open Promise
-  AddressPaymentInput.importStates("./../States.json")->then(res => {
-    res.states->resolve
-  })
+let getStateJson = async _ => {
+  try {
+    let res = await AddressPaymentInput.importStates("./../States.json")
+    res.states
+  } catch {
+  | err =>
+    Console.error2("Error importing states:", err)
+    JSON.Encode.null
+  }
 }
 
 let sortCustomerMethodsBasedOnPriority = (
@@ -477,9 +483,7 @@ let sortCustomerMethodsBasedOnPriority = (
   }
 }
 
-let getSupportedCardBrands = (
-  paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
-) => {
+let getSupportedCardBrands = (paymentMethodListValue: PaymentMethodsRecord.paymentMethodList) => {
   let cardPaymentMethod =
     paymentMethodListValue.payment_methods->Array.find(ele => ele.payment_method === "card")
 
