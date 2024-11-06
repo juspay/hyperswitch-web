@@ -10,6 +10,7 @@ let sendPromiseData = (promise, key) => {
     }
   )()->ignore
 }
+
 let useMessageHandler = getPromisesAndMessageHandler => {
   let cleanup = messageHandler => {
     Utils.messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
@@ -136,7 +137,7 @@ let make = (
   ~merchantHostname,
   ~customPodUri,
 ) => {
-  let logger = OrcaLogger.make(
+  let logger = HyperLogger.make(
     ~sessionId,
     ~source=Loader,
     ~merchantId=publishableKey,

@@ -239,7 +239,7 @@ let logFileToObj = logFile => {
       }->JSON.Encode.string,
     ),
     ("source", logFile.source->convertToScreamingSnakeCase->JSON.Encode.string),
-    ("version", logFile.version->JSON.Encode.string), // repoversion of orca-android
+    ("version", logFile.version->JSON.Encode.string),
     ("value", logFile.value->JSON.Encode.string),
     ("internal_metadata", logFile.internalMetadata->JSON.Encode.string),
     ("session_id", logFile.sessionId->JSON.Encode.string),
