@@ -1,19 +1,30 @@
 import * as testIds from "../../../src/Utilities/TestUtils.bs";
-import { CLIENT_URL } from "../support/utils";
+import { getClientURL } from "../support/utils";
+import { createPaymentBody } from "../support/utils";
+import { changeObjectKeyValue } from "../support/utils";
 
 describe("Card payment flow test", () => {
-  let getIframeBody : () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
+
+  const publishableKey = Cypress.env('HYPERSWITCH_PUBLISHABLE_KEY')
+  const secretKey = Cypress.env('HYPERSWITCH_SECRET_KEY')
+  let getIframeBody: () => Cypress.Chainable<JQuery<HTMLBodyElement>>;
   let iframeSelector =
-      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
+    "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
+
+  // changeObjectKeyValue(createPaymentBody,"profile_id","YOUR_PROFILE_ID")
+
+
   beforeEach(() => {
     getIframeBody = () => cy.iframe(iframeSelector);
+    cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
+      cy.getGlobalState("clientSecret").then((clientSecret) => {
 
-    cy.visit(CLIENT_URL);
+        cy.visit(getClientURL(clientSecret, publishableKey));
+      });
+
+    })
   });
 
-  it("page loaded successfully", () => {
-    cy.visit(CLIENT_URL);
-  });
 
   it("title rendered correctly", () => {
     cy.contains("Hyperswitch Unified Checkout").should("be.visible");
@@ -30,18 +41,16 @@ describe("Card payment flow test", () => {
 
   it('should check if cards are saved', () => {
     // Visit the page where the test will be performed
-    cy.visit(CLIENT_URL);
-
     getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`)
-    .then($element => {
-      if ($element.length > 0) {
-        getIframeBody().find('[data-testid=cvvInput]').type('123');
-        getIframeBody().get("#submit").click();
-        cy.wait(2000);
-        cy.contains("Thanks for your order!").should("be.visible");
-      } else {
-        cy.log(' new card card flow');
-      }
-    });
+      .then($element => {
+        if ($element.length > 0) {
+          getIframeBody().find('[data-testid=cvvInput]').type('123');
+          getIframeBody().get("#submit").click();
+          cy.wait(2000);
+          cy.contains("Thanks for your order!").should("be.visible");
+        } else {
+          cy.log(' new card card flow');
+        }
+      });
   });
 });

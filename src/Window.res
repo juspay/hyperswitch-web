@@ -14,8 +14,6 @@ type style
 @get external cardCVCElement: window => option<window> = "cardCvc"
 @get external cardExpiryElement: window => option<window> = "cardExpiry"
 @get external value: Dom.element => 'a = "value"
-@val @scope(("window", "location"))
-external replace: string => unit = "replace"
 
 @val @scope("document") external createElement: string => Dom.element = "createElement"
 @set external windowOnload: (window, unit => unit) => unit = "onload"
@@ -28,6 +26,7 @@ external replace: string => unit = "replace"
 external querySelector: string => Nullable.t<Dom.element> = "querySelector"
 @val @scope("document")
 external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
+@send external getAttribute: (Dom.element, string) => option<string> = "getAttribute"
 
 type eventData = {
   elementType: string,
@@ -46,6 +45,7 @@ external addEventListener: (string, _ => unit) => unit = "addEventListener"
 @val @scope("window")
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
 @send external postMessage: (Dom.element, string, string) => unit = "postMessage"
+@send external postMessageJSON: (Dom.element, JSON.t, string) => unit = "postMessage"
 @send
 external getElementById: (document, string) => Nullable.t<Dom.element> = "getElementById"
 @get
@@ -62,6 +62,10 @@ external style: Dom.element => style = "style"
 
 let sendPostMessage = (element, message) => {
   element->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
+}
+
+let sendPostMessageJSON = (element, message) => {
+  element->postMessageJSON(message, GlobalVars.targetOrigin)
 }
 
 let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
@@ -132,6 +136,9 @@ module Location = {
   external hostname: string = "hostname"
 
   @val @scope(("window", "location"))
+  external href: string = "href"
+
+  @val @scope(("window", "location"))
   external origin: string = "origin"
 
   @val @scope(("window", "location"))
@@ -139,6 +146,28 @@ module Location = {
 
   @val @scope(("window", "location"))
   external pathname: string = "pathname"
+}
+
+module Top = {
+  module Location = {
+    @val @scope(("window", "top", "location"))
+    external replace: string => unit = "replace"
+
+    @val @scope(("window", "top", "location"))
+    external hostname: string = "hostname"
+
+    @val @scope(("window", "top", "location"))
+    external href: string = "href"
+
+    @val @scope(("window", "top", "location"))
+    external origin: string = "origin"
+
+    @val @scope(("window", "top", "location"))
+    external protocol: string = "protocol"
+
+    @val @scope(("window", "top", "location"))
+    external pathname: string = "pathname"
+  }
 }
 
 module Element = {
@@ -155,3 +184,57 @@ let isSandbox = Location.hostname === "beta.hyperswitch.io"
 let isInteg = Location.hostname === "dev.hyperswitch.io"
 
 let isProd = Location.hostname === "checkout.hyperswitch.io"
+
+let isIframed = () =>
+  try {
+    Location.href !== Top.Location.href
+  } catch {
+  | e => {
+      let default = true
+      Js.Console.error3(
+        "Failed to check whether or not document is within an iframe",
+        e,
+        `Using "${default->String.make}" as default (due to DOMException)`,
+      )
+      default
+    }
+  }
+
+let getRootHostName = () =>
+  switch isIframed() {
+  | true =>
+    try {
+      Top.Location.hostname
+    } catch {
+    | e => {
+        let default = Location.hostname
+        Js.Console.error3(
+          "Failed to get root document's hostname",
+          e,
+          `Using "${default}" [window.location.hostname] as default`,
+        )
+        default
+      }
+    }
+  | false => Location.hostname
+  }
+
+let replaceRootHref = (href: string) => {
+  Location.replace(href)
+  // switch isIframed() {
+  // | true =>
+  //   try {
+  //     Top.Location.replace(href)
+  //   } catch {
+  //   | e => {
+  //       Js.Console.error3(
+  //         "Failed to redirect root document",
+  //         e,
+  //         `Using [window.location.replace] for redirection`,
+  //       )
+  //       Location.replace(href)
+  //     }
+  //   }
+  // | false => Location.replace(href)
+  // }
+}

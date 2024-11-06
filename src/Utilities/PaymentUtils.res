@@ -7,10 +7,9 @@ let paymentListLookupNew = (
   ~isShowKlarnaOneClick,
   ~isKlarnaSDKFlow,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
-  ~areAllApplePayRequiredFieldsPrefilled,
   ~areAllGooglePayRequiredFieldsPrefilled,
-  ~isApplePayReady,
   ~isGooglePayReady,
+  ~shouldDisplayApplePayInTabs,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
@@ -33,11 +32,7 @@ let paymentListLookupNew = (
   ]
   let otherPaymentList = []
 
-  if (
-    !paymentMethodListValue.collect_billing_details_from_wallets &&
-    !areAllApplePayRequiredFieldsPrefilled &&
-    isApplePayReady
-  ) {
+  if shouldDisplayApplePayInTabs {
     walletToBeDisplayedInTabs->Array.push("apple_pay")
   }
 
@@ -346,6 +341,12 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
       let paymentOrder =
         paymentOrder->Array.length > 0 ? paymentOrder : PaymentModeType.defaultOrder
       let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
+
+      let shouldDisplayApplePayInTabs =
+        !paymentMethodListValue.collect_billing_details_from_wallets &&
+        !areAllApplePayRequiredFieldsPrefilled &&
+        isApplePayReady
+
       let (wallets, otherOptions) =
         plist->paymentListLookupNew(
           ~order=paymentOrder,
@@ -353,10 +354,9 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
           ~isShowKlarnaOneClick=optionAtomValue.wallets.klarna === Auto,
           ~isKlarnaSDKFlow,
           ~paymentMethodListValue=plist,
-          ~areAllApplePayRequiredFieldsPrefilled,
           ~areAllGooglePayRequiredFieldsPrefilled,
-          ~isApplePayReady,
           ~isGooglePayReady,
+          ~shouldDisplayApplePayInTabs,
         )
 
       let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
@@ -368,9 +368,13 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
       let isKlarnaInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
 
       let filterPaymentMethods = (paymentOptionsList: array<string>) => {
-        paymentOptionsList->Array.filter(paymentOptionsName =>
-          !(paymentOptionsName === "klarna" && isKlarnaSDKFlow && isKlarnaInvokeSDKExperience)
-        )
+        paymentOptionsList->Array.filter(paymentOptionsName => {
+          switch paymentOptionsName {
+          | "klarna" => !(isKlarnaSDKFlow && isKlarnaInvokeSDKExperience)
+          | "apple_pay" => shouldDisplayApplePayInTabs
+          | _ => true
+          }
+        })
       }
 
       (
@@ -474,7 +478,7 @@ let sortCustomerMethodsBasedOnPriority = (
 }
 
 let getSupportedCardBrands = (
-  paymentMethodListValue: OrcaPaymentPage.PaymentMethodsRecord.paymentMethodList,
+  paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
 ) => {
   let cardPaymentMethod =
     paymentMethodListValue.payment_methods->Array.find(ele => ele.payment_method === "card")
@@ -498,7 +502,9 @@ let getSupportedCardBrands = (
 let checkIsCardSupported = (cardNumber, supportedCardBrands) => {
   let cardBrand = cardNumber->CardUtils.getCardBrand
   let clearValue = cardNumber->CardUtils.clearSpaces
-  if CardUtils.cardValid(clearValue, cardBrand) {
+  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
+    Some(CardUtils.cardValid(clearValue, cardBrand))
+  } else if CardUtils.cardValid(clearValue, cardBrand) {
     switch supportedCardBrands {
     | Some(brands) => Some(brands->Array.includes(cardBrand->String.toLowerCase))
     | None => Some(true)

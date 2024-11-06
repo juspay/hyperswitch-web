@@ -1,18 +1,18 @@
-open PaymentModeType
-open PaymentType
-
 @react.component
-let make = (~mode) => {
-  let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+let make = (~mode: PaymentModeType.payment) => {
+  open RecoilAtoms
+  let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {customMessageForCardTerms, business, terms} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let cardTermsValue =
+    customMessageForCardTerms->String.length > 0
+      ? customMessageForCardTerms
+      : localeString.cardTerms(business.name)
+
   let terms = switch mode {
-  | ACHBankDebit => (
-      localeString.achBankDebitTerms(options.business.name),
-      options.terms.usBankAccount,
-    )
-  | SepaBankDebit => (localeString.sepaDebitTerms(options.business.name), options.terms.sepaDebit)
-  | BecsBankDebit => (localeString.becsDebitTerms, options.terms.auBecsDebit)
-  | Card => (localeString.cardTerms(options.business.name), options.terms.card)
+  | ACHBankDebit => (localeString.achBankDebitTerms(business.name), terms.usBankAccount)
+  | SepaBankDebit => (localeString.sepaDebitTerms(business.name), terms.sepaDebit)
+  | BecsBankDebit => (localeString.becsDebitTerms, terms.auBecsDebit)
+  | Card => (cardTermsValue, terms.card)
   | _ => ("", Auto)
   }
   let (termsText, showTerm) = terms

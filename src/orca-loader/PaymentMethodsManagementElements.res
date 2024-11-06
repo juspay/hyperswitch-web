@@ -56,6 +56,7 @@ let make = (
           src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&ephemeralKey=${ephemeralKey}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}"
           allow="*"
           name="orca-payment"
+          style="outline: none;"
         ></iframe>
         </div>`
         let iframeDiv = Window.createElement("div")

@@ -23,20 +23,25 @@ let years = Array.fromInitializer(~length=currentYear - startYear, i => currentY
 let make = () => {
   open Utils
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (selectedDate, setSelectedDate) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
   let (error, setError) = React.useState(_ => false)
   let (isNotEligible, setIsNotEligible) = React.useState(_ => false)
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let (dateOfBirth, setDateOfBirth) = Recoil.useLoggedRecoilState(
+    RecoilAtoms.dateOfBirth,
+    "dateOfBirth",
+    loggerState,
+  )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      switch selectedDate->Nullable.toOption {
+      switch dateOfBirth->Nullable.toOption {
       | Some(_) => setError(_ => false)
       | None => ()
       }
     }
-  }, (selectedDate, isNotEligible))
+  }, (dateOfBirth, isNotEligible))
 
   useSubmitPaymentData(submitCallback)
 
@@ -45,7 +50,7 @@ let make = () => {
     | Some(val) => val->checkIs18OrAbove
     | None => false
     }
-    setSelectedDate(_ => date)
+    setDateOfBirth(_ => date)
     setIsNotEligible(_ => !isAbove18)
   }
 
@@ -67,7 +72,7 @@ let make = () => {
       showIcon=true
       icon={<Icon name="calander" size=13 className="!px-[6px] !py-[10px]" />}
       className="w-full border border-gray-300 rounded p-2"
-      selected={selectedDate}
+      selected={dateOfBirth}
       onChange
       dateFormat="dd-MM-yyyy"
       wrapperClassName="datepicker"
