@@ -1,9 +1,9 @@
 type type_ = Error | Warning
 type stringType = Dynamic(string => string) | Static(string)
 
-type error = array<(OrcaLogger.eventName, type_, string)>
+type error = array<(HyperLogger.eventName, type_, string)>
 
-open OrcaLogger
+open HyperLogger
 
 let errorWarning = [
   (
@@ -107,9 +107,9 @@ let errorWarning = [
 ]
 
 let manageErrorWarning = (
-  key: OrcaLogger.eventName,
+  key: HyperLogger.eventName,
   ~dynamicStr="",
-  ~logger: OrcaLogger.loggerMake,
+  ~logger: HyperLogger.loggerMake,
 ) => {
   let entry = errorWarning->Array.find(((value, _, _)) => value == key)
   switch entry {
@@ -120,7 +120,7 @@ let manageErrorWarning = (
       | Static(string) => string
       | Dynamic(fn) => fn(dynamicStr)
       }
-      let logType: OrcaLogger.logType = switch type_ {
+      let logType: HyperLogger.logType = switch type_ {
       | Warning => WARNING
       | Error => ERROR
       }
@@ -154,7 +154,7 @@ let unknownPropValueWarning = (
   inValidValue,
   validValueArr,
   dictType,
-  ~logger: OrcaLogger.loggerMake,
+  ~logger: HyperLogger.loggerMake,
 ) => {
   let expectedValues =
     validValueArr
@@ -168,10 +168,10 @@ let unknownPropValueWarning = (
     ~logger,
   )
 }
-let valueOutRangeWarning = (num: int, dictType, range, ~logger: OrcaLogger.loggerMake) => {
+let valueOutRangeWarning = (num: int, dictType, range, ~logger: HyperLogger.loggerMake) => {
   manageErrorWarning(
     VALUE_OUT_OF_RANGE,
     ~dynamicStr=`${num->Int.toString} value in ${dictType} Expected value between ${range}`,
-    ~logger: OrcaLogger.loggerMake,
+    ~logger: HyperLogger.loggerMake,
   )
 }

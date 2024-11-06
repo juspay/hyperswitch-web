@@ -86,7 +86,7 @@ let handleHyperApplePayMounted = (event: Types.event) => {
     let sdkSessionId = dict->getString("sdkSessionId", "")
     let analyticsMetadata = dict->getJsonFromDict("analyticsMetadata", JSON.Encode.null)
 
-    let logger = OrcaLogger.make(
+    let logger = HyperLogger.make(
       ~sessionId=sdkSessionId,
       ~source=Loader,
       ~merchantId=publishableKey,
@@ -155,7 +155,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     let sessionID =
       analyticsInfoDict->getString("sessionID", "hyp_" ++ Utils.generateRandomString(8))
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
-    let logger = OrcaLogger.make(
+    let logger = HyperLogger.make(
       ~sessionId=sessionID,
       ~source=Loader,
       ~merchantId=publishableKey,

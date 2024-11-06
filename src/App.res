@@ -7,7 +7,7 @@ let make = () => {
   let paymentMode = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let paymentType = paymentMode->CardThemeType.getPaymentMode
   let (logger, initTimestamp) = React.useMemo0(() => {
-    (OrcaLogger.make(~source=Elements(paymentType)), Date.now())
+    (HyperLogger.make(~source=Elements(paymentType)), Date.now())
   })
   let fullscreenMode = CardUtils.getQueryParamsDictforKey(url.search, "fullscreenType")
 

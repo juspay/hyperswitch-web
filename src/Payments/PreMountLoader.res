@@ -121,7 +121,7 @@ let make = (
   ~merchantHostname,
   ~customPodUri,
 ) => {
-  let logger = OrcaLogger.make(
+  let logger = HyperLogger.make(
     ~sessionId,
     ~source=Loader,
     ~merchantId=publishableKey,
