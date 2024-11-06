@@ -140,6 +140,7 @@ let make = () => {
       name="threeDsInvisibleIframe"
       className="h-96 invisible"
       ref={divRef->ReactDOM.Ref.domRef}
+      style={outline: "none"}
       onLoad={handleOnLoad}
     />
   </>
