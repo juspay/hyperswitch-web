@@ -1,33 +1,7 @@
 type window
 type parent
 type document
-@val external window: window = "window"
-@val @scope("window") external windowInnerHeight: int = "innerHeight"
-@val @scope("window") external windowInnerWidth: int = "innerWidth"
-
-@val @scope("window")
-external windowParent: window = "parent"
 type style
-
-@val external parent: window = "parent"
-@get external cardNumberElement: window => option<window> = "cardNumber"
-@get external cardCVCElement: window => option<window> = "cardCvc"
-@get external cardExpiryElement: window => option<window> = "cardExpiry"
-@get external value: Dom.element => 'a = "value"
-
-@val @scope("document") external createElement: string => Dom.element = "createElement"
-@set external windowOnload: (window, unit => unit) => unit = "onload"
-
-@get external fullscreen: window => option<window> = "fullscreen"
-
-@get external document: window => document = "document"
-@get external parentNode: Dom.element => Dom.element = "parentNode"
-@val @scope("document")
-external querySelector: string => Nullable.t<Dom.element> = "querySelector"
-@val @scope("document")
-external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
-@send external getAttribute: (Dom.element, string) => option<string> = "getAttribute"
-
 type eventData = {
   elementType: string,
   clickTriggered: bool,
@@ -38,76 +12,62 @@ type eventData = {
   oneClickConfirmTriggered: bool,
 }
 type loaderEvent = {key: string, data: eventData}
-@set external innerHTML: (Dom.element, string) => unit = "innerHTML"
 type event = {key: string, data: string, origin: string}
-@val @scope("window")
-external addEventListener: (string, _ => unit) => unit = "addEventListener"
+type date = {now: unit => string}
+type body
+type packageJson = {version: string}
+
+/* External Declarations */
+@val external window: window = "window"
+@val @scope("window") external innerHeight: int = "innerHeight"
+@val @scope("window") external innerWidth: int = "innerWidth"
+@val @scope("window") external windowParent: window = "parent"
+@val external parent: window = "parent"
+@val @scope("document") external createElement: string => Dom.element = "createElement"
+@val @scope("document") external querySelector: string => Nullable.t<Dom.element> = "querySelector"
+@val @scope("document") external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
+@module("/package.json") @val external packageJson: packageJson = "default"
+@val @scope("document") external body: body = "body"
+@val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
+@val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
 @val @scope("window")
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
+@val @scope("window") external btoa: string => string = "btoa"
+@new external date: date = "Date"
+@get external value: Dom.element => 'a = "value"
+
+/* External Methods */
+@scope("window") @get external cardNumberElement: window => option<window> = "cardNumber"
+@get external cardCVCElement: window => option<window> = "cardCvc"
+@get external cardExpiryElement: window => option<window> = "cardExpiry"
+@get external document: window => document = "document"
+@get external fullscreen: window => option<window> = "fullscreen"
+@get external frames: window => {..} = "frames"
+@get external name: window => string = "name"
+@get external contentWindow: Dom.element => Dom.element = "contentWindow"
+@get external style: Dom.element => style = "style"
+@send external getAttribute: (Dom.element, string) => option<string> = "getAttribute"
 @send external postMessage: (Dom.element, string, string) => unit = "postMessage"
 @send external postMessageJSON: (Dom.element, JSON.t, string) => unit = "postMessage"
-@send
-external getElementById: (document, string) => Nullable.t<Dom.element> = "getElementById"
-@get
-external frames: window => {..} = "frames"
-@get external name: window => string = "name"
-@get
-external contentWindow: Dom.element => Dom.element = "contentWindow"
-@get
-external style: Dom.element => style = "style"
-@set external setTransition: (style, string) => unit = "transition"
-@set external setHeight: (style, string) => unit = "height"
-@send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
-@send external click: Dom.element => unit = "click"
-
-let sendPostMessage = (element, message) => {
-  element->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
-}
-
-let sendPostMessageJSON = (element, message) => {
-  element->postMessageJSON(message, GlobalVars.targetOrigin)
-}
-
-let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
-  switch iframeRef->Nullable.toOption {
-  | Some(ref) =>
-    try {
-      ref
-      ->contentWindow
-      ->sendPostMessage(message)
-    } catch {
-    | _ => ()
-    }
-  | None => Console.error("This element does not exist or is not mounted yet.")
-  }
-}
-
+@send external getElementById: (document, string) => Nullable.t<Dom.element> = "getElementById"
 @send external preventDefault: (event, unit) => unit = "preventDefault"
-
-type date = {now: unit => string}
-@new external date: date = "Date"
-@set external className: (Dom.element, string) => unit = "className"
-@set external id: (Dom.element, string) => unit = "id"
-@send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
-@set external elementSrc: (Dom.element, string) => unit = "src"
-type body
-
-@val @scope("document")
-external body: body = "body"
 @send external appendChild: (body, Dom.element) => unit = "appendChild"
 @send external remove: Dom.element => unit = "remove"
-
+@send external setAttribute: (Dom.element, string, string) => unit = "setAttribute"
+@send external paymentRequest: (JSON.t, JSON.t, JSON.t) => JSON.t = "PaymentRequest"
+@send external click: Dom.element => unit = "click"
+@set external innerHTML: (Dom.element, string) => unit = "innerHTML"
+@set external className: (Dom.element, string) => unit = "className"
+@set external id: (Dom.element, string) => unit = "id"
+@set external elementSrc: (Dom.element, string) => unit = "src"
 @set external elementOnload: (Dom.element, unit => unit) => unit = "onload"
 @set external elementOnerror: (Dom.element, exn => unit) => unit = "onerror"
-@val @scope("window")
-external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
-@set
-external setHyper: (window, Types.hyperInstance) => unit = "HyperMethod"
+@set external setTransition: (style, string) => unit = "transition"
+@set external setHeight: (style, string) => unit = "height"
+@set external windowOnload: (window, unit => unit) => unit = "onload"
+@set external setHyper: (window, Types.hyperInstance) => unit = "HyperMethod"
 
-type packageJson = {version: string}
-@module("/package.json") @val external packageJson: packageJson = "default"
-let version = packageJson.version
-
+/* Module Definitions */
 module Navigator = {
   @val @scope("navigator")
   external browserName: string = "appName"
@@ -174,17 +134,41 @@ module Element = {
   @get external clientWidth: Dom.element => int = "clientWidth"
 }
 
-@val @scope("window")
-external btoa: string => string = "btoa"
+/* Helper Functions */
+let sendPostMessage = (element, message) => {
+  element->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
+}
 
+let sendPostMessageJSON = (element, message) => {
+  element->postMessageJSON(message, GlobalVars.targetOrigin)
+}
+
+let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
+  switch iframeRef->Nullable.toOption {
+  | Some(ref) =>
+    try {
+      ref
+      ->contentWindow
+      ->sendPostMessage(message)
+    } catch {
+    | _ => ()
+    }
+  | None => Console.error("This element does not exist or is not mounted yet.")
+  }
+}
+
+/* Version Handling */
+let version = packageJson.version
+
+/* URL Handling */
 let hrefWithoutSearch = Location.origin ++ Location.pathname
 
+/* Environment Flags */
 let isSandbox = Location.hostname === "beta.hyperswitch.io"
-
 let isInteg = Location.hostname === "dev.hyperswitch.io"
-
 let isProd = Location.hostname === "checkout.hyperswitch.io"
 
+/* iFrame Detection */
 let isIframed = () =>
   try {
     Location.href !== Top.Location.href
@@ -200,6 +184,7 @@ let isIframed = () =>
     }
   }
 
+/* Root Hostname Retrieval */
 let getRootHostName = () =>
   switch isIframed() {
   | true =>
@@ -219,22 +204,5 @@ let getRootHostName = () =>
   | false => Location.hostname
   }
 
-let replaceRootHref = (href: string) => {
-  Location.replace(href)
-  // switch isIframed() {
-  // | true =>
-  //   try {
-  //     Top.Location.replace(href)
-  //   } catch {
-  //   | e => {
-  //       Js.Console.error3(
-  //         "Failed to redirect root document",
-  //         e,
-  //         `Using [window.location.replace] for redirection`,
-  //       )
-  //       Location.replace(href)
-  //     }
-  //   }
-  // | false => Location.replace(href)
-  // }
-}
+/* Redirect Handling */
+let replaceRootHref = (href: string) => Location.replace(href)
