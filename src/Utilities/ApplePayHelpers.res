@@ -72,7 +72,7 @@ let startApplePaySession = (
   ~paymentRequest,
   ~applePaySessionRef,
   ~applePayPresent,
-  ~logger: OrcaLogger.loggerMake,
+  ~logger: HyperLogger.loggerMake,
   ~callBackFunc,
   ~resolvePromise,
   ~clientSecret,

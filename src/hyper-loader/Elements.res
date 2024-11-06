@@ -17,13 +17,13 @@ let make = (
   ~clientSecret,
   ~sdkSessionId,
   ~publishableKey,
-  ~logger: option<OrcaLogger.loggerMake>,
+  ~logger: option<HyperLogger.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
 ) => {
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
+    let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 

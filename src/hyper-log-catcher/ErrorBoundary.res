@@ -126,7 +126,7 @@ module ErrorCard = {
   let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level, ~componentName) => {
     let beaconApiCall = data => {
       if data->Array.length > 0 {
-        let logData = data->Array.map(OrcaLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
+        let logData = data->Array.map(HyperLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
         Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
       }
     }
@@ -142,7 +142,7 @@ module ErrorCard = {
 
         errorDict->Dict.set("componentName", componentName->JSON.Encode.string)
 
-        let errorLog: OrcaLogger.logFile = {
+        let errorLog: HyperLogger.logFile = {
           logType: ERROR,
           timestamp: Date.now()->Float.toString,
           sessionId: "",
@@ -153,8 +153,8 @@ module ErrorCard = {
           category: USER_ERROR,
           paymentId: "",
           merchantId: "",
-          browserName: OrcaLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
-          browserVersion: OrcaLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
+          browserName: HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
+          browserVersion: HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
           platform: Window.Navigator.platform,
           userAgent: Window.Navigator.userAgent,
           appId: "",
