@@ -1,14 +1,14 @@
 let sendPromiseData = (promise, key) => {
-  let asyncOperation = async () => {
-    let response = try {
-      await promise
-    } catch {
-    | _ => JSON.Encode.null
+  (
+    async () => {
+      let response = try {
+        await promise
+      } catch {
+      | _ => JSON.Encode.null
+      }
+      Utils.messageParentWindow([("response", response), ("data", key->JSON.Encode.string)])
     }
-    Utils.messageParentWindow([("response", response), ("data", key->JSON.Encode.string)])
-  }
-
-  asyncOperation()->ignore
+  )()->ignore
 }
 let useMessageHandler = getPromisesAndMessageHandler => {
   let cleanup = messageHandler => {
