@@ -16,6 +16,38 @@ let make = () => {
     None
   }, [logger])
 
+  React.useEffect0(() => {
+    let handleMetaDataPostMessage = (ev: Window.event) => {
+      let json = ev.data->Utils.safeParse
+      let dict = json->Utils.getDictFromJson
+
+      if dict->Dict.get("metadata")->Option.isSome {
+        let metadata = dict->Utils.getJsonObjectFromDict("metadata")
+        let config = metadata->Utils.getDictFromJson->Dict.get("config")
+
+        switch config {
+        | Some(config) => {
+            let config = CardTheme.itemToObjMapper(
+              config->Utils.getDictFromJson,
+              DefaultTheme.default,
+              DefaultTheme.defaultRules,
+              logger,
+            )
+
+            CardUtils.generateFontsLink(config.fonts)
+            let dict = config.appearance.rules->Utils.getDictFromJson
+            if dict->Dict.toArray->Array.length > 0 {
+              Utils.generateStyleSheet("", dict, "mystyle")
+            }
+          }
+        | None => ()
+        }
+      }
+    }
+    Window.addEventListener("message", handleMetaDataPostMessage)
+    Some(() => Window.removeEventListener("message", handleMetaDataPostMessage))
+  })
+
   let renderFullscreen = switch paymentMode {
   | "paymentMethodCollect" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
@@ -25,6 +57,7 @@ let make = () => {
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
     | "plaidSDK" => <PlaidSDKIframe />
+    | "pazeWallet" => <PazeWallet />
     | "fullscreen" =>
       <div id="fullscreen">
         <FullScreenDivDriver />
@@ -45,6 +78,7 @@ let make = () => {
             "hyperComponentName",
           )->Types.getHyperComponentNameFromStr
         let merchantHostname = CardUtils.getQueryParamsDictforKey(url.search, "merchantHostname")
+        let customPodUri = CardUtils.getQueryParamsDictforKey(url.search, "customPodUri")
 
         <PreMountLoader
           publishableKey
@@ -54,6 +88,7 @@ let make = () => {
           ephemeralKey
           hyperComponentName
           merchantHostname
+          customPodUri
         />
       }
     | "achBankTransfer"

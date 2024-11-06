@@ -5,11 +5,11 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
 
   let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let switchToCustomPod = Recoil.useRecoilValueFromAtom(RecoilAtoms.switchToCustomPod)
+  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let removeSavedMethod = (
-    savedMethods: array<OrcaPaymentPage.PaymentType.customerMethods>,
+    savedMethods: array<PaymentType.customerMethods>,
     paymentMethodId,
   ) => {
     savedMethods->Array.filter(savedMethod => {
@@ -28,7 +28,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
       ~ephemeralKey=config.ephemeralKey,
       ~paymentMethodId=paymentItem.paymentMethodId,
       ~logger,
-      ~switchToCustomPod,
+      ~customPodUri,
     )
     ->then(res => {
       let dict = res->getDictFromJson

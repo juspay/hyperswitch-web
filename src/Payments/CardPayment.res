@@ -35,11 +35,8 @@ let make = (
     cardError,
     setCardError,
     maxCardLength,
+    cardBrand,
   ) = cardProps
-
-  let cardBrand = React.useMemo(() => {
-    cardNumber->CardUtils.getCardBrand
-  }, [cardNumber])
 
   let (
     isExpiryValid,
@@ -180,6 +177,14 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
+        } else if isCardSupported->Option.getOr(true)->not {
+          if cardBrand == "" {
+            setCardError(_ => localeString.enterValidCardNumberErrorText)
+            setUserError(localeString.enterValidDetailsText)
+          } else {
+            setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
+            setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+          }
         }
         if cardExpiry === "" {
           setExpiryError(_ => localeString.cardExpiryDateEmptyText)
@@ -188,10 +193,6 @@ let make = (
         if !isBancontact && cvcNumber === "" {
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
-        }
-        if isCardSupported->Option.getOr(true)->not {
-          setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
-          setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
         }
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)
@@ -207,6 +208,7 @@ let make = (
     nickname,
     isCardBrandValid,
     isManualRetryEnabled,
+    cardProps,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -264,7 +266,7 @@ let make = (
               style={
                 gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
               }>
-              <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
+              <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.validThruText
                   isValid=isExpiryValid
@@ -282,7 +284,7 @@ let make = (
                   name=TestUtils.expiryInputTestId
                 />
               </div>
-              <div className={innerLayout === Spaced ? "w-[45%]" : "w-[50%]"}>
+              <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
                 <PaymentInputField
                   fieldName=localeString.cvcTextLabel
                   isValid=isCVCValid

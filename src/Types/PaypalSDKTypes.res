@@ -79,6 +79,7 @@ type buttons = {
   onApprove: (data, actions) => unit,
   onCancel: data => unit,
   onError?: err => unit,
+  onShippingAddressChange?: JSON.t => promise<JSON.t>,
 }
 let getLabel = (var: PaymentType.paypalStyleType) => {
   switch var {
@@ -125,9 +126,8 @@ let getShippingDetails = shippingAddressOverrideObj => {
   }
 }
 
-let paypalShippingDetails = purchaseUnit => {
+let paypalShippingDetails = (purchaseUnit, payerDetails: PaymentType.payerDetails) => {
   let shippingAddress = purchaseUnit->Utils.getDictFromDict("shipping")
-  let payee = purchaseUnit->Utils.getDictFromDict("payee")
 
   let address = shippingAddress->Utils.getDictFromDict("address")
   let name = shippingAddress->Utils.getDictFromDict("name")
@@ -139,10 +139,7 @@ let paypalShippingDetails = purchaseUnit => {
   let countryCode = address->Utils.getOptionString("country_code")
   let postalCode = address->Utils.getOptionString("postal_code")
   let state = address->Utils.getOptionString("admin_area_1")
-  let email = payee->Utils.getString("email_address", "")
-
-  let payeePhone = payee->Utils.getOptionString("phone")
-  let shippingAddressPhone = address->Utils.getOptionString("phone")
+  let email = payerDetails.email->Option.getOr("")
 
   {
     email,
@@ -154,9 +151,9 @@ let paypalShippingDetails = purchaseUnit => {
       countryCode,
       postalCode,
       state,
-      phone: shippingAddressPhone,
+      phone: payerDetails.phone,
     },
-    phone: payeePhone,
+    phone: payerDetails.phone,
   }
 }
 
@@ -180,4 +177,15 @@ let getOrderDetails = (orderDetails, paymentType) => {
     shippingAddressEditable: None,
     shippingAddressOverride,
   }
+}
+
+let shippingAddressItemToObjMapper=dict=>{
+  recipientName: dict->Utils.getOptionString("recipientName"),
+  line1: dict->Utils.getOptionString("line1"),
+  line2: dict->Utils.getOptionString("line2"),
+  city: dict->Utils.getOptionString("city"),
+  countryCode: dict->Utils.getOptionString("countryCode"),
+  postalCode: dict->Utils.getOptionString("postalCode"),
+  state: dict->Utils.getOptionString("state"),
+  phone: dict->Utils.getOptionString("phone"),
 }

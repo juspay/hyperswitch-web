@@ -21,7 +21,6 @@ let make = (
   ~analyticsMetadata,
   ~customBackendUrl,
 ) => {
-  let applePaySessionRef = ref(Nullable.null)
   try {
     let iframeRef = []
     let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
@@ -49,13 +48,12 @@ let make = (
       ->Option.flatMap(x => x->Dict.get("blockConfirm"))
       ->Option.flatMap(JSON.Decode.bool)
       ->Option.getOr(false)
-    let switchToCustomPod =
-      GlobalVars.isInteg &&
+    let customPodUri =
       options
       ->JSON.Decode.object
-      ->Option.flatMap(x => x->Dict.get("switchToCustomPod"))
-      ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(false)
+      ->Option.flatMap(x => x->Dict.get("customPodUri"))
+      ->Option.flatMap(JSON.Decode.string)
+      ->Option.getOr("")
 
     let merchantHostname = Window.Location.hostname
 
@@ -69,14 +67,14 @@ let make = (
         let componentType = "preMountLoader"
         let iframeDivHtml = `<div id="orca-element-${localSelectorString}" style= "height: 0px; width: 0px; display: none;"  class="${componentType}">
           <div id="orca-fullscreen-iframeRef-${localSelectorString}"></div>
-           <iframe
-           id ="orca-payment-element-iframeRef-${localSelectorString}"
-           name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}"
-          allow="*"
-          name="orca-payment"
-        ></iframe>
-        </div>`
+            <iframe
+              id="orca-payment-element-iframeRef-${localSelectorString}"
+              name="orca-payment-element-iframeRef-${localSelectorString}"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"              allow="*"
+              name="orca-payment"
+              style="outline: none;"
+            ></iframe>
+          </div>`
         let iframeDiv = Window.createElement("div")
         iframeDiv->Window.innerHTML(iframeDivHtml)
         Window.body->Window.appendChild(iframeDiv)
@@ -92,6 +90,7 @@ let make = (
     let clientSecretReMatch = Re.test(`.+_secret_[A-Za-z0-9]+`->Re.fromString, clientSecret)
 
     let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
+    let isTaxCalculationEnabled = ref(false)
 
     let unMountPreMountLoaderIframe = () => {
       switch preMountLoaderIframeDiv->Nullable.toOption {
@@ -130,13 +129,27 @@ let make = (
       }
     }
 
+    let onPazeCallback = mountedIframeRef => {
+      (ev: Types.event) => {
+        let json = ev.data->Identity.anyTypeToJson
+        let dict = json->getDictFromJson
+        let isPazeExist = dict->getBool("isPaze", false)
+        if isPazeExist {
+          mountedIframeRef->Window.iframePostMessage([("data", json)]->Dict.fromArray)
+        }
+      }
+    }
+
     let fetchPaymentsList = (mountedIframeRef, componentType) => {
       let handlePaymentMethodsLoaded = (event: Types.event) => {
         let json = event.data->Identity.anyTypeToJson
         let dict = json->getDictFromJson
         let isPaymentMethodsData = dict->getString("data", "") === "payment_methods"
         if isPaymentMethodsData {
+          isTaxCalculationEnabled.contents =
+            dict->getDictFromDict("response")->getBool("is_tax_calculation_enabled", false)
           addSmartEventListener("message", onPlaidCallback(mountedIframeRef), "onPlaidCallback")
+          addSmartEventListener("message", onPazeCallback(mountedIframeRef), "onPazeCallback")
 
           let json = dict->getJsonFromDict("response", JSON.Encode.null)
           let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -298,34 +311,45 @@ let make = (
             ("loader", loader),
             ("fonts", fonts),
           ]->getJsonFromArrayOfJson
-        let message =
-          [
-            (
-              "paymentElementCreate",
-              componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
-            ),
-            ("otherElements", otherElements->JSON.Encode.bool),
-            ("options", newOptions),
-            ("componentType", componentType->JSON.Encode.string),
-            ("paymentOptions", widgetOptions),
-            ("iframeId", selectorString->JSON.Encode.string),
-            ("publishableKey", publishableKey->JSON.Encode.string),
-            ("endpoint", endpoint->JSON.Encode.string),
-            ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-            ("blockConfirm", blockConfirm->JSON.Encode.bool),
-            ("switchToCustomPod", switchToCustomPod->JSON.Encode.bool),
-            ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
-            ("parentURL", "*"->JSON.Encode.string),
-            ("analyticsMetadata", analyticsMetadata),
-            ("launchTime", launchTime->JSON.Encode.float),
-            ("customBackendUrl", customBackendUrl->JSON.Encode.string),
-          ]->Dict.fromArray
+        let message = [
+          (
+            "paymentElementCreate",
+            componentType->getIsComponentTypeForPaymentElementCreate->JSON.Encode.bool,
+          ),
+          ("otherElements", otherElements->JSON.Encode.bool),
+          ("options", newOptions),
+          ("componentType", componentType->JSON.Encode.string),
+          ("paymentOptions", widgetOptions),
+          ("iframeId", selectorString->JSON.Encode.string),
+          ("publishableKey", publishableKey->JSON.Encode.string),
+          ("endpoint", endpoint->JSON.Encode.string),
+          ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+          ("blockConfirm", blockConfirm->JSON.Encode.bool),
+          ("customPodUri", customPodUri->JSON.Encode.string),
+          ("sdkHandleOneClickConfirmPayment", sdkHandleOneClickConfirmPayment->JSON.Encode.bool),
+          ("parentURL", "*"->JSON.Encode.string),
+          ("analyticsMetadata", analyticsMetadata),
+          ("launchTime", launchTime->JSON.Encode.float),
+          ("customBackendUrl", customBackendUrl->JSON.Encode.string),
+          (
+            "isPaymentButtonHandlerProvided",
+            LoaderPaymentElement.isPaymentButtonHandlerProvided.contents->JSON.Encode.bool,
+          ),
+          (
+            "onCompleteDoThisUsed",
+            EventListenerManager.eventListenerMap
+            ->Dict.get("onCompleteDoThis")
+            ->Option.isSome
+            ->JSON.Encode.bool,
+          ),
+        ]->Dict.fromArray
 
         let wallets = PaymentType.getWallets(newOptions->getDictFromJson, "wallets", logger)
 
         let handleApplePayMounted = (event: Types.event) => {
           let json = event.data->anyTypeToJson
           let dict = json->getDictFromJson
+          let componentName = getString(dict, "componentName", "payment")
 
           if dict->Dict.get("applePayMounted")->Option.isSome {
             if wallets.applePay === Auto {
@@ -333,8 +357,11 @@ let make = (
               | Some(session) =>
                 try {
                   if session.canMakePayments() {
-                    let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
-                    event.source->Window.sendPostMessage(msg)
+                    let msg = [
+                      ("hyperApplePayCanMakePayments", true->JSON.Encode.bool),
+                      ("componentName", componentName->JSON.Encode.string),
+                    ]
+                    messageTopWindow(msg)
                   } else {
                     Console.log("CANNOT MAKE PAYMENT USING APPLE PAY")
                     logger.setLogInfo(
@@ -365,6 +392,28 @@ let make = (
                 ~paymentMethod="APPLE_PAY",
                 ~logType=INFO,
               )
+            }
+          } else if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
+            let applePayCanMakePayments = getBool(dict, "applePayCanMakePayments", false)
+
+            if applePayCanMakePayments {
+              try {
+                let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
+
+                handleApplePayIframePostMessage(msg, componentName, mountedIframeRef)
+              } catch {
+              | exn => {
+                  let exnString = exn->anyTypeToJson->JSON.stringify
+
+                  Console.log("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
+                  logger.setLogInfo(
+                    ~value=exnString,
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                    ~logType=ERROR,
+                  )
+                }
+              }
             }
           }
         }
@@ -418,7 +467,7 @@ let make = (
                           clientSecret,
                           headers,
                           ~optLogger=Some(logger),
-                          ~switchToCustomPod,
+                          ~customPodUri,
                           ~isForceSync=true,
                         )
                       )
@@ -611,9 +660,28 @@ let make = (
           | Some(obj) => redirect := obj->getDictFromJson->getString("redirect", "if_required")
           | None => ()
           }
+
+          let handleRetrievePaymentResponse = json => {
+            let dict = json->getDictFromJson
+            let status = dict->getString("status", "")
+            let returnUrl = dict->getString("return_url", "")
+            let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`
+            if redirect.contents === "always" {
+              Window.replaceRootHref(redirectUrl)
+              resolve(JSON.Encode.null)
+            } else {
+              messageCurrentWindow([
+                ("submitSuccessful", true->JSON.Encode.bool),
+                ("data", json),
+                ("url", redirectUrl->JSON.Encode.string),
+              ])
+              resolve(json)
+            }
+          }
+
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
           | Some(val) => {
-              messageParentWindow([
+              messageCurrentWindow([
                 ("fullscreen", true->JSON.Encode.bool),
                 ("param", "paymentloader"->JSON.Encode.string),
                 ("iframeId", selectorString->JSON.Encode.string),
@@ -624,9 +692,21 @@ let make = (
                 dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
               let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
               let url = dict->getString("return_url_with_query_params", "")
+
+              let handleErrorResponse = err => {
+                if redirect.contents === "always" {
+                  Window.replaceRootHref(url)
+                }
+                messageCurrentWindow([
+                  ("submitSuccessful", false->JSON.Encode.bool),
+                  ("error", err->Identity.anyTypeToJson),
+                  ("url", url->JSON.Encode.string),
+                ])
+              }
+
               PaymentHelpers.pollStatus(
                 ~headers,
-                ~switchToCustomPod,
+                ~customPodUri,
                 ~pollId,
                 ~interval,
                 ~count,
@@ -638,72 +718,57 @@ let make = (
                   clientSecret,
                   headers,
                   ~optLogger=Some(logger),
-                  ~switchToCustomPod,
+                  ~customPodUri,
                   ~isForceSync=true,
                 )
-                ->then(json => {
-                  if redirect.contents === "always" {
-                    let dict = json->getDictFromJson
-                    let status = dict->getString("status", "")
-                    let returnUrl = dict->getString("return_url", "")
-                    Window.Location.replace(
-                      `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`,
-                    )
-                    resolve(JSON.Encode.null)
-                  } else {
-                    messageParentWindow([
-                      ("fullscreen", false->JSON.Encode.bool),
-                      ("submitSuccessful", true->JSON.Encode.bool),
-                      ("data", json),
-                    ])
-                    resolve(json)
-                  }
-                })
+                ->then(json => json->handleRetrievePaymentResponse)
                 ->catch(err => {
-                  if redirect.contents === "always" {
-                    Window.Location.replace(url)
-                  }
-                  messageParentWindow([
-                    ("submitSuccessful", false->JSON.Encode.bool),
-                    ("error", err->Identity.anyTypeToJson),
-                  ])
+                  err->handleErrorResponse
                   resolve(err->Identity.anyTypeToJson)
                 })
                 ->ignore
                 ->resolve
               })
-              ->catch(e => Console.log2("POLL_STATUS ERROR -", e)->resolve)
+              ->catch(err => {
+                err->handleErrorResponse
+                resolve()
+              })
+              ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
               ->ignore
             }
           | None => ()
           }
 
           switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
-          | Some(val) =>
-            if redirect.contents === "always" {
-              Window.Location.replace(val->JSON.Decode.string->Option.getOr(""))
-              resolve(JSON.Encode.null)
-            } else {
-              PaymentHelpers.retrievePaymentIntent(
-                clientSecret,
-                headers,
-                ~optLogger=Some(logger),
-                ~switchToCustomPod,
-                ~isForceSync=true,
-              )
-              ->then(json => {
-                messageParentWindow([("submitSuccessful", true->JSON.Encode.bool), ("data", json)])
-                resolve(json)
-              })
-              ->catch(err => {
-                messageParentWindow([
+          | Some(redirectUrl) =>
+            messageCurrentWindow([
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", "paymentloader"->JSON.Encode.string),
+              ("iframeId", selectorString->JSON.Encode.string),
+            ])
+            PaymentHelpers.retrievePaymentIntent(
+              clientSecret,
+              headers,
+              ~optLogger=Some(logger),
+              ~customPodUri,
+              ~isForceSync=true,
+            )
+            ->then(json => json->handleRetrievePaymentResponse)
+            ->catch(err => {
+              if redirect.contents === "always" {
+                Window.replaceRootHref(redirectUrl->JSON.Decode.string->Option.getOr(""))
+                resolve(JSON.Encode.null)
+              } else {
+                messageCurrentWindow([
                   ("submitSuccessful", false->JSON.Encode.bool),
                   ("error", err->Identity.anyTypeToJson),
+                  ("url", redirectUrl),
                 ])
                 resolve(err->Identity.anyTypeToJson)
-              })
-              ->finally(_ => messageParentWindow([("fullscreen", false->JSON.Encode.bool)]))
-            }->ignore
+              }
+            })
+            ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+            ->ignore
 
           | None => ()
           }
@@ -768,11 +833,17 @@ let make = (
                   let handleApplePayMessages = (applePayEvent: Types.event) => {
                     let json = applePayEvent.data->Identity.anyTypeToJson
                     let dict = json->getDictFromJson
+                    let componentName = dict->getString("componentName", "payment")
+
                     switch (
                       dict->Dict.get("applePayButtonClicked"),
                       dict->Dict.get("applePayPaymentRequest"),
+                      dict
+                      ->Dict.get("isTaxCalculationEnabled")
+                      ->Option.flatMap(JSON.Decode.bool)
+                      ->Option.getOr(false),
                     ) {
-                    | (Some(val), Some(paymentRequest)) =>
+                    | (Some(val), Some(paymentRequest), isTaxCalculationEnabled) =>
                       if val->JSON.Decode.bool->Option.getOr(false) {
                         let isDelayedSessionToken =
                           applePayPresent
@@ -789,29 +860,44 @@ let make = (
                             ~paymentMethod="APPLE_PAY",
                           )
 
-                          let callBackFunc = payment => {
-                            let msg =
-                              [
-                                ("applePayProcessPayment", payment.token),
-                                ("applePayBillingContact", payment.billingContact),
-                                ("applePayShippingContact", payment.shippingContact),
-                              ]->Dict.fromArray
-                            applePayEvent.source->Window.sendPostMessage(msg)
-                          }
-
-                          ApplePayHelpers.startApplePaySession(
-                            ~paymentRequest,
-                            ~applePaySessionRef,
-                            ~applePayPresent,
-                            ~logger,
-                            ~applePayEvent=Some(applePayEvent),
-                            ~callBackFunc,
-                          )
+                          let msg = [
+                            ("hyperApplePayButtonClicked", true->JSON.Encode.bool),
+                            ("paymentRequest", paymentRequest),
+                            ("applePayPresent", applePayPresent->Option.getOr(JSON.Encode.null)),
+                            ("clientSecret", clientSecret->JSON.Encode.string),
+                            ("publishableKey", publishableKey->JSON.Encode.string),
+                            ("isTaxCalculationEnabled", isTaxCalculationEnabled->JSON.Encode.bool),
+                            ("sdkSessionId", sdkSessionId->JSON.Encode.string),
+                            ("analyticsMetadata", analyticsMetadata),
+                            ("componentName", componentName->JSON.Encode.string),
+                          ]
+                          messageTopWindow(msg)
                         }
-                      } else {
-                        ()
                       }
                     | _ => ()
+                    }
+
+                    if dict->Dict.get("applePayPaymentToken")->Option.isSome {
+                      let token = dict->getJsonFromDict("applePayPaymentToken", JSON.Encode.null)
+                      let billingContact =
+                        dict->getJsonFromDict("applePayBillingContact", JSON.Encode.null)
+                      let shippingContact =
+                        dict->getJsonFromDict("applePayShippingContact", JSON.Encode.null)
+
+                      let msg =
+                        [
+                          ("applePayPaymentToken", token),
+                          ("applePayBillingContact", billingContact),
+                          ("applePayShippingContact", shippingContact),
+                        ]->Dict.fromArray
+
+                      handleApplePayIframePostMessage(msg, componentName, mountedIframeRef)
+                    }
+
+                    if dict->Dict.get("showApplePayButton")->Option.isSome {
+                      let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
+
+                      handleApplePayIframePostMessage(msg, componentName, mountedIframeRef)
                     }
                   }
 
@@ -845,13 +931,112 @@ let make = (
                   )
 
                   try {
-                    let gPayClient = GooglePayType.google(
+                    let transactionInfo = gpayobj.transaction_info->getDictFromJson
+
+                    let onPaymentDataChanged = intermediatePaymentData => {
+                      let shippingAddress =
+                        intermediatePaymentData
+                        ->getDictFromJson
+                        ->getDictFromDict("shippingAddress")
+                        ->billingContactItemToObjMapper
+                      let newShippingAddress =
+                        [
+                          ("state", shippingAddress.administrativeArea->JSON.Encode.string),
+                          ("country", shippingAddress.countryCode->JSON.Encode.string),
+                          ("zip", shippingAddress.postalCode->JSON.Encode.string),
+                        ]->getJsonFromArrayOfJson
+
+                      let paymentMethodType = "google_pay"->JSON.Encode.string
+
+                      let currentPaymentRequest = [
+                        (
+                          "newTransactionInfo",
+                          [
+                            (
+                              "countryCode",
+                              transactionInfo
+                              ->getString("country_code", "")
+                              ->JSON.Encode.string,
+                            ),
+                            (
+                              "currencyCode",
+                              transactionInfo
+                              ->getString("currency_code", "")
+                              ->JSON.Encode.string,
+                            ),
+                            ("totalPriceStatus", "FINAL"->JSON.Encode.string),
+                            (
+                              "totalPrice",
+                              transactionInfo
+                              ->getString("total_price", "")
+                              ->JSON.Encode.string,
+                            ),
+                          ]->getJsonFromArrayOfJson,
+                        ),
+                      ]->getJsonFromArrayOfJson
+
+                      if isTaxCalculationEnabled.contents {
+                        TaxCalculation.calculateTax(
+                          ~shippingAddress=[
+                            ("address", newShippingAddress),
+                          ]->getJsonFromArrayOfJson,
+                          ~logger,
+                          ~publishableKey,
+                          ~clientSecret,
+                          ~paymentMethodType,
+                        )->then(resp => {
+                          switch resp->TaxCalculation.taxResponseToObjMapper {
+                          | Some(taxCalculationResponse) => {
+                              let updatePaymentRequest = [
+                                (
+                                  "newTransactionInfo",
+                                  [
+                                    (
+                                      "countryCode",
+                                      shippingAddress.countryCode->JSON.Encode.string,
+                                    ),
+                                    (
+                                      "currencyCode",
+                                      transactionInfo
+                                      ->getString("currency_code", "")
+                                      ->JSON.Encode.string,
+                                    ),
+                                    ("totalPriceStatus", "FINAL"->JSON.Encode.string),
+                                    (
+                                      "totalPrice",
+                                      taxCalculationResponse.net_amount
+                                      ->minorUnitToString
+                                      ->JSON.Encode.string,
+                                    ),
+                                  ]->getJsonFromArrayOfJson,
+                                ),
+                              ]->getJsonFromArrayOfJson
+                              updatePaymentRequest->resolve
+                            }
+                          | None => currentPaymentRequest->resolve
+                          }
+                        })
+                      } else {
+                        currentPaymentRequest->resolve
+                      }
+                    }
+                    let gpayClientRequest = if componentType->getIsExpressCheckoutComponent {
                       {
                         "environment": publishableKey->String.startsWith("pk_prd_")
                           ? "PRODUCTION"
                           : "TEST",
-                      }->Identity.anyTypeToJson,
-                    )
+                        "paymentDataCallbacks": {
+                          "onPaymentDataChanged": onPaymentDataChanged,
+                        },
+                      }->Identity.anyTypeToJson
+                    } else {
+                      {
+                        "environment": publishableKey->String.startsWith("pk_prd_")
+                          ? "PRODUCTION"
+                          : "TEST",
+                      }->Identity.anyTypeToJson
+                    }
+                    let gPayClient = GooglePayType.google(gpayClientRequest)
 
                     gPayClient.isReadyToPay(payRequest)
                     ->then(res => {
@@ -874,6 +1059,7 @@ let make = (
 
                     let handleGooglePayMessages = (event: Types.event) => {
                       let evJson = event.data->anyTypeToJson
+
                       let gpayClicked =
                         evJson
                         ->getOptionalJsonFromJson("GpayClicked")

@@ -34,7 +34,6 @@ module Loader = {
             },
             borderTopStyle: {i == 0 && !layoutClass.spacedAccordionItems ? "hidden" : "solid"},
             width: "100%",
-            paddingLeft: "25px",
             marginBottom: layoutClass.spacedAccordionItems ? themeObj.spacingAccordionItem : "",
             cursor: "pointer",
           }>

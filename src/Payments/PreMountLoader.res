@@ -29,13 +29,20 @@ let useMessageHandler = getPromisesAndMessageHandler => {
 
 module PreMountLoaderForElements = {
   @react.component
-  let make = (~logger, ~publishableKey, ~clientSecret, ~endpoint, ~merchantHostname) => {
+  let make = (
+    ~logger,
+    ~publishableKey,
+    ~clientSecret,
+    ~endpoint,
+    ~merchantHostname,
+    ~customPodUri,
+  ) => {
     useMessageHandler(() => {
       let paymentMethodsPromise = PaymentHelpers.fetchPaymentMethodList(
         ~clientSecret,
         ~publishableKey,
         ~logger,
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
 
@@ -43,7 +50,7 @@ module PreMountLoaderForElements = {
         ~clientSecret,
         ~publishableKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
 
@@ -51,7 +58,7 @@ module PreMountLoaderForElements = {
         ~clientSecret,
         ~publishableKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
         ~merchantHostname,
       )
@@ -78,12 +85,12 @@ module PreMountLoaderForElements = {
 
 module PreMountLoaderForPMMElements = {
   @react.component
-  let make = (~logger, ~endpoint, ~ephemeralKey) => {
+  let make = (~logger, ~endpoint, ~ephemeralKey, ~customPodUri) => {
     useMessageHandler(() => {
       let savedPaymentMethodsPromise = PaymentHelpers.fetchSavedPaymentMethodList(
         ~ephemeralKey,
         ~optLogger=Some(logger),
-        ~switchToCustomPod=false,
+        ~customPodUri,
         ~endpoint,
       )
 
@@ -112,6 +119,7 @@ let make = (
   ~ephemeralKey,
   ~hyperComponentName: Types.hyperComponentName,
   ~merchantHostname,
+  ~customPodUri,
 ) => {
   let logger = OrcaLogger.make(
     ~sessionId,
@@ -122,8 +130,10 @@ let make = (
 
   switch hyperComponentName {
   | Elements =>
-    <PreMountLoaderForElements logger publishableKey clientSecret endpoint merchantHostname />
+    <PreMountLoaderForElements
+      logger publishableKey clientSecret endpoint merchantHostname customPodUri
+    />
   | PaymentMethodsManagementElements =>
-    <PreMountLoaderForPMMElements logger endpoint ephemeralKey />
+    <PreMountLoaderForPMMElements logger endpoint ephemeralKey customPodUri />
   }
 }

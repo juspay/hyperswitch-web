@@ -127,7 +127,7 @@ let make = (~paymentType: CardThemeType.mode) => {
         <Surcharge paymentMethod="bank_debit" paymentMethodType="ach" />
         <Terms mode=ACHBankDebit />
         <FullScreenPortal>
-          <BankDebitModal setModalData />
+          <BankDebitModal setModalData paymentType />
         </FullScreenPortal>
       </div>
     </RenderIf>

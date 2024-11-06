@@ -93,9 +93,16 @@ let make = (
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
+  let bankAccountNumberRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
+
+  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
+    userBankAccountNumber,
+    "bankAccountNumber",
+    logger,
+  )
 
   let defaultCardProps = (
     None,
@@ -109,6 +116,7 @@ let make = (
     "",
     _ => (),
     0,
+    "",
   )
 
   let defaultExpiryProps = (
@@ -163,6 +171,7 @@ let make = (
     cardError,
     _,
     maxCardLength,
+    _,
   ) = switch cardProps {
   | Some(cardProps) => cardProps
   | None => defaultCardProps
@@ -315,7 +324,6 @@ let make = (
       (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
-  let spacedStylesForCity = isSpacedInnerLayout ? "p-2" : ""
 
   <RenderIf condition={fieldsArr->Array.length > 0}>
     {<>
@@ -461,6 +469,34 @@ let make = (
           | PixKey => <PixPaymentInput label="pixKey" />
           | PixCPF => <PixPaymentInput label="pixCPF" />
           | PixCNPJ => <PixPaymentInput label="pixCNPJ" />
+          | BankAccountNumber | IBAN =>
+            <PaymentField
+              fieldName="IBAN"
+              setValue={setBankAccountNumber}
+              value=bankAccountNumber
+              onChange={ev => {
+                let value = ReactEvent.Form.target(ev)["value"]
+                setBankAccountNumber(_ => {
+                  isValid: Some(value !== ""),
+                  value,
+                  errorString: value !== "" ? "" : localeString.ibanEmptyText,
+                })
+              }}
+              onBlur={ev => {
+                let value = ReactEvent.Focus.target(ev)["value"]
+                setBankAccountNumber(prev => {
+                  ...prev,
+                  errorString: value !== "" ? "" : localeString.ibanEmptyText,
+                  isValid: Some(value !== ""),
+                })
+              }}
+              paymentType
+              type_="text"
+              name="bankAccountNumber"
+              maxLength=42
+              inputRef=bankAccountNumberRef
+              placeholder="DE00 0000 0000 0000 0000 00"
+            />
           | Email
           | InfoElement
           | Country
@@ -509,9 +545,10 @@ let make = (
             {React.string(localeString.billingDetailsText)}
           </div>
           <div
-            className={`${spacedStylesForCity} flex flex-col ${isSpacedInnerLayout
-                ? "gap-2"
-                : ""}`}>
+            className={`flex flex-col`}
+            style={
+              gap: isSpacedInnerLayout ? themeObj.spacingGridRow : "",
+            }>
             {dynamicFieldsToRenderInsideBilling
             ->Array.mapWithIndex((item, index) => {
               <div
@@ -522,7 +559,7 @@ let make = (
                 | Email => <EmailPaymentInput paymentType />
                 | PhoneNumber => <PhoneNumberPaymentInput />
                 | StateAndCity =>
-                  <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""} overflow-hidden`}>
                     <PaymentField
                       fieldName=localeString.cityLabel
                       setValue={setCity}
@@ -530,7 +567,7 @@ let make = (
                       onChange={ev => {
                         let value = ReactEvent.Form.target(ev)["value"]
                         setCity(prev => {
-                          isValid: value !== "" ? Some(true) : Some(false),
+                          isValid: Some(value !== ""),
                           value,
                           errorString: value !== "" ? "" : prev.errorString,
                         })
@@ -567,7 +604,7 @@ let make = (
                 | CountryAndPincode(countryArr) =>
                   let updatedCountryArray =
                     countryArr->DropdownField.updateArrayOfStringToOptionsTypeArray
-                  <div className={`flex ${isSpacedInnerLayout ? "gap-1" : ""}`}>
+                  <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""}`}>
                     <DropdownField
                       appearance=config.appearance
                       fieldName=localeString.countryLabel
@@ -604,7 +641,7 @@ let make = (
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
                       setLine1(prev => {
-                        isValid: value !== "" ? Some(true) : Some(false),
+                        isValid: Some(value !== ""),
                         value,
                         errorString: value !== "" ? "" : prev.errorString,
                       })
@@ -631,7 +668,7 @@ let make = (
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
                       setLine2(prev => {
-                        isValid: value !== "" ? Some(true) : Some(false),
+                        isValid: Some(value !== ""),
                         value,
                         errorString: value !== "" ? "" : prev.errorString,
                       })
@@ -657,7 +694,7 @@ let make = (
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
                       setCity(prev => {
-                        isValid: value !== "" ? Some(true) : Some(false),
+                        isValid: Some(value !== ""),
                         value,
                         errorString: value !== "" ? "" : prev.errorString,
                       })
@@ -775,6 +812,8 @@ let make = (
                 | PhoneCountryCode
                 | VpaId
                 | LanguagePreference(_)
+                | BankAccountNumber
+                | IBAN
                 | None => React.null
                 }}
               </div>

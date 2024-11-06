@@ -21,6 +21,10 @@ let make = () => {
     }
   }
 
+  let eventsToSendToParent = ["confirmParams", "poll_status", "openurl_if_required"]
+
+  eventsToSendToParent->UtilityHooks.useSendEventsToParent
+
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
@@ -141,7 +145,13 @@ let make = () => {
     <div className="backdrop-blur-xl">
       <div id="threeDsAuthDiv" className="hidden" />
       <iframe
-        id="threeDsAuthFrame" name="threeDsAuthFrame" style={minHeight: "500px"} width="100%"
+        id="threeDsAuthFrame"
+        name="threeDsAuthFrame"
+        style={
+          minHeight: "500px",
+          outline: "none",
+        }
+        width="100%"
       />
     </div>
   </Modal>

@@ -33,13 +33,12 @@ let make = (
       ->Option.getOr([])
       ->JSON.Encode.array
 
-    let switchToCustomPod =
-      GlobalVars.isInteg &&
+    let customPodUri =
       options
       ->JSON.Decode.object
-      ->Option.flatMap(x => x->Dict.get("switchToCustomPod"))
-      ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(false)
+      ->Option.flatMap(x => x->Dict.get("customPodUri"))
+      ->Option.flatMap(JSON.Decode.string)
+      ->Option.getOr("")
 
     let localSelectorString = "hyper-preMountLoader-iframe"
     let mountPreMountLoaderIframe = () => {
@@ -57,6 +56,7 @@ let make = (
           src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&ephemeralKey=${ephemeralKey}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}"
           allow="*"
           name="orca-payment"
+          style="outline: none;"
         ></iframe>
         </div>`
         let iframeDiv = Window.createElement("div")
@@ -190,7 +190,7 @@ let make = (
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
-            ("switchToCustomPod", switchToCustomPod->JSON.Encode.bool),
+            ("customPodUri", customPodUri->JSON.Encode.string),
             ("parentURL", "*"->JSON.Encode.string),
             ("analyticsMetadata", analyticsMetadata),
             ("launchTime", launchTime->JSON.Encode.float),

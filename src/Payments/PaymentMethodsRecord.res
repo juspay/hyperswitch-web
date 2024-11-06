@@ -44,6 +44,8 @@ type paymentMethodsFields =
   | PixCPF
   | PixCNPJ
   | LanguagePreference(array<string>)
+  | BankAccountNumber
+  | IBAN
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -123,9 +125,7 @@ let defaultPaymentMethodFields = {
   miniIcon: None,
 }
 
-let icon = (~size=22, ~width=size, name) => {
-  <Icon size width name />
-}
+let icon = (~size=22, ~width=size, name) => <Icon size width name />
 
 let paymentMethodsFields = [
   {
@@ -182,6 +182,13 @@ let paymentMethodsFields = [
     fields: [InfoElement],
     icon: Some(icon("wechatpay", ~size=19)),
     displayName: "WeChat",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "duit_now",
+    fields: [InfoElement],
+    icon: Some(icon("duitNow", ~size=20)),
+    displayName: "DuitNow",
     miniIcon: None,
   },
   {
@@ -530,8 +537,8 @@ let paymentMethodsFields = [
   {
     paymentMethodName: "local_bank_transfer_transfer",
     fields: [InfoElement],
-    icon: Some(icon("bank", ~size=19)),
-    displayName: "Local Bank Transfer",
+    icon: Some(icon("union-pay", ~size=19, ~width=30)),
+    displayName: "Union Pay",
     miniIcon: None,
   },
   {
@@ -588,6 +595,8 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_cpf", _) => PixCPF
   | ("user_cnpj", _) => PixCNPJ
   | ("user_pix_key", _) => PixKey
+  | ("user_bank_account_number", _) => BankAccountNumber
+  | ("user_iban", _) => BankAccountNumber
   | _ => None
   }
 }
@@ -670,6 +679,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "afterpay_clearpay",
   "mifinity",
   "upi_collect",
+  "sepa",
 ]
 
 let getIsBillingField = requiredFieldType => {
@@ -806,6 +816,7 @@ type paymentMethodList = {
   payment_type: payment_type,
   merchant_name: string,
   collect_billing_details_from_wallets: bool,
+  is_tax_calculation_enabled: bool,
 }
 
 let defaultPaymentMethodType = {
@@ -828,6 +839,7 @@ let defaultList = {
   payment_type: NONE,
   merchant_name: "",
   collect_billing_details_from_wallets: true,
+  is_tax_calculation_enabled: false,
 }
 
 let getPaymentExperienceType = str => {
@@ -1027,6 +1039,7 @@ let itemToObjMapper = dict => {
       "collect_billing_details_from_wallets",
       true,
     ),
+    is_tax_calculation_enabled: getBool(dict, "is_tax_calculation_enabled", false),
   }
 }
 
