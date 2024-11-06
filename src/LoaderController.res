@@ -9,6 +9,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
+  let (_, setUseTopRedirection) = Recoil.useRecoilState(useTopRedirectionAtom)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
@@ -275,6 +276,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 })
                 logger.setClientSecret(clientSecret)
 
+                // Update useTopRedirectionAtom
+                paymentOptions
+                ->Dict.get("useTopRedirection")
+                ->Option.flatMap(JSON.Decode.bool)
+                ->Option.map(useTop => setUseTopRedirection(_ => useTop))
+                ->ignore
+
                 switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
                   promise->then(res => {
@@ -321,6 +329,13 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               ephemeralKey,
             })
             logger.setClientSecret(clientSecret)
+
+            // Update useTopRedirectionAtom
+            paymentOptions
+            ->Dict.get("useTopRedirection")
+            ->Option.flatMap(JSON.Decode.bool)
+            ->Option.map(useTop => setUseTopRedirection(_ => useTop))
+            ->ignore
 
             switch getThemePromise(paymentOptions) {
             | Some(promise) =>

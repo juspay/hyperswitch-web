@@ -319,6 +319,7 @@ let rec intentCall = (
   ~isPaymentSession=false,
   ~isCallbackUsedVal=?,
   ~componentName="payment",
+  ~useTopRedirection,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
@@ -346,7 +347,7 @@ let rec intentCall = (
   )
   let handleOpenUrl = url => {
     if isPaymentSession {
-      Window.replaceRootHref(url)
+      Window.replaceRootHref(url, useTopRedirection)
     } else {
       openUrl(url)
     }
@@ -472,6 +473,7 @@ let rec intentCall = (
                 ~sdkHandleOneClickConfirmPayment,
                 ~counter=counter + 1,
                 ~componentName,
+                ~useTopRedirection,
               )
               ->then(
                 res => {
@@ -899,6 +901,7 @@ let rec intentCall = (
             ~counter=counter + 1,
             ~isPaymentSession,
             ~componentName,
+            ~useTopRedirection,
           )
           ->then(
             res => {
@@ -929,6 +932,7 @@ let usePaymentSync = (optLogger: option<HyperLogger.loggerMake>, paymentType: pa
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let useTopRedirection = Recoil.useRecoilValueFromAtom(useTopRedirectionAtom)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="") => {
     switch keys.clientSecret {
@@ -956,6 +960,7 @@ let usePaymentSync = (optLogger: option<HyperLogger.loggerMake>, paymentType: pa
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
           ~isCallbackUsedVal,
+          ~useTopRedirection,
         )->ignore
       }
       switch paymentMethodList {
@@ -1003,6 +1008,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let useTopRedirection = Recoil.useRecoilValueFromAtom(useTopRedirectionAtom)
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (
@@ -1098,6 +1104,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~counter=0,
             ~isCallbackUsedVal,
             ~componentName,
+            ~useTopRedirection,
           )
           ->then(val => {
             intentCallback(val)
@@ -1183,6 +1190,7 @@ let useCompleteAuthorize = (optLogger: option<HyperLogger.loggerMake>, paymentTy
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   let url = RescriptReactRouter.useUrl()
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let useTopRedirection = Recoil.useRecoilValueFromAtom(useTopRedirectionAtom)
   let paymentTypeFromUrl =
     CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
   (
@@ -1227,6 +1235,7 @@ let useCompleteAuthorize = (optLogger: option<HyperLogger.loggerMake>, paymentTy
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
           ~isCallbackUsedVal,
+          ~useTopRedirection,
         )->ignore
       }
       switch paymentMethodList {
@@ -1648,6 +1657,8 @@ let paymentIntentForPaymentSession = (
 
   let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
 
+  let useTopRedirection = Recoil.useRecoilValueFromAtom(RecoilAtoms.useTopRedirectionAtom)
+
   let bodyStr =
     body
     ->Array.concatMany([
@@ -1675,6 +1686,7 @@ let paymentIntentForPaymentSession = (
     ~sdkHandleOneClickConfirmPayment=false,
     ~counter=0,
     ~isPaymentSession=true,
+    ~useTopRedirection,
   )
 }
 
@@ -2111,6 +2123,7 @@ let usePostSessionTokens = (
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let useTopRedirection = Recoil.useRecoilValueFromAtom(RecoilAtoms.useTopRedirectionAtom)
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (
@@ -2202,6 +2215,7 @@ let usePostSessionTokens = (
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
+          ~useTopRedirection,
         )
         ->then(val => {
           intentCallback(val)

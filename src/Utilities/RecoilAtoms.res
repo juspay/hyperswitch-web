@@ -12,6 +12,7 @@ let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
 let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
+let useTopRedirectionAtom = Recoil.atom("useTopRedirection", false)
 let paymentTokenAtom = Recoil.atom(
   "paymentToken",
   {

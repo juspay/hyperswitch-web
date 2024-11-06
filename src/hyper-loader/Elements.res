@@ -20,6 +20,7 @@ let make = (
   ~logger: option<HyperLogger.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
+  ~useTopRedirection,
 ) => {
   try {
     let iframeRef = []
@@ -310,6 +311,7 @@ let make = (
             ("locale", locale),
             ("loader", loader),
             ("fonts", fonts),
+            ("useTopRedirection", useTopRedirection->JSON.Encode.bool),
           ]->getJsonFromArrayOfJson
         let message = [
           (
@@ -667,7 +669,7 @@ let make = (
             let returnUrl = dict->getString("return_url", "")
             let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`
             if redirect.contents === "always" {
-              Window.replaceRootHref(redirectUrl)
+              Window.replaceRootHref(redirectUrl, useTopRedirection)
               resolve(JSON.Encode.null)
             } else {
               messageCurrentWindow([
@@ -695,7 +697,7 @@ let make = (
 
               let handleErrorResponse = err => {
                 if redirect.contents === "always" {
-                  Window.replaceRootHref(url)
+                  Window.replaceRootHref(url, useTopRedirection)
                 }
                 messageCurrentWindow([
                   ("submitSuccessful", false->JSON.Encode.bool),
@@ -756,7 +758,10 @@ let make = (
             ->then(json => json->handleRetrievePaymentResponse)
             ->catch(err => {
               if redirect.contents === "always" {
-                Window.replaceRootHref(redirectUrl->JSON.Decode.string->Option.getOr(""))
+                Window.replaceRootHref(
+                  redirectUrl->JSON.Decode.string->Option.getOr(""),
+                  useTopRedirection,
+                )
                 resolve(JSON.Encode.null)
               } else {
                 messageCurrentWindow([
@@ -1157,6 +1162,7 @@ let make = (
         setElementIframeRef,
         iframeRef,
         mountPostMessage,
+        ~useTopRedirection,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

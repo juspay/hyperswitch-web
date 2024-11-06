@@ -15,6 +15,7 @@ let make = (
   iframeRef,
   mountPostMessage,
   ~isPaymentManagementElement=false,
+  ~useTopRedirection,
 ) => {
   try {
     let mountId = ref("")
@@ -243,7 +244,7 @@ let make = (
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
             let url = val->getStringFromJson("")
-            Window.replaceRootHref(url)
+            Window.replaceRootHref(url, useTopRedirection)
           }
         | None => ()
         }
