@@ -1,6 +1,9 @@
 @val external document: 'a = "document"
 @val external window: Dom.element = "window"
 @val @scope("window") external iframeParent: Dom.element = "parent"
+@send external body: ('a, Dom.element) => Dom.element = "body"
+
+@val @scope("window") external topParent: Dom.element = "top"
 type event = {data: string}
 external dictToObj: Dict.t<'a> => {..} = "%identity"
 
@@ -16,16 +19,31 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
 open ErrorUtils
+
+let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
+
+let messageWindow = (window, ~targetOrigin="*", messageArr) => {
+  window->postMessage(messageArr->getJsonFromArrayOfJson, targetOrigin)
+}
+
+let messageTopWindow = (~targetOrigin="*", messageArr) => {
+  topParent->messageWindow(~targetOrigin, messageArr)
+}
+
 let messageParentWindow = (~targetOrigin="*", messageArr) => {
-  iframeParent->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+  iframeParent->messageWindow(~targetOrigin, messageArr)
 }
 
 let messageCurrentWindow = (~targetOrigin="*", messageArr) => {
-  window->postMessage(messageArr->Dict.fromArray->JSON.Encode.object, targetOrigin)
+  window->messageWindow(~targetOrigin, messageArr)
 }
 
 let handleOnFocusPostMessage = (~targetOrigin="*") => {
   messageParentWindow([("focus", true->JSON.Encode.bool)], ~targetOrigin)
+}
+
+let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
+  messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnBlurPostMessage = (~targetOrigin="*") => {
@@ -301,13 +319,12 @@ let getFailedSubmitResponse = (~errorType, ~message) => {
   [
     (
       "error",
-      [("type", errorType->JSON.Encode.string), ("message", message->JSON.Encode.string)]
-      ->Dict.fromArray
-      ->JSON.Encode.object,
+      [
+        ("type", errorType->JSON.Encode.string),
+        ("message", message->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson,
     ),
-  ]
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ]->getJsonFromArrayOfJson
 }
 
 let toCamelCase = str => {
@@ -369,8 +386,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
     }
     x
   })
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ->getJsonFromArrayOfJson
 }
 
 let getClientCountry = clientTimeZone => {
@@ -673,7 +689,7 @@ let handlePostMessageEvents = (
   ~complete,
   ~empty,
   ~paymentType,
-  ~loggerState: OrcaLogger.loggerMake,
+  ~loggerState: HyperLogger.loggerMake,
   ~savedMethod=false,
 ) => {
   if complete && paymentType !== "" {
@@ -685,7 +701,7 @@ let handlePostMessageEvents = (
     ("elementType", "payment"->JSON.Encode.string),
     ("complete", complete->JSON.Encode.bool),
     ("empty", empty->JSON.Encode.bool),
-    ("value", [("type", paymentType->JSON.Encode.string)]->Dict.fromArray->JSON.Encode.object),
+    ("value", [("type", paymentType->JSON.Encode.string)]->getJsonFromArrayOfJson),
   ])
 }
 
@@ -810,14 +826,15 @@ let delay = timeOut => {
     }, timeOut)->ignore
   })
 }
+
 let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
   let headerObj =
     [
       ("Content-Type", "application/json"),
       ("X-Client-Version", Window.version),
       ("X-Payment-Confirm-Source", "sdk"),
-      ("X-Browser-Name", OrcaLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
-      ("X-Browser-Version", OrcaLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+      ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+      ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
       ("X-Client-Platform", "web"),
     ]->Dict.fromArray
 
@@ -832,6 +849,33 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
   })
   Fetch.Headers.fromObject(headerObj->dictToObj)
 }
+
+let formatException = exc =>
+  switch exc {
+  | Exn.Error(obj) =>
+    let message = Exn.message(obj)
+    let name = Exn.name(obj)
+    let stack = Exn.stack(obj)
+    let fileName = Exn.fileName(obj)
+
+    if (
+      message->Option.isSome ||
+      name->Option.isSome ||
+      stack->Option.isSome ||
+      fileName->Option.isSome
+    ) {
+      [
+        ("message", message->Option.getOr("Unknown Error")->JSON.Encode.string),
+        ("type", name->Option.getOr("Unknown")->JSON.Encode.string),
+        ("stack", stack->Option.getOr("Unknown")->JSON.Encode.string),
+        ("fileName", fileName->Option.getOr("Unknown")->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson
+    } else {
+      exc->Identity.anyTypeToJson
+    }
+  | _ => exc->Identity.anyTypeToJson
+  }
+
 let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method) => {
   open Promise
   let body = switch method {
@@ -860,9 +904,6 @@ let arrayJsonToCamelCase = arr => {
   arr->Array.map(item => {
     item->transformKeys(CamelCase)
   })
-}
-let formatException = exc => {
-  exc->Identity.anyTypeToJson
 }
 
 let getArrayValFromJsonDict = (dict, key, arrayKey) => {
@@ -983,8 +1024,7 @@ let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
   dict1
   ->Dict.toArray
   ->Array.concat(dict2->Dict.toArray)
-  ->Dict.fromArray
-  ->JSON.Encode.object
+  ->getJsonFromArrayOfJson
   ->unflattenObject
 }
 
@@ -1148,6 +1188,7 @@ let eventHandlerFunc = (
       | Click
       | Ready
       | Focus
+      | CompleteDoThis
       | ConfirmPayment
       | OneClickConfirmPayment
       | Blur =>
@@ -1207,25 +1248,25 @@ let getThemePromise = dict => {
   }
 }
 
-let makeOneClickHandlerPromise = sdkHandleOneClickConfirmPayment => {
-  open EventListenerManager
+let makeOneClickHandlerPromise = sdkHandleIsThere => {
   Promise.make((resolve, _) => {
-    if sdkHandleOneClickConfirmPayment {
+    if !sdkHandleIsThere {
       resolve(JSON.Encode.bool(true))
     } else {
-      let handleMessage = (event: Types.event) => {
+      let handleMessage = (event: Window.event) => {
         let json = try {
-          event.data->anyTypeToJson
+          event.data->safeParse
         } catch {
         | _ => JSON.Encode.null
         }
 
         let dict = json->getDictFromJson
-        if dict->Dict.get("oneClickDoSubmit")->Option.isSome {
-          resolve(dict->Dict.get("oneClickDoSubmit")->Option.getOr(true->JSON.Encode.bool))
+
+        if dict->Dict.get("walletClickEvent")->Option.isSome {
+          resolve(dict->Dict.get("walletClickEvent")->Option.getOr(true->JSON.Encode.bool))
         }
       }
-      addSmartEventListener("message", handleMessage, "onOneClickHandlerPaymentConfirm")
+      Window.addEventListener("message", handleMessage)
       handleOnConfirmPostMessage(~targetOrigin="*", ~isOneClick=true)
     }
   })
@@ -1282,8 +1323,6 @@ let getIsWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
 }
 
 let getUniqueArray = arr => arr->Array.map(item => (item, ""))->Dict.fromArray->Dict.keysToArray
-
-let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
 
 let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, country: string) => {
   let options =

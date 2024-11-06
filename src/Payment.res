@@ -18,7 +18,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-
   let {iframeId} = keys
 
   let (cardNumber, setCardNumber) = React.useState(_ => "")
@@ -56,6 +55,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let (cardBrand, setCardBrand) = React.useState(_ =>
     !showFields && isNotBancontact ? cardScheme : cardBrand
   )
+
+  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showFields)
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
@@ -100,6 +101,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       setDisplayPincode(_ => false)
     }
     setCardNumber(_ => card)
+    if card->String.length == 0 {
+      setIsCardValid(_ => Some(false))
+    }
   }
 
   let changeCardExpiry = ev => {
@@ -150,7 +154,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
       setIsCardValid(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
     } else if cardNumber->String.length == 0 {
-      setIsCardValid(_ => None)
+      setIsCardValid(_ => Some(false))
     } else {
       setIsCardValid(_ => Some(false))
     }
@@ -324,12 +328,17 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
   React.useEffect(() => {
-    let cardError = if isCardSupported->Option.getOr(true) && isCardValid->Option.getOr(true) {
+    let cardError = if isCardValid == None || cardNumber->String.length == 0 {
+      ""
+    } else if isCardSupported->Option.getOr(true) && isCardValid->Option.getOr(true) {
       ""
     } else if isCardSupported->Option.getOr(true) {
       localeString.inValidCardErrorText
     } else {
-      localeString.cardBrandConfiguredErrorText(cardBrand)
+      switch cardNumber->CardUtils.getCardBrand {
+      | "" => localeString.inValidCardErrorText
+      | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)
+      }
     }
     setCardError(_ => cardError)
     None

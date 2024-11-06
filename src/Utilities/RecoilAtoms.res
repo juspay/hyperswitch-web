@@ -7,7 +7,7 @@ let elementOptions = Recoil.atom("elementOptions", ElementType.defaultOptions)
 let optionAtom = Recoil.atom("options", PaymentType.defaultOptions)
 let sessions = Recoil.atom("sessions", PaymentType.Loading)
 let paymentMethodList = Recoil.atom("paymentMethodList", PaymentType.Loading)
-let loggerAtom = Recoil.atom("component", OrcaLogger.defaultLoggerConfig)
+let loggerAtom = Recoil.atom("component", HyperLogger.defaultLoggerConfig)
 let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
 let customPodUri = Recoil.atom("customPodUri", "")
@@ -73,6 +73,9 @@ let userVpaId = Recoil.atom("userVpaId", defaultFieldValues)
 let userPixKey = Recoil.atom("userPixKey", defaultFieldValues)
 let userPixCPF = Recoil.atom("userPixCPF", defaultFieldValues)
 let userPixCNPJ = Recoil.atom("userPixCNPJ", defaultFieldValues)
+let isCompleteCallbackUsed = Recoil.atom("isCompleteCallbackUsed", false)
+let isPaymentButtonHandlerProvidedAtom = Recoil.atom("isPaymentButtonHandlerProvidedAtom", false)
+let userBankAccountNumber = Recoil.atom("userBankAccountNumber", defaultFieldValues)
 
 type areOneClickWalletsRendered = {
   isGooglePay: bool,

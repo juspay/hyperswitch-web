@@ -26,6 +26,7 @@ type style
 external querySelector: string => Nullable.t<Dom.element> = "querySelector"
 @val @scope("document")
 external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
+@send external getAttribute: (Dom.element, string) => option<string> = "getAttribute"
 
 type eventData = {
   elementType: string,
@@ -44,6 +45,7 @@ external addEventListener: (string, _ => unit) => unit = "addEventListener"
 @val @scope("window")
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
 @send external postMessage: (Dom.element, string, string) => unit = "postMessage"
+@send external postMessageJSON: (Dom.element, JSON.t, string) => unit = "postMessage"
 @send
 external getElementById: (document, string) => Nullable.t<Dom.element> = "getElementById"
 @get
@@ -60,6 +62,10 @@ external style: Dom.element => style = "style"
 
 let sendPostMessage = (element, message) => {
   element->postMessage(message->JSON.Encode.object->JSON.stringify, GlobalVars.targetOrigin)
+}
+
+let sendPostMessageJSON = (element, message) => {
+  element->postMessageJSON(message, GlobalVars.targetOrigin)
 }
 
 let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {

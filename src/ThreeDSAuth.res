@@ -8,7 +8,7 @@ let make = () => {
   let threeDsAuthoriseUrl = React.useRef("")
   let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
-  let logger = OrcaLogger.make(~source=Elements(Payment))
+  let logger = HyperLogger.make(~source=Elements(Payment))
 
   let handleFrictionLess = () => {
     let ele = Window.querySelector("#threeDsAuthDiv")
@@ -145,7 +145,13 @@ let make = () => {
     <div className="backdrop-blur-xl">
       <div id="threeDsAuthDiv" className="hidden" />
       <iframe
-        id="threeDsAuthFrame" name="threeDsAuthFrame" style={minHeight: "500px"} width="100%"
+        id="threeDsAuthFrame"
+        name="threeDsAuthFrame"
+        style={
+          minHeight: "500px",
+          outline: "none",
+        }
+        width="100%"
       />
     </div>
   </Modal>

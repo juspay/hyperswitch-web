@@ -5,9 +5,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let {publishableKey, sdkHandleOneClickConfirmPayment} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.keys,
+  let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
   )
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
   let (showApplePay, setShowApplePay) = React.useState(() => false)
@@ -212,7 +213,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
       ~paymentMethod="APPLE_PAY",
     )
     setApplePayClicked(_ => true)
-    makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
+    makeOneClickHandlerPromise(sdkHandleIsThere)
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
@@ -241,7 +242,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
               ~isManualRetryEnabled,
             )
           } else {
-            ApplePayHelpers.handleApplePayButtonClicked(~sessionObj, ~componentName, ~paymentMethodListValue)
+            ApplePayHelpers.handleApplePayButtonClicked(
+              ~sessionObj,
+              ~componentName,
+              ~paymentMethodListValue,
+            )
           }
         } else {
           let bodyDict = PaymentBody.applePayRedirectBody(~connectors)

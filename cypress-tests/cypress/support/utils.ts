@@ -6,6 +6,16 @@ export const getClientURL = (clientSecret, publishableKey) => {
   return `${CLIENT_BASE_URL}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
 }
 
+export const enum connectorEnum{
+  TRUSTPAY,
+  ADYEN,
+  STRIPE
+}
+export const connectorProfileIdMapping = new Map<connectorEnum, string>([
+  [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
+  [connectorEnum.ADYEN, "pro_Kvqzu8WqBZsT1OjHlCj4"],
+  [connectorEnum.STRIPE, "pro_5fVcCxU8MFTYozgtf0P8"],
+]);
 
 export const createPaymentBody = {
   currency: "USD",
@@ -116,3 +126,5 @@ export const confirmBody = {
 export const stripeTestCard = "4000000000003220";
 export const adyenTestCard = "4917610000000000";
 export const bluesnapTestCard = "4000000000001091";
+export const amexTestCard = "378282246310005"
+export const visaTestCard = "4242424242424242";

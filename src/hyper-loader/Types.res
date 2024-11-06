@@ -4,6 +4,7 @@ type eventData = {
   blur: bool,
   ready: bool,
   clickTriggered: bool,
+  completeDoThis: bool,
   elementType: string,
   classChange: bool,
   newClassType: string,
@@ -30,6 +31,7 @@ type paymentElement = {
   mount: string => unit,
   focus: unit => unit,
   clear: unit => unit,
+  onSDKHandleClick: option<unit => Promise.t<unit>> => unit,
 }
 
 type element = {
@@ -106,6 +108,8 @@ let fetchUpdates = () => {
     setTimeout(() => resolve(Dict.make()->JSON.Encode.object), 1000)->ignore
   })
 }
+
+let fnArgument = Some(() => Promise.make((_, _) => {()}))
 let defaultPaymentElement = {
   on: (_str, _func) => (),
   collapse: () => (),
@@ -116,6 +120,7 @@ let defaultPaymentElement = {
   mount: _string => (),
   focus: () => (),
   clear: () => (),
+  onSDKHandleClick: fnArgument => (),
 }
 
 let create = (_componentType, _options) => {
@@ -184,7 +189,16 @@ let defaultHyperInstance = {
 }
 
 type eventType =
-  Escape | Change | Click | Ready | Focus | Blur | ConfirmPayment | OneClickConfirmPayment | None
+  | Escape
+  | Change
+  | Click
+  | Ready
+  | Focus
+  | Blur
+  | CompleteDoThis
+  | ConfirmPayment
+  | OneClickConfirmPayment
+  | None
 
 let eventTypeMapper = event => {
   switch event {
@@ -192,6 +206,7 @@ let eventTypeMapper = event => {
   | "change" => Change
   | "clickTriggered" => Click
   | "ready" => Ready
+  | "completeDoThis" => CompleteDoThis
   | "focus" => Focus
   | "blur" => Blur
   | "confirmTriggered" => ConfirmPayment

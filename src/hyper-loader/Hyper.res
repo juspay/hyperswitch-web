@@ -60,6 +60,80 @@ let preloader = () => {
   preloadFile(~type_="script", ~href="https://js.braintreegateway.com/web/3.88.4/js/client.min.js")
 }
 
+let handleHyperApplePayMounted = (event: Types.event) => {
+  open ApplePayTypes
+  let json = event.data->anyTypeToJson
+  let dict = json->getDictFromJson
+  let applePaySessionRef = ref(Nullable.null)
+
+  let componentName = dict->getString("componentName", "payment")
+
+  if dict->Dict.get("hyperApplePayCanMakePayments")->Option.isSome {
+    let msg =
+      [
+        ("applePayCanMakePayments", true->JSON.Encode.bool),
+        ("componentName", componentName->JSON.Encode.string),
+      ]
+      ->Dict.fromArray
+      ->JSON.Encode.object
+    event.source->Window.sendPostMessageJSON(msg)
+  } else if dict->Dict.get("hyperApplePayButtonClicked")->Option.isSome {
+    let paymentRequest = dict->Dict.get("paymentRequest")->Option.getOr(JSON.Encode.null)
+    let applePayPresent = dict->Dict.get("applePayPresent")
+    let clientSecret = dict->getString("clientSecret", "")
+    let publishableKey = dict->getString("publishableKey", "")
+    let isTaxCalculationEnabled = dict->getBool("isTaxCalculationEnabled", false)
+    let sdkSessionId = dict->getString("sdkSessionId", "")
+    let analyticsMetadata = dict->getJsonFromDict("analyticsMetadata", JSON.Encode.null)
+
+    let logger = HyperLogger.make(
+      ~sessionId=sdkSessionId,
+      ~source=Loader,
+      ~merchantId=publishableKey,
+      ~metadata=analyticsMetadata,
+      ~clientSecret,
+    )
+
+    let callBackFunc = payment => {
+      let msg =
+        [
+          ("applePayPaymentToken", payment.token),
+          ("applePayBillingContact", payment.billingContact),
+          ("applePayShippingContact", payment.shippingContact),
+          ("componentName", componentName->JSON.Encode.string),
+        ]
+        ->Dict.fromArray
+        ->JSON.Encode.object
+      event.source->Window.sendPostMessageJSON(msg)
+    }
+
+    let resolvePromise = _ => {
+      let msg =
+        [
+          ("showApplePayButton", true->JSON.Encode.bool),
+          ("componentName", componentName->JSON.Encode.string),
+        ]
+        ->Dict.fromArray
+        ->JSON.Encode.object
+      event.source->Window.sendPostMessageJSON(msg)
+    }
+
+    ApplePayHelpers.startApplePaySession(
+      ~paymentRequest,
+      ~applePaySessionRef,
+      ~applePayPresent,
+      ~logger,
+      ~callBackFunc,
+      ~clientSecret,
+      ~publishableKey,
+      ~isTaxCalculationEnabled,
+      ~resolvePromise,
+    )
+  }
+}
+
+addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMount")
+
 let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
     let isPreloadEnabled =
@@ -81,7 +155,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     let sessionID =
       analyticsInfoDict->getString("sessionID", "hyp_" ++ Utils.generateRandomString(8))
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
-    let logger = OrcaLogger.make(
+    let logger = HyperLogger.make(
       ~sessionId=sessionID,
       ~source=Loader,
       ~merchantId=publishableKey,

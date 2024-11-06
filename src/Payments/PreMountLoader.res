@@ -19,7 +19,7 @@ let make = (
     false
   )
   let (sessionTokensResponseSent, setSessionTokensResponseSent) = React.useState(_ => false)
-  let logger = OrcaLogger.make(
+  let logger = HyperLogger.make(
     ~sessionId,
     ~source=Loader,
     ~merchantId=publishableKey,
