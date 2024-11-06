@@ -1,29 +1,44 @@
 let sendPromiseData = (promise, key) => {
-  open Promise
-  promise
-  ->then(res => resolve(res))
-  ->catch(_ => resolve(JSON.Encode.null))
-  ->thenResolve(response => {
+  let asyncOperation = async () => {
+    let response = try {
+      await promise
+    } catch {
+    | _ => JSON.Encode.null
+    }
     Utils.messageParentWindow([("response", response), ("data", key->JSON.Encode.string)])
-  })
-  ->ignore
+  }
+
+  asyncOperation()->ignore
 }
-
 let useMessageHandler = getPromisesAndMessageHandler => {
-  React.useEffect0(() => {
-    let (promises, messageHandler) = getPromisesAndMessageHandler()
-
-    open Promise
-    Promise.all(promises)
-    ->thenResolve(_ => {
-      Utils.messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
-      Window.removeEventListener("message", messageHandler)
-    })
-    ->ignore
-
+  let cleanup = messageHandler => {
+    Utils.messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
+    Window.removeEventListener("message", messageHandler)
+  }
+  let setup = messageHandler => {
     Utils.messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
     Window.addEventListener("message", messageHandler)
-    Some(() => Window.removeEventListener("message", messageHandler))
+  }
+
+  React.useEffect0(() => {
+    let (promises, messageHandler) = getPromisesAndMessageHandler()
+    setup(messageHandler)
+
+    (
+      async () => {
+        try {
+          let _ = await Promise.all(promises)
+          cleanup(messageHandler)
+        } catch {
+        | error => {
+            Console.error2("Error in useMessageHandler:", error)
+            cleanup(messageHandler)
+          }
+        }
+      }
+    )()->ignore
+
+    Some(() => cleanup(messageHandler))
   })
 }
 
