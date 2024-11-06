@@ -1,15 +1,8 @@
 open Utils
 open Identity
-
-@val @scope(("window", "parent", "location")) external href: string = "href"
-
-type searchParams = {set: (string, string) => unit}
-type url = {searchParams: searchParams, href: string}
-@new external urlSearch: string => url = "URL"
-
+open PaymentHelpersTypes
 open LoggerUtils
-type payment =
-  Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Paze | Other
+open URLModule
 
 let getPaymentType = paymentMethodType =>
   switch paymentMethodType {
@@ -24,23 +17,6 @@ let getPaymentType = paymentMethodType =>
   }
 
 let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-
-type paymentIntent = (
-  ~handleUserError: bool=?,
-  ~bodyArr: array<(string, JSON.t)>,
-  ~confirmParam: ConfirmType.confirmParams,
-  ~iframeId: string=?,
-  ~isThirdPartyFlow: bool=?,
-  ~intentCallback: Core__JSON.t => unit=?,
-  ~manualRetry: bool=?,
-) => unit
-
-type completeAuthorize = (
-  ~handleUserError: bool=?,
-  ~bodyArr: array<(string, JSON.t)>,
-  ~confirmParam: ConfirmType.confirmParams,
-  ~iframeId: string=?,
-) => unit
 
 let retrievePaymentIntent = (
   clientSecret,
@@ -360,10 +336,10 @@ let rec intentCall = (
   )
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString
-    let url = urlSearch(confirmParam.return_url)
+    let url = makeUrl(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
-    messageParentWindow([("confirmParams", confirmParam->Identity.anyTypeToJson)])
+    messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
     if statusCode->String.charAt(0) !== "2" {
       res
@@ -506,7 +482,7 @@ let rec intentCall = (
             | _ => intent.payment_method_type
             }
 
-            let url = urlSearch(confirmParam.return_url)
+            let url = makeUrl(confirmParam.return_url)
             url.searchParams.set("payment_intent_client_secret", clientSecret)
             url.searchParams.set("status", intent.status)
 
@@ -518,7 +494,7 @@ let rec intentCall = (
               | (Paypal, false) =>
                 if !isPaymentSession {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    Utils.handleOnCompleteDoThisMessage()
+                    handleOnCompleteDoThisMessage()
                   } else {
                     closePaymentLoaderIfAny()
                   }
@@ -526,7 +502,7 @@ let rec intentCall = (
                   postSubmitResponse(~jsonData=data, ~url=url.href)
                 } else if confirmParam.redirect === Some("always") {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    Utils.handleOnCompleteDoThisMessage()
+                    handleOnCompleteDoThisMessage()
                   } else {
                     handleOpenUrl(url.href)
                   }
@@ -536,7 +512,7 @@ let rec intentCall = (
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
                   closePaymentLoaderIfAny()
-                  Utils.handleOnCompleteDoThisMessage()
+                  handleOnCompleteDoThisMessage()
                 } else {
                   handleOpenUrl(url.href)
                 }
@@ -721,7 +697,7 @@ let rec intentCall = (
                         ->getString("open_banking_session_token", "")
                         ->JSON.Encode.string,
                       ),
-                      ("pmAuthConnectorArray", ["plaid"]->Identity.anyTypeToJson),
+                      ("pmAuthConnectorArray", ["plaid"]->anyTypeToJson),
                       ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                       ("clientSecret", clientSecret->JSON.Encode.string),
                       ("isForceSync", true->JSON.Encode.bool),
@@ -848,7 +824,7 @@ let rec intentCall = (
   ->catch(err => {
     Promise.make((resolve, _) => {
       try {
-        let url = urlSearch(confirmParam.return_url)
+        let url = makeUrl(confirmParam.return_url)
         url.searchParams.set("payment_intent_client_secret", clientSecret)
         url.searchParams.set("status", "failed")
         let exceptionMessage = err->formatException
@@ -987,7 +963,7 @@ let rec maskPayload = payloadJson => {
       let (key, value) = entry
       (key, maskPayload(value))
     })
-    ->Utils.getJsonFromArrayOfJson
+    ->getJsonFromArrayOfJson
 
   | Array(arr) => arr->Array.map(maskPayload)->JSON.Encode.array
   | String(valueStr) => valueStr->maskStr->JSON.Encode.string
@@ -1055,10 +1031,10 @@ let usePaymentIntent = (optLogger, paymentType) => {
                 let (key, value) = header
                 (key, value->JSON.Encode.string)
               })
-              ->Utils.getJsonFromArrayOfJson,
+              ->getJsonFromArrayOfJson,
             ),
           ]
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         switch paymentType {
         | Card =>
@@ -1122,7 +1098,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             bodyArr->Array.concat(broswerInfo()),
             mandatePaymentType->PaymentBody.paymentTypeBody,
           ])
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
@@ -1133,7 +1109,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
           ->Array.concat(
             bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
           )
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
@@ -1214,7 +1190,7 @@ let useCompleteAuthorize = (optLogger: option<HyperLogger.loggerMake>, paymentTy
       let bodyStr =
         [("client_secret", clientSecret->JSON.Encode.string)]
         ->Array.concatMany([bodyArr, browserInfo()])
-        ->Utils.getJsonFromArrayOfJson
+        ->getJsonFromArrayOfJson
         ->JSON.stringify
 
       let completeAuthorize = () => {
@@ -1749,7 +1725,7 @@ let callAuthLink = (
         let metaData =
           [
             ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
-            ("pmAuthConnectorArray", pmAuthConnectorsArr->Identity.anyTypeToJson),
+            ("pmAuthConnectorArray", pmAuthConnectorsArr->anyTypeToJson),
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
             ("isForceSync", false->JSON.Encode.bool),
@@ -2169,10 +2145,10 @@ let usePostSessionTokens = (
                 let (key, value) = header
                 (key, value->JSON.Encode.string)
               })
-              ->Utils.getJsonFromArrayOfJson,
+              ->getJsonFromArrayOfJson,
             ),
           ]
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         switch paymentType {
         | Card =>
@@ -2231,7 +2207,7 @@ let usePostSessionTokens = (
             bodyArr->Array.concat(broswerInfo()),
             mandatePaymentType->PaymentBody.paymentTypeBody,
           ])
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
@@ -2242,7 +2218,7 @@ let usePostSessionTokens = (
           ->Array.concat(
             bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
           )
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
