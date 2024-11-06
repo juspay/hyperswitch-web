@@ -698,38 +698,6 @@ let bacsBankTransferBody = (~email, ~name, ~connectors) => {
   ]
 }
 
-let sepaBankTransferBody = (~email, ~name, ~country, ~connectors) => {
-  let (firstName, lastName) = name->Utils.getFirstAndLastNameFromFullName
-
-  [
-    ("payment_method", "bank_transfer"->JSON.Encode.string),
-    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-    ("payment_method_type", "sepa"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "billing",
-          [
-            ("email", email->JSON.Encode.string),
-            (
-              "address",
-              [
-                ("first_name", firstName),
-                ("last_name", lastName),
-                ("country", country->JSON.Encode.string),
-              ]->Utils.getJsonFromArrayOfJson,
-            ),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-        (
-          "bank_transfer",
-          [("sepa_bank_transfer", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ]
-}
 let blikBody = (~blikCode) => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "blik"->JSON.Encode.string),
@@ -977,14 +945,21 @@ let appendRedirectPaymentMethods = [
 ]
 
 let appendBankeDebitMethods = ["sepa"]
+let appendBankTransferMethods = ["sepa"]
 
-let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) =>
+let appendPaymentMethodExperience = (~paymentMethod, ~paymentMethodType, ~isQrPaymentMethod) =>
   if isQrPaymentMethod {
-    paymentMethodType ++ "_qr"
+    `${paymentMethodType}_qr`
   } else if appendRedirectPaymentMethods->Array.includes(paymentMethodType) {
-    paymentMethodType ++ "_redirect"
-  } else if appendBankeDebitMethods->Array.includes(paymentMethodType) {
-    paymentMethodType ++ "_bank_debit"
+    `${paymentMethodType}_redirect`
+  } else if (
+    appendBankeDebitMethods->Array.includes(paymentMethodType) && paymentMethod == "bank_debit"
+  ) {
+    `${paymentMethodType}_bank_debit`
+  } else if (
+    appendBankTransferMethods->Array.includes(paymentMethodType) && paymentMethod == "bank_transfer"
+  ) {
+    `${paymentMethodType}_bank_transfer`
   } else {
     paymentMethodType
   }
@@ -1010,7 +985,7 @@ let dynamicPaymentBody = (paymentMethod, paymentMethodType, ~isQrPaymentMethod=f
           paymentMethod,
           [
             (
-              paymentMethodType->appendPaymentMethodExperience(isQrPaymentMethod),
+              appendPaymentMethodExperience(~paymentMethod, ~paymentMethodType, ~isQrPaymentMethod),
               Dict.make()->JSON.Encode.object,
             ),
           ]->Utils.getJsonFromArrayOfJson,
