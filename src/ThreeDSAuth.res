@@ -8,7 +8,7 @@ let make = () => {
   let threeDsAuthoriseUrl = React.useRef("")
   let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
-  let logger = OrcaLogger.make(~source=Elements(Payment))
+  let logger = HyperLogger.make(~source=Elements(Payment))
 
   let handleFrictionLess = () => {
     let ele = Window.querySelector("#threeDsAuthDiv")
