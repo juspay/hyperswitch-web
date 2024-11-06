@@ -19,8 +19,8 @@ type packageJson = {version: string}
 
 /* External Declarations */
 @val external window: window = "window"
-@val @scope("window") external windowInnerHeight: int = "innerHeight"
-@val @scope("window") external windowInnerWidth: int = "innerWidth"
+@val @scope("window") external innerHeight: int = "innerHeight"
+@val @scope("window") external innerWidth: int = "innerWidth"
 @val @scope("window") external windowParent: window = "parent"
 @val external parent: window = "parent"
 @val @scope("document") external createElement: string => Dom.element = "createElement"

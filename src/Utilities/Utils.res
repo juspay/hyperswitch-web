@@ -257,7 +257,7 @@ let useWindowSize = () => {
   let (size, setSize) = React.useState(_ => (0, 0))
   React.useLayoutEffect1(() => {
     let updateSize = () => {
-      setSize(_ => (Window.windowInnerWidth, Window.windowInnerHeight))
+      setSize(_ => (Window.innerWidth, Window.innerHeight))
     }
     Window.addEventListener("resize", updateSize)
     updateSize()
