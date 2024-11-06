@@ -67,7 +67,7 @@ const maxLogsPushedPerEventName = 100;
 module.exports = (publicPath = "auto") => {
   const entries = {
     app: "./index.js",
-    HyperLoader: "./src/orca-loader/HyperLoader.bs.js",
+    HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
   };
   const plugins = [
     new MiniCssExtractPlugin(),

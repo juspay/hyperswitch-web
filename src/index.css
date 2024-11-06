@@ -1,3 +1,14 @@
+/* Remove blue outline of input, button in firefox */
+@-moz-document url-prefix() {
+  *:focus,
+  *:focus-visible,
+  *:focus-within,
+  *:active,
+  *:visited {
+    outline: none !important;
+  }
+}
+
 /* Remove contact and password icon in safari */
 input::-webkit-credentials-auto-fill-button,
 input::-webkit-contacts-auto-fill-button {

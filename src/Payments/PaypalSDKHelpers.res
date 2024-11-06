@@ -4,7 +4,7 @@ open Utils
 open TaxCalculation
 
 let loadPaypalSDK = (
-  ~loggerState: OrcaLogger.loggerMake,
+  ~loggerState: HyperLogger.loggerMake,
   ~sdkHandleOneClickConfirmPayment as _,
   ~buttonStyle,
   ~iframeId,
@@ -227,7 +227,7 @@ let loadPaypalSDK = (
 }
 
 let loadBraintreePaypalSdk = (
-  ~loggerState: OrcaLogger.loggerMake,
+  ~loggerState: HyperLogger.loggerMake,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
   ~buttonStyle,

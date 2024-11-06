@@ -17,13 +17,13 @@ let make = (
   ~clientSecret,
   ~sdkSessionId,
   ~publishableKey,
-  ~logger: option<OrcaLogger.loggerMake>,
+  ~logger: option<HyperLogger.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
 ) => {
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
+    let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
@@ -72,6 +72,7 @@ let make = (
               name="orca-payment-element-iframeRef-${localSelectorString}"
               src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"              allow="*"
               name="orca-payment"
+              style="outline: none;"
             ></iframe>
           </div>`
         let iframeDiv = Window.createElement("div")

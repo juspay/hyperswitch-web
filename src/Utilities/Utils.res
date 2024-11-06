@@ -689,7 +689,7 @@ let handlePostMessageEvents = (
   ~complete,
   ~empty,
   ~paymentType,
-  ~loggerState: OrcaLogger.loggerMake,
+  ~loggerState: HyperLogger.loggerMake,
   ~savedMethod=false,
 ) => {
   if complete && paymentType !== "" {
@@ -833,8 +833,8 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
       ("Content-Type", "application/json"),
       ("X-Client-Version", Window.version),
       ("X-Payment-Confirm-Source", "sdk"),
-      ("X-Browser-Name", OrcaLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
-      ("X-Browser-Version", OrcaLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+      ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+      ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
       ("X-Client-Platform", "web"),
     ]->Dict.fromArray
 
@@ -1419,6 +1419,7 @@ let getFirstAndLastNameFromFullName = fullName => {
   (firstName, lastNameJson)
 }
 
+let isKeyPresentInDict = (dict, key) => dict->Dict.get(key)->Option.isSome
 let checkIsTestCardWildcard = val => ["1111222233334444"]->Array.includes(val)
 
 let minorUnitToString = val => (val->Int.toFloat /. 100.)->Float.toString

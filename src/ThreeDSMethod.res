@@ -1,7 +1,7 @@
 open Utils
 @react.component
 let make = () => {
-  let logger = OrcaLogger.make(~source=Elements(Payment))
+  let logger = HyperLogger.make(~source=Elements(Payment))
 
   let (stateMetadata, setStateMetadata) = React.useState(_ => Dict.make()->JSON.Encode.object)
 
@@ -140,6 +140,7 @@ let make = () => {
       name="threeDsInvisibleIframe"
       className="h-96 invisible"
       ref={divRef->ReactDOM.Ref.domRef}
+      style={outline: "none"}
       onLoad={handleOnLoad}
     />
   </>

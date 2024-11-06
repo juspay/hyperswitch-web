@@ -325,7 +325,7 @@ let rec intentCall = (
 
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
   let isPostSessionTokens = uri->String.includes("/post_session_tokens")
-  let (eventName: OrcaLogger.eventName, initEventName: OrcaLogger.eventName) = switch (
+  let (eventName: HyperLogger.eventName, initEventName: HyperLogger.eventName) = switch (
     isConfirm,
     isCompleteAuthorize,
     isPostSessionTokens,
@@ -923,7 +923,7 @@ let rec intentCall = (
   })
 }
 
-let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
+let usePaymentSync = (optLogger: option<HyperLogger.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
@@ -1175,7 +1175,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   }
 }
 
-let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
+let useCompleteAuthorize = (optLogger: option<HyperLogger.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
@@ -1789,7 +1789,7 @@ let callAuthExchange = (
   open Promise
   open PaymentType
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let logger = OrcaLogger.make(~source=Elements(Payment))
+  let logger = HyperLogger.make(~source=Elements(Payment))
   let uri = `${endpoint}/payment_methods/auth/exchange`
   let updatedBody = [
     ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
