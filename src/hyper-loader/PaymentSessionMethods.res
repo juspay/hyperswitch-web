@@ -8,6 +8,7 @@ let getCustomerSavedPaymentMethods = (
   ~endpoint,
   ~logger,
   ~customPodUri,
+  ~useTopRedirection,
 ) => {
   open ApplePayTypes
   open GooglePayType
@@ -115,6 +116,7 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
+            ~useTopRedirection,
           )
         }
       | None =>
@@ -163,6 +165,7 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
+            ~useTopRedirection,
           )->then(val => {
             val->resolvePromise
             resolve()
@@ -231,6 +234,7 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
+            ~useTopRedirection,
           )
         }
 
@@ -305,6 +309,7 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
+            ~useTopRedirection,
           )
         }
       | None =>

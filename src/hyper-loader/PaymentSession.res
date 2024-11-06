@@ -6,6 +6,7 @@ let make = (
   ~publishableKey,
   ~logger: option<HyperLogger.loggerMake>,
   ~ephemeralKey,
+  ~useTopRedirection,
 ) => {
   let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
   let customPodUri =
@@ -24,6 +25,7 @@ let make = (
         ~endpoint,
         ~logger,
         ~customPodUri,
+        ~useTopRedirection,
       ),
     getPaymentManagementMethods: _ =>
       PaymentSessionMethods.getPaymentManagementMethods(

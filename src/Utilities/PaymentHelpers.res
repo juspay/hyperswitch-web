@@ -1628,6 +1628,7 @@ let paymentIntentForPaymentSession = (
   ~clientSecret,
   ~logger,
   ~customPodUri,
+  ~useTopRedirection,
 ) => {
   let confirmParams =
     payload
@@ -1656,8 +1657,6 @@ let paymentIntentForPaymentSession = (
   let broswerInfo = BrowserSpec.broswerInfo()
 
   let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
-
-  let useTopRedirection = Recoil.useRecoilValueFromAtom(RecoilAtoms.useTopRedirectionAtom)
 
   let bodyStr =
     body

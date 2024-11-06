@@ -675,6 +675,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~publishableKey,
           ~logger=Some(logger),
           ~ephemeralKey=ephemeralKey.contents,
+          ~useTopRedirection,
         )
       }
 
