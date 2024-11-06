@@ -15,13 +15,11 @@ describe("Card payment flow test", () => {
   changeObjectKeyValue(createPaymentBody,"authentication_type","three_ds")
   changeObjectKeyValue(createPaymentBody,"customer_id","new_user")
 
-
   beforeEach(() => {
     getIframeBody = () => cy.iframe(iframeSelector);
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
-
-        cy.visit(getClientURL(clientSecret, publishableKey));
+       cy.visit(getClientURL(clientSecret, publishableKey));
       });
 
     })
@@ -39,20 +37,15 @@ describe("Card payment flow test", () => {
   });
 
   it("should complete the card payment successfully", () => {
-    // Visit the page with the payment form
-const{ cardNo,cvc, card_exp_month, card_exp_year}=stripeCards.threeDSCard
-    // Wait for iframe to load and get its body
-    getIframeBody().find('[data-testid=cardNoInput]').type(cardNo); // Example card number
-    getIframeBody().find('[data-testid=expiryInput]').type(card_exp_month); // Expiration month
-    getIframeBody().find('[data-testid=expiryInput]').type(card_exp_year); // Expiration year
-    getIframeBody().find('[data-testid=cvvInput]').type(cvc); // CVV
+   const{ cardNo,cvc, card_exp_month, card_exp_year}=stripeCards.threeDSCard
+    getIframeBody().find('[data-testid=cardNoInput]').type(cardNo); 
+    getIframeBody().find('[data-testid=expiryInput]').type(card_exp_month); 
+    getIframeBody().find('[data-testid=expiryInput]').type(card_exp_year); 
+    getIframeBody().find('[data-testid=cvvInput]').type(cvc); 
 
-    // Click on the submit button
-    getIframeBody().get("#submit").click();
-
-    // Wait for the response and assert payment success message
-    cy.wait(3000); // Adjust wait time based on actual response time
-    cy.url().should('include', 'hooks.stripe.com/3d_secure_2');
+    getIframeBody().get("#submit").click().then(() => {
+      cy.url().should('include', 'hooks.stripe.com/3d_secure_2');
+    });
   });
 });
 
