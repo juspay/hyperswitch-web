@@ -257,7 +257,7 @@ let useWindowSize = () => {
   let (size, setSize) = React.useState(_ => (0, 0))
   React.useLayoutEffect1(() => {
     let updateSize = () => {
-      setSize(_ => (Window.windowInnerWidth, Window.windowInnerHeight))
+      setSize(_ => (Window.innerWidth, Window.innerHeight))
     }
     Window.addEventListener("resize", updateSize)
     updateSize()
@@ -1419,6 +1419,14 @@ let getFirstAndLastNameFromFullName = fullName => {
   (firstName, lastNameJson)
 }
 
+let isKeyPresentInDict = (dict, key) => dict->Dict.get(key)->Option.isSome
 let checkIsTestCardWildcard = val => ["1111222233334444"]->Array.includes(val)
 
 let minorUnitToString = val => (val->Int.toFloat /. 100.)->Float.toString
+
+let mergeAndFlattenToTuples = (body, requiredFieldsBody) =>
+  body
+  ->getJsonFromArrayOfJson
+  ->flattenObject(true)
+  ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+  ->getArrayOfTupleFromDict

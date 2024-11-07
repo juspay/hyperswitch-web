@@ -100,11 +100,7 @@ let make = (~sessionObj: SessionsType.token) => {
                       )
 
                       let body = {
-                        klarnaSDKBody
-                        ->getJsonFromArrayOfJson
-                        ->flattenObject(true)
-                        ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-                        ->getArrayOfTupleFromDict
+                        klarnaSDKBody->mergeAndFlattenToTuples(requiredFieldsBody)
                       }
 
                       res.approved

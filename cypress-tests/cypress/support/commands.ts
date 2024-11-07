@@ -173,3 +173,11 @@ Cypress.Commands.add("createPaymentIntent", (secretKey: string, createPaymentBod
 Cypress.Commands.add("getGlobalState", (key: any) => {
   return globalState[key];
 });
+
+Cypress.Commands.add("nestedIFrame", (selector, callback) => {
+  cy.iframe("#orca-fullscreen").find(selector).should("exist").should("be.visible").then(($ele) => {
+    const $body =
+      $ele.contents().find('body')
+    callback($body);
+  })
+});

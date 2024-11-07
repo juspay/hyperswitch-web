@@ -1,3 +1,27 @@
+## [0.101.3](https://github.com/juspay/hyperswitch-web/compare/v0.101.2...v0.101.3) (2024-11-07)
+
+## [0.101.2](https://github.com/juspay/hyperswitch-web/compare/v0.101.1...v0.101.2) (2024-11-07)
+
+## [0.101.1](https://github.com/juspay/hyperswitch-web/compare/v0.101.0...v0.101.1) (2024-11-07)
+
+# [0.101.0](https://github.com/juspay/hyperswitch-web/compare/v0.100.1...v0.101.0) (2024-11-07)
+
+
+### Features
+
+* added dynamic fields support for sepa bank transfer ([#775](https://github.com/juspay/hyperswitch-web/issues/775)) ([52d2d15](https://github.com/juspay/hyperswitch-web/commit/52d2d15ed2b2b8ed364a81fe9bbd3dfbd64c0cec))
+
+## [0.100.1](https://github.com/juspay/hyperswitch-web/compare/v0.100.0...v0.100.1) (2024-11-06)
+
+# [0.100.0](https://github.com/juspay/hyperswitch-web/compare/v0.99.6...v0.100.0) (2024-11-06)
+
+
+### Features
+
+* add dynamic fields support for affirm ([#776](https://github.com/juspay/hyperswitch-web/issues/776)) ([e55e533](https://github.com/juspay/hyperswitch-web/commit/e55e533a197efad11c9b8cceb4b06c672a365dfe))
+
+## [0.99.6](https://github.com/juspay/hyperswitch-web/compare/v0.99.5...v0.99.6) (2024-11-06)
+
 ## [0.99.5](https://github.com/juspay/hyperswitch-web/compare/v0.99.4...v0.99.5) (2024-11-06)
 
 ## [0.99.4](https://github.com/juspay/hyperswitch-web/compare/v0.99.3...v0.99.4) (2024-11-05)
