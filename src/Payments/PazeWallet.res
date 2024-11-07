@@ -85,6 +85,7 @@ let make = () => {
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),
                 ("isPaze", true->JSON.Encode.bool),
+                ("componentName", componentName->JSON.Encode.string),
                 (
                   "completeResponse",
                   completeResponse
