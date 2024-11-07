@@ -680,6 +680,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "mifinity",
   "upi_collect",
   "sepa",
+  "affirm",
 ]
 
 let getIsBillingField = requiredFieldType => {
