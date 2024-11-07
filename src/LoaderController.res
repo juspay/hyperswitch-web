@@ -9,7 +9,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
-  let setShouldUseTopRedirection = Recoil.useSetRecoilState(shouldUseTopRedirectionAtom)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
@@ -147,14 +146,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
-  let updateTopRedirectionAtom = paymentOptions =>
-    paymentOptions
-    ->Dict.get("shouldUseTopRedirection")
-    ->Option.flatMap(JSON.Decode.bool)
-    ->Option.map(useTop => {
-      setShouldUseTopRedirection(_ => useTop)
-    })
-    ->ignore
+  let updateShouldUseTopRedirection = UtilityHooks.useUpdateShouldUseTopRedirection()
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMounted", true->JSON.Encode.bool)])
@@ -286,7 +278,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 logger.setClientSecret(clientSecret)
 
                 // Update top redirection atom
-                updateTopRedirectionAtom(paymentOptions)
+                updateShouldUseTopRedirection(paymentOptions)
 
                 switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
@@ -336,7 +328,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             logger.setClientSecret(clientSecret)
 
             // Update top redirection atom
-            updateTopRedirectionAtom(paymentOptions)
+            updateShouldUseTopRedirection(paymentOptions)
 
             switch getThemePromise(paymentOptions) {
             | Some(promise) =>
