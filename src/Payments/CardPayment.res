@@ -163,11 +163,7 @@ let make = (
       if validFormat && (showFields || isBancontact) {
         intent(
           ~bodyArr={
-            (isBancontact ? banContactBody : cardBody)
-            ->getJsonFromArrayOfJson
-            ->flattenObject(true)
-            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-            ->getArrayOfTupleFromDict
+            (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(requiredFieldsBody)
           },
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,

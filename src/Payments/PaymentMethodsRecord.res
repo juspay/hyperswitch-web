@@ -661,28 +661,6 @@ let getFieldType = (dict, isBancontact) => {
   }
 }
 
-let dynamicFieldsEnabledPaymentMethods = [
-  "crypto_currency",
-  "debit",
-  "credit",
-  "blik",
-  "google_pay",
-  "apple_pay",
-  "bancontact_card",
-  "open_banking_uk",
-  "eps",
-  "ideal",
-  "sofort",
-  "pix_transfer",
-  "giropay",
-  "local_bank_transfer_transfer",
-  "afterpay_clearpay",
-  "mifinity",
-  "upi_collect",
-  "sepa",
-  "affirm",
-]
-
 let getIsBillingField = requiredFieldType => {
   switch requiredFieldType {
   | AddressLine1

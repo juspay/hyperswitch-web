@@ -53,11 +53,7 @@ let getGooglePayBodyFromResponse = (
     )
   }
 
-  gPayBody
-  ->getJsonFromArrayOfJson
-  ->flattenObject(true)
-  ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-  ->getArrayOfTupleFromDict
+  gPayBody->mergeAndFlattenToTuples(requiredFieldsBody)
 }
 
 let processPayment = (
@@ -123,11 +119,7 @@ let useHandleGooglePayResponse = (
         let googlePayBody = if isWallet {
           body
         } else {
-          body
-          ->getJsonFromArrayOfJson
-          ->flattenObject(true)
-          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->getArrayOfTupleFromDict
+          body->mergeAndFlattenToTuples(requiredFieldsBody)
         }
 
         processPayment(

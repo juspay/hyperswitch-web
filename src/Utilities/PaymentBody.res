@@ -654,21 +654,6 @@ let epsBody = (~name, ~bankName) => [
   ),
 ]
 
-let achBankTransferBody = (~email, ~connectors) => [
-  ("payment_method", "bank_transfer"->JSON.Encode.string),
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  ("payment_method_type", "ach"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      ("billing", [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
-      (
-        "bank_transfer",
-        [("ach_bank_transfer", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
 let bacsBankTransferBody = (~email, ~name, ~connectors) => {
   let (firstName, lastName) = name->Utils.getFirstAndLastNameFromFullName
 
@@ -945,7 +930,7 @@ let appendRedirectPaymentMethods = [
 ]
 
 let appendBankeDebitMethods = ["sepa"]
-let appendBankTransferMethods = ["sepa"]
+let appendBankTransferMethods = ["sepa", "ach"]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {

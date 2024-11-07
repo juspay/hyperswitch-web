@@ -1,4 +1,3 @@
-open RecoilAtoms
 @react.component
 let make = (
   ~paymentType,
@@ -12,7 +11,9 @@ let make = (
   ~cvcProps=None,
   ~isBancontact=false,
 ) => {
+  open DynamicFieldsUtils
   open Utils
+  open RecoilAtoms
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   React.useEffect(() => {
@@ -41,10 +42,8 @@ let make = (
 
       paymentMethodTypes.required_fields
       ->Array.concat(creditRequiredFields)
-      ->DynamicFieldsUtils.removeRequiredFieldsDuplicates
-    } else if (
-      PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType)
-    ) {
+      ->removeRequiredFieldsDuplicates
+    } else if dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType) {
       paymentMethodTypes.required_fields
     } else {
       []
@@ -52,9 +51,7 @@ let make = (
   }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType))
 
   let requiredFields = React.useMemo(() => {
-    requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress(
-      billingAddress,
-    )
+    requiredFieldsWithBillingDetails->removeBillingDetailsIfUseBillingAddress(billingAddress)
   }, [requiredFieldsWithBillingDetails])
 
   let isAllStoredCardsHaveName = React.useMemo(() => {
@@ -69,7 +66,7 @@ let make = (
       ~isSavedCardFlow,
       ~isAllStoredCardsHaveName,
     )
-    ->DynamicFieldsUtils.updateDynamicFields(billingAddress)
+    ->updateDynamicFields(billingAddress)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
@@ -255,7 +252,7 @@ let make = (
     }
   }
 
-  DynamicFieldsUtils.useRequiredFieldsEmptyAndValid(
+  useRequiredFieldsEmptyAndValid(
     ~requiredFields,
     ~fieldsArr,
     ~countryNames,
@@ -268,14 +265,14 @@ let make = (
     ~cvcNumber,
   )
 
-  DynamicFieldsUtils.useSetInitialRequiredFields(
+  useSetInitialRequiredFields(
     ~requiredFields={
       billingAddress.usePrefilledValues === Auto ? requiredFieldsWithBillingDetails : requiredFields
     },
     ~paymentMethodType,
   )
 
-  DynamicFieldsUtils.useRequiredFieldsBody(
+  useRequiredFieldsBody(
     ~requiredFields,
     ~paymentMethodType,
     ~cardNumber,
@@ -286,7 +283,7 @@ let make = (
     ~setRequiredFieldsBody,
   )
 
-  let submitCallback = DynamicFieldsUtils.useSubmitCallback()
+  let submitCallback = useSubmitCallback()
   useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
@@ -307,11 +304,11 @@ let make = (
   }
 
   let dynamicFieldsToRenderOutsideBilling = React.useMemo(() => {
-    fieldsArr->Array.filter(DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
+    fieldsArr->Array.filter(isFieldTypeToRenderOutsideBilling)
   }, [fieldsArr])
 
   let dynamicFieldsToRenderInsideBilling = React.useMemo(() => {
-    fieldsArr->Array.filter(field => !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling))
+    fieldsArr->Array.filter(field => !(field->isFieldTypeToRenderOutsideBilling))
   }, [fieldsArr])
 
   let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Array.includes(InfoElement)
