@@ -147,13 +147,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
-  let updateTopRedirectionInRecoilState = (paymentOptions, setShouldUseTopRedirection) => {
+  let updateTopRedirectionAtom = paymentOptions =>
     paymentOptions
     ->Dict.get("shouldUseTopRedirection")
     ->Option.flatMap(JSON.Decode.bool)
-    ->Option.map(useTop => setShouldUseTopRedirection(_ => useTop))
+    ->Option.map(useTop => {
+      setShouldUseTopRedirection(_ => useTop)
+    })
     ->ignore
-  }
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMounted", true->JSON.Encode.bool)])
@@ -284,8 +285,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 })
                 logger.setClientSecret(clientSecret)
 
-                // Update shouldUseTopRedirectionAtom
-                updateTopRedirectionInRecoilState(paymentOptions, setShouldUseTopRedirection)
+                // Update top redirection atom
+                updateTopRedirectionAtom(paymentOptions)
 
                 switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
@@ -334,8 +335,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
             logger.setClientSecret(clientSecret)
 
-            // Update shouldUseTopRedirectionAtom
-            updateTopRedirectionInRecoilState(paymentOptions, setShouldUseTopRedirection)
+            // Update top redirection atom
+            updateTopRedirectionAtom(paymentOptions)
 
             switch getThemePromise(paymentOptions) {
             | Some(promise) =>
