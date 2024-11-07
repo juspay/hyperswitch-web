@@ -74,7 +74,7 @@ let make = (~integrateError, ~logger) => {
         setTimeout(() => {
           clearInterval(interval)
           // Append query params and redirect
-          let url = PaymentHelpers.urlSearch(returnUrl)
+          let url = URLModule.makeUrl(returnUrl)
           url.searchParams.set("payout_id", options.payoutId)
           url.searchParams.set("status", statusInfo.status->getPayoutStatusString)
           Utils.openUrl(url.href)
