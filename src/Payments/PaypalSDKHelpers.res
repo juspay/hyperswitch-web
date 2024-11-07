@@ -299,12 +299,7 @@ let loadBraintreePaypalSdk = (
                               ~statesList=stateJson,
                             )
 
-                            let paypalBody =
-                              body
-                              ->getJsonFromArrayOfJson
-                              ->flattenObject(true)
-                              ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-                              ->getArrayOfTupleFromDict
+                            let paypalBody = body->mergeAndFlattenToTuples(requiredFieldsBody)
 
                             let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
                               ~isGuestCustomer,
