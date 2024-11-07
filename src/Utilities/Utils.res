@@ -1020,13 +1020,8 @@ let unflattenObject = obj => {
   newDict
 }
 
-let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
-  dict1
-  ->Dict.toArray
-  ->Array.concat(dict2->Dict.toArray)
-  ->getJsonFromArrayOfJson
-  ->unflattenObject
-}
+let mergeTwoFlattenedJsonDicts = (dict1, dict2) =>
+  [...dict1->Dict.toArray, ...dict2->Dict.toArray]->getJsonFromArrayOfJson->unflattenObject
 
 open Identity
 
