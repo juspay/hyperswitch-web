@@ -681,6 +681,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "upi_collect",
   "sepa",
   "affirm",
+  "ach",
 ]
 
 let getIsBillingField = requiredFieldType => {
