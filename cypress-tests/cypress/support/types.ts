@@ -22,7 +22,7 @@ declare global {
             selectValueInIframe(selector: string, value: string): Chainable<JQuery<HTMLElement>>
             hardReload(): Chainable<JQuery<HTMLElement>>
             testDynamicFields(
-                customerData: CustomerData, testIdsToRemoveArr: string[], isThreeDSEnabled: boolean
+                customerData: CustomerData, testIdsToRemoveArr: string[], isThreeDSEnabled: boolean, publishableKey: string
             ): Chainable<JQuery<HTMLElement>>
             createPaymentIntent(secretKey: string, createPaymentBody: Record<string, any>): Chainable<Response<any>>
             getGlobalState(key: string): Chainable<Response<any>>
