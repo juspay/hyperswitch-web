@@ -698,38 +698,6 @@ let bacsBankTransferBody = (~email, ~name, ~connectors) => {
   ]
 }
 
-let sepaBankTransferBody = (~email, ~name, ~country, ~connectors) => {
-  let (firstName, lastName) = name->Utils.getFirstAndLastNameFromFullName
-
-  [
-    ("payment_method", "bank_transfer"->JSON.Encode.string),
-    ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-    ("payment_method_type", "sepa"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "billing",
-          [
-            ("email", email->JSON.Encode.string),
-            (
-              "address",
-              [
-                ("first_name", firstName),
-                ("last_name", lastName),
-                ("country", country->JSON.Encode.string),
-              ]->Utils.getJsonFromArrayOfJson,
-            ),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-        (
-          "bank_transfer",
-          [("sepa_bank_transfer", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ]
-}
 let blikBody = (~blikCode) => [
   ("payment_method", "bank_redirect"->JSON.Encode.string),
   ("payment_method_type", "blik"->JSON.Encode.string),
@@ -935,6 +903,22 @@ let multibancoBody = (~email) => [
   ),
 ]
 
+let pazeBody = (~completeResponse) => {
+  open Utils
+  let pazeCompleteResponse =
+    [("complete_response", completeResponse->JSON.Encode.string)]->getJsonFromArrayOfJson
+
+  let pazeWalletData = [("paze", pazeCompleteResponse)]->getJsonFromArrayOfJson
+
+  let paymentMethodData = [("wallet", pazeWalletData)]->getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "paze"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
@@ -961,16 +945,30 @@ let appendRedirectPaymentMethods = [
 ]
 
 let appendBankeDebitMethods = ["sepa"]
+let appendBankTransferMethods = ["sepa"]
 
-let appendPaymentMethodExperience = (paymentMethodType, isQrPaymentMethod) =>
+let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {
-    paymentMethodType ++ "_qr"
+    Some("qr")
   } else if appendRedirectPaymentMethods->Array.includes(paymentMethodType) {
-    paymentMethodType ++ "_redirect"
-  } else if appendBankeDebitMethods->Array.includes(paymentMethodType) {
-    paymentMethodType ++ "_bank_debit"
+    Some("redirect")
+  } else if (
+    appendBankeDebitMethods->Array.includes(paymentMethodType) && paymentMethod == "bank_debit"
+  ) {
+    Some("bank_debit")
+  } else if (
+    appendBankTransferMethods->Array.includes(paymentMethodType) && paymentMethod == "bank_transfer"
+  ) {
+    Some("bank_transfer")
   } else {
-    paymentMethodType
+    None
+  }
+}
+
+let appendPaymentMethodExperience = (~paymentMethod, ~paymentMethodType, ~isQrPaymentMethod) =>
+  switch getPaymentMethodSuffix(~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) {
+  | Some(suffix) => `${paymentMethodType}_${suffix}`
+  | None => paymentMethodType
   }
 
 let paymentExperiencePaymentMethods = ["affirm"]
@@ -994,7 +992,7 @@ let dynamicPaymentBody = (paymentMethod, paymentMethodType, ~isQrPaymentMethod=f
           paymentMethod,
           [
             (
-              paymentMethodType->appendPaymentMethodExperience(isQrPaymentMethod),
+              appendPaymentMethodExperience(~paymentMethod, ~paymentMethodType, ~isQrPaymentMethod),
               Dict.make()->JSON.Encode.object,
             ),
           ]->Utils.getJsonFromArrayOfJson,

@@ -9,7 +9,7 @@ let make = () => {
   let (clientSecret, setClientSecret) = React.useState(_ => "")
   let (isForceSync, setIsForceSync) = React.useState(_ => false)
   let logger = React.useMemo(() => {
-    OrcaLogger.make(~source=Elements(Payment), ~clientSecret, ~merchantId=publishableKey)
+    HyperLogger.make(~source=Elements(Payment), ~clientSecret, ~merchantId=publishableKey)
   }, (publishableKey, clientSecret))
 
   React.useEffect0(() => {

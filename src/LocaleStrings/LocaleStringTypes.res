@@ -8,6 +8,7 @@ type localeStrings = {
   inValidCardErrorText: string,
   inCompleteCVCErrorText: string,
   inCompleteExpiryErrorText: string,
+  enterValidCardNumberErrorText: string,
   pastExpiryErrorText: string,
   poweredBy: string,
   validThruText: string,
