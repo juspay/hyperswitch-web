@@ -13,23 +13,22 @@ let make = () => {
     (publishableKey, clientSecret),
   )
 
-  let handleParentWindowMessage = (ev: Window.event) => {
-    let json = ev.data->safeParse
-    let metaData = json->getDictFromJson->getDictFromDict("metadata")
-    let linkToken = metaData->getString("linkToken", "")
-
-    if linkToken->String.length > 0 {
-      setLinkToken(_ => linkToken)
-      setPmAuthConnectorsArr(_ =>
-        metaData->getArray("pmAuthConnectorArray")->Array.map(JSON.Decode.string)
-      )
-      setPublishableKey(_ => metaData->getString("publishableKey", ""))
-      setClientSecret(_ => metaData->getString("clientSecret", ""))
-      setIsForceSync(_ => metaData->getBool("isForceSync", false))
-    }
-  }
-
   React.useEffect(() => {
+    let handleParentWindowMessage = (ev: Window.event) => {
+      let json = ev.data->safeParse
+      let metaData = json->getDictFromJson->getDictFromDict("metadata")
+      let linkToken = metaData->getString("linkToken", "")
+
+      if linkToken->String.length > 0 {
+        setLinkToken(_ => linkToken)
+        setPmAuthConnectorsArr(_ =>
+          metaData->getArray("pmAuthConnectorArray")->Array.map(JSON.Decode.string)
+        )
+        setPublishableKey(_ => metaData->getString("publishableKey", ""))
+        setClientSecret(_ => metaData->getString("clientSecret", ""))
+        setIsForceSync(_ => metaData->getBool("isForceSync", false))
+      }
+    }
     Window.addEventListener("message", handleParentWindowMessage)
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     Some(() => Window.removeEventListener("message", handleParentWindowMessage))

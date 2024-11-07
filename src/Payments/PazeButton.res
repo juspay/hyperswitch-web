@@ -11,7 +11,7 @@ let make = (~token: SessionsType.token) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
   let (showLoader, setShowLoader) = React.useState(() => false)
-  let onClick = React.useCallback(_ => {
+  let onClick = _ => {
     setShowLoader(_ => true)
     let metadata =
       [
@@ -32,9 +32,9 @@ let make = (~token: SessionsType.token) => {
       ("iframeId", iframeId->JSON.Encode.string),
       ("metadata", metadata),
     ])
-  }, (token, iframeId, publishableKey, paymentIntentID))
+  }
 
-  let handlePazeCallback = React.useCallback(ev => {
+  let handlePazeCallback = ev => {
     let json = ev.data->safeParse
     let dict = json->Utils.getDictFromJson->getDictFromDict("data")
     if dict->getBool("isPaze", false) {
@@ -52,14 +52,13 @@ let make = (~token: SessionsType.token) => {
         )
       }
     }
-  }, (intent, options, publishableKey, isManualRetryEnabled))
+  }
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     setIsShowOrPayUsing(_ => true)
     Window.addEventListener("message", handlePazeCallback)
     Some(() => Window.removeEventListener("message", handlePazeCallback))
-  })
-
+  }, [])
   <button
     disabled={showLoader}
     onClick
