@@ -1,3 +1,12 @@
+## [0.100.1](https://github.com/juspay/hyperswitch-web/compare/v0.100.0...v0.100.1) (2024-11-06)
+
+# [0.100.0](https://github.com/juspay/hyperswitch-web/compare/v0.99.6...v0.100.0) (2024-11-06)
+
+
+### Features
+
+* add dynamic fields support for affirm ([#776](https://github.com/juspay/hyperswitch-web/issues/776)) ([e55e533](https://github.com/juspay/hyperswitch-web/commit/e55e533a197efad11c9b8cceb4b06c672a365dfe))
+
 ## [0.99.6](https://github.com/juspay/hyperswitch-web/compare/v0.99.5...v0.99.6) (2024-11-06)
 
 ## [0.99.5](https://github.com/juspay/hyperswitch-web/compare/v0.99.4...v0.99.5) (2024-11-06)

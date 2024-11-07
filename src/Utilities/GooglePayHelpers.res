@@ -63,7 +63,7 @@ let getGooglePayBodyFromResponse = (
 let processPayment = (
   ~body: array<(string, JSON.t)>,
   ~isThirdPartyFlow=false,
-  ~intent: PaymentHelpers.paymentIntent,
+  ~intent: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
   ~publishableKey,
   ~isManualRetryEnabled,
@@ -151,12 +151,7 @@ let useHandleGooglePayResponse = (
   }, (paymentMethodTypes, stateJson, isManualRetryEnabled, requiredFieldsBody, isWallet))
 }
 
-let handleGooglePayClicked = (
-  ~sessionObj,
-  ~componentName,
-  ~iframeId,
-  ~readOnly,
-) => {
+let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly) => {
   let paymentDataRequest = GooglePayType.getPaymentDataFromSession(~sessionObj, ~componentName)
   messageParentWindow([
     ("fullscreen", true->JSON.Encode.bool),
@@ -183,12 +178,7 @@ let useSubmitCallback = (~isWallet, ~sessionObj, ~componentName) => {
       let json = ev.data->safeParse
       let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
       if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
-        handleGooglePayClicked(
-          ~sessionObj,
-          ~componentName,
-          ~iframeId,
-          ~readOnly=options.readOnly,
-        )
+        handleGooglePayClicked(~sessionObj, ~componentName, ~iframeId, ~readOnly=options.readOnly)
       } else if areRequiredFieldsEmpty {
         postFailedSubmitResponse(
           ~errortype="validation_error",
