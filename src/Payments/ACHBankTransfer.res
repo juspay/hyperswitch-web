@@ -29,11 +29,9 @@ let make = (~paymentType: CardThemeType.mode) => {
     if confirm.doSubmit {
       if complete {
         let bodyArr =
-          PaymentBody.dynamicPaymentBody("bank_transfer", "ach")
-          ->getJsonFromArrayOfJson
-          ->flattenObject(true)
-          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->getArrayOfTupleFromDict
+          PaymentBody.dynamicPaymentBody("bank_transfer", "ach")->mergeAndFlattenToTuples(
+            requiredFieldsBody,
+          )
         intent(
           ~bodyArr,
           ~confirmParam=confirm.confirmParams,

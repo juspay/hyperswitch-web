@@ -147,11 +147,7 @@ let make = (
           | _ =>
             // TODO - To be replaced with proper error message
             intent(
-              ~bodyArr=savedPaymentMethodBody
-              ->getJsonFromArrayOfJson
-              ->flattenObject(true)
-              ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-              ->getArrayOfTupleFromDict,
+              ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
               ~confirmParam=confirm.confirmParams,
               ~handleUserError=false,
               ~manualRetry=isManualRetryEnabled,
@@ -168,11 +164,7 @@ let make = (
           | _ =>
             // TODO - To be replaced with proper error message
             intent(
-              ~bodyArr=savedPaymentMethodBody
-              ->getJsonFromArrayOfJson
-              ->flattenObject(true)
-              ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-              ->getArrayOfTupleFromDict,
+              ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
               ~confirmParam=confirm.confirmParams,
               ~handleUserError=false,
               ~manualRetry=isManualRetryEnabled,
@@ -180,11 +172,7 @@ let make = (
           }
         | _ =>
           intent(
-            ~bodyArr=savedPaymentMethodBody
-            ->getJsonFromArrayOfJson
-            ->flattenObject(true)
-            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-            ->getArrayOfTupleFromDict,
+            ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
             ~manualRetry=isManualRetryEnabled,

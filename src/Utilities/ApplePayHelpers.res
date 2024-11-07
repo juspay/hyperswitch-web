@@ -61,11 +61,7 @@ let getApplePayFromResponse = (
 
   let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
 
-  bodyDict
-  ->getJsonFromArrayOfJson
-  ->flattenObject(true)
-  ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-  ->getArrayOfTupleFromDict
+  bodyDict->mergeAndFlattenToTuples(requiredFieldsBody)
 }
 
 let startApplePaySession = (
@@ -261,11 +257,7 @@ let useHandleApplePayResponse = (
           let bodyArr = if isWallet {
             applePayBody
           } else {
-            applePayBody
-            ->getJsonFromArrayOfJson
-            ->flattenObject(true)
-            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-            ->getArrayOfTupleFromDict
+            applePayBody->mergeAndFlattenToTuples(requiredFieldsBody)
           }
 
           processPayment(
