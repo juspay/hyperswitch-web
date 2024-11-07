@@ -947,21 +947,28 @@ let appendRedirectPaymentMethods = [
 let appendBankeDebitMethods = ["sepa"]
 let appendBankTransferMethods = ["sepa"]
 
-let appendPaymentMethodExperience = (~paymentMethod, ~paymentMethodType, ~isQrPaymentMethod) =>
+let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {
-    `${paymentMethodType}_qr`
+    Some("qr")
   } else if appendRedirectPaymentMethods->Array.includes(paymentMethodType) {
-    `${paymentMethodType}_redirect`
+    Some("redirect")
   } else if (
     appendBankeDebitMethods->Array.includes(paymentMethodType) && paymentMethod == "bank_debit"
   ) {
-    `${paymentMethodType}_bank_debit`
+    Some("bank_debit")
   } else if (
     appendBankTransferMethods->Array.includes(paymentMethodType) && paymentMethod == "bank_transfer"
   ) {
-    `${paymentMethodType}_bank_transfer`
+    Some("bank_transfer")
   } else {
-    paymentMethodType
+    None
+  }
+}
+
+let appendPaymentMethodExperience = (~paymentMethod, ~paymentMethodType, ~isQrPaymentMethod) =>
+  switch getPaymentMethodSuffix(~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) {
+  | Some(suffix) => `${paymentMethodType}_${suffix}`
+  | None => paymentMethodType
   }
 
 let paymentExperiencePaymentMethods = ["affirm"]
