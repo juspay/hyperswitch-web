@@ -34,27 +34,27 @@ let make = (~token: SessionsType.token) => {
     ])
   }
 
-  let handlePazeCallback = ev => {
-    let json = ev.data->safeParse
-    let dict = json->Utils.getDictFromJson->getDictFromDict("data")
-    if dict->getBool("isPaze", false) {
-      setShowLoader(_ => false)
-      if dict->getOptionString("completeResponse")->Option.isSome {
-        let completeResponse = dict->getString("completeResponse", "")
-        intent(
-          ~bodyArr=PaymentBody.pazeBody(~completeResponse),
-          ~confirmParam={
-            return_url: options.wallets.walletReturnUrl,
-            publishableKey,
-          },
-          ~handleUserError=false,
-          ~manualRetry=isManualRetryEnabled,
-        )
+  React.useEffect(() => {
+    let handlePazeCallback = ev => {
+      let json = ev.data->safeParse
+      let dict = json->Utils.getDictFromJson->getDictFromDict("data")
+      if dict->getBool("isPaze", false) {
+        setShowLoader(_ => false)
+        if dict->getOptionString("completeResponse")->Option.isSome {
+          let completeResponse = dict->getString("completeResponse", "")
+          intent(
+            ~bodyArr=PaymentBody.pazeBody(~completeResponse),
+            ~confirmParam={
+              return_url: options.wallets.walletReturnUrl,
+              publishableKey,
+            },
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
+        }
       }
     }
-  }
 
-  React.useEffect(() => {
     setIsShowOrPayUsing(_ => true)
     Window.addEventListener("message", handlePazeCallback)
     Some(() => Window.removeEventListener("message", handlePazeCallback))
