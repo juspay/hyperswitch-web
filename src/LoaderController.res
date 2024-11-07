@@ -146,6 +146,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
+  let updateShouldUseTopRedirection = UtilityHooks.useUpdateShouldUseTopRedirection()
+
   React.useEffect0(() => {
     messageParentWindow([("iframeMounted", true->JSON.Encode.bool)])
     messageParentWindow([
@@ -275,6 +277,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 })
                 logger.setClientSecret(clientSecret)
 
+                // Update top redirection atom
+                updateShouldUseTopRedirection(paymentOptions)
+
                 switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
                   promise->then(res => {
@@ -321,6 +326,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               ephemeralKey,
             })
             logger.setClientSecret(clientSecret)
+
+            // Update top redirection atom
+            updateShouldUseTopRedirection(paymentOptions)
 
             switch getThemePromise(paymentOptions) {
             | Some(promise) =>
