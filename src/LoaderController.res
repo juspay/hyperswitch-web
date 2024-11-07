@@ -97,6 +97,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PayPalElement
     | ApplePayElement
     | KlarnaElement
+    | PazeElement
     | ExpressCheckoutElement
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)

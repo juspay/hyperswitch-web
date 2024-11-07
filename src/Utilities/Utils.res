@@ -1289,11 +1289,19 @@ let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   | PayPalElement => wallets->Array.filter(item => item === "paypal")
   | ApplePayElement => wallets->Array.filter(item => item === "apple_pay")
   | KlarnaElement => wallets->Array.filter(item => item === "klarna")
+  | PazeElement => wallets->Array.filter(item => item === "paze")
   | _ => wallets
   }
 }
 
-let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "klarna", "expressCheckout"]
+let expressCheckoutComponents = [
+  "googlePay",
+  "payPal",
+  "applePay",
+  "klarna",
+  "paze",
+  "expressCheckout",
+]
 
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
 
@@ -1315,6 +1323,7 @@ let walletElementPaymentType: array<CardThemeType.mode> = [
   PayPalElement,
   ApplePayElement,
   KlarnaElement,
+  PazeElement,
   ExpressCheckoutElement,
 ]
 
