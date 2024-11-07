@@ -9,7 +9,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
-  let setUseTopRedirection = Recoil.useSetRecoilState(useTopRedirectionAtom)
+  let setShouldUseTopRedirection = Recoil.useSetRecoilState(shouldUseTopRedirectionAtom)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
@@ -147,11 +147,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
-  let updateTopRedirectionInRecoilState = (paymentOptions, setUseTopRedirection) => {
+  let updateTopRedirectionInRecoilState = (paymentOptions, setShouldUseTopRedirection) => {
     paymentOptions
-    ->Dict.get("useTopRedirection")
+    ->Dict.get("shouldUseTopRedirection")
     ->Option.flatMap(JSON.Decode.bool)
-    ->Option.map(useTop => setUseTopRedirection(_ => useTop))
+    ->Option.map(useTop => setShouldUseTopRedirection(_ => useTop))
     ->ignore
   }
 
@@ -284,8 +284,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 })
                 logger.setClientSecret(clientSecret)
 
-                // Update useTopRedirectionAtom
-                updateTopRedirectionInRecoilState(paymentOptions, setUseTopRedirection)
+                // Update shouldUseTopRedirectionAtom
+                updateTopRedirectionInRecoilState(paymentOptions, setShouldUseTopRedirection)
 
                 switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
@@ -334,8 +334,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
             logger.setClientSecret(clientSecret)
 
-            // Update useTopRedirectionAtom
-            updateTopRedirectionInRecoilState(paymentOptions, setUseTopRedirection)
+            // Update shouldUseTopRedirectionAtom
+            updateTopRedirectionInRecoilState(paymentOptions, setShouldUseTopRedirection)
 
             switch getThemePromise(paymentOptions) {
             | Some(promise) =>

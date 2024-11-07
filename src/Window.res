@@ -205,8 +205,8 @@ let getRootHostName = () =>
   }
 
 /* Redirect Handling */
-let replaceRootHref = (href: string, useTopRedirection: bool) => {
-  switch useTopRedirection {
+let replaceRootHref = (href: string, shouldUseTopRedirection: bool) => {
+  switch shouldUseTopRedirection {
   | true =>
     try {
       Top.Location.replace(href)

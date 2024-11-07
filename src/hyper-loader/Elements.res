@@ -20,7 +20,7 @@ let make = (
   ~logger: option<HyperLogger.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
-  ~useTopRedirection,
+  ~shouldUseTopRedirection,
 ) => {
   try {
     let iframeRef = []
@@ -311,7 +311,7 @@ let make = (
             ("locale", locale),
             ("loader", loader),
             ("fonts", fonts),
-            ("useTopRedirection", useTopRedirection->JSON.Encode.bool),
+            ("shouldUseTopRedirection", shouldUseTopRedirection->JSON.Encode.bool),
           ]->getJsonFromArrayOfJson
         let message = [
           (
@@ -669,7 +669,7 @@ let make = (
             let returnUrl = dict->getString("return_url", "")
             let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`
             if redirect.contents === "always" {
-              Window.replaceRootHref(redirectUrl, useTopRedirection)
+              Window.replaceRootHref(redirectUrl, shouldUseTopRedirection)
               resolve(JSON.Encode.null)
             } else {
               messageCurrentWindow([
@@ -697,7 +697,7 @@ let make = (
 
               let handleErrorResponse = err => {
                 if redirect.contents === "always" {
-                  Window.replaceRootHref(url, useTopRedirection)
+                  Window.replaceRootHref(url, shouldUseTopRedirection)
                 }
                 messageCurrentWindow([
                   ("submitSuccessful", false->JSON.Encode.bool),
@@ -760,7 +760,7 @@ let make = (
               if redirect.contents === "always" {
                 Window.replaceRootHref(
                   redirectUrl->JSON.Decode.string->Option.getOr(""),
-                  useTopRedirection,
+                  shouldUseTopRedirection,
                 )
                 resolve(JSON.Encode.null)
               } else {
@@ -1162,7 +1162,7 @@ let make = (
         setElementIframeRef,
         iframeRef,
         mountPostMessage,
-        ~useTopRedirection,
+        ~shouldUseTopRedirection,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

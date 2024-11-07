@@ -222,7 +222,7 @@ let make = (
         iframeRef,
         mountPostMessage,
         ~isPaymentManagementElement=true,
-        ~useTopRedirection=false,
+        ~shouldUseTopRedirection=false,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement
