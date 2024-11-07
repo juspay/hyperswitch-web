@@ -21,6 +21,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "sepa",
   "affirm",
   "ach",
+  "bacs",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
