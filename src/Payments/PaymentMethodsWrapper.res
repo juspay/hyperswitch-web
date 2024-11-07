@@ -84,12 +84,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
             ),
             ~paymentExperience=paymentFlow,
-          )
-          ->Dict.fromArray
-          ->JSON.Encode.object
-          ->flattenObject(true)
-          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->getArrayOfTupleFromDict
+          )->mergeAndFlattenToTuples(requiredFieldsBody)
 
         intent(
           ~bodyArr=body,
