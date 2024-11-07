@@ -26,6 +26,7 @@ declare global {
             ): Chainable<JQuery<HTMLElement>>
             createPaymentIntent(secretKey: string, createPaymentBody: Record<string, any>): Chainable<Response<any>>
             getGlobalState(key: string): Chainable<Response<any>>
+            nestedIFrame(selector: string, callback: (body: Chainable<JQuery<HTMLElement>>) => void): Chainable<void>;
         }
     }
 }
