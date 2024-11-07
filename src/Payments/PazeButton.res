@@ -2,6 +2,10 @@
 let make = (~token: SessionsType.token) => {
   open Utils
   open RecoilAtoms
+
+  let url = RescriptReactRouter.useUrl()
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+
   let {iframeId, publishableKey, clientSecret} = Recoil.useRecoilValueFromAtom(keys)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -26,6 +30,7 @@ let make = (~token: SessionsType.token) => {
       (
         "metadata",
         [
+          ("componentName", componentName->JSON.Encode.string),
           ("wallet", (token.walletName :> string)->JSON.Encode.string),
           ("clientId", token.clientId->JSON.Encode.string),
           ("clientName", token.clientName->JSON.Encode.string),

@@ -129,14 +129,13 @@ let make = (
       }
     }
 
-    let onPazeCallback = mountedIframeRef => {
-      (ev: Types.event) => {
-        let json = ev.data->Identity.anyTypeToJson
-        let dict = json->getDictFromJson
-        let isPazeExist = dict->getBool("isPaze", false)
-        if isPazeExist {
-          mountedIframeRef->Window.iframePostMessage([("data", json)]->Dict.fromArray)
-        }
+    let onPazeCallback = (event: Types.event) => {
+      let json = event.data->Identity.anyTypeToJson
+      let dict = json->getDictFromJson
+      if dict->getBool("isPaze", false) {
+        let componentName = dict->getString("componentName", "payment")
+        let msg = [("data", json)]->Dict.fromArray
+        handlePazeIframePostMessage(msg, componentName, event.source)
       }
     }
 
@@ -149,7 +148,7 @@ let make = (
           isTaxCalculationEnabled.contents =
             dict->getDictFromDict("response")->getBool("is_tax_calculation_enabled", false)
           addSmartEventListener("message", onPlaidCallback(mountedIframeRef), "onPlaidCallback")
-          addSmartEventListener("message", onPazeCallback(mountedIframeRef), "onPazeCallback")
+          addSmartEventListener("message", onPazeCallback, "onPazeCallback")
 
           let json = dict->getJsonFromDict("response", JSON.Encode.null)
           let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
