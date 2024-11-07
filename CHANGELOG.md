@@ -1,3 +1,10 @@
+# [0.101.0](https://github.com/juspay/hyperswitch-web/compare/v0.100.1...v0.101.0) (2024-11-07)
+
+
+### Features
+
+* added dynamic fields support for sepa bank transfer ([#775](https://github.com/juspay/hyperswitch-web/issues/775)) ([52d2d15](https://github.com/juspay/hyperswitch-web/commit/52d2d15ed2b2b8ed364a81fe9bbd3dfbd64c0cec))
+
 ## [0.100.1](https://github.com/juspay/hyperswitch-web/compare/v0.100.0...v0.100.1) (2024-11-06)
 
 # [0.100.0](https://github.com/juspay/hyperswitch-web/compare/v0.99.6...v0.100.0) (2024-11-06)
