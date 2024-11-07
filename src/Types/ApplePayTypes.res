@@ -185,37 +185,3 @@ let getPaymentRequestFromSession = (~sessionObj, ~componentName) => {
 
   paymentRequest
 }
-
-let handleApplePayIframePostMessage = (msg, componentName, mountedIframeRef) => {
-  let isApplePayMessageSent = ref(false)
-
-  let iframes = Window.querySelectorAll("iframe")
-
-  iframes->Array.forEach(iframe => {
-    let iframeSrc = iframe->Window.getAttribute("src")->Option.getOr("")
-    if iframeSrc->String.includes(`componentName=${componentName}`) {
-      iframe->Js.Nullable.return->Window.iframePostMessage(msg)
-      isApplePayMessageSent := true
-    }
-  })
-
-  if !isApplePayMessageSent.contents {
-    mountedIframeRef->Window.iframePostMessage(msg)
-  }
-}
-
-let handlePazeIframePostMessage = (msg, componentName, eventSource) => {
-  let isPazePresent = ref(false)
-  let iframes = Window.querySelectorAll("iframe")
-  iframes->Array.forEach(iframe => {
-    let iframeSrc = iframe->Window.getAttribute("src")->Option.getOr("")
-    if iframeSrc->String.includes(`componentName=${componentName}`) {
-      iframe->Js.Nullable.return->Window.iframePostMessage(msg)
-      isPazePresent := true
-    }
-  })
-
-  if !isPazePresent.contents {
-    eventSource->Window.sendPostMessage(msg)
-  }
-}

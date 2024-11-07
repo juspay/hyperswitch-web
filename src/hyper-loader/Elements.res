@@ -3,10 +3,9 @@ open ErrorUtils
 open Identity
 open Utils
 open EventListenerManager
-open ApplePayTypes
 
 type trustPayFunctions = {
-  finishApplePaymentV2: (string, paymentRequestData) => promise<JSON.t>,
+  finishApplePaymentV2: (string, ApplePayTypes.paymentRequestData) => promise<JSON.t>,
   executeGooglePayment: (string, GooglePayType.paymentDataRequest) => promise<JSON.t>,
 }
 @new external trustPayApi: JSON.t => trustPayFunctions = "TrustPayApi"
@@ -353,7 +352,7 @@ let make = (
 
           if dict->Dict.get("applePayMounted")->Option.isSome {
             if wallets.applePay === Auto {
-              switch sessionForApplePay->Nullable.toOption {
+              switch ApplePayTypes.sessionForApplePay->Nullable.toOption {
               | Some(session) =>
                 try {
                   if session.canMakePayments() {
@@ -938,7 +937,7 @@ let make = (
                         intermediatePaymentData
                         ->getDictFromJson
                         ->getDictFromDict("shippingAddress")
-                        ->billingContactItemToObjMapper
+                        ->ApplePayTypes.billingContactItemToObjMapper
                       let newShippingAddress =
                         [
                           ("state", shippingAddress.administrativeArea->JSON.Encode.string),
