@@ -61,3 +61,17 @@ let useSendEventsToParent = eventsToSendToParent => {
     Some(() => {Window.removeEventListener("message", handle)})
   })
 }
+
+let useUpdateShouldUseTopRedirection = () => {
+  let setShouldUseTopRedirection = Recoil.useSetRecoilState(RecoilAtoms.shouldUseTopRedirectionAtom)
+  let updateTopRedirectionAtom = paymentOptions => {
+    paymentOptions
+    ->Dict.get("shouldUseTopRedirection")
+    ->Option.flatMap(JSON.Decode.bool)
+    ->Option.map(useTop => {
+      setShouldUseTopRedirection(_ => useTop)
+    })
+    ->ignore
+  }
+  updateTopRedirectionAtom
+}
