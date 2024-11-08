@@ -128,3 +128,10 @@ export const adyenTestCard = "4917610000000000";
 export const bluesnapTestCard = "4000000000001091";
 export const amexTestCard = "378282246310005"
 export const visaTestCard = "4242424242424242";
+
+export const adyenTestCardDetails = {
+  cardNumber: "4917 6100 0000 0000",
+  expiryDate: "03/30",
+  cvv: "737",
+};
+
