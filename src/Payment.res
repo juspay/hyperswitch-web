@@ -328,25 +328,17 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
   React.useEffect(() => {
-    let cardError = if isCardValid == None || cardNumber->String.length == 0 {
-      ""
-    } else {
-      let isCardSupportedValue = isCardSupported->Option.getOr(true)
-      let isCardValidValue = isCardValid->Option.getOr(false)
-
-      if isCardSupportedValue && isCardValidValue {
-        ""
-      } else if isCardSupportedValue {
-        localeString.inValidCardErrorText
-      } else {
-        let cardBrand = cardNumber->CardUtils.getCardBrand
-        if cardBrand == "" {
-          localeString.enterValidCardNumberErrorText
-        } else {
-          localeString.cardBrandConfiguredErrorText(cardBrand)
-        }
-      }
+    let cardError = switch (
+      isCardSupported->Option.getOr(true),
+      isCardValid->Option.getOr(true),
+      cardNumber->String.length == 0,
+    ) {
+    | (_, _, true) => ""
+    | (true, true, _) => ""
+    | (true, _, _) => localeString.inValidCardErrorText
+    | (_, _, _) => CardUtils.getCardBrandInvalidError(~cardNumber, ~localeString)
     }
+    let cardError = isCardValid->Option.isSome ? cardError : ""
     setCardError(_ => cardError)
     None
   }, [isCardValid, isCardSupported])
