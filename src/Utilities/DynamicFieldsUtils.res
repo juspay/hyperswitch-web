@@ -20,6 +20,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "upi_collect",
   "sepa",
   "affirm",
+  "walley",
   "ach",
   "bacs",
 ]
