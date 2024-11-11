@@ -884,7 +884,17 @@ let appendRedirectPaymentMethods = [
 ]
 
 let appendBankeDebitMethods = ["sepa"]
-let appendBankTransferMethods = ["sepa", "ach", "bacs", "multibanco"]
+let appendBankTransferMethods = [
+  "sepa",
+  "ach",
+  "bacs",
+  "multibanco",
+  "bni_va",
+  "bri_va",
+  "cimb_va",
+  "danamon_va",
+  "mandiri_va",
+]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {
