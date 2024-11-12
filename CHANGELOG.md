@@ -1,3 +1,10 @@
+# [0.102.0](https://github.com/juspay/hyperswitch-web/compare/v0.101.10...v0.102.0) (2024-11-12)
+
+
+### Features
+
+* express checkout for paze ([#779](https://github.com/juspay/hyperswitch-web/issues/779)) ([f5dd999](https://github.com/juspay/hyperswitch-web/commit/f5dd999dc9f12a5e81c7cc7b353a40cfc5386f65))
+
 ## [0.101.10](https://github.com/juspay/hyperswitch-web/compare/v0.101.9...v0.101.10) (2024-11-12)
 
 ## [0.101.9](https://github.com/juspay/hyperswitch-web/compare/v0.101.8...v0.101.9) (2024-11-12)
