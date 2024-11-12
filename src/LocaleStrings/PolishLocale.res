@@ -5,6 +5,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   inValidCardErrorText: `Numer karty jest nieprawidłowy.`,
   inCompleteCVCErrorText: `Kod zabezpieczający karty jest niekompletny.`,
   inCompleteExpiryErrorText: `Data ważności karty jest niepełna.`,
+  enterValidCardNumberErrorText: `Proszę podać prawidłowy numer karty.`,
   pastExpiryErrorText: `Rok w dacie ważności karty minął.`,
   poweredBy: `Na oprogramowaniu Hyperswitch`,
   validThruText: `Dada ważności`,

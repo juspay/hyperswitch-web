@@ -15,6 +15,7 @@ let make = (
   iframeRef,
   mountPostMessage,
   ~isPaymentManagementElement=false,
+  ~shouldUseTopRedirection,
 ) => {
   try {
     let mountId = ref("")
@@ -243,7 +244,7 @@ let make = (
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
             let url = val->getStringFromJson("")
-            Window.replaceRootHref(url)
+            Window.replaceRootHref(url, shouldUseTopRedirection)
           }
         | None => ()
         }
@@ -385,7 +386,7 @@ let make = (
           src="${ApiEndpoint.sdkDomainUrl}/index.html?componentName=${componentType}"
           allow="payment *"
           name="orca-payment"
-          style="border: 0px; ${additionalIframeStyle}"
+          style="border: 0px; ${additionalIframeStyle} outline: none;"
           width="100%"
         ></iframe>
         </div>`

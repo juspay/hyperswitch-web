@@ -56,7 +56,7 @@ Cypress.Commands.add("hardReload", () => {
 
 Cypress.Commands.add(
   "testDynamicFields",
-  (customerData, testIdsToRemoveArr = [], isThreeDSEnabled = false) => {
+  (customerData, testIdsToRemoveArr = [], isThreeDSEnabled = false, publishableKey) => {
     const mapping = {
       [testIds.cardNoInputTestId]: customerData.cardNo,
       [testIds.expiryInputTestId]: customerData.cardExpiry,
@@ -73,7 +73,7 @@ Cypress.Commands.add(
     if (isThreeDSEnabled) {
       mapping[testIds.cardNoInputTestId] = customerData.threeDSCardNo;
     }
-    let publishableKey = "pk_snd_3b33cd9404234113804aa1accaabe22f";
+
     let clientSecret: string;
     cy.request({
       method: "GET",
@@ -172,4 +172,12 @@ Cypress.Commands.add("createPaymentIntent", (secretKey: string, createPaymentBod
 
 Cypress.Commands.add("getGlobalState", (key: any) => {
   return globalState[key];
+});
+
+Cypress.Commands.add("nestedIFrame", (selector, callback) => {
+  cy.iframe("#orca-fullscreen").find(selector).should("exist").should("be.visible").then(($ele) => {
+    const $body =
+      $ele.contents().find('body')
+    callback($body);
+  })
 });

@@ -17,13 +17,14 @@ let make = (
   ~clientSecret,
   ~sdkSessionId,
   ~publishableKey,
-  ~logger: option<OrcaLogger.loggerMake>,
+  ~logger: option<HyperLogger.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
+  ~shouldUseTopRedirection,
 ) => {
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
+    let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
@@ -72,6 +73,7 @@ let make = (
               name="orca-payment-element-iframeRef-${localSelectorString}"
               src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"              allow="*"
               name="orca-payment"
+              style="outline: none;"
             ></iframe>
           </div>`
         let iframeDiv = Window.createElement("div")
@@ -128,6 +130,17 @@ let make = (
       }
     }
 
+    let onPazeCallback = mountedIframeRef => {
+      (ev: Types.event) => {
+        let json = ev.data->Identity.anyTypeToJson
+        let dict = json->getDictFromJson
+        let isPazeExist = dict->getBool("isPaze", false)
+        if isPazeExist {
+          mountedIframeRef->Window.iframePostMessage([("data", json)]->Dict.fromArray)
+        }
+      }
+    }
+
     let fetchPaymentsList = (mountedIframeRef, componentType) => {
       let handlePaymentMethodsLoaded = (event: Types.event) => {
         let json = event.data->Identity.anyTypeToJson
@@ -137,6 +150,7 @@ let make = (
           isTaxCalculationEnabled.contents =
             dict->getDictFromDict("response")->getBool("is_tax_calculation_enabled", false)
           addSmartEventListener("message", onPlaidCallback(mountedIframeRef), "onPlaidCallback")
+          addSmartEventListener("message", onPazeCallback(mountedIframeRef), "onPazeCallback")
 
           let json = dict->getJsonFromDict("response", JSON.Encode.null)
           let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -297,6 +311,7 @@ let make = (
             ("locale", locale),
             ("loader", loader),
             ("fonts", fonts),
+            ("shouldUseTopRedirection", shouldUseTopRedirection->JSON.Encode.bool),
           ]->getJsonFromArrayOfJson
         let message = [
           (
@@ -654,7 +669,7 @@ let make = (
             let returnUrl = dict->getString("return_url", "")
             let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`
             if redirect.contents === "always" {
-              Window.replaceRootHref(redirectUrl)
+              Window.replaceRootHref(redirectUrl, shouldUseTopRedirection)
               resolve(JSON.Encode.null)
             } else {
               messageCurrentWindow([
@@ -682,7 +697,7 @@ let make = (
 
               let handleErrorResponse = err => {
                 if redirect.contents === "always" {
-                  Window.replaceRootHref(url)
+                  Window.replaceRootHref(url, shouldUseTopRedirection)
                 }
                 messageCurrentWindow([
                   ("submitSuccessful", false->JSON.Encode.bool),
@@ -743,7 +758,10 @@ let make = (
             ->then(json => json->handleRetrievePaymentResponse)
             ->catch(err => {
               if redirect.contents === "always" {
-                Window.replaceRootHref(redirectUrl->JSON.Decode.string->Option.getOr(""))
+                Window.replaceRootHref(
+                  redirectUrl->JSON.Decode.string->Option.getOr(""),
+                  shouldUseTopRedirection,
+                )
                 resolve(JSON.Encode.null)
               } else {
                 messageCurrentWindow([
@@ -1144,6 +1162,7 @@ let make = (
         setElementIframeRef,
         iframeRef,
         mountPostMessage,
+        ~shouldUseTopRedirection,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

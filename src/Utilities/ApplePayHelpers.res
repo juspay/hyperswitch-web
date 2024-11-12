@@ -7,7 +7,7 @@ let processPayment = (
   ~isThirdPartyFlow=false,
   ~isGuestCustomer,
   ~paymentMethodListValue=PaymentMethodsRecord.defaultList,
-  ~intent: PaymentHelpers.paymentIntent,
+  ~intent: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
   ~publishableKey,
   ~isManualRetryEnabled,
@@ -61,18 +61,14 @@ let getApplePayFromResponse = (
 
   let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
 
-  bodyDict
-  ->getJsonFromArrayOfJson
-  ->flattenObject(true)
-  ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-  ->getArrayOfTupleFromDict
+  bodyDict->mergeAndFlattenToTuples(requiredFieldsBody)
 }
 
 let startApplePaySession = (
   ~paymentRequest,
   ~applePaySessionRef,
   ~applePayPresent,
-  ~logger: OrcaLogger.loggerMake,
+  ~logger: HyperLogger.loggerMake,
   ~callBackFunc,
   ~resolvePromise,
   ~clientSecret,
@@ -261,11 +257,7 @@ let useHandleApplePayResponse = (
           let bodyArr = if isWallet {
             applePayBody
           } else {
-            applePayBody
-            ->getJsonFromArrayOfJson
-            ->flattenObject(true)
-            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-            ->getArrayOfTupleFromDict
+            applePayBody->mergeAndFlattenToTuples(requiredFieldsBody)
           }
 
           processPayment(

@@ -163,11 +163,7 @@ let make = (
       if validFormat && (showFields || isBancontact) {
         intent(
           ~bodyArr={
-            (isBancontact ? banContactBody : cardBody)
-            ->getJsonFromArrayOfJson
-            ->flattenObject(true)
-            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-            ->getArrayOfTupleFromDict
+            (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(requiredFieldsBody)
           },
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
@@ -177,6 +173,14 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
+        } else if isCardSupported->Option.getOr(true)->not {
+          if cardBrand == "" {
+            setCardError(_ => localeString.enterValidCardNumberErrorText)
+            setUserError(localeString.enterValidDetailsText)
+          } else {
+            setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
+            setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+          }
         }
         if cardExpiry === "" {
           setExpiryError(_ => localeString.cardExpiryDateEmptyText)
@@ -185,10 +189,6 @@ let make = (
         if !isBancontact && cvcNumber === "" {
           setCvcError(_ => localeString.cvcNumberEmptyText)
           setUserError(localeString.enterFieldsText)
-        }
-        if isCardSupported->Option.getOr(true)->not {
-          setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
-          setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
         }
         if !validFormat {
           setUserError(localeString.enterValidDetailsText)

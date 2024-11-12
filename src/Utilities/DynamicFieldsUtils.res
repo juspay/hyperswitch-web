@@ -1,5 +1,32 @@
 open RecoilAtoms
 
+let dynamicFieldsEnabledPaymentMethods = [
+  "crypto_currency",
+  "debit",
+  "credit",
+  "blik",
+  "google_pay",
+  "apple_pay",
+  "bancontact_card",
+  "open_banking_uk",
+  "eps",
+  "ideal",
+  "sofort",
+  "pix_transfer",
+  "giropay",
+  "local_bank_transfer_transfer",
+  "afterpay_clearpay",
+  "mifinity",
+  "upi_collect",
+  "sepa",
+  "affirm",
+  "walley",
+  "ach",
+  "bacs",
+  "pay_bright",
+  "multibanco_transfer",
+]
+
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
   let fieldNameArr = field.value->String.split(" ")
   let requiredFieldsArr = item.required_field->String.split(".")

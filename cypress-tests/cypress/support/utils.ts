@@ -6,15 +6,17 @@ export const getClientURL = (clientSecret, publishableKey) => {
   return `${CLIENT_BASE_URL}?isCypressTestMode=true&clientSecret=${clientSecret}&publishableKey=${publishableKey}`;
 }
 
-export const enum connectorEnum{
+export const enum connectorEnum {
   TRUSTPAY,
   ADYEN,
-  STRIPE
+  STRIPE,
+  NETCETERA
 }
 export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
   [connectorEnum.ADYEN, "pro_Kvqzu8WqBZsT1OjHlCj4"],
   [connectorEnum.STRIPE, "pro_5fVcCxU8MFTYozgtf0P8"],
+  [connectorEnum.NETCETERA, "pro_h9VHXnJx8s6W4KSZfSUL"]
 ]);
 
 export const createPaymentBody = {
@@ -78,7 +80,7 @@ export const createPaymentBody = {
 
 }
 
-export const changeObjectKeyValue = (object: Record<string, any>, key: string, value: string) => {
+export const changeObjectKeyValue = (object: Record<string, any>, key: string, value: boolean | string) => {
   object[key] = value
 }
 
@@ -128,6 +130,7 @@ export const adyenTestCard = "4917610000000000";
 export const bluesnapTestCard = "4000000000001091";
 export const amexTestCard = "378282246310005"
 export const visaTestCard = "4242424242424242";
+export const netceteraChallengeTestCard = "348638267931507";
 
 export const adyenTestCardDetails = {
   cardNumber: "4400 0000 0000 0008",

@@ -11,7 +11,8 @@ let default = (~paymentType: CardThemeType.mode) => {
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
@@ -28,13 +29,12 @@ let default = (~paymentType: CardThemeType.mode) => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
       if complete {
-        let (connectors, _) = paymentMethodListValue->PaymentUtils.getConnectors(BankTransfer(Bacs))
+        let bodyArr =
+          PaymentBody.dynamicPaymentBody("bank_transfer", "bacs")->mergeAndFlattenToTuples(
+            requiredFieldsBody,
+          )
         intent(
-          ~bodyArr=PaymentBody.bacsBankTransferBody(
-            ~email=email.value,
-            ~name=fullName.value,
-            ~connectors,
-          ),
+          ~bodyArr,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~iframeId,
@@ -48,8 +48,9 @@ let default = (~paymentType: CardThemeType.mode) => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <EmailPaymentInput paymentType />
-    <FullNamePaymentInput paymentType />
+    <DynamicFields
+      paymentType paymentMethod="bank_transfer" paymentMethodType="bacs" setRequiredFieldsBody
+    />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="bacs" />
     <InfoElement />
   </div>

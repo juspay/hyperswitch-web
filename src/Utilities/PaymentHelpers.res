@@ -1,19 +1,14 @@
 open Utils
 open Identity
-
-@val @scope(("window", "parent", "location")) external href: string = "href"
-
-type searchParams = {set: (string, string) => unit}
-type url = {searchParams: searchParams, href: string}
-@new external urlSearch: string => url = "URL"
-
+open PaymentHelpersTypes
 open LoggerUtils
-type payment = Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Other
+open URLModule
 
 let getPaymentType = paymentMethodType =>
   switch paymentMethodType {
   | "apple_pay" => Applepay
   | "google_pay" => Gpay
+  | "paze" => Paze
   | "debit"
   | "credit"
   | "" =>
@@ -22,23 +17,6 @@ let getPaymentType = paymentMethodType =>
   }
 
 let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-
-type paymentIntent = (
-  ~handleUserError: bool=?,
-  ~bodyArr: array<(string, JSON.t)>,
-  ~confirmParam: ConfirmType.confirmParams,
-  ~iframeId: string=?,
-  ~isThirdPartyFlow: bool=?,
-  ~intentCallback: Core__JSON.t => unit=?,
-  ~manualRetry: bool=?,
-) => unit
-
-type completeAuthorize = (
-  ~handleUserError: bool=?,
-  ~bodyArr: array<(string, JSON.t)>,
-  ~confirmParam: ConfirmType.confirmParams,
-  ~iframeId: string=?,
-) => unit
 
 let retrievePaymentIntent = (
   clientSecret,
@@ -317,13 +295,14 @@ let rec intentCall = (
   ~isPaymentSession=false,
   ~isCallbackUsedVal=?,
   ~componentName="payment",
+  ~shouldUseTopRedirection,
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
 
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
   let isPostSessionTokens = uri->String.includes("/post_session_tokens")
-  let (eventName: OrcaLogger.eventName, initEventName: OrcaLogger.eventName) = switch (
+  let (eventName: HyperLogger.eventName, initEventName: HyperLogger.eventName) = switch (
     isConfirm,
     isCompleteAuthorize,
     isPostSessionTokens,
@@ -344,7 +323,7 @@ let rec intentCall = (
   )
   let handleOpenUrl = url => {
     if isPaymentSession {
-      Window.replaceRootHref(url)
+      Window.replaceRootHref(url, shouldUseTopRedirection)
     } else {
       openUrl(url)
     }
@@ -357,10 +336,10 @@ let rec intentCall = (
   )
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString
-    let url = urlSearch(confirmParam.return_url)
+    let url = makeUrl(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
-    messageParentWindow([("confirmParams", confirmParam->Identity.anyTypeToJson)])
+    messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
     if statusCode->String.charAt(0) !== "2" {
       res
@@ -470,6 +449,7 @@ let rec intentCall = (
                 ~sdkHandleOneClickConfirmPayment,
                 ~counter=counter + 1,
                 ~componentName,
+                ~shouldUseTopRedirection,
               )
               ->then(
                 res => {
@@ -502,7 +482,7 @@ let rec intentCall = (
             | _ => intent.payment_method_type
             }
 
-            let url = urlSearch(confirmParam.return_url)
+            let url = makeUrl(confirmParam.return_url)
             url.searchParams.set("payment_intent_client_secret", clientSecret)
             url.searchParams.set("status", intent.status)
 
@@ -514,7 +494,7 @@ let rec intentCall = (
               | (Paypal, false) =>
                 if !isPaymentSession {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    Utils.handleOnCompleteDoThisMessage()
+                    handleOnCompleteDoThisMessage()
                   } else {
                     closePaymentLoaderIfAny()
                   }
@@ -522,7 +502,7 @@ let rec intentCall = (
                   postSubmitResponse(~jsonData=data, ~url=url.href)
                 } else if confirmParam.redirect === Some("always") {
                   if isCallbackUsedVal->Option.getOr(false) {
-                    Utils.handleOnCompleteDoThisMessage()
+                    handleOnCompleteDoThisMessage()
                   } else {
                     handleOpenUrl(url.href)
                   }
@@ -532,7 +512,7 @@ let rec intentCall = (
               | _ =>
                 if isCallbackUsedVal->Option.getOr(false) {
                   closePaymentLoaderIfAny()
-                  Utils.handleOnCompleteDoThisMessage()
+                  handleOnCompleteDoThisMessage()
                 } else {
                   handleOpenUrl(url.href)
                 }
@@ -717,7 +697,7 @@ let rec intentCall = (
                         ->getString("open_banking_session_token", "")
                         ->JSON.Encode.string,
                       ),
-                      ("pmAuthConnectorArray", ["plaid"]->Identity.anyTypeToJson),
+                      ("pmAuthConnectorArray", ["plaid"]->anyTypeToJson),
                       ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
                       ("clientSecret", clientSecret->JSON.Encode.string),
                       ("isForceSync", true->JSON.Encode.bool),
@@ -844,7 +824,7 @@ let rec intentCall = (
   ->catch(err => {
     Promise.make((resolve, _) => {
       try {
-        let url = urlSearch(confirmParam.return_url)
+        let url = makeUrl(confirmParam.return_url)
         url.searchParams.set("payment_intent_client_secret", clientSecret)
         url.searchParams.set("status", "failed")
         let exceptionMessage = err->formatException
@@ -897,6 +877,7 @@ let rec intentCall = (
             ~counter=counter + 1,
             ~isPaymentSession,
             ~componentName,
+            ~shouldUseTopRedirection,
           )
           ->then(
             res => {
@@ -921,12 +902,13 @@ let rec intentCall = (
   })
 }
 
-let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
+let usePaymentSync = (optLogger: option<HyperLogger.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let shouldUseTopRedirection = Recoil.useRecoilValueFromAtom(shouldUseTopRedirectionAtom)
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (~handleUserError=false, ~confirmParam: ConfirmType.confirmParams, ~iframeId="") => {
     switch keys.clientSecret {
@@ -954,6 +936,7 @@ let usePaymentSync = (optLogger: option<OrcaLogger.loggerMake>, paymentType: pay
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
           ~isCallbackUsedVal,
+          ~shouldUseTopRedirection,
         )->ignore
       }
       switch paymentMethodList {
@@ -980,7 +963,7 @@ let rec maskPayload = payloadJson => {
       let (key, value) = entry
       (key, maskPayload(value))
     })
-    ->Utils.getJsonFromArrayOfJson
+    ->getJsonFromArrayOfJson
 
   | Array(arr) => arr->Array.map(maskPayload)->JSON.Encode.array
   | String(valueStr) => valueStr->maskStr->JSON.Encode.string
@@ -1001,6 +984,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let shouldUseTopRedirection = Recoil.useRecoilValueFromAtom(shouldUseTopRedirectionAtom)
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (
@@ -1047,10 +1031,10 @@ let usePaymentIntent = (optLogger, paymentType) => {
                 let (key, value) = header
                 (key, value->JSON.Encode.string)
               })
-              ->Utils.getJsonFromArrayOfJson,
+              ->getJsonFromArrayOfJson,
             ),
           ]
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         switch paymentType {
         | Card =>
@@ -1096,6 +1080,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ~counter=0,
             ~isCallbackUsedVal,
             ~componentName,
+            ~shouldUseTopRedirection,
           )
           ->then(val => {
             intentCallback(val)
@@ -1113,7 +1098,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             bodyArr->Array.concat(broswerInfo()),
             mandatePaymentType->PaymentBody.paymentTypeBody,
           ])
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
@@ -1124,7 +1109,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
           ->Array.concat(
             bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
           )
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
@@ -1173,7 +1158,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   }
 }
 
-let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentType: payment) => {
+let useCompleteAuthorize = (optLogger: option<HyperLogger.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
@@ -1181,6 +1166,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   let url = RescriptReactRouter.useUrl()
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let shouldUseTopRedirection = Recoil.useRecoilValueFromAtom(shouldUseTopRedirectionAtom)
   let paymentTypeFromUrl =
     CardUtils.getQueryParamsDictforKey(url.search, "componentName")->CardThemeType.getPaymentMode
   (
@@ -1204,7 +1190,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
       let bodyStr =
         [("client_secret", clientSecret->JSON.Encode.string)]
         ->Array.concatMany([bodyArr, browserInfo()])
-        ->Utils.getJsonFromArrayOfJson
+        ->getJsonFromArrayOfJson
         ->JSON.stringify
 
       let completeAuthorize = () => {
@@ -1225,6 +1211,7 @@ let useCompleteAuthorize = (optLogger: option<OrcaLogger.loggerMake>, paymentTyp
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
           ~isCallbackUsedVal,
+          ~shouldUseTopRedirection,
         )->ignore
       }
       switch paymentMethodList {
@@ -1617,6 +1604,7 @@ let paymentIntentForPaymentSession = (
   ~clientSecret,
   ~logger,
   ~customPodUri,
+  ~shouldUseTopRedirection,
 ) => {
   let confirmParams =
     payload
@@ -1673,6 +1661,7 @@ let paymentIntentForPaymentSession = (
     ~sdkHandleOneClickConfirmPayment=false,
     ~counter=0,
     ~isPaymentSession=true,
+    ~shouldUseTopRedirection,
   )
 }
 
@@ -1736,7 +1725,7 @@ let callAuthLink = (
         let metaData =
           [
             ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
-            ("pmAuthConnectorArray", pmAuthConnectorsArr->Identity.anyTypeToJson),
+            ("pmAuthConnectorArray", pmAuthConnectorsArr->anyTypeToJson),
             ("publishableKey", publishableKey->JSON.Encode.string),
             ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
             ("isForceSync", false->JSON.Encode.bool),
@@ -1787,7 +1776,7 @@ let callAuthExchange = (
   open Promise
   open PaymentType
   let endpoint = ApiEndpoint.getApiEndPoint()
-  let logger = OrcaLogger.make(~source=Elements(Payment))
+  let logger = HyperLogger.make(~source=Elements(Payment))
   let uri = `${endpoint}/payment_methods/auth/exchange`
   let updatedBody = [
     ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
@@ -2109,6 +2098,7 @@ let usePostSessionTokens = (
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
+  let shouldUseTopRedirection = Recoil.useRecoilValueFromAtom(RecoilAtoms.shouldUseTopRedirectionAtom)
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (
@@ -2155,10 +2145,10 @@ let usePostSessionTokens = (
                 let (key, value) = header
                 (key, value->JSON.Encode.string)
               })
-              ->Utils.getJsonFromArrayOfJson,
+              ->getJsonFromArrayOfJson,
             ),
           ]
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         switch paymentType {
         | Card =>
@@ -2200,6 +2190,7 @@ let usePostSessionTokens = (
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
+          ~shouldUseTopRedirection,
         )
         ->then(val => {
           intentCallback(val)
@@ -2216,7 +2207,7 @@ let usePostSessionTokens = (
             bodyArr->Array.concat(broswerInfo()),
             mandatePaymentType->PaymentBody.paymentTypeBody,
           ])
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }
@@ -2227,7 +2218,7 @@ let usePostSessionTokens = (
           ->Array.concat(
             bodyArr->Array.concatMany([PaymentBody.mandateBody(mandatePaymentType), broswerInfo()]),
           )
-          ->Utils.getJsonFromArrayOfJson
+          ->getJsonFromArrayOfJson
           ->JSON.stringify
         callIntent(bodyStr)
       }

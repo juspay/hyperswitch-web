@@ -74,7 +74,7 @@ let make = (~integrateError, ~logger) => {
         setTimeout(() => {
           clearInterval(interval)
           // Append query params and redirect
-          let url = PaymentHelpers.urlSearch(returnUrl)
+          let url = URLModule.makeUrl(returnUrl)
           url.searchParams.set("payout_id", options.payoutId)
           url.searchParams.set("status", statusInfo.status->getPayoutStatusString)
           Utils.openUrl(url.href)
@@ -297,11 +297,7 @@ let make = (~integrateError, ~logger) => {
                       <p> {React.string(`${options.currency} ${options.amount}`)} </p>
                     </div>
                     <div className="flex self-start h-12 w-auto bg-white rounded-sm">
-                      <img
-                        className="max-h-12 w-auto max-w-21 h-auto w-auto"
-                        src={merchantLogo}
-                        alt="O"
-                      />
+                      <img className="max-h-12 w-auto max-w-21 h-auto" src={merchantLogo} alt="O" />
                     </div>
                   </div>
                   <div className="lg:mx-5">

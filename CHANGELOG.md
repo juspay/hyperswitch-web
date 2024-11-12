@@ -1,3 +1,83 @@
+## [0.101.8](https://github.com/juspay/hyperswitch-web/compare/v0.101.7...v0.101.8) (2024-11-08)
+
+## [0.101.7](https://github.com/juspay/hyperswitch-web/compare/v0.101.6...v0.101.7) (2024-11-08)
+
+## [0.101.6](https://github.com/juspay/hyperswitch-web/compare/v0.101.5...v0.101.6) (2024-11-08)
+
+## [0.101.5](https://github.com/juspay/hyperswitch-web/compare/v0.101.4...v0.101.5) (2024-11-07)
+
+## [0.101.4](https://github.com/juspay/hyperswitch-web/compare/v0.101.3...v0.101.4) (2024-11-07)
+
+## [0.101.3](https://github.com/juspay/hyperswitch-web/compare/v0.101.2...v0.101.3) (2024-11-07)
+
+## [0.101.2](https://github.com/juspay/hyperswitch-web/compare/v0.101.1...v0.101.2) (2024-11-07)
+
+## [0.101.1](https://github.com/juspay/hyperswitch-web/compare/v0.101.0...v0.101.1) (2024-11-07)
+
+# [0.101.0](https://github.com/juspay/hyperswitch-web/compare/v0.100.1...v0.101.0) (2024-11-07)
+
+
+### Features
+
+* added dynamic fields support for sepa bank transfer ([#775](https://github.com/juspay/hyperswitch-web/issues/775)) ([52d2d15](https://github.com/juspay/hyperswitch-web/commit/52d2d15ed2b2b8ed364a81fe9bbd3dfbd64c0cec))
+
+## [0.100.1](https://github.com/juspay/hyperswitch-web/compare/v0.100.0...v0.100.1) (2024-11-06)
+
+# [0.100.0](https://github.com/juspay/hyperswitch-web/compare/v0.99.6...v0.100.0) (2024-11-06)
+
+
+### Features
+
+* add dynamic fields support for affirm ([#776](https://github.com/juspay/hyperswitch-web/issues/776)) ([e55e533](https://github.com/juspay/hyperswitch-web/commit/e55e533a197efad11c9b8cceb4b06c672a365dfe))
+
+## [0.99.6](https://github.com/juspay/hyperswitch-web/compare/v0.99.5...v0.99.6) (2024-11-06)
+
+## [0.99.5](https://github.com/juspay/hyperswitch-web/compare/v0.99.4...v0.99.5) (2024-11-06)
+
+## [0.99.4](https://github.com/juspay/hyperswitch-web/compare/v0.99.3...v0.99.4) (2024-11-05)
+
+
+### Bug Fixes
+
+* card brand update to prevent multiple error messages ([#767](https://github.com/juspay/hyperswitch-web/issues/767)) ([17892d9](https://github.com/juspay/hyperswitch-web/commit/17892d9ff7470ac12e251e878afe9ae9affffd50))
+
+## [0.99.3](https://github.com/juspay/hyperswitch-web/compare/v0.99.2...v0.99.3) (2024-11-05)
+
+
+### Bug Fixes
+
+* remove blue border of iframe in firefox ([#766](https://github.com/juspay/hyperswitch-web/issues/766)) ([f629219](https://github.com/juspay/hyperswitch-web/commit/f629219492ef234c2df76a52a99fb135def7b428))
+
+## [0.99.2](https://github.com/juspay/hyperswitch-web/compare/v0.99.1...v0.99.2) (2024-11-04)
+
+
+### Reverts
+
+* reverting fetchAPI changes ([3108148](https://github.com/juspay/hyperswitch-web/commit/31081488d47d81590a980cc147efdb918b2a8235))
+
+## [0.99.1](https://github.com/juspay/hyperswitch-web/compare/v0.99.0...v0.99.1) (2024-11-04)
+
+
+### Bug Fixes
+
+* card input error text correction ([#759](https://github.com/juspay/hyperswitch-web/issues/759)) ([f426662](https://github.com/juspay/hyperswitch-web/commit/f426662c04e78d170c303fa01193eb37934c7636))
+
+# [0.99.0](https://github.com/juspay/hyperswitch-web/compare/v0.98.6...v0.99.0) (2024-11-04)
+
+
+### Features
+
+* paze integration ([#738](https://github.com/juspay/hyperswitch-web/issues/738)) ([64fab0a](https://github.com/juspay/hyperswitch-web/commit/64fab0aac5323613f77c92537973e43f89a165d2))
+
+## [0.98.6](https://github.com/juspay/hyperswitch-web/compare/v0.98.5...v0.98.6) (2024-11-04)
+
+## [0.98.5](https://github.com/juspay/hyperswitch-web/compare/v0.98.4...v0.98.5) (2024-11-04)
+
+
+### Bug Fixes
+
+* format function refactor for better logs readability ([#757](https://github.com/juspay/hyperswitch-web/issues/757)) ([4f4ee6b](https://github.com/juspay/hyperswitch-web/commit/4f4ee6be28975b3060c955388f0536d2f6cea7ea))
+
 ## [0.98.4](https://github.com/juspay/hyperswitch-web/compare/v0.98.3...v0.98.4) (2024-10-30)
 
 

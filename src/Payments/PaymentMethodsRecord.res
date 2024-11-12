@@ -489,7 +489,7 @@ let paymentMethodsFields = [
     paymentMethodName: "multibanco_transfer",
     icon: Some(icon("multibanco", ~size=19)),
     displayName: "Multibanco",
-    fields: [Email, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -660,27 +660,6 @@ let getFieldType = (dict, isBancontact) => {
   | Object(dict) => dict->getPaymentMethodsFieldTypeFromDict
   }
 }
-
-let dynamicFieldsEnabledPaymentMethods = [
-  "crypto_currency",
-  "debit",
-  "credit",
-  "blik",
-  "google_pay",
-  "apple_pay",
-  "bancontact_card",
-  "open_banking_uk",
-  "eps",
-  "ideal",
-  "sofort",
-  "pix_transfer",
-  "giropay",
-  "local_bank_transfer_transfer",
-  "afterpay_clearpay",
-  "mifinity",
-  "upi_collect",
-  "sepa",
-]
 
 let getIsBillingField = requiredFieldType => {
   switch requiredFieldType {

@@ -4,10 +4,11 @@ let make = (
   options,
   ~clientSecret,
   ~publishableKey,
-  ~logger: option<OrcaLogger.loggerMake>,
+  ~logger: option<HyperLogger.loggerMake>,
   ~ephemeralKey,
+  ~shouldUseTopRedirection,
 ) => {
-  let logger = logger->Option.getOr(OrcaLogger.defaultLoggerConfig)
+  let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
   let customPodUri =
     options
     ->JSON.Decode.object
@@ -24,6 +25,7 @@ let make = (
         ~endpoint,
         ~logger,
         ~customPodUri,
+        ~shouldUseTopRedirection,
       ),
     getPaymentManagementMethods: _ =>
       PaymentSessionMethods.getPaymentManagementMethods(
