@@ -842,23 +842,6 @@ let thailandOBBody = (~bank) => [
   ),
 ]
 
-let multibancoBody = (~email) => [
-  ("payment_method", "bank_transfer"->JSON.Encode.string),
-  ("payment_method_type", "multibanco"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      ("billing", [("email", email->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson),
-      (
-        "bank_transfer",
-        [
-          ("multibanco_bank_transfer", Dict.make()->JSON.Encode.object),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
-
 let pazeBody = (~completeResponse) => {
   open Utils
   let pazeCompleteResponse =
@@ -901,7 +884,7 @@ let appendRedirectPaymentMethods = [
 ]
 
 let appendBankeDebitMethods = ["sepa"]
-let appendBankTransferMethods = ["sepa", "ach", "bacs"]
+let appendBankTransferMethods = ["sepa", "ach", "bacs", "multibanco"]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {
@@ -1008,7 +991,6 @@ let getPaymentBody = (
   | "przelewy24" => p24Body(~email)
   | "online_banking_fpx" => fpxOBBody(~bank)
   | "online_banking_thailand" => thailandOBBody(~bank)
-  | "multibanco_transfer" => multibancoBody(~email)
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)
