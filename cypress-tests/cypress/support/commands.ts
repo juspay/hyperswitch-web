@@ -24,7 +24,7 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 import "cypress-iframe";
-import { createPaymentBody } from "./utils";
+import { createPaymentBody } from "./utils"
 import * as testIds from "../../../src/Utilities/TestUtils.bs";
 // commands.js or your custom support file
 const iframeSelector =
@@ -44,13 +44,6 @@ Cypress.Commands.add("selectValueInIframe", (selector, value) => {
     .find(`[data-testid=${selector}]`)
     .should("be.visible")
     .select(value);
-});
-
-Cypress.Commands.add("clickElementInIframe", (selector) => {
-  cy.iframe(iframeSelector)
-    .find(`[data-testid=${selector}]`)
-    .should("be.visible")
-    .click();
 });
 
 Cypress.Commands.add("hardReload", () => {
@@ -153,36 +146,30 @@ Cypress.Commands.add(
   }
 );
 
-Cypress.Commands.add(
-  "createPaymentIntent",
-  (secretKey: string, createPaymentBody: any) => {
-    return cy
-      .request({
-        method: "POST",
-        url: "https://sandbox.hyperswitch.io/payments",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "api-key": secretKey,
-        },
-        body: JSON.stringify(createPaymentBody),
-      })
-      .then((response) => {
-        expect(response.headers["content-type"]).to.include("application/json");
-        expect(response.body).to.have.property("client_secret");
-        const clientSecret = response.body.client_secret;
-        cy.log(clientSecret);
-        cy.log(response.toString());
 
-        globalState["clientSecret"] = clientSecret;
-      });
-  }
-);
+Cypress.Commands.add("createPaymentIntent", (secretKey: string, createPaymentBody: any) => {
+  return cy
+    .request({
+      method: "POST",
+      url: "https://sandbox.hyperswitch.io/payments",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "api-key": secretKey,
+      },
+      body: JSON.stringify(createPaymentBody),
+    })
+    .then((response) => {
+      expect(response.headers["content-type"]).to.include("application/json");
+      expect(response.body).to.have.property("client_secret");
+      const clientSecret = response.body.client_secret;
+      cy.log(clientSecret);
+      cy.log(response.toString());
+
+      globalState["clientSecret"] = clientSecret;
+    });
+});
 
 Cypress.Commands.add("getGlobalState", (key: any) => {
   return globalState[key];
-});
-
-Cypress.Commands.add("getIframeElement", (iframeSelector, elementSelector) => {
-  return cy.iframe(iframeSelector).find(elementSelector).should("be.visible");
 });

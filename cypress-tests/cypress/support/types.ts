@@ -25,7 +25,6 @@ declare global {
         selector: string,
         value: string
       ): Chainable<JQuery<HTMLElement>>;
-      clickElementInIframe(selector: string): Chainable<JQuery<HTMLElement>>;
       hardReload(): Chainable<JQuery<HTMLElement>>;
       testDynamicFields(
         customerData: CustomerData,
@@ -37,10 +36,6 @@ declare global {
         createPaymentBody: Record<string, any>
       ): Chainable<Response<any>>;
       getGlobalState(key: string): Chainable<Response<any>>;
-      getIframeElement(
-        iframeSelector: string,
-        elementSelector: string
-      ): Chainable<JQuery<HTMLElement>>;
     }
   }
 }

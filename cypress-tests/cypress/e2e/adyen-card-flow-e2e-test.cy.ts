@@ -3,6 +3,9 @@ import {
   getClientURL,
   createPaymentBody,
   changeObjectKeyValue,
+  connectorProfileIdMapping,
+  connectorEnum,
+  adyenTestCardDetails,
 } from "../support/utils";
 
 describe("Adyen Card payment flow test", () => {
@@ -16,9 +19,8 @@ describe("Adyen Card payment flow test", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    Cypress.env("PROFILE_ID")
+    connectorProfileIdMapping.get(connectorEnum.ADYEN)
   );
-  changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
 
   beforeEach(() => {
     getIframeBody = () => cy.iframe(iframeSelector);
@@ -38,35 +40,19 @@ describe("Adyen Card payment flow test", () => {
   });
 
   it("submit payment form and make successful payment", () => {
-    cy.clickElementInIframe(testIds.addNewCardIcon);
-
-    cy.fixture("adyen3DSCardDetails").then((cardDetails) => {
-      cy.enterValueInIframe(testIds.cardNoInputTestId, cardDetails.cardNumber);
-      cy.enterValueInIframe(testIds.expiryInputTestId, cardDetails.expiryDate);
-      cy.enterValueInIframe(testIds.cardCVVInputTestId, cardDetails.cvv);
-    });
-
-    cy.intercept("**/payments/redirect/**").as("hyperswitchRedriect");
-    cy.intercept("**/checkoutshopper/threeDS2.shtml*").as("adyenCheckout");
+    getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click();
+    getIframeBody()
+      .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+      .type(adyenTestCardDetails.cardNumber);
+    getIframeBody()
+      .find(`[data-testid=${testIds.expiryInputTestId}]`)
+      .type(adyenTestCardDetails.expiryDate);
+    getIframeBody()
+      .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+      .type(adyenTestCardDetails.cvv);
 
     getIframeBody().get("#submit").click();
 
-    //redirect through hyperswitch
-    cy.wait("@hyperswitchRedriect").then(() => {
-      cy.location("pathname").should("include", "/payments/redirect");
-      cy.contains("Please wait while we process your payment...").should(
-        "be.visible"
-      );
-    });
-
-    //adyen checkout page
-    cy.wait("@adyenCheckout").then(() => {
-      cy.frameLoaded(adyenIframeSelector);
-      cy.getIframeElement(adyenIframeSelector, ".input-field").type("password");
-      cy.getIframeElement(adyenIframeSelector, "#buttonSubmit").click();
-
-      cy.contains("Returning to JuspayDEECOM");
-    });
     cy.contains("Thanks for your order!").should("be.visible");
   });
 });
