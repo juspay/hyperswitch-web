@@ -95,6 +95,7 @@ type wallets = {
   googlePay: showType,
   payPal: showType,
   klarna: showType,
+  paze: showType,
   style: style,
 }
 type business = {name: string}
@@ -283,6 +284,7 @@ let defaultWallets = {
   googlePay: Auto,
   payPal: Auto,
   klarna: Auto,
+  paze: Auto,
   style: defaultStyle,
 }
 let defaultBillingAddress = {
@@ -828,6 +830,10 @@ let getWallets = (dict, str, logger) => {
       ),
       klarna: getWarningString(json, "klarna", "auto", ~logger)->getShowType(
         "options.wallets.klarna",
+        logger,
+      ),
+      paze: getWarningString(json, "paze", "auto", ~logger)->getShowType(
+        "options.wallets.paze",
         logger,
       ),
       style: getStyle(json, "style", logger),
