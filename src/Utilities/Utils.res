@@ -1435,7 +1435,7 @@ let mergeAndFlattenToTuples = (body, requiredFieldsBody) =>
   ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
   ->getArrayOfTupleFromDict
 
-let handleIframePostMessage = (msg, componentName, sendFallbackMessage) => {
+let handleIframePostMessage = (~msg, ~componentName, ~sendFallbackMessage) => {
   let isMessageSent = ref(false)
   let iframes = Window.querySelectorAll("iframe")
 
@@ -1452,10 +1452,12 @@ let handleIframePostMessage = (msg, componentName, sendFallbackMessage) => {
   }
 }
 
-let handleApplePayIframePostMessage = (msg, componentName, mountedIframeRef) => {
-  handleIframePostMessage(msg, componentName, _ => mountedIframeRef->Window.iframePostMessage(msg))
-}
+let handleApplePayIframePostMessage = (msg, componentName, mountedIframeRef) =>
+  handleIframePostMessage(~msg, ~componentName, ~sendFallbackMessage=_ =>
+    mountedIframeRef->Window.iframePostMessage(msg)
+  )
 
-let handlePazeIframePostMessage = (msg, componentName, source) => {
-  handleIframePostMessage(msg, componentName, _ => source->Window.sendPostMessage(msg))
-}
+let handlePazeIframePostMessage = (msg, componentName, source) =>
+  handleIframePostMessage(~msg, ~componentName, ~sendFallbackMessage=_ =>
+    source->Window.sendPostMessage(msg)
+  )
