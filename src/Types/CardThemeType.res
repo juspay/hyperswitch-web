@@ -1,4 +1,4 @@
-type theme = Default | Brutal | Midnight | Soft | Charcoal| Bubblegum | NONE
+type theme = Default | Brutal | Midnight | Soft | Charcoal | Bubblegum | NONE
 
 type innerLayout = Spaced | Compressed
 
@@ -15,6 +15,7 @@ type mode =
   | PayPalElement
   | ApplePayElement
   | KlarnaElement
+  | PazeElement
   | ExpressCheckoutElement
   | PaymentMethodsManagement
   | NONE
@@ -105,6 +106,7 @@ let getPaymentMode = val => {
   | "paymentMethodCollect" => PaymentMethodCollectElement
   | "klarna" => KlarnaElement
   | "expressCheckout" => ExpressCheckoutElement
+  | "paze" => PazeElement
   | "paymentMethodsManagement" => PaymentMethodsManagement
   | _ => NONE
   }

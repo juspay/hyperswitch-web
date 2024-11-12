@@ -21,6 +21,7 @@ let make = () => {
         let emailAddress = metaData->getString("emailAddress", "")
         let transactionAmount = metaData->getString("transactionAmount", "")
         let transactionCurrencyCode = metaData->getString("transactionCurrencyCode", "")
+        let componentName = metaData->getString("componentName", "")
 
         let mountPazeSDK = () => {
           let pazeScriptURL =
@@ -84,6 +85,7 @@ let make = () => {
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),
                 ("isPaze", true->JSON.Encode.bool),
+                ("componentName", componentName->JSON.Encode.string),
                 (
                   "completeResponse",
                   completeResponse
@@ -100,6 +102,7 @@ let make = () => {
                 ("fullscreen", false->JSON.Encode.bool),
                 ("isPaze", true->JSON.Encode.bool),
                 ("flowExited", "stop"->JSON.Encode.string),
+                ("componentName", componentName->JSON.Encode.string),
               ])
               resolve()
             }

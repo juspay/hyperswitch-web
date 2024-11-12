@@ -365,6 +365,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
     | KlarnaElement
     | ExpressCheckoutElement
     | PaymentMethodsManagement
+    | PazeElement
     | NONE =>
       <Icon size=brandIconSize name="default-card" />
     }
@@ -674,4 +675,14 @@ let getEligibleCoBadgedCardSchemes = (~matchedCardSchemes, ~enabledCardSchemes) 
 
 let getCardBrandFromStates = (cardBrand, cardScheme, showFields) => {
   !showFields ? cardScheme : cardBrand
+}
+
+let getCardBrandInvalidError = (
+  ~cardNumber,
+  ~localeString: OrcaPaymentPage.LocaleStringTypes.localeStrings,
+) => {
+  switch cardNumber->getCardBrand {
+  | "" => localeString.enterValidCardNumberErrorText
+  | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)
+  }
 }
