@@ -1,4 +1,5 @@
 open Utils
+
 let getKeyValue = (json, str) => {
   json
   ->Dict.get(str)
@@ -21,50 +22,54 @@ let make = () => {
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
-      let json = ev.data->safeParse
-      let dict = json->Utils.getDictFromJson
-      if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
-        let metadata = dict->getJsonObjectFromDict("metadata")
-        let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
-        let qrData = metaDataDict->getString("qrData", "")
-        setQrCode(_ => qrData)
-        let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
-        setClientSecret(_ => paymentIntentId)
-        let headersDict =
-          metaDataDict
-          ->getJsonObjectFromDict("headers")
-          ->JSON.Decode.object
-          ->Option.getOr(Dict.make())
-        let headers = Dict.make()
-        setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))
-        headersDict
-        ->Dict.toArray
-        ->Array.forEach(entries => {
-          let (x, val) = entries
-          Dict.set(headers, x, val->getStringFromJson(""))
-        })
-        let expiryTime =
-          metaDataDict->getString("expiryTime", "")->Float.fromString->Option.getOr(0.0)
-        let timeExpiry = expiryTime -. Date.now()
-        if timeExpiry > 0.0 && timeExpiry < 900000.0 {
-          setExpiryTime(_ => timeExpiry)
+      let handleAsync = async () => {
+        let json = ev.data->safeParse
+        let dict = json->Utils.getDictFromJson
+        if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
+          let metadata = dict->getJsonObjectFromDict("metadata")
+          let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+          let qrData = metaDataDict->getString("qrData", "")
+          setQrCode(_ => qrData)
+          let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
+          setClientSecret(_ => paymentIntentId)
+          let headersDict =
+            metaDataDict
+            ->getJsonObjectFromDict("headers")
+            ->JSON.Decode.object
+            ->Option.getOr(Dict.make())
+          let headers = Dict.make()
+          setReturnUrl(_ => metadata->getDictFromJson->getString("url", ""))
+          headersDict
+          ->Dict.toArray
+          ->Array.forEach(entries => {
+            let (x, val) = entries
+            Dict.set(headers, x, val->getStringFromJson(""))
+          })
+          let expiryTime =
+            metaDataDict->getString("expiryTime", "")->Float.fromString->Option.getOr(0.0)
+          let timeExpiry = expiryTime -. Date.now()
+          if timeExpiry > 0.0 && timeExpiry < 900000.0 {
+            setExpiryTime(_ => timeExpiry)
+          }
+          setHeaders(_ => headers->Dict.toArray)
+
+          try {
+            let res = await PaymentHelpers.pollRetrievePaymentIntent(
+              paymentIntentId,
+              headers->Dict.toArray,
+              ~optLogger=Some(logger),
+              ~customPodUri,
+            )
+            Modal.close(setOpenModal)
+            postSubmitResponse(~jsonData=res, ~url=return_url)
+          } catch {
+          | error => Console.log2("Error while polling payment intent:", error)
+          }
         }
-        open Promise
-        setHeaders(_ => headers->Dict.toArray)
-        PaymentHelpers.pollRetrievePaymentIntent(
-          paymentIntentId,
-          headers->Dict.toArray,
-          ~optLogger=Some(logger),
-          ~customPodUri,
-        )
-        ->then(res => {
-          Modal.close(setOpenModal)
-          postSubmitResponse(~jsonData=res, ~url=return_url)
-          resolve(res)
-        })
-        ->ignore
       }
+      handleAsync()->ignore
     }
+
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
   })
@@ -82,15 +87,14 @@ let make = () => {
     )
   }, [expiryTime])
 
-  let closeModal = () => {
-    open Promise
-    PaymentHelpers.retrievePaymentIntent(
-      clientSecret,
-      headers,
-      ~optLogger=Some(logger),
-      ~customPodUri,
-    )
-    ->then(json => {
+  let closeModal = async () => {
+    try {
+      let json = await PaymentHelpers.retrievePaymentIntent(
+        clientSecret,
+        headers,
+        ~optLogger=Some(logger),
+        ~customPodUri,
+      )
       let dict = json->getDictFromJson
       let status = dict->getString("status", "")
 
@@ -109,17 +113,10 @@ let make = () => {
           ~message="Payment is processing. Try again later!",
         )
       }
-      resolve(json)
-    })
-    ->then(_json => {
       Modal.close(setOpenModal)
-      resolve(Nullable.null)
-    })
-    ->catch(e => {
-      Console.log2("Retrieve Failed", e)
-      resolve(Nullable.null)
-    })
-    ->ignore
+    } catch {
+    | e => Console.log2("Retrieve Failed", e)
+    }
   }
 
   let expiryString = React.useMemo(() => {
@@ -152,7 +149,7 @@ let make = () => {
                 color: "#ffffff",
               }
               onClick={_ => {
-                closeModal()
+                closeModal()->ignore
               }}>
               {React.string("Done")}
             </button>
