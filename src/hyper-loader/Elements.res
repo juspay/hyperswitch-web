@@ -129,13 +129,15 @@ let make = (
       }
     }
 
-    let onPazeCallback = (event: Types.event) => {
-      let json = event.data->Identity.anyTypeToJson
-      let dict = json->getDictFromJson
-      if dict->getBool("isPaze", false) {
-        let componentName = dict->getString("componentName", "payment")
-        let msg = [("data", json)]->Dict.fromArray
-        handlePazeIframePostMessage(msg, componentName, event.source)
+    let onPazeCallback = mountedIframeRef => {
+      (event: Types.event) => {
+        let json = event.data->Identity.anyTypeToJson
+        let dict = json->getDictFromJson
+        if dict->getBool("isPaze", false) {
+          let componentName = dict->getString("componentName", "payment")
+          let msg = [("data", json)]->Dict.fromArray
+          handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
+        }
       }
     }
 
@@ -148,7 +150,7 @@ let make = (
           isTaxCalculationEnabled.contents =
             dict->getDictFromDict("response")->getBool("is_tax_calculation_enabled", false)
           addSmartEventListener("message", onPlaidCallback(mountedIframeRef), "onPlaidCallback")
-          addSmartEventListener("message", onPazeCallback, "onPazeCallback")
+          addSmartEventListener("message", onPazeCallback(mountedIframeRef), "onPazeCallback")
 
           let json = dict->getJsonFromDict("response", JSON.Encode.null)
           let isApplePayPresent = PaymentMethodsRecord.getPaymentMethodTypeFromList(
@@ -401,7 +403,7 @@ let make = (
               try {
                 let msg = [("applePayCanMakePayments", true->JSON.Encode.bool)]->Dict.fromArray
 
-                handleApplePayIframePostMessage(msg, componentName, mountedIframeRef)
+                handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
               } catch {
               | exn => {
                   let exnString = exn->anyTypeToJson->JSON.stringify
@@ -895,13 +897,13 @@ let make = (
                           ("applePayShippingContact", shippingContact),
                         ]->Dict.fromArray
 
-                      handleApplePayIframePostMessage(msg, componentName, mountedIframeRef)
+                      handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
                     }
 
                     if dict->Dict.get("showApplePayButton")->Option.isSome {
                       let msg = [("showApplePayButton", true->JSON.Encode.bool)]->Dict.fromArray
 
-                      handleApplePayIframePostMessage(msg, componentName, mountedIframeRef)
+                      handleIframePostMessageForWallets(msg, componentName, mountedIframeRef)
                     }
                   }
 
