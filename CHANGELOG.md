@@ -1,3 +1,10 @@
+## [0.102.1](https://github.com/juspay/hyperswitch-web/compare/v0.102.0...v0.102.1) (2024-11-13)
+
+
+### Bug Fixes
+
+* paze express checkout for multiple iframe ([#789](https://github.com/juspay/hyperswitch-web/issues/789)) ([7af9e96](https://github.com/juspay/hyperswitch-web/commit/7af9e96f60277b5bacb2cabec059ab56a601a7a9))
+
 # [0.102.0](https://github.com/juspay/hyperswitch-web/compare/v0.101.10...v0.102.0) (2024-11-12)
 
 
