@@ -177,7 +177,14 @@ let formatCardNumber = (val, cardType) => {
   let formatedCard = switch cardType {
   | AMEX => `${clearValue->slice(0, 4)} ${clearValue->slice(4, 10)} ${clearValue->slice(10, 15)}`
   | DINERSCLUB =>
-    `${clearValue->slice(0, 4)} ${clearValue->slice(4, 10)} ${clearValue->slice(10, 14)}`
+    if clearValue->String.length > 14 {
+      `${clearValue->slice(0, 4)} ${clearValue->slice(4, 8)} ${clearValue->slice(
+          8,
+          12,
+        )}  ${clearValue->slice(12, 16)} `
+    } else {
+      `${clearValue->slice(0, 4)} ${clearValue->slice(4, 10)} ${clearValue->slice(10, 14)}`
+    }
   | MASTERCARD
   | DISCOVER
   | SODEXO
@@ -454,9 +461,15 @@ let generateFontsLink = (fonts: array<CardThemeType.fonts>) => {
     ->ignore
   }
 }
+
 let maxCardLength = cardBrand => {
   let obj = getobjFromCardPattern(cardBrand)
   Array.reduce(obj.length, 0, (acc, val) => max(acc, val))
+}
+
+let isCardLengthValid = (cardBrand, cardNumberLength) => {
+  let obj = getobjFromCardPattern(cardBrand)
+  Array.includes(obj.length, cardNumberLength)
 }
 
 let cardValid = (cardNumber, cardBrand) => {
@@ -464,8 +477,7 @@ let cardValid = (cardNumber, cardBrand) => {
   if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
     Utils.checkIsTestCardWildcard(cardNumber)
   } else {
-    (clearValueLength == maxCardLength(cardBrand) ||
-      (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)
+    isCardLengthValid(cardBrand, clearValueLength) && calculateLuhn(cardNumber)
   }
 }
 let blurRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
@@ -566,10 +578,10 @@ let setCardValid = (cardnumber, setIsCardValid) => {
   if cardValid(cardnumber, cardBrand) {
     setIsCardValid(_ => Some(true))
   } else if (
-    !cardValid(cardnumber, cardBrand) && cardnumber->String.length == maxCardLength(cardBrand)
+    !cardValid(cardnumber, cardBrand) && isCardLengthValid(cardBrand, cardnumber->String.length)
   ) {
     setIsCardValid(_ => Some(false))
-  } else if !(cardnumber->String.length == maxCardLength(cardBrand)) {
+  } else if !isCardLengthValid(cardBrand, cardnumber->String.length) {
     setIsCardValid(_ => None)
   }
 }
