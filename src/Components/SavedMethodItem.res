@@ -69,7 +69,7 @@ let make = (~brandIcon, ~paymentItem: PaymentType.customerMethods, ~handleDelete
               name="delete"
               style={color: themeObj.colorDanger}
               className="cursor-pointer ml-4 mb-[6px]"
-              onClick={_ => paymentItem->handleDelete}
+              onClick={_ => handleDelete(paymentItem)->ignore}
             />
           </div>
           <div className="w-full">

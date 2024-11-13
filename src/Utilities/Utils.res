@@ -1284,11 +1284,19 @@ let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   | PayPalElement => wallets->Array.filter(item => item === "paypal")
   | ApplePayElement => wallets->Array.filter(item => item === "apple_pay")
   | KlarnaElement => wallets->Array.filter(item => item === "klarna")
+  | PazeElement => wallets->Array.filter(item => item === "paze")
   | _ => wallets
   }
 }
 
-let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "klarna", "expressCheckout"]
+let expressCheckoutComponents = [
+  "googlePay",
+  "payPal",
+  "applePay",
+  "klarna",
+  "paze",
+  "expressCheckout",
+]
 
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
 
@@ -1310,6 +1318,7 @@ let walletElementPaymentType: array<CardThemeType.mode> = [
   PayPalElement,
   ApplePayElement,
   KlarnaElement,
+  PazeElement,
   ExpressCheckoutElement,
 ]
 
@@ -1425,3 +1434,32 @@ let mergeAndFlattenToTuples = (body, requiredFieldsBody) =>
   ->flattenObject(true)
   ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
   ->getArrayOfTupleFromDict
+
+let sendMessageToIframe = (~msg, ~componentName, ~eventSource=None, ~mountedIframeRef=None) => {
+  let isMessageSent = ref(false)
+  let iframes = Window.querySelectorAll("iframe")
+
+  iframes->Array.forEach(iframe => {
+    let iframeSrc = iframe->Window.getAttribute("src")->Option.getOr("")
+    if iframeSrc->String.includes(`componentName=${componentName}`) {
+      iframe->Js.Nullable.return->Window.iframePostMessage(msg)
+      isMessageSent := true
+    }
+  })
+
+  if !isMessageSent.contents {
+    switch (eventSource, mountedIframeRef) {
+    | (Some(source), _) => source->Window.sendPostMessage(msg)
+    | (None, Some(ref)) => ref->Window.iframePostMessage(msg)
+    | (None, None) => ()
+    }
+  }
+}
+
+let handleApplePayIframePostMessage = (msg, componentName, mountedIframeRef) => {
+  sendMessageToIframe(~msg, ~componentName, ~mountedIframeRef=Some(mountedIframeRef))
+}
+
+let handlePazeIframePostMessage = (msg, componentName, eventSource) => {
+  sendMessageToIframe(~msg, ~componentName, ~eventSource=Some(eventSource))
+}

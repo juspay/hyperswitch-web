@@ -8,40 +8,38 @@ let make = () => {
   let (publishableKey, setPublishableKey) = React.useState(_ => "")
   let (clientSecret, setClientSecret) = React.useState(_ => "")
   let (isForceSync, setIsForceSync) = React.useState(_ => false)
-  let logger = React.useMemo(() => {
-    HyperLogger.make(~source=Elements(Payment), ~clientSecret, ~merchantId=publishableKey)
-  }, (publishableKey, clientSecret))
+  let logger = React.useMemo(
+    () => HyperLogger.make(~source=Elements(Payment), ~clientSecret, ~merchantId=publishableKey),
+    (publishableKey, clientSecret),
+  )
 
-  React.useEffect0(() => {
-    let handle = (ev: Window.event) => {
+  React.useEffect(() => {
+    let handleParentWindowMessage = (ev: Window.event) => {
       let json = ev.data->safeParse
       let metaData = json->getDictFromJson->getDictFromDict("metadata")
       let linkToken = metaData->getString("linkToken", "")
-      if linkToken->String.length > 0 {
-        let pmAuthConnectorArray =
-          metaData
-          ->getArray("pmAuthConnectorArray")
-          ->Array.map(ele => ele->JSON.Decode.string)
 
+      if linkToken->String.length > 0 {
         setLinkToken(_ => linkToken)
-        setPmAuthConnectorsArr(_ => pmAuthConnectorArray)
+        setPmAuthConnectorsArr(_ =>
+          metaData->getArray("pmAuthConnectorArray")->Array.map(JSON.Decode.string)
+        )
         setPublishableKey(_ => metaData->getString("publishableKey", ""))
         setClientSecret(_ => metaData->getString("clientSecret", ""))
         setIsForceSync(_ => metaData->getBool("isForceSync", false))
       }
     }
-    Window.addEventListener("message", handle)
+    Window.addEventListener("message", handleParentWindowMessage)
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
-    Some(() => {Window.removeEventListener("message", handle)})
-  })
+    Some(() => Window.removeEventListener("message", handleParentWindowMessage))
+  }, [])
 
   React.useEffect(() => {
     PmAuthConnectorUtils.mountAllRequriedAuthConnectorScripts(
       ~pmAuthConnectorsArr,
       ~onScriptLoaded=authConnector => {
-        switch authConnector->PmAuthConnectorUtils.pmAuthNameToTypeMapper {
-        | PLAID => setIsReady(_ => true)
-        | NONE => ()
+        if authConnector->PmAuthConnectorUtils.pmAuthNameToTypeMapper === PLAID {
+          setIsReady(_ => true)
         }
       },
       ~logger,
@@ -49,81 +47,72 @@ let make = () => {
     None
   }, [pmAuthConnectorsArr])
 
-  let callbackOnSuccessOfPlaidPaymentsFlow = () => {
-    open Promise
+  let callbackOnSuccessOfPlaidPaymentsFlow = async () => {
     let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
 
-    PaymentHelpers.retrievePaymentIntent(
-      clientSecret,
-      headers,
-      ~optLogger=Some(logger),
-      ~customPodUri="",
-      ~isForceSync=true,
-    )
-    ->then(json => {
+    try {
+      let json = await PaymentHelpers.retrievePaymentIntent(
+        clientSecret,
+        headers,
+        ~optLogger=Some(logger),
+        ~customPodUri="",
+        ~isForceSync=true,
+      )
       let dict = json->getDictFromJson
       let status = dict->getString("status", "")
       let return_url = dict->getString("return_url", "")
 
-      if (
-        status === "succeeded" || status === "requires_customer_action" || status === "processing"
-      ) {
+      switch status {
+      | "succeeded" | "requires_customer_action" | "processing" =>
         postSubmitResponse(~jsonData=json, ~url=return_url)
-      } else if status === "failed" {
+      | "failed" =>
         postFailedSubmitResponse(
           ~errortype="confirm_payment_failed",
           ~message="Payment failed. Try again!",
         )
-      } else {
+      | _ =>
         postFailedSubmitResponse(
           ~errortype="sync_payment_failed",
           ~message="Payment is processing. Try again later!",
         )
       }
       messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-      resolve(json)
-    })
-    ->then(_ => {
-      resolve(Nullable.null)
-    })
-    ->catch(e => {
-      logInfo(Console.log2("Retrieve Failed", e))
-      resolve(Nullable.null)
-    })
-    ->ignore
+    } catch {
+    | e => logInfo(Console.log2("Retrieve Failed", e))
+    }
+  }
+
+  let initializePlaid = () => {
+    Plaid.create({
+      token: linkToken,
+      onLoad: _ => logger.setLogInfo(~value="Plaid SDK Loaded", ~eventName=PLAID_SDK),
+      onSuccess: (publicToken, _) => {
+        messageParentWindow([
+          ("isPlaid", true->JSON.Encode.bool),
+          ("publicToken", publicToken->JSON.Encode.string),
+        ])
+        if isForceSync {
+          callbackOnSuccessOfPlaidPaymentsFlow()->ignore
+        }
+      },
+      onExit: _ => {
+        if isForceSync {
+          callbackOnSuccessOfPlaidPaymentsFlow()->ignore
+        } else {
+          messageParentWindow([
+            ("fullscreen", false->JSON.Encode.bool),
+            ("isPlaid", true->JSON.Encode.bool),
+            ("isExited", true->JSON.Encode.bool),
+            ("publicToken", ""->JSON.Encode.string),
+          ])
+        }
+      },
+    }).open_()
   }
 
   React.useEffect(() => {
     if isReady && linkToken->String.length > 0 {
-      let handler = Plaid.create({
-        token: linkToken,
-        onLoad: _ => {
-          logger.setLogInfo(~value="Plaid SDK Loaded", ~eventName=PLAID_SDK)
-        },
-        onSuccess: (publicToken, _) => {
-          messageParentWindow([
-            ("isPlaid", true->JSON.Encode.bool),
-            ("publicToken", publicToken->JSON.Encode.string),
-          ])
-          if isForceSync {
-            callbackOnSuccessOfPlaidPaymentsFlow()
-          }
-        },
-        onExit: _ => {
-          if isForceSync {
-            callbackOnSuccessOfPlaidPaymentsFlow()
-          } else {
-            messageParentWindow([
-              ("fullscreen", false->JSON.Encode.bool),
-              ("isPlaid", true->JSON.Encode.bool),
-              ("isExited", true->JSON.Encode.bool),
-              ("publicToken", ""->JSON.Encode.string),
-            ])
-          }
-        },
-      })
-
-      handler.open_()
+      initializePlaid()
     }
 
     None

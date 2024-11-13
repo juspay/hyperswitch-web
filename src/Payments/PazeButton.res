@@ -2,50 +2,48 @@
 let make = (~token: SessionsType.token) => {
   open Utils
   open RecoilAtoms
+
+  let url = RescriptReactRouter.useUrl()
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+
   let {iframeId, publishableKey, clientSecret} = Recoil.useRecoilValueFromAtom(keys)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
-  let (showLoader, setShowLoader) = React.useState(() => false)
-  let setIsShowOrPayUsing = Recoil.useSetRecoilState(RecoilAtoms.isShowOrPayUsing)
+  let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Paze)
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
-
-  React.useEffect0(() => {
-    setIsShowOrPayUsing(_ => true)
-    None
-  })
-
+  let (showLoader, setShowLoader) = React.useState(() => false)
   let onClick = _ => {
     setShowLoader(_ => true)
+    let metadata =
+      [
+        ("componentName", componentName->JSON.Encode.string),
+        ("wallet", (token.walletName :> string)->JSON.Encode.string),
+        ("clientId", token.clientId->JSON.Encode.string),
+        ("clientName", token.clientName->JSON.Encode.string),
+        ("clientProfileId", token.clientProfileId->JSON.Encode.string),
+        ("sessionId", paymentIntentID->JSON.Encode.string),
+        ("publishableKey", publishableKey->JSON.Encode.string),
+        ("emailAddress", token.email_address->JSON.Encode.string),
+        ("transactionAmount", token.transaction_amount->JSON.Encode.string),
+        ("transactionCurrencyCode", token.transaction_currency_code->JSON.Encode.string),
+      ]->getJsonFromArrayOfJson
+
     messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("param", "pazeWallet"->JSON.Encode.string),
       ("iframeId", iframeId->JSON.Encode.string),
-      (
-        "metadata",
-        [
-          ("wallet", (token.walletName :> string)->JSON.Encode.string),
-          ("clientId", token.clientId->JSON.Encode.string),
-          ("clientName", token.clientName->JSON.Encode.string),
-          ("clientProfileId", token.clientProfileId->JSON.Encode.string),
-          ("sessionId", paymentIntentID->JSON.Encode.string),
-          ("publishableKey", publishableKey->JSON.Encode.string),
-          ("emailAddress", token.email_address->JSON.Encode.string),
-          ("transactionAmount", token.transaction_amount->JSON.Encode.string),
-          ("transactionCurrencyCode", token.transaction_currency_code->JSON.Encode.string),
-        ]->getJsonFromArrayOfJson,
-      ),
+      ("metadata", metadata),
     ])
   }
 
-  React.useEffect0(() => {
-    let onPazeCallback = (ev: Window.event) => {
+  React.useEffect(() => {
+    let handlePazeCallback = ev => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson->getDictFromDict("data")
-      let isPaze = dict->getBool("isPaze", false)
-      if isPaze {
+      if dict->getBool("isPaze", false) {
         setShowLoader(_ => false)
         if dict->getOptionString("completeResponse")->Option.isSome {
           let completeResponse = dict->getString("completeResponse", "")
@@ -61,14 +59,15 @@ let make = (~token: SessionsType.token) => {
         }
       }
     }
-    Window.addEventListener("message", onPazeCallback)
-    Some(() => Window.removeEventListener("message", ev => onPazeCallback(ev)))
-  })
 
+    setIsShowOrPayUsing(_ => true)
+    Window.addEventListener("message", handlePazeCallback)
+    Some(() => Window.removeEventListener("message", handlePazeCallback))
+  }, [])
   <button
     disabled={showLoader}
     onClick
-    className={`w-full flex flex-row justify-center items-center`}
+    className="w-full flex flex-row justify-center items-center"
     style={
       borderRadius: themeObj.buttonBorderRadius,
       backgroundColor: "#2B63FF",

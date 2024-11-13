@@ -69,6 +69,7 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
   let pazeTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Paze)
 
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let isPaypalSDKFlow = paypalPaymentMethodExperience->Array.includes(InvokeSDK)
   let isPaypalRedirectFlow = paypalPaymentMethodExperience->Array.includes(RedirectToURL)
 
@@ -140,16 +141,18 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
               </SessionPaymentWrapper>
 
             | PazeWallet =>
-              <SessionPaymentWrapper type_={Wallet}>
-                {switch pazeTokenObj {
-                | OtherTokenOptional(optToken) =>
-                  switch optToken {
-                  | Some(token) => <PazeButton token />
-                  | None => React.null
-                  }
-                | _ => React.null
-                }}
-              </SessionPaymentWrapper>
+              <RenderIf condition={options.wallets.paze === Auto}>
+                <SessionPaymentWrapper type_={Wallet}>
+                  {switch pazeTokenObj {
+                  | OtherTokenOptional(optToken) =>
+                    switch optToken {
+                    | Some(token) => <PazeButton token />
+                    | None => React.null
+                    }
+                  | _ => React.null
+                  }}
+                </SessionPaymentWrapper>
+              </RenderIf>
             | NONE => React.null
             }
           | None => React.null
