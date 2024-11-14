@@ -163,7 +163,9 @@ let make = (
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
                   style={fontSize: "14px", opacity: "0.5"}>
-                  <div className="w-12 mt-6"> {React.string("CVC: ")} </div>
+                  <div className="w-12 mt-6">
+                    {React.string(`${localeString.cvcTextLabel}: `)}
+                  </div>
                   <div
                     className={`flex h mx-4 justify-start w-16 ${isActive
                         ? "opacity-1 mt-4"
