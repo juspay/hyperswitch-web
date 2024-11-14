@@ -536,7 +536,6 @@ let make = (
           style={
             border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
             borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
-            margin: {isSpacedInnerLayout ? `10px 0` : ""},
           }>
           <div
             className="billing-details-text"
