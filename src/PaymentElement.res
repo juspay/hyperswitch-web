@@ -158,6 +158,19 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     googlePayThirdPartySessionObj.sessionsToken,
     Gpay,
   )
+  let paypalPaymentMethodExperience = React.useMemo(() => {
+    PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
+      ~paymentMethodList=paymentMethodListValue,
+      ~paymentMethodName="wallet",
+      ~paymentMethodType="paypal",
+    )
+  }, [paymentMethodListValue])
+  let paypalToken = React.useMemo(
+    () => SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Paypal),
+    [sessionObj],
+  )
+  let isPaypalSDKFlow = paypalPaymentMethodExperience->Array.includes(InvokeSDK)
+  let isPaypalRedirectFlow = paypalPaymentMethodExperience->Array.includes(RedirectToURL)
 
   React.useEffect(() => {
     switch paymentMethodList {
@@ -353,6 +366,21 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
               }}
             </ReusableReactSuspense>
           | _ => React.null
+          }}
+        </SessionPaymentWrapper>
+      | PayPal =>
+        <SessionPaymentWrapper type_={Wallet}>
+          {switch paypalToken {
+          | OtherTokenOptional(optToken) =>
+            switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
+            | (Some(token), true, _) => <PaypalSDKLazy sessionObj=token paymentType />
+            | (_, _, true) => <PayPalLazy paymentType walletOptions />
+            | _ => React.null
+            }
+          | _ =>
+            <RenderIf condition={isPaypalRedirectFlow}>
+              <PayPalLazy paymentType walletOptions />
+            </RenderIf>
           }}
         </SessionPaymentWrapper>
       | _ =>

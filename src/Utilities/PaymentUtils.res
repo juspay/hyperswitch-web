@@ -8,6 +8,7 @@ let paymentListLookupNew = (
   ~isKlarnaSDKFlow,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ~areAllGooglePayRequiredFieldsPrefilled,
+  ~areAllPaypalRequiredFieldsPreFilled,
   ~isGooglePayReady,
   ~shouldDisplayApplePayInTabs,
 ) => {
@@ -34,6 +35,13 @@ let paymentListLookupNew = (
 
   if shouldDisplayApplePayInTabs {
     walletToBeDisplayedInTabs->Array.push("apple_pay")
+  }
+
+  if (
+    !paymentMethodListValue.collect_billing_details_from_wallets &&
+    !areAllPaypalRequiredFieldsPreFilled
+  ) {
+    walletToBeDisplayedInTabs->Array.push("paypal")
   }
 
   if (
@@ -332,6 +340,12 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     ~paymentMethodType="google_pay",
   )
 
+  let areAllPaypalRequiredFieldsPreFilled = useAreAllRequiredFieldsPrefilled(
+    ~paymentMethodListValue,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="paypal",
+  )
+
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
 
@@ -355,6 +369,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
           ~isKlarnaSDKFlow,
           ~paymentMethodListValue=plist,
           ~areAllGooglePayRequiredFieldsPrefilled,
+          ~areAllPaypalRequiredFieldsPreFilled,
           ~isGooglePayReady,
           ~shouldDisplayApplePayInTabs,
         )

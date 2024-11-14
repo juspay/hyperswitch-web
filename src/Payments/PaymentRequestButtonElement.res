@@ -113,12 +113,12 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
                 | OtherTokenOptional(optToken) =>
                   switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
                   | (Some(token), true, _) => <PaypalSDKLazy sessionObj=token paymentType />
-                  | (_, _, true) => <PayPalLazy />
+                  | (_, _, true) => <PayPalLazy paymentType walletOptions />
                   | _ => React.null
                   }
                 | _ =>
                   <RenderIf condition={isPaypalRedirectFlow}>
-                    <PayPalLazy />
+                    <PayPalLazy paymentType walletOptions />
                   </RenderIf>
                 }}
               </SessionPaymentWrapper>
