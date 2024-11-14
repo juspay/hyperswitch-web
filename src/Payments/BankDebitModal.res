@@ -199,12 +199,12 @@ let make = (~setModalData, ~paymentType: CardThemeType.mode) => {
   }
 
   let dynamicFieldsModalBody =
-    <>
+    <div className="flex flex-col item-center gap-5">
       <DynamicFields
         paymentType paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody
       />
       <PayNowButton onClickHandler label="Done" />
-    </>
+    </div>
 
   let nonDynamicFieldsModalBody =
     <>
