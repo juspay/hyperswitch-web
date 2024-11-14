@@ -51,7 +51,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payNowButton: `立即支付`,
   cardNumberEmptyText: `卡号不能为空`,
   cardExpiryDateEmptyText: `卡片到期日期不能为空`,
-  cvcNumberEmptyText: `CVC 号码不能为空`,
+  cvcNumberEmptyText: `安全码不能为空`,
   enterFieldsText: `请输入所有字段`,
   enterValidDetailsText: `请输入有效的详细信息`,
   selectPaymentMethodText: `请选择付款方式然后重试`,
