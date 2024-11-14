@@ -10,7 +10,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   poweredBy: `由 Hyperswitch 提供技术支持`,
   validThruText: `有效期`,
   sortCodeText: `排序代码`,
-  cvcTextLabel: `CVC`,
+  cvcTextLabel: `安全碼`,
   line1Label: `地址行 1`,
   line1Placeholder: `街道地址`,
   line1EmptyText: `地址行 1 不能为空`,
