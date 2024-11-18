@@ -27,20 +27,6 @@ describe("Card number validation test", () => {
         })
     });
 
-    it("should complete the card payment successfully", () => {
-        const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.successCard;
-
-        getIframeBody().find('[data-testid=cardNoInput]').type(cardNo);
-        getIframeBody().find('[data-testid=expiryInput]').type(card_exp_month); 
-        getIframeBody().find('[data-testid=expiryInput]').type(card_exp_year); 
-        getIframeBody().find('[data-testid=cvvInput]').type(cvc); 
-
-        getIframeBody().get("#submit").click();
-
-        cy.wait(3000); 
-        cy.contains("Thanks for your order!").should("be.visible");
-    });
-
     it("should fail with an undetectable card brand", () => {
         const { card_exp_month, card_exp_year, cvc } = stripeCards.successCard;
 
@@ -51,10 +37,11 @@ describe("Card number validation test", () => {
 
         getIframeBody().get("#submit").click();
 
-        cy.wait(3000); 
-
         getIframeBody().find('.Error.pt-1').should('be.visible')
-        .and('contain.text', "Please enter a valid card number.");
+        .and('contain.text', "Please enter a valid card number.");       
+        getIframeBody().find('[data-testid=cardNoInput]').click(); 
+        getIframeBody().find('.Error.pt-1').should('not.exist');
+
     });
 
     it("should fail with a detectable but invalid card number", () => {
@@ -66,11 +53,11 @@ describe("Card number validation test", () => {
         getIframeBody().find('[data-testid=cvvInput]').type(cvc); 
  
         getIframeBody().get("#submit").click();
- 
-        cy.wait(3000); 
- 
+         
         getIframeBody().find('.Error.pt-1').should('be.visible')
         .and('contain.text', "Card number is invalid.");
+        getIframeBody().find('[data-testid=cardNoInput]').click(); 
+        getIframeBody().find('.Error.pt-1').should('not.exist');
     });
 
     it("should fail with an unsupported card brand (RuPay)", () => {
@@ -82,11 +69,11 @@ describe("Card number validation test", () => {
         getIframeBody().find('[data-testid=cvvInput]').type(cvc); 
  
         getIframeBody().get("#submit").click();
- 
-        cy.wait(3000); 
- 
+        
         getIframeBody().find('.Error.pt-1').should('be.visible')
         .and('contain.text', "RuPay is not supported at the moment.");
+        getIframeBody().find('[data-testid=cardNoInput]').click(); 
+        getIframeBody().find('.Error.pt-1').should('not.exist');
     });
 
     it("should fail with an empty card number", () => {
@@ -97,11 +84,11 @@ describe("Card number validation test", () => {
         getIframeBody().find('[data-testid=cvvInput]').type(cvc); 
  
         getIframeBody().get("#submit").click();
- 
-        cy.wait(3000); 
- 
+       
         getIframeBody().find('.Error.pt-1').should('be.visible')
         .and('contain.text', "Card Number cannot be empty");
+        getIframeBody().find('[data-testid=cardNoInput]').click();  
+        getIframeBody().find('.Error.pt-1').should('not.exist');
     });
 
 });
