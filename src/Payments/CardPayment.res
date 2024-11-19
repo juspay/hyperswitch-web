@@ -160,7 +160,7 @@ let make = (
         isCardSupported->Option.getOr(false) &&
         isExpiryValid->Option.getOr(false)
 
-      let isNicknameValid = nickname.isValid->Option.getOr(false)
+      let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
 
       let validFormat =
         (isBancontact || isCardDetailsValid) && isNicknameValid && areRequiredFieldsValid
