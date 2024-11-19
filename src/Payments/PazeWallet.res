@@ -41,12 +41,12 @@ let make = () => {
 
               Console.log2("PAZE --- init completed", val)
 
-              let consumerPresent = await digitalWalletSdk.canCheckout({
+              let canCheckout = await digitalWalletSdk.canCheckout({
                 emailAddress: emailAddress,
               })
 
               Console.log("PAZE --- canCheckout completed")
-              Console.log2("PAZE --- consumerPresent: ", consumerPresent)
+              Console.log2("PAZE --- canCheckout: ", canCheckout.consumerPresent)
 
               let transactionValue = {
                 transactionAmount,
@@ -61,7 +61,7 @@ let make = () => {
 
               let checkoutResponse = await digitalWalletSdk.checkout({
                 acceptedPaymentCardNetworks: ["VISA", "MASTERCARD"],
-                emailAddress,
+                emailAddress: canCheckout.consumerPresent ? emailAddress : "",
                 sessionId,
                 actionCode: "START_FLOW",
                 transactionValue,
