@@ -1060,7 +1060,11 @@ let usePaymentIntent = (optLogger, paymentType) => {
           })
         }
         if blockConfirm && Window.isInteg {
-          Console.log3("CONFIRM IS BLOCKED", body->safeParse, headers)
+          Console.log2("CONFIRM IS BLOCKED - Body", body)
+          Console.log2(
+            "CONFIRM IS BLOCKED - Headers",
+            headers->Dict.fromArray->Identity.anyTypeToJson->JSON.stringify,
+          )
         } else {
           intentCall(
             ~fetchApi,
@@ -2098,7 +2102,9 @@ let usePostSessionTokens = (
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
-  let shouldUseTopRedirection = Recoil.useRecoilValueFromAtom(RecoilAtoms.shouldUseTopRedirectionAtom)
+  let shouldUseTopRedirection = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.shouldUseTopRedirectionAtom,
+  )
 
   let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
   (

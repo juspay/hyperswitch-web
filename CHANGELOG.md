@@ -1,3 +1,16 @@
+## [0.102.5](https://github.com/juspay/hyperswitch-web/compare/v0.102.4...v0.102.5) (2024-11-19)
+
+## [0.102.4](https://github.com/juspay/hyperswitch-web/compare/v0.102.3...v0.102.4) (2024-11-14)
+
+## [0.102.3](https://github.com/juspay/hyperswitch-web/compare/v0.102.2...v0.102.3) (2024-11-14)
+
+
+### Bug Fixes
+
+* card holder name ([#794](https://github.com/juspay/hyperswitch-web/issues/794)) ([60275cd](https://github.com/juspay/hyperswitch-web/commit/60275cd6aed4cb8dec1c1bbaafc1a37cffe0b193))
+
+## [0.102.2](https://github.com/juspay/hyperswitch-web/compare/v0.102.1...v0.102.2) (2024-11-14)
+
 ## [0.102.1](https://github.com/juspay/hyperswitch-web/compare/v0.102.0...v0.102.1) (2024-11-13)
 
 

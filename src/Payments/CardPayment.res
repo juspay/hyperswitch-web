@@ -217,8 +217,6 @@ let make = (
     options.displaySavedPaymentMethodsCheckbox &&
     !isBancontact
 
-  let nicknameFieldClassName = conditionsForShowingSaveCardCheckbox ? "pt-2" : "pt-5"
-
   let compressedLayoutStyleForCvcError =
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
 
@@ -334,16 +332,14 @@ let make = (
             isBancontact
           />
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
-            <div className="pt-4 pb-2 flex items-center justify-start">
+            <div className="flex items-center justify-start">
               <SaveDetailsCheckbox
                 isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked
               />
             </div>
           </RenderIf>
           <RenderIf condition={!options.hideCardNicknameField && isCustomerAcceptanceRequired}>
-            <div className={`pb-2 ${nicknameFieldClassName}`}>
-              <NicknamePaymentInput paymentType value=nickname setValue=setNickname />
-            </div>
+            <NicknamePaymentInput paymentType value=nickname setValue=setNickname />
           </RenderIf>
         </div>
       </div>

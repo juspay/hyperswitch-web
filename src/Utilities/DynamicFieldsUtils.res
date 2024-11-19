@@ -168,7 +168,9 @@ let useRequiredFieldsEmptyAndValid = (
       acc &&
       switch paymentMethodFields {
       | Email => email.isValid->Option.getOr(false)
-      | FullName => checkIfNameIsValid(requiredFields, paymentMethodFields, fullName)
+      | FullName =>
+        checkIfNameIsValid(requiredFields, paymentMethodFields, fullName) &&
+        fullName.isValid->Option.getOr(false)
       | Country => country !== "" || countryNames->Array.length === 0
       | AddressCountry(countryArr) => country !== "" || countryArr->Array.length === 0
       | BillingName => checkIfNameIsValid(requiredFields, paymentMethodFields, billingName)
