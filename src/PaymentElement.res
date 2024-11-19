@@ -17,17 +17,17 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     layout,
     customerPaymentMethods,
     displaySavedPaymentMethods,
+    sdkHandleConfirmPayment,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
+  let logger = HyperLogger.make(~source=Elements(Payment))
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
-  let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
-
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
-  let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
+  let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
 
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentMethodListValue,
@@ -373,7 +373,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           {switch paypalToken {
           | OtherTokenOptional(optToken) =>
             switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
-            | (Some(token), true, _) => <PaypalSDKLazy sessionObj=token paymentType />
+            | (Some(_token), true, _) => {
+                logger.setLogInfo(
+                  ~value="PayPal Invoke SDK Flow in Tabs",
+                  ~eventName=PAYPAL_SDK_TABS_FLOW,
+                )
+                React.null
+              }
             | (_, _, true) => <PayPalLazy paymentType walletOptions />
             | _ => React.null
             }

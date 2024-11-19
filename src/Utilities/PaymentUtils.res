@@ -11,6 +11,9 @@ let paymentListLookupNew = (
   ~areAllPaypalRequiredFieldsPreFilled,
   ~isGooglePayReady,
   ~shouldDisplayApplePayInTabs,
+  ~isPaypalSDKFlow,
+  ~isPaypalRedirectFlow,
+  ~isPaypalTokenExist,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
@@ -39,7 +42,9 @@ let paymentListLookupNew = (
 
   if (
     !paymentMethodListValue.collect_billing_details_from_wallets &&
-    !areAllPaypalRequiredFieldsPreFilled
+    !areAllPaypalRequiredFieldsPreFilled &&
+    isPaypalRedirectFlow &&
+    (!isPaypalSDKFlow || !isPaypalTokenExist)
   ) {
     walletToBeDisplayedInTabs->Array.push("paypal")
   }
@@ -313,6 +318,42 @@ let getIsKlarnaSDKFlow = sessions => {
   }
 }
 
+let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
+  open Utils
+
+  let sessionObj =
+    sessions
+    ->getDictFromJson
+    ->SessionsType.itemToObjMapper(Others)
+
+  let paypalPaymentMethodExperience = React.useMemo(() => {
+    PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
+      ~paymentMethodList=paymentMethodListValue,
+      ~paymentMethodName="wallet",
+      ~paymentMethodType="paypal",
+    )
+  }, [paymentMethodListValue])
+
+  let paypalToken = React.useMemo(
+    () => SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Paypal),
+    [sessionObj],
+  )
+
+  let isPaypalSDKFlow = paypalPaymentMethodExperience->Array.includes(InvokeSDK)
+  let isPaypalRedirectFlow = paypalPaymentMethodExperience->Array.includes(RedirectToURL)
+
+  let isPaypalTokenExist = switch paypalToken {
+  | OtherTokenOptional(optToken) =>
+    switch optToken {
+    | Some(_) => true
+    | _ => false
+    }
+  | _ => false
+  }
+
+  (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist)
+}
+
 let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
@@ -349,6 +390,11 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
 
+  let (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist) = usePaypalFlowStatus(
+    ~sessions,
+    ~paymentMethodListValue,
+  )
+
   React.useMemo(() => {
     switch methodslist {
     | Loaded(paymentlist) =>
@@ -372,6 +418,9 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
           ~areAllPaypalRequiredFieldsPreFilled,
           ~isGooglePayReady,
           ~shouldDisplayApplePayInTabs,
+          ~isPaypalSDKFlow,
+          ~isPaypalRedirectFlow,
+          ~isPaypalTokenExist,
         )
 
       let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
