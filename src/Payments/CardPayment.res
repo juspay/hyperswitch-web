@@ -21,7 +21,7 @@ let make = (
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
-  let (nickname, setNickname) = React.useState(_ => "")
+  let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
 
   let (
     isCardValid,
@@ -145,7 +145,7 @@ let make = (
       ~cardHolderName="",
       ~cvcNumber,
       ~cardBrand=cardNetwork,
-      ~nickname,
+      ~nickname=nickname.value,
     )
     let banContactBody = PaymentBody.bancontactBody()
     let cardBody = if isCustomerAcceptanceRequired {
@@ -154,12 +154,17 @@ let make = (
       defaultCardBody
     }
     if confirm.doSubmit {
-      let validFormat =
-        (isBancontact ||
-        (isCVCValid->Option.getOr(false) &&
+      let isCardDetailsValid =
+        isCVCValid->Option.getOr(false) &&
         isCardValid->Option.getOr(false) &&
         isCardSupported->Option.getOr(false) &&
-        isExpiryValid->Option.getOr(false))) && areRequiredFieldsValid
+        isExpiryValid->Option.getOr(false)
+
+      let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
+
+      let validFormat =
+        (isBancontact || isCardDetailsValid) && isNicknameValid && areRequiredFieldsValid
+
       if validFormat && (showFields || isBancontact) {
         intent(
           ~bodyArr={
@@ -339,7 +344,7 @@ let make = (
             </div>
           </RenderIf>
           <RenderIf condition={!options.hideCardNicknameField && isCustomerAcceptanceRequired}>
-            <NicknamePaymentInput paymentType value=nickname setValue=setNickname />
+            <NicknamePaymentInput paymentType />
           </RenderIf>
         </div>
       </div>
