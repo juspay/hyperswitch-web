@@ -150,4 +150,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pixキーは空にできません`,
   pixKeyPlaceholder: `Pixキーを入力`,
   pixKeyLabel: `Pixキー`,
+  invalidCardHolderNameError: `カード所有者の名前に数字を含めることはできません`,
+  invalidNickNameError: `ニックネームには2つ以上の数字を含めることはできません`,
 }
