@@ -149,4 +149,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pix-nyckel kan inte vara tom`,
   pixKeyPlaceholder: `Ange Pix-nyckel`,
   pixKeyLabel: `Pix-nyckel`,
+  invalidCardHolderNameError: `Kortinnehavarens namn får inte innehålla siffror`,
+  invalidNickNameError: `Smeknamnet får inte innehålla mer än 2 siffror`,
 }

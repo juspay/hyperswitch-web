@@ -141,6 +141,8 @@ type localeStrings = {
   pixKeyEmptyText: string,
   pixKeyLabel: string,
   pixKeyPlaceholder: string,
+  invalidCardHolderNameError: string,
+  invalidNickNameError: string,
 }
 
 type constantStrings = {

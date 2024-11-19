@@ -150,4 +150,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `A chave Pix não pode estar vazia`,
   pixKeyPlaceholder: `Digite a chave Pix`,
   pixKeyLabel: `Chave Pix`,
+  invalidCardHolderNameError: `O nome do titular do cartão não pode conter dígitos`,
+  invalidNickNameError: `O apelido não pode conter mais de 2 dígitos`,
 }
