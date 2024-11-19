@@ -7,26 +7,38 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-
   let (fullName, setFullName) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
-
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
+
+  let validateName = (
+    val: string,
+    prev: RecoilAtomTypes.field,
+    localeString: LocaleStringTypes.localeStrings,
+  ) => {
+    let isValid = val !== "" && %re("/^\D*$/")->RegExp.test(val)
+    let errorString = if val === "" {
+      prev.errorString
+    } else if isValid {
+      ""
+    } else {
+      localeString.invalidCardHolderNameError
+    }
+    {
+      ...prev,
+      value: val,
+      isValid: Some(isValid),
+      errorString,
+    }
+  }
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setFullName(prev => {
-      value: val,
-      isValid: Some(val !== ""),
-      errorString: val !== "" ? "" : prev.errorString,
-    })
+    setFullName(prev => validateName(val, prev, localeString))
   }
 
   let onBlur = ev => {
     let val: string = ReactEvent.Focus.target(ev)["value"]
-    setFullName(prev => {
-      ...prev,
-      isValid: Some(val !== ""),
-    })
+    setFullName(prev => validateName(val, prev, localeString))
   }
 
   let (placeholder, fieldName) = switch customFieldName {
@@ -43,6 +55,11 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
         setFullName(prev => {
           ...prev,
           errorString: fieldName->localeString.nameEmptyText,
+        })
+      } else if !(fullName.isValid->Option.getOr(false)) {
+        setFullName(prev => {
+          ...prev,
+          errorString: localeString.invalidCardHolderNameError,
         })
       } else {
         switch optionalRequiredFields {

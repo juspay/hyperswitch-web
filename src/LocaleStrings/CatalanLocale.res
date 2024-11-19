@@ -151,4 +151,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `La clau Pix no pot estar buida`,
   pixKeyPlaceholder: `Introdueix la clau Pix`,
   pixKeyLabel: `Clau Pix`,
+  invalidCardHolderNameError: `El nom del titular de la targeta no pot contenir dígits`,
+  invalidNickNameError: `El sobrenom no pot contenir més de 2 dígits`,
 }

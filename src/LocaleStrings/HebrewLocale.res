@@ -150,4 +150,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `מפתח Pix לא יכול להיות ריק`,
   pixKeyPlaceholder: `הכנס מפתח Pix`,
   pixKeyLabel: `מפתח Pix`,
+  invalidCardHolderNameError: `שם בעל הכרטיס לא יכול לכלול ספרות`,
+  invalidNickNameError: `הכינוי לא יכול לכלול יותר משתי ספרות`,
 }
