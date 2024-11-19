@@ -1451,3 +1451,10 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
     mountedIframeRef->Window.iframePostMessage(msg)
   }
 }
+
+let isDigitLimitExceeded = (val, ~digit) => {
+  switch val->String.match(%re("/\d/g")) {
+  | Some(matches) => matches->Array.length > digit
+  | None => false
+  }
+}
