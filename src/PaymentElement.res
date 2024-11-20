@@ -376,7 +376,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             | (Some(_token), true, _) => {
                 logger.setLogInfo(
                   ~value="PayPal Invoke SDK Flow in Tabs",
-                  ~eventName=PAYPAL_SDK_TABS_FLOW,
+                  ~eventName=PAYPAL_SDK_FLOW,
                 )
                 React.null
               }
