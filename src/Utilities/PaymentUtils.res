@@ -318,21 +318,11 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
     ->getDictFromJson
     ->SessionsType.itemToObjMapper(Others)
 
-  let paypalPaymentMethodExperience = React.useMemo(() => {
-    PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
-      ~paymentMethodList=paymentMethodListValue,
-      ~paymentMethodName="wallet",
-      ~paymentMethodType="paypal",
-    )
-  }, [paymentMethodListValue])
-
-  let paypalToken = React.useMemo(
-    () => SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Paypal),
-    [sessionObj],
-  )
-
-  let isPaypalSDKFlow = paypalPaymentMethodExperience->Array.includes(InvokeSDK)
-  let isPaypalRedirectFlow = paypalPaymentMethodExperience->Array.includes(RedirectToURL)
+  let {
+    paypalToken,
+    isPaypalSDKFlow,
+    isPaypalRedirectFlow,
+  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
 
   let isPaypalTokenExist = switch paypalToken {
   | OtherTokenOptional(optToken) =>

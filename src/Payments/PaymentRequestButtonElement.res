@@ -44,17 +44,13 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let sessionObj = React.useMemo(() => itemToObjMapper(dict, Others), [dict])
-  let paypalToken = React.useMemo(
-    () => getPaymentSessionObj(sessionObj.sessionsToken, Paypal),
-    [sessionObj],
-  )
-  let paypalPaymentMethodExperience = React.useMemo(() => {
-    PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
-      ~paymentMethodList=paymentMethodListValue,
-      ~paymentMethodName="wallet",
-      ~paymentMethodType="paypal",
-    )
-  }, [paymentMethodListValue])
+
+  let {
+    paypalToken,
+    isPaypalSDKFlow,
+    isPaypalRedirectFlow,
+  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
+
   let gPayToken = getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
   let applePaySessionObj = itemToObjMapper(dict, ApplePayObject)
   let applePayToken = getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
@@ -70,8 +66,6 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
 
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let isPaypalSDKFlow = paypalPaymentMethodExperience->Array.includes(InvokeSDK)
-  let isPaypalRedirectFlow = paypalPaymentMethodExperience->Array.includes(RedirectToURL)
 
   <div className="flex flex-col gap-2 h-auto w-full">
     {walletOptions

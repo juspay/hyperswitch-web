@@ -19,7 +19,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     displaySavedPaymentMethods,
     sdkHandleConfirmPayment,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
-  let logger = HyperLogger.make(~source=Elements(Payment))
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
@@ -158,19 +157,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     googlePayThirdPartySessionObj.sessionsToken,
     Gpay,
   )
-  let paypalPaymentMethodExperience = React.useMemo(() => {
-    PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
-      ~paymentMethodList=paymentMethodListValue,
-      ~paymentMethodName="wallet",
-      ~paymentMethodType="paypal",
-    )
-  }, [paymentMethodListValue])
-  let paypalToken = React.useMemo(
-    () => SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Paypal),
-    [sessionObj],
-  )
-  let isPaypalSDKFlow = paypalPaymentMethodExperience->Array.includes(InvokeSDK)
-  let isPaypalRedirectFlow = paypalPaymentMethodExperience->Array.includes(RedirectToURL)
+  let {
+    paypalToken,
+    isPaypalSDKFlow,
+    isPaypalRedirectFlow,
+  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
 
   React.useEffect(() => {
     switch paymentMethodList {
@@ -374,7 +365,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           | OtherTokenOptional(optToken) =>
             switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
             | (Some(_token), true, _) => {
-                logger.setLogInfo(
+                loggerState.setLogInfo(
                   ~value="PayPal Invoke SDK Flow in Tabs",
                   ~eventName=PAYPAL_SDK_FLOW,
                 )
