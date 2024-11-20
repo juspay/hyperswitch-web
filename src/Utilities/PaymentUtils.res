@@ -8,12 +8,9 @@ let paymentListLookupNew = (
   ~isKlarnaSDKFlow,
   ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ~areAllGooglePayRequiredFieldsPrefilled,
-  ~areAllPaypalRequiredFieldsPreFilled,
   ~isGooglePayReady,
   ~shouldDisplayApplePayInTabs,
-  ~isPaypalSDKFlow,
-  ~isPaypalRedirectFlow,
-  ~isPaypalTokenExist,
+  ~shouldDisplayPayPalInTabs,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
@@ -40,12 +37,7 @@ let paymentListLookupNew = (
     walletToBeDisplayedInTabs->Array.push("apple_pay")
   }
 
-  if (
-    !paymentMethodListValue.collect_billing_details_from_wallets &&
-    !areAllPaypalRequiredFieldsPreFilled &&
-    isPaypalRedirectFlow &&
-    (!isPaypalSDKFlow || !isPaypalTokenExist)
-  ) {
+  if shouldDisplayPayPalInTabs {
     walletToBeDisplayedInTabs->Array.push("paypal")
   }
 
@@ -407,20 +399,26 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
         !areAllApplePayRequiredFieldsPrefilled &&
         isApplePayReady
 
+      let isShowPaypal = optionAtomValue.wallets.payPal === Auto
+
+      let shouldDisplayPayPalInTabs =
+        isShowPaypal &&
+        !paymentMethodListValue.collect_billing_details_from_wallets &&
+        !areAllPaypalRequiredFieldsPreFilled &&
+        isPaypalRedirectFlow &&
+        (!isPaypalSDKFlow || !isPaypalTokenExist)
+
       let (wallets, otherOptions) =
         plist->paymentListLookupNew(
           ~order=paymentOrder,
-          ~isShowPaypal=optionAtomValue.wallets.payPal === Auto,
+          ~isShowPaypal,
           ~isShowKlarnaOneClick=optionAtomValue.wallets.klarna === Auto,
           ~isKlarnaSDKFlow,
           ~paymentMethodListValue=plist,
           ~areAllGooglePayRequiredFieldsPrefilled,
-          ~areAllPaypalRequiredFieldsPreFilled,
           ~isGooglePayReady,
           ~shouldDisplayApplePayInTabs,
-          ~isPaypalSDKFlow,
-          ~isPaypalRedirectFlow,
-          ~isPaypalTokenExist,
+          ~shouldDisplayPayPalInTabs,
         )
 
       let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
