@@ -1,3 +1,10 @@
+# [0.103.0](https://github.com/juspay/hyperswitch-web/compare/v0.102.9...v0.103.0) (2024-11-21)
+
+
+### Features
+
+* added paypal tabs flow support for billing details ([#792](https://github.com/juspay/hyperswitch-web/issues/792)) ([a7c7d19](https://github.com/juspay/hyperswitch-web/commit/a7c7d191aa3df3de3293f8dade14c0448415a913))
+
 ## [0.102.9](https://github.com/juspay/hyperswitch-web/compare/v0.102.8...v0.102.9) (2024-11-20)
 
 ## [0.102.8](https://github.com/juspay/hyperswitch-web/compare/v0.102.7...v0.102.8) (2024-11-19)
