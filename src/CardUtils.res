@@ -362,6 +362,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
     | GooglePayElement
     | PayPalElement
     | ApplePayElement
+    | SamsungPayElement
     | KlarnaElement
     | ExpressCheckoutElement
     | PaymentMethodsManagement
@@ -677,10 +678,7 @@ let getCardBrandFromStates = (cardBrand, cardScheme, showFields) => {
   !showFields ? cardScheme : cardBrand
 }
 
-let getCardBrandInvalidError = (
-  ~cardNumber,
-  ~localeString: OrcaPaymentPage.LocaleStringTypes.localeStrings,
-) => {
+let getCardBrandInvalidError = (~cardNumber, ~localeString: LocaleStringTypes.localeStrings) => {
   switch cardNumber->getCardBrand {
   | "" => localeString.enterValidCardNumberErrorText
   | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)

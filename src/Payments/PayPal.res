@@ -22,12 +22,12 @@ let make = (~paymentType, ~walletOptions) => {
   let isWallet = walletOptions->Array.includes("paypal")
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
-  let (_, _, labelType) = options.wallets.style.type_
+  let (_, _, labelType, _) = options.wallets.style.type_
   let _label = switch labelType {
   | Paypal(val) => val->PaypalSDKTypes.getLabel
   | _ => Paypal->PaypalSDKTypes.getLabel
   }
-  let (_, _, heightType, _) = options.wallets.style.height
+  let (_, _, heightType, _, _) = options.wallets.style.height
   let height = switch heightType {
   | Paypal(val) => val
   | _ => 48

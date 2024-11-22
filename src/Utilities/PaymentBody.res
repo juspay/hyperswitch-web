@@ -386,6 +386,18 @@ let paypalSdkBody = (~token, ~connectors) => [
   ),
 ]
 
+let samsungPayBody = (~metadata) => {
+  let paymentCredential = [("payment_credential", metadata)]->Utils.getJsonFromArrayOfJson
+  let spayBody = [("samsung_pay", paymentCredential)]->Utils.getJsonFromArrayOfJson
+  let paymentMethodData = [("wallet", spayBody)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "samsung_pay"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) => {
   let gPayBody = [
     ("payment_method", "wallet"->JSON.Encode.string),

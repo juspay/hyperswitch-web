@@ -4,6 +4,7 @@ type oneClickWallets = {
 }
 let oneClickWallets = [
   {paymentMethodType: "apple_pay", displayName: "ApplePay"},
+  {paymentMethodType: "samsung_pay", displayName: "SamsungPay"},
   {paymentMethodType: "paypal", displayName: "Paypal"},
   {paymentMethodType: "google_pay", displayName: "GooglePay"},
   {paymentMethodType: "klarna", displayName: "Klarna"},
@@ -23,6 +24,7 @@ let useSurchargeDetailsForOneClickWallets = (~paymentMethodListValue) => {
     oneClickWallets->Array.reduce([], (acc, wallet) => {
       let (isWalletBtnRendered, paymentMethod) = switch wallet.paymentMethodType {
       | "apple_pay" => (areOneClickWalletsRendered.isApplePay, "wallet")
+      | "samsung_pay" => (areOneClickWalletsRendered.isSamsungPay, "wallet")
       | "paypal" => (areOneClickWalletsRendered.isPaypal, "wallet")
       | "google_pay" => (areOneClickWalletsRendered.isGooglePay, "wallet")
       | "klarna" => (areOneClickWalletsRendered.isKlarna, "pay_later")

@@ -60,8 +60,10 @@ type terms = {
   usBankAccount: showTerms,
 }
 type buttonHeight = Default | Custom
-type heightType = ApplePay(int) | GooglePay(int) | Paypal(int) | Klarna(int)
+type heightType = ApplePay(int) | GooglePay(int) | Paypal(int) | Klarna(int) | SamsungPay(int)
 type googlePayStyleType = Default | Buy | Donate | Checkout | Subscribe | Book | Pay | Order
+type samsungPayStyleType = Buy
+
 type paypalStyleType = Paypal | Checkout | Buynow | Pay | Installment
 type applePayStyleType =
   | Default
@@ -81,12 +83,13 @@ type styleType =
   | ApplePay(applePayStyleType)
   | GooglePay(googlePayStyleType)
   | Paypal(paypalStyleType)
-type styleTypeArray = (styleType, styleType, styleType)
+  | SamsungPay(samsungPayStyleType)
+type styleTypeArray = (styleType, styleType, styleType, styleType)
 type theme = Dark | Light | Outline
 type style = {
   type_: styleTypeArray,
   theme: theme,
-  height: (heightType, heightType, heightType, heightType),
+  height: (heightType, heightType, heightType, heightType, heightType),
   buttonRadius: int,
 }
 type wallets = {
@@ -96,6 +99,7 @@ type wallets = {
   payPal: showType,
   klarna: showType,
   paze: showType,
+  samsungPay: showType,
   style: style,
 }
 type business = {name: string}
@@ -273,9 +277,9 @@ let defaultFields = {
   billingDetails: JSONObject(defaultBilling),
 }
 let defaultStyle = {
-  type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal)),
+  type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal), SamsungPay(Buy)),
   theme: Light,
-  height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48)),
+  height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48), SamsungPay(48)),
   buttonRadius: 2,
 }
 let defaultWallets = {
@@ -285,6 +289,7 @@ let defaultWallets = {
   payPal: Auto,
   klarna: Auto,
   paze: Auto,
+  samsungPay: Auto,
   style: defaultStyle,
 }
 let defaultBillingAddress = {
@@ -467,6 +472,11 @@ let getGooglePayType = str => {
     GooglePay(Default)
   }
 }
+let getSamsungPayType = str => {
+  switch str {
+  | _ => SamsungPay(Buy)
+  }
+}
 let getPayPalType = str => {
   switch str {
   | "check-out"
@@ -505,7 +515,7 @@ let getTypeArray = (str, logger) => {
   if !Array.includes(goodVals, str) {
     str->unknownPropValueWarning(goodVals, "options.wallets.style.type", ~logger)
   }
-  (str->getApplePayType, str->getGooglePayType, str->getPayPalType)
+  (str->getApplePayType, str->getGooglePayType, str->getPayPalType, str->getSamsungPayType)
 }
 
 let getShowDetails = (~billingDetails, ~logger) => {
@@ -718,6 +728,21 @@ let getGooglePayHeight = (val, logger) => {
         }
   val
 }
+let getSamsungPayHeight = (val, logger) => {
+  let val: heightType =
+    val >= 48
+      ? SamsungPay(val)
+      : {
+          valueOutRangeWarning(
+            val,
+            "options.style.height",
+            "[h>=48] - SamsungPay. Value set to min",
+            ~logger,
+          )
+          SamsungPay(48)
+        }
+  val
+}
 let getPaypalHeight = (val, logger) => {
   let val: heightType =
     val < 25
@@ -784,6 +809,7 @@ let getHeightArray = (val, logger) => {
     val->getGooglePayHeight(logger),
     val->getPaypalHeight(logger),
     val->getKlarnaHeight(logger),
+    val->getSamsungPayHeight(logger),
   )
 }
 let getStyle = (dict, str, logger) => {
@@ -808,7 +834,7 @@ let getWallets = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna"],
+      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna", "samsungPay"],
       json,
       "options.wallets",
       ~logger,
@@ -834,6 +860,10 @@ let getWallets = (dict, str, logger) => {
       ),
       paze: getWarningString(json, "paze", "auto", ~logger)->getShowType(
         "options.wallets.paze",
+        logger,
+      ),
+      samsungPay: getWarningString(json, "samsungPay", "auto", ~logger)->getShowType(
+        "options.wallets.samsungPay",
         logger,
       ),
       style: getStyle(json, "style", logger),

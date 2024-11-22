@@ -28,7 +28,6 @@ let paymentListLookupNew = (
     "gcash",
     "momo",
     "touch_n_go",
-    "samsung_pay",
     "mifinity",
   ]
   let otherPaymentList = []
