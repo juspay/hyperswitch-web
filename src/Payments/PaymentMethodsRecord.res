@@ -535,6 +535,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "paypal",
+    icon: Some(icon("paypal", ~size=21, ~width=25)),
+    displayName: "Paypal",
+    fields: [],
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "local_bank_transfer_transfer",
     fields: [InfoElement],
     icon: Some(icon("union-pay", ~size=19, ~width=30)),

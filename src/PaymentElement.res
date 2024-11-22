@@ -17,6 +17,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     layout,
     customerPaymentMethods,
     displaySavedPaymentMethods,
+    sdkHandleConfirmPayment,
   } = Recoil.useRecoilValueFromAtom(optionAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -24,10 +25,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
-  let {sdkHandleConfirmPayment} = Recoil.useRecoilValueFromAtom(optionAtom)
-
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
-  let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
+  let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
 
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentMethodListValue,
@@ -158,6 +157,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     googlePayThirdPartySessionObj.sessionsToken,
     Gpay,
   )
+  let {
+    paypalToken,
+    isPaypalSDKFlow,
+    isPaypalRedirectFlow,
+  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
 
   React.useEffect(() => {
     switch paymentMethodList {
@@ -353,6 +357,27 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
               }}
             </ReusableReactSuspense>
           | _ => React.null
+          }}
+        </SessionPaymentWrapper>
+      | PayPal =>
+        <SessionPaymentWrapper type_={Wallet}>
+          {switch paypalToken {
+          | OtherTokenOptional(optToken) =>
+            switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
+            | (Some(_token), true, _) => {
+                loggerState.setLogInfo(
+                  ~value="PayPal Invoke SDK Flow in Tabs",
+                  ~eventName=PAYPAL_SDK_FLOW,
+                )
+                React.null
+              }
+            | (_, _, true) => <PayPalLazy paymentType walletOptions />
+            | _ => React.null
+            }
+          | _ =>
+            <RenderIf condition={isPaypalRedirectFlow}>
+              <PayPalLazy paymentType walletOptions />
+            </RenderIf>
           }}
         </SessionPaymentWrapper>
       | _ =>

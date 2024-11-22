@@ -19,6 +19,7 @@ type payment =
   | GooglePay
   | ApplePay
   | Boleto
+  | PayPal
   | NONE
 
 let paymentMode = str => {
@@ -43,6 +44,7 @@ let paymentMode = str => {
   | "google_pay" => GooglePay
   | "apple_pay" => ApplePay
   | "boleto" => Boleto
+  | "paypal" => PayPal
   | _ => NONE
   }
 }
