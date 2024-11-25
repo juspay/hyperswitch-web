@@ -156,7 +156,7 @@ let getStrFromIndex = (arr: array<string>, index) => {
 let formatCVCNumber = (val, cardType) => {
   let clearValue = val->clearSpaces
   let obj = getobjFromCardPattern(cardType)
-  clearValue->slice(0, obj.maxCVCLenth)
+  clearValue->slice(0, obj.maxCVCLength)
 }
 
 let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
