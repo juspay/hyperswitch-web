@@ -290,6 +290,7 @@ let useRequiredFieldsEmptyAndValid = (
     cardExpiry,
     cvcNumber,
     bankAccountNumber,
+    cryptoCurrencyNetworks,
   ))
 }
 
