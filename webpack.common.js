@@ -50,7 +50,6 @@ const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
 
 const backendDomain = getEnvironmentDomain("checkout", "dev", "beta");
 const confirmDomain = getEnvironmentDomain("api", "integ-api", "sandbox");
-const logDomain = getEnvironmentDomain("api", "integ-api", "sandbox");
 
 const backendEndPoint =
   envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
@@ -58,8 +57,7 @@ const backendEndPoint =
 const confirmEndPoint =
   envBackendUrl || `https://${confirmDomain}.hyperswitch.io`;
 
-const logEndpoint =
-  envLoggingUrl || `https://${logDomain}.hyperswitch.io/logs/sdk`;
+const logEndpoint = envLoggingUrl;
 
 const loggingLevel = "DEBUG";
 const maxLogsPushedPerEventName = 100;
