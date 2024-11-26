@@ -1,3 +1,12 @@
+## [0.103.2](https://github.com/juspay/hyperswitch-web/compare/v0.103.1...v0.103.2) (2024-11-26)
+
+## [0.103.1](https://github.com/juspay/hyperswitch-web/compare/v0.103.0...v0.103.1) (2024-11-25)
+
+
+### Bug Fixes
+
+* crypto currency payment method ([#810](https://github.com/juspay/hyperswitch-web/issues/810)) ([c3aed42](https://github.com/juspay/hyperswitch-web/commit/c3aed42b9f218b8c44e2574f3032081cd7a45999))
+
 # [0.103.0](https://github.com/juspay/hyperswitch-web/compare/v0.102.9...v0.103.0) (2024-11-21)
 
 
