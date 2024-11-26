@@ -1,3 +1,10 @@
+# [0.104.0](https://github.com/juspay/hyperswitch-web/compare/v0.103.2...v0.104.0) (2024-11-26)
+
+
+### Features
+
+* samsung pay added ([#806](https://github.com/juspay/hyperswitch-web/issues/806)) ([01db104](https://github.com/juspay/hyperswitch-web/commit/01db104a2512e99eb38305751a9e9395e0812940))
+
 ## [0.103.2](https://github.com/juspay/hyperswitch-web/compare/v0.103.1...v0.103.2) (2024-11-26)
 
 ## [0.103.1](https://github.com/juspay/hyperswitch-web/compare/v0.103.0...v0.103.1) (2024-11-25)
