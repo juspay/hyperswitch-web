@@ -25,6 +25,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "bacs",
   "pay_bright",
   "multibanco_transfer",
+  "paypal",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
@@ -289,6 +290,7 @@ let useRequiredFieldsEmptyAndValid = (
     cardExpiry,
     cvcNumber,
     bankAccountNumber,
+    cryptoCurrencyNetworks,
   ))
 }
 

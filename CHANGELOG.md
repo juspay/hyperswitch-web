@@ -1,3 +1,27 @@
+## [0.103.2](https://github.com/juspay/hyperswitch-web/compare/v0.103.1...v0.103.2) (2024-11-26)
+
+## [0.103.1](https://github.com/juspay/hyperswitch-web/compare/v0.103.0...v0.103.1) (2024-11-25)
+
+
+### Bug Fixes
+
+* crypto currency payment method ([#810](https://github.com/juspay/hyperswitch-web/issues/810)) ([c3aed42](https://github.com/juspay/hyperswitch-web/commit/c3aed42b9f218b8c44e2574f3032081cd7a45999))
+
+# [0.103.0](https://github.com/juspay/hyperswitch-web/compare/v0.102.9...v0.103.0) (2024-11-21)
+
+
+### Features
+
+* added paypal tabs flow support for billing details ([#792](https://github.com/juspay/hyperswitch-web/issues/792)) ([a7c7d19](https://github.com/juspay/hyperswitch-web/commit/a7c7d191aa3df3de3293f8dade14c0448415a913))
+
+## [0.102.9](https://github.com/juspay/hyperswitch-web/compare/v0.102.8...v0.102.9) (2024-11-20)
+
+## [0.102.8](https://github.com/juspay/hyperswitch-web/compare/v0.102.7...v0.102.8) (2024-11-19)
+
+## [0.102.7](https://github.com/juspay/hyperswitch-web/compare/v0.102.6...v0.102.7) (2024-11-19)
+
+## [0.102.6](https://github.com/juspay/hyperswitch-web/compare/v0.102.5...v0.102.6) (2024-11-19)
+
 ## [0.102.5](https://github.com/juspay/hyperswitch-web/compare/v0.102.4...v0.102.5) (2024-11-19)
 
 ## [0.102.4](https://github.com/juspay/hyperswitch-web/compare/v0.102.3...v0.102.4) (2024-11-14)

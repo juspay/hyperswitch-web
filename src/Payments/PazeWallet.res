@@ -41,12 +41,12 @@ let make = () => {
 
               Console.log2("PAZE --- init completed", val)
 
-              let consumerPresent = await digitalWalletSdk.canCheckout({
+              let canCheckout = await digitalWalletSdk.canCheckout({
                 emailAddress: emailAddress,
               })
 
               Console.log("PAZE --- canCheckout completed")
-              Console.log2("PAZE --- consumerPresent: ", consumerPresent)
+              Console.log2("PAZE --- canCheckout: ", canCheckout.consumerPresent)
 
               let transactionValue = {
                 transactionAmount,
@@ -59,16 +59,16 @@ let make = () => {
                 payloadTypeIndicator: "PAYMENT",
               }
 
-              let checkoutResponse = await digitalWalletSdk.checkout({
+              let _ = await digitalWalletSdk.checkout({
                 acceptedPaymentCardNetworks: ["VISA", "MASTERCARD"],
-                emailAddress,
+                emailAddress: canCheckout.consumerPresent ? emailAddress : "",
                 sessionId,
                 actionCode: "START_FLOW",
                 transactionValue,
                 shippingPreference: "ALL",
               })
 
-              Console.log2("PAZE --- Checkout Response Object: ", checkoutResponse)
+              Console.log("PAZE --- digitalWalletSdk.checkout completed")
 
               let completeObj = {
                 transactionOptions,
@@ -80,7 +80,7 @@ let make = () => {
 
               let completeResponse = await digitalWalletSdk.complete(completeObj)
 
-              Console.log2("PAZE --- Complete Response Object: ", completeResponse)
+              Console.log("PAZE --- digitalWalletSdk.complete completed")
 
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),
