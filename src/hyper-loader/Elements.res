@@ -829,14 +829,7 @@ let make = (
                   x === "google_pay" || x === "googlepay"
                 })
                 let samsungPayPresent = sessionsArr->Array.find(item => {
-                  let walletName =
-                    item
-                    ->JSON.Decode.object
-                    ->Belt.Option.flatMap(val => {
-                      val->Dict.get("wallet_name")
-                    })
-                    ->Belt.Option.flatMap(JSON.Decode.string)
-                    ->Option.getOr("")
+                  let walletName = item->getDictFromJson->getString("wallet_name", "")
                   walletName === "samsung_pay" || walletName === "samsungpay"
                 })
 
@@ -1205,7 +1198,6 @@ let make = (
                           resolve()
                         })
                         ->catch(err => {
-                          Js.log2("fullscreen", err)
                           event.source->Window.sendPostMessage(
                             [("samsungPayError", err->anyTypeToJson)]->Dict.fromArray,
                           )

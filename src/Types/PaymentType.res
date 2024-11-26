@@ -698,101 +698,72 @@ let getTerms = (dict, str, logger) => {
   })
   ->Option.getOr(defaultTerms)
 }
-let getApplePayHeight = (val, logger) => {
-  let val: heightType =
-    val >= 45
-      ? ApplePay(val)
-      : {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[h>=45] - ApplePay. Value set to min",
-            ~logger,
-          )
-          ApplePay(48)
-        }
-  val
+let getApplePayHeight: (int, 'a) => heightType = (val, logger) => {
+  if val >= 45 {
+    ApplePay(val)
+  } else {
+    valueOutRangeWarning(
+      val,
+      "options.style.height",
+      "[h>=45] - ApplePay. Value set to min",
+      ~logger,
+    )
+    ApplePay(48)
+  }
 }
-let getGooglePayHeight = (val, logger) => {
-  let val: heightType =
-    val >= 48
-      ? GooglePay(val)
-      : {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[h>=48] - GooglePay. Value set to min",
-            ~logger,
-          )
-          GooglePay(48)
-        }
-  val
+
+let getGooglePayHeight: (int, 'a) => heightType = (val, logger) => {
+  if val >= 45 {
+    GooglePay(val)
+  } else {
+    valueOutRangeWarning(
+      val,
+      "options.style.height",
+      "[h>=45] - GooglePay. Value set to min",
+      ~logger,
+    )
+    GooglePay(48)
+  }
 }
-let getSamsungPayHeight = (val, logger) => {
-  let val: heightType =
-    val >= 48
-      ? SamsungPay(val)
-      : {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[h>=48] - SamsungPay. Value set to min",
-            ~logger,
-          )
-          SamsungPay(48)
-        }
-  val
+
+let getSamsungPayHeight: (int, 'a) => heightType = (val, logger) => {
+  if val >= 45 {
+    SamsungPay(val)
+  } else {
+    valueOutRangeWarning(
+      val,
+      "options.style.height",
+      "[h>=45] - SamsungPay. Value set to min",
+      ~logger,
+    )
+    SamsungPay(48)
+  }
 }
-let getPaypalHeight = (val, logger) => {
-  let val: heightType =
-    val < 25
-      ? {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[25-55] - Paypal. Value set to min",
-            ~logger,
-          )
-          Paypal(25)
-        }
-      : val > 55
-      ? {
-        valueOutRangeWarning(
-          val,
-          "options.style.height",
-          "[25-55] - Paypal. Value set to max",
-          ~logger,
-        )
-        Paypal(55)
-      }
-      : Paypal(val)
-  val
+
+let getPaypalHeight: (int, 'a) => heightType = (val, logger) => {
+  if val < 25 {
+    valueOutRangeWarning(val, "options.style.height", "[25-55] - Paypal. Value set to min", ~logger)
+    Paypal(25)
+  } else if val > 55 {
+    valueOutRangeWarning(val, "options.style.height", "[25-55] - Paypal. Value set to max", ~logger)
+    Paypal(55)
+  } else {
+    Paypal(val)
+  }
 }
-let getKlarnaHeight = (val, logger) => {
-  let val: heightType =
-    val < 40
-      ? {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[40-60] - Klarna. Value set to min",
-            ~logger,
-          )
-          Klarna(40)
-        }
-      : val > 60
-      ? {
-        valueOutRangeWarning(
-          val,
-          "options.style.height",
-          "[40-60] - Paypal. Value set to max",
-          ~logger,
-        )
-        Klarna(60)
-      }
-      : Klarna(val)
-  val
+
+let getKlarnaHeight: (int, 'a) => heightType = (val, logger) => {
+  if val < 40 {
+    valueOutRangeWarning(val, "options.style.height", "[40-60] - Klarna. Value set to min", ~logger)
+    Klarna(40)
+  } else if val > 60 {
+    valueOutRangeWarning(val, "options.style.height", "[40-60] - Paypal. Value set to max", ~logger)
+    Klarna(60)
+  } else {
+    Klarna(val)
+  }
 }
+
 let getTheme = (str, logger) => {
   switch str {
   | "outline" => Outline
