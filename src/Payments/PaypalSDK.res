@@ -32,8 +32,8 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let (_, _, buttonType) = options.wallets.style.type_
-  let (_, _, heightType, _) = options.wallets.style.height
+  let (_, _, buttonType, _) = options.wallets.style.type_
+  let (_, _, heightType, _, _) = options.wallets.style.height
   let buttonStyle = {
     layout: "vertical",
     color: options.wallets.style.theme == Outline

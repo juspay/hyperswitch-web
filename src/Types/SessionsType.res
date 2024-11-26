@@ -1,8 +1,8 @@
 open Utils
 
-type wallet = Gpay | Paypal | Klarna | ApplePay | Paze | NONE
-
-type tokenCategory = ApplePayObject | GooglePayThirdPartyObject | PazeObject | Others
+type wallet = Gpay | Paypal | Klarna | ApplePay | SamsungPay | Paze | NONE
+type tokenCategory =
+  ApplePayObject | GooglePayThirdPartyObject | SamsungPayObject | PazeObject | Others
 
 type paymentType = Wallet | Others
 
@@ -30,12 +30,14 @@ type tokenType =
   | ApplePayToken(array<JSON.t>)
   | GooglePayThirdPartyToken(array<JSON.t>)
   | PazeToken(array<JSON.t>)
+  | SamsungPayToken(array<JSON.t>)
   | OtherToken(array<token>)
 
 type optionalTokenType =
   | ApplePayTokenOptional(option<JSON.t>)
   | GooglePayThirdPartyTokenOptional(option<JSON.t>)
   | PazeTokenOptional(option<JSON.t>)
+  | SamsungPayTokenOptional(option<JSON.t>)
   | OtherTokenOptional(option<token>)
 
 type sessions = {
@@ -67,6 +69,7 @@ let getWallet = str => {
   | "apple_pay" => ApplePay
   | "paypal" => Paypal
   | "klarna" => Klarna
+  | "samsung_pay" => SamsungPay
   | "google_pay" => Gpay
   | "paze" => Paze
   | _ => NONE
@@ -124,6 +127,11 @@ let itemToObjMapper = (dict, returnType) => {
       clientSecret: getString(dict, "client_secret", ""),
       sessionsToken: PazeToken(getSessionsTokenJson(dict, "session_token")),
     }
+  | SamsungPayObject => {
+      paymentId: getString(dict, "payment_id", ""),
+      clientSecret: getString(dict, "client_secret", ""),
+      sessionsToken: SamsungPayToken(getSessionsTokenJson(dict, "session_token")),
+    }
 
   | Others => {
       paymentId: getString(dict, "payment_id", ""),
@@ -149,5 +157,6 @@ let getPaymentSessionObj = (tokenType, val) =>
   | GooglePayThirdPartyToken(arr) =>
     GooglePayThirdPartyTokenOptional(getWalletFromTokenType(arr, val))
   | PazeToken(arr) => PazeTokenOptional(getWalletFromTokenType(arr, val))
+  | SamsungPayToken(arr) => SamsungPayTokenOptional(getWalletFromTokenType(arr, val))
   | OtherToken(arr) => OtherTokenOptional(arr->Array.find(item => item.walletName == val))
   }

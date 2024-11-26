@@ -7,6 +7,7 @@ open URLModule
 let getPaymentType = paymentMethodType =>
   switch paymentMethodType {
   | "apple_pay" => Applepay
+  | "samsung_pay" => Samsungpay
   | "google_pay" => Gpay
   | "paze" => Paze
   | "debit"

@@ -272,6 +272,18 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         logger.setLogInfo(~value="GooglePay Script Loaded", ~eventName=GOOGLE_PAY_SCRIPT)
       }
 
+      if (
+        Window.querySelectorAll(`script[src="https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js"]`)->Array.length === 0
+      ) {
+        let samsungPayScriptUrl = "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js"
+        let samsungPayScript = Window.createElement("script")
+        samsungPayScript->Window.elementSrc(samsungPayScriptUrl)
+        samsungPayScript->Window.elementOnerror(err => {
+          Console.log2("ERROR LOADING SAMSUNG PAY SCRIPT", err)
+        })
+        Window.body->Window.appendChild(samsungPayScript)
+      }
+
       let iframeRef = ref([])
       let clientSecret = ref("")
       let ephemeralKey = ref("")
