@@ -97,7 +97,13 @@ let make = (~logger: HyperLogger.loggerMake) => {
 
               resolve()
             } catch {
-            | _ =>
+            | err =>
+              logger.setLogError(
+                ~value=err->formatException->JSON.stringify,
+                ~eventName=PAZE_SDK_FLOW,
+                ~paymentMethod="PAZE",
+                ~logType=ERROR,
+              )
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),
                 ("isPaze", true->JSON.Encode.bool),

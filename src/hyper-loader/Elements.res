@@ -1176,11 +1176,11 @@ let make = (
                       resolve()
                     })
                     ->catch(err => {
-                      logger.setLogInfo(
-                        ~value=err->anyTypeToJson->JSON.stringify,
+                      logger.setLogError(
+                        ~value=err->formatException->JSON.stringify,
                         ~eventName=SAMSUNG_PAY_FLOW,
                         ~paymentMethod="SAMSUNG_PAY",
-                        ~logType=DEBUG,
+                        ~logType=ERROR,
                       )
                       resolve()
                     })
@@ -1206,11 +1206,11 @@ let make = (
                           resolve()
                         })
                         ->catch(err => {
-                          logger.setLogInfo(
-                            ~value=err->anyTypeToJson->JSON.stringify,
+                          logger.setLogError(
+                            ~value=err->formatException->JSON.stringify,
                             ~eventName=SAMSUNG_PAY_FLOW,
                             ~paymentMethod="SAMSUNG_PAY",
-                            ~logType=DEBUG,
+                            ~logType=ERROR,
                           )
                           event.source->Window.sendPostMessage(
                             [("samsungPayError", err->anyTypeToJson)]->Dict.fromArray,
@@ -1226,7 +1226,14 @@ let make = (
                       "onSamsungPayMessages",
                     )
                   } catch {
-                  | _ => Console.log("Error loading Samsung Pay")
+                  | err =>
+                    logger.setLogError(
+                      ~value=err->formatException->JSON.stringify,
+                      ~eventName=SAMSUNG_PAY_FLOW,
+                      ~paymentMethod="SAMSUNG_PAY",
+                      ~logType=ERROR,
+                    )
+                    Console.log("Error loading Samsung Pay")
                   }
                 } else if wallets.samsungPay === Never {
                   logger.setLogInfo(
