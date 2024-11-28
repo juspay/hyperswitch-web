@@ -282,7 +282,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           Utils.logInfo(Console.log2("ERROR DURING LOADING SAMSUNG PAY SCRIPT", err))
         })
         Window.body->Window.appendChild(samsungPayScript)
-        logger.setLogInfo(~value="SamsungPay Script Loaded", ~eventName=SAMSUNG_PAY_SCRIPT)
+        samsungPayScript->Window.elementOnload(_ =>
+          logger.setLogInfo(~value="SamsungPay Script Loaded", ~eventName=SAMSUNG_PAY_SCRIPT)
+        )
       }
 
       let iframeRef = ref([])

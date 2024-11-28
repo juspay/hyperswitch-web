@@ -124,7 +124,10 @@ let make = (~logger: HyperLogger.loggerMake) => {
             )
             Console.log2("PAZE --- errrorrr", err)
           })
-          pazeScript->Window.elementOnload(_ => loadPazeSDK()->ignore)
+          pazeScript->Window.elementOnload(_ => {
+            logger.setLogInfo(~value="Pzae SDK Script Loaded", ~eventName=PAZE_SDK_FLOW)
+            loadPazeSDK()->ignore
+          })
           Window.body->Window.appendChild(pazeScript)
         }
 
@@ -138,7 +141,6 @@ let make = (~logger: HyperLogger.loggerMake) => {
           ]->Array.every(x => x != "")
         ) {
           mountPazeSDK()
-          logger.setLogInfo(~value="Pzae SDK Script Loaded", ~eventName=PAZE_SDK_FLOW)
         }
       }
     }
