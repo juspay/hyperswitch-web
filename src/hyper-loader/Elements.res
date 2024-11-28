@@ -1175,7 +1175,15 @@ let make = (
                       mountedIframeRef->Window.iframePostMessage(msg)
                       resolve()
                     })
-                    ->catch(_ => resolve())
+                    ->catch(err => {
+                      logger.setLogInfo(
+                        ~value=err->anyTypeToJson->JSON.stringify,
+                        ~eventName=SAMSUNG_PAY_FLOW,
+                        ~paymentMethod="SAMSUNG_PAY",
+                        ~logType=DEBUG,
+                      )
+                      resolve()
+                    })
                     ->ignore
 
                     let handleSamsungPayMessages = (event: Types.event) => {
@@ -1198,6 +1206,12 @@ let make = (
                           resolve()
                         })
                         ->catch(err => {
+                          logger.setLogInfo(
+                            ~value=err->anyTypeToJson->JSON.stringify,
+                            ~eventName=SAMSUNG_PAY_FLOW,
+                            ~paymentMethod="SAMSUNG_PAY",
+                            ~logType=DEBUG,
+                          )
                           event.source->Window.sendPostMessage(
                             [("samsungPayError", err->anyTypeToJson)]->Dict.fromArray,
                           )
@@ -1214,6 +1228,13 @@ let make = (
                   } catch {
                   | _ => Console.log("Error loading Samsung Pay")
                   }
+                } else if wallets.samsungPay === Never {
+                  logger.setLogInfo(
+                    ~value="SamsungPay is set as never by merchant",
+                    ~eventName=SAMSUNG_PAY_FLOW,
+                    ~paymentMethod="SAMSUNG_PAY",
+                    ~logType=INFO,
+                  )
                 }
 
                 json->resolve

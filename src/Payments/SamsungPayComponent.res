@@ -28,6 +28,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     })
 
   let onSamsungPaymentButtonClick = _ => {
+    loggerState.setLogInfo(
+      ~value="SamsungPay Button Clicked",
+      ~eventName=SAMSUNG_PAY_FLOW,
+      ~paymentMethod="SAMSUNG_PAY",
+    )
     SamsungPayHelpers.handleSamsungPayClicked(
       ~sessionObj=sessionObj->Option.getOr(JSON.Encode.null)->getDictFromJson,
       ~componentName,

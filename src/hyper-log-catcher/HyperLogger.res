@@ -86,6 +86,9 @@ type eventName =
   | EXTERNAL_TAX_CALCULATION
   | POST_SESSION_TOKENS_CALL
   | POST_SESSION_TOKENS_CALL_INIT
+  | PAZE_SDK_FLOW
+  | SAMSUNG_PAY_SCRIPT
+  | SAMSUNG_PAY_FLOW
 
 let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
 

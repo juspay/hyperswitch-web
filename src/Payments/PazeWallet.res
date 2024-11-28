@@ -4,7 +4,7 @@ open PazeTypes
 external digitalWalletSdk: digitalWalletSdk = "DIGITAL_WALLET_SDK"
 
 @react.component
-let make = () => {
+let make = (~logger: HyperLogger.loggerMake) => {
   open Promise
   open Utils
 
@@ -107,11 +107,15 @@ let make = () => {
               resolve()
             }
           }
-
+          logger.setLogInfo(~value="Paze SDK Script Loading", ~eventName=PAZE_SDK_FLOW)
           let pazeScript = Window.createElement("script")
           pazeScript->Window.elementSrc(pazeScriptURL)
           pazeScript->Window.elementOnerror(exn => {
             let err = exn->Identity.anyTypeToJson->JSON.stringify
+            logger.setLogError(
+              ~value=`Error During Loading Paze SDK Script: ${err}`,
+              ~eventName=PAZE_SDK_FLOW,
+            )
             Console.log2("PAZE --- errrorrr", err)
           })
           pazeScript->Window.elementOnload(_ => loadPazeSDK()->ignore)
@@ -128,6 +132,7 @@ let make = () => {
           ]->Array.every(x => x != "")
         ) {
           mountPazeSDK()
+          logger.setLogInfo(~value="Pzae SDK Script Loaded", ~eventName=PAZE_SDK_FLOW)
         }
       }
     }
