@@ -139,26 +139,25 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     let isPreloadEnabled =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getBool("isPreloadEnabled", true)
+      ->getDictFromJson
+      ->getBool("isPreloadEnabled", true)
     let shouldUseTopRedirection =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getBool("shouldUseTopRedirection", false)
+      ->getDictFromJson
+      ->getBool("shouldUseTopRedirection", false)
     let analyticsMetadata =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getDictFromObj("analytics")
-      ->Utils.getJsonObjectFromDict("metadata")
+      ->getDictFromJson
+      ->getDictFromObj("analytics")
+      ->getJsonObjectFromDict("metadata")
     if isPreloadEnabled {
       preloader()
     }
     let analyticsInfoDict =
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-    let sessionID =
-      analyticsInfoDict->getString("sessionID", "hyp_" ++ Utils.generateRandomString(8))
+    let sessionID = analyticsInfoDict->getString("sessionID", "hyp_" ++ generateRandomString(8))
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
     let logger = HyperLogger.make(
       ~sessionId=sessionID,
@@ -266,7 +265,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let googlePayScript = Window.createElement("script")
         googlePayScript->Window.elementSrc(googlePayScriptURL)
         googlePayScript->Window.elementOnerror(err => {
-          Utils.logInfo(Console.log2("ERROR DURING LOADING GOOGLE PAY SCRIPT", err))
+          logInfo(Console.log2("ERROR DURING LOADING GOOGLE PAY SCRIPT", err))
         })
         Window.body->Window.appendChild(googlePayScript)
         logger.setLogInfo(~value="GooglePay Script Loaded", ~eventName=GOOGLE_PAY_SCRIPT)
@@ -279,7 +278,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let samsungPayScript = Window.createElement("script")
         samsungPayScript->Window.elementSrc(samsungPayScriptUrl)
         samsungPayScript->Window.elementOnerror(err => {
-          Utils.logInfo(Console.log2("ERROR DURING LOADING SAMSUNG PAY SCRIPT", err))
+          logInfo(Console.log2("ERROR DURING LOADING SAMSUNG PAY SCRIPT", err))
         })
         Window.body->Window.appendChild(samsungPayScript)
         samsungPayScript->Window.elementOnload(_ =>
