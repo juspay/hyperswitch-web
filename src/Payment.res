@@ -112,13 +112,12 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let formattedExpiry = val->formatCardExpiryNumber
     if isExipryValid(formattedExpiry) {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
+
+      // * Sending card expiry to handle cases where the card expires before the use date.
+      Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
     }
     setExpiryValid(formattedExpiry, setIsExpiryValid)
     setCardExpiry(_ => formattedExpiry)
-    // * Sending card expiry to handle cases where the card expires before the use date.
-    if formattedExpiry->String.length > 0 && getExpiryValidity(formattedExpiry) {
-      Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
-    }
   }
 
   let changeCVCNumber = ev => {
