@@ -340,6 +340,7 @@ let rec intentCall = (
     let url = makeUrl(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
+    url.searchParams.set("payment_id", clientSecret->getPaymentId)
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
     if statusCode->String.charAt(0) !== "2" {
@@ -485,6 +486,7 @@ let rec intentCall = (
 
             let url = makeUrl(confirmParam.return_url)
             url.searchParams.set("payment_intent_client_secret", clientSecret)
+            url.searchParams.set("payment_id", clientSecret->getPaymentId)
             url.searchParams.set("status", intent.status)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
@@ -827,6 +829,7 @@ let rec intentCall = (
       try {
         let url = makeUrl(confirmParam.return_url)
         url.searchParams.set("payment_intent_client_secret", clientSecret)
+        url.searchParams.set("payment_id", clientSecret->getPaymentId)
         url.searchParams.set("status", "failed")
         let exceptionMessage = err->formatException
         logApi(
