@@ -199,7 +199,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     | _ => ()
     }
     None
-  }, (paymentMethodList, walletList, paymentOptionsList, actualList))
+  }, (paymentMethodList, walletList, paymentOptionsList, actualList, showCardFormByDefault))
   React.useEffect(() => {
     switch sessionsObj {
     | Loaded(ssn) => setSessions(_ => ssn)
@@ -275,7 +275,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           }
     )
     None
-  }, (layoutClass.defaultCollapsed, paymentOptions, paymentMethodList, selectedOption))
+  }, (
+    layoutClass.defaultCollapsed,
+    paymentOptions,
+    paymentMethodList,
+    selectedOption,
+    showCardFormByDefault,
+  ))
   let checkRenderOrComp = () => {
     walletOptions->Array.includes("paypal") || isShowOrPayUsing
   }
