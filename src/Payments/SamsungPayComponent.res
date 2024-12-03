@@ -24,7 +24,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
 
   let getSamsungPaymentsClient = _ =>
     SamsungPayType.samsung({
-      environment: publishableKey->String.startsWith("pk_prd_") ? "PRODUCTION" : "STAGE",
+      environment: "PRODUCTION",
     })
 
   let onSamsungPaymentButtonClick = _ => {
