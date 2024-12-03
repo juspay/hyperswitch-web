@@ -453,6 +453,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     areAllGooglePayRequiredFieldsPrefilled,
     isApplePayReady,
     isGooglePayReady,
+    showCardFormByDefault,
   ))
 }
 
