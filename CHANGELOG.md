@@ -1,3 +1,10 @@
+## [0.104.4](https://github.com/juspay/hyperswitch-web/compare/v0.104.3...v0.104.4) (2024-12-03)
+
+
+### Bug Fixes
+
+* show card form by default rendering issue ([#817](https://github.com/juspay/hyperswitch-web/issues/817)) ([00e8562](https://github.com/juspay/hyperswitch-web/commit/00e8562b97c20ed02dc86eaf139ffafb822be075))
+
 ## [0.104.3](https://github.com/juspay/hyperswitch-web/compare/v0.104.2...v0.104.3) (2024-12-02)
 
 ## [0.104.2](https://github.com/juspay/hyperswitch-web/compare/v0.104.1...v0.104.2) (2024-12-02)
