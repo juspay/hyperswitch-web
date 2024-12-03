@@ -168,9 +168,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     | Loaded(paymentlist) =>
       let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
 
-      setPaymentOptions(_ => {
-        paymentOptionsList
-      })
+      setPaymentOptions(_ =>
+        [
+          ...showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? ["card"] : [],
+          ...paymentOptionsList,
+        ]->removeDuplicate
+      )
       setWalletOptions(_ => walletList)
       setPaymentMethodListValue(_ => plist)
       showCardFormByDefault
