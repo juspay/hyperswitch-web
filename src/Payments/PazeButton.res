@@ -45,6 +45,11 @@ let make = (~token: SessionsType.token) => {
       let dict = json->Utils.getDictFromJson->getDictFromDict("data")
       if dict->getBool("isPaze", false) {
         setShowLoader(_ => false)
+        messageParentWindow([
+          ("fullscreen", true->JSON.Encode.bool),
+          ("param", "paymentloader"->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+        ])
         if dict->getOptionString("completeResponse")->Option.isSome {
           let completeResponse = dict->getString("completeResponse", "")
           intent(
