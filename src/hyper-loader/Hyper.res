@@ -265,7 +265,12 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let googlePayScript = Window.createElement("script")
         googlePayScript->Window.elementSrc(googlePayScriptURL)
         googlePayScript->Window.elementOnerror(err => {
-          logInfo(Console.log2("ERROR DURING LOADING GOOGLE PAY SCRIPT", err))
+          logger.setLogError(
+            ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT",
+            ~eventName=GOOGLE_PAY_SCRIPT,
+            ~internalMetadata=err->formatException->JSON.stringify,
+            ~paymentMethod="GOOGLE_PAY",
+          )
         })
         Window.body->Window.appendChild(googlePayScript)
         logger.setLogInfo(~value="GooglePay Script Loaded", ~eventName=GOOGLE_PAY_SCRIPT)
@@ -278,7 +283,12 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let samsungPayScript = Window.createElement("script")
         samsungPayScript->Window.elementSrc(samsungPayScriptUrl)
         samsungPayScript->Window.elementOnerror(err => {
-          logInfo(Console.log2("ERROR DURING LOADING SAMSUNG PAY SCRIPT", err))
+          logger.setLogError(
+            ~value="ERROR DURING LOADING SAMSUNG PAY SCRIPT",
+            ~eventName=SAMSUNG_PAY_SCRIPT,
+            ~internalMetadata=err->formatException->JSON.stringify,
+            ~paymentMethod="SAMSUNG_PAY",
+          )
         })
         Window.body->Window.appendChild(samsungPayScript)
         samsungPayScript->Window.elementOnload(_ =>

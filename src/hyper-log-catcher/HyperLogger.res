@@ -107,9 +107,6 @@ let toSnakeCaseWithSeparator = (str, separator) => {
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
-let logInfo = log => {
-  Window.isProd ? () : log
-}
 
 type logFile = {
   timestamp: string,

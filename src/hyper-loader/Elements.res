@@ -182,7 +182,11 @@ let make = (
               logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT)
               trustPayScript->Window.elementSrc(trustPayScriptURL)
               trustPayScript->Window.elementOnerror(err => {
-                logInfo(Console.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
+                logger.setLogError(
+                  ~value="ERROR DURING LOADING TRUSTPAY APPLE PAY",
+                  ~eventName=TRUSTPAY_SCRIPT,
+                  ~internalMetadata=err->formatException->JSON.stringify,
+                )
               })
               trustPayScript->Window.elementOnload(_ => {
                 logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT)
