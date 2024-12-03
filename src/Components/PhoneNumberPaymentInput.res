@@ -1,5 +1,5 @@
 @react.component
-let make = () => {
+let make = (~isOptional=false) => {
   open RecoilAtoms
   open PaymentType
   open Utils
@@ -59,6 +59,7 @@ let make = () => {
       ...prev,
       countryCode: valueDropDown->getCountryCodeSplitValue,
       value: val,
+      errorString: val === "" ? prev.errorString : "",
     })
   }
 
@@ -66,6 +67,7 @@ let make = () => {
     setPhone(prev => {
       ...prev,
       countryCode: valueDropDown->getCountryCodeSplitValue,
+      errorString: prev.value === "" ? prev.errorString : "",
     })
     None
   }, [valueDropDown])
@@ -85,7 +87,7 @@ let make = () => {
 
   <RenderIf condition={showDetails.phone == Auto}>
     <PaymentField
-      fieldName="Phone Number"
+      fieldName={"Phone Number" ++ (isOptional ? " (Optional)" : "")}
       value=phone
       onChange=changePhone
       paymentType=Payment

@@ -25,6 +25,26 @@ type address = {
   country: string,
   postal_code: string,
 }
+
+type addressDetails = {
+  first_name: string,
+  last_name: string,
+  line1: string,
+  line2: string,
+  city: string,
+  state: string,
+  country: string,
+  postal_code: string,
+  email: string,
+  phone: string,
+  country_code: string,
+}
+
+type addressData = {
+  complete: bool,
+  data: addressDetails,
+}
+
 type addressType =
   | JSONString(string)
   | JSONObject(showAddress)
@@ -185,6 +205,8 @@ type payerDetails = {
   phone: option<string>,
 }
 
+type addressOptions = {optional: array<string>}
+
 let defaultCardDetails = {
   scheme: None,
   last4Digits: "",
@@ -325,6 +347,11 @@ let defaultOptions = {
   displayDefaultSavedPaymentIcon: true,
   hideCardNicknameField: false,
   customMessageForCardTerms: "",
+}
+
+let defaultOptional = []
+let defaultAddressOptions = {
+  optional: defaultOptional,
 }
 
 let getLayout = (str, logger) => {
@@ -1089,4 +1116,10 @@ let itemToPayerDetailsObjectMapper = dict => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.flatMap(Dict.get(_, "national_number"))
   ->Option.flatMap(JSON.Decode.string),
+}
+
+let itemToObjMapperAddress = (dict, logger) => {
+  {
+    optional: getStrArray(dict, "optional"),
+  }
 }

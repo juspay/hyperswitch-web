@@ -3,7 +3,7 @@ open PaymentType
 open Utils
 
 @react.component
-let make = (~paymentType) => {
+let make = (~paymentType, ~isOptional=false) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
@@ -56,7 +56,7 @@ let make = (~paymentType) => {
 
   <RenderIf condition={showDetails.email == Auto}>
     <PaymentField
-      fieldName=localeString.emailLabel
+      fieldName={localeString.emailLabel ++ (isOptional ? " (Optional)" : "")}
       setValue={setEmail}
       value=email
       onChange=changeEmail

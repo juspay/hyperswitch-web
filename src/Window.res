@@ -40,6 +40,8 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @scope("window") @get external cardNumberElement: window => option<window> = "cardNumber"
 @get external cardCVCElement: window => option<window> = "cardCvc"
 @get external cardExpiryElement: window => option<window> = "cardExpiry"
+@get external shippingAddressElement: window => option<window> = "shippingAddressElement"
+@get external billingAddressElement: window => option<window> = "billingAddressElement"
 @get external document: window => document = "document"
 @get external fullscreen: window => option<window> = "fullscreen"
 @get external frames: window => {..} = "frames"

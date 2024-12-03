@@ -137,6 +137,45 @@ let make = (
       })
     }
 
+    let getAddressValues = () => {
+      Promise.make((resolve, _reject) => {
+        if componentType !== "billingAddressElement" && componentType !== "shippingAddressElement" {
+          resolve(JSON.Encode.null)
+        }
+
+        iframeRef->Array.forEach(iframe => {
+          if componentType === "billingAddressElement" {
+            let message = [("getBillingAddress", true->JSON.Encode.bool)]->Dict.fromArray
+            iframe->Window.iframePostMessage(message)
+          } else {
+            let message = [("getShippingAddress", true->JSON.Encode.bool)]->Dict.fromArray
+            iframe->Window.iframePostMessage(message)
+          }
+        })
+
+        let handleFun = (ev: Types.event) => {
+          let json = ev.data->anyTypeToJson
+          let dict = json->Utils.getDictFromJson
+
+          if (
+            dict->Dict.get("billingAddressDetails")->Option.isSome &&
+              componentType === "billingAddressElement"
+          ) {
+            let addressDetails = dict->Utils.getDictFromDict("billingAddressDetails")
+            resolve(addressDetails->Identity.anyTypeToJson)
+          } else if (
+            dict->Dict.get("shippingAddressDetails")->Option.isSome &&
+              componentType === "shippingAddressElement"
+          ) {
+            let addressDetails = dict->Utils.getDictFromDict("shippingAddressDetails")
+            resolve(addressDetails->Identity.anyTypeToJson)
+          }
+        }
+
+        addSmartEventListener("message", handleFun, "showAddressHandler")->ignore
+      })
+    }
+
     let focus = () => {
       iframeRef->Array.forEach(iframe => {
         let message = [("doFocus", true->JSON.Encode.bool)]->Dict.fromArray
@@ -420,6 +459,7 @@ let make = (
       update,
       mount,
       onSDKHandleClick,
+      getAddressValues,
     }
   } catch {
   | e => {

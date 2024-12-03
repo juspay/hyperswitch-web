@@ -1697,3 +1697,13 @@ let getCountry = paymentMethodName => {
   | _ => country
   }
 }
+
+let getCountryNameFromIsoAlpha = (code: string): string => {
+  let upperCode = code->Js.String2.toUpperCase
+  switch country->Array.find(ele => {
+    ele.isoAlpha2 == upperCode || ele.isoAlpha3 == upperCode
+  }) {
+  | Some(val) => val.countryName
+  | None => "India"
+  }
+}

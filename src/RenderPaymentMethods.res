@@ -82,6 +82,8 @@ let make = (
               paymentType cardProps expiryProps cvcProps zipProps handleElementFocus isFocus
             />
           </ReusableReactSuspense>
+        | ShippingAddressElement => <AddressElement mode="shipping" />
+        | BillingAddressElement => <AddressElement mode="billing" />
         | GooglePayElement
         | PayPalElement
         | ApplePayElement
