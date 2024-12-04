@@ -1,3 +1,10 @@
+# [0.105.0](https://github.com/juspay/hyperswitch-web/compare/v0.104.6...v0.105.0) (2024-12-04)
+
+
+### Features
+
+* add traditional chinese locale ([#822](https://github.com/juspay/hyperswitch-web/issues/822)) ([2707923](https://github.com/juspay/hyperswitch-web/commit/27079236edef9bdd776753b67a70c474a794dd72))
+
 ## [0.104.6](https://github.com/juspay/hyperswitch-web/compare/v0.104.5...v0.104.6) (2024-12-04)
 
 ## [0.104.5](https://github.com/juspay/hyperswitch-web/compare/v0.104.4...v0.104.5) (2024-12-03)
