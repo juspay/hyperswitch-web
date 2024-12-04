@@ -17,6 +17,7 @@ let mapLocalStringToTypeLocale = val => {
   | "sv" => SV
   | "ru" => RU
   | "zh" => ZH
+  | "zh-Hant" => ZH_HANT
   | "en"
   | _ =>
     EN
