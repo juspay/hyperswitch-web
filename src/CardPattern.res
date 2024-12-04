@@ -72,7 +72,7 @@ let cardPatterns = [
     issuer: "Visa",
     pattern: %re("/^4/"),
     cvcLength: [3],
-    length: [16, 19],
+    length: [13, 14, 15, 16, 19],
     maxCVCLenth: 3,
     pincodeRequired: true,
   },
