@@ -88,7 +88,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let clearValue = card->clearSpaces
     setCardValid(clearValue, setIsCardValid)
     if (
-      cardValid(clearValue, cardBrand) &&
+      focusCardValid(clearValue, cardBrand) &&
       (PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false) ||
         Utils.checkIsTestCardWildcard(clearValue))
     ) {
