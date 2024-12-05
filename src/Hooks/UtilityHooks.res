@@ -22,24 +22,19 @@ let useHandlePostMessages = (~complete, ~empty, ~paymentType, ~savedMethod=false
 }
 
 let useIsCustomerAcceptanceRequired = (
-  ~displaySavedPaymentMethodsCheckbox,
+  ~options: PaymentType.options,
   ~isSaveCardsChecked,
   ~isGuestCustomer,
 ) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   React.useMemo(() => {
-    if displaySavedPaymentMethodsCheckbox {
+    if options.displaySavedPaymentMethodsCheckbox {
       isSaveCardsChecked || paymentMethodListValue.payment_type === SETUP_MANDATE
     } else {
       !(isGuestCustomer || paymentMethodListValue.payment_type === NORMAL)
     }
-  }, (
-    isSaveCardsChecked,
-    paymentMethodListValue.payment_type,
-    isGuestCustomer,
-    displaySavedPaymentMethodsCheckbox,
-  ))
+  }, (isSaveCardsChecked, paymentMethodListValue.payment_type, isGuestCustomer, options))
 }
 
 let useSendEventsToParent = eventsToSendToParent => {
