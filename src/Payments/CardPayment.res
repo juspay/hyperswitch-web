@@ -62,7 +62,6 @@ let make = (
     cvcError,
     setCvcError,
   ) = cvcProps
-  let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
@@ -120,7 +119,7 @@ let make = (
   )
 
   let isCustomerAcceptanceRequired = useIsCustomerAcceptanceRequired(
-    ~displaySavedPaymentMethodsCheckbox,
+    ~options,
     ~isSaveCardsChecked,
     ~isGuestCustomer,
   )
@@ -352,7 +351,7 @@ let make = (
     <RenderIf condition={showFields || isBancontact}>
       <Surcharge paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType} />
     </RenderIf>
-    <RenderIf condition={displaySavedPaymentMethodsCheckbox && !isBancontact}>
+    <RenderIf condition={options.displaySavedPaymentMethodsCheckbox && !isBancontact}>
       {switch (
         paymentMethodListValue.mandate_payment,
         options.terms.card,
