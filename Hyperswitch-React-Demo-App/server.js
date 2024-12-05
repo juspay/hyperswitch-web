@@ -2,13 +2,10 @@ const fetch = require("node-fetch");
 const express = require("express");
 const { resolve } = require("path");
 const dotenv = require("dotenv");
-const hyper = require("@juspay-tech/hyperswitch-node");
 dotenv.config({ path: "./.env" });
 
 const app = express();
 const PORT = 5252;
-
-const hyperswitch = hyper(process.env.HYPERSWITCH_SECRET_KEY);
 
 function getUrl(envVar, selfHostedValue) {
   return process.env[envVar] === selfHostedValue ? "" : process.env[envVar];
@@ -95,7 +92,7 @@ const paymentData = {
       country_code: "+91",
     },
   },
-}
+};
 
 const profileId = process.env.PROFILE_ID;
 if (profileId) {
@@ -122,29 +119,25 @@ app.get("/create-payment-intent", async (_, res) => {
 });
 
 async function createPaymentIntent(request) {
-  if (SERVER_URL) {
-    const url =
-      process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
-      process.env.HYPERSWITCH_SERVER_URL;
-    const apiResponse = await fetch(`${url}/payments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "api-key": process.env.HYPERSWITCH_SECRET_KEY,
-      },
-      body: JSON.stringify(request),
-    });
-    const paymentIntent = await apiResponse.json();
+  const url =
+    process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
+    process.env.HYPERSWITCH_SERVER_URL;
+  const apiResponse = await fetch(`${url}/payments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "api-key": process.env.HYPERSWITCH_SECRET_KEY,
+    },
+    body: JSON.stringify(request),
+  });
+  const paymentIntent = await apiResponse.json();
 
-    if (paymentIntent.error) {
-      console.error("Error - ", paymentIntent.error);
-      throw new Error(paymentIntent?.error?.message ?? "Something went wrong.");
-    }
-    return paymentIntent;
-  } else {
-    return await hyperswitch?.paymentIntents?.create(request);
+  if (paymentIntent.error) {
+    console.error("Error - ", paymentIntent.error);
+    throw new Error(paymentIntent?.error?.message ?? "Something went wrong.");
   }
+  return paymentIntent;
 }
 
 app.listen(PORT, () => {
