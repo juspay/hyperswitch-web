@@ -30,7 +30,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let onSamsungPaymentButtonClick = _ => {
     loggerState.setLogInfo(
       ~value="SamsungPay Button Clicked",
-      ~eventName=SAMSUNG_PAY_FLOW,
+      ~eventName=SAMSUNG_PAY,
       ~paymentMethod="SAMSUNG_PAY",
     )
     SamsungPayHelpers.handleSamsungPayClicked(

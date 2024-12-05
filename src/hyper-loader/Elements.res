@@ -1179,8 +1179,8 @@ let make = (
                     })
                     ->catch(err => {
                       logger.setLogError(
-                        ~value=err->formatException->JSON.stringify,
-                        ~eventName=SAMSUNG_PAY_FLOW,
+                        ~value=`SAMSUNG PAY not ready ${err->formatException->JSON.stringify}`,
+                        ~eventName=SAMSUNG_PAY,
                         ~paymentMethod="SAMSUNG_PAY",
                         ~logType=ERROR,
                       )
@@ -1209,8 +1209,10 @@ let make = (
                         })
                         ->catch(err => {
                           logger.setLogError(
-                            ~value=err->formatException->JSON.stringify,
-                            ~eventName=SAMSUNG_PAY_FLOW,
+                            ~value=`SAMSUNG PAY Initialization fail ${err
+                              ->formatException
+                              ->JSON.stringify}`,
+                            ~eventName=SAMSUNG_PAY,
                             ~paymentMethod="SAMSUNG_PAY",
                             ~logType=ERROR,
                           )
@@ -1230,8 +1232,8 @@ let make = (
                   } catch {
                   | err =>
                     logger.setLogError(
-                      ~value=err->formatException->JSON.stringify,
-                      ~eventName=SAMSUNG_PAY_FLOW,
+                      ~value=`SAMSUNG PAY Not Ready - ${err->formatException->JSON.stringify}`,
+                      ~eventName=SAMSUNG_PAY,
                       ~paymentMethod="SAMSUNG_PAY",
                       ~logType=ERROR,
                     )
@@ -1239,8 +1241,8 @@ let make = (
                   }
                 } else if wallets.samsungPay === Never {
                   logger.setLogInfo(
-                    ~value="SamsungPay is set as never by merchant",
-                    ~eventName=SAMSUNG_PAY_FLOW,
+                    ~value="SAMSUNG PAY is set as never by merchant",
+                    ~eventName=SAMSUNG_PAY,
                     ~paymentMethod="SAMSUNG_PAY",
                     ~logType=INFO,
                   )

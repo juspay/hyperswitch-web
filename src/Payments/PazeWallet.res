@@ -113,19 +113,19 @@ let make = (~logger: HyperLogger.loggerMake) => {
               resolve()
             }
           }
-          logger.setLogInfo(~value="Paze SDK Script Loading", ~eventName=PAZE_SDK_FLOW)
+          logger.setLogInfo(~value="PAZE SDK Script Loading", ~eventName=PAZE_SDK_FLOW)
           let pazeScript = Window.createElement("script")
           pazeScript->Window.elementSrc(pazeScriptURL)
           pazeScript->Window.elementOnerror(exn => {
-            let err = exn->Identity.anyTypeToJson->JSON.stringify
             logger.setLogError(
-              ~value=`Error During Loading Paze SDK Script: ${err}`,
+              ~value=`Error During Loading PAZE SDK Script: ${exn
+                ->Identity.anyTypeToJson
+                ->JSON.stringify}`,
               ~eventName=PAZE_SDK_FLOW,
             )
-            Console.log2("PAZE --- errrorrr", err)
           })
           pazeScript->Window.elementOnload(_ => {
-            logger.setLogInfo(~value="Pzae SDK Script Loaded", ~eventName=PAZE_SDK_FLOW)
+            logger.setLogInfo(~value="PAZE SDK Script Loaded", ~eventName=PAZE_SDK_FLOW)
             loadPazeSDK()->ignore
           })
           Window.body->Window.appendChild(pazeScript)

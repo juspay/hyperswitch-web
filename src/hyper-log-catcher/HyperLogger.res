@@ -88,7 +88,7 @@ type eventName =
   | POST_SESSION_TOKENS_CALL_INIT
   | PAZE_SDK_FLOW
   | SAMSUNG_PAY_SCRIPT
-  | SAMSUNG_PAY_FLOW
+  | SAMSUNG_PAY
 
 let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
 
