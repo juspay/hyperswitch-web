@@ -97,6 +97,7 @@ let getLocaleObject = async string => {
     | NL => Js.import(DutchLocale.localeStrings)
     | SV => Js.import(SwedishLocale.localeStrings)
     | RU => Js.import(RussianLocale.localeStrings)
+    | ZH_HANT => Js.import(TraditionalChineseLocale.localeStrings)
     }
 
     let awaitedLocaleValue = await promiseLocale

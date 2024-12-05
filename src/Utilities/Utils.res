@@ -764,10 +764,6 @@ let snakeToTitleCase = str => {
   ->Array.joinWith(" ")
 }
 
-let logInfo = log => {
-  Window.isProd ? () : log
-}
-
 let formatIBAN = iban => {
   let formatted = iban->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
   let countryCode = formatted->String.substring(~start=0, ~end=2)->String.toUpperCase
