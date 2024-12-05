@@ -77,8 +77,8 @@ let make = (
 
   GooglePayHelpers.useHandleGooglePayResponse(~connectors, ~intent, ~isWallet, ~requiredFieldsBody)
 
-  let (_, buttonType, _) = options.wallets.style.type_
-  let (_, heightType, _, _) = options.wallets.style.height
+  let (_, buttonType, _, _) = options.wallets.style.type_
+  let (_, heightType, _, _, _) = options.wallets.style.height
   let height = switch heightType {
   | GooglePay(val) => val
   | _ => 48
@@ -190,7 +190,13 @@ let make = (
           syncPayment()
         }
       } catch {
-      | _ => logInfo(Console.log("Error in syncing GooglePay Payment"))
+      | err =>
+        loggerState.setLogError(
+          ~value="Error in syncing GooglePay Payment",
+          ~eventName=GOOGLE_PAY_FLOW,
+          ~internalMetadata=err->formatException->JSON.stringify,
+          ~paymentMethod="GOOGLE_PAY",
+        )
       }
     }
     Window.addEventListener("message", handleGooglePayMessages)

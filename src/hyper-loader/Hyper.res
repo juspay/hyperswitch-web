@@ -139,26 +139,25 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     let isPreloadEnabled =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getBool("isPreloadEnabled", true)
+      ->getDictFromJson
+      ->getBool("isPreloadEnabled", true)
     let shouldUseTopRedirection =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getBool("shouldUseTopRedirection", false)
+      ->getDictFromJson
+      ->getBool("shouldUseTopRedirection", false)
     let analyticsMetadata =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getDictFromObj("analytics")
-      ->Utils.getJsonObjectFromDict("metadata")
+      ->getDictFromJson
+      ->getDictFromObj("analytics")
+      ->getJsonObjectFromDict("metadata")
     if isPreloadEnabled {
       preloader()
     }
     let analyticsInfoDict =
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-    let sessionID =
-      analyticsInfoDict->getString("sessionID", "hyp_" ++ Utils.generateRandomString(8))
+    let sessionID = analyticsInfoDict->getString("sessionID", "hyp_" ++ generateRandomString(8))
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
     let logger = HyperLogger.make(
       ~sessionId=sessionID,
@@ -266,10 +265,35 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let googlePayScript = Window.createElement("script")
         googlePayScript->Window.elementSrc(googlePayScriptURL)
         googlePayScript->Window.elementOnerror(err => {
-          Utils.logInfo(Console.log2("ERROR DURING LOADING GOOGLE PAY SCRIPT", err))
+          logger.setLogError(
+            ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT",
+            ~eventName=GOOGLE_PAY_SCRIPT,
+            ~internalMetadata=err->formatException->JSON.stringify,
+            ~paymentMethod="GOOGLE_PAY",
+          )
         })
         Window.body->Window.appendChild(googlePayScript)
         logger.setLogInfo(~value="GooglePay Script Loaded", ~eventName=GOOGLE_PAY_SCRIPT)
+      }
+
+      if (
+        Window.querySelectorAll(`script[src="https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js"]`)->Array.length === 0
+      ) {
+        let samsungPayScriptUrl = "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js"
+        let samsungPayScript = Window.createElement("script")
+        samsungPayScript->Window.elementSrc(samsungPayScriptUrl)
+        samsungPayScript->Window.elementOnerror(err => {
+          logger.setLogError(
+            ~value="ERROR DURING LOADING SAMSUNG PAY SCRIPT",
+            ~eventName=SAMSUNG_PAY_SCRIPT,
+            ~internalMetadata=err->formatException->JSON.stringify,
+            ~paymentMethod="SAMSUNG_PAY",
+          )
+        })
+        Window.body->Window.appendChild(samsungPayScript)
+        samsungPayScript->Window.elementOnload(_ =>
+          logger.setLogInfo(~value="SamsungPay Script Loaded", ~eventName=SAMSUNG_PAY_SCRIPT)
+        )
       }
 
       let iframeRef = ref([])

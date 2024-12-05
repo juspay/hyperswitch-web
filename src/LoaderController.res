@@ -14,6 +14,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
+  let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
@@ -96,6 +97,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | GooglePayElement
     | PayPalElement
     | ApplePayElement
+    | SamsungPayElement
     | KlarnaElement
     | PazeElement
     | ExpressCheckoutElement
@@ -384,6 +386,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           setIsGooglePayReady(_ =>
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
+        }
+        if dict->getDictIsSome("isSamsungPayReady") {
+          setIsSamsungPayReady(_ => dict->getBool("isSamsungPayReady", false))
         }
         if (
           dict->getDictIsSome("customBackendUrl") &&

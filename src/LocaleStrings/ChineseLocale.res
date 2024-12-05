@@ -1,7 +1,7 @@
 let localeStrings: LocaleStringTypes.localeStrings = {
   locale: `zh`,
   localeDirection: `ltr`,
-  cardNumberLabel: `卡号`,
+  cardNumberLabel: `卡號`,
   inValidCardErrorText: `卡号无效。`,
   inCompleteCVCErrorText: `您的卡片安全码不完整。`,
   inCompleteExpiryErrorText: `您的卡片到期日期不完整。`,

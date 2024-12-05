@@ -11,14 +11,13 @@ let setUserError = message => {
 @react.component
 let make = (~paymentMode, ~integrateError, ~logger) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
   let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {iframeId} = keys
 
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
@@ -112,6 +111,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let formattedExpiry = val->formatCardExpiryNumber
     if isExipryValid(formattedExpiry) {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
+
+      // * Sending card expiry to handle cases where the card expires before the use date.
+      Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
     }
     setExpiryValid(formattedExpiry, setIsExpiryValid)
     setCardExpiry(_ => formattedExpiry)

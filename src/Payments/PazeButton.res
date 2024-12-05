@@ -16,6 +16,11 @@ let make = (~token: SessionsType.token) => {
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
   let (showLoader, setShowLoader) = React.useState(() => false)
   let onClick = _ => {
+    loggerState.setLogInfo(
+      ~value="Paze SDK Button Clicked",
+      ~eventName=PAZE_SDK_FLOW,
+      ~paymentMethod="PAZE",
+    )
     setShowLoader(_ => true)
     let metadata =
       [
@@ -45,6 +50,11 @@ let make = (~token: SessionsType.token) => {
       let dict = json->Utils.getDictFromJson->getDictFromDict("data")
       if dict->getBool("isPaze", false) {
         setShowLoader(_ => false)
+        messageParentWindow([
+          ("fullscreen", true->JSON.Encode.bool),
+          ("param", "paymentloader"->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+        ])
         if dict->getOptionString("completeResponse")->Option.isSome {
           let completeResponse = dict->getString("completeResponse", "")
           intent(
