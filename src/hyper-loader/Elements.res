@@ -1166,9 +1166,7 @@ let make = (
 
                   try {
                     let samsungPayClient = SamsungPayType.samsung({
-                      environment: publishableKey->String.startsWith("pk_prd_")
-                        ? "PRODUCTION"
-                        : "STAGE",
+                      environment: "PRODUCTION",
                     })
                     samsungPayClient.isReadyToPay(payRequest)
                     ->then(res => {
