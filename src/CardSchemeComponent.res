@@ -31,7 +31,7 @@ let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand) => {
   let enabledCardSchemes =
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands->Option.getOr([])
 
-  let matchedCardSchemes = cardNumber->CardUtils.getAllMatchedCardSchemes
+  let matchedCardSchemes = cardNumber->CardUtils.clearSpaces->CardUtils.getAllMatchedCardSchemes
 
   let eligibleCardSchemes = CardUtils.getEligibleCoBadgedCardSchemes(
     ~matchedCardSchemes,
