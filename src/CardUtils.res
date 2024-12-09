@@ -176,8 +176,7 @@ let formatCardNumber = (val, cardType) => {
   let clearValue = val->clearSpaces
   let formatedCard = switch cardType {
   | AMEX => `${clearValue->slice(0, 4)} ${clearValue->slice(4, 10)} ${clearValue->slice(10, 15)}`
-  | DINERSCLUB =>
-    `${clearValue->slice(0, 4)} ${clearValue->slice(4, 10)} ${clearValue->slice(10, 14)}`
+  | DINERSCLUB
   | MASTERCARD
   | DISCOVER
   | SODEXO
@@ -380,7 +379,10 @@ let getExpiryValidity = cardExpiry => {
   let valid = if currentYear == year->toInt && month->toInt >= currentMonth && month->toInt <= 12 {
     true
   } else if (
-    year->toInt > currentYear && year->toInt < 2075 && month->toInt >= 1 && month->toInt <= 12
+    year->toInt > currentYear &&
+    year->toInt < Date.getFullYear(Js.Date.fromFloat(Date.now())) + 100 &&
+    month->toInt >= 1 &&
+    month->toInt <= 12
   ) {
     true
   } else {
@@ -454,12 +456,27 @@ let generateFontsLink = (fonts: array<CardThemeType.fonts>) => {
     ->ignore
   }
 }
+
 let maxCardLength = cardBrand => {
   let obj = getobjFromCardPattern(cardBrand)
   Array.reduce(obj.length, 0, (acc, val) => max(acc, val))
 }
 
+let isCardLengthValid = (cardBrand, cardNumberLength) => {
+  let obj = getobjFromCardPattern(cardBrand)
+  Array.includes(obj.length, cardNumberLength)
+}
+
 let cardValid = (cardNumber, cardBrand) => {
+  let clearValueLength = cardNumber->clearSpaces->String.length
+  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
+    Utils.checkIsTestCardWildcard(cardNumber)
+  } else {
+    isCardLengthValid(cardBrand, clearValueLength) && calculateLuhn(cardNumber)
+  }
+}
+
+let focusCardValid = (cardNumber, cardBrand) => {
   let clearValueLength = cardNumber->clearSpaces->String.length
   if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
     Utils.checkIsTestCardWildcard(cardNumber)
@@ -468,6 +485,7 @@ let cardValid = (cardNumber, cardBrand) => {
       (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)
   }
 }
+
 let blurRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
   ref.current->Nullable.toOption->Option.forEach(input => input->blur)->ignore
 }
@@ -566,10 +584,10 @@ let setCardValid = (cardnumber, setIsCardValid) => {
   if cardValid(cardnumber, cardBrand) {
     setIsCardValid(_ => Some(true))
   } else if (
-    !cardValid(cardnumber, cardBrand) && cardnumber->String.length == maxCardLength(cardBrand)
+    !cardValid(cardnumber, cardBrand) && isCardLengthValid(cardBrand, cardnumber->String.length)
   ) {
     setIsCardValid(_ => Some(false))
-  } else if !(cardnumber->String.length == maxCardLength(cardBrand)) {
+  } else if !isCardLengthValid(cardBrand, cardnumber->String.length) {
     setIsCardValid(_ => None)
   }
 }
