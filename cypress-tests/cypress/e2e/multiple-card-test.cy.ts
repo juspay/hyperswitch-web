@@ -35,6 +35,7 @@ describe("Card number validation test", () => {
         getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month); 
         getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year); 
         getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc); 
+        cy.wait(2000);
     
         getIframeBody().get("#submit").click();
     
