@@ -71,7 +71,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   React.useEffect(() => {
     let obj = getobjFromCardPattern(cardBrand)
-    let cvcLength = obj.maxCVCLenth
+    let cvcLength = obj.maxCVCLength
     if (
       cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true) &&
         cvcNumber->String.length == cvcLength
