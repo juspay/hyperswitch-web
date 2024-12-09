@@ -1,3 +1,10 @@
+# [0.106.0](https://github.com/juspay/hyperswitch-web/compare/v0.105.3...v0.106.0) (2024-12-09)
+
+
+### Features
+
+* added cb regex and typo fix ([#811](https://github.com/juspay/hyperswitch-web/issues/811)) ([e925e33](https://github.com/juspay/hyperswitch-web/commit/e925e33556531eb7142ee0a7b26cdbcacc920b15))
+
 ## [0.105.3](https://github.com/juspay/hyperswitch-web/compare/v0.105.2...v0.105.3) (2024-12-09)
 
 ## [0.105.2](https://github.com/juspay/hyperswitch-web/compare/v0.105.1...v0.105.2) (2024-12-05)
