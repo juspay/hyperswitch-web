@@ -1,5 +1,14 @@
 type payment =
-  Card | BankTransfer | BankDebits | KlarnaRedirect | Gpay | Applepay | Paypal | Paze | Other
+  | Card
+  | BankTransfer
+  | BankDebits
+  | KlarnaRedirect
+  | Gpay
+  | Applepay
+  | Paypal
+  | Samsungpay
+  | Paze
+  | Other
 
 type paymentIntent = (
   ~handleUserError: bool=?,

@@ -14,6 +14,7 @@ type mode =
   | GooglePayElement
   | PayPalElement
   | ApplePayElement
+  | SamsungPayElement
   | KlarnaElement
   | PazeElement
   | ExpressCheckoutElement
@@ -104,6 +105,7 @@ let getPaymentMode = val => {
   | "payPal" => PayPalElement
   | "applePay" => ApplePayElement
   | "paymentMethodCollect" => PaymentMethodCollectElement
+  | "samsungPay" => SamsungPayElement
   | "klarna" => KlarnaElement
   | "expressCheckout" => ExpressCheckoutElement
   | "paze" => PazeElement

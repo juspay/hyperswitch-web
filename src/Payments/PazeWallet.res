@@ -4,7 +4,7 @@ open PazeTypes
 external digitalWalletSdk: digitalWalletSdk = "DIGITAL_WALLET_SDK"
 
 @react.component
-let make = () => {
+let make = (~logger: HyperLogger.loggerMake) => {
   open Promise
   open Utils
 
@@ -97,7 +97,13 @@ let make = () => {
 
               resolve()
             } catch {
-            | _ =>
+            | err =>
+              logger.setLogError(
+                ~value=err->formatException->JSON.stringify,
+                ~eventName=PAZE_SDK_FLOW,
+                ~paymentMethod="PAZE",
+                ~logType=ERROR,
+              )
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),
                 ("isPaze", true->JSON.Encode.bool),
@@ -107,14 +113,21 @@ let make = () => {
               resolve()
             }
           }
-
+          logger.setLogInfo(~value="PAZE SDK Script Loading", ~eventName=PAZE_SDK_FLOW)
           let pazeScript = Window.createElement("script")
           pazeScript->Window.elementSrc(pazeScriptURL)
           pazeScript->Window.elementOnerror(exn => {
-            let err = exn->Identity.anyTypeToJson->JSON.stringify
-            Console.log2("PAZE --- errrorrr", err)
+            logger.setLogError(
+              ~value=`Error During Loading PAZE SDK Script: ${exn
+                ->Identity.anyTypeToJson
+                ->JSON.stringify}`,
+              ~eventName=PAZE_SDK_FLOW,
+            )
           })
-          pazeScript->Window.elementOnload(_ => loadPazeSDK()->ignore)
+          pazeScript->Window.elementOnload(_ => {
+            logger.setLogInfo(~value="PAZE SDK Script Loaded", ~eventName=PAZE_SDK_FLOW)
+            loadPazeSDK()->ignore
+          })
           Window.body->Window.appendChild(pazeScript)
         }
 

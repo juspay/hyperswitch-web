@@ -1,3 +1,45 @@
+## [0.105.2](https://github.com/juspay/hyperswitch-web/compare/v0.105.1...v0.105.2) (2024-12-05)
+
+
+### Bug Fixes
+
+* re render issue of card nickname ([#823](https://github.com/juspay/hyperswitch-web/issues/823)) ([a4691b0](https://github.com/juspay/hyperswitch-web/commit/a4691b09f8dba1fa3ebaa8a56b910206296b899d))
+
+## [0.105.1](https://github.com/juspay/hyperswitch-web/compare/v0.105.0...v0.105.1) (2024-12-05)
+
+# [0.105.0](https://github.com/juspay/hyperswitch-web/compare/v0.104.6...v0.105.0) (2024-12-04)
+
+
+### Features
+
+* add traditional chinese locale ([#822](https://github.com/juspay/hyperswitch-web/issues/822)) ([2707923](https://github.com/juspay/hyperswitch-web/commit/27079236edef9bdd776753b67a70c474a794dd72))
+
+## [0.104.6](https://github.com/juspay/hyperswitch-web/compare/v0.104.5...v0.104.6) (2024-12-04)
+
+## [0.104.5](https://github.com/juspay/hyperswitch-web/compare/v0.104.4...v0.104.5) (2024-12-03)
+
+## [0.104.4](https://github.com/juspay/hyperswitch-web/compare/v0.104.3...v0.104.4) (2024-12-03)
+
+
+### Bug Fixes
+
+* show card form by default rendering issue ([#817](https://github.com/juspay/hyperswitch-web/issues/817)) ([00e8562](https://github.com/juspay/hyperswitch-web/commit/00e8562b97c20ed02dc86eaf139ffafb822be075))
+
+## [0.104.3](https://github.com/juspay/hyperswitch-web/compare/v0.104.2...v0.104.3) (2024-12-02)
+
+## [0.104.2](https://github.com/juspay/hyperswitch-web/compare/v0.104.1...v0.104.2) (2024-12-02)
+
+## [0.104.1](https://github.com/juspay/hyperswitch-web/compare/v0.104.0...v0.104.1) (2024-12-02)
+
+# [0.104.0](https://github.com/juspay/hyperswitch-web/compare/v0.103.2...v0.104.0) (2024-11-26)
+
+
+### Features
+
+* samsung pay added ([#806](https://github.com/juspay/hyperswitch-web/issues/806)) ([01db104](https://github.com/juspay/hyperswitch-web/commit/01db104a2512e99eb38305751a9e9395e0812940))
+
+## [0.103.2](https://github.com/juspay/hyperswitch-web/compare/v0.103.1...v0.103.2) (2024-11-26)
+
 ## [0.103.1](https://github.com/juspay/hyperswitch-web/compare/v0.103.0...v0.103.1) (2024-11-25)
 
 

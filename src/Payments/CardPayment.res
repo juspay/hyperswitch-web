@@ -154,9 +154,6 @@ let make = (
       defaultCardBody
     }
     if confirm.doSubmit {
-      // * Sending card expiry to handle cases where the card expires before the use date.
-      messageParentWindow([("expiryDate", cardExpiry->JSON.Encode.string)])
-
       let isCardDetailsValid =
         isCVCValid->Option.getOr(false) &&
         isCardValid->Option.getOr(false) &&
