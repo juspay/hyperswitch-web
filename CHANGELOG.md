@@ -1,3 +1,10 @@
+## [0.106.1](https://github.com/juspay/hyperswitch-web/compare/v0.106.0...v0.106.1) (2024-12-09)
+
+
+### Bug Fixes
+
+* card validation focus check ([#827](https://github.com/juspay/hyperswitch-web/issues/827)) ([fd15e54](https://github.com/juspay/hyperswitch-web/commit/fd15e54ffd9d1bb4445a78567242d3ebc5a25b90))
+
 # [0.106.0](https://github.com/juspay/hyperswitch-web/compare/v0.105.3...v0.106.0) (2024-12-09)
 
 
