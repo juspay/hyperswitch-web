@@ -581,13 +581,12 @@ let swapCardOption = (cardOpts: array<string>, dropOpts: array<string>, selected
 
 let setCardValid = (cardnumber, setIsCardValid) => {
   let cardBrand = getCardBrand(cardnumber)
+  let isCardMaxLength = cardnumber->String.length == maxCardLength(cardBrand)
   if cardValid(cardnumber, cardBrand) {
     setIsCardValid(_ => Some(true))
-  } else if (
-    !cardValid(cardnumber, cardBrand) && isCardLengthValid(cardBrand, cardnumber->String.length)
-  ) {
+  } else if !cardValid(cardnumber, cardBrand) && isCardMaxLength {
     setIsCardValid(_ => Some(false))
-  } else if !isCardLengthValid(cardBrand, cardnumber->String.length) {
+  } else if !isCardMaxLength {
     setIsCardValid(_ => None)
   }
 }
