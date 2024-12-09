@@ -182,7 +182,11 @@ let make = (
               logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT)
               trustPayScript->Window.elementSrc(trustPayScriptURL)
               trustPayScript->Window.elementOnerror(err => {
-                logInfo(Console.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
+                logger.setLogError(
+                  ~value="ERROR DURING LOADING TRUSTPAY APPLE PAY",
+                  ~eventName=TRUSTPAY_SCRIPT,
+                  ~internalMetadata=err->formatException->JSON.stringify,
+                )
               })
               trustPayScript->Window.elementOnload(_ => {
                 logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT)
@@ -1173,7 +1177,15 @@ let make = (
                       mountedIframeRef->Window.iframePostMessage(msg)
                       resolve()
                     })
-                    ->catch(_ => resolve())
+                    ->catch(err => {
+                      logger.setLogError(
+                        ~value=`SAMSUNG PAY not ready ${err->formatException->JSON.stringify}`,
+                        ~eventName=SAMSUNG_PAY,
+                        ~paymentMethod="SAMSUNG_PAY",
+                        ~logType=ERROR,
+                      )
+                      resolve()
+                    })
                     ->ignore
 
                     let handleSamsungPayMessages = (event: Types.event) => {
@@ -1196,6 +1208,14 @@ let make = (
                           resolve()
                         })
                         ->catch(err => {
+                          logger.setLogError(
+                            ~value=`SAMSUNG PAY Initialization fail ${err
+                              ->formatException
+                              ->JSON.stringify}`,
+                            ~eventName=SAMSUNG_PAY,
+                            ~paymentMethod="SAMSUNG_PAY",
+                            ~logType=ERROR,
+                          )
                           event.source->Window.sendPostMessage(
                             [("samsungPayError", err->anyTypeToJson)]->Dict.fromArray,
                           )
@@ -1210,8 +1230,22 @@ let make = (
                       "onSamsungPayMessages",
                     )
                   } catch {
-                  | _ => Console.log("Error loading Samsung Pay")
+                  | err =>
+                    logger.setLogError(
+                      ~value=`SAMSUNG PAY Not Ready - ${err->formatException->JSON.stringify}`,
+                      ~eventName=SAMSUNG_PAY,
+                      ~paymentMethod="SAMSUNG_PAY",
+                      ~logType=ERROR,
+                    )
+                    Console.log("Error loading Samsung Pay")
                   }
+                } else if wallets.samsungPay === Never {
+                  logger.setLogInfo(
+                    ~value="SAMSUNG PAY is set as never by merchant",
+                    ~eventName=SAMSUNG_PAY,
+                    ~paymentMethod="SAMSUNG_PAY",
+                    ~logType=INFO,
+                  )
                 }
 
                 json->resolve

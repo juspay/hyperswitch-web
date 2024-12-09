@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "@juspay-tech/hyper-js": "^1.6.0",
-    "@juspay-tech/hyperswitch-node": "^1.0.1",
     "@juspay-tech/react-hyper-js": "^1.0.2",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^12.1.5",

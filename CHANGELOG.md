@@ -1,3 +1,21 @@
+## [0.105.2](https://github.com/juspay/hyperswitch-web/compare/v0.105.1...v0.105.2) (2024-12-05)
+
+
+### Bug Fixes
+
+* re render issue of card nickname ([#823](https://github.com/juspay/hyperswitch-web/issues/823)) ([a4691b0](https://github.com/juspay/hyperswitch-web/commit/a4691b09f8dba1fa3ebaa8a56b910206296b899d))
+
+## [0.105.1](https://github.com/juspay/hyperswitch-web/compare/v0.105.0...v0.105.1) (2024-12-05)
+
+# [0.105.0](https://github.com/juspay/hyperswitch-web/compare/v0.104.6...v0.105.0) (2024-12-04)
+
+
+### Features
+
+* add traditional chinese locale ([#822](https://github.com/juspay/hyperswitch-web/issues/822)) ([2707923](https://github.com/juspay/hyperswitch-web/commit/27079236edef9bdd776753b67a70c474a794dd72))
+
+## [0.104.6](https://github.com/juspay/hyperswitch-web/compare/v0.104.5...v0.104.6) (2024-12-04)
+
 ## [0.104.5](https://github.com/juspay/hyperswitch-web/compare/v0.104.4...v0.104.5) (2024-12-03)
 
 ## [0.104.4](https://github.com/juspay/hyperswitch-web/compare/v0.104.3...v0.104.4) (2024-12-03)
