@@ -366,6 +366,8 @@ let getCardBrandIcon = (cardType, paymentType) => {
     | ExpressCheckoutElement
     | PaymentMethodsManagement
     | PazeElement
+    | ShippingAddressElement
+    | BillingAddressElement
     | NONE =>
       <Icon size=brandIconSize name="default-card" />
     }
