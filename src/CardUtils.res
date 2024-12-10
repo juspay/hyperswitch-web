@@ -701,3 +701,6 @@ let getCardBrandInvalidError = (~cardNumber, ~localeString: LocaleStringTypes.lo
   | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)
   }
 }
+
+let emitExpiryDate = formattedExpiry =>
+  Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
