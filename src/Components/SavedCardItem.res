@@ -72,15 +72,26 @@ let make = (
     | None => ()
     }
   }
-  React.useEffect(() => {
-    isActive ? focusCVC() : ()
-    None
-  }, [isActive])
 
   let isCard = paymentItem.paymentMethod === "card"
   let isRenderCvv = isCard && paymentItem.requiresCvv
   let expiryMonth = paymentItem.card.expiryMonth
   let expiryYear = paymentItem.card.expiryYear
+
+  React.useEffect(() => {
+    open CardUtils
+
+    if isActive {
+      // * Focus CVC
+      focusCVC()
+
+      // * Sending card expiry to handle cases where the card expires before the use date.
+      `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
+      ->formatCardExpiryNumber
+      ->emitExpiryDate
+    }
+    None
+  }, [isActive])
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
