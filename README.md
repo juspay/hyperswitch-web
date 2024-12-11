@@ -74,7 +74,7 @@ Ways to get started with Hyperswitch:
   - **`HYPERSWITCH_SECRET_KEY`:** The API key of your Hyperswitch account that is used to authenticate API requests from your merchant server.
 
   - **`HYPERSWITCH_SERVER_URL`:** The URL of the Hyperswitch backend server. You may use our Sandbox URL (https://sandbox.hyperswitch.io). To do this, go to the Hyperswitch Dashboard, find the "Developers" section, then click on [API Keys](https://app.hyperswitch.io/dashboard/developer-api-keys). Here you can generate an API key (`HYPERSWITCH_SECRET_KEY`) and copy your publishable key (`HYPERSWITCH_PUBLISHABLE_KEY`).<br>
-Alternatively, you can specify that your backend is running locally (e.g. http://localhost:8080). In this case, you will need to create the API key and publishable key locally. See this [guide](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md#try-out-our-apis) on how to do this.
+Alternatively, you can specify that your backend is running locally (e.g. http://localhost:8080). In this case, you will need to create the API key and publishable key locally. Read this [hyperswitch docs](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md) on how to do this.
 
   - **`HYPERSWITCH_CLIENT_URL`:** The URL of your hosted Hyperswitch SDK (e.g. http://localhost:9050). You may also use our Sandbox URL (https://beta.hyperswitch.io/v1).
 
@@ -107,7 +107,7 @@ Alternatively, you can specify that your backend is running locally (e.g. http:/
 
   ### Setup the repo
 
-  1. First install all the node modules by running the following command
+  1. First install all the node modules by running the following command.
 
      ```bash
      npm install
@@ -137,8 +137,8 @@ Alternatively, you can specify that your backend is running locally (e.g. http:/
      npm run start
      ```
 
-     Now you can run the demo app on http://localhost:5252/ where you can test your payments.<br>
-     If you encounter any problems, please refer to the troubleshooting section of the [Hyperswitch-React-Demo-App readme](./Hyperswitch-React-Demo-App/README.md#troubleshooting) file.
+     Now you can launch the demo app on http://localhost:5252/ where you can test your payments.<br>
+     If you encounter any problems, please refer to the troubleshooting section of the [Hyperswitch-React-Demo-App Readme](./Hyperswitch-React-Demo-App/README.md#troubleshooting).
 
   > 💡 Alternatively, you can update `.env` file and use the commands
   > above
