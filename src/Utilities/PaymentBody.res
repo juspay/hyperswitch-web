@@ -35,7 +35,7 @@ let cardPaymentBody = (
   ~cardNumber,
   ~month,
   ~year,
-  ~cardHolderName,
+  ~cardHolderName=None,
   ~cvcNumber,
   ~cardBrand,
   ~nickname="",
@@ -44,10 +44,13 @@ let cardPaymentBody = (
     ("card_number", cardNumber->CardUtils.clearSpaces->JSON.Encode.string),
     ("card_exp_month", month->JSON.Encode.string),
     ("card_exp_year", year->JSON.Encode.string),
-    ("card_holder_name", cardHolderName->JSON.Encode.string),
     ("card_cvc", cvcNumber->JSON.Encode.string),
     ("card_issuer", ""->JSON.Encode.string),
   ]
+
+  cardHolderName
+  ->Option.map(name => cardBody->Array.push(("card_holder_name", name->JSON.Encode.string))->ignore)
+  ->ignore
 
   if nickname != "" {
     cardBody->Array.push(("nick_name", nickname->JSON.Encode.string))->ignore

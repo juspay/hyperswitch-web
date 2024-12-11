@@ -862,7 +862,7 @@ let getCardDetails = (dict, str) => {
       expiryMonth: getString(json, "expiry_month", ""),
       expiryYear: getString(json, "expiry_year", ""),
       cardToken: getString(json, "card_token", ""),
-      cardHolderName: Some(getString(json, "card_holder_name", "")),
+      cardHolderName: getOptionString(json, "card_holder_name"),
       nickname: getString(json, "nick_name", ""),
     }
   })
