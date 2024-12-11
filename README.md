@@ -177,7 +177,7 @@ In the [`webpack.common.js`](./webpack.common.js) file, you would have to enable
 
 ```javascipt
 let logEndpoint =
-  SDK_ENV === "prod"
+  sdkEnv === "prod"
     ? "<YOUR_PRODUCTION_LOGGING_ENDPOINT>"
     : "<YOUR_SANDBOX_LOGGING_ENDPOINT>";
 

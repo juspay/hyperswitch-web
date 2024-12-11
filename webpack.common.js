@@ -13,7 +13,7 @@ const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
 const getEnvVariable = (variable, defaultValue) =>
   process.env[variable] ?? defaultValue;
 
-const SDK_ENV = getEnvVariable("SDK_ENV", "local");
+const sdkEnv = getEnvVariable("sdkEnv", "local");
 const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
@@ -23,7 +23,7 @@ const repoVersion = require("./package.json").version;
 const majorVersion = "v" + repoVersion.split(".")[0];
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  SDK_ENV === "local" ? "" : `/web/${repoVersion}/${majorVersion}`;
+  sdkEnv === "local" ? "" : `/web/${repoVersion}/${majorVersion}`;
 
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
@@ -36,9 +36,9 @@ const getSdkUrl = (env, customUrl) => {
   return urls[env] || urls.local;
 };
 
-const sdkUrl = getSdkUrl(SDK_ENV, envSdkUrl);
+const sdkUrl = getSdkUrl(sdkEnv, envSdkUrl);
 const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
-  switch (SDK_ENV) {
+  switch (sdkEnv) {
     case "prod":
       return prodDomain;
     case "integ":
@@ -129,18 +129,18 @@ module.exports = (publicPath = "auto") => {
   }
 
   return {
-    mode: SDK_ENV === "local" ? "development" : "production",
-    devtool: SDK_ENV === "local" ? "eval-source-map" : "source-map",
+    mode: sdkEnv === "local" ? "development" : "production",
+    devtool: sdkEnv === "local" ? "eval-source-map" : "source-map",
     output: {
       path:
-        SDK_ENV && SDK_ENV !== "local"
-          ? path.resolve(__dirname, "dist", SDK_ENV)
+        sdkEnv && sdkEnv !== "local"
+          ? path.resolve(__dirname, "dist", sdkEnv)
           : path.resolve(__dirname, "dist"),
       clean: true,
       publicPath: `${repoPublicPath}/`,
     },
     optimization:
-      SDK_ENV === "local"
+      sdkEnv === "local"
         ? {}
         : {
             sideEffects: true,
