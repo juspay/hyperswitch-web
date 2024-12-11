@@ -42,6 +42,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsPaymentButtonHandlerProvided = Recoil.useSetRecoilState(
     isPaymentButtonHandlerProvidedAtom,
   )
+  let setAddressElementOptions = Recoil.useSetRecoilState(addressElementOptions)
 
   let optionsCallback = (optionsPayment: PaymentType.options) => {
     [
@@ -93,6 +94,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           logger,
         )
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
+      }
+    | ShippingAddressElement
+    | BillingAddressElement => {
+        let addressOptions = PaymentType.itemToObjMapperAddress(optionsDict, logger)
+        setAddressElementOptions(_ => addressOptions)
       }
     | GooglePayElement
     | PayPalElement
