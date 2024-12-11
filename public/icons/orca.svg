@@ -760,6 +760,7 @@ License)
       </clipPath>
     </defs>
   </symbol>
+  <symbol id="cartesbancaires-card" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg" role="presentation" focusable="false" class="p-Logo p-Logo--md p-CardBrandIcon"><defs><linearGradient id="sjs-ui91768" x1="84.571%" x2="20.485%" y1="-2.163%" y2="100%"><stop offset="0%" stop-color="#002253"></stop><stop offset="24.255%" stop-color="#0082B1"></stop><stop offset="100%" stop-color="#0E9641"></stop></linearGradient><clipPath id="sjs-ui91767" clipPathUnits="userSpaceOnUse"><rect width="24" height="16" fill="#00f" rx="2"></rect></clipPath></defs><g fill="none" fill-rule="evenodd" clip-path="url(#sjs-ui91767)"><path fill="url(#sjs-ui91768)" d="M0 0h32v32H0z"></path><path fill="#FFF" d="M13.06 3.506v4.206h6.714a2.103 2.103 0 0 0 0-4.206H13.06zm-.572 4.206c-.039-.827-.245-1.57-.593-2.2a4.174 4.174 0 0 0-1.65-1.65c-.701-.387-1.541-.599-2.483-.599h-.89c-.941 0-1.78.212-2.482.6a4.174 4.174 0 0 0-1.65 1.65c-.387.7-.6 1.54-.6 2.482 0 .942.213 1.781.6 2.482.387.701.95 1.264 1.65 1.65.701.388 1.54.6 2.483.6h.89c.94 0 1.78-.212 2.482-.6a4.174 4.174 0 0 0 1.65-1.65c.348-.63.554-1.371.593-2.199H7.479v-.566h5.009zm.572.566v4.206h6.714a2.103 2.103 0 0 0 0-4.206H13.06z"></path></g></symbol>
 
   <symbol id="rupay-card" viewBox="0 0 41 10">
     <path

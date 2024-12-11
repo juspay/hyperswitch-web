@@ -347,7 +347,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
   | SODEXO => <Icon size=brandIconSize name="card" />
   | RUPAY => <Icon size=brandIconSize name="rupay-card" />
   | JCB => <Icon size=brandIconSize name="jcb-card" />
-  | CARTESBANCAIRES => <Icon size=brandIconSize name="card" />
+  | CARTESBANCAIRES => <Icon size=brandIconSize name="cartesbancaires-card" />
   | UNIONPAY => <Icon size=brandIconSize name="card" />
   | INTERAC => <Icon size=brandIconSize name="interac" />
   | NOTFOUND =>
