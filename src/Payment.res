@@ -241,7 +241,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardNumber,
           ~month,
           ~year,
-          ~cardHolderName="",
+          ~cardHolderName=None,
           ~cvcNumber,
           ~cardBrand=cardNetwork,
         )
@@ -252,7 +252,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardNumber,
           ~month,
           ~year,
-          ~cardHolderName="",
+          ~cardHolderName=None,
           ~cvcNumber=localCvcNumber,
           ~cardBrand=cardNetwork,
         )

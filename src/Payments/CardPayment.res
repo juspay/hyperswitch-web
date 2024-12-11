@@ -144,7 +144,7 @@ let make = (
       ~cardNumber,
       ~month,
       ~year,
-      ~cardHolderName="",
+      ~cardHolderName=None,
       ~cvcNumber,
       ~cardBrand=cardNetwork,
       ~nickname=nickname.value,
