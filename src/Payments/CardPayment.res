@@ -125,6 +125,8 @@ let make = (
     ~isGuestCustomer,
   )
 
+  Console.log2(">>>> Logs Debug >>>>", (GlobalVars.enableLogging, GlobalVars.logEndpoint))
+
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper

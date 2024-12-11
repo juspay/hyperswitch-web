@@ -3,7 +3,7 @@ require("dotenv").config();
 const { merge } = require("webpack-merge");
 const common = require("./webpack.common.js");
 
-const sdkEnv = process.env.sdkEnv ?? "local";
+const SDK_ENV = process.env.SDK_ENV ?? "local";
 
 const endpointMap = {
   prod: "https://api.hyperswitch.io/payments",
@@ -12,7 +12,7 @@ const endpointMap = {
   local: "https://sandbox.hyperswitch.io/payments", // Default or local environment endpoint
 };
 
-const backendEndPoint = endpointMap[sdkEnv] || endpointMap.local;
+const backendEndPoint = endpointMap[SDK_ENV] || endpointMap.local;
 
 const devServer = {
   static: {
