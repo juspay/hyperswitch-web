@@ -65,19 +65,20 @@ Ways to get started with Hyperswitch:
 
 ### 🛠️ Try it in Local
 
-&nbsp; &nbsp; Before you start the local setup, you need to understand a few configs -
+&nbsp; &nbsp; You will need to understand and configure a few configurations before starting the local setup. -
 
 - #### Env Configs for Demo App
 
   - **`HYPERSWITCH_PUBLISHABLE_KEY`:** The publishable key of your Hyperswitch account. This key will start with `pk_dev_` for local development, `pk_snd_` for sandbox, and `pk_prd_` for production.
 
-  - **`HYPERSWITCH_SECRET_KEY`:** The API key of your Hyperswitch account that is used to authenticate API requests from your merchant server. On the Hyperswitch Dashboard, locate the "Developers" section, then click on [API Keys](https://app.hyperswitch.io/developer-api-keys). Here, you can generate your API Key.
+  - **`HYPERSWITCH_SECRET_KEY`:** The API key of your Hyperswitch account that is used to authenticate API requests from your merchant server.
 
-  - **`HYPERSWITCH_SERVER_URL`:** The URL of your hosted Hyperswitch backend server. Alternatively, you can use our Sandbox URL (https://sandbox.hyperswitch.io) or specify your backend running locally (e.g., http://localhost:8080).
+  - **`HYPERSWITCH_SERVER_URL`:** The URL of the Hyperswitch backend server. You may use our Sandbox URL (https://sandbox.hyperswitch.io). To do this, go to the Hyperswitch Dashboard, find the "Developers" section, then click on [API Keys](https://app.hyperswitch.io/dashboard/developer-api-keys). Here you can generate an API key (`HYPERSWITCH_SECRET_KEY`) and copy your publishable key (`HYPERSWITCH_PUBLISHABLE_KEY`).<br>
+Alternatively, you can specify that your backend is running locally (e.g. http://localhost:8080). In this case, you will need to create the API key and publishable key locally. See this [guide](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md#try-out-our-apis) on how to do this.
 
-  - **`HYPERSWITCH_CLIENT_URL`:** The URL of your hosted Hyperswitch SDK. You can also use our Sandbox URL (https://beta.hyperswitch.io/v1) or specify your app running locally (e.g., http://localhost:9050).
+  - **`HYPERSWITCH_CLIENT_URL`:** The URL of your hosted Hyperswitch SDK (e.g. http://localhost:9050). You may also use our Sandbox URL (https://beta.hyperswitch.io/v1).
 
-  - **`SELF_SERVER_URL`:** The URL of the hosted server file for generating client-secret and for fetching urls & configs. (eg: http://localhost:9060/payments)
+  - **`SELF_SERVER_URL`:** The URL of the hosted server file for generating client-secret and for fetching urls & configs (eg: http://localhost:5252).
 
 - #### Env Configs for SDK
 
@@ -120,7 +121,7 @@ Ways to get started with Hyperswitch:
        npm run re:start
        ```
 
-     - On the second terminal, run the following command for starting the server.
+     - On the second terminal, run the following command for starting the SDK server (by default on http://localhost:9050).
 
        ```bash
          npm run start
@@ -136,7 +137,8 @@ Ways to get started with Hyperswitch:
      npm run start
      ```
 
-     This will open a demo app where you can test your payments.
+     Now you can run the demo app on http://localhost:5252/ where you can test your payments.<br>
+     If you encounter any problems, please refer to the troubleshooting section of the [Hyperswitch-React-Demo-App readme](./Hyperswitch-React-Demo-App/README.md#troubleshooting) file.
 
   > 💡 Alternatively, you can update `.env` file and use the commands
   > above
