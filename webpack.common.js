@@ -36,8 +36,6 @@ const getSdkUrl = (env, customUrl) => {
   return urls[env] || urls.local;
 };
 
-console.log("env", process.env);
-
 const sdkUrl = getSdkUrl(sdkEnv, envSdkUrl);
 const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
   switch (sdkEnv) {
@@ -69,6 +67,7 @@ module.exports = (publicPath = "auto") => {
     app: "./index.js",
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
   };
+
   let definePluginValues = {
     repoName: JSON.stringify(repoName),
     repoVersion: JSON.stringify(repoVersion),
@@ -83,7 +82,6 @@ module.exports = (publicPath = "auto") => {
     loggingLevel: JSON.stringify(loggingLevel),
     maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
   };
-  console.log("definePluginValues", definePluginValues);
 
   const plugins = [
     new MiniCssExtractPlugin(),
