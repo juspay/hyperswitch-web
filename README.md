@@ -177,12 +177,12 @@ In the [`webpack.common.js`](./webpack.common.js) file, you would have to enable
 
 ```javascipt
 let logEndpoint =
-  sdkEnv === "prod"
+  SDK_ENV === "prod"
     ? "<YOUR_PRODUCTION_LOGGING_ENDPOINT>"
     : "<YOUR_SANDBOX_LOGGING_ENDPOINT>";
 
 // Set this to true to enable logging
-let enableLogging = true;
+let ENABLE_LOGGING = true;
 
 // Choose from DEBUG, INFO, WARNING, ERROR, SILENT
 let loggingLevel = "DEBUG";
