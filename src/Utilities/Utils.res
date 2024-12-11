@@ -764,10 +764,6 @@ let snakeToTitleCase = str => {
   ->Array.joinWith(" ")
 }
 
-let logInfo = log => {
-  Window.isProd ? () : log
-}
-
 let formatIBAN = iban => {
   let formatted = iban->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
   let countryCode = formatted->String.substring(~start=0, ~end=2)->String.toUpperCase
@@ -1285,6 +1281,7 @@ let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   | ApplePayElement => wallets->Array.filter(item => item === "apple_pay")
   | KlarnaElement => wallets->Array.filter(item => item === "klarna")
   | PazeElement => wallets->Array.filter(item => item === "paze")
+  | SamsungPayElement => wallets->Array.filter(item => item === "samsung_pay")
   | _ => wallets
   }
 }
@@ -1295,6 +1292,7 @@ let expressCheckoutComponents = [
   "applePay",
   "klarna",
   "paze",
+  "samsungPay",
   "expressCheckout",
 ]
 
@@ -1317,6 +1315,7 @@ let walletElementPaymentType: array<CardThemeType.mode> = [
   GooglePayElement,
   PayPalElement,
   ApplePayElement,
+  SamsungPayElement,
   KlarnaElement,
   PazeElement,
   ExpressCheckoutElement,
@@ -1449,5 +1448,12 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
 
   if !isMessageSent.contents {
     mountedIframeRef->Window.iframePostMessage(msg)
+  }
+}
+
+let isDigitLimitExceeded = (val, ~digit) => {
+  switch val->String.match(%re("/\d/g")) {
+  | Some(matches) => matches->Array.length > digit
+  | None => false
   }
 }

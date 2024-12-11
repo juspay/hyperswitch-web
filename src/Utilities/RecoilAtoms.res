@@ -50,8 +50,10 @@ let userPhoneNumber = Recoil.atom(
     countryCode: "",
   },
 )
+let userCardNickName = Recoil.atom("userCardNickName", defaultFieldValues)
 let isGooglePayReady = Recoil.atom("isGooglePayReady", false)
 let isApplePayReady = Recoil.atom("isApplePayReady", false)
+let isSamsungPayReady = Recoil.atom("isSamsungPayReady", false)
 let userCountry = Recoil.atom("userCountry", "")
 let userBank = Recoil.atom("userBank", "")
 let userAddressline1 = Recoil.atom("userAddressline1", defaultFieldValues)
@@ -83,6 +85,7 @@ type areOneClickWalletsRendered = {
   isApplePay: bool,
   isPaypal: bool,
   isKlarna: bool,
+  isSamsungPay: bool,
 }
 
 let defaultAreOneClickWalletsRendered = {
@@ -90,6 +93,7 @@ let defaultAreOneClickWalletsRendered = {
   isApplePay: false,
   isPaypal: false,
   isKlarna: false,
+  isSamsungPay: false,
 }
 
 let areOneClickWalletsRendered = Recoil.atom(

@@ -86,6 +86,9 @@ type eventName =
   | EXTERNAL_TAX_CALCULATION
   | POST_SESSION_TOKENS_CALL
   | POST_SESSION_TOKENS_CALL_INIT
+  | PAZE_SDK_FLOW
+  | SAMSUNG_PAY_SCRIPT
+  | SAMSUNG_PAY
 
 let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
 
@@ -104,9 +107,6 @@ let toSnakeCaseWithSeparator = (str, separator) => {
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
-let logInfo = log => {
-  Window.isProd ? () : log
-}
 
 type logFile = {
   timestamp: string,

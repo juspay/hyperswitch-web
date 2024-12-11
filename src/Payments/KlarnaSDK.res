@@ -24,7 +24,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let setAreOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
   let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
 
-  let (_, _, _, heightType) = options.wallets.style.height
+  let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
   | Klarna(val) => val
   | _ => 48

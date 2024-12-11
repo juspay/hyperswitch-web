@@ -13,8 +13,8 @@ const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
 const getEnvVariable = (variable, defaultValue) =>
   process.env[variable] ?? defaultValue;
 
-const sdkEnv = getEnvVariable("sdkEnv", "local");
-const enableLogging = getEnvVariable("enableLogging", "false") === "true";
+const SDK_ENV = getEnvVariable("SDK_ENV", "local");
+const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
@@ -23,7 +23,7 @@ const repoVersion = require("./package.json").version;
 const majorVersion = "v" + repoVersion.split(".")[0];
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${majorVersion}`;
+  SDK_ENV === "local" ? "" : `/web/${repoVersion}/${majorVersion}`;
 
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
@@ -36,9 +36,9 @@ const getSdkUrl = (env, customUrl) => {
   return urls[env] || urls.local;
 };
 
-const sdkUrl = getSdkUrl(sdkEnv, envSdkUrl);
+const sdkUrl = getSdkUrl(SDK_ENV, envSdkUrl);
 const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
-  switch (sdkEnv) {
+  switch (SDK_ENV) {
     case "prod":
       return prodDomain;
     case "integ":
@@ -50,7 +50,6 @@ const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
 
 const backendDomain = getEnvironmentDomain("checkout", "dev", "beta");
 const confirmDomain = getEnvironmentDomain("api", "integ-api", "sandbox");
-const logDomain = getEnvironmentDomain("api", "integ-api", "sandbox");
 
 const backendEndPoint =
   envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
@@ -58,8 +57,7 @@ const backendEndPoint =
 const confirmEndPoint =
   envBackendUrl || `https://${confirmDomain}.hyperswitch.io`;
 
-const logEndpoint =
-  envLoggingUrl || `https://${logDomain}.hyperswitch.io/logs/sdk`;
+const logEndpoint = envLoggingUrl;
 
 const loggingLevel = "DEBUG";
 const maxLogsPushedPerEventName = 100;
@@ -84,7 +82,7 @@ module.exports = (publicPath = "auto") => {
       logEndpoint: JSON.stringify(logEndpoint),
       sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
       sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
-      enableLogging: enableLogging,
+      enableLogging: ENABLE_LOGGING,
       loggingLevel: JSON.stringify(loggingLevel),
       maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
     }),
@@ -131,18 +129,18 @@ module.exports = (publicPath = "auto") => {
   }
 
   return {
-    mode: sdkEnv === "local" ? "development" : "production",
-    devtool: sdkEnv === "local" ? "eval-source-map" : "source-map",
+    mode: SDK_ENV === "local" ? "development" : "production",
+    devtool: SDK_ENV === "local" ? "eval-source-map" : "source-map",
     output: {
       path:
-        sdkEnv && sdkEnv !== "local"
-          ? path.resolve(__dirname, "dist", sdkEnv)
+        SDK_ENV && SDK_ENV !== "local"
+          ? path.resolve(__dirname, "dist", SDK_ENV)
           : path.resolve(__dirname, "dist"),
       clean: true,
       publicPath: `${repoPublicPath}/`,
     },
     optimization:
-      sdkEnv === "local"
+      SDK_ENV === "local"
         ? {}
         : {
             sideEffects: true,

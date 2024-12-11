@@ -60,8 +60,10 @@ type terms = {
   usBankAccount: showTerms,
 }
 type buttonHeight = Default | Custom
-type heightType = ApplePay(int) | GooglePay(int) | Paypal(int) | Klarna(int)
+type heightType = ApplePay(int) | GooglePay(int) | Paypal(int) | Klarna(int) | SamsungPay(int)
 type googlePayStyleType = Default | Buy | Donate | Checkout | Subscribe | Book | Pay | Order
+type samsungPayStyleType = Buy
+
 type paypalStyleType = Paypal | Checkout | Buynow | Pay | Installment
 type applePayStyleType =
   | Default
@@ -81,12 +83,13 @@ type styleType =
   | ApplePay(applePayStyleType)
   | GooglePay(googlePayStyleType)
   | Paypal(paypalStyleType)
-type styleTypeArray = (styleType, styleType, styleType)
+  | SamsungPay(samsungPayStyleType)
+type styleTypeArray = (styleType, styleType, styleType, styleType)
 type theme = Dark | Light | Outline
 type style = {
   type_: styleTypeArray,
   theme: theme,
-  height: (heightType, heightType, heightType, heightType),
+  height: (heightType, heightType, heightType, heightType, heightType),
   buttonRadius: int,
 }
 type wallets = {
@@ -96,6 +99,7 @@ type wallets = {
   payPal: showType,
   klarna: showType,
   paze: showType,
+  samsungPay: showType,
   style: style,
 }
 type business = {name: string}
@@ -273,9 +277,9 @@ let defaultFields = {
   billingDetails: JSONObject(defaultBilling),
 }
 let defaultStyle = {
-  type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal)),
+  type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal), SamsungPay(Buy)),
   theme: Light,
-  height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48)),
+  height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48), SamsungPay(48)),
   buttonRadius: 2,
 }
 let defaultWallets = {
@@ -285,6 +289,7 @@ let defaultWallets = {
   payPal: Auto,
   klarna: Auto,
   paze: Auto,
+  samsungPay: Auto,
   style: defaultStyle,
 }
 let defaultBillingAddress = {
@@ -467,6 +472,11 @@ let getGooglePayType = str => {
     GooglePay(Default)
   }
 }
+let getSamsungPayType = str => {
+  switch str {
+  | _ => SamsungPay(Buy)
+  }
+}
 let getPayPalType = str => {
   switch str {
   | "check-out"
@@ -505,7 +515,7 @@ let getTypeArray = (str, logger) => {
   if !Array.includes(goodVals, str) {
     str->unknownPropValueWarning(goodVals, "options.wallets.style.type", ~logger)
   }
-  (str->getApplePayType, str->getGooglePayType, str->getPayPalType)
+  (str->getApplePayType, str->getGooglePayType, str->getPayPalType, str->getSamsungPayType)
 }
 
 let getShowDetails = (~billingDetails, ~logger) => {
@@ -688,86 +698,72 @@ let getTerms = (dict, str, logger) => {
   })
   ->Option.getOr(defaultTerms)
 }
-let getApplePayHeight = (val, logger) => {
-  let val: heightType =
-    val >= 45
-      ? ApplePay(val)
-      : {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[h>=45] - ApplePay. Value set to min",
-            ~logger,
-          )
-          ApplePay(48)
-        }
-  val
+let getApplePayHeight: (int, 'a) => heightType = (val, logger) => {
+  if val >= 45 {
+    ApplePay(val)
+  } else {
+    valueOutRangeWarning(
+      val,
+      "options.style.height",
+      "[h>=45] - ApplePay. Value set to min",
+      ~logger,
+    )
+    ApplePay(48)
+  }
 }
-let getGooglePayHeight = (val, logger) => {
-  let val: heightType =
-    val >= 48
-      ? GooglePay(val)
-      : {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[h>=48] - GooglePay. Value set to min",
-            ~logger,
-          )
-          GooglePay(48)
-        }
-  val
+
+let getGooglePayHeight: (int, 'a) => heightType = (val, logger) => {
+  if val >= 45 {
+    GooglePay(val)
+  } else {
+    valueOutRangeWarning(
+      val,
+      "options.style.height",
+      "[h>=45] - GooglePay. Value set to min",
+      ~logger,
+    )
+    GooglePay(48)
+  }
 }
-let getPaypalHeight = (val, logger) => {
-  let val: heightType =
-    val < 25
-      ? {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[25-55] - Paypal. Value set to min",
-            ~logger,
-          )
-          Paypal(25)
-        }
-      : val > 55
-      ? {
-        valueOutRangeWarning(
-          val,
-          "options.style.height",
-          "[25-55] - Paypal. Value set to max",
-          ~logger,
-        )
-        Paypal(55)
-      }
-      : Paypal(val)
-  val
+
+let getSamsungPayHeight: (int, 'a) => heightType = (val, logger) => {
+  if val >= 45 {
+    SamsungPay(val)
+  } else {
+    valueOutRangeWarning(
+      val,
+      "options.style.height",
+      "[h>=45] - SamsungPay. Value set to min",
+      ~logger,
+    )
+    SamsungPay(48)
+  }
 }
-let getKlarnaHeight = (val, logger) => {
-  let val: heightType =
-    val < 40
-      ? {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[40-60] - Klarna. Value set to min",
-            ~logger,
-          )
-          Klarna(40)
-        }
-      : val > 60
-      ? {
-        valueOutRangeWarning(
-          val,
-          "options.style.height",
-          "[40-60] - Paypal. Value set to max",
-          ~logger,
-        )
-        Klarna(60)
-      }
-      : Klarna(val)
-  val
+
+let getPaypalHeight: (int, 'a) => heightType = (val, logger) => {
+  if val < 25 {
+    valueOutRangeWarning(val, "options.style.height", "[25-55] - Paypal. Value set to min", ~logger)
+    Paypal(25)
+  } else if val > 55 {
+    valueOutRangeWarning(val, "options.style.height", "[25-55] - Paypal. Value set to max", ~logger)
+    Paypal(55)
+  } else {
+    Paypal(val)
+  }
 }
+
+let getKlarnaHeight: (int, 'a) => heightType = (val, logger) => {
+  if val < 40 {
+    valueOutRangeWarning(val, "options.style.height", "[40-60] - Klarna. Value set to min", ~logger)
+    Klarna(40)
+  } else if val > 60 {
+    valueOutRangeWarning(val, "options.style.height", "[40-60] - Paypal. Value set to max", ~logger)
+    Klarna(60)
+  } else {
+    Klarna(val)
+  }
+}
+
 let getTheme = (str, logger) => {
   switch str {
   | "outline" => Outline
@@ -784,6 +780,7 @@ let getHeightArray = (val, logger) => {
     val->getGooglePayHeight(logger),
     val->getPaypalHeight(logger),
     val->getKlarnaHeight(logger),
+    val->getSamsungPayHeight(logger),
   )
 }
 let getStyle = (dict, str, logger) => {
@@ -808,7 +805,7 @@ let getWallets = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna"],
+      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna", "samsungPay"],
       json,
       "options.wallets",
       ~logger,
@@ -834,6 +831,10 @@ let getWallets = (dict, str, logger) => {
       ),
       paze: getWarningString(json, "paze", "auto", ~logger)->getShowType(
         "options.wallets.paze",
+        logger,
+      ),
+      samsungPay: getWarningString(json, "samsungPay", "auto", ~logger)->getShowType(
+        "options.wallets.samsungPay",
         logger,
       ),
       style: getStyle(json, "style", logger),

@@ -4,7 +4,7 @@ open PazeTypes
 external digitalWalletSdk: digitalWalletSdk = "DIGITAL_WALLET_SDK"
 
 @react.component
-let make = () => {
+let make = (~logger: HyperLogger.loggerMake) => {
   open Promise
   open Utils
 
@@ -41,12 +41,12 @@ let make = () => {
 
               Console.log2("PAZE --- init completed", val)
 
-              let consumerPresent = await digitalWalletSdk.canCheckout({
+              let canCheckout = await digitalWalletSdk.canCheckout({
                 emailAddress: emailAddress,
               })
 
               Console.log("PAZE --- canCheckout completed")
-              Console.log2("PAZE --- consumerPresent: ", consumerPresent)
+              Console.log2("PAZE --- canCheckout: ", canCheckout.consumerPresent)
 
               let transactionValue = {
                 transactionAmount,
@@ -59,16 +59,16 @@ let make = () => {
                 payloadTypeIndicator: "PAYMENT",
               }
 
-              let checkoutResponse = await digitalWalletSdk.checkout({
+              let _ = await digitalWalletSdk.checkout({
                 acceptedPaymentCardNetworks: ["VISA", "MASTERCARD"],
-                emailAddress,
+                emailAddress: canCheckout.consumerPresent ? emailAddress : "",
                 sessionId,
                 actionCode: "START_FLOW",
                 transactionValue,
                 shippingPreference: "ALL",
               })
 
-              Console.log2("PAZE --- Checkout Response Object: ", checkoutResponse)
+              Console.log("PAZE --- digitalWalletSdk.checkout completed")
 
               let completeObj = {
                 transactionOptions,
@@ -80,7 +80,7 @@ let make = () => {
 
               let completeResponse = await digitalWalletSdk.complete(completeObj)
 
-              Console.log2("PAZE --- Complete Response Object: ", completeResponse)
+              Console.log("PAZE --- digitalWalletSdk.complete completed")
 
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),
@@ -97,7 +97,13 @@ let make = () => {
 
               resolve()
             } catch {
-            | _ =>
+            | err =>
+              logger.setLogError(
+                ~value=err->formatException->JSON.stringify,
+                ~eventName=PAZE_SDK_FLOW,
+                ~paymentMethod="PAZE",
+                ~logType=ERROR,
+              )
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),
                 ("isPaze", true->JSON.Encode.bool),
@@ -107,14 +113,21 @@ let make = () => {
               resolve()
             }
           }
-
+          logger.setLogInfo(~value="PAZE SDK Script Loading", ~eventName=PAZE_SDK_FLOW)
           let pazeScript = Window.createElement("script")
           pazeScript->Window.elementSrc(pazeScriptURL)
           pazeScript->Window.elementOnerror(exn => {
-            let err = exn->Identity.anyTypeToJson->JSON.stringify
-            Console.log2("PAZE --- errrorrr", err)
+            logger.setLogError(
+              ~value=`Error During Loading PAZE SDK Script: ${exn
+                ->Identity.anyTypeToJson
+                ->JSON.stringify}`,
+              ~eventName=PAZE_SDK_FLOW,
+            )
           })
-          pazeScript->Window.elementOnload(_ => loadPazeSDK()->ignore)
+          pazeScript->Window.elementOnload(_ => {
+            logger.setLogInfo(~value="PAZE SDK Script Loaded", ~eventName=PAZE_SDK_FLOW)
+            loadPazeSDK()->ignore
+          })
           Window.body->Window.appendChild(pazeScript)
         }
 
