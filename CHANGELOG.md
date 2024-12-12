@@ -1,3 +1,10 @@
+## [0.106.10](https://github.com/juspay/hyperswitch-web/compare/v0.106.9...v0.106.10) (2024-12-12)
+
+
+### Bug Fixes
+
+* cartes bancaires logo not appearing in firefox ([#837](https://github.com/juspay/hyperswitch-web/issues/837)) ([aa0182b](https://github.com/juspay/hyperswitch-web/commit/aa0182b92018dfb95284198e2610fb40a0b6387e))
+
 ## [0.106.9](https://github.com/juspay/hyperswitch-web/compare/v0.106.8...v0.106.9) (2024-12-11)
 
 ## [0.106.8](https://github.com/juspay/hyperswitch-web/compare/v0.106.7...v0.106.8) (2024-12-11)
