@@ -101,10 +101,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     })
     None
   }, [isRenderSamsungPayButton])
-
-  <div
-    style={height: `${height->Int.toString}px`}
-    id="samsungpay-container"
-    className={`w-full flex flex-row justify-center rounded-md  [&>*]:w-full [&>button]:!bg-contain`}
-  />
+  <RenderIf condition={isRenderSamsungPayButton}>
+    <div
+      style={height: `${height->Int.toString}px`}
+      id="samsungpay-container"
+      className={`w-full flex flex-row justify-center rounded-md  [&>*]:w-full [&>button]:!bg-contain`}
+    />
+  </RenderIf>
 }
