@@ -1,3 +1,10 @@
+## [0.106.11](https://github.com/juspay/hyperswitch-web/compare/v0.106.10...v0.106.11) (2024-12-16)
+
+
+### Bug Fixes
+
+* samsung pay button rendering fixed ([#838](https://github.com/juspay/hyperswitch-web/issues/838)) ([904d103](https://github.com/juspay/hyperswitch-web/commit/904d10369cae6dd41b211493c932d94dad0943a6))
+
 ## [0.106.10](https://github.com/juspay/hyperswitch-web/compare/v0.106.9...v0.106.10) (2024-12-12)
 
 
