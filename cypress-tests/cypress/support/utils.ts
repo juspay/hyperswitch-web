@@ -80,6 +80,48 @@ export const createPaymentBody = {
 
 }
 
+export const createPaymentBodyWithoutBillingAddress = {
+  currency: "USD",
+  amount: 2999,
+  order_details: [
+    {
+      product_name: "Apple iPhone 15",
+      quantity: 1,
+      amount: 2999,
+    },
+  ],
+  confirm: false,
+  capture_method: "automatic",
+  authentication_type: "no_three_ds",
+  customer_id: "hyperswitch_sdk_demo_id",
+  email: "hyperswitch_sdk_demo_id@gmail.com",
+  request_external_three_ds_authentication: false,
+  description: "Hello this is description",
+  shipping: {
+    address: {
+      line1: "1467",
+      line2: "Harrison Street",
+      line3: "Harrison Street",
+      city: "San Fransico",
+      state: "California",
+      zip: "94122",
+      country: "US",
+      first_name: "joseph",
+      last_name: "Doe",
+    },
+    phone: {
+      number: "8056594427",
+      country_code: "+91",
+    },
+  },
+  metadata: {
+    udf1: "value1",
+    new_customer: "true",
+    login_date: "2019-09-10T10:11:12Z",
+  },
+  profile_id: "pro_5fVcCxU8MFTYozgtf0P8",
+}
+
 export const changeObjectKeyValue = (object: Record<string, any>, key: string, value: boolean | string) => {
   object[key] = value
 }
