@@ -84,6 +84,10 @@ export const changeObjectKeyValue = (object: Record<string, any>, key: string, v
   object[key] = value
 }
 
+export const deleteObjectKey = (object: Record<string, any>, key: string) => {
+  delete object[key]
+}
+
 export const confirmBody = {
   client_secret: "",
   return_url: "http://localhost:9060/completion",
