@@ -1,3 +1,49 @@
+## [0.106.11](https://github.com/juspay/hyperswitch-web/compare/v0.106.10...v0.106.11) (2024-12-16)
+
+
+### Bug Fixes
+
+* samsung pay button rendering fixed ([#838](https://github.com/juspay/hyperswitch-web/issues/838)) ([904d103](https://github.com/juspay/hyperswitch-web/commit/904d10369cae6dd41b211493c932d94dad0943a6))
+
+## [0.106.10](https://github.com/juspay/hyperswitch-web/compare/v0.106.9...v0.106.10) (2024-12-12)
+
+
+### Bug Fixes
+
+* cartes bancaires logo not appearing in firefox ([#837](https://github.com/juspay/hyperswitch-web/issues/837)) ([aa0182b](https://github.com/juspay/hyperswitch-web/commit/aa0182b92018dfb95284198e2610fb40a0b6387e))
+
+## [0.106.9](https://github.com/juspay/hyperswitch-web/compare/v0.106.8...v0.106.9) (2024-12-11)
+
+## [0.106.8](https://github.com/juspay/hyperswitch-web/compare/v0.106.7...v0.106.8) (2024-12-11)
+
+## [0.106.7](https://github.com/juspay/hyperswitch-web/compare/v0.106.6...v0.106.7) (2024-12-11)
+
+## [0.106.6](https://github.com/juspay/hyperswitch-web/compare/v0.106.5...v0.106.6) (2024-12-11)
+
+## [0.106.5](https://github.com/juspay/hyperswitch-web/compare/v0.106.4...v0.106.5) (2024-12-11)
+
+## [0.106.4](https://github.com/juspay/hyperswitch-web/compare/v0.106.3...v0.106.4) (2024-12-11)
+
+## [0.106.3](https://github.com/juspay/hyperswitch-web/compare/v0.106.2...v0.106.3) (2024-12-11)
+
+## [0.106.2](https://github.com/juspay/hyperswitch-web/compare/v0.106.1...v0.106.2) (2024-12-10)
+
+## [0.106.1](https://github.com/juspay/hyperswitch-web/compare/v0.106.0...v0.106.1) (2024-12-09)
+
+
+### Bug Fixes
+
+* card validation focus check ([#827](https://github.com/juspay/hyperswitch-web/issues/827)) ([fd15e54](https://github.com/juspay/hyperswitch-web/commit/fd15e54ffd9d1bb4445a78567242d3ebc5a25b90))
+
+# [0.106.0](https://github.com/juspay/hyperswitch-web/compare/v0.105.3...v0.106.0) (2024-12-09)
+
+
+### Features
+
+* added cb regex and typo fix ([#811](https://github.com/juspay/hyperswitch-web/issues/811)) ([e925e33](https://github.com/juspay/hyperswitch-web/commit/e925e33556531eb7142ee0a7b26cdbcacc920b15))
+
+## [0.105.3](https://github.com/juspay/hyperswitch-web/compare/v0.105.2...v0.105.3) (2024-12-09)
+
 ## [0.105.2](https://github.com/juspay/hyperswitch-web/compare/v0.105.1...v0.105.2) (2024-12-05)
 
 

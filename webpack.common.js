@@ -14,7 +14,7 @@ const getEnvVariable = (variable, defaultValue) =>
   process.env[variable] ?? defaultValue;
 
 const sdkEnv = getEnvVariable("sdkEnv", "local");
-const enableLogging = getEnvVariable("enableLogging", "false") === "true";
+const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
@@ -67,25 +67,28 @@ module.exports = (publicPath = "auto") => {
     app: "./index.js",
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
   };
+
+  let definePluginValues = {
+    repoName: JSON.stringify(repoName),
+    repoVersion: JSON.stringify(repoVersion),
+    publicPath: JSON.stringify(repoPublicPath),
+    sdkUrl: JSON.stringify(sdkUrl),
+    backendEndPoint: JSON.stringify(backendEndPoint),
+    confirmEndPoint: JSON.stringify(confirmEndPoint),
+    logEndpoint: JSON.stringify(logEndpoint),
+    sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
+    sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
+    enableLogging: ENABLE_LOGGING,
+    loggingLevel: JSON.stringify(loggingLevel),
+    maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
+  };
+
   const plugins = [
     new MiniCssExtractPlugin(),
     new CopyPlugin({
       patterns: [{ from: "public" }],
     }),
-    new webpack.DefinePlugin({
-      repoName: JSON.stringify(repoName),
-      repoVersion: JSON.stringify(repoVersion),
-      publicPath: JSON.stringify(repoPublicPath),
-      sdkUrl: JSON.stringify(sdkUrl),
-      backendEndPoint: JSON.stringify(backendEndPoint),
-      confirmEndPoint: JSON.stringify(confirmEndPoint),
-      logEndpoint: JSON.stringify(logEndpoint),
-      sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
-      sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
-      enableLogging: enableLogging,
-      loggingLevel: JSON.stringify(loggingLevel),
-      maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
-    }),
+    new webpack.DefinePlugin(definePluginValues),
     new HtmlWebpackPlugin({
       inject: false,
       template: "./public/build.html",

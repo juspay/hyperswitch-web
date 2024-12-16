@@ -760,6 +760,27 @@ License)
       </clipPath>
     </defs>
   </symbol>
+  <symbol id="cartesbancaires-card" viewBox="0 0 24 16" width="28" height="28" fill="none"
+    xmlns="http://www.w3.org/2000/svg" role="presentation" focusable="false"
+    class="p-Logo p-Logo--md p-CardBrandIcon">
+
+    <g clip-path="url(#clip0_1_3)">
+      <rect width="24" height="16" fill="white" />
+      <mask id="mask0_1_3" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0"
+        width="24" height="16">
+        <path
+          d="M22 0H2C0.89543 0 0 0.89543 0 2V14C0 15.1046 0.89543 16 2 16H22C23.1046 16 24 15.1046 24 14V2C24 0.89543 23.1046 0 22 0Z"
+          fill="white" />
+      </mask>
+      <g mask="url(#mask0_1_3)">
+        <path d="M24 0H0V16H24V0Z" fill="#0082B1" />
+        <path
+          d="M13.06 3.506V7.712H19.774C20.3318 7.712 20.8667 7.49043 21.261 7.09605C21.6554 6.70166 21.877 6.16675 21.877 5.609C21.877 5.05125 21.6554 4.51634 21.261 4.12195C20.8667 3.72757 20.3318 3.506 19.774 3.506H13.06ZM12.488 7.712C12.449 6.885 12.243 6.142 11.895 5.512C11.513 4.81632 10.9407 4.24395 10.245 3.862C9.544 3.475 8.704 3.263 7.762 3.263H6.872C5.931 3.263 5.092 3.475 4.39 3.863C3.69432 4.24495 3.12195 4.81732 2.74 5.513C2.353 6.213 2.14 7.053 2.14 7.995C2.14 8.937 2.353 9.776 2.74 10.477C3.127 11.178 3.69 11.741 4.39 12.127C5.091 12.515 5.93 12.727 6.873 12.727H7.763C8.703 12.727 9.543 12.515 10.245 12.127C10.9407 11.745 11.513 11.1727 11.895 10.477C12.243 9.847 12.449 9.106 12.488 8.278H7.479V7.712H12.488ZM13.06 8.278V12.484H19.774C20.3318 12.484 20.8667 12.2624 21.261 11.868C21.6554 11.4737 21.877 10.9388 21.877 10.381C21.877 9.82325 21.6554 9.28834 21.261 8.89395C20.8667 8.49957 20.3318 8.278 19.774 8.278H13.06Z"
+          fill="white" />
+      </g>
+    </g>
+
+  </symbol>
 
   <symbol id="rupay-card" viewBox="0 0 41 10">
     <path
@@ -2482,42 +2503,42 @@ License)
     <defs>
       <style>
         .cls-1 {
-          isolation: isolate;
+        isolation: isolate;
         }
         .cls-2 {
-          fill: url(#linear-gradient);
+        fill: url(#linear-gradient);
         }
         .cls-3 {
-          fill: url(#linear-gradient-2);
+        fill: url(#linear-gradient-2);
         }
         .cls-11,
         .cls-4 {
-          mix-blend-mode: soft-light;
+        mix-blend-mode: soft-light;
         }
         .cls-5 {
-          fill: #e7e6e6;
+        fill: #e7e6e6;
         }
         .cls-6 {
-          fill: url(#linear-gradient-3);
+        fill: url(#linear-gradient-3);
         }
         .cls-7 {
-          fill: url(#linear-gradient-4);
+        fill: url(#linear-gradient-4);
         }
         .cls-8 {
-          mix-blend-mode: multiply;
-          opacity: 0.71;
-          fill: url(#linear-gradient-5);
+        mix-blend-mode: multiply;
+        opacity: 0.71;
+        fill: url(#linear-gradient-5);
         }
         .cls-9 {
-          fill: url(#linear-gradient-6);
+        fill: url(#linear-gradient-6);
         }
         .cls-10 {
-          fill: #1887b2;
-          mix-blend-mode: darken;
-          opacity: 0.57;
+        fill: #1887b2;
+        mix-blend-mode: darken;
+        opacity: 0.57;
         }
         .cls-11 {
-          fill: #fff;
+        fill: #fff;
         }
       </style>
       <linearGradient
