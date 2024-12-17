@@ -81,6 +81,21 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, (cvcNumber, cardNumber))
 
+  React.useEffect(() => {
+    let maxCvcLengthPossible = maxCvcLength(cardBrand)
+    if (
+      cvcNumber->String.length > 0 && cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
+    ) {
+      setIsCVCValid(_ => Some(true))
+    } else if cvcNumber->String.length > maxCvcLengthPossible {
+      setCvcNumber(_ => cvcNumber->String.slice(~start=0, ~end=maxCvcLengthPossible))
+      setIsCVCValid(_ => Some(true))
+    } else {
+      setIsCVCValid(_ => None)
+    }
+    None
+  }, [cardBrand])
+
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
