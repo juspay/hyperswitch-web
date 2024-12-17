@@ -47,6 +47,17 @@ describe("Card CVC Checks", () => {
 
 
     })
+
+    it('CVC Trimming: 4-Digit to 3-Digit on Card Type Change (Amex to Visa)', () => {
+        getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click()
+        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(amexTestCard)
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type("0444")
+        getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type("2412")
+        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).clear()
+        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(visaTestCard)
+        getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).should('have.value', '241');
+    })
+    
     it('user can enter 3 digit cvc on saved payment methods screen', () => {
         getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type('123').then(() => {
             getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).should('have.value', '123');
