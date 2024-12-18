@@ -16,7 +16,7 @@ let make = (
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let (requiredFieldsBody, _) = React.useState(_ => Dict.make())
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
@@ -60,7 +60,6 @@ let make = (
           savedCardlength
           cvcProps
           paymentType
-          setRequiredFieldsBody
         />
       )
       ->React.array}
