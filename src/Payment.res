@@ -82,17 +82,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cvcNumber, cardNumber))
 
   React.useEffect(() => {
-    let maxCvcLengthPossible = maxCvcLength(cardBrand)
-    if (
-      cvcNumber->String.length > 0 && cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true)
-    ) {
-      setIsCVCValid(_ => Some(true))
-    } else if cvcNumber->String.length > maxCvcLengthPossible {
-      setCvcNumber(_ => cvcNumber->String.slice(~start=0, ~end=maxCvcLengthPossible))
-      setIsCVCValid(_ => Some(true))
-    } else {
-      setIsCVCValid(_ => None)
-    }
+    setCvcNumber(_ => "")
+    setIsCVCValid(_ => None)
     None
   }, [cardBrand])
 
@@ -116,6 +107,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     }
     setCardNumber(_ => card)
     if card->String.length == 0 {
+      setCvcNumber(_ => "")
+      setIsCVCValid(_ => None)
       setIsCardValid(_ => Some(false))
     }
   }

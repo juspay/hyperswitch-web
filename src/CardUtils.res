@@ -462,11 +462,6 @@ let maxCardLength = cardBrand => {
   Array.reduce(obj.length, 0, (acc, val) => max(acc, val))
 }
 
-let maxCvcLength = cardBrand => {
-  let obj = getobjFromCardPattern(cardBrand)
-  obj.maxCVCLength
-}
-
 let isCardLengthValid = (cardBrand, cardNumberLength) => {
   let obj = getobjFromCardPattern(cardBrand)
   Array.includes(obj.length, cardNumberLength)
