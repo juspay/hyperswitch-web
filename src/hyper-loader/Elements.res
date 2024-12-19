@@ -299,6 +299,8 @@ let make = (
       | "paze"
       | "samsungPay"
       | "paymentMethodsManagement"
+      | "shippingAddressElement"
+      | "billingAddressElement"
       | "payment" => ()
       | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger)
       }
