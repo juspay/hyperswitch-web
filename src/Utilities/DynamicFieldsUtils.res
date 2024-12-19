@@ -36,9 +36,7 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
   | "last_name" =>
     fieldNameArr
     ->Array.sliceToEnd(~start=1)
-    ->Array.reduce("", (acc, item) => {
-      acc ++ item
-    })
+    ->Array.reduce("", (acc, item) => acc === "" ? item : `${acc} ${item}`)
   | _ => field.value
   }
 }
