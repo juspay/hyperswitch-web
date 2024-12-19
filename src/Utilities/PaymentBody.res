@@ -129,6 +129,20 @@ let savedCardBody = (
   savedCardBody
 }
 
+let clickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
+  let clickToPayServiceDetails =
+    [
+      ("merchant_transaction_id", merchantTransactionId->JSON.Encode.string),
+      ("correlation_id", correlationId->JSON.Encode.string),
+      ("x_src_flow_id", xSrcFlowId->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("ctp_service_details", clickToPayServiceDetails),
+  ]
+}
+
 let savedPaymentMethodBody = (
   ~paymentToken,
   ~customerId,

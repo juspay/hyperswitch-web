@@ -27,6 +27,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
   let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
+  let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(clickToPayConfig)
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentMethodListValue,
@@ -47,10 +49,17 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     setLoadSavedCards: (savedCardsLoadState => savedCardsLoadState) => unit,
   ) = React.useState(_ => LoadingSavedCards)
 
+  let isShowPaymentMethodsDependingOnClickToPay = React.useMemo(() => {
+    clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length > 0 ||
+    clickToPayConfig.isReady->Option.getOr(false) &&
+      clickToPayConfig.clickToPayCards->Option.isNone ||
+    clickToPayConfig.email !== ""
+  }, [clickToPayConfig])
+
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
-        setShowFields(_ => true)
+        setShowFields(_ => isShowPaymentMethodsDependingOnClickToPay->not)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
       }
     | (_, LoadingSavedCards) => ()
@@ -100,11 +109,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             ? NoResult(isGuestCustomer)
             : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
         )
-        setShowFields(prev => finalSavedPaymentMethods->Array.length == 0 || prev)
+        setShowFields(prev =>
+          (finalSavedPaymentMethods->Array.length == 0 || prev) &&
+            isShowPaymentMethodsDependingOnClickToPay->not
+        )
       }
     | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
-        setShowFields(_ => true)
+        setShowFields(_ => true && isShowPaymentMethodsDependingOnClickToPay->not)
       }
     }
 
@@ -115,6 +127,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     optionAtomValue,
     isApplePayReady,
     isGPayReady,
+    clickToPayConfig.isReady,
+    isShowPaymentMethodsDependingOnClickToPay,
   ))
 
   React.useEffect(() => {
@@ -203,9 +217,61 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
     None
   }, (paymentMethodList, walletList, paymentOptionsList, actualList, showCardFormByDefault))
+
+  let loadMastercardClickToPayScript = ssn => {
+    open Promise
+    let dict = ssn->getDictFromJson
+    let clickToPaySessionObj = SessionsType.itemToObjMapper(dict, ClickToPayObject)
+    let clickToPayToken = SessionsType.getPaymentSessionObj(
+      clickToPaySessionObj.sessionsToken,
+      ClickToPay,
+    )
+
+    switch clickToPayToken {
+    | ClickToPayTokenOptional(optToken) =>
+      switch optToken {
+      | Some(token) =>
+        let clickToPayToken = ClickToPayHelpers.clickToPayTokenItemToObjMapper(token)
+        let isProd = publishableKey->String.startsWith("pk_prd_")
+        ClickToPayHelpers.loadClickToPayScripts(loggerState)
+        ClickToPayHelpers.loadMastercardScript(clickToPayToken, isProd, loggerState)
+        ->then(resp => {
+          let availableCardBrands =
+            resp
+            ->Utils.getDictFromJson
+            ->Utils.getArray("availableCardBrands")
+            ->Array.map(item => item->JSON.Decode.string->Option.getOr(""))
+            ->Array.filter(item => item !== "")
+
+          setClickToPayConfig(prev => {
+            ...prev,
+            isReady: Some(true),
+            availableCardBrands,
+            email: clickToPayToken.email,
+            dpaName: clickToPayToken.dpaName,
+          })
+          resolve()
+        })
+        ->catch(_ => {
+          setClickToPayConfig(prev => {
+            ...prev,
+            isReady: Some(false),
+          })
+          resolve()
+        })
+        ->ignore
+      | None => ()
+      }
+    | _ => ()
+    }
+  }
+
   React.useEffect(() => {
     switch sessionsObj {
-    | Loaded(ssn) => setSessions(_ => ssn)
+    | Loaded(ssn) => {
+        setSessions(_ => ssn)
+        loadMastercardClickToPayScript(ssn)
+      }
     | _ => ()
     }
     None
@@ -427,6 +493,26 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (paymentMethodList, customerPaymentMethods))
 
+  React.useEffect(() => {
+    let fetchCards = async () => {
+      switch clickToPayConfig.isReady {
+      | Some(true) =>
+        let cardsResult = await ClickToPayHelpers.getCards(loggerState)
+        switch cardsResult {
+        | Ok(cards) =>
+          setClickToPayConfig(prev => {
+            ...prev,
+            clickToPayCards: Some(cards),
+          })
+        | Error(_) => ()
+        }
+      | _ => ()
+      }
+    }
+    fetchCards()->ignore
+    None
+  }, [clickToPayConfig.isReady])
+
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div className="text-2xl font-semibold text-[#151619] mb-6">
@@ -464,7 +550,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     <RenderIf
-      condition={displaySavedPaymentMethods && savedMethods->Array.length > 0 && showFields}>
+      condition={((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
+        isShowPaymentMethodsDependingOnClickToPay) && showFields}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
