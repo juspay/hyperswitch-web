@@ -169,6 +169,14 @@ License)
       d="M70.94 285.81c-16.17 16.24-42.46 16.32-58.71.15-16.24-16.16-16.32-42.46-.15-58.7L226.57 12.23c16.16-16.24 42.46-16.32 58.7-.15l214.65 215.18c16.17 16.24 16.09 42.54-.15 58.7-16.25 16.17-42.54 16.09-58.71-.15L256 100.29 70.94 285.81z"
     />
   </symbol>
+  <symbol id="arrow-back" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <mask id="mask0_2608_28566" style="mask-type: alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="16" height="16">
+      <rect width="16" height="16" fill="#D9D9D9" />
+    </mask>
+    <g mask="url(#mask0_2608_28566)">
+      <path d="M5.21797 8.67187L8.9513 12.4052L8.0013 13.3385L2.66797 8.00521L8.0013 2.67188L8.9513 3.60521L5.21797 7.33854H13.3346V8.67187H5.21797Z" fill="#1C1B1F" />
+    </g>
+  </symbol>
   <symbol id="card-1" viewBox="0 0 512 512">
     <g>
       <g>
