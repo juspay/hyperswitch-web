@@ -18,6 +18,7 @@ const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
+const apiVersion = getEnvVariable("API_VERSION", "v1");
 
 const repoVersion = require("./package.json").version;
 const majorVersion = "v" + repoVersion.split(".")[0];
@@ -81,6 +82,7 @@ module.exports = (publicPath = "auto") => {
     enableLogging: ENABLE_LOGGING,
     loggingLevel: JSON.stringify(loggingLevel),
     maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
+    apiVersion: JSON.stringify(apiVersion),
   };
 
   const plugins = [
@@ -137,7 +139,7 @@ module.exports = (publicPath = "auto") => {
     output: {
       path:
         sdkEnv && sdkEnv !== "local"
-          ? path.resolve(__dirname, "dist", sdkEnv)
+          ? path.resolve(__dirname, "dist", sdkEnv, apiVersion)
           : path.resolve(__dirname, "dist"),
       clean: true,
       publicPath: `${repoPublicPath}/`,
