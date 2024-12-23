@@ -165,6 +165,7 @@ let useRequiredFieldsEmptyAndValid = (
   ~cardNumber,
   ~cardExpiry,
   ~cvcNumber,
+  ~isSavedCardFlow,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
@@ -239,7 +240,7 @@ let useRequiredFieldsEmptyAndValid = (
       | _ => true
       }
     })
-    setAreRequiredFieldsValid(_ => areRequiredFieldsValid)
+    setAreRequiredFieldsValid(_ => isSavedCardFlow || areRequiredFieldsValid)
 
     let areRequiredFieldsEmpty = fieldsArrWithBillingAddress->Array.reduce(false, (
       acc,
