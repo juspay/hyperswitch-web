@@ -19,6 +19,8 @@ let make = (
   ~paymentType,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
+  //TODO - To be discussed
+  let (_, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let closeComponentIfSavedMethodsAreEmpty = () => {
     if savedMethods->Array.length === 0 && loadSavedCards !== PaymentType.LoadingSavedCards {
@@ -155,6 +157,7 @@ let make = (
               savedCardlength={cards->Array.length}
               cvcProps
               paymentType
+              setRequiredFieldsBody
             />
           })
           ->React.array}
