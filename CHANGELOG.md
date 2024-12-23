@@ -1,3 +1,10 @@
+## [0.106.14](https://github.com/juspay/hyperswitch-web/compare/v0.106.13...v0.106.14) (2024-12-23)
+
+
+### Bug Fixes
+
+* display saved method screen condition and dynamic fields values updation issue in saved card screen ([#848](https://github.com/juspay/hyperswitch-web/issues/848)) ([aa0d088](https://github.com/juspay/hyperswitch-web/commit/aa0d088c7c56425ff815564cf79e740996649751))
+
 ## [0.106.13](https://github.com/juspay/hyperswitch-web/compare/v0.106.12...v0.106.13) (2024-12-19)
 
 ## [0.106.12](https://github.com/juspay/hyperswitch-web/compare/v0.106.11...v0.106.12) (2024-12-18)
