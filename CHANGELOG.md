@@ -1,3 +1,10 @@
+## [0.106.15](https://github.com/juspay/hyperswitch-web/compare/v0.106.14...v0.106.15) (2024-12-23)
+
+
+### Bug Fixes
+
+* saved cards screen cards validity issue ([#849](https://github.com/juspay/hyperswitch-web/issues/849)) ([ef1bd85](https://github.com/juspay/hyperswitch-web/commit/ef1bd8521a58be3e61e088cf60c9e4a88b7e82fc))
+
 ## [0.106.14](https://github.com/juspay/hyperswitch-web/compare/v0.106.13...v0.106.14) (2024-12-23)
 
 
