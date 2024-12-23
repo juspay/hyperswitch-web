@@ -21,10 +21,10 @@ const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
 const apiVersion = getEnvVariable("API_VERSION", "v1");
 
 const repoVersion = require("./package.json").version;
-const majorVersion = "v" + repoVersion.split(".")[0];
+// const majorVersion = "v" + repoVersion.split(".")[0];
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${majorVersion}`;
+  sdkEnv === "local" ? "" : `/web/${repoVersion}/${apiVersion}`;
 
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
