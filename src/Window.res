@@ -67,6 +67,9 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @set external windowOnload: (window, unit => unit) => unit = "onload"
 @set external setHyper: (window, Types.hyperInstance) => unit = "HyperMethod"
 
+@send external closeWindow: window => unit = "close"
+@val external windowOpen: (string, string, string) => Nullable.t<window> = "open"
+
 /* Module Definitions */
 module Navigator = {
   @val @scope("navigator")
@@ -128,6 +131,12 @@ module Top = {
     @val @scope(("window", "top", "location"))
     external pathname: string = "pathname"
   }
+}
+
+module LocalStorage = {
+  @scope(("window", "localStorage")) @val external setItem: (string, string) => unit = "setItem"
+  @scope(("window", "localStorage")) @val external getItem: string => Nullable.t<string> = "getItem"
+  @scope(("window", "localStorage")) @val external removeItem: string => unit = "removeItem"
 }
 
 module Element = {

@@ -1,14 +1,8 @@
-@react.component
-let make = (~isChecked, ~setIsChecked) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
-  let {business, customMessageForCardTerms} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-
-  let css = `.container {
+let saveDetailsCssStyle = (themeObj: CardThemeType.themeClass) => {
+  `.container {
   display: flex;
   cursor: pointer;
   position: relative;
-  justify-content: center;
 }
 
 .container input {
@@ -36,8 +30,16 @@ let make = (~isChecked, ~setIsChecked) => {
   border-radius: 2px;
   transition: all .3s;
 }
-
 `
+}
+
+@react.component
+let make = (~isChecked, ~setIsChecked) => {
+  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
+  let {business, customMessageForCardTerms} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+
+  let css = saveDetailsCssStyle(themeObj)
   let onChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["checked"]
@@ -58,7 +60,7 @@ let make = (~isChecked, ~setIsChecked) => {
 
   <div className={`Checkbox ${checkboxState} flex flex-row gap-2 items-center`}>
     <style> {React.string(css)} </style>
-    <label className={`container CheckboxInput ${checkedState}`}>
+    <label className={`container justify-center CheckboxInput ${checkedState}`}>
       <input type_={`checkbox`} onChange />
       <div className={`checkmark CheckboxInput ${checkedState} mt-1`} />
       <div className={`CheckboxLabel ${checkBoxLabelState} ml-2 w-11/12 opacity-50 text-xs`}>

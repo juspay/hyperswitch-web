@@ -123,6 +123,7 @@ type customerCard = {
   cardToken: string,
   cardHolderName: option<string>,
   nickname: string,
+  isClickToPayCard: bool,
 }
 type bank = {mask: string}
 type customerMethods = {
@@ -193,6 +194,7 @@ let defaultCardDetails = {
   cardToken: "",
   cardHolderName: None,
   nickname: "",
+  isClickToPayCard: false,
 }
 let defaultCustomerMethods = {
   paymentToken: "",
@@ -865,6 +867,7 @@ let getCardDetails = (dict, str) => {
       cardToken: getString(json, "card_token", ""),
       cardHolderName: getOptionString(json, "card_holder_name"),
       nickname: getString(json, "nick_name", ""),
+      isClickToPayCard: false,
     }
   })
   ->Option.getOr(defaultCardDetails)
@@ -1089,4 +1092,44 @@ let itemToPayerDetailsObjectMapper = dict => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.flatMap(Dict.get(_, "national_number"))
   ->Option.flatMap(JSON.Decode.string),
+}
+
+let convertClickToPayCardToCustomerMethod = (
+  clickToPayCard: ClickToPayHelpers.clickToPayCard,
+): customerMethods => {
+  paymentToken: clickToPayCard.srcDigitalCardId,
+  customerId: "", // Empty as Click to Pay doesn't provide this
+  paymentMethod: "card",
+  paymentMethodId: clickToPayCard.srcDigitalCardId,
+  paymentMethodIssuer: None,
+  card: {
+    scheme: Some(
+      switch clickToPayCard.paymentCardDescriptor->Js.String2.toLowerCase {
+      | "amex" => "AmericanExpress"
+      | "mastercard" => "Mastercard"
+      | "visa" => "Visa"
+      | "discover" => "Discover"
+      | other =>
+        other
+        ->Js.String2.charAt(0)
+        ->Js.String.toUpperCase
+        ->Js.String.concat(other->Js.String2.sliceToEnd(~from=1)->Js.String.toLowerCase)
+      },
+    ),
+    last4Digits: clickToPayCard.panLastFour,
+    expiryMonth: clickToPayCard.panExpirationMonth,
+    expiryYear: clickToPayCard.panExpirationYear,
+    cardToken: clickToPayCard.srcDigitalCardId,
+    cardHolderName: None,
+    nickname: clickToPayCard.digitalCardData.descriptorName,
+    isClickToPayCard: true,
+  },
+  paymentMethodType: Some("click_to_pay"),
+  defaultPaymentMethodSet: false, // Default to false as Click to Pay doesn't provide this
+  requiresCvv: false, // Click to Pay handles CVV internally
+  lastUsedAt: Js.Date.make()->Js.Date.toISOString, // Current timestamp as Click to Pay doesn't provide this
+  bank: {
+    mask: "", // Just use the mask field that exists in the type
+  },
+  recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
 }
