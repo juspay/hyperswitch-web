@@ -269,6 +269,7 @@ let make = (
     ~cardNumber,
     ~cardExpiry,
     ~cvcNumber,
+    ~isSavedCardFlow,
   )
 
   useSetInitialRequiredFields(
