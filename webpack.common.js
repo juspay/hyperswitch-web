@@ -19,11 +19,21 @@ const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
 
+/*
+* SDK Version Compatibility:
+
+* v0: Compatible with API v1
+* v1: Compatible with API v1
+* v2: Compatible with API v2
+
+* The default SDK version is "v1".
+*/
+const sdkVersion = getEnvVariable("SDK_VERSION", "v1");
+
 const repoVersion = require("./package.json").version;
-const majorVersion = "v" + repoVersion.split(".")[0];
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${majorVersion}`;
+  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersion}`;
 
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
@@ -81,6 +91,7 @@ module.exports = (publicPath = "auto") => {
     enableLogging: ENABLE_LOGGING,
     loggingLevel: JSON.stringify(loggingLevel),
     maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
+    sdkVersion: JSON.stringify(sdkVersion),
   };
 
   const plugins = [
@@ -137,7 +148,7 @@ module.exports = (publicPath = "auto") => {
     output: {
       path:
         sdkEnv && sdkEnv !== "local"
-          ? path.resolve(__dirname, "dist", sdkEnv)
+          ? path.resolve(__dirname, "dist", sdkEnv, sdkVersion)
           : path.resolve(__dirname, "dist"),
       clean: true,
       publicPath: `${repoPublicPath}/`,
