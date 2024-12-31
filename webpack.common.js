@@ -59,13 +59,13 @@ const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
 };
 
 const backendDomain = getEnvironmentDomain("checkout", "dev", "beta");
-const confirmDomain = getEnvironmentDomain("api", "integ-api", "sandbox");
+const confirmDomain = getEnvironmentDomain("live", "integ", "app");
 
 const backendEndPoint =
   envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
 
 const confirmEndPoint =
-  envBackendUrl || `https://${confirmDomain}.hyperswitch.io`;
+  envBackendUrl || `https://${confirmDomain}.hyperswitch.io/api`;
 
 const logEndpoint = envLoggingUrl;
 
