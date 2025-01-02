@@ -21,7 +21,7 @@ let checkIsSafari = () => {
 let getPlatformFromUserAgent = () => {
   let userAgentString = navigator.userAgent
 
-  let platform = if userAgentString->String.includes("Win") {
+  if userAgentString->String.includes("Win") {
     "Windows"
   } else if userAgentString->String.includes("Mac") {
     "MacOS"
@@ -34,8 +34,6 @@ let getPlatformFromUserAgent = () => {
   } else {
     "Unknown"
   }
-
-  platform
 }
 
 let matchAndExtract = (regex, groupIndex, userAgentString) => {
@@ -48,39 +46,29 @@ let matchAndExtract = (regex, groupIndex, userAgentString) => {
 let getBrowserInfoFromUserAgent = () => {
   let userAgentString = navigator.userAgent
 
-  let browserName = ref("Unknown Browser")
-  let browserVersion = ref("Unknown Version")
-
   if (
     %re("/Chrome\/(\d+\.\d+\.\d+\.\d+)/")->RegExp.test(userAgentString) &&
       !(%re("/Edg\/|OPR\//")->RegExp.test(userAgentString))
   ) {
-    browserName := "Chrome"
-    browserVersion := matchAndExtract(%re("/Chrome\/(\d+\.\d+\.\d+\.\d+)/"), 1, userAgentString)
+    ("Chrome", matchAndExtract(%re("/Chrome\/(\d+\.\d+\.\d+\.\d+)/"), 1, userAgentString))
   } else if (
     %re("/Safari\/(\d+\.\d+\.\d+)/")->RegExp.test(userAgentString) &&
       !(%re("/Chrome/")->RegExp.test(userAgentString))
   ) {
-    browserName := "Safari"
-    browserVersion := matchAndExtract(%re("/Version\/(\d+\.\d+)/"), 1, userAgentString)
+    ("Safari", matchAndExtract(%re("/Version\/(\d+\.\d+)/"), 1, userAgentString))
   } else if %re("/Firefox\/(\d+\.\d+)/")->RegExp.test(userAgentString) {
-    browserName := "Firefox"
-    browserVersion := matchAndExtract(%re("/Firefox\/(\d+\.\d+)/"), 1, userAgentString)
+    ("Firefox", matchAndExtract(%re("/Firefox\/(\d+\.\d+)/"), 1, userAgentString))
   } else if %re("/Edg\/(\d+\.\d+\.\d+\.\d+)/")->RegExp.test(userAgentString) {
-    browserName := "Edge"
-    browserVersion := matchAndExtract(%re("/Edg\/(\d+\.\d+\.\d+\.\d+)/"), 1, userAgentString)
+    ("Edge", matchAndExtract(%re("/Edg\/(\d+\.\d+\.\d+\.\d+)/"), 1, userAgentString))
   } else if %re("/OPR\/(\d+\.\d+\.\d+\.\d+)/")->RegExp.test(userAgentString) {
-    browserName := "Opera"
-    browserVersion := matchAndExtract(%re("/OPR\/(\d+\.\d+\.\d+\.\d+)/"), 1, userAgentString)
+    ("Opera", matchAndExtract(%re("/OPR\/(\d+\.\d+\.\d+\.\d+)/"), 1, userAgentString))
   } else if %re("/MSIE (\d+\.\d+);/")->RegExp.test(userAgentString) {
-    browserName := "Internet Explorer"
-    browserVersion := matchAndExtract(%re("/MSIE (\d+\.\d+);/"), 1, userAgentString)
+    ("Internet Explorer", matchAndExtract(%re("/MSIE (\d+\.\d+);/"), 1, userAgentString))
   } else if %re("/Trident\/.*rv:(\d+\.\d+)/")->RegExp.test(userAgentString) {
-    browserName := "Internet Explorer 11"
-    browserVersion := matchAndExtract(%re("/Trident\/.*rv:(\d+\.\d+)/"), 1, userAgentString)
+    ("Internet Explorer 11", matchAndExtract(%re("/Trident\/.*rv:(\d+\.\d+)/"), 1, userAgentString))
+  } else {
+    ("Unknown Browser", "Unknown Version")
   }
-
-  (browserName, browserVersion)
 }
 
 let date = date()
@@ -104,9 +92,9 @@ let broswerInfo = () => {
         ("time_zone", date.getTimezoneOffset()->JSON.Encode.float),
         ("java_enabled", true->JSON.Encode.bool),
         ("java_script_enabled", true->JSON.Encode.bool),
-        ("device_model", `web-${browserName.contents}`->JSON.Encode.string),
+        ("device_model", `web-${browserName}`->JSON.Encode.string),
         ("os_type", getPlatformFromUserAgent()->JSON.Encode.string),
-        ("os_version", browserVersion.contents->JSON.Encode.string),
+        ("os_version", browserVersion->JSON.Encode.string),
       ]->Utils.getJsonFromArrayOfJson,
     ),
   ]
