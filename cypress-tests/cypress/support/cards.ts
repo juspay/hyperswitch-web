@@ -37,4 +37,34 @@ export const stripeCards = {
         card_exp_month:"13",
         card_exp_year:"30",
     },
+    visaCard19: {  
+        cardNo: "4479667352342682672",
+        cardScheme: "Visa",
+        cvc: "123",
+        card_exp_month: "12",
+        card_exp_year: "30",
+    },
+    masterCard16: {
+        cardNo: "5555555555554444",
+        cardScheme: "MasterCard",
+        cvc: "123",
+        card_exp_month: "12",
+        card_exp_year: "30",
+    },
+    amexCard15: {
+        cardNo: "378282246310005",
+        cardScheme: "American Express",
+        cvc: "1234",
+        card_exp_month: "12",
+        card_exp_year: "30",
+    },
+    dinersClubCard14: {
+        cardNo: "36227206271667",
+        cardScheme: "Diners Club",
+        cvc: "123",
+        card_exp_month: "12",
+        card_exp_year: "30",
+    },
+
 }
+
