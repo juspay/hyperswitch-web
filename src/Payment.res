@@ -81,6 +81,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, (cvcNumber, cardNumber))
 
+  React.useEffect(() => {
+    setCvcNumber(_ => "")
+    setCardExpiry(_ => "")
+    setIsExpiryValid(_ => None)
+    setIsCVCValid(_ => None)
+    None
+  }, [cardBrand])
+
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
@@ -101,6 +109,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     }
     setCardNumber(_ => card)
     if card->String.length == 0 {
+      setCvcNumber(_ => "")
+      setCardExpiry(_ => "")
+      setIsExpiryValid(_ => None)
+      setIsCVCValid(_ => None)
       setIsCardValid(_ => Some(false))
     }
   }
