@@ -74,9 +74,10 @@ let paymentListLookupNew = (
         let isInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
         let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
 
-        if isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience {
+        if (isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience) || isRedirectExperience {
           walletsList->Array.push(item.paymentMethodName)->ignore
-        } else if isRedirectExperience {
+        }
+        else {
           otherPaymentList->Array.push(item.paymentMethodName)->ignore
         }
       } else {
