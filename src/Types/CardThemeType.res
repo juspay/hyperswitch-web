@@ -19,6 +19,8 @@ type mode =
   | PazeElement
   | ExpressCheckoutElement
   | PaymentMethodsManagement
+  | ShippingAddressElement
+  | BillingAddressElement
   | NONE
 type label = Above | Floating | Never
 type themeClass = {
@@ -110,6 +112,8 @@ let getPaymentMode = val => {
   | "expressCheckout" => ExpressCheckoutElement
   | "paze" => PazeElement
   | "paymentMethodsManagement" => PaymentMethodsManagement
+  | "shippingAddressElement" => ShippingAddressElement
+  | "billingAddressElement" => BillingAddressElement
   | _ => NONE
   }
 }
