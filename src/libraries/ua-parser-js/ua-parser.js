@@ -1,34 +1,15 @@
-/////////////////////////////////////////////////////////////////////////////////
-/* UAParser.js v2.0.0
-   Copyright © 2012-2024 Faisal Salman <f@faisalman.com>
-   AGPLv3 License */ /*
-   Detect Browser, Engine, OS, CPU, and Device type/model from User-Agent data.
-   Supports browser & node.js environment.
-   Demo   : https://uaparser.dev
-   Source : https://github.com/faisalman/ua-parser-js */
-/////////////////////////////////////////////////////////////////////////////////
-
-/* jshint esversion: 3 */
-/* globals window */
-
 (function (window, undefined) {
   "use strict";
-
-  //////////////
-  // Constants
-  /////////////
 
   var LIBVERSION = "2.0.0",
     UA_MAX_LENGTH = 500,
     USER_AGENT = "user-agent",
     EMPTY = "",
     UNKNOWN = "?",
-    // typeof
     FUNC_TYPE = "function",
     UNDEF_TYPE = "undefined",
     OBJ_TYPE = "object",
     STR_TYPE = "string",
-    // properties
     UA_BROWSER = "browser",
     UA_CPU = "cpu",
     UA_DEVICE = "device",
@@ -42,7 +23,6 @@
     ARCHITECTURE = "architecture",
     MAJOR = "major",
     MODEL = "model",
-    // device types
     CONSOLE = "console",
     MOBILE = "mobile",
     TABLET = "tablet",
@@ -50,9 +30,7 @@
     WEARABLE = "wearable",
     XR = "xr",
     EMBEDDED = "embedded",
-    // browser types
     INAPP = "inapp",
-    // client hints
     BRANDS = "brands",
     FORMFACTORS = "formFactors",
     FULLVERLIST = "fullVersionList",
@@ -79,7 +57,6 @@
       FORMFACTORS,
       BITNESS,
     ],
-    // device vendors
     AMAZON = "Amazon",
     APPLE = "Apple",
     ASUS = "ASUS",
@@ -99,7 +76,6 @@
     SONY = "Sony",
     XIAOMI = "Xiaomi",
     ZEBRA = "Zebra",
-    // browsers
     CHROME = "Chrome",
     CHROMIUM = "Chromium",
     CHROMECAST = "Chromecast",
@@ -110,7 +86,6 @@
     SOGOU = "Sogou",
     PREFIX_MOBILE = "Mobile ",
     SUFFIX_BROWSER = " Browser",
-    // os
     WINDOWS = "Windows";
 
   var isWindow = typeof window !== UNDEF_TYPE,
@@ -119,10 +94,6 @@
       NAVIGATOR && NAVIGATOR.userAgentData
         ? NAVIGATOR.userAgentData
         : undefined;
-
-  ///////////
-  // Helper
-  //////////
 
   var extend = function (defaultRgx, extensions) {
       var mergedRgx = {};
@@ -222,10 +193,6 @@
       }
     };
 
-  ///////////////
-  // Map helper
-  //////////////
-
   var rgxMapper = function (ua, arrays) {
       if (!ua || !arrays) return;
 
@@ -237,13 +204,10 @@
         matches,
         match;
 
-      // loop through all regexes maps
       while (i < arrays.length && !matches) {
-        var regex = arrays[i], // even sequence (0,2,4,..)
-          props = arrays[i + 1]; // odd sequence (1,3,5,..)
+        var regex = arrays[i],
+          props = arrays[i + 1];
         j = k = 0;
-
-        // try matching uastring with regexes
         while (j < regex.length && !matches) {
           if (!regex[j]) {
             break;
@@ -254,25 +218,19 @@
             for (p = 0; p < props.length; p++) {
               match = matches[++k];
               q = props[p];
-              // check if given property is actually array
               if (typeof q === OBJ_TYPE && q.length > 0) {
                 if (q.length === 2) {
                   if (typeof q[1] == FUNC_TYPE) {
-                    // assign modified match
                     this[q[0]] = q[1].call(this, match);
                   } else {
-                    // assign given value, ignore regex match
                     this[q[0]] = q[1];
                   }
                 } else if (q.length === 3) {
-                  // check whether function or regex
                   if (typeof q[1] === FUNC_TYPE && !(q[1].exec && q[1].test)) {
-                    // call function (usually string mapper)
                     this[q[0]] = match
                       ? q[1].call(this, match, q[2])
                       : undefined;
                   } else {
-                    // sanitize match using given regex
                     this[q[0]] = match ? match.replace(q[1], q[2]) : undefined;
                   }
                 } else if (q.length === 4) {
@@ -291,7 +249,6 @@
     },
     strMapper = function (str, map) {
       for (var i in map) {
-        // check if current value is array
         if (typeof map[i] === OBJ_TYPE && map[i].length > 0) {
           for (var j = 0; j < map[i].length; j++) {
             if (has(map[i][j], str)) {
@@ -304,10 +261,6 @@
       }
       return map.hasOwnProperty("*") ? map["*"] : str;
     };
-
-  ///////////////
-  // String map
-  //////////////
 
   var windowsVersionMap = {
       ME: "4.90",
@@ -333,85 +286,52 @@
       "*": undefined,
     };
 
-  //////////////
-  // Regex map
-  /////////////
-
   var defaultRegexes = {
     browser: [
-      [
-        // Most common regardless engine
-        /\b(?:crmo|crios)\/([\w\.]+)/i, // Chrome for Android/iOS
-      ],
+      [/\b(?:crmo|crios)\/([\w\.]+)/i],
       [VERSION, [NAME, PREFIX_MOBILE + "Chrome"]],
-      [
-        /edg(?:e|ios|a)?\/([\w\.]+)/i, // Microsoft Edge
-      ],
+      [/edg(?:e|ios|a)?\/([\w\.]+)/i],
       [VERSION, [NAME, "Edge"]],
       [
-        // Presto based
-        /(opera mini)\/([-\w\.]+)/i, // Opera Mini
-        /(opera [mobiletab]{3,6})\b.+version\/([-\w\.]+)/i, // Opera Mobi/Tablet
-        /(opera)(?:.+version\/|[\/ ]+)([\w\.]+)/i, // Opera
+        /(opera mini)\/([-\w\.]+)/i,
+        /(opera [mobiletab]{3,6})\b.+version\/([-\w\.]+)/i,
+        /(opera)(?:.+version\/|[\/ ]+)([\w\.]+)/i,
       ],
       [NAME, VERSION],
-      [
-        /opios[\/ ]+([\w\.]+)/i, // Opera mini on iphone >= 8.0
-      ],
+      [/opios[\/ ]+([\w\.]+)/i],
       [VERSION, [NAME, OPERA + " Mini"]],
-      [
-        /\bop(?:rg)?x\/([\w\.]+)/i, // Opera GX
-      ],
+      [/\bop(?:rg)?x\/([\w\.]+)/i],
       [VERSION, [NAME, OPERA + " GX"]],
-      [
-        /\bopr\/([\w\.]+)/i, // Opera Webkit
-      ],
+      [/\bopr\/([\w\.]+)/i],
       [VERSION, [NAME, OPERA]],
-      [
-        // Mixed
-        /\bb[ai]*d(?:uhd|[ub]*[aekoprswx]{5,6})[\/ ]?([\w\.]+)/i, // Baidu
-      ],
+      [/\bb[ai]*d(?:uhd|[ub]*[aekoprswx]{5,6})[\/ ]?([\w\.]+)/i],
       [VERSION, [NAME, "Baidu"]],
-      [
-        /\b(?:mxbrowser|mxios|myie2)\/?([-\w\.]*)\b/i, // Maxthon
-      ],
+      [/\b(?:mxbrowser|mxios|myie2)\/?([-\w\.]*)\b/i],
       [VERSION, [NAME, "Maxthon"]],
       [
-        /(kindle)\/([\w\.]+)/i, // Kindle
+        /(kindle)\/([\w\.]+)/i,
         /(lunascape|maxthon|netfront|jasmine|blazer|sleipnir)[\/ ]?([\w\.]*)/i,
-        // Lunascape/Maxthon/Netfront/Jasmine/Blazer/Sleipnir
-        // Trident based
-        /(avant|iemobile|slim(?:browser|boat|jet))[\/ ]?([\d\.]*)/i, // Avant/IEMobile/SlimBrowser/SlimBoat/Slimjet
-        /(?:ms|\()(ie) ([\w\.]+)/i, // Internet Explorer
+        /(avant|iemobile|slim(?:browser|boat|jet))[\/ ]?([\d\.]*)/i,
+        /(?:ms|\()(ie) ([\w\.]+)/i,
 
-        // Blink/Webkit/KHTML based                                         // Flock/RockMelt/Midori/Epiphany/Silk/Skyfire/Bolt/Iron/Iridium/PhantomJS/Bowser/QupZilla/Falkon
         /(flock|rockmelt|midori|epiphany|silk|skyfire|ovibrowser|bolt|iron|vivaldi|iridium|phantomjs|bowser|qupzilla|falkon|rekonq|puffin|brave|whale(?!.+naver)|qqbrowserlite|duckduckgo|klar|helio|(?=comodo_)?dragon)\/([-\w\.]+)/i,
-        // Rekonq/Puffin/Brave/Whale/QQBrowserLite/QQ//Vivaldi/DuckDuckGo/Klar/Helio/Dragon
-        /(heytap|ovi|115)browser\/([\d\.]+)/i, // HeyTap/Ovi/115
-        /(weibo)__([\d\.]+)/i, // Weibo
+        /(heytap|ovi|115)browser\/([\d\.]+)/i,
+        /(weibo)__([\d\.]+)/i,
       ],
       [NAME, VERSION],
-      [
-        /quark(?:pc)?\/([-\w\.]+)/i, // Quark
-      ],
+      [/quark(?:pc)?\/([-\w\.]+)/i],
       [VERSION, [NAME, "Quark"]],
-      [
-        /\bddg\/([\w\.]+)/i, // DuckDuckGo
-      ],
+      [/\bddg\/([\w\.]+)/i],
       [VERSION, [NAME, "DuckDuckGo"]],
-      [
-        /(?:\buc? ?browser|(?:juc.+)ucweb)[\/ ]?([\w\.]+)/i, // UCBrowser
-      ],
+      [/(?:\buc? ?browser|(?:juc.+)ucweb)[\/ ]?([\w\.]+)/i],
       [VERSION, [NAME, "UCBrowser"]],
       [
-        /microm.+\bqbcore\/([\w\.]+)/i, // WeChat Desktop for Windows Built-in Browser
+        /microm.+\bqbcore\/([\w\.]+)/i,
         /\bqbcore\/([\w\.]+).+microm/i,
-        /micromessenger\/([\w\.]+)/i, // WeChat
+        /micromessenger\/([\w\.]+)/i,
       ],
       [VERSION, [NAME, "WeChat"]],
-      [
-        /konqueror\/([\w\.]+)/i, // Konqueror
-      ],
+      [/konqueror\/([\w\.]+)/i],
       [VERSION, [NAME, "Konqueror"]],
       [
         /trident.+rv[: ]([\w\.]{1,9})\b.+like gecko/i, // IE11
@@ -643,11 +563,6 @@
 
     device: [
       [
-        //////////////////////////
-        // MOBILES & TABLETS
-        /////////////////////////
-
-        // Samsung
         /\b(sch-i[89]0\d|shw-m380s|sm-[ptx]\w{2,4}|gt-[pn]\d{2,4}|sgh-t8[56]9|nexus 10)/i,
       ],
       [MODEL, [VENDOR, SAMSUNG], [TYPE, TABLET]],
@@ -912,7 +827,6 @@
       [VENDOR, MODEL, [TYPE, TABLET]],
       [
         /(blackberry|benq|palm(?=\-)|sonyericsson|acer|asus(?! zenw)|dell|jolla|meizu|motorola|polytron|infinix|tecno|micromax|advan)[-_ ]?([-\w]*)/i,
-        // BlackBerry/BenQ/Palm/Sony-Ericsson/Acer/Asus/Dell/Meizu/Motorola/Polytron/Infinix/Tecno/Micromax/Advan
         /; (hmd|imo) ([\w ]+?)(?: bui|\))/i, // HMD/IMO
         /(hp) ([\w ]+\w)/i, // HP iPAQ
         /(microsoft); (lumia[\w ]+)/i, // Microsoft Lumia
@@ -958,10 +872,6 @@
       [/droid.+; (ec30|ps20|tc[2-8]\d[kx])\)/i],
       [MODEL, [VENDOR, ZEBRA], [TYPE, MOBILE]],
       [
-        ///////////////////
-        // SMARTTVS
-        ///////////////////
-
         /smart-tv.+(samsung)/i, // Samsung
       ],
       [VENDOR, [TYPE, SMARTTV]],
@@ -1048,18 +958,11 @@
         [MODEL, trim],
         [TYPE, SMARTTV],
       ],
-      [
-        // SmartTV from Unidentified Vendors
-        /droid.+; ([\w- ]+) (?:android tv|smart[- ]?tv)/i,
-      ],
+      [/droid.+; ([\w- ]+) (?:android tv|smart[- ]?tv)/i],
       [MODEL, [TYPE, SMARTTV]],
       [/\b(android tv|smart[- ]?tv|opera tv|tv; rv:)\b/i],
       [[TYPE, SMARTTV]],
       [
-        ///////////////////
-        // CONSOLES
-        ///////////////////
-
         /(ouya)/i, // Ouya
         /(nintendo) (\w+)/i, // Nintendo
       ],
@@ -1077,10 +980,6 @@
       ],
       [MODEL, [VENDOR, MICROSOFT], [TYPE, CONSOLE]],
       [
-        ///////////////////
-        // WEARABLES
-        ///////////////////
-
         /\b(sm-[lr]\d\d[0156][fnuw]?s?|gear live)\b/i, // Samsung Galaxy Watch
       ],
       [MODEL, [VENDOR, SAMSUNG], [TYPE, WEARABLE]],
@@ -1116,10 +1015,6 @@
       [/droid.+; (wt63?0{2,3})\)/i],
       [MODEL, [VENDOR, ZEBRA], [TYPE, WEARABLE]],
       [
-        ///////////////////
-        // XR
-        ///////////////////
-
         /droid.+; (glass) \d/i, // Google Glass
       ],
       [MODEL, [VENDOR, GOOGLE], [TYPE, XR]],
@@ -1132,10 +1027,6 @@
       ],
       [MODEL, [VENDOR, FACEBOOK], [TYPE, XR]],
       [
-        ///////////////////
-        // EMBEDDED
-        ///////////////////
-
         /(tesla)(?: qtcarbrowser|\/[-\w\.]+)/i, // Tesla
       ],
       [VENDOR, [TYPE, EMBEDDED]],
@@ -1149,13 +1040,7 @@
       [MODEL, [VENDOR, APPLE], [TYPE, EMBEDDED]],
       [/windows iot/i],
       [[TYPE, EMBEDDED]],
-      [
-        ////////////////////
-        // MIXED (GENERIC)
-        ///////////////////
-
-        /droid .+?; ([^;]+?)(?: bui|; wv\)|\) applew).+?(mobile|vr|\d) safari/i,
-      ],
+      [/droid .+?; ([^;]+?)(?: bui|; wv\)|\) applew).+?(mobile|vr|\d) safari/i],
       [MODEL, [TYPE, strMapper, { mobile: "Mobile", xr: "VR", "*": TABLET }]],
       [
         /\b((tablet|tab)[;\/]|focus\/\d(?!.+mobile))/i, // Unidentifiable Tablet
@@ -1340,10 +1225,6 @@
     ],
   };
 
-  /////////////////
-  // Factories
-  ////////////////
-
   var defaultProps = (function () {
     var props = { init: {}, isIgnore: {}, isIgnoreRgx: {}, toString: {} };
     setProps.call(props.init, [
@@ -1387,12 +1268,10 @@
     };
 
     IData.prototype.withClientHints = function () {
-      // nodejs / non-client-hints browsers
       if (!NAVIGATOR_UADATA) {
         return item.parseCH().get();
       }
 
-      // browsers based on chromium 85+
       return NAVIGATOR_UADATA.getHighEntropyValues(CH_ALL_VALUES).then(
         function (res) {
           return item.setCH(new UACHData(res, false)).parseCH().get();
@@ -1459,10 +1338,6 @@
     return new IData();
   };
 
-  /////////////////
-  // Constructor
-  ////////////////
-
   function UACHData(uach, isHttpUACH) {
     uach = uach || {};
     setProps.call(this, CH_ALL_VALUES);
@@ -1506,7 +1381,6 @@
       if (NAVIGATOR && NAVIGATOR.userAgent == this.ua) {
         switch (this.itemType) {
           case UA_BROWSER:
-            // Brave-specific detection
             if (
               NAVIGATOR.brave &&
               typeof NAVIGATOR.brave.isBrave == FUNC_TYPE
@@ -1515,7 +1389,6 @@
             }
             break;
           case UA_DEVICE:
-            // Chrome-specific detection: check for 'mobile' value of navigator.userAgentData
             if (
               !this.get(TYPE) &&
               NAVIGATOR_UADATA &&
@@ -1523,7 +1396,6 @@
             ) {
               this.set(TYPE, MOBILE);
             }
-            // iPadOS-specific detection: identified as Mac, but has some iOS-only properties
             if (
               this.get(MODEL) == "Macintosh" &&
               NAVIGATOR &&
@@ -1535,7 +1407,6 @@
             }
             break;
           case UA_OS:
-            // Chrome-specific detection: check for 'platform' value of navigator.userAgentData
             if (
               !this.get(NAME) &&
               NAVIGATOR_UADATA &&
@@ -1650,7 +1521,6 @@
               osVersion = parseInt(majorize(osVersion), 10) >= 13 ? "11" : "10";
             this.set(NAME, osName).set(VERSION, osVersion);
           }
-          // Xbox-Specific Detection
           if (this.get(NAME) == WINDOWS && uaCH[MODEL] == "Xbox") {
             this.set(NAME, "Xbox").set(VERSION, undefined);
           }
@@ -1697,7 +1567,6 @@
       extensions = undefined;
     }
 
-    // Convert Headers object into a plain object
     if (headers && typeof headers.append === FUNC_TYPE) {
       var kv = {};
       headers.forEach(function (v, k) {
@@ -1743,7 +1612,6 @@
         }
       };
 
-    // public methods
     setProps
       .call(this, [
         ["getBrowser", createItemFunc(UA_BROWSER)],
@@ -1789,34 +1657,20 @@
   ]);
   UAParser.ENGINE = UAParser.OS = enumerize([NAME, VERSION]);
 
-  ///////////
-  // Export
-  //////////
-
-  // check js environment
   if (typeof exports !== UNDEF_TYPE) {
-    // nodejs env
     if (typeof module !== UNDEF_TYPE && module.exports) {
       exports = module.exports = UAParser;
     }
     exports.UAParser = UAParser;
   } else {
-    // requirejs env (optional)
     if (typeof define === FUNC_TYPE && define.amd) {
       define(function () {
         return UAParser;
       });
     } else if (isWindow) {
-      // browser env
       window.UAParser = UAParser;
     }
   }
-
-  // jQuery/Zepto specific (optional)
-  // Note:
-  //   In AMD env the global scope should be kept clean, but jQuery is an exception.
-  //   jQuery always exports to global scope, unless jQuery.noConflict(true) is used,
-  //   and we should catch that.
   var $ = isWindow && (window.jQuery || window.Zepto);
   if ($ && !$.ua) {
     var parser = new UAParser();
