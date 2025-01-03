@@ -68,6 +68,8 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
     Gpay,
   )
 
+  let {isKlarnaSDKFlow, isKlarnaCheckoutFlow} = KlarnaHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
+
   let klarnaTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
   let pazeTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Paze)
 
@@ -136,14 +138,18 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
               | _ => React.null
               }
             | KlarnaWallet =>
-              <SessionPaymentWrapper type_=Others>
+              <SessionPaymentWrapper type_={Others}>
                 {switch klarnaTokenObj {
-                | OtherTokenOptional(optToken) =>
-                  switch optToken {
-                  | Some(token) => <KlarnaSDKLazy sessionObj=token />
-                  | None => React.null
-                  }
-                | _ => React.null
+                  | OtherTokenOptional(optToken) =>
+                    switch (optToken, isKlarnaSDKFlow, isKlarnaCheckoutFlow) {
+                      | (Some(token), true, _) => <KlarnaSDKLazy sessionObj=token />
+                      | (_, _, true) => <KlarnaCheckoutLazy/>
+                      | _ => React.null
+                    }
+                  | _ =>
+                    <RenderIf condition={isKlarnaCheckoutFlow}>
+                      <KlarnaCheckoutLazy/>
+                    </RenderIf>
                 }}
               </SessionPaymentWrapper>
 
