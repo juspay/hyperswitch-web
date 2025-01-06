@@ -1,3 +1,18 @@
+## [0.107.2](https://github.com/juspay/hyperswitch-web/compare/v0.107.1...v0.107.2) (2025-01-06)
+
+## [0.107.1](https://github.com/juspay/hyperswitch-web/compare/v0.107.0...v0.107.1) (2025-01-06)
+
+# [0.107.0](https://github.com/juspay/hyperswitch-web/compare/v0.106.17...v0.107.0) (2025-01-03)
+
+
+### Features
+
+* klarna Checkout SDK added ([#851](https://github.com/juspay/hyperswitch-web/issues/851)) ([3011a1c](https://github.com/juspay/hyperswitch-web/commit/3011a1c61ae4cf2650cb44e7dd65364af108204a))
+
+## [0.106.17](https://github.com/juspay/hyperswitch-web/compare/v0.106.16...v0.106.17) (2024-12-31)
+
+## [0.106.16](https://github.com/juspay/hyperswitch-web/compare/v0.106.15...v0.106.16) (2024-12-25)
+
 ## [0.106.15](https://github.com/juspay/hyperswitch-web/compare/v0.106.14...v0.106.15) (2024-12-23)
 
 
