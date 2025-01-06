@@ -21,8 +21,8 @@ let checkIsSafari = () => {
 let date = date()
 let broswerInfo = () => {
   let data = UAParser.make()
-  let osType = data.os.name->Option.getOr("Undefined")
-  let osVersion = data.os.version->Option.getOr("Undefined")
+  let osType = data.os.name->Option.getOr("Unknown")
+  let osVersion = data.os.version->Option.getOr("Unknown")
   let deviceModel = data.device.model->Option.getOr("Unknown Device")
   let colorDepth =
     [1, 4, 8, 15, 16, 24, 32, 48]->Array.includes(screen.colorDepth) ? screen.colorDepth : 24
