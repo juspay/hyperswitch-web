@@ -515,10 +515,10 @@ let paymentMethodsFields = [
   },
   {
     paymentMethodName: "evoucher",
-    icon: Some(icon("cashtocode", ~size=50)),
+    icon: Some(icon("cash_voucher", ~size=19, ~width=50)),
     displayName: "E-Voucher",
     fields: [InfoElement],
-    miniIcon: Some(icon("cashtocode", ~size=19)),
+    miniIcon: Some(icon("cash_voucher", ~size=19)),
   },
   {
     paymentMethodName: "pix_transfer",
