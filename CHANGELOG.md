@@ -1,3 +1,10 @@
+## [0.107.4](https://github.com/juspay/hyperswitch-web/compare/v0.107.3...v0.107.4) (2025-01-07)
+
+
+### Bug Fixes
+
+* fix klarna_checkout getting rendered with stripe ([#857](https://github.com/juspay/hyperswitch-web/issues/857)) ([b49e6e0](https://github.com/juspay/hyperswitch-web/commit/b49e6e01c417e8f50dc9c04d6f32e79d67523880))
+
 ## [0.107.3](https://github.com/juspay/hyperswitch-web/compare/v0.107.2...v0.107.3) (2025-01-06)
 
 ## [0.107.2](https://github.com/juspay/hyperswitch-web/compare/v0.107.1...v0.107.2) (2025-01-06)
