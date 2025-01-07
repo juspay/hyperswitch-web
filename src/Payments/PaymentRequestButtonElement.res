@@ -146,10 +146,7 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
                       | (_, _, true) => <KlarnaCheckoutLazy/>
                       | _ => React.null
                     }
-                  | _ =>
-                    <RenderIf condition={isKlarnaCheckoutFlow}>
-                      <KlarnaCheckoutLazy/>
-                    </RenderIf>
+                  | _ => React.null
                 }}
               </SessionPaymentWrapper>
 
