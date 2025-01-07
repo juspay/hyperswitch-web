@@ -1,29 +1,18 @@
-open PaymentType
 open RecoilAtoms
 @react.component
 let make = (~paymentType) => {
-  let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), KlarnaRedirect)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
-  let showAddressDetails = getShowAddressDetails(
-    ~billingDetails=fields.billingDetails,
-    ~logger=loggerState,
-  )
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
 
-  let countryNames =
-    Utils.getCountryNames(Country.country)->DropdownField.updateArrayOfStringToOptionsTypeArray
-
-  let (country, setCountry) = Recoil.useRecoilState(userCountry)
-  let setCountry = val => {
-    setCountry(val)
-  }
+  let (country, _) = Recoil.useRecoilState(userCountry)
+  let (_, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   open Utils
   let clientCountryCode =
@@ -46,16 +35,18 @@ let make = (~paymentType) => {
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     let (connectors, _) =
       paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
-    let body = PaymentBody.klarnaRedirectionBody(
-      ~fullName=fullName.value,
-      ~email=email.value,
-      ~country=clientCountryCode.isoAlpha2,
-      ~connectors,
-    )
+
     if confirm.doSubmit {
       if complete {
+        let bodyArr = PaymentBody.klarnaRedirectionBody(
+          ~fullName=fullName.value,
+          ~email=email.value,
+          ~country=clientCountryCode.isoAlpha2,
+          ~connectors,
+        )
+
         intent(
-          ~bodyArr=body,
+          ~bodyArr,
           ~confirmParam=confirm.confirmParams,
           ~handleUserError=false,
           ~manualRetry=isManualRetryEnabled,
@@ -65,25 +56,13 @@ let make = (~paymentType) => {
       }
     }
   }, (email, fullName, country, isManualRetryEnabled))
+
   useSubmitPaymentData(submitCallback)
 
-  <div
-    className="flex flex-col animate-slowShow"
-    style={
-      gridGap: config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : "",
-    }>
-    <EmailPaymentInput paymentType={paymentType} />
-    <FullNamePaymentInput paymentType={paymentType} />
-    <RenderIf condition={showAddressDetails.country == Auto}>
-      <DropdownField
-        appearance=config.appearance
-        fieldName=localeString.countryLabel
-        value=country
-        setValue=setCountry
-        disabled=false
-        options=countryNames
-      />
-    </RenderIf>
+  <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
+    <DynamicFields
+      paymentType paymentMethod="pay_later" paymentMethodType="klarna" setRequiredFieldsBody
+    />
     <Surcharge paymentMethod="pay_later" paymentMethodType="klarna" />
     <InfoElement />
   </div>
