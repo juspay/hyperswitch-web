@@ -1,3 +1,45 @@
+## [0.107.4](https://github.com/juspay/hyperswitch-web/compare/v0.107.3...v0.107.4) (2025-01-07)
+
+
+### Bug Fixes
+
+* fix klarna_checkout getting rendered with stripe ([#857](https://github.com/juspay/hyperswitch-web/issues/857)) ([b49e6e0](https://github.com/juspay/hyperswitch-web/commit/b49e6e01c417e8f50dc9c04d6f32e79d67523880))
+
+## [0.107.3](https://github.com/juspay/hyperswitch-web/compare/v0.107.2...v0.107.3) (2025-01-06)
+
+## [0.107.2](https://github.com/juspay/hyperswitch-web/compare/v0.107.1...v0.107.2) (2025-01-06)
+
+## [0.107.1](https://github.com/juspay/hyperswitch-web/compare/v0.107.0...v0.107.1) (2025-01-06)
+
+# [0.107.0](https://github.com/juspay/hyperswitch-web/compare/v0.106.17...v0.107.0) (2025-01-03)
+
+
+### Features
+
+* klarna Checkout SDK added ([#851](https://github.com/juspay/hyperswitch-web/issues/851)) ([3011a1c](https://github.com/juspay/hyperswitch-web/commit/3011a1c61ae4cf2650cb44e7dd65364af108204a))
+
+## [0.106.17](https://github.com/juspay/hyperswitch-web/compare/v0.106.16...v0.106.17) (2024-12-31)
+
+## [0.106.16](https://github.com/juspay/hyperswitch-web/compare/v0.106.15...v0.106.16) (2024-12-25)
+
+## [0.106.15](https://github.com/juspay/hyperswitch-web/compare/v0.106.14...v0.106.15) (2024-12-23)
+
+
+### Bug Fixes
+
+* saved cards screen cards validity issue ([#849](https://github.com/juspay/hyperswitch-web/issues/849)) ([ef1bd85](https://github.com/juspay/hyperswitch-web/commit/ef1bd8521a58be3e61e088cf60c9e4a88b7e82fc))
+
+## [0.106.14](https://github.com/juspay/hyperswitch-web/compare/v0.106.13...v0.106.14) (2024-12-23)
+
+
+### Bug Fixes
+
+* display saved method screen condition and dynamic fields values updation issue in saved card screen ([#848](https://github.com/juspay/hyperswitch-web/issues/848)) ([aa0d088](https://github.com/juspay/hyperswitch-web/commit/aa0d088c7c56425ff815564cf79e740996649751))
+
+## [0.106.13](https://github.com/juspay/hyperswitch-web/compare/v0.106.12...v0.106.13) (2024-12-19)
+
+## [0.106.12](https://github.com/juspay/hyperswitch-web/compare/v0.106.11...v0.106.12) (2024-12-18)
+
 ## [0.106.11](https://github.com/juspay/hyperswitch-web/compare/v0.106.10...v0.106.11) (2024-12-16)
 
 
