@@ -1,3 +1,10 @@
+## [0.107.5](https://github.com/juspay/hyperswitch-web/compare/v0.107.4...v0.107.5) (2025-01-08)
+
+
+### Reverts
+
+* reverting some changes for klarna checkout ([#859](https://github.com/juspay/hyperswitch-web/issues/859)) ([18ad359](https://github.com/juspay/hyperswitch-web/commit/18ad3595f1ac27b108236c38f35ecfce9193669c))
+
 ## [0.107.4](https://github.com/juspay/hyperswitch-web/compare/v0.107.3...v0.107.4) (2025-01-07)
 
 
