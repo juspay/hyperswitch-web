@@ -11,7 +11,7 @@ let make = (~paymentType) => {
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
 
-  let (country, _) = Recoil.useRecoilState(userCountry)
+  let country = Recoil.useRecoilValueFromAtom(userCountry)
   let (_, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   open Utils
