@@ -74,10 +74,10 @@ let paymentListLookupNew = (
         let isInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
         let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
 
-        if (isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience) || isRedirectExperience {
+        // To be fixed for Klarna Checkout - PR - https://github.com/juspay/hyperswitch-web/pull/851
+        if isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience {
           walletsList->Array.push(item.paymentMethodName)->ignore
-        }
-        else {
+        } else if isRedirectExperience {
           otherPaymentList->Array.push(item.paymentMethodName)->ignore
         }
       } else {
