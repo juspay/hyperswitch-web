@@ -675,7 +675,7 @@ let make = (
             let returnUrl = dict->getString("return_url", "")
             let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`
             if redirect.contents === "always" {
-              Window.replaceRootHref(redirectUrl, shouldUseTopRedirection)
+              Utils.replaceRootHref(redirectUrl, shouldUseTopRedirection)
               resolve(JSON.Encode.null)
             } else {
               messageCurrentWindow([
@@ -703,7 +703,7 @@ let make = (
 
               let handleErrorResponse = err => {
                 if redirect.contents === "always" {
-                  Window.replaceRootHref(url, shouldUseTopRedirection)
+                  Utils.replaceRootHref(url, shouldUseTopRedirection)
                 }
                 messageCurrentWindow([
                   ("submitSuccessful", false->JSON.Encode.bool),
@@ -764,7 +764,7 @@ let make = (
             ->then(json => json->handleRetrievePaymentResponse)
             ->catch(err => {
               if redirect.contents === "always" {
-                Window.replaceRootHref(
+                Utils.replaceRootHref(
                   redirectUrl->JSON.Decode.string->Option.getOr(""),
                   shouldUseTopRedirection,
                 )

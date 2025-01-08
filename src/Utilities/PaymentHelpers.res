@@ -324,7 +324,7 @@ let rec intentCall = (
   )
   let handleOpenUrl = url => {
     if isPaymentSession {
-      Window.replaceRootHref(url, shouldUseTopRedirection)
+      Utils.replaceRootHref(url, shouldUseTopRedirection)
     } else {
       openUrl(url)
     }

@@ -422,9 +422,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
 
                 if isSdkButton && submitSuccessfulValue {
-                  Window.replaceRootHref(returnUrl, shouldUseTopRedirection)
+                  Utils.replaceRootHref(returnUrl, shouldUseTopRedirection)
                 } else if submitSuccessfulValue && redirect === "always" {
-                  Window.replaceRootHref(returnUrl, shouldUseTopRedirection)
+                  Utils.replaceRootHref(returnUrl, shouldUseTopRedirection)
                 } else if !submitSuccessfulValue {
                   resolve1(json)
                 } else {
@@ -602,7 +602,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 )
                 let url = decodedData->getString("return_url", "/")
                 if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
-                  Window.replaceRootHref(url, shouldUseTopRedirection)
+                  Utils.replaceRootHref(url, shouldUseTopRedirection)
                 } else {
                   resolve(json)
                 }

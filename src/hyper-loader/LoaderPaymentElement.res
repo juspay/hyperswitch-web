@@ -244,7 +244,7 @@ let make = (
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
             let url = val->getStringFromJson("")
-            Window.replaceRootHref(url, shouldUseTopRedirection)
+            Utils.replaceRootHref(url, shouldUseTopRedirection)
           }
         | None => ()
         }
