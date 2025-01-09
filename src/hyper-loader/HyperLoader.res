@@ -7,14 +7,22 @@ let loadStripe = (str, option) => {
   loadHyper(str, option)
 }
 
-let removeBeforeUnloadEventListener: ('ev => unit) => unit = handler => {
+let removeBeforeUnloadEventListeners: array<'ev => unit> => unit = handlers => {
   let iframeMessageHandler = (ev: Types.event) => {
     let dict = ev.data->Identity.anyTypeToJson->Utils.getDictFromJson
     dict
     ->Dict.get("disableBeforeUnloadEventListener")
     ->Option.map(shouldRemove => {
       if shouldRemove->JSON.Decode.bool->Option.getOr(false) {
-        Window.removeEventListener("beforeunload", handler)
+        try {
+          handlers
+          ->Array.map(handler => {
+            Window.removeEventListener("beforeunload", handler)
+          })
+          ->ignore
+        } catch {
+        | err => Js.Console.error2("Incorrect usage of removeBeforeUnloadEventListeners hook", err)
+        }
       }
     })
     ->ignore
@@ -27,7 +35,7 @@ let removeBeforeUnloadEventListener: ('ev => unit) => unit = handler => {
 @val external window: {..} = "window"
 window["Hyper"] = Hyper.make
 window["Hyper"]["init"] = Hyper.make
-window["removeBeforeUnloadEventListener"] = removeBeforeUnloadEventListener
+window["removeBeforeUnloadEventListeners"] = removeBeforeUnloadEventListeners
 
 let isWordpress = window["wp"] !== JSON.Encode.null
 if !isWordpress {

@@ -141,11 +141,12 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ->Option.getOr(JSON.Encode.null)
       ->getDictFromJson
       ->getBool("isPreloadEnabled", true)
-    let shouldUseTopRedirection =
+    let redirectionFlags =
       options
       ->Option.getOr(JSON.Encode.null)
       ->getDictFromJson
-      ->getBool("shouldUseTopRedirection", false)
+      ->getJsonObjectFromDict("redirectionFlags")
+      ->RecoilAtomTypes.decodeRedirectionFlags(RecoilAtoms.defaultRedirectionFlags)
     let analyticsMetadata =
       options
       ->Option.getOr(JSON.Encode.null)
@@ -422,9 +423,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
 
                 if isSdkButton && submitSuccessfulValue {
-                  Utils.replaceRootHref(returnUrl, shouldUseTopRedirection)
+                  Utils.replaceRootHref(returnUrl, redirectionFlags)
                 } else if submitSuccessfulValue && redirect === "always" {
-                  Utils.replaceRootHref(returnUrl, shouldUseTopRedirection)
+                  Utils.replaceRootHref(returnUrl, redirectionFlags)
                 } else if !submitSuccessfulValue {
                   resolve1(json)
                 } else {
@@ -516,7 +517,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.getOr(JSON.Encode.null)
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
-          ~shouldUseTopRedirection,
+          ~redirectionFlags,
         )
       }
 
@@ -602,7 +603,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 )
                 let url = decodedData->getString("return_url", "/")
                 if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
-                  Utils.replaceRootHref(url, shouldUseTopRedirection)
+                  Utils.replaceRootHref(url, redirectionFlags)
                 } else {
                   resolve(json)
                 }
@@ -699,7 +700,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~publishableKey,
           ~logger=Some(logger),
           ~ephemeralKey=ephemeralKey.contents,
-          ~shouldUseTopRedirection,
+          ~redirectionFlags,
         )
       }
 

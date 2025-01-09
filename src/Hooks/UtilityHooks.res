@@ -62,16 +62,29 @@ let useSendEventsToParent = eventsToSendToParent => {
   })
 }
 
-let useUpdateShouldUseTopRedirection = () => {
-  let setShouldUseTopRedirection = Recoil.useSetRecoilState(RecoilAtoms.shouldUseTopRedirectionAtom)
-  let updateTopRedirectionAtom = paymentOptions => {
+let useUpdateRedirectionFlags = () => {
+  let setRedirectionFlags = Recoil.useSetRecoilState(RecoilAtoms.redirectionFlagsAtom)
+  let updateRedirectionFlagsAtom = paymentOptions => {
     paymentOptions
     ->Dict.get("shouldUseTopRedirection")
     ->Option.flatMap(JSON.Decode.bool)
     ->Option.map(useTop => {
-      setShouldUseTopRedirection(_ => useTop)
+      setRedirectionFlags(cv => {
+        shouldUseTopRedirection: useTop,
+        shouldRemoveBeforeUnloadEvents: cv.shouldRemoveBeforeUnloadEvents,
+      })
+    })
+    ->ignore
+    paymentOptions
+    ->Dict.get("shouldRemoveBeforeUnloadEvents")
+    ->Option.flatMap(JSON.Decode.bool)
+    ->Option.map(removeEvent => {
+      setRedirectionFlags(cv => {
+        shouldUseTopRedirection: cv.shouldUseTopRedirection,
+        shouldRemoveBeforeUnloadEvents: removeEvent,
+      })
     })
     ->ignore
   }
-  updateTopRedirectionAtom
+  updateRedirectionFlagsAtom
 }

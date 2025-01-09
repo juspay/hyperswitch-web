@@ -19,7 +19,7 @@ let make = (
   ~logger: option<HyperLogger.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
-  ~shouldUseTopRedirection,
+  ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
   try {
     let iframeRef = []
@@ -310,15 +310,29 @@ let make = (
       ) => {
         open Promise
 
-        let widgetOptions =
-          [
-            ("clientSecret", clientSecret->JSON.Encode.string),
-            ("appearance", appearance),
-            ("locale", locale),
-            ("loader", loader),
-            ("fonts", fonts),
-            ("shouldUseTopRedirection", shouldUseTopRedirection->JSON.Encode.bool),
-          ]->getJsonFromArrayOfJson
+        let widgetOptions = [
+          ("clientSecret", clientSecret->JSON.Encode.string),
+          ("appearance", appearance),
+          ("locale", locale),
+          ("loader", loader),
+          ("fonts", fonts),
+          (
+            "redirectionFlags",
+            {
+              let dict = Dict.fromArray([
+                (
+                  "shouldUseTopRedirection",
+                  JSON.Encode.bool(redirectionFlags.shouldUseTopRedirection),
+                ),
+                (
+                  "shouldRemoveBeforeUnloadEvents",
+                  JSON.Encode.bool(redirectionFlags.shouldRemoveBeforeUnloadEvents),
+                ),
+              ])
+              JSON.Encode.object(dict)
+            },
+          ),
+        ]->getJsonFromArrayOfJson
         let message = [
           (
             "paymentElementCreate",
@@ -675,7 +689,7 @@ let make = (
             let returnUrl = dict->getString("return_url", "")
             let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`
             if redirect.contents === "always" {
-              Utils.replaceRootHref(redirectUrl, shouldUseTopRedirection)
+              Utils.replaceRootHref(redirectUrl, redirectionFlags)
               resolve(JSON.Encode.null)
             } else {
               messageCurrentWindow([
@@ -703,7 +717,7 @@ let make = (
 
               let handleErrorResponse = err => {
                 if redirect.contents === "always" {
-                  Utils.replaceRootHref(url, shouldUseTopRedirection)
+                  Utils.replaceRootHref(url, redirectionFlags)
                 }
                 messageCurrentWindow([
                   ("submitSuccessful", false->JSON.Encode.bool),
@@ -766,7 +780,7 @@ let make = (
               if redirect.contents === "always" {
                 Utils.replaceRootHref(
                   redirectUrl->JSON.Decode.string->Option.getOr(""),
-                  shouldUseTopRedirection,
+                  redirectionFlags,
                 )
                 resolve(JSON.Encode.null)
               } else {
@@ -1288,7 +1302,7 @@ let make = (
         setElementIframeRef,
         iframeRef,
         mountPostMessage,
-        ~shouldUseTopRedirection,
+        ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

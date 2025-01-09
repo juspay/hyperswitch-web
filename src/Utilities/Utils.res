@@ -1464,11 +1464,13 @@ let isDigitLimitExceeded = (val, ~digit) => {
 }
 
 /* Redirect Handling */
-let replaceRootHref = (href: string, shouldUseTopRedirection: bool) => {
-  switch shouldUseTopRedirection {
+let replaceRootHref = (href: string, redirectionFlags: RecoilAtomTypes.redirectionFlags) => {
+  if redirectionFlags.shouldRemoveBeforeUnloadEvents {
+    handleBeforeRedirectPostMessage()
+  }
+  switch redirectionFlags.shouldUseTopRedirection {
   | true =>
     try {
-      handleBeforeRedirectPostMessage()
       setTimeout(() => {
         Window.Top.Location.replace(href)
       }, 100)->ignore

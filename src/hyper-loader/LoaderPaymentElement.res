@@ -15,7 +15,7 @@ let make = (
   iframeRef,
   mountPostMessage,
   ~isPaymentManagementElement=false,
-  ~shouldUseTopRedirection,
+  ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
   try {
     let mountId = ref("")
@@ -244,7 +244,7 @@ let make = (
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
             let url = val->getStringFromJson("")
-            Utils.replaceRootHref(url, shouldUseTopRedirection)
+            Utils.replaceRootHref(url, redirectionFlags)
           }
         | None => ()
         }
