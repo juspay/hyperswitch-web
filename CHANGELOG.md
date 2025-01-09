@@ -1,3 +1,10 @@
+## [0.107.6](https://github.com/juspay/hyperswitch-web/compare/v0.107.5...v0.107.6) (2025-01-09)
+
+
+### Bug Fixes
+
+* added initiative context back for trustpay applepay ([#861](https://github.com/juspay/hyperswitch-web/issues/861)) ([b43ce26](https://github.com/juspay/hyperswitch-web/commit/b43ce261c2dfe093b0f2eb5176152db3c9e1e442))
+
 ## [0.107.5](https://github.com/juspay/hyperswitch-web/compare/v0.107.4...v0.107.5) (2025-01-08)
 
 
