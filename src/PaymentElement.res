@@ -521,7 +521,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
-    <RenderIf condition={!showFields && displaySavedPaymentMethods}>
+    <RenderIf
+      condition={!showFields &&
+      (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay)}>
       <SavedMethods
         paymentToken
         setPaymentToken
