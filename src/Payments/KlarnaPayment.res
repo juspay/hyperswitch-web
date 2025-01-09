@@ -1,4 +1,5 @@
 open RecoilAtoms
+open Utils
 @react.component
 let make = (~paymentType) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -6,19 +7,12 @@ let make = (~paymentType) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), KlarnaRedirect)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
 
   let country = Recoil.useRecoilValueFromAtom(userCountry)
-  let (_, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-
-  open Utils
-  let clientCountryCode =
-    Country.country
-    ->Array.find(item => item.countryName == country)
-    ->Option.getOr(Country.defaultTimeZone)
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
@@ -33,17 +27,13 @@ let make = (~paymentType) => {
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
-    let (connectors, _) =
-      paymentMethodListValue->PaymentUtils.getConnectors(PayLater(Klarna(Redirect)))
 
     if confirm.doSubmit {
       if complete {
-        let bodyArr = PaymentBody.klarnaRedirectionBody(
-          ~fullName=fullName.value,
-          ~email=email.value,
-          ~country=clientCountryCode.isoAlpha2,
-          ~connectors,
-        )
+        let bodyArr =
+          PaymentBody.dynamicPaymentBody("pay_later", "klarna")->mergeAndFlattenToTuples(
+            requiredFieldsBody,
+          )
 
         intent(
           ~bodyArr,
