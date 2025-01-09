@@ -7,6 +7,8 @@ let make = (
   ~cvcProps,
   ~paymentType,
   ~sessions,
+  ~isClickToPayAuthenticateError,
+  ~setIsClickToPayAuthenticateError,
 ) => {
   open CardUtils
   open Utils
@@ -21,7 +23,6 @@ let make = (
     ->Option.getOr([])
     ->Array.map(obj => obj->PaymentType.convertClickToPayCardToCustomerMethod)
 
-  let (isClickToPayAuthenticateError, setIsClickToPayAuthenticateError) = React.useState(_ => false)
   let (isCTPAuthenticateNotYouClicked, setIsCTPAuthenticateNotYouClicked) = React.useState(_ =>
     false
   )

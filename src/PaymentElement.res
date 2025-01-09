@@ -49,12 +49,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     setLoadSavedCards: (savedCardsLoadState => savedCardsLoadState) => unit,
   ) = React.useState(_ => LoadingSavedCards)
 
+  let (isClickToPayAuthenticateError, setIsClickToPayAuthenticateError) = React.useState(_ => false)
+
   let isShowPaymentMethodsDependingOnClickToPay = React.useMemo(() => {
-    clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length > 0 ||
+    (clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length > 0 ||
     clickToPayConfig.isReady->Option.getOr(false) &&
       clickToPayConfig.clickToPayCards->Option.isNone ||
-    clickToPayConfig.email !== ""
-  }, [clickToPayConfig])
+    clickToPayConfig.email !== "") && !isClickToPayAuthenticateError
+  }, (clickToPayConfig, isClickToPayAuthenticateError))
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
@@ -521,7 +523,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     </RenderIf>
     <RenderIf condition={!showFields && displaySavedPaymentMethods}>
       <SavedMethods
-        paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType sessions
+        paymentToken
+        setPaymentToken
+        savedMethods
+        loadSavedCards
+        cvcProps
+        paymentType
+        sessions
+        isClickToPayAuthenticateError
+        setIsClickToPayAuthenticateError
       />
     </RenderIf>
     <RenderIf
