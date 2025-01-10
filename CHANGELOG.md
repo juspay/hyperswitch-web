@@ -1,3 +1,10 @@
+## [0.107.7](https://github.com/juspay/hyperswitch-web/compare/v0.107.6...v0.107.7) (2025-01-10)
+
+
+### Bug Fixes
+
+* checkbox margin issue ([#864](https://github.com/juspay/hyperswitch-web/issues/864)) ([8f1f2db](https://github.com/juspay/hyperswitch-web/commit/8f1f2db494febeb6f112ab608bd08510d0e42515))
+
 ## [0.107.6](https://github.com/juspay/hyperswitch-web/compare/v0.107.5...v0.107.6) (2025-01-09)
 
 
