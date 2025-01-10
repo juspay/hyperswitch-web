@@ -74,6 +74,9 @@ let make = (
                           clickToPayCards: Some(cards),
                         })
                         ele.replaceChildren()
+                        if cards->Array.length === 0 {
+                          setIsClickToPayAuthenticateError(_ => true)
+                        }
                         if cards->Array.length === 0 && savedMethods->Array.length === 0 {
                           setShowFields(_ => true)
                         }
