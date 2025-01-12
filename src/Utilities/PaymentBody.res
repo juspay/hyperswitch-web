@@ -355,6 +355,20 @@ let klarnaSDKbody = (~token, ~connectors) => [
   ),
 ]
 
+let klarnaCheckoutBody = (~connectors) => {
+  open Utils
+  let checkoutBody=[]->Utils.getJsonFromArrayOfJson
+  let payLaterBody = [("klarna_checkout", checkoutBody)]->getJsonFromArrayOfJson
+  let paymentMethodData = [("pay_later", payLaterBody)]->getJsonFromArrayOfJson
+  [
+    ("payment_method", "pay_later"->JSON.Encode.string),
+    ("payment_method_type", "klarna"->JSON.Encode.string),
+    ("payment_experience", "redirect_to_url"->JSON.Encode.string),
+    ("connector", connectors->getArrofJsonString->JSON.Encode.array),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let paypalRedirectionBody = (~connectors) => [
   ("payment_method", "wallet"->JSON.Encode.string),
   ("payment_method_type", "paypal"->JSON.Encode.string),
