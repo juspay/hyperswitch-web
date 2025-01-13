@@ -63,7 +63,7 @@ let make = (
                         let cards =
                           data
                           ->Utils.getDictFromJson
-                          ->Utils.getJsonFromDict("cards", Js.Json.null)
+                          ->Utils.getJsonFromDict("cards", JSON.Encode.null)
                           ->JSON.Decode.array
                           ->Option.flatMap(arr => Some(
                             arr->Array.map(ClickToPayHelpers.clickToPayCardItemToObjMapper),
@@ -92,7 +92,7 @@ let make = (
                           let exceptionMessage =
                             errException
                             ->getDictFromJson
-                            ->getJsonFromDict("message", Js.Json.null)
+                            ->getJsonFromDict("message", JSON.Encode.null)
                             ->JSON.Decode.string
                             ->Option.getOr("")
 

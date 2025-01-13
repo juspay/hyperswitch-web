@@ -56,8 +56,8 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setCon
   }
 
   let formatPhoneNumber: string => string = value => {
-    if Js.String.startsWith(value, "+") {
-      if Js.String.includes(value, " ") {
+    if String.startsWith(value, "+") {
+      if String.includes(value, " ") {
         value
       } else {
         String.replaceRegExp(value, %re("/^\+(\d{1,3})(\d+)$/"), "+$1 $2")

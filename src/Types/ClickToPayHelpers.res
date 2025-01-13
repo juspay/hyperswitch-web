@@ -389,7 +389,7 @@ let initializeMastercardCheckout = (
               ~value="Mastercard Checkout Service not initialized",
               ~eventName=CLICK_TO_PAY_FLOW,
             )
-            reject(Js.Exn.raiseError("Mastercard Checkout Service not initialized"))
+            reject(Exn.raiseError("Mastercard Checkout Service not initialized"))
           }
         }
       } catch {
@@ -409,7 +409,7 @@ let initializeMastercardCheckout = (
         ~value="MastercardCheckoutServices is not available",
         ~eventName=CLICK_TO_PAY_FLOW,
       )
-      Js.Exn.raiseError("MastercardCheckoutServices is not available")
+      Exn.raiseError("MastercardCheckoutServices is not available")
     }
   }
 }
@@ -484,7 +484,7 @@ let authenticate = async (payload: authenticateInputPayload, logger: HyperLogger
           ~value="Mastercard Checkout Service not initialized",
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        Error(Js.Exn.raiseError("Mastercard Checkout Service not initialized"))
+        Error(Exn.raiseError("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
@@ -520,7 +520,7 @@ let checkoutWithCard = async (
           ~value="Mastercard Checkout Service not initialized",
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        Error(Js.Exn.raiseError("Mastercard Checkout Service not initialized"))
+        Error(Exn.raiseError("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
@@ -559,7 +559,7 @@ let encryptCardForClickToPay = async (
           ~value="Mastercard Checkout Service not initialized",
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        Error(Js.Exn.raiseError("Mastercard Checkout Service not initialized"))
+        Error(Exn.raiseError("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
@@ -594,7 +594,7 @@ let checkoutWithNewCard = async (
           ~value="Mastercard Checkout Service not initialized",
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        Error(Js.Exn.raiseError("Mastercard Checkout Service not initialized"))
+        Error(Exn.raiseError("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
@@ -695,13 +695,13 @@ let loadMastercardScript = (clickToPayToken, isProd, logger: HyperLogger.loggerM
           )
           // Initialize after script loads
           initializeMastercardCheckout(clickToPayToken, logger)
-          ->Promise.then(
+          ->then(
             resp => {
               resp->resolve
               Promise.resolve()
             },
           )
-          ->Promise.catch(
+          ->catch(
             err => {
               err->reject
               Promise.resolve()
@@ -716,7 +716,7 @@ let loadMastercardScript = (clickToPayToken, isProd, logger: HyperLogger.loggerM
             ~value="Error loading Mastercard script",
             ~eventName=CLICK_TO_PAY_SCRIPT,
           )
-          let exn = Js.Exn.raiseError("Failed to load Mastercard script")
+          let exn = Exn.raiseError("Failed to load Mastercard script")
           exn->reject
         })
 
@@ -774,14 +774,14 @@ let defaultParamUrl = {
 }
 
 let urlToParamUrlItemToObjMapper = url => {
-  let params = url->Js.String2.replace("?", "")->Js.String2.split("&")
+  let params = url->String.replace("?", "")->String.split("&")
   params
-  ->Js.Array2.filter(param => param !== "")
-  ->Js.Array2.map(param => {
-    let paramValues = param->Js.String2.split("=")
+  ->Array.filter(param => param !== "")
+  ->Array.map(param => {
+    let paramValues = param->String.split("=")
     {
-      key: paramValues->Belt.Array.get(0)->Belt.Option.getWithDefault(""),
-      value: paramValues->Belt.Array.get(1)->Belt.Option.getWithDefault(""),
+      key: paramValues->Array.get(0)->Option.getOr(""),
+      value: paramValues->Array.get(1)->Option.getOr(""),
     }
   })
 }
@@ -825,7 +825,7 @@ let handleProceedToPay = async (
         let checkoutResp = await checkoutWithCard(~windowRef=window, ~srcDigitalCardId, ~logger)
         switch checkoutResp {
         | Ok(response) => response->handleSuccessResponse
-        | Error(_) => closeWindow(ERROR, Js.Json.null)
+        | Error(_) => closeWindow(ERROR, JSON.Encode.null)
         }
       }
     | None => {
@@ -833,7 +833,7 @@ let handleProceedToPay = async (
           ~value="Click to Pay window reference is null",
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        closeWindow(ERROR, Js.Json.null)
+        closeWindow(ERROR, JSON.Encode.null)
       }
     }
   }
@@ -892,7 +892,7 @@ let handleProceedToPay = async (
 
         switch checkoutResp {
         | Ok(response) => response->handleSuccessResponse
-        | Error(_) => closeWindow(ERROR, Js.Json.null)
+        | Error(_) => closeWindow(ERROR, JSON.Encode.null)
         }
       }
     | None => {
@@ -900,7 +900,7 @@ let handleProceedToPay = async (
           ~value="Click to Pay window reference is null",
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        closeWindow(ERROR, Js.Json.null)
+        closeWindow(ERROR, JSON.Encode.null)
       }
     }
   }
@@ -920,7 +920,7 @@ let handleProceedToPay = async (
         ~value=`Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
         ~eventName=CLICK_TO_PAY_FLOW,
       )
-      closeWindow(ERROR, Js.Json.null)
+      closeWindow(ERROR, JSON.Encode.null)
     }
   }
 }
@@ -932,7 +932,7 @@ external signOutMastercard: mastercardCheckoutServices => promise<JSON.t> = "sig
 // Then add the signOut function implementation
 let signOut = async () => {
   try {
-    Js.Console.log("signOut")
+    Console.log("signOut")
     deleteLocalStorage(~key=recognitionTokenCookieName)
 
     switch mcCheckoutService.contents {
@@ -941,13 +941,13 @@ let signOut = async () => {
         Ok(signOutResp)
       }
     | None => {
-        Js.Console.error("Mastercard Checkout Service not initialized")
-        Error(Js.Exn.raiseError("Mastercard Checkout Service not initialized"))
+        Console.error("Mastercard Checkout Service not initialized")
+        Error(Exn.raiseError("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
   | error => {
-      Js.Console.error2("Error during signOut:", error)
+      Console.error2("Error during signOut:", error)
       Error(error)
     }
   }

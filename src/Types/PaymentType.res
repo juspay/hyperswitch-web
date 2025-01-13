@@ -1104,16 +1104,16 @@ let convertClickToPayCardToCustomerMethod = (
   paymentMethodIssuer: None,
   card: {
     scheme: Some(
-      switch clickToPayCard.paymentCardDescriptor->Js.String2.toLowerCase {
+      switch clickToPayCard.paymentCardDescriptor->String.toLowerCase {
       | "amex" => "AmericanExpress"
       | "mastercard" => "Mastercard"
       | "visa" => "Visa"
       | "discover" => "Discover"
       | other =>
         other
-        ->Js.String2.charAt(0)
-        ->Js.String.toUpperCase
-        ->Js.String.concat(other->Js.String2.sliceToEnd(~from=1)->Js.String.toLowerCase)
+        ->String.charAt(0)
+        ->String.toUpperCase
+        ->String.concat(other->String.sliceToEnd(~start=1)->String.toLowerCase)
       },
     ),
     last4Digits: clickToPayCard.panLastFour,

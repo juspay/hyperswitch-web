@@ -14,7 +14,7 @@ let make = (
   let css = SaveDetailsCheckbox.saveDetailsCssStyle(themeObj)
 
   let getPrivacyNoticeUrl = () => {
-    switch Js.String.toLowerCase(clickToPayCardBrand) {
+    switch String.toLowerCase(clickToPayCardBrand) {
     | "mastercard" => "https://www.mastercard.com/global/click-to-pay/en-us/privacy-notice.html"
     | "visa" => "https://www.visa.com.hk/en_HK/legal/global-privacy-notice.html"
     | _ => "https://www.mastercard.com/global/click-to-pay/en-us/privacy-notice.html"
@@ -22,7 +22,7 @@ let make = (
   }
 
   let getTermsUrl = () => {
-    switch Js.String.toLowerCase(clickToPayCardBrand) {
+    switch String.toLowerCase(clickToPayCardBrand) {
     | "mastercard" => "https://www.mastercard.com/global/click-to-pay/en-us/terms-of-use.html"
     | "visa" => "https://www.visa.com.hk/en_HK/legal/visa-checkout/terms-of-service.html"
     | _ => "https://www.mastercard.com/global/click-to-pay/en-us/terms-of-use.html"
