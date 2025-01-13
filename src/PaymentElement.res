@@ -262,9 +262,17 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           resolve()
         })
         ->ignore
-      | None => ()
+      | None =>
+        setClickToPayConfig(prev => {
+          ...prev,
+          isReady: Some(false),
+        })
       }
-    | _ => ()
+    | _ =>
+      setClickToPayConfig(prev => {
+        ...prev,
+        isReady: Some(false),
+      })
     }
   }
 
@@ -521,6 +529,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
+    <RenderIf condition={clickToPayConfig.isReady->Option.isNone}>
+      <ClickToPayHelpers.SrcLoader />
+    </RenderIf>
     <RenderIf
       condition={!showFields &&
       (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay)}>
@@ -538,7 +549,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     </RenderIf>
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
-        showFields}>
+      showFields &&
+      clickToPayConfig.isReady->Option.isSome}>
       <div className="flex flex-col place-items-center">
         <ErrorBoundary
           key="payment_request_buttons_all"
