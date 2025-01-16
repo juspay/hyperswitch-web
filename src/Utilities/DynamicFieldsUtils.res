@@ -819,11 +819,6 @@ let useSubmitCallback = () => {
     logger,
   )
   let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
-    userBankAccountNumber,
-    "bankAccountNumber",
-    logger,
-  )
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -860,12 +855,6 @@ let useSubmitCallback = () => {
         setCity(prev => {
           ...prev,
           errorString: localeString.cityEmptyText,
-        })
-      }
-      if bankAccountNumber.value === "" {
-        setBankAccountNumber(prev => {
-          ...prev,
-          errorString: localeString.ibanEmptyText,
         })
       }
     }
