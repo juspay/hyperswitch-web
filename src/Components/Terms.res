@@ -6,12 +6,18 @@ let make = (~mode: PaymentModeType.payment) => {
   let cardTermsValue =
     customMessageForCardTerms->String.length > 0
       ? customMessageForCardTerms
-      : localeString.cardTerms(business.name)
+      : LocaleStringHelper.getCardTerms(localeString, business.name)
 
   let terms = switch mode {
-  | ACHBankDebit => (localeString.achBankDebitTerms(business.name), terms.usBankAccount)
-  | SepaBankDebit => (localeString.sepaDebitTerms(business.name), terms.sepaDebit)
-  | BecsBankDebit => (localeString.becsDebitTerms, terms.auBecsDebit)
+  | ACHBankDebit => (
+      LocaleStringHelper.getAchBankDebitTerms(localeString, business.name),
+      terms.usBankAccount,
+    )
+  | SepaBankDebit => (
+      LocaleStringHelper.getSepaDebitTerms(localeString, business.name),
+      terms.sepaDebit,
+    )
+  | BecsBankDebit => (localeString.becsDebitTermsWeb, terms.auBecsDebit)
   | Card => (cardTermsValue, terms.card)
   | _ => ("", Auto)
   }

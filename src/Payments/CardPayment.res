@@ -183,8 +183,12 @@ let make = (
             setCardError(_ => localeString.enterValidCardNumberErrorText)
             setUserError(localeString.enterValidDetailsText)
           } else {
-            setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
-            setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+            setCardError(_ =>
+              LocaleStringHelper.getCardBrandConfiguredErrorText(localeString, cardBrand)
+            )
+            setUserError(
+              LocaleStringHelper.getCardBrandConfiguredErrorText(localeString, cardBrand),
+            )
           }
         }
         if cardExpiry === "" {

@@ -259,7 +259,11 @@ let make = (~integrateError, ~logger) => {
       </div>
       {switch secondsUntilRedirect {
       | Some(seconds) =>
-        <div className="mt-10"> {React.string(seconds->localeString.linkRedirectionText)} </div>
+        <div className="mt-10">
+          {React.string(
+            LocaleStringHelper.getLinkRedirectionText(localeString, seconds->Int.toString),
+          )}
+        </div>
       | None => React.null
       }}
     </div>
@@ -302,7 +306,9 @@ let make = (~integrateError, ~logger) => {
                   </div>
                   <div className="lg:mx-5">
                     <div className="self-center text-xl font-semibold">
-                      {React.string(merchantName->localeString.payoutFromText)}
+                      {React.string(
+                        LocaleStringHelper.getPayoutFromText(localeString, merchantName),
+                      )}
                     </div>
                     <div className="flex flex-row lg:mt-1">
                       <div className="font-semibold text-xs">
@@ -314,7 +320,9 @@ let make = (~integrateError, ~logger) => {
                   <div
                     className="mt-4 px-4 py-1.5 bg-gray-200 text-[13px] rounded-full w-max text-black
                     lg:w-full lg:rounded-none lg:rounded-b-lg">
-                    {React.string(options.sessionExpiry->localeString.linkExpiryInfo)}
+                    {React.string(
+                      LocaleStringHelper.getLinkExpiryInfo(localeString, options.sessionExpiry),
+                    )}
                   </div>
                 </div>
               </div>

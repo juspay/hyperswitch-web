@@ -66,12 +66,12 @@ let defaultConfig = {
 type recoilConfig = {
   config: configClass,
   themeObj: themeClass,
-  localeString: LocaleStringTypes.localeStrings,
+  localeString: LocaleStringTypes.localeStringsWebAndroid,
   constantString: LocaleStringTypes.constantStrings,
   showLoader: bool,
 }
 
-let getLocaleObject = async string => {
+let getLocaleObject = async (string, ~logger: HyperLogger.loggerMake) => {
   try {
     let locale = if string == "auto" {
       Window.Navigator.language
@@ -79,31 +79,41 @@ let getLocaleObject = async string => {
       string
     }
 
-    let promiseLocale = switch locale->LocaleStringHelper.mapLocalStringToTypeLocale {
-    | EN => Js.import(EnglishLocale.localeStrings)
-    | HE => Js.import(HebrewLocale.localeStrings)
-    | FR => Js.import(FrenchLocale.localeStrings)
-    | EN_GB => Js.import(EnglishGBLocale.localeStrings)
-    | AR => Js.import(ArabicLocale.localeStrings)
-    | JA => Js.import(JapaneseLocale.localeStrings)
-    | DE => Js.import(DeutschLocale.localeStrings)
-    | FR_BE => Js.import(FrenchBelgiumLocale.localeStrings)
-    | ES => Js.import(SpanishLocale.localeStrings)
-    | CA => Js.import(CatalanLocale.localeStrings)
-    | ZH => Js.import(ChineseLocale.localeStrings)
-    | PT => Js.import(PortugueseLocale.localeStrings)
-    | IT => Js.import(ItalianLocale.localeStrings)
-    | PL => Js.import(PolishLocale.localeStrings)
-    | NL => Js.import(DutchLocale.localeStrings)
-    | SV => Js.import(SwedishLocale.localeStrings)
-    | RU => Js.import(RussianLocale.localeStrings)
-    | ZH_HANT => Js.import(TraditionalChineseLocale.localeStrings)
+    let baseUrl = switch (GlobalVars.isProd, GlobalVars.isSandbox, GlobalVars.isInteg) {
+    | (true, _, _) => "https://checkout.hyperswitch.io"
+    | (_, true, _) => "https://beta.hyperswitch.io"
+    | (_, _, true) => "https://dev.hyperswitch.io"
+    | (_, _, _) => "https://dev.hyperswitch.io"
+    }
+    let localeStringEndPoint = `${baseUrl}/assets/v1/locales/${locale}`
+
+    let fetchLocale = endpoint => {
+      fetchApi(endpoint, ~method=#GET)
+      ->GZipUtils.extractJson
+      ->Promise.then(data => {
+        Promise.resolve(LocaleStringHelper.getLocaleStringsFromJson(data))
+      })
     }
 
-    let awaitedLocaleValue = await promiseLocale
-    awaitedLocaleValue
+    let localeValue =
+      await fetchLocale(localeStringEndPoint)
+      ->Promise.catch(_ => {
+        fetchLocale(`${baseUrl}/assets/v1/locales/en`)
+      })
+      ->Promise.catch(_ => {
+        logger.setLogError(
+          ~value="Failed to fetch locale strings S",
+          ~eventName=S3_API,
+          ~logType=ERROR,
+          ~logCategory=USER_ERROR,
+        )
+        // logger
+        Promise.resolve(LocaleStringHelper.defaultLocale)
+      })
+
+    localeValue
   } catch {
-  | _ => EnglishLocale.localeStrings
+  | _ => LocaleStringHelper.defaultLocale
   }
 }
 
@@ -119,7 +129,7 @@ let getConstantStringsObject = async () => {
 let defaultRecoilConfig: recoilConfig = {
   config: defaultConfig,
   themeObj: defaultConfig.appearance.variables,
-  localeString: EnglishLocale.localeStrings,
+  localeString: LocaleStringHelper.defaultLocale,
   constantString: ConstantStrings.constantStrings,
   showLoader: false,
 }

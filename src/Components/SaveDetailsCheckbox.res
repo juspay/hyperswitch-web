@@ -53,7 +53,7 @@ let make = (~isChecked, ~setIsChecked) => {
   } else if customMessageForCardTerms->String.length > 0 {
     customMessageForCardTerms
   } else {
-    localeString.cardTerms(business.name)
+    LocaleStringHelper.getCardTerms(localeString, business.name)
   }
 
   <div className={`Checkbox ${checkboxState} flex flex-row gap-2 items-center`}>

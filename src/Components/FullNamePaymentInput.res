@@ -13,7 +13,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
   let validateName = (
     val: string,
     prev: RecoilAtomTypes.field,
-    localeString: LocaleStringTypes.localeStrings,
+    localeString: LocaleStringTypes.localeStringsWebAndroid,
   ) => {
     let isValid = val !== "" && %re("/^\D*$/")->RegExp.test(val)
     let errorString = if val === "" {
@@ -54,7 +54,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
       if fullName.value == "" {
         setFullName(prev => {
           ...prev,
-          errorString: fieldName->localeString.nameEmptyText,
+          errorString: LocaleStringHelper.getNameEmptyText(localeString, fieldName),
         })
       } else if !(fullName.isValid->Option.getOr(false)) {
         setFullName(prev => {
@@ -67,7 +67,7 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
           if !DynamicFieldsUtils.checkIfNameIsValid(requiredFields, FullName, fullName) {
             setFullName(prev => {
               ...prev,
-              errorString: fieldName->localeString.completeNameEmptyText,
+              errorString: LocaleStringHelper.getCompleteNameEmptyText(localeString, fieldName),
             })
           }
         | None => ()

@@ -90,6 +90,7 @@ type eventName =
   | PAZE_SDK_FLOW
   | SAMSUNG_PAY_SCRIPT
   | SAMSUNG_PAY
+  | S3_API
 
 let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
 

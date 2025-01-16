@@ -162,6 +162,9 @@ let getDictFromObj = (dict, key) => {
 let getJsonObjectFromDict = (dict, key) => {
   dict->Dict.get(key)->Option.getOr(JSON.Encode.object(Dict.make()))
 }
+
+let getJsonObjectFromRecord = record => record->Obj.magic
+
 let getOptionBool = (dict, key) => {
   dict->Dict.get(key)->Option.flatMap(JSON.Decode.bool)
 }

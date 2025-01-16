@@ -107,9 +107,10 @@ let make = (
           | Card => {
               let newPmt = Card(Debit)
               let payoutDynamicFields =
-                getPayoutDynamicFields(enabledPaymentMethodsWithDynamicFields, newPmt)->Option.getOr(
-                  defaultPayoutDynamicFields(~pmt=newPmt),
-                )
+                getPayoutDynamicFields(
+                  enabledPaymentMethodsWithDynamicFields,
+                  newPmt,
+                )->Option.getOr(defaultPayoutDynamicFields(~pmt=newPmt))
               setActivePmt(_ => newPmt)
               payoutDynamicFields.address
               ->Option.map(address => {
@@ -291,8 +292,8 @@ let make = (
           {renderHeader(
             switch pm {
             | Card => localeString.formHeaderEnterCardText
-            | BankTransfer => key->localeString.formHeaderBankText
-            | Wallet => key->localeString.formHeaderWalletText
+            | BankTransfer => LocaleStringHelper.getFormHeaderBankText(localeString, key)
+            | Wallet => LocaleStringHelper.getFormHeaderWalletText(localeString, key)
             },
             true,
           )}
@@ -313,9 +314,10 @@ let make = (
               <img src={"merchantLogo"} alt="" className="h-6 w-auto" />
               <div className="ml-1.5">
                 {React.string(
-                  pmt
-                  ->getPaymentMethodTypeLabel
-                  ->localeString.formHeaderReviewTabLayoutText,
+                  LocaleStringHelper.getFormHeaderReviewTabLayoutText(
+                    localeString,
+                    pmt->getPaymentMethodTypeLabel,
+                  ),
                 )}
               </div>
             </div>
@@ -364,10 +366,10 @@ let make = (
             className="flex flex-row items-center min-w-full my-5 px-2.5 py-1.5 text-xs border border-solid border-blue-200 rounded bg-blue-50">
             <img src={"merchantLogo"} alt="" className="h-3 w-auto mr-1.5" />
             {React.string(
-              pm
-              ->getPaymentMethodLabel
-              ->String.toLowerCase
-              ->localeString.formFundsCreditInfoText,
+              LocaleStringHelper.getFormFundsCreditInfoText(
+                localeString,
+                pm->getPaymentMethodLabel->String.toLowerCase,
+              ),
             )}
           </div>
           <div className="flex my-5 text-lg font-semibold w-full">
