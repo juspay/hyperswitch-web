@@ -45,6 +45,7 @@ let make = (
 
     let currEventHandler = ref(Some(() => Promise.make((_, _) => {()})))
     let walletOneClickEventHandler = (event: Types.event) => {
+      open Promise
       let json = try {
         event.data->anyTypeToJson
       } catch {
@@ -56,14 +57,12 @@ let make = (
         switch currEventHandler.contents {
         | Some(eH) =>
           asyncWrapper(eH)
-          ->Promise.then(() => {
+          ->then(() => {
             let msg = [("walletClickEvent", true->JSON.Encode.bool)]->Dict.fromArray
             event.source->Window.sendPostMessage(msg)
-            Promise.resolve()
+            resolve()
           })
-          ->Promise.catch(_ => {
-            Promise.resolve()
-          })
+          ->catch(_ => resolve())
           ->ignore
 
         | None => ()
@@ -73,7 +72,7 @@ let make = (
 
     Window.addEventListener("message", walletOneClickEventHandler)
 
-    let onSDKHandleClick = (eventHandler: option<unit => RescriptCore.Promise.t<'a>>) => {
+    let onSDKHandleClick = (eventHandler: option<unit => Promise.t<'a>>) => {
       currEventHandler := eventHandler
       if eventHandler->Option.isSome {
         isPaymentButtonHandlerProvided := true
@@ -258,14 +257,7 @@ let make = (
           eventDataObject->getOptionalJsonFromJson("copyDetails")->getStringFromOptionalJson("")
         if isCopy {
           open Promise
-          writeText(text)
-          ->then(_ => {
-            resolve()
-          })
-          ->catch(_ => {
-            resolve()
-          })
-          ->ignore
+          writeText(text)->then(_ => resolve())->catch(_ => resolve())->ignore
         }
 
         let combinedHyperClasses = eventDataObject->getOptionalJsonFromJson("concatedString")

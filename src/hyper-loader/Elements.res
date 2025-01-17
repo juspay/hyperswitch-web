@@ -470,7 +470,8 @@ let make = (
                     let trustpay = trustPayApi(secrets)
 
                     let polling =
-                      delay(2000)->then(_ =>
+                      delay(2000)
+                      ->then(_ =>
                         PaymentHelpers.pollRetrievePaymentIntent(
                           clientSecret,
                           headers,
@@ -479,15 +480,21 @@ let make = (
                           ~isForceSync=true,
                         )
                       )
+                      ->catch(_ => Promise.resolve(JSON.Encode.null))
                     let executeGooglePayment = trustpay.executeGooglePayment(
                       payment,
                       googlePayRequest,
                     )
-                    let timeOut = delay(600000)->then(_ => {
-                      let errorMsg =
-                        [("error", "Request Timed Out"->JSON.Encode.string)]->getJsonFromArrayOfJson
-                      reject(Exn.anyToExnInternal(errorMsg))
-                    })
+                    let timeOut =
+                      delay(600000)
+                      ->then(_ => {
+                        let errorMsg =
+                          [
+                            ("error", "Request Timed Out"->JSON.Encode.string),
+                          ]->getJsonFromArrayOfJson
+                        reject(Exn.anyToExnInternal(errorMsg))
+                      })
+                      ->catch(_ => Promise.resolve(JSON.Encode.null))
 
                     Promise.race([polling, executeGooglePayment, timeOut])
                     ->then(res => {
@@ -687,6 +694,55 @@ let make = (
             }
           }
 
+          let pollStatusWrapper = dict => {
+            let pollId = dict->getString("poll_id", "")
+            let interval =
+              dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
+            let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
+            let url = dict->getString("return_url_with_query_params", "")
+
+            let handleErrorResponse = err => {
+              if redirect.contents === "always" {
+                Window.replaceRootHref(url, shouldUseTopRedirection)
+              }
+              messageCurrentWindow([
+                ("submitSuccessful", false->JSON.Encode.bool),
+                ("error", err->anyTypeToJson),
+                ("url", url->JSON.Encode.string),
+              ])
+            }
+            PaymentHelpers.pollStatus(
+              ~headers,
+              ~customPodUri,
+              ~pollId,
+              ~interval,
+              ~count,
+              ~returnUrl=url,
+              ~logger,
+            )
+            ->then(_ => {
+              PaymentHelpers.retrievePaymentIntent(
+                clientSecret,
+                headers,
+                ~optLogger=Some(logger),
+                ~customPodUri,
+                ~isForceSync=true,
+              )
+              ->then(json => json->handleRetrievePaymentResponse)
+              ->catch(err => {
+                err->handleErrorResponse
+                resolve(err->anyTypeToJson)
+              })
+              ->ignore
+              ->resolve
+            })
+            ->catch(err => {
+              err->handleErrorResponse
+              resolve()
+            })
+            ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+          }
+
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
           | Some(val) => {
               messageCurrentWindow([
@@ -695,65 +751,15 @@ let make = (
                 ("iframeId", selectorString->JSON.Encode.string),
               ])
               let dict = val->getDictFromJson
-              let pollId = dict->getString("poll_id", "")
-              let interval =
-                dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
-              let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
-              let url = dict->getString("return_url_with_query_params", "")
-
-              let handleErrorResponse = err => {
-                if redirect.contents === "always" {
-                  Window.replaceRootHref(url, shouldUseTopRedirection)
-                }
-                messageCurrentWindow([
-                  ("submitSuccessful", false->JSON.Encode.bool),
-                  ("error", err->anyTypeToJson),
-                  ("url", url->JSON.Encode.string),
-                ])
-              }
-
-              PaymentHelpers.pollStatus(
-                ~headers,
-                ~customPodUri,
-                ~pollId,
-                ~interval,
-                ~count,
-                ~returnUrl=url,
-                ~logger,
-              )
-              ->then(_ => {
-                PaymentHelpers.retrievePaymentIntent(
-                  clientSecret,
-                  headers,
-                  ~optLogger=Some(logger),
-                  ~customPodUri,
-                  ~isForceSync=true,
-                )
-                ->then(json => json->handleRetrievePaymentResponse)
-                ->catch(err => {
-                  err->handleErrorResponse
-                  resolve(err->anyTypeToJson)
-                })
-                ->ignore
-                ->resolve
-              })
-              ->catch(err => {
-                err->handleErrorResponse
-                resolve()
-              })
-              ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+              pollStatusWrapper(dict)
+              ->then(_ => resolve())
+              ->catch(_ => resolve())
               ->ignore
             }
           | None => ()
           }
 
-          switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
-          | Some(redirectUrl) =>
-            messageCurrentWindow([
-              ("fullscreen", true->JSON.Encode.bool),
-              ("param", "paymentloader"->JSON.Encode.string),
-              ("iframeId", selectorString->JSON.Encode.string),
-            ])
+          let retrievePaymentIntentWrapper = redirectUrl => {
             PaymentHelpers.retrievePaymentIntent(
               clientSecret,
               headers,
@@ -779,6 +785,18 @@ let make = (
               }
             })
             ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+          }
+
+          switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
+          | Some(redirectUrl) =>
+            messageCurrentWindow([
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", "paymentloader"->JSON.Encode.string),
+              ("iframeId", selectorString->JSON.Encode.string),
+            ])
+            retrievePaymentIntentWrapper(redirectUrl)
+            ->then(_ => resolve())
+            ->catch(_ => resolve())
             ->ignore
 
           | None => ()

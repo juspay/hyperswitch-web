@@ -211,6 +211,7 @@ let make = (
           }
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
         mountedIframeRef->Window.iframePostMessage(message)
       }
