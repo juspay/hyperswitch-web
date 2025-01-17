@@ -271,6 +271,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
       }
       resolve()
     })
+    ->catch(_ => {
+      resolve()
+    })
     ->ignore
   }
 

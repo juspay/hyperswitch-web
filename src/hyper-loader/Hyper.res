@@ -345,6 +345,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               )
               resolve()
             })
+            ->catch(_ => resolve())
             ->ignore
           } else {
             logApi(
@@ -362,6 +363,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         ->then(data => {
           [("paymentIntent", data)]->getJsonFromArrayOfJson->Promise.resolve
         })
+        ->catch(_ => Promise.resolve(JSON.Encode.null))
       }
 
       let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
@@ -453,6 +455,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             postSubmitMessage(message)
             Promise.resolve(JSON.Encode.null)
           })
+          ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
           ->ignore
         })
       }
@@ -502,6 +505,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=ORCA_ELEMENTS_CALLED)
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
 
         Elements.make(
@@ -551,6 +555,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           )
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
 
         PaymentMethodsManagementElements.make(
@@ -691,6 +696,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=PAYMENT_SESSION_INITIATED)
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
 
         PaymentSession.make(
