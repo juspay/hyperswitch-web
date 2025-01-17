@@ -310,29 +310,24 @@ let make = (
       ) => {
         open Promise
 
-        let widgetOptions = [
-          ("clientSecret", clientSecret->JSON.Encode.string),
-          ("appearance", appearance),
-          ("locale", locale),
-          ("loader", loader),
-          ("fonts", fonts),
-          (
-            "redirectionFlags",
-            {
-              let dict = Dict.fromArray([
-                (
-                  "shouldUseTopRedirection",
-                  JSON.Encode.bool(redirectionFlags.shouldUseTopRedirection),
-                ),
-                (
-                  "shouldRemoveBeforeUnloadEvents",
-                  JSON.Encode.bool(redirectionFlags.shouldRemoveBeforeUnloadEvents),
-                ),
-              ])
-              JSON.Encode.object(dict)
-            },
-          ),
-        ]->getJsonFromArrayOfJson
+        let redirectionFlagsDict =
+          [
+            ("shouldUseTopRedirection", JSON.Encode.bool(redirectionFlags.shouldUseTopRedirection)),
+            (
+              "shouldRemoveBeforeUnloadEvents",
+              JSON.Encode.bool(redirectionFlags.shouldRemoveBeforeUnloadEvents),
+            ),
+          ]->Dict.fromArray
+
+        let widgetOptions =
+          [
+            ("clientSecret", clientSecret->JSON.Encode.string),
+            ("appearance", appearance),
+            ("locale", locale),
+            ("loader", loader),
+            ("fonts", fonts),
+            ("redirectionFlags", redirectionFlagsDict->JSON.Encode.object),
+          ]->getJsonFromArrayOfJson
         let message = [
           (
             "paymentElementCreate",

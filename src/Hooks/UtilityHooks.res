@@ -65,26 +65,25 @@ let useSendEventsToParent = eventsToSendToParent => {
 let useUpdateRedirectionFlags = () => {
   let setRedirectionFlags = Recoil.useSetRecoilState(RecoilAtoms.redirectionFlagsAtom)
   let updateRedirectionFlagsAtom = paymentOptions => {
-    paymentOptions
-    ->Dict.get("shouldUseTopRedirection")
-    ->Option.flatMap(JSON.Decode.bool)
-    ->Option.map(useTop => {
+    let optionalShouldUseTopRedirection =
+      paymentOptions
+      ->Dict.get("shouldUseTopRedirection")
+      ->Option.flatMap(JSON.Decode.bool)
+    let optionalShouldRemoveBeforeUnloadEvents =
+      paymentOptions
+      ->Dict.get("shouldRemoveBeforeUnloadEvents")
+      ->Option.flatMap(JSON.Decode.bool)
+
+    switch (optionalShouldUseTopRedirection, optionalShouldRemoveBeforeUnloadEvents) {
+    | (None, None) => ()
+    | (shouldUseTopRedirection, shouldRemoveBeforeUnloadEvents) =>
       setRedirectionFlags(cv => {
-        shouldUseTopRedirection: useTop,
-        shouldRemoveBeforeUnloadEvents: cv.shouldRemoveBeforeUnloadEvents,
+        shouldUseTopRedirection: shouldUseTopRedirection->Option.getOr(cv.shouldUseTopRedirection),
+        shouldRemoveBeforeUnloadEvents: shouldRemoveBeforeUnloadEvents->Option.getOr(
+          cv.shouldRemoveBeforeUnloadEvents,
+        ),
       })
-    })
-    ->ignore
-    paymentOptions
-    ->Dict.get("shouldRemoveBeforeUnloadEvents")
-    ->Option.flatMap(JSON.Decode.bool)
-    ->Option.map(removeEvent => {
-      setRedirectionFlags(cv => {
-        shouldUseTopRedirection: cv.shouldUseTopRedirection,
-        shouldRemoveBeforeUnloadEvents: removeEvent,
-      })
-    })
-    ->ignore
+    }
   }
   updateRedirectionFlagsAtom
 }

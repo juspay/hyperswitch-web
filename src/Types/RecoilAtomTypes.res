@@ -17,10 +17,7 @@ type redirectionFlags = {
   shouldRemoveBeforeUnloadEvents: bool,
 }
 
-let decodeRedirectionFlags = (
-  json: JSON.t,
-  defaultRedirectionFlags: redirectionFlags,
-): redirectionFlags => {
+let decodeRedirectionFlags = (json: JSON.t, default: redirectionFlags): redirectionFlags => {
   json
   ->JSON.Decode.object
   ->Option.flatMap(obj => {
@@ -28,16 +25,16 @@ let decodeRedirectionFlags = (
       obj
       ->Dict.get("shouldUseTopRedirection")
       ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(defaultRedirectionFlags.shouldUseTopRedirection)
+      ->Option.getOr(default.shouldUseTopRedirection)
     let shouldRemoveBeforeUnloadEvents =
       obj
       ->Dict.get("shouldRemoveBeforeUnloadEvents")
       ->Option.flatMap(JSON.Decode.bool)
-      ->Option.getOr(defaultRedirectionFlags.shouldRemoveBeforeUnloadEvents)
+      ->Option.getOr(default.shouldRemoveBeforeUnloadEvents)
     Some({
       shouldRemoveBeforeUnloadEvents,
       shouldUseTopRedirection,
     })
   })
-  ->Option.getOr(defaultRedirectionFlags)
+  ->Option.getOr(default)
 }

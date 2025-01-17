@@ -141,12 +141,22 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ->Option.getOr(JSON.Encode.null)
       ->getDictFromJson
       ->getBool("isPreloadEnabled", true)
+    // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
+    let shouldUseTopRedirection =
+      options
+      ->Option.getOr(JSON.Encode.null)
+      ->getDictFromJson
+      ->getBool("shouldUseTopRedirection", false)
+    let overridenDefaultRedirectionFlags: RecoilAtomTypes.redirectionFlags = {
+      shouldUseTopRedirection,
+      shouldRemoveBeforeUnloadEvents: false,
+    }
     let redirectionFlags =
       options
       ->Option.getOr(JSON.Encode.null)
       ->getDictFromJson
       ->getJsonObjectFromDict("redirectionFlags")
-      ->RecoilAtomTypes.decodeRedirectionFlags(RecoilAtoms.defaultRedirectionFlags)
+      ->RecoilAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
     let analyticsMetadata =
       options
       ->Option.getOr(JSON.Encode.null)
