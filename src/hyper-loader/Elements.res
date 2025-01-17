@@ -5,7 +5,7 @@ open Utils
 open EventListenerManager
 
 type trustPayFunctions = {
-  finishApplePaymentV2: (string, ApplePayTypes.paymentRequestData) => promise<JSON.t>,
+  finishApplePaymentV2: (string, ApplePayTypes.paymentRequestData, string) => promise<JSON.t>,
   executeGooglePayment: (string, GooglePayType.paymentDataRequest) => promise<JSON.t>,
 }
 @new external trustPayApi: JSON.t => trustPayFunctions = "TrustPayApi"
@@ -624,7 +624,7 @@ let make = (
 
                   try {
                     let trustpay = trustPayApi(secrets)
-                    trustpay.finishApplePaymentV2(payment, paymentRequest)
+                    trustpay.finishApplePaymentV2(payment, paymentRequest, Window.Location.hostname)
                     ->then(res => {
                       let value = "Payment Data Filled: New Payment Method"
                       logger.setLogInfo(

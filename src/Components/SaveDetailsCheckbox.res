@@ -60,7 +60,7 @@ let make = (~isChecked, ~setIsChecked) => {
     <style> {React.string(css)} </style>
     <label className={`container CheckboxInput ${checkedState}`}>
       <input type_={`checkbox`} onChange />
-      <div className={`checkmark CheckboxInput ${checkedState} mt-1`} />
+      <div className={`checkmark CheckboxInput ${checkedState}`} />
       <div className={`CheckboxLabel ${checkBoxLabelState} ml-2 w-11/12 opacity-50 text-xs`}>
         {React.string(saveCardCheckboxLabel)}
       </div>

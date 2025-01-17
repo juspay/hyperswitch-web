@@ -1,3 +1,26 @@
+## [0.107.9](https://github.com/juspay/hyperswitch-web/compare/v0.107.8...v0.107.9) (2025-01-16)
+
+
+### Bug Fixes
+
+* apple pay height ([#870](https://github.com/juspay/hyperswitch-web/issues/870)) ([90c79a6](https://github.com/juspay/hyperswitch-web/commit/90c79a62db4c6080fa89f98a9c15035a06d23a8e))
+
+## [0.107.8](https://github.com/juspay/hyperswitch-web/compare/v0.107.7...v0.107.8) (2025-01-15)
+
+## [0.107.7](https://github.com/juspay/hyperswitch-web/compare/v0.107.6...v0.107.7) (2025-01-10)
+
+
+### Bug Fixes
+
+* checkbox margin issue ([#864](https://github.com/juspay/hyperswitch-web/issues/864)) ([8f1f2db](https://github.com/juspay/hyperswitch-web/commit/8f1f2db494febeb6f112ab608bd08510d0e42515))
+
+## [0.107.6](https://github.com/juspay/hyperswitch-web/compare/v0.107.5...v0.107.6) (2025-01-09)
+
+
+### Bug Fixes
+
+* added initiative context back for trustpay applepay ([#861](https://github.com/juspay/hyperswitch-web/issues/861)) ([b43ce26](https://github.com/juspay/hyperswitch-web/commit/b43ce261c2dfe093b0f2eb5176152db3c9e1e442))
+
 ## [0.107.5](https://github.com/juspay/hyperswitch-web/compare/v0.107.4...v0.107.5) (2025-01-08)
 
 
