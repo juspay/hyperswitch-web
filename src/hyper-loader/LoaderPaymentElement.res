@@ -61,6 +61,9 @@ let make = (
             event.source->Window.sendPostMessage(msg)
             Promise.resolve()
           })
+          ->Promise.catch(_ => {
+            Promise.resolve()
+          })
           ->ignore
 
         | None => ()
@@ -257,6 +260,9 @@ let make = (
           open Promise
           writeText(text)
           ->then(_ => {
+            resolve()
+          })
+          ->catch(_ => {
             resolve()
           })
           ->ignore

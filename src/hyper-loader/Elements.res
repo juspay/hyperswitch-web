@@ -1255,6 +1255,7 @@ let make = (
                 mountedIframeRef->Window.iframePostMessage(msg)
                 json->resolve
               })
+              ->catch(_ => resolve(JSON.Encode.null))
               ->ignore
             }
           }
@@ -1278,6 +1279,7 @@ let make = (
           fetchSessionTokens(mountedIframeRef)
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
         mountedIframeRef->Window.iframePostMessage(message)
       }

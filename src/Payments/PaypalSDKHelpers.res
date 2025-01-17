@@ -208,6 +208,9 @@ let loadPaypalSDK = (
             }
           })
         })
+        ->Promise.catch(_ => {
+          Promise.resolve()
+        })
         ->ignore
       }
     },
@@ -338,6 +341,9 @@ let loadBraintreePaypalSdk = (
         )
       })->ignore
     }
+    Promise.resolve()
+  })
+  ->Promise.catch(_ => {
     Promise.resolve()
   })
   ->ignore
