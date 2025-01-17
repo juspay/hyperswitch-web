@@ -285,8 +285,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
                 switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
-                  promise->then(res => {
+                  promise
+                  ->then(res => {
                     dict->setConfigs(res)
+                  })
+                  ->catch(_ => {
+                    dict->setConfigs({
+                      default: DefaultTheme.default,
+                      defaultRules: DefaultTheme.defaultRules,
+                    })
                   })
                 | None =>
                   dict->setConfigs({
@@ -335,8 +342,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
             switch getThemePromise(paymentOptions) {
             | Some(promise) =>
-              promise->then(res => {
+              promise
+              ->then(res => {
                 dict->setConfigs(res)
+              })
+              ->catch(_ => {
+                dict->setConfigs({
+                  default: DefaultTheme.default,
+                  defaultRules: DefaultTheme.defaultRules,
+                })
               })
 
             | None =>
@@ -368,8 +382,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
           switch getThemePromise(optionsDict) {
           | Some(promise) =>
-            promise->then(res => {
+            promise
+            ->then(res => {
               dict->setConfigs(res)
+            })
+            ->catch(_ => {
+              dict->setConfigs({
+                default: DefaultTheme.default,
+                defaultRules: DefaultTheme.defaultRules,
+              })
             })
 
           | None =>
