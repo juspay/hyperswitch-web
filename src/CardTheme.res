@@ -75,15 +75,23 @@ let getLocaleObject = async (string, ~logger: HyperLogger.loggerMake) => {
   try {
     let locale = if string == "auto" {
       Window.Navigator.language
+    } else if string == "" {
+      "en"
     } else {
       string
     }
 
-    let baseUrl = switch (GlobalVars.isProd, GlobalVars.isSandbox, GlobalVars.isInteg) {
-    | (true, _, _) => "https://checkout.hyperswitch.io"
-    | (_, true, _) => "https://beta.hyperswitch.io"
-    | (_, _, true) => "https://dev.hyperswitch.io"
-    | (_, _, _) => "https://dev.hyperswitch.io"
+    let baseUrl = switch (
+      GlobalVars.isRunningInLocal,
+      GlobalVars.isProd,
+      GlobalVars.isSandbox,
+      GlobalVars.isInteg,
+    ) {
+    | (true, _, _, _) => ""
+    | (_, true, _, _) => "https://checkout.hyperswitch.io"
+    | (_, _, true, _) => "https://beta.hyperswitch.io"
+    | (_, _, _, true) => "https://dev.hyperswitch.io"
+    | (_, _, _, _) => ""
     }
     let localeStringEndPoint = `${baseUrl}/assets/v1/locales/${locale}`
 
