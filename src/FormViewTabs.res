@@ -219,8 +219,8 @@ let make = (
           <div className={contentHeaderClasses}>
             {switch activePmt {
             | Card(_) => localeString.formHeaderEnterCardText
-            | BankTransfer(_) => key->localeString.formHeaderBankText
-            | Wallet(_) => key->localeString.formHeaderWalletText
+            | BankTransfer(_) => LocaleStringHelper.getFormHeaderBankText(localeString, key)
+            | Wallet(_) => LocaleStringHelper.getFormHeaderWalletText(localeString, key)
             }->React.string}
           </div>
           {payoutDynamicFields.payoutMethodData->renderPayoutMethodForm->React.array}
@@ -254,9 +254,10 @@ let make = (
               <img src={"merchantLogo"} alt="" className="h-6 w-auto" />
               <div className="ml-1.5">
                 {React.string(
-                  pmt
-                  ->getPaymentMethodTypeLabel
-                  ->localeString.formHeaderReviewTabLayoutText,
+                  LocaleStringHelper.getFormHeaderReviewTabLayoutText(
+                    localeString,
+                    pmt->getPaymentMethodTypeLabel,
+                  ),
                 )}
               </div>
             </div>
@@ -305,10 +306,10 @@ let make = (
             className="flex flex-row items-center min-w-full my-5 px-2.5 py-1.5 text-xs border border-solid border-blue-200 rounded bg-blue-50">
             <img src={"merchantLogo"} alt="" className="h-3 w-auto mr-1.5" />
             {React.string(
-              pm
-              ->getPaymentMethodLabel
-              ->String.toLowerCase
-              ->localeString.formFundsCreditInfoText,
+              LocaleStringHelper.getFormFundsCreditInfoText(
+                localeString,
+                pm->getPaymentMethodLabel->String.toLowerCase,
+              ),
             )}
           </div>
           <div className="flex my-5 text-lg font-semibold w-full">

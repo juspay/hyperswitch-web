@@ -65,9 +65,17 @@ let useMessageGetter = () => {
     let surchargeValue = surchargeDetails.displayTotalSurchargeAmount->Float.toString
 
     let localeStrForSurcharge = if paymentMethod === "card" {
-      localeString.surchargeMsgAmountForCard(paymentMethodListValue.currency, surchargeValue)
+      LocaleStringHelper.getSurchangeMsgAmountForCardComponent(
+        localeString,
+        paymentMethodListValue.currency,
+        surchargeValue,
+      )
     } else {
-      localeString.surchargeMsgAmount(paymentMethodListValue.currency, surchargeValue)
+      LocaleStringHelper.getSurchangeMsgAmountComponent(
+        localeString,
+        paymentMethodListValue.currency,
+        surchargeValue,
+      )
     }
 
     Some(localeStrForSurcharge)

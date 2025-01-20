@@ -695,10 +695,14 @@ let getCardBrandFromStates = (cardBrand, cardScheme, showFields) => {
   !showFields ? cardScheme : cardBrand
 }
 
-let getCardBrandInvalidError = (~cardNumber, ~localeString: LocaleStringTypes.localeStrings) => {
+let getCardBrandInvalidError = (
+  ~cardNumber,
+  ~localeString: LocaleStringTypes.localeStringsWebAndroid,
+) => {
   switch cardNumber->getCardBrand {
   | "" => localeString.enterValidCardNumberErrorText
-  | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)
+  | cardBrandValue =>
+    LocaleStringHelper.getCardBrandConfiguredErrorText(localeString, cardBrandValue)
   }
 }
 

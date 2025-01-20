@@ -185,7 +185,10 @@ let getPaymentMethodDataFieldKey = (key): string =>
     }
   }
 
-let getPaymentMethodDataFieldLabel = (key, localeString: LocaleStringTypes.localeStrings): string =>
+let getPaymentMethodDataFieldLabel = (
+  key,
+  localeString: LocaleStringTypes.localeStringsWebAndroid,
+): string =>
   switch key {
   | PayoutMethodData(CardNumber) => localeString.cardNumberLabel
   | PayoutMethodData(CardExpDate(_)) => localeString.validThruText
@@ -229,7 +232,7 @@ let getPaymentMethodDataFieldLabel = (key, localeString: LocaleStringTypes.local
 
 let getPaymentMethodDataFieldPlaceholder = (
   key,
-  locale: LocaleStringTypes.localeStrings,
+  locale: LocaleStringTypes.localeStringsWebAndroid,
   constant: LocaleStringTypes.constantStrings,
 ): string => {
   switch key {
@@ -329,7 +332,7 @@ let getPayoutImageSource = (payoutStatus: payoutStatus): string => {
 
 let getPayoutReadableStatus = (
   payoutStatus: payoutStatus,
-  localeString: LocaleStringTypes.localeStrings,
+  localeString: LocaleStringTypes.localeStringsWebAndroid,
 ): string =>
   switch payoutStatus {
   | Success => localeString.payoutStatusSuccessText
@@ -368,7 +371,7 @@ let getPayoutStatusString = (payoutStatus: payoutStatus): string =>
 
 let getPayoutStatusMessage = (
   payoutStatus: payoutStatus,
-  localeString: LocaleStringTypes.localeStrings,
+  localeString: LocaleStringTypes.localeStringsWebAndroid,
 ): string =>
   switch payoutStatus {
   | Success => localeString.payoutStatusSuccessMessage
@@ -391,7 +394,7 @@ let getPayoutStatusMessage = (
 let getPaymentMethodDataErrorString = (
   key,
   value,
-  localeString: LocaleStringTypes.localeStrings,
+  localeString: LocaleStringTypes.localeStringsWebAndroid,
 ): string => {
   let len = value->String.length
   let notEmptyAndComplete = len >= 0 && len === key->getPaymentMethodDataFieldMaxLength
@@ -591,7 +594,7 @@ let defaultPaymentMethodCollectOptions = {
 let defaultStatusInfo = {
   status: Success,
   payoutId: "",
-  message: EnglishLocale.localeStrings.payoutStatusSuccessMessage,
+  message: LocaleStringHelper.defaultLocale.payoutStatusSuccessMessage,
   code: None,
   errorMessage: None,
   reason: None,
