@@ -1,3 +1,17 @@
+# [0.108.0](https://github.com/juspay/hyperswitch-web/compare/v0.107.9...v0.108.0) (2025-01-20)
+
+
+### Features
+
+* add functionality for removing any beforeunload listeners once payment form is submitted ([#860](https://github.com/juspay/hyperswitch-web/issues/860)) ([e889a53](https://github.com/juspay/hyperswitch-web/commit/e889a5364a7d6eecc6196ececee2c192576e2bd7))
+
+## [0.107.9](https://github.com/juspay/hyperswitch-web/compare/v0.107.8...v0.107.9) (2025-01-16)
+
+
+### Bug Fixes
+
+* apple pay height ([#870](https://github.com/juspay/hyperswitch-web/issues/870)) ([90c79a6](https://github.com/juspay/hyperswitch-web/commit/90c79a62db4c6080fa89f98a9c15035a06d23a8e))
+
 ## [0.107.8](https://github.com/juspay/hyperswitch-web/compare/v0.107.7...v0.107.8) (2025-01-15)
 
 ## [0.107.7](https://github.com/juspay/hyperswitch-web/compare/v0.107.6...v0.107.7) (2025-01-10)
