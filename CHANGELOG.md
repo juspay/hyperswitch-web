@@ -1,3 +1,10 @@
+# [0.108.0](https://github.com/juspay/hyperswitch-web/compare/v0.107.9...v0.108.0) (2025-01-20)
+
+
+### Features
+
+* add functionality for removing any beforeunload listeners once payment form is submitted ([#860](https://github.com/juspay/hyperswitch-web/issues/860)) ([e889a53](https://github.com/juspay/hyperswitch-web/commit/e889a5364a7d6eecc6196ececee2c192576e2bd7))
+
 ## [0.107.9](https://github.com/juspay/hyperswitch-web/compare/v0.107.8...v0.107.9) (2025-01-16)
 
 

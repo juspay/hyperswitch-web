@@ -60,6 +60,11 @@ let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false) => {
   let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
   messageParentWindow([(message, true->JSON.Encode.bool)], ~targetOrigin)
 }
+
+let handleBeforeRedirectPostMessage = (~targetOrigin="*") => {
+  messageTopWindow([("disableBeforeUnloadEventListener", true->JSON.Encode.bool)], ~targetOrigin)
+}
+
 let getOptionString = (dict, key) => {
   dict->Dict.get(key)->Option.flatMap(JSON.Decode.string)
 }
@@ -1455,5 +1460,30 @@ let isDigitLimitExceeded = (val, ~digit) => {
   switch val->String.match(%re("/\d/g")) {
   | Some(matches) => matches->Array.length > digit
   | None => false
+  }
+}
+
+/* Redirect Handling */
+let replaceRootHref = (href: string, redirectionFlags: RecoilAtomTypes.redirectionFlags) => {
+  if redirectionFlags.shouldRemoveBeforeUnloadEvents {
+    handleBeforeRedirectPostMessage()
+  }
+  switch redirectionFlags.shouldUseTopRedirection {
+  | true =>
+    try {
+      setTimeout(() => {
+        Window.Top.Location.replace(href)
+      }, 100)->ignore
+    } catch {
+    | e => {
+        Js.Console.error3(
+          "Failed to redirect root document",
+          e,
+          `Using [window.location.replace] for redirection`,
+        )
+        Window.Location.replace(href)
+      }
+    }
+  | false => Window.Location.replace(href)
   }
 }
