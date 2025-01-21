@@ -224,6 +224,12 @@ let make = (
           )
           resolve(resp)
         })
+        ->catch(_ =>
+          resolve({
+            status: ERROR,
+            payload: JSON.Encode.null,
+          })
+        )
         ->ignore
       } else if (
         areRequiredFieldsValid &&

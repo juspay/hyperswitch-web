@@ -11,8 +11,9 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setCon
   let (identifierType, setIdentifierType) = React.useState(_ => EMAIL_ADDRESS)
 
   let onContinue = consumerIdentity => {
+    open Promise
     ClickToPayHelpers.signOut()
-    ->Promise.finally(() => {
+    ->finally(() => {
       setClickToPayConfig(prev => {
         ...prev,
         clickToPayCards: Some([]),
@@ -20,6 +21,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setCon
       setIsShowClickToPayNotYou(_ => false)
       setConsumerIdentity(_ => consumerIdentity)
     })
+    ->catch(err => resolve(Error(err)))
     ->ignore
   }
 

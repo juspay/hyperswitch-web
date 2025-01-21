@@ -204,7 +204,8 @@ let make = (
           )
           ->then(res => {
             switch res {
-            | Ok(res) => ClickToPayHelpers.handleProceedToPay(
+            | Ok(res) =>
+              ClickToPayHelpers.handleProceedToPay(
                 ~encryptedCard=res,
                 ~isCheckoutWithNewCard=true,
                 ~isUnrecognizedUser={
@@ -242,6 +243,7 @@ let make = (
                   resolve()
                 },
               )
+              ->catch(_ => resolve())
               ->ignore
             | Error(err) =>
               loggerState.setLogError(
