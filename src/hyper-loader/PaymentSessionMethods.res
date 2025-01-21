@@ -423,6 +423,17 @@ let getCustomerSavedPaymentMethods = (
             resolve()
           },
         )
+        ->catch(
+          err => {
+            logger.setLogInfo(
+              ~value=err->Identity.anyTypeToJson->JSON.stringify,
+              ~eventName=GOOGLE_PAY_FLOW,
+              ~paymentMethod="GOOGLE_PAY",
+              ~logType=DEBUG,
+            )
+            resolve()
+          },
+        )
         ->ignore
 
         switch applePayToken {
