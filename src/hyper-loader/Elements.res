@@ -479,8 +479,7 @@ let make = (
                     let trustpay = trustPayApi(secrets)
 
                     let polling =
-                      delay(2000)
-                      ->then(_ =>
+                      delay(2000)->then(_ =>
                         PaymentHelpers.pollRetrievePaymentIntent(
                           clientSecret,
                           headers,
@@ -489,21 +488,15 @@ let make = (
                           ~isForceSync=true,
                         )
                       )
-                      ->catch(_ => Promise.resolve(JSON.Encode.null))
                     let executeGooglePayment = trustpay.executeGooglePayment(
                       payment,
                       googlePayRequest,
                     )
-                    let timeOut =
-                      delay(600000)
-                      ->then(_ => {
-                        let errorMsg =
-                          [
-                            ("error", "Request Timed Out"->JSON.Encode.string),
-                          ]->getJsonFromArrayOfJson
-                        reject(Exn.anyToExnInternal(errorMsg))
-                      })
-                      ->catch(_ => Promise.resolve(JSON.Encode.null))
+                    let timeOut = delay(600000)->then(_ => {
+                      let errorMsg =
+                        [("error", "Request Timed Out"->JSON.Encode.string)]->getJsonFromArrayOfJson
+                      reject(Exn.anyToExnInternal(errorMsg))
+                    })
 
                     Promise.race([polling, executeGooglePayment, timeOut])
                     ->then(res => {
@@ -761,10 +754,7 @@ let make = (
                 ("iframeId", selectorString->JSON.Encode.string),
               ])
               let dict = val->getDictFromJson
-              pollStatusWrapper(dict)
-              ->then(_ => resolve())
-              ->catch(_ => resolve())
-              ->ignore
+              pollStatusWrapper(dict)->then(_ => resolve())->catch(_ => resolve())->ignore
             }
           | None => ()
           }
@@ -1309,6 +1299,7 @@ let make = (
         })
         ->catch(_ => resolve())
         ->ignore
+
         mountedIframeRef->Window.iframePostMessage(message)
       }
 
