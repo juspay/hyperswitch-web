@@ -28,7 +28,7 @@ let make = (
     }
   }
 
-  <React.Fragment>
+  <>
     {switch clickToPayConfig.clickToPayCards {
     | Some(cards) =>
       if cards->Array.length == 0 {
@@ -62,8 +62,8 @@ let make = (
                       | Ok(data) =>
                         let cards =
                           data
-                          ->Utils.getDictFromJson
-                          ->Utils.getJsonFromDict("cards", JSON.Encode.null)
+                          ->getDictFromJson
+                          ->getJsonFromDict("cards", JSON.Encode.null)
                           ->JSON.Decode.array
                           ->Option.flatMap(arr => Some(
                             arr->Array.map(ClickToPayHelpers.clickToPayCardItemToObjMapper),
@@ -114,7 +114,7 @@ let make = (
                     ->catch(err => {
                       loggerState.setLogError(
                         ~value=`Error authenticating consumer identity - ${err
-                          ->Utils.formatException
+                          ->formatException
                           ->JSON.stringify}`,
                         ~eventName=CLICK_TO_PAY_FLOW,
                       )
@@ -131,7 +131,7 @@ let make = (
           } catch {
           | err => {
               loggerState.setLogError(
-                ~value=`Error - ${err->Utils.formatException->JSON.stringify}`,
+                ~value=`Error - ${err->formatException->JSON.stringify}`,
                 ~eventName=CLICK_TO_PAY_FLOW,
               )
               closeComponentIfSavedMethodsAreEmpty()
@@ -170,5 +170,5 @@ let make = (
       loggerState.setLogInfo(~value="Click to Pay cards not found", ~eventName=CLICK_TO_PAY_FLOW)
       React.null
     }}
-  </React.Fragment>
+  </>
 }

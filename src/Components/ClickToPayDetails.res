@@ -73,7 +73,7 @@ let make = (
     ])
   }
 
-  <React.Fragment>
+  <>
     <style> {React.string(css)} </style>
     {!isUnrecognizedUser
       ? <div className="text-xs font-normal">
@@ -175,5 +175,5 @@ let make = (
             </div>
           </div>
         </>}
-  </React.Fragment>
+  </>
 }

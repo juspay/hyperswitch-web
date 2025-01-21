@@ -1,5 +1,4 @@
 open PaymentType
-open RecoilAtoms
 open Utils
 
 let cardsToRender = (width: int) => {
@@ -10,7 +9,8 @@ let cardsToRender = (width: int) => {
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
-  let sessionsObj = Recoil.useRecoilValueFromAtom(sessions)
+
+  let sessionsObj = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let {
     showCardFormByDefault,
     paymentMethodOrder,
@@ -18,37 +18,35 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     customerPaymentMethods,
     displaySavedPaymentMethods,
     sdkHandleConfirmPayment,
-  } = Recoil.useRecoilValueFromAtom(optionAtom)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
-  let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
-  let (walletOptions, setWalletOptions) = React.useState(_ => [])
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
-  let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
-  let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(clickToPayConfig)
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
+  let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
 
+  let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
+  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(RecoilAtoms.selectedOptionAtom)
+  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentMethodListValue,
   )
+
+  let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
+  let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
+  let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
-  let layoutClass = CardUtils.getLayoutClass(layout)
-  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (dropDownOptions: array<string>, setDropDownOptions) = React.useState(_ => [])
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(isShowOrPayUsing)
-
-  let (showFields, setShowFields) = Recoil.useRecoilState(showCardFieldsAtom)
-  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(paymentTokenAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
   let (
     loadSavedCards: savedCardsLoadState,
     setLoadSavedCards: (savedCardsLoadState => savedCardsLoadState) => unit,
   ) = React.useState(_ => LoadingSavedCards)
-
   let (isClickToPayAuthenticateError, setIsClickToPayAuthenticateError) = React.useState(_ => false)
 
   let isShowPaymentMethodsDependingOnClickToPay = React.useMemo(() => {
@@ -57,6 +55,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       clickToPayConfig.clickToPayCards->Option.isNone ||
     clickToPayConfig.email !== "") && !isClickToPayAuthenticateError
   }, (clickToPayConfig, isClickToPayAuthenticateError))
+
+  let layoutClass = CardUtils.getLayoutClass(layout)
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
