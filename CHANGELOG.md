@@ -1,3 +1,10 @@
+# [0.109.0](https://github.com/juspay/hyperswitch-web/compare/v0.108.0...v0.109.0) (2025-01-21)
+
+
+### Features
+
+* added eslint config for promise catch handling ([#871](https://github.com/juspay/hyperswitch-web/issues/871)) ([f03787a](https://github.com/juspay/hyperswitch-web/commit/f03787a7dab0ea02bf155169d80b54b9593a5bcd))
+
 # [0.108.0](https://github.com/juspay/hyperswitch-web/compare/v0.107.9...v0.108.0) (2025-01-20)
 
 
