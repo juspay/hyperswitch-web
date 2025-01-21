@@ -40,7 +40,7 @@ let make = (
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {hideExpiredPaymentMethods, displayDefaultSavedPaymentIcon} = Recoil.useRecoilValueFromAtom(
+  let {hideExpiredPaymentMethods, displayDefaultSavedPaymentIcon, displayBillingDetails} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.optionAtom,
   )
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
@@ -199,6 +199,19 @@ let make = (
                       height="2.2rem"
                       name={TestUtils.cardCVVInputTestId}
                     />
+                  </div>
+                </div>
+              </RenderIf>
+              <RenderIf condition=displayBillingDetails>
+                <div>
+                  <div className="flex flex-row items-start justify-start gap-2 mt-3" style={textAlign: "left", fontSize: "15px"}><strong> {React.string(`Billing Details:`)} </strong></div>
+                  <div className="flex flex-row items-start justify-start gap-2" style={textAlign: "left", fontSize: "15px"}>{React.string(Option.getOr(paymentItem.billing.address.line1, "") ++ ", " 
+                    ++ Option.getOr(paymentItem.billing.address.line2, "") ++ ", " 
+                    ++ Option.getOr(paymentItem.billing.address.line3, "") ++ ", " 
+                    ++ Option.getOr(paymentItem.billing.address.city, "") ++ ", " 
+                    ++ Option.getOr(paymentItem.billing.address.state, "") ++ ", "
+                    ++ Option.getOr(paymentItem.billing.address.country, "") ++ ", "
+                    ++ Option.getOr(paymentItem.billing.address.zip, ""))}
                   </div>
                 </div>
               </RenderIf>
