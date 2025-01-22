@@ -46,7 +46,7 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @get external name: window => string = "name"
 @get external contentWindow: Dom.element => Dom.element = "contentWindow"
 @get external style: Dom.element => style = "style"
-@send external getAttribute: (Dom.element, string) => option<string> = "getAttribute"
+@send external getAttribute: (Dom.element, string) => Nullable.t<string> = "getAttribute"
 @send external postMessage: (Dom.element, string, string) => unit = "postMessage"
 @send external postMessageJSON: (Dom.element, JSON.t, string) => unit = "postMessage"
 @send external getElementById: (document, string) => Nullable.t<Dom.element> = "getElementById"
