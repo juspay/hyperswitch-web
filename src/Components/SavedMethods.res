@@ -262,6 +262,13 @@ let make = (
           width: "fit-content",
           color: themeObj.colorPrimary,
         }
+        tabIndex=0
+        onKeyPress={event => {
+          let key = JsxEvent.Keyboard.key(event)
+          if key == "Enter" {
+            setShowFields(_ => true)
+          }
+        }}
         dataTestId={TestUtils.addNewCardIcon}
         onClick={_ => setShowFields(_ => true)}>
         <Icon name="circle-plus" size=22 />

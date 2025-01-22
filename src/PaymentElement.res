@@ -474,6 +474,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           width: "fit-content",
           color: themeObj.colorPrimary,
         }
+        tabIndex=0
+        onKeyPress={event => {
+          let key = JsxEvent.Keyboard.key(event)
+          if key == "Enter" {
+            setShowFields(_ => false)
+          }
+        }}
         onClick={_ => setShowFields(_ => false)}>
         <Icon name="circle_dots" size=20 width=19 />
         {React.string(localeString.useExistingPaymentMethods)}
