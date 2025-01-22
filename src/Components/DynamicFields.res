@@ -269,6 +269,7 @@ let make = (
     ~cardNumber,
     ~cardExpiry,
     ~cvcNumber,
+    ~isSavedCardFlow,
   )
 
   useSetInitialRequiredFields(
@@ -328,7 +329,7 @@ let make = (
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
 
-  <RenderIf condition={fieldsArr->Array.length > 0}>
+  <RenderIf condition={!isSavedCardFlow && fieldsArr->Array.length > 0}>
     {<>
       {dynamicFieldsToRenderOutsideBilling
       ->Array.mapWithIndex((item, index) => {

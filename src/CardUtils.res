@@ -347,7 +347,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
   | SODEXO => <Icon size=brandIconSize name="card" />
   | RUPAY => <Icon size=brandIconSize name="rupay-card" />
   | JCB => <Icon size=brandIconSize name="jcb-card" />
-  | CARTESBANCAIRES => <Icon size=brandIconSize name="card" />
+  | CARTESBANCAIRES => <Icon size=brandIconSize name="cartesbancaires-card" />
   | UNIONPAY => <Icon size=brandIconSize name="card" />
   | INTERAC => <Icon size=brandIconSize name="interac" />
   | NOTFOUND =>
@@ -581,13 +581,12 @@ let swapCardOption = (cardOpts: array<string>, dropOpts: array<string>, selected
 
 let setCardValid = (cardnumber, setIsCardValid) => {
   let cardBrand = getCardBrand(cardnumber)
+  let isCardMaxLength = cardnumber->String.length == maxCardLength(cardBrand)
   if cardValid(cardnumber, cardBrand) {
     setIsCardValid(_ => Some(true))
-  } else if (
-    !cardValid(cardnumber, cardBrand) && isCardLengthValid(cardBrand, cardnumber->String.length)
-  ) {
+  } else if !cardValid(cardnumber, cardBrand) && isCardMaxLength {
     setIsCardValid(_ => Some(false))
-  } else if !isCardLengthValid(cardBrand, cardnumber->String.length) {
+  } else if !isCardMaxLength {
     setIsCardValid(_ => None)
   }
 }
@@ -702,3 +701,6 @@ let getCardBrandInvalidError = (~cardNumber, ~localeString: LocaleStringTypes.lo
   | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)
   }
 }
+
+let emitExpiryDate = formattedExpiry =>
+  Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])

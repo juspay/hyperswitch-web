@@ -113,7 +113,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
 
       // * Sending card expiry to handle cases where the card expires before the use date.
-      Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
+      emitExpiryDate(formattedExpiry)
     }
     setExpiryValid(formattedExpiry, setIsExpiryValid)
     setCardExpiry(_ => formattedExpiry)
@@ -241,7 +241,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardNumber,
           ~month,
           ~year,
-          ~cardHolderName="",
+          ~cardHolderName=None,
           ~cvcNumber,
           ~cardBrand=cardNetwork,
         )
@@ -252,7 +252,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardNumber,
           ~month,
           ~year,
-          ~cardHolderName="",
+          ~cardHolderName=None,
           ~cvcNumber=localCvcNumber,
           ~cardBrand=cardNetwork,
         )

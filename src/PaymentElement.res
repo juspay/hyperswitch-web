@@ -100,7 +100,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             ? NoResult(isGuestCustomer)
             : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
         )
-        setShowFields(prev => finalSavedPaymentMethods->Array.length == 0 || prev)
+        setShowFields(_ => finalSavedPaymentMethods->Array.length == 0)
       }
     | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))

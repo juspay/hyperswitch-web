@@ -20,6 +20,10 @@ let checkIsSafari = () => {
 
 let date = date()
 let broswerInfo = () => {
+  let data = UAParser.make()
+  let osType = data.os.name->Option.getOr("Unknown")
+  let osVersion = data.os.version->Option.getOr("Unknown")
+  let deviceModel = data.device.model->Option.getOr("Unknown Device")
   let colorDepth =
     [1, 4, 8, 15, 16, 24, 32, 48]->Array.includes(screen.colorDepth) ? screen.colorDepth : 24
   [
@@ -38,6 +42,9 @@ let broswerInfo = () => {
         ("time_zone", date.getTimezoneOffset()->JSON.Encode.float),
         ("java_enabled", true->JSON.Encode.bool),
         ("java_script_enabled", true->JSON.Encode.bool),
+        ("device_model", deviceModel->JSON.Encode.string),
+        ("os_type", osType->JSON.Encode.string),
+        ("os_version", osVersion->JSON.Encode.string),
       ]->Utils.getJsonFromArrayOfJson,
     ),
   ]

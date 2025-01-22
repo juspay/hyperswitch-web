@@ -36,9 +36,7 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
   | "last_name" =>
     fieldNameArr
     ->Array.sliceToEnd(~start=1)
-    ->Array.reduce("", (acc, item) => {
-      acc ++ item
-    })
+    ->Array.reduce("", (acc, item) => acc === "" ? item : `${acc} ${item}`)
   | _ => field.value
   }
 }
@@ -136,6 +134,7 @@ let useRequiredFieldsEmptyAndValid = (
   ~cardNumber,
   ~cardExpiry,
   ~cvcNumber,
+  ~isSavedCardFlow,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
@@ -210,7 +209,7 @@ let useRequiredFieldsEmptyAndValid = (
       | _ => true
       }
     })
-    setAreRequiredFieldsValid(_ => areRequiredFieldsValid)
+    setAreRequiredFieldsValid(_ => isSavedCardFlow || areRequiredFieldsValid)
 
     let areRequiredFieldsEmpty = fieldsArrWithBillingAddress->Array.reduce(false, (
       acc,
@@ -820,11 +819,6 @@ let useSubmitCallback = () => {
     logger,
   )
   let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
-    userBankAccountNumber,
-    "bankAccountNumber",
-    logger,
-  )
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -861,12 +855,6 @@ let useSubmitCallback = () => {
         setCity(prev => {
           ...prev,
           errorString: localeString.cityEmptyText,
-        })
-      }
-      if bankAccountNumber.value === "" {
-        setBankAccountNumber(prev => {
-          ...prev,
-          errorString: localeString.ibanEmptyText,
         })
       }
     }

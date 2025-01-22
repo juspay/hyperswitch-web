@@ -141,11 +141,22 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       ->Option.getOr(JSON.Encode.null)
       ->getDictFromJson
       ->getBool("isPreloadEnabled", true)
+    // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
     let shouldUseTopRedirection =
       options
       ->Option.getOr(JSON.Encode.null)
       ->getDictFromJson
       ->getBool("shouldUseTopRedirection", false)
+    let overridenDefaultRedirectionFlags: RecoilAtomTypes.redirectionFlags = {
+      shouldUseTopRedirection,
+      shouldRemoveBeforeUnloadEvents: false,
+    }
+    let redirectionFlags =
+      options
+      ->Option.getOr(JSON.Encode.null)
+      ->getDictFromJson
+      ->getJsonObjectFromDict("redirectionFlags")
+      ->RecoilAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
     let analyticsMetadata =
       options
       ->Option.getOr(JSON.Encode.null)
@@ -345,6 +356,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               )
               resolve()
             })
+            ->catch(_ => resolve())
             ->ignore
           } else {
             logApi(
@@ -362,6 +374,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         ->then(data => {
           [("paymentIntent", data)]->getJsonFromArrayOfJson->Promise.resolve
         })
+        ->catch(_ => Promise.resolve(JSON.Encode.null))
       }
 
       let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
@@ -422,9 +435,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
 
                 if isSdkButton && submitSuccessfulValue {
-                  Window.replaceRootHref(returnUrl, shouldUseTopRedirection)
+                  Utils.replaceRootHref(returnUrl, redirectionFlags)
                 } else if submitSuccessfulValue && redirect === "always" {
-                  Window.replaceRootHref(returnUrl, shouldUseTopRedirection)
+                  Utils.replaceRootHref(returnUrl, redirectionFlags)
                 } else if !submitSuccessfulValue {
                   resolve1(json)
                 } else {
@@ -453,6 +466,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             postSubmitMessage(message)
             Promise.resolve(JSON.Encode.null)
           })
+          ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
           ->ignore
         })
       }
@@ -502,6 +516,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=ORCA_ELEMENTS_CALLED)
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
 
         Elements.make(
@@ -516,7 +531,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.getOr(JSON.Encode.null)
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
-          ~shouldUseTopRedirection,
+          ~redirectionFlags,
         )
       }
 
@@ -551,6 +566,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           )
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
 
         PaymentMethodsManagementElements.make(
@@ -602,7 +618,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 )
                 let url = decodedData->getString("return_url", "/")
                 if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
-                  Window.replaceRootHref(url, shouldUseTopRedirection)
+                  Utils.replaceRootHref(url, redirectionFlags)
                 } else {
                   resolve(json)
                 }
@@ -691,6 +707,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=PAYMENT_SESSION_INITIATED)
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
 
         PaymentSession.make(
@@ -699,7 +716,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~publishableKey,
           ~logger=Some(logger),
           ~ephemeralKey=ephemeralKey.contents,
-          ~shouldUseTopRedirection,
+          ~redirectionFlags,
         )
       }
 
