@@ -1440,7 +1440,7 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
   let iframes = Window.querySelectorAll("iframe")
 
   iframes->Array.forEach(iframe => {
-    let iframeSrc = iframe->Window.getAttribute("src")->Option.getOr("")
+    let iframeSrc = iframe->Window.getAttribute("src")->Nullable.toOption->Option.getOr("")
     if iframeSrc->String.includes(`componentName=${componentName}`) {
       iframe->Js.Nullable.return->Window.iframePostMessage(msg)
       isMessageSent := true
