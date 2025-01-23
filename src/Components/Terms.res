@@ -17,7 +17,7 @@ let make = (~mode: PaymentModeType.payment) => {
       LocaleStringHelper.getSepaDebitTerms(localeString, business.name),
       terms.sepaDebit,
     )
-  | BecsBankDebit => (localeString.becsDebitTermsWeb, terms.auBecsDebit)
+  | BecsBankDebit => (localeString.becsDebitTerms, terms.auBecsDebit)
   | Card => (cardTermsValue, terms.card)
   | _ => ("", Auto)
   }

@@ -41,13 +41,6 @@ let defaultLocale: localeStringsWebAndroid = {
   useExisitingSavedCards: "Use saved payment methods",
   saveCardDetails: "Save card details",
   addBankAccount: "Add bank account",
-  achBankDebitTermsPart1: "By providing your account number and confirming this payment, you are authorizing ",
-  achBankDebitTermsPart2: " and Hyperswitch, our payment service provider, to send instructions to your bank to debit your account and your bank to debit your account in accordance with those instructions. You are entitled to a refund from your bank under the terms and conditions of your agreement with your bank.",
-  sepaDebitTermsPart1: "By providing your payment information and confirming this payment, you authorise (A) ",
-  sepaDebitTermsPart2: " and our payment service provider(s) to send instructions to your bank to debit your account and (B) your bank to debit your account in accordance with those instructions. As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. Your rights are explained in a statement that you can obtain from your bank. You agree to receive notifications for future debits up to 2 days before they occur.",
-  becsDebitTerms: "By providing your bank account details and confirming this payment, you agree to this Direct Debit Request and the Direct Debit Request service agreement and authorise to debit your account through the Bulk Electronic Clearing System (BECS) on behalf of Hyperswitch Payment Widget (the \"Merchant\") for any amounts separately communicated to you by the Merchant. You certify that you are either an account holder or an authorised signatory on the account listed above.",
-  cardTermsPart1: "You allow ",
-  cardTermsPart2: " to automatically charge your card for future payments.",
   payNowButton: "Pay Now",
   cardNumberEmptyText: "Card Number cannot be empty",
   cardExpiryDateEmptyText: "Card expiry date cannot be empty",
@@ -79,13 +72,14 @@ let defaultLocale: localeStringsWebAndroid = {
   stateEmptyText: "State cannot be empty",
   ibanEmptyText: "IBAN cannot be empty",
   selectPaymentMethodText: "Please select a payment method and try again",
-  achBankDebitTermsWeb: "Your ACH Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.",
-  sepaDebitTermsWebPart1: "By providing your payment information and confirming to this mandate form, you authorise (A) ",
-  sepaDebitTermsWebPart2: ", the Creditor and/or our payment service provider(s) to send instructions to your bank to debit your account and (B) your bank to debit your account in accordance with the instructions from ",
-  sepaDebitTermsWebPart3: ". As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. A refund must be claimed within 8 weeks starting from the date on which your account was debited. Your rights are explained in a statement that you can obtain from your bank.",
-  becsDebitTermsWeb: `By providing your bank account details and confirming this payment, you agree to this Direct Debit Request and the Direct Debit Request service agreement and authorise Hyperswitch Payments Australia Pty Ltd ACN 160 180 343 Direct Debit User ID number 507156 (“Hyperswitch”) to debit your account through the Bulk Electronic Clearing System (BECS) on behalf of Hyperswitch Payment Widget (the "Merchant") for any amounts separately communicated to you by the Merchant. You certify that you are either an account holder or an authorised signatory on the account listed above.`,
-  cardTermsWebPart1: `By providing your card information, you allow `,
-  cardTermsWebPart2: ` to charge your card for future payments in accordance with their terms.`,
+  achBankDebitTermsPart1: "Your ACH Debit Authorization will be set up now, but we'll confirm the amount and let you know before future payments are taken.",
+  achBankDebitTermsPart2: "",
+  sepaDebitTermsPart1: "By providing your payment information and confirming to this mandate form, you authorise (A) ",
+  sepaDebitTermsPart2: ", the Creditor and/or our payment service provider(s) to send instructions to your bank to debit your account and (B) your bank to debit your account in accordance with the instructions from ",
+  sepaDebitTermsPart3: ". As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. A refund must be claimed within 8 weeks starting from the date on which your account was debited. Your rights are explained in a statement that you can obtain from your bank.",
+  becsDebitTerms: `By providing your bank account details and confirming this payment, you agree to this Direct Debit Request and the Direct Debit Request service agreement and authorise Hyperswitch Payments Australia Pty Ltd ACN 160 180 343 Direct Debit User ID number 507156 (“Hyperswitch”) to debit your account through the Bulk Electronic Clearing System (BECS) on behalf of Hyperswitch Payment Widget (the "Merchant") for any amounts separately communicated to you by the Merchant. You certify that you are either an account holder or an authorised signatory on the account listed above.`,
+  cardTermsPart1: `By providing your card information, you allow `,
+  cardTermsPart2: ` to charge your card for future payments in accordance with their terms.`,
   surchargeMsgAmountPart1: "A surcharge amount of ",
   surchargeMsgAmountPart2: " will be applied for this transaction",
   surchargeMsgAmountForCardPart1: "A surcharge amount of upto ",
@@ -123,7 +117,8 @@ let defaultLocale: localeStringsWebAndroid = {
   formSubmittingText: "Submitting",
   formSubheaderBillingDetailsText: "Enter your billing address",
   formSubheaderCardText: "Your card details",
-  formSubheaderAccountText: "Your",
+  formSubheaderAccountTextPart1: "Your",
+  formSubheaderAccountTextPart2: "",
   formHeaderReviewText: "Review",
   formHeaderReviewTabLayoutTextPart1: "Review your",
   formHeaderReviewTabLayoutTextPart2: "details",
@@ -156,8 +151,10 @@ let defaultLocale: localeStringsWebAndroid = {
   infoCardErrReason: "Reason",
   linkRedirectionTextPart1: "Redirecting in ",
   linkRedirectionTextPart2: " seconds ...",
-  linkExpiryInfo: "Link expires on: ",
-  payoutFromText: "Payout from ",
+  linkExpiryInfoPart1: "Link expires on: ",
+  linkExpiryInfoPart2: "",
+  payoutFromTextPart1: "Payout from ",
+  payoutFromTextPart2: "",
   payoutStatusFailedMessage: "Failed to process your payout. Please check with your provider for more details.",
   payoutStatusPendingMessage: "Your payout should be processed within 2-3 business days.",
   payoutStatusSuccessMessage: "Your payout was successful. Funds were deposited in your selected payment mode.",
@@ -290,29 +287,6 @@ let getLocaleStrings: Js.Json.t => localeStringsWebAndroid = data => {
       ),
       saveCardDetails: Utils.getString(res, "saveCardDetails", defaultLocale.saveCardDetails),
       addBankAccount: Utils.getString(res, "addBankAccount", defaultLocale.addBankAccount),
-      achBankDebitTermsPart1: Utils.getString(
-        res,
-        "achBankDebitTermsPart1",
-        defaultLocale.achBankDebitTermsPart1,
-      ),
-      achBankDebitTermsPart2: Utils.getString(
-        res,
-        "achBankDebitTermsPart2",
-        defaultLocale.achBankDebitTermsPart2,
-      ),
-      sepaDebitTermsPart1: Utils.getString(
-        res,
-        "sepaDebitTermsPart1",
-        defaultLocale.sepaDebitTermsPart1,
-      ),
-      sepaDebitTermsPart2: Utils.getString(
-        res,
-        "sepaDebitTermsPart2",
-        defaultLocale.sepaDebitTermsPart2,
-      ),
-      becsDebitTerms: Utils.getString(res, "becsDebitTerms", defaultLocale.becsDebitTerms),
-      cardTermsPart1: Utils.getString(res, "cardTermsPart1", defaultLocale.cardTermsPart1),
-      cardTermsPart2: Utils.getString(res, "cardTermsPart2", defaultLocale.cardTermsPart2),
       payNowButton: Utils.getString(res, "payNowButton", defaultLocale.payNowButton),
       cardNumberEmptyText: Utils.getString(
         res,
@@ -396,27 +370,32 @@ let getLocaleStrings: Js.Json.t => localeStringsWebAndroid = data => {
         "selectPaymentMethodText",
         defaultLocale.selectPaymentMethodText,
       ),
-      achBankDebitTermsWeb: Utils.getString(
+      achBankDebitTermsPart1: Utils.getString(
         res,
-        "achBankDebitTermsWeb",
-        defaultLocale.achBankDebitTermsWeb,
+        "achBankDebitTermsPart1",
+        defaultLocale.achBankDebitTermsPart1,
       ),
-      sepaDebitTermsWebPart1: Utils.getString(
+      achBankDebitTermsPart2: Utils.getString(
         res,
-        "sepaDebitTermsWebPart1",
-        defaultLocale.sepaDebitTermsWebPart1,
+        "achBankDebitTermsPart2",
+        defaultLocale.achBankDebitTermsPart2,
       ),
-      sepaDebitTermsWebPart2: Utils.getString(
+      sepaDebitTermsPart1: Utils.getString(
         res,
-        "sepaDebitTermsWebPart2",
-        defaultLocale.sepaDebitTermsWebPart2,
+        "sepaDebitTermsPart1",
+        defaultLocale.sepaDebitTermsPart1,
       ),
-      sepaDebitTermsWebPart3: Utils.getString(
+      sepaDebitTermsPart2: Utils.getString(
         res,
-        "sepaDebitTermsWebPart3",
-        defaultLocale.sepaDebitTermsWebPart3,
+        "sepaDebitTermsPart2",
+        defaultLocale.sepaDebitTermsPart2,
       ),
-      becsDebitTermsWeb: Utils.getString(res, "becsDebitTermsWeb", defaultLocale.becsDebitTermsWeb),
+      sepaDebitTermsPart3: Utils.getString(
+        res,
+        "sepaDebitTermsPart3",
+        defaultLocale.sepaDebitTermsPart3,
+      ),
+      becsDebitTerms: Utils.getString(res, "becsDebitTerms", defaultLocale.becsDebitTerms),
       surchargeMsgAmountPart1: Utils.getString(
         res,
         "surchargeMsgAmountPart1",
@@ -528,10 +507,15 @@ let getLocaleStrings: Js.Json.t => localeStringsWebAndroid = data => {
         "formSubheaderCardText",
         defaultLocale.formSubheaderCardText,
       ),
-      formSubheaderAccountText: Utils.getString(
+      formSubheaderAccountTextPart1: Utils.getString(
         res,
-        "formSubheaderAccountText",
-        defaultLocale.formSubheaderAccountText,
+        "formSubheaderAccountTextPart1",
+        defaultLocale.formSubheaderAccountTextPart1,
+      ),
+      formSubheaderAccountTextPart2: Utils.getString(
+        res,
+        "formSubheaderAccountTextPart2",
+        defaultLocale.formSubheaderAccountTextPart2,
       ),
       formHeaderReviewText: Utils.getString(
         res,
@@ -677,8 +661,26 @@ let getLocaleStrings: Js.Json.t => localeStringsWebAndroid = data => {
         "linkRedirectionTextPart2",
         defaultLocale.linkRedirectionTextPart2,
       ),
-      linkExpiryInfo: Utils.getString(res, "linkExpiryInfo", defaultLocale.linkExpiryInfo),
-      payoutFromText: Utils.getString(res, "payoutFromText", defaultLocale.payoutFromText),
+      linkExpiryInfoPart1: Utils.getString(
+        res,
+        "linkExpiryInfoPart1",
+        defaultLocale.linkExpiryInfoPart1,
+      ),
+      linkExpiryInfoPart2: Utils.getString(
+        res,
+        "linkExpiryInfoPart2",
+        defaultLocale.linkExpiryInfoPart2,
+      ),
+      payoutFromTextPart1: Utils.getString(
+        res,
+        "payoutFromTextPart1",
+        defaultLocale.payoutFromTextPart1,
+      ),
+      payoutFromTextPart2: Utils.getString(
+        res,
+        "payoutFromTextPart2",
+        defaultLocale.payoutFromTextPart2,
+      ),
       payoutStatusFailedMessage: Utils.getString(
         res,
         "payoutStatusFailedMessage",
@@ -743,8 +745,8 @@ let getLocaleStrings: Js.Json.t => localeStringsWebAndroid = data => {
         "nicknamePlaceholder",
         defaultLocale.nicknamePlaceholder,
       ),
-      cardTermsWebPart1: Utils.getString(res, "cardTermsWebPart1", defaultLocale.cardTermsWebPart1),
-      cardTermsWebPart2: Utils.getString(res, "cardTermsWebPart2", defaultLocale.cardTermsWebPart2),
+      cardTermsPart1: Utils.getString(res, "cardTermsPart1", defaultLocale.cardTermsPart1),
+      cardTermsPart2: Utils.getString(res, "cardTermsPart2", defaultLocale.cardTermsPart2),
       useExisitingSavedCardsWeb: Utils.getString(
         res,
         "useExisitingSavedCardsWeb",
@@ -762,16 +764,18 @@ let getLocaleStringsFromJson: Js.Json.t => localeStringsWebAndroid = jsonData =>
   }
 }
 
-let getAchBankDebitTerms = (localString, _) => {
-  localString.achBankDebitTermsWeb
+let getAchBankDebitTerms = (localString, str) => {
+  `${localString.achBankDebitTermsPart1} ${localString.achBankDebitTermsPart2 === ""
+      ? ""
+      : str} ${localString.achBankDebitTermsPart2}`
 }
 
 let getSepaDebitTerms = (localString, str) => {
-  `${localString.sepaDebitTermsWebPart1} ${str} ${localString.sepaDebitTermsWebPart2} ${str} ${localString.sepaDebitTermsWebPart3}`
+  `${localString.sepaDebitTermsPart1} ${str} ${localString.sepaDebitTermsPart2} ${str} ${localString.sepaDebitTermsPart3}`
 }
 
 let getCardTerms = (localString, str) => {
-  `${localString.cardTermsWebPart1} ${str} ${localString.cardTermsWebPart2}`
+  `${localString.cardTermsPart1} ${str} ${localString.cardTermsPart2}`
 }
 
 let getSurchangeMsgAmountComponent = (localString, currency, str) => {
@@ -807,7 +811,7 @@ let getFormFundsCreditInfoText = (localString, pmLabel) => {
 }
 
 let getFormSubheaderAccountText = (localString, pmLabel) => {
-  `${localString.formSubheaderAccountText} ${pmLabel}`
+  `${localString.formSubheaderAccountTextPart1} ${pmLabel} ${localString.formSubheaderAccountTextPart2}`
 }
 
 let getFormHeaderReviewTabLayoutText = (localString, pmLabel) => {
@@ -827,9 +831,9 @@ let getLinkRedirectionText = (localString, seconds) => {
 }
 
 let getLinkExpiryInfo = (localString, expiry) => {
-  `${localString.linkExpiryInfo} ${expiry}`
+  `${localString.linkExpiryInfoPart1} ${expiry} ${localString.linkExpiryInfoPart2}`
 }
 
 let getPayoutFromText = (localString, merchant) => {
-  `${localString.payoutFromText} ${merchant}`
+  `${localString.payoutFromTextPart1} ${merchant} ${localString.payoutFromTextPart2}`
 }
