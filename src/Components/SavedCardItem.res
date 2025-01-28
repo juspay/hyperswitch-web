@@ -103,6 +103,20 @@ let make = (
   | None => "debit"
   }
 
+  let billingDetailsText = "Billing Details:"
+
+  let billingDetailsArray = [
+                        paymentItem.billing.address.line1,
+                        paymentItem.billing.address.line2,
+                        paymentItem.billing.address.line3,
+                        paymentItem.billing.address.city,
+                        paymentItem.billing.address.state,
+                        paymentItem.billing.address.country,
+                        paymentItem.billing.address.zip,
+                      ]
+                      -> Array.map(item => Option.getOr(item, ""))
+                      -> Array.filter(item => Js.String.trim(item) !== "")
+
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
       className={`PickerItem ${pickerItemClass} flex flex-row items-stretch`}
@@ -202,16 +216,11 @@ let make = (
                   </div>
                 </div>
               </RenderIf>
-              <RenderIf condition=displayBillingDetails>
+              <RenderIf condition=(isActive && displayBillingDetails)>
                 <div>
-                  <div className="flex flex-row items-start justify-start gap-2 mt-3" style={textAlign: "left", fontSize: "15px"}><strong> {React.string(`Billing Details:`)} </strong></div>
-                  <div className="flex flex-row items-start justify-start gap-2" style={textAlign: "left", fontSize: "15px"}>{React.string(Option.getOr(paymentItem.billing.address.line1, "") ++ ", " 
-                    ++ Option.getOr(paymentItem.billing.address.line2, "") ++ ", " 
-                    ++ Option.getOr(paymentItem.billing.address.line3, "") ++ ", " 
-                    ++ Option.getOr(paymentItem.billing.address.city, "") ++ ", " 
-                    ++ Option.getOr(paymentItem.billing.address.state, "") ++ ", "
-                    ++ Option.getOr(paymentItem.billing.address.country, "") ++ ", "
-                    ++ Option.getOr(paymentItem.billing.address.zip, ""))}
+                  <div className="flex flex-row items-start justify-start gap-2 mt-3" style={textAlign: "left", fontSize: "15px", opacity: "0.6"}><strong> {React.string(billingDetailsText)} </strong></div>
+                  <div className="flex flex-row items-start justify-start gap-2" style={ textAlign: "left", fontSize: "15px", opacity: "0.6"}>
+                    {React.string(Array.joinWith(billingDetailsArray, ", "))}
                   </div>
                 </div>
               </RenderIf>

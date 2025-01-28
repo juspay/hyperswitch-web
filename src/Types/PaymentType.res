@@ -357,7 +357,7 @@ let defaultOptions = {
   sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
   hideExpiredPaymentMethods: false,
   displayDefaultSavedPaymentIcon: true,
-  hideCardNicknameField: false, 
+  hideCardNicknameField: false,
   displayBillingDetails: false,
   customMessageForCardTerms: "",
 }
@@ -910,15 +910,13 @@ let getAddressDetails = (dict, str) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    {
-      line1: Some(getString(json, "line1", "")),
-      line2: Some(getString(json, "line2", "")),
-      line3: Some(getString(json, "line3", "")),
-      city: Some(getString(json, "city", "")),
-      state: Some(getString(json, "state", "")),
-      country: Some(getString(json, "country", "")),
-      zip: Some(getString(json, "zip", "")),
-    }
+    line1: Some(getString(json, "line1", "")),
+    line2: Some(getString(json, "line2", "")),
+    line3: Some(getString(json, "line3", "")),
+    city: Some(getString(json, "city", "")),
+    state: Some(getString(json, "state", "")),
+    country: Some(getString(json, "country", "")),
+    zip: Some(getString(json, "zip", "")), 
   })
   ->Option.getOr(defaultAddressDetails)
 }
@@ -928,9 +926,7 @@ let getBillingAddressPaymentMethod = (dict, str) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    {
-      address: getAddressDetails(json, "address")
-    }
+    address: getAddressDetails(json, "address")
   })
     ->Option.getOr(defaultBillingAddressPaymentMethod)
 }
