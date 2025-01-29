@@ -189,10 +189,9 @@ let startApplePaySession = (
     let payment = event.payment
     payment->callBackFunc
   }
-  ssn.oncancel = _ev => {
+  ssn.oncancel = _ => {
     applePaySessionRef := Nullable.null
-    logInfo(Console.log("Apple Pay Payment Cancelled"))
-    logger.setLogInfo(
+    logger.setLogError(
       ~value="Apple Pay Payment Cancelled",
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
@@ -218,6 +217,7 @@ let useHandleApplePayResponse = (
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
 
@@ -279,7 +279,13 @@ let useHandleApplePayResponse = (
           syncPayment()
         }
       } catch {
-      | _ => logInfo(Console.log("Error in parsing Apple Pay Data"))
+      | err =>
+        logger.setLogError(
+          ~value="Error in parsing Apple Pay Data",
+          ~eventName=APPLE_PAY_FLOW,
+          ~paymentMethod="APPLE_PAY",
+          ~internalMetadata=err->formatException->JSON.stringify,
+        )
       }
     }
     Window.addEventListener("message", handleApplePayMessages)

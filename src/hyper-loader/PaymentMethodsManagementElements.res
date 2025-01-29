@@ -211,6 +211,7 @@ let make = (
           }
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
         mountedIframeRef->Window.iframePostMessage(message)
       }
@@ -222,7 +223,7 @@ let make = (
         iframeRef,
         mountPostMessage,
         ~isPaymentManagementElement=true,
-        ~shouldUseTopRedirection=false,
+        ~redirectionFlags=RecoilAtoms.defaultRedirectionFlags,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

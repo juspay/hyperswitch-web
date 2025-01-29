@@ -24,10 +24,15 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
 
   let getSamsungPaymentsClient = _ =>
     SamsungPayType.samsung({
-      environment: publishableKey->String.startsWith("pk_prd_") ? "PRODUCTION" : "STAGE",
+      environment: "PRODUCTION",
     })
 
   let onSamsungPaymentButtonClick = _ => {
+    loggerState.setLogInfo(
+      ~value="SamsungPay Button Clicked",
+      ~eventName=SAMSUNG_PAY,
+      ~paymentMethod="SAMSUNG_PAY",
+    )
     SamsungPayHelpers.handleSamsungPayClicked(
       ~sessionObj=sessionObj->Option.getOr(JSON.Encode.null)->getDictFromJson,
       ~componentName,
@@ -96,10 +101,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     })
     None
   }, [isRenderSamsungPayButton])
-
-  <div
-    style={height: `${height->Int.toString}px`}
-    id="samsungpay-container"
-    className={`w-full flex flex-row justify-center rounded-md  [&>*]:w-full [&>button]:!bg-contain`}
-  />
+  <RenderIf condition={isRenderSamsungPayButton}>
+    <div
+      style={height: `${height->Int.toString}px`}
+      id="samsungpay-container"
+      className={`w-full flex flex-row justify-center rounded-md  [&>*]:w-full [&>button]:!bg-contain`}
+    />
+  </RenderIf>
 }

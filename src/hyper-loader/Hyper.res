@@ -139,26 +139,36 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     let isPreloadEnabled =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getBool("isPreloadEnabled", true)
+      ->getDictFromJson
+      ->getBool("isPreloadEnabled", true)
+    // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
     let shouldUseTopRedirection =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getBool("shouldUseTopRedirection", false)
+      ->getDictFromJson
+      ->getBool("shouldUseTopRedirection", false)
+    let overridenDefaultRedirectionFlags: RecoilAtomTypes.redirectionFlags = {
+      shouldUseTopRedirection,
+      shouldRemoveBeforeUnloadEvents: false,
+    }
+    let redirectionFlags =
+      options
+      ->Option.getOr(JSON.Encode.null)
+      ->getDictFromJson
+      ->getJsonObjectFromDict("redirectionFlags")
+      ->RecoilAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
     let analyticsMetadata =
       options
       ->Option.getOr(JSON.Encode.null)
-      ->Utils.getDictFromJson
-      ->Utils.getDictFromObj("analytics")
-      ->Utils.getJsonObjectFromDict("metadata")
+      ->getDictFromJson
+      ->getDictFromObj("analytics")
+      ->getJsonObjectFromDict("metadata")
     if isPreloadEnabled {
       preloader()
     }
     let analyticsInfoDict =
       analyticsInfo->Option.flatMap(JSON.Decode.object)->Option.getOr(Dict.make())
-    let sessionID =
-      analyticsInfoDict->getString("sessionID", "hyp_" ++ Utils.generateRandomString(8))
+    let sessionID = analyticsInfoDict->getString("sessionID", "hyp_" ++ generateRandomString(8))
     let sdkTimestamp = analyticsInfoDict->getString("timeStamp", Date.now()->Float.toString)
     let logger = HyperLogger.make(
       ~sessionId=sessionID,
@@ -266,7 +276,12 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let googlePayScript = Window.createElement("script")
         googlePayScript->Window.elementSrc(googlePayScriptURL)
         googlePayScript->Window.elementOnerror(err => {
-          Utils.logInfo(Console.log2("ERROR DURING LOADING GOOGLE PAY SCRIPT", err))
+          logger.setLogError(
+            ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT",
+            ~eventName=GOOGLE_PAY_SCRIPT,
+            ~internalMetadata=err->formatException->JSON.stringify,
+            ~paymentMethod="GOOGLE_PAY",
+          )
         })
         Window.body->Window.appendChild(googlePayScript)
         logger.setLogInfo(~value="GooglePay Script Loaded", ~eventName=GOOGLE_PAY_SCRIPT)
@@ -279,9 +294,17 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         let samsungPayScript = Window.createElement("script")
         samsungPayScript->Window.elementSrc(samsungPayScriptUrl)
         samsungPayScript->Window.elementOnerror(err => {
-          Console.log2("ERROR LOADING SAMSUNG PAY SCRIPT", err)
+          logger.setLogError(
+            ~value="ERROR DURING LOADING SAMSUNG PAY SCRIPT",
+            ~eventName=SAMSUNG_PAY_SCRIPT,
+            ~internalMetadata=err->formatException->JSON.stringify,
+            ~paymentMethod="SAMSUNG_PAY",
+          )
         })
         Window.body->Window.appendChild(samsungPayScript)
+        samsungPayScript->Window.elementOnload(_ =>
+          logger.setLogInfo(~value="SamsungPay Script Loaded", ~eventName=SAMSUNG_PAY_SCRIPT)
+        )
       }
 
       let iframeRef = ref([])
@@ -333,6 +356,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               )
               resolve()
             })
+            ->catch(_ => resolve())
             ->ignore
           } else {
             logApi(
@@ -350,6 +374,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         ->then(data => {
           [("paymentIntent", data)]->getJsonFromArrayOfJson->Promise.resolve
         })
+        ->catch(_ => Promise.resolve(JSON.Encode.null))
       }
 
       let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
@@ -410,9 +435,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
 
                 if isSdkButton && submitSuccessfulValue {
-                  Window.replaceRootHref(returnUrl, shouldUseTopRedirection)
+                  Utils.replaceRootHref(returnUrl, redirectionFlags)
                 } else if submitSuccessfulValue && redirect === "always" {
-                  Window.replaceRootHref(returnUrl, shouldUseTopRedirection)
+                  Utils.replaceRootHref(returnUrl, redirectionFlags)
                 } else if !submitSuccessfulValue {
                   resolve1(json)
                 } else {
@@ -441,6 +466,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             postSubmitMessage(message)
             Promise.resolve(JSON.Encode.null)
           })
+          ->Promise.catch(_ => Promise.resolve(JSON.Encode.null))
           ->ignore
         })
       }
@@ -490,6 +516,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=ORCA_ELEMENTS_CALLED)
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
 
         Elements.make(
@@ -504,7 +531,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.getOr(JSON.Encode.null)
           ->getDictFromJson
           ->getString("customBackendUrl", ""),
-          ~shouldUseTopRedirection,
+          ~redirectionFlags,
         )
       }
 
@@ -539,6 +566,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           )
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
 
         PaymentMethodsManagementElements.make(
@@ -590,7 +618,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 )
                 let url = decodedData->getString("return_url", "/")
                 if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
-                  Window.replaceRootHref(url, shouldUseTopRedirection)
+                  Utils.replaceRootHref(url, redirectionFlags)
                 } else {
                   resolve(json)
                 }
@@ -679,6 +707,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=PAYMENT_SESSION_INITIATED)
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
 
         PaymentSession.make(
@@ -687,7 +716,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~publishableKey,
           ~logger=Some(logger),
           ~ephemeralKey=ephemeralKey.contents,
-          ~shouldUseTopRedirection,
+          ~redirectionFlags,
         )
       }
 

@@ -5,7 +5,7 @@ open Utils
 open EventListenerManager
 
 type trustPayFunctions = {
-  finishApplePaymentV2: (string, ApplePayTypes.paymentRequestData) => promise<JSON.t>,
+  finishApplePaymentV2: (string, ApplePayTypes.paymentRequestData, string) => promise<JSON.t>,
   executeGooglePayment: (string, GooglePayType.paymentDataRequest) => promise<JSON.t>,
 }
 @new external trustPayApi: JSON.t => trustPayFunctions = "TrustPayApi"
@@ -19,7 +19,7 @@ let make = (
   ~logger: option<HyperLogger.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
-  ~shouldUseTopRedirection,
+  ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
   try {
     let iframeRef = []
@@ -182,7 +182,11 @@ let make = (
               logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT)
               trustPayScript->Window.elementSrc(trustPayScriptURL)
               trustPayScript->Window.elementOnerror(err => {
-                logInfo(Console.log2("ERROR DURING LOADING TRUSTPAY APPLE PAY", err))
+                logger.setLogError(
+                  ~value="ERROR DURING LOADING TRUSTPAY APPLE PAY",
+                  ~eventName=TRUSTPAY_SCRIPT,
+                  ~internalMetadata=err->formatException->JSON.stringify,
+                )
               })
               trustPayScript->Window.elementOnload(_ => {
                 logger.setLogInfo(~value="TrustPay Script Loaded", ~eventName=TRUSTPAY_SCRIPT)
@@ -308,6 +312,15 @@ let make = (
       ) => {
         open Promise
 
+        let redirectionFlagsDict =
+          [
+            ("shouldUseTopRedirection", JSON.Encode.bool(redirectionFlags.shouldUseTopRedirection)),
+            (
+              "shouldRemoveBeforeUnloadEvents",
+              JSON.Encode.bool(redirectionFlags.shouldRemoveBeforeUnloadEvents),
+            ),
+          ]->Dict.fromArray
+
         let widgetOptions =
           [
             ("clientSecret", clientSecret->JSON.Encode.string),
@@ -315,7 +328,7 @@ let make = (
             ("locale", locale),
             ("loader", loader),
             ("fonts", fonts),
-            ("shouldUseTopRedirection", shouldUseTopRedirection->JSON.Encode.bool),
+            ("redirectionFlags", redirectionFlagsDict->JSON.Encode.object),
           ]->getJsonFromArrayOfJson
         let message = [
           (
@@ -608,7 +621,7 @@ let make = (
 
                   try {
                     let trustpay = trustPayApi(secrets)
-                    trustpay.finishApplePaymentV2(payment, paymentRequest)
+                    trustpay.finishApplePaymentV2(payment, paymentRequest, Window.Location.hostname)
                     ->then(res => {
                       let value = "Payment Data Filled: New Payment Method"
                       logger.setLogInfo(
@@ -673,7 +686,7 @@ let make = (
             let returnUrl = dict->getString("return_url", "")
             let redirectUrl = `${returnUrl}?payment_intent_client_secret=${clientSecret}&status=${status}`
             if redirect.contents === "always" {
-              Window.replaceRootHref(redirectUrl, shouldUseTopRedirection)
+              Utils.replaceRootHref(redirectUrl, redirectionFlags)
               resolve(JSON.Encode.null)
             } else {
               messageCurrentWindow([
@@ -685,6 +698,56 @@ let make = (
             }
           }
 
+          let pollStatusWrapper = dict => {
+            let pollId = dict->getString("poll_id", "")
+            let interval =
+              dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
+            let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
+            let url = dict->getString("return_url_with_query_params", "")
+
+            let handleErrorResponse = err => {
+              if redirect.contents === "always" {
+                Utils.replaceRootHref(url, redirectionFlags)
+              }
+              messageCurrentWindow([
+                ("submitSuccessful", false->JSON.Encode.bool),
+                ("error", err->anyTypeToJson),
+                ("url", url->JSON.Encode.string),
+              ])
+            }
+
+            PaymentHelpers.pollStatus(
+              ~headers,
+              ~customPodUri,
+              ~pollId,
+              ~interval,
+              ~count,
+              ~returnUrl=url,
+              ~logger,
+            )
+            ->then(_ => {
+              PaymentHelpers.retrievePaymentIntent(
+                clientSecret,
+                headers,
+                ~optLogger=Some(logger),
+                ~customPodUri,
+                ~isForceSync=true,
+              )
+              ->then(json => json->handleRetrievePaymentResponse)
+              ->catch(err => {
+                err->handleErrorResponse
+                resolve(err->anyTypeToJson)
+              })
+              ->ignore
+              ->resolve
+            })
+            ->catch(err => {
+              err->handleErrorResponse
+              resolve()
+            })
+            ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+          }
+
           switch eventDataObject->getOptionalJsonFromJson("poll_status") {
           | Some(val) => {
               messageCurrentWindow([
@@ -693,65 +756,12 @@ let make = (
                 ("iframeId", selectorString->JSON.Encode.string),
               ])
               let dict = val->getDictFromJson
-              let pollId = dict->getString("poll_id", "")
-              let interval =
-                dict->getString("delay_in_secs", "")->Int.fromString->Option.getOr(1) * 1000
-              let count = dict->getString("frequency", "")->Int.fromString->Option.getOr(5)
-              let url = dict->getString("return_url_with_query_params", "")
-
-              let handleErrorResponse = err => {
-                if redirect.contents === "always" {
-                  Window.replaceRootHref(url, shouldUseTopRedirection)
-                }
-                messageCurrentWindow([
-                  ("submitSuccessful", false->JSON.Encode.bool),
-                  ("error", err->anyTypeToJson),
-                  ("url", url->JSON.Encode.string),
-                ])
-              }
-
-              PaymentHelpers.pollStatus(
-                ~headers,
-                ~customPodUri,
-                ~pollId,
-                ~interval,
-                ~count,
-                ~returnUrl=url,
-                ~logger,
-              )
-              ->then(_ => {
-                PaymentHelpers.retrievePaymentIntent(
-                  clientSecret,
-                  headers,
-                  ~optLogger=Some(logger),
-                  ~customPodUri,
-                  ~isForceSync=true,
-                )
-                ->then(json => json->handleRetrievePaymentResponse)
-                ->catch(err => {
-                  err->handleErrorResponse
-                  resolve(err->anyTypeToJson)
-                })
-                ->ignore
-                ->resolve
-              })
-              ->catch(err => {
-                err->handleErrorResponse
-                resolve()
-              })
-              ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
-              ->ignore
+              pollStatusWrapper(dict)->then(_ => resolve())->catch(_ => resolve())->ignore
             }
           | None => ()
           }
 
-          switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
-          | Some(redirectUrl) =>
-            messageCurrentWindow([
-              ("fullscreen", true->JSON.Encode.bool),
-              ("param", "paymentloader"->JSON.Encode.string),
-              ("iframeId", selectorString->JSON.Encode.string),
-            ])
+          let retrievePaymentIntentWrapper = redirectUrl => {
             PaymentHelpers.retrievePaymentIntent(
               clientSecret,
               headers,
@@ -762,9 +772,9 @@ let make = (
             ->then(json => json->handleRetrievePaymentResponse)
             ->catch(err => {
               if redirect.contents === "always" {
-                Window.replaceRootHref(
+                Utils.replaceRootHref(
                   redirectUrl->JSON.Decode.string->Option.getOr(""),
-                  shouldUseTopRedirection,
+                  redirectionFlags,
                 )
                 resolve(JSON.Encode.null)
               } else {
@@ -777,6 +787,18 @@ let make = (
               }
             })
             ->finally(_ => messageCurrentWindow([("fullscreen", false->JSON.Encode.bool)]))
+          }
+
+          switch eventDataObject->getOptionalJsonFromJson("openurl_if_required") {
+          | Some(redirectUrl) =>
+            messageCurrentWindow([
+              ("fullscreen", true->JSON.Encode.bool),
+              ("param", "paymentloader"->JSON.Encode.string),
+              ("iframeId", selectorString->JSON.Encode.string),
+            ])
+            retrievePaymentIntentWrapper(redirectUrl)
+            ->then(_ => resolve())
+            ->catch(_ => resolve())
             ->ignore
 
           | None => ()
@@ -1164,9 +1186,7 @@ let make = (
 
                   try {
                     let samsungPayClient = SamsungPayType.samsung({
-                      environment: publishableKey->String.startsWith("pk_prd_")
-                        ? "PRODUCTION"
-                        : "STAGE",
+                      environment: "PRODUCTION",
                     })
                     samsungPayClient.isReadyToPay(payRequest)
                     ->then(res => {
@@ -1177,7 +1197,15 @@ let make = (
                       mountedIframeRef->Window.iframePostMessage(msg)
                       resolve()
                     })
-                    ->catch(_ => resolve())
+                    ->catch(err => {
+                      logger.setLogError(
+                        ~value=`SAMSUNG PAY not ready ${err->formatException->JSON.stringify}`,
+                        ~eventName=SAMSUNG_PAY,
+                        ~paymentMethod="SAMSUNG_PAY",
+                        ~logType=ERROR,
+                      )
+                      resolve()
+                    })
                     ->ignore
 
                     let handleSamsungPayMessages = (event: Types.event) => {
@@ -1200,6 +1228,14 @@ let make = (
                           resolve()
                         })
                         ->catch(err => {
+                          logger.setLogError(
+                            ~value=`SAMSUNG PAY Initialization fail ${err
+                              ->formatException
+                              ->JSON.stringify}`,
+                            ~eventName=SAMSUNG_PAY,
+                            ~paymentMethod="SAMSUNG_PAY",
+                            ~logType=ERROR,
+                          )
                           event.source->Window.sendPostMessage(
                             [("samsungPayError", err->anyTypeToJson)]->Dict.fromArray,
                           )
@@ -1214,8 +1250,22 @@ let make = (
                       "onSamsungPayMessages",
                     )
                   } catch {
-                  | _ => Console.log("Error loading Samsung Pay")
+                  | err =>
+                    logger.setLogError(
+                      ~value=`SAMSUNG PAY Not Ready - ${err->formatException->JSON.stringify}`,
+                      ~eventName=SAMSUNG_PAY,
+                      ~paymentMethod="SAMSUNG_PAY",
+                      ~logType=ERROR,
+                    )
+                    Console.log("Error loading Samsung Pay")
                   }
+                } else if wallets.samsungPay === Never {
+                  logger.setLogInfo(
+                    ~value="SAMSUNG PAY is set as never by merchant",
+                    ~eventName=SAMSUNG_PAY,
+                    ~paymentMethod="SAMSUNG_PAY",
+                    ~logType=INFO,
+                  )
                 }
 
                 json->resolve
@@ -1225,6 +1275,7 @@ let make = (
                 mountedIframeRef->Window.iframePostMessage(msg)
                 json->resolve
               })
+              ->catch(_ => resolve(JSON.Encode.null))
               ->ignore
             }
           }
@@ -1248,7 +1299,9 @@ let make = (
           fetchSessionTokens(mountedIframeRef)
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
+
         mountedIframeRef->Window.iframePostMessage(message)
       }
 
@@ -1258,7 +1311,7 @@ let make = (
         setElementIframeRef,
         iframeRef,
         mountPostMessage,
-        ~shouldUseTopRedirection,
+        ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

@@ -1,5 +1,4 @@
 open RecoilAtoms
-open PaymentType
 open Utils
 
 @react.component
@@ -9,7 +8,10 @@ let make = (~paymentType, ~isOptional=false) => {
   let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
 
-  let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
+  let showDetails = PaymentType.getShowDetails(
+    ~billingDetails=fields.billingDetails,
+    ~logger=loggerState,
+  )
 
   let emailRef = React.useRef(Nullable.null)
 

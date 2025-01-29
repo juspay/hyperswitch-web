@@ -10,6 +10,7 @@ let make = (
   ~expiryProps=None,
   ~cvcProps=None,
   ~isBancontact=false,
+  ~isSaveDetailsWithClickToPay=false,
 ) => {
   open DynamicFieldsUtils
   open Utils
@@ -57,8 +58,10 @@ let make = (
   ))
 
   let requiredFields = React.useMemo(() => {
-    requiredFieldsWithBillingDetails->removeBillingDetailsIfUseBillingAddress(billingAddress)
-  }, [requiredFieldsWithBillingDetails])
+    requiredFieldsWithBillingDetails
+    ->removeBillingDetailsIfUseBillingAddress(billingAddress)
+    ->removeClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay)
+  }, (requiredFieldsWithBillingDetails, isSaveDetailsWithClickToPay))
 
   let isAllStoredCardsHaveName = React.useMemo(() => {
     PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
@@ -72,10 +75,10 @@ let make = (
       ~isSavedCardFlow,
       ~isAllStoredCardsHaveName,
     )
-    ->updateDynamicFields(billingAddress)
+    ->updateDynamicFields(billingAddress, isSaveDetailsWithClickToPay)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
-  }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
+  }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow, isSaveDetailsWithClickToPay))
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
@@ -269,6 +272,7 @@ let make = (
     ~cardNumber,
     ~cardExpiry,
     ~cvcNumber,
+    ~isSavedCardFlow,
   )
 
   useSetInitialRequiredFields(
@@ -328,7 +332,7 @@ let make = (
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
 
-  <RenderIf condition={fieldsArr->Array.length > 0}>
+  <RenderIf condition={!isSavedCardFlow && fieldsArr->Array.length > 0}>
     {<>
       {dynamicFieldsToRenderOutsideBilling
       ->Array.mapWithIndex((item, index) => {

@@ -155,7 +155,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
-  let updateShouldUseTopRedirection = UtilityHooks.useUpdateShouldUseTopRedirection()
+  let updateRedirectionFlags = UtilityHooks.useUpdateRedirectionFlags()
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMounted", true->JSON.Encode.bool)])
@@ -287,12 +287,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 logger.setClientSecret(clientSecret)
 
                 // Update top redirection atom
-                updateShouldUseTopRedirection(paymentOptions)
+                updateRedirectionFlags(paymentOptions)
 
                 switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
-                  promise->then(res => {
+                  promise
+                  ->then(res => {
                     dict->setConfigs(res)
+                  })
+                  ->catch(_ => {
+                    dict->setConfigs({
+                      default: DefaultTheme.default,
+                      defaultRules: DefaultTheme.defaultRules,
+                    })
                   })
                 | None =>
                   dict->setConfigs({
@@ -337,12 +344,19 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             logger.setClientSecret(clientSecret)
 
             // Update top redirection atom
-            updateShouldUseTopRedirection(paymentOptions)
+            updateRedirectionFlags(paymentOptions)
 
             switch getThemePromise(paymentOptions) {
             | Some(promise) =>
-              promise->then(res => {
+              promise
+              ->then(res => {
                 dict->setConfigs(res)
+              })
+              ->catch(_ => {
+                dict->setConfigs({
+                  default: DefaultTheme.default,
+                  defaultRules: DefaultTheme.defaultRules,
+                })
               })
 
             | None =>
@@ -374,8 +388,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
           switch getThemePromise(optionsDict) {
           | Some(promise) =>
-            promise->then(res => {
+            promise
+            ->then(res => {
               dict->setConfigs(res)
+            })
+            ->catch(_ => {
+              dict->setConfigs({
+                default: DefaultTheme.default,
+                defaultRules: DefaultTheme.defaultRules,
+              })
             })
 
           | None =>

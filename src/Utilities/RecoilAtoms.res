@@ -13,7 +13,6 @@ let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
 let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
-let shouldUseTopRedirectionAtom = Recoil.atom("shouldUseTopRedirection", false)
 let paymentTokenAtom = Recoil.atom(
   "paymentToken",
   {
@@ -101,3 +100,26 @@ let areOneClickWalletsRendered = Recoil.atom(
   "areOneClickWalletsBtnRendered",
   defaultAreOneClickWalletsRendered,
 )
+
+type clickToPayConfig = {
+  isReady: option<bool>,
+  availableCardBrands: array<string>,
+  email: string,
+  clickToPayCards: option<array<ClickToPayHelpers.clickToPayCard>>,
+  dpaName: string,
+}
+
+let defaultClickToPayConfig = {
+  isReady: None,
+  availableCardBrands: [],
+  email: "",
+  clickToPayCards: None,
+  dpaName: "",
+}
+
+let clickToPayConfig = Recoil.atom("clickToPayConfig", defaultClickToPayConfig)
+let defaultRedirectionFlags: redirectionFlags = {
+  shouldUseTopRedirection: false,
+  shouldRemoveBeforeUnloadEvents: false,
+}
+let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)

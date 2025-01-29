@@ -31,7 +31,7 @@ let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand) => {
   let enabledCardSchemes =
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands->Option.getOr([])
 
-  let matchedCardSchemes = cardNumber->CardUtils.getAllMatchedCardSchemes
+  let matchedCardSchemes = cardNumber->CardUtils.clearSpaces->CardUtils.getAllMatchedCardSchemes
 
   let eligibleCardSchemes = CardUtils.getEligibleCoBadgedCardSchemes(
     ~matchedCardSchemes,
@@ -44,7 +44,7 @@ let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand) => {
 
   <div className={`${animate} flex items-center ${marginLeft} hellow-rodl`}>
     cardBrandIcon
-    <RenderIf condition={isCardCoBadged}>
+    <RenderIf condition={isCardCoBadged && cardNumber->CardUtils.clearSpaces->String.length >= 16}>
       <CoBadgeCardSchemeDropDown eligibleCardSchemes setCardBrand />
     </RenderIf>
   </div>

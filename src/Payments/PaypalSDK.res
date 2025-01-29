@@ -140,7 +140,13 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
         }
       }
     } catch {
-    | _err => Utils.logInfo(Console.log("Error loading Paypal"))
+    | err =>
+      loggerState.setLogError(
+        ~value="Error loading Paypal",
+        ~eventName=PAYPAL_SDK_FLOW,
+        ~internalMetadata=err->Utils.formatException->JSON.stringify,
+        ~paymentMethod="PAYPAL_SDK",
+      )
     }
     None
   }, [stateJson])

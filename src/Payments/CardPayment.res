@@ -13,6 +13,7 @@ let make = (
   open PaymentModeType
   open Utils
   open UtilityHooks
+  open Promise
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
@@ -20,6 +21,12 @@ let make = (
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let email = Recoil.useRecoilValueFromAtom(RecoilAtoms.userEmailAddress)
+  let phoneNumber = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
+  let (isSaveDetailsWithClickToPay, setIsSaveDetailsWithClickToPay) = React.useState(_ => false)
+  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+  let (clickToPayCardBrand, setClickToPayCardBrand) = React.useState(_ => "")
+  let (clickToPayRememberMe, setClickToPayRememberMe) = React.useState(_ => false)
 
   let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
 
@@ -71,6 +78,18 @@ let make = (
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
+
+  React.useEffect(() => {
+    if (
+      cardBrand === "" ||
+        clickToPayConfig.availableCardBrands->Array.includes(cardBrand->String.toLowerCase)->not
+    ) {
+      setClickToPayCardBrand(_ => "")
+    } else if cardBrand !== clickToPayCardBrand {
+      setClickToPayCardBrand(_ => cardBrand)
+    }
+    None
+  }, (cardBrand, clickToPayConfig.availableCardBrands))
 
   let combinedCardNetworks = React.useMemo1(() => {
     let cardPaymentMethod =
@@ -142,7 +161,7 @@ let make = (
       ~cardNumber,
       ~month,
       ~year,
-      ~cardHolderName="",
+      ~cardHolderName=None,
       ~cvcNumber,
       ~cardBrand=cardNetwork,
       ~nickname=nickname.value,
@@ -153,6 +172,13 @@ let make = (
     } else {
       defaultCardBody
     }
+
+    let isRecognizedClickToPayPayment =
+      clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length > 0 &&
+        clickToPayCardBrand !== ""
+
+    let isUnrecognizedClickToPayPayment = isSaveDetailsWithClickToPay
+
     if confirm.doSubmit {
       let isCardDetailsValid =
         isCVCValid->Option.getOr(false) &&
@@ -166,14 +192,87 @@ let make = (
         (isBancontact || isCardDetailsValid) && isNicknameValid && areRequiredFieldsValid
 
       if validFormat && (showFields || isBancontact) {
-        intent(
-          ~bodyArr={
-            (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(requiredFieldsBody)
-          },
-          ~confirmParam=confirm.confirmParams,
-          ~handleUserError=false,
-          ~manualRetry=isManualRetryEnabled,
-        )
+        if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
+          ClickToPayHelpers.handleOpenClickToPayWindow()
+
+          ClickToPayHelpers.encryptCardForClickToPay(
+            ~cardNumber=cardNumber->CardUtils.clearSpaces,
+            ~expiryMonth=month,
+            ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
+            ~cvcNumber,
+            ~logger=loggerState,
+          )
+          ->then(res => {
+            switch res {
+            | Ok(res) =>
+              ClickToPayHelpers.handleProceedToPay(
+                ~encryptedCard=res,
+                ~isCheckoutWithNewCard=true,
+                ~isUnrecognizedUser={
+                  clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length == 0
+                },
+                ~email=email.value,
+                ~phoneNumber=phoneNumber.value,
+                ~countryCode=phoneNumber.countryCode->Option.getOr("")->String.replace("+", ""),
+                ~rememberMe=clickToPayRememberMe,
+                ~logger=loggerState,
+              )
+              ->then(
+                resp => {
+                  let dict = resp.payload->Utils.getDictFromJson
+                  let headers = dict->Utils.getDictFromDict("headers")
+                  let merchantTransactionId =
+                    headers->Utils.getString("merchant-transaction-id", "")
+                  let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
+                  let correlationId =
+                    dict
+                    ->Utils.getDictFromDict("checkoutResponseData")
+                    ->Utils.getString("srcCorrelationId", "")
+
+                  let clickToPayBody = PaymentBody.clickToPayBody(
+                    ~merchantTransactionId,
+                    ~correlationId,
+                    ~xSrcFlowId,
+                  )
+                  intent(
+                    ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                    ~confirmParam=confirm.confirmParams,
+                    ~handleUserError=false,
+                    ~manualRetry=isManualRetryEnabled,
+                  )
+                  resolve()
+                },
+              )
+              ->catch(_ => resolve())
+              ->ignore
+            | Error(err) =>
+              loggerState.setLogError(
+                ~value=`Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
+            }
+            resolve()
+          })
+          ->catch(err => {
+            loggerState.setLogError(
+              ~value=`Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
+            resolve()
+          })
+          ->ignore
+        } else {
+          intent(
+            ~bodyArr={
+              (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(
+                requiredFieldsBody,
+              )
+            },
+            ~confirmParam=confirm.confirmParams,
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
+        }
       } else {
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
@@ -210,6 +309,9 @@ let make = (
     isCardBrandValid,
     isManualRetryEnabled,
     cardProps,
+    clickToPayConfig,
+    clickToPayCardBrand,
+    clickToPayRememberMe,
   ))
   useSubmitPaymentData(submitCallback)
 
@@ -335,6 +437,7 @@ let make = (
             expiryProps={Some(expiryProps)}
             cvcProps={Some(cvcProps)}
             isBancontact
+            isSaveDetailsWithClickToPay
           />
           <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
             <div className="flex items-center justify-start">
@@ -374,6 +477,18 @@ let make = (
         </div>
       | (_, _, _) => React.null
       }}
+    </RenderIf>
+    <RenderIf condition={clickToPayCardBrand !== ""}>
+      <div className="space-y-3 mt-2">
+        <ClickToPayHelpers.SrcMark cardBrands=clickToPayCardBrand height="32" />
+        <ClickToPayDetails
+          isSaveDetailsWithClickToPay
+          setIsSaveDetailsWithClickToPay
+          clickToPayCardBrand
+          clickToPayRememberMe
+          setClickToPayRememberMe
+        />
+      </div>
     </RenderIf>
   </div>
 }
