@@ -113,7 +113,6 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setCon
         identifierType === MOBILE_PHONE_NUMBER
           ? String.sliceToEnd(country.code, ~start=1) ++ " " ++ identifier
           : identifier
-      Js.log2("submittedIdentifier", submittedIdentifier)
       onContinue({identityValue: submittedIdentifier, identityType: identifierType})
     }
   }
