@@ -1,3 +1,10 @@
+## [0.110.1](https://github.com/juspay/hyperswitch-web/compare/v0.110.0...v0.110.1) (2025-01-29)
+
+
+### Bug Fixes
+
+* fixed click to pay loader coming above saved cards ([#880](https://github.com/juspay/hyperswitch-web/issues/880)) ([94c63c4](https://github.com/juspay/hyperswitch-web/commit/94c63c4fdffecfb93c8b7606d1c9bd0fea77b9ed))
+
 # [0.110.0](https://github.com/juspay/hyperswitch-web/compare/v0.109.1...v0.110.0) (2025-01-29)
 
 
