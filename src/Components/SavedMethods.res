@@ -16,7 +16,7 @@ let make = (
   open Promise
   open ClickToPayHelpers
 
-  let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
+  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
 
   let customerMethods =
     clickToPayConfig.clickToPayCards
@@ -76,7 +76,7 @@ let make = (
     None
   }, [clickToPayConfig.email])
 
-  let closeComponentIfSavedMethodsAreEmpty = () => {
+  let _closeComponentIfSavedMethodsAreEmpty = () => {
     if savedCardlength === 0 && loadSavedCards !== PaymentType.LoadingSavedCards {
       setShowFields(_ => true)
     }

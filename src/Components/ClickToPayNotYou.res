@@ -51,9 +51,8 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setCon
     let phoneRegex = %re("/^\d{6,14}$/")
 
     switch identityType {
-    | EMAIL_ADDRESS => emailRegex->Js.Re.test_(value)
-    | MOBILE_PHONE_NUMBER => phoneRegex->Js.Re.test_(value)
-    | _ => false
+    | EMAIL_ADDRESS => emailRegex->RegExp.test(value)
+    | MOBILE_PHONE_NUMBER => phoneRegex->RegExp.test(value)
     }
   }
 
@@ -119,7 +118,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setCon
     }
   }
 
-  let maskedEmail = (~onNotYouClick) => {
+  let _maskedEmail = (~onNotYouClick) => {
     <div className="flex space-x-2 text-sm text-[#484848]">
       <button
         onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]">
