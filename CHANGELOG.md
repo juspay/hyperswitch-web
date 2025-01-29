@@ -1,3 +1,17 @@
+# [0.110.0](https://github.com/juspay/hyperswitch-web/compare/v0.109.1...v0.110.0) (2025-01-29)
+
+
+### Features
+
+* added support for ClickToPay ([#846](https://github.com/juspay/hyperswitch-web/issues/846)) ([232d141](https://github.com/juspay/hyperswitch-web/commit/232d1419bc2e78dd95728ea898ae4dcf52ed0ff8))
+
+## [0.109.1](https://github.com/juspay/hyperswitch-web/compare/v0.109.0...v0.109.1) (2025-01-22)
+
+
+### Bug Fixes
+
+* get attribute type fixed for handling null values ([#876](https://github.com/juspay/hyperswitch-web/issues/876)) ([ab149b7](https://github.com/juspay/hyperswitch-web/commit/ab149b7865d88195acc8f47c365de88d3c4a043f))
+
 # [0.109.0](https://github.com/juspay/hyperswitch-web/compare/v0.108.0...v0.109.0) (2025-01-21)
 
 
