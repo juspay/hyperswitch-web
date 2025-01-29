@@ -90,6 +90,8 @@ type eventName =
   | PAZE_SDK_FLOW
   | SAMSUNG_PAY_SCRIPT
   | SAMSUNG_PAY
+  | CLICK_TO_PAY_SCRIPT
+  | CLICK_TO_PAY_FLOW
 
 let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
 
