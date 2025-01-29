@@ -1,3 +1,10 @@
+## [0.109.1](https://github.com/juspay/hyperswitch-web/compare/v0.109.0...v0.109.1) (2025-01-22)
+
+
+### Bug Fixes
+
+* get attribute type fixed for handling null values ([#876](https://github.com/juspay/hyperswitch-web/issues/876)) ([ab149b7](https://github.com/juspay/hyperswitch-web/commit/ab149b7865d88195acc8f47c365de88d3c4a043f))
+
 # [0.109.0](https://github.com/juspay/hyperswitch-web/compare/v0.108.0...v0.109.0) (2025-01-21)
 
 
