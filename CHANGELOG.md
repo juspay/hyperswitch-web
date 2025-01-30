@@ -1,3 +1,24 @@
+## [0.110.2](https://github.com/juspay/hyperswitch-web/compare/v0.110.1...v0.110.2) (2025-01-30)
+
+
+### Bug Fixes
+
+* inconsistent country code dropdown border ([#881](https://github.com/juspay/hyperswitch-web/issues/881)) ([9841f63](https://github.com/juspay/hyperswitch-web/commit/9841f635dca15efa1612d2c04dcf010dc85cf1cb))
+
+## [0.110.1](https://github.com/juspay/hyperswitch-web/compare/v0.110.0...v0.110.1) (2025-01-29)
+
+
+### Bug Fixes
+
+* fixed click to pay loader coming above saved cards ([#880](https://github.com/juspay/hyperswitch-web/issues/880)) ([94c63c4](https://github.com/juspay/hyperswitch-web/commit/94c63c4fdffecfb93c8b7606d1c9bd0fea77b9ed))
+
+# [0.110.0](https://github.com/juspay/hyperswitch-web/compare/v0.109.1...v0.110.0) (2025-01-29)
+
+
+### Features
+
+* added support for ClickToPay ([#846](https://github.com/juspay/hyperswitch-web/issues/846)) ([232d141](https://github.com/juspay/hyperswitch-web/commit/232d1419bc2e78dd95728ea898ae4dcf52ed0ff8))
+
 ## [0.109.1](https://github.com/juspay/hyperswitch-web/compare/v0.109.0...v0.109.1) (2025-01-22)
 
 

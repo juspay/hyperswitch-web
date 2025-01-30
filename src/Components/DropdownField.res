@@ -103,7 +103,7 @@ let make = (
       <div className="relative">
         <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
           <div
-            className="absolute top-1 left-1 right-0 bottom-0  pointer-events-none rounded-sm z-20 whitespace-nowrap"
+            className="absolute top-[2px] left-[2px] right-0 bottom-[2px]  pointer-events-none rounded-sm z-20 whitespace-nowrap"
             style={
               background: disabled ? disbaledBG : themeObj.colorBackground,
               opacity: disabled ? "35%" : "",

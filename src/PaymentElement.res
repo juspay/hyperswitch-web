@@ -1,5 +1,4 @@
 open PaymentType
-open RecoilAtoms
 open Utils
 
 let cardsToRender = (width: int) => {
@@ -10,7 +9,8 @@ let cardsToRender = (width: int) => {
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
-  let sessionsObj = Recoil.useRecoilValueFromAtom(sessions)
+
+  let sessionsObj = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let {
     showCardFormByDefault,
     paymentMethodOrder,
@@ -18,39 +18,50 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     customerPaymentMethods,
     displaySavedPaymentMethods,
     sdkHandleConfirmPayment,
-  } = Recoil.useRecoilValueFromAtom(optionAtom)
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
-  let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
-  let (walletOptions, setWalletOptions) = React.useState(_ => [])
-  let isApplePayReady = Recoil.useRecoilValueFromAtom(isApplePayReady)
-  let isGPayReady = Recoil.useRecoilValueFromAtom(isGooglePayReady)
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
+  let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
+  let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
 
+  let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
+  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(RecoilAtoms.selectedOptionAtom)
+  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentMethodListValue,
   )
+
+  let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
+  let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
+  let (walletOptions, setWalletOptions) = React.useState(_ => [])
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
-  let layoutClass = CardUtils.getLayoutClass(layout)
-  let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (dropDownOptions: array<string>, setDropDownOptions) = React.useState(_ => [])
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(isShowOrPayUsing)
-
-  let (showFields, setShowFields) = Recoil.useRecoilState(showCardFieldsAtom)
-  let (paymentToken, setPaymentToken) = Recoil.useRecoilState(paymentTokenAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
   let (
     loadSavedCards: savedCardsLoadState,
     setLoadSavedCards: (savedCardsLoadState => savedCardsLoadState) => unit,
   ) = React.useState(_ => LoadingSavedCards)
+  let (isClickToPayAuthenticateError, setIsClickToPayAuthenticateError) = React.useState(_ => false)
+
+  let isShowPaymentMethodsDependingOnClickToPay = React.useMemo(() => {
+    (clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length > 0 ||
+    clickToPayConfig.isReady->Option.getOr(false) &&
+      clickToPayConfig.clickToPayCards->Option.isNone ||
+    clickToPayConfig.email !== "") && !isClickToPayAuthenticateError
+  }, (clickToPayConfig, isClickToPayAuthenticateError))
+
+  let layoutClass = CardUtils.getLayoutClass(layout)
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
-        setShowFields(_ => true)
+        setShowFields(_ => isShowPaymentMethodsDependingOnClickToPay->not)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
       }
     | (_, LoadingSavedCards) => ()
@@ -100,11 +111,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             ? NoResult(isGuestCustomer)
             : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
         )
-        setShowFields(_ => finalSavedPaymentMethods->Array.length == 0)
+        setShowFields(_ =>
+          finalSavedPaymentMethods->Array.length == 0 &&
+            isShowPaymentMethodsDependingOnClickToPay->not
+        )
       }
     | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
-        setShowFields(_ => true)
+        setShowFields(_ => true && isShowPaymentMethodsDependingOnClickToPay->not)
       }
     }
 
@@ -115,6 +129,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     optionAtomValue,
     isApplePayReady,
     isGPayReady,
+    clickToPayConfig.isReady,
+    isShowPaymentMethodsDependingOnClickToPay,
   ))
 
   React.useEffect(() => {
@@ -203,9 +219,69 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
     None
   }, (paymentMethodList, walletList, paymentOptionsList, actualList, showCardFormByDefault))
+
+  let loadMastercardClickToPayScript = ssn => {
+    open Promise
+    let dict = ssn->getDictFromJson
+    let clickToPaySessionObj = SessionsType.itemToObjMapper(dict, ClickToPayObject)
+    let clickToPayToken = SessionsType.getPaymentSessionObj(
+      clickToPaySessionObj.sessionsToken,
+      ClickToPay,
+    )
+
+    switch clickToPayToken {
+    | ClickToPayTokenOptional(optToken) =>
+      switch optToken {
+      | Some(token) =>
+        let clickToPayToken = ClickToPayHelpers.clickToPayTokenItemToObjMapper(token)
+        let isProd = publishableKey->String.startsWith("pk_prd_")
+        ClickToPayHelpers.loadClickToPayScripts(loggerState)
+        ClickToPayHelpers.loadMastercardScript(clickToPayToken, isProd, loggerState)
+        ->then(resp => {
+          let availableCardBrands =
+            resp
+            ->Utils.getDictFromJson
+            ->Utils.getArray("availableCardBrands")
+            ->Array.map(item => item->JSON.Decode.string->Option.getOr(""))
+            ->Array.filter(item => item !== "")
+
+          setClickToPayConfig(prev => {
+            ...prev,
+            isReady: Some(true),
+            availableCardBrands,
+            email: clickToPayToken.email,
+            dpaName: clickToPayToken.dpaName,
+          })
+          resolve()
+        })
+        ->catch(_ => {
+          setClickToPayConfig(prev => {
+            ...prev,
+            isReady: Some(false),
+          })
+          resolve()
+        })
+        ->ignore
+      | None =>
+        setClickToPayConfig(prev => {
+          ...prev,
+          isReady: Some(false),
+        })
+      }
+    | _ =>
+      setClickToPayConfig(prev => {
+        ...prev,
+        isReady: Some(false),
+      })
+    }
+  }
+
   React.useEffect(() => {
     switch sessionsObj {
-    | Loaded(ssn) => setSessions(_ => ssn)
+    | Loaded(ssn) => {
+        setSessions(_ => ssn)
+        loadMastercardClickToPayScript(ssn)
+      }
     | _ => ()
     }
     None
@@ -427,20 +503,55 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (paymentMethodList, customerPaymentMethods))
 
+  React.useEffect(() => {
+    let fetchCards = async () => {
+      switch clickToPayConfig.isReady {
+      | Some(true) =>
+        let cardsResult = await ClickToPayHelpers.getCards(loggerState)
+        switch cardsResult {
+        | Ok(cards) =>
+          setClickToPayConfig(prev => {
+            ...prev,
+            clickToPayCards: Some(cards),
+          })
+        | Error(_) => ()
+        }
+      | _ => ()
+      }
+    }
+    fetchCards()->ignore
+    None
+  }, [clickToPayConfig.isReady])
+
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div className="text-2xl font-semibold text-[#151619] mb-6">
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
-    <RenderIf condition={!showFields && displaySavedPaymentMethods}>
-      <SavedMethods
-        paymentToken setPaymentToken savedMethods loadSavedCards cvcProps paymentType sessions
-      />
-    </RenderIf>
+    {if clickToPayConfig.isReady->Option.isNone {
+      <ClickToPayHelpers.SrcLoader />
+    } else {
+      <RenderIf
+        condition={!showFields &&
+        (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay)}>
+        <SavedMethods
+          paymentToken
+          setPaymentToken
+          savedMethods
+          loadSavedCards
+          cvcProps
+          paymentType
+          sessions
+          isClickToPayAuthenticateError
+          setIsClickToPayAuthenticateError
+        />
+      </RenderIf>
+    }}
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
-        showFields}>
+      showFields &&
+      clickToPayConfig.isReady->Option.isSome}>
       <div className="flex flex-col place-items-center">
         <ErrorBoundary
           key="payment_request_buttons_all"
@@ -464,7 +575,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     <RenderIf
-      condition={displaySavedPaymentMethods && savedMethods->Array.length > 0 && showFields}>
+      condition={((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
+        isShowPaymentMethodsDependingOnClickToPay) && showFields}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
