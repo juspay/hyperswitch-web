@@ -154,7 +154,7 @@ let make = (
       if cardBrand != "" {
         [("card_network", cardBrand->JSON.Encode.string)]
       } else {
-        []
+        [("card_network", JSON.Encode.null)]
       }
     }
     let defaultCardBody = PaymentBody.cardPaymentBody(

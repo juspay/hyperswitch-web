@@ -229,7 +229,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       if cardBrand != "" {
         [("card_network", cardBrand->JSON.Encode.string)]
       } else {
-        []
+        [("card_network", JSON.Encode.null)]
       }
     }
     if validFormat {
