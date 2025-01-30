@@ -470,19 +470,13 @@ let isCardLengthValid = (cardBrand, cardNumberLength) => {
 
 let cardValid = (cardNumber, cardBrand) => {
   let clearValueLength = cardNumber->clearSpaces->String.length
-  if cardBrand == "" {
-    ((GlobalVars.isInteg || GlobalVars.isSandbox) && Utils.checkIsTestCardWildcard(cardNumber)) ||
-      (isCardLengthValid(cardBrand, clearValueLength) && calculateLuhn(cardNumber))
-  } else {
-    isCardLengthValid(cardBrand, clearValueLength) && calculateLuhn(cardNumber)
-  }
+  isCardLengthValid(cardBrand, clearValueLength) && calculateLuhn(cardNumber)
 }
 
 let focusCardValid = (cardNumber, cardBrand) => {
   let clearValueLength = cardNumber->clearSpaces->String.length
   if cardBrand == "" {
-    ((GlobalVars.isInteg || GlobalVars.isSandbox) && Utils.checkIsTestCardWildcard(cardNumber)) ||
-      (clearValueLength == maxCardLength(cardBrand) && calculateLuhn(cardNumber))
+    clearValueLength == maxCardLength(cardBrand) && calculateLuhn(cardNumber)
   } else {
     (clearValueLength == maxCardLength(cardBrand) ||
       (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)
