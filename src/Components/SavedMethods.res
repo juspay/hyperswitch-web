@@ -47,7 +47,12 @@ let make = (
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
   let bottomElement = {
-    <div className="PickerItemContainer">
+    <div
+      className="PickerItemContainer"
+      tabIndex={0}
+      id="saved-methods"
+      role="region"
+      ariaLabel="Saved payment methods">
       {savedMethods
       ->Array.mapWithIndex((obj, i) =>
         <SavedCardItem
@@ -254,6 +259,7 @@ let make = (
     </RenderIf>
     <RenderIf condition={!showFields}>
       <div
+        id="more-payment-methods"
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
           fontSize: "14px",
@@ -262,6 +268,15 @@ let make = (
           width: "fit-content",
           color: themeObj.colorPrimary,
         }
+        role="button"
+        ariaLabel="Click to use more payment methods"
+        tabIndex=0
+        onKeyDown={event => {
+          let key = JsxEvent.Keyboard.key(event)
+          if key == "Enter" {
+            setShowFields(_ => true)
+          }
+        }}
         dataTestId={TestUtils.addNewCardIcon}
         onClick={_ => setShowFields(_ => true)}>
         <Icon name="circle-plus" size=22 />

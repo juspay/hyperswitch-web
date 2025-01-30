@@ -140,6 +140,7 @@ let make = (
         onChange
         onBlur=handleBlur
         onFocus=handleFocus
+        ariaLabel={`Type to fill ${fieldName} input`}
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>
     </div>

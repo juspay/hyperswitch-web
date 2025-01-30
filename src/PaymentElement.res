@@ -429,7 +429,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
-      <div className="text-2xl font-semibold text-[#151619] mb-6">
+      <div className="text-2xl font-semibold text-[#151619] mb-6" role="heading" ariaLevel={1}>
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
@@ -441,7 +441,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
         showFields}>
-      <div className="flex flex-col place-items-center">
+      <div
+        className="flex flex-col place-items-center"
+        id="payment-section"
+        role="region"
+        ariaLabel="Payment Section"
+        tabIndex={0}>
         <ErrorBoundary
           key="payment_request_buttons_all"
           level={ErrorBoundary.RequestButton}
@@ -466,6 +471,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     <RenderIf
       condition={displaySavedPaymentMethods && savedMethods->Array.length > 0 && showFields}>
       <div
+        id="use-existing-payment-methods"
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
           fontSize: "14px",
@@ -474,6 +480,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           width: "fit-content",
           color: themeObj.colorPrimary,
         }
+        tabIndex=0
+        role="button"
+        ariaLabel="Click to use existing payment methods"
+        onKeyDown={event => {
+          let key = JsxEvent.Keyboard.key(event)
+          if key == "Enter" {
+            setShowFields(_ => false)
+          }
+        }}
         onClick={_ => setShowFields(_ => false)}>
         <Icon name="circle_dots" size=20 width=19 />
         {React.string(localeString.useExistingPaymentMethods)}

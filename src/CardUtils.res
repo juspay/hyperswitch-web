@@ -66,6 +66,7 @@ type zipProps = (
 @val external document: 'a = "document"
 
 @send external focus: Dom.element => unit = "focus"
+@send external click: Dom.element => unit = "click"
 @send external blur: Dom.element => unit = "blur"
 
 type options = {timeZone: string}
@@ -489,6 +490,15 @@ let focusCardValid = (cardNumber, cardBrand) => {
 let blurRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
   ref.current->Nullable.toOption->Option.forEach(input => input->blur)->ignore
 }
+
+let focusRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
+  ref.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
+}
+
+let clickRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
+  ref.current->Nullable.toOption->Option.forEach(input => input->click)->ignore
+}
+
 let handleInputFocus = (
   ~currentRef: React.ref<Nullable.t<Dom.element>>,
   ~destinationRef: React.ref<Nullable.t<Dom.element>>,

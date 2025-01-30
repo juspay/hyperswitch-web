@@ -132,7 +132,7 @@ let make = () => {
         className=" flex flex-row w-full justify-center items-start mb-8 font-medium text-2xl font-semibold text-[#151A1F] opacity-50">
         {expiryString->React.string}
       </div>
-      <img style={height: "13rem"} src=qrCode />
+      <img style={height: "13rem"} src=qrCode alt="" />
       <div className=" flex flex-col max-w-md justify-between items-center">
         <div className="Disclaimer w-full mt-16 font-medium text-xs text-[#151A1F] opacity-50">
           {React.string(
