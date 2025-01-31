@@ -150,13 +150,9 @@ let make = (
     let (month, year) = CardUtils.getExpiryDates(cardExpiry)
 
     let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
-    let cardNetwork = {
-      if cardBrand != "" {
-        [("card_network", cardBrand->JSON.Encode.string)]
-      } else {
-        []
-      }
-    }
+    let cardNetwork = [
+      ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
+    ]
     let defaultCardBody = PaymentBody.cardPaymentBody(
       ~cardNumber,
       ~month,
