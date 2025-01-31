@@ -1,3 +1,10 @@
+# [0.111.0](https://github.com/juspay/hyperswitch-web/compare/v0.110.2...v0.111.0) (2025-01-31)
+
+
+### Features
+
+* add regex for UnionPay and allow card number checking if cardbrand not detected ([#882](https://github.com/juspay/hyperswitch-web/issues/882)) ([543d4dc](https://github.com/juspay/hyperswitch-web/commit/543d4dcd4f0fbbee54abeec709c7651775d463a9))
+
 ## [0.110.2](https://github.com/juspay/hyperswitch-web/compare/v0.110.1...v0.110.2) (2025-01-30)
 
 
