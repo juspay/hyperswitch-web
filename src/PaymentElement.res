@@ -529,24 +529,25 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {paymentLabel->Option.getOr("")->React.string}
       </div>
     </RenderIf>
-    <RenderIf condition={clickToPayConfig.isReady->Option.isNone}>
+    {if clickToPayConfig.isReady->Option.isNone {
       <ClickToPayHelpers.SrcLoader />
-    </RenderIf>
-    <RenderIf
-      condition={!showFields &&
-      (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay)}>
-      <SavedMethods
-        paymentToken
-        setPaymentToken
-        savedMethods
-        loadSavedCards
-        cvcProps
-        paymentType
-        sessions
-        isClickToPayAuthenticateError
-        setIsClickToPayAuthenticateError
-      />
-    </RenderIf>
+    } else {
+      <RenderIf
+        condition={!showFields &&
+        (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay)}>
+        <SavedMethods
+          paymentToken
+          setPaymentToken
+          savedMethods
+          loadSavedCards
+          cvcProps
+          paymentType
+          sessions
+          isClickToPayAuthenticateError
+          setIsClickToPayAuthenticateError
+        />
+      </RenderIf>
+    }}
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
       showFields &&
