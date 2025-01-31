@@ -7,10 +7,30 @@ let make = (
   ~cvcProps,
   ~paymentType,
   ~sessions,
+  ~isClickToPayAuthenticateError,
+  ~setIsClickToPayAuthenticateError,
 ) => {
   open CardUtils
   open Utils
   open UtilityHooks
+  open Promise
+  open ClickToPayHelpers
+
+  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+
+  let customerMethods =
+    clickToPayConfig.clickToPayCards
+    ->Option.getOr([])
+    ->Array.map(obj => obj->PaymentType.convertClickToPayCardToCustomerMethod)
+
+  let (isCTPAuthenticateNotYouClicked, setIsCTPAuthenticateNotYouClicked) = React.useState(_ =>
+    false
+  )
+  let (isShowClickToPayNotYou, setIsShowClickToPayNotYou) = React.useState(_ => false)
+  let (consumerIdentity, setConsumerIdentity) = React.useState(_ => {
+    identityType: EMAIL_ADDRESS,
+    identityValue: "",
+  })
 
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
@@ -46,6 +66,22 @@ let make = (
 
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
+  React.useEffect(() => {
+    if clickToPayConfig.email !== "" && consumerIdentity.identityValue === "" {
+      setConsumerIdentity(_ => {
+        identityType: EMAIL_ADDRESS,
+        identityValue: clickToPayConfig.email,
+      })
+    }
+    None
+  }, [clickToPayConfig.email])
+
+  let _closeComponentIfSavedMethodsAreEmpty = () => {
+    if savedCardlength === 0 && loadSavedCards !== PaymentType.LoadingSavedCards {
+      setShowFields(_ => true)
+    }
+  }
+
   let bottomElement = {
     <div className="PickerItemContainer">
       {savedMethods
@@ -64,6 +100,36 @@ let make = (
         />
       )
       ->React.array}
+      <RenderIf
+        condition={clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length == 0 &&
+        !isClickToPayAuthenticateError &&
+        clickToPayConfig.email !== ""}>
+        <ClickToPayHelpers.SrcMark
+          cardBrands={clickToPayConfig.availableCardBrands->Array.joinWith(",")} height="32"
+        />
+      </RenderIf>
+      <div id="mastercard-account-verification" />
+      {if isShowClickToPayNotYou {
+        <ClickToPayNotYou
+          setIsShowClickToPayNotYou isCTPAuthenticateNotYouClicked setConsumerIdentity
+        />
+      } else {
+        <ClickToPayAuthenticate
+          consumerIdentity
+          loggerState
+          savedMethods
+          setShowFields
+          setIsCTPAuthenticateNotYouClicked
+          setIsShowClickToPayNotYou
+          isClickToPayAuthenticateError
+          setIsClickToPayAuthenticateError
+          loadSavedCards
+          setPaymentToken
+          paymentTokenVal
+          cvcProps
+          paymentType
+        />
+      }}
     </div>
   }
 
@@ -75,6 +141,7 @@ let make = (
   let empty = cvcNumber == ""
   let customerMethod = React.useMemo(_ =>
     savedMethods
+    ->Array.concat(customerMethods)
     ->Array.filter(savedMethod => savedMethod.paymentToken === paymentTokenVal)
     ->Array.get(0)
     ->Option.getOr(PaymentType.defaultCustomerMethods)
@@ -88,9 +155,10 @@ let make = (
     !isUnknownPaymentMethod &&
     (!isCardPaymentMethod || isCardPaymentMethodValid)
 
-  let paymentType = customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
+  let paymentMethodType =
+    customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
 
-  useHandlePostMessages(~complete, ~empty, ~paymentType, ~savedMethod=true)
+  useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType, ~savedMethod=true)
 
   GooglePayHelpers.useHandleGooglePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
 
@@ -128,7 +196,42 @@ let make = (
     }
 
     if confirm.doSubmit {
-      if (
+      if customerMethod.card.isClickToPayCard {
+        ClickToPayHelpers.handleProceedToPay(
+          ~srcDigitalCardId=customerMethod.paymentToken,
+          ~logger=loggerState,
+        )
+        ->then(resp => {
+          let dict = resp.payload->Utils.getDictFromJson
+          let headers = dict->Utils.getDictFromDict("headers")
+          let merchantTransactionId = headers->Utils.getString("merchant-transaction-id", "")
+          let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
+          let correlationId =
+            dict
+            ->Utils.getDictFromDict("checkoutResponseData")
+            ->Utils.getString("srcCorrelationId", "")
+
+          let clickToPayBody = PaymentBody.clickToPayBody(
+            ~merchantTransactionId,
+            ~correlationId,
+            ~xSrcFlowId,
+          )
+          intent(
+            ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+            ~confirmParam=confirm.confirmParams,
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
+          resolve(resp)
+        })
+        ->catch(_ =>
+          resolve({
+            status: ERROR,
+            payload: JSON.Encode.null,
+          })
+        )
+        ->ignore
+      } else if (
         areRequiredFieldsValid &&
         !isUnknownPaymentMethod &&
         (!isCardPaymentMethod || isCardPaymentMethodValid) &&
@@ -221,7 +324,11 @@ let make = (
   ))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
-    {if savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields) {
+    {if (
+      savedCardlength === 0 &&
+      clickToPayConfig.isReady->Option.isNone &&
+      (loadSavedCards === PaymentType.LoadingSavedCards || !showFields)
+    ) {
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer"
         style={
