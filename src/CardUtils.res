@@ -182,6 +182,7 @@ let formatCardNumber = (val, cardType) => {
   | DISCOVER
   | SODEXO
   | RUPAY
+  | UNIONPAY
   | VISA =>
     `${clearValue->slice(0, 4)} ${clearValue->slice(4, 8)} ${clearValue->slice(
         8,
@@ -349,7 +350,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
   | RUPAY => <Icon size=brandIconSize name="rupay-card" />
   | JCB => <Icon size=brandIconSize name="jcb-card" />
   | CARTESBANCAIRES => <Icon size=brandIconSize name="cartesbancaires-card" />
-  | UNIONPAY => <Icon size=brandIconSize name="card" />
+  | UNIONPAY => <Icon size=brandIconSize name="union-pay" />
   | INTERAC => <Icon size=brandIconSize name="interac" />
   | NOTFOUND =>
     switch paymentType {
@@ -470,17 +471,13 @@ let isCardLengthValid = (cardBrand, cardNumberLength) => {
 
 let cardValid = (cardNumber, cardBrand) => {
   let clearValueLength = cardNumber->clearSpaces->String.length
-  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
-    Utils.checkIsTestCardWildcard(cardNumber)
-  } else {
-    isCardLengthValid(cardBrand, clearValueLength) && calculateLuhn(cardNumber)
-  }
+  isCardLengthValid(cardBrand, clearValueLength) && calculateLuhn(cardNumber)
 }
 
 let focusCardValid = (cardNumber, cardBrand) => {
   let clearValueLength = cardNumber->clearSpaces->String.length
-  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
-    Utils.checkIsTestCardWildcard(cardNumber)
+  if cardBrand == "" {
+    clearValueLength == maxCardLength(cardBrand) && calculateLuhn(cardNumber)
   } else {
     (clearValueLength == maxCardLength(cardBrand) ||
       (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)

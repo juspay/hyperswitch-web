@@ -100,6 +100,23 @@ let areOneClickWalletsRendered = Recoil.atom(
   defaultAreOneClickWalletsRendered,
 )
 
+type clickToPayConfig = {
+  isReady: option<bool>,
+  availableCardBrands: array<string>,
+  email: string,
+  clickToPayCards: option<array<ClickToPayHelpers.clickToPayCard>>,
+  dpaName: string,
+}
+
+let defaultClickToPayConfig = {
+  isReady: None,
+  availableCardBrands: [],
+  email: "",
+  clickToPayCards: None,
+  dpaName: "",
+}
+
+let clickToPayConfig = Recoil.atom("clickToPayConfig", defaultClickToPayConfig)
 let defaultRedirectionFlags: redirectionFlags = {
   shouldUseTopRedirection: false,
   shouldRemoveBeforeUnloadEvents: false,
