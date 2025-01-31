@@ -97,8 +97,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     setCardValid(clearValue, setIsCardValid)
     if (
       focusCardValid(clearValue, cardBrand) &&
-      (PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false) ||
-        Utils.checkIsTestCardWildcard(clearValue))
+      PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false)
     ) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
@@ -237,13 +236,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       checkCardExpiry(getCardElementValue(iframeId, "card-expiry"))
     | _ => true
     }
-    let cardNetwork = {
-      if cardBrand != "" {
-        [("card_network", cardBrand->JSON.Encode.string)]
-      } else {
-        []
-      }
-    }
+    let cardNetwork = [
+      ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
+    ]
     if validFormat {
       let body = switch paymentMode->getPaymentMode {
       | Card =>

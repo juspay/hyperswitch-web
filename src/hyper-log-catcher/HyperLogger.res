@@ -35,6 +35,7 @@ type eventName =
   | GOOGLE_PAY_FLOW
   | PAYPAL_FLOW
   | PAYPAL_SDK_FLOW
+  | KLARNA_CHECKOUT_FLOW
   | APP_INITIATED
   | APP_REINITIATED
   | LOG_INITIATED
@@ -89,6 +90,8 @@ type eventName =
   | PAZE_SDK_FLOW
   | SAMSUNG_PAY_SCRIPT
   | SAMSUNG_PAY
+  | CLICK_TO_PAY_SCRIPT
+  | CLICK_TO_PAY_FLOW
 
 let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
 

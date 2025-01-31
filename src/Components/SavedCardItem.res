@@ -37,6 +37,7 @@ let make = (
   ~savedCardlength,
   ~cvcProps,
   ~paymentType,
+  ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {hideExpiredPaymentMethods, displayDefaultSavedPaymentIcon} = Recoil.useRecoilValueFromAtom(
@@ -207,6 +208,14 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf condition={isActive}>
+                <DynamicFields
+                  paymentType
+                  paymentMethod=paymentItem.paymentMethod
+                  paymentMethodType
+                  setRequiredFieldsBody
+                  isSavedCardFlow=true
+                  savedMethod=paymentItem
+                />
                 <Surcharge
                   paymentMethod=paymentItem.paymentMethod
                   paymentMethodType
