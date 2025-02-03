@@ -595,7 +595,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         ariaLabel="Click to use existing payment methods"
         onKeyDown={event => {
           let key = JsxEvent.Keyboard.key(event)
-          if key == "Enter" {
+          let keyCode = JsxEvent.Keyboard.keyCode(event)
+          if key == "Enter" || keyCode == 13 {
             setShowFields(_ => false)
           }
         }}

@@ -375,7 +375,8 @@ let make = (
         tabIndex=0
         onKeyDown={event => {
           let key = JsxEvent.Keyboard.key(event)
-          if key == "Enter" {
+          let keyCode = JsxEvent.Keyboard.keyCode(event)
+          if key == "Enter" || keyCode == 13 {
             setShowFields(_ => true)
           }
         }}

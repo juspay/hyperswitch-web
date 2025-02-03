@@ -63,7 +63,8 @@ let make = (~isChecked, ~setIsChecked) => {
     tabIndex=0
     onKeyDown={event => {
       let key = JsxEvent.Keyboard.key(event)
-      if key == "Enter" {
+      let keyCode = JsxEvent.Keyboard.keyCode(event)
+      if key == "Enter" || keyCode == 13 {
         setIsChecked(prev => !prev)
       }
     }}
@@ -71,10 +72,8 @@ let make = (~isChecked, ~setIsChecked) => {
     ariaChecked={isChecked ? #"true" : #"false"}
     ariaLabel={isChecked ? "Deselect to avoid saving card details" : "Select to save card details"}>
     <style> {React.string(css)} </style>
-
     <label className={`container CheckboxInput ${checkedState}`}>
       <input tabIndex={-1} type_={`checkbox`} checked={isChecked} onChange />
-
       <div className={`checkmark CheckboxInput ${checkedState}`} />
       <div className={`CheckboxLabel ${checkBoxLabelState} ml-2 w-11/12 opacity-50 text-xs`}>
         {React.string(saveCardCheckboxLabel)}

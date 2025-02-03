@@ -30,13 +30,9 @@ type packageJson = {version: string}
 @val @scope("document") external body: body = "body"
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
-@val @scope("document")
-external addEventListenerDom: (string, _ => unit) => unit = "addEventListener"
 
 @val @scope("window")
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
-@val @scope("document")
-external removeEventListenerDom: (string, 'ev => unit) => unit = "removeEventListener"
 @val @scope("window") external btoa: string => string = "btoa"
 @new external date: date = "Date"
 @get external value: Dom.element => 'a = "value"
