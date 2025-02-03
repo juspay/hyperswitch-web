@@ -1,3 +1,10 @@
+# [0.112.0](https://github.com/juspay/hyperswitch-web/compare/v0.111.0...v0.112.0) (2025-01-31)
+
+
+### Features
+
+* add integrity hash ([#875](https://github.com/juspay/hyperswitch-web/issues/875)) ([da6e01c](https://github.com/juspay/hyperswitch-web/commit/da6e01c13c071fc90082f9ae1b95a4191d604807))
+
 # [0.111.0](https://github.com/juspay/hyperswitch-web/compare/v0.110.2...v0.111.0) (2025-01-31)
 
 

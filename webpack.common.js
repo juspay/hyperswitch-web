@@ -150,6 +150,7 @@ module.exports = (publicPath = "auto") => {
         sdkEnv && sdkEnv !== "local"
           ? path.resolve(__dirname, "dist", sdkEnv, sdkVersion)
           : path.resolve(__dirname, "dist"),
+      crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,
     },
