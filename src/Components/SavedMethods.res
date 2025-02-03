@@ -83,7 +83,8 @@ let make = (
   }
 
   let bottomElement = {
-    <div className="PickerItemContainer">
+    <div
+      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
       {savedMethods
       ->Array.mapWithIndex((obj, i) =>
         <SavedCardItem
@@ -369,6 +370,16 @@ let make = (
           width: "fit-content",
           color: themeObj.colorPrimary,
         }
+        role="button"
+        ariaLabel="Click to use more payment methods"
+        tabIndex=0
+        onKeyDown={event => {
+          let key = JsxEvent.Keyboard.key(event)
+          let keyCode = JsxEvent.Keyboard.keyCode(event)
+          if key == "Enter" || keyCode == 13 {
+            setShowFields(_ => true)
+          }
+        }}
         dataTestId={TestUtils.addNewCardIcon}
         onClick={_ => setShowFields(_ => true)}>
         <Icon name="circle-plus" size=22 />
