@@ -550,15 +550,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }}
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
-        showFields &&
+      showFields &&
       clickToPayConfig.isReady->Option.isSome}>
       <div
         className="flex flex-col place-items-center"
-        id="payment-section"
         role="region"
         ariaLabel="Payment Section"
         tabIndex={0}>
-
         <ErrorBoundary
           key="payment_request_buttons_all"
           level={ErrorBoundary.RequestButton}
@@ -584,7 +582,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       condition={((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
         isShowPaymentMethodsDependingOnClickToPay) && showFields}>
       <div
-        id="use-existing-payment-methods"
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
           fontSize: "14px",

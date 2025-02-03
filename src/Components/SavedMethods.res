@@ -84,11 +84,7 @@ let make = (
 
   let bottomElement = {
     <div
-      className="PickerItemContainer"
-      tabIndex={0}
-      id="saved-methods"
-      role="region"
-      ariaLabel="Saved payment methods">
+      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
       {savedMethods
       ->Array.mapWithIndex((obj, i) =>
         <SavedCardItem
@@ -366,7 +362,6 @@ let make = (
     </RenderIf>
     <RenderIf condition={!showFields}>
       <div
-        id="more-payment-methods"
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
           fontSize: "14px",

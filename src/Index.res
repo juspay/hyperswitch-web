@@ -11,9 +11,7 @@ let app = switch ReactDOM.querySelector("#app") {
       <div className="h-auto flex flex-col">
         <Recoil.RecoilRoot>
           <ErrorBoundary level=ErrorBoundary.Top componentName="App">
-            <KeyboardShortcutWrapper>
-              <App />
-            </KeyboardShortcutWrapper>
+            <App />
           </ErrorBoundary>
         </Recoil.RecoilRoot>
       </div>
