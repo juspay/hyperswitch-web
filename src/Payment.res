@@ -38,6 +38,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let expiryRef = React.useRef(Nullable.null)
   let cvcRef = React.useRef(Nullable.null)
   let zipRef = React.useRef(Nullable.null)
+  let prevCardBrandRef = React.useRef("")
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
   let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
@@ -82,10 +83,13 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cvcNumber, cardNumber))
 
   React.useEffect(() => {
-    setCvcNumber(_ => "")
-    setCardExpiry(_ => "")
-    setIsExpiryValid(_ => None)
-    setIsCVCValid(_ => None)
+    if prevCardBrandRef.current !== "" {
+      setCvcNumber(_ => "")
+      setCardExpiry(_ => "")
+      setIsExpiryValid(_ => None)
+      setIsCVCValid(_ => None)
+    }
+    prevCardBrandRef.current = cardBrand
     None
   }, [cardBrand])
 
@@ -107,7 +111,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       setDisplayPincode(_ => false)
     }
     setCardNumber(_ => card)
-    if card->String.length == 0 {
+    if card->String.length == 0 && prevCardBrandRef.current !== "" {
       setCvcNumber(_ => "")
       setCardExpiry(_ => "")
       setIsExpiryValid(_ => None)
