@@ -51,7 +51,7 @@ let make = (
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {hideExpiredPaymentMethods, displayDefaultSavedPaymentIcon} = Recoil.useRecoilValueFromAtom(
+  let {hideExpiredPaymentMethods, displayDefaultSavedPaymentIcon, displayBillingDetails} = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.optionAtom,
   )
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
@@ -113,6 +113,20 @@ let make = (
   | Some(paymentMethodType) => paymentMethodType
   | None => "debit"
   }
+
+  let billingDetailsText = "Billing Details:"
+
+  let billingDetailsArray = [
+                        paymentItem.billing.address.line1,
+                        paymentItem.billing.address.line2,
+                        paymentItem.billing.address.line3,
+                        paymentItem.billing.address.city,
+                        paymentItem.billing.address.state,
+                        paymentItem.billing.address.country,
+                        paymentItem.billing.address.zip,
+                      ]
+                      -> Array.map(item => Option.getOr(item, ""))
+                      -> Array.filter(item => Js.String.trim(item) !== "")
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
@@ -211,6 +225,14 @@ let make = (
                       height="2.2rem"
                       name={TestUtils.cardCVVInputTestId}
                     />
+                  </div>
+                </div>
+              </RenderIf>
+              <RenderIf condition=(isActive && displayBillingDetails)>
+                <div>
+                  <div className="flex flex-row items-start justify-start gap-2 mt-3" style={textAlign: "left", fontSize: "15px", opacity: "0.6"}><strong> {React.string(billingDetailsText)} </strong></div>
+                  <div className="flex flex-row items-start justify-start gap-2" style={ textAlign: "left", fontSize: "15px", opacity: "0.6"}>
+                    {React.string(Array.joinWith(billingDetailsArray, ", "))}
                   </div>
                 </div>
               </RenderIf>
