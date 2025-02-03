@@ -1,3 +1,10 @@
+## [0.112.1](https://github.com/juspay/hyperswitch-web/compare/v0.112.0...v0.112.1) (2025-02-03)
+
+
+### Bug Fixes
+
+* updated CVC and expiry behaviour ([#840](https://github.com/juspay/hyperswitch-web/issues/840)) ([7e30da1](https://github.com/juspay/hyperswitch-web/commit/7e30da1d053577b4521912d182e44d2faa0ffd3a))
+
 # [0.112.0](https://github.com/juspay/hyperswitch-web/compare/v0.111.0...v0.112.0) (2025-01-31)
 
 
