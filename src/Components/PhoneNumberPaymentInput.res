@@ -87,7 +87,7 @@ let make = (~isOptional=false) => {
 
   <RenderIf condition={showDetails.phone == Auto}>
     <PaymentField
-      fieldName={"Phone Number" ++ (isOptional ? " (Optional)" : "")}
+      fieldName={`Phone Number ${isOptional ? "(Optional)" : ""}`}
       value=phone
       onChange=changePhone
       paymentType=Payment

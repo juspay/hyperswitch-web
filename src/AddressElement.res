@@ -151,7 +151,7 @@ let make = (~mode) => {
   let getAddressDetails = () => {
     let (firstName, lastName) = fullName.value->Utils.getFirstAndLastNameFromFullName
     let addressDetails: PaymentType.addressData = {
-      complete: complete == "true" ? true : false,
+      complete: complete == "true",
       data: {
         first_name: firstName->getStringFromJson(""),
         last_name: lastName->getStringFromJson(""),
@@ -265,7 +265,7 @@ let make = (~mode) => {
         <FullNamePaymentInput paymentType={Payment} isOptional={isFieldOptional("full_name")} />
         // Address Line 1
         <PaymentField
-          fieldName={localeString.line1Label ++ (isFieldOptional("line1") ? " (Optional)" : "")}
+          fieldName={`${localeString.line1Label} ${isFieldOptional("line1") ? "(Optional)" : ""}`}
           setValue={setLine1}
           value=line1
           onChange={ev => {
@@ -292,7 +292,7 @@ let make = (~mode) => {
         />
         //Address Line 2
         <PaymentField
-          fieldName={localeString.line2Label ++ (isFieldOptional("line2") ? " (Optional)" : "")}
+          fieldName={`${localeString.line2Label} ${isFieldOptional("line2") ? "(Optional)" : ""}`}
           setValue={setLine2}
           value=line2
           onChange={ev => {
@@ -319,7 +319,7 @@ let make = (~mode) => {
         // State and City
         <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""} overflow-hidden`}>
           <PaymentField
-            fieldName={localeString.cityLabel ++ (isFieldOptional("city") ? " (Optional)" : "")}
+            fieldName={`${localeString.cityLabel} ${isFieldOptional("city") ? "(Optional)" : ""}`}
             setValue={setCity}
             value=city
             onChange={ev => {
@@ -347,7 +347,9 @@ let make = (~mode) => {
           {switch stateJson {
           | Some(options) =>
             <PaymentDropDownField
-              fieldName={localeString.stateLabel ++ (isFieldOptional("state") ? " (Optional)" : "")}
+              fieldName={`${localeString.stateLabel} ${isFieldOptional("state")
+                  ? "(Optional)"
+                  : ""}`}
               value=state
               setValue=setState
               options={options->getStateNames({
@@ -363,9 +365,9 @@ let make = (~mode) => {
         <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""}`}>
           <DropdownField
             appearance=config.appearance
-            fieldName={localeString.countryLabel ++ (
-              isFieldOptional("country") ? " (Optional)" : ""
-            )}
+            fieldName={`${localeString.countryLabel} ${isFieldOptional("country")
+                ? "(Optional)"
+                : ""}`}
             value=country
             setValue={setCountry}
             disabled=false
@@ -373,9 +375,9 @@ let make = (~mode) => {
             className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
           />
           <PaymentField
-            fieldName={localeString.postalCodeLabel ++ (
-              isFieldOptional("postal_code") ? " (Optional)" : ""
-            )}
+            fieldName={`${localeString.postalCodeLabel} ${isFieldOptional("postal_code")
+                ? "(Optional)"
+                : ""}`}
             setValue={setPostalCode}
             value=postalCode
             onBlur={ev => {

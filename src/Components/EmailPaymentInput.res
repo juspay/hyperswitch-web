@@ -58,7 +58,7 @@ let make = (~paymentType, ~isOptional=false) => {
 
   <RenderIf condition={showDetails.email == Auto}>
     <PaymentField
-      fieldName={localeString.emailLabel ++ (isOptional ? " (Optional)" : "")}
+      fieldName={`${localeString.emailLabel} ${isOptional ? "(Optional)" : ""}`}
       setValue={setEmail}
       value=email
       onChange=changeEmail

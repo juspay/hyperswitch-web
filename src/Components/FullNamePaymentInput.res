@@ -84,7 +84,7 @@ let make = (
 
   <RenderIf condition={showDetails.name == Auto}>
     <PaymentField
-      fieldName={fieldName ++ (isOptional ? " (Optional)" : "")}
+      fieldName={`${fieldName} ${isOptional ? "(Optional)" : ""}`}
       setValue=setFullName
       value=fullName
       onChange=changeName
