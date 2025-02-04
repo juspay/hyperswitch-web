@@ -109,7 +109,7 @@ let make = (
               background: disabled ? disbaledBG : themeObj.colorBackground,
               opacity: disabled ? "35%" : "",
               padding: themeObj.spacingUnit,
-              width: "95%",
+              width: "75%",
             }
             ariaHidden=true>
             {React.string(displayValue->Option.getOr(""))}
