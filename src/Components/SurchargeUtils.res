@@ -76,6 +76,32 @@ let useMessageGetter = () => {
   getMessage
 }
 
+let emitSurcharge = surchage =>
+  Utils.messageParentWindow([("surchage", surchage->JSON.Encode.object)])
+
+let emitTotalSurchargeValue = (
+  ~paymentMethod,
+  ~paymentMethodType,
+  ~cardBrand=CardUtils.NOTFOUND,
+) => {
+  if cardBrand === CardUtils.NOTFOUND {
+    emitSurcharge(
+      [
+        ("paymentMethod", paymentMethod->JSON.Encode.string),
+        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+      ]->Dict.fromArray,
+    )
+  } else {
+    emitSurcharge(
+      [
+        ("paymentMethod", paymentMethod->JSON.Encode.string),
+        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+        ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
+      ]->Dict.fromArray,
+    )
+  }
+}
+
 let useOneClickWalletsMessageGetter = (~paymentMethodListValue) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 

@@ -28,6 +28,7 @@ let make = (
     if isForWallets {
       getOneClickWalletsMessage()
     } else {
+      SurchargeUtils.emitTotalSurchargeValue(~paymentMethod, ~paymentMethodType, ~cardBrand)
       switch paymentMethodTypes.surcharge_details {
       | Some(surchargeDetails) =>
         getSurchargeUtilsMessage(~paymentMethod, ~surchargeDetails, ~paymentMethodListValue)
