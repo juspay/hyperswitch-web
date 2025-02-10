@@ -40,6 +40,46 @@ module TabLoader = {
   }
 }
 
+module TabLoaderV2 = {
+  @react.component
+  let make = (~cardShimmerCount) => {
+    let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+    open PaymentElementShimmer
+    switch paymentManagementList {
+    | SemiLoadedV2 =>
+      Array.make(~length=cardShimmerCount - 1, "")
+      ->Array.mapWithIndex((_, i) => {
+        <div
+          className={`Tab flex flex-col gap-3 animate-pulse cursor-default`}
+          key={i->Int.toString}
+          style={
+            minWidth: "5rem",
+            overflowWrap: "hidden",
+            width: "100%",
+            padding: themeObj.spacingUnit,
+            cursor: "pointer",
+          }>
+          <Shimmer classname="opacity-50 w-1/3">
+            <div
+              className="w-full h-3 animate-pulse"
+              style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
+            />
+          </Shimmer>
+          <Shimmer classname="opacity-50">
+            <div
+              className="w-full h-2 animate-pulse"
+              style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
+            />
+          </Shimmer>
+        </div>
+      })
+      ->React.array
+    | _ => React.null
+    }
+  }
+}
+
 @react.component
 let make = (
   ~setCardsContainerWidth,
@@ -104,6 +144,12 @@ let make = (
   let displayIcon = ele => {
     <span className={`scale-90 animate-slowShow ${toggleIconElement ? "hidden" : ""}`}> ele </span>
   }
+
+  let tabLoader = switch GlobalVars.sdkVersionEnum {
+  | V2 => <TabLoaderV2 cardShimmerCount />
+  | V1 => <TabLoader cardShimmerCount />
+  }
+
   <div className="w-full">
     <div
       ref={payOptionsRef->ReactDOM.Ref.domRef}
@@ -122,7 +168,7 @@ let make = (
         <TabCard key={i->Int.toString} paymentOption=payOption isActive />
       })
       ->React.array}
-      <TabLoader cardShimmerCount />
+      {tabLoader}
       <RenderIf condition={dropDownOptionsDetails->Array.length > 0}>
         <div className="flex relative h-auto justify-center">
           <div className="flex flex-col items-center absolute mt-3 pointer-events-none gap-y-1.5">

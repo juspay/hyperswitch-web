@@ -442,7 +442,9 @@ let make = (
               />
             </div>
           </RenderIf>
-          <RenderIf condition={!options.hideCardNicknameField && isCustomerAcceptanceRequired}>
+          <RenderIf
+            condition={(!options.hideCardNicknameField && isCustomerAcceptanceRequired) ||
+              paymentType == PaymentMethodsManagement}>
             <NicknamePaymentInput paymentType />
           </RenderIf>
         </div>
