@@ -20,6 +20,8 @@ type element = {
 type keys = {
   clientSecret: option<string>,
   ephemeralKey?: string,
+  pmSessionId?: string,
+  pmClientSecret?: string,
   publishableKey: string,
   iframeId: string,
   parentURL: string,

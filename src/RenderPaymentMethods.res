@@ -154,7 +154,7 @@ let make = (
               <PaymentElementShimmer />
             </RenderIf>}
             componentName="PaymentManagementLazy">
-            <PaymentManagementLazy />
+            <PaymentManagementLazy paymentType />
           </ReusableReactSuspense>
         | PaymentMethodCollectElement
         | NONE => React.null

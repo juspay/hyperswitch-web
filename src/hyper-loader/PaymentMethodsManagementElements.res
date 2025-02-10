@@ -7,6 +7,8 @@ let make = (
   options,
   setIframeRef,
   ~ephemeralKey,
+  ~pmClientSecret,
+  ~pmSessionId,
   ~sdkSessionId,
   ~publishableKey,
   ~logger: option<HyperLogger.loggerMake>,
@@ -53,8 +55,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
-           title="Orca Payment Element Frame"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&ephemeralKey=${ephemeralKey}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}"
+          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&ephemeralKey=${ephemeralKey}&pmSessionId=${pmSessionId}&pmClientSecret=${pmClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}"
           allow="*"
           name="orca-payment"
           style="outline: none;"
@@ -121,6 +122,29 @@ let make = (
       preMountLoaderIframeDiv->Window.iframePostMessage(msg)
     }
 
+    let fetchPaymentManagementList = (mountedIframeRef, disableSaveCards, componentType) => {
+      if !disableSaveCards {
+        let handleSavedPaymentMethodsLoaded = (event: Types.event) => {
+          let json = event.data->Identity.anyTypeToJson
+          let dict = json->getDictFromJson
+          let isPaymentManagementData = dict->getString("data", "") === "payment_management_list"
+          if isPaymentManagementData {
+            let json = dict->getJsonFromDict("response", JSON.Encode.null)
+            let msg = [("paymentManagementMethods", json)]->Dict.fromArray
+            mountedIframeRef->Window.iframePostMessage(msg)
+          }
+        }
+        addSmartEventListener(
+          "message",
+          handleSavedPaymentMethodsLoaded,
+          `onAllPaymentMethodsLoaded-${componentType}`,
+        )
+      }
+      let msg =
+        [("sendPaymentManagementListResponse", !disableSaveCards->JSON.Encode.bool)]->Dict.fromArray
+      preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+    }
+
     let setElementIframeRef = ref => {
       iframeRef->Array.push(ref)->ignore
       setIframeRef(ref)
@@ -172,6 +196,8 @@ let make = (
         let widgetOptions =
           [
             ("ephemeralKey", ephemeralKey->JSON.Encode.string),
+            ("pmClientSecret", pmClientSecret->JSON.Encode.string),
+            ("pmSessionId", pmSessionId->JSON.Encode.string),
             ("appearance", appearance),
             ("locale", locale),
             ("loader", loader),
@@ -208,7 +234,9 @@ let make = (
             disableSavedPaymentMethods &&
             !(expressCheckoutComponents->Array.includes(componentType))
           ) {
-            fetchSavedPaymentMethods(mountedIframeRef, false, componentType)
+            GlobalVars.sdkVersionEnum == V1
+              ? fetchSavedPaymentMethods(mountedIframeRef, false, componentType)
+              : fetchPaymentManagementList(mountedIframeRef, false, componentType)
           }
           resolve()
         })
