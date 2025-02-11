@@ -27,7 +27,7 @@ describe("Card number validation test", () => {
         })
     });
 
-    it("should fail with an undetectable card brand", () => {
+    it("should fail with an undetectable card brand and invalid card number", () => {
         const { card_exp_month, card_exp_year, cvc } = stripeCards.successCard;
 
         getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type("111111"); 
