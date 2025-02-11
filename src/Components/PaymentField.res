@@ -100,7 +100,8 @@ let make = (
           fontSize: themeObj.fontSizeLg,
           marginBottom: "5px",
           opacity: "0.6",
-        }>
+        }
+        ariaHidden=true>
         {React.string(fieldName)}
       </div>
     </RenderIf>
@@ -130,7 +131,8 @@ let make = (
             fontSize: themeObj.fontSizeLg,
             marginBottom: "5px",
             opacity: "0.6",
-          }>
+          }
+          ariaHidden=true>
           {React.string(fieldName)}
         </div>
       </RenderIf>
@@ -157,6 +159,7 @@ let make = (
             onChange
             onBlur=handleBlur
             onFocus=handleFocus
+            ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
           />
           <RenderIf condition={config.appearance.labels == Floating}>
             <div
@@ -169,7 +172,8 @@ let make = (
                   inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
                 },
                 opacity: "0.6",
-              }>
+              }
+              ariaHidden=true>
               {React.string(fieldName)}
             </div>
           </RenderIf>
@@ -184,7 +188,8 @@ let make = (
             fontSize: themeObj.fontSizeSm,
             alignSelf: "start",
             textAlign: "left",
-          }>
+          }
+          ariaHidden=true>
           {React.string(value.errorString)}
         </div>
       </RenderIf>

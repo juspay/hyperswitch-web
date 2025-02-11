@@ -1,3 +1,47 @@
+## [0.112.3](https://github.com/juspay/hyperswitch-web/compare/v0.112.2...v0.112.3) (2025-02-03)
+
+
+### Bug Fixes
+
+* improve web accessibility with better ARIA support and contrast fixes ([#885](https://github.com/juspay/hyperswitch-web/issues/885)) ([269c230](https://github.com/juspay/hyperswitch-web/commit/269c2306436e63c382652ba855a0ccf7e598cde5))
+
+## [0.112.2](https://github.com/juspay/hyperswitch-web/compare/v0.112.1...v0.112.2) (2025-02-03)
+
+## [0.112.1](https://github.com/juspay/hyperswitch-web/compare/v0.112.0...v0.112.1) (2025-02-03)
+
+
+### Bug Fixes
+
+* updated CVC and expiry behaviour ([#840](https://github.com/juspay/hyperswitch-web/issues/840)) ([7e30da1](https://github.com/juspay/hyperswitch-web/commit/7e30da1d053577b4521912d182e44d2faa0ffd3a))
+
+# [0.112.0](https://github.com/juspay/hyperswitch-web/compare/v0.111.0...v0.112.0) (2025-01-31)
+
+
+### Features
+
+* add integrity hash ([#875](https://github.com/juspay/hyperswitch-web/issues/875)) ([da6e01c](https://github.com/juspay/hyperswitch-web/commit/da6e01c13c071fc90082f9ae1b95a4191d604807))
+
+# [0.111.0](https://github.com/juspay/hyperswitch-web/compare/v0.110.2...v0.111.0) (2025-01-31)
+
+
+### Features
+
+* add regex for UnionPay and allow card number checking if cardbrand not detected ([#882](https://github.com/juspay/hyperswitch-web/issues/882)) ([543d4dc](https://github.com/juspay/hyperswitch-web/commit/543d4dcd4f0fbbee54abeec709c7651775d463a9))
+
+## [0.110.2](https://github.com/juspay/hyperswitch-web/compare/v0.110.1...v0.110.2) (2025-01-30)
+
+
+### Bug Fixes
+
+* inconsistent country code dropdown border ([#881](https://github.com/juspay/hyperswitch-web/issues/881)) ([9841f63](https://github.com/juspay/hyperswitch-web/commit/9841f635dca15efa1612d2c04dcf010dc85cf1cb))
+
+## [0.110.1](https://github.com/juspay/hyperswitch-web/compare/v0.110.0...v0.110.1) (2025-01-29)
+
+
+### Bug Fixes
+
+* fixed click to pay loader coming above saved cards ([#880](https://github.com/juspay/hyperswitch-web/issues/880)) ([94c63c4](https://github.com/juspay/hyperswitch-web/commit/94c63c4fdffecfb93c8b7606d1c9bd0fea77b9ed))
+
 # [0.110.0](https://github.com/juspay/hyperswitch-web/compare/v0.109.1...v0.110.0) (2025-01-29)
 
 
