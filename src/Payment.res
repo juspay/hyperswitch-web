@@ -38,6 +38,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let expiryRef = React.useRef(Nullable.null)
   let cvcRef = React.useRef(Nullable.null)
   let zipRef = React.useRef(Nullable.null)
+  let prevCardBrandRef = React.useRef("")
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
   let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
@@ -71,7 +72,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   React.useEffect(() => {
     let obj = getobjFromCardPattern(cardBrand)
-    let cvcLength = obj.maxCVCLenth
+    let cvcLength = obj.maxCVCLength
     if (
       cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true) &&
         cvcNumber->String.length == cvcLength
@@ -81,6 +82,17 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, (cvcNumber, cardNumber))
 
+  React.useEffect(() => {
+    if prevCardBrandRef.current !== "" {
+      setCvcNumber(_ => "")
+      setCardExpiry(_ => "")
+      setIsExpiryValid(_ => None)
+      setIsCVCValid(_ => None)
+    }
+    prevCardBrandRef.current = cardBrand
+    None
+  }, [cardBrand])
+
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
@@ -88,9 +100,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let clearValue = card->clearSpaces
     setCardValid(clearValue, setIsCardValid)
     if (
-      cardValid(clearValue, cardBrand) &&
-      (PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false) ||
-        Utils.checkIsTestCardWildcard(clearValue))
+      focusCardValid(clearValue, cardBrand) &&
+      PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false)
     ) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
@@ -100,7 +111,11 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       setDisplayPincode(_ => false)
     }
     setCardNumber(_ => card)
-    if card->String.length == 0 {
+    if card->String.length == 0 && prevCardBrandRef.current !== "" {
+      setCvcNumber(_ => "")
+      setCardExpiry(_ => "")
+      setIsExpiryValid(_ => None)
+      setIsCVCValid(_ => None)
       setIsCardValid(_ => Some(false))
     }
   }
@@ -113,7 +128,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
 
       // * Sending card expiry to handle cases where the card expires before the use date.
-      Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
+      emitExpiryDate(formattedExpiry)
     }
     setExpiryValid(formattedExpiry, setIsExpiryValid)
     setCardExpiry(_ => formattedExpiry)
@@ -225,13 +240,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       checkCardExpiry(getCardElementValue(iframeId, "card-expiry"))
     | _ => true
     }
-    let cardNetwork = {
-      if cardBrand != "" {
-        [("card_network", cardBrand->JSON.Encode.string)]
-      } else {
-        []
-      }
-    }
+    let cardNetwork = [
+      ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
+    ]
     if validFormat {
       let body = switch paymentMode->getPaymentMode {
       | Card =>
@@ -241,7 +252,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardNumber,
           ~month,
           ~year,
-          ~cardHolderName="",
+          ~cardHolderName=None,
           ~cvcNumber,
           ~cardBrand=cardNetwork,
         )
@@ -252,7 +263,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardNumber,
           ~month,
           ~year,
-          ~cardHolderName="",
+          ~cardHolderName=None,
           ~cvcNumber=localCvcNumber,
           ~cardBrand=cardNetwork,
         )

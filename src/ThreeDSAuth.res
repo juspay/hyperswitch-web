@@ -147,6 +147,7 @@ let make = () => {
       <iframe
         id="threeDsAuthFrame"
         name="threeDsAuthFrame"
+        title="3D Secure Authentication Frame"
         style={
           minHeight: "500px",
           outline: "none",

@@ -83,6 +83,7 @@ let make = (~paymentType, ~walletOptions) => {
       }
       resolve()
     })
+    ->catch(_ => resolve())
     ->ignore
   }
 

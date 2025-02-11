@@ -55,6 +55,8 @@ let make = (~modalData, ~setModalData) => {
         isDataAvailable ? themeObj.colorTextSecondary : themeObj.colorPrimary
       },
     }
+    tabIndex={0}
+    ariaLabel="Click to Add bank account"
     onClick={_ => isDataAvailable ? () : openModal()}>
     {switch modalData {
     | Some(data: ACHTypes.data) =>
@@ -85,7 +87,7 @@ let make = (~modalData, ~setModalData) => {
           <div>
             <Icon size=22 name="bank" />
           </div>
-          <div> {React.string(localeString.addBankAccount)} </div>
+          <div ariaHidden=true> {React.string(localeString.addBankAccount)} </div>
         </div>
         <div className="PickerAction self-center">
           <Icon size=22 name="caret-right" />

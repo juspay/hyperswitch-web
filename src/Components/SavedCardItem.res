@@ -3,26 +3,37 @@ module RenderSavedPaymentMethodItem = {
   let make = (~paymentItem: PaymentType.customerMethods, ~paymentMethodType) => {
     switch paymentItem.paymentMethod {
     | "card" =>
-      <div className="flex flex-col items-start">
+      <div
+        className="flex flex-col items-start"
+        role="group"
+        ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
         <div> {React.string(paymentItem.card.nickname)} </div>
         <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-          <div className="tracking-widest"> {React.string(`****`)} </div>
-          <div> {React.string(paymentItem.card.last4Digits)} </div>
+          <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
+          <div ariaHidden=true> {React.string(paymentItem.card.last4Digits)} </div>
         </div>
       </div>
+
     | "bank_debit" =>
-      <div className="flex flex-col items-start">
+      <div
+        className="flex flex-col items-start"
+        role="group"
+        ariaLabel={`${paymentMethodType->String.toUpperCase} bank debit account ending in ${paymentItem.bank.mask}`}>
         <div>
           {React.string(
             `${paymentMethodType->String.toUpperCase} ${paymentItem.paymentMethod->Utils.snakeToTitleCase}`,
           )}
         </div>
         <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-          <div className="tracking-widest"> {React.string(`****`)} </div>
-          <div> {React.string(paymentItem.bank.mask)} </div>
+          <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
+          <div ariaHidden=true> {React.string(paymentItem.bank.mask)} </div>
         </div>
       </div>
-    | _ => <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>
+
+    | _ =>
+      <div ariaLabel={paymentMethodType->Utils.snakeToTitleCase}>
+        {React.string(paymentMethodType->Utils.snakeToTitleCase)}
+      </div>
     }
   }
 }
@@ -72,15 +83,26 @@ let make = (
     | None => ()
     }
   }
-  React.useEffect(() => {
-    isActive ? focusCVC() : ()
-    None
-  }, [isActive])
 
   let isCard = paymentItem.paymentMethod === "card"
   let isRenderCvv = isCard && paymentItem.requiresCvv
   let expiryMonth = paymentItem.card.expiryMonth
   let expiryYear = paymentItem.card.expiryYear
+
+  React.useEffect(() => {
+    open CardUtils
+
+    if isActive {
+      // * Focus CVC
+      focusCVC()
+
+      // * Sending card expiry to handle cases where the card expires before the use date.
+      `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
+      ->formatCardExpiryNumber
+      ->emitExpiryDate
+    }
+    None
+  }, [isActive])
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
@@ -150,8 +172,9 @@ let make = (
             <RenderIf condition={isCard}>
               <div
                 className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                style={fontSize: "14px", opacity: "0.5"}>
-                <div className="flex">
+                style={fontSize: "14px", opacity: "0.5"}
+                ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
+                <div className="flex" ariaHidden=true>
                   {React.string(`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
                 </div>
               </div>

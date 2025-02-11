@@ -1,6 +1,6 @@
 {
   "name": "orca-payment-page",
-  "version": "0.105.2",
+  "version": "0.112.3",
   "main": "index.js",
   "private": true,
   "dependencies": {
@@ -17,10 +17,14 @@
   },
   "scripts": {
     "build": "webpack --config webpack.common.js",
-    "build:integ": "cross-env sdkEnv=integ enableLogging=false webpack --config webpack.common.js",
-    "build:playground": "npm run setup:playground && npm run build",
-    "build:prod": "cross-env sdkEnv=prod enableLogging=true webpack --config webpack.common.js",
-    "build:sandbox": "cross-env sdkEnv=sandbox enableLogging=true webpack --config webpack.common.js",
+    "build:v2": "cross-env SDK_VERSION=v2 webpack --config webpack.common.js",
+    "build:integ": "cross-env sdkEnv=integ webpack --config webpack.common.js",
+    "build:playground": "npm run setup:playground && webpack --config webpack.common.js",
+    "build:sandbox": "cross-env sdkEnv=sandbox webpack --config webpack.common.js",
+    "build:prod": "cross-env sdkEnv=prod webpack --config webpack.common.js",
+    "build:integ:v2": "cross-env sdkEnv=integ SDK_VERSION=v2 webpack --config webpack.common.js",
+    "build:sandbox:v2": "cross-env sdkEnv=sandbox SDK_VERSION=v2 webpack --config webpack.common.js",
+    "build:prod:v2": "cross-env sdkEnv=prod SDK_VERSION=v2 webpack --config webpack.common.js",
     "deploy-to-s3": "node ./scripts/pushToS3.js",
     "postinstall": "cd Hyperswitch-React-Demo-App && npm i",
     "prepare": "husky install",
@@ -29,7 +33,7 @@
     "re:format": "rescript format -all",
     "re:start": "rescript -w",
     "setup:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js",
-    "start": "cross-env sdkEnv=local enableLogging=false webpack serve --config webpack.dev.js",
+    "start": "cross-env sdkEnv=local webpack serve --config webpack.dev.js",
     "start:playground": "npm run setup:playground && npm run start",
     "test": "cd cypress-tests && npm run cypress:run",
     "test:hooks": "npx eslint src/"
@@ -84,7 +88,8 @@
     "webpack": "^5.94.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.1.0"
+    "webpack-dev-server": "^5.1.0",
+    "eslint-plugin-promise": "^7.2.1"
   },
   "config": {
     "commitizen": {
