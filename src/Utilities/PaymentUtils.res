@@ -74,6 +74,7 @@ let paymentListLookupNew = (
         let isInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
         let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
 
+        // To be fixed for Klarna Checkout - PR - https://github.com/juspay/hyperswitch-web/pull/851
         if isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience {
           walletsList->Array.push(item.paymentMethodName)->ignore
         } else if isRedirectExperience {
@@ -558,7 +559,7 @@ let getSupportedCardBrands = (paymentMethodListValue: PaymentMethodsRecord.payme
 let checkIsCardSupported = (cardNumber, supportedCardBrands) => {
   let cardBrand = cardNumber->CardUtils.getCardBrand
   let clearValue = cardNumber->CardUtils.clearSpaces
-  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
+  if cardBrand == "" {
     Some(CardUtils.cardValid(clearValue, cardBrand))
   } else if CardUtils.cardValid(clearValue, cardBrand) {
     switch supportedCardBrands {

@@ -30,6 +30,7 @@ type packageJson = {version: string}
 @val @scope("document") external body: body = "body"
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
+
 @val @scope("window")
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
 @val @scope("window") external btoa: string => string = "btoa"
@@ -46,7 +47,7 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @get external name: window => string = "name"
 @get external contentWindow: Dom.element => Dom.element = "contentWindow"
 @get external style: Dom.element => style = "style"
-@send external getAttribute: (Dom.element, string) => option<string> = "getAttribute"
+@send external getAttribute: (Dom.element, string) => Nullable.t<string> = "getAttribute"
 @send external postMessage: (Dom.element, string, string) => unit = "postMessage"
 @send external postMessageJSON: (Dom.element, JSON.t, string) => unit = "postMessage"
 @send external getElementById: (document, string) => Nullable.t<Dom.element> = "getElementById"
@@ -66,6 +67,9 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @set external setHeight: (style, string) => unit = "height"
 @set external windowOnload: (window, unit => unit) => unit = "onload"
 @set external setHyper: (window, Types.hyperInstance) => unit = "HyperMethod"
+
+@send external closeWindow: window => unit = "close"
+@val external windowOpen: (string, string, string) => Nullable.t<window> = "open"
 
 /* Module Definitions */
 module Navigator = {
@@ -128,6 +132,12 @@ module Top = {
     @val @scope(("window", "top", "location"))
     external pathname: string = "pathname"
   }
+}
+
+module LocalStorage = {
+  @scope(("window", "localStorage")) @val external setItem: (string, string) => unit = "setItem"
+  @scope(("window", "localStorage")) @val external getItem: string => Nullable.t<string> = "getItem"
+  @scope(("window", "localStorage")) @val external removeItem: string => unit = "removeItem"
 }
 
 module Element = {
@@ -203,23 +213,3 @@ let getRootHostName = () =>
     }
   | false => Location.hostname
   }
-
-/* Redirect Handling */
-let replaceRootHref = (href: string, shouldUseTopRedirection: bool) => {
-  switch shouldUseTopRedirection {
-  | true =>
-    try {
-      Top.Location.replace(href)
-    } catch {
-    | e => {
-        Js.Console.error3(
-          "Failed to redirect root document",
-          e,
-          `Using [window.location.replace] for redirection`,
-        )
-        Location.replace(href)
-      }
-    }
-  | false => Location.replace(href)
-  }
-}

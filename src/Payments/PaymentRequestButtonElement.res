@@ -68,13 +68,18 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
     Gpay,
   )
 
+  let {isKlarnaSDKFlow, isKlarnaCheckoutFlow} = KlarnaHelpers.usePaymentMethodExperience(
+    ~paymentMethodListValue,
+    ~sessionObj,
+  )
+
   let klarnaTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
   let pazeTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Paze)
 
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
-  <div className="flex flex-col gap-2 h-auto w-full">
+  <div role="region" ariaLabel="Wallet Section" className="flex flex-col gap-2 h-auto w-full">
     {walletOptions
     ->Array.mapWithIndex((item, i) => {
       <ErrorBoundary
@@ -136,12 +141,13 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
               | _ => React.null
               }
             | KlarnaWallet =>
-              <SessionPaymentWrapper type_=Others>
+              <SessionPaymentWrapper type_={Others}>
                 {switch klarnaTokenObj {
                 | OtherTokenOptional(optToken) =>
-                  switch optToken {
-                  | Some(token) => <KlarnaSDKLazy sessionObj=token />
-                  | None => React.null
+                  switch (optToken, isKlarnaSDKFlow, isKlarnaCheckoutFlow) {
+                  | (Some(token), true, _) => <KlarnaSDKLazy sessionObj=token />
+                  | (_, _, true) => <KlarnaCheckoutLazy />
+                  | _ => React.null
                   }
                 | _ => React.null
                 }}

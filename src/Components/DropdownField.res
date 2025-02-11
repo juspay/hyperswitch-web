@@ -96,20 +96,22 @@ let make = (
             fontSize: themeObj.fontSizeLg,
             marginBottom: "5px",
             opacity: "0.6",
-          }>
+          }
+          ariaHidden=true>
           {React.string(fieldName)}
         </div>
       </RenderIf>
       <div className="relative">
         <RenderIf condition={isDisplayValueVisible && displayValue->Option.isSome}>
           <div
-            className="absolute top-1 left-1 right-0 bottom-0  pointer-events-none rounded-sm z-20 whitespace-nowrap"
+            className="absolute top-[2px] left-[2px] right-0 bottom-[2px]  pointer-events-none rounded-sm z-20 whitespace-nowrap"
             style={
               background: disabled ? disbaledBG : themeObj.colorBackground,
               opacity: disabled ? "35%" : "",
               padding: themeObj.spacingUnit,
               width: "95%",
-            }>
+            }
+            ariaHidden=true>
             {React.string(displayValue->Option.getOr(""))}
           </div>
         </RenderIf>
@@ -127,7 +129,8 @@ let make = (
           disabled={readOnly || disabled}
           onChange=handleChange
           onFocus=handleFocus
-          className={`${inputClassStyles} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}>
+          className={`${inputClassStyles} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
+          ariaLabel={`${fieldName} option tab`}>
           {options
           ->Array.mapWithIndex((item, index) => {
             <option key={Int.toString(index)} value=item.value>
@@ -147,7 +150,8 @@ let make = (
                 inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
               opacity: "0.6",
-            }>
+            }
+            ariaHidden=true>
             {React.string(fieldName)}
           </div>
         </RenderIf>
