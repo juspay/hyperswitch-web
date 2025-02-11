@@ -488,6 +488,11 @@ let focusCardValid = (cardNumber, cardBrand) => {
 let blurRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
   ref.current->Nullable.toOption->Option.forEach(input => input->blur)->ignore
 }
+
+let focusRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
+  ref.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
+}
+
 let handleInputFocus = (
   ~currentRef: React.ref<Nullable.t<Dom.element>>,
   ~destinationRef: React.ref<Nullable.t<Dom.element>>,

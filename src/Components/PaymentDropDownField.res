@@ -78,7 +78,8 @@ let make = (
             fontSize: themeObj.fontSizeLg,
             marginBottom: "5px",
             opacity: "0.6",
-          }>
+          }
+          ariaHidden=true>
           {React.string(fieldName)}
         </div>
       </RenderIf>
@@ -96,7 +97,8 @@ let make = (
           disabled={readOnly || disabled}
           onFocus={handleFocus}
           onChange=handleChange
-          className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}>
+          className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
+          ariaLabel={`${fieldName} option tab`}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>
@@ -114,7 +116,8 @@ let make = (
                 inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
               opacity: "0.6",
-            }>
+            }
+            ariaHidden=true>
             {React.string(fieldName)}
           </div>
         </RenderIf>

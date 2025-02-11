@@ -422,6 +422,7 @@ let make = (
            name="orca-${elementIframeId}-iframeRef-${localSelectorString}"
           src="${ApiEndpoint.sdkDomainUrl}/index.html?componentName=${componentType}"
           allow="payment *"
+          title="Orca Payment Element Frame"
           sandbox="allow-scripts allow-popups allow-same-origin allow-forms"
           name="orca-payment"
           style="border: 0px; ${additionalIframeStyle} outline: none;"

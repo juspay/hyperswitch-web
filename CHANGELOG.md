@@ -1,3 +1,10 @@
+## [0.112.3](https://github.com/juspay/hyperswitch-web/compare/v0.112.2...v0.112.3) (2025-02-03)
+
+
+### Bug Fixes
+
+* improve web accessibility with better ARIA support and contrast fixes ([#885](https://github.com/juspay/hyperswitch-web/issues/885)) ([269c230](https://github.com/juspay/hyperswitch-web/commit/269c2306436e63c382652ba855a0ccf7e598cde5))
+
 ## [0.112.2](https://github.com/juspay/hyperswitch-web/compare/v0.112.1...v0.112.2) (2025-02-03)
 
 ## [0.112.1](https://github.com/juspay/hyperswitch-web/compare/v0.112.0...v0.112.1) (2025-02-03)
