@@ -37,9 +37,9 @@ export const stripeCards = {
         card_exp_month:"13",
         card_exp_year:"30",
     },
-    visaCard19: {  
-        cardNo: "4479667352342682672",
-        cardScheme: "Visa",
+    unionPay19: {  
+        cardNo: "6205500000000000004",
+        cardScheme: "UnionPay",
         cvc: "123",
         card_exp_month: "12",
         card_exp_year: "30",

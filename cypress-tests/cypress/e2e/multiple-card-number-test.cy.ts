@@ -4,7 +4,7 @@ import { createPaymentBody } from "../support/utils";
 import { changeObjectKeyValue } from "../support/utils";
 import {  stripeCards } from "cypress/support/cards";
 
-describe("Card number validation test", () => {
+describe("Multiple Card number validation test", () => {
 
     const publishableKey = Cypress.env('HYPERSWITCH_PUBLISHABLE_KEY')
     const secretKey = Cypress.env('HYPERSWITCH_SECRET_KEY')
@@ -28,8 +28,8 @@ describe("Card number validation test", () => {
     });
 
 
-    it("19 digit visa card", () => {
-        const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.visaCard19;
+    it("19 digit unionpay card", () => {
+        const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.unionPay19;
     
         getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo); 
         getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month); 
