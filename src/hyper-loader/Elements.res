@@ -809,6 +809,35 @@ let make = (
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
         addSmartEventListener("message", handleApplePayThirdPartyFlow, "onApplePayThirdParty")
 
+        let mountSamsungPayScript = samsungPayPresent => {
+          Promise.make((resolve, _) => {
+            if (
+              samsungPayPresent->Option.isSome &&
+                Window.querySelectorAll(`script[src="https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js"]`)->Array.length === 0
+            ) {
+              let samsungPayScriptUrl = "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js"
+              let samsungPayScript = Window.createElement("script")
+              samsungPayScript->Window.elementSrc(samsungPayScriptUrl)
+              samsungPayScript->Window.elementOnerror(err => {
+                logger.setLogError(
+                  ~value="ERROR DURING LOADING SAMSUNG PAY SCRIPT",
+                  ~eventName=SAMSUNG_PAY_SCRIPT,
+                  ~internalMetadata=err->formatException->JSON.stringify,
+                  ~paymentMethod="SAMSUNG_PAY",
+                )
+                resolve()
+              })
+              Window.body->Window.appendChild(samsungPayScript)
+              samsungPayScript->Window.elementOnload(_ => {
+                logger.setLogInfo(~value="SamsungPay Script Loaded", ~eventName=SAMSUNG_PAY_SCRIPT)
+                resolve()
+              })
+            } else {
+              resolve()
+            }
+          })
+        }
+
         let fetchSessionTokens = mountedIframeRef => {
           let handleSessionTokensLoaded = (event: Types.event) => {
             let json = event.data->anyTypeToJson
@@ -817,20 +846,28 @@ let make = (
             if sessionTokensData {
               let json = dict->getJsonFromDict("response", JSON.Encode.null)
 
-              {
-                let sessionsArr =
-                  json
-                  ->JSON.Decode.object
-                  ->Option.getOr(Dict.make())
-                  ->SessionsType.getSessionsTokenJson("session_token")
+              let sessionsArr =
+                json
+                ->JSON.Decode.object
+                ->Option.getOr(Dict.make())
+                ->SessionsType.getSessionsTokenJson("session_token")
 
+              let samsungPayPresent = sessionsArr->Array.find(item => {
+                let walletName = item->getDictFromJson->getString("wallet_name", "")
+                walletName === "samsung_pay" || walletName === "samsungpay"
+              })
+
+              mountSamsungPayScript(samsungPayPresent)
+              ->then(_ => {
                 let applePayPresent = sessionsArr->Array.find(item => {
                   let x =
                     item
                     ->JSON.Decode.object
-                    ->Belt.Option.flatMap(x => {
-                      x->Dict.get("wallet_name")
-                    })
+                    ->Belt.Option.flatMap(
+                      x => {
+                        x->Dict.get("wallet_name")
+                      },
+                    )
                     ->Belt.Option.flatMap(JSON.Decode.string)
                     ->Option.getOr("")
                   x === "apple_pay" || x === "applepay"
@@ -844,20 +881,18 @@ let make = (
                   let x =
                     item
                     ->JSON.Decode.object
-                    ->Belt.Option.flatMap(x => {
-                      x->Dict.get("wallet_name")
-                    })
+                    ->Belt.Option.flatMap(
+                      x => {
+                        x->Dict.get("wallet_name")
+                      },
+                    )
                     ->Belt.Option.flatMap(JSON.Decode.string)
                     ->Option.getOr("")
                   x === "google_pay" || x === "googlepay"
                 })
-                let samsungPayPresent = sessionsArr->Array.find(item => {
-                  let walletName = item->getDictFromJson->getString("wallet_name", "")
-                  walletName === "samsung_pay" || walletName === "samsungpay"
-                })
 
                 (json, applePayPresent, googlePayPresent, samsungPayPresent)->resolve
-              }
+              })
               ->then(res => {
                 let (json, applePayPresent, googlePayPresent, samsungPayPresent) = res
                 if (
