@@ -12,30 +12,36 @@ let sendPromiseData = (promise, key) => {
 
 let useMessageHandler = getPromisesAndHandler => {
   React.useEffect(_ => {
-    let (promises, messageHandler) = getPromisesAndHandler()
+    let messageHandler = getPromisesAndHandler()
+
     let setupMessageListener = _ => {
-      Utils.messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
       Window.addEventListener("message", messageHandler)
+      Utils.messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
     }
 
     let cleanupMessageListener = _ => {
-      Utils.messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
       Window.removeEventListener("message", messageHandler)
+      Utils.messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
     }
+
+    let handleCleanUpEventListener = (ev: Window.event) => {
+      open Utils
+      let dict = ev.data->safeParse->getDictFromJson
+      if dict->Dict.get("cleanUpPreMountLoaderIframe")->Option.isSome {
+        cleanupMessageListener()
+      }
+    }
+
+    Window.addEventListener("message", handleCleanUpEventListener)
 
     setupMessageListener()
 
-    let executeAllPromises = async () => {
-      try {
-        let _ = await Promise.all(promises)
-      } catch {
-      | error => Console.error2("Error in message handler:", error)
-      }
-      cleanupMessageListener()
-    }
-    executeAllPromises()->ignore
-
-    Some(cleanupMessageListener)
+    Some(
+      () => {
+        cleanupMessageListener()
+        Window.removeEventListener("message", handleCleanUpEventListener)
+      },
+    )
   }, [])
 }
 
@@ -87,8 +93,7 @@ module PreMountLoaderForElements = {
         }
       }
 
-      let promises = [paymentMethodsPromise, customerPaymentMethodsPromise, sessionTokensPromise]
-      (promises, messageHandler)
+      messageHandler
     })
 
     React.null
@@ -114,8 +119,7 @@ module PreMountLoaderForPMMElements = {
         }
       }
 
-      let promises = [savedPaymentMethodsPromise]
-      (promises, messageHandler)
+      messageHandler
     })
 
     React.null

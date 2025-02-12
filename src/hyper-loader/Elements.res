@@ -142,12 +142,13 @@ let make = (
       }
     }
 
-    let fetchPaymentsList = (mountedIframeRef, componentType) => {
+    let fetchPaymentsList = (mountedIframeRef, componentType, promiseResolve) => {
       let handlePaymentMethodsLoaded = (event: Types.event) => {
         let json = event.data->anyTypeToJson
         let dict = json->getDictFromJson
         let isPaymentMethodsData = dict->getString("data", "") === "payment_methods"
         if isPaymentMethodsData {
+          promiseResolve()
           isTaxCalculationEnabled.contents =
             dict->getDictFromDict("response")->getBool("is_tax_calculation_enabled", false)
           addSmartEventListener("message", onPlaidCallback(mountedIframeRef), "onPlaidCallback")
@@ -212,6 +213,7 @@ let make = (
       mountedIframeRef,
       disableSavedPaymentMethods,
       componentType,
+      promiseResolve,
     ) => {
       if !disableSavedPaymentMethods {
         let handleCustomerPaymentMethodsLoaded = (event: Types.event) => {
@@ -223,6 +225,7 @@ let make = (
             let json = dict->getJsonFromDict("response", JSON.Encode.null)
             let msg = [("customerPaymentMethods", json)]->Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
+            promiseResolve()
           }
         }
         addSmartEventListener(
@@ -230,6 +233,8 @@ let make = (
           handleCustomerPaymentMethodsLoaded,
           `onCustomerPaymentMethodsLoaded-${componentType}`,
         )
+      } else {
+        promiseResolve()
       }
       let msg =
         [
@@ -809,13 +814,14 @@ let make = (
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
         addSmartEventListener("message", handleApplePayThirdPartyFlow, "onApplePayThirdParty")
 
-        let fetchSessionTokens = mountedIframeRef => {
+        let fetchSessionTokens = (mountedIframeRef, promiseResolve) => {
           let handleSessionTokensLoaded = (event: Types.event) => {
             let json = event.data->anyTypeToJson
             let dict = json->getDictFromJson
             let sessionTokensData = dict->getString("data", "") === "session_tokens"
             if sessionTokensData {
               let json = dict->getJsonFromDict("response", JSON.Encode.null)
+              promiseResolve()
 
               {
                 let sessionsArr =
@@ -1288,15 +1294,34 @@ let make = (
         }
         preMountLoaderMountedPromise
         ->then(_ => {
-          fetchPaymentsList(mountedIframeRef, componentType)
+          let paymentMethodsPromise = Promise.make((resolve, _) => {
+            fetchPaymentsList(mountedIframeRef, componentType, resolve)
+          })
           let disableSavedPaymentMethods =
             newOptions
             ->getDictFromJson
             ->getBool("displaySavedPaymentMethods", true) &&
               !(spmComponents->Array.includes(componentType))->not
-          fetchCustomerPaymentMethods(mountedIframeRef, disableSavedPaymentMethods, componentType)
-          fetchSessionTokens(mountedIframeRef)
-          resolve()
+          let customerPaymentMethodsPromise = Promise.make((resolve, _) => {
+            fetchCustomerPaymentMethods(
+              mountedIframeRef,
+              disableSavedPaymentMethods,
+              componentType,
+              resolve,
+            )
+          })
+          let sessionTokensPromise = Promise.make((resolve, _) => {
+            fetchSessionTokens(mountedIframeRef, resolve)
+          })
+          Promise.all([
+            paymentMethodsPromise,
+            customerPaymentMethodsPromise,
+            sessionTokensPromise,
+          ])->then(_ => {
+            let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
+            preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+            resolve()
+          })
         })
         ->catch(_ => resolve())
         ->ignore
