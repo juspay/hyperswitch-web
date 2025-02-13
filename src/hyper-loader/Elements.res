@@ -809,7 +809,7 @@ let make = (
         addSmartEventListener("message", handleGooglePayThirdPartyFlow, "onGooglePayThirdParty")
         addSmartEventListener("message", handleApplePayThirdPartyFlow, "onApplePayThirdParty")
 
-        let mountSamsungPayScript = samsungPayPresent => {
+        let checkAndMountSamsungPay = samsungPayPresent => {
           Promise.make((resolve, _) => {
             if (
               samsungPayPresent->Option.isSome &&
@@ -857,7 +857,7 @@ let make = (
                 walletName === "samsung_pay" || walletName === "samsungpay"
               })
 
-              mountSamsungPayScript(samsungPayPresent)
+              checkAndMountSamsungPay(samsungPayPresent)
               ->then(_ => {
                 let applePayPresent = sessionsArr->Array.find(item => {
                   let x =
