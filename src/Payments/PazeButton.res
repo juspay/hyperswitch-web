@@ -21,7 +21,7 @@ let make = (~token: SessionsType.token) => {
       ~eventName=PAZE_SDK_FLOW,
       ~paymentMethod="PAZE",
     )
-    SurchargeUtils.emitTotalSurchargeValue(~paymentMethod="wallet", ~paymentMethodType="paze")
+    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paze")
     setShowLoader(_ => true)
     let metadata =
       [

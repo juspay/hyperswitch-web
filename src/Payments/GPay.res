@@ -104,7 +104,7 @@ let make = (
       ~eventName=GOOGLE_PAY_FLOW,
       ~paymentMethod="GOOGLE_PAY",
     )
-    SurchargeUtils.emitTotalSurchargeValue(~paymentMethod="wallet", ~paymentMethodType="google_pay")
+    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="google_pay")
     makeOneClickHandlerPromise(isSDKHandleClick)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {

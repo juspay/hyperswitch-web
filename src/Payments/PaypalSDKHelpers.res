@@ -58,7 +58,7 @@ let loadPaypalSDK = (
     style: buttonStyle,
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: () => {
-      SurchargeUtils.emitTotalSurchargeValue(~paymentMethod="wallet", ~paymentMethodType="paypal")
+      PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
       makeOneClickHandlerPromise(sdkHandleIsThere)->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {

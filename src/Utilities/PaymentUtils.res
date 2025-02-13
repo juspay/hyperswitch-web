@@ -570,3 +570,66 @@ let checkIsCardSupported = (cardNumber, supportedCardBrands) => {
     None
   }
 }
+
+let emitMessage = paymentMethodInfo =>
+  Utils.messageParentWindow([("paymentMethodInfo", paymentMethodInfo->JSON.Encode.object)])
+
+let emitPaymentMethodInfo = (~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTFOUND) => {
+  if cardBrand === CardUtils.NOTFOUND {
+    emitMessage(
+      [
+        ("paymentMethod", paymentMethod->JSON.Encode.string),
+        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+      ]->Dict.fromArray,
+    )
+  } else {
+    emitMessage(
+      [
+        ("paymentMethod", paymentMethod->JSON.Encode.string),
+        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+        ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
+      ]->Dict.fromArray,
+    )
+  }
+}
+
+let useSomeNamePending = (
+  ~paymentMethodName,
+  ~paymentMethods: array<PaymentMethodsRecord.methods>,
+  ~cardBrand,
+) => {
+  React.useEffect(() => {
+    if paymentMethodName->String.includes("_debit") {
+      emitPaymentMethodInfo(~paymentMethod="bank_debit", ~paymentMethodType=paymentMethodName)
+    } else if paymentMethodName->String.includes("_transfer") {
+      emitPaymentMethodInfo(~paymentMethod="bank_transfer", ~paymentMethodType=paymentMethodName)
+    } else if paymentMethodName === "card" {
+      emitPaymentMethodInfo(
+        ~paymentMethod="card",
+        ~paymentMethodType="debit",
+        ~cardBrand=cardBrand->CardUtils.getCardType,
+      )
+    } else {
+      let finalOptionalPaymentMethodType = paymentMethods->Array.filter(paymentMethodData => {
+        let filteredPaymentMethodTypes = paymentMethodData.payment_method_types->Array.filter(
+          paymentMethodType => {
+            paymentMethodType.payment_method_type === paymentMethodName
+          },
+        )
+
+        filteredPaymentMethodTypes->Array.length > 0
+      })
+
+      switch finalOptionalPaymentMethodType->Array.get(0) {
+      | Some(finalPaymentMethodType) =>
+        emitPaymentMethodInfo(
+          ~paymentMethod=finalPaymentMethodType.payment_method,
+          ~paymentMethodType=paymentMethodName,
+        )
+      | None => Console.log("===> No Payment Method Type Found")
+      }
+    }
+
+    None
+  }, (paymentMethodName, cardBrand, paymentMethods))
+}
