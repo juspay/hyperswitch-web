@@ -1,18 +1,27 @@
 @react.component
-let make = (
-  ~savedMethods: array<PaymentType.customerMethods>,
-  ~setSavedMethods,
-  ~savedMethodsV2: array<PMMTypesV2.customerMethods>,
-  ~setSavedMethodsV2,
-) => {
+let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods) => {
   open CardUtils
   open Utils
   open RecoilAtoms
 
-  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, publishableKey} = Recoil.useRecoilValueFromAtom(keys)
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let nickName = Recoil.useRecoilValueFromAtom(userCardNickName)
+  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
+  let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
+  let (_, setManagePaymentMethod) = Recoil.useRecoilState(RecoilAtomsV2.managePaymentMethod)
+
+  let updateSavedMethodV2 = (
+    savedMethods: array<PMMTypesV2.customerMethods>,
+    paymentMethodId,
+    updatedCustomerMethod: PMMTypesV2.customerMethods,
+  ) => {
+    savedMethods->Array.map(savedMethod =>
+      savedMethod.id !== paymentMethodId ? savedMethod : updatedCustomerMethod
+    )
+  }
 
   let removeSavedMethod = (savedMethods: array<PaymentType.customerMethods>, paymentMethodId) =>
     savedMethods->Array.filter(savedMethod => savedMethod.paymentMethodId !== paymentMethodId)
@@ -59,6 +68,47 @@ let make = (
     messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }
 
+  let handleUpdate = async (paymentItem: PMMTypesV2.customerMethods) => {
+    let bodyArr = PaymentManagementBody.updateCardBody(
+      ~paymentMethodId=paymentItem.id,
+      ~nickName=nickName.value,
+      ~cardHolderName=fullName.value,
+    )
+    messageParentWindow([
+      ("fullscreen", true->JSON.Encode.bool),
+      ("param", "paymentloader"->JSON.Encode.string),
+      ("iframeId", iframeId->JSON.Encode.string),
+    ])
+
+    try {
+      let res = await PaymentHelpersV2.updatePaymentMethod(
+        ~bodyArr,
+        ~pmSessionId=config.pmSessionId,
+        ~pmClientSecret=config.pmClientSecret,
+        ~publishableKey,
+        ~paymentMethodId=paymentItem.id,
+        ~logger,
+        ~customPodUri,
+      )
+
+      let dict = res->getDictFromJson
+      let paymentMethodId = dict->getString("id", "")
+
+      if paymentMethodId != "" {
+        setManagePaymentMethod(_ => "")
+        let updatedCard = dict->PMMV2Helpers.itemToPaymentDetails
+        setSavedMethodsV2(prev => prev->updateSavedMethodV2(paymentMethodId, updatedCard))
+      } else {
+        Console.log2("Payment Id Empty ", res->JSON.stringify)
+      }
+    } catch {
+    | err =>
+      let exceptionMessage = err->formatException->JSON.stringify
+      Console.log2("Unable to Update Card ", exceptionMessage)
+    }
+    messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+  }
+
   let handleDeleteV2 = async (paymentItem: PMMTypesV2.customerMethods) => {
     messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
@@ -68,6 +118,7 @@ let make = (
 
     try {
       let res = await PaymentHelpersV2.deletePaymentMethodV2(
+        ~publishableKey,
         ~pmSessionId=config.pmSessionId,
         ~pmClientSecret=config.pmClientSecret,
         ~paymentMethodId=paymentItem.id,
@@ -80,21 +131,14 @@ let make = (
       let isDeleted = dict->getBool("deleted", false)
 
       if isDeleted {
-        logger.setLogInfo(
-          ~value="Successfully Deleted Saved Payment Method",
-          ~eventName=DELETE_SAVED_PAYMENT_METHOD,
-        )
         setSavedMethodsV2(prev => prev->removeSavedMethodV2(paymentMethodId))
       } else {
-        logger.setLogError(~value=res->JSON.stringify, ~eventName=DELETE_SAVED_PAYMENT_METHOD)
+        Console.log2("Payment Id Empty ", res->JSON.stringify)
       }
     } catch {
     | err =>
       let exceptionMessage = err->formatException->JSON.stringify
-      logger.setLogError(
-        ~value=`Error Deleting Saved Payment Method: ${exceptionMessage}`,
-        ~eventName=DELETE_SAVED_PAYMENT_METHOD,
-      )
+      Console.log2("Unable to Delete Card ", exceptionMessage)
     }
     messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }
@@ -104,7 +148,9 @@ let make = (
     savedMethodsV2
     ->Array.mapWithIndex((obj, i) => {
       let brandIcon = obj->CardUtilsV2.getPaymentMethodBrand
-      <SavedMethodItemV2 key={i->Int.toString} paymentItem=obj brandIcon handleDeleteV2 />
+      <SavedMethodItemV2
+        key={i->Int.toString} paymentItem=obj brandIcon handleDeleteV2 handleUpdate
+      />
     })
     ->React.array
   | V1 =>

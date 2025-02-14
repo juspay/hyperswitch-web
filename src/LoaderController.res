@@ -7,15 +7,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
-  let (paymentManagementList, setPaymentManagementList) = Recoil.useRecoilState(
-    paymentManagementList,
-  )
-  let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
-    PaymentUtils.paymentManagementListValue,
-  )
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
+  let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)

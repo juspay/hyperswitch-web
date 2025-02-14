@@ -38,14 +38,38 @@ let itemToPMMCustomerMapper = customerArray => {
   customerMethods
 }
 
+let itemToPaymentDetails = cust => {
+  let cardDict =
+    getJsonObjectFromDict(cust, "payment_method_data")
+    ->getDictFromJson
+    ->getJsonObjectFromDict("card")
+    ->getDictFromJson
+  {
+    id: getString(cust, "id", ""),
+    customerId: getString(cust, "customer_id", ""),
+    paymentMethodType: getString(cust, "payment_method_type", ""),
+    paymentMethodSubType: getString(cust, "payment_method_subtype", ""),
+    recurringEnabled: getBool(cust, "recurring_enabled", false),
+    paymentMethodData: {
+      card: {
+        network: getOptionString(cardDict, "card_network"),
+        last4Digits: getString(cardDict, "last4_digits", ""),
+        expiryMonth: getString(cardDict, "expiry_month", ""),
+        expiryYear: getString(cardDict, "expiry_year", ""),
+        cardHolderName: getOptionString(cardDict, "card_holder_name"),
+        nickname: getOptionString(cardDict, "nick_name"),
+      },
+    },
+    isDefault: getBool(cust, "is_default", false),
+    requiresCvv: getBool(cust, "reuires_cvv", false),
+    created: getString(cust, "created", ""),
+    lastUsedAt: getString(cust, "last_used_at", ""),
+    bank: {mask: ""},
+  }
+}
+
 let getDynamicFieldsFromJsonDictV2 = (dict, isBancontact) => {
   let requiredFields = getArray(dict, "required_fields")
-  // getJsonFromDict(dict, "required_fields", JSON.Encode.null)
-  // ->getDictFromJson
-  // ->Dict.valuesToArray
-  //   let hello = getArray(dict, "required_fields")
-  //   Console.log2("champ==>dict", dict)
-  //   Console.log2("champ==>requiredFields", hello)
   requiredFields->Array.map(requiredField => {
     let requiredFieldsDict = requiredField->getDictFromJson
     {

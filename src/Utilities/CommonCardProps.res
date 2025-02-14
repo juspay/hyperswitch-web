@@ -11,8 +11,6 @@ let useCardProps = (~logger, ~supportedCardBrands, ~cardType, ~cardBrand) => {
   let (expiryError, setExpiryError) = React.useState(_ => "")
 
   let (displayPincode, setDisplayPincode) = React.useState(_ => false)
-  let (isFocus, setIsFocus) = React.useState(_ => false)
-  let (blurState, setBlurState) = React.useState(_ => false)
 
   let cardRef = React.useRef(Nullable.null)
   let expiryRef = React.useRef(Nullable.null)
@@ -24,6 +22,11 @@ let useCardProps = (~logger, ~supportedCardBrands, ~cardType, ~cardBrand) => {
   let (isCVCValid, setIsCVCValid) = React.useState(_ => None)
   let (isZipValid, setIsZipValid) = React.useState(_ => None)
   let (isCardSupported, setIsCardSupported) = React.useState(_ => None)
+
+  React.useEffect(() => {
+    setIsCardSupported(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
+    None
+  }, (supportedCardBrands, cardNumber))
 
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
@@ -103,12 +106,6 @@ let useCardProps = (~logger, ~supportedCardBrands, ~cardType, ~cardBrand) => {
       setIsCardValid(_ => Some(false))
     }
   }
-
-  let handleElementFocus = React.useMemo(() => {
-    isFocus => {
-      setIsFocus(_ => isFocus)
-    }
-  }, (isCardValid, isCVCValid, isExpiryValid, isZipValid))
 
   let handleExpiryBlur = ev => {
     let cardExpiry = ReactEvent.Focus.target(ev)["value"]

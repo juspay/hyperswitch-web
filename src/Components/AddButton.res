@@ -8,18 +8,18 @@ module Loader = {
   }
 }
 @react.component
-let make = (~onClickHandler=?, ~label=?) => {
+let make = (~onClickHandler=?, ~label: option<string>=?) => {
   open RecoilAtoms
 
   let {themeObj} = configAtom->Recoil.useRecoilValueFromAtom
-  let (showAddScreen, setShowAddScreen) = Recoil.useRecoilState(RecoilAtomsV2.showAddScreen)
+  let setShowAddScreen = Recoil.useSetRecoilState(RecoilAtomsV2.showAddScreen)
 
   let (isAddNowButtonDisable, setIsAddNowButtonDisable) = React.useState(() => false)
   let (showLoader, setShowLoader) = React.useState(() => false)
 
   let buttonText = switch label {
   | Some(val) => val
-  | None => "Add a new card"->React.string
+  | None => "Add a new card"
   }
 
   let onClickHandlerFunc = _ => {
@@ -59,7 +59,7 @@ let make = (~onClickHandler=?, ~label=?) => {
         {if showLoader {
           <Loader />
         } else {
-          buttonText
+          buttonText->React.string
         }}
       </span>
     </button>

@@ -97,13 +97,22 @@ module PreMountLoaderForElements = {
 
 module PreMountLoaderForPMMElements = {
   @react.component
-  let make = (~logger, ~endpoint, ~ephemeralKey, ~customPodUri, ~pmSessionId, ~pmClientSecret) => {
+  let make = (
+    ~logger,
+    ~endpoint,
+    ~ephemeralKey,
+    ~customPodUri,
+    ~pmSessionId,
+    ~pmClientSecret,
+    ~publishableKey,
+  ) => {
     useMessageHandler(() => {
       switch GlobalVars.sdkVersionEnum {
       | V2 => {
           let listPromise = PaymentHelpersV2.fetchPaymentManagementList(
             ~pmSessionId,
             ~pmClientSecret,
+            ~publishableKey,
             ~optLogger=Some(logger),
             ~customPodUri,
             ~endpoint,
@@ -173,7 +182,7 @@ let make = (
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements
-      logger endpoint ephemeralKey customPodUri pmSessionId pmClientSecret
+      logger endpoint ephemeralKey customPodUri pmSessionId pmClientSecret publishableKey
     />
   }
 }

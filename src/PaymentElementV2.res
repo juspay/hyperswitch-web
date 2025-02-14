@@ -10,16 +10,14 @@ let cardsToRender = (width: int) => {
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
-  let {showCardFormByDefault, paymentMethodOrder, layout} = Recoil.useRecoilValueFromAtom(
-    optionAtom,
-  )
+  let {showCardFormByDefault, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentManagementListValue,
   )
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
-  let (walletOptions, setWalletOptions) = React.useState(_ => [])
+  let (walletOptions, _setWalletOptions) = React.useState(_ => [])
 
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
   let layoutClass = CardUtils.getLayoutClass(layout)
@@ -28,8 +26,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
-  let (showAddScreen, setShowAddScreen) = Recoil.useRecoilState(RecoilAtomsV2.showAddScreen)
-  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
 
   let (paymentOptionsList, actualList) = PaymentUtilsV2.useGetPaymentMethodListV2(
     ~paymentOptions,

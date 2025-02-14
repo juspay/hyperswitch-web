@@ -3,10 +3,10 @@ open RecoilAtoms
 
 @react.component
 let make = (~paymentType: CardThemeType.mode) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {savedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
-  let (savedMethodsV2, setSavedMethodsV2) = React.useState(_ => [])
+  let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
   let (isLoading, setIsLoading) = React.useState(_ => false)
   let (showAddScreen, setShowAddScreen) = Recoil.useRecoilState(RecoilAtomsV2.showAddScreen)
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(cardBrand)
@@ -32,53 +32,27 @@ let make = (~paymentType: CardThemeType.mode) => {
     ~cardBrand,
   )
   let handleBack = _ => {
-    Console.log("ONClick of back")
     setShowAddScreen(_ => false)
   }
-  let (
-    isCardValid,
-    setIsCardValid,
-    isCardSupported,
-    cardNumber,
-    changeCardNumber,
-    handleCardBlur,
-    cardRef,
-    icon,
-    cardError,
-    setCardError,
-    maxCardLength,
-    _,
-  ) = cardProps
+  let (isCardValid, _, isCardSupported, cardNumber, _, _, _, _, _, setCardError, _, _) = cardProps
 
-  let (
-    isExpiryValid,
-    setIsExpiryValid,
-    cardExpiry,
-    changeCardExpiry,
-    handleExpiryBlur,
-    expiryRef,
-    onExpiryKeyDown,
-    expiryError,
-    setExpiryError,
-  ) = expiryProps
+  let (isExpiryValid, _, cardExpiry, _, _, _, _, _, setExpiryError) = expiryProps
 
-  let (
-    isCVCValid,
-    setIsCVCValid,
-    cvcNumber,
-    setCvcNumber,
-    changeCVCNumber,
-    handleCVCBlur,
-    cvcRef,
-    onCvcKeyDown,
-    cvcError,
-    setCvcError,
-  ) = cvcProps
+  let (isCVCValid, _, _, _, _, _, _, _, _, setCvcError) = cvcProps
 
   React.useEffect(() => {
     setCardBrand(_ => cardNumber->CardUtils.getCardBrand)
     None
   }, [cardNumber])
+
+  React.useEffect(() => {
+    if savedMethodsV2->Array.length == 0 {
+      setShowAddScreen(_ => true)
+    } else {
+      setShowAddScreen(_ => false)
+    }
+    None
+  }, [savedMethodsV2->Array.length])
 
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let (savedPaymentMethodsV2, setSavedPaymentMethodsV2) = Recoil.useRecoilState(
@@ -87,12 +61,6 @@ let make = (~paymentType: CardThemeType.mode) => {
   let {showCardFormByDefault, displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(
     optionAtom,
   )
-
-  let handleConfirmClick = () => {
-    //Confirm Api
-    Console.log("Save the card")
-  }
-
   React.useEffect(() => {
     switch paymentManagementList {
     | LoadedV2(val) =>
@@ -169,19 +137,27 @@ let make = (~paymentType: CardThemeType.mode) => {
 
   <>
     <RenderIf condition={showAddScreen}>
-      <button
-        className="p-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline "
-        onClick={handleBack}>
-        {React.string("Back")}
-      </button>
-      <PaymentElementRendererLazy paymentType cardProps cvcProps expiryProps />
-      <div className="mt-4">
-        <PayNowButton label="Save card" onClickHandler=handleConfirmClick />
+      <div className="flex flex-col gap-3">
+        <RenderIf condition={savedMethodsV2->Array.length != 0}>
+          <Icon
+            size=18
+            name="arrow-back"
+            style={color: themeObj.colorDanger}
+            className="cursor-pointer ml-1 mb-[6px]"
+            onClick={_ => {
+              handleBack()
+            }}
+          />
+        </RenderIf>
+        <PaymentElementRendererLazy paymentType cardProps cvcProps expiryProps />
+        <div className="mt-4">
+          <PayNowButton label="Save card" />
+        </div>
       </div>
     </RenderIf>
     <RenderIf condition={!showAddScreen}>
       <RenderIf condition={!isLoading}>
-        <SavedPaymentManagement savedMethods setSavedMethods savedMethodsV2 setSavedMethodsV2 />
+        <SavedPaymentManagement savedMethods setSavedMethods />
       </RenderIf>
       <RenderIf condition={isLoading}>
         <PaymentElementShimmer.SavedPaymentShimmer />

@@ -1,18 +1,3 @@
-type cardProps = {
-  isCardValid: option<bool>,
-  setIsCardValid: (option<bool> => option<bool>) => unit,
-  isCardSupported: option<bool>,
-  cardNumber: string,
-  changeCardNumber: JsxEvent.Form.t => unit,
-  handleCardBlur: JsxEvent.Focus.t => unit,
-  cardRef: React.ref<Nullable.t<Dom.element>>,
-  icon: React.element,
-  cardError: string,
-  setCardError: (string => string) => unit,
-  maxCardLength: int,
-  cardBrand: string,
-}
-
 type paymentMethods = {
   paymentMethodType: string,
   paymentMethodSubType: string,
