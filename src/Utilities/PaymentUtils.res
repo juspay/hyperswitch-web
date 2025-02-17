@@ -593,7 +593,7 @@ let emitPaymentMethodInfo = (~paymentMethod, ~paymentMethodType, ~cardBrand=Card
   }
 }
 
-let useSomeNamePending = (
+let useEmitPaymentMethodInfo = (
   ~paymentMethodName,
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
   ~cardBrand,

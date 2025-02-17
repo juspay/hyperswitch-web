@@ -104,7 +104,7 @@ let make = (
     )
   }, [dropDownOptionsDetails])
 
-  PaymentUtils.useSomeNamePending(
+  PaymentUtils.useEmitPaymentMethodInfo(
     ~paymentMethodName=selectedPaymentOption.paymentMethodName,
     ~paymentMethods=paymentMethodListValue.payment_methods,
     ~cardBrand,

@@ -67,7 +67,7 @@ let make = (~paymentOptions: array<string>, ~checkoutEle: React.element, ~cardPr
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (_, _, _, _, _, _, _, _, _, _, _, cardBrand) = cardProps
 
-  PaymentUtils.useSomeNamePending(
+  PaymentUtils.useEmitPaymentMethodInfo(
     ~paymentMethodName=selectedOption,
     ~paymentMethods=paymentMethodListValue.payment_methods,
     ~cardBrand,
