@@ -218,6 +218,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
     )
+    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="apple_pay")
     setApplePayClicked(_ => true)
     makeOneClickHandlerPromise(sdkHandleIsThere)
     ->then(result => {
