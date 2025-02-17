@@ -610,17 +610,18 @@ let useEmitPaymentMethodInfo = (
         ~cardBrand=cardBrand->CardUtils.getCardType,
       )
     } else {
-      let finalOptionalPaymentMethodType = paymentMethods->Array.filter(paymentMethodData => {
-        let filteredPaymentMethodTypes = paymentMethodData.payment_method_types->Array.filter(
-          paymentMethodType => {
-            paymentMethodType.payment_method_type === paymentMethodName
-          },
+      let finalOptionalPaymentMethodTypeValue =
+        paymentMethods
+        ->Array.filter(paymentMethodData =>
+          paymentMethodData.payment_method_types
+          ->Array.filter(
+            paymentMethodType => paymentMethodType.payment_method_type === paymentMethodName,
+          )
+          ->Array.length > 0
         )
+        ->Array.get(0)
 
-        filteredPaymentMethodTypes->Array.length > 0
-      })
-
-      switch finalOptionalPaymentMethodType->Array.get(0) {
+      switch finalOptionalPaymentMethodTypeValue {
       | Some(finalPaymentMethodType) =>
         emitPaymentMethodInfo(
           ~paymentMethod=finalPaymentMethodType.payment_method,
