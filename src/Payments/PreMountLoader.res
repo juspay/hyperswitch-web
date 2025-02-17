@@ -10,9 +10,9 @@ let sendPromiseData = (promise, key) => {
   executePromise()->ignore
 }
 
-let useMessageHandler = getPromisesAndHandler => {
+let useMessageHandler = getMessageHandler => {
   React.useEffect(_ => {
-    let messageHandler = getPromisesAndHandler()
+    let messageHandler = getMessageHandler()
 
     let setupMessageListener = _ => {
       Window.addEventListener("message", messageHandler)
