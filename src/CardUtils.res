@@ -350,7 +350,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
   | JCB => <Icon size=brandIconSize name="jcb-card" />
   | CARTESBANCAIRES => <Icon size=brandIconSize name="cartesbancaires-card" />
   | UNIONPAY => <Icon size=brandIconSize name="union-pay" />
-  | INTERAC => <Icon size=brandIconSize name="interac-cardbrand" />
+  | INTERAC => <Icon size=brandIconSize name="interac" />
   | NOTFOUND =>
     switch paymentType {
     | Payment => <Icon size=brandIconSize name="base-card" />
