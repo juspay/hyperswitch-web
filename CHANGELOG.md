@@ -1,3 +1,10 @@
+# [0.114.0](https://github.com/juspay/hyperswitch-web/compare/v0.113.0...v0.114.0) (2025-02-17)
+
+
+### Features
+
+* emit payment method info ([#890](https://github.com/juspay/hyperswitch-web/issues/890)) ([91dda60](https://github.com/juspay/hyperswitch-web/commit/91dda605207bed54c86aba619494f7a36e185021))
+
 # [0.113.0](https://github.com/juspay/hyperswitch-web/compare/v0.112.3...v0.113.0) (2025-02-17)
 
 
