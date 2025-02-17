@@ -113,7 +113,7 @@ let make = (
       )
     }
     None
-  }, (isActive, cardBrand))
+  }, (isActive, cardBrand, paymentItem.paymentMethod, paymentMethodType))
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)

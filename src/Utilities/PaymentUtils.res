@@ -598,6 +598,8 @@ let useEmitPaymentMethodInfo = (
   ~paymentMethods: array<PaymentMethodsRecord.methods>,
   ~cardBrand,
 ) => {
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+
   React.useEffect(() => {
     if paymentMethodName->String.includes("_debit") {
       emitPaymentMethodInfo(~paymentMethod="bank_debit", ~paymentMethodType=paymentMethodName)
@@ -627,7 +629,11 @@ let useEmitPaymentMethodInfo = (
           ~paymentMethod=finalPaymentMethodType.payment_method,
           ~paymentMethodType=paymentMethodName,
         )
-      | None => Console.log("===> No Payment Method Type Found")
+      | None =>
+        loggerState.setLogError(
+          ~value="Payment method type not found",
+          ~eventName=PAYMENT_METHOD_TYPE_DETECTION_FAILED,
+        )
       }
     }
 
