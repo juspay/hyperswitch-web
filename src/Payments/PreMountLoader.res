@@ -97,25 +97,58 @@ module PreMountLoaderForElements = {
 
 module PreMountLoaderForPMMElements = {
   @react.component
-  let make = (~logger, ~endpoint, ~ephemeralKey, ~customPodUri) => {
+  let make = (
+    ~logger,
+    ~endpoint,
+    ~ephemeralKey,
+    ~customPodUri,
+    ~pmSessionId,
+    ~pmClientSecret,
+    ~publishableKey,
+  ) => {
     useMessageHandler(() => {
-      let savedPaymentMethodsPromise = PaymentHelpers.fetchSavedPaymentMethodList(
-        ~ephemeralKey,
-        ~optLogger=Some(logger),
-        ~customPodUri,
-        ~endpoint,
-      )
+      switch GlobalVars.sdkVersionEnum {
+      | V2 => {
+          let listPromise = PaymentHelpersV2.fetchPaymentManagementList(
+            ~pmSessionId,
+            ~pmClientSecret,
+            ~publishableKey,
+            ~optLogger=Some(logger),
+            ~customPodUri,
+            ~endpoint,
+          )
 
-      let messageHandler = (ev: Window.event) => {
-        open Utils
-        let dict = ev.data->safeParse->getDictFromJson
-        if dict->isKeyPresentInDict("sendSavedPaymentMethodsResponse") {
-          savedPaymentMethodsPromise->sendPromiseData("saved_payment_methods")
+          let messageHandler = (ev: Window.event) => {
+            open Utils
+            let dict = ev.data->safeParse->getDictFromJson
+            if dict->isKeyPresentInDict("sendPaymentManagementListResponse") {
+              listPromise->sendPromiseData("payment_management_list")
+            }
+          }
+
+          let promises = [listPromise]
+          (promises, messageHandler)
+        }
+      | V1 => {
+          let savedPaymentMethodsPromise = PaymentHelpers.fetchSavedPaymentMethodList(
+            ~ephemeralKey,
+            ~optLogger=Some(logger),
+            ~customPodUri,
+            ~endpoint,
+          )
+
+          let messageHandler = (ev: Window.event) => {
+            open Utils
+            let dict = ev.data->safeParse->getDictFromJson
+            if dict->isKeyPresentInDict("sendSavedPaymentMethodsResponse") {
+              savedPaymentMethodsPromise->sendPromiseData("saved_payment_methods")
+            }
+          }
+
+          let promises = [savedPaymentMethodsPromise]
+          (promises, messageHandler)
         }
       }
-
-      let promises = [savedPaymentMethodsPromise]
-      (promises, messageHandler)
     })
 
     React.null
@@ -129,6 +162,8 @@ let make = (
   ~clientSecret,
   ~endpoint,
   ~ephemeralKey,
+  ~pmSessionId,
+  ~pmClientSecret,
   ~hyperComponentName: Types.hyperComponentName,
   ~merchantHostname,
   ~customPodUri,
@@ -146,6 +181,8 @@ let make = (
       logger publishableKey clientSecret endpoint merchantHostname customPodUri
     />
   | PaymentMethodsManagementElements =>
-    <PreMountLoaderForPMMElements logger endpoint ephemeralKey customPodUri />
+    <PreMountLoaderForPMMElements
+      logger endpoint ephemeralKey customPodUri pmSessionId pmClientSecret publishableKey
+    />
   }
 }

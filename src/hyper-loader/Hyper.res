@@ -310,6 +310,8 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       let iframeRef = ref([])
       let clientSecret = ref("")
       let ephemeralKey = ref("")
+      let pmSessionId = ref("")
+      let pmClientSecret = ref("")
       let setIframeRef = ref => {
         iframeRef.contents->Array.push(ref)->ignore
       }
@@ -549,12 +551,26 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 
+        let pmClientSecretId =
+          paymentMethodsManagementElementsOptionsDict
+          ->Option.flatMap(x => x->Dict.get("clientSecret2"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+
+        let pmSessionIdVal =
+          paymentMethodsManagementElementsOptionsDict
+          ->Option.flatMap(x => x->Dict.get("pmSessionId"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+
         let paymentMethodsManagementElementsOptions =
           paymentMethodsManagementElementsOptionsDict->Option.mapOr(
             paymentMethodsManagementElementsOptions,
             JSON.Encode.object,
           )
         ephemeralKey := ephemeralKeyId
+        pmSessionId := pmSessionIdVal
+        pmClientSecret := pmClientSecretId
         Promise.make((resolve, _) => {
           logger.setEphemeralKey(ephemeralKeyId)
           resolve(JSON.Encode.null)
@@ -575,6 +591,8 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ~sdkSessionId=sessionID,
           ~publishableKey,
           ~ephemeralKey={ephemeralKeyId},
+          ~pmClientSecret={pmClientSecretId},
+          ~pmSessionId={pmSessionIdVal},
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options

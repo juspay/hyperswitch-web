@@ -73,6 +73,8 @@ let make = () => {
         let publishableKey = CardUtils.getQueryParamsDictforKey(url.search, "publishableKey")
         let endpoint = CardUtils.getQueryParamsDictforKey(url.search, "endpoint")
         let ephemeralKey = CardUtils.getQueryParamsDictforKey(url.search, "ephemeralKey")
+        let pmClientSecret = CardUtils.getQueryParamsDictforKey(url.search, "pmClientSecret")
+        let pmSessionId = CardUtils.getQueryParamsDictforKey(url.search, "pmSessionId")
         let hyperComponentName =
           CardUtils.getQueryParamsDictforKey(
             url.search,
@@ -87,6 +89,8 @@ let make = () => {
           clientSecret
           endpoint
           ephemeralKey
+          pmSessionId
+          pmClientSecret
           hyperComponentName
           merchantHostname
           customPodUri

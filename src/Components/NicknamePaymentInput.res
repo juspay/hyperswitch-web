@@ -1,9 +1,10 @@
 @react.component
-let make = (~paymentType: CardThemeType.mode) => {
+let make = (~paymentType: CardThemeType.mode, ~nickNameValue="") => {
   open RecoilAtoms
   open Utils
 
   let (nickName, setNickName) = Recoil.useRecoilState(userCardNickName)
+  let showAddScreen = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.showAddScreen)
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   let validateNickname = val => {
@@ -23,6 +24,13 @@ let make = (~paymentType: CardThemeType.mode) => {
       errorString,
     }
   }
+
+  React.useEffect(() => {
+    if nickNameValue != "" && !showAddScreen {
+      setNickName(prev => setNickNameState(nickNameValue, prev))
+    }
+    None
+  }, [])
 
   let onChange = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
