@@ -1,3 +1,10 @@
+## [0.114.2](https://github.com/juspay/hyperswitch-web/compare/v0.114.1...v0.114.2) (2025-02-18)
+
+
+### Bug Fixes
+
+* premount loader race condition ([#896](https://github.com/juspay/hyperswitch-web/issues/896)) ([7c8f1df](https://github.com/juspay/hyperswitch-web/commit/7c8f1df521990b3c48d69e2810f656b641372a88))
+
 ## [0.114.1](https://github.com/juspay/hyperswitch-web/compare/v0.114.0...v0.114.1) (2025-02-18)
 
 
