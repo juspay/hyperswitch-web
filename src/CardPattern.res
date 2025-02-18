@@ -35,6 +35,14 @@ let cardPatterns = [
     pincodeRequired: true,
   },
   {
+    issuer: "Interac",
+    pattern: %re("/^(4506|4724|4761|0012)/"),
+    cvcLength: [3],
+    length: [16],
+    maxCVCLength: 3,
+    pincodeRequired: true,
+  },
+  {
     issuer: "RuPay",
     pattern: %re(
       "/^(508227|508[5-9]|603741|60698[5-9]|60699|607[0-8]|6079[0-7]|60798[0-4]|60800[1-9]|6080[1-9]|608[1-4]|608500|6521[5-9]|652[2-9]|6530|6531[0-4]|817290|817368|817378|353800|82)/"
