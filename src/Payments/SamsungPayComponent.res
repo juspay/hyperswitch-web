@@ -33,6 +33,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       ~eventName=SAMSUNG_PAY,
       ~paymentMethod="SAMSUNG_PAY",
     )
+    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="samsung_pay")
     SamsungPayHelpers.handleSamsungPayClicked(
       ~sessionObj=sessionObj->Option.getOr(JSON.Encode.null)->getDictFromJson,
       ~componentName,
