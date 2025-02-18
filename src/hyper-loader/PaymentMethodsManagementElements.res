@@ -53,6 +53,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
+           title="Orca Payment Element Frame"
           src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&ephemeralKey=${ephemeralKey}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}"
           allow="*"
           name="orca-payment"
@@ -211,6 +212,7 @@ let make = (
           }
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
         mountedIframeRef->Window.iframePostMessage(message)
       }
@@ -222,7 +224,7 @@ let make = (
         iframeRef,
         mountPostMessage,
         ~isPaymentManagementElement=true,
-        ~shouldUseTopRedirection=false,
+        ~redirectionFlags=RecoilAtoms.defaultRedirectionFlags,
       )
       savedPaymentElement->Dict.set(componentType, paymentElement)
       paymentElement

@@ -74,6 +74,7 @@ let paymentListLookupNew = (
         let isInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
         let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
 
+        // To be fixed for Klarna Checkout - PR - https://github.com/juspay/hyperswitch-web/pull/851
         if isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience {
           walletsList->Array.push(item.paymentMethodName)->ignore
         } else if isRedirectExperience {
@@ -558,7 +559,7 @@ let getSupportedCardBrands = (paymentMethodListValue: PaymentMethodsRecord.payme
 let checkIsCardSupported = (cardNumber, supportedCardBrands) => {
   let cardBrand = cardNumber->CardUtils.getCardBrand
   let clearValue = cardNumber->CardUtils.clearSpaces
-  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
+  if cardBrand == "" {
     Some(CardUtils.cardValid(clearValue, cardBrand))
   } else if CardUtils.cardValid(clearValue, cardBrand) {
     switch supportedCardBrands {
@@ -568,4 +569,74 @@ let checkIsCardSupported = (cardNumber, supportedCardBrands) => {
   } else {
     None
   }
+}
+
+let emitMessage = paymentMethodInfo =>
+  Utils.messageParentWindow([("paymentMethodInfo", paymentMethodInfo->JSON.Encode.object)])
+
+let emitPaymentMethodInfo = (~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTFOUND) => {
+  if cardBrand === CardUtils.NOTFOUND {
+    emitMessage(
+      [
+        ("paymentMethod", paymentMethod->JSON.Encode.string),
+        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+      ]->Dict.fromArray,
+    )
+  } else {
+    emitMessage(
+      [
+        ("paymentMethod", paymentMethod->JSON.Encode.string),
+        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+        ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
+      ]->Dict.fromArray,
+    )
+  }
+}
+
+let useEmitPaymentMethodInfo = (
+  ~paymentMethodName,
+  ~paymentMethods: array<PaymentMethodsRecord.methods>,
+  ~cardBrand,
+) => {
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+
+  React.useEffect(() => {
+    if paymentMethodName->String.includes("_debit") {
+      emitPaymentMethodInfo(~paymentMethod="bank_debit", ~paymentMethodType=paymentMethodName)
+    } else if paymentMethodName->String.includes("_transfer") {
+      emitPaymentMethodInfo(~paymentMethod="bank_transfer", ~paymentMethodType=paymentMethodName)
+    } else if paymentMethodName === "card" {
+      emitPaymentMethodInfo(
+        ~paymentMethod="card",
+        ~paymentMethodType="debit",
+        ~cardBrand=cardBrand->CardUtils.getCardType,
+      )
+    } else {
+      let finalOptionalPaymentMethodTypeValue =
+        paymentMethods
+        ->Array.filter(paymentMethodData =>
+          paymentMethodData.payment_method_types
+          ->Array.filter(
+            paymentMethodType => paymentMethodType.payment_method_type === paymentMethodName,
+          )
+          ->Array.length > 0
+        )
+        ->Array.get(0)
+
+      switch finalOptionalPaymentMethodTypeValue {
+      | Some(finalPaymentMethodType) =>
+        emitPaymentMethodInfo(
+          ~paymentMethod=finalPaymentMethodType.payment_method,
+          ~paymentMethodType=paymentMethodName,
+        )
+      | None =>
+        loggerState.setLogError(
+          ~value="Payment method type not found",
+          ~eventName=PAYMENT_METHOD_TYPE_DETECTION_FAILED,
+        )
+      }
+    }
+
+    None
+  }, (paymentMethodName, cardBrand, paymentMethods))
 }
