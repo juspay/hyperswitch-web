@@ -89,6 +89,11 @@ let make = (
   let expiryMonth = paymentItem.card.expiryMonth
   let expiryYear = paymentItem.card.expiryYear
 
+  let paymentMethodType = switch paymentItem.paymentMethodType {
+  | Some(paymentMethodType) => paymentMethodType
+  | None => "debit"
+  }
+
   React.useEffect(() => {
     open CardUtils
 
@@ -100,19 +105,20 @@ let make = (
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->formatCardExpiryNumber
       ->emitExpiryDate
+
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod=paymentItem.paymentMethod,
+        ~paymentMethodType,
+        ~cardBrand=cardBrand->CardUtils.getCardType,
+      )
     }
     None
-  }, [isActive])
+  }, (isActive, cardBrand, paymentItem.paymentMethod, paymentMethodType))
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
   let currentDate = Date.make()
   let isCardExpired = isCard && expiryDate < currentDate
-
-  let paymentMethodType = switch paymentItem.paymentMethodType {
-  | Some(paymentMethodType) => paymentMethodType
-  | None => "debit"
-  }
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button

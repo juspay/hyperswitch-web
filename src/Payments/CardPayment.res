@@ -451,7 +451,7 @@ let make = (
     <RenderIf condition={showFields || isBancontact}>
       <Surcharge paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType} />
     </RenderIf>
-    <RenderIf condition={displaySavedPaymentMethodsCheckbox && !isBancontact}>
+    <RenderIf condition={!isBancontact}>
       {switch (
         paymentMethodListValue.mandate_payment,
         options.terms.card,
