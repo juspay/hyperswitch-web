@@ -1,3 +1,29 @@
+module DynamicFieldsToRenderWrapper = {
+  @react.component
+  let make = (~children, ~index, ~isInside=true) => {
+    open RecoilAtoms
+    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+    if children == React.null {
+      React.null
+    } else if isInside {
+      <div
+        key={`inside-billing-${index->Int.toString}`}
+        className="flex flex-col w-full place-content-between">
+        {children}
+      </div>
+    } else {
+      <div
+        key={`outside-billing-${index->Int.toString}`}
+        className="flex flex-col w-full place-content-between"
+        style={
+          gridColumnGap: themeObj.spacingGridRow,
+        }>
+        {children}
+      </div>
+    }
+  }
+}
+
 @react.component
 let make = (
   ~paymentType,
@@ -336,12 +362,7 @@ let make = (
     {<>
       {dynamicFieldsToRenderOutsideBilling
       ->Array.mapWithIndex((item, index) => {
-        <div
-          key={`outside-billing-${index->Int.toString}`}
-          className="flex flex-col w-full place-content-between"
-          style={
-            gridColumnGap: themeObj.spacingGridRow,
-          }>
+        <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index} isInside={false}>
           {switch item {
           | CardNumber =>
             <PaymentInputField
@@ -531,7 +552,7 @@ let make = (
           | LanguagePreference(_)
           | ShippingAddressCountry(_) => React.null
           }}
-        </div>
+        </DynamicFieldsToRenderWrapper>
       })
       ->React.array}
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
@@ -557,9 +578,7 @@ let make = (
             }>
             {dynamicFieldsToRenderInsideBilling
             ->Array.mapWithIndex((item, index) => {
-              <div
-                key={`inside-billing-${index->Int.toString}`}
-                className="flex flex-col w-full place-content-between">
+              <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index}>
                 {switch item {
                 | BillingName => <BillingNamePaymentInput paymentType requiredFields />
                 | Email => <EmailPaymentInput paymentType />
@@ -822,7 +841,7 @@ let make = (
                 | IBAN
                 | None => React.null
                 }}
-              </div>
+              </DynamicFieldsToRenderWrapper>
             })
             ->React.array}
           </div>
