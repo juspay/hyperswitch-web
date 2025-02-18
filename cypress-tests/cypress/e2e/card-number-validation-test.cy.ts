@@ -89,4 +89,62 @@ describe("Card number validation test", () => {
         .and('contain.text', "Card Number cannot be empty");
     });
 
+    it("19 digit unionpay card", () => {
+        const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.unionPay19;
+    
+        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo); 
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month); 
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year); 
+        getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc); 
+        cy.wait(2000);
+    
+        getIframeBody().get("#submit").click();
+    
+        
+        cy.contains("Thanks for your order!").should("be.visible");
+      });
+
+
+      it("16 digit master card", () => {
+        const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.masterCard16;
+    
+        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo); 
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month); 
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year); 
+        getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc); 
+    
+        getIframeBody().get("#submit").click();
+    
+        
+        cy.contains("Thanks for your order!").should("be.visible");
+      });
+
+      it("15 digit american express card", () => {
+        const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.amexCard15;
+    
+        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo); 
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month); 
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year); 
+        getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc); 
+    
+        getIframeBody().get("#submit").click();
+    
+        
+        cy.contains("Thanks for your order!").should("be.visible");
+      });
+
+      it("14 digit diners club card", () => {
+        const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.dinersClubCard14;
+    
+        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo); 
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month); 
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year); 
+        getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc); 
+    
+        getIframeBody().get("#submit").click();
+    
+        
+        cy.contains("Thanks for your order!").should("be.visible");
+      });
+
 });
