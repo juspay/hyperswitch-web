@@ -1,26 +1,18 @@
 module DynamicFieldsToRenderWrapper = {
   @react.component
   let make = (~children, ~index, ~isInside=true) => {
-    open RecoilAtoms
-    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-    if children == React.null {
-      React.null
-    } else if isInside {
+    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+
+    <RenderIf condition={children != React.null}>
       <div
-        key={`inside-billing-${index->Int.toString}`}
-        className="flex flex-col w-full place-content-between">
-        {children}
-      </div>
-    } else {
-      <div
-        key={`outside-billing-${index->Int.toString}`}
+        key={`${isInside ? "inside" : "outside"}-billing-${index->Int.toString}`}
         className="flex flex-col w-full place-content-between"
         style={
-          gridColumnGap: themeObj.spacingGridRow,
+          gridColumnGap: isInside ? "0px" : themeObj.spacingGridRow,
         }>
         {children}
       </div>
-    }
+    </RenderIf>
   }
 }
 
