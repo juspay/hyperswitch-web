@@ -219,6 +219,7 @@ let make = (
               preMountLoaderIframeDiv->Window.iframePostMessage(msg)
               resolve()
             })
+            ->catch(_ => resolve())
             ->ignore
           }
           resolve()
