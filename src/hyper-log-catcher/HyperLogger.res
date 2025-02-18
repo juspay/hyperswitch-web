@@ -92,6 +92,7 @@ type eventName =
   | SAMSUNG_PAY
   | CLICK_TO_PAY_SCRIPT
   | CLICK_TO_PAY_FLOW
+  | PAYMENT_METHOD_TYPE_DETECTION_FAILED
 
 let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
 

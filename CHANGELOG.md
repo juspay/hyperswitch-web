@@ -1,3 +1,24 @@
+## [0.114.1](https://github.com/juspay/hyperswitch-web/compare/v0.114.0...v0.114.1) (2025-02-18)
+
+
+### Bug Fixes
+
+* ensure country code dropdown appears and prevent text overflow ([#903](https://github.com/juspay/hyperswitch-web/issues/903)) ([adb1642](https://github.com/juspay/hyperswitch-web/commit/adb16423c96642e225eb049aad78b9b9f91f4e89))
+
+# [0.114.0](https://github.com/juspay/hyperswitch-web/compare/v0.113.0...v0.114.0) (2025-02-17)
+
+
+### Features
+
+* emit payment method info ([#890](https://github.com/juspay/hyperswitch-web/issues/890)) ([91dda60](https://github.com/juspay/hyperswitch-web/commit/91dda605207bed54c86aba619494f7a36e185021))
+
+# [0.113.0](https://github.com/juspay/hyperswitch-web/compare/v0.112.3...v0.113.0) (2025-02-17)
+
+
+### Features
+
+* added regex interac card network ([#901](https://github.com/juspay/hyperswitch-web/issues/901)) ([9cedc5b](https://github.com/juspay/hyperswitch-web/commit/9cedc5b5d5fb0da84c4668932016d6f3d1b565a0))
+
 ## [0.112.3](https://github.com/juspay/hyperswitch-web/compare/v0.112.2...v0.112.3) (2025-02-03)
 
 
