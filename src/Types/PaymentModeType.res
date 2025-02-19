@@ -21,6 +21,7 @@ type payment =
   | SamsungPay
   | Boleto
   | PayPal
+  | EFT
   | NONE
 
 let paymentMode = str => {
@@ -47,6 +48,7 @@ let paymentMode = str => {
   | "samsung_pay" => SamsungPay
   | "boleto" => Boleto
   | "paypal" => PayPal
+  | "eft" => EFT
   | _ => NONE
   }
 }
@@ -74,4 +76,5 @@ let defaultOrder = [
   "crypto",
   "bancontact_card",
   "boleto",
+  "eft",
 ]
