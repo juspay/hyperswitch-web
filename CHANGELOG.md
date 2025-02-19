@@ -1,3 +1,10 @@
+## [0.114.6](https://github.com/juspay/hyperswitch-web/compare/v0.114.5...v0.114.6) (2025-02-19)
+
+
+### Bug Fixes
+
+* shimmer fixed for saved flow ([#909](https://github.com/juspay/hyperswitch-web/issues/909)) ([0ae81a9](https://github.com/juspay/hyperswitch-web/commit/0ae81a93b5f2db16b2f8b336553ae27a6c62901a))
+
 ## [0.114.5](https://github.com/juspay/hyperswitch-web/compare/v0.114.4...v0.114.5) (2025-02-19)
 
 ## [0.114.4](https://github.com/juspay/hyperswitch-web/compare/v0.114.3...v0.114.4) (2025-02-19)
