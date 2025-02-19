@@ -916,7 +916,7 @@ let getAddressDetails = (dict, str) => {
     city: Some(getString(json, "city", "")),
     state: Some(getString(json, "state", "")),
     country: Some(getString(json, "country", "")),
-    zip: Some(getString(json, "zip", "")), 
+    zip: Some(getString(json, "zip", "")),
   })
   ->Option.getOr(defaultAddressDetails)
 }

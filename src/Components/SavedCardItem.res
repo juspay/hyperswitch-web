@@ -3,16 +3,20 @@ module RenderSavedPaymentMethodItem = {
   let make = (
     ~paymentItem: PaymentType.customerMethods,
     ~paymentMethodType,
-    ~themeObj: OrcaPaymentPage.CardThemeType.themeClass,
-    ~displayDefaultSavedPaymentIcon: bool,
-    ~defaultPaymentMethodSet: bool,
-    ~expiryMonth: string,
-    ~expiryYear: string,
+    ~themeObj: CardThemeType.themeClass,
+    ~displayDefaultSavedPaymentIcon,
+    ~defaultPaymentMethodSet,
+    ~expiryText,
+    ~expiryMonth,
+    ~expiryYear,
   ) => {
+
+    let expiryYearToTwoDigits = expiryYear->CardUtils.formatExpiryToTwoDigit
+
     switch paymentItem.paymentMethod {
     | "card" =>
       <div className="flex flex-col items-start">
-        <div className="flex items-center">
+        <div className="flex items-center" style={fontSize: "15px", fontWeight: "550"}>
           {React.string(paymentItem.card.nickname)}
           <RenderIf condition={displayDefaultSavedPaymentIcon && defaultPaymentMethodSet}>
             <Icon className="ml-2" size=16 name="checkmark" style={color: themeObj.colorPrimary} />
@@ -20,7 +24,7 @@ module RenderSavedPaymentMethodItem = {
         </div>
         <div
           className={`PickerItemLabel flex flex-row gap-2 items-center text-sm`}
-          style={{fontWeight: "500"}}>
+          style={{fontWeight: "400"}}>
           <div>
             {React.string(`XXXX `)}
             {React.string(paymentItem.card.last4Digits)}
@@ -34,8 +38,8 @@ module RenderSavedPaymentMethodItem = {
             }}
           />
           <div>
-            {React.string(`expiry `)}
-            {React.string(`${expiryMonth}/${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
+            {React.string(expiryText ++ ` `)}
+            {React.string(`${expiryMonth}/${expiryYearToTwoDigits}`)}
           </div>
         </div>
       </div>
@@ -155,6 +159,8 @@ let make = (
 
   let {innerLayout} = config.appearance
 
+  let expiryText = localeString.expiry
+
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
       className={`PickerItem ${pickerItemClass} flex flex-row items-stretch`}
@@ -207,6 +213,7 @@ let make = (
                     themeObj
                     displayDefaultSavedPaymentIcon
                     defaultPaymentMethodSet
+                    expiryText
                     expiryMonth
                     expiryYear
                   />
@@ -242,10 +249,10 @@ let make = (
             <div className="flex flex-col items-start mx-3">
               <RenderIf condition={isActive && displayBillingDetails}>
                 <div className="text-sm text-left gap-2 mt-5" style={marginLeft: "16%"}>
-                  <div>
-                    <strong> {React.string(billingDetailsText)} </strong>
+                  <div style={fontWeight: "550"}>
+                    {React.string(billingDetailsText)}
                   </div>
-                  <div> {React.string(Array.joinWith(billingDetailsArray, ", "))} </div>
+                  <div style={fontWeight: "400"}> {React.string(Array.joinWith(billingDetailsArray, ", "))} </div>
                 </div>
               </RenderIf>
               <RenderIf condition={isActive && innerLayout === Spaced}>
