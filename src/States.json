@@ -418,13 +418,34 @@
       { "name": "Saint Thomas", "code": "11" }
     ],
     "BY": [
-      { "name": "Brest Region", "code": "BR" },
-      { "name": "Gomel Region", "code": "HO" },
-      { "name": "Grodno Region", "code": "HR" },
-      { "name": "Minsk", "code": "HM" },
-      { "name": "Minsk Region", "code": "MI" },
-      { "name": "Mogilev Region", "code": "MA" },
-      { "name": "Vitebsk Region", "code": "VI" }
+      {
+        "name": "Brest Region",
+        "code": "BR"
+      },
+      {
+        "name": "Gomel Region",
+        "code": "HO"
+      },
+      {
+        "name": "Grodno Region",
+        "code": "HR"
+      },
+      {
+        "name": "Minsk",
+        "code": "HM"
+      },
+      {
+        "name": "Minsk Region",
+        "code": "MI"
+      },
+      {
+        "name": "Mogilev Region",
+        "code": "MA"
+      },
+      {
+        "name": "Vitebsk Region",
+        "code": "VI"
+      }
     ],
     "BE": [
       { "name": "Antwerp", "code": "VAN" },
@@ -1052,113 +1073,366 @@
       { "name": "Paphos District", "code": "05" }
     ],
     "CZ": [
-      { "name": "Benešov District", "code": "201" },
-      { "name": "Beroun District", "code": "202" },
-      { "name": "Blansko District", "code": "641" },
-      { "name": "Brno-City District", "code": "642" },
-      { "name": "Brno-Country District", "code": "643" },
-      { "name": "Bruntál District", "code": "801" },
-      { "name": "Břeclav District", "code": "644" },
-      { "name": "Central Bohemian Region", "code": "20" },
-      { "name": "Cheb District", "code": "411" },
-      { "name": "Chomutov District", "code": "422" },
-      { "name": "Chrudim District", "code": "531" },
-      { "name": "Domažlice District", "code": "321" },
-      { "name": "Děčín District", "code": "421" },
-      { "name": "Frýdek-Místek District", "code": "802" },
-      { "name": "Havlíčkův Brod District", "code": "631" },
-      { "name": "Hodonín District", "code": "645" },
-      { "name": "Horní Počernice", "code": "120" },
-      { "name": "Hradec Králové District", "code": "521" },
-      { "name": "Hradec Králové Region", "code": "52" },
-      { "name": "Jablonec nad Nisou District", "code": "512" },
-      { "name": "Jeseník District", "code": "711" },
-      { "name": "Jihlava District", "code": "632" },
-      { "name": "Jindřichův Hradec District", "code": "313" },
-      { "name": "Jičín District", "code": "522" },
-      { "name": "Karlovy Vary District", "code": "412" },
-      { "name": "Karlovy Vary Region", "code": "41" },
-      { "name": "Karviná District", "code": "803" },
-      { "name": "Kladno District", "code": "203" },
-      { "name": "Klatovy District", "code": "322" },
-      { "name": "Kolín District", "code": "204" },
-      { "name": "Kroměříž District", "code": "721" },
-      { "name": "Liberec District", "code": "513" },
-      { "name": "Liberec Region", "code": "51" },
-      { "name": "Litoměřice District", "code": "423" },
-      { "name": "Louny District", "code": "424" },
-      { "name": "Mladá Boleslav District", "code": "207" },
-      { "name": "Moravian-Silesian Region", "code": "80" },
-      { "name": "Most District", "code": "425" },
-      { "name": "Mělník District", "code": "206" },
-      { "name": "Nový Jičín District", "code": "804" },
-      { "name": "Nymburk District", "code": "208" },
-      { "name": "Náchod District", "code": "523" },
-      { "name": "Olomouc District", "code": "712" },
-      { "name": "Olomouc Region", "code": "71" },
-      { "name": "Opava District", "code": "805" },
-      { "name": "Ostrava-City District", "code": "806" },
-      { "name": "Pardubice District", "code": "532" },
-      { "name": "Pardubice Region", "code": "53" },
-      { "name": "Pelhřimov District", "code": "633" },
-      { "name": "Plzeň Region", "code": "32" },
-      { "name": "Plzeň-City District", "code": "323" },
-      { "name": "Plzeň-North District", "code": "325" },
-      { "name": "Plzeň-South District", "code": "324" },
-      { "name": "Prachatice District", "code": "315" },
-      { "name": "Prague", "code": "10" },
-      { "name": "Prague 1", "code": "101" },
-      { "name": "Prague 10", "code": "110" },
-      { "name": "Prague 11", "code": "111" },
-      { "name": "Prague 12", "code": "112" },
-      { "name": "Prague 13", "code": "113" },
-      { "name": "Prague 14", "code": "114" },
-      { "name": "Prague 15", "code": "115" },
-      { "name": "Prague 16", "code": "116" },
-      { "name": "Prague 2", "code": "102" },
-      { "name": "Prague 21", "code": "121" },
-      { "name": "Prague 3", "code": "103" },
-      { "name": "Prague 4", "code": "104" },
-      { "name": "Prague 5", "code": "105" },
-      { "name": "Prague 6", "code": "106" },
-      { "name": "Prague 7", "code": "107" },
-      { "name": "Prague 8", "code": "108" },
-      { "name": "Prague 9", "code": "109" },
-      { "name": "Prague-East District", "code": "209" },
-      { "name": "Prague-West District", "code": "20A" },
-      { "name": "Prostějov District", "code": "713" },
-      { "name": "Písek District", "code": "314" },
-      { "name": "Přerov District", "code": "714" },
-      { "name": "Příbram District", "code": "20B" },
-      { "name": "Rakovník District", "code": "20C" },
-      { "name": "Rokycany District", "code": "326" },
-      { "name": "Rychnov nad Kněžnou District", "code": "524" },
-      { "name": "Semily District", "code": "514" },
-      { "name": "Sokolov District", "code": "413" },
-      { "name": "South Bohemian Region", "code": "31" },
-      { "name": "South Moravian Region", "code": "64" },
-      { "name": "Strakonice District", "code": "316" },
-      { "name": "Svitavy District", "code": "533" },
-      { "name": "Tachov District", "code": "327" },
-      { "name": "Teplice District", "code": "426" },
-      { "name": "Trutnov District", "code": "525" },
-      { "name": "Tábor District", "code": "317" },
-      { "name": "Třebíč District", "code": "634" },
-      { "name": "Uherské Hradiště District", "code": "722" },
-      { "name": "Vsetín District", "code": "723" },
-      { "name": "Vysočina Region", "code": "63" },
-      { "name": "Vyškov District", "code": "646" },
-      { "name": "Zlín District", "code": "724" },
-      { "name": "Zlín Region", "code": "72" },
-      { "name": "Znojmo District", "code": "647" },
-      { "name": "Ústí nad Labem District", "code": "427" },
-      { "name": "Ústí nad Labem Region", "code": "42" },
-      { "name": "Ústí nad Orlicí District", "code": "534" },
-      { "name": "Česká Lípa District", "code": "511" },
-      { "name": "České Budějovice District", "code": "311" },
-      { "name": "Český Krumlov District", "code": "312" },
-      { "name": "Šumperk District", "code": "715" },
-      { "name": "Žďár nad Sázavou District", "code": "635" }
+      {
+        "name": "Benešov",
+        "code": "201"
+      },
+      {
+        "name": "Beroun",
+        "code": "202"
+      },
+      {
+        "name": "Blansko",
+        "code": "641"
+      },
+      {
+        "name": "Břeclav",
+        "code": "644"
+      },
+      {
+        "name": "Brno-město",
+        "code": "642"
+      },
+      {
+        "name": "Brno-venkov",
+        "code": "643"
+      },
+      {
+        "name": "Bruntál",
+        "code": "801"
+      },
+      {
+        "name": "Česká Lípa",
+        "code": "511"
+      },
+      {
+        "name": "České Budějovice",
+        "code": "311"
+      },
+      {
+        "name": "Český Krumlov",
+        "code": "312"
+      },
+      {
+        "name": "Cheb",
+        "code": "411"
+      },
+      {
+        "name": "Chomutov",
+        "code": "422"
+      },
+      {
+        "name": "Chrudim",
+        "code": "531"
+      },
+      {
+        "name": "Děčín",
+        "code": "421"
+      },
+      {
+        "name": "Domažlice",
+        "code": "321"
+      },
+      {
+        "name": "Frýdek-Místek",
+        "code": "802"
+      },
+      {
+        "name": "Havlíčkův Brod",
+        "code": "631"
+      },
+      {
+        "name": "Hodonín",
+        "code": "645"
+      },
+      {
+        "name": "Hradec Králové",
+        "code": "521"
+      },
+      {
+        "name": "Jablonec nad Nisou",
+        "code": "512"
+      },
+      {
+        "name": "Jeseník",
+        "code": "711"
+      },
+      {
+        "name": "Jičín",
+        "code": "522"
+      },
+      {
+        "name": "Jihlava",
+        "code": "632"
+      },
+      {
+        "name": "Jihočeský kraj",
+        "code": "31"
+      },
+      {
+        "name": "Jihomoravský kraj",
+        "code": "64"
+      },
+      {
+        "name": "Jindřichův Hradec",
+        "code": "313"
+      },
+      {
+        "name": "Karlovarský kraj",
+        "code": "41"
+      },
+      {
+        "name": "Karlovy Vary",
+        "code": "412"
+      },
+      {
+        "name": "Karviná",
+        "code": "803"
+      },
+      {
+        "name": "Kladno",
+        "code": "203"
+      },
+      {
+        "name": "Klatovy",
+        "code": "322"
+      },
+      {
+        "name": "Kolín",
+        "code": "204"
+      },
+      {
+        "name": "Kraj Vysočina",
+        "code": "63"
+      },
+      {
+        "name": "Královéhradecký kraj",
+        "code": "52"
+      },
+      {
+        "name": "Kroměříž",
+        "code": "721"
+      },
+      {
+        "name": "Kutná Hora",
+        "code": "205"
+      },
+      {
+        "name": "Liberec",
+        "code": "513"
+      },
+      {
+        "name": "Liberecký kraj",
+        "code": "51"
+      },
+      {
+        "name": "Litoměřice",
+        "code": "423"
+      },
+      {
+        "name": "Louny",
+        "code": "424"
+      },
+      {
+        "name": "Mělník",
+        "code": "206"
+      },
+      {
+        "name": "Mladá Boleslav",
+        "code": "207"
+      },
+      {
+        "name": "Moravskoslezský kraj",
+        "code": "80"
+      },
+      {
+        "name": "Most",
+        "code": "425"
+      },
+      {
+        "name": "Náchod",
+        "code": "523"
+      },
+      {
+        "name": "Nový Jičín",
+        "code": "804"
+      },
+      {
+        "name": "Nymburk",
+        "code": "208"
+      },
+      {
+        "name": "Olomouc",
+        "code": "712"
+      },
+      {
+        "name": "Olomoucký kraj",
+        "code": "71"
+      },
+      {
+        "name": "Opava",
+        "code": "805"
+      },
+      {
+        "name": "Ostrava-město",
+        "code": "806"
+      },
+      {
+        "name": "Pardubice",
+        "code": "532"
+      },
+      {
+        "name": "Pardubický kraj",
+        "code": "53"
+      },
+      {
+        "name": "Pelhřimov",
+        "code": "633"
+      },
+      {
+        "name": "Písek",
+        "code": "314"
+      },
+      {
+        "name": "Plzeň-jih",
+        "code": "324"
+      },
+      {
+        "name": "Plzeň-město",
+        "code": "323"
+      },
+      {
+        "name": "Plzeň-sever",
+        "code": "325"
+      },
+      {
+        "name": "Plzeňský kraj",
+        "code": "32"
+      },
+      {
+        "name": "Prachatice",
+        "code": "315"
+      },
+      {
+        "name": "Praha-východ",
+        "code": "209"
+      },
+      {
+        "name": "Praha-západ",
+        "code": "20A"
+      },
+      {
+        "name": "Praha, Hlavní město",
+        "code": "10"
+      },
+      {
+        "name": "Přerov",
+        "code": "714"
+      },
+      {
+        "name": "Příbram",
+        "code": "20B"
+      },
+      {
+        "name": "Prostějov",
+        "code": "713"
+      },
+      {
+        "name": "Rakovník",
+        "code": "20C"
+      },
+      {
+        "name": "Rokycany",
+        "code": "326"
+      },
+      {
+        "name": "Rychnov nad Kněžnou",
+        "code": "524"
+      },
+      {
+        "name": "Semily",
+        "code": "514"
+      },
+      {
+        "name": "Sokolov",
+        "code": "413"
+      },
+      {
+        "name": "Strakonice",
+        "code": "316"
+      },
+      {
+        "name": "Středočeský kraj",
+        "code": "20"
+      },
+      {
+        "name": "Šumperk",
+        "code": "715"
+      },
+      {
+        "name": "Svitavy",
+        "code": "533"
+      },
+      {
+        "name": "Tábor",
+        "code": "317"
+      },
+      {
+        "name": "Tachov",
+        "code": "327"
+      },
+      {
+        "name": "Teplice",
+        "code": "426"
+      },
+      {
+        "name": "Třebíč",
+        "code": "634"
+      },
+      {
+        "name": "Trutnov",
+        "code": "525"
+      },
+      {
+        "name": "Uherské Hradiště",
+        "code": "722"
+      },
+      {
+        "name": "Ústecký kraj",
+        "code": "42"
+      },
+      {
+        "name": "Ústí nad Labem",
+        "code": "427"
+      },
+      {
+        "name": "Ústí nad Orlicí",
+        "code": "534"
+      },
+      {
+        "name": "Vsetín",
+        "code": "723"
+      },
+      {
+        "name": "Vyškov",
+        "code": "646"
+      },
+      {
+        "name": "Žďár nad Sázavou",
+        "code": "635"
+      },
+      {
+        "name": "Zlín",
+        "code": "724"
+      },
+      {
+        "name": "Zlínský kraj",
+        "code": "72"
+      },
+      {
+        "name": "Znojmo",
+        "code": "647"
+      }
     ],
     "DK": [
       { "name": "Capital Region of Denmark", "code": "84" },
@@ -1930,22 +2204,70 @@
       { "name": "Tbilisi", "code": "TB" }
     ],
     "DE": [
-      { "name": "Baden-Württemberg", "code": "BW" },
-      { "name": "Bavaria", "code": "BY" },
-      { "name": "Berlin", "code": "BE" },
-      { "name": "Brandenburg", "code": "BB" },
-      { "name": "Bremen", "code": "HB" },
-      { "name": "Hamburg", "code": "HH" },
-      { "name": "Hesse", "code": "HE" },
-      { "name": "Lower Saxony", "code": "NI" },
-      { "name": "Mecklenburg-Vorpommern", "code": "MV" },
-      { "name": "North Rhine-Westphalia", "code": "NW" },
-      { "name": "Rhineland-Palatinate", "code": "RP" },
-      { "name": "Saarland", "code": "SL" },
-      { "name": "Saxony", "code": "SN" },
-      { "name": "Saxony-Anhalt", "code": "ST" },
-      { "name": "Schleswig-Holstein", "code": "SH" },
-      { "name": "Thuringia", "code": "TH" }
+      {
+        "name": "Baden-Württemberg",
+        "code": "BW"
+      },
+      {
+        "name": "Bavaria",
+        "code": "BY"
+      },
+      {
+        "name": "Berlin",
+        "code": "BE"
+      },
+      {
+        "name": "Brandenburg",
+        "code": "BB"
+      },
+      {
+        "name": "Bremen",
+        "code": "HB"
+      },
+      {
+        "name": "Hamburg",
+        "code": "HH"
+      },
+      {
+        "name": "Hessen",
+        "code": "HE"
+      },
+      {
+        "name": "Lower Saxony",
+        "code": "NI"
+      },
+      {
+        "name": "Mecklenburg-Vorpommern",
+        "code": "MV"
+      },
+      {
+        "name": "North Rhine-Westphalia",
+        "code": "NW"
+      },
+      {
+        "name": "Rhineland-Palatinate",
+        "code": "RP"
+      },
+      {
+        "name": "Saarland",
+        "code": "SL"
+      },
+      {
+        "name": "Saxony",
+        "code": "SN"
+      },
+      {
+        "name": "Saxony-Anhalt",
+        "code": "ST"
+      },
+      {
+        "name": "Schleswig-Holstein",
+        "code": "SH"
+      },
+      {
+        "name": "Thuringia",
+        "code": "TH"
+      }
     ],
     "GH": [
       { "name": "Ashanti Region", "code": "AH" },
@@ -2957,75 +3279,282 @@
       { "name": "Vaduz", "code": "11" }
     ],
     "LT": [
-      { "name": "Akmenė District Municipality", "code": "01" },
-      { "name": "Alytus City Municipality", "code": "02" },
-      { "name": "Alytus County", "code": "AL" },
-      { "name": "Alytus District Municipality", "code": "03" },
-      { "name": "Birštonas Municipality", "code": "05" },
-      { "name": "Biržai District Municipality", "code": "06" },
-      { "name": "Druskininkai municipality", "code": "07" },
-      { "name": "Elektrėnai municipality", "code": "08" },
-      { "name": "Ignalina District Municipality", "code": "09" },
-      { "name": "Jonava District Municipality", "code": "10" },
-      { "name": "Joniškis District Municipality", "code": "11" },
-      { "name": "Jurbarkas District Municipality", "code": "12" },
-      { "name": "Kaišiadorys District Municipality", "code": "13" },
-      { "name": "Kalvarija municipality", "code": "14" },
-      { "name": "Kaunas City Municipality", "code": "15" },
-      { "name": "Kaunas County", "code": "KU" },
-      { "name": "Kaunas District Municipality", "code": "16" },
-      { "name": "Kazlų Rūda municipality", "code": "17" },
-      { "name": "Kelmė District Municipality", "code": "19" },
-      { "name": "Klaipeda City Municipality", "code": "20" },
-      { "name": "Klaipėda County", "code": "KL" },
-      { "name": "Klaipėda District Municipality", "code": "21" },
-      { "name": "Kretinga District Municipality", "code": "22" },
-      { "name": "Kupiškis District Municipality", "code": "23" },
-      { "name": "Kėdainiai District Municipality", "code": "18" },
-      { "name": "Lazdijai District Municipality", "code": "24" },
-      { "name": "Marijampolė County", "code": "MR" },
-      { "name": "Marijampolė Municipality", "code": "25" },
-      { "name": "Mažeikiai District Municipality", "code": "26" },
-      { "name": "Molėtai District Municipality", "code": "27" },
-      { "name": "Neringa Municipality", "code": "28" },
-      { "name": "Pagėgiai municipality", "code": "29" },
-      { "name": "Pakruojis District Municipality", "code": "30" },
-      { "name": "Palanga City Municipality", "code": "31" },
-      { "name": "Panevėžys City Municipality", "code": "32" },
-      { "name": "Panevėžys County", "code": "PN" },
-      { "name": "Panevėžys District Municipality", "code": "33" },
-      { "name": "Pasvalys District Municipality", "code": "34" },
-      { "name": "Plungė District Municipality", "code": "35" },
-      { "name": "Prienai District Municipality", "code": "36" },
-      { "name": "Radviliškis District Municipality", "code": "37" },
-      { "name": "Raseiniai District Municipality", "code": "38" },
-      { "name": "Rietavas municipality", "code": "39" },
-      { "name": "Rokiškis District Municipality", "code": "40" },
-      { "name": "Skuodas District Municipality", "code": "48" },
-      { "name": "Tauragė County", "code": "TA" },
-      { "name": "Tauragė District Municipality", "code": "50" },
-      { "name": "Telšiai County", "code": "TE" },
-      { "name": "Telšiai District Municipality", "code": "51" },
-      { "name": "Trakai District Municipality", "code": "52" },
-      { "name": "Ukmergė District Municipality", "code": "53" },
-      { "name": "Utena County", "code": "UT" },
-      { "name": "Utena District Municipality", "code": "54" },
-      { "name": "Varėna District Municipality", "code": "55" },
-      { "name": "Vilkaviškis District Municipality", "code": "56" },
-      { "name": "Vilnius City Municipality", "code": "57" },
-      { "name": "Vilnius County", "code": "VL" },
-      { "name": "Vilnius District Municipality", "code": "58" },
-      { "name": "Visaginas Municipality", "code": "59" },
-      { "name": "Zarasai District Municipality", "code": "60" },
-      { "name": "Šakiai District Municipality", "code": "41" },
-      { "name": "Šalčininkai District Municipality", "code": "42" },
-      { "name": "Šiauliai City Municipality", "code": "43" },
-      { "name": "Šiauliai County", "code": "SA" },
-      { "name": "Šiauliai District Municipality", "code": "44" },
-      { "name": "Šilalė District Municipality", "code": "45" },
-      { "name": "Šilutė District Municipality", "code": "46" },
-      { "name": "Širvintos District Municipality", "code": "47" },
-      { "name": "Švenčionys District Municipality", "code": "49" }
+      {
+        "name": "Akmenė District Municipality",
+        "code": "01"
+      },
+      {
+        "name": "Alytus City Municipality",
+        "code": "02"
+      },
+      {
+        "name": "Alytus County",
+        "code": "AL"
+      },
+      {
+        "name": "Alytus District Municipality",
+        "code": "03"
+      },
+      {
+        "name": "Birštonas Municipality",
+        "code": "05"
+      },
+      {
+        "name": "Biržai District Municipality",
+        "code": "06"
+      },
+      {
+        "name": "Druskininkai municipality",
+        "code": "07"
+      },
+      {
+        "name": "Elektrėnai municipality",
+        "code": "08"
+      },
+      {
+        "name": "Ignalina District Municipality",
+        "code": "09"
+      },
+      {
+        "name": "Jonava District Municipality",
+        "code": "10"
+      },
+      {
+        "name": "Joniškis District Municipality",
+        "code": "11"
+      },
+      {
+        "name": "Jurbarkas District Municipality",
+        "code": "12"
+      },
+      {
+        "name": "Kaišiadorys District Municipality",
+        "code": "13"
+      },
+      {
+        "name": "Kalvarija municipality",
+        "code": "14"
+      },
+      {
+        "name": "Kaunas City Municipality",
+        "code": "15"
+      },
+      {
+        "name": "Kaunas County",
+        "code": "KU"
+      },
+      {
+        "name": "Kaunas District Municipality",
+        "code": "16"
+      },
+      {
+        "name": "Kazlų Rūda municipality",
+        "code": "17"
+      },
+      {
+        "name": "Kėdainiai District Municipality",
+        "code": "18"
+      },
+      {
+        "name": "Kelmė District Municipality",
+        "code": "19"
+      },
+      {
+        "name": "Klaipeda City Municipality",
+        "code": "20"
+      },
+      {
+        "name": "Klaipėda County",
+        "code": "KL"
+      },
+      {
+        "name": "Klaipėda District Municipality",
+        "code": "21"
+      },
+      {
+        "name": "Kretinga District Municipality",
+        "code": "22"
+      },
+      {
+        "name": "Kupiškis District Municipality",
+        "code": "23"
+      },
+      {
+        "name": "Lazdijai District Municipality",
+        "code": "24"
+      },
+      {
+        "name": "Marijampolė County",
+        "code": "MR"
+      },
+      {
+        "name": "Marijampolė Municipality",
+        "code": "25"
+      },
+      {
+        "name": "Mažeikiai District Municipality",
+        "code": "26"
+      },
+      {
+        "name": "Molėtai District Municipality",
+        "code": "27"
+      },
+      {
+        "name": "Neringa Municipality",
+        "code": "28"
+      },
+      {
+        "name": "Pagėgiai municipality",
+        "code": "29"
+      },
+      {
+        "name": "Pakruojis District Municipality",
+        "code": "30"
+      },
+      {
+        "name": "Palanga City Municipality",
+        "code": "31"
+      },
+      {
+        "name": "Panevėžys City Municipality",
+        "code": "32"
+      },
+      {
+        "name": "Panevėžys County",
+        "code": "PN"
+      },
+      {
+        "name": "Panevėžys District Municipality",
+        "code": "33"
+      },
+      {
+        "name": "Pasvalys District Municipality",
+        "code": "34"
+      },
+      {
+        "name": "Plungė District Municipality",
+        "code": "35"
+      },
+      {
+        "name": "Prienai District Municipality",
+        "code": "36"
+      },
+      {
+        "name": "Radviliškis District Municipality",
+        "code": "37"
+      },
+      {
+        "name": "Raseiniai District Municipality",
+        "code": "38"
+      },
+      {
+        "name": "Rietavas municipality",
+        "code": "39"
+      },
+      {
+        "name": "Rokiškis District Municipality",
+        "code": "40"
+      },
+      {
+        "name": "Šakiai District Municipality",
+        "code": "41"
+      },
+      {
+        "name": "Šalčininkai District Municipality",
+        "code": "42"
+      },
+      {
+        "name": "Šiauliai City Municipality",
+        "code": "43"
+      },
+      {
+        "name": "Šiauliai County",
+        "code": "SA"
+      },
+      {
+        "name": "Šiauliai District Municipality",
+        "code": "44"
+      },
+      {
+        "name": "Šilalė District Municipality",
+        "code": "45"
+      },
+      {
+        "name": "Šilutė District Municipality",
+        "code": "46"
+      },
+      {
+        "name": "Širvintos District Municipality",
+        "code": "47"
+      },
+      {
+        "name": "Skuodas District Municipality",
+        "code": "48"
+      },
+      {
+        "name": "Švenčionys District Municipality",
+        "code": "49"
+      },
+      {
+        "name": "Tauragė County",
+        "code": "TA"
+      },
+      {
+        "name": "Tauragė District Municipality",
+        "code": "50"
+      },
+      {
+        "name": "Telšiai County",
+        "code": "TE"
+      },
+      {
+        "name": "Telšiai District Municipality",
+        "code": "51"
+      },
+      {
+        "name": "Trakai District Municipality",
+        "code": "52"
+      },
+      {
+        "name": "Ukmergė District Municipality",
+        "code": "53"
+      },
+      {
+        "name": "Utena County",
+        "code": "UT"
+      },
+      {
+        "name": "Utena District Municipality",
+        "code": "54"
+      },
+      {
+        "name": "Varėna District Municipality",
+        "code": "55"
+      },
+      {
+        "name": "Vilkaviškis District Municipality",
+        "code": "56"
+      },
+      {
+        "name": "Vilnius City Municipality",
+        "code": "57"
+      },
+      {
+        "name": "Vilnius County",
+        "code": "VL"
+      },
+      {
+        "name": "Vilnius District Municipality",
+        "code": "58"
+      },
+      {
+        "name": "Visaginas Municipality",
+        "code": "59"
+      },
+      {
+        "name": "Zarasai District Municipality",
+        "code": "60"
+      }
     ],
     "LU": [
       { "name": "Canton of Capellen", "code": "CA" },
@@ -4122,89 +4651,338 @@
       { "name": "Vâlcea County", "code": "VL" }
     ],
     "RU": [
-      { "name": "Altai Krai", "code": "ALT" },
-      { "name": "Altai Republic", "code": "AL" },
-      { "name": "Amur Oblast", "code": "AMU" },
-      { "name": "Arkhangelsk", "code": "ARK" },
-      { "name": "Astrakhan Oblast", "code": "AST" },
-      { "name": "Belgorod Oblast", "code": "BEL" },
-      { "name": "Bryansk Oblast", "code": "BRY" },
-      { "name": "Chechen Republic", "code": "CE" },
-      { "name": "Chelyabinsk Oblast", "code": "CHE" },
-      { "name": "Chukotka Autonomous Okrug", "code": "CHU" },
-      { "name": "Chuvash Republic", "code": "CU" },
-      { "name": "Irkutsk", "code": "IRK" },
-      { "name": "Ivanovo Oblast", "code": "IVA" },
-      { "name": "Jewish Autonomous Oblast", "code": "YEV" },
-      { "name": "Kabardino-Balkar Republic", "code": "KB" },
-      { "name": "Kaliningrad", "code": "KGD" },
-      { "name": "Kaluga Oblast", "code": "KLU" },
-      { "name": "Kamchatka Krai", "code": "KAM" },
-      { "name": "Karachay-Cherkess Republic", "code": "KC" },
-      { "name": "Kemerovo Oblast", "code": "KEM" },
-      { "name": "Khabarovsk Krai", "code": "KHA" },
-      { "name": "Khanty-Mansi Autonomous Okrug", "code": "KHM" },
-      { "name": "Kirov Oblast", "code": "KIR" },
-      { "name": "Komi Republic", "code": "KO" },
-      { "name": "Kostroma Oblast", "code": "KOS" },
-      { "name": "Krasnodar Krai", "code": "KDA" },
-      { "name": "Krasnoyarsk Krai", "code": "KYA" },
-      { "name": "Kurgan Oblast", "code": "KGN" },
-      { "name": "Kursk Oblast", "code": "KRS" },
-      { "name": "Leningrad Oblast", "code": "LEN" },
-      { "name": "Lipetsk Oblast", "code": "LIP" },
-      { "name": "Magadan Oblast", "code": "MAG" },
-      { "name": "Mari El Republic", "code": "ME" },
-      { "name": "Moscow", "code": "MOW" },
-      { "name": "Moscow Oblast", "code": "MOS" },
-      { "name": "Murmansk Oblast", "code": "MUR" },
-      { "name": "Nenets Autonomous Okrug", "code": "NEN" },
-      { "name": "Nizhny Novgorod Oblast", "code": "NIZ" },
-      { "name": "Novgorod Oblast", "code": "NGR" },
-      { "name": "Novosibirsk", "code": "NVS" },
-      { "name": "Omsk Oblast", "code": "OMS" },
-      { "name": "Orenburg Oblast", "code": "ORE" },
-      { "name": "Oryol Oblast", "code": "ORL" },
-      { "name": "Penza Oblast", "code": "PNZ" },
-      { "name": "Perm Krai", "code": "PER" },
-      { "name": "Primorsky Krai", "code": "PRI" },
-      { "name": "Pskov Oblast", "code": "PSK" },
-      { "name": "Republic of Adygea", "code": "AD" },
-      { "name": "Republic of Bashkortostan", "code": "BA" },
-      { "name": "Republic of Buryatia", "code": "BU" },
-      { "name": "Republic of Dagestan", "code": "DA" },
-      { "name": "Republic of Ingushetia", "code": "IN" },
-      { "name": "Republic of Kalmykia", "code": "KL" },
-      { "name": "Republic of Karelia", "code": "KR" },
-      { "name": "Republic of Khakassia", "code": "KK" },
-      { "name": "Republic of Mordovia", "code": "MO" },
-      { "name": "Republic of North Ossetia-Alania", "code": "SE" },
-      { "name": "Republic of Tatarstan", "code": "TA" },
-      { "name": "Rostov Oblast", "code": "ROS" },
-      { "name": "Ryazan Oblast", "code": "RYA" },
-      { "name": "Saint Petersburg", "code": "SPE" },
-      { "name": "Sakha Republic", "code": "SA" },
-      { "name": "Sakhalin", "code": "SAK" },
-      { "name": "Samara Oblast", "code": "SAM" },
-      { "name": "Saratov Oblast", "code": "SAR" },
-      { "name": "Sevastopol", "code": "UA-40" },
-      { "name": "Smolensk Oblast", "code": "SMO" },
-      { "name": "Stavropol Krai", "code": "STA" },
-      { "name": "Sverdlovsk", "code": "SVE" },
-      { "name": "Tambov Oblast", "code": "TAM" },
-      { "name": "Tomsk Oblast", "code": "TOM" },
-      { "name": "Tula Oblast", "code": "TUL" },
-      { "name": "Tuva Republic", "code": "TY" },
-      { "name": "Tver Oblast", "code": "TVE" },
-      { "name": "Tyumen Oblast", "code": "TYU" },
-      { "name": "Udmurt Republic", "code": "UD" },
-      { "name": "Ulyanovsk Oblast", "code": "ULY" },
-      { "name": "Vladimir Oblast", "code": "VLA" },
-      { "name": "Vologda Oblast", "code": "VLG" },
-      { "name": "Voronezh Oblast", "code": "VOR" },
-      { "name": "Yamalo-Nenets Autonomous Okrug", "code": "YAN" },
-      { "name": "Yaroslavl Oblast", "code": "YAR" },
-      { "name": "Zabaykalsky Krai", "code": "ZAB" }
+      {
+        "value": "Altai Krai",
+        "code": "ALT"
+      },
+      {
+        "value": "Altai Republic",
+        "code": "AL"
+      },
+      {
+        "value": "Amur Oblast",
+        "code": "AMU"
+      },
+      {
+        "value": "Arkhangelsk",
+        "code": "ARK"
+      },
+      {
+        "value": "Astrakhan Oblast",
+        "code": "AST"
+      },
+      {
+        "value": "Belgorod Oblast",
+        "code": "BEL"
+      },
+      {
+        "value": "Bryansk Oblast",
+        "code": "BRY"
+      },
+      {
+        "value": "Chechen Republic",
+        "code": "CE"
+      },
+      {
+        "value": "Chelyabinsk Oblast",
+        "code": "CHE"
+      },
+      {
+        "value": "Chukotka Autonomous Okrug",
+        "code": "CHU"
+      },
+      {
+        "value": "Chuvash Republic",
+        "code": "CU"
+      },
+      {
+        "value": "Irkutsk",
+        "code": "IRK"
+      },
+      {
+        "value": "Ivanovo Oblast",
+        "code": "IVA"
+      },
+      {
+        "value": "Jewish Autonomous Oblast",
+        "code": "YEV"
+      },
+      {
+        "value": "Kabardino-Balkar Republic",
+        "code": "KB"
+      },
+      {
+        "value": "Kaliningrad",
+        "code": "KGD"
+      },
+      {
+        "value": "Kaluga Oblast",
+        "code": "KLU"
+      },
+      {
+        "value": "Kamchatka Krai",
+        "code": "KAM"
+      },
+      {
+        "value": "Karachay-Cherkess Republic",
+        "code": "KC"
+      },
+      {
+        "value": "Kemerovo Oblast",
+        "code": "KEM"
+      },
+      {
+        "value": "Khabarovsk Krai",
+        "code": "KHA"
+      },
+      {
+        "value": "Khanty-Mansi Autonomous Okrug",
+        "code": "KHM"
+      },
+      {
+        "value": "Kirov Oblast",
+        "code": "KIR"
+      },
+      {
+        "value": "Komi Republic",
+        "code": "KO"
+      },
+      {
+        "value": "Kostroma Oblast",
+        "code": "KOS"
+      },
+      {
+        "value": "Krasnodar Krai",
+        "code": "KDA"
+      },
+      {
+        "value": "Krasnoyarsk Krai",
+        "code": "KYA"
+      },
+      {
+        "value": "Kurgan Oblast",
+        "code": "KGN"
+      },
+      {
+        "value": "Kursk Oblast",
+        "code": "KRS"
+      },
+      {
+        "value": "Leningrad Oblast",
+        "code": "LEN"
+      },
+      {
+        "value": "Lipetsk Oblast",
+        "code": "LIP"
+      },
+      {
+        "value": "Magadan Oblast",
+        "code": "MAG"
+      },
+      {
+        "value": "Mari El Republic",
+        "code": "ME"
+      },
+      {
+        "value": "Moscow",
+        "code": "MOW"
+      },
+      {
+        "value": "Moscow Oblast",
+        "code": "MOS"
+      },
+      {
+        "value": "Murmansk Oblast",
+        "code": "MUR"
+      },
+      {
+        "value": "Nenets Autonomous Okrug",
+        "code": "NEN"
+      },
+      {
+        "value": "Nizhny Novgorod Oblast",
+        "code": "NIZ"
+      },
+      {
+        "value": "Novgorod Oblast",
+        "code": "NGR"
+      },
+      {
+        "value": "Novosibirsk",
+        "code": "NVS"
+      },
+      {
+        "value": "Omsk Oblast",
+        "code": "OMS"
+      },
+      {
+        "value": "Orenburg Oblast",
+        "code": "ORE"
+      },
+      {
+        "value": "Oryol Oblast",
+        "code": "ORL"
+      },
+      {
+        "value": "Penza Oblast",
+        "code": "PNZ"
+      },
+      {
+        "value": "Perm Krai",
+        "code": "PER"
+      },
+      {
+        "value": "Primorsky Krai",
+        "code": "PRI"
+      },
+      {
+        "value": "Pskov Oblast",
+        "code": "PSK"
+      },
+      {
+        "value": "Republic of Adygea",
+        "code": "AD"
+      },
+      {
+        "value": "Republic of Bashkortostan",
+        "code": "BA"
+      },
+      {
+        "value": "Republic of Buryatia",
+        "code": "BU"
+      },
+      {
+        "value": "Republic of Dagestan",
+        "code": "DA"
+      },
+      {
+        "value": "Republic of Ingushetia",
+        "code": "IN"
+      },
+      {
+        "value": "Republic of Kalmykia",
+        "code": "KL"
+      },
+      {
+        "value": "Republic of Karelia",
+        "code": "KR"
+      },
+      {
+        "value": "Republic of Khakassia",
+        "code": "KK"
+      },
+      {
+        "value": "Republic of Mordovia",
+        "code": "MO"
+      },
+      {
+        "value": "Republic of North Ossetia-Alania",
+        "code": "SE"
+      },
+      {
+        "value": "Republic of Tatarstan",
+        "code": "TA"
+      },
+      {
+        "value": "Rostov Oblast",
+        "code": "ROS"
+      },
+      {
+        "value": "Ryazan Oblast",
+        "code": "RYA"
+      },
+      {
+        "value": "Saint Petersburg",
+        "code": "SPE"
+      },
+      {
+        "value": "Sakha Republic",
+        "code": "SA"
+      },
+      {
+        "value": "Sakhalin",
+        "code": "SAK"
+      },
+      {
+        "value": "Samara Oblast",
+        "code": "SAM"
+      },
+      {
+        "value": "Saratov Oblast",
+        "code": "SAR"
+      },
+      {
+        "value": "Smolensk Oblast",
+        "code": "SMO"
+      },
+      {
+        "value": "Stavropol Krai",
+        "code": "STA"
+      },
+      {
+        "value": "Sverdlovsk",
+        "code": "SVE"
+      },
+      {
+        "value": "Tambov Oblast",
+        "code": "TAM"
+      },
+      {
+        "value": "Tomsk Oblast",
+        "code": "TOM"
+      },
+      {
+        "value": "Tula Oblast",
+        "code": "TUL"
+      },
+      {
+        "value": "Tuva Republic",
+        "code": "TY"
+      },
+      {
+        "value": "Tver Oblast",
+        "code": "TVE"
+      },
+      {
+        "value": "Tyumen Oblast",
+        "code": "TYU"
+      },
+      {
+        "value": "Udmurt Republic",
+        "code": "UD"
+      },
+      {
+        "value": "Ulyanovsk Oblast",
+        "code": "ULY"
+      },
+      {
+        "value": "Vladimir Oblast",
+        "code": "VLA"
+      },
+      {
+        "value": "Volgograd Oblast",
+        "code": "VGG"
+      },
+      {
+        "value": "Vologda Oblast",
+        "code": "VLG"
+      },
+      {
+        "value": "Voronezh Oblast",
+        "code": "VOR"
+      },
+      {
+        "value": "Yamalo-Nenets Autonomous Okrug",
+        "code": "YAN"
+      },
+      {
+        "value": "Yaroslavl Oblast",
+        "code": "YAR"
+      },
+      {
+        "value": "Zabaykalsky Krai",
+        "code": "ZAB"
+      }
     ],
     "RW": [
       { "name": "Eastern Province", "code": "02" },
@@ -4395,14 +5173,38 @@
     ],
     "SX": [{ "name": "Sint Maarten", "code": "Sint Maarten" }],
     "SK": [
-      { "name": "Banská Bystrica Region", "code": "BC" },
-      { "name": "Bratislava Region", "code": "BL" },
-      { "name": "Košice Region", "code": "KI" },
-      { "name": "Nitra Region", "code": "NI" },
-      { "name": "Prešov Region", "code": "PV" },
-      { "name": "Trenčín Region", "code": "TC" },
-      { "name": "Trnava Region", "code": "TA" },
-      { "name": "Žilina Region", "code": "ZI" }
+      {
+        "name": "Banská Bystrica Region",
+        "code": "BC"
+      },
+      {
+        "name": "Bratislava Region",
+        "code": "BL"
+      },
+      {
+        "name": "Košice Region",
+        "code": "KI"
+      },
+      {
+        "name": "Nitra Region",
+        "code": "NI"
+      },
+      {
+        "name": "Prešov Region",
+        "code": "PV"
+      },
+      {
+        "name": "Trenčín Region",
+        "code": "TC"
+      },
+      {
+        "name": "Trnava Region",
+        "code": "TA"
+      },
+      {
+        "name": "Žilina Region",
+        "code": "ZI"
+      }
     ],
     "SI": [
       { "name": "Ajdovščina Municipality", "code": "001" },
@@ -5337,31 +6139,114 @@
       { "name": "Zombo District", "code": "330" }
     ],
     "UA": [
-      { "name": "Autonomous Republic of Crimea", "code": "43" },
-      { "name": "Cherkasy Oblast", "code": "71" },
-      { "name": "Chernihiv Oblast", "code": "74" },
-      { "name": "Chernivtsi Oblast", "code": "77" },
-      { "name": "Dnipropetrovsk Oblast", "code": "12" },
-      { "name": "Donetsk Oblast", "code": "14" },
-      { "name": "Ivano-Frankivsk Oblast", "code": "26" },
-      { "name": "Kharkiv Oblast", "code": "63" },
-      { "name": "Kherson Oblast", "code": "65" },
-      { "name": "Khmelnytsky Oblast", "code": "68" },
-      { "name": "Kiev", "code": "30" },
-      { "name": "Kirovohrad Oblast", "code": "35" },
-      { "name": "Kyiv Oblast", "code": "32" },
-      { "name": "Luhansk Oblast", "code": "09" },
-      { "name": "Lviv Oblast", "code": "46" },
-      { "name": "Mykolaiv Oblast", "code": "48" },
-      { "name": "Odessa Oblast", "code": "51" },
-      { "name": "Rivne Oblast", "code": "56" },
-      { "name": "Sumy Oblast", "code": "59" },
-      { "name": "Ternopil Oblast", "code": "61" },
-      { "name": "Vinnytsia Oblast", "code": "05" },
-      { "name": "Volyn Oblast", "code": "07" },
-      { "name": "Zakarpattia Oblast", "code": "21" },
-      { "name": "Zaporizhzhya Oblast", "code": "23" },
-      { "name": "Zhytomyr Oblast", "code": "18" }
+      {
+        "name": "Autonomous Republic of Crimea",
+        "code": "43"
+      },
+      {
+        "name": "Cherkaska oblast",
+        "code": "71"
+      },
+      {
+        "name": "Chernihivska oblast",
+        "code": "74"
+      },
+      {
+        "name": "Chernivetska oblast",
+        "code": "77"
+      },
+      {
+        "name": "Dnipropetrovska oblast",
+        "code": "12"
+      },
+      {
+        "name": "Donetska oblast",
+        "code": "14"
+      },
+      {
+        "name": "Ivano-Frankivska oblast",
+        "code": "26"
+      },
+      {
+        "name": "Kharkivska oblast",
+        "code": "63"
+      },
+      {
+        "name": "Khersonska oblast",
+        "code": "65"
+      },
+      {
+        "name": "Khmelnytska oblast",
+        "code": "68"
+      },
+      {
+        "name": "Kirovohradska oblast",
+        "code": "35"
+      },
+      {
+        "name": "Kyiv",
+        "code": "30"
+      },
+      {
+        "name": "Kyivska oblast",
+        "code": "32"
+      },
+      {
+        "name": "Luhanska oblast",
+        "code": "09"
+      },
+      {
+        "name": "Lvivska oblast",
+        "code": "46"
+      },
+      {
+        "name": "Mykolaivska oblast",
+        "code": "48"
+      },
+      {
+        "name": "Odeska oblast",
+        "code": "51"
+      },
+      {
+        "name": "Poltavska oblast",
+        "code": "53"
+      },
+      {
+        "name": "Rivnenska oblast",
+        "code": "56"
+      },
+      {
+        "name": "Sevastopol",
+        "code": "40"
+      },
+      {
+        "name": "Sumska oblast",
+        "code": "59"
+      },
+      {
+        "name": "Ternopilska oblast",
+        "code": "61"
+      },
+      {
+        "name": "Vinnytska oblast",
+        "code": "05"
+      },
+      {
+        "name": "Volynska oblast",
+        "code": "07"
+      },
+      {
+        "name": "Zakarpatska Oblast",
+        "code": "21"
+      },
+      {
+        "name": "Zaporizka oblast",
+        "code": "23"
+      },
+      {
+        "name": "Zhytomyrska oblast",
+        "code": "18"
+      }
     ],
     "AE": [
       { "name": "Abu Dhabi", "code": "AZ" },
