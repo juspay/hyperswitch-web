@@ -1,3 +1,10 @@
+## [0.114.3](https://github.com/juspay/hyperswitch-web/compare/v0.114.2...v0.114.3) (2025-02-19)
+
+
+### Bug Fixes
+
+* remove unwanted gap in dynamic fields ([#905](https://github.com/juspay/hyperswitch-web/issues/905)) ([f7dec59](https://github.com/juspay/hyperswitch-web/commit/f7dec593621c8f8d346e9ec449fb6eeaa4327b44))
+
 ## [0.114.2](https://github.com/juspay/hyperswitch-web/compare/v0.114.1...v0.114.2) (2025-02-18)
 
 
