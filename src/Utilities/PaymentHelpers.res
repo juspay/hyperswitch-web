@@ -161,9 +161,11 @@ let rec pollRetrievePaymentIntent = (
     if status === "succeeded" || status === "failed" {
       resolve(json)
     } else {
-      delay(2000)->then(_val => {
+      delay(2000)
+      ->then(_val => {
         pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~customPodUri, ~isForceSync)
       })
+      ->catch(_ => Promise.resolve(JSON.Encode.null))
     }
   })
   ->catch(e => {
@@ -254,6 +256,7 @@ let rec pollStatus = (~headers, ~customPodUri, ~pollId, ~interval, ~count, ~retu
             )
           },
         )
+        ->catch(_ => Promise.resolve())
         ->ignore
       }
     })
@@ -459,6 +462,7 @@ let rec intentCall = (
                   Promise.resolve()
                 },
               )
+              ->catch(_ => Promise.resolve())
               ->ignore
             }
           },
@@ -889,6 +893,7 @@ let rec intentCall = (
               Promise.resolve()
             },
           )
+          ->catch(_ => Promise.resolve())
           ->ignore
         }
       } catch {
@@ -1094,6 +1099,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             intentCallback(val)
             resolve()
           })
+          ->catch(_ => resolve())
           ->ignore
         }
       }
@@ -2204,6 +2210,7 @@ let usePostSessionTokens = (
           intentCallback(val)
           resolve()
         })
+        ->catch(_ => Promise.resolve())
         ->ignore
       }
 

@@ -10,9 +10,9 @@ type card = {details: array<patterns>}
 let defaultCardPattern = {
   issuer: "",
   pattern: %re("/^[0-9]/"),
-  cvcLength: [3],
-  maxCVCLength: 3,
-  length: [16],
+  cvcLength: [3, 4],
+  maxCVCLength: 4,
+  length: [13, 14, 15, 16, 17, 18, 19],
   pincodeRequired: false,
 }
 let cardPatterns = [
@@ -24,6 +24,22 @@ let cardPatterns = [
     cvcLength: [3, 4],
     length: [12, 13, 14, 15, 16, 17, 18, 19],
     maxCVCLength: 4,
+    pincodeRequired: true,
+  },
+  {
+    issuer: "UnionPay",
+    pattern: %re("/^(6[27]|81)/"),
+    cvcLength: [3],
+    length: [16, 17, 18, 19],
+    maxCVCLength: 3,
+    pincodeRequired: true,
+  },
+  {
+    issuer: "Interac",
+    pattern: %re("/^(4506|4724|4761|0012)/"),
+    cvcLength: [3],
+    length: [16],
+    maxCVCLength: 3,
     pincodeRequired: true,
   },
   {

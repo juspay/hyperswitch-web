@@ -53,6 +53,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
+           title="Orca Payment Element Frame"
           src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&ephemeralKey=${ephemeralKey}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}"
           allow="*"
           name="orca-payment"
@@ -98,26 +99,31 @@ let make = (
     })
 
     let fetchSavedPaymentMethods = (mountedIframeRef, disableSaveCards, componentType) => {
-      if !disableSaveCards {
-        let handleSavedPaymentMethodsLoaded = (event: Types.event) => {
-          let json = event.data->Identity.anyTypeToJson
-          let dict = json->getDictFromJson
-          let isSavedPaymentMethodsData = dict->getString("data", "") === "saved_payment_methods"
-          if isSavedPaymentMethodsData {
-            let json = dict->getJsonFromDict("response", JSON.Encode.null)
-            let msg = [("savedPaymentMethods", json)]->Dict.fromArray
-            mountedIframeRef->Window.iframePostMessage(msg)
+      Promise.make((resolve, _) => {
+        if !disableSaveCards {
+          let handleSavedPaymentMethodsLoaded = (event: Types.event) => {
+            let json = event.data->Identity.anyTypeToJson
+            let dict = json->getDictFromJson
+            let isSavedPaymentMethodsData = dict->getString("data", "") === "saved_payment_methods"
+            if isSavedPaymentMethodsData {
+              resolve()
+              let json = dict->getJsonFromDict("response", JSON.Encode.null)
+              let msg = [("savedPaymentMethods", json)]->Dict.fromArray
+              mountedIframeRef->Window.iframePostMessage(msg)
+            }
           }
+          addSmartEventListener(
+            "message",
+            handleSavedPaymentMethodsLoaded,
+            `onSavedPaymentMethodsLoaded-${componentType}`,
+          )
+        } else {
+          resolve()
         }
-        addSmartEventListener(
-          "message",
-          handleSavedPaymentMethodsLoaded,
-          `onSavedPaymentMethodsLoaded-${componentType}`,
-        )
-      }
-      let msg =
-        [("sendSavedPaymentMethodsResponse", !disableSaveCards->JSON.Encode.bool)]->Dict.fromArray
-      preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+        let msg =
+          [("sendSavedPaymentMethodsResponse", !disableSaveCards->JSON.Encode.bool)]->Dict.fromArray
+        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+      })
     }
 
     let setElementIframeRef = ref => {
@@ -208,9 +214,17 @@ let make = (
             !(expressCheckoutComponents->Array.includes(componentType))
           ) {
             fetchSavedPaymentMethods(mountedIframeRef, false, componentType)
+            ->then(_ => {
+              let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
+              preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+              resolve()
+            })
+            ->catch(_ => resolve())
+            ->ignore
           }
           resolve()
         })
+        ->catch(_ => resolve())
         ->ignore
         mountedIframeRef->Window.iframePostMessage(message)
       }

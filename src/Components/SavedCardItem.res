@@ -15,7 +15,8 @@ module RenderSavedPaymentMethodItem = {
 
     switch paymentItem.paymentMethod {
     | "card" =>
-      <div className="flex flex-col items-start">
+      <div className="flex flex-col items-start" role="group"
+        ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
         <div className="flex items-center" style={fontSize: "15px", fontWeight: "550"}>
           {React.string(paymentItem.card.nickname)}
           <RenderIf condition={displayDefaultSavedPaymentIcon && defaultPaymentMethodSet}>
@@ -25,7 +26,7 @@ module RenderSavedPaymentMethodItem = {
         <div
           className={`PickerItemLabel flex flex-row gap-2 items-center text-sm`}
           style={{fontWeight: "400"}}>
-          <div>
+          <div ariaHidden=true>
             {React.string(`XXXX `)}
             {React.string(paymentItem.card.last4Digits)}
           </div>
