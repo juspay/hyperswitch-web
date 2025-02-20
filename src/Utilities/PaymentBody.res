@@ -901,6 +901,21 @@ let pazeBody = (~completeResponse) => {
   ]
 }
 
+let eftBody = () => {
+  open Utils
+  let eftProviderName = [("provider", "ozow"->JSON.Encode.string)]->getJsonFromArrayOfJson
+
+  let eftBankRedirectData = [("eft", eftProviderName)]->getJsonFromArrayOfJson
+
+  let paymentMethodData =[("bank_redirect", eftBankRedirectData)]->getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "bank_redirect"->JSON.Encode.string),
+    ("payment_method_type", "eft"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
@@ -1037,5 +1052,6 @@ let getPaymentBody = (
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)
+  | "eft" => eftBody()
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }
