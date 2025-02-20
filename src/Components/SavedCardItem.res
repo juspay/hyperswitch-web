@@ -3,26 +3,37 @@ module RenderSavedPaymentMethodItem = {
   let make = (~paymentItem: PaymentType.customerMethods, ~paymentMethodType) => {
     switch paymentItem.paymentMethod {
     | "card" =>
-      <div className="flex flex-col items-start">
+      <div
+        className="flex flex-col items-start"
+        role="group"
+        ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
         <div> {React.string(paymentItem.card.nickname)} </div>
         <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-          <div className="tracking-widest"> {React.string(`****`)} </div>
-          <div> {React.string(paymentItem.card.last4Digits)} </div>
+          <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
+          <div ariaHidden=true> {React.string(paymentItem.card.last4Digits)} </div>
         </div>
       </div>
+
     | "bank_debit" =>
-      <div className="flex flex-col items-start">
+      <div
+        className="flex flex-col items-start"
+        role="group"
+        ariaLabel={`${paymentMethodType->String.toUpperCase} bank debit account ending in ${paymentItem.bank.mask}`}>
         <div>
           {React.string(
             `${paymentMethodType->String.toUpperCase} ${paymentItem.paymentMethod->Utils.snakeToTitleCase}`,
           )}
         </div>
         <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-          <div className="tracking-widest"> {React.string(`****`)} </div>
-          <div> {React.string(paymentItem.bank.mask)} </div>
+          <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
+          <div ariaHidden=true> {React.string(paymentItem.bank.mask)} </div>
         </div>
       </div>
-    | _ => <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>
+
+    | _ =>
+      <div ariaLabel={paymentMethodType->Utils.snakeToTitleCase}>
+        {React.string(paymentMethodType->Utils.snakeToTitleCase)}
+      </div>
     }
   }
 }
@@ -37,6 +48,7 @@ let make = (
   ~savedCardlength,
   ~cvcProps,
   ~paymentType,
+  ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {hideExpiredPaymentMethods, displayDefaultSavedPaymentIcon} = Recoil.useRecoilValueFromAtom(
@@ -77,6 +89,11 @@ let make = (
   let expiryMonth = paymentItem.card.expiryMonth
   let expiryYear = paymentItem.card.expiryYear
 
+  let paymentMethodType = switch paymentItem.paymentMethodType {
+  | Some(paymentMethodType) => paymentMethodType
+  | None => "debit"
+  }
+
   React.useEffect(() => {
     open CardUtils
 
@@ -88,19 +105,20 @@ let make = (
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->formatCardExpiryNumber
       ->emitExpiryDate
+
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod=paymentItem.paymentMethod,
+        ~paymentMethodType,
+        ~cardBrand=cardBrand->CardUtils.getCardType,
+      )
     }
     None
-  }, [isActive])
+  }, (isActive, cardBrand, paymentItem.paymentMethod, paymentMethodType))
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
   let currentDate = Date.make()
   let isCardExpired = isCard && expiryDate < currentDate
-
-  let paymentMethodType = switch paymentItem.paymentMethodType {
-  | Some(paymentMethodType) => paymentMethodType
-  | None => "debit"
-  }
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
@@ -160,8 +178,9 @@ let make = (
             <RenderIf condition={isCard}>
               <div
                 className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                style={fontSize: "14px", opacity: "0.5"}>
-                <div className="flex">
+                style={fontSize: "14px", opacity: "0.5"}
+                ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
+                <div className="flex" ariaHidden=true>
                   {React.string(`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
                 </div>
               </div>
@@ -207,6 +226,14 @@ let make = (
                 </div>
               </RenderIf>
               <RenderIf condition={isActive}>
+                <DynamicFields
+                  paymentType
+                  paymentMethod=paymentItem.paymentMethod
+                  paymentMethodType
+                  setRequiredFieldsBody
+                  isSavedCardFlow=true
+                  savedMethod=paymentItem
+                />
                 <Surcharge
                   paymentMethod=paymentItem.paymentMethod
                   paymentMethodType

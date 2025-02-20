@@ -60,6 +60,11 @@ let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false) => {
   let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
   messageParentWindow([(message, true->JSON.Encode.bool)], ~targetOrigin)
 }
+
+let handleBeforeRedirectPostMessage = (~targetOrigin="*") => {
+  messageTopWindow([("disableBeforeUnloadEventListener", true->JSON.Encode.bool)], ~targetOrigin)
+}
+
 let getOptionString = (dict, key) => {
   dict->Dict.get(key)->Option.flatMap(JSON.Decode.string)
 }
@@ -1423,7 +1428,6 @@ let getFirstAndLastNameFromFullName = fullName => {
 }
 
 let isKeyPresentInDict = (dict, key) => dict->Dict.get(key)->Option.isSome
-let checkIsTestCardWildcard = val => ["1111222233334444"]->Array.includes(val)
 
 let minorUnitToString = val => (val->Int.toFloat /. 100.)->Float.toString
 
@@ -1439,7 +1443,7 @@ let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) =
   let iframes = Window.querySelectorAll("iframe")
 
   iframes->Array.forEach(iframe => {
-    let iframeSrc = iframe->Window.getAttribute("src")->Option.getOr("")
+    let iframeSrc = iframe->Window.getAttribute("src")->Nullable.toOption->Option.getOr("")
     if iframeSrc->String.includes(`componentName=${componentName}`) {
       iframe->Js.Nullable.return->Window.iframePostMessage(msg)
       isMessageSent := true
@@ -1455,5 +1459,30 @@ let isDigitLimitExceeded = (val, ~digit) => {
   switch val->String.match(%re("/\d/g")) {
   | Some(matches) => matches->Array.length > digit
   | None => false
+  }
+}
+
+/* Redirect Handling */
+let replaceRootHref = (href: string, redirectionFlags: RecoilAtomTypes.redirectionFlags) => {
+  if redirectionFlags.shouldRemoveBeforeUnloadEvents {
+    handleBeforeRedirectPostMessage()
+  }
+  switch redirectionFlags.shouldUseTopRedirection {
+  | true =>
+    try {
+      setTimeout(() => {
+        Window.Top.Location.replace(href)
+      }, 100)->ignore
+    } catch {
+    | e => {
+        Js.Console.error3(
+          "Failed to redirect root document",
+          e,
+          `Using [window.location.replace] for redirection`,
+        )
+        Window.Location.replace(href)
+      }
+    }
+  | false => Window.Location.replace(href)
   }
 }

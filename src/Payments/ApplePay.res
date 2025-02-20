@@ -27,6 +27,12 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("apple_pay")
 
+  let (heightType, _, _, _, _) = options.wallets.style.height
+  let height = switch heightType {
+  | ApplePay(val) => val
+  | _ => 48
+  }
+
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
     ~empty=areRequiredFieldsEmpty,
@@ -98,7 +104,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
   let css = `@supports (-webkit-appearance: -apple-pay-button) {
     .apple-pay-loader-div {
       background-color: ${loaderDivBackgroundColor};
-      height: 3rem;
+      height: ${height->Int.toString}px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -135,7 +141,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
     .apple-pay-button-black-with-text {
         -apple-pay-button-style: ${buttonColor};
         width: 100%;
-        height: 3rem;
+        height: ${height->Int.toString}px;
         display: flex;
         cursor: pointer;
         border-radius: ${options.wallets.style.buttonRadius->Int.toString}px;
@@ -212,6 +218,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
     )
+    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="apple_pay")
     setApplePayClicked(_ => true)
     makeOneClickHandlerPromise(sdkHandleIsThere)
     ->then(result => {
@@ -263,6 +270,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
       } else {
         setApplePayClicked(_ => false)
       }
+      resolve()
+    })
+    ->catch(_ => {
       resolve()
     })
     ->ignore
