@@ -152,4 +152,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pixキー`,
   invalidCardHolderNameError: `カード所有者の名前に数字を含めることはできません`,
   invalidNickNameError: `ニックネームには2つ以上の数字を含めることはできません`,
+  expiry: `有効期限`,
 }

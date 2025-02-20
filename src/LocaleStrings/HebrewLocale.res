@@ -152,4 +152,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `מפתח Pix`,
   invalidCardHolderNameError: `שם בעל הכרטיס לא יכול לכלול ספרות`,
   invalidNickNameError: `הכינוי לא יכול לכלול יותר משתי ספרות`,
+  expiry: `תְפוּגָה`,
 }

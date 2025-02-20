@@ -153,4 +153,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Chiave Pix`,
   invalidCardHolderNameError: `Il nome del titolare della carta non può contenere cifre`,
   invalidNickNameError: `Il soprannome non può contenere più di 2 cifre`,
+  expiry: `scadenza`,
 }
