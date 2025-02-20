@@ -44,19 +44,27 @@ module RenderSavedPaymentMethodItem = {
           </div>
         </div>
       </div>
+
     | "bank_debit" =>
-      <div className="flex flex-col items-start">
+      <div
+        className="flex flex-col items-start"
+        role="group"
+        ariaLabel={`${paymentMethodType->String.toUpperCase} bank debit account ending in ${paymentItem.bank.mask}`}>
         <div>
           {React.string(
             `${paymentMethodType->String.toUpperCase} ${paymentItem.paymentMethod->Utils.snakeToTitleCase}`,
           )}
         </div>
         <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-          <div className="tracking-widest"> {React.string(`****`)} </div>
-          <div> {React.string(paymentItem.bank.mask)} </div>
+          <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
+          <div ariaHidden=true> {React.string(paymentItem.bank.mask)} </div>
         </div>
       </div>
-    | _ => <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>
+
+    | _ =>
+      <div ariaLabel={paymentMethodType->Utils.snakeToTitleCase}>
+        {React.string(paymentMethodType->Utils.snakeToTitleCase)}
+      </div>
     }
   }
 }
@@ -114,6 +122,11 @@ let make = (
   let expiryMonth = paymentItem.card.expiryMonth
   let expiryYear = paymentItem.card.expiryYear
 
+  let paymentMethodType = switch paymentItem.paymentMethodType {
+  | Some(paymentMethodType) => paymentMethodType
+  | None => "debit"
+  }
+
   React.useEffect(() => {
     open CardUtils
 
@@ -125,9 +138,15 @@ let make = (
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
       ->formatCardExpiryNumber
       ->emitExpiryDate
+
+        PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod=paymentItem.paymentMethod,
+        ~paymentMethodType,
+        ~cardBrand=cardBrand->CardUtils.getCardType,
+      )
     }
     None
-  }, [isActive])
+  }, (isActive, cardBrand, paymentItem.paymentMethod, paymentMethodType))
 
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
