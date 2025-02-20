@@ -389,7 +389,7 @@ let make = (
                     ]
                     messageTopWindow(msg)
                   } else {
-                    Console.log("CANNOT MAKE PAYMENT USING APPLE PAY")
+                    Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
                     logger.setLogInfo(
                       ~value="CANNOT MAKE PAYMENT USING APPLE PAY",
                       ~eventName=APPLE_PAY_FLOW,
@@ -400,7 +400,7 @@ let make = (
                 } catch {
                 | exn => {
                     let exnString = exn->anyTypeToJson->JSON.stringify
-                    Console.log("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
+                    Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
                     logger.setLogInfo(
                       ~value=exnString,
                       ~eventName=APPLE_PAY_FLOW,
@@ -430,8 +430,7 @@ let make = (
               } catch {
               | exn => {
                   let exnString = exn->anyTypeToJson->JSON.stringify
-
-                  Console.log("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
+                  Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
                   logger.setLogInfo(
                     ~value=exnString,
                     ~eventName=APPLE_PAY_FLOW,
@@ -1174,7 +1173,7 @@ let make = (
                         "onGooglePayMessages",
                       )
                     } catch {
-                    | _ => Console.log("Error loading Gpay")
+                    | _ => Console.error("Error loading Gpay")
                     }
                   } else if wallets.googlePay === Never {
                     logger.setLogInfo(
@@ -1299,7 +1298,7 @@ let make = (
                         ~paymentMethod="SAMSUNG_PAY",
                         ~logType=ERROR,
                       )
-                      Console.log("Error loading Samsung Pay")
+                      Console.error("Error loading Samsung Pay")
                     }
                   } else if wallets.samsungPay === Never {
                     logger.setLogInfo(

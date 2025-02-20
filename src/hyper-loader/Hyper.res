@@ -19,7 +19,7 @@ if (
     let script = Window.createElement("script")
     script->Window.elementSrc(GlobalVars.sentryScriptUrl)
     script->Window.elementOnerror(err => {
-      Console.log2("ERROR DURING LOADING Sentry on HyperLoader", err)
+      Console.error2("ERROR DURING LOADING Sentry on HyperLoader", err)
     })
     script->Window.elementOnload(() => {
       Sentry.initiateSentryJs(~dsn=GlobalVars.sentryDSN)
@@ -28,7 +28,7 @@ if (
       Window.body->Window.appendChild(script)
     })
   } catch {
-  | e => Console.log2("Sentry load exited", e)
+  | e => Console.error2("Sentry load exited", e)
   }
 }
 
@@ -262,7 +262,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             let script = Window.createElement("script")
             script->Window.elementSrc(scriptURL)
             script->Window.elementOnerror(err => {
-              Console.log2("ERROR DURING LOADING APPLE PAY", err)
+              Console.error2("ERROR DURING LOADING APPLE PAY", err)
             })
             Window.body->Window.appendChild(script)
           }
