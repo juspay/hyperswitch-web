@@ -32,6 +32,7 @@ type paymentElement = {
   focus: unit => unit,
   clear: unit => unit,
   onSDKHandleClick: option<unit => Promise.t<unit>> => unit,
+  getAddressValues: unit => Promise.t<JSON.t>,
 }
 
 type element = {
@@ -121,6 +122,7 @@ let defaultPaymentElement = {
   focus: () => (),
   clear: () => (),
   onSDKHandleClick: fnArgument => (),
+  getAddressValues: () => Promise.make((resolve, _) => resolve(Dict.make()->JSON.Encode.object)),
 }
 
 let create = (_componentType, _options) => {
