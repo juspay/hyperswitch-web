@@ -1475,7 +1475,7 @@ let replaceRootHref = (href: string, redirectionFlags: RecoilAtomTypes.redirecti
       }, 100)->ignore
     } catch {
     | e => {
-        Js.Console.error3(
+        Console.error3(
           "Failed to redirect root document",
           e,
           `Using [window.location.replace] for redirection`,

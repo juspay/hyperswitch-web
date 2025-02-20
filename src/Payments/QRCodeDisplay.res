@@ -63,7 +63,7 @@ let make = () => {
             Modal.close(setOpenModal)
             postSubmitResponse(~jsonData=res, ~url=return_url)
           } catch {
-          | error => Console.log2("Error while polling payment intent:", error)
+          | error => Console.error2("Error while polling payment intent:", error)
           }
         }
       }
@@ -115,7 +115,7 @@ let make = () => {
       }
       Modal.close(setOpenModal)
     } catch {
-    | e => Console.log2("Retrieve Failed", e)
+    | e => Console.error2("Retrieve Failed", e)
     }
   }
 

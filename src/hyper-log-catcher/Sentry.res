@@ -89,7 +89,7 @@ let initiateSentry = (~dsn) => {
       },
     })
   } catch {
-  | err => Console.log(err)
+  | err => Console.error(err)
   }
 }
 
@@ -107,7 +107,7 @@ let initiateSentryJs = (~dsn) => {
       },
     })
   } catch {
-  | err => Console.log(err)
+  | err => Console.error(err)
   }
 }
 

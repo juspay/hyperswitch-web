@@ -73,7 +73,7 @@ let retrievePaymentIntent = (
     }
   })
   ->catch(e => {
-    Console.log2("Unable to retrieve payment details because of ", e)
+    Console.error2("Unable to retrieve payment details because of ", e)
     JSON.Encode.null->resolve
   })
 }
@@ -131,7 +131,7 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
   })
   ->catch(err => {
     let exceptionMessage = err->formatException
-    Console.log2("Unable to call 3ds auth ", exceptionMessage)
+    Console.error2("Unable to call 3ds auth ", exceptionMessage)
     logApi(
       ~optLogger,
       ~url,
@@ -169,7 +169,7 @@ let rec pollRetrievePaymentIntent = (
     }
   })
   ->catch(e => {
-    Console.log2("Unable to retrieve payment due to following error", e)
+    Console.error2("Unable to retrieve payment due to following error", e)
     pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~customPodUri, ~isForceSync)
   })
 }
@@ -219,7 +219,7 @@ let retrieveStatus = (~headers, ~customPodUri, pollID, logger) => {
     }
   })
   ->catch(e => {
-    Console.log2("Unable to Poll status details because of ", e)
+    Console.error2("Unable to Poll status details because of ", e)
     JSON.Encode.null->resolve
   })
 }
@@ -262,7 +262,7 @@ let rec pollStatus = (~headers, ~customPodUri, ~pollId, ~interval, ~count, ~retu
     })
   })
   ->catch(e => {
-    Console.log2("Unable to retrieve payment due to following error", e)
+    Console.error2("Unable to retrieve payment due to following error", e)
     pollStatus(
       ~headers,
       ~customPodUri,
@@ -1069,8 +1069,8 @@ let usePaymentIntent = (optLogger, paymentType) => {
           })
         }
         if blockConfirm && Window.isInteg {
-          Console.log2("CONFIRM IS BLOCKED - Body", body)
-          Console.log2(
+          Console.warn2("CONFIRM IS BLOCKED - Body", body)
+          Console.warn2(
             "CONFIRM IS BLOCKED - Headers",
             headers->Dict.fromArray->Identity.anyTypeToJson->JSON.stringify,
           )
@@ -1774,7 +1774,7 @@ let callAuthLink = (
       ~logCategory=API,
       ~data={e->formatException},
     )
-    Console.log2("Unable to retrieve payment_methods auth/link because of ", e)
+    Console.error2("Unable to retrieve payment_methods auth/link because of ", e)
     JSON.Encode.null->resolve
   })
 }
@@ -1866,7 +1866,7 @@ let callAuthExchange = (
         JSON.Encode.null->resolve
       })
       ->catch(e => {
-        Console.log2(
+        Console.error2(
           "Unable to retrieve customer/payment_methods after auth/exchange because of ",
           e,
         )
@@ -1884,7 +1884,7 @@ let callAuthExchange = (
       ~logCategory=API,
       ~data={e->formatException},
     )
-    Console.log2("Unable to retrieve payment_methods auth/exchange because of ", e)
+    Console.error2("Unable to retrieve payment_methods auth/exchange because of ", e)
     JSON.Encode.null->resolve
   })
 }
@@ -2204,7 +2204,7 @@ let usePostSessionTokens = (
           ~customPodUri,
           ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
           ~counter=0,
-          ~redirectionFlags
+          ~redirectionFlags,
         )
         ->then(val => {
           intentCallback(val)

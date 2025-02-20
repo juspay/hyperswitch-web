@@ -82,7 +82,7 @@ let startApplePaySession = (
     try {
       session.abort()
     } catch {
-    | error => Console.log2("Abort fail", error)
+    | error => Console.error2("Abort fail", error)
     }
   | None => ()
   }
