@@ -1197,4 +1197,5 @@ let convertClickToPayCardToCustomerMethod = (
     mask: "", // Just use the mask field that exists in the type
   },
   recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
+  billing: defaultBillingAddressPaymentMethod,
 }
