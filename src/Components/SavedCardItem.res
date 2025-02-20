@@ -153,7 +153,7 @@ let make = (
       paymentItem.billing.address.zip,
     ]
     ->Array.map(item => Option.getOr(item, ""))
-    ->Array.filter(item => Js.String.trim(item) !== "")
+    ->Array.filter(item => String.trim(item) !== "")
 
   let isCVCEmpty = cvcNumber->String.length == 0
 
