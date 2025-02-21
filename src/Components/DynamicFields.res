@@ -1,3 +1,21 @@
+module DynamicFieldsToRenderWrapper = {
+  @react.component
+  let make = (~children, ~index, ~isInside=true) => {
+    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+
+    <RenderIf condition={children != React.null}>
+      <div
+        key={`${isInside ? "inside" : "outside"}-billing-${index->Int.toString}`}
+        className="flex flex-col w-full place-content-between"
+        style={
+          gridColumnGap: isInside ? "0px" : themeObj.spacingGridRow,
+        }>
+        {children}
+      </div>
+    </RenderIf>
+  }
+}
+
 @react.component
 let make = (
   ~paymentType,
@@ -357,12 +375,7 @@ let make = (
     {<>
       {dynamicFieldsToRenderOutsideBilling
       ->Array.mapWithIndex((item, index) => {
-        <div
-          key={`outside-billing-${index->Int.toString}`}
-          className="flex flex-col w-full place-content-between"
-          style={
-            gridColumnGap: themeObj.spacingGridRow,
-          }>
+        <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index} isInside={false}>
           {switch item {
           | CardNumber =>
             <PaymentInputField
@@ -552,7 +565,7 @@ let make = (
           | LanguagePreference(_)
           | ShippingAddressCountry(_) => React.null
           }}
-        </div>
+        </DynamicFieldsToRenderWrapper>
       })
       ->React.array}
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
@@ -578,9 +591,7 @@ let make = (
             }>
             {dynamicFieldsToRenderInsideBilling
             ->Array.mapWithIndex((item, index) => {
-              <div
-                key={`inside-billing-${index->Int.toString}`}
-                className="flex flex-col w-full place-content-between">
+              <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index}>
                 {switch item {
                 | BillingName => <BillingNamePaymentInput paymentType requiredFields />
                 | Email => <EmailPaymentInput paymentType />
@@ -843,7 +854,7 @@ let make = (
                 | IBAN
                 | None => React.null
                 }}
-              </div>
+              </DynamicFieldsToRenderWrapper>
             })
             ->React.array}
           </div>

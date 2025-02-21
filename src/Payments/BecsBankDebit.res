@@ -28,10 +28,6 @@ let make = (~paymentType: CardThemeType.mode) => {
     email.isValid->Option.getOr(false) &&
     switch modalData {
     | Some(data: ACHTypes.data) =>
-      Console.log2(
-        data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6,
-        "complete",
-      )
       data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6
     | None => false
     }

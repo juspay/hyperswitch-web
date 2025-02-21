@@ -49,6 +49,7 @@ let make = (~paymentType, ~walletOptions) => {
       ~eventName=PAYPAL_FLOW,
       ~paymentMethod="PAYPAL",
     )
+    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
     setPaypalClicked(_ => true)
     open Promise
     Utils.makeOneClickHandlerPromise(sdkHandleIsThere)

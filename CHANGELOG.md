@@ -1,3 +1,51 @@
+## [0.114.7](https://github.com/juspay/hyperswitch-web/compare/v0.114.6...v0.114.7) (2025-02-20)
+
+## [0.114.6](https://github.com/juspay/hyperswitch-web/compare/v0.114.5...v0.114.6) (2025-02-19)
+
+
+### Bug Fixes
+
+* shimmer fixed for saved flow ([#909](https://github.com/juspay/hyperswitch-web/issues/909)) ([0ae81a9](https://github.com/juspay/hyperswitch-web/commit/0ae81a93b5f2db16b2f8b336553ae27a6c62901a))
+
+## [0.114.5](https://github.com/juspay/hyperswitch-web/compare/v0.114.4...v0.114.5) (2025-02-19)
+
+## [0.114.4](https://github.com/juspay/hyperswitch-web/compare/v0.114.3...v0.114.4) (2025-02-19)
+
+## [0.114.3](https://github.com/juspay/hyperswitch-web/compare/v0.114.2...v0.114.3) (2025-02-19)
+
+
+### Bug Fixes
+
+* remove unwanted gap in dynamic fields ([#905](https://github.com/juspay/hyperswitch-web/issues/905)) ([f7dec59](https://github.com/juspay/hyperswitch-web/commit/f7dec593621c8f8d346e9ec449fb6eeaa4327b44))
+
+## [0.114.2](https://github.com/juspay/hyperswitch-web/compare/v0.114.1...v0.114.2) (2025-02-18)
+
+
+### Bug Fixes
+
+* premount loader race condition ([#896](https://github.com/juspay/hyperswitch-web/issues/896)) ([7c8f1df](https://github.com/juspay/hyperswitch-web/commit/7c8f1df521990b3c48d69e2810f656b641372a88))
+
+## [0.114.1](https://github.com/juspay/hyperswitch-web/compare/v0.114.0...v0.114.1) (2025-02-18)
+
+
+### Bug Fixes
+
+* ensure country code dropdown appears and prevent text overflow ([#903](https://github.com/juspay/hyperswitch-web/issues/903)) ([adb1642](https://github.com/juspay/hyperswitch-web/commit/adb16423c96642e225eb049aad78b9b9f91f4e89))
+
+# [0.114.0](https://github.com/juspay/hyperswitch-web/compare/v0.113.0...v0.114.0) (2025-02-17)
+
+
+### Features
+
+* emit payment method info ([#890](https://github.com/juspay/hyperswitch-web/issues/890)) ([91dda60](https://github.com/juspay/hyperswitch-web/commit/91dda605207bed54c86aba619494f7a36e185021))
+
+# [0.113.0](https://github.com/juspay/hyperswitch-web/compare/v0.112.3...v0.113.0) (2025-02-17)
+
+
+### Features
+
+* added regex interac card network ([#901](https://github.com/juspay/hyperswitch-web/issues/901)) ([9cedc5b](https://github.com/juspay/hyperswitch-web/commit/9cedc5b5d5fb0da84c4668932016d6f3d1b565a0))
+
 ## [0.112.3](https://github.com/juspay/hyperswitch-web/compare/v0.112.2...v0.112.3) (2025-02-03)
 
 

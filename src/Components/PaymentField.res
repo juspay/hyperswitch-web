@@ -113,7 +113,7 @@ let make = (
           setValue={setValueDropDown->Option.getOr(_ => ())}
           fieldName={dropDownFieldName->Option.getOr("")}
           options={dropDownOptions->Option.getOr([])}
-          width="w-1/3 mr-2"
+          width="w-40 mr-2"
           displayValue={displayValue->Option.getOr("")}
           setDisplayValue={setDisplayValue->Option.getOr(_ => ())}
           isDisplayValueVisible=true

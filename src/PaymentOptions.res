@@ -87,6 +87,7 @@ let make = (
   ~dropDownOptions: array<string>,
   ~checkoutEle: React.element,
   ~cardShimmerCount: int,
+  ~cardProps,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -96,6 +97,7 @@ let make = (
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   React.useEffect(() => {
     let width = switch payOptionsRef.current->Nullable.toOption {
     | Some(ref) => ref->Window.Element.clientWidth
@@ -120,6 +122,7 @@ let make = (
     ->Array.find(item => item.paymentMethodName == selectedOption)
     ->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodFields)
 
+  let (_, _, _, _, _, _, _, _, _, _, _, cardBrand) = cardProps
   React.useEffect(() => {
     let intervalId = setInterval(() => {
       if dropDownOptionsDetails->Array.length > 1 {
@@ -140,6 +143,12 @@ let make = (
       },
     )
   }, [dropDownOptionsDetails])
+
+  PaymentUtils.useEmitPaymentMethodInfo(
+    ~paymentMethodName=selectedPaymentOption.paymentMethodName,
+    ~paymentMethods=paymentMethodListValue.payment_methods,
+    ~cardBrand,
+  )
 
   let displayIcon = ele => {
     <span className={`scale-90 animate-slowShow ${toggleIconElement ? "hidden" : ""}`}> ele </span>

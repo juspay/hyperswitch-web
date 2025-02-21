@@ -172,9 +172,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         {switch layoutClass.\"type" {
         | Tabs =>
           <PaymentOptions
-            setCardsContainerWidth cardOptions dropDownOptions checkoutEle cardShimmerCount
+            setCardsContainerWidth
+            cardOptions
+            dropDownOptions
+            checkoutEle
+            cardShimmerCount
+            cardProps
           />
-        | Accordion => <AccordionContainer paymentOptions checkoutEle />
+        | Accordion => <AccordionContainer paymentOptions checkoutEle cardProps />
         }}
       </div>
     </RenderIf>

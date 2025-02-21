@@ -10,32 +10,38 @@ let sendPromiseData = (promise, key) => {
   executePromise()->ignore
 }
 
-let useMessageHandler = getPromisesAndHandler => {
+let useMessageHandler = getMessageHandler => {
   React.useEffect(_ => {
-    let (promises, messageHandler) = getPromisesAndHandler()
+    let messageHandler = getMessageHandler()
+
     let setupMessageListener = _ => {
-      Utils.messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
       Window.addEventListener("message", messageHandler)
+      Utils.messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
     }
 
     let cleanupMessageListener = _ => {
-      Utils.messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
       Window.removeEventListener("message", messageHandler)
+      Utils.messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
     }
+
+    let handleCleanUpEventListener = (ev: Window.event) => {
+      open Utils
+      let dict = ev.data->safeParse->getDictFromJson
+      if dict->Dict.get("cleanUpPreMountLoaderIframe")->Option.isSome {
+        cleanupMessageListener()
+      }
+    }
+
+    Window.addEventListener("message", handleCleanUpEventListener)
 
     setupMessageListener()
 
-    let executeAllPromises = async () => {
-      try {
-        let _ = await Promise.all(promises)
-      } catch {
-      | error => Console.error2("Error in message handler:", error)
-      }
-      cleanupMessageListener()
-    }
-    executeAllPromises()->ignore
-
-    Some(cleanupMessageListener)
+    Some(
+      () => {
+        cleanupMessageListener()
+        Window.removeEventListener("message", handleCleanUpEventListener)
+      },
+    )
   }, [])
 }
 
@@ -87,8 +93,7 @@ module PreMountLoaderForElements = {
         }
       }
 
-      let promises = [paymentMethodsPromise, customerPaymentMethodsPromise, sessionTokensPromise]
-      (promises, messageHandler)
+      messageHandler
     })
 
     React.null
@@ -108,27 +113,6 @@ module PreMountLoaderForPMMElements = {
   ) => {
     useMessageHandler(() => {
       switch GlobalVars.sdkVersionEnum {
-      | V2 => {
-          let listPromise = PaymentHelpersV2.fetchPaymentManagementList(
-            ~pmSessionId,
-            ~pmClientSecret,
-            ~publishableKey,
-            ~optLogger=Some(logger),
-            ~customPodUri,
-            ~endpoint,
-          )
-
-          let messageHandler = (ev: Window.event) => {
-            open Utils
-            let dict = ev.data->safeParse->getDictFromJson
-            if dict->isKeyPresentInDict("sendPaymentManagementListResponse") {
-              listPromise->sendPromiseData("payment_management_list")
-            }
-          }
-
-          let promises = [listPromise]
-          (promises, messageHandler)
-        }
       | V1 => {
           let savedPaymentMethodsPromise = PaymentHelpers.fetchSavedPaymentMethodList(
             ~ephemeralKey,
@@ -145,8 +129,27 @@ module PreMountLoaderForPMMElements = {
             }
           }
 
-          let promises = [savedPaymentMethodsPromise]
-          (promises, messageHandler)
+          messageHandler
+        }
+      | V2 => {
+          let listPromise = PaymentHelpersV2.fetchPaymentManagementList(
+            ~pmSessionId,
+            ~pmClientSecret,
+            ~publishableKey,
+            ~optLogger=Some(logger),
+            ~customPodUri,
+            ~endpoint,
+          )
+
+          let messageHandler = (ev: Window.event) => {
+            open Utils
+            let dict = ev.data->safeParse->getDictFromJson
+            if dict->isKeyPresentInDict("sendSavedPaymentMethodsResponse") {
+              listPromise->sendPromiseData("saved_payment_methods")
+            }
+          }
+
+          messageHandler
         }
       }
     })
