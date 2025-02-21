@@ -16,7 +16,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Samsungpay)
 
-  let (_, _, _, _, heightType) = options.wallets.style.height
+  let (_, _, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
   | SamsungPay(val) => val
   | _ => 48

@@ -77,8 +77,8 @@ let make = (
 
   GooglePayHelpers.useHandleGooglePayResponse(~connectors, ~intent, ~isWallet, ~requiredFieldsBody)
 
-  let (_, buttonType, _, _) = options.wallets.style.type_
-  let (_, heightType, _, _, _) = options.wallets.style.height
+  let (_, buttonType, _, _, _) = options.wallets.style.type_
+  let (_, heightType, _, _, _, _) = options.wallets.style.height
   let height = switch heightType {
   | GooglePay(val) => val
   | _ => 48

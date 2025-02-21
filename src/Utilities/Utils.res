@@ -1287,6 +1287,7 @@ let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   | KlarnaElement => wallets->Array.filter(item => item === "klarna")
   | PazeElement => wallets->Array.filter(item => item === "paze")
   | SamsungPayElement => wallets->Array.filter(item => item === "samsung_pay")
+  | AmazonPayElement => wallets->Array.filter(item => item === "amazon_pay")
   | _ => wallets
   }
 }
@@ -1298,6 +1299,7 @@ let expressCheckoutComponents = [
   "klarna",
   "paze",
   "samsungPay",
+  "amazonPay",
   "expressCheckout",
 ]
 
@@ -1323,6 +1325,7 @@ let walletElementPaymentType: array<CardThemeType.mode> = [
   SamsungPayElement,
   KlarnaElement,
   PazeElement,
+  AmazonPayElement,
   ExpressCheckoutElement,
 ]
 

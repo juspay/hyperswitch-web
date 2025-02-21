@@ -17,6 +17,7 @@ type mode =
   | SamsungPayElement
   | KlarnaElement
   | PazeElement
+  | AmazonPayElement
   | ExpressCheckoutElement
   | PaymentMethodsManagement
   | NONE
@@ -109,6 +110,7 @@ let getPaymentMode = val => {
   | "klarna" => KlarnaElement
   | "expressCheckout" => ExpressCheckoutElement
   | "paze" => PazeElement
+  | "amazonPay" => AmazonPayElement
   | "paymentMethodsManagement" => PaymentMethodsManagement
   | _ => NONE
   }

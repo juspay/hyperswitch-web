@@ -16,6 +16,7 @@ function Payment() {
 
   const getPaymentData = async () => {
     try {
+      console.log("here2")
       const [configResponse, urlsResponse] = await Promise.all([
         fetch(`${url}/config`),
         fetch(`${url}/urls`),

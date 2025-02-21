@@ -92,6 +92,8 @@ type eventName =
   | SAMSUNG_PAY
   | CLICK_TO_PAY_SCRIPT
   | CLICK_TO_PAY_FLOW
+  | AMAZON_PAY_SCRIPT
+  | AMAZON_PAY
 
 let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
 

@@ -241,6 +241,53 @@ let achBankDebitBody = (
     ),
   ])
 
+let amazonPayBody = () => [
+  ("payment_method", "wallet"->JSON.Encode.string),
+  ("payment_method_type", "amazon_pay"->JSON.Encode.string),
+  ("payment_experience", "invoke_sdk_client"->JSON.Encode.string),
+  (
+    "payment_method_data",
+      [
+        (
+          "wallet",
+          [
+            (
+              "amazon_pay",
+              [
+                ("checkout_session_id", ""->JSON.Encode.string),
+              ]->Utils.getJsonFromArrayOfJson,
+            ),
+          ]->Utils.getJsonFromArrayOfJson,
+        ),
+      ]->Utils.getJsonFromArrayOfJson,
+  ),
+  (
+    "shipping",
+      [
+        (
+          "address",
+            [
+              ("line1", ""->JSON.Encode.string),
+              ("line2", ""->JSON.Encode.string),
+              ("line3", ""->JSON.Encode.string),
+              ("city", ""->JSON.Encode.string),
+              ("state", ""->JSON.Encode.string),
+              ("zip", ""->JSON.Encode.string),
+              ("country", ""->JSON.Encode.string),
+              ("first_name", ""->JSON.Encode.string),
+              ("last_name", ""->JSON.Encode.string),
+            ]->Utils.getJsonFromArrayOfJson,
+        ),
+        (
+          "phone",
+          [
+            ("number", ""->JSON.Encode.string),
+          ]->Utils.getJsonFromArrayOfJson,
+        )
+      ]->Utils.getJsonFromArrayOfJson,
+  ),
+]
+
 let bacsBankDebitBody = (
   ~email,
   ~accNum,

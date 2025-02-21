@@ -60,7 +60,7 @@ type terms = {
   usBankAccount: showTerms,
 }
 type buttonHeight = Default | Custom
-type heightType = ApplePay(int) | GooglePay(int) | Paypal(int) | Klarna(int) | SamsungPay(int)
+type heightType = ApplePay(int) | GooglePay(int) | Paypal(int) | Klarna(int) | SamsungPay(int) | AmazonPay(int)
 type googlePayStyleType = Default | Buy | Donate | Checkout | Subscribe | Book | Pay | Order
 type samsungPayStyleType = Buy
 
@@ -79,17 +79,19 @@ type applePayStyleType =
   | Support
   | Tip
   | Contribute
+type amazonPayStyleType = Buy
 type styleType =
   | ApplePay(applePayStyleType)
   | GooglePay(googlePayStyleType)
   | Paypal(paypalStyleType)
   | SamsungPay(samsungPayStyleType)
-type styleTypeArray = (styleType, styleType, styleType, styleType)
+  | AmazonPay(amazonPayStyleType)
+type styleTypeArray = (styleType, styleType, styleType, styleType, styleType)
 type theme = Dark | Light | Outline
 type style = {
   type_: styleTypeArray,
   theme: theme,
-  height: (heightType, heightType, heightType, heightType, heightType),
+  height: (heightType, heightType, heightType, heightType, heightType, heightType),
   buttonRadius: int,
 }
 type wallets = {
@@ -100,6 +102,7 @@ type wallets = {
   klarna: showType,
   paze: showType,
   samsungPay: showType,
+  amazonPay: showType,
   style: style,
 }
 type business = {name: string}
@@ -279,9 +282,9 @@ let defaultFields = {
   billingDetails: JSONObject(defaultBilling),
 }
 let defaultStyle = {
-  type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal), SamsungPay(Buy)),
+  type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal), SamsungPay(Buy), AmazonPay(Buy)),
   theme: Light,
-  height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48), SamsungPay(48)),
+  height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48), SamsungPay(48), AmazonPay(48)),
   buttonRadius: 2,
 }
 let defaultWallets = {
@@ -292,6 +295,7 @@ let defaultWallets = {
   klarna: Auto,
   paze: Auto,
   samsungPay: Auto,
+  amazonPay: Auto,
   style: defaultStyle,
 }
 let defaultBillingAddress = {
@@ -494,6 +498,11 @@ let getPayPalType = str => {
     Paypal(Paypal)
   }
 }
+let getAmazonPayType = str => {
+  switch str {
+  | _ => AmazonPay(Buy)
+  }
+}
 let getTypeArray = (str, logger) => {
   let goodVals = [
     "checkout",
@@ -517,7 +526,7 @@ let getTypeArray = (str, logger) => {
   if !Array.includes(goodVals, str) {
     str->unknownPropValueWarning(goodVals, "options.wallets.style.type", ~logger)
   }
-  (str->getApplePayType, str->getGooglePayType, str->getPayPalType, str->getSamsungPayType)
+  (str->getApplePayType, str->getGooglePayType, str->getPayPalType, str->getSamsungPayType, str->getAmazonPayType)
 }
 
 let getShowDetails = (~billingDetails, ~logger) => {
@@ -766,6 +775,18 @@ let getKlarnaHeight: (int, 'a) => heightType = (val, logger) => {
   }
 }
 
+let getAmazonHeight: (int, 'a) => heightType = (val, logger) => {
+  if val < 45 {
+    valueOutRangeWarning(val, "options.style.height", "[45-192] - AmazonPay. Value set to min", ~logger)
+    AmazonPay(45)
+  } else if val > 192 {
+    valueOutRangeWarning(val, "options.style.height", "[45-192] - AmazonPay. Value set to max", ~logger)
+    AmazonPay(192)
+  } else {
+    AmazonPay(val)
+  }
+}
+
 let getTheme = (str, logger) => {
   switch str {
   | "outline" => Outline
@@ -783,6 +804,7 @@ let getHeightArray = (val, logger) => {
     val->getPaypalHeight(logger),
     val->getKlarnaHeight(logger),
     val->getSamsungPayHeight(logger),
+    val->getAmazonHeight(logger),
   )
 }
 let getStyle = (dict, str, logger) => {
@@ -807,7 +829,7 @@ let getWallets = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna", "samsungPay"],
+      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna", "samsungPay", "amazonPay"],
       json,
       "options.wallets",
       ~logger,
@@ -837,6 +859,10 @@ let getWallets = (dict, str, logger) => {
       ),
       samsungPay: getWarningString(json, "samsungPay", "auto", ~logger)->getShowType(
         "options.wallets.samsungPay",
+        logger,
+      ),
+      amazonPay: getWarningString(json, "amazonPay", "auto", ~logger)->getShowType(
+        "options.wallets.amazonPay",
         logger,
       ),
       style: getStyle(json, "style", logger),

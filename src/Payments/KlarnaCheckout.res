@@ -14,7 +14,7 @@ let make = () => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (klarnaClicked, setKlarnaClicked) = React.useState(_ => false)
 
-  let (_, _, _, heightType, _) = options.wallets.style.height
+  let (_, _, _, heightType, _, _) = options.wallets.style.height
   let height = switch heightType {
   | Klarna(val) => val
   | _ => 48

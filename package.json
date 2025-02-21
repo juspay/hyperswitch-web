@@ -33,8 +33,8 @@
     "re:format": "rescript format -all",
     "re:start": "rescript -w",
     "setup:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js",
-    "start": "cross-env sdkEnv=local webpack serve --config webpack.dev.js",
-    "start:playground": "npm run setup:playground && npm run start",
+    "start": "cross-env sdkEnv=local enableLogging=false webpack serve --config webpack.dev.js",
+    "start:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js && npm run start",
     "test": "cd cypress-tests && npm run cypress:run",
     "test:hooks": "npx eslint src/"
   },

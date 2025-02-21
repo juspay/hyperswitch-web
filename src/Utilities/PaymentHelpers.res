@@ -10,6 +10,7 @@ let getPaymentType = paymentMethodType =>
   | "samsung_pay" => Samsungpay
   | "google_pay" => Gpay
   | "paze" => Paze
+  | "amazon_pay" => AmazonPay
   | "debit"
   | "credit"
   | "" =>

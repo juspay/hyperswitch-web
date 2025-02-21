@@ -1,9 +1,9 @@
 open Utils
 
-type wallet = Gpay | Paypal | Klarna | ApplePay | SamsungPay | Paze | ClickToPay | NONE
+type wallet = Gpay | Paypal | Klarna | ApplePay | SamsungPay | Paze | ClickToPay | AmazonPay | NONE
 
 type tokenCategory =
-  ApplePayObject | GooglePayThirdPartyObject | SamsungPayObject | PazeObject | ClickToPayObject | Others
+  ApplePayObject | GooglePayThirdPartyObject | SamsungPayObject | PazeObject | ClickToPayObject | AmazonPayObject | Others
 
 type paymentType = Wallet | Others
 
@@ -33,6 +33,7 @@ type tokenType =
   | PazeToken(array<JSON.t>)
   | SamsungPayToken(array<JSON.t>)
   | ClickToPayToken(array<JSON.t>)
+  | AmazonPayToken(array<JSON.t>)
   | OtherToken(array<token>)
 
 type optionalTokenType =
@@ -41,6 +42,7 @@ type optionalTokenType =
   | PazeTokenOptional(option<JSON.t>)
   | SamsungPayTokenOptional(option<JSON.t>)
   | ClickToPayTokenOptional(option<JSON.t>)
+  | AmazonPayTokenOptional(option<JSON.t>)
   | OtherTokenOptional(option<token>)
 
 type sessions = {
@@ -76,6 +78,7 @@ let getWallet = str => {
   | "google_pay" => Gpay
   | "paze" => Paze
   | "click_to_pay" => ClickToPay
+  | "amazon_pay" => AmazonPay
   | _ => NONE
   }
 }
@@ -136,7 +139,11 @@ let itemToObjMapper = (dict, returnType) => {
       clientSecret: getString(dict, "client_secret", ""),
       sessionsToken: SamsungPayToken(getSessionsTokenJson(dict, "session_token")),
     }
-
+  | AmazonPayObject => {
+    paymentId: getString(dict, "payment_id", ""),
+    clientSecret: getString(dict, "client_secret", ""),
+    sessionsToken: AmazonPayToken(getSessionsTokenJson(dict, "session_token")),
+  }
   | ClickToPayObject => {
       paymentId: getString(dict, "payment_id", ""),
       clientSecret: getString(dict, "client_secret", ""),
@@ -169,5 +176,6 @@ let getPaymentSessionObj = (tokenType, val) =>
   | PazeToken(arr) => PazeTokenOptional(getWalletFromTokenType(arr, val))
   | SamsungPayToken(arr) => SamsungPayTokenOptional(getWalletFromTokenType(arr, val))
   | ClickToPayToken(arr) => ClickToPayTokenOptional(getWalletFromTokenType(arr, val))
+  | AmazonPayToken(arr) => AmazonPayTokenOptional(getWalletFromTokenType(arr, val))
   | OtherToken(arr) => OtherTokenOptional(arr->Array.find(item => item.walletName == val))
   }

@@ -178,6 +178,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     isPaypalSDKFlow,
     isPaypalRedirectFlow,
   } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
+  let amazonPaySessionObj = SessionsType.itemToObjMapper(dict, AmazonPayObject)
+  let amazonPayToken = SessionsType.getPaymentSessionObj(amazonPaySessionObj.sessionsToken, AmazonPay)
 
   React.useEffect(() => {
     switch paymentMethodList {
@@ -465,6 +467,26 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             </RenderIf>
           }}
         </SessionPaymentWrapper>
+      | AmazonPay =>
+        // <SessionPaymentWrapper>
+        //   {switch amazonPayToken {
+        //     | OtherTokenOptional(optToken) =>
+        //       <ReusableReactSuspense loaderComponent={loader()} componentName="AmazonPayLazy">
+        //         {switch amazonPayToken {
+        //       | AmazonPayTokenOptional(amazonPayThirdPartyOptToken) =>
+        //         <AmazonPayLazy
+        //           // sessionObj=optToken
+        //           // thirdPartySessionObj=amazonPayThirdPartyOptToken
+        //           walletOptions
+        //           // paymentType
+        //         />
+        //       | _ =>
+        //         <AmazonPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions paymentType />
+        //       }}
+        //       </ReusableReactSuspense>
+        //   }}
+        // </SessionPaymentWrapper>
+        React.null
       | _ =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentType paymentMethodName=selectedOption />

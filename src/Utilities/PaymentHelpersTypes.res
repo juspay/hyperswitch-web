@@ -8,6 +8,7 @@ type payment =
   | Paypal
   | Samsungpay
   | Paze
+  | AmazonPay
   | Other
 
 type paymentIntent = (

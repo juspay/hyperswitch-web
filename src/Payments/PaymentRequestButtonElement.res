@@ -1,5 +1,5 @@
 type wallet =
-  GPayWallet | PaypalWallet | ApplePayWallet | KlarnaWallet | SamsungPayWallet | PazeWallet | NONE
+  GPayWallet | PaypalWallet | ApplePayWallet | KlarnaWallet | SamsungPayWallet | PazeWallet | AmazonPayWallet | NONE
 let paymentMode = str => {
   switch str {
   | "gpay"
@@ -14,6 +14,9 @@ let paymentMode = str => {
     SamsungPayWallet
   | "klarna" => KlarnaWallet
   | "paze" => PazeWallet
+  | "amazonpay"
+  | "amazon_pay" =>
+    AmazonPayWallet
   | _ => NONE
   }
 }
@@ -22,7 +25,7 @@ module WalletsSaveDetailsText = {
   @react.component
   let make = (~paymentType) => {
     open RecoilAtoms
-    let {isGooglePay, isApplePay, isPaypal, isSamsungPay} = Recoil.useRecoilValueFromAtom(
+    let {isGooglePay, isApplePay, isPaypal, isSamsungPay, isAmazonPay} = Recoil.useRecoilValueFromAtom(
       areOneClickWalletsRendered,
     )
     let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -30,7 +33,7 @@ module WalletsSaveDetailsText = {
 
     <RenderIf
       condition={PaymentUtils.isAppendingCustomerAcceptance(~isGuestCustomer, ~paymentType) &&
-      (isGooglePay || isApplePay || isPaypal || isSamsungPay)}>
+      (isGooglePay || isApplePay || isPaypal || isSamsungPay || isAmazonPay)}>
       <div className="flex items-center text-xs mt-2">
         <Icon name="lock" size=10 className="mr-1" />
         <em className="text-left text-gray-400">
@@ -76,9 +79,21 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
   let klarnaTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Klarna)
   let pazeTokenObj = getPaymentSessionObj(sessionObj.sessionsToken, Paze)
 
+  let amazonPaySessionObj = itemToObjMapper(dict, AmazonPayObject)
+  let amazonPayToken = getPaymentSessionObj(
+    amazonPaySessionObj.sessionsToken,
+    AmazonPay,
+  )
+
+  let amazonPaySessionObj = itemToObjMapper(dict, AmazonPayObject)
+  let amazonPayToken = getPaymentSessionObj(
+    amazonPaySessionObj.sessionsToken,
+    AmazonPay,
+  )
+
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-
+  Console.log(walletOptions)
   <div role="region" ariaLabel="Wallet Section" className="flex flex-col gap-2 h-auto w-full">
     {walletOptions
     ->Array.mapWithIndex((item, i) => {
@@ -160,6 +175,20 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
                   | OtherTokenOptional(optToken) =>
                     switch optToken {
                     | Some(token) => <PazeButton token />
+                    | None => React.null
+                    }
+                  | _ => React.null
+                  }}
+                </SessionPaymentWrapper>
+              </RenderIf>
+            | AmazonPayWallet =>
+              Console.log("inside PaymentRequestButtonElement AmazonPayWallet")
+              <RenderIf condition={options.wallets.amazonPay === Auto}>
+                <SessionPaymentWrapper type_={Wallet}>
+                  {switch amazonPayToken {
+                  | AmazonPayTokenOptional(optToken) =>
+                    switch optToken {
+                    | Some(token) => <AmazonPay walletOptions/>
                     | None => React.null
                     }
                   | _ => React.null

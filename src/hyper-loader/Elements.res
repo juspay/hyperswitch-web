@@ -3,6 +3,7 @@ open ErrorUtils
 open Identity
 open Utils
 open EventListenerManager
+open AmazonPayTypes
 
 type trustPayFunctions = {
   finishApplePaymentV2: (string, ApplePayTypes.paymentRequestData, string) => promise<JSON.t>,
@@ -26,7 +27,6 @@ let make = (
     let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
-
     let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
     let redirect = ref("if_required")
 
@@ -299,6 +299,7 @@ let make = (
       | "expressCheckout"
       | "paze"
       | "samsungPay"
+      | "amazonPay"
       | "paymentMethodsManagement"
       | "payment" => ()
       | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger)
@@ -855,11 +856,19 @@ let make = (
                   let walletName = item->getDictFromJson->getString("wallet_name", "")
                   walletName === "samsung_pay" || walletName === "samsungpay"
                 })
+                let amazonPayPresent = sessionsArr->Array.find(item => {
+                  let walletName =
+                    item
+                    ->getDictFromJson
+                    ->getString("wallet_name", "")
+                    walletName === "amazon_pay" || walletName === "amazonpay"
+                })
 
-                (json, applePayPresent, googlePayPresent, samsungPayPresent)->resolve
+                (json, applePayPresent, googlePayPresent, samsungPayPresent, amazonPayPresent)->resolve
               }
               ->then(res => {
-                let (json, applePayPresent, googlePayPresent, samsungPayPresent) = res
+                let (json, applePayPresent, googlePayPresent, samsungPayPresent, amazonPayPresent) = res
+                let (json, applePayPresent, googlePayPresent, samsungPayPresent, amazonPayPresent) = res
                 if (
                   componentType->getIsComponentTypeForPaymentElementCreate &&
                     applePayPresent->Option.isSome
@@ -1263,6 +1272,256 @@ let make = (
                     ~value="SAMSUNG PAY is set as never by merchant",
                     ~eventName=SAMSUNG_PAY,
                     ~paymentMethod="SAMSUNG_PAY",
+                    ~logType=INFO,
+                  )
+                }
+                if (
+                  componentType->getIsComponentTypeForPaymentElementCreate &&
+                  amazonPayPresent->Option.isSome &&
+                  wallets.amazonPay === Auto
+                ) {
+                  let dict = json->getDictFromJson
+                  let sessionObj = SessionsType.itemToObjMapper(dict, AmazonPayObject)
+                  let amazonPayToken = SessionsType.getPaymentSessionObj(
+                    sessionObj.sessionsToken,
+                    AmazonPay,
+                  )
+                  let tokenObj = switch amazonPayToken {
+                  | AmazonPayTokenOptional(optToken) => optToken
+                  | _=> None
+                  }
+
+                  let sessionObject =
+                    tokenObj
+                    ->Option.flatMap(JSON.Decode.object)
+                    ->Option.getOr(Dict.make())
+
+                  Console.log(sessionObject)
+
+                  let deliveryOptions = sessionObject
+                    ->getArray("delivery_options")
+                    ->Array.map(item => {
+                      let obj = item->getDictFromJson
+                      let price = Js.Json.decodeObject(item)
+                        ->Option.flatMap(eventDict => Dict.get(eventDict, "price"))
+                        ->Option.getOr(Js.Json.null)
+
+                      let shippingMethod = Js.Json.decodeObject(item)
+                        ->Option.flatMap(eventDict => Dict.get(eventDict, "shipping_method"))
+                        ->Option.getOr(Js.Json.null)
+
+                      Js.Json.object_(Js.Dict.fromArray([
+                        ("id", Js.Json.string(obj->getString("id", ""))),
+                        ("is_default", Js.Json.boolean(obj->getBool("is_default", false))),
+                        ("price", price),
+                        ("shipping_method", shippingMethod)
+                      ]))
+                    })
+                    ->Js.Json.array
+
+                  let merchant_id = sessionObject->getString("merchant_id", "")
+                  let ledgerCurrency = sessionObject->getString("ledger_currency", "")
+                  let storeId = sessionObject->getString("store_id", "")
+                  let paymentIntent = sessionObject->getString("payment_intent", "")
+                  let totalShippingAmount = sessionObject->getString("total_shipping_amount", "")
+                  let totalTaxAmount = sessionObject->getString("total_tax_amount", "")
+                  let totalBaseAmount = sessionObject->getString("total_base_amount", "")
+
+                  let buyerShippingAddress = ref(Js.Json.null)
+                  let amazonPayCheckoutSessionId = ref(Js.Json.null)
+                  let totalChargeAmount = (totalShippingAmount->Float.fromString->Option.getOr(0.0) +. totalBaseAmount->Float.fromString->Option.getOr(0.0) +. totalTaxAmount->Float.fromString->Option.getOr(0.0))->Float.toString->JSON.Encode.string
+
+                  try {
+                    open AmazonPayTypes
+                    // let config = {
+                    //   merchantId: merchant_id,
+                    //   ledgerCurrency: ledgerCurrency,
+                    //   sandbox: true,
+                    //   checkoutLanguage: "en_US",
+                    //   productType: "PayAndShip",
+                    //   placement: "Cart",
+                    //   buttonColor: "Gold",
+                    //   checkoutSessionConfig: {
+                    //     storeId: storeId,
+                    //     paymentDetails: {
+                    //       paymentIntent: paymentIntent
+                    //     }
+                    //   },
+                    //   onInitCheckout: event => {
+                    //     buyerShippingAddress := Js.Json.decodeObject(event)
+                    //       ->Option.flatMap(eventDict => Dict.get(eventDict, "shippingAddress"))
+                    //       ->Option.getOr(Js.Json.null)
+
+                    //     Js.log2("onInitCheckout:", Js.Json.stringifyAny(event))
+
+                    //     Js.Json.object_(
+                    //       Dict.fromArray([
+                    //         ("totalShippingAmount", Js.Json.object_(
+                    //           Dict.fromArray([
+                    //             ("amount", totalShippingAmount->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalBaseAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", totalBaseAmount->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalTaxAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", totalTaxAmount->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalDiscountAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", "0"->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalChargeAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", totalChargeAmount),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("deliveryOptions", deliveryOptions),
+                    //       ])
+                    //     )
+                    //   },
+                    //   onShippingAddressSelection: event => {
+                    //     buyerShippingAddress := Js.Json.decodeObject(event)
+                    //       ->Option.flatMap(eventDict => Dict.get(eventDict, "shippingAddress"))
+                    //       ->Option.getOr(Js.Json.null)
+                    //     Js.log2("onShippingAddressSelection:", Js.Json.stringifyAny(event))
+                    //     Js.Json.object_(
+                    //       Dict.fromArray([
+                    //         ("totalShippingAmount", Js.Json.object_(
+                    //           Dict.fromArray([
+                    //             ("amount", totalShippingAmount->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalBaseAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", totalBaseAmount->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalTaxAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", totalTaxAmount->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalDiscountAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", "0"->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalChargeAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", totalChargeAmount),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //       ])
+                    //     )
+                    //   },
+                    //   onCompleteCheckout: event => {
+                    //     amazonPayCheckoutSessionId := Js.Json.decodeObject(event)
+                    //       ->Option.flatMap(eventDict => Dict.get(eventDict, "shippingAddress"))
+                    //       ->Option.getOr(Js.Json.null)
+                    //     Js.log2("onCompleteCheckout:", event)
+                    //     Js.log("Please use this values while calling backend API:")
+                    //     Js.log2("Shipping Address:", Js.Json.stringifyAny(buyerShippingAddress))
+                    //     Js.log2("Amazon Checkout Session ID:", amazonPayCheckoutSessionId)
+                    //   },
+                    //   onDeliveryOptionSelection: event => {
+                    //     Js.log2("onDeliveryOptionSelection:", Js.Json.stringifyAny(event))
+                    //     let newShippingAmount = event
+                    //       -> Js.Json.decodeObject
+                    //       -> Option.flatMap(eventDict => Dict.get(eventDict, "deliveryOptions"))
+                    //       -> Option.flatMap(deliveryOptionsJson => Js.Json.decodeObject(deliveryOptionsJson))
+                    //       -> Option.flatMap(deliveryOptionsDict => Dict.get(deliveryOptionsDict,"amount"))
+                    //       -> Option.flatMap(amountJson => Js.Json.decodeString(amountJson))
+                    //       -> Option.flatMap(amountString => Some(Js.Float.fromString(amountString)))
+                    //       -> Option.getOr(totalShippingAmount->Float.fromString->Option.getOr(0.0))
+
+                    //     let newTotalChargeAmount = (newShippingAmount +. totalBaseAmount->Float.fromString->Option.getOr(0.0) +. totalTaxAmount->Float.fromString->Option.getOr(0.0))->Float.toString->JSON.Encode.string
+                    //     Js.Json.object_(
+                    //       Dict.fromArray([
+                    //         ("totalShippingAmount", Js.Json.object_(
+                    //           Dict.fromArray([
+                    //             ("amount", Js.Json.string(newShippingAmount->Float.toString)),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalBaseAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", totalBaseAmount->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalTaxAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", totalTaxAmount->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalDiscountAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", "0"->JSON.Encode.string),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //         ("totalChargeAmount", Js.Json.object_(
+                    //           Js.Dict.fromArray([
+                    //             ("amount", newTotalChargeAmount),
+                    //             ("currencyCode", "USD"->JSON.Encode.string),
+                    //           ])
+                    //         )),
+                    //       ])
+                    //     )
+                    //   },
+                    //   onCancel: _ => {
+                    //     Js.log("Checkout Cancelled")
+                    //   },
+                    // }
+
+                    // Js.log2("config:\n",config)
+
+                    // let amazonPayConfigDict = [("amazonPayConfig", config->anyTypeToJson)]->Dict.fromArray
+                    // mountedIframeRef->Window.iframePostMessage(amazonPayConfigDict)
+
+                    let amazonPayConfigDict = [("amazonPayConfig", {
+                      merchantId: merchant_id,
+                      ledgerCurrency: ledgerCurrency,
+                      storeId: storeId,
+                      paymentIntent: paymentIntent,
+                      totalShippingAmount: totalShippingAmount,
+                      totalTaxAmount: totalTaxAmount,
+                      totalBaseAmount: totalBaseAmount,
+                      deliveryOptions: deliveryOptions,
+                    }->anyTypeToJson)]->Dict.fromArray
+                    mountedIframeRef->Window.iframePostMessage(amazonPayConfigDict)
+                  } catch {
+                  | err =>
+                    logger.setLogError(
+                      ~value=`AMAZON PAY Not Ready - ${err->formatException->JSON.stringify}`,
+                      ~eventName=SAMSUNG_PAY,
+                      ~paymentMethod="AMAZON_PAY",
+                      ~logType=ERROR,
+                    )
+                    Console.log("Error loading Amazon Pay")
+                  }
+                } else if wallets.amazonPay === Never {
+                  logger.setLogInfo(
+                    ~value="AMAZON PAY is set as never by merchant",
+                    ~eventName=AMAZON_PAY,
+                    ~paymentMethod="AMAZON_PAY",
                     ~logType=INFO,
                   )
                 }

@@ -27,7 +27,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("apple_pay")
 
-  let (heightType, _, _, _, _) = options.wallets.style.height
+  let (heightType, _, _, _, _, _) = options.wallets.style.height
   let height = switch heightType {
   | ApplePay(val) => val
   | _ => 48

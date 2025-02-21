@@ -307,6 +307,26 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         )
       }
 
+      if (
+        Window.querySelectorAll(`script[src="https://static-na.payments-amazon.com/checkout.js"]`)->Array.length === 0
+      ) {
+        let amazonPayScriptUrl = "https://static-na.payments-amazon.com/checkout.js"
+        let amazonPayScript = Window.createElement("script")
+        amazonPayScript->Window.elementSrc(amazonPayScriptUrl)
+        amazonPayScript->Window.elementOnerror(err => {
+          logger.setLogError(
+            ~value="ERROR DURING LOADING AMAZON PAY SCRIPT",
+            ~eventName=AMAZON_PAY_SCRIPT,
+            ~internalMetadata=err->formatException->JSON.stringify,
+            ~paymentMethod="AMAZON_PAY"
+          )
+        })
+        Window.body->Window.appendChild(amazonPayScript)
+        amazonPayScript->Window.elementOnload(_ =>
+          logger.setLogInfo(~value="AmazonPay Script Loaded", ~eventName=AMAZON_PAY_SCRIPT)
+        )
+      }
+
       let iframeRef = ref([])
       let clientSecret = ref("")
       let ephemeralKey = ref("")

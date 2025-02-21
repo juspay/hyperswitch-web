@@ -1,4 +1,5 @@
-import { PaymentElement } from "@juspay-tech/react-hyper-js";
+// import { PaymentElement } from "@juspay-tech/react-hyper-js";
+import { ExpressCheckoutElement } from "@juspay-tech/react-hyper-js";
 import Cart from "./Cart";
 import { useState, useEffect } from "react";
 import { useHyper, useElements } from "@juspay-tech/react-hyper-js";
@@ -130,7 +131,8 @@ export default function CheckoutForm() {
             <div className="payment-form">
               <form id="payment-form" onSubmit={handleSubmit}>
                 <div className="paymentElement">
-                  <PaymentElement id="payment-element" options={options} />
+                  {/* <PaymentElement id="payment-element" options={options} /> */}
+                  <ExpressCheckoutElement id="express-checkout" options={options} />
                 </div>
                 <button
                   disabled={isProcessing || !hyper || !elements}

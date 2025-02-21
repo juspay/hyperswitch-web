@@ -36,63 +36,95 @@ app.get("/urls", (req, res) => {
   });
 });
 
+// const paymentData = {
+//   "amount": 5044,
+//   "currency": "USD",
+//   "shipping_cost": 5000,
+//   "order_tax_amount": 1000,
+//   "confirm": false,
+//   "metadata": {
+//       "delivery_options": [
+//           {
+//               "id": "standard-delivery",
+//               "price":{
+//                   "amount": "20.00",
+//                   "currency_code":"USD"
+//               },
+//               "shipping_method":{
+//                   "shipping_method_name":"standard-courier",
+//                   "shipping_method_code":"standard-courier"
+//               },
+//               "is_default":true
+//           },
+//           {
+//               "id":"express-delivery",
+//               "price":{
+//                   "amount":"50",
+//                   "currency_code":"USD"
+//               },
+//               "shipping_method":{
+//                   "shipping_method_name":"express-courier",
+//                   "shipping_method_code":"express-courier"
+//               },
+//               "is_default":false
+//           }
+//       ]
+//   },
+//   "shipping": {
+//       "address": {
+//           "line1": "10 Ditka Ave",
+//           "line2": "Suite 2500",
+//           "line3": null,
+//           "city": "Chicago",
+//           "state": "IL",
+//           "zip": "60602",
+//           "country": "US",
+//           "first_name": "Susie",
+//           "last_name": "Smith"
+//       },
+//       "phone": {
+//           "number": "8000000000"
+//       }
+//   }
+// };
+
+// console.log(paymentData.metadata);
+
 const paymentData = {
-  currency: "USD",
-  amount: 2999,
-  order_details: [
-    {
-      product_name: "Apple iPhone 15",
-      quantity: 1,
-      amount: 2999,
-    },
-  ],
-  confirm: false,
-  capture_method: "automatic",
-  authentication_type: "three_ds",
-  customer_id: "hyperswitch_sdk_demo_id",
-  email: "hyperswitch_sdk_demo_id@gmail.com",
-  request_external_three_ds_authentication: false,
-  description: "Hello this is description",
-  shipping: {
-    address: {
-      line1: "1467",
-      line2: "Harrison Street",
-      line3: "Harrison Street",
-      city: "San Fransico",
-      state: "California",
-      zip: "94122",
-      country: "US",
-      first_name: "joseph",
-      last_name: "Doe",
-    },
-    phone: {
-      number: "8056594427",
-      country_code: "+91",
-    },
-  },
-  metadata: {
-    udf1: "value1",
-    new_customer: "true",
-    login_date: "2019-09-10T10:11:12Z",
-  },
-  billing: {
-    address: {
-      line1: "1467",
-      line2: "Harrison Street",
-      line3: "Harrison Street",
-      city: "San Fransico",
-      state: "California",
-      zip: "94122",
-      country: "US",
-      first_name: "joseph",
-      last_name: "Doe",
-    },
-    phone: {
-      number: "8056594427",
-      country_code: "+91",
-    },
-  },
-};
+  "amount": 5044,
+  "currency": "USD",
+  "shipping_cost": 2000,
+  "order_tax_amount": 1000,
+  "confirm": false,
+  "metadata": {
+      "delivery_options": [
+          {
+              "id": "standard-delivery",
+              "price":{
+                  "amount": 2000,
+                  "currency_code":"USD"
+              },
+              "shipping_method":{
+                  "shipping_method_name":"standard-courier",
+                  "shipping_method_code":"standard-courier"
+              },
+              "is_default":true
+          },
+          {
+              "id":"express-delivery",
+              "price":{
+                  "amount": 5000,
+                  "currency_code":"USD"
+              },
+              "shipping_method":{
+                  "shipping_method_name":"express-courier",
+                  "shipping_method_code":"express-courier"
+              },
+              "is_default":false
+          }
+      ]
+  }
+}
 
 const profileId = process.env.PROFILE_ID;
 if (profileId) {
@@ -100,11 +132,13 @@ if (profileId) {
 }
 
 function createPaymentRequest() {
+  // console.log("heelo",paymentData.metadata);
   return paymentData;
 }
 
 app.get("/create-payment-intent", async (_, res) => {
   try {
+    // console.log("here")
     const paymentRequest = createPaymentRequest();
     const paymentIntent = await createPaymentIntent(paymentRequest);
 

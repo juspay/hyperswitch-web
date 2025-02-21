@@ -15,6 +15,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
+  let setIsAmazonPayReady = Recoil.useSetRecoilState(isAmazonPayReady)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
@@ -100,6 +101,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | SamsungPayElement
     | KlarnaElement
     | PazeElement
+    | AmazonPayElement
     | ExpressCheckoutElement
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
@@ -410,6 +412,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("isSamsungPayReady") {
           setIsSamsungPayReady(_ => dict->getBool("isSamsungPayReady", false))
+        }
+        if dict->getDictIsSome("isAmazonPayReady") {
+          setIsAmazonPayReady(_ => dict->getBool("isAmazonPayReady", false))
         }
         if (
           dict->getDictIsSome("customBackendUrl") &&
