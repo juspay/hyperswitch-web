@@ -10,12 +10,13 @@ module RenderSavedPaymentMethodItem = {
     ~expiryMonth,
     ~expiryYear,
   ) => {
-
     let expiryYearToTwoDigits = expiryYear->CardUtils.formatExpiryToTwoDigit
 
     switch paymentItem.paymentMethod {
     | "card" =>
-      <div className="flex flex-col items-start" role="group"
+      <div
+        className="flex flex-col items-start"
+        role="group"
         ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
         <div className="flex items-center" style={fontSize: "15px", fontWeight: "550"}>
           {React.string(paymentItem.card.nickname)}
@@ -30,18 +31,8 @@ module RenderSavedPaymentMethodItem = {
             {React.string(`XXXX `)}
             {React.string(paymentItem.card.last4Digits)}
           </div>
-          <span
-            style={{
-              width: "4px",
-              height: "4px",
-              borderRadius: "50%",
-              backgroundColor: "rgba(0, 0, 0, 0.6)",
-            }}
-          />
-          <div>
-            {React.string(expiryText ++ ` `)}
-            {React.string(`${expiryMonth}/${expiryYearToTwoDigits}`)}
-          </div>
+          <span className="w-1 h-1 rounded-full bg-black/60" />
+          <div> {React.string(expiryText ++ ` ${expiryMonth}/${expiryYearToTwoDigits}`)} </div>
         </div>
       </div>
 
@@ -139,7 +130,7 @@ let make = (
       ->formatCardExpiryNumber
       ->emitExpiryDate
 
-        PaymentUtils.emitPaymentMethodInfo(
+      PaymentUtils.emitPaymentMethodInfo(
         ~paymentMethod=paymentItem.paymentMethod,
         ~paymentMethodType,
         ~cardBrand=cardBrand->CardUtils.getCardType,
@@ -269,10 +260,10 @@ let make = (
             <div className="flex flex-col items-start mx-3">
               <RenderIf condition={isActive && displayBillingDetails}>
                 <div className="text-sm text-left gap-2 mt-5" style={marginLeft: "16%"}>
-                  <div style={fontWeight: "550"}>
-                    {React.string(billingDetailsText)}
+                  <div style={fontWeight: "550"}> {React.string(billingDetailsText)} </div>
+                  <div style={fontWeight: "400"}>
+                    {React.string(Array.joinWith(billingDetailsArray, ", "))}
                   </div>
-                  <div style={fontWeight: "400"}> {React.string(Array.joinWith(billingDetailsArray, ", "))} </div>
                 </div>
               </RenderIf>
               <RenderIf condition={isActive && innerLayout === Spaced}>

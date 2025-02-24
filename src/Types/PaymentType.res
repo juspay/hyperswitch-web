@@ -137,9 +137,7 @@ type addressDetails = {
   zip: option<string>,
 }
 
-type billingAddressPaymentMethod = {
-  address: addressDetails,
-}
+type billingAddressPaymentMethod = {address: addressDetails}
 
 type customerMethods = {
   paymentToken: string,
@@ -225,8 +223,8 @@ let defaultAddressDetails = {
   zip: None,
 }
 
-let defaultBillingAddressPaymentMethod = {
-  address: defaultAddressDetails
+let defaultDisplayBillingDetails = {
+  address: defaultAddressDetails,
 }
 
 let defaultCustomerMethods = {
@@ -242,7 +240,7 @@ let defaultCustomerMethods = {
   lastUsedAt: "",
   bank: {mask: ""},
   recurringEnabled: false,
-  billing: defaultBillingAddressPaymentMethod,
+  billing: defaultDisplayBillingDetails,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -924,15 +922,12 @@ let getAddressDetails = (dict, str) => {
   ->Option.getOr(defaultAddressDetails)
 }
 
-let getBillingAddressPaymentMethod = (dict, str) => {
+let getBillingAddressPaymentMethod = (dict, str) =>
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
-  ->Option.map(json => {
-    address: getAddressDetails(json, "address")
-  })
-    ->Option.getOr(defaultBillingAddressPaymentMethod)
-}
+  ->Option.map(json => {address: getAddressDetails(json, "address")})
+  ->Option.getOr(defaultDisplayBillingDetails)
 
 let getPaymentMethodType = dict => {
   dict->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
@@ -1006,7 +1001,7 @@ let getCustomerMethods = (dict, str) => {
           lastUsedAt: getString(dict, "last_used_at", ""),
           bank: dict->getBank,
           recurringEnabled: getBool(dict, "recurring_enabled", false),
-          billing: getBillingAddressPaymentMethod(json, "billing")
+          billing: getBillingAddressPaymentMethod(json, "billing"),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)
@@ -1197,5 +1192,5 @@ let convertClickToPayCardToCustomerMethod = (
     mask: "", // Just use the mask field that exists in the type
   },
   recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
-  billing: defaultBillingAddressPaymentMethod,
+  billing: defaultDisplayBillingDetails,
 }
