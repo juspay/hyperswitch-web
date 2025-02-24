@@ -60,7 +60,7 @@ let fetchCountryStateFromS3 = endpoint => {
 }
 
 let getBaseUrl = () => {
-  GlobalVars.isRunningInLocal ? "" : GlobalVars.sdkUrl
+  GlobalVars.isRunningLocally ? "" : GlobalVars.sdkUrl
 }
 
 let getCountryStateData = async (
