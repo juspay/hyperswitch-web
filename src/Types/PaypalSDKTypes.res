@@ -179,7 +179,7 @@ let getOrderDetails = (orderDetails, paymentType) => {
   }
 }
 
-let shippingAddressItemToObjMapper=dict=>{
+let shippingAddressItemToObjMapper = dict => {
   recipientName: dict->Utils.getOptionString("recipientName"),
   line1: dict->Utils.getOptionString("line1"),
   line2: dict->Utils.getOptionString("line2"),

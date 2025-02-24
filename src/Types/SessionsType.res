@@ -3,7 +3,12 @@ open Utils
 type wallet = Gpay | Paypal | Klarna | ApplePay | SamsungPay | Paze | ClickToPay | NONE
 
 type tokenCategory =
-  ApplePayObject | GooglePayThirdPartyObject | SamsungPayObject | PazeObject | ClickToPayObject | Others
+  | ApplePayObject
+  | GooglePayThirdPartyObject
+  | SamsungPayObject
+  | PazeObject
+  | ClickToPayObject
+  | Others
 
 type paymentType = Wallet | Others
 

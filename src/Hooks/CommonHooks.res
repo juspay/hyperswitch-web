@@ -1,6 +1,4 @@
-type contentRect = {
-  height: float,
-}
+type contentRect = {height: float}
 
 type element = {
   mutable getAttribute: string => string,

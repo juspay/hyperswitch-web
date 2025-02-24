@@ -58,14 +58,14 @@ let bubblegumRules = theme =>
       "color": theme.colorTextSecondary,
       "alignItems": "start",
       "transition": "background .15s ease, border .15s ease, box-shadow .15s ease",
-      "boxShadow": "0px 3px 10px rgba(18, 42, 66, 0.08)"
+      "boxShadow": "0px 3px 10px rgba(18, 42, 66, 0.08)",
     },
     ".Tab:hover": {
       "border": "0",
       "color": theme.colorText,
     },
-    ".Tab:focus":{
-      "border": "0"
+    ".Tab:focus": {
+      "border": "0",
     },
     ".Label": {
       "color": theme.colorText,
@@ -144,7 +144,7 @@ let bubblegumRules = theme =>
       "borderRadius": theme.borderRadius,
       // "border": `1px solid ${theme.borderColor}`,
       "borderColor": "transparent",
-      "boxShadow": "0px 3px 10px rgba(18, 42, 66, 0.08)"
+      "boxShadow": "0px 3px 10px rgba(18, 42, 66, 0.08)",
     },
     ".BlockDivider": {
       "backgroundColor": "#ebebeb",
@@ -209,8 +209,8 @@ let bubblegumRules = theme =>
       "fontWeight": theme.fontWeightLight,
       "fontSize": theme.fontSizeLg,
     },
-    ".CheckboxInput":{
-      "boxShadow": "0px 3px 10px rgba(18, 42, 66, 0.08)"
+    ".CheckboxInput": {
+      "boxShadow": "0px 3px 10px rgba(18, 42, 66, 0.08)",
     },
     ".PaymentMethodsHeaderLabel": {
       "color": theme.colorText,
