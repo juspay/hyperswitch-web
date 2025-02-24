@@ -59,10 +59,11 @@ let make = (~paymentType, ~className="") => {
   let cityRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
 
-  let (stateJson, setStatesJson) = React.useState(_ => None)
   let (showOtherFileds, setShowOtherFields) = React.useState(_ => false)
-
-  let countryNames = getCountryNames(Country.country)
+  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
+  let stateList = Recoil.useRecoilValueFromAtom(RecoilAtoms.stateAtom)
+  let stateNames = getStateNames(stateList, country, countryList)
+  let countryNames = getCountryNames(countryList)
 
   let checkPostalValidity = (
     postal: RecoilAtomTypes.field,
@@ -82,22 +83,6 @@ let make = (~paymentType, ~className="") => {
       })
     }
   }
-
-  React.useEffect0(() => {
-    open Promise
-    importStates("./../States.json")
-    ->then(res => {
-      setStatesJson(_ => Some(res.states))
-      resolve()
-    })
-    ->catch(_ => {
-      setStatesJson(_ => None)
-      resolve()
-    })
-    ->ignore
-
-    None
-  })
 
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
@@ -234,17 +219,15 @@ let make = (~paymentType, ~className="") => {
             />
           </RenderIf>
           <RenderIf condition={showField(showDetails.address, State) == Auto}>
-            {switch stateJson {
-            | Some(options) =>
-              <PaymentDropDownField
-                fieldName=localeString.stateLabel
-                value=state
-                className
-                setValue=setState
-                options={options->getStateNames(country)}
-              />
-            | None => React.null
-            }}
+            {stateNames->Array.length > 0
+              ? <PaymentDropDownField
+                  fieldName=localeString.stateLabel
+                  value=state
+                  className
+                  setValue=setState
+                  options={stateNames}
+                />
+              : React.null}
           </RenderIf>
         </div>
         <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>

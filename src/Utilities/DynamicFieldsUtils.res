@@ -41,7 +41,7 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
   }
 }
 
-let countryNames = Utils.getCountryNames(Country.country)
+let countryNames = Utils.getCountryNames(S3Utils.countryListData)
 
 let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
   BillingName,
@@ -371,6 +371,7 @@ let useSetInitialRequiredFields = (
     "bankAccountNumber",
     logger,
   )
+  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -447,7 +448,7 @@ let useSetInitialRequiredFields = (
           setFields(setPostalCode, postalCode, requiredField, false)
           if value !== "" && country === "" {
             let countryCode =
-              Country.getCountry(paymentMethodType)
+              Country.getCountry(paymentMethodType, countryList)
               ->Array.filter(item => item.isoAlpha2 === value)
               ->Array.get(0)
               ->Option.getOr(Country.defaultTimeZone)
@@ -469,7 +470,7 @@ let useSetInitialRequiredFields = (
       | AddressCountry(_) =>
         if value !== "" {
           let defaultCountry =
-            Country.getCountry(paymentMethodType)
+            Country.getCountry(paymentMethodType, countryList)
             ->Array.filter(item => item.isoAlpha2 === value)
             ->Array.get(0)
             ->Option.getOr(Country.defaultTimeZone)
@@ -554,6 +555,7 @@ let useRequiredFieldsBody = (
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
+  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -582,7 +584,7 @@ let useRequiredFieldsBody = (
       ).hyperSwitch
     | AddressCountry(_) => {
         let countryCode =
-          Country.getCountry(paymentMethodType)
+          Country.getCountry(paymentMethodType, countryList)
           ->Array.filter(item => item.countryName === country)
           ->Array.get(0)
           ->Option.getOr(Country.defaultTimeZone)

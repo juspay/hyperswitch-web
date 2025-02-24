@@ -40,6 +40,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   let (sortcode, setSortcode) = React.useState(_ => "")
   let (accountNumber, setAccountNumber) = React.useState(_ => "")
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
 
   let (sortCodeError, setSortCodeError) = React.useState(_ => "")
 
@@ -97,7 +98,7 @@ let make = (~paymentType: CardThemeType.mode) => {
           ~city=city.value,
           ~zip=postalCode.value,
           ~state=state.value,
-          ~country=getCountryCode(country.value).isoAlpha2,
+          ~country=getCountryCode(country.value, countryList).isoAlpha2,
           ~bankAccountHolderName=fullName.value,
         )
         intent(

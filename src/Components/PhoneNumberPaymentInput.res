@@ -9,8 +9,12 @@ let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
   let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", loggerState)
-  let clientCountry = getClientCountry(CardUtils.dateTimeFormat().resolvedOptions().timeZone)
-  let currentCountryCode = Utils.getCountryCode(clientCountry.countryName)
+  let countryList = Recoil.useRecoilValueFromAtom(countryAtom)
+  let clientCountry = getClientCountry(
+    CardUtils.dateTimeFormat().resolvedOptions().timeZone,
+    countryList,
+  )
+  let currentCountryCode = Utils.getCountryCode(clientCountry.countryName, countryList)
   let (displayValue, setDisplayValue) = React.useState(_ => "")
 
   let countryAndCodeCodeList =

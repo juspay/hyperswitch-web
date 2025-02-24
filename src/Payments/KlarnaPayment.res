@@ -16,9 +16,10 @@ let make = (~paymentType) => {
   )
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
+  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
 
   let countryNames =
-    Utils.getCountryNames(Country.country)->DropdownField.updateArrayOfStringToOptionsTypeArray
+    Utils.getCountryNames(countryList)->DropdownField.updateArrayOfStringToOptionsTypeArray
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {
@@ -27,7 +28,7 @@ let make = (~paymentType) => {
 
   open Utils
   let clientCountryCode =
-    Country.country
+    countryList
     ->Array.find(item => item.countryName == country)
     ->Option.getOr(Country.defaultTimeZone)
 

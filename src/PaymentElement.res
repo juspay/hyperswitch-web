@@ -57,6 +57,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (clickToPayConfig, isClickToPayAuthenticateError))
 
   let layoutClass = CardUtils.getLayoutClass(layout)
+  CountryStateHooks.useCountryState()
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
