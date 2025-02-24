@@ -18,21 +18,16 @@ module RenderSavedPaymentMethodItem = {
         className="flex flex-col items-start"
         role="group"
         ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
-        <div className="flex items-center" style={fontSize: "15px", fontWeight: "550"}>
+        <div className="flex items-center text-[15px] font-medium">
           {React.string(paymentItem.card.nickname)}
           <RenderIf condition={displayDefaultSavedPaymentIcon && defaultPaymentMethodSet}>
             <Icon className="ml-2" size=16 name="checkmark" style={color: themeObj.colorPrimary} />
           </RenderIf>
         </div>
-        <div
-          className={`PickerItemLabel flex flex-row gap-2 items-center text-sm`}
-          style={{fontWeight: "400"}}>
-          <div ariaHidden=true>
-            {React.string(`XXXX `)}
-            {React.string(paymentItem.card.last4Digits)}
-          </div>
+        <div className={`PickerItemLabel flex flex-row gap-2 items-center text-sm font-normal`}>
+          <div ariaHidden=true> {React.string(`XXXX ${paymentItem.card.last4Digits}`)} </div>
           <span className="w-1 h-1 rounded-full bg-black/60" />
-          <div> {React.string(expiryText ++ ` ${expiryMonth}/${expiryYearToTwoDigits}`)} </div>
+          <div> {React.string(`${expiryText} ${expiryMonth}/${expiryYearToTwoDigits}`)} </div>
         </div>
       </div>
 
@@ -260,8 +255,8 @@ let make = (
             <div className="flex flex-col items-start mx-3">
               <RenderIf condition={isActive && displayBillingDetails}>
                 <div className="text-sm text-left gap-2 mt-5" style={marginLeft: "16%"}>
-                  <div style={fontWeight: "550"}> {React.string(billingDetailsText)} </div>
-                  <div style={fontWeight: "400"}>
+                  <div className="font-semibold"> {React.string(billingDetailsText)} </div>
+                  <div className="font-normal">
                     {React.string(Array.joinWith(billingDetailsArray, ", "))}
                   </div>
                 </div>
