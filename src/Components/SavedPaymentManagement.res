@@ -69,16 +69,17 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
   }
 
   let handleUpdate = async (paymentItem: PMMTypesV2.customerMethods) => {
-    let bodyArr = PaymentManagementBody.updateCardBody(
-      ~paymentMethodId=paymentItem.id,
-      ~nickName=nickName.value,
-      ~cardHolderName=fullName.value,
-    )
     messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("param", "paymentloader"->JSON.Encode.string),
       ("iframeId", iframeId->JSON.Encode.string),
     ])
+
+    let bodyArr = PaymentManagementBody.updateCardBody(
+      ~paymentMethodId=paymentItem.id,
+      ~nickName=nickName.value,
+      ~cardHolderName=fullName.value,
+    )
 
     try {
       let res = await PaymentHelpersV2.updatePaymentMethod(

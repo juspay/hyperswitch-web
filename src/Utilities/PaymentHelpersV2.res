@@ -4,16 +4,18 @@ let fetchPaymentManagementList = (
   ~pmSessionId,
   ~pmClientSecret,
   ~publishableKey,
+  ~profileId,
   ~endpoint,
   ~optLogger,
   ~customPodUri,
 ) => {
   open Promise
   let headers = [
-    ("Content-Type", "application/json"),
+    ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
   let uri = `${endpoint}/v2/payment-methods-session/${pmSessionId}/list-payment-methods`
+
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString

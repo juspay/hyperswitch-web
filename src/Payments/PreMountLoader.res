@@ -110,6 +110,7 @@ module PreMountLoaderForPMMElements = {
     ~pmSessionId,
     ~pmClientSecret,
     ~publishableKey,
+    ~profileId,
   ) => {
     useMessageHandler(() => {
       switch GlobalVars.sdkVersionEnum {
@@ -136,6 +137,7 @@ module PreMountLoaderForPMMElements = {
             ~pmSessionId,
             ~pmClientSecret,
             ~publishableKey,
+            ~profileId,
             ~optLogger=Some(logger),
             ~customPodUri,
             ~endpoint,
@@ -144,8 +146,8 @@ module PreMountLoaderForPMMElements = {
           let messageHandler = (ev: Window.event) => {
             open Utils
             let dict = ev.data->safeParse->getDictFromJson
-            if dict->isKeyPresentInDict("sendSavedPaymentMethodsResponse") {
-              listPromise->sendPromiseData("saved_payment_methods")
+            if dict->isKeyPresentInDict("sendPaymentManagementListResponse") {
+              listPromise->sendPromiseData("payment_management_list")
             }
           }
 
@@ -162,6 +164,7 @@ module PreMountLoaderForPMMElements = {
 let make = (
   ~sessionId,
   ~publishableKey,
+  ~profileId,
   ~clientSecret,
   ~endpoint,
   ~ephemeralKey,
@@ -185,7 +188,7 @@ let make = (
     />
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements
-      logger endpoint ephemeralKey customPodUri pmSessionId pmClientSecret publishableKey
+      logger endpoint ephemeralKey customPodUri pmSessionId pmClientSecret publishableKey profileId
     />
   }
 }

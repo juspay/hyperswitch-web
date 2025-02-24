@@ -61,12 +61,24 @@ let make = (
                   <div className="flex flex-col">
                     <div className="flex items-center gap-4">
                       {if isCard {
-                        <div className="flex flex-col items-start">
-                          <div> {React.string(nickname)} </div>
-                          <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-                            <div className="tracking-widest"> {React.string(`****`)} </div>
-                            <div>
-                              {React.string(paymentItem.paymentMethodData.card.last4Digits)}
+                        <div className="flex flex-col items-start gap-1">
+                          <div className="flex flex-row items-start gap-3">
+                            <div> {React.string(nickname)} </div>
+                            <div className={`PickerItemLabel flex flex-row gap-1 items-center`}>
+                              <div className="tracking-widest"> {React.string(`****`)} </div>
+                              <div>
+                                {React.string(paymentItem.paymentMethodData.card.last4Digits)}
+                              </div>
+                            </div>
+                          </div>
+                          <div
+                            className={`flex flex-row items-center justify-end gap-3 -mt-1`}
+                            style={fontSize: "14px", opacity: "0.5"}>
+                            <div> {React.string(`Expiry`)} </div>
+                            <div className="flex">
+                              {React.string(
+                                `${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`,
+                              )}
                             </div>
                           </div>
                         </div>
@@ -76,17 +88,6 @@ let make = (
                     </div>
                   </div>
                 </div>
-                <RenderIf condition={isCard}>
-                  <div
-                    className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                    style={fontSize: "14px", opacity: "0.5"}>
-                    <div className="flex">
-                      {React.string(
-                        `${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`,
-                      )}
-                    </div>
-                  </div>
-                </RenderIf>
               </div>
               <RenderIf condition={managePaymentMethod == paymentItem.id}>
                 <Icon
@@ -95,14 +96,13 @@ let make = (
                   style={color: themeObj.colorDanger}
                   className="cursor-pointer ml-4 mb-[6px]"
                   onClick={_ => {
-                    Console.log("delete")
                     handleDeleteV2(paymentItem)->ignore
                   }}
                 />
                 <Icon
                   size=18
                   name="ticMark"
-                  style={color: themeObj.colorDanger}
+                  style={color: themeObj.colorPrimary}
                   className="cursor-pointer ml-4 mb-[6px]"
                   onClick={_ => {
                     handleUpdate(paymentItem)->ignore
@@ -112,11 +112,10 @@ let make = (
               <RenderIf condition={!(managePaymentMethod == paymentItem.id)}>
                 <Icon
                   size=18
-                  name="circle_dots"
+                  name="manage"
                   style={color: themeObj.colorPrimary}
                   className="cursor-pointer ml-4 mb-[6px]"
                   onClick={_ => {
-                    Console.log("delete")
                     handlemanage()
                   }}
                 />

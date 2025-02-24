@@ -28,6 +28,8 @@ let make = (~paymentType: CardThemeType.mode, ~nickNameValue="") => {
   React.useEffect(() => {
     if nickNameValue != "" && !showAddScreen {
       setNickName(prev => setNickNameState(nickNameValue, prev))
+    } else {
+      setNickName(prev => setNickNameState("", prev))
     }
     None
   }, [])

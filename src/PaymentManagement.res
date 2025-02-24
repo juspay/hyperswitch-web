@@ -151,7 +151,7 @@ let make = (~paymentType: CardThemeType.mode) => {
         </RenderIf>
         <PaymentElementRendererLazy paymentType cardProps cvcProps expiryProps />
         <div className="mt-4">
-          <PayNowButton label="Save card" />
+          <PayNowButton label="Save card" paymentType />
         </div>
       </div>
     </RenderIf>

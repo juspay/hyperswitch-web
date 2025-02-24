@@ -2,7 +2,7 @@ module Loader = {
   @react.component
   let make = () => {
     let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-    <div className=" w-8 h-8 animate-spin" style={color: themeObj.colorTextSecondary}>
+    <div className="w-8 h-8 animate-spin" style={color: themeObj.colorTextSecondary}>
       <Icon size=32 name="loader" />
     </div>
   }
@@ -17,9 +17,11 @@ let make = (~onClickHandler=?, ~label: option<string>=?) => {
   let (isAddNowButtonDisable, setIsAddNowButtonDisable) = React.useState(() => false)
   let (showLoader, setShowLoader) = React.useState(() => false)
 
+  let {sdkHandleAddPayment} = optionAtom->Recoil.useRecoilValueFromAtom
+
   let buttonText = switch label {
   | Some(val) => val
-  | None => "Add a new card"
+  | None => sdkHandleAddPayment.buttonText->Option.getOr("Add new card")
   }
 
   let onClickHandlerFunc = _ => {

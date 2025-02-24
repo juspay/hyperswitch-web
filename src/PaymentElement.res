@@ -625,7 +625,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }}
     <RenderIf condition={sdkHandleConfirmPayment.handleConfirm}>
       <div className="mt-4">
-        <PayNowButton />
+        <PayNowButton paymentType />
       </div>
     </RenderIf>
     <PoweredBy />

@@ -11,6 +11,7 @@ let make = (
   ~pmSessionId,
   ~sdkSessionId,
   ~publishableKey,
+  ~profileId,
   ~logger: option<HyperLogger.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
@@ -55,7 +56,7 @@ let make = (
            <iframe
            id ="orca-payment-element-iframeRef-${localSelectorString}"
            name="orca-payment-element-iframeRef-${localSelectorString}"
-          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&ephemeralKey=${ephemeralKey}&pmSessionId=${pmSessionId}&pmClientSecret=${pmClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}"
+          src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&profileId=${profileId}&ephemeralKey=${ephemeralKey}&pmSessionId=${pmSessionId}&pmClientSecret=${pmClientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&hyperComponentName=${hyperComponentName->getStrFromHyperComponentName}"
           allow="*"
           name="orca-payment"
           style="outline: none;"
@@ -135,6 +136,7 @@ let make = (
             let dict = json->getDictFromJson
             let isPaymentManagementData = dict->getString("data", "") === "payment_management_list"
             if isPaymentManagementData {
+              resolve()
               let json = dict->getJsonFromDict("response", JSON.Encode.null)
               let msg = [("paymentManagementMethods", json)]->Dict.fromArray
               mountedIframeRef->Window.iframePostMessage(msg)
@@ -145,7 +147,6 @@ let make = (
             handleSavedPaymentMethodsLoaded,
             `onAllPaymentMethodsLoaded-${componentType}`,
           )
-          resolve()
         } else {
           resolve()
         }
@@ -227,6 +228,7 @@ let make = (
             ("paymentOptions", widgetOptions),
             ("iframeId", selectorString->JSON.Encode.string),
             ("publishableKey", publishableKey->JSON.Encode.string),
+            ("profileId", profileId->JSON.Encode.string),
             ("endpoint", endpoint->JSON.Encode.string),
             ("sdkSessionId", sdkSessionId->JSON.Encode.string),
             ("customPodUri", customPodUri->JSON.Encode.string),

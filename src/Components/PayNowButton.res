@@ -4,13 +4,13 @@ module Loader = {
   @react.component
   let make = () => {
     let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-    <div className=" w-8 h-8 animate-spin" style={color: themeObj.colorTextSecondary}>
+    <div className="w-8 h-8 animate-spin" style={color: themeObj.colorTextSecondary}>
       <Icon size=32 name="loader" />
     </div>
   }
 }
 @react.component
-let make = (~onClickHandler=?, ~label=?) => {
+let make = (~onClickHandler=?, ~label=?, ~paymentType: CardThemeType.mode) => {
   open RecoilAtoms
   open Utils
   let (showLoader, setShowLoader) = React.useState(() => false)
@@ -18,10 +18,16 @@ let make = (~onClickHandler=?, ~label=?) => {
   let {themeObj, localeString} = configAtom->Recoil.useRecoilValueFromAtom
   let {sdkHandleConfirmPayment} = optionAtom->Recoil.useRecoilValueFromAtom
 
+  let {sdkHandleSavePayment} = optionAtom->Recoil.useRecoilValueFromAtom
+
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
-  let buttonText = switch label {
-  | Some(val) => val
-  | None => sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
+  let buttonText = switch paymentType {
+  | PaymentMethodsManagement => sdkHandleSavePayment.buttonText->Option.getOr("Save Card")
+  | _ =>
+    switch label {
+    | Some(val) => val
+    | None => sdkHandleConfirmPayment.buttonText->Option.getOr(localeString.payNowButton)
+    }
   }
 
   let handleMessage = (event: Types.event) => {

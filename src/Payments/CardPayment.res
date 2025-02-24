@@ -14,15 +14,8 @@ let make = (
   open Utils
   open UtilityHooks
   open Promise
-  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
-  let {iframeId, publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-  let setSavedMethodsV2 = Recoil.useSetRecoilState(RecoilAtomsV2.savedMethodsV2)
-  let setManagePaymentMethod = Recoil.useSetRecoilState(RecoilAtomsV2.managePaymentMethod)
-  let setShowAddScreen = Recoil.useSetRecoilState(RecoilAtomsV2.showAddScreen)
+  let {publishableKey, profileId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (logger, _initTimestamp) = React.useMemo0(() => {
-    (HyperLogger.make(~source=Elements(PaymentMethodsManagement)), Date.now())
-  })
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let {innerLayout} = config.appearance
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -84,6 +77,7 @@ let make = (
   ) = cvcProps
   let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let saveCard = PaymentHelpers.useSaveCard(Some(loggerState), Card)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
   let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
@@ -91,45 +85,6 @@ let make = (
 
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
-  }
-
-  let handleConfirmClick = async (~bodyArr) => {
-    messageParentWindow([
-      ("fullscreen", true->JSON.Encode.bool),
-      ("param", "paymentloader"->JSON.Encode.string),
-      ("iframeId", iframeId->JSON.Encode.string),
-    ])
-
-    try {
-      let res = await PaymentHelpersV2.savePaymentMethod(
-        ~bodyArr,
-        ~pmClientSecret=config.pmClientSecret,
-        ~pmSessionId=config.pmSessionId,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-      )
-
-      let dict = res->getDictFromJson
-      let paymentMethodId = dict->getString("id", "")
-
-      if paymentMethodId != "" {
-        setManagePaymentMethod(_ => "")
-        let newCard = dict->PMMV2Helpers.itemToPaymentDetails
-        setShowAddScreen(_ => false)
-        setSavedMethodsV2(prev => [newCard, ...prev])
-      } else {
-        logger.setLogError(~value=res->JSON.stringify, ~eventName=DELETE_SAVED_PAYMENT_METHOD)
-      }
-    } catch {
-    | err =>
-      let exceptionMessage = err->formatException->JSON.stringify
-      logger.setLogError(
-        ~value=`Error Deleting Saved Payment Method: ${exceptionMessage}`,
-        ~eventName=DELETE_SAVED_PAYMENT_METHOD,
-      )
-    }
-    messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }
 
   React.useEffect(() => {
@@ -312,7 +267,14 @@ let make = (
           })
           ->ignore
         } else if isPMMFlow {
-          handleConfirmClick(~bodyArr=cardBody->mergeAndFlattenToTuples(requiredFieldsBody))->ignore
+          saveCard(
+            ~bodyArr=cardBody->mergeAndFlattenToTuples(requiredFieldsBody),
+            ~confirmParam={
+              return_url: options.sdkHandleSavePayment.confirmParams.return_url,
+              publishableKey,
+            },
+            ~handleUserError=true,
+          )
         } else {
           intent(
             ~bodyArr={
