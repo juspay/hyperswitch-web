@@ -100,12 +100,12 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
         let updatedCard = dict->PMMV2Helpers.itemToPaymentDetails
         setSavedMethodsV2(prev => prev->updateSavedMethodV2(paymentMethodId, updatedCard))
       } else {
-        Console.log2("Payment Id Empty ", res->JSON.stringify)
+        Console.error2("Payment Id Empty ", res->JSON.stringify)
       }
     } catch {
     | err =>
       let exceptionMessage = err->formatException->JSON.stringify
-      Console.log2("Unable to Update Card ", exceptionMessage)
+      Console.error2("Unable to Update Card ", exceptionMessage)
     }
     messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }
@@ -134,12 +134,12 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
       if isDeleted {
         setSavedMethodsV2(prev => prev->removeSavedMethodV2(paymentMethodId))
       } else {
-        Console.log2("Payment Id Empty ", res->JSON.stringify)
+        Console.error2("Payment Id Empty ", res->JSON.stringify)
       }
     } catch {
     | err =>
       let exceptionMessage = err->formatException->JSON.stringify
-      Console.log2("Unable to Delete Card ", exceptionMessage)
+      Console.error2("Unable to Delete Card ", exceptionMessage)
     }
     messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }

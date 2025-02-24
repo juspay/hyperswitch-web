@@ -2303,7 +2303,6 @@ let useSaveCard = (optLogger: option<HyperLogger.loggerMake>, paymentType: payme
     | Some(clientSecret) =>
       // let paymentIntentID = clientSecret->getPaymentId
       let pmSessionId = keys.pmSessionId->Option.getOr("")
-      Console.log2("pmsession id is==>", pmSessionId)
       let headers = [
         ("Content-Type", "application/json"),
         ("api-key", confirmParam.publishableKey),
@@ -2318,11 +2317,8 @@ let useSaveCard = (optLogger: option<HyperLogger.loggerMake>, paymentType: payme
         ->Array.concatMany([bodyArr, browserInfo()])
         ->getJsonFromArrayOfJson
         ->JSON.stringify
-      Console.log2("pmsession endpoind str==?", endpoint)
-      Console.log2("body str==?", bodyStr)
 
       let saveCard = () => {
-        Console.log("going to intent")
         intentCall(
           ~fetchApi,
           ~uri,

@@ -135,7 +135,6 @@ let handleHyperApplePayMounted = (event: Types.event) => {
 addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMount")
 
 let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
-  Console.log3("STr Option==>", keys, options)
   try {
     let publishableKey = switch keys->JSON.Classify.classify {
     | String(val) => val
