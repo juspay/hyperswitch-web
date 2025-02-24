@@ -932,7 +932,6 @@ external signOutMastercard: mastercardCheckoutServices => promise<JSON.t> = "sig
 // Then add the signOut function implementation
 let signOut = async () => {
   try {
-    Console.log("signOut")
     deleteLocalStorage(~key=recognitionTokenCookieName)
 
     switch mcCheckoutService.contents {

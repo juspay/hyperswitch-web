@@ -39,7 +39,7 @@ let make = (
       try {
         await fn()
       } catch {
-      | err => Console.log2("Async function call failure", err)
+      | err => Console.error2("Async function call failure", err)
       }
     }
 

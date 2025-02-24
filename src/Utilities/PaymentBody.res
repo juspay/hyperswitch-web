@@ -371,7 +371,7 @@ let klarnaSDKbody = (~token, ~connectors) => [
 
 let klarnaCheckoutBody = (~connectors) => {
   open Utils
-  let checkoutBody=[]->Utils.getJsonFromArrayOfJson
+  let checkoutBody = []->Utils.getJsonFromArrayOfJson
   let payLaterBody = [("klarna_checkout", checkoutBody)]->getJsonFromArrayOfJson
   let paymentMethodData = [("pay_later", payLaterBody)]->getJsonFromArrayOfJson
   [
