@@ -1,16 +1,33 @@
 module RenderSavedPaymentMethodItem = {
   @react.component
-  let make = (~paymentItem: PaymentType.customerMethods, ~paymentMethodType) => {
+  let make = (
+    ~paymentItem: PaymentType.customerMethods,
+    ~paymentMethodType,
+    ~themeObj: CardThemeType.themeClass,
+    ~displayDefaultSavedPaymentIcon,
+    ~defaultPaymentMethodSet,
+    ~expiryText,
+    ~expiryMonth,
+    ~expiryYear,
+  ) => {
+    let expiryYearToTwoDigits = expiryYear->CardUtils.formatExpiryToTwoDigit
+
     switch paymentItem.paymentMethod {
     | "card" =>
       <div
         className="flex flex-col items-start"
         role="group"
         ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
-        <div> {React.string(paymentItem.card.nickname)} </div>
-        <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-          <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
-          <div ariaHidden=true> {React.string(paymentItem.card.last4Digits)} </div>
+        <div className="flex items-center text-[15px] font-medium">
+          {React.string(paymentItem.card.nickname)}
+          <RenderIf condition={displayDefaultSavedPaymentIcon && defaultPaymentMethodSet}>
+            <Icon className="ml-2" size=16 name="checkmark" style={color: themeObj.colorPrimary} />
+          </RenderIf>
+        </div>
+        <div className={`PickerItemLabel flex flex-row gap-2 items-center text-sm font-normal`}>
+          <div ariaHidden=true> {React.string(`XXXX ${paymentItem.card.last4Digits}`)} </div>
+          <span className="w-1 h-1 rounded-full bg-black/60" />
+          <div> {React.string(`${expiryText} ${expiryMonth}/${expiryYearToTwoDigits}`)} </div>
         </div>
       </div>
 
@@ -51,9 +68,11 @@ let make = (
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {hideExpiredPaymentMethods, displayDefaultSavedPaymentIcon} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.optionAtom,
-  )
+  let {
+    hideExpiredPaymentMethods,
+    displayDefaultSavedPaymentIcon,
+    displayBillingDetails,
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
   let (
     isCVCValid,
@@ -120,6 +139,34 @@ let make = (
   let currentDate = Date.make()
   let isCardExpired = isCard && expiryDate < currentDate
 
+  let paymentMethodType = switch paymentItem.paymentMethodType {
+  | Some(paymentMethodType) => paymentMethodType
+  | None => "debit"
+  }
+
+  let defaultPaymentMethodSet = paymentItem.defaultPaymentMethodSet
+
+  let billingDetailsText = "Billing Details:"
+
+  let billingDetailsArray =
+    [
+      paymentItem.billing.address.line1,
+      paymentItem.billing.address.line2,
+      paymentItem.billing.address.line3,
+      paymentItem.billing.address.city,
+      paymentItem.billing.address.state,
+      paymentItem.billing.address.country,
+      paymentItem.billing.address.zip,
+    ]
+    ->Array.map(item => Option.getOr(item, ""))
+    ->Array.filter(item => String.trim(item) !== "")
+
+  let isCVCEmpty = cvcNumber->String.length == 0
+
+  let {innerLayout} = config.appearance
+
+  let expiryText = localeString.expiry
+
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
       className={`PickerItem ${pickerItemClass} flex flex-row items-stretch`}
@@ -163,62 +210,69 @@ let make = (
                   border="1px solid currentColor"
                 />
               </div>
-              <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
+              <div className={`PickerItemIcon mx-1 flex items-center`}> brandIcon </div>
               <div className="flex flex-col">
-                <div className="flex items-center gap-4">
-                  <RenderSavedPaymentMethodItem paymentItem={paymentItem} paymentMethodType />
-                  <RenderIf
-                    condition={displayDefaultSavedPaymentIcon &&
-                    paymentItem.defaultPaymentMethodSet}>
-                    <Icon size=18 name="checkmark" style={color: themeObj.colorPrimary} />
-                  </RenderIf>
+                <div className="flex items-center gap-2">
+                  <RenderSavedPaymentMethodItem
+                    paymentItem={paymentItem}
+                    paymentMethodType
+                    themeObj
+                    displayDefaultSavedPaymentIcon
+                    defaultPaymentMethodSet
+                    expiryText
+                    expiryMonth
+                    expiryYear
+                  />
                 </div>
               </div>
             </div>
-            <RenderIf condition={isCard}>
-              <div
-                className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                style={fontSize: "14px", opacity: "0.5"}
-                ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
-                <div className="flex" ariaHidden=true>
-                  {React.string(`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
+            <RenderIf condition={isCard && isActive && isRenderCvv}>
+              <div className={`flex flex-row items-start gap-2 opacity-70 text-sm`}>
+                <div className={`flex h mx-4 w-16 ${isActive ? "opacity-1" : "opacity-0"}`}>
+                  <PaymentInputField
+                    isValid=isCVCValid
+                    setIsValid=setIsCVCValid
+                    value=cvcNumber
+                    onChange=changeCVCNumber
+                    onBlur=handleCVCBlur
+                    errorString=""
+                    inputFieldClassName="flex justify-start"
+                    paymentType
+                    appearance=config.appearance
+                    type_="tel"
+                    className={`tracking-widest justify-start w-full`}
+                    maxLength=4
+                    inputRef=cvcRef
+                    height="2.2rem"
+                    name={TestUtils.cardCVVInputTestId}
+                    placeholder=localeString.cvcTextLabel
+                  />
                 </div>
               </div>
             </RenderIf>
           </div>
           <div className="w-full">
-            <div className="flex flex-col items-start mx-8">
-              <RenderIf condition={isActive && isRenderCvv}>
-                <div
-                  className={`flex flex-row items-start justify-start gap-2`}
-                  style={fontSize: "14px", opacity: "0.5"}>
-                  <div className="w-12 mt-6">
-                    {React.string(`${localeString.cvcTextLabel}: `)}
-                  </div>
-                  <div
-                    className={`flex h mx-4 justify-start w-16 ${isActive
-                        ? "opacity-1 mt-4"
-                        : "opacity-0"}`}>
-                    <PaymentInputField
-                      isValid=isCVCValid
-                      setIsValid=setIsCVCValid
-                      value=cvcNumber
-                      onChange=changeCVCNumber
-                      onBlur=handleCVCBlur
-                      errorString=cvcError
-                      inputFieldClassName="flex justify-start"
-                      paymentType
-                      appearance=config.appearance
-                      type_="tel"
-                      className={`tracking-widest justify-start w-full`}
-                      maxLength=4
-                      inputRef=cvcRef
-                      placeholder="123"
-                      height="2.2rem"
-                      name={TestUtils.cardCVVInputTestId}
-                    />
+            <div className="flex flex-col items-start mx-3">
+              <RenderIf condition={isActive && displayBillingDetails}>
+                <div className="text-sm text-left gap-2 mt-5" style={marginLeft: "16%"}>
+                  <div className="font-semibold"> {React.string(billingDetailsText)} </div>
+                  <div className="font-normal">
+                    {React.string(Array.joinWith(billingDetailsArray, ", "))}
                   </div>
                 </div>
+              </RenderIf>
+              <RenderIf condition={isActive && innerLayout === Spaced}>
+                <RenderIf condition=isCVCEmpty>
+                  <div
+                    className="Error pt-1 mt-1"
+                    style={
+                      color: themeObj.colorDangerText,
+                      fontSize: themeObj.fontSizeSm,
+                      marginLeft: "16%",
+                    }>
+                    {React.string(cvcError)}
+                  </div>
+                </RenderIf>
               </RenderIf>
               <RenderIf condition={isCardExpired}>
                 <div className="italic mt-3 ml-1" style={fontSize: "14px", opacity: "0.7"}>

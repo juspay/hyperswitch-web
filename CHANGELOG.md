@@ -1,3 +1,10 @@
+# [0.115.0](https://github.com/juspay/hyperswitch-web/compare/v0.114.10...v0.115.0) (2025-02-25)
+
+
+### Features
+
+* added display billing details feature ([#874](https://github.com/juspay/hyperswitch-web/issues/874)) ([be60bff](https://github.com/juspay/hyperswitch-web/commit/be60bff52838d953fc4868ac106c1b2ffd79e98c))
+
 ## [0.114.10](https://github.com/juspay/hyperswitch-web/compare/v0.114.9...v0.114.10) (2025-02-25)
 
 
