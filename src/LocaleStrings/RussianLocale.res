@@ -14,7 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Адресная строка 1`,
   line1Placeholder: `Улица`,
   line2Label: `Адресная строка 2`,
-  line2Placeholder: `Квартира, номер блока и т. д. (необязательно)`,
+  line2Placeholder: `Квартира, номер блока и т. д.`,
   cityLabel: `Город`,
   postalCodeLabel: `Почтовый индекс`,
   stateLabel: `Область`,

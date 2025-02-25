@@ -284,7 +284,7 @@ let fpxBanks = [
   {displayName: "HSBC Bank", hyperSwitch: "hsbc_bank"},
   {displayName: "Kuwait Finance House", hyperSwitch: "kuwait_finance_house"},
   {displayName: "Maybank", hyperSwitch: "maybank"},
-  {displayName: "Citibank", hyperSwitch: "citibank"},
+  {displayName: "Citibank", hyperSwitch: "citi"},
   {displayName: "OCBC Bank", hyperSwitch: "ocbc_bank"},
   {displayName: "Public Bank", hyperSwitch: "public_bank"},
   {displayName: "RHB Bank", hyperSwitch: "rhb_bank"},

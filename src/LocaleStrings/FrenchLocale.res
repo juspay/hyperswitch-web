@@ -15,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: `Adresse de rue`,
   line1EmptyText: `La ligne d'adresse 1 ne peut pas être vide`,
   line2Label: `Adresse - Ligne 2`,
-  line2Placeholder: `Appartement, numéro d'unité, etc (facultatif)`,
+  line2Placeholder: `Appartement, numéro d'unité, etc`,
   line2EmptyText: `La ligne d'adresse 2 ne peut pas être vide`,
   cityLabel: `Ville`,
   cityEmptyText: `La ville ne peut pas être vide`,
