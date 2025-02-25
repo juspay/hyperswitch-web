@@ -4,7 +4,6 @@ let decodeCountryArray = data => {
   data->Array.map(item => {
     switch item->JSON.Decode.object {
     | Some(res) => {
-        isoAlpha3: Utils.getString(res, "isoAlpha3", ""),
         isoAlpha2: Utils.getString(res, "isoAlpha2", ""),
         timeZones: Utils.getStrArray(res, "timeZones"),
         countryName: Utils.getString(res, "value", ""),
