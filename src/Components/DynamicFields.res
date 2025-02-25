@@ -597,14 +597,14 @@ let make = (
                       placeholder=localeString.cityLabel
                       className={isSpacedInnerLayout ? "" : "!border-r-0"}
                     />
-                    {stateNames->Array.length > 0
-                      ? <PaymentDropDownField
-                          fieldName=localeString.stateLabel
-                          value=state
-                          setValue=setState
-                          options={stateNames}
-                        />
-                      : React.null}
+                    <RenderIf condition={stateNames->Array.length > 0}>
+                      <PaymentDropDownField
+                        fieldName=localeString.stateLabel
+                        value=state
+                        setValue=setState
+                        options={stateNames}
+                      />
+                    </RenderIf>
                   </div>
                 | CountryAndPincode(countryArr) =>
                   let updatedCountryArray =
@@ -718,14 +718,14 @@ let make = (
                     placeholder=localeString.cityLabel
                   />
                 | AddressState =>
-                  stateNames->Array.length > 0
-                    ? <PaymentDropDownField
-                        fieldName=localeString.stateLabel
-                        value=state
-                        setValue=setState
-                        options={stateNames}
-                      />
-                    : React.null
+                  <RenderIf condition={stateNames->Array.length > 0}>
+                    <PaymentDropDownField
+                      fieldName=localeString.stateLabel
+                      value=state
+                      setValue=setState
+                      options={stateNames}
+                    />
+                  </RenderIf>
                 | AddressPincode =>
                   <PaymentField
                     fieldName=localeString.postalCodeLabel

@@ -462,21 +462,7 @@ let useStatesJson = setStatesJson => {
   let stateList = Recoil.useRecoilValueFromAtom(RecoilAtoms.stateAtom)
 
   React.useEffect0(_ => {
-    let fetchStates = async () => {
-      try {
-        let dict = Utils.getDictFromJson(stateList)
-        if dict->Js.Dict.entries->Array.length !== 0 {
-          let res = await S3Utils.getCountryStateData()
-          setStatesJson(_ => res.states)
-        } else {
-          setStatesJson(_ => stateList)
-        }
-      } catch {
-      | err => Console.error2("Error importing states:", err)
-      }
-    }
-
-    fetchStates()->ignore
+    setStatesJson(_ => stateList)
     None
   })
 }

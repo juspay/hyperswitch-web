@@ -124,4 +124,4 @@ let defaultRedirectionFlags: redirectionFlags = {
 let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)
 
 let countryAtom = Recoil.atom("countryList", Country.country)
-let stateAtom = Recoil.atom("stateList", JSON.Encode.object(Dict.make()))
+let stateAtom = Recoil.atom("stateList", JSON.Encode.null)

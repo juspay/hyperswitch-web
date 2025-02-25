@@ -26,7 +26,7 @@ let decodeJsonTocountryStateData = jsonData => {
       let statesDict =
         res
         ->Dict.get("states")
-        ->Option.getOr(JSON.Encode.object(Dict.make()))
+        ->Option.getOr(JSON.Encode.null)
 
       Some({
         countries: decodeCountryArray(countryArr),
@@ -96,7 +96,7 @@ let getCountryStateData = async (
           } catch {
           | _ => {
               countries: fallbackCountries,
-              states: JSON.Encode.object(Dict.make()),
+              states: JSON.Encode.null,
             }
           }
         }
@@ -120,7 +120,7 @@ let getCountryStateData = async (
       } catch {
       | _ => {
           countries: fallbackCountries,
-          states: JSON.Encode.object(Dict.make()),
+          states: JSON.Encode.null,
         }
       }
     }
@@ -133,15 +133,17 @@ let initializeCountryData = async () => {
   switch countryDataRef.contents {
   | None => {
       let data = await getCountryStateData()
-      countryDataRef.contents = Some(data)
-      data
+      countryDataRef.contents = Some(data.countries)
+      data.countries
     }
   | Some(data) => data
   }
 }
 let _ = initializeCountryData()
 
-let countryListData = switch countryDataRef.contents {
-| Some(data) => data.countries
-| None => country
+let getCountryListData = () => {
+  switch countryDataRef.contents {
+  | Some(data) => data
+  | None => country
+  }
 }

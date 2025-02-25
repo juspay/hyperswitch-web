@@ -41,7 +41,7 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
   }
 }
 
-let countryNames = Utils.getCountryNames(S3Utils.countryListData)
+let countryNames = Utils.getCountryNames(S3Utils.getCountryListData())
 
 let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
   BillingName,

@@ -218,16 +218,16 @@ let make = (~paymentType, ~className="") => {
               options=countryNames
             />
           </RenderIf>
-          <RenderIf condition={showField(showDetails.address, State) == Auto}>
-            {stateNames->Array.length > 0
-              ? <PaymentDropDownField
-                  fieldName=localeString.stateLabel
-                  value=state
-                  className
-                  setValue=setState
-                  options={stateNames}
-                />
-              : React.null}
+          <RenderIf
+            condition={showField(showDetails.address, State) == Auto &&
+              stateNames->Array.length > 0}>
+            <PaymentDropDownField
+              fieldName=localeString.stateLabel
+              value=state
+              className
+              setValue=setState
+              options={stateNames}
+            />
           </RenderIf>
         </div>
         <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>
