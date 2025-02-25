@@ -160,4 +160,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Ключ Pix`,
   invalidCardHolderNameError: `Имя владельца карты не может содержать цифры`,
   invalidNickNameError: `Псевдоним не может содержать более 2 цифр`,
+  expiry: `истечение срока действия`,
 }
