@@ -48,6 +48,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     setLoadSavedCards: (savedCardsLoadState => savedCardsLoadState) => unit,
   ) = React.useState(_ => LoadingSavedCards)
   let (isClickToPayAuthenticateError, setIsClickToPayAuthenticateError) = React.useState(_ => false)
+  let (areClickToPayUIScriptsLoaded, setAreClickToPayUIScriptsLoaded) = React.useState(_ => false)
 
   let isShowPaymentMethodsDependingOnClickToPay = React.useMemo(() => {
     (clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length > 0 ||
@@ -236,6 +237,18 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         let clickToPayToken = ClickToPayHelpers.clickToPayTokenItemToObjMapper(token)
         let isProd = publishableKey->String.startsWith("pk_prd_")
         ClickToPayHelpers.loadClickToPayScripts(loggerState)
+        ->then(_ => {
+          setAreClickToPayUIScriptsLoaded(_ => true)
+          resolve()
+        })
+        ->catch(_ => {
+          loggerState.setLogError(
+            ~value="ClickToPay UI Kit CSS Load Error",
+            ~eventName=CLICK_TO_PAY_SCRIPT,
+          )
+          resolve()
+        })
+        ->ignore
         ClickToPayHelpers.loadMastercardScript(clickToPayToken, isProd, loggerState)
         ->then(resp => {
           let availableCardBrands =
@@ -530,7 +543,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     {if clickToPayConfig.isReady->Option.isNone {
-      <ClickToPayHelpers.SrcLoader />
+      if areClickToPayUIScriptsLoaded {
+        <ClickToPayHelpers.SrcLoader />
+      } else {
+        <PaymentElementShimmer.SavedPaymentCardShimmer />
+      }
     } else {
       <RenderIf
         condition={!showFields &&

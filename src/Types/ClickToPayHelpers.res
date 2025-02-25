@@ -624,6 +624,7 @@ external appendChild: Dom.element => unit = "appendChild"
 @set external setSrc: (Dom.element, string) => unit = "src"
 @set external setRel: (Dom.element, string) => unit = "rel"
 @set external setHref: (Dom.element, string) => unit = "href"
+@set external setOnload: (Dom.element, unit => unit) => unit = "onload"
 @val @scope(("top", "location"))
 external topLocationHref: string = "href"
 
@@ -633,32 +634,65 @@ external topLocationHref: string = "href"
 
 // Add the function at the end of the file
 let loadClickToPayScripts = (logger: HyperLogger.loggerMake) => {
-  let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
-  let linkSelector = `link[href="${srcUiKitCssHref}"]`
+  Promise.make((clickToPayScriptsPromiseResolve, _) => {
+    let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
+    let linkSelector = `link[href="${srcUiKitCssHref}"]`
 
-  // Add script if not exists
-  switch querySelector(scriptSelector)->Nullable.toOption {
-  | None => {
-      let script = createElement("script")
-      script->setType("module")
-      script->setSrc(srcUiKitScriptSrc)
-      appendChild(script)
-      logger.setLogInfo(~value="ClickToPay UI Kit Script Loaded", ~eventName=CLICK_TO_PAY_SCRIPT)
-    }
-  | Some(_) => ()
-  }
+    // Add script if not exists
+    let srcUiKitScriptPromise = Promise.make((scriptPromiseResolve, _) => {
+      switch querySelector(scriptSelector)->Nullable.toOption {
+      | None => {
+          let script = createElement("script")
+          script->setType("module")
+          script->setSrc(srcUiKitScriptSrc)
+          script->setOnLoad(
+            () => {
+              logger.setLogInfo(
+                ~value="ClickToPay UI Kit Script Loaded",
+                ~eventName=CLICK_TO_PAY_SCRIPT,
+              )
+              scriptPromiseResolve()
+            },
+          )
+          appendChild(script)
+        }
+      | Some(_) => scriptPromiseResolve()
+      }
+    })
 
-  // Add link if not exists
-  switch querySelector(linkSelector)->Nullable.toOption {
-  | None => {
-      let link = createElement("link")
-      link->setRel("stylesheet")
-      link->setHref(srcUiKitCssHref)
-      appendChild(link)
-      logger.setLogInfo(~value="ClickToPay UI Kit CSS Loaded", ~eventName=CLICK_TO_PAY_SCRIPT)
-    }
-  | Some(_) => ()
-  }
+    // Add link if not exists
+    let srcUiKitCssPromise = Promise.make((cssPromiseResolve, _) => {
+      switch querySelector(linkSelector)->Nullable.toOption {
+      | None => {
+          let link = createElement("link")
+          link->setRel("stylesheet")
+          link->setHref(srcUiKitCssHref)
+          link->setOnLoad(
+            () => {
+              logger.setLogInfo(
+                ~value="ClickToPay UI Kit CSS Loaded",
+                ~eventName=CLICK_TO_PAY_SCRIPT,
+              )
+              cssPromiseResolve()
+            },
+          )
+          appendChild(link)
+        }
+      | Some(_) => cssPromiseResolve()
+      }
+    })
+
+    Promise.all([srcUiKitScriptPromise, srcUiKitCssPromise])
+    ->then(_ => {
+      clickToPayScriptsPromiseResolve()
+      resolve()
+    })
+    ->catch(_ => {
+      logger.setLogError(~value="ClickToPay UI Kit CSS Load Error", ~eventName=CLICK_TO_PAY_SCRIPT)
+      resolve()
+    })
+    ->ignore
+  })
 }
 
 // Add this function at the end of the file

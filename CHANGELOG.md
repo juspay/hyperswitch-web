@@ -1,3 +1,17 @@
+# [0.115.0](https://github.com/juspay/hyperswitch-web/compare/v0.114.10...v0.115.0) (2025-02-25)
+
+
+### Features
+
+* added display billing details feature ([#874](https://github.com/juspay/hyperswitch-web/issues/874)) ([be60bff](https://github.com/juspay/hyperswitch-web/commit/be60bff52838d953fc4868ac106c1b2ffd79e98c))
+
+## [0.114.10](https://github.com/juspay/hyperswitch-web/compare/v0.114.9...v0.114.10) (2025-02-25)
+
+
+### Bug Fixes
+
+* fixed shimmer stuck for click to pay ([#917](https://github.com/juspay/hyperswitch-web/issues/917)) ([7e1e20f](https://github.com/juspay/hyperswitch-web/commit/7e1e20fd8ff49b726e7fc62a35a1bfeb985ac2fa))
+
 ## [0.114.9](https://github.com/juspay/hyperswitch-web/compare/v0.114.8...v0.114.9) (2025-02-24)
 
 ## [0.114.8](https://github.com/juspay/hyperswitch-web/compare/v0.114.7...v0.114.8) (2025-02-21)
