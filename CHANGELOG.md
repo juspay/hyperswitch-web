@@ -1,3 +1,10 @@
+## [0.114.10](https://github.com/juspay/hyperswitch-web/compare/v0.114.9...v0.114.10) (2025-02-25)
+
+
+### Bug Fixes
+
+* fixed shimmer stuck for click to pay ([#917](https://github.com/juspay/hyperswitch-web/issues/917)) ([7e1e20f](https://github.com/juspay/hyperswitch-web/commit/7e1e20fd8ff49b726e7fc62a35a1bfeb985ac2fa))
+
 ## [0.114.9](https://github.com/juspay/hyperswitch-web/compare/v0.114.8...v0.114.9) (2025-02-24)
 
 ## [0.114.8](https://github.com/juspay/hyperswitch-web/compare/v0.114.7...v0.114.8) (2025-02-21)
