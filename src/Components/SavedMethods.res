@@ -327,19 +327,10 @@ let make = (
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if (
       savedCardlength === 0 &&
-        ((clickToPayConfig.isReady->Option.isNone &&
-          loadSavedCards === PaymentType.LoadingSavedCards) || !showFields)
+      clickToPayConfig.isReady->Option.isNone &&
+      (loadSavedCards === PaymentType.LoadingSavedCards || !showFields)
     ) {
-      <div
-        className="Label flex flex-row gap-3 items-end cursor-pointer"
-        style={
-          fontSize: "14px",
-          color: themeObj.colorPrimary,
-          fontWeight: "400",
-          marginTop: "25px",
-        }>
-        <PaymentElementShimmer.SavedPaymentShimmer />
-      </div>
+      <PaymentElementShimmer.SavedPaymentCardShimmer />
     } else {
       <RenderIf condition={!showFields}> {bottomElement} </RenderIf>
     }}
