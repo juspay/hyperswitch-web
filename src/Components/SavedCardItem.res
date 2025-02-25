@@ -14,15 +14,18 @@ module RenderSavedPaymentMethodItem = {
 
     switch paymentItem.paymentMethod {
     | "card" =>
-      <div className="flex flex-col w-full gap-1 text-[15px] font-medium">
+      <div
+        className="flex flex-col w-full gap-1 text-[15px] font-medium"
+        role="group"
+        ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
         <div className="flex items-center">
           {React.string(paymentItem.card.nickname)}
           <RenderIf condition={displayDefaultSavedPaymentIcon && defaultPaymentMethodSet}>
             <Icon className="ml-2" size=16 name="checkmark" style={color: themeObj.colorPrimary} />
           </RenderIf>
         </div>
-        <div className="flex flex-row items-center gap-2 text-sm font-normal">
-          <div className="whitespace-nowrap">
+        <div className="PickerItemLabel flex flex-row items-center gap-2 text-sm font-normal">
+          <div className="whitespace-nowrap" ariaHidden=true>
             {React.string(`**** ${paymentItem.card.last4Digits}`)}
           </div>
           <span className="w-1 h-1 rounded-full bg-black/60" />
