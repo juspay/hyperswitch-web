@@ -30,6 +30,23 @@ module SavedPaymentShimmer = {
   }
 }
 
+module SavedPaymentCardShimmer = {
+  @react.component
+  let make = () => {
+    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    <div
+      className="Label flex flex-row gap-3 items-end cursor-pointer"
+      style={
+        fontSize: "14px",
+        color: themeObj.colorPrimary,
+        fontWeight: "400",
+        marginTop: "25px",
+      }>
+      <SavedPaymentShimmer />
+    </div>
+  }
+}
+
 @react.component
 let make = () => {
   <div className="flex flex-col gap-4">
