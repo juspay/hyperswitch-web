@@ -14,7 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Linha de endereço 1`,
   line1Placeholder: `Nome de rua`,
   line2Label: `Linha de endereço 2`,
-  line2Placeholder: `Apartamento, número de porta, etc. (opcional)`,
+  line2Placeholder: `Apartamento, número de porta, etc.`,
   cityLabel: `Localidade`,
   postalCodeLabel: `Código postal`,
   stateLabel: `Distrito`,
