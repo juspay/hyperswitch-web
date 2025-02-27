@@ -39,7 +39,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
-
+  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
   React.useEffect(() => {
     setFieldComplete(_ => areRequiredFieldsValid)
     None
@@ -59,7 +59,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     if confirm.doSubmit {
       if areRequiredFieldsValid {
         let countryCode =
-          Country.getCountry(paymentMethodName)
+          Country.getCountry(paymentMethodName, countryList)
           ->Array.filter(item => item.countryName == country)
           ->Array.get(0)
           ->Option.getOr(Country.defaultTimeZone)
