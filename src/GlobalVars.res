@@ -15,4 +15,7 @@ let targetOrigin: string = "*"
 let isInteg = sdkUrl === "https://dev.hyperswitch.io"
 let isSandbox = sdkUrl === "https://beta.hyperswitch.io" || sdkUrl === "http://localhost:9050"
 let isProd = sdkUrl === "https://checkout.hyperswitch.io"
-let isRunningLocally = sdkUrl === "http://localhost:9050"
+let isRunningLocally =
+  sdkUrl->String.includes("localhost") ||
+  sdkUrl->String.includes("127.0.0.") ||
+  sdkUrl->String.includes("0.0.0.0")
