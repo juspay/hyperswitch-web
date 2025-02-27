@@ -71,8 +71,11 @@ let make = () => {
         let clientSecret = CardUtils.getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = CardUtils.getQueryParamsDictforKey(url.search, "sessionId")
         let publishableKey = CardUtils.getQueryParamsDictforKey(url.search, "publishableKey")
+        let profileId = CardUtils.getQueryParamsDictforKey(url.search, "profileId")
         let endpoint = CardUtils.getQueryParamsDictforKey(url.search, "endpoint")
         let ephemeralKey = CardUtils.getQueryParamsDictforKey(url.search, "ephemeralKey")
+        let pmClientSecret = CardUtils.getQueryParamsDictforKey(url.search, "pmClientSecret")
+        let pmSessionId = CardUtils.getQueryParamsDictforKey(url.search, "pmSessionId")
         let hyperComponentName =
           CardUtils.getQueryParamsDictforKey(
             url.search,
@@ -83,10 +86,13 @@ let make = () => {
 
         <PreMountLoader
           publishableKey
+          profileId
           sessionId
           clientSecret
           endpoint
           ephemeralKey
+          pmSessionId
+          pmClientSecret
           hyperComponentName
           merchantHostname
           customPodUri
