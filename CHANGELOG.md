@@ -1,3 +1,11 @@
+## [0.115.1](https://github.com/juspay/hyperswitch-web/compare/v0.115.0...v0.115.1) (2025-02-25)
+
+
+### Bug Fixes
+
+* fixed crypto pay body payload ([#919](https://github.com/juspay/hyperswitch-web/issues/919)) ([e956628](https://github.com/juspay/hyperswitch-web/commit/e9566287f96a257d261e1a5f9a131730814bc80c))
+* fixed error handling of click to pay ([#923](https://github.com/juspay/hyperswitch-web/issues/923)) ([2ea9ff1](https://github.com/juspay/hyperswitch-web/commit/2ea9ff1a3b316b6e777ee7431952488233ab7f76))
+
 # [0.115.0](https://github.com/juspay/hyperswitch-web/compare/v0.114.10...v0.115.0) (2025-02-25)
 
 

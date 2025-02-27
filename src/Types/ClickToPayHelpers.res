@@ -389,7 +389,7 @@ let initializeMastercardCheckout = (
               ~value="Mastercard Checkout Service not initialized",
               ~eventName=CLICK_TO_PAY_FLOW,
             )
-            reject(Exn.raiseError("Mastercard Checkout Service not initialized"))
+            reject(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
           }
         }
       } catch {
@@ -409,7 +409,7 @@ let initializeMastercardCheckout = (
         ~value="MastercardCheckoutServices is not available",
         ~eventName=CLICK_TO_PAY_FLOW,
       )
-      Exn.raiseError("MastercardCheckoutServices is not available")
+      reject(Exn.anyToExnInternal("MastercardCheckoutServices is not available"))
     }
   }
 }
@@ -484,7 +484,7 @@ let authenticate = async (payload: authenticateInputPayload, logger: HyperLogger
           ~value="Mastercard Checkout Service not initialized",
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        Error(Exn.raiseError("Mastercard Checkout Service not initialized"))
+        Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
@@ -520,7 +520,7 @@ let checkoutWithCard = async (
           ~value="Mastercard Checkout Service not initialized",
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        Error(Exn.raiseError("Mastercard Checkout Service not initialized"))
+        Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
@@ -559,7 +559,7 @@ let encryptCardForClickToPay = async (
           ~value="Mastercard Checkout Service not initialized",
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        Error(Exn.raiseError("Mastercard Checkout Service not initialized"))
+        Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
@@ -594,7 +594,7 @@ let checkoutWithNewCard = async (
           ~value="Mastercard Checkout Service not initialized",
           ~eventName=CLICK_TO_PAY_FLOW,
         )
-        Error(Exn.raiseError("Mastercard Checkout Service not initialized"))
+        Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
@@ -750,7 +750,7 @@ let loadMastercardScript = (clickToPayToken, isProd, logger: HyperLogger.loggerM
             ~value="Error loading Mastercard script",
             ~eventName=CLICK_TO_PAY_SCRIPT,
           )
-          let exn = Exn.raiseError("Failed to load Mastercard script")
+          let exn = Exn.anyToExnInternal("Failed to load Mastercard script")
           exn->reject
         })
 
@@ -975,7 +975,7 @@ let signOut = async () => {
       }
     | None => {
         Console.error("Mastercard Checkout Service not initialized")
-        Error(Exn.raiseError("Mastercard Checkout Service not initialized"))
+        Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
