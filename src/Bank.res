@@ -276,6 +276,8 @@ let fpxBanks = [
   {displayName: "Agro Bank", hyperSwitch: "agro_bank"},
   {displayName: "Alliance Bank", hyperSwitch: "alliance_bank"},
   {displayName: "Am Bank", hyperSwitch: "am_bank"},
+  {displayName: "Bank Islam", hyperSwitch: "bank_islam"},
+  {displayName: "Bank Of China", hyperSwitch: "bank_of_china"},
   {displayName: "Bank Rakyat", hyperSwitch: "bank_rakyat"},
   {displayName: "Bank Simpanan Nasional", hyperSwitch: "bank_simpanan_nasional"},
   {displayName: "CIMB Bank", hyperSwitch: "cimb_bank"},
