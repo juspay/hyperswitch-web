@@ -175,11 +175,6 @@ type sdkHandleSavePayment = {
   confirmParams: ConfirmType.confirmParams,
 }
 
-type sdkHandleAddPayment = {
-  handleAdd: bool,
-  buttonText?: string,
-}
-
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
@@ -200,7 +195,6 @@ type options = {
   billingAddress: billingAddress,
   sdkHandleConfirmPayment: sdkHandleConfirmPayment,
   sdkHandleSavePayment: sdkHandleSavePayment,
-  sdkHandleAddPayment: sdkHandleAddPayment,
   paymentMethodsHeaderText?: string,
   savedPaymentMethodsHeaderText?: string,
   hideExpiredPaymentMethods: bool,
@@ -349,10 +343,6 @@ let defaultSdkHandleConfirmPayment = {
   confirmParams: ConfirmType.defaultConfirm,
 }
 
-let defaultSdkHandleAddPayment = {
-  handleAdd: false,
-}
-
 let defaultSdkHandleSavePayment = {
   handleSave: false,
   confirmParams: ConfirmType.defaultConfirm,
@@ -378,7 +368,6 @@ let defaultOptions = {
   billingAddress: defaultBillingAddress,
   sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
   sdkHandleSavePayment: defaultSdkHandleSavePayment,
-  sdkHandleAddPayment: defaultSdkHandleAddPayment,
   hideExpiredPaymentMethods: false,
   displayDefaultSavedPaymentIcon: true,
   hideCardNicknameField: false,
@@ -1092,11 +1081,6 @@ let getSdkHandleSavePaymentProps = dict => {
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
-let getSdkHandleAddPaymentProps = dict => {
-  handleAdd: dict->getBool("handleAdd", false),
-  buttonText: ?dict->getOptionString("buttonText"),
-}
-
 let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(
     [
@@ -1116,7 +1100,6 @@ let itemToObjMapper = (dict, logger) => {
       "showCardFormByDefault",
       "sdkHandleConfirmPayment",
       "sdkHandleSavePayment",
-      "sdkHandleAddPayment",
       "paymentMethodsHeaderText",
       "savedPaymentMethodsHeaderText",
       "hideExpiredPaymentMethods",
@@ -1167,7 +1150,6 @@ let itemToObjMapper = (dict, logger) => {
     sdkHandleSavePayment: dict
     ->getDictFromDict("sdkHandleSavePayment")
     ->getSdkHandleSavePaymentProps,
-    sdkHandleAddPayment: dict->getDictFromDict("sdkHandleAddPayment")->getSdkHandleAddPaymentProps,
     paymentMethodsHeaderText: ?getOptionString(dict, "paymentMethodsHeaderText"),
     savedPaymentMethodsHeaderText: ?getOptionString(dict, "savedPaymentMethodsHeaderText"),
     hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
