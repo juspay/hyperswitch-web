@@ -61,6 +61,8 @@ let defaultConfig = {
   fonts: [],
   clientSecret: "",
   ephemeralKey: "",
+  pmClientSecret: "",
+  pmSessionId: "",
   loader: Auto,
 }
 type recoilConfig = {
@@ -397,7 +399,16 @@ let itemToObjMapper = (
   logger,
 ) => {
   unknownKeysWarning(
-    ["appearance", "fonts", "locale", "clientSecret", "loader", "ephemeralKey"],
+    [
+      "appearance",
+      "fonts",
+      "locale",
+      "clientSecret",
+      "loader",
+      "ephemeralKey",
+      "pmClientSecret",
+      "pmSessionId",
+    ],
     dict,
     "elements",
     ~logger,
@@ -408,6 +419,8 @@ let itemToObjMapper = (
     fonts: getFonts("fonts", dict, logger),
     clientSecret: getWarningString(dict, "clientSecret", "", ~logger),
     ephemeralKey: getWarningString(dict, "ephemeralKey", "", ~logger),
+    pmSessionId: getWarningString(dict, "pmSessionId", "", ~logger),
+    pmClientSecret: getWarningString(dict, "pmClientSecret", "", ~logger),
     loader: getWarningString(dict, "loader", "auto", ~logger)->getShowLoader(logger),
   }
 }

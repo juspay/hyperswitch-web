@@ -14,7 +14,7 @@ let make = (
   open Utils
   open UtilityHooks
   open Promise
-
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let {innerLayout} = config.appearance
@@ -29,7 +29,13 @@ let make = (
   let (clickToPayRememberMe, setClickToPayRememberMe) = React.useState(_ => false)
 
   let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
-
+  let url = RescriptReactRouter.useUrl()
+  let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+  let paymentTypeFromUrl = componentName->CardThemeType.getPaymentMode
+  let isPMMFlow = switch paymentTypeFromUrl {
+  | PaymentMethodsManagement => true
+  | _ => false
+  }
   let (
     isCardValid,
     setIsCardValid,
@@ -71,7 +77,9 @@ let make = (
   ) = cvcProps
   let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
+  let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
 
@@ -125,6 +133,7 @@ let make = (
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect(() => {
     setComplete(_ => complete)
+    setShowFields(_ => true)
     None
   }, [complete])
 
@@ -257,6 +266,15 @@ let make = (
             resolve()
           })
           ->ignore
+        } else if isPMMFlow {
+          saveCard(
+            ~bodyArr=cardBody->mergeAndFlattenToTuples(requiredFieldsBody),
+            ~confirmParam={
+              return_url: options.sdkHandleSavePayment.confirmParams.return_url,
+              publishableKey,
+            },
+            ~handleUserError=true,
+          )
         } else {
           intent(
             ~bodyArr={
@@ -442,7 +460,9 @@ let make = (
               />
             </div>
           </RenderIf>
-          <RenderIf condition={!options.hideCardNicknameField && isCustomerAcceptanceRequired}>
+          <RenderIf
+            condition={(!options.hideCardNicknameField && isCustomerAcceptanceRequired) ||
+              paymentType == PaymentMethodsManagement}>
             <NicknamePaymentInput paymentType />
           </RenderIf>
         </div>
