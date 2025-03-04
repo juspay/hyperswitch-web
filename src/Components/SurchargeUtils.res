@@ -63,30 +63,25 @@ let useMessageGetter = () => {
     ~paymentMethod,
     ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ) => {
+    let currency = paymentMethodListValue.currency
     let surchargeValue = surchargeDetails.displayTotalSurchargeAmount->Float.toString
+    let messageTemplate = customSurchargeMessage->Option.getOr("")
 
-    let localeStrForSurcharge = if (
-      customSurchargeMessage->Option.isSome &&
-        customSurchargeMessage->Option.getOr("")->String.includes("{{amountAndCurrency}}")
-    ) {
+    if messageTemplate->String.includes("{{amountAndCurrency}}") {
       let customSurchargeMessageFilteredValue =
-        customSurchargeMessage
-        ->Option.getOr("")
-        ->String.replace(
-          "{{amountAndCurrency}}",
-          `${paymentMethodListValue.currency} ${surchargeValue}`,
-        )
+        messageTemplate->String.replace("{{amountAndCurrency}}", `${currency} ${surchargeValue}`)
 
-      {React.string(customSurchargeMessageFilteredValue)}
-    } else if paymentMethod === "card" {
-      localeString.surchargeMsgAmountForCard(paymentMethodListValue.currency, surchargeValue)
+      Some(React.string(customSurchargeMessageFilteredValue))
     } else {
-      localeString.surchargeMsgAmount(paymentMethodListValue.currency, surchargeValue)
+      let message = if paymentMethod === "card" {
+        localeString.surchargeMsgAmountForCard(currency, surchargeValue)
+      } else {
+        localeString.surchargeMsgAmount(currency, surchargeValue)
+      }
+
+      Some(message)
     }
-
-    Some(localeStrForSurcharge)
   }
-
   getMessage
 }
 
