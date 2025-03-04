@@ -1299,6 +1299,8 @@ let expressCheckoutComponents = [
   "paze",
   "samsungPay",
   "expressCheckout",
+  "shippingAddressElement",
+  "billingAddressElement",
 ]
 
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
