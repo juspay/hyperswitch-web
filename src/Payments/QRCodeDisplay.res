@@ -2,8 +2,7 @@ open Utils
 
 type paymentMethod =
   | DuitNow
-  | Other(string)
-  | Unknown
+  | Other
 
 type paymentMethodConfig = {
   defaultColor: string,
@@ -25,8 +24,7 @@ let getKeyValue = (json, str) => {
 let parsePaymentMethod = methodString => {
   switch methodString {
   | "duit_now" => DuitNow
-  | "" => Unknown
-  | other => Other(other)
+  | _ => Other
   }
 }
 
@@ -40,7 +38,7 @@ let getPaymentMethodConfig = (method): paymentMethodConfig => {
       color: "",
       logoName: "duitNow",
     }
-  | Other(_) | Unknown => {
+  | Other => {
       defaultColor: "transparent",
       showBorder: false,
       footerText: "",
@@ -61,9 +59,9 @@ let make = () => {
   let (headers, setHeaders) = React.useState(_ => [])
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
-  let (paymentMethod, setPaymentMethod) = React.useState(_ => Unknown)
+  let (paymentMethod, setPaymentMethod) = React.useState(_ => Other)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
-    getPaymentMethodConfig(Unknown)
+    getPaymentMethodConfig(Other)
   )
 
   React.useEffect0(() => {
@@ -87,9 +85,7 @@ let make = () => {
           setQrCode(_ => qrData)
 
           switch parsedPaymentMethod {
-          | Other(_)
-          | Unknown =>
-            setPaymentMethodConfig(_ => defaultConfig)
+          | Other => setPaymentMethodConfig(_ => defaultConfig)
           | _ => {
               let displayText = metaDataDict->getString("display_text", defaultConfig.footerText)
               let borderColor = metaDataDict->getString("border_color", defaultConfig.defaultColor)
