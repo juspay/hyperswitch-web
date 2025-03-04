@@ -28,7 +28,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   stateLabel: `州`,
   stateEmptyText: `状態を空にすることはできません`,
   cityLabel: `街`,
-  line2Placeholder: `アパート、ユニット番号など（任意）`,
+  line2Placeholder: `アパート、ユニット番号など`,
   line2EmptyText: `住所行 2 を空にすることはできません`,
   countryLabel: `国`,
   cityEmptyText: `都市を空にすることはできません`,
@@ -152,4 +152,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pixキー`,
   invalidCardHolderNameError: `カード所有者の名前に数字を含めることはできません`,
   invalidNickNameError: `ニックネームには2つ以上の数字を含めることはできません`,
+  expiry: `有効期限`,
 }

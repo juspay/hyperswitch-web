@@ -15,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: "Street address",
   line1EmptyText: "Address line 1 cannot be empty",
   line2Label: "Address line 2",
-  line2Placeholder: "Apt., unit number, etc (optional)",
+  line2Placeholder: "Apt., unit number, etc",
   line2EmptyText: "Address line 2 cannot be empty",
   cityLabel: "City",
   cityEmptyText: "City cannot be empty",
@@ -151,4 +151,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix key`,
   invalidCardHolderNameError: `Card Holder's name cannot have digits`,
   invalidNickNameError: `Nickname cannot have more than 2 digits`,
+  expiry: `expiry`,
 }

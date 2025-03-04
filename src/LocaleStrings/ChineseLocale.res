@@ -15,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: `街道地址`,
   line1EmptyText: `地址行 1 不能为空`,
   line2Label: `地址行 2`,
-  line2Placeholder: `公寓、单元号等（可选）`,
+  line2Placeholder: `公寓、单元号等`,
   line2EmptyText: `地址行 2 不能为空`,
   cityLabel: `城市`,
   cityEmptyText: `城市不能为空`,
@@ -151,4 +151,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix 密钥`,
   invalidCardHolderNameError: `持卡人姓名不能包含数字`,
   invalidNickNameError: `昵称不能包含超过2个数字`,
+  expiry: `到期`,
 }

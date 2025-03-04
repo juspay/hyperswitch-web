@@ -143,6 +143,7 @@ type localeStrings = {
   pixKeyPlaceholder: string,
   invalidCardHolderNameError: string,
   invalidNickNameError: string,
+  expiry: string,
 }
 
 type constantStrings = {

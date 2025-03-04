@@ -14,7 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Línia d'adreça 1`,
   line1Placeholder: `Adreça postal`,
   line2Label: `Línia d'adreça 2`,
-  line2Placeholder: `Pis, número d'apartament, etc. (opcional)`,
+  line2Placeholder: `Pis, número d'apartament, etc.`,
   cityLabel: `Ciutat`,
   postalCodeLabel: `Codi postal`,
   stateLabel: `Estat`,
@@ -153,4 +153,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Clau Pix`,
   invalidCardHolderNameError: `El nom del titular de la targeta no pot contenir dígits`,
   invalidNickNameError: `El sobrenom no pot contenir més de 2 dígits`,
+  expiry: `caducitat`,
 }
