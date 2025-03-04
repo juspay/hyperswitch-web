@@ -4,7 +4,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
   open Utils
   open RecoilAtoms
 
-  let {iframeId, publishableKey} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId, publishableKey, profileId} = Recoil.useRecoilValueFromAtom(keys)
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -84,9 +84,9 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
     try {
       let res = await PaymentHelpersV2.updatePaymentMethod(
         ~bodyArr,
-        ~pmSessionId=config.pmSessionId,
         ~pmClientSecret=config.pmClientSecret,
         ~publishableKey,
+        ~profileId,
         ~paymentMethodId=paymentItem.id,
         ~logger,
         ~customPodUri,
@@ -120,7 +120,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
     try {
       let res = await PaymentHelpersV2.deletePaymentMethodV2(
         ~publishableKey,
-        ~pmSessionId=config.pmSessionId,
+        ~profileId,
         ~pmClientSecret=config.pmClientSecret,
         ~paymentMethodId=paymentItem.id,
         ~logger,
@@ -128,7 +128,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
       )
 
       let dict = res->getDictFromJson
-      let paymentMethodId = dict->getString("payment_method_id", "")
+      let paymentMethodId = dict->getString("id", "")
       let isDeleted = dict->getBool("deleted", false)
 
       if isDeleted {

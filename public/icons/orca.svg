@@ -2161,6 +2161,37 @@ License)
     />
   </symbol>
   <symbol
+    id="delete-hollow"
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    fill="none"
+    viewBox="0 0 16 16"
+  >
+    <path
+      stroke="#C0362D"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.333"
+      d="M10.667 4 9.93 2.526a2.157 2.157 0 0 0-3.86 0L5.335 4M2.667 4h10.667M4 4h8v6c0 1.243 0 1.864-.203 2.354a2.666 2.666 0 0 1-1.443 1.443C9.864 14 9.243 14 8 14c-1.242 0-1.863 0-2.354-.203a2.667 2.667 0 0 1-1.443-1.443C4 11.864 4 11.243 4 10V4Z"
+    />
+  </symbol>
+  <symbol
+    id="plus"
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    fill="none"
+    viewBox="0 0 12 12"
+  >
+    <path
+      stroke="#1C6DEA"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      d="M6 9.5V6m0 0V2.5M6 6H2.5M6 6h3.5"
+    />
+  </symbol>
+  <symbol
     id="card-2"
     width="24"
     height="24"

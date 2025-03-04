@@ -14,7 +14,7 @@ let make = (
   open Utils
   open UtilityHooks
   open Promise
-  let {publishableKey, profileId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let {innerLayout} = config.appearance
@@ -77,7 +77,7 @@ let make = (
   ) = cvcProps
   let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
-  let saveCard = PaymentHelpers.useSaveCard(Some(loggerState), Card)
+  let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
   let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)

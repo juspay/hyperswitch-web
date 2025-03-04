@@ -3,6 +3,7 @@ open RecoilAtoms
 
 @react.component
 let make = (~paymentType: CardThemeType.mode) => {
+  let divRef = React.useRef(Nullable.null)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {savedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   let (savedMethods, setSavedMethods) = React.useState(_ => [])
@@ -13,12 +14,12 @@ let make = (~paymentType: CardThemeType.mode) => {
   let (paymentMethodListValue, _setPaymentMethodListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentMethodListValue,
   )
+  let (paymentManagementListValue, _setPaymentManagementListValue) = Recoil.useRecoilState(
+    PaymentUtils.paymentManagementListValue,
+  )
   let (logger, _initTimestamp) = React.useMemo0(() => {
     (HyperLogger.make(~source=Elements(PaymentMethodsManagement)), Date.now())
   })
-  let handleOnClick = () => {
-    setShowAddScreen(_ => true)
-  }
   let supportedCardBrands = React.useMemo(() => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
@@ -136,7 +137,9 @@ let make = (~paymentType: CardThemeType.mode) => {
   }, (isExpiryValid, CardUtils.isExpiryComplete(cardExpiry)))
 
   <>
-    <RenderIf condition={showAddScreen}>
+    <RenderIf
+      condition={showAddScreen &&
+      paymentManagementListValue.paymentMethodsEnabled->Array.length != 0}>
       <div className="flex flex-col gap-3">
         <RenderIf condition={savedMethodsV2->Array.length != 0}>
           <Icon
@@ -155,6 +158,11 @@ let make = (~paymentType: CardThemeType.mode) => {
         </div>
       </div>
     </RenderIf>
+    <RenderIf
+      condition={showAddScreen &&
+      paymentManagementListValue.paymentMethodsEnabled->Array.length == 0}>
+      <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
+    </RenderIf>
     <RenderIf condition={!showAddScreen}>
       <RenderIf condition={!isLoading}>
         <SavedPaymentManagement savedMethods setSavedMethods />
@@ -163,8 +171,22 @@ let make = (~paymentType: CardThemeType.mode) => {
         <PaymentElementShimmer.SavedPaymentShimmer />
       </RenderIf>
       <RenderIf condition={GlobalVars.sdkVersionEnum == V2}>
-        <div className="mt-4">
-          <AddButton onClickHandler={handleOnClick} />
+        <div
+          className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
+          style={
+            fontSize: "14px",
+            float: "left",
+            fontWeight: "500",
+            width: "fit-content",
+            color: themeObj.colorPrimary,
+          }
+          role="button"
+          ariaLabel="Click to use more payment methods"
+          tabIndex=0
+          onClick={_ => setShowAddScreen(_ => true)}
+          dataTestId={TestUtils.addNewCardIcon}>
+          <Icon name="plus" size=19 />
+          {React.string("Add new card")}
         </div>
       </RenderIf>
     </RenderIf>

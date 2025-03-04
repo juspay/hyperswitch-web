@@ -112,6 +112,6 @@ let createCustomerObjArr = (dict, key) => {
     ->Dict.get(key)
     ->Option.flatMap(JSON.Decode.object)
     ->Option.getOr(Dict.make())
-  let wholeStructure = customerDict->itemToPMMObjMapper
-  LoadedV2(wholeStructure)
+  let finalList = customerDict->itemToPMMObjMapper
+  LoadedV2(finalList)
 }

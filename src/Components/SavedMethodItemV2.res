@@ -5,7 +5,8 @@ let make = (
   ~handleDeleteV2,
   ~handleUpdate,
 ) => {
-  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {innerLayout} = config.appearance
   let {hideExpiredPaymentMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let isCard = paymentItem.paymentMethodType === "card"
   let expiryMonth = paymentItem.paymentMethodData.card.expiryMonth
@@ -40,7 +41,9 @@ let make = (
           minWidth: "150px",
           width: "100%",
           padding: "1rem 0 1rem 0",
-          borderBottom: `1px solid ${themeObj.borderColor}`,
+          borderBottom: managePaymentMethod != paymentItem.id
+            ? `1px solid ${themeObj.borderColor}`
+            : "none",
           borderTop: "none",
           borderLeft: "none",
           borderRight: "none",
@@ -64,23 +67,27 @@ let make = (
                         <div className="flex flex-col items-start gap-1">
                           <div className="flex flex-row items-start gap-3">
                             <div> {React.string(nickname)} </div>
-                            <div className={`PickerItemLabel flex flex-row gap-1 items-center`}>
-                              <div className="tracking-widest"> {React.string(`****`)} </div>
-                              <div>
-                                {React.string(paymentItem.paymentMethodData.card.last4Digits)}
+                            <RenderIf condition={managePaymentMethod != paymentItem.id}>
+                              <div className={`PickerItemLabel flex flex-row gap-1 items-center`}>
+                                <div className="tracking-widest"> {React.string(`****`)} </div>
+                                <div>
+                                  {React.string(paymentItem.paymentMethodData.card.last4Digits)}
+                                </div>
+                              </div>
+                            </RenderIf>
+                          </div>
+                          <RenderIf condition={managePaymentMethod != paymentItem.id}>
+                            <div
+                              className={`flex flex-row items-center justify-end gap-3 -mt-1`}
+                              style={fontSize: "14px", opacity: "0.5"}>
+                              <div> {React.string(`Expiry`)} </div>
+                              <div className="flex">
+                                {React.string(
+                                  `${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`,
+                                )}
                               </div>
                             </div>
-                          </div>
-                          <div
-                            className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                            style={fontSize: "14px", opacity: "0.5"}>
-                            <div> {React.string(`Expiry`)} </div>
-                            <div className="flex">
-                              {React.string(
-                                `${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`,
-                              )}
-                            </div>
-                          </div>
+                          </RenderIf>
                         </div>
                       } else {
                         <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>
@@ -90,26 +97,25 @@ let make = (
                 </div>
               </div>
               <RenderIf condition={managePaymentMethod == paymentItem.id}>
+                <div
+                  className="cursor-pointer ml-4 mb-[6px]"
+                  style={color: themeObj.colorPrimary}
+                  onClick={_ => {
+                    handleUpdate(paymentItem)->ignore
+                  }}>
+                  {React.string("Save")}
+                </div>
                 <Icon
                   size=18
-                  name="delete"
+                  name="delete-hollow"
                   style={color: themeObj.colorDanger}
                   className="cursor-pointer ml-4 mb-[6px]"
                   onClick={_ => {
                     handleDeleteV2(paymentItem)->ignore
                   }}
                 />
-                <Icon
-                  size=18
-                  name="ticMark"
-                  style={color: themeObj.colorPrimary}
-                  className="cursor-pointer ml-4 mb-[6px]"
-                  onClick={_ => {
-                    handleUpdate(paymentItem)->ignore
-                  }}
-                />
               </RenderIf>
-              <RenderIf condition={!(managePaymentMethod == paymentItem.id)}>
+              <RenderIf condition={!(managePaymentMethod === paymentItem.id)}>
                 <Icon
                   size=18
                   name="manage"
@@ -139,8 +145,10 @@ let make = (
           style={
             minWidth: "150px",
             width: "100%",
-            padding: "1rem 0 1rem 0",
-            borderBottom: `1px solid ${themeObj.borderColor}`,
+            padding: "0 0 1rem 0",
+            borderBottom: managePaymentMethod === paymentItem.id
+              ? `1px solid ${themeObj.borderColor}`
+              : "none",
             borderTop: "none",
             borderLeft: "none",
             borderRight: "none",
@@ -150,6 +158,39 @@ let make = (
             boxShadow: "none",
             opacity: {isCardExpired ? "0.7" : "1"},
           }>
+          <div
+            className="flex flex-row w-full place-content-between"
+            style={
+              gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
+            }>
+            <div className={innerLayout === Spaced ? "w-[70%]" : "w-[50%]"}>
+              <PaymentInputField
+                fieldName=localeString.cardNumberLabel
+                value={`**** **** **** ${paymentItem.paymentMethodData.card.last4Digits}`}
+                onChange={_ => ()}
+                paymentType=CardThemeType.Card
+                type_="tel"
+                appearance=config.appearance
+                inputRef={React.useRef(Nullable.null)}
+                name=TestUtils.expiryInputTestId
+                isDisabled=true
+              />
+            </div>
+            <div className={innerLayout === Spaced ? "w-[30%]" : "w-[50%]"}>
+              <PaymentInputField
+                fieldName=localeString.validThruText
+                value={`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}
+                onChange={_ => ()}
+                paymentType=CardThemeType.Card
+                type_="tel"
+                appearance=config.appearance
+                inputRef={React.useRef(Nullable.null)}
+                placeholder=localeString.expiryPlaceholder
+                name=TestUtils.expiryInputTestId
+                isDisabled=true
+              />
+            </div>
+          </div>
           <FullNamePaymentInput
             paymentType={PaymentMethodsManagement} fullNameValue=cardHolderName
           />

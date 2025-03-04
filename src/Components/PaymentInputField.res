@@ -21,6 +21,7 @@ let make = (
   ~appearance: CardThemeType.appearance,
   ~className="",
   ~inputRef,
+  ~isDisabled=false,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
@@ -98,13 +99,13 @@ let make = (
       <div className={`relative w-full ${inputFieldClassName}`}>
         <input
           style={
-            background: backgroundClass,
+            background: isDisabled ? "#F6F8FA" : backgroundClass,
             padding: themeObj.spacingUnit,
             width: fieldWidth,
             height,
           }
           dataTestId={name}
-          disabled=readOnly
+          disabled={isDisabled || readOnly}
           ref={inputRef->ReactDOM.Ref.domRef}
           type_
           name

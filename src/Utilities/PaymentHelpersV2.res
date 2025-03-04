@@ -1,4 +1,274 @@
 open Utils
+open Identity
+open PaymentHelpersTypes
+open LoggerUtils
+open URLModule
+
+let intentCall = (
+  ~fetchApi: (
+    string,
+    ~bodyStr: string=?,
+    ~headers: Dict.t<string>=?,
+    ~method: Fetch.method,
+  ) => promise<Fetch.Response.t>,
+  ~uri,
+  ~headers,
+  ~bodyStr,
+  ~confirmParam: ConfirmType.confirmParams,
+  ~clientSecret,
+  ~optLogger,
+  ~handleUserError,
+  ~paymentType,
+  ~fetchMethod,
+  ~customPodUri,
+  ~sdkHandleOneClickConfirmPayment,
+  ~isPaymentSession=false,
+  ~isCallbackUsedVal=?,
+  ~redirectionFlags,
+) => {
+  open Promise
+  let isConfirm = uri->String.includes("/confirm")
+  Console.log2("headers and uri==>", uri)
+  let handleOpenUrl = url => {
+    if isPaymentSession {
+      Utils.replaceRootHref(url, redirectionFlags)
+    } else {
+      openUrl(url)
+    }
+  }
+  fetchApi(
+    uri,
+    ~method=fetchMethod,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~bodyStr,
+  )
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status->Int.toString
+    let url = makeUrl(confirmParam.return_url)
+    Console.log2("clijet==>", clientSecret)
+    Console.log2("clijet==>", clientSecret->getPaymentId)
+    url.searchParams.set("payment_intent_client_secret", clientSecret)
+    url.searchParams.set("status", "failed")
+    // url.searchParams.set("payment_id", clientSecret->getPaymentId)
+    messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
+
+    if statusCode->String.charAt(0) !== "2" {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        Promise.make(
+          (resolve, _) => {
+            if isConfirm {
+              let paymentMethod = switch paymentType {
+              | Card => "CARD"
+              | _ =>
+                bodyStr
+                ->safeParse
+                ->getDictFromJson
+                ->getString("payment_method_type", "")
+              }
+              handleLogging(
+                ~optLogger,
+                ~value=data->JSON.stringify,
+                ~eventName=PAYMENT_FAILED,
+                ~paymentMethod,
+              )
+            }
+            let dict = data->getDictFromJson
+            let errorObj = PaymentError.itemToObjMapper(dict)
+            if !isPaymentSession {
+              PaymentHelpers.closePaymentLoaderIfAny()
+              postFailedSubmitResponse(
+                ~errortype=errorObj.error.type_,
+                ~message=errorObj.error.message,
+              )
+            }
+            if handleUserError {
+              handleOpenUrl(url.href)
+            } else {
+              let failedSubmitResponse = getFailedSubmitResponse(
+                ~errorType=errorObj.error.type_,
+                ~message=errorObj.error.message,
+              )
+              resolve(failedSubmitResponse)
+            }
+          },
+        )->then(resolve)
+      })
+      ->catch(err => {
+        Promise.make(
+          (resolve, _) => {
+            let _exceptionMessage = err->formatException
+            if !isPaymentSession {
+              PaymentHelpers.closePaymentLoaderIfAny()
+              postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+            }
+            if handleUserError {
+              handleOpenUrl(url.href)
+            } else {
+              let failedSubmitResponse = getFailedSubmitResponse(
+                ~errorType="server_error",
+                ~message="Something went wrong",
+              )
+              resolve(failedSubmitResponse)
+            }
+          },
+        )->then(resolve)
+      })
+    } else {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        Promise.make(
+          (resolve, _) => {
+            let intent = PaymentConfirmTypesV2.itemToPMMConfirmMapper(data->getDictFromJson)
+            let paymentMethod = switch paymentType {
+            | Card => "CARD"
+            | _ => "CARD"
+            }
+
+            let url = makeUrl(confirmParam.return_url)
+            url.searchParams.set("payment_intent_client_secret", clientSecret)
+            url.searchParams.set("status", intent.authenticationDetails.status)
+
+            let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
+              switch (paymentType, sdkHandleOneClickConfirmPayment) {
+              | (Card, _)
+              | (Gpay, false)
+              | (Applepay, false)
+              | (Paypal, false) =>
+                if !isPaymentSession {
+                  if isCallbackUsedVal->Option.getOr(false) {
+                    handleOnCompleteDoThisMessage()
+                  } else {
+                    PaymentHelpers.closePaymentLoaderIfAny()
+                  }
+
+                  postSubmitResponse(~jsonData=data, ~url=url.href)
+                } else if confirmParam.redirect === Some("always") {
+                  if isCallbackUsedVal->Option.getOr(false) {
+                    handleOnCompleteDoThisMessage()
+                  } else {
+                    handleOpenUrl(url.href)
+                  }
+                } else {
+                  resolve(data)
+                }
+              | _ =>
+                if isCallbackUsedVal->Option.getOr(false) {
+                  PaymentHelpers.closePaymentLoaderIfAny()
+                  handleOnCompleteDoThisMessage()
+                } else {
+                  handleOpenUrl(url.href)
+                }
+              }
+            }
+
+            if intent.authenticationDetails.status == "requires_customer_action" {
+              if intent.nextAction.type_ == "redirect_to_url" {
+                handleLogging(
+                  ~optLogger,
+                  ~value="",
+                  ~internalMetadata=intent.nextAction.redirectToUrl,
+                  ~eventName=REDIRECTING_USER,
+                  ~paymentMethod,
+                )
+                handleOpenUrl(intent.nextAction.redirectToUrl)
+              } else {
+                if !isPaymentSession {
+                  postFailedSubmitResponse(
+                    ~errortype="confirm_payment_failed",
+                    ~message="Payment failed. Try again!",
+                  )
+                }
+                if uri->String.includes("force_sync=true") {
+                  handleLogging(
+                    ~optLogger,
+                    ~value=intent.nextAction.type_,
+                    ~internalMetadata=intent.nextAction.type_,
+                    ~eventName=REDIRECTING_USER,
+                    ~paymentMethod,
+                    ~logType=ERROR,
+                  )
+                  handleOpenUrl(url.href)
+                } else {
+                  let failedSubmitResponse = getFailedSubmitResponse(
+                    ~errorType="confirm_payment_failed",
+                    ~message="Payment failed. Try again!",
+                  )
+                  resolve(failedSubmitResponse)
+                }
+              }
+            } else if intent.authenticationDetails.status != "" {
+              if intent.authenticationDetails.status === "succeeded" {
+                handleLogging(
+                  ~optLogger,
+                  ~value=intent.authenticationDetails.status,
+                  ~eventName=PAYMENT_SUCCESS,
+                  ~paymentMethod,
+                )
+              } else if intent.authenticationDetails.status === "failed" {
+                handleLogging(
+                  ~optLogger,
+                  ~value=intent.authenticationDetails.status,
+                  ~eventName=PAYMENT_FAILED,
+                  ~paymentMethod,
+                )
+              }
+              handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
+            } else if !isPaymentSession {
+              postFailedSubmitResponse(
+                ~errortype="confirm_payment_failed",
+                ~message="Payment failed. Try again!",
+              )
+            } else {
+              let failedSubmitResponse = getFailedSubmitResponse(
+                ~errorType="confirm_payment_failed",
+                ~message="Payment failed. Try again!",
+              )
+              resolve(failedSubmitResponse)
+            }
+          },
+        )->then(resolve)
+      })
+    }
+  })
+  ->catch(err => {
+    Promise.make((resolve, _) => {
+      try {
+        let url = makeUrl(confirmParam.return_url)
+        url.searchParams.set("payment_intent_client_secret", clientSecret)
+        url.searchParams.set("payment_id", clientSecret->getPaymentId)
+        url.searchParams.set("status", "failed")
+        let _exceptionMessage = err->formatException
+
+        if !isPaymentSession {
+          PaymentHelpers.closePaymentLoaderIfAny()
+          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+        }
+        if handleUserError {
+          handleOpenUrl(url.href)
+        } else {
+          let failedSubmitResponse = getFailedSubmitResponse(
+            ~errorType="server_error",
+            ~message="Something went wrong",
+          )
+          resolve(failedSubmitResponse)
+        }
+      } catch {
+      | _ =>
+        if !isPaymentSession {
+          postFailedSubmitResponse(~errortype="error", ~message="Something went wrong")
+        }
+        let failedSubmitResponse = getFailedSubmitResponse(
+          ~errorType="server_error",
+          ~message="Something went wrong",
+        )
+        resolve(failedSubmitResponse)
+      }
+    })->then(resolve)
+  })
+}
 
 let fetchPaymentManagementList = (
   ~pmSessionId,
@@ -23,138 +293,7 @@ let fetchPaymentManagementList = (
       res
       ->Fetch.Response.json
       ->then(_ => {
-        // JSON.Encode.null->resolve
-        // JSON.Encode.null->resolve
-        let val = `{
-    "payment_methods_enabled": [
-        {
-            "payment_method_type": "card",
-            "payment_method_subtype": "credit",
-            "required_fields": [
-                {
-                    "required_field": "payment_method_data.card.card_number",
-                    "display_name": "card_number",
-                    "field_type": "user_card_number",
-                    "value": null
-                },
-                {
-                    "required_field": "payment_method_data.card.card_exp_year",
-                    "display_name": "card_exp_year",
-                    "field_type": "user_card_expiry_year",
-                    "value": null
-                },
-                {
-                    "required_field": "payment_method_data.card.card_cvc",
-                    "display_name": "card_cvc",
-                    "field_type": "user_card_cvc",
-                    "value": null
-                },
-                {
-                            "required_field": "payment_method_data.billing.address.last_name",
-                            "display_name": "card_holder_name",
-                            "field_type": "user_full_name",
-                            "value": null
-                        },
-                {
-                    "required_field": "payment_method_data.card.card_exp_month",
-                    "display_name": "card_exp_month",
-                    "field_type": "user_card_expiry_month",
-                    "value": null
-                },
-                        {
-                            "required_field": "payment_method_data.billing.address.state",
-                            "display_name": "state",
-                            "field_type": "user_address_state",
-                            "value": null
-                        },
-                        {
-                            "required_field": "payment_method_data.billing.address.city",
-                            "display_name": "city",
-                            "field_type": "user_address_city",
-                            "value": null
-                        },
-                        {
-                            "required_field": "payment_method_data.billing.address.country",
-                            "display_name": "country",
-                            "field_type": {
-                                "user_address_country": {
-                                    "options": [
-                                        "ALL"
-                                    ]
-                                }
-                            },
-                            "value": null
-                        }
-            ]
-        },
-        {
-            "payment_method_type": "card",
-            "payment_method_subtype": "debit",
-            "required_fields": []
-        }
-    ],
-    "customer_payment_methods": [
-        {
-            "id": "12345_pm_0194abb4d9bc735292e1f5682da787ff",
-            "customer_id": "12345_cus_0194abb4c1b277e3a6b45551089cfd9e",
-            "payment_method_type": "card",
-            "payment_method_subtype": "credit",
-            "recurring_enabled": true,
-            "payment_method_data": {
-                "card": {
-                    "issuer_country": null,
-                    "last4_digits": "4242",
-                    "expiry_month": "03",
-                    "expiry_year": "2025",
-                    "card_holder_name": "joseph Doe",
-                    "card_fingerprint": null,
-                    "nick_name": "hello123",
-                    "card_network": null,
-                    "card_isin": null,
-                    "card_issuer": null,
-                    "card_type": null,
-                    "saved_to_locker": true
-                }
-            },
-            "bank": null,
-            "created": "2025-01-28T06:59:03.754Z",
-            "requires_cvv": true,
-            "last_used_at": "2025-01-28T06:59:03.754Z",
-            "is_default": false,
-            "billing": null
-        },
-        {
-            "id": "12345_pm_0194abb4d9bc735292e1f5682da787hh",
-            "customer_id": "12345_cus_0194abb4c1b277e3a6b45551089cfd9e",
-            "payment_method_type": "card",
-            "payment_method_subtype": "credit",
-            "recurring_enabled": true,
-            "payment_method_data": {
-                "card": {
-                    "issuer_country": null,
-                    "last4_digits": "4242",
-                    "expiry_month": "03",
-                    "expiry_year": "2025",
-                    "card_holder_name": "joseph Doe",
-                    "card_fingerprint": null,
-                    "nick_name": "hello123",
-                    "card_network": "Visa",
-                    "card_isin": null,
-                    "card_issuer": null,
-                    "card_type": null,
-                    "saved_to_locker": true
-                }
-            },
-            "bank": null,
-            "created": "2025-01-28T06:59:03.754Z",
-            "requires_cvv": true,
-            "last_used_at": "2025-01-28T06:59:03.754Z",
-            "is_default": false,
-            "billing": null
-        }
-    ]
-}`->JSON.parseExn
-        val->resolve
+        JSON.Encode.null->resolve
       })
     } else {
       res->Fetch.Response.json
@@ -168,9 +307,9 @@ let fetchPaymentManagementList = (
 }
 
 let deletePaymentMethodV2 = (
-  ~pmSessionId,
   ~pmClientSecret,
   ~publishableKey,
+  ~profileId,
   ~paymentMethodId,
   ~logger,
   ~customPodUri,
@@ -178,7 +317,7 @@ let deletePaymentMethodV2 = (
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [
-    ("Content-Type", "application/json"),
+    ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
   let uri = `${endpoint}/payment_methods/${paymentMethodId}`
@@ -204,9 +343,9 @@ let deletePaymentMethodV2 = (
 
 let updatePaymentMethod = (
   ~bodyArr,
-  ~pmSessionId,
   ~pmClientSecret,
   ~publishableKey,
+  ~profileId,
   ~paymentMethodId,
   ~logger,
   ~customPodUri,
@@ -214,8 +353,9 @@ let updatePaymentMethod = (
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [
-    ("Content-Type", "application/json"),
+    ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
+    ("Content-Type", "application/json"),
   ]
   let uri = `${endpoint}/v2/payment-methods-session/${paymentMethodId}/update-saved-payment-method`
 
@@ -249,13 +389,14 @@ let savePaymentMethod = (
   ~pmSessionId,
   ~pmClientSecret,
   ~publishableKey,
-  // ~paymentMethodId,
+  ~profileId,
   ~logger,
   ~customPodUri,
 ) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
   let headers = [
+    ("x-profile-id", `${profileId}`),
     ("Content-Type", "application/json"),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
@@ -283,4 +424,71 @@ let savePaymentMethod = (
     Console.error2("Error ", exceptionMessage)
     JSON.Encode.null->resolve
   })
+}
+
+let useSaveCard = (optLogger: option<HyperLogger.loggerMake>, paymentType: payment) => {
+  open RecoilAtoms
+  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+  let {config} = Recoil.useRecoilValueFromAtom(configAtom)
+  let keys = Recoil.useRecoilValueFromAtom(keys)
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+  (
+    ~handleUserError=false,
+    ~bodyArr: array<(string, JSON.t)>,
+    ~confirmParam: ConfirmType.confirmParams,
+  ) => {
+    Console.log2("this is profile", keys.profileId)
+    switch keys.pmClientSecret {
+    | Some(pmClientSecret) =>
+      let pmSessionId = keys.pmSessionId->Option.getOr("")
+      let headers = [
+        ("Content-Type", "application/json"),
+        (
+          "Authorization",
+          `publishable-key=${keys.publishableKey},client-secret=${config.pmClientSecret}`,
+        ),
+        ("x-profile-id", keys.profileId),
+      ]
+      let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
+      let uri = `${endpoint}/v2/payment-methods-session/${pmSessionId}/confirm`
+
+      let browserInfo = BrowserSpec.broswerInfo
+      let bodyStr =
+        [("client_secret", pmClientSecret->JSON.Encode.string)]
+        ->Array.concatMany([bodyArr, browserInfo()])
+        ->getJsonFromArrayOfJson
+        ->JSON.stringify
+
+      let saveCard = () => {
+        intentCall(
+          ~fetchApi,
+          ~uri,
+          ~headers,
+          ~bodyStr,
+          ~confirmParam: ConfirmType.confirmParams,
+          ~clientSecret=pmClientSecret,
+          ~optLogger,
+          ~handleUserError,
+          ~paymentType,
+          ~fetchMethod=#POST,
+          ~customPodUri,
+          ~sdkHandleOneClickConfirmPayment=keys.sdkHandleOneClickConfirmPayment,
+          ~isCallbackUsedVal,
+          ~redirectionFlags,
+        )->ignore
+      }
+
+      switch paymentManagementList {
+      | LoadedV2(_) => saveCard()
+      | _ => ()
+      }
+    | None =>
+      postFailedSubmitResponse(
+        ~errortype="confirms_payment_failed",
+        ~message="Payment failed. Try again!",
+      )
+    }
+  }
 }
