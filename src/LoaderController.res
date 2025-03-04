@@ -21,6 +21,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (_, setPaymentMethodCollectOptions) = Recoil.useRecoilState(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+  let countryList = Recoil.useRecoilValueFromAtom(countryAtom)
 
   let divRef = React.useRef(Nullable.null)
 
@@ -64,7 +65,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     })
     if optionsPayment.defaultValues.billingDetails.address.country === "" {
       let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
-      let clientCountry = getClientCountry(clientTimeZone)
+      let clientCountry = getClientCountry(clientTimeZone, countryList)
       setUserAddressCountry(prev => {
         ...prev,
         value: clientCountry.countryName,
@@ -102,7 +103,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PazeElement
     | ExpressCheckoutElement
     | Payment => {
-        let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
+        let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger, countryList)
         setOptionsPayment(_ => paymentOptions)
         optionsCallback(paymentOptions)
       }
