@@ -452,10 +452,10 @@ let paymentMethodsFields = [
   },
   {
     paymentMethodName: "classic",
-    icon: Some(icon("cashtocode", ~size=50)),
+    icon: Some(icon("cash_voucher", ~size=19, ~width=50)),
     displayName: "Cash / Voucher",
     fields: [InfoElement],
-    miniIcon: Some(icon("cashtocode", ~size=19)),
+    miniIcon: Some(icon("cash_voucher", ~size=19)),
   },
   {
     paymentMethodName: "online_banking_fpx",
@@ -489,7 +489,7 @@ let paymentMethodsFields = [
     paymentMethodName: "multibanco_transfer",
     icon: Some(icon("multibanco", ~size=19)),
     displayName: "Multibanco",
-    fields: [Email, InfoElement],
+    fields: [InfoElement],
     miniIcon: None,
   },
   {
@@ -515,10 +515,10 @@ let paymentMethodsFields = [
   },
   {
     paymentMethodName: "evoucher",
-    icon: Some(icon("cashtocode", ~size=50)),
+    icon: Some(icon("cash_voucher", ~size=19, ~width=50)),
     displayName: "E-Voucher",
     fields: [InfoElement],
-    miniIcon: Some(icon("cashtocode", ~size=19)),
+    miniIcon: Some(icon("cash_voucher", ~size=19)),
   },
   {
     paymentMethodName: "pix_transfer",
@@ -532,6 +532,13 @@ let paymentMethodsFields = [
     icon: Some(icon("boleto", ~size=21, ~width=25)),
     displayName: "Boleto",
     fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "paypal",
+    icon: Some(icon("paypal", ~size=21, ~width=25)),
+    displayName: "Paypal",
+    fields: [],
     miniIcon: None,
   },
   {
@@ -660,27 +667,6 @@ let getFieldType = (dict, isBancontact) => {
   | Object(dict) => dict->getPaymentMethodsFieldTypeFromDict
   }
 }
-
-let dynamicFieldsEnabledPaymentMethods = [
-  "crypto_currency",
-  "debit",
-  "credit",
-  "blik",
-  "google_pay",
-  "apple_pay",
-  "bancontact_card",
-  "open_banking_uk",
-  "eps",
-  "ideal",
-  "sofort",
-  "pix_transfer",
-  "giropay",
-  "local_bank_transfer_transfer",
-  "afterpay_clearpay",
-  "mifinity",
-  "upi_collect",
-  "sepa",
-]
 
 let getIsBillingField = requiredFieldType => {
   switch requiredFieldType {

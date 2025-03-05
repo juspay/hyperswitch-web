@@ -75,6 +75,7 @@ let make = (
   }
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
+  let inputLogoClass = getClassName("InputLogo")
   let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
 
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
@@ -89,7 +90,8 @@ let make = (
           fontSize: themeObj.fontSizeLg,
           marginBottom: "5px",
           opacity: "0.6",
-        }>
+        }
+        ariaHidden=true>
         {React.string(fieldName)}
       </div>
     </RenderIf>
@@ -116,6 +118,7 @@ let make = (
           onChange
           onBlur=handleBlur
           onFocus=handleFocus
+          ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
         />
         <RenderIf condition={appearance.labels == Floating}>
           <div
@@ -126,12 +129,15 @@ let make = (
               },
               fontSize: {inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""},
               opacity: "0.6",
-            }>
+            }
+            ariaHidden=true>
             {React.string(fieldName)}
           </div>
         </RenderIf>
       </div>
-      <div className="relative flex -ml-10 items-center"> {rightIcon} </div>
+      <div className={`InputLogo ${inputLogoClass} relative flex -ml-10 items-center`}>
+        {rightIcon}
+      </div>
     </div>
     <RenderIf condition={innerLayout === Spaced}>
       {switch errorString {

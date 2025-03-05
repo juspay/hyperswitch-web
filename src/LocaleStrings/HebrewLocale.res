@@ -15,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: `כתובת רחוב`,
   line1EmptyText: `שורת כתובת 1 לא יכולה להיות ריקה`,
   line2Label: `כתובת - שורה 2`,
-  line2Placeholder: `דירה, יחידה, וכדומה (אופציונלי)`,
+  line2Placeholder: `דירה, יחידה, וכדומה`,
   line2EmptyText: `שורת כתובת 2 לא יכולה להיות ריקה`,
   cityLabel: `עיר`,
   cityEmptyText: `עיר לא יכולה להיות ריקה`,
@@ -150,4 +150,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `מפתח Pix לא יכול להיות ריק`,
   pixKeyPlaceholder: `הכנס מפתח Pix`,
   pixKeyLabel: `מפתח Pix`,
+  invalidCardHolderNameError: `שם בעל הכרטיס לא יכול לכלול ספרות`,
+  invalidNickNameError: `הכינוי לא יכול לכלול יותר משתי ספרות`,
+  expiry: `תְפוּגָה`,
 }

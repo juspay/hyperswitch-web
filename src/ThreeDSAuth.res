@@ -8,7 +8,7 @@ let make = () => {
   let threeDsAuthoriseUrl = React.useRef("")
   let (expiryTime, setExpiryTime) = React.useState(_ => 600000.0)
 
-  let logger = OrcaLogger.make(~source=Elements(Payment))
+  let logger = HyperLogger.make(~source=Elements(Payment))
 
   let handleFrictionLess = () => {
     let ele = Window.querySelector("#threeDsAuthDiv")
@@ -147,6 +147,7 @@ let make = () => {
       <iframe
         id="threeDsAuthFrame"
         name="threeDsAuthFrame"
+        title="3D Secure Authentication Frame"
         style={
           minHeight: "500px",
           outline: "none",

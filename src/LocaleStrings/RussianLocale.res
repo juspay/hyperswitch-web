@@ -14,7 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Адресная строка 1`,
   line1Placeholder: `Улица`,
   line2Label: `Адресная строка 2`,
-  line2Placeholder: `Квартира, номер блока и т. д. (необязательно)`,
+  line2Placeholder: `Квартира, номер блока и т. д.`,
   cityLabel: `Город`,
   postalCodeLabel: `Почтовый индекс`,
   stateLabel: `Область`,
@@ -158,4 +158,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Ключ Pix не может быть пустым`,
   pixKeyPlaceholder: `Введите ключ Pix`,
   pixKeyLabel: `Ключ Pix`,
+  invalidCardHolderNameError: `Имя владельца карты не может содержать цифры`,
+  invalidNickNameError: `Псевдоним не может содержать более 2 цифр`,
+  expiry: `истечение срока действия`,
 }

@@ -14,7 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Adressrad 1`,
   line1Placeholder: `Gatuadress`,
   line2Label: `Adressrad 2`,
-  line2Placeholder: `Lägenhetsnummer osv. (valfritt)`,
+  line2Placeholder: `Lägenhetsnummer osv.`,
   cityLabel: `Ort`,
   postalCodeLabel: `Postnummer`,
   stateLabel: `Region`,
@@ -149,4 +149,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pix-nyckel kan inte vara tom`,
   pixKeyPlaceholder: `Ange Pix-nyckel`,
   pixKeyLabel: `Pix-nyckel`,
+  invalidCardHolderNameError: `Kortinnehavarens namn får inte innehålla siffror`,
+  invalidNickNameError: `Smeknamnet får inte innehålla mer än 2 siffror`,
+  expiry: `upphörande`,
 }

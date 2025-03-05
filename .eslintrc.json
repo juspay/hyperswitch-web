@@ -8,8 +8,10 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "plugins": ["react-hooks"],
+  "plugins": ["react-hooks", "eslint-plugin-promise"],
   "rules": {
-    "react-hooks/rules-of-hooks": "error"
+    "react-hooks/rules-of-hooks": "error",
+    "promise/catch-or-return": "error",
+    "no-console": ["error", { "allow": ["warn", "error"] }]
   }
 }

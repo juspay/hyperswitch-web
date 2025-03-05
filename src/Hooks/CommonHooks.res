@@ -1,3 +1,5 @@
+type contentRect = {height: float}
+
 type element = {
   mutable getAttribute: string => string,
   mutable src: string,
@@ -6,6 +8,11 @@ type element = {
   mutable href: string,
   mutable \"as": string,
   mutable crossorigin: string,
+  mutable \"type": string,
+  mutable id: string,
+  mutable width: string,
+  mutable height: string,
+  contentWindow: option<Window.window>,
   setAttribute: (string, string) => unit,
 }
 type keys = {
@@ -29,7 +36,7 @@ external addEventListener: (element, string, event => unit) => unit = "addEventL
 @send
 external removeEventListener: (element, string, event => unit) => unit = "removeEventListener"
 
-let useScript = (src: string) => {
+let useScript = (src: string, ~\"type"="") => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
   React.useEffect(() => {
     if src == "" {
@@ -43,6 +50,9 @@ let useScript = (src: string) => {
     | None =>
       let script = createElement("script")
       script.src = src
+      if \"type" != "" {
+        script.\"type" = \"type"
+      }
       script.async = true
       script.setAttribute("data-status", "loading")
       appendChild(script)
@@ -56,6 +66,40 @@ let useScript = (src: string) => {
         () => {
           script->removeEventListener("load", setAttributeFromEvent)
           script->removeEventListener("error", setAttributeFromEvent)
+        },
+      )
+    }
+  }, [src])
+  status
+}
+
+let useLink = (src: string) => {
+  let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
+  React.useEffect(() => {
+    if src == "" {
+      setStatus(_ => "idle")
+    }
+    let link = querySelector(`link[href="${src}"]`)
+    switch link->Nullable.toOption {
+    | Some(dom) =>
+      setStatus(_ => dom.getAttribute("data-status"))
+      None
+    | None =>
+      let link = createElement("link")
+      link.href = src
+      link.rel = "stylesheet"
+      link.setAttribute("data-status", "loading")
+      appendChild(link)
+      let setAttributeFromEvent = (event: event) => {
+        setStatus(_ => event.\"type" === "load" ? "ready" : "error")
+        link.setAttribute("data-status", event.\"type" === "load" ? "ready" : "error")
+      }
+      link->addEventListener("load", setAttributeFromEvent)
+      link->addEventListener("error", setAttributeFromEvent)
+      Some(
+        () => {
+          link->removeEventListener("load", setAttributeFromEvent)
+          link->removeEventListener("error", setAttributeFromEvent)
         },
       )
     }

@@ -60,6 +60,11 @@ let handleOnConfirmPostMessage = (~targetOrigin="*", ~isOneClick=false) => {
   let message = isOneClick ? "oneClickConfirmTriggered" : "confirmTriggered"
   messageParentWindow([(message, true->JSON.Encode.bool)], ~targetOrigin)
 }
+
+let handleBeforeRedirectPostMessage = (~targetOrigin="*") => {
+  messageTopWindow([("disableBeforeUnloadEventListener", true->JSON.Encode.bool)], ~targetOrigin)
+}
+
 let getOptionString = (dict, key) => {
   dict->Dict.get(key)->Option.flatMap(JSON.Decode.string)
 }
@@ -257,7 +262,7 @@ let useWindowSize = () => {
   let (size, setSize) = React.useState(_ => (0, 0))
   React.useLayoutEffect1(() => {
     let updateSize = () => {
-      setSize(_ => (Window.windowInnerWidth, Window.windowInnerHeight))
+      setSize(_ => (Window.innerWidth, Window.innerHeight))
     }
     Window.addEventListener("resize", updateSize)
     updateSize()
@@ -689,7 +694,7 @@ let handlePostMessageEvents = (
   ~complete,
   ~empty,
   ~paymentType,
-  ~loggerState: OrcaLogger.loggerMake,
+  ~loggerState: HyperLogger.loggerMake,
   ~savedMethod=false,
 ) => {
   if complete && paymentType !== "" {
@@ -764,10 +769,6 @@ let snakeToTitleCase = str => {
   ->Array.joinWith(" ")
 }
 
-let logInfo = log => {
-  Window.isProd ? () : log
-}
-
 let formatIBAN = iban => {
   let formatted = iban->String.replaceRegExp(%re(`/[^a-zA-Z0-9]/g`), "")
   let countryCode = formatted->String.substring(~start=0, ~end=2)->String.toUpperCase
@@ -833,8 +834,8 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
       ("Content-Type", "application/json"),
       ("X-Client-Version", Window.version),
       ("X-Payment-Confirm-Source", "sdk"),
-      ("X-Browser-Name", OrcaLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
-      ("X-Browser-Version", OrcaLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+      ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+      ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
       ("X-Client-Platform", "web"),
     ]->Dict.fromArray
 
@@ -1020,13 +1021,8 @@ let unflattenObject = obj => {
   newDict
 }
 
-let mergeTwoFlattenedJsonDicts = (dict1, dict2) => {
-  dict1
-  ->Dict.toArray
-  ->Array.concat(dict2->Dict.toArray)
-  ->getJsonFromArrayOfJson
-  ->unflattenObject
-}
+let mergeTwoFlattenedJsonDicts = (dict1, dict2) =>
+  [...dict1->Dict.toArray, ...dict2->Dict.toArray]->getJsonFromArrayOfJson->unflattenObject
 
 open Identity
 
@@ -1289,11 +1285,21 @@ let getWalletPaymentMethod = (wallets, paymentType: CardThemeType.mode) => {
   | PayPalElement => wallets->Array.filter(item => item === "paypal")
   | ApplePayElement => wallets->Array.filter(item => item === "apple_pay")
   | KlarnaElement => wallets->Array.filter(item => item === "klarna")
+  | PazeElement => wallets->Array.filter(item => item === "paze")
+  | SamsungPayElement => wallets->Array.filter(item => item === "samsung_pay")
   | _ => wallets
   }
 }
 
-let expressCheckoutComponents = ["googlePay", "payPal", "applePay", "klarna", "expressCheckout"]
+let expressCheckoutComponents = [
+  "googlePay",
+  "payPal",
+  "applePay",
+  "klarna",
+  "paze",
+  "samsungPay",
+  "expressCheckout",
+]
 
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
 
@@ -1314,7 +1320,9 @@ let walletElementPaymentType: array<CardThemeType.mode> = [
   GooglePayElement,
   PayPalElement,
   ApplePayElement,
+  SamsungPayElement,
   KlarnaElement,
+  PazeElement,
   ExpressCheckoutElement,
 ]
 
@@ -1419,6 +1427,62 @@ let getFirstAndLastNameFromFullName = fullName => {
   (firstName, lastNameJson)
 }
 
-let checkIsTestCardWildcard = val => ["1111222233334444"]->Array.includes(val)
+let isKeyPresentInDict = (dict, key) => dict->Dict.get(key)->Option.isSome
 
 let minorUnitToString = val => (val->Int.toFloat /. 100.)->Float.toString
+
+let mergeAndFlattenToTuples = (body, requiredFieldsBody) =>
+  body
+  ->getJsonFromArrayOfJson
+  ->flattenObject(true)
+  ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+  ->getArrayOfTupleFromDict
+
+let handleIframePostMessageForWallets = (msg, componentName, mountedIframeRef) => {
+  let isMessageSent = ref(false)
+  let iframes = Window.querySelectorAll("iframe")
+
+  iframes->Array.forEach(iframe => {
+    let iframeSrc = iframe->Window.getAttribute("src")->Nullable.toOption->Option.getOr("")
+    if iframeSrc->String.includes(`componentName=${componentName}`) {
+      iframe->Js.Nullable.return->Window.iframePostMessage(msg)
+      isMessageSent := true
+    }
+  })
+
+  if !isMessageSent.contents {
+    mountedIframeRef->Window.iframePostMessage(msg)
+  }
+}
+
+let isDigitLimitExceeded = (val, ~digit) => {
+  switch val->String.match(%re("/\d/g")) {
+  | Some(matches) => matches->Array.length > digit
+  | None => false
+  }
+}
+
+/* Redirect Handling */
+let replaceRootHref = (href: string, redirectionFlags: RecoilAtomTypes.redirectionFlags) => {
+  if redirectionFlags.shouldRemoveBeforeUnloadEvents {
+    handleBeforeRedirectPostMessage()
+  }
+  switch redirectionFlags.shouldUseTopRedirection {
+  | true =>
+    try {
+      setTimeout(() => {
+        Window.Top.Location.replace(href)
+      }, 100)->ignore
+    } catch {
+    | e => {
+        Console.error3(
+          "Failed to redirect root document",
+          e,
+          `Using [window.location.replace] for redirection`,
+        )
+        Window.Location.replace(href)
+      }
+    }
+  | false => Window.Location.replace(href)
+  }
+}

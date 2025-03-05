@@ -8,6 +8,7 @@ let getCustomerSavedPaymentMethods = (
   ~endpoint,
   ~logger,
   ~customPodUri,
+  ~redirectionFlags,
 ) => {
   open ApplePayTypes
   open GooglePayType
@@ -115,6 +116,7 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
+            ~redirectionFlags,
           )
         }
       | None =>
@@ -163,6 +165,7 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
+            ~redirectionFlags,
           )->then(val => {
             val->resolvePromise
             resolve()
@@ -231,6 +234,7 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
+            ~redirectionFlags,
           )
         }
 
@@ -305,6 +309,7 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
+            ~redirectionFlags,
           )
         }
       | None =>
@@ -415,6 +420,17 @@ let getCustomerSavedPaymentMethods = (
             } else {
               updateCustomerPaymentMethodsRef(~isFilterGooglePay=true)
             }
+            resolve()
+          },
+        )
+        ->catch(
+          err => {
+            logger.setLogInfo(
+              ~value=err->Identity.anyTypeToJson->JSON.stringify,
+              ~eventName=GOOGLE_PAY_FLOW,
+              ~paymentMethod="GOOGLE_PAY",
+              ~logType=DEBUG,
+            )
             resolve()
           },
         )

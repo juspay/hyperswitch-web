@@ -14,7 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Indirizzo (riga 1)`,
   line1Placeholder: `Indirizzo`,
   line2Label: `Indirizzo (riga 2)`,
-  line2Placeholder: `Appartamento, interno, ecc. (facoltativo)`,
+  line2Placeholder: `Appartamento, interno, ecc.`,
   cityLabel: `Città`,
   postalCodeLabel: `Codice di avviamento postale`,
   stateLabel: `Stato`,
@@ -151,4 +151,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `La chiave Pix non può essere vuota`,
   pixKeyPlaceholder: `Inserisci la chiave Pix`,
   pixKeyLabel: `Chiave Pix`,
+  invalidCardHolderNameError: `Il nome del titolare della carta non può contenere cifre`,
+  invalidNickNameError: `Il soprannome non può contenere più di 2 cifre`,
+  expiry: `scadenza`,
 }

@@ -1,3 +1,131 @@
+let sendPromiseData = (promise, key) => {
+  let executePromise = async () => {
+    let response = try {
+      await promise
+    } catch {
+    | _ => JSON.Encode.null
+    }
+    Utils.messageParentWindow([("response", response), ("data", key->JSON.Encode.string)])
+  }
+  executePromise()->ignore
+}
+
+let useMessageHandler = getMessageHandler => {
+  React.useEffect(_ => {
+    let messageHandler = getMessageHandler()
+
+    let setupMessageListener = _ => {
+      Window.addEventListener("message", messageHandler)
+      Utils.messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
+    }
+
+    let cleanupMessageListener = _ => {
+      Window.removeEventListener("message", messageHandler)
+      Utils.messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
+    }
+
+    let handleCleanUpEventListener = (ev: Window.event) => {
+      open Utils
+      let dict = ev.data->safeParse->getDictFromJson
+      if dict->Dict.get("cleanUpPreMountLoaderIframe")->Option.isSome {
+        cleanupMessageListener()
+      }
+    }
+
+    Window.addEventListener("message", handleCleanUpEventListener)
+
+    setupMessageListener()
+
+    Some(
+      () => {
+        cleanupMessageListener()
+        Window.removeEventListener("message", handleCleanUpEventListener)
+      },
+    )
+  }, [])
+}
+
+module PreMountLoaderForElements = {
+  @react.component
+  let make = (
+    ~logger,
+    ~publishableKey,
+    ~clientSecret,
+    ~endpoint,
+    ~merchantHostname,
+    ~customPodUri,
+  ) => {
+    useMessageHandler(() => {
+      let paymentMethodsPromise = PaymentHelpers.fetchPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~endpoint,
+      )
+
+      let customerPaymentMethodsPromise = PaymentHelpers.fetchCustomerPaymentMethodList(
+        ~clientSecret,
+        ~publishableKey,
+        ~optLogger=Some(logger),
+        ~customPodUri,
+        ~endpoint,
+      )
+
+      let sessionTokensPromise = PaymentHelpers.fetchSessions(
+        ~clientSecret,
+        ~publishableKey,
+        ~optLogger=Some(logger),
+        ~customPodUri,
+        ~endpoint,
+        ~merchantHostname,
+      )
+
+      let messageHandler = (ev: Window.event) => {
+        open Utils
+        let dict = ev.data->safeParse->getDictFromJson
+        if dict->isKeyPresentInDict("sendPaymentMethodsResponse") {
+          paymentMethodsPromise->sendPromiseData("payment_methods")
+        } else if dict->isKeyPresentInDict("sendCustomerPaymentMethodsResponse") {
+          customerPaymentMethodsPromise->sendPromiseData("customer_payment_methods")
+        } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
+          sessionTokensPromise->sendPromiseData("session_tokens")
+        }
+      }
+
+      messageHandler
+    })
+
+    React.null
+  }
+}
+
+module PreMountLoaderForPMMElements = {
+  @react.component
+  let make = (~logger, ~endpoint, ~ephemeralKey, ~customPodUri) => {
+    useMessageHandler(() => {
+      let savedPaymentMethodsPromise = PaymentHelpers.fetchSavedPaymentMethodList(
+        ~ephemeralKey,
+        ~optLogger=Some(logger),
+        ~customPodUri,
+        ~endpoint,
+      )
+
+      let messageHandler = (ev: Window.event) => {
+        open Utils
+        let dict = ev.data->safeParse->getDictFromJson
+        if dict->isKeyPresentInDict("sendSavedPaymentMethodsResponse") {
+          savedPaymentMethodsPromise->sendPromiseData("saved_payment_methods")
+        }
+      }
+
+      messageHandler
+    })
+
+    React.null
+  }
+}
+
 @react.component
 let make = (
   ~sessionId,
@@ -9,158 +137,19 @@ let make = (
   ~merchantHostname,
   ~customPodUri,
 ) => {
-  open Utils
-  let (paymentMethodsResponseSent, setPaymentMethodsResponseSent) = React.useState(_ => false)
-  let (
-    customerPaymentMethodsResponseSent,
-    setCustomerPaymentMethodsResponseSent,
-  ) = React.useState(_ => false)
-  let (savedPaymentMethodsResponseSent, setSavedPaymentMethodsResponseSent) = React.useState(_ =>
-    false
-  )
-  let (sessionTokensResponseSent, setSessionTokensResponseSent) = React.useState(_ => false)
-  let logger = OrcaLogger.make(
+  let logger = HyperLogger.make(
     ~sessionId,
     ~source=Loader,
     ~merchantId=publishableKey,
     ~clientSecret,
   )
 
-  let (
-    paymentMethodsResponse,
-    customerPaymentMethodsResponse,
-    sessionTokensResponse,
-    savedPaymentMethodsResponse,
-  ) = React.useMemo0(() => {
-    let paymentMethodsResponse = switch hyperComponentName {
-    | Elements =>
-      PaymentHelpers.fetchPaymentMethodList(
-        ~clientSecret,
-        ~publishableKey,
-        ~logger,
-        ~customPodUri,
-        ~endpoint,
-      )
-    | _ => JSON.Encode.null->Promise.resolve
-    }
-
-    let customerPaymentMethodsResponse = switch hyperComponentName {
-    | Elements =>
-      PaymentHelpers.fetchCustomerPaymentMethodList(
-        ~clientSecret,
-        ~publishableKey,
-        ~optLogger=Some(logger),
-        ~customPodUri,
-        ~endpoint,
-      )
-    | _ => JSON.Encode.null->Promise.resolve
-    }
-
-    let sessionTokensResponse = switch hyperComponentName {
-    | Elements =>
-      PaymentHelpers.fetchSessions(
-        ~clientSecret,
-        ~publishableKey,
-        ~optLogger=Some(logger),
-        ~customPodUri,
-        ~endpoint,
-        ~merchantHostname,
-      )
-    | _ => JSON.Encode.null->Promise.resolve
-    }
-
-    let savedPaymentMethodsResponse = switch hyperComponentName {
-    | PaymentMethodsManagementElements =>
-      PaymentHelpers.fetchSavedPaymentMethodList(
-        ~ephemeralKey,
-        ~optLogger=Some(logger),
-        ~customPodUri,
-        ~endpoint,
-      )
-    | _ => JSON.Encode.null->Promise.resolve
-    }
-
-    (
-      paymentMethodsResponse,
-      customerPaymentMethodsResponse,
-      sessionTokensResponse,
-      savedPaymentMethodsResponse,
-    )
-  })
-
-  let sendPromiseData = (promise, key) => {
-    open Promise
-    promise
-    ->then(res => {
-      messageParentWindow([("response", res), ("data", key->JSON.Encode.string)])
-      switch key {
-      | "payment_methods" => setPaymentMethodsResponseSent(_ => true)
-      | "session_tokens" => setSessionTokensResponseSent(_ => true)
-      | "customer_payment_methods" => setCustomerPaymentMethodsResponseSent(_ => true)
-      | "saved_payment_methods" => setSavedPaymentMethodsResponseSent(_ => true)
-      | _ => ()
-      }
-      resolve()
-    })
-    ->catch(_err => {
-      messageParentWindow([("response", JSON.Encode.null), ("data", key->JSON.Encode.string)])
-      resolve()
-    })
-    ->ignore
+  switch hyperComponentName {
+  | Elements =>
+    <PreMountLoaderForElements
+      logger publishableKey clientSecret endpoint merchantHostname customPodUri
+    />
+  | PaymentMethodsManagementElements =>
+    <PreMountLoaderForPMMElements logger endpoint ephemeralKey customPodUri />
   }
-
-  let handle = (ev: Window.event) => {
-    let json = ev.data->safeParse
-    let dict = json->Utils.getDictFromJson
-    if dict->Dict.get("sendPaymentMethodsResponse")->Option.isSome {
-      paymentMethodsResponse->sendPromiseData("payment_methods")
-    } else if dict->Dict.get("sendCustomerPaymentMethodsResponse")->Option.isSome {
-      customerPaymentMethodsResponse->sendPromiseData("customer_payment_methods")
-    } else if dict->Dict.get("sendSessionTokensResponse")->Option.isSome {
-      sessionTokensResponse->sendPromiseData("session_tokens")
-    } else if dict->Dict.get("sendSavedPaymentMethodsResponse")->Belt.Option.isSome {
-      savedPaymentMethodsResponse->sendPromiseData("saved_payment_methods")
-    }
-  }
-
-  React.useEffect0(() => {
-    Window.addEventListener("message", handle)
-    messageParentWindow([("preMountLoaderIframeMountedCallback", true->JSON.Encode.bool)])
-    Some(
-      () => {
-        Window.removeEventListener("message", handle)
-      },
-    )
-  })
-
-  React.useEffect4(() => {
-    let handleUnmount = () => {
-      messageParentWindow([("preMountLoaderIframeUnMount", true->JSON.Encode.bool)])
-      Window.removeEventListener("message", handle)
-    }
-
-    switch hyperComponentName {
-    | Elements =>
-      if (
-        paymentMethodsResponseSent &&
-        customerPaymentMethodsResponseSent &&
-        sessionTokensResponseSent
-      ) {
-        handleUnmount()
-      }
-    | PaymentMethodsManagementElements =>
-      if savedPaymentMethodsResponseSent {
-        handleUnmount()
-      }
-    }
-
-    None
-  }, (
-    paymentMethodsResponseSent,
-    customerPaymentMethodsResponseSent,
-    sessionTokensResponseSent,
-    savedPaymentMethodsResponseSent,
-  ))
-
-  React.null
 }

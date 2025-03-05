@@ -2,13 +2,13 @@ let logApi = (
   ~eventName,
   ~statusCode="",
   ~data: JSON.t=Dict.make()->JSON.Encode.object,
-  ~apiLogType: OrcaLogger.apiLogType,
+  ~apiLogType: HyperLogger.apiLogType,
   ~url="",
   ~paymentMethod="",
   ~result: JSON.t=Dict.make()->JSON.Encode.object,
-  ~optLogger: option<OrcaLogger.loggerMake>,
-  ~logType: OrcaLogger.logType=INFO,
-  ~logCategory: OrcaLogger.logCategory=API,
+  ~optLogger: option<HyperLogger.loggerMake>,
+  ~logType: HyperLogger.logType=INFO,
+  ~logCategory: HyperLogger.logCategory=API,
   ~isPaymentSession: bool=false,
 ) => {
   let (value, internalMetadata) = switch apiLogType {
@@ -50,17 +50,17 @@ let logApi = (
   }
 }
 
-let logInputChangeInfo = (text, logger: OrcaLogger.loggerMake) => {
+let logInputChangeInfo = (text, logger: HyperLogger.loggerMake) => {
   logger.setLogInfo(~value=text, ~eventName=INPUT_FIELD_CHANGED)
 }
 
 let handleLogging = (
-  ~optLogger: option<OrcaLogger.loggerMake>,
+  ~optLogger: option<HyperLogger.loggerMake>,
   ~value,
   ~internalMetadata="",
   ~eventName,
   ~paymentMethod,
-  ~logType: OrcaLogger.logType=INFO,
+  ~logType: HyperLogger.logType=INFO,
 ) => {
   switch optLogger {
   | Some(logger) =>

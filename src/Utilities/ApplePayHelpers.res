@@ -7,7 +7,7 @@ let processPayment = (
   ~isThirdPartyFlow=false,
   ~isGuestCustomer,
   ~paymentMethodListValue=PaymentMethodsRecord.defaultList,
-  ~intent: PaymentHelpers.paymentIntent,
+  ~intent: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
   ~publishableKey,
   ~isManualRetryEnabled,
@@ -61,18 +61,14 @@ let getApplePayFromResponse = (
 
   let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
 
-  bodyDict
-  ->getJsonFromArrayOfJson
-  ->flattenObject(true)
-  ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-  ->getArrayOfTupleFromDict
+  bodyDict->mergeAndFlattenToTuples(requiredFieldsBody)
 }
 
 let startApplePaySession = (
   ~paymentRequest,
   ~applePaySessionRef,
   ~applePayPresent,
-  ~logger: OrcaLogger.loggerMake,
+  ~logger: HyperLogger.loggerMake,
   ~callBackFunc,
   ~resolvePromise,
   ~clientSecret,
@@ -86,7 +82,7 @@ let startApplePaySession = (
     try {
       session.abort()
     } catch {
-    | error => Console.log2("Abort fail", error)
+    | error => Console.error2("Abort fail", error)
     }
   | None => ()
   }
@@ -193,10 +189,9 @@ let startApplePaySession = (
     let payment = event.payment
     payment->callBackFunc
   }
-  ssn.oncancel = _ev => {
+  ssn.oncancel = _ => {
     applePaySessionRef := Nullable.null
-    logInfo(Console.log("Apple Pay Payment Cancelled"))
-    logger.setLogInfo(
+    logger.setLogError(
       ~value="Apple Pay Payment Cancelled",
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
@@ -222,6 +217,7 @@ let useHandleApplePayResponse = (
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
 
@@ -261,11 +257,7 @@ let useHandleApplePayResponse = (
           let bodyArr = if isWallet {
             applePayBody
           } else {
-            applePayBody
-            ->getJsonFromArrayOfJson
-            ->flattenObject(true)
-            ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-            ->getArrayOfTupleFromDict
+            applePayBody->mergeAndFlattenToTuples(requiredFieldsBody)
           }
 
           processPayment(
@@ -287,7 +279,13 @@ let useHandleApplePayResponse = (
           syncPayment()
         }
       } catch {
-      | _ => logInfo(Console.log("Error in parsing Apple Pay Data"))
+      | err =>
+        logger.setLogError(
+          ~value="Error in parsing Apple Pay Data",
+          ~eventName=APPLE_PAY_FLOW,
+          ~paymentMethod="APPLE_PAY",
+          ~internalMetadata=err->formatException->JSON.stringify,
+        )
       }
     }
     Window.addEventListener("message", handleApplePayMessages)

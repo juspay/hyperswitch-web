@@ -21,7 +21,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: `.عنوان الشارع`,
   line1EmptyText: `لا يمكن أن يكون سطر العنوان 1 فارغًا`,
   line2Label: `سطر العنوان 2`,
-  line2Placeholder: `مناسب ، رقم الوحدة ، إلخ (اختياري)`,
+  line2Placeholder: `مناسب ، رقم الوحدة ، إلخ`,
   line2EmptyText: `لا يمكن أن يكون سطر العنوان 2 فارغًا`,
   postalCodeLabel: `رمز بريدي`,
   postalCodeEmptyText: `لا يمكن أن يكون الرمز البريدي فارغًا`,
@@ -152,4 +152,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `مفتاح Pix لا يمكن أن يكون فارغًا`,
   pixKeyPlaceholder: `أدخل مفتاح Pix`,
   pixKeyLabel: `مفتاح Pix`,
+  invalidCardHolderNameError: `اسم حامل البطاقة لا يمكن أن يحتوي على أرقام`,
+  invalidNickNameError: `لا يمكن أن يحتوي الاسم المستعار على أكثر من رقمين`,
+  expiry: `انتهاء الصلاحية`,
 }

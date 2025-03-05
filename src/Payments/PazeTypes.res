@@ -36,8 +36,9 @@ type complete = {
   transactionValue: transactionValue,
 }
 
+type canCheckoutReturnType = {consumerPresent: bool}
 type digitalWalletSdk = {
-  canCheckout: canCheckout => promise<JSON.t>,
+  canCheckout: canCheckout => promise<canCheckoutReturnType>,
   checkout: checkout => promise<JSON.t>,
   complete: complete => promise<JSON.t>,
   initialize: initialize => promise<JSON.t>,

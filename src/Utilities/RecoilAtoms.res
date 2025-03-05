@@ -7,7 +7,7 @@ let elementOptions = Recoil.atom("elementOptions", ElementType.defaultOptions)
 let optionAtom = Recoil.atom("options", PaymentType.defaultOptions)
 let sessions = Recoil.atom("sessions", PaymentType.Loading)
 let paymentMethodList = Recoil.atom("paymentMethodList", PaymentType.Loading)
-let loggerAtom = Recoil.atom("component", OrcaLogger.defaultLoggerConfig)
+let loggerAtom = Recoil.atom("component", HyperLogger.defaultLoggerConfig)
 let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
 let customPodUri = Recoil.atom("customPodUri", "")
@@ -49,8 +49,10 @@ let userPhoneNumber = Recoil.atom(
     countryCode: "",
   },
 )
+let userCardNickName = Recoil.atom("userCardNickName", defaultFieldValues)
 let isGooglePayReady = Recoil.atom("isGooglePayReady", false)
 let isApplePayReady = Recoil.atom("isApplePayReady", false)
+let isSamsungPayReady = Recoil.atom("isSamsungPayReady", false)
 let userCountry = Recoil.atom("userCountry", "")
 let userBank = Recoil.atom("userBank", "")
 let userAddressline1 = Recoil.atom("userAddressline1", defaultFieldValues)
@@ -82,6 +84,7 @@ type areOneClickWalletsRendered = {
   isApplePay: bool,
   isPaypal: bool,
   isKlarna: bool,
+  isSamsungPay: bool,
 }
 
 let defaultAreOneClickWalletsRendered = {
@@ -89,9 +92,33 @@ let defaultAreOneClickWalletsRendered = {
   isApplePay: false,
   isPaypal: false,
   isKlarna: false,
+  isSamsungPay: false,
 }
 
 let areOneClickWalletsRendered = Recoil.atom(
   "areOneClickWalletsBtnRendered",
   defaultAreOneClickWalletsRendered,
 )
+
+type clickToPayConfig = {
+  isReady: option<bool>,
+  availableCardBrands: array<string>,
+  email: string,
+  clickToPayCards: option<array<ClickToPayHelpers.clickToPayCard>>,
+  dpaName: string,
+}
+
+let defaultClickToPayConfig = {
+  isReady: None,
+  availableCardBrands: [],
+  email: "",
+  clickToPayCards: None,
+  dpaName: "",
+}
+
+let clickToPayConfig = Recoil.atom("clickToPayConfig", defaultClickToPayConfig)
+let defaultRedirectionFlags: redirectionFlags = {
+  shouldUseTopRedirection: false,
+  shouldRemoveBeforeUnloadEvents: false,
+}
+let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)

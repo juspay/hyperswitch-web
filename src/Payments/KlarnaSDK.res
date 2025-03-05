@@ -24,7 +24,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let setAreOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
   let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
 
-  let (_, _, _, heightType) = options.wallets.style.height
+  let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
   | Klarna(val) => val
   | _ => 48
@@ -66,6 +66,7 @@ let make = (~sessionObj: SessionsType.token) => {
           theme: options.wallets.style.theme == Dark ? "default" : "outlined",
           shape: "default",
           on_click: authorize => {
+            PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="klarna")
             makeOneClickHandlerPromise(sdkHandleIsThere)->then(
               result => {
                 let result = result->JSON.Decode.bool->Option.getOr(false)
@@ -100,11 +101,7 @@ let make = (~sessionObj: SessionsType.token) => {
                       )
 
                       let body = {
-                        klarnaSDKBody
-                        ->getJsonFromArrayOfJson
-                        ->flattenObject(true)
-                        ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-                        ->getArrayOfTupleFromDict
+                        klarnaSDKBody->mergeAndFlattenToTuples(requiredFieldsBody)
                       }
 
                       res.approved

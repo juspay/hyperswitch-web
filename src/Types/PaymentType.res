@@ -60,8 +60,10 @@ type terms = {
   usBankAccount: showTerms,
 }
 type buttonHeight = Default | Custom
-type heightType = ApplePay(int) | GooglePay(int) | Paypal(int) | Klarna(int)
+type heightType = ApplePay(int) | GooglePay(int) | Paypal(int) | Klarna(int) | SamsungPay(int)
 type googlePayStyleType = Default | Buy | Donate | Checkout | Subscribe | Book | Pay | Order
+type samsungPayStyleType = Buy
+
 type paypalStyleType = Paypal | Checkout | Buynow | Pay | Installment
 type applePayStyleType =
   | Default
@@ -81,12 +83,13 @@ type styleType =
   | ApplePay(applePayStyleType)
   | GooglePay(googlePayStyleType)
   | Paypal(paypalStyleType)
-type styleTypeArray = (styleType, styleType, styleType)
+  | SamsungPay(samsungPayStyleType)
+type styleTypeArray = (styleType, styleType, styleType, styleType)
 type theme = Dark | Light | Outline
 type style = {
   type_: styleTypeArray,
   theme: theme,
-  height: (heightType, heightType, heightType, heightType),
+  height: (heightType, heightType, heightType, heightType, heightType),
   buttonRadius: int,
 }
 type wallets = {
@@ -95,6 +98,8 @@ type wallets = {
   googlePay: showType,
   payPal: showType,
   klarna: showType,
+  paze: showType,
+  samsungPay: showType,
   style: style,
 }
 type business = {name: string}
@@ -118,8 +123,22 @@ type customerCard = {
   cardToken: string,
   cardHolderName: option<string>,
   nickname: string,
+  isClickToPayCard: bool,
 }
 type bank = {mask: string}
+
+type addressDetails = {
+  line1: option<string>,
+  line2: option<string>,
+  line3: option<string>,
+  city: option<string>,
+  state: option<string>,
+  country: option<string>,
+  zip: option<string>,
+}
+
+type billingAddressPaymentMethod = {address: addressDetails}
+
 type customerMethods = {
   paymentToken: string,
   customerId: string,
@@ -133,7 +152,9 @@ type customerMethods = {
   lastUsedAt: string,
   bank: bank,
   recurringEnabled: bool,
+  billing: billingAddressPaymentMethod,
 }
+
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
 
@@ -172,7 +193,9 @@ type options = {
   hideExpiredPaymentMethods: bool,
   displayDefaultSavedPaymentIcon: bool,
   hideCardNicknameField: bool,
+  displayBillingDetails: bool,
   customMessageForCardTerms: string,
+  customSurchargeMessage: option<string>,
 }
 
 type payerDetails = {
@@ -188,7 +211,23 @@ let defaultCardDetails = {
   cardToken: "",
   cardHolderName: None,
   nickname: "",
+  isClickToPayCard: false,
 }
+
+let defaultAddressDetails = {
+  line1: None,
+  line2: None,
+  line3: None,
+  city: None,
+  state: None,
+  country: None,
+  zip: None,
+}
+
+let defaultDisplayBillingDetails = {
+  address: defaultAddressDetails,
+}
+
 let defaultCustomerMethods = {
   paymentToken: "",
   customerId: "",
@@ -202,6 +241,7 @@ let defaultCustomerMethods = {
   lastUsedAt: "",
   bank: {mask: ""},
   recurringEnabled: false,
+  billing: defaultDisplayBillingDetails,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -272,9 +312,9 @@ let defaultFields = {
   billingDetails: JSONObject(defaultBilling),
 }
 let defaultStyle = {
-  type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal)),
+  type_: (ApplePay(Default), GooglePay(Default), Paypal(Paypal), SamsungPay(Buy)),
   theme: Light,
-  height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48)),
+  height: (ApplePay(48), GooglePay(48), Paypal(48), Klarna(48), SamsungPay(48)),
   buttonRadius: 2,
 }
 let defaultWallets = {
@@ -283,6 +323,8 @@ let defaultWallets = {
   googlePay: Auto,
   payPal: Auto,
   klarna: Auto,
+  paze: Auto,
+  samsungPay: Auto,
   style: defaultStyle,
 }
 let defaultBillingAddress = {
@@ -317,7 +359,9 @@ let defaultOptions = {
   hideExpiredPaymentMethods: false,
   displayDefaultSavedPaymentIcon: true,
   hideCardNicknameField: false,
+  displayBillingDetails: false,
   customMessageForCardTerms: "",
+  customSurchargeMessage: None,
 }
 
 let getLayout = (str, logger) => {
@@ -465,6 +509,11 @@ let getGooglePayType = str => {
     GooglePay(Default)
   }
 }
+let getSamsungPayType = str => {
+  switch str {
+  | _ => SamsungPay(Buy)
+  }
+}
 let getPayPalType = str => {
   switch str {
   | "check-out"
@@ -503,7 +552,7 @@ let getTypeArray = (str, logger) => {
   if !Array.includes(goodVals, str) {
     str->unknownPropValueWarning(goodVals, "options.wallets.style.type", ~logger)
   }
-  (str->getApplePayType, str->getGooglePayType, str->getPayPalType)
+  (str->getApplePayType, str->getGooglePayType, str->getPayPalType, str->getSamsungPayType)
 }
 
 let getShowDetails = (~billingDetails, ~logger) => {
@@ -686,86 +735,72 @@ let getTerms = (dict, str, logger) => {
   })
   ->Option.getOr(defaultTerms)
 }
-let getApplePayHeight = (val, logger) => {
-  let val: heightType =
-    val >= 45
-      ? ApplePay(val)
-      : {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[h>=45] - ApplePay. Value set to min",
-            ~logger,
-          )
-          ApplePay(48)
-        }
-  val
+let getApplePayHeight: (int, 'a) => heightType = (val, logger) => {
+  if val >= 45 {
+    ApplePay(val)
+  } else {
+    valueOutRangeWarning(
+      val,
+      "options.style.height",
+      "[h>=45] - ApplePay. Value set to min",
+      ~logger,
+    )
+    ApplePay(48)
+  }
 }
-let getGooglePayHeight = (val, logger) => {
-  let val: heightType =
-    val >= 48
-      ? GooglePay(val)
-      : {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[h>=48] - GooglePay. Value set to min",
-            ~logger,
-          )
-          GooglePay(48)
-        }
-  val
+
+let getGooglePayHeight: (int, 'a) => heightType = (val, logger) => {
+  if val >= 45 {
+    GooglePay(val)
+  } else {
+    valueOutRangeWarning(
+      val,
+      "options.style.height",
+      "[h>=45] - GooglePay. Value set to min",
+      ~logger,
+    )
+    GooglePay(48)
+  }
 }
-let getPaypalHeight = (val, logger) => {
-  let val: heightType =
-    val < 25
-      ? {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[25-55] - Paypal. Value set to min",
-            ~logger,
-          )
-          Paypal(25)
-        }
-      : val > 55
-      ? {
-        valueOutRangeWarning(
-          val,
-          "options.style.height",
-          "[25-55] - Paypal. Value set to max",
-          ~logger,
-        )
-        Paypal(55)
-      }
-      : Paypal(val)
-  val
+
+let getSamsungPayHeight: (int, 'a) => heightType = (val, logger) => {
+  if val >= 45 {
+    SamsungPay(val)
+  } else {
+    valueOutRangeWarning(
+      val,
+      "options.style.height",
+      "[h>=45] - SamsungPay. Value set to min",
+      ~logger,
+    )
+    SamsungPay(48)
+  }
 }
-let getKlarnaHeight = (val, logger) => {
-  let val: heightType =
-    val < 40
-      ? {
-          valueOutRangeWarning(
-            val,
-            "options.style.height",
-            "[40-60] - Klarna. Value set to min",
-            ~logger,
-          )
-          Klarna(40)
-        }
-      : val > 60
-      ? {
-        valueOutRangeWarning(
-          val,
-          "options.style.height",
-          "[40-60] - Paypal. Value set to max",
-          ~logger,
-        )
-        Klarna(60)
-      }
-      : Klarna(val)
-  val
+
+let getPaypalHeight: (int, 'a) => heightType = (val, logger) => {
+  if val < 25 {
+    valueOutRangeWarning(val, "options.style.height", "[25-55] - Paypal. Value set to min", ~logger)
+    Paypal(25)
+  } else if val > 55 {
+    valueOutRangeWarning(val, "options.style.height", "[25-55] - Paypal. Value set to max", ~logger)
+    Paypal(55)
+  } else {
+    Paypal(val)
+  }
 }
+
+let getKlarnaHeight: (int, 'a) => heightType = (val, logger) => {
+  if val < 40 {
+    valueOutRangeWarning(val, "options.style.height", "[40-60] - Klarna. Value set to min", ~logger)
+    Klarna(40)
+  } else if val > 60 {
+    valueOutRangeWarning(val, "options.style.height", "[40-60] - Paypal. Value set to max", ~logger)
+    Klarna(60)
+  } else {
+    Klarna(val)
+  }
+}
+
 let getTheme = (str, logger) => {
   switch str {
   | "outline" => Outline
@@ -782,6 +817,7 @@ let getHeightArray = (val, logger) => {
     val->getGooglePayHeight(logger),
     val->getPaypalHeight(logger),
     val->getKlarnaHeight(logger),
+    val->getSamsungPayHeight(logger),
   )
 }
 let getStyle = (dict, str, logger) => {
@@ -806,7 +842,7 @@ let getWallets = (dict, str, logger) => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(
-      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna"],
+      ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna", "samsungPay"],
       json,
       "options.wallets",
       ~logger,
@@ -828,6 +864,14 @@ let getWallets = (dict, str, logger) => {
       ),
       klarna: getWarningString(json, "klarna", "auto", ~logger)->getShowType(
         "options.wallets.klarna",
+        logger,
+      ),
+      paze: getWarningString(json, "paze", "auto", ~logger)->getShowType(
+        "options.wallets.paze",
+        logger,
+      ),
+      samsungPay: getWarningString(json, "samsungPay", "auto", ~logger)->getShowType(
+        "options.wallets.samsungPay",
         logger,
       ),
       style: getStyle(json, "style", logger),
@@ -856,12 +900,36 @@ let getCardDetails = (dict, str) => {
       expiryMonth: getString(json, "expiry_month", ""),
       expiryYear: getString(json, "expiry_year", ""),
       cardToken: getString(json, "card_token", ""),
-      cardHolderName: Some(getString(json, "card_holder_name", "")),
+      cardHolderName: getOptionString(json, "card_holder_name"),
       nickname: getString(json, "nick_name", ""),
+      isClickToPayCard: false,
     }
   })
   ->Option.getOr(defaultCardDetails)
 }
+
+let getAddressDetails = (dict, str) => {
+  dict
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
+    line1: Some(getString(json, "line1", "")),
+    line2: Some(getString(json, "line2", "")),
+    line3: Some(getString(json, "line3", "")),
+    city: Some(getString(json, "city", "")),
+    state: Some(getString(json, "state", "")),
+    country: Some(getString(json, "country", "")),
+    zip: Some(getString(json, "zip", "")),
+  })
+  ->Option.getOr(defaultAddressDetails)
+}
+
+let getBillingAddressPaymentMethod = (dict, str) =>
+  dict
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {address: getAddressDetails(json, "address")})
+  ->Option.getOr(defaultDisplayBillingDetails)
 
 let getPaymentMethodType = dict => {
   dict->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
@@ -897,6 +965,7 @@ let itemToCustomerObjMapper = customerDict => {
         lastUsedAt: getString(dict, "last_used_at", ""),
         bank: dict->getBank,
         recurringEnabled: getBool(dict, "recurring_enabled", false),
+        billing: getBillingAddressPaymentMethod(dict, "billing"),
       }
     })
 
@@ -934,6 +1003,7 @@ let getCustomerMethods = (dict, str) => {
           lastUsedAt: getString(dict, "last_used_at", ""),
           bank: dict->getBank,
           recurringEnabled: getBool(dict, "recurring_enabled", false),
+          billing: getBillingAddressPaymentMethod(json, "billing"),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)
@@ -1018,7 +1088,9 @@ let itemToObjMapper = (dict, logger) => {
       "branding",
       "displayDefaultSavedPaymentIcon",
       "hideCardNicknameField",
+      "displayBillingDetails",
       "customMessageForCardTerms",
+      "customSurchargeMessage",
     ],
     dict,
     "options",
@@ -1063,7 +1135,9 @@ let itemToObjMapper = (dict, logger) => {
     hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
     displayDefaultSavedPaymentIcon: getBool(dict, "displayDefaultSavedPaymentIcon", true),
     hideCardNicknameField: getBool(dict, "hideCardNicknameField", false),
+    displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
+    customSurchargeMessage: getOptionString(dict, "customSurchargeMessage"),
   }
 }
 
@@ -1082,4 +1156,45 @@ let itemToPayerDetailsObjectMapper = dict => {
   ->Option.flatMap(JSON.Decode.object)
   ->Option.flatMap(Dict.get(_, "national_number"))
   ->Option.flatMap(JSON.Decode.string),
+}
+
+let convertClickToPayCardToCustomerMethod = (
+  clickToPayCard: ClickToPayHelpers.clickToPayCard,
+): customerMethods => {
+  paymentToken: clickToPayCard.srcDigitalCardId,
+  customerId: "", // Empty as Click to Pay doesn't provide this
+  paymentMethod: "card",
+  paymentMethodId: clickToPayCard.srcDigitalCardId,
+  paymentMethodIssuer: None,
+  card: {
+    scheme: Some(
+      switch clickToPayCard.paymentCardDescriptor->String.toLowerCase {
+      | "amex" => "AmericanExpress"
+      | "mastercard" => "Mastercard"
+      | "visa" => "Visa"
+      | "discover" => "Discover"
+      | other =>
+        other
+        ->String.charAt(0)
+        ->String.toUpperCase
+        ->String.concat(other->String.sliceToEnd(~start=1)->String.toLowerCase)
+      },
+    ),
+    last4Digits: clickToPayCard.panLastFour,
+    expiryMonth: clickToPayCard.panExpirationMonth,
+    expiryYear: clickToPayCard.panExpirationYear,
+    cardToken: clickToPayCard.srcDigitalCardId,
+    cardHolderName: None,
+    nickname: clickToPayCard.digitalCardData.descriptorName,
+    isClickToPayCard: true,
+  },
+  paymentMethodType: Some("click_to_pay"),
+  defaultPaymentMethodSet: false, // Default to false as Click to Pay doesn't provide this
+  requiresCvv: false, // Click to Pay handles CVV internally
+  lastUsedAt: Js.Date.make()->Js.Date.toISOString, // Current timestamp as Click to Pay doesn't provide this
+  bank: {
+    mask: "", // Just use the mask field that exists in the type
+  },
+  recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
+  billing: defaultDisplayBillingDetails,
 }

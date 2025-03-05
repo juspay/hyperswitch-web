@@ -1,4 +1,21 @@
-open RecoilAtoms
+module DynamicFieldsToRenderWrapper = {
+  @react.component
+  let make = (~children, ~index, ~isInside=true) => {
+    let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+
+    <RenderIf condition={children != React.null}>
+      <div
+        key={`${isInside ? "inside" : "outside"}-billing-${index->Int.toString}`}
+        className="flex flex-col w-full place-content-between"
+        style={
+          gridColumnGap: isInside ? "0px" : themeObj.spacingGridRow,
+        }>
+        {children}
+      </div>
+    </RenderIf>
+  }
+}
+
 @react.component
 let make = (
   ~paymentType,
@@ -11,8 +28,11 @@ let make = (
   ~expiryProps=None,
   ~cvcProps=None,
   ~isBancontact=false,
+  ~isSaveDetailsWithClickToPay=false,
 ) => {
+  open DynamicFieldsUtils
   open Utils
+  open RecoilAtoms
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   React.useEffect(() => {
@@ -39,23 +59,27 @@ let make = (
     if paymentMethod === "card" {
       let creditRequiredFields = creditPaymentMethodTypes.required_fields
 
-      paymentMethodTypes.required_fields
-      ->Array.concat(creditRequiredFields)
-      ->DynamicFieldsUtils.removeRequiredFieldsDuplicates
-    } else if (
-      PaymentMethodsRecord.dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType)
-    ) {
+      [
+        ...paymentMethodTypes.required_fields,
+        ...creditRequiredFields,
+      ]->removeRequiredFieldsDuplicates
+    } else if dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType) {
       paymentMethodTypes.required_fields
     } else {
       []
     }
-  }, (paymentMethod, paymentMethodTypes.required_fields, paymentMethodType))
+  }, (
+    paymentMethod,
+    paymentMethodTypes.required_fields,
+    paymentMethodType,
+    creditPaymentMethodTypes.required_fields,
+  ))
 
   let requiredFields = React.useMemo(() => {
-    requiredFieldsWithBillingDetails->DynamicFieldsUtils.removeBillingDetailsIfUseBillingAddress(
-      billingAddress,
-    )
-  }, [requiredFieldsWithBillingDetails])
+    requiredFieldsWithBillingDetails
+    ->removeBillingDetailsIfUseBillingAddress(billingAddress)
+    ->removeClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay)
+  }, (requiredFieldsWithBillingDetails, isSaveDetailsWithClickToPay))
 
   let isAllStoredCardsHaveName = React.useMemo(() => {
     PaymentType.getIsStoredPaymentMethodHasName(savedMethod)
@@ -69,10 +93,10 @@ let make = (
       ~isSavedCardFlow,
       ~isAllStoredCardsHaveName,
     )
-    ->DynamicFieldsUtils.updateDynamicFields(billingAddress)
+    ->updateDynamicFields(billingAddress, isSaveDetailsWithClickToPay)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
-  }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow))
+  }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow, isSaveDetailsWithClickToPay))
 
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
@@ -255,7 +279,7 @@ let make = (
     }
   }
 
-  DynamicFieldsUtils.useRequiredFieldsEmptyAndValid(
+  useRequiredFieldsEmptyAndValid(
     ~requiredFields,
     ~fieldsArr,
     ~countryNames,
@@ -266,16 +290,17 @@ let make = (
     ~cardNumber,
     ~cardExpiry,
     ~cvcNumber,
+    ~isSavedCardFlow,
   )
 
-  DynamicFieldsUtils.useSetInitialRequiredFields(
+  useSetInitialRequiredFields(
     ~requiredFields={
       billingAddress.usePrefilledValues === Auto ? requiredFieldsWithBillingDetails : requiredFields
     },
     ~paymentMethodType,
   )
 
-  DynamicFieldsUtils.useRequiredFieldsBody(
+  useRequiredFieldsBody(
     ~requiredFields,
     ~paymentMethodType,
     ~cardNumber,
@@ -286,7 +311,7 @@ let make = (
     ~setRequiredFieldsBody,
   )
 
-  let submitCallback = DynamicFieldsUtils.useSubmitCallback()
+  let submitCallback = useSubmitCallback()
   useSubmitPaymentData(submitCallback)
 
   let bottomElement = <InfoElement />
@@ -307,11 +332,11 @@ let make = (
   }
 
   let dynamicFieldsToRenderOutsideBilling = React.useMemo(() => {
-    fieldsArr->Array.filter(DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling)
+    fieldsArr->Array.filter(isFieldTypeToRenderOutsideBilling)
   }, [fieldsArr])
 
   let dynamicFieldsToRenderInsideBilling = React.useMemo(() => {
-    fieldsArr->Array.filter(field => !(field->DynamicFieldsUtils.isFieldTypeToRenderOutsideBilling))
+    fieldsArr->Array.filter(field => !(field->isFieldTypeToRenderOutsideBilling))
   }, [fieldsArr])
 
   let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Array.includes(InfoElement)
@@ -325,16 +350,11 @@ let make = (
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
 
-  <RenderIf condition={fieldsArr->Array.length > 0}>
+  <RenderIf condition={!isSavedCardFlow && fieldsArr->Array.length > 0}>
     {<>
       {dynamicFieldsToRenderOutsideBilling
       ->Array.mapWithIndex((item, index) => {
-        <div
-          key={`outside-billing-${index->Int.toString}`}
-          className="flex flex-col w-full place-content-between"
-          style={
-            gridColumnGap: themeObj.spacingGridRow,
-          }>
+        <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index} isInside={false}>
           {switch item {
           | CardNumber =>
             <PaymentInputField
@@ -524,7 +544,7 @@ let make = (
           | LanguagePreference(_)
           | ShippingAddressCountry(_) => React.null
           }}
-        </div>
+        </DynamicFieldsToRenderWrapper>
       })
       ->React.array}
       <RenderIf condition={isRenderDynamicFieldsInsideBilling}>
@@ -533,7 +553,6 @@ let make = (
           style={
             border: {isSpacedInnerLayout ? `1px solid ${themeObj.borderColor}` : ""},
             borderRadius: {isSpacedInnerLayout ? themeObj.borderRadius : ""},
-            margin: {isSpacedInnerLayout ? `10px 0` : ""},
           }>
           <div
             className="billing-details-text"
@@ -551,9 +570,7 @@ let make = (
             }>
             {dynamicFieldsToRenderInsideBilling
             ->Array.mapWithIndex((item, index) => {
-              <div
-                key={`inside-billing-${index->Int.toString}`}
-                className="flex flex-col w-full place-content-between">
+              <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index}>
                 {switch item {
                 | BillingName => <BillingNamePaymentInput paymentType requiredFields />
                 | Email => <EmailPaymentInput paymentType />
@@ -816,7 +833,7 @@ let make = (
                 | IBAN
                 | None => React.null
                 }}
-              </div>
+              </DynamicFieldsToRenderWrapper>
             })
             ->React.array}
           </div>

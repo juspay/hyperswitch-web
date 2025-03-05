@@ -3,26 +3,39 @@ module RenderSavedPaymentMethodItem = {
   let make = (~paymentItem: PaymentType.customerMethods, ~paymentMethodType) => {
     switch paymentItem.paymentMethod {
     | "card" =>
-      <div className="flex flex-col items-start">
-        <div> {React.string(paymentItem.card.nickname)} </div>
-        <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-          <div className="tracking-widest"> {React.string(`****`)} </div>
-          <div> {React.string(paymentItem.card.last4Digits)} </div>
+      <div
+        className="flex flex-col items-start"
+        role="group"
+        ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
+        <div className="text-base tracking-wide"> {React.string(paymentItem.card.nickname)} </div>
+        <div className={`PickerItemLabel flex flex-row gap-3 items-center text-sm`}>
+          <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
+          <div className="tracking-wide" ariaHidden=true>
+            {React.string(paymentItem.card.last4Digits)}
+          </div>
         </div>
       </div>
+
     | "bank_debit" =>
-      <div className="flex flex-col items-start">
+      <div
+        className="flex flex-col items-start"
+        role="group"
+        ariaLabel={`${paymentMethodType->String.toUpperCase} bank debit account ending in ${paymentItem.bank.mask}`}>
         <div>
           {React.string(
             `${paymentMethodType->String.toUpperCase} ${paymentItem.paymentMethod->Utils.snakeToTitleCase}`,
           )}
         </div>
         <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
-          <div className="tracking-widest"> {React.string(`****`)} </div>
-          <div> {React.string(paymentItem.bank.mask)} </div>
+          <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
+          <div ariaHidden=true> {React.string(paymentItem.bank.mask)} </div>
         </div>
       </div>
-    | _ => <div> {React.string(paymentMethodType->Utils.snakeToTitleCase)} </div>
+
+    | _ =>
+      <div ariaLabel={paymentMethodType->Utils.snakeToTitleCase}>
+        {React.string(paymentMethodType->Utils.snakeToTitleCase)}
+      </div>
     }
   }
 }
@@ -40,9 +53,11 @@ let make = (
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {hideExpiredPaymentMethods, displayDefaultSavedPaymentIcon} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.optionAtom,
-  )
+  let {
+    hideExpiredPaymentMethods,
+    displayDefaultSavedPaymentIcon,
+    displayBillingDetails,
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
   let (
     isCVCValid,
@@ -72,25 +87,63 @@ let make = (
     | None => ()
     }
   }
-  React.useEffect(() => {
-    isActive ? focusCVC() : ()
-    None
-  }, [isActive])
 
   let isCard = paymentItem.paymentMethod === "card"
   let isRenderCvv = isCard && paymentItem.requiresCvv
   let expiryMonth = paymentItem.card.expiryMonth
   let expiryYear = paymentItem.card.expiryYear
 
+  let paymentMethodType = switch paymentItem.paymentMethodType {
+  | Some(paymentMethodType) => paymentMethodType
+  | None => "debit"
+  }
+
+  React.useEffect(() => {
+    open CardUtils
+
+    if isActive {
+      // * Focus CVC
+      focusCVC()
+
+      // * Sending card expiry to handle cases where the card expires before the use date.
+      `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
+      ->formatCardExpiryNumber
+      ->emitExpiryDate
+
+      PaymentUtils.emitPaymentMethodInfo(
+        ~paymentMethod=paymentItem.paymentMethod,
+        ~paymentMethodType,
+        ~cardBrand=cardBrand->CardUtils.getCardType,
+      )
+    }
+    None
+  }, (isActive, cardBrand, paymentItem.paymentMethod, paymentMethodType))
+
   let expiryDate = Date.fromString(`${expiryYear}-${expiryMonth}`)
   expiryDate->Date.setMonth(expiryDate->Date.getMonth + 1)
   let currentDate = Date.make()
   let isCardExpired = isCard && expiryDate < currentDate
 
-  let paymentMethodType = switch paymentItem.paymentMethodType {
-  | Some(paymentMethodType) => paymentMethodType
-  | None => "debit"
-  }
+  let billingDetailsText = "Billing Details:"
+
+  let billingDetailsArray =
+    [
+      paymentItem.billing.address.line1,
+      paymentItem.billing.address.line2,
+      paymentItem.billing.address.line3,
+      paymentItem.billing.address.city,
+      paymentItem.billing.address.state,
+      paymentItem.billing.address.country,
+      paymentItem.billing.address.zip,
+    ]
+    ->Array.map(item => Option.getOr(item, ""))
+    ->Array.filter(item => String.trim(item) !== "")
+
+  let billingDetailsArrayLength = Array.length(billingDetailsArray)
+
+  let isCVCEmpty = cvcNumber->String.length == 0
+
+  let {innerLayout} = config.appearance
 
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
@@ -142,7 +195,7 @@ let make = (
                   <RenderIf
                     condition={displayDefaultSavedPaymentIcon &&
                     paymentItem.defaultPaymentMethodSet}>
-                    <Icon size=18 name="checkmark" style={color: themeObj.colorPrimary} />
+                    <Icon size=16 name="checkmark" style={color: themeObj.colorPrimary} />
                   </RenderIf>
                 </div>
               </div>
@@ -150,8 +203,9 @@ let make = (
             <RenderIf condition={isCard}>
               <div
                 className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                style={fontSize: "14px", opacity: "0.5"}>
-                <div className="flex">
+                style={fontSize: "14px", opacity: "0.5"}
+                ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
+                <div className="flex" ariaHidden=true>
                   {React.string(`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
                 </div>
               </div>
@@ -163,7 +217,9 @@ let make = (
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
                   style={fontSize: "14px", opacity: "0.5"}>
-                  <div className="w-12 mt-6"> {React.string("CVC: ")} </div>
+                  <div className="tracking-widest w-12 mt-6">
+                    {React.string(`${localeString.cvcTextLabel}: `)}
+                  </div>
                   <div
                     className={`flex h mx-4 justify-start w-16 ${isActive
                         ? "opacity-1 mt-4"
@@ -174,7 +230,7 @@ let make = (
                       value=cvcNumber
                       onChange=changeCVCNumber
                       onBlur=handleCVCBlur
-                      errorString=cvcError
+                      errorString=""
                       inputFieldClassName="flex justify-start"
                       paymentType
                       appearance=config.appearance
@@ -183,10 +239,30 @@ let make = (
                       maxLength=4
                       inputRef=cvcRef
                       placeholder="123"
-                      height="2.2rem"
+                      height="1.8rem"
                       name={TestUtils.cardCVVInputTestId}
                     />
                   </div>
+                </div>
+              </RenderIf>
+              <RenderIf
+                condition={isActive && displayBillingDetails && billingDetailsArrayLength > 0}>
+                <div className="tracking-wide text-sm text-left gap-2 mt-4 ml-2">
+                  <div className="font-semibold"> {React.string(billingDetailsText)} </div>
+                  <div className="font-normal">
+                    {React.string(Array.joinWith(billingDetailsArray, ", "))}
+                  </div>
+                </div>
+              </RenderIf>
+              <RenderIf
+                condition={isActive && isCVCEmpty && innerLayout === Spaced && cvcError != ""}>
+                <div
+                  className="Error pt-1 mt-1 ml-2"
+                  style={
+                    color: themeObj.colorDangerText,
+                    fontSize: themeObj.fontSizeSm,
+                  }>
+                  {React.string(cvcError)}
                 </div>
               </RenderIf>
               <RenderIf condition={isCardExpired}>

@@ -14,6 +14,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
+  let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
@@ -96,7 +97,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | GooglePayElement
     | PayPalElement
     | ApplePayElement
+    | SamsungPayElement
     | KlarnaElement
+    | PazeElement
     | ExpressCheckoutElement
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
@@ -145,6 +148,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | _ => ()
     }
   }
+
+  let updateRedirectionFlags = UtilityHooks.useUpdateRedirectionFlags()
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMounted", true->JSON.Encode.bool)])
@@ -275,10 +280,20 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 })
                 logger.setClientSecret(clientSecret)
 
+                // Update top redirection atom
+                updateRedirectionFlags(paymentOptions)
+
                 switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
-                  promise->then(res => {
+                  promise
+                  ->then(res => {
                     dict->setConfigs(res)
+                  })
+                  ->catch(_ => {
+                    dict->setConfigs({
+                      default: DefaultTheme.default,
+                      defaultRules: DefaultTheme.defaultRules,
+                    })
                   })
                 | None =>
                   dict->setConfigs({
@@ -322,10 +337,20 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             })
             logger.setClientSecret(clientSecret)
 
+            // Update top redirection atom
+            updateRedirectionFlags(paymentOptions)
+
             switch getThemePromise(paymentOptions) {
             | Some(promise) =>
-              promise->then(res => {
+              promise
+              ->then(res => {
                 dict->setConfigs(res)
+              })
+              ->catch(_ => {
+                dict->setConfigs({
+                  default: DefaultTheme.default,
+                  defaultRules: DefaultTheme.defaultRules,
+                })
               })
 
             | None =>
@@ -357,8 +382,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
           switch getThemePromise(optionsDict) {
           | Some(promise) =>
-            promise->then(res => {
+            promise
+            ->then(res => {
               dict->setConfigs(res)
+            })
+            ->catch(_ => {
+              dict->setConfigs({
+                default: DefaultTheme.default,
+                defaultRules: DefaultTheme.defaultRules,
+              })
             })
 
           | None =>
@@ -375,6 +407,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           setIsGooglePayReady(_ =>
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
+        }
+        if dict->getDictIsSome("isSamsungPayReady") {
+          setIsSamsungPayReady(_ => dict->getBool("isSamsungPayReady", false))
         }
         if (
           dict->getDictIsSome("customBackendUrl") &&

@@ -11,14 +11,13 @@ let setUserError = message => {
 @react.component
 let make = (~paymentMode, ~integrateError, ~logger) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let keys = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
   let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let {iframeId} = keys
 
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
@@ -39,6 +38,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let expiryRef = React.useRef(Nullable.null)
   let cvcRef = React.useRef(Nullable.null)
   let zipRef = React.useRef(Nullable.null)
+  let prevCardBrandRef = React.useRef("")
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
   let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
@@ -72,7 +72,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   React.useEffect(() => {
     let obj = getobjFromCardPattern(cardBrand)
-    let cvcLength = obj.maxCVCLenth
+    let cvcLength = obj.maxCVCLength
     if (
       cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true) &&
         cvcNumber->String.length == cvcLength
@@ -82,6 +82,25 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, (cvcNumber, cardNumber))
 
+  React.useEffect(() => {
+    setCvcNumber(_ => "")
+    setCardExpiry(_ => "")
+    setIsExpiryValid(_ => None)
+    setIsCVCValid(_ => None)
+    None
+  }, [showFields])
+
+  React.useEffect(() => {
+    if prevCardBrandRef.current !== "" {
+      setCvcNumber(_ => "")
+      setCardExpiry(_ => "")
+      setIsExpiryValid(_ => None)
+      setIsCVCValid(_ => None)
+    }
+    prevCardBrandRef.current = cardBrand
+    None
+  }, [cardBrand])
+
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
@@ -89,9 +108,8 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let clearValue = card->clearSpaces
     setCardValid(clearValue, setIsCardValid)
     if (
-      cardValid(clearValue, cardBrand) &&
-      (PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false) ||
-        Utils.checkIsTestCardWildcard(clearValue))
+      focusCardValid(clearValue, cardBrand) &&
+      PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false)
     ) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
@@ -101,7 +119,11 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       setDisplayPincode(_ => false)
     }
     setCardNumber(_ => card)
-    if card->String.length == 0 {
+    if card->String.length == 0 && prevCardBrandRef.current !== "" {
+      setCvcNumber(_ => "")
+      setCardExpiry(_ => "")
+      setIsExpiryValid(_ => None)
+      setIsCVCValid(_ => None)
       setIsCardValid(_ => Some(false))
     }
   }
@@ -112,6 +134,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     let formattedExpiry = val->formatCardExpiryNumber
     if isExipryValid(formattedExpiry) {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
+
+      // * Sending card expiry to handle cases where the card expires before the use date.
+      emitExpiryDate(formattedExpiry)
     }
     setExpiryValid(formattedExpiry, setIsExpiryValid)
     setCardExpiry(_ => formattedExpiry)
@@ -223,13 +248,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       checkCardExpiry(getCardElementValue(iframeId, "card-expiry"))
     | _ => true
     }
-    let cardNetwork = {
-      if cardBrand != "" {
-        [("card_network", cardBrand->JSON.Encode.string)]
-      } else {
-        []
-      }
-    }
+    let cardNetwork = [
+      ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
+    ]
     if validFormat {
       let body = switch paymentMode->getPaymentMode {
       | Card =>
@@ -239,7 +260,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardNumber,
           ~month,
           ~year,
-          ~cardHolderName="",
+          ~cardHolderName=None,
           ~cvcNumber,
           ~cardBrand=cardNetwork,
         )
@@ -250,7 +271,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
           ~cardNumber,
           ~month,
           ~year,
-          ~cardHolderName="",
+          ~cardHolderName=None,
           ~cvcNumber=localCvcNumber,
           ~cardBrand=cardNetwork,
         )
@@ -328,18 +349,17 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cardNumber, cvcNumber, cardExpiry, isCVCValid, isExpiryValid, isCardValid))
 
   React.useEffect(() => {
-    let cardError = if isCardValid == None || cardNumber->String.length == 0 {
-      ""
-    } else if isCardSupported->Option.getOr(true) && isCardValid->Option.getOr(true) {
-      ""
-    } else if isCardSupported->Option.getOr(true) {
-      localeString.inValidCardErrorText
-    } else {
-      switch cardNumber->CardUtils.getCardBrand {
-      | "" => localeString.inValidCardErrorText
-      | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)
-      }
+    let cardError = switch (
+      isCardSupported->Option.getOr(true),
+      isCardValid->Option.getOr(true),
+      cardNumber->String.length == 0,
+    ) {
+    | (_, _, true) => ""
+    | (true, true, _) => ""
+    | (true, _, _) => localeString.inValidCardErrorText
+    | (_, _, _) => CardUtils.getCardBrandInvalidError(~cardNumber, ~localeString)
     }
+    let cardError = isCardValid->Option.isSome ? cardError : ""
     setCardError(_ => cardError)
     None
   }, [isCardValid, isCardSupported])

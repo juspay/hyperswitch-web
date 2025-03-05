@@ -85,7 +85,9 @@ let make = (
         | GooglePayElement
         | PayPalElement
         | ApplePayElement
+        | SamsungPayElement
         | KlarnaElement
+        | PazeElement
         | ExpressCheckoutElement
         | Payment =>
           <ReusableReactSuspense

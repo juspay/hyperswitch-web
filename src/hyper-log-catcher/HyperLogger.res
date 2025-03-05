@@ -35,6 +35,7 @@ type eventName =
   | GOOGLE_PAY_FLOW
   | PAYPAL_FLOW
   | PAYPAL_SDK_FLOW
+  | KLARNA_CHECKOUT_FLOW
   | APP_INITIATED
   | APP_REINITIATED
   | LOG_INITIATED
@@ -86,6 +87,12 @@ type eventName =
   | EXTERNAL_TAX_CALCULATION
   | POST_SESSION_TOKENS_CALL
   | POST_SESSION_TOKENS_CALL_INIT
+  | PAZE_SDK_FLOW
+  | SAMSUNG_PAY_SCRIPT
+  | SAMSUNG_PAY
+  | CLICK_TO_PAY_SCRIPT
+  | CLICK_TO_PAY_FLOW
+  | PAYMENT_METHOD_TYPE_DETECTION_FAILED
 
 let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
 
@@ -104,9 +111,6 @@ let toSnakeCaseWithSeparator = (str, separator) => {
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
-let logInfo = log => {
-  Window.isProd ? () : log
-}
 
 type logFile = {
   timestamp: string,
@@ -239,7 +243,7 @@ let logFileToObj = logFile => {
       }->JSON.Encode.string,
     ),
     ("source", logFile.source->convertToScreamingSnakeCase->JSON.Encode.string),
-    ("version", logFile.version->JSON.Encode.string), // repoversion of orca-android
+    ("version", logFile.version->JSON.Encode.string),
     ("value", logFile.value->JSON.Encode.string),
     ("internal_metadata", logFile.internalMetadata->JSON.Encode.string),
     ("session_id", logFile.sessionId->JSON.Encode.string),

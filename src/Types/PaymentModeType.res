@@ -18,7 +18,9 @@ type payment =
   | BanContactCard
   | GooglePay
   | ApplePay
+  | SamsungPay
   | Boleto
+  | PayPal
   | NONE
 
 let paymentMode = str => {
@@ -42,7 +44,9 @@ let paymentMode = str => {
   | "bancontact_card" => BanContactCard
   | "google_pay" => GooglePay
   | "apple_pay" => ApplePay
+  | "samsung_pay" => SamsungPay
   | "boleto" => Boleto
+  | "paypal" => PayPal
   | _ => NONE
   }
 }
@@ -53,6 +57,7 @@ let defaultOrder = [
   "google_pay",
   "paypal",
   "klarna",
+  "samsung_pay",
   "affirm",
   "afterpay_clearpay",
   "ach_transfer",

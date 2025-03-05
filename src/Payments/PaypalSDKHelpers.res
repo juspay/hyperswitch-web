@@ -1,23 +1,22 @@
 open PaypalSDKTypes
-open Promise
 open Utils
 open TaxCalculation
 
 let loadPaypalSDK = (
-  ~loggerState: OrcaLogger.loggerMake,
+  ~loggerState: HyperLogger.loggerMake,
   ~sdkHandleOneClickConfirmPayment as _,
   ~buttonStyle,
   ~iframeId,
   ~isManualRetryEnabled,
   ~paymentMethodListValue,
   ~isGuestCustomer,
-  ~postSessionTokens: PaymentHelpers.paymentIntent,
+  ~postSessionTokens: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
   ~publishableKey,
   ~paymentMethodTypes,
   ~stateJson,
-  ~confirm: PaymentHelpers.paymentIntent,
-  ~completeAuthorize: PaymentHelpers.completeAuthorize,
+  ~confirm: PaymentHelpersTypes.paymentIntent,
+  ~completeAuthorize: PaymentHelpersTypes.completeAuthorize,
   ~handleCloseLoader,
   ~areOneClickWalletsRendered: (
     RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
@@ -28,6 +27,8 @@ let loadPaypalSDK = (
   ~sessions: PaymentType.loadType,
   ~clientSecret,
 ) => {
+  open Promise
+
   loggerState.setLogInfo(
     ~value="Paypal SDK Button Clicked",
     ~eventName=PAYPAL_SDK_FLOW,
@@ -57,10 +58,11 @@ let loadPaypalSDK = (
     style: buttonStyle,
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: () => {
-      Utils.makeOneClickHandlerPromise(sdkHandleIsThere)->then(result => {
+      PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
+      makeOneClickHandlerPromise(sdkHandleIsThere)->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
-          Utils.messageParentWindow([
+          messageParentWindow([
             ("fullscreen", true->JSON.Encode.bool),
             ("param", "paymentloader"->JSON.Encode.string),
             ("iframeId", iframeId->JSON.Encode.string),
@@ -73,7 +75,7 @@ let loadPaypalSDK = (
             ~paymentType=paymentMethodListValue.payment_type,
             ~body,
           )
-          Promise.make((resolve, _) => {
+          make((resolve, _) => {
             if paypalNextAction == "post_session_tokens" {
               postSessionTokens(
                 ~bodyArr=modifiedPaymentBody,
@@ -84,9 +86,9 @@ let loadPaypalSDK = (
                 ~handleUserError=true,
                 ~intentCallback=val => {
                   val
-                  ->Utils.getDictFromJson
-                  ->Utils.getDictFromDict("nextActionData")
-                  ->Utils.getString("order_id", "")
+                  ->getDictFromJson
+                  ->getDictFromDict("nextActionData")
+                  ->getString("order_id", "")
                   ->resolve
                 },
                 ~manualRetry=isManualRetryEnabled,
@@ -99,8 +101,7 @@ let loadPaypalSDK = (
                   publishableKey,
                 },
                 ~handleUserError=true,
-                ~intentCallback=val =>
-                  val->Utils.getDictFromJson->Utils.getString("orderId", "")->resolve,
+                ~intentCallback=val => val->getDictFromJson->getString("orderId", "")->resolve,
                 ~manualRetry=isManualRetryEnabled,
               )
             }
@@ -141,7 +142,7 @@ let loadPaypalSDK = (
           ~sessionId=data->getDictFromJson->Dict.get("orderID"),
         )
       } else {
-        Js.Json.null->Js.Promise.resolve
+        JSON.Encode.null->resolve
       }
     },
     onApprove: (_data, actions) => {
@@ -150,14 +151,14 @@ let loadPaypalSDK = (
         ->then(val => {
           let purchaseUnit =
             val
-            ->Utils.getDictFromJson
-            ->Utils.getArray("purchase_units")
+            ->getDictFromJson
+            ->getArray("purchase_units")
             ->Array.get(0)
             ->Option.flatMap(JSON.Decode.object)
             ->Option.getOr(Dict.make())
           let payerDetails =
             val
-            ->Utils.getDictFromJson
+            ->getDictFromJson
             ->Dict.get("payer")
             ->Option.flatMap(JSON.Decode.object)
             ->Option.getOr(Dict.make())
@@ -172,7 +173,7 @@ let loadPaypalSDK = (
 
           let (connectors, _) =
             paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
-          let orderId = val->getDictFromJson->Utils.getString("id", "")
+          let orderId = val->getDictFromJson->getString("id", "")
           let body = PaymentBody.paypalSdkBody(~token=orderId, ~connectors)
           let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
             ~isGuestCustomer,
@@ -183,11 +184,11 @@ let loadPaypalSDK = (
           let bodyArr =
             requiredFieldsBody
             ->JSON.Encode.object
-            ->Utils.unflattenObject
-            ->Utils.getArrayOfTupleFromDict
+            ->unflattenObject
+            ->getArrayOfTupleFromDict
 
           let confirmBody = bodyArr->Array.concatMany([modifiedPaymentBody])
-          Promise.make((_resolve, _) => {
+          make((_resolve, _) => {
             if paypalNextAction == "post_session_tokens" {
               confirm(
                 ~bodyArr=confirmBody,
@@ -210,6 +211,7 @@ let loadPaypalSDK = (
             }
           })
         })
+        ->catch(_ => resolve())
         ->ignore
       }
     },
@@ -227,14 +229,14 @@ let loadPaypalSDK = (
 }
 
 let loadBraintreePaypalSdk = (
-  ~loggerState: OrcaLogger.loggerMake,
+  ~loggerState: HyperLogger.loggerMake,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
   ~buttonStyle,
   ~iframeId,
   ~paymentMethodListValue,
   ~isGuestCustomer,
-  ~intent: PaymentHelpers.paymentIntent,
+  ~intent: PaymentHelpersTypes.paymentIntent,
   ~options: PaymentType.options,
   ~orderDetails,
   ~publishableKey,
@@ -246,12 +248,13 @@ let loadBraintreePaypalSdk = (
   ) => unit,
   ~isManualRetryEnabled,
 ) => {
+  open Promise
   loggerState.setLogInfo(
     ~value="Paypal Braintree SDK Button Clicked",
     ~eventName=PAYPAL_SDK_FLOW,
     ~paymentMethod="PAYPAL",
   )
-  Utils.makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
+  makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
   ->then(result => {
     let result = result->JSON.Decode.bool->Option.getOr(false)
     if result {
@@ -276,7 +279,7 @@ let loadBraintreePaypalSdk = (
                   fundingSource: paypal["FUNDING"]["PAYPAL"],
                   createBillingAgreement: () => {
                     //Paypal Clicked
-                    Utils.messageParentWindow([
+                    messageParentWindow([
                       ("fullscreen", true->JSON.Encode.bool),
                       ("param", "paymentloader"->JSON.Encode.string),
                       ("iframeId", iframeId->JSON.Encode.string),
@@ -301,12 +304,7 @@ let loadBraintreePaypalSdk = (
                               ~statesList=stateJson,
                             )
 
-                            let paypalBody =
-                              body
-                              ->Utils.getJsonFromArrayOfJson
-                              ->Utils.flattenObject(true)
-                              ->Utils.mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-                              ->Utils.getArrayOfTupleFromDict
+                            let paypalBody = body->mergeAndFlattenToTuples(requiredFieldsBody)
 
                             let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
                               ~isGuestCustomer,
@@ -347,5 +345,6 @@ let loadBraintreePaypalSdk = (
     }
     resolve()
   })
+  ->catch(_ => resolve())
   ->ignore
 }

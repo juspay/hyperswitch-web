@@ -1,5 +1,5 @@
 type locale =
-  EN | HE | FR | EN_GB | AR | JA | DE | FR_BE | ES | CA | PT | IT | PL | NL | SV | RU | ZH
+  EN | HE | FR | EN_GB | AR | JA | DE | FR_BE | ES | CA | PT | IT | PL | NL | SV | RU | ZH | ZH_HANT
 
 type localeStrings = {
   locale: string,
@@ -141,6 +141,9 @@ type localeStrings = {
   pixKeyEmptyText: string,
   pixKeyLabel: string,
   pixKeyPlaceholder: string,
+  invalidCardHolderNameError: string,
+  invalidNickNameError: string,
+  expiry: string,
 }
 
 type constantStrings = {

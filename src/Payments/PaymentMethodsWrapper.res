@@ -40,17 +40,15 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
 
-  let complete = areRequiredFieldsValid
-
   React.useEffect(() => {
-    setFieldComplete(_ => complete)
+    setFieldComplete(_ => areRequiredFieldsValid)
     None
-  }, [complete])
+  }, [areRequiredFieldsValid])
 
   let empty = areRequiredFieldsEmpty
 
   UtilityHooks.useHandlePostMessages(
-    ~complete,
+    ~complete=areRequiredFieldsValid,
     ~empty,
     ~paymentType=paymentMethodDetails.paymentMethodName,
   )
@@ -59,7 +57,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if complete {
+      if areRequiredFieldsValid {
         let countryCode =
           Country.getCountry(paymentMethodName)
           ->Array.filter(item => item.countryName == country)
@@ -84,12 +82,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
             ),
             ~paymentExperience=paymentFlow,
-          )
-          ->Dict.fromArray
-          ->JSON.Encode.object
-          ->flattenObject(true)
-          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
-          ->getArrayOfTupleFromDict
+          )->mergeAndFlattenToTuples(requiredFieldsBody)
 
         intent(
           ~bodyArr=body,
@@ -110,7 +103,10 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     paymentMethodName,
     isManualRetryEnabled,
     phoneNumber.value,
-    (selectedBank, currency, requiredFieldsBody),
+    selectedBank,
+    currency,
+    requiredFieldsBody,
+    areRequiredFieldsValid,
   ))
   useSubmitPaymentData(submitCallback)
   <div

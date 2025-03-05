@@ -1,5 +1,33 @@
 open RecoilAtoms
 
+let dynamicFieldsEnabledPaymentMethods = [
+  "crypto_currency",
+  "debit",
+  "credit",
+  "blik",
+  "google_pay",
+  "apple_pay",
+  "bancontact_card",
+  "open_banking_uk",
+  "eps",
+  "ideal",
+  "sofort",
+  "pix_transfer",
+  "giropay",
+  "local_bank_transfer_transfer",
+  "afterpay_clearpay",
+  "mifinity",
+  "upi_collect",
+  "sepa",
+  "affirm",
+  "walley",
+  "ach",
+  "bacs",
+  "pay_bright",
+  "multibanco_transfer",
+  "paypal",
+]
+
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
   let fieldNameArr = field.value->String.split(" ")
   let requiredFieldsArr = item.required_field->String.split(".")
@@ -8,9 +36,7 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
   | "last_name" =>
     fieldNameArr
     ->Array.sliceToEnd(~start=1)
-    ->Array.reduce("", (acc, item) => {
-      acc ++ item
-    })
+    ->Array.reduce("", (acc, item) => acc === "" ? item : `${acc} ${item}`)
   | _ => field.value
   }
 }
@@ -76,6 +102,37 @@ let addBillingAddressIfUseBillingAddress = (
   }
 }
 
+let clickToPayFields: array<PaymentMethodsRecord.paymentMethodsFields> = [Email, PhoneNumber]
+
+let isClickToPayFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
+  switch fieldType {
+  | Email
+  | PhoneNumber => true
+  | _ => false
+  }
+}
+
+let removeClickToPayFieldsIfSaveDetailsWithClickToPay = (
+  requiredFields: array<PaymentMethodsRecord.required_fields>,
+  isSaveDetailsWithClickToPay,
+) => {
+  if isSaveDetailsWithClickToPay {
+    requiredFields->Array.filter(requiredField => {
+      !(requiredField.field_type->isClickToPayFieldType)
+    })
+  } else {
+    requiredFields
+  }
+}
+
+let addClickToPayFieldsIfSaveDetailsWithClickToPay = (fieldsArr, isSaveDetailsWithClickToPay) => {
+  if isSaveDetailsWithClickToPay {
+    [...fieldsArr, ...clickToPayFields]
+  } else {
+    fieldsArr
+  }
+}
+
 let checkIfNameIsValid = (
   requiredFieldsType: array<PaymentMethodsRecord.required_fields>,
   paymentMethodFields,
@@ -108,6 +165,7 @@ let useRequiredFieldsEmptyAndValid = (
   ~cardNumber,
   ~cardExpiry,
   ~cvcNumber,
+  ~isSavedCardFlow,
 ) => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
   let vpaId = Recoil.useRecoilValueFromAtom(userVpaId)
@@ -140,7 +198,9 @@ let useRequiredFieldsEmptyAndValid = (
       acc &&
       switch paymentMethodFields {
       | Email => email.isValid->Option.getOr(false)
-      | FullName => checkIfNameIsValid(requiredFields, paymentMethodFields, fullName)
+      | FullName =>
+        checkIfNameIsValid(requiredFields, paymentMethodFields, fullName) &&
+        fullName.isValid->Option.getOr(false)
       | Country => country !== "" || countryNames->Array.length === 0
       | AddressCountry(countryArr) => country !== "" || countryArr->Array.length === 0
       | BillingName => checkIfNameIsValid(requiredFields, paymentMethodFields, billingName)
@@ -180,7 +240,7 @@ let useRequiredFieldsEmptyAndValid = (
       | _ => true
       }
     })
-    setAreRequiredFieldsValid(_ => areRequiredFieldsValid)
+    setAreRequiredFieldsValid(_ => isSavedCardFlow || areRequiredFieldsValid)
 
     let areRequiredFieldsEmpty = fieldsArrWithBillingAddress->Array.reduce(false, (
       acc,
@@ -260,6 +320,7 @@ let useRequiredFieldsEmptyAndValid = (
     cardExpiry,
     cvcNumber,
     bankAccountNumber,
+    cryptoCurrencyNetworks,
   ))
 }
 
@@ -767,11 +828,13 @@ let combineCardExpiryAndCvc = arr => {
 let updateDynamicFields = (
   arr: array<PaymentMethodsRecord.paymentMethodsFields>,
   billingAddress,
+  isSaveDetailsWithClickToPay,
 ) => {
   arr
   ->Utils.removeDuplicate
   ->Array.filter(item => item !== None)
   ->addBillingAddressIfUseBillingAddress(billingAddress)
+  ->addClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay)
   ->combineStateAndCity
   ->combineCountryAndPostal
   ->combineCardExpiryMonthAndYear
@@ -789,11 +852,6 @@ let useSubmitCallback = () => {
     logger,
   )
   let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
-    userBankAccountNumber,
-    "bankAccountNumber",
-    logger,
-  )
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -830,12 +888,6 @@ let useSubmitCallback = () => {
         setCity(prev => {
           ...prev,
           errorString: localeString.cityEmptyText,
-        })
-      }
-      if bankAccountNumber.value === "" {
-        setBankAccountNumber(prev => {
-          ...prev,
-          errorString: localeString.ibanEmptyText,
         })
       }
     }
