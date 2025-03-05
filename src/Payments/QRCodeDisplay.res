@@ -193,8 +193,8 @@ let make = () => {
   let expiryString = React.useMemo(() => {
     let minutes = (expiryTime /. 60000.0)->Float.toInt->Int.toString
     let seconds = (mod(expiryTime->Float.toInt, 60000) / 1000)->Int.toString
-    let seconds = seconds->String.length == 1 ? `0${seconds}` : seconds
-    `${minutes}:${seconds}`
+    let formatedSeconds = seconds->String.length == 1 ? `0${seconds}` : seconds
+    `${minutes}:${formatedSeconds}`
   }, [expiryTime])
 
   let displayColor = React.useMemo(() => {
