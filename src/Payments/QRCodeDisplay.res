@@ -238,7 +238,9 @@ let make = () => {
         }
         className={paymentMethodConfig.showBorder ? "border-[1em] rounded-md" : ""}>
         <div
-          className={paymentMethodConfig.showBorder ? "border-[2em] border-white rounded-md" : ""}>
+          className={paymentMethodConfig.showBorder
+            ? "border-[0.5em] border-white rounded-md"
+            : ""}>
           <img style={height: "13rem"} src=qrCode alt="" />
         </div>
         <RenderIf condition={paymentMethodConfig.footerText !== ""}>
