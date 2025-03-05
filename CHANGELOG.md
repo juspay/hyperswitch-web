@@ -1,3 +1,10 @@
+# [0.116.0](https://github.com/juspay/hyperswitch-web/compare/v0.115.4...v0.116.0) (2025-03-05)
+
+
+### Features
+
+* add new rule to change color of input icon ([#935](https://github.com/juspay/hyperswitch-web/issues/935)) ([695b876](https://github.com/juspay/hyperswitch-web/commit/695b876467b08dd587d016c57b7a025eb17c3257))
+
 ## [0.115.4](https://github.com/juspay/hyperswitch-web/compare/v0.115.3...v0.115.4) (2025-03-05)
 
 
