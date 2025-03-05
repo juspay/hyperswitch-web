@@ -2,6 +2,10 @@
 let make = () => {
   open CardUtils
 
+  let a = 0
+  let b = 0
+  Console.log(a)
+
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
   let setLoggerState = Recoil.useSetRecoilState(RecoilAtoms.loggerAtom)
