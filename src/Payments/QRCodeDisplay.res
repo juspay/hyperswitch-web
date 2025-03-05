@@ -59,7 +59,6 @@ let make = () => {
   let (headers, setHeaders) = React.useState(_ => [])
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
-  let (paymentMethod, setPaymentMethod) = React.useState(_ => Other)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
     getPaymentMethodConfig(Other)
   )
@@ -77,8 +76,6 @@ let make = () => {
           let paymentMethodStr = metaDataDict->getString("paymentMethod", "")
           let parsedPaymentMethod = parsePaymentMethod(paymentMethodStr)
 
-          setPaymentMethod(_ => parsedPaymentMethod)
-
           let defaultConfig = getPaymentMethodConfig(parsedPaymentMethod)
 
           let qrData = metaDataDict->getString("qrData", "")
@@ -90,17 +87,8 @@ let make = () => {
               let displayText = metaDataDict->getString("display_text", defaultConfig.footerText)
               let borderColor = metaDataDict->getString("border_color", defaultConfig.defaultColor)
 
-              let displayText = if displayText == "" {
-                defaultConfig.footerText
-              } else {
-                displayText
-              }
-              let borderColor = if borderColor == "" {
-                defaultConfig.defaultColor
-              } else {
-                borderColor
-              }
-
+              let displayText = displayText === "" ? defaultConfig.footerText : displayText
+              let borderColor = borderColor === "" ? defaultConfig.defaultColor : borderColor
               let showBorder = displayText !== "" && borderColor !== ""
 
               setPaymentMethodConfig(_ => {
@@ -155,11 +143,6 @@ let make = () => {
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
   })
-
-  let isValidHexColor = (color: string): bool => {
-    let hexRegex = %re("/^#([0-9a-f]{6}|[0-9a-f]{3})$/i")
-    Js.Re.test_(hexRegex, color)
-  }
 
   React.useEffect(() => {
     if expiryTime < 1000.0 {

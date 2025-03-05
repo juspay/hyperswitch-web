@@ -168,8 +168,8 @@ let getNextAction = (dict, str) => {
         ->Option.map(json => json->getVoucherDetails)
       },
       next_action_data: Some(json->getDictFromDict("next_action_data")->JSON.Encode.object),
-      display_text: Some(json->getString("display_text", "")),
-      border_color: Some(json->getString("border_color", "")),
+      display_text: json->getOptionString("display_text"),
+      border_color: json->getOptionString("border_color"),
     }
   })
   ->Option.getOr(defaultNextAction)
