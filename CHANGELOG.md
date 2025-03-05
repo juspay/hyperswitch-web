@@ -1,3 +1,10 @@
+# [0.117.0](https://github.com/juspay/hyperswitch-web/compare/v0.116.0...v0.117.0) (2025-03-05)
+
+
+### Features
+
+* update QR code page for DuitNow payment method ([#929](https://github.com/juspay/hyperswitch-web/issues/929)) ([cc76426](https://github.com/juspay/hyperswitch-web/commit/cc76426dcecebe73bd42f03d4c42bf910b753a15))
+
 # [0.116.0](https://github.com/juspay/hyperswitch-web/compare/v0.115.4...v0.116.0) (2025-03-05)
 
 
