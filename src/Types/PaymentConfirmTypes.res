@@ -43,6 +43,8 @@ type nextAction = {
   voucher_details: option<voucherDetails>,
   display_to_timestamp: option<float>,
   next_action_data: option<JSON.t>,
+  display_text: option<string>,
+  border_color: option<string>,
 }
 type intent = {
   nextAction: nextAction,
@@ -70,6 +72,8 @@ let defaultNextAction = {
   voucher_details: None,
   display_to_timestamp: None,
   next_action_data: None,
+  display_text: None,
+  border_color: None,
 }
 let defaultIntent = {
   nextAction: defaultNextAction,
@@ -164,6 +168,8 @@ let getNextAction = (dict, str) => {
         ->Option.map(json => json->getVoucherDetails)
       },
       next_action_data: Some(json->getDictFromDict("next_action_data")->JSON.Encode.object),
+      display_text: json->getOptionString("display_text"),
+      border_color: json->getOptionString("border_color"),
     }
   })
   ->Option.getOr(defaultNextAction)

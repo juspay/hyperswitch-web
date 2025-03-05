@@ -1,3 +1,24 @@
+# [0.117.0](https://github.com/juspay/hyperswitch-web/compare/v0.116.0...v0.117.0) (2025-03-05)
+
+
+### Features
+
+* update QR code page for DuitNow payment method ([#929](https://github.com/juspay/hyperswitch-web/issues/929)) ([cc76426](https://github.com/juspay/hyperswitch-web/commit/cc76426dcecebe73bd42f03d4c42bf910b753a15))
+
+# [0.116.0](https://github.com/juspay/hyperswitch-web/compare/v0.115.4...v0.116.0) (2025-03-05)
+
+
+### Features
+
+* add new rule to change color of input icon ([#935](https://github.com/juspay/hyperswitch-web/issues/935)) ([695b876](https://github.com/juspay/hyperswitch-web/commit/695b876467b08dd587d016c57b7a025eb17c3257))
+
+## [0.115.4](https://github.com/juspay/hyperswitch-web/compare/v0.115.3...v0.115.4) (2025-03-05)
+
+
+### Bug Fixes
+
+* fix: Missing Billing Details ([#934](https://github.com/juspay/hyperswitch-web/issues/934)) ([9fda007](https://github.com/juspay/hyperswitch-web/commit/9fda007114c3405d032eaf0f9af317f09b1e46a7))
+
 ## [0.115.3](https://github.com/juspay/hyperswitch-web/compare/v0.115.2...v0.115.3) (2025-03-04)
 
 ## [0.115.2](https://github.com/juspay/hyperswitch-web/compare/v0.115.1...v0.115.2) (2025-03-03)
