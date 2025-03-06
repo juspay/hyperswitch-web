@@ -342,14 +342,12 @@ let make = (
     <RenderIf
       condition={displaySavedPaymentMethodsCheckbox &&
       paymentMethodListValue.payment_type === SETUP_MANDATE}>
-      <div
-        className="opacity-50 text-xs mb-2 text-left"
-        style={
-          color: themeObj.colorText,
+      <Terms
+        mode={Card}
+        styles={
           marginTop: themeObj.spacingGridColumn,
-        }>
-        <Terms mode={Card} />
-      </div>
+        }
+      />
     </RenderIf>
     <RenderIf condition={!showFields}>
       <div
