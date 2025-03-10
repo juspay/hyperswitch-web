@@ -195,7 +195,7 @@ type options = {
   hideCardNicknameField: bool,
   displayBillingDetails: bool,
   customMessageForCardTerms: string,
-  customSurchargeMessage: option<string>,
+  showShortSurchargeMessage: bool,
 }
 
 type payerDetails = {
@@ -361,7 +361,7 @@ let defaultOptions = {
   hideCardNicknameField: false,
   displayBillingDetails: false,
   customMessageForCardTerms: "",
-  customSurchargeMessage: None,
+  showShortSurchargeMessage: false,
 }
 
 let getLayout = (str, logger) => {
@@ -1090,7 +1090,7 @@ let itemToObjMapper = (dict, logger) => {
       "hideCardNicknameField",
       "displayBillingDetails",
       "customMessageForCardTerms",
-      "customSurchargeMessage",
+      "showShortSurchargeMessage",
     ],
     dict,
     "options",
@@ -1137,7 +1137,7 @@ let itemToObjMapper = (dict, logger) => {
     hideCardNicknameField: getBool(dict, "hideCardNicknameField", false),
     displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
-    customSurchargeMessage: getOptionString(dict, "customSurchargeMessage"),
+    showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
   }
 }
 
