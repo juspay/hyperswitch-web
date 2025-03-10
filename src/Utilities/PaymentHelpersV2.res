@@ -28,7 +28,6 @@ let intentCall = (
 ) => {
   open Promise
   let isConfirm = uri->String.includes("/confirm")
-  Console.log2("headers and uri==>", uri)
   let handleOpenUrl = url => {
     if isPaymentSession {
       Utils.replaceRootHref(url, redirectionFlags)
@@ -45,11 +44,8 @@ let intentCall = (
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString
     let url = makeUrl(confirmParam.return_url)
-    Console.log2("clijet==>", clientSecret)
-    Console.log2("clijet==>", clientSecret->getPaymentId)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
-    // url.searchParams.set("payment_id", clientSecret->getPaymentId)
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
     if statusCode->String.charAt(0) !== "2" {
@@ -276,7 +272,7 @@ let fetchPaymentManagementList = (
   ~publishableKey,
   ~profileId,
   ~endpoint,
-  ~optLogger,
+  ~optLogger as _,
   ~customPodUri,
 ) => {
   open Promise
@@ -311,7 +307,7 @@ let deletePaymentMethodV2 = (
   ~publishableKey,
   ~profileId,
   ~paymentMethodId,
-  ~logger,
+  ~logger as _,
   ~customPodUri,
 ) => {
   open Promise
@@ -347,7 +343,7 @@ let updatePaymentMethod = (
   ~publishableKey,
   ~profileId,
   ~paymentMethodId,
-  ~logger,
+  ~logger as _,
   ~customPodUri,
 ) => {
   open Promise
@@ -390,7 +386,7 @@ let savePaymentMethod = (
   ~pmClientSecret,
   ~publishableKey,
   ~profileId,
-  ~logger,
+  ~logger as _,
   ~customPodUri,
 ) => {
   open Promise
@@ -439,7 +435,6 @@ let useSaveCard = (optLogger: option<HyperLogger.loggerMake>, paymentType: payme
     ~bodyArr: array<(string, JSON.t)>,
     ~confirmParam: ConfirmType.confirmParams,
   ) => {
-    Console.log2("this is profile", keys.profileId)
     switch keys.pmClientSecret {
     | Some(pmClientSecret) =>
       let pmSessionId = keys.pmSessionId->Option.getOr("")
