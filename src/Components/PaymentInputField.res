@@ -76,6 +76,7 @@ let make = (
   }
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
+  let inputLogoClass = getClassName("InputLogo")
   let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
 
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
@@ -135,7 +136,9 @@ let make = (
           </div>
         </RenderIf>
       </div>
-      <div className="relative flex -ml-10 items-center"> {rightIcon} </div>
+      <div className={`InputLogo ${inputLogoClass} relative flex -ml-10 items-center`}>
+        {rightIcon}
+      </div>
     </div>
     <RenderIf condition={innerLayout === Spaced}>
       {switch errorString {

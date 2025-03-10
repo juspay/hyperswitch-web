@@ -1,11 +1,52 @@
 open Utils
 
+type paymentMethod =
+  | DuitNow
+  | Other
+
+type paymentMethodConfig = {
+  defaultColor: string,
+  showBorder: bool,
+  footerText: string,
+  showLogo: bool,
+  color: string,
+  logoName: string,
+}
+
 let getKeyValue = (json, str) => {
   json
   ->Dict.get(str)
   ->Option.getOr(Dict.make()->JSON.Encode.object)
   ->JSON.Decode.string
   ->Option.getOr("")
+}
+
+let parsePaymentMethod = methodString => {
+  switch methodString {
+  | "duit_now" => DuitNow
+  | _ => Other
+  }
+}
+
+let getPaymentMethodConfig = (method): paymentMethodConfig => {
+  switch method {
+  | DuitNow => {
+      defaultColor: "#ED2E67",
+      showBorder: true,
+      footerText: "MALAYSIA NATIONAL QR",
+      showLogo: true,
+      color: "",
+      logoName: "duitNow",
+    }
+  | Other => {
+      defaultColor: "transparent",
+      showBorder: false,
+      footerText: "",
+      showLogo: false,
+      color: "",
+      logoName: "",
+    }
+  }
 }
 
 @react.component
@@ -18,6 +59,9 @@ let make = () => {
   let (headers, setHeaders) = React.useState(_ => [])
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
+  let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
+    getPaymentMethodConfig(Other)
+  )
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -28,8 +72,34 @@ let make = () => {
         if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
           let metadata = dict->getJsonObjectFromDict("metadata")
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
+
+          let paymentMethodStr = metaDataDict->getString("paymentMethod", "")
+          let parsedPaymentMethod = parsePaymentMethod(paymentMethodStr)
+
+          let defaultConfig = getPaymentMethodConfig(parsedPaymentMethod)
+
           let qrData = metaDataDict->getString("qrData", "")
           setQrCode(_ => qrData)
+
+          switch parsedPaymentMethod {
+          | Other => setPaymentMethodConfig(_ => defaultConfig)
+          | _ => {
+              let displayText = metaDataDict->getString("display_text", defaultConfig.footerText)
+              let borderColor = metaDataDict->getString("border_color", defaultConfig.defaultColor)
+
+              let displayText = displayText === "" ? defaultConfig.footerText : displayText
+              let borderColor = borderColor === "" ? defaultConfig.defaultColor : borderColor
+              let showBorder = displayText !== "" && borderColor !== ""
+
+              setPaymentMethodConfig(_ => {
+                ...defaultConfig,
+                color: borderColor,
+                showBorder,
+                footerText: displayText,
+              })
+            }
+          }
+
           let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
           setClientSecret(_ => paymentIntentId)
           let headersDict =
@@ -73,6 +143,7 @@ let make = () => {
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
   })
+
   React.useEffect(() => {
     if expiryTime < 1000.0 {
       Modal.close(setOpenModal)
@@ -121,22 +192,52 @@ let make = () => {
 
   let expiryString = React.useMemo(() => {
     let minutes = (expiryTime /. 60000.0)->Float.toInt->Int.toString
-    let seconds = mod(expiryTime->Float.toInt, 60000)->Int.toString->String.slice(~start=0, ~end=2)
-    let seconds = seconds->String.length == 1 ? `${seconds}0` : seconds
-    `${minutes}:${seconds}`
+    let seconds = (mod(expiryTime->Float.toInt, 60000) / 1000)->Int.toString
+    let formatedSeconds = seconds->String.length == 1 ? `0${seconds}` : seconds
+    `${minutes}:${formatedSeconds}`
   }, [expiryTime])
+
+  let displayColor = React.useMemo(() => {
+    !isValidHexColor(paymentMethodConfig.color) || paymentMethodConfig.color === ""
+      ? paymentMethodConfig.defaultColor
+      : paymentMethodConfig.color
+  }, [paymentMethodConfig.color, paymentMethodConfig.defaultColor])
 
   <Modal showClose=false openModal setOpenModal>
     <div className="flex flex-col h-full justify-between items-center">
+      <RenderIf condition={paymentMethodConfig.showLogo && paymentMethodConfig.logoName !== ""}>
+        <div className="flex flex-row w-full justify-center items-start mb-2">
+          <Icon size=84 width=84 name={paymentMethodConfig.logoName} />
+        </div>
+      </RenderIf>
       <div
-        className=" flex flex-row w-full justify-center items-start mb-8 font-medium text-2xl font-semibold text-[#151A1F] opacity-50">
+        className="flex flex-row w-full justify-center items-start mb-8 font-medium text-2xl font-semibold text-[#151A1F] opacity-50">
         {expiryString->React.string}
       </div>
-      <img style={height: "13rem"} src=qrCode alt="" />
-      <div className=" flex flex-col max-w-md justify-between items-center">
+      <div
+        style={
+          borderColor: paymentMethodConfig.showBorder ? displayColor : "transparent",
+          backgroundColor: paymentMethodConfig.showBorder ? displayColor : "transparent",
+        }
+        className={paymentMethodConfig.showBorder ? "border-[1em] rounded-md" : ""}>
+        <div
+          className={paymentMethodConfig.showBorder
+            ? "border-[0.5em] border-white rounded-md"
+            : ""}>
+          <img style={height: "13rem"} src=qrCode alt="" />
+        </div>
+        <RenderIf condition={paymentMethodConfig.footerText !== ""}>
+          <div
+            style={backgroundColor: displayColor}
+            className="font-bold flex justify-center items-end text-[1em] text-white h-[2em]">
+            <p> {paymentMethodConfig.footerText->React.string} </p>
+          </div>
+        </RenderIf>
+      </div>
+      <div className="flex flex-col max-w-md justify-between items-center">
         <div className="Disclaimer w-full mt-16 font-medium text-xs text-[#151A1F] opacity-50">
           {React.string(
-            " The QR Code is valid for the next 15 minutes, please do not close until you have successfully completed the payment, after which you will be automatically redirected. ",
+            "The QR Code is valid for the next 15 minutes, please do not close until you have successfully completed the payment, after which you will be automatically redirected.",
           )}
         </div>
         <div className="button w-full">

@@ -31,11 +31,10 @@ module WalletsSaveDetailsText = {
     <RenderIf
       condition={PaymentUtils.isAppendingCustomerAcceptance(~isGuestCustomer, ~paymentType) &&
       (isGooglePay || isApplePay || isPaypal || isSamsungPay)}>
-      <div className="flex items-center text-xs mt-2">
+      <div
+        className="SaveWalletDetailsLabel flex items-center text-xs mt-2 text-left text-gray-400">
         <Icon name="lock" size=10 className="mr-1" />
-        <em className="text-left text-gray-400">
-          {localeString.saveWalletDetails->React.string}
-        </em>
+        <em> {localeString.saveWalletDetails->React.string} </em>
       </div>
     </RenderIf>
   }

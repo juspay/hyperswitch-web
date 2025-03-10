@@ -1486,3 +1486,8 @@ let replaceRootHref = (href: string, redirectionFlags: RecoilAtomTypes.redirecti
   | false => Window.Location.replace(href)
   }
 }
+
+let isValidHexColor = (color: string): bool => {
+  let hexRegex = %re("/^#([0-9a-f]{6}|[0-9a-f]{3})$/i")
+  Js.Re.test_(hexRegex, color)
+}

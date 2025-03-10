@@ -483,14 +483,12 @@ let make = (
       | (_, Always, SETUP_MANDATE)
       | (_, _, SETUP_MANDATE)
       | (_, _, NEW_MANDATE) =>
-        <div
-          className="opacity-50 text-xs mb-2 text-left"
-          style={
-            color: themeObj.colorText,
+        <Terms
+          mode={Card}
+          styles={
             marginTop: themeObj.spacingGridColumn,
-          }>
-          <Terms mode={Card} />
-        </div>
+          }
+        />
       | (_, _, _) => React.null
       }}
     </RenderIf>
