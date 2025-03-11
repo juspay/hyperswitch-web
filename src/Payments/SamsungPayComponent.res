@@ -30,7 +30,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     })
 
   let onSamsungPaymentButtonClick = _ => {
-    Console.log("Coming here in click")
     loggerState.setLogInfo(
       ~value="SamsungPay Button Clicked",
       ~eventName=SAMSUNG_PAY,
