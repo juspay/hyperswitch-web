@@ -15,6 +15,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isWallet = walletOptions->Array.includes("samsung_pay")
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Samsungpay)
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let (_, _, _, _, heightType) = options.wallets.style.height
   let height = switch heightType {
@@ -75,8 +77,14 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
           ~metadata=getBody.paymentMethodData->Identity.anyTypeToJson,
         )
 
+        let finalBody = PaymentUtils.appendedCustomerAcceptance(
+          ~isGuestCustomer,
+          ~paymentType=paymentMethodListValue.payment_type,
+          ~body,
+        )
+
         intent(
-          ~bodyArr=body,
+          ~bodyArr=finalBody,
           ~confirmParam={
             return_url: options.wallets.walletReturnUrl,
             publishableKey,

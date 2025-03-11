@@ -78,7 +78,7 @@ let make = (
   | Some(surchargeMessage) =>
     <div className="flex items-baseline text-xs mt-2">
       <Icon name="asterisk" size=8 className="text-red-600 mr-1" />
-      <em className="text-left text-gray-400"> {surchargeMessage} </em>
+      <div className="text-left text-gray-400"> {surchargeMessage} </div>
     </div>
   | None => React.null
   }
