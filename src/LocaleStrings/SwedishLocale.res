@@ -64,6 +64,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}kommer att tillämpas för denna transaktion`})}
   </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Avgift :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
+  </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Ett tilläggsbelopp på upp till${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>

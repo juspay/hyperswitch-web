@@ -61,6 +61,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}的附加费用`})}
   </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`费用 :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
+  </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`此交易将收取最高${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
