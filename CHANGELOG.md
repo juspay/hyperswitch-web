@@ -1,3 +1,10 @@
+## [0.117.4](https://github.com/juspay/hyperswitch-web/compare/v0.117.3...v0.117.4) (2025-03-11)
+
+
+### Bug Fixes
+
+* added cust acceptance for samsung pay and removed italics for surcharge ([#943](https://github.com/juspay/hyperswitch-web/issues/943)) ([bcaf8c9](https://github.com/juspay/hyperswitch-web/commit/bcaf8c93a3bc5e642b46e1f66d8042b99e9c1bef))
+
 ## [0.117.3](https://github.com/juspay/hyperswitch-web/compare/v0.117.2...v0.117.3) (2025-03-10)
 
 ## [0.117.2](https://github.com/juspay/hyperswitch-web/compare/v0.117.1...v0.117.2) (2025-03-07)
