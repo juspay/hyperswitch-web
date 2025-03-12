@@ -85,7 +85,7 @@ let make = (
       elem
     }
 
-    let locale = localOptions->getJsonStringFromDict("locale", "")
+    let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
     let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
     let clientSecretReMatch = Re.test(`.+_secret_[A-Za-z0-9]+`->Re.fromString, clientSecret)
