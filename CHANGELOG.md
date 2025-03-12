@@ -1,3 +1,11 @@
+## [0.117.7](https://github.com/juspay/hyperswitch-web/compare/v0.117.6...v0.117.7) (2025-03-12)
+
+
+### Bug Fixes
+
+* correction in locale detection ([#948](https://github.com/juspay/hyperswitch-web/issues/948)) ([91f5b8b](https://github.com/juspay/hyperswitch-web/commit/91f5b8b5a615d52d6da9b0bc8941d889b925c240))
+* fix pay button stuck on processing after QR code modal closes ([#944](https://github.com/juspay/hyperswitch-web/issues/944)) ([9681286](https://github.com/juspay/hyperswitch-web/commit/9681286b58808aacdd45c2ae5db148010ebf9dfb))
+
 ## [0.117.6](https://github.com/juspay/hyperswitch-web/compare/v0.117.5...v0.117.6) (2025-03-12)
 
 
