@@ -1,5 +1,7 @@
 open Utils
 
+let maxQRTime = 900000.0
+
 type paymentMethod =
   | DuitNow
   | Other
@@ -52,7 +54,7 @@ let getPaymentMethodConfig = (method): paymentMethodConfig => {
 @react.component
 let make = () => {
   let (qrCode, setQrCode) = React.useState(_ => "")
-  let (expiryTime, setExpiryTime) = React.useState(_ => 900000.0)
+  let (expiryTime, setExpiryTime) = React.useState(_ => maxQRTime)
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (return_url, setReturnUrl) = React.useState(_ => "")
   let (clientSecret, setClientSecret) = React.useState(_ => "")
@@ -118,7 +120,7 @@ let make = () => {
           let expiryTime =
             metaDataDict->getString("expiryTime", "")->Float.fromString->Option.getOr(0.0)
           let timeExpiry = expiryTime -. Date.now()
-          if timeExpiry > 0.0 && timeExpiry < 900000.0 {
+          if timeExpiry > 0.0 && timeExpiry < maxQRTime {
             setExpiryTime(_ => timeExpiry)
           }
           setHeaders(_ => headers->Dict.toArray)
@@ -144,20 +146,6 @@ let make = () => {
     Some(() => {Window.removeEventListener("message", handle)})
   })
 
-  React.useEffect(() => {
-    if expiryTime < 1000.0 {
-      Modal.close(setOpenModal)
-    }
-    let intervalID = setInterval(() => {
-      setExpiryTime(prev => prev -. 1000.0)
-    }, 1000)
-    Some(
-      () => {
-        clearInterval(intervalID)
-      },
-    )
-  }, [expiryTime])
-
   let closeModal = async () => {
     try {
       let json = await PaymentHelpers.retrievePaymentIntent(
@@ -166,29 +154,25 @@ let make = () => {
         ~optLogger=Some(logger),
         ~customPodUri,
       )
-      let dict = json->getDictFromJson
-      let status = dict->getString("status", "")
 
-      if (
-        status === "succeeded" || status === "requires_customer_action" || status === "processing"
-      ) {
-        postSubmitResponse(~jsonData=json, ~url=return_url)
-      } else if status === "failed" {
-        postFailedSubmitResponse(
-          ~errortype="confirm_payment_failed",
-          ~message="Payment failed. Try again!",
-        )
-      } else {
-        postFailedSubmitResponse(
-          ~errortype="sync_payment_failed",
-          ~message="Payment is processing. Try again later!",
-        )
-      }
+      postSubmitResponse(~jsonData=json, ~url=return_url)
       Modal.close(setOpenModal)
     } catch {
     | e => Console.error2("Retrieve Failed", e)
     }
   }
+
+  React.useEffect(() => {
+    if expiryTime < 1000.0 {
+      closeModal()->ignore
+    }
+
+    let intervalID = setInterval(() => {
+      setExpiryTime(prev => prev -. 1000.0)
+    }, 1000)
+
+    Some(() => clearInterval(intervalID))
+  }, [expiryTime])
 
   let expiryString = React.useMemo(() => {
     let minutes = (expiryTime /. 60000.0)->Float.toInt->Int.toString
