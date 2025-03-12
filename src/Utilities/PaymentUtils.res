@@ -96,7 +96,7 @@ type exp = Redirect | SDK
 type paylater = Klarna(exp) | AfterPay(exp) | Affirm(exp)
 type wallet = Gpay(exp) | ApplePay(exp) | Paypal(exp)
 type card = Credit(exp) | Debit(exp)
-type banks = Sofort | Eps | GiroPay | Ideal
+type banks = Sofort | Eps | GiroPay | Ideal | EFT
 type transfer = ACH | Sepa | Bacs
 type connectorType =
   | PayLater(paylater)
@@ -140,6 +140,7 @@ let getMethodType = method => {
     | Eps => "eps"
     | GiroPay => "giropay"
     | Ideal => "ideal"
+    | EFT => "eft"
     }
   | BankDebit(val)
   | BankTransfer(val) =>
