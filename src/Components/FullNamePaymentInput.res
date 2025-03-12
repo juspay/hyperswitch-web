@@ -3,7 +3,12 @@ open PaymentType
 open Utils
 
 @react.component
-let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) => {
+let make = (
+  ~paymentType,
+  ~customFieldName=None,
+  ~optionalRequiredFields=None,
+  ~fullNameValue="",
+) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -30,6 +35,15 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
       errorString,
     }
   }
+
+  React.useEffect(() => {
+    if fullNameValue != "" {
+      setFullName(prev => validateName(fullNameValue, prev, localeString))
+    } else {
+      setFullName(prev => validateName("", prev, localeString))
+    }
+    None
+  }, [])
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
