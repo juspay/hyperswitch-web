@@ -1,3 +1,10 @@
+## [0.117.6](https://github.com/juspay/hyperswitch-web/compare/v0.117.5...v0.117.6) (2025-03-12)
+
+
+### Reverts
+
+* detect country correction ([#947](https://github.com/juspay/hyperswitch-web/issues/947)) ([afb3098](https://github.com/juspay/hyperswitch-web/commit/afb3098956ee2f17d670e39abf0d8f5401d81988))
+
 ## [0.117.5](https://github.com/juspay/hyperswitch-web/compare/v0.117.4...v0.117.5) (2025-03-11)
 
 
