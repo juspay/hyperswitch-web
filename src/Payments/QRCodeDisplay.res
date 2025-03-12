@@ -154,24 +154,8 @@ let make = () => {
         ~optLogger=Some(logger),
         ~customPodUri,
       )
-      let dict = json->getDictFromJson
-      let status = dict->getString("status", "")
 
-      if (
-        status === "succeeded" || status === "requires_customer_action" || status === "processing"
-      ) {
-        postSubmitResponse(~jsonData=json, ~url=return_url)
-      } else if status === "failed" {
-        postFailedSubmitResponse(
-          ~errortype="confirm_payment_failed",
-          ~message="Payment failed. Try again!",
-        )
-      } else {
-        postFailedSubmitResponse(
-          ~errortype="sync_payment_failed",
-          ~message="Payment is processing. Try again later!",
-        )
-      }
+      postSubmitResponse(~jsonData=json, ~url=return_url)
       Modal.close(setOpenModal)
     } catch {
     | e => Console.error2("Retrieve Failed", e)
