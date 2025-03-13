@@ -184,7 +184,9 @@ let useRequiredFieldsEmptyAndValid = (
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
-  let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
+    areRequiredFieldsValid,
+  )
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
@@ -322,6 +324,16 @@ let useRequiredFieldsEmptyAndValid = (
     bankAccountNumber,
     cryptoCurrencyNetworks,
   ))
+
+  React.useEffect(() => {
+    CardUtils.emitIsFormReadyForSubmission(
+      isCardValid->Option.getOr(false) &&
+      isExpiryValid->Option.getOr(false) &&
+      isCVCValid->Option.getOr(false) &&
+      areRequiredFieldsValid,
+    )
+    None
+  }, [areRequiredFieldsValid])
 }
 
 let useSetInitialRequiredFields = (
