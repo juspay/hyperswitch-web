@@ -58,7 +58,6 @@ type terms = {
   sepaDebit: showTerms,
   sofort: showTerms,
   usBankAccount: showTerms,
-  eft: showTerms,
 }
 type buttonHeight = Default | Custom
 type heightType = ApplePay(int) | GooglePay(int) | Paypal(int) | Klarna(int) | SamsungPay(int)
@@ -308,7 +307,6 @@ let defaultTerms = {
   sepaDebit: Auto,
   sofort: Auto,
   usBankAccount: Auto,
-  eft: Auto,
 }
 let defaultFields = {
   billingDetails: JSONObject(defaultBilling),
@@ -732,10 +730,6 @@ let getTerms = (dict, str, logger) => {
       usBankAccount: getWarningString(json, "usBankAccount", "auto", ~logger)->getShowTerms(
         "options.terms.usBankAccount",
         logger,
-      ),
-      eft: getWarningString(json, "eft", "auto", ~logger)->getShowTerms(
-        "options.terms.eft",
-        logger
       ),
     }
   })
