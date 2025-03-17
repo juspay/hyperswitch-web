@@ -28,7 +28,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   stateLabel: `州`,
   stateEmptyText: `状態を空にすることはできません`,
   cityLabel: `街`,
-  line2Placeholder: `アパート、ユニット番号など（任意）`,
+  line2Placeholder: `アパート、ユニット番号など`,
   line2EmptyText: `住所行 2 を空にすることはできません`,
   countryLabel: `国`,
   cityEmptyText: `都市を空にすることはできません`,
@@ -60,6 +60,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`この取引には${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string(`${Utils.nbsp}の追加料金が適用されます`)}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`手数料 :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`この取引には${Utils.nbsp}`)}
@@ -152,4 +156,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pixキー`,
   invalidCardHolderNameError: `カード所有者の名前に数字を含めることはできません`,
   invalidNickNameError: `ニックネームには2つ以上の数字を含めることはできません`,
+  expiry: `有効期限`,
 }

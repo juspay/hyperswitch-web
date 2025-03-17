@@ -14,7 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Adresse ligne 1`,
   line1Placeholder: `Rue`,
   line2Label: `Adresse ligne 2`,
-  line2Placeholder: `Appartement, numéro d'unité, etc. (facultatif)`,
+  line2Placeholder: `Appartement, numéro d'unité, etc.`,
   cityLabel: `Ville`,
   postalCodeLabel: `Code postal`,
   stateLabel: `État`,
@@ -63,6 +63,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`Un montant supplémentaire de${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}sera appliqué pour cette transaction`})}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Frais :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Un montant supplémentaire pouvant aller jusqu'à${Utils.nbsp}`)}
@@ -153,4 +157,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Clé Pix`,
   invalidCardHolderNameError: `Le nom du titulaire de la carte ne peut pas contenir de chiffres`,
   invalidNickNameError: `Le surnom ne peut pas contenir plus de 2 chiffres`,
+  expiry: `expiration`,
 }

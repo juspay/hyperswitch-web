@@ -7,10 +7,12 @@ module RenderSavedPaymentMethodItem = {
         className="flex flex-col items-start"
         role="group"
         ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
-        <div> {React.string(paymentItem.card.nickname)} </div>
-        <div className={`PickerItemLabel flex flex-row gap-3 items-center`}>
+        <div className="text-base tracking-wide"> {React.string(paymentItem.card.nickname)} </div>
+        <div className={`PickerItemLabel flex flex-row gap-3 items-center text-sm`}>
           <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
-          <div ariaHidden=true> {React.string(paymentItem.card.last4Digits)} </div>
+          <div className="tracking-wide" ariaHidden=true>
+            {React.string(paymentItem.card.last4Digits)}
+          </div>
         </div>
       </div>
 
@@ -51,9 +53,11 @@ let make = (
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {hideExpiredPaymentMethods, displayDefaultSavedPaymentIcon} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.optionAtom,
-  )
+  let {
+    hideExpiredPaymentMethods,
+    displayDefaultSavedPaymentIcon,
+    displayBillingDetails,
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (cardBrand, setCardBrand) = Recoil.useRecoilState(RecoilAtoms.cardBrand)
   let (
     isCVCValid,
@@ -120,6 +124,27 @@ let make = (
   let currentDate = Date.make()
   let isCardExpired = isCard && expiryDate < currentDate
 
+  let billingDetailsText = "Billing Details:"
+
+  let billingDetailsArray =
+    [
+      paymentItem.billing.address.line1,
+      paymentItem.billing.address.line2,
+      paymentItem.billing.address.line3,
+      paymentItem.billing.address.city,
+      paymentItem.billing.address.state,
+      paymentItem.billing.address.country,
+      paymentItem.billing.address.zip,
+    ]
+    ->Array.map(item => Option.getOr(item, ""))
+    ->Array.filter(item => String.trim(item) !== "")
+
+  let billingDetailsArrayLength = Array.length(billingDetailsArray)
+
+  let isCVCEmpty = cvcNumber->String.length == 0
+
+  let {innerLayout} = config.appearance
+
   <RenderIf condition={!hideExpiredPaymentMethods || !isCardExpired}>
     <button
       className={`PickerItem ${pickerItemClass} flex flex-row items-stretch`}
@@ -170,7 +195,7 @@ let make = (
                   <RenderIf
                     condition={displayDefaultSavedPaymentIcon &&
                     paymentItem.defaultPaymentMethodSet}>
-                    <Icon size=18 name="checkmark" style={color: themeObj.colorPrimary} />
+                    <Icon size=16 name="checkmark" style={color: themeObj.colorPrimary} />
                   </RenderIf>
                 </div>
               </div>
@@ -192,7 +217,7 @@ let make = (
                 <div
                   className={`flex flex-row items-start justify-start gap-2`}
                   style={fontSize: "14px", opacity: "0.5"}>
-                  <div className="w-12 mt-6">
+                  <div className="tracking-widest w-12 mt-6">
                     {React.string(`${localeString.cvcTextLabel}: `)}
                   </div>
                   <div
@@ -205,7 +230,7 @@ let make = (
                       value=cvcNumber
                       onChange=changeCVCNumber
                       onBlur=handleCVCBlur
-                      errorString=cvcError
+                      errorString=""
                       inputFieldClassName="flex justify-start"
                       paymentType
                       appearance=config.appearance
@@ -214,10 +239,30 @@ let make = (
                       maxLength=4
                       inputRef=cvcRef
                       placeholder="123"
-                      height="2.2rem"
+                      height="1.8rem"
                       name={TestUtils.cardCVVInputTestId}
                     />
                   </div>
+                </div>
+              </RenderIf>
+              <RenderIf
+                condition={isActive && displayBillingDetails && billingDetailsArrayLength > 0}>
+                <div className="tracking-wide text-sm text-left gap-2 mt-4 ml-2">
+                  <div className="font-semibold"> {React.string(billingDetailsText)} </div>
+                  <div className="font-normal">
+                    {React.string(Array.joinWith(billingDetailsArray, ", "))}
+                  </div>
+                </div>
+              </RenderIf>
+              <RenderIf
+                condition={isActive && isCVCEmpty && innerLayout === Spaced && cvcError != ""}>
+                <div
+                  className="Error pt-1 mt-1 ml-2"
+                  style={
+                    color: themeObj.colorDangerText,
+                    fontSize: themeObj.fontSizeSm,
+                  }>
+                  {React.string(cvcError)}
                 </div>
               </RenderIf>
               <RenderIf condition={isCardExpired}>

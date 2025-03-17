@@ -1,3 +1,132 @@
+## [0.117.7](https://github.com/juspay/hyperswitch-web/compare/v0.117.6...v0.117.7) (2025-03-12)
+
+
+### Bug Fixes
+
+* correction in locale detection ([#948](https://github.com/juspay/hyperswitch-web/issues/948)) ([91f5b8b](https://github.com/juspay/hyperswitch-web/commit/91f5b8b5a615d52d6da9b0bc8941d889b925c240))
+* fix pay button stuck on processing after QR code modal closes ([#944](https://github.com/juspay/hyperswitch-web/issues/944)) ([9681286](https://github.com/juspay/hyperswitch-web/commit/9681286b58808aacdd45c2ae5db148010ebf9dfb))
+
+## [0.117.6](https://github.com/juspay/hyperswitch-web/compare/v0.117.5...v0.117.6) (2025-03-12)
+
+
+### Reverts
+
+* detect country correction ([#947](https://github.com/juspay/hyperswitch-web/issues/947)) ([afb3098](https://github.com/juspay/hyperswitch-web/commit/afb3098956ee2f17d670e39abf0d8f5401d81988))
+
+## [0.117.5](https://github.com/juspay/hyperswitch-web/compare/v0.117.4...v0.117.5) (2025-03-11)
+
+
+### Bug Fixes
+
+* detect country correction ([#941](https://github.com/juspay/hyperswitch-web/issues/941)) ([40d7c70](https://github.com/juspay/hyperswitch-web/commit/40d7c7088af2ed37cabe76999a24a0885a3dcf66))
+
+## [0.117.4](https://github.com/juspay/hyperswitch-web/compare/v0.117.3...v0.117.4) (2025-03-11)
+
+
+### Bug Fixes
+
+* added cust acceptance for samsung pay and removed italics for surcharge ([#943](https://github.com/juspay/hyperswitch-web/issues/943)) ([bcaf8c9](https://github.com/juspay/hyperswitch-web/commit/bcaf8c93a3bc5e642b46e1f66d8042b99e9c1bef))
+
+## [0.117.3](https://github.com/juspay/hyperswitch-web/compare/v0.117.2...v0.117.3) (2025-03-10)
+
+## [0.117.2](https://github.com/juspay/hyperswitch-web/compare/v0.117.1...v0.117.2) (2025-03-07)
+
+## [0.117.1](https://github.com/juspay/hyperswitch-web/compare/v0.117.0...v0.117.1) (2025-03-06)
+
+# [0.117.0](https://github.com/juspay/hyperswitch-web/compare/v0.116.0...v0.117.0) (2025-03-05)
+
+
+### Features
+
+* update QR code page for DuitNow payment method ([#929](https://github.com/juspay/hyperswitch-web/issues/929)) ([cc76426](https://github.com/juspay/hyperswitch-web/commit/cc76426dcecebe73bd42f03d4c42bf910b753a15))
+
+# [0.116.0](https://github.com/juspay/hyperswitch-web/compare/v0.115.4...v0.116.0) (2025-03-05)
+
+
+### Features
+
+* add new rule to change color of input icon ([#935](https://github.com/juspay/hyperswitch-web/issues/935)) ([695b876](https://github.com/juspay/hyperswitch-web/commit/695b876467b08dd587d016c57b7a025eb17c3257))
+
+## [0.115.4](https://github.com/juspay/hyperswitch-web/compare/v0.115.3...v0.115.4) (2025-03-05)
+
+
+### Bug Fixes
+
+* fix: Missing Billing Details ([#934](https://github.com/juspay/hyperswitch-web/issues/934)) ([9fda007](https://github.com/juspay/hyperswitch-web/commit/9fda007114c3405d032eaf0f9af317f09b1e46a7))
+
+## [0.115.3](https://github.com/juspay/hyperswitch-web/compare/v0.115.2...v0.115.3) (2025-03-04)
+
+## [0.115.2](https://github.com/juspay/hyperswitch-web/compare/v0.115.1...v0.115.2) (2025-03-03)
+
+## [0.115.1](https://github.com/juspay/hyperswitch-web/compare/v0.115.0...v0.115.1) (2025-02-27)
+
+
+### Bug Fixes
+
+* fixed crypto pay body payload ([#919](https://github.com/juspay/hyperswitch-web/issues/919)) ([e956628](https://github.com/juspay/hyperswitch-web/commit/e9566287f96a257d261e1a5f9a131730814bc80c))
+* fixed error handling of click to pay ([#923](https://github.com/juspay/hyperswitch-web/issues/923)) ([2ea9ff1](https://github.com/juspay/hyperswitch-web/commit/2ea9ff1a3b316b6e777ee7431952488233ab7f76))
+* Fixed Responsive Behaviour for Saved Cards ([#922](https://github.com/juspay/hyperswitch-web/issues/922)) ([a23fd2b](https://github.com/juspay/hyperswitch-web/commit/a23fd2bcbd5dc4cd59b00185440241a5677584f4))
+
+## [0.115.1](https://github.com/juspay/hyperswitch-web/compare/v0.115.0...v0.115.1) (2025-02-27)
+
+
+### Bug Fixes
+
+* fixed crypto pay body payload ([#919](https://github.com/juspay/hyperswitch-web/issues/919)) ([e956628](https://github.com/juspay/hyperswitch-web/commit/e9566287f96a257d261e1a5f9a131730814bc80c))
+* fixed error handling of click to pay ([#923](https://github.com/juspay/hyperswitch-web/issues/923)) ([2ea9ff1](https://github.com/juspay/hyperswitch-web/commit/2ea9ff1a3b316b6e777ee7431952488233ab7f76))
+* Fixed Responsive Behaviour for Saved Cards ([#922](https://github.com/juspay/hyperswitch-web/issues/922)) ([a23fd2b](https://github.com/juspay/hyperswitch-web/commit/a23fd2bcbd5dc4cd59b00185440241a5677584f4))
+
+## [0.115.1](https://github.com/juspay/hyperswitch-web/compare/v0.115.0...v0.115.1) (2025-02-27)
+
+
+### Bug Fixes
+
+* fixed crypto pay body payload ([#919](https://github.com/juspay/hyperswitch-web/issues/919)) ([e956628](https://github.com/juspay/hyperswitch-web/commit/e9566287f96a257d261e1a5f9a131730814bc80c))
+* fixed error handling of click to pay ([#923](https://github.com/juspay/hyperswitch-web/issues/923)) ([2ea9ff1](https://github.com/juspay/hyperswitch-web/commit/2ea9ff1a3b316b6e777ee7431952488233ab7f76))
+* Fixed Responsive Behaviour for Saved Cards ([#922](https://github.com/juspay/hyperswitch-web/issues/922)) ([a23fd2b](https://github.com/juspay/hyperswitch-web/commit/a23fd2bcbd5dc4cd59b00185440241a5677584f4))
+
+## [0.115.1](https://github.com/juspay/hyperswitch-web/compare/v0.115.0...v0.115.1) (2025-02-27)
+
+
+### Bug Fixes
+
+* fixed crypto pay body payload ([#919](https://github.com/juspay/hyperswitch-web/issues/919)) ([e956628](https://github.com/juspay/hyperswitch-web/commit/e9566287f96a257d261e1a5f9a131730814bc80c))
+* fixed error handling of click to pay ([#923](https://github.com/juspay/hyperswitch-web/issues/923)) ([2ea9ff1](https://github.com/juspay/hyperswitch-web/commit/2ea9ff1a3b316b6e777ee7431952488233ab7f76))
+* Fixed Responsive Behaviour for Saved Cards ([#922](https://github.com/juspay/hyperswitch-web/issues/922)) ([a23fd2b](https://github.com/juspay/hyperswitch-web/commit/a23fd2bcbd5dc4cd59b00185440241a5677584f4))
+
+## [0.115.1](https://github.com/juspay/hyperswitch-web/compare/v0.115.0...v0.115.1) (2025-02-25)
+
+
+### Bug Fixes
+
+* fixed crypto pay body payload ([#919](https://github.com/juspay/hyperswitch-web/issues/919)) ([e956628](https://github.com/juspay/hyperswitch-web/commit/e9566287f96a257d261e1a5f9a131730814bc80c))
+* fixed error handling of click to pay ([#923](https://github.com/juspay/hyperswitch-web/issues/923)) ([2ea9ff1](https://github.com/juspay/hyperswitch-web/commit/2ea9ff1a3b316b6e777ee7431952488233ab7f76))
+
+# [0.115.0](https://github.com/juspay/hyperswitch-web/compare/v0.114.10...v0.115.0) (2025-02-25)
+
+
+### Features
+
+* added display billing details feature ([#874](https://github.com/juspay/hyperswitch-web/issues/874)) ([be60bff](https://github.com/juspay/hyperswitch-web/commit/be60bff52838d953fc4868ac106c1b2ffd79e98c))
+
+## [0.114.10](https://github.com/juspay/hyperswitch-web/compare/v0.114.9...v0.114.10) (2025-02-25)
+
+
+### Bug Fixes
+
+* fixed shimmer stuck for click to pay ([#917](https://github.com/juspay/hyperswitch-web/issues/917)) ([7e1e20f](https://github.com/juspay/hyperswitch-web/commit/7e1e20fd8ff49b726e7fc62a35a1bfeb985ac2fa))
+
+## [0.114.9](https://github.com/juspay/hyperswitch-web/compare/v0.114.8...v0.114.9) (2025-02-24)
+
+## [0.114.8](https://github.com/juspay/hyperswitch-web/compare/v0.114.7...v0.114.8) (2025-02-21)
+
+
+### Bug Fixes
+
+* clear card expiry and CVC when switching to saved method and back ([#913](https://github.com/juspay/hyperswitch-web/issues/913)) ([a4049e6](https://github.com/juspay/hyperswitch-web/commit/a4049e606b7c99956b5b26679e2a3d14c3d6d274))
+
+## [0.114.7](https://github.com/juspay/hyperswitch-web/compare/v0.114.6...v0.114.7) (2025-02-20)
+
 ## [0.114.6](https://github.com/juspay/hyperswitch-web/compare/v0.114.5...v0.114.6) (2025-02-19)
 
 

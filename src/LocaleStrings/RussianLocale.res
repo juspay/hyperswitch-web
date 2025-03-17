@@ -14,7 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Адресная строка 1`,
   line1Placeholder: `Улица`,
   line2Label: `Адресная строка 2`,
-  line2Placeholder: `Квартира, номер блока и т. д. (необязательно)`,
+  line2Placeholder: `Квартира, номер блока и т. д.`,
   cityLabel: `Город`,
   postalCodeLabel: `Почтовый индекс`,
   stateLabel: `Область`,
@@ -65,6 +65,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string({
       `${Utils.nbsp}будет применено к этой транзакции`
     })}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Комиссия :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Сумма доплаты до${Utils.nbsp}`)}
@@ -160,4 +164,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Ключ Pix`,
   invalidCardHolderNameError: `Имя владельца карты не может содержать цифры`,
   invalidNickNameError: `Псевдоним не может содержать более 2 цифр`,
+  expiry: `истечение срока действия`,
 }

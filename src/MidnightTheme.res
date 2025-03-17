@@ -134,6 +134,9 @@ let midnightRules = theme =>
       "fontWeight": theme.fontWeightLight,
       "color": theme.colorTextPlaceholder,
     },
+    ".InputLogo": {
+      "color": "#979797",
+    },
     ".TabLabel": {
       "transition": "color .1s ease",
       "textAlign": "start",

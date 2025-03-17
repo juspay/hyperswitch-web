@@ -15,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: "街道地址",
   line1EmptyText: "地址第一行不能為空",
   line2Label: "地址第二行",
-  line2Placeholder: "公寓、單元號等（可選）",
+  line2Placeholder: "公寓、單元號等",
   line2EmptyText: "地址第二行不能為空",
   cityLabel: "城市",
   cityEmptyText: "城市不能為空",
@@ -60,6 +60,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`此交易將收取附加費${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string(`${Utils.nbsp}的金額`)}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`費用 :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`此交易將收取最高附加費${Utils.nbsp}`)}
@@ -151,4 +155,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix 金鑰`,
   invalidCardHolderNameError: `持卡人姓名不能包含數字`,
   invalidNickNameError: `暱稱不能包含超過兩個數字`,
+  expiry: `到期`,
 }

@@ -14,7 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Adresselinje 1`,
   line1Placeholder: `Gadenavn`,
   line2Label: "Adresselinje 2",
-  line2Placeholder: `Lejl., enhedsnummer osv. (valgfrit)`,
+  line2Placeholder: `Lejl., enhedsnummer osv.`,
   cityLabel: `By`,
   postalCodeLabel: `Postnummer`,
   stateLabel: `Region`,
@@ -63,6 +63,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`Een toeslagbedrag van${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}zal voor deze transactie worden toegepast`})}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Kosten :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Een toeslagbedrag van maximaal${Utils.nbsp}`)}
@@ -151,4 +155,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix-sleutel`,
   invalidCardHolderNameError: `De naam van de kaarthouder mag geen cijfers bevatten`,
   invalidNickNameError: `De bijnaam mag niet meer dan 2 cijfers bevatten`,
+  expiry: `vervaldatum`,
 }

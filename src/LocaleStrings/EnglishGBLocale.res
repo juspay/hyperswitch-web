@@ -19,7 +19,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: "Street address",
   line1EmptyText: "Address line 1 cannot be empty",
   line2Label: "Address line 2",
-  line2Placeholder: "Apt., unit number, etc (optional)",
+  line2Placeholder: "Apt., unit number, etc",
   line2EmptyText: "Address line 2 cannot be empty",
   cityLabel: "City",
   cityEmptyText: "City cannot be empty",
@@ -60,6 +60,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`A surcharge amount of${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string(`${Utils.nbsp}will be applied for this transaction`)}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Fee :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
@@ -151,4 +155,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix key`,
   invalidCardHolderNameError: `Cardholder's name cannot contain digits`,
   invalidNickNameError: `Nickname cannot have more than 2 digits`,
+  expiry: `expiry`,
 }

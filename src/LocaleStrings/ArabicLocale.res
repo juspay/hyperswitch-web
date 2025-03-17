@@ -21,7 +21,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: `.عنوان الشارع`,
   line1EmptyText: `لا يمكن أن يكون سطر العنوان 1 فارغًا`,
   line2Label: `سطر العنوان 2`,
-  line2Placeholder: `مناسب ، رقم الوحدة ، إلخ (اختياري)`,
+  line2Placeholder: `مناسب ، رقم الوحدة ، إلخ`,
   line2EmptyText: `لا يمكن أن يكون سطر العنوان 2 فارغًا`,
   postalCodeLabel: `رمز بريدي`,
   postalCodeEmptyText: `لا يمكن أن يكون الرمز البريدي فارغًا`,
@@ -60,6 +60,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`سيتم تطبيق مبلغ إضافي من${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string(`${Utils.nbsp}على هذه المعاملة`)}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`الرسوم :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`سيتم تطبيق مبلغ إضافي يصل إلى${Utils.nbsp}`)}
@@ -154,4 +158,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `مفتاح Pix`,
   invalidCardHolderNameError: `اسم حامل البطاقة لا يمكن أن يحتوي على أرقام`,
   invalidNickNameError: `لا يمكن أن يحتوي الاسم المستعار على أكثر من رقمين`,
+  expiry: `انتهاء الصلاحية`,
 }

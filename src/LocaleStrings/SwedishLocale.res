@@ -14,7 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Adressrad 1`,
   line1Placeholder: `Gatuadress`,
   line2Label: `Adressrad 2`,
-  line2Placeholder: `Lägenhetsnummer osv. (valfritt)`,
+  line2Placeholder: `Lägenhetsnummer osv.`,
   cityLabel: `Ort`,
   postalCodeLabel: `Postnummer`,
   stateLabel: `Region`,
@@ -63,6 +63,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`Ett tilläggsbelopp på${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}kommer att tillämpas för denna transaktion`})}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Avgift :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Ett tilläggsbelopp på upp till${Utils.nbsp}`)}
@@ -151,4 +155,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix-nyckel`,
   invalidCardHolderNameError: `Kortinnehavarens namn får inte innehålla siffror`,
   invalidNickNameError: `Smeknamnet får inte innehålla mer än 2 siffror`,
+  expiry: `upphörande`,
 }

@@ -83,6 +83,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (cvcNumber, cardNumber))
 
   React.useEffect(() => {
+    setCvcNumber(_ => "")
+    setCardExpiry(_ => "")
+    setIsExpiryValid(_ => None)
+    setIsCVCValid(_ => None)
+    None
+  }, [showFields])
+
+  React.useEffect(() => {
     if prevCardBrandRef.current !== "" {
       setCvcNumber(_ => "")
       setCardExpiry(_ => "")

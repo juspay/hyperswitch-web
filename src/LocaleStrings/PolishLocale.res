@@ -8,13 +8,13 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   enterValidCardNumberErrorText: `Proszę podać prawidłowy numer karty.`,
   pastExpiryErrorText: `Rok w dacie ważności karty minął.`,
   poweredBy: `Na oprogramowaniu Hyperswitch`,
-  validThruText: `Dada ważności`,
+  validThruText: `Data ważności`,
   sortCodeText: `Kod sortowania`,
   cvcTextLabel: `CVC`,
   line1Label: `Adres wiersz 1`,
   line1Placeholder: `Adres (ulica, nr budynku)`,
   line2Label: `Adres wiersz 2`,
-  line2Placeholder: `Nr lokalu itp. (opcjonalnie)`,
+  line2Placeholder: `Nr lokalu itp.`,
   cityLabel: `Miejscowość`,
   postalCodeLabel: `Kod pocztowy`,
   stateLabel: `Stan`,
@@ -64,6 +64,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}zostaną zastosowane do tej transakcji`})}
   </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Opłata :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
+  </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Dopłata w wysokości do${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
@@ -79,7 +83,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   saveWalletDetails: `Po dokonaniu wyboru szczegóły portfela zostaną zapisane`,
   morePaymentMethods: `Więcej metod płatności`,
   useExistingPaymentMethods: `Skorzystaj z zapisanych metod płatności`,
-  nicknamePlaceholder: `Pseudonim karty (opcjonalnie)`,
+  nicknamePlaceholder: `Alias karty (opcjonalnie)`,
   selectPaymentMethodText: `Wybierz metodę płatności i spróbuj ponownie`,
   cardExpiredText: `Ta karta wygasła`,
   cardHeader: `Informacje o karcie`,
@@ -120,7 +124,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   formFieldCountryCodeLabel: `Kod kraju (opcjonalnie)`,
   formFieldBankNameLabel: `Nazwa banku (opcjonalnie)`,
   formFieldBankCityLabel: `Miasto banku (opcjonalnie)`,
-  formFieldCardHoldernamePlaceholder: `Twoje imię`,
+  formFieldCardHoldernamePlaceholder: `Twoje imię i nazwisko`,
   formFieldBankNamePlaceholder: `Nazwa banku`,
   formFieldBankCityPlaceholder: `Miasto banku`,
   formFieldEmailPlaceholder: `Twój e-mail`,
@@ -152,4 +156,5 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Klucz Pix`,
   invalidCardHolderNameError: `Imię posiadacza karty nie może zawierać cyfr`,
   invalidNickNameError: `Pseudonim nie może zawierać więcej niż 2 cyfry`,
+  expiry: `wygaśnięcie`,
 }

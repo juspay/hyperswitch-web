@@ -107,9 +107,10 @@ let make = (
           | Card => {
               let newPmt = Card(Debit)
               let payoutDynamicFields =
-                getPayoutDynamicFields(enabledPaymentMethodsWithDynamicFields, newPmt)->Option.getOr(
-                  defaultPayoutDynamicFields(~pmt=newPmt),
-                )
+                getPayoutDynamicFields(
+                  enabledPaymentMethodsWithDynamicFields,
+                  newPmt,
+                )->Option.getOr(defaultPayoutDynamicFields(~pmt=newPmt))
               setActivePmt(_ => newPmt)
               payoutDynamicFields.address
               ->Option.map(address => {

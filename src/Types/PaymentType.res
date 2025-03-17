@@ -127,6 +127,19 @@ type customerCard = {
   isClickToPayCard: bool,
 }
 type bank = {mask: string}
+
+type addressDetails = {
+  line1: option<string>,
+  line2: option<string>,
+  line3: option<string>,
+  city: option<string>,
+  state: option<string>,
+  country: option<string>,
+  zip: option<string>,
+}
+
+type billingAddressPaymentMethod = {address: addressDetails}
+
 type customerMethods = {
   paymentToken: string,
   customerId: string,
@@ -140,7 +153,9 @@ type customerMethods = {
   lastUsedAt: string,
   bank: bank,
   recurringEnabled: bool,
+  billing: billingAddressPaymentMethod,
 }
+
 type savedCardsLoadState =
   LoadingSavedCards | LoadedSavedCards(array<customerMethods>, bool) | NoResult(bool)
 
@@ -179,7 +194,9 @@ type options = {
   hideExpiredPaymentMethods: bool,
   displayDefaultSavedPaymentIcon: bool,
   hideCardNicknameField: bool,
+  displayBillingDetails: bool,
   customMessageForCardTerms: string,
+  showShortSurchargeMessage: bool,
 }
 
 type payerDetails = {
@@ -197,6 +214,21 @@ let defaultCardDetails = {
   nickname: "",
   isClickToPayCard: false,
 }
+
+let defaultAddressDetails = {
+  line1: None,
+  line2: None,
+  line3: None,
+  city: None,
+  state: None,
+  country: None,
+  zip: None,
+}
+
+let defaultDisplayBillingDetails = {
+  address: defaultAddressDetails,
+}
+
 let defaultCustomerMethods = {
   paymentToken: "",
   customerId: "",
@@ -210,6 +242,7 @@ let defaultCustomerMethods = {
   lastUsedAt: "",
   bank: {mask: ""},
   recurringEnabled: false,
+  billing: defaultDisplayBillingDetails,
 }
 let defaultLayout = {
   defaultCollapsed: false,
@@ -328,7 +361,9 @@ let defaultOptions = {
   hideExpiredPaymentMethods: false,
   displayDefaultSavedPaymentIcon: true,
   hideCardNicknameField: false,
+  displayBillingDetails: false,
   customMessageForCardTerms: "",
+  showShortSurchargeMessage: false,
 }
 
 let getLayout = (str, logger) => {
@@ -879,6 +914,29 @@ let getCardDetails = (dict, str) => {
   ->Option.getOr(defaultCardDetails)
 }
 
+let getAddressDetails = (dict, str) => {
+  dict
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
+    line1: Some(getString(json, "line1", "")),
+    line2: Some(getString(json, "line2", "")),
+    line3: Some(getString(json, "line3", "")),
+    city: Some(getString(json, "city", "")),
+    state: Some(getString(json, "state", "")),
+    country: Some(getString(json, "country", "")),
+    zip: Some(getString(json, "zip", "")),
+  })
+  ->Option.getOr(defaultAddressDetails)
+}
+
+let getBillingAddressPaymentMethod = (dict, str) =>
+  dict
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {address: getAddressDetails(json, "address")})
+  ->Option.getOr(defaultDisplayBillingDetails)
+
 let getPaymentMethodType = dict => {
   dict->Dict.get("payment_method_type")->Option.flatMap(JSON.Decode.string)
 }
@@ -913,6 +971,7 @@ let itemToCustomerObjMapper = customerDict => {
         lastUsedAt: getString(dict, "last_used_at", ""),
         bank: dict->getBank,
         recurringEnabled: getBool(dict, "recurring_enabled", false),
+        billing: getBillingAddressPaymentMethod(dict, "billing"),
       }
     })
 
@@ -950,6 +1009,7 @@ let getCustomerMethods = (dict, str) => {
           lastUsedAt: getString(dict, "last_used_at", ""),
           bank: dict->getBank,
           recurringEnabled: getBool(dict, "recurring_enabled", false),
+          billing: getBillingAddressPaymentMethod(json, "billing"),
         }
       })
     LoadedSavedCards(customerPaymentMethods, false)
@@ -1034,7 +1094,9 @@ let itemToObjMapper = (dict, logger) => {
       "branding",
       "displayDefaultSavedPaymentIcon",
       "hideCardNicknameField",
+      "displayBillingDetails",
       "customMessageForCardTerms",
+      "showShortSurchargeMessage",
     ],
     dict,
     "options",
@@ -1079,7 +1141,9 @@ let itemToObjMapper = (dict, logger) => {
     hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
     displayDefaultSavedPaymentIcon: getBool(dict, "displayDefaultSavedPaymentIcon", true),
     hideCardNicknameField: getBool(dict, "hideCardNicknameField", false),
+    displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
+    showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
   }
 }
 
@@ -1138,4 +1202,5 @@ let convertClickToPayCardToCustomerMethod = (
     mask: "", // Just use the mask field that exists in the type
   },
   recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
+  billing: defaultDisplayBillingDetails,
 }
