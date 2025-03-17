@@ -1,3 +1,25 @@
+# [0.118.0](https://github.com/juspay/hyperswitch-web/compare/v0.117.7...v0.118.0) (2025-03-17)
+
+
+### Features
+
+* add EFT as a payment method ([#910](https://github.com/juspay/hyperswitch-web/issues/910)) ([976dc6f](https://github.com/juspay/hyperswitch-web/commit/976dc6fa35890e02315bc7f2c99ccfae4ee46490)), closes [Anurag-Sin#WPMHJ5619](https://github.com/Anurag-Sin/issues/WPMHJ5619)
+
+## [0.117.7](https://github.com/juspay/hyperswitch-web/compare/v0.117.6...v0.117.7) (2025-03-12)
+
+
+### Bug Fixes
+
+* correction in locale detection ([#948](https://github.com/juspay/hyperswitch-web/issues/948)) ([91f5b8b](https://github.com/juspay/hyperswitch-web/commit/91f5b8b5a615d52d6da9b0bc8941d889b925c240))
+* fix pay button stuck on processing after QR code modal closes ([#944](https://github.com/juspay/hyperswitch-web/issues/944)) ([9681286](https://github.com/juspay/hyperswitch-web/commit/9681286b58808aacdd45c2ae5db148010ebf9dfb))
+
+## [0.117.6](https://github.com/juspay/hyperswitch-web/compare/v0.117.5...v0.117.6) (2025-03-12)
+
+
+### Reverts
+
+* detect country correction ([#947](https://github.com/juspay/hyperswitch-web/issues/947)) ([afb3098](https://github.com/juspay/hyperswitch-web/commit/afb3098956ee2f17d670e39abf0d8f5401d81988))
+
 ## [0.117.5](https://github.com/juspay/hyperswitch-web/compare/v0.117.4...v0.117.5) (2025-03-11)
 
 

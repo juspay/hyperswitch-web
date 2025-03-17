@@ -116,7 +116,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       let optionsDict = dict->getDictFromObj("options")
       let (default, defaultRules) = (themeValues.default, themeValues.defaultRules)
       let config = CardTheme.itemToObjMapper(paymentOptions, default, defaultRules, logger)
-      let optionsLocaleString = getWarningString(optionsDict, "locale", "auto", ~logger)
+      let optionsLocaleString = getWarningString(optionsDict, "locale", "", ~logger)
       let optionsAppearance = CardTheme.getAppearance(
         "appearance",
         optionsDict,
