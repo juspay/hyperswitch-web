@@ -103,14 +103,15 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, [cardBrand])
 
   React.useEffect(() => {
-    emitIsFormReadyForSubmission(
-      isCardValid->Option.getOr(false) &&
-      isExpiryValid->Option.getOr(false) &&
-      isCVCValid->Option.getOr(false) &&
-      areRequiredFieldsValid,
-    )
+    switch (isCardValid, isExpiryValid, isCVCValid) {
+    | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
+      CardUtils.emitIsFormReadyForSubmission(
+        cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+      )
+    | _ => ()
+    }
     None
-  }, [isCardValid, isExpiryValid, isCVCValid])
+  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid))
 
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]

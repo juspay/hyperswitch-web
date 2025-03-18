@@ -62,6 +62,7 @@ let make = (
       setValidClasses()
     }
     setFocus(true)
+    setIsValid(_ => None)
     Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
   }
 

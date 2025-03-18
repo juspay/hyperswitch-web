@@ -326,14 +326,15 @@ let useRequiredFieldsEmptyAndValid = (
   ))
 
   React.useEffect(() => {
-    CardUtils.emitIsFormReadyForSubmission(
-      isCardValid->Option.getOr(false) &&
-      isExpiryValid->Option.getOr(false) &&
-      isCVCValid->Option.getOr(false) &&
-      areRequiredFieldsValid,
-    )
+    switch (isCardValid, isExpiryValid, isCVCValid) {
+    | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
+      CardUtils.emitIsFormReadyForSubmission(
+        cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+      )
+    | _ => ()
+    }
     None
-  }, [areRequiredFieldsValid])
+  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid))
 }
 
 let useSetInitialRequiredFields = (

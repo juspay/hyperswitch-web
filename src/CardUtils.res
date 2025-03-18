@@ -708,6 +708,6 @@ let emitExpiryDate = formattedExpiry =>
   Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
 
 let emitIsFormReadyForSubmission = isFormReadyForSubmission =>
-  Utils.messageTopWindow([
+  Utils.messageParentWindow([
     ("isFormReadyForSubmission", isFormReadyForSubmission->JSON.Encode.bool),
   ])

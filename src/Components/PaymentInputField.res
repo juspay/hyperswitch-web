@@ -32,7 +32,7 @@ let make = (
   let handleFocus = _ => {
     setInputFocused(_ => true)
     switch setIsValid {
-    | Some(_) => ()
+    | Some(fn) => fn(_ => None)
     | None => ()
     }
     Utils.handleOnFocusPostMessage(~targetOrigin=parentURL)
