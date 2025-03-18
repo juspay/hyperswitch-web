@@ -1,3 +1,10 @@
+# [0.119.0](https://github.com/juspay/hyperswitch-web/compare/v0.118.1...v0.119.0) (2025-03-18)
+
+
+### Features
+
+* post message events for isFormReadyForSubmission ([#951](https://github.com/juspay/hyperswitch-web/issues/951)) ([589d342](https://github.com/juspay/hyperswitch-web/commit/589d3422c801c6bc08300dc4f09567c08300b2fa))
+
 ## [0.118.1](https://github.com/juspay/hyperswitch-web/compare/v0.118.0...v0.118.1) (2025-03-18)
 
 
