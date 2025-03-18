@@ -837,6 +837,7 @@ let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
       ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
       ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
       ("X-Client-Platform", "web"),
+      ("ngrok-skip-browser-warning", "true"),
     ]->Dict.fromArray
 
   switch (token, uri) {

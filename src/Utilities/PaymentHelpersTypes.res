@@ -8,6 +8,7 @@ type payment =
   | Paypal
   | Samsungpay
   | Paze
+  | Redsys3ds
   | Other
 
 type paymentIntent = (

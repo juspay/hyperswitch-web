@@ -67,6 +67,7 @@ let make = () => {
       </div>
     | "qrData" => <QRCodeDisplay />
     | "3dsAuth" => <ThreeDSAuth />
+    | "redsys3ds" => <Redsys3ds />
     | "3ds" => <ThreeDSMethod />
     | "voucherData" => <VoucherDisplay />
     | "preMountLoader" => {

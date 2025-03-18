@@ -332,6 +332,8 @@ let rec intentCall = (
       openUrl(url)
     }
   }
+  Console.log("inside intent Call")
+
   fetchApi(
     uri,
     ~method=fetchMethod,
@@ -340,13 +342,18 @@ let rec intentCall = (
   )
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString
+    Console.log2("fetch api success", statusCode)
     let url = makeUrl(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
     url.searchParams.set("payment_id", clientSecret->getPaymentId)
+    Console.log("Message parent window")
+
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
     if statusCode->String.charAt(0) !== "2" {
+      Console.log2("statusCode !==2", statusCode)
+
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -469,9 +476,11 @@ let rec intentCall = (
         )->then(resolve)
       })
     } else {
+      Console.log("status code ===2")
       res
       ->Fetch.Response.json
       ->then(data => {
+        Console.log2("statusCode", statusCode)
         Promise.make(
           (resolve, _) => {
             logApi(
@@ -527,7 +536,10 @@ let rec intentCall = (
             }
 
             if intent.status == "requires_customer_action" {
+              Console.log("redirect to url")
               if intent.nextAction.type_ == "redirect_to_url" {
+                Console.log("redirect to url inside")
+
                 handleLogging(
                   ~optLogger,
                   ~value="",
@@ -654,6 +666,36 @@ let rec intentCall = (
                     ("metadata", metaData->JSON.Encode.object),
                   ])
                 }
+              } else if intent.nextAction.type_ === "invoke_hidden_iframe" {
+                Console.log("Invoke hidden iframe")
+                let iframeData =
+                  intent.nextAction.iframe_data
+                  ->Option.flatMap(JSON.Decode.object)
+                  ->Option.getOr(Dict.make())
+
+                let headerObj = Dict.make()
+                headers->Array.forEach(
+                  entries => {
+                    let (x, val) = entries
+                    Dict.set(headerObj, x, val->JSON.Encode.string)
+                  },
+                )
+                let metaData =
+                  [
+                    ("iframeData", iframeData->JSON.Encode.object),
+                    ("paymentIntentId", clientSecret->JSON.Encode.string),
+                    ("publishableKey", confirmParam.publishableKey->JSON.Encode.string),
+                    ("headers", headerObj->JSON.Encode.object),
+                    ("url", url.href->JSON.Encode.string),
+                    ("iframeId", iframeId->JSON.Encode.string),
+                  ]->Dict.fromArray
+
+                messageParentWindow([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", `redsys3ds`->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                  ("metadata", metaData->JSON.Encode.object),
+                ])
               } else if intent.nextAction.type_ === "display_voucher_information" {
                 let voucherData = intent.nextAction.voucher_details->Option.getOr({
                   download_url: "",
@@ -834,6 +876,8 @@ let rec intentCall = (
     }
   })
   ->catch(err => {
+    Console.log("fetch api fail")
+
     Promise.make((resolve, _) => {
       try {
         let url = makeUrl(confirmParam.return_url)
@@ -915,6 +959,26 @@ let rec intentCall = (
     })->then(resolve)
   })
 }
+
+// let redsys3dsAuth = (~clientSecret, ~threeDsMethodComp, ~headers) => {
+//   let endpoint = ApiEndpoint.getApiEndPoint()
+//   let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
+//   let url = `${endpoint}/payments/${paymentIntentID}/complete_authorize`
+//   let body =
+//     [
+//       ("client_secret", clientSecret->JSON.Encode.string),
+//       ("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string),
+//     ]->getJsonFromArrayOfJson
+//   // open Promise
+//   // fetchApi(url, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray)
+//   // ->then(res => {
+//   //   Console.log2("completeAuthorize", res)
+//   //   resolve(res)
+//   // })
+//   // ->catch(err => reject(err))
+
+//   intentCall(~fetchApi, ~uri=url, ~headers, ~bodyStr=body->JSON.stringify)
+// }
 
 let usePaymentSync = (optLogger: option<HyperLogger.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
@@ -1177,6 +1241,68 @@ let usePaymentIntent = (optLogger, paymentType) => {
   }
 }
 
+let useRedsysCompleteAuthorize = (optLogger: option<HyperLogger.loggerMake>) => {
+  open RecoilAtoms
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let setIsManualRetryEnabled = Recoil.useSetRecoilState(isManualRetryEnabled)
+  let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
+
+  (
+    ~handleUserError=false,
+    ~bodyArr: array<(string, JSON.t)>,
+    ~confirmParam: ConfirmType.confirmParams,
+    ~iframeId="redsys3ds",
+    ~clientSecret,
+    ~headers,
+  ) => {
+    Console.log("intentCall")
+    switch clientSecret {
+    | Some(clientSecret) =>
+      let paymentIntentID = clientSecret->getPaymentId
+      Console.log("some clientSecret")
+      let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
+      let uri = `${endpoint}/payments/${paymentIntentID}/complete_authorize`
+
+      let browserInfo = BrowserSpec.broswerInfo
+      let bodyStr =
+        [("client_secret", clientSecret->JSON.Encode.string)]
+        ->Array.concatMany([bodyArr, browserInfo()])
+        ->getJsonFromArrayOfJson
+        ->JSON.stringify
+
+      let completeAuthorize = () => {
+        intentCall(
+          ~fetchApi,
+          ~uri,
+          ~headers,
+          ~bodyStr,
+          ~confirmParam: ConfirmType.confirmParams,
+          ~clientSecret,
+          ~optLogger,
+          ~handleUserError,
+          ~paymentType=Redsys3ds,
+          ~iframeId,
+          ~fetchMethod=#POST,
+          ~setIsManualRetryEnabled,
+          ~customPodUri,
+          ~sdkHandleOneClickConfirmPayment=false,
+          ~counter=0,
+          ~isCallbackUsedVal,
+          ~redirectionFlags,
+        )->ignore
+      }
+
+      completeAuthorize()
+
+    | None =>
+      postFailedSubmitResponse(
+        ~errortype="complete_authorize_failed",
+        ~message="Complete Authorize Failed. Try Again!",
+      )
+    }
+  }
+}
 let useCompleteAuthorize = (optLogger: option<HyperLogger.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
