@@ -562,6 +562,13 @@ let paymentMethodsFields = [
     displayName: "UPI Collect",
     miniIcon: None,
   },
+  {
+    paymentMethodName: "eft",
+    icon: Some(icon("eft", ~size=19)),
+    fields: [InfoElement],
+    displayName: "EFT",
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {

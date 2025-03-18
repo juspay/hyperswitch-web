@@ -1,3 +1,17 @@
+## [0.118.1](https://github.com/juspay/hyperswitch-web/compare/v0.118.0...v0.118.1) (2025-03-18)
+
+
+### Bug Fixes
+
+* react-sentry ([#946](https://github.com/juspay/hyperswitch-web/issues/946)) ([2de1210](https://github.com/juspay/hyperswitch-web/commit/2de1210220c137b73572210e3b2c113220bb0dbf))
+
+# [0.118.0](https://github.com/juspay/hyperswitch-web/compare/v0.117.7...v0.118.0) (2025-03-17)
+
+
+### Features
+
+* add EFT as a payment method ([#910](https://github.com/juspay/hyperswitch-web/issues/910)) ([976dc6f](https://github.com/juspay/hyperswitch-web/commit/976dc6fa35890e02315bc7f2c99ccfae4ee46490)), closes [Anurag-Sin#WPMHJ5619](https://github.com/Anurag-Sin/issues/WPMHJ5619)
+
 ## [0.117.7](https://github.com/juspay/hyperswitch-web/compare/v0.117.6...v0.117.7) (2025-03-12)
 
 
