@@ -37,11 +37,8 @@ let make = (
   }
 
   React.useEffect(() => {
-    if fullNameValue != "" {
-      setFullName(prev => validateName(fullNameValue, prev, localeString))
-    } else {
-      setFullName(prev => validateName("", prev, localeString))
-    }
+    setFullName(prev => validateName(fullNameValue, prev, localeString))
+
     None
   }, [])
 

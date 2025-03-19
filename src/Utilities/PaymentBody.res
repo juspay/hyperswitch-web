@@ -914,7 +914,7 @@ let eftBody = () => {
 
   let eftBankRedirectData = [("eft", eftProviderName)]->getJsonFromArrayOfJson
 
-  let paymentMethodData =[("bank_redirect", eftBankRedirectData)]->getJsonFromArrayOfJson
+  let paymentMethodData = [("bank_redirect", eftBankRedirectData)]->getJsonFromArrayOfJson
 
   [
     ("payment_method", "bank_redirect"->JSON.Encode.string),

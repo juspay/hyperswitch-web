@@ -572,7 +572,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let pmClientSecretId =
           paymentMethodsManagementElementsOptionsDict
-          ->Option.flatMap(x => x->Dict.get("clientSecret2"))
+          ->Option.flatMap(x => x->Dict.get("pmClientSecret"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 

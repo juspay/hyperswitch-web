@@ -44,7 +44,7 @@ let intentCall = (
   ->then(res => {
     let statusCode = res->Fetch.Response.status->Int.toString
     let url = makeUrl(confirmParam.return_url)
-    url.searchParams.set("payment_intent_client_secret", clientSecret)
+    url.searchParams.set("client_secret", clientSecret)
     url.searchParams.set("status", "failed")
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
@@ -124,7 +124,7 @@ let intentCall = (
             }
 
             let url = makeUrl(confirmParam.return_url)
-            url.searchParams.set("payment_intent_client_secret", clientSecret)
+            url.searchParams.set("client_secret", clientSecret)
             url.searchParams.set("status", intent.authenticationDetails.status)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
@@ -212,17 +212,15 @@ let intentCall = (
                 )
               }
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
-            } else if !isPaymentSession {
-              postFailedSubmitResponse(
-                ~errortype="confirm_payment_failed",
-                ~message="Payment failed. Try again!",
-              )
             } else {
-              let failedSubmitResponse = getFailedSubmitResponse(
-                ~errorType="confirm_payment_failed",
-                ~message="Payment failed. Try again!",
+              handleLogging(
+                ~optLogger,
+                ~value="succeeded",
+                ~eventName=PAYMENT_SUCCESS,
+                ~paymentMethod,
               )
-              resolve(failedSubmitResponse)
+              url.searchParams.set("status", "succeeded")
+              handleOpenUrl(url.href)
             }
           },
         )->then(resolve)
@@ -233,8 +231,7 @@ let intentCall = (
     Promise.make((resolve, _) => {
       try {
         let url = makeUrl(confirmParam.return_url)
-        url.searchParams.set("payment_intent_client_secret", clientSecret)
-        url.searchParams.set("payment_id", clientSecret->getPaymentId)
+        url.searchParams.set("client_secret", clientSecret)
         url.searchParams.set("status", "failed")
         let _exceptionMessage = err->formatException
 
@@ -307,6 +304,7 @@ let deletePaymentMethodV2 = (
   ~publishableKey,
   ~profileId,
   ~paymentMethodId,
+  ~pmSessionId,
   ~logger as _,
   ~customPodUri,
 ) => {
@@ -316,8 +314,15 @@ let deletePaymentMethodV2 = (
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/payment_methods/${paymentMethodId}`
-  fetchApi(uri, ~method=#DELETE, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
+  let uri = `${endpoint}/payment_methods/${pmSessionId}`
+  fetchApi(
+    uri,
+    ~method=#DELETE,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~bodyStr=[("payment_method_id", paymentMethodId->JSON.Encode.string)]
+    ->getJsonFromArrayOfJson
+    ->JSON.stringify,
+  )
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status->Int.toString
     if statusCode->String.charAt(0) !== "2" {
@@ -342,7 +347,7 @@ let updatePaymentMethod = (
   ~pmClientSecret,
   ~publishableKey,
   ~profileId,
-  ~paymentMethodId,
+  ~pmSessionId,
   ~logger as _,
   ~customPodUri,
 ) => {
@@ -353,7 +358,7 @@ let updatePaymentMethod = (
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
     ("Content-Type", "application/json"),
   ]
-  let uri = `${endpoint}/v2/payment-methods-session/${paymentMethodId}/update-saved-payment-method`
+  let uri = `${endpoint}/v2/payment-methods-session/${pmSessionId}/update-saved-payment-method`
 
   fetchApi(
     uri,
@@ -450,9 +455,10 @@ let useSaveCard = (optLogger: option<HyperLogger.loggerMake>, paymentType: payme
       let uri = `${endpoint}/v2/payment-methods-session/${pmSessionId}/confirm`
 
       let browserInfo = BrowserSpec.broswerInfo
+      let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let bodyStr =
         [("client_secret", pmClientSecret->JSON.Encode.string)]
-        ->Array.concatMany([bodyArr, browserInfo()])
+        ->Array.concatMany([bodyArr, browserInfo(), returnUrlArr])
         ->getJsonFromArrayOfJson
         ->JSON.stringify
 

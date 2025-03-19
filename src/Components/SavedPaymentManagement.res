@@ -87,7 +87,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
         ~pmClientSecret=config.pmClientSecret,
         ~publishableKey,
         ~profileId,
-        ~paymentMethodId=paymentItem.id,
+        ~pmSessionId=config.pmSessionId,
         ~logger,
         ~customPodUri,
       )
@@ -123,6 +123,7 @@ let make = (~savedMethods: array<PaymentType.customerMethods>, ~setSavedMethods)
         ~profileId,
         ~pmClientSecret=config.pmClientSecret,
         ~paymentMethodId=paymentItem.id,
+        ~pmSessionId=config.pmSessionId,
         ~logger,
         ~customPodUri,
       )
