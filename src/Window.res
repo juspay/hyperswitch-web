@@ -16,6 +16,28 @@ type event = {key: string, data: string, origin: string}
 type date = {now: unit => string}
 type body
 type packageJson = {version: string}
+type callback = Js.Nullable.t<Js.Json.t> => unit
+type options = {signal: unit}
+
+type element = {
+  mutable getAttribute: string => string,
+  mutable src: string,
+  mutable async: bool,
+  mutable rel: string,
+  mutable href: string,
+  mutable \"as": string,
+  mutable crossorigin: string,
+  mutable \"type": string,
+  mutable id: string,
+  mutable width: string,
+  mutable height: string,
+  contentWindow: option<window>,
+  setAttribute: (string, string) => unit,
+  addEventListener?: (string, callback, option<options>) => unit,
+}
+
+type elementDocument
+@val external myDocument: elementDocument = "document"
 
 /* External Declarations */
 @val external window: window = "window"
@@ -30,6 +52,8 @@ type packageJson = {version: string}
 @val @scope("document") external body: body = "body"
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
+@send
+external elementQuerySelector: (elementDocument, string) => Nullable.t<element> = "querySelector"
 
 @val @scope("window")
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
