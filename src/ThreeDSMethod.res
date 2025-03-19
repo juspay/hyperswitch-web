@@ -53,7 +53,7 @@ let make = () => {
     }, 20000)->ignore
   }
 
-  React.useEffect0(() => {
+  React.useEffect(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let json = ev.data->safeParse
@@ -116,10 +116,19 @@ let make = () => {
             input.value = encodeURIComponent(threeDsMethodStr)
             form.target = "threeDsInvisibleIframe"
             form.appendChild(input)
+            let timeoutId = setTimeout(() => {
+              handleFailureScenarios("Form submission timed out")
+            }, 10000)
             try {
               form.submit()
+              let iframe = Window.querySelector("iframe[name='threeDsInvisibleIframe']")
+              switch iframe->Nullable.toOption {
+              | Some(_) => clearTimeout(timeoutId)
+              | None => handleFailureScenarios("Iframe not found, potential submission issue")
+              }
             } catch {
             | err => {
+                clearTimeout(timeoutId)
                 let exceptionMessage = err->Utils.formatException->JSON.stringify
                 handleFailureScenarios(exceptionMessage)
               }
@@ -130,8 +139,8 @@ let make = () => {
       }
     }
     Window.addEventListener("message", handle)
-    Some(() => {Window.removeEventListener("message", handle)})
-  })
+    Some(() => Window.removeEventListener("message", handle)) // Cleanup effect on unmount
+  }, [])
 
   <>
     <div id="threeDsInvisibleDiv" className="hidden" />
