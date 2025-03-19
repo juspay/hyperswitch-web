@@ -37,6 +37,7 @@ describe("External 3DS using Netcetera Checks", () => {
 
 
     it('If the user completes the challenge, the payment should be successful.', () => {
+        cy.wait(2000)
         getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click()
         getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(netceteraChallengeTestCard)
         getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type("0444")
@@ -57,6 +58,7 @@ describe("External 3DS using Netcetera Checks", () => {
     })
 
     it('If the user closes the challenge, the payment should fail.', () => {
+        cy.wait(2000)
         getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click()
         getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(netceteraChallengeTestCard)
         getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type("0444")
