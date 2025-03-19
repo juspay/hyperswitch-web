@@ -1,3 +1,53 @@
+# [0.119.0](https://github.com/juspay/hyperswitch-web/compare/v0.118.1...v0.119.0) (2025-03-18)
+
+
+### Features
+
+* post message events for isFormReadyForSubmission ([#951](https://github.com/juspay/hyperswitch-web/issues/951)) ([589d342](https://github.com/juspay/hyperswitch-web/commit/589d3422c801c6bc08300dc4f09567c08300b2fa))
+
+## [0.118.1](https://github.com/juspay/hyperswitch-web/compare/v0.118.0...v0.118.1) (2025-03-18)
+
+
+### Bug Fixes
+
+* react-sentry ([#946](https://github.com/juspay/hyperswitch-web/issues/946)) ([2de1210](https://github.com/juspay/hyperswitch-web/commit/2de1210220c137b73572210e3b2c113220bb0dbf))
+
+# [0.118.0](https://github.com/juspay/hyperswitch-web/compare/v0.117.7...v0.118.0) (2025-03-17)
+
+
+### Features
+
+* add EFT as a payment method ([#910](https://github.com/juspay/hyperswitch-web/issues/910)) ([976dc6f](https://github.com/juspay/hyperswitch-web/commit/976dc6fa35890e02315bc7f2c99ccfae4ee46490)), closes [Anurag-Sin#WPMHJ5619](https://github.com/Anurag-Sin/issues/WPMHJ5619)
+
+## [0.117.7](https://github.com/juspay/hyperswitch-web/compare/v0.117.6...v0.117.7) (2025-03-12)
+
+
+### Bug Fixes
+
+* correction in locale detection ([#948](https://github.com/juspay/hyperswitch-web/issues/948)) ([91f5b8b](https://github.com/juspay/hyperswitch-web/commit/91f5b8b5a615d52d6da9b0bc8941d889b925c240))
+* fix pay button stuck on processing after QR code modal closes ([#944](https://github.com/juspay/hyperswitch-web/issues/944)) ([9681286](https://github.com/juspay/hyperswitch-web/commit/9681286b58808aacdd45c2ae5db148010ebf9dfb))
+
+## [0.117.6](https://github.com/juspay/hyperswitch-web/compare/v0.117.5...v0.117.6) (2025-03-12)
+
+
+### Reverts
+
+* detect country correction ([#947](https://github.com/juspay/hyperswitch-web/issues/947)) ([afb3098](https://github.com/juspay/hyperswitch-web/commit/afb3098956ee2f17d670e39abf0d8f5401d81988))
+
+## [0.117.5](https://github.com/juspay/hyperswitch-web/compare/v0.117.4...v0.117.5) (2025-03-11)
+
+
+### Bug Fixes
+
+* detect country correction ([#941](https://github.com/juspay/hyperswitch-web/issues/941)) ([40d7c70](https://github.com/juspay/hyperswitch-web/commit/40d7c7088af2ed37cabe76999a24a0885a3dcf66))
+
+## [0.117.4](https://github.com/juspay/hyperswitch-web/compare/v0.117.3...v0.117.4) (2025-03-11)
+
+
+### Bug Fixes
+
+* added cust acceptance for samsung pay and removed italics for surcharge ([#943](https://github.com/juspay/hyperswitch-web/issues/943)) ([bcaf8c9](https://github.com/juspay/hyperswitch-web/commit/bcaf8c93a3bc5e642b46e1f66d8042b99e9c1bef))
+
 ## [0.117.3](https://github.com/juspay/hyperswitch-web/compare/v0.117.2...v0.117.3) (2025-03-10)
 
 ## [0.117.2](https://github.com/juspay/hyperswitch-web/compare/v0.117.1...v0.117.2) (2025-03-07)

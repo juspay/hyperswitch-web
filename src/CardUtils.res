@@ -706,3 +706,8 @@ let getCardBrandInvalidError = (~cardNumber, ~localeString: LocaleStringTypes.lo
 
 let emitExpiryDate = formattedExpiry =>
   Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
+
+let emitIsFormReadyForSubmission = isFormReadyForSubmission =>
+  Utils.messageParentWindow([
+    ("isFormReadyForSubmission", isFormReadyForSubmission->JSON.Encode.bool),
+  ])
