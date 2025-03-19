@@ -3,8 +3,8 @@ let make = (
   ~isSaveDetailsWithClickToPay,
   ~setIsSaveDetailsWithClickToPay,
   ~clickToPayCardBrand,
-  ~clickToPayRememberMe,
-  ~setClickToPayRememberMe,
+  ~isClickToPayRememberMe,
+  ~setIsClickToPayRememberMe,
 ) => {
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
@@ -58,7 +58,7 @@ let make = (
     isRememberMeCheckboxState,
     isRememberMeCheckedState,
     isRememberMeCheckBoxLabelState,
-  ) = clickToPayRememberMe
+  ) = isClickToPayRememberMe
     ? ("Checkbox--checked", "CheckboxInput--checked", "CheckboxLabel--checked")
     : ("", "", "")
 
@@ -123,7 +123,9 @@ let make = (
             <label
               className={`container CheckboxInput ${isRememberMeCheckedState}`}
               style={width: "fit-content"}>
-              <input type_={`checkbox`} onChange={e => setClickToPayRememberMe(e->getIsChecked)} />
+              <input
+                type_={`checkbox`} onChange={e => setIsClickToPayRememberMe(e->getIsChecked)}
+              />
               <div className={`checkmark CheckboxInput ${isRememberMeCheckedState}`} />
             </label>
             <div
