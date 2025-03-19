@@ -460,24 +460,17 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
 }
 
 let useStatesJson = setStatesJson => {
-  React.useEffect0(_ => {
-    let fetchStates = async () => {
-      try {
-        let res = await AddressPaymentInput.importStates("./../States.json")
-        setStatesJson(_ => res.states)
-      } catch {
-      | err => Console.error2("Error importing states:", err)
-      }
-    }
+  let stateList = Recoil.useRecoilValueFromAtom(RecoilAtoms.stateAtom)
 
-    fetchStates()->ignore
+  React.useEffect0(_ => {
+    setStatesJson(_ => stateList)
     None
   })
 }
 
 let getStateJson = async _ => {
   try {
-    let res = await AddressPaymentInput.importStates("./../States.json")
+    let res = await S3Utils.getCountryStateData()
     res.states
   } catch {
   | err =>
