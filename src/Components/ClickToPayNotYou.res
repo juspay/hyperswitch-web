@@ -2,7 +2,7 @@ open ClickToPayHelpers
 open Utils
 
 @react.component
-let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setConsumerIdentity) => {
+let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVisaCards) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
 
@@ -10,19 +10,55 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setCon
   let (isValid, setIsValid) = React.useState(_ => false)
   let (identifierType, setIdentifierType) = React.useState(_ => EMAIL_ADDRESS)
 
+  let updateCtpNotYouState = consumerIdentity => {
+    setClickToPayConfig(prev => {
+      ...prev,
+      clickToPayCards: Some([]),
+    })
+    setClickToPayConfig(prev => {
+      ...prev,
+      consumerIdentity,
+    })
+    setIsShowClickToPayNotYou(_ => false)
+  }
+
   let onContinue = consumerIdentity => {
     open Promise
-    ClickToPayHelpers.signOut()
-    ->finally(() => {
-      setClickToPayConfig(prev => {
-        ...prev,
-        clickToPayCards: Some([]),
+    switch clickToPayConfig.clickToPayProvider {
+    | MASTERCARD =>
+      ClickToPayHelpers.signOut()
+      ->finally(() => {
+        updateCtpNotYouState(consumerIdentity)
       })
-      setIsShowClickToPayNotYou(_ => false)
-      setConsumerIdentity(_ => consumerIdentity)
-    })
-    ->catch(err => resolve(Error(err)))
-    ->ignore
+      ->catch(err => resolve(Error(err)))
+      ->ignore
+    | VISA =>
+      updateCtpNotYouState(consumerIdentity)
+
+      (
+        async _ => {
+          setClickToPayConfig(prev => {
+            ...prev,
+            visaComponentState: CARDS_LOADING,
+          })
+          try {
+            await signOutVisaUnified()
+            await getVisaCards(
+              ~identityValue=consumerIdentity.identityValue,
+              ~otp="",
+              ~identityType=consumerIdentity.identityType,
+            )
+          } catch {
+          | _ =>
+            setClickToPayConfig(prev => {
+              ...prev,
+              visaComponentState: NONE,
+            })
+          }
+        }
+      )()->ignore
+    | NONE => ()
+    }
   }
 
   let onBack = _ => {

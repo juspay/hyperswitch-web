@@ -106,6 +106,12 @@ type clickToPayConfig = {
   email: string,
   clickToPayCards: option<array<ClickToPayHelpers.clickToPayCard>>,
   dpaName: string,
+  clickToPayProvider: ClickToPayHelpers.ctpProviderType,
+  visaComponentState: ClickToPayHelpers.visaComponentState,
+  maskedIdentity: string,
+  otpError: string,
+  consumerIdentity: ClickToPayHelpers.consumerIdentity,
+  clickToPayToken?: ClickToPayHelpers.clickToPayToken,
 }
 
 let defaultClickToPayConfig = {
@@ -114,6 +120,14 @@ let defaultClickToPayConfig = {
   email: "",
   clickToPayCards: None,
   dpaName: "",
+  clickToPayProvider: NONE,
+  visaComponentState: NONE,
+  maskedIdentity: "",
+  otpError: "",
+  consumerIdentity: {
+    identityType: EMAIL_ADDRESS,
+    identityValue: "",
+  },
 }
 
 let clickToPayConfig = Recoil.atom("clickToPayConfig", defaultClickToPayConfig)

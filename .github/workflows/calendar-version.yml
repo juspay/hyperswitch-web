@@ -3,14 +3,26 @@ name: Calendar Versioning Tag
 on:
   push:
     branches:
-      - main
+      - "main"
 
 jobs:
   tag:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
 
       - name: Get formatted date (YYYY.MM.DD)
         id: get-date
@@ -28,17 +40,14 @@ jobs:
           VERSION=$(printf "%02d" $COUNT)
           TAG="${DATE_PREFIX}.${VERSION}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Creating tag: $TAG"
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "Pritish Budhiraja"
+          git config --global user.email "pritish.budhiraja@gmail.com"
 
       - name: Create and push tag
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          git tag ${{ steps.get-next-tag.outputs.tag }}
-          git push origin ${{ steps.get-next-tag.outputs.tag }}
-
-      - name: Create GitHub Release (auto-verified)
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.get-next-tag.outputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+          git tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
+          git push origin "${{ steps.get-next-tag.outputs.tag }}"
