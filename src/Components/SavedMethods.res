@@ -9,6 +9,7 @@ let make = (
   ~sessions,
   ~isClickToPayAuthenticateError,
   ~setIsClickToPayAuthenticateError,
+  ~areClickToPayUIScriptsLoaded,
 ) => {
   open CardUtils
   open Utils
@@ -22,15 +23,6 @@ let make = (
     clickToPayConfig.clickToPayCards
     ->Option.getOr([])
     ->Array.map(obj => obj->PaymentType.convertClickToPayCardToCustomerMethod)
-
-  let (isCTPAuthenticateNotYouClicked, setIsCTPAuthenticateNotYouClicked) = React.useState(_ =>
-    false
-  )
-  let (isShowClickToPayNotYou, setIsShowClickToPayNotYou) = React.useState(_ => false)
-  let (consumerIdentity, setConsumerIdentity) = React.useState(_ => {
-    identityType: EMAIL_ADDRESS,
-    identityValue: "",
-  })
 
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
@@ -66,16 +58,6 @@ let make = (
 
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
-  React.useEffect(() => {
-    if clickToPayConfig.email !== "" && consumerIdentity.identityValue === "" {
-      setConsumerIdentity(_ => {
-        identityType: EMAIL_ADDRESS,
-        identityValue: clickToPayConfig.email,
-      })
-    }
-    None
-  }, [clickToPayConfig.email])
-
   let _closeComponentIfSavedMethodsAreEmpty = () => {
     if savedCardlength === 0 && loadSavedCards !== PaymentType.LoadingSavedCards {
       setShowFields(_ => true)
@@ -101,36 +83,19 @@ let make = (
         />
       )
       ->React.array}
-      <RenderIf
-        condition={clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length == 0 &&
-        !isClickToPayAuthenticateError &&
-        clickToPayConfig.email !== ""}>
-        <ClickToPayHelpers.SrcMark
-          cardBrands={clickToPayConfig.availableCardBrands->Array.joinWith(",")} height="32"
-        />
-      </RenderIf>
-      <div id="mastercard-account-verification" />
-      {if isShowClickToPayNotYou {
-        <ClickToPayNotYou
-          setIsShowClickToPayNotYou isCTPAuthenticateNotYouClicked setConsumerIdentity
-        />
-      } else {
-        <ClickToPayAuthenticate
-          consumerIdentity
-          loggerState
-          savedMethods
-          setShowFields
-          setIsCTPAuthenticateNotYouClicked
-          setIsShowClickToPayNotYou
-          isClickToPayAuthenticateError
-          setIsClickToPayAuthenticateError
-          loadSavedCards
-          setPaymentToken
-          paymentTokenVal
-          cvcProps
-          paymentType
-        />
-      }}
+      <ClickToPayAuthenticate
+        loggerState
+        savedMethods
+        setShowFields
+        isClickToPayAuthenticateError
+        setIsClickToPayAuthenticateError
+        loadSavedCards
+        setPaymentToken
+        paymentTokenVal
+        cvcProps
+        paymentType
+        areClickToPayUIScriptsLoaded
+      />
     </div>
   }
 

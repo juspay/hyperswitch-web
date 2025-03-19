@@ -6,6 +6,7 @@ let cardsToRender = (width: int) => {
   let noOfCards = (width - 40) / minWidth
   noOfCards
 }
+
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
@@ -58,6 +59,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (clickToPayConfig, isClickToPayAuthenticateError))
 
   let layoutClass = CardUtils.getLayoutClass(layout)
+
+  let (clickToPayProvider, setClickToPayProvider) = Recoil.useRecoilState(
+    RecoilAtoms.clickToPayProvider,
+  )
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
@@ -289,11 +294,95 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
   }
 
+  let visaScriptOnLoadCallback = ssn => {
+    let dict = ssn->getDictFromJson
+    let clickToPaySessionObj = SessionsType.itemToObjMapper(dict, ClickToPayObject)
+    let clickToPayToken = SessionsType.getPaymentSessionObj(
+      clickToPaySessionObj.sessionsToken,
+      ClickToPay,
+    )
+    switch clickToPayToken {
+    | ClickToPayTokenOptional(optToken) => {
+        switch optToken {
+        | Some(token) => {
+            let clickToPayToken = ClickToPayHelpers.clickToPayTokenItemToObjMapper(token)
+            setTimeout(() => {
+              let availableCardBrands = ["mastercard", "visa"]
+              let _ = setClickToPayConfig(prev => {
+                ...prev,
+                isReady: Some(true),
+                availableCardBrands,
+                email: clickToPayToken.email,
+                dpaName: clickToPayToken.dpaName,
+              })
+            }, 4000)->ignore
+          }
+        | None => ()
+        }
+        ()
+      }
+    | _ =>
+      setClickToPayConfig(prev => {
+        ...prev,
+        isReady: Some(false),
+      })
+    }
+  }
+
+  let visaScriptOnErrorCallback = () => {
+    setClickToPayConfig(prev => {
+      ...prev,
+      isReady: Some(false),
+    })
+    Console.log("script loading error")
+  }
+
+  let loadVisaScript = async ssn => {
+    try {
+      ClickToPayHelpers.loadVisaScript(
+        () => visaScriptOnLoadCallback(ssn),
+        visaScriptOnErrorCallback,
+      )
+      ClickToPayHelpers.loadClickToPayUIScripts(
+        loggerState,
+        () => {
+          setAreClickToPayUIScriptsLoaded(_ => true)
+          Console.log("UI SCRIPTS LOADED")
+        },
+        () => {
+          setClickToPayConfig(prev => {
+            ...prev,
+            isReady: Some(false),
+          })
+          Console.log("UI SCRIPTS ERROR")
+        },
+      )
+    } catch {
+    | err => {
+        setClickToPayConfig(prev => {
+          ...prev,
+          isReady: Some(false),
+        })
+        Console.log(err)
+      }
+    }
+  }
+
   React.useEffect(() => {
     switch sessionsObj {
     | Loaded(ssn) => {
         setSessions(_ => ssn)
-        loadMastercardClickToPayScript(ssn)
+        switch clickToPayProvider {
+        | VISA => loadVisaScript(ssn)->ignore
+        | MASTERCARD => {
+            let _ = loadMastercardClickToPayScript(ssn)
+          }
+        | NONE =>
+          setClickToPayConfig(prev => {
+            ...prev,
+            isReady: Some(false),
+          })
+        }
       }
     | _ => ()
     }
@@ -516,26 +605,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (paymentMethodList, customerPaymentMethods))
 
-  React.useEffect(() => {
-    let fetchCards = async () => {
-      switch clickToPayConfig.isReady {
-      | Some(true) =>
-        let cardsResult = await ClickToPayHelpers.getCards(loggerState)
-        switch cardsResult {
-        | Ok(cards) =>
-          setClickToPayConfig(prev => {
-            ...prev,
-            clickToPayCards: Some(cards),
-          })
-        | Error(_) => ()
-        }
-      | _ => ()
-      }
-    }
-    fetchCards()->ignore
-    None
-  }, [clickToPayConfig.isReady])
-
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div className="text-2xl font-semibold text-[#151619] mb-6" role="heading" ariaLevel={1}>
@@ -562,6 +631,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           sessions
           isClickToPayAuthenticateError
           setIsClickToPayAuthenticateError
+          areClickToPayUIScriptsLoaded
         />
       </RenderIf>
     }}

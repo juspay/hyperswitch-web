@@ -17,6 +17,8 @@ let savedCardId = "click_to_pay_saved_card_"
 
 let orderIdRef = ref("")
 
+type ctpProviderType = VISA | MASTERCARD | NONE
+
 type element = {
   mutable innerHTML: string,
   appendChild: CommonHooks.element => unit,
@@ -143,6 +145,7 @@ let getIdentityType = identityType => {
 }
 
 type consumerIdentity = {
+  identityProvider?: string,
   identityType: identityType,
   identityValue: string,
 }
@@ -983,5 +986,149 @@ let signOut = async () => {
       Console.error2("Error during signOut:", error)
       Error(error)
     }
+  }
+}
+
+@val @scope(("document", "body"))
+external appendChildInBody: Dom.element => unit = "appendChild"
+
+type srcOtpInputProps = {
+  @as("display-header") header?: bool,
+  @as("display-cancel-option") displayCancelOption?: bool,
+  @as("display-remember-me") displayRememberMe?: bool,
+  @as("disable-elements") disableElements?: bool,
+  @as("is-successful") isOtpValid?: bool,
+  @as("hide-loader") hideLoader?: bool,
+  @as("otp-resend-loading") isOtpResendLoading?: bool,
+  @as("error-reason") errorReason?: string,
+  locale: string,
+  id?: string,
+  @as("type") typeName?: string,
+  @as("card-brands") cardBrand?: string,
+  @as("masked-identity-value") maskedIdentityValue?: string,
+  @as("network-id") network: string,
+  @as("auto-submit") isAutoSubmit?: bool,
+}
+
+module SrcOtpInput = {
+  @val
+  external makeOrig: (@as("src-otp-input") _, srcOtpInputProps) => React.element =
+    "React.createElement"
+  let make = React.memo(makeOrig)
+}
+type actionCode = SUCCESS | PENDING_CONSUMER_IDV | FAILED | ERROR
+type visaTransactionAmount = {
+  transactionAmount: string,
+  transactionCurrencyCode: string,
+}
+
+type visaDpaTransactionOptions = {
+  dpaLocale: string,
+  transactionAmount: visaTransactionAmount,
+  merchantCountryCode: string,
+  merchantOrderId: string,
+}
+
+type visaInitConfig = {dpaTransactionOptions: visaDpaTransactionOptions}
+type getCardsConfig = {consumerIdentity: consumerIdentity, validationData?: string}
+type errorObj = {reason?: string}
+type profile = {maskedCards: array<clickToPayCard>}
+type getCardsResultType = {
+  actionCode: actionCode,
+  error?: errorObj,
+  profiles?: array<profile>,
+  maskedValidationChannel?: string,
+}
+type authenticationmethodAttributes = {challengeIndicator: string}
+type authenticationMethodsVisa = {
+  authenticationMethodType: string,
+  authenticationSubject: string,
+  methodAttributes: authenticationmethodAttributes,
+}
+type authenticationPreferencesVisa = {
+  authenticationMethods: array<authenticationMethodsVisa>,
+  payloadRequested: string,
+}
+type dpaTransactionOptionsVisa = {
+  authenticationPreferences: authenticationPreferencesVisa,
+  acquirerBIN: string,
+  acquirerMerchantId: string,
+  merchantName: string,
+}
+type checkoutConfig = {
+  srcDigitalCardId: string,
+  payloadTypeIndicatorCheckout: string,
+  windowRef?: Dom.element,
+  dpaTransactionOptions: dpaTransactionOptionsVisa,
+}
+
+type vsdk = {
+  initialize: visaInitConfig => promise<{.}>,
+  getCards: getCardsConfig => promise<getCardsResultType>,
+  checkout: checkoutConfig => promise<JSON.t>,
+}
+
+let defaultProfile = {
+  maskedCards: [],
+}
+
+@val external vsdk: vsdk = "window.VSDK"
+
+let getCardsVisaUnified = (~getCardsConfig) => {
+  Console.log("fetching cards...")
+  vsdk.getCards(getCardsConfig)
+}
+
+let loadVisaScript = (onLoadCallback, onErrorCallback) => {
+  let scriptSrc = "https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=498WCF39JVQVH1UK4TGG21leLAj_MJQoapP5f12IanfEYaSno&locale=en_US&cardBrands=visa,mastercard&dpaClientId=TestMerchant"
+  let script = createElement("script")
+  script->setType("text/javascript")
+  script->setSrc(scriptSrc)
+  script->setOnLoad(() => {
+    let _ = onLoadCallback()
+  })
+  script->setOnError(() => {
+    Console.log("Visa Script Load Error")
+    onErrorCallback()
+  })
+  appendChildInBody(script)
+}
+
+let loadClickToPayUIScripts = (
+  logger: HyperLogger.loggerMake,
+  scriptLoadedCallback: unit => unit,
+  scriptErrorCallback: unit => unit,
+) => {
+  let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
+  let linkSelector = `link[href="${srcUiKitCssHref}"]`
+
+  // Add script if not exists
+  switch querySelector(scriptSelector)->Nullable.toOption {
+  | None => {
+      let script = createElement("script")
+      script->setType("module")
+      script->setSrc(srcUiKitScriptSrc)
+      appendChild(script)
+      script->setOnLoad(() => {
+        scriptLoadedCallback()
+      })
+      script->setOnError(() => {
+        scriptErrorCallback()
+      })
+      logger.setLogInfo(~value="ClickToPay UI Kit Script Loaded", ~eventName=CLICK_TO_PAY_SCRIPT)
+    }
+  | Some(_) => ()
+  }
+
+  // Add link if not exists
+  switch querySelector(linkSelector)->Nullable.toOption {
+  | None => {
+      let link = createElement("link")
+      link->setRel("stylesheet")
+      link->setHref(srcUiKitCssHref)
+      appendChild(link)
+      logger.setLogInfo(~value="ClickToPay UI Kit CSS Loaded", ~eventName=CLICK_TO_PAY_SCRIPT)
+    }
+  | Some(_) => ()
   }
 }
