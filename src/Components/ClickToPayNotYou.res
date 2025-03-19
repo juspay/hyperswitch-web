@@ -2,7 +2,12 @@ open ClickToPayHelpers
 open Utils
 
 @react.component
-let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setConsumerIdentity) => {
+let make = (
+  ~setIsShowClickToPayNotYou,
+  ~isCTPAuthenticateNotYouClicked,
+  ~setConsumerIdentity,
+  ~getVisaCards,
+) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
 
@@ -10,19 +15,36 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setCon
   let (isValid, setIsValid) = React.useState(_ => false)
   let (identifierType, setIdentifierType) = React.useState(_ => EMAIL_ADDRESS)
 
+  let (clickToPayProvider, _) = Recoil.useRecoilState(RecoilAtoms.clickToPayProvider)
+
   let onContinue = consumerIdentity => {
     open Promise
-    ClickToPayHelpers.signOut()
-    ->finally(() => {
+    switch clickToPayProvider {
+    | MASTERCARD =>
+      ClickToPayHelpers.signOut()
+      ->finally(() => {
+        setClickToPayConfig(prev => {
+          ...prev,
+          clickToPayCards: Some([]),
+        })
+        setIsShowClickToPayNotYou(_ => false)
+        setConsumerIdentity(_ => consumerIdentity)
+      })
+      ->catch(err => resolve(Error(err)))
+      ->ignore
+    | VISA =>
       setClickToPayConfig(prev => {
         ...prev,
         clickToPayCards: Some([]),
       })
       setIsShowClickToPayNotYou(_ => false)
       setConsumerIdentity(_ => consumerIdentity)
-    })
-    ->catch(err => resolve(Error(err)))
-    ->ignore
+      getVisaCards(
+        ~identityValue=consumerIdentity.identityValue,
+        ~identityType=consumerIdentity.identityType,
+      )
+    | NONE => ()
+    }
   }
 
   let onBack = _ => {
