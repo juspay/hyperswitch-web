@@ -1,3 +1,10 @@
+## [0.119.1](https://github.com/juspay/hyperswitch-web/compare/v0.119.0...v0.119.1) (2025-03-19)
+
+
+### Bug Fixes
+
+* netcetera and cvc cypress test ([#956](https://github.com/juspay/hyperswitch-web/issues/956)) ([018d1be](https://github.com/juspay/hyperswitch-web/commit/018d1be67d1c41c6ab4160c5b7e3f84c39921e67))
+
 # [0.119.0](https://github.com/juspay/hyperswitch-web/compare/v0.118.1...v0.119.0) (2025-03-18)
 
 
