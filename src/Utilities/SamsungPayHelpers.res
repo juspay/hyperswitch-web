@@ -58,3 +58,54 @@ let itemToObjMapper = dict => {
 let getSamsungPayBodyFromResponse = (~sPayResponse) => {
   sPayResponse->getDictFromJson->itemToObjMapper
 }
+
+let useHandleSamsungPayResponse = (
+  ~intent: PaymentHelpersTypes.paymentIntent,
+  ~isSavedMethodsFlow=false,
+  ~isWallet=true,
+) => {
+  let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+
+  React.useEffect0(() => {
+    let handleSamsung = (ev: Window.event) => {
+      let json = ev.data->safeParse
+      let dict = json->getDictFromJson
+      if dict->Dict.get("samsungPayResponse")->Option.isSome {
+        let metadata = dict->getJsonObjectFromDict("samsungPayResponse")
+        let getBody = getSamsungPayBodyFromResponse(~sPayResponse=metadata)
+        let body = PaymentBody.samsungPayBody(
+          ~metadata=getBody.paymentMethodData->Identity.anyTypeToJson,
+        )
+
+        let finalBody = PaymentUtils.appendedCustomerAcceptance(
+          ~isGuestCustomer,
+          ~paymentType=paymentMethodListValue.payment_type,
+          ~body,
+        )
+
+        intent(
+          ~bodyArr=finalBody,
+          ~confirmParam={
+            return_url: options.wallets.walletReturnUrl,
+            publishableKey,
+          },
+          ~handleUserError=false,
+          ~manualRetry=isManualRetryEnabled,
+        )
+      }
+      if dict->Dict.get("samsungPayError")->Option.isSome {
+        messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+        if isSavedMethodsFlow || !isWallet {
+          postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
+        }
+      }
+    }
+    Window.addEventListener("message", handleSamsung)
+    Some(() => {Window.removeEventListener("message", handleSamsung)})
+  })
+}
