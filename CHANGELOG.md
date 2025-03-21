@@ -1,3 +1,33 @@
+## [0.119.2](https://github.com/juspay/hyperswitch-web/compare/v0.119.1...v0.119.2) (2025-03-19)
+
+## [0.119.1](https://github.com/juspay/hyperswitch-web/compare/v0.119.0...v0.119.1) (2025-03-19)
+
+
+### Bug Fixes
+
+* netcetera and cvc cypress test ([#956](https://github.com/juspay/hyperswitch-web/issues/956)) ([018d1be](https://github.com/juspay/hyperswitch-web/commit/018d1be67d1c41c6ab4160c5b7e3f84c39921e67))
+
+# [0.119.0](https://github.com/juspay/hyperswitch-web/compare/v0.118.1...v0.119.0) (2025-03-18)
+
+
+### Features
+
+* post message events for isFormReadyForSubmission ([#951](https://github.com/juspay/hyperswitch-web/issues/951)) ([589d342](https://github.com/juspay/hyperswitch-web/commit/589d3422c801c6bc08300dc4f09567c08300b2fa))
+
+## [0.118.1](https://github.com/juspay/hyperswitch-web/compare/v0.118.0...v0.118.1) (2025-03-18)
+
+
+### Bug Fixes
+
+* react-sentry ([#946](https://github.com/juspay/hyperswitch-web/issues/946)) ([2de1210](https://github.com/juspay/hyperswitch-web/commit/2de1210220c137b73572210e3b2c113220bb0dbf))
+
+# [0.118.0](https://github.com/juspay/hyperswitch-web/compare/v0.117.7...v0.118.0) (2025-03-17)
+
+
+### Features
+
+* add EFT as a payment method ([#910](https://github.com/juspay/hyperswitch-web/issues/910)) ([976dc6f](https://github.com/juspay/hyperswitch-web/commit/976dc6fa35890e02315bc7f2c99ccfae4ee46490)), closes [Anurag-Sin#WPMHJ5619](https://github.com/Anurag-Sin/issues/WPMHJ5619)
+
 ## [0.117.7](https://github.com/juspay/hyperswitch-web/compare/v0.117.6...v0.117.7) (2025-03-12)
 
 

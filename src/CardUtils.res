@@ -657,6 +657,7 @@ let getWalletBrandIcon = (customerMethod: PaymentType.customerMethods) => {
   let iconName = switch customerMethod.paymentMethodType {
   | Some("apple_pay") => "apple_pay_saved"
   | Some("google_pay") => "google_pay_saved"
+  | Some("samsung_pay") => "samsung_pay_saved"
   | Some("paypal") => "paypal"
   | _ => "default-card"
   }
@@ -706,3 +707,8 @@ let getCardBrandInvalidError = (~cardNumber, ~localeString: LocaleStringTypes.lo
 
 let emitExpiryDate = formattedExpiry =>
   Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
+
+let emitIsFormReadyForSubmission = isFormReadyForSubmission =>
+  Utils.messageParentWindow([
+    ("isFormReadyForSubmission", isFormReadyForSubmission->JSON.Encode.bool),
+  ])
