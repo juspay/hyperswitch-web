@@ -38,6 +38,7 @@ describe("Card CVC Checks", () => {
 
 
     it('user can enter 4 digit cvc in card form', () => {
+        cy.wait(2000)
         getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click()
         getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(amexTestCard)
         getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type("0444")
@@ -49,6 +50,7 @@ describe("Card CVC Checks", () => {
     })
 
     it('removing cvc and expiry on card brand change or after clearing card number', () => {
+        cy.wait(2000)
         getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click()
         getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(amexTestCard)
         getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type("0444")
@@ -67,6 +69,7 @@ describe("Card CVC Checks", () => {
     })
 
     it('user can enter 3 digit cvc in card form', () => {
+        cy.wait(2000)
         getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click()
         getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(visaTestCard)
         getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type("0444")
