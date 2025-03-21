@@ -18,7 +18,10 @@ type element = {
 type keys = {
   clientSecret: option<string>,
   ephemeralKey?: string,
+  pmSessionId?: string,
+  pmClientSecret?: string,
   publishableKey: string,
+  profileId: string,
   iframeId: string,
   parentURL: string,
   sdkHandleOneClickConfirmPayment: bool,
@@ -123,6 +126,11 @@ let updateKeys = (dict, keyPair, setKeys) => {
         ...prev,
         publishableKey: dict->Utils.getString(key, valueStr),
       })
+    | "profileId" =>
+      setKeys(prev => {
+        ...prev,
+        profileId: dict->Utils.getString(key, valueStr),
+      })
     | "parentURL" =>
       setKeys(prev => {
         ...prev,
@@ -140,6 +148,7 @@ let updateKeys = (dict, keyPair, setKeys) => {
 let defaultkeys = {
   clientSecret: None,
   publishableKey: "",
+  profileId: "",
   iframeId: "",
   parentURL: "*",
   sdkHandleOneClickConfirmPayment: true,

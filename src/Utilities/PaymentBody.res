@@ -56,8 +56,12 @@ let cardPaymentBody = (
     cardBody->Array.push(("nick_name", nickname->JSON.Encode.string))->ignore
   }
 
+  let paymentMethod = switch GlobalVars.sdkVersionEnum {
+  | V1 => ("payment_method", "card"->JSON.Encode.string)
+  | V2 => ("payment_method_type", "card"->JSON.Encode.string)
+  }
   [
-    ("payment_method", "card"->JSON.Encode.string),
+    paymentMethod,
     (
       "payment_method_data",
       [
@@ -910,7 +914,7 @@ let eftBody = () => {
 
   let eftBankRedirectData = [("eft", eftProviderName)]->getJsonFromArrayOfJson
 
-  let paymentMethodData =[("bank_redirect", eftBankRedirectData)]->getJsonFromArrayOfJson
+  let paymentMethodData = [("bank_redirect", eftBankRedirectData)]->getJsonFromArrayOfJson
 
   [
     ("payment_method", "bank_redirect"->JSON.Encode.string),
