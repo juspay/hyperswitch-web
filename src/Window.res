@@ -173,11 +173,6 @@ let version = packageJson.version
 /* URL Handling */
 let hrefWithoutSearch = Location.origin ++ Location.pathname
 
-/* Environment Flags */
-let isSandbox = Location.hostname === "beta.hyperswitch.io"
-let isInteg = Location.hostname === "dev.hyperswitch.io"
-let isProd = Location.hostname === "checkout.hyperswitch.io"
-
 /* iFrame Detection */
 let isIframed = () =>
   try {
