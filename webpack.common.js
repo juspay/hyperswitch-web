@@ -9,6 +9,7 @@ const TerserPlugin = require("terser-webpack-plugin");
 const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
+const { SubresourceIntegrityPlugin } = require("webpack-subresource-integrity");
 
 const getEnvVariable = (variable, defaultValue) =>
   process.env[variable] ?? defaultValue;
@@ -101,14 +102,20 @@ module.exports = (publicPath = "auto") => {
     }),
     new webpack.DefinePlugin(definePluginValues),
     new HtmlWebpackPlugin({
-      inject: false,
+      inject: true,
       template: "./public/build.html",
+      chunks: ["app"],
+      scriptLoading: "blocking",
     }),
     new HtmlWebpackPlugin({
       // Also generate a test.html
-      inject: false,
+      inject: true,
       filename: "fullscreenIndex.html",
       template: "./public/fullscreenIndexTemplate.html",
+    }),
+    new SubresourceIntegrityPlugin({
+      hashFuncNames: ["sha384"],
+      enabled: process.env.NODE_ENV === "production",
     }),
   ];
 
@@ -153,6 +160,7 @@ module.exports = (publicPath = "auto") => {
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,
+      hashFunction: "sha384",
     },
     optimization:
       sdkEnv === "local"

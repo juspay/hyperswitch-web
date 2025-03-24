@@ -75,6 +75,7 @@
     "css-loader": "^6.7.1",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^8.57.0",
+    "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "html-webpack-plugin": "^5.6.0",
     "husky": "^8.0.3",
@@ -89,7 +90,7 @@
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.1.0",
-    "eslint-plugin-promise": "^7.2.1"
+    "webpack-subresource-integrity": "^5.2.0-rc.1"
   },
   "config": {
     "commitizen": {
@@ -162,5 +163,6 @@
       "@semantic-release/changelog",
       "@semantic-release/git"
     ]
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
