@@ -1,3 +1,10 @@
+## [0.119.3](https://github.com/juspay/hyperswitch-web/compare/v0.119.2...v0.119.3) (2025-03-24)
+
+
+### Bug Fixes
+
+* updated the regex for CartesBancaires ([#952](https://github.com/juspay/hyperswitch-web/issues/952)) ([243bccd](https://github.com/juspay/hyperswitch-web/commit/243bccdd4c3c6c5b5db900448d8e1f1d86542cb5))
+
 ## [0.119.2](https://github.com/juspay/hyperswitch-web/compare/v0.119.1...v0.119.2) (2025-03-19)
 
 ## [0.119.1](https://github.com/juspay/hyperswitch-web/compare/v0.119.0...v0.119.1) (2025-03-19)
