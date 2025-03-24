@@ -43,6 +43,7 @@ let handleOnFocusPostMessage = (~targetOrigin="*") => {
 }
 
 let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
+  Console.log("46 Utils.res completeDoThis message")
   messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
@@ -307,12 +308,18 @@ let postFailedSubmitResponse = (~errortype, ~message) => {
       ("type", errortype->JSON.Encode.string),
       ("message", message->JSON.Encode.string),
     ]->Dict.fromArray
+  Console.log("310 Utils.res Inside postFailedSubmitResponse")
   messageParentWindow([
     ("submitSuccessful", false->JSON.Encode.bool),
     ("error", errorDict->JSON.Encode.object),
   ])
 }
 let postSubmitResponse = (~jsonData, ~url) => {
+  Console.log3(
+    "317 Utils.res Inside postSubmitResponse json and url =>",
+    jsonData->JSON.stringify,
+    url,
+  )
   messageParentWindow([
     ("submitSuccessful", true->JSON.Encode.bool),
     ("data", jsonData),
@@ -321,6 +328,11 @@ let postSubmitResponse = (~jsonData, ~url) => {
 }
 
 let getFailedSubmitResponse = (~errorType, ~message) => {
+  Console.log3(
+    "326 Inside Utils.res getFailedSubmitResponse error and message =>",
+    errorType,
+    message,
+  )
   [
     (
       "error",

@@ -316,6 +316,7 @@ let rec intentCall = (
   | (_, _, true) => (POST_SESSION_TOKENS_CALL, POST_SESSION_TOKENS_CALL_INIT)
   | _ => (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
   }
+  Console.log("319 Confirm Flow Started")
   logApi(
     ~optLogger,
     ~url=uri,
@@ -326,9 +327,16 @@ let rec intentCall = (
     ~isPaymentSession,
   )
   let handleOpenUrl = url => {
+    Console.log("330 Inside handleOpenUrl")
     if isPaymentSession {
+      Console.log3(
+        "332 Inside isPaymentSession url and redirectionFlags =>",
+        url,
+        redirectionFlags->Identity.anyTypeToJson->JSON.stringify,
+      )
       Utils.replaceRootHref(url, redirectionFlags)
     } else {
+      Console.log2("335 Inside else url =>", url)
       openUrl(url)
     }
   }
@@ -345,8 +353,13 @@ let rec intentCall = (
     url.searchParams.set("status", "failed")
     url.searchParams.set("payment_id", clientSecret->getPaymentId)
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
-
+    Console.log3(
+      "349 fetch Call done url and confirmParam =>",
+      url,
+      confirmParam->Identity.anyTypeToJson->JSON.stringify,
+    )
     if statusCode->String.charAt(0) !== "2" {
+      Console.log("351 Confirm Call Not 2xx")
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -381,8 +394,11 @@ let rec intentCall = (
             )
 
             let dict = data->getDictFromJson
+            Console.log2("386 Response Dict =>", dict->Identity.anyTypeToJson->JSON.stringify)
             let errorObj = PaymentError.itemToObjMapper(dict)
+            Console.log2("388 errorObj =>", errorObj->Identity.anyTypeToJson->JSON.stringify)
             if !isPaymentSession {
+              Console.log("390 !isPaymentSession Posting Message False-Submit Successfull")
               closePaymentLoaderIfAny()
               postFailedSubmitResponse(
                 ~errortype=errorObj.error.type_,
@@ -390,11 +406,16 @@ let rec intentCall = (
               )
             }
             if handleUserError {
+              Console.log2("398 handleUserError handleOpenUrl url =>", url)
               handleOpenUrl(url.href)
             } else {
               let failedSubmitResponse = getFailedSubmitResponse(
                 ~errorType=errorObj.error.type_,
                 ~message=errorObj.error.message,
+              )
+              Console.log2(
+                "405 else failedSubmitResponse =>",
+                failedSubmitResponse->Identity.anyTypeToJson->JSON.stringify,
               )
               resolve(failedSubmitResponse)
             }
@@ -416,21 +437,33 @@ let rec intentCall = (
               ~logCategory=API,
               ~isPaymentSession,
             )
+            Console.log2(
+              "426 catch When not 2xx exceptionMessage =>",
+              exceptionMessage->Identity.anyTypeToJson->JSON.stringify,
+            )
             if counter >= 5 {
+              Console.log("431 counter>=5")
               if !isPaymentSession {
+                Console.log("433 counter>=5 !isPaymentSession")
                 closePaymentLoaderIfAny()
                 postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
               }
               if handleUserError {
+                Console.log("433 counter>=5 handleUserError")
                 handleOpenUrl(url.href)
               } else {
                 let failedSubmitResponse = getFailedSubmitResponse(
                   ~errorType="server_error",
                   ~message="Something went wrong",
                 )
+                Console.log2(
+                  "441 counter>=5 else failedSubmitResponse =>",
+                  failedSubmitResponse->Identity.anyTypeToJson->JSON.stringify,
+                )
                 resolve(failedSubmitResponse)
               }
             } else {
+              Console.log("449 counter<5")
               let paymentIntentID = clientSecret->getPaymentId
               let endpoint = ApiEndpoint.getApiEndPoint(
                 ~publishableKey=confirmParam.publishableKey,
@@ -474,6 +507,7 @@ let rec intentCall = (
       ->then(data => {
         Promise.make(
           (resolve, _) => {
+            Console.log("493 API 2xx")
             logApi(
               ~optLogger,
               ~url=uri,
@@ -483,6 +517,7 @@ let rec intentCall = (
               ~isPaymentSession,
             )
             let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
+            Console.log2("503 API Intent =>", intent->Identity.anyTypeToJson->JSON.stringify)
             let paymentMethod = switch paymentType {
             | Card => "CARD"
             | _ => intent.payment_method_type
@@ -492,42 +527,65 @@ let rec intentCall = (
             url.searchParams.set("payment_intent_client_secret", clientSecret)
             url.searchParams.set("payment_id", clientSecret->getPaymentId)
             url.searchParams.set("status", intent.status)
-
+            Console.log3(
+              "513 API url and paymentMethod =>",
+              url->Identity.anyTypeToJson->JSON.stringify,
+              paymentMethod,
+            )
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
               switch (paymentType, sdkHandleOneClickConfirmPayment) {
               | (Card, _)
               | (Gpay, false)
               | (Applepay, false)
               | (Paypal, false) =>
+                Console.log("520 Inside the handleProcessingStatus")
                 if !isPaymentSession {
+                  Console.log("522 Inside the !isPaymentSession")
                   if isCallbackUsedVal->Option.getOr(false) {
+                    Console.log("524 Inside the isCallbackUsedVal")
                     handleOnCompleteDoThisMessage()
                   } else {
+                    Console.log("527 Inside the else")
                     closePaymentLoaderIfAny()
                   }
 
                   postSubmitResponse(~jsonData=data, ~url=url.href)
                 } else if confirmParam.redirect === Some("always") {
+                  Console.log("533 Inside the confirmParam.redirect === always")
                   if isCallbackUsedVal->Option.getOr(false) {
+                    Console.log("535 Inside the isCallbackUsedVal")
                     handleOnCompleteDoThisMessage()
                   } else {
+                    Console.log2("538 Inside the else url =>", url)
                     handleOpenUrl(url.href)
                   }
                 } else {
+                  Console.log2(
+                    "542 Inside Else data =>",
+                    data->Identity.anyTypeToJson->JSON.stringify,
+                  )
                   resolve(data)
                 }
               | _ =>
+                Console.log("546 Inside the _")
                 if isCallbackUsedVal->Option.getOr(false) {
+                  Console.log("548 Inside the isCallbackUsedVal")
                   closePaymentLoaderIfAny()
                   handleOnCompleteDoThisMessage()
                 } else {
+                  Console.log2(
+                    "552 Inside Else url =>",
+                    url->Identity.anyTypeToJson->JSON.stringify,
+                  )
                   handleOpenUrl(url.href)
                 }
               }
             }
 
             if intent.status == "requires_customer_action" {
+              Console.log("548 Intent.status requires_customer_action")
               if intent.nextAction.type_ == "redirect_to_url" {
+                Console.log("548 Intent.nextAction.type_ redirect_to_url")
                 handleLogging(
                   ~optLogger,
                   ~value="",
@@ -601,6 +659,7 @@ let rec intentCall = (
                 }
                 resolve(data)
               } else if intent.nextAction.type_ === "three_ds_invoke" {
+                Console.log("624 Intent.nextAction.type_ three_ds_invoke")
                 let threeDsData =
                   intent.nextAction.three_ds_data
                   ->Option.flatMap(JSON.Decode.object)
@@ -738,6 +797,7 @@ let rec intentCall = (
                   ]->getJsonFromArrayOfJson
                 resolve(response)
               } else {
+                Console.log2("762 Else part isPaymentSession =>", isPaymentSession)
                 if !isPaymentSession {
                   postFailedSubmitResponse(
                     ~errortype="confirm_payment_failed",
@@ -755,6 +815,7 @@ let rec intentCall = (
                   )
                   handleOpenUrl(url.href)
                 } else {
+                  Console.log("780 Else part force_sync")
                   let failedSubmitResponse = getFailedSubmitResponse(
                     ~errorType="confirm_payment_failed",
                     ~message="Payment failed. Try again!",
@@ -797,6 +858,7 @@ let rec intentCall = (
               }
               resolve(data)
             } else if intent.status != "" {
+              Console.log2("823 intent.status not empty intent.status =>", intent.status)
               if intent.status === "succeeded" {
                 handleLogging(
                   ~optLogger,
@@ -813,10 +875,17 @@ let rec intentCall = (
                 )
               }
               if intent.status === "failed" {
+                Console.log("840 intent.status failed")
                 setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
               }
+              Console.log3(
+                "843 handleProcessingStatus paymentType & sdkHandleOneClickConfirmPayment =>",
+                paymentType,
+                sdkHandleOneClickConfirmPayment,
+              )
               handleProcessingStatus(paymentType, sdkHandleOneClickConfirmPayment)
             } else if !isPaymentSession {
+              Console.log("861 Not isPaymentSession")
               postFailedSubmitResponse(
                 ~errortype="confirm_payment_failed",
                 ~message="Payment failed. Try again!",
@@ -825,6 +894,10 @@ let rec intentCall = (
               let failedSubmitResponse = getFailedSubmitResponse(
                 ~errorType="confirm_payment_failed",
                 ~message="Payment failed. Try again!",
+              )
+              Console.log2(
+                "867 Not isPaymentSession =>",
+                failedSubmitResponse->Identity.anyTypeToJson->JSON.stringify,
               )
               resolve(failedSubmitResponse)
             }
@@ -841,6 +914,11 @@ let rec intentCall = (
         url.searchParams.set("payment_id", clientSecret->getPaymentId)
         url.searchParams.set("status", "failed")
         let exceptionMessage = err->formatException
+        Console.log3(
+          "887 Catch of Fetch url & exception =>",
+          url->Identity.anyTypeToJson->JSON.stringify,
+          exceptionMessage->Identity.anyTypeToJson->JSON.stringify,
+        )
         logApi(
           ~optLogger,
           ~url=uri,

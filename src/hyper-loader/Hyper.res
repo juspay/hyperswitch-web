@@ -409,6 +409,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               let dict = json->getDictFromJson
               switch dict->Dict.get("submitSuccessful") {
               | Some(val) =>
+                Console.log("412 Hyper.res Inside handleMessage Some submitSuccessful")
                 logApi(
                   ~apiLogType=Method,
                   ~optLogger=Some(logger),
@@ -419,7 +420,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 let data = dict->Dict.get("data")->Option.getOr(Dict.make()->JSON.Encode.object)
                 let returnUrl =
                   dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
-
+                Console.log2("423 Hyper.res Inside handleMessage returnUrl =>", returnUrl)
                 if isOneClick {
                   iframeRef.contents->Array.forEach(
                     ifR => {
@@ -433,14 +434,26 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                 postSubmitMessage(dict)
 
                 let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
-
+                Console.log2("437 Hyper.res submitSuccessfulValue =>", submitSuccessfulValue)
                 if isSdkButton && submitSuccessfulValue {
+                  Console.log3(
+                    "439 Hyper.res Redirect If SDK and True",
+                    returnUrl,
+                    redirectionFlags->Identity.anyTypeToJson->JSON.stringify,
+                  )
                   Utils.replaceRootHref(returnUrl, redirectionFlags)
                 } else if submitSuccessfulValue && redirect === "always" {
+                  Console.log3(
+                    "447 Hyper.res Redirect submitSuccessfulValue True and always",
+                    returnUrl,
+                    redirectionFlags->Identity.anyTypeToJson->JSON.stringify,
+                  )
                   Utils.replaceRootHref(returnUrl, redirectionFlags)
                 } else if !submitSuccessfulValue {
+                  Console.log2("453 Hyper.res !submitSuccessfull json =>", json->JSON.stringify)
                   resolve1(json)
                 } else {
+                  Console.log2("456 Hyper.res else json =>", json->JSON.stringify)
                   resolve1(data)
                 }
               | None => ()
@@ -609,6 +622,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
               let dict = json->getDictFromJson
               switch dict->Dict.get("submitSuccessful") {
               | Some(val) =>
+                Console.log("625 Hyper.res Inside handleMessage Some submitSuccessful")
                 logApi(
                   ~apiLogType=Method,
                   ~optLogger=Some(logger),
@@ -617,12 +631,22 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
                   ~eventName=CONFIRM_CARD_PAYMENT,
                 )
                 let url = decodedData->getString("return_url", "/")
+                Console.log2("634 Hyper.res Inside handleMessage Some submitSuccessful url =>", url)
                 if val->JSON.Decode.bool->Option.getOr(false) && url !== "/" {
+                  Console.log3(
+                    "636 Hyper.res Inside handleMessage val true and url",
+                    url,
+                    redirectionFlags->Identity.anyTypeToJson->JSON.stringify,
+                  )
                   Utils.replaceRootHref(url, redirectionFlags)
                 } else {
+                  Console.log2("644 Hyper.res Inside handleMessage else", json->JSON.stringify)
                   resolve(json)
                 }
-              | None => resolve(json)
+              | None => {
+                  Console.log2("647 Hyper.res Inside handleMessage None", json->JSON.stringify)
+                  resolve(json)
+                }
               }
             }
             addSmartEventListener("message", handleMessage, "")

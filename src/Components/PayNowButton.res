@@ -29,11 +29,15 @@ let make = (~onClickHandler=?, ~label=?) => {
     let dict = json->getDictFromJson
     switch dict->Dict.get("submitSuccessful") {
     | Some(submitSuccessfulVal) =>
+      Console.log("32 PayNowButton.res Inside handleMessage Some")
       if !(submitSuccessfulVal->JSON.Decode.bool->Option.getOr(false)) {
         setIsPayNowButtonDisable(_ => false)
         setShowLoader(_ => false)
       }
-    | None => ()
+    | None => {
+        Console.log("32 PayNowButton.res Inside handleMessage None")
+        ()
+      }
     }
   }
 

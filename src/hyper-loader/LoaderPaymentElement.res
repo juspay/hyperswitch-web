@@ -246,6 +246,11 @@ let make = (
         switch eventDataObject->getOptionalJsonFromJson("openurl") {
         | Some(val) => {
             let url = val->getStringFromJson("")
+            Console.log3(
+              "249 Inside LoaderPaymentElement url =>",
+              url,
+              redirectionFlags->Identity.anyTypeToJson->JSON.stringify,
+            )
             Utils.replaceRootHref(url, redirectionFlags)
           }
         | None => ()
