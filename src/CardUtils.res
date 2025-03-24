@@ -395,9 +395,9 @@ let isExipryValid = val => {
   val->String.length > 0 && getExpiryValidity(val) && isExpiryComplete(val)
 }
 
-let cardNumberInRange = val => {
+let cardNumberInRange = (val, cardBrand) => {
   let clearValue = val->clearSpaces
-  let obj = getobjFromCardPattern(val->getCardBrand)
+  let obj = getobjFromCardPattern(cardBrand)
   let cardLengthInRange = obj.length->Array.map(item => {
     clearValue->String.length == item
   })
@@ -408,7 +408,7 @@ let max = (a, b) => {
 }
 
 let getMaxLength = val => {
-  let obj = getobjFromCardPattern(val->getCardBrand)
+  let obj = getobjFromCardPattern(val)
   let maxValue = obj.length->Array.reduce(0, max)
   if maxValue <= 12 {
     maxValue + 2
@@ -563,8 +563,7 @@ let commonKeyDownEvent = (ev, srcRef, destRef, srcEle, destEle, setEle) => {
   }
 }
 
-let pincodeVisibility = cardNumber => {
-  let brand = getCardBrand(cardNumber)
+let pincodeVisibility = brand => {
   let brandPattern =
     CardPattern.cardPatterns
     ->Array.filter(obj => obj.issuer == brand)
@@ -581,8 +580,7 @@ let swapCardOption = (cardOpts: array<string>, dropOpts: array<string>, selected
   (cardOpts, temp)
 }
 
-let setCardValid = (cardnumber, setIsCardValid) => {
-  let cardBrand = getCardBrand(cardnumber)
+let setCardValid = (cardnumber, cardBrand, setIsCardValid) => {
   let isCardMaxLength = cardnumber->String.length == maxCardLength(cardBrand)
   if cardValid(cardnumber, cardBrand) {
     setIsCardValid(_ => Some(true))
@@ -688,6 +686,19 @@ let getAllMatchedCardSchemes = cardNumber => {
   })
 }
 
+let isCardSchemeEnabled = (~cardScheme, ~enabledCardSchemes) => {
+  enabledCardSchemes->Array.includes(cardScheme)
+}
+
+let getFirstValidCardScheme = (~cardNumber, ~enabledCardSchemes) => {
+  let allMatchedCards = getAllMatchedCardSchemes(cardNumber->clearSpaces)
+  allMatchedCards
+  ->Array.find(card =>
+    isCardSchemeEnabled(~cardScheme=card->String.toLowerCase, ~enabledCardSchemes)
+  )
+  ->Option.getOr("")
+}
+
 let getEligibleCoBadgedCardSchemes = (~matchedCardSchemes, ~enabledCardSchemes) => {
   matchedCardSchemes->Array.filter(ele => {
     enabledCardSchemes->Array.includes(ele->String.toLowerCase)
@@ -698,8 +709,8 @@ let getCardBrandFromStates = (cardBrand, cardScheme, showFields) => {
   !showFields ? cardScheme : cardBrand
 }
 
-let getCardBrandInvalidError = (~cardNumber, ~localeString: LocaleStringTypes.localeStrings) => {
-  switch cardNumber->getCardBrand {
+let getCardBrandInvalidError = (~cardBrand, ~localeString: LocaleStringTypes.localeStrings) => {
+  switch cardBrand {
   | "" => localeString.enterValidCardNumberErrorText
   | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)
   }
