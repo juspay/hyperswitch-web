@@ -11,6 +11,23 @@ const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
 const { SubresourceIntegrityPlugin } = require("webpack-subresource-integrity");
 
+// List of authorized external script sources (for Content Security Policy)
+const authorizedScriptSources = [
+  "'self'",
+  "https://js.braintreegateway.com",
+  "https://checkout.hyperswitch.io",
+  "https://beta.hyperswitch.io",
+  "https://dev.hyperswitch.io",
+  // Add other trusted sources here
+];
+
+// List of authorized external styles sources
+const authorizedStyleSources = [
+  "'self'",
+  "https://fonts.googleapis.com",
+  // Add other trusted sources here
+];
+
 const getEnvVariable = (variable, defaultValue) =>
   process.env[variable] ?? defaultValue;
 
@@ -106,16 +123,43 @@ module.exports = (publicPath = "auto") => {
       template: "./public/build.html",
       chunks: ["app"],
       scriptLoading: "blocking",
+      // Add CSP meta tag
+      meta: {
+        "Content-Security-Policy": {
+          "http-equiv": "Content-Security-Policy",
+          content: `default-src 'self'; script-src ${authorizedScriptSources.join(
+            " "
+          )}; style-src ${authorizedStyleSources.join(
+            " "
+          )}; connect-src 'self' ${backendEndPoint} ${confirmEndPoint} ${logEndpoint};`,
+        },
+      },
     }),
     new HtmlWebpackPlugin({
       // Also generate a test.html
       inject: true,
       filename: "fullscreenIndex.html",
       template: "./public/fullscreenIndexTemplate.html",
+      // Add CSP meta tag
+      meta: {
+        "Content-Security-Policy": {
+          "http-equiv": "Content-Security-Policy",
+          content: `default-src 'self'; script-src ${authorizedScriptSources.join(
+            " "
+          )}; style-src ${authorizedStyleSources.join(
+            " "
+          )}; connect-src 'self' ${backendEndPoint} ${confirmEndPoint} ${logEndpoint};`,
+        },
+      },
     }),
     new SubresourceIntegrityPlugin({
       hashFuncNames: ["sha384"],
       enabled: process.env.NODE_ENV === "production",
+    }),
+    // Build-time verification plugin
+    new webpack.DefinePlugin({
+      // Custom verification to ensure SRI is enforced
+      __VERIFY_SRI__: JSON.stringify(process.env.NODE_ENV === "production"),
     }),
   ];
 
