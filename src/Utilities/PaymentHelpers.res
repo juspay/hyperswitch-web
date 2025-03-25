@@ -1073,7 +1073,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             ()
           })
         }
-        if blockConfirm && Window.isInteg {
+        if blockConfirm && GlobalVars.isInteg {
           Console.warn2("CONFIRM IS BLOCKED - Body", body)
           Console.warn2(
             "CONFIRM IS BLOCKED - Headers",
