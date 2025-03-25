@@ -14,7 +14,6 @@ type sentryInitArg = {
   tracePropagationTargets: array<string>,
   replaysSessionSampleRate: float,
   replaysOnErrorSampleRate: float,
-  beforeSend: (event, hint) => option<event>,
 }
 
 external exnToJsExn: exn => option<Exn.t> = "%identity"
@@ -22,16 +21,17 @@ external exnToJsExn: exn => option<Exn.t> = "%identity"
 @module("@sentry/react")
 external initSentry: sentryInitArg => unit = "init"
 
-type newBrowserTracingArg = {routingInstrumentation: instrumentation}
-@new @module("@sentry/react")
-external newBrowserTracing: newBrowserTracingArg => integration = "BrowserTracing"
+@module("@sentry/react")
+external newBrowserTracing: unit => integration = "browserTracingIntegration"
+
+type reactRouterV6BrowserTracingIntegrationArg = {useEffect: (unit => option<unit => unit>) => unit}
 
 @module("@sentry/react")
-external reactRouterV6Instrumentation: ((unit => option<unit => unit>) => unit) => instrumentation =
-  "reactRouterV6Instrumentation"
+external reactRouterV6BrowserTracingIntegration: reactRouterV6BrowserTracingIntegrationArg => integration =
+  "reactRouterV6BrowserTracingIntegration"
 
-@new @module("@sentry/react")
-external newSentryReplay: unit => integration = "Replay"
+@module("@sentry/react")
+external newSentryReplay: unit => integration = "replayIntegration"
 
 @val @scope("Sentry")
 external initSentryJs: sentryInitArg => unit = "init"
@@ -39,11 +39,9 @@ external initSentryJs: sentryInitArg => unit = "init"
 @module("@sentry/react")
 external capture: Exn.t => unit = "captureException"
 
-@new
-external newSentryReplayJs: unit => integration = "Sentry.Replay"
+external newSentryReplayJs: unit => integration = "Sentry.replayIntegration"
 
-@new
-external newBrowserTracingJs: unit => integration = "Sentry.BrowserTracing"
+external newBrowserTracingJs: unit => integration = "Sentry.browserTracingIntegration"
 
 module ErrorBoundary = {
   type fallbackArg = {
@@ -64,9 +62,8 @@ let initiateSentry = (~dsn) => {
     initSentry({
       dsn,
       integrations: [
-        newBrowserTracing({
-          routingInstrumentation: reactRouterV6Instrumentation(React.useEffect0),
-        }),
+        newBrowserTracing(),
+        reactRouterV6BrowserTracingIntegration({useEffect: React.useEffect0}),
         newSentryReplay(),
       ],
       tracesSampleRate: 0.1,
@@ -78,9 +75,6 @@ let initiateSentry = (~dsn) => {
       ],
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
-      beforeSend: (event, hint) => {
-        hint.originalException.tag == "HyperTag" ? Some(event) : None
-      },
     })
   } catch {
   | err => Console.error(err)
@@ -96,9 +90,6 @@ let initiateSentryJs = (~dsn) => {
       tracePropagationTargets: ["localhost"],
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
-      beforeSend: (event, hint) => {
-        hint.originalException.tag == "HyperTag" ? Some(event) : None
-      },
     })
   } catch {
   | err => Console.error(err)

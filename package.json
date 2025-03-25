@@ -1,14 +1,14 @@
 {
   "name": "orca-payment-page",
-  "version": "0.119.4",
+  "version": "0.119.7",
   "main": "index.js",
   "private": true,
   "dependencies": {
     "@glennsl/rescript-fetch": "^0.2.0",
     "@rescript/core": "^0.7.0",
     "@rescript/react": "^0.12.1",
-    "@sentry/react": "^7.119.0",
-    "@sentry/webpack-plugin": "^2.22.5",
+    "@sentry/react": "^9.9.0",
+    "@sentry/webpack-plugin": "^3.2.2",
     "react": "^18.2.0",
     "react-datepicker": "^6.9.0",
     "react-dom": "^18.2.0",
