@@ -21,6 +21,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
 
   let complete =
     email.value != "" &&
@@ -60,7 +61,7 @@ let make = (~paymentType: CardThemeType.mode) => {
               ~data,
               ~line1=line1.value,
               ~line2=line2.value,
-              ~country=getCountryCode(country.value).isoAlpha2,
+              ~country=getCountryCode(country.value, countryList).isoAlpha2,
               ~city=city.value,
               ~postalCode=postalCode.value,
               ~state=state.value,

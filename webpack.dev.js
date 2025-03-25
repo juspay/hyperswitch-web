@@ -30,6 +30,13 @@ const devServer = {
       secure: true,
       pathRewrite: { "^/payments": "" },
     },
+    {
+      context: ["/assets/v1/location/"],
+      target: "https://dev.hyperswitch.io",
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: { "^/assets/v1/location/": "/assets/v1/location/" },
+    },
     // Uncomment the following if needed for 3DS method proxying
     // {
     //   context: ["/3dsmethod"],
