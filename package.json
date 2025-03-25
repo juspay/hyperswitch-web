@@ -7,8 +7,8 @@
     "@glennsl/rescript-fetch": "^0.2.0",
     "@rescript/core": "^0.7.0",
     "@rescript/react": "^0.12.1",
-    "@sentry/react": "^7.119.0",
-    "@sentry/webpack-plugin": "^2.22.5",
+    "@sentry/react": "^9.9.0",
+    "@sentry/webpack-plugin": "^3.2.2",
     "react": "^18.2.0",
     "react-datepicker": "^6.9.0",
     "react-dom": "^18.2.0",
@@ -75,6 +75,7 @@
     "css-loader": "^6.7.1",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^8.57.0",
+    "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "html-webpack-plugin": "^5.6.0",
     "husky": "^8.0.3",
@@ -88,8 +89,7 @@
     "webpack": "^5.94.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.1.0",
-    "eslint-plugin-promise": "^7.2.1"
+    "webpack-dev-server": "^5.1.0"
   },
   "config": {
     "commitizen": {

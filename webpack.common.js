@@ -128,12 +128,12 @@ module.exports = (publicPath = "auto") => {
   ) {
     plugins.push(
       sentryWebpackPlugin({
-        org: "sentry",
-        project: "hyperswitch-react-sdk",
+        org: "hyperswitch",
+        project: "hyperswitch-web-react",
         authToken: process.env.SENTRY_AUTH_TOKEN,
         url: process.env.SENTRY_URL,
         release: {
-          name: "0.2",
+          name: "0.3",
           uploadLegacySourcemaps: {
             paths: ["dist"],
           },
