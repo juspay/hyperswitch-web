@@ -1,3 +1,10 @@
+## [0.119.8](https://github.com/juspay/hyperswitch-web/compare/v0.119.7...v0.119.8) (2025-03-26)
+
+
+### Bug Fixes
+
+* HyperLoader Reinitialisation ([#966](https://github.com/juspay/hyperswitch-web/issues/966)) ([39f4bf2](https://github.com/juspay/hyperswitch-web/commit/39f4bf24a6cd4f1836139e8cf1af00b9b2b04fca))
+
 ## [0.119.7](https://github.com/juspay/hyperswitch-web/compare/v0.119.6...v0.119.7) (2025-03-25)
 
 ## [0.119.6](https://github.com/juspay/hyperswitch-web/compare/v0.119.5...v0.119.6) (2025-03-25)
