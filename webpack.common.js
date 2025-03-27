@@ -10,6 +10,7 @@ const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
 
+// Helper function to get environment variables with fallback
 const getEnvVariable = (variable, defaultValue) =>
   process.env[variable] ?? defaultValue;
 
@@ -30,11 +31,13 @@ const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
 */
 const sdkVersion = getEnvVariable("SDK_VERSION", "v1");
 
+// Repository info
 const repoVersion = require("./package.json").version;
 const repoName = require("./package.json").name;
 const repoPublicPath =
   sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersion}`;
 
+// Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
   const urls = {
@@ -46,7 +49,10 @@ const getSdkUrl = (env, customUrl) => {
   return urls[env] || urls.local;
 };
 
+// Determine SDK URL
 const sdkUrl = getSdkUrl(sdkEnv, envSdkUrl);
+
+// Helper function to determine environment domains
 const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
   switch (sdkEnv) {
     case "prod":
@@ -58,9 +64,11 @@ const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
   }
 };
 
+// Environment endpoints
 const backendDomain = getEnvironmentDomain("checkout", "dev", "beta");
 const confirmDomain = getEnvironmentDomain("live", "integ", "app");
 
+// Backend and confirm endpoints
 const backendEndPoint =
   envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
 
@@ -72,13 +80,27 @@ const logEndpoint = envLoggingUrl;
 const loggingLevel = "DEBUG";
 const maxLogsPushedPerEventName = 100;
 
+// Function to determine the current environment type
+const getEnvironmentType = (env) => {
+  const envType = {
+    isLocal: env === "local",
+    isIntegrationEnv: env === "integ",
+    isProductionEnv: env === "prod",
+    isSandboxEnv: env === "sandbox" || env === "local",
+  };
+  return envType;
+};
+
+const { isLocal, isIntegrationEnv, isProductionEnv, isSandboxEnv } =
+  getEnvironmentType(sdkEnv);
+
 module.exports = (publicPath = "auto") => {
   const entries = {
     app: "./index.js",
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
   };
 
-  let definePluginValues = {
+  const definePluginValues = {
     repoName: JSON.stringify(repoName),
     repoVersion: JSON.stringify(repoVersion),
     publicPath: JSON.stringify(repoPublicPath),
@@ -92,6 +114,9 @@ module.exports = (publicPath = "auto") => {
     loggingLevel: JSON.stringify(loggingLevel),
     maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
     sdkVersion: JSON.stringify(sdkVersion),
+    isIntegrationEnv,
+    isSandboxEnv,
+    isProductionEnv,
   };
 
   const plugins = [
@@ -128,12 +153,12 @@ module.exports = (publicPath = "auto") => {
   ) {
     plugins.push(
       sentryWebpackPlugin({
-        org: "sentry",
-        project: "hyperswitch-react-sdk",
+        org: "hyperswitch",
+        project: "hyperswitch-web-react",
         authToken: process.env.SENTRY_AUTH_TOKEN,
         url: process.env.SENTRY_URL,
         release: {
-          name: "0.2",
+          name: "0.3",
           uploadLegacySourcemaps: {
             paths: ["dist"],
           },
@@ -143,37 +168,35 @@ module.exports = (publicPath = "auto") => {
   }
 
   return {
-    mode: sdkEnv === "local" ? "development" : "production",
-    devtool: sdkEnv === "local" ? "eval-source-map" : "source-map",
+    mode: isLocal ? "development" : "production",
+    devtool: isLocal ? "eval-source-map" : "source-map",
     output: {
-      path:
-        sdkEnv && sdkEnv !== "local"
-          ? path.resolve(__dirname, "dist", sdkEnv, sdkVersion)
-          : path.resolve(__dirname, "dist"),
+      path: isLocal
+        ? path.resolve(__dirname, "dist")
+        : path.resolve(__dirname, "dist", sdkEnv, sdkVersion),
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,
     },
-    optimization:
-      sdkEnv === "local"
-        ? {}
-        : {
-            sideEffects: true,
-            minimize: true,
-            minimizer: [
-              new TerserPlugin({
-                terserOptions: {
-                  compress: {
-                    drop_console: false,
-                  },
-                  mangle: {
-                    keep_fnames: true, // Prevent function names from being mangled
-                    keep_classnames: true, // Prevent class names from being mangled
-                  },
+    optimization: isLocal
+      ? {}
+      : {
+          sideEffects: true,
+          minimize: true,
+          minimizer: [
+            new TerserPlugin({
+              terserOptions: {
+                compress: {
+                  drop_console: false,
                 },
-              }),
-            ],
-          },
+                mangle: {
+                  keep_fnames: true, // Prevent function names from being mangled
+                  keep_classnames: true, // Prevent class names from being mangled
+                },
+              },
+            }),
+          ],
+        },
     plugins,
     module: {
       rules: [
