@@ -45,6 +45,7 @@ type nextAction = {
   next_action_data: option<JSON.t>,
   display_text: option<string>,
   border_color: option<string>,
+  iframe_data: option<JSON.t>,
 }
 type intent = {
   nextAction: nextAction,
@@ -74,6 +75,7 @@ let defaultNextAction = {
   next_action_data: None,
   display_text: None,
   border_color: None,
+  iframe_data: None,
 }
 let defaultIntent = {
   nextAction: defaultNextAction,
@@ -170,6 +172,7 @@ let getNextAction = (dict, str) => {
       next_action_data: Some(json->getDictFromDict("next_action_data")->JSON.Encode.object),
       display_text: json->getOptionString("display_text"),
       border_color: json->getOptionString("border_color"),
+      iframe_data: Some(json->Utils.getJsonObjectFromDict("iframe_data")),
     }
   })
   ->Option.getOr(defaultNextAction)
