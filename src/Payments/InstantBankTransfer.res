@@ -6,9 +6,10 @@ let make = (~paymentType) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
@@ -27,7 +28,7 @@ let make = (~paymentType) => {
         let bodyArr =
           PaymentBody.dynamicPaymentBody(
             "bank_transfer",
-            "sepa_bank_transfer",
+            "instant_bank_transfer",
           )->mergeAndFlattenToTuples(requiredFieldsBody)
 
         intent(
@@ -41,17 +42,17 @@ let make = (~paymentType) => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isManualRetryEnabled, requiredFieldsBody))
+  }, (requiredFieldsBody, areRequiredFieldsValid, areRequiredFieldsEmpty, isManualRetryEnabled))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <DynamicFields
       paymentType
       paymentMethod="bank_transfer"
-      paymentMethodType="sepa_bank_transfer"
+      paymentMethodType="instant_bank_transfer"
       setRequiredFieldsBody
     />
-    <Surcharge paymentMethod="bank_transfer" paymentMethodType="sepa" />
+    <Surcharge paymentMethod="bank_transfer" paymentMethodType="instant" />
     <InfoElement />
   </div>
 }

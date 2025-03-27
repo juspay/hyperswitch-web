@@ -910,7 +910,7 @@ let eftBody = () => {
 
   let eftBankRedirectData = [("eft", eftProviderName)]->getJsonFromArrayOfJson
 
-  let paymentMethodData =[("bank_redirect", eftBankRedirectData)]->getJsonFromArrayOfJson
+  let paymentMethodData = [("bank_redirect", eftBankRedirectData)]->getJsonFromArrayOfJson
 
   [
     ("payment_method", "bank_redirect"->JSON.Encode.string),
@@ -922,7 +922,12 @@ let eftBody = () => {
 let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
-  | "bank_transfer" => paymentMethodType->String.replace("_transfer", "")
+  | "bank_transfer" =>
+    if paymentMethodType != "sepa_bank_transfer" && paymentMethodType != "instant_bank_transfer" {
+      paymentMethodType->String.replace("_transfer", "")
+    } else {
+      paymentMethodType
+    }
   | _ => paymentMethodType
   }
 
@@ -945,7 +950,7 @@ let appendRedirectPaymentMethods = [
 ]
 
 let appendBankeDebitMethods = ["sepa"]
-let appendBankTransferMethods = ["sepa", "ach", "bacs", "multibanco"]
+let appendBankTransferMethods = ["ach", "bacs", "multibanco"]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {

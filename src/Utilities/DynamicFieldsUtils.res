@@ -19,6 +19,8 @@ let dynamicFieldsEnabledPaymentMethods = [
   "mifinity",
   "upi_collect",
   "sepa",
+  "sepa_bank_transfer",
+  "instant_bank_transfer",
   "affirm",
   "walley",
   "ach",
