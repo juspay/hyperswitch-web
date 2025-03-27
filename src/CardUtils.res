@@ -690,13 +690,11 @@ let isCardSchemeEnabled = (~cardScheme, ~enabledCardSchemes) => {
   enabledCardSchemes->Array.includes(cardScheme)
 }
 
-let getFirstValidCardScheme = (~cardNumber, ~enabledCardSchemes) => {
+let getFirstValidCardSchemeFromPML = (~cardNumber, ~enabledCardSchemes) => {
   let allMatchedCards = getAllMatchedCardSchemes(cardNumber->clearSpaces)
-  allMatchedCards
-  ->Array.find(card =>
+  allMatchedCards->Array.find(card =>
     isCardSchemeEnabled(~cardScheme=card->String.toLowerCase, ~enabledCardSchemes)
   )
-  ->Option.getOr("")
 }
 
 let getEligibleCoBadgedCardSchemes = (~matchedCardSchemes, ~enabledCardSchemes) => {

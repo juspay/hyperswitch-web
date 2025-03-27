@@ -278,12 +278,14 @@ let make = (
             ((fieldValidity, isPmdValid), field) => {
               let key = PayoutMethodData(field.fieldType)->getPaymentMethodDataFieldKey
               let value = formData->Dict.get(key)->Option.getOr("")
-              let validCardBrand = CardUtils.getFirstValidCardScheme(
+              let validCardBrand = CardUtils.getFirstValidCardSchemeFromPML(
                 ~cardNumber=value,
                 ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
               )
-              let newCardBrand =
-                validCardBrand === "" ? value->CardUtils.getCardBrand : validCardBrand
+              let newCardBrand = switch validCardBrand {
+              | Some(brand) => brand
+              | None => value->CardUtils.getCardBrand
+              }
               let validity =
                 PayoutMethodData(field.fieldType)->calculateValidity(
                   value,

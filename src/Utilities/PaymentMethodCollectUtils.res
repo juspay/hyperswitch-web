@@ -977,11 +977,14 @@ let getDefaultsAndValidity = (payoutDynamicFields, supportedCardBrands) => {
       ->Option.map(
         value => {
           let key = BillingAddress(field.fieldType)
-          let validCardBrand = getFirstValidCardScheme(
+          let validCardBrand = getFirstValidCardSchemeFromPML(
             ~cardNumber=value,
             ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
           )
-          let newCardBrand = validCardBrand === "" ? value->CardUtils.getCardBrand : validCardBrand
+          let newCardBrand = switch validCardBrand {
+          | Some(brand) => brand
+          | None => value->CardUtils.getCardBrand
+          }
           let isValid = calculateValidity(key, value, newCardBrand)
           let keyStr = key->getPaymentMethodDataFieldKey
           values->Dict.set(keyStr, value)
@@ -1000,11 +1003,14 @@ let getDefaultsAndValidity = (payoutDynamicFields, supportedCardBrands) => {
       switch field.value {
       | Some(value) => {
           let key = PayoutMethodData(field.fieldType)
-          let validCardBrand = getFirstValidCardScheme(
+          let validCardBrand = getFirstValidCardSchemeFromPML(
             ~cardNumber=value,
             ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
           )
-          let newCardBrand = validCardBrand === "" ? value->CardUtils.getCardBrand : validCardBrand
+          let newCardBrand = switch validCardBrand {
+          | Some(brand) => brand
+          | None => value->CardUtils.getCardBrand
+          }
           let isValid = calculateValidity(key, value, newCardBrand)
           let keyStr = key->getPaymentMethodDataFieldKey
           values->Dict.set(keyStr, value)

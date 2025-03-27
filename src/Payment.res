@@ -400,11 +400,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (isExpiryValid, isExpiryComplete(cardExpiry)))
 
   React.useEffect(() => {
-    let validCardBrand = getFirstValidCardScheme(
+    let validCardBrand = getFirstValidCardSchemeFromPML(
       ~cardNumber,
       ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
     )
-    let newCardBrand = validCardBrand === "" ? cardNumber->CardUtils.getCardBrand : validCardBrand
+    let newCardBrand = switch validCardBrand {
+    | Some(brand) => brand
+    | None => cardNumber->CardUtils.getCardBrand
+    }
     setCardBrand(_ => newCardBrand)
     None
   }, [cardNumber])

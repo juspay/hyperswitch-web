@@ -134,12 +134,14 @@ let make = (
     if isValid {
       switch key {
       | PayoutMethodData(CardNumber) => {
-          let validCardBrand = getFirstValidCardScheme(
+          let validCardBrand = getFirstValidCardSchemeFromPML(
             ~cardNumber=updatedValue,
             ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
           )
-          let newCardBrand =
-            validCardBrand === "" ? updatedValue->CardUtils.getCardBrand : validCardBrand
+          let newCardBrand = switch validCardBrand {
+          | Some(brand) => brand
+          | None => updatedValue->CardUtils.getCardBrand
+          }
           setFormData(PayoutMethodData(CardBrand)->getPaymentMethodDataFieldKey, newCardBrand)
         }
       | _ => ()
@@ -161,12 +163,15 @@ let make = (
               value
               setValue={getVal => {
                 let updatedValue = getVal()
-                let validCardBrand = getFirstValidCardScheme(
+                let validCardBrand = getFirstValidCardSchemeFromPML(
                   ~cardNumber=updatedValue,
                   ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
                 )
-                let newCardBrand =
-                  validCardBrand === "" ? updatedValue->CardUtils.getCardBrand : validCardBrand
+                let newCardBrand = switch validCardBrand {
+                | Some(brand) => brand
+                | None => updatedValue->CardUtils.getCardBrand
+                }
+
                 let isValid = calculateValidity(
                   field,
                   updatedValue,
@@ -245,11 +250,15 @@ let make = (
       setIsValid={updatedValidityFn => key->setValidityDictVal(updatedValidityFn())}
       onBlur={ev => {
         let value = ReactEvent.Focus.target(ev)["value"]
-        let validCardBrand = getFirstValidCardScheme(
+        let validCardBrand = getFirstValidCardSchemeFromPML(
           ~cardNumber=value,
           ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
         )
-        let newCardBrand = validCardBrand === "" ? value->CardUtils.getCardBrand : validCardBrand
+        let newCardBrand = switch validCardBrand {
+        | Some(brand) => brand
+        | None => value->CardUtils.getCardBrand
+        }
+
         let isValid = calculateValidity(field, value, newCardBrand, ~default=None)
         setValidityDictVal(key, isValid)
       }}
