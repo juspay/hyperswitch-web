@@ -1,3 +1,10 @@
+# [0.122.0](https://github.com/juspay/hyperswitch-web/compare/v0.121.2...v0.122.0) (2025-03-28)
+
+
+### Features
+
+* add sub-resource integrity in webpack generated build file ([#962](https://github.com/juspay/hyperswitch-web/issues/962)) ([40828c0](https://github.com/juspay/hyperswitch-web/commit/40828c08825e3f4e405cd700d97e149b5857838e))
+
 ## [0.121.2](https://github.com/juspay/hyperswitch-web/compare/v0.121.1...v0.121.2) (2025-03-28)
 
 
