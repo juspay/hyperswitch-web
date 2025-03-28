@@ -1,3 +1,35 @@
+# [0.121.0](https://github.com/juspay/hyperswitch-web/compare/v0.120.2...v0.121.0) (2025-03-28)
+
+
+### Features
+
+* added instant bank transfer method ([#968](https://github.com/juspay/hyperswitch-web/issues/968)) ([a354546](https://github.com/juspay/hyperswitch-web/commit/a35454658c24d39e6d9ba3350d7528087c253994))
+
+## [0.120.2](https://github.com/juspay/hyperswitch-web/compare/v0.120.1...v0.120.2) (2025-03-28)
+
+
+### Bug Fixes
+
+* **sentry:** fix sentry integrations ([#970](https://github.com/juspay/hyperswitch-web/issues/970)) ([be35ee7](https://github.com/juspay/hyperswitch-web/commit/be35ee7861d489edb43f9f5d5ee4dc0f0ccfb20c))
+
+## [0.120.1](https://github.com/juspay/hyperswitch-web/compare/v0.120.0...v0.120.1) (2025-03-28)
+
+# [0.120.0](https://github.com/juspay/hyperswitch-web/compare/v0.119.9...v0.120.0) (2025-03-27)
+
+
+### Features
+
+* integration for redsys 3ds ([#963](https://github.com/juspay/hyperswitch-web/issues/963)) ([b4bea78](https://github.com/juspay/hyperswitch-web/commit/b4bea781254cc142ca565fd8d73bea7b6fbfc0c8))
+
+## [0.119.9](https://github.com/juspay/hyperswitch-web/compare/v0.119.8...v0.119.9) (2025-03-26)
+
+## [0.119.8](https://github.com/juspay/hyperswitch-web/compare/v0.119.7...v0.119.8) (2025-03-26)
+
+
+### Bug Fixes
+
+* HyperLoader Reinitialisation ([#966](https://github.com/juspay/hyperswitch-web/issues/966)) ([39f4bf2](https://github.com/juspay/hyperswitch-web/commit/39f4bf24a6cd4f1836139e8cf1af00b9b2b04fca))
+
 ## [0.119.7](https://github.com/juspay/hyperswitch-web/compare/v0.119.6...v0.119.7) (2025-03-25)
 
 ## [0.119.6](https://github.com/juspay/hyperswitch-web/compare/v0.119.5...v0.119.6) (2025-03-25)

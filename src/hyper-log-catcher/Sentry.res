@@ -33,15 +33,9 @@ external reactRouterV6BrowserTracingIntegration: reactRouterV6BrowserTracingInte
 @module("@sentry/react")
 external newSentryReplay: unit => integration = "replayIntegration"
 
-@val @scope("Sentry")
-external initSentryJs: sentryInitArg => unit = "init"
 
 @module("@sentry/react")
 external capture: Exn.t => unit = "captureException"
-
-external newSentryReplayJs: unit => integration = "Sentry.replayIntegration"
-
-external newBrowserTracingJs: unit => integration = "Sentry.browserTracingIntegration"
 
 module ErrorBoundary = {
   type fallbackArg = {
@@ -83,9 +77,9 @@ let initiateSentry = (~dsn) => {
 
 let initiateSentryJs = (~dsn) => {
   try {
-    initSentryJs({
+    initSentry({
       dsn,
-      integrations: [newBrowserTracingJs(), newSentryReplayJs()],
+      integrations: [newBrowserTracing(), newSentryReplay()],
       tracesSampleRate: 1.0,
       tracePropagationTargets: ["localhost"],
       replaysSessionSampleRate: 0.1,

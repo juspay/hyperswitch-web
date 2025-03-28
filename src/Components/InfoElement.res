@@ -19,6 +19,7 @@ let make = () => {
       | ACHTransfer
       | BacsTransfer
       | SepaTransfer
+      | InstantTransfer
       | Boleto =>
         localeString.bankDetailsText
       | _ => localeString.redirectText
