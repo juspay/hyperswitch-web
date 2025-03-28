@@ -1,3 +1,10 @@
+# [0.121.0](https://github.com/juspay/hyperswitch-web/compare/v0.120.2...v0.121.0) (2025-03-28)
+
+
+### Features
+
+* added instant bank transfer method ([#968](https://github.com/juspay/hyperswitch-web/issues/968)) ([a354546](https://github.com/juspay/hyperswitch-web/commit/a35454658c24d39e6d9ba3350d7528087c253994))
+
 ## [0.120.2](https://github.com/juspay/hyperswitch-web/compare/v0.120.1...v0.120.2) (2025-03-28)
 
 
