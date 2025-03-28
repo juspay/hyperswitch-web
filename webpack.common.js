@@ -41,7 +41,6 @@ const authorizedStyleSources = [
   "https://fonts.googleapis.com",
   "http://fonts.googleapis.com",
   "https://src.mastercard.com",
-  "https://src.mastercard.com",
   // Add other trusted sources here
 ];
 
