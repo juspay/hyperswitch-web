@@ -9,28 +9,26 @@ let make = (
   ~sessions,
   ~isClickToPayAuthenticateError,
   ~setIsClickToPayAuthenticateError,
+  ~getVisaCards,
+  ~visaComponentState,
+  ~otpError,
+  ~setOtpError,
+  ~maskedIdentity,
+  ~consumerIdentity,
+  ~setConsumerIdentity,
 ) => {
   open CardUtils
   open Utils
   open UtilityHooks
   open Promise
-  open ClickToPayHelpers
 
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
 
+  let (clickToPayProvider, _) = Recoil.useRecoilState(RecoilAtoms.clickToPayProvider)
   let customerMethods =
     clickToPayConfig.clickToPayCards
     ->Option.getOr([])
-    ->Array.map(obj => obj->PaymentType.convertClickToPayCardToCustomerMethod)
-
-  let (isCTPAuthenticateNotYouClicked, setIsCTPAuthenticateNotYouClicked) = React.useState(_ =>
-    false
-  )
-  let (isShowClickToPayNotYou, setIsShowClickToPayNotYou) = React.useState(_ => false)
-  let (consumerIdentity, setConsumerIdentity) = React.useState(_ => {
-    identityType: EMAIL_ADDRESS,
-    identityValue: "",
-  })
+    ->Array.map(obj => obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider))
 
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
@@ -65,22 +63,13 @@ let make = (
     samsungPaySessionObj.sessionsToken,
     SamsungPay,
   )
+  let (clickToPayRememberMe, setClickToPayRememberMe) = React.useState(_ => false)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let savedCardlength = savedMethods->Array.length
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-
+  let (clickToPayProvider, _) = Recoil.useRecoilState(RecoilAtoms.clickToPayProvider)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
-
-  React.useEffect(() => {
-    if clickToPayConfig.email !== "" && consumerIdentity.identityValue === "" {
-      setConsumerIdentity(_ => {
-        identityType: EMAIL_ADDRESS,
-        identityValue: clickToPayConfig.email,
-      })
-    }
-    None
-  }, [clickToPayConfig.email])
 
   let _closeComponentIfSavedMethodsAreEmpty = () => {
     if savedCardlength === 0 && loadSavedCards !== PaymentType.LoadingSavedCards {
@@ -107,36 +96,26 @@ let make = (
         />
       )
       ->React.array}
-      <RenderIf
-        condition={clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length == 0 &&
-        !isClickToPayAuthenticateError &&
-        clickToPayConfig.email !== ""}>
-        <ClickToPayHelpers.SrcMark
-          cardBrands={clickToPayConfig.availableCardBrands->Array.joinWith(",")} height="32"
-        />
-      </RenderIf>
-      <div id="mastercard-account-verification" />
-      {if isShowClickToPayNotYou {
-        <ClickToPayNotYou
-          setIsShowClickToPayNotYou isCTPAuthenticateNotYouClicked setConsumerIdentity
-        />
-      } else {
-        <ClickToPayAuthenticate
-          consumerIdentity
-          loggerState
-          savedMethods
-          setShowFields
-          setIsCTPAuthenticateNotYouClicked
-          setIsShowClickToPayNotYou
-          isClickToPayAuthenticateError
-          setIsClickToPayAuthenticateError
-          loadSavedCards
-          setPaymentToken
-          paymentTokenVal
-          cvcProps
-          paymentType
-        />
-      }}
+      <ClickToPayAuthenticate
+        loggerState
+        savedMethods
+        setShowFields
+        isClickToPayAuthenticateError
+        setIsClickToPayAuthenticateError
+        loadSavedCards
+        setPaymentToken
+        paymentTokenVal
+        cvcProps
+        paymentType
+        getVisaCards
+        visaComponentState
+        otpError
+        setOtpError
+        maskedIdentity
+        consumerIdentity
+        setConsumerIdentity
+        setClickToPayRememberMe
+      />
     </div>
   }
 
@@ -209,33 +188,54 @@ let make = (
         ClickToPayHelpers.handleProceedToPay(
           ~srcDigitalCardId=customerMethod.paymentToken,
           ~logger=loggerState,
+          ~clickToPayProvider,
+          ~clickToPayRememberMe,
         )
         ->then(resp => {
+          Console.log2("Response", resp)
           let dict = resp.payload->Utils.getDictFromJson
-          let headers = dict->Utils.getDictFromDict("headers")
-          let merchantTransactionId = headers->Utils.getString("merchant-transaction-id", "")
-          let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
-          let correlationId =
-            dict
-            ->Utils.getDictFromDict("checkoutResponseData")
-            ->Utils.getString("srcCorrelationId", "")
 
-          let clickToPayBody = PaymentBody.clickToPayBody(
-            ~merchantTransactionId,
-            ~correlationId,
-            ~xSrcFlowId,
-          )
-          intent(
-            ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
-            ~confirmParam=confirm.confirmParams,
-            ~handleUserError=false,
-            ~manualRetry=isManualRetryEnabled,
-          )
+          switch clickToPayProvider {
+          | MASTERCARD => {
+              let headers = dict->Utils.getDictFromDict("headers")
+              let merchantTransactionId = headers->Utils.getString("merchant-transaction-id", "")
+              let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
+              let correlationId =
+                dict
+                ->Utils.getDictFromDict("checkoutResponseData")
+                ->Utils.getString("srcCorrelationId", "")
+
+              let clickToPayBody = PaymentBody.clickToPayBody(
+                ~merchantTransactionId,
+                ~correlationId,
+                ~xSrcFlowId,
+              )
+              intent(
+                ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                ~confirmParam=confirm.confirmParams,
+                ~handleUserError=false,
+                ~manualRetry=isManualRetryEnabled,
+              )
+            }
+          | VISA => {
+              let clickToPayBody = PaymentBody.visaClickToPayBody(
+                ~email=clickToPayConfig.email,
+                ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
+              )
+              intent(
+                ~bodyArr=clickToPayBody,
+                ~confirmParam=confirm.confirmParams,
+                ~handleUserError=false,
+                ~manualRetry=isManualRetryEnabled,
+              )
+            }
+          | NONE => ()
+          }
           resolve(resp)
         })
         ->catch(_ =>
           resolve({
-            status: ERROR,
+            ClickToPayHelpers.status: ERROR,
             payload: JSON.Encode.null,
           })
         )
