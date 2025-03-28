@@ -4,11 +4,11 @@ let make = (
   options,
   ~clientSecret,
   ~publishableKey,
-  ~logger: option<HyperLogger.loggerMake>,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~ephemeralKey,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
-  let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
+  let logger = logger->Option.getOr(HyperLoggerTypes.defaultLoggerConfig)
   let customPodUri =
     options
     ->JSON.Decode.object

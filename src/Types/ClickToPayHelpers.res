@@ -307,7 +307,7 @@ external getMastercardCheckoutServices: unit => mastercardCheckoutServices =
 // Then update the initialization function
 let initializeMastercardCheckout = (
   clickToPayToken: clickToPayToken,
-  logger: HyperLogger.loggerMake,
+  logger: HyperLoggerTypes.loggerMake,
 ) => {
   switch getOptionMastercardCheckoutServices {
   | Some(_) => {
@@ -414,7 +414,7 @@ let initializeMastercardCheckout = (
   }
 }
 
-let getCards = async (logger: HyperLogger.loggerMake) => {
+let getCards = async (logger: HyperLoggerTypes.loggerMake) => {
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
@@ -451,7 +451,10 @@ type authenticateInputPayload = {
 @val @scope(("window", "location"))
 external hostname: string = "hostname"
 
-let authenticate = async (payload: authenticateInputPayload, logger: HyperLogger.loggerMake) => {
+let authenticate = async (
+  payload: authenticateInputPayload,
+  logger: HyperLoggerTypes.loggerMake,
+) => {
   // Construct the authenticate payload
   let authenticatePayload = {
     windowRef: payload.windowRef,
@@ -501,7 +504,7 @@ let authenticate = async (payload: authenticateInputPayload, logger: HyperLogger
 let checkoutWithCard = async (
   ~windowRef: window,
   ~srcDigitalCardId: string,
-  ~logger: HyperLogger.loggerMake,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   let checkoutPayload = {
     windowRef,
@@ -539,7 +542,7 @@ let encryptCardForClickToPay = async (
   ~expiryMonth,
   ~expiryYear,
   ~cvcNumber,
-  ~logger: HyperLogger.loggerMake,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   let card: encryptCardPayload = {
     primaryAccountNumber: cardNumber,
@@ -581,7 +584,7 @@ external checkoutWithNewCard: (
 
 let checkoutWithNewCard = async (
   payload: checkoutWithNewCardPayload,
-  ~logger: HyperLogger.loggerMake,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   try {
     switch mcCheckoutService.contents {
@@ -633,7 +636,7 @@ external topLocationHref: string = "href"
 @set external setOnError: (Dom.element, unit => unit) => unit = "onerror"
 
 // Add the function at the end of the file
-let loadClickToPayScripts = (logger: HyperLogger.loggerMake) => {
+let loadClickToPayScripts = (logger: HyperLoggerTypes.loggerMake) => {
   Promise.make((clickToPayScriptsPromiseResolve, _) => {
     let scriptSelector = `script[src="${srcUiKitScriptSrc}"]`
     let linkSelector = `link[href="${srcUiKitCssHref}"]`
@@ -696,7 +699,7 @@ let loadClickToPayScripts = (logger: HyperLogger.loggerMake) => {
 }
 
 // Add this function at the end of the file
-let loadMastercardScript = (clickToPayToken, isProd, logger: HyperLogger.loggerMake) => {
+let loadMastercardScript = (clickToPayToken, isProd, logger: HyperLoggerTypes.loggerMake) => {
   let scriptSrc = isProd->getScriptSrc
   Promise.make((resolve, reject) => {
     let scriptSelector = `script[src="${scriptSrc}"]`
@@ -829,7 +832,7 @@ let handleProceedToPay = async (
   ~phoneNumber: string="",
   ~countryCode: string="",
   ~rememberMe: bool=false,
-  ~logger: HyperLogger.loggerMake,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   let closeWindow = (status, payload: JSON.t) => {
     handleCloseClickToPayWindow()

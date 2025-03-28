@@ -147,7 +147,7 @@ module ErrorCard = {
 
         errorDict->Dict.set("componentName", componentName->JSON.Encode.string)
 
-        let errorLog: HyperLogger.logFile = {
+        let errorLog: HyperLoggerTypes.logFile = {
           logType: ERROR,
           timestamp: Date.now()->Float.toString,
           sessionId: "",
