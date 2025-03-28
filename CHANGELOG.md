@@ -1,3 +1,10 @@
+## [0.121.2](https://github.com/juspay/hyperswitch-web/compare/v0.121.1...v0.121.2) (2025-03-28)
+
+
+### Bug Fixes
+
+* bancontact confirm payload ([#976](https://github.com/juspay/hyperswitch-web/issues/976)) ([bd5b5b1](https://github.com/juspay/hyperswitch-web/commit/bd5b5b1376aac14422af989bebe9c976ce3b4b05))
+
 ## [0.121.1](https://github.com/juspay/hyperswitch-web/compare/v0.121.0...v0.121.1) (2025-03-28)
 
 # [0.121.0](https://github.com/juspay/hyperswitch-web/compare/v0.120.2...v0.121.0) (2025-03-28)
