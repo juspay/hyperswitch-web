@@ -566,8 +566,7 @@ let getSupportedCardBrands = (paymentMethodListValue: PaymentMethodsRecord.payme
   }
 }
 
-let checkIsCardSupported = (cardNumber, supportedCardBrands) => {
-  let cardBrand = cardNumber->CardUtils.getCardBrand
+let checkIsCardSupported = (cardNumber, cardBrand, supportedCardBrands) => {
   let clearValue = cardNumber->CardUtils.clearSpaces
   if cardBrand == "" {
     Some(CardUtils.cardValid(clearValue, cardBrand))
