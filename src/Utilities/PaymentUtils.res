@@ -57,7 +57,11 @@ let paymentListLookupNew = (
       }
     } else if item.methodType == "bank_debit" {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_debit")->ignore
-    } else if item.methodType == "bank_transfer" {
+    } else if (
+      item.methodType == "bank_transfer" &&
+        (item.paymentMethodName !== "sepa_bank_transfer" &&
+        item.paymentMethodName !== "instant_bank_transfer")
+    ) {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_transfer")->ignore
     } else if item.methodType == "card" {
       otherPaymentList->Array.push("card")->ignore
@@ -97,7 +101,7 @@ type paylater = Klarna(exp) | AfterPay(exp) | Affirm(exp)
 type wallet = Gpay(exp) | ApplePay(exp) | Paypal(exp)
 type card = Credit(exp) | Debit(exp)
 type banks = Sofort | Eps | GiroPay | Ideal | EFT
-type transfer = ACH | Sepa | Bacs
+type transfer = ACH | Sepa | Bacs | Instant
 type connectorType =
   | PayLater(paylater)
   | Wallets(wallet)
@@ -148,6 +152,7 @@ let getMethodType = method => {
     | ACH => "ach"
     | Bacs => "bacs"
     | Sepa => "sepa"
+    | Instant => "instant"
     }
   | Crypto => "crypto_currency"
   }
@@ -248,7 +253,11 @@ let getDisplayNameAndIcon = (
 let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
   if paymentMethodType == "bank_debit" {
     paymentMethodName->String.replace("_debit", "")
-  } else if paymentMethodType == "bank_transfer" {
+  } else if (
+    paymentMethodType == "bank_transfer" &&
+      (paymentMethodName !== "sepa_bank_transfer" &&
+      paymentMethodName !== "instant_bank_transfer")
+  ) {
     paymentMethodName->String.replace("_transfer", "")
   } else {
     paymentMethodName
