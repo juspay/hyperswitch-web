@@ -68,11 +68,20 @@ const authorizedImageSources = [
 // List of authorized external frame sources
 const authorizedFrameSources = [
   "'self'",
+  "https://checkout.hyperswitch.io",
+  "https://dev.hyperswitch.io",
+  "https://beta.hyperswitch.io",
+  "https://live.hyperswitch.io",
+  "https://integ.hyperswitch.io",
+  "https://app.hyperswitch.io",
+  "https://sandbox.hyperswitch.io",
+  "https://api.hyperswitch.io",
   "https://pay.google.com",
   "https://www.sandbox.paypal.com",
   "https://sandbox.src.mastercard.com/",
   "https://sandbox.secure.checkout.visa.com/",
   "https://checkout.wallet.cat.earlywarning.io/",
+  "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/",
   // Add other trusted sources here
 ];
 
