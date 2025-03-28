@@ -7,7 +7,13 @@ module RenderSavedPaymentMethodItem = {
         className="flex flex-col items-start"
         role="group"
         ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
-        <div className="text-base tracking-wide"> {React.string(paymentItem.card.nickname)} </div>
+        <div className="text-base tracking-wide">
+          {React.string(
+            paymentItem.card.nickname->String.length > 15
+              ? paymentItem.card.nickname->String.slice(~start=0, ~end=13)->String.concat("..")
+              : paymentItem.card.nickname,
+          )}
+        </div>
         <div className={`PickerItemLabel flex flex-row gap-3 items-center text-sm`}>
           <div className="tracking-widest" ariaHidden=true> {React.string(`****`)} </div>
           <div className="tracking-wide" ariaHidden=true>
