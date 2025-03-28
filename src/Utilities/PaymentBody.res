@@ -67,10 +67,17 @@ let cardPaymentBody = (
   ]
 }
 
-let bancontactBody = () => [
-  ("payment_method", "bank_redirect"->JSON.Encode.string),
-  ("payment_method_type", "bancontact_card"->JSON.Encode.string),
-]
+let bancontactBody = () => {
+  let bancontactField =
+    [("bancontact_card", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
+  let bankRedirectField = [("bank_redirect", bancontactField)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "bank_redirect"->JSON.Encode.string),
+    ("payment_method_type", "bancontact_card"->JSON.Encode.string),
+    ("payment_method_data", bankRedirectField),
+  ]
+}
 
 let boletoBody = (~socialSecurityNumber) => [
   ("payment_method", "voucher"->JSON.Encode.string),
