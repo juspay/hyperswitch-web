@@ -9,6 +9,98 @@ const TerserPlugin = require("terser-webpack-plugin");
 const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
+const { SubresourceIntegrityPlugin } = require("webpack-subresource-integrity");
+
+// List of authorized external script sources (for Content Security Policy)
+const authorizedScriptSources = [
+  "'self'",
+  "https://js.braintreegateway.com",
+  "https://tpgw.trustpay.eu/js/v1.js",
+  "https://test-tpgw.trustpay.eu/js/v1.js",
+  "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js",
+  "https://pay.google.com",
+  "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js",
+  "https://apple.com/apple-pay",
+  "https://x.klarnacdn.net/kp/lib/v1/api.js",
+  "https://www.paypal.com/sdk/js",
+  "https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js",
+  "https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js",
+  "https://cdn.plaid.com/link/v2/stable/link-initialize.js",
+  "https://www.sandbox.paypal.com",
+  "https://www.google.com/pay",
+  "https://sandbox.secure.checkout.visa.com",
+  "https://src.mastercard.com",
+  "https://sandbox.src.mastercard.com",
+  // Add other trusted sources here
+];
+
+// List of authorized external styles sources
+const authorizedStyleSources = [
+  "'self'",
+  "'unsafe-inline'",
+  "https://fonts.googleapis.com",
+  "http://fonts.googleapis.com",
+  "https://src.mastercard.com",
+  // Add other trusted sources here
+];
+
+// List of authorized external font sources
+const authorizedFontSources = [
+  "'self'",
+  "https://fonts.gstatic.com",
+  "http://fonts.gstatic.com",
+  // Add other trusted sources here
+];
+
+// List of authorized external image sources
+const authorizedImageSources = [
+  "'self'",
+  "https://www.gstatic.com",
+  "https://static.scarf.sh/a.png",
+  "https://www.paypalobjects.com",
+  "https://googleads.g.doubleclick.net",
+  "https://www.google.com",
+  "data: *",
+  // Add other trusted sources here
+];
+
+// List of authorized external frame sources
+const authorizedFrameSources = [
+  "'self'",
+  "https://checkout.hyperswitch.io",
+  "https://dev.hyperswitch.io",
+  "https://beta.hyperswitch.io",
+  "https://live.hyperswitch.io",
+  "https://integ.hyperswitch.io",
+  "https://app.hyperswitch.io",
+  "https://sandbox.hyperswitch.io",
+  "https://api.hyperswitch.io",
+  "https://pay.google.com",
+  "https://www.sandbox.paypal.com",
+  "https://sandbox.src.mastercard.com/",
+  "https://sandbox.secure.checkout.visa.com/",
+  "https://checkout.wallet.cat.earlywarning.io/",
+  "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/",
+  // Add other trusted sources here
+];
+
+// List of authorized external connect sources
+const authorizedConnectSources = [
+  "'self'",
+  "https://checkout.hyperswitch.io",
+  "https://dev.hyperswitch.io",
+  "https://beta.hyperswitch.io",
+  "https://live.hyperswitch.io",
+  "https://integ.hyperswitch.io",
+  "https://app.hyperswitch.io",
+  "https://sandbox.hyperswitch.io",
+  "https://api.hyperswitch.io",
+  "https://www.google.com/pay",
+  "https://pay.google.com",
+  "https://google.com/pay",
+  "https://www.sandbox.paypal.com",
+  // Add other trusted sources here
+];
 
 // Helper function to get environment variables with fallback
 const getEnvVariable = (variable, defaultValue) =>
@@ -126,14 +218,55 @@ module.exports = (publicPath = "auto") => {
     }),
     new webpack.DefinePlugin(definePluginValues),
     new HtmlWebpackPlugin({
-      inject: false,
+      inject: true,
       template: "./public/build.html",
+      chunks: ["app"],
+      scriptLoading: "blocking",
+      // Add CSP meta tag
+      meta: {
+        "Content-Security-Policy": {
+          "http-equiv": "Content-Security-Policy",
+          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+            " "
+          )}; 
+          style-src ${authorizedStyleSources.join(" ")};
+          frame-src ${authorizedFrameSources.join(" ")};
+          img-src ${authorizedImageSources.join(" ")};
+          font-src ${authorizedFontSources.join(" ")}; 
+          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
+`,
+        },
+      },
     }),
     new HtmlWebpackPlugin({
       // Also generate a test.html
-      inject: false,
+      inject: true,
       filename: "fullscreenIndex.html",
       template: "./public/fullscreenIndexTemplate.html",
+      // Add CSP meta tag
+      meta: {
+        "Content-Security-Policy": {
+          "http-equiv": "Content-Security-Policy",
+          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+            " "
+          )};
+          style-src ${authorizedStyleSources.join(" ")};
+          frame-src ${authorizedFrameSources.join(" ")}; 
+          img-src ${authorizedImageSources.join(" ")};
+          font-src ${authorizedFontSources.join(" ")};
+          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
+          `,
+        },
+      },
+    }),
+    new SubresourceIntegrityPlugin({
+      hashFuncNames: ["sha384"],
+      enabled: process.env.NODE_ENV === "production",
+    }),
+    // Build-time verification plugin
+    new webpack.DefinePlugin({
+      // Custom verification to ensure SRI is enforced
+      __VERIFY_SRI__: JSON.stringify(process.env.NODE_ENV === "production"),
     }),
   ];
 
@@ -169,7 +302,7 @@ module.exports = (publicPath = "auto") => {
 
   return {
     mode: isLocal ? "development" : "production",
-    devtool: isLocal ? "eval-source-map" : "source-map",
+    devtool: isLocal ? "cheap-module-source-map" : "source-map",
     output: {
       path: isLocal
         ? path.resolve(__dirname, "dist")
@@ -177,6 +310,7 @@ module.exports = (publicPath = "auto") => {
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,
+      hashFunction: "sha384",
     },
     optimization: isLocal
       ? {}
