@@ -539,7 +539,12 @@ let make = (
                     })
                     ->ignore
                   }
-                | _ => ()
+                | _ =>
+                  logger.setLogInfo(
+                    ~value="Connector Not Found",
+                    ~eventName=GOOGLE_PAY_FLOW,
+                    ~paymentMethod="GOOGLE_PAY",
+                  )
                 }
               } catch {
               | err => {
@@ -668,7 +673,12 @@ let make = (
                       event.source->Window.sendPostMessage(msg)
                     }
                   }
-                | _ => ()
+                | _ =>
+                  logger.setLogInfo(
+                    ~value="Connector Not Found",
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                  )
                 }
               }
             } else {
