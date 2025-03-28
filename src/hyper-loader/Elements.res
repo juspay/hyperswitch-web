@@ -16,14 +16,14 @@ let make = (
   ~clientSecret,
   ~sdkSessionId,
   ~publishableKey,
-  ~logger: option<HyperLogger.loggerMake>,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
+    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 

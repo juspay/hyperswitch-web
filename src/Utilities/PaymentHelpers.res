@@ -306,7 +306,7 @@ let rec intentCall = (
 
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
   let isPostSessionTokens = uri->String.includes("/post_session_tokens")
-  let (eventName: HyperLogger.eventName, initEventName: HyperLogger.eventName) = switch (
+  let (eventName: HyperLoggerTypes.eventName, initEventName: HyperLoggerTypes.eventName) = switch (
     isConfirm,
     isCompleteAuthorize,
     isPostSessionTokens,
@@ -927,7 +927,7 @@ let rec intentCall = (
   })
 }
 
-let usePaymentSync = (optLogger: option<HyperLogger.loggerMake>, paymentType: payment) => {
+let usePaymentSync = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let keys = Recoil.useRecoilValueFromAtom(keys)
