@@ -8,7 +8,7 @@ let make = (
   ~ephemeralKey,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
-  let logger = logger->Option.getOr(HyperLoggerTypes.defaultLoggerConfig)
+  let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =
     options
     ->JSON.Decode.object

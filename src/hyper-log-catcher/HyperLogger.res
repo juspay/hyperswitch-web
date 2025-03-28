@@ -1,4 +1,5 @@
 open HyperLoggerTypes
+open LoggerUtils
 
 let logFileToObj = logFile => {
   [

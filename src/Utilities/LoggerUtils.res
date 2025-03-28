@@ -68,3 +68,61 @@ let handleLogging = (
   | _ => ()
   }
 }
+
+let eventNameToStrMapper = (eventName: HyperLoggerTypes.eventName) => (eventName :> string)
+
+let getPaymentId = clientSecret =>
+  String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
+
+let convertToScreamingSnakeCase = text => {
+  text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
+}
+
+let toSnakeCaseWithSeparator = (str, separator) => {
+  str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
+    `${separator}${letter->String.toLowerCase}`
+  )
+}
+
+let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
+  sendLogs: () => (),
+  setClientSecret: _x => (),
+  setEphemeralKey: _x => (),
+  setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
+  setLogError: (
+    ~value as _,
+    ~internalMetadata as _=?,
+    ~eventName as _,
+    ~timestamp as _=?,
+    ~latency as _=?,
+    ~logType as _=?,
+    ~logCategory as _=?,
+    ~paymentMethod as _=?,
+  ) => (),
+  setLogApi: (
+    ~value as _,
+    ~internalMetadata as _,
+    ~eventName as _,
+    ~timestamp as _=?,
+    ~logType as _=?,
+    ~logCategory as _=?,
+    ~paymentMethod as _=?,
+    ~apiLogType as _=?,
+    ~isPaymentSession as _=?,
+  ) => (),
+  setLogInfo: (
+    ~value as _,
+    ~internalMetadata as _=?,
+    ~eventName as _,
+    ~timestamp as _=?,
+    ~latency as _=?,
+    ~logType as _=?,
+    ~logCategory as _=?,
+    ~paymentMethod as _=?,
+  ) => (),
+  setLogInitiated: () => (),
+  setMerchantId: _x => (),
+  setSessionId: _x => (),
+  setMetadata: _x => (),
+  setSource: _x => (),
+}

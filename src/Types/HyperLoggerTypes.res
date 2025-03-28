@@ -94,21 +94,6 @@ type eventName =
   | CLICK_TO_PAY_FLOW
   | PAYMENT_METHOD_TYPE_DETECTION_FAILED
 
-let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
-
-let getPaymentId = clientSecret =>
-  String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-
-let convertToScreamingSnakeCase = text => {
-  text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
-}
-
-let toSnakeCaseWithSeparator = (str, separator) => {
-  str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
-    `${separator}${letter->String.toLowerCase}`
-  )
-}
-
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
 
@@ -174,47 +159,4 @@ type loggerMake = {
   setMetadata: JSON.t => unit,
   setSource: string => unit,
   setEphemeralKey: string => unit,
-}
-
-let defaultLoggerConfig = {
-  sendLogs: () => (),
-  setClientSecret: _x => (),
-  setEphemeralKey: _x => (),
-  setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
-  setLogError: (
-    ~value as _,
-    ~internalMetadata as _=?,
-    ~eventName as _,
-    ~timestamp as _=?,
-    ~latency as _=?,
-    ~logType as _=?,
-    ~logCategory as _=?,
-    ~paymentMethod as _=?,
-  ) => (),
-  setLogApi: (
-    ~value as _,
-    ~internalMetadata as _,
-    ~eventName as _,
-    ~timestamp as _=?,
-    ~logType as _=?,
-    ~logCategory as _=?,
-    ~paymentMethod as _=?,
-    ~apiLogType as _=?,
-    ~isPaymentSession as _=?,
-  ) => (),
-  setLogInfo: (
-    ~value as _,
-    ~internalMetadata as _=?,
-    ~eventName as _,
-    ~timestamp as _=?,
-    ~latency as _=?,
-    ~logType as _=?,
-    ~logCategory as _=?,
-    ~paymentMethod as _=?,
-  ) => (),
-  setLogInitiated: () => (),
-  setMerchantId: _x => (),
-  setSessionId: _x => (),
-  setMetadata: _x => (),
-  setSource: _x => (),
 }

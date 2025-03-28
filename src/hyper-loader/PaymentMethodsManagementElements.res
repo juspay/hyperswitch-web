@@ -16,7 +16,7 @@ let make = (
   let hyperComponentName = PaymentMethodsManagementElements
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(HyperLoggerTypes.defaultLoggerConfig)
+    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
