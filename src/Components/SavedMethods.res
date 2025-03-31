@@ -24,7 +24,7 @@ let make = (
 
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
 
-  let (clickToPayProvider, _) = Recoil.useRecoilState(RecoilAtoms.clickToPayProvider)
+  let clickToPayProvider = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayProvider)
   let customerMethods =
     clickToPayConfig.clickToPayCards
     ->Option.getOr([])
@@ -68,7 +68,6 @@ let make = (
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let savedCardlength = savedMethods->Array.length
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let (clickToPayProvider, _) = Recoil.useRecoilState(RecoilAtoms.clickToPayProvider)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
   let _closeComponentIfSavedMethodsAreEmpty = () => {

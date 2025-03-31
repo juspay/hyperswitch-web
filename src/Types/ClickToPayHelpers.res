@@ -966,7 +966,7 @@ let defaultProfile = {
   maskedCards: [],
 }
 
-type visaComponentState = CARDS_LOADING | OTP_INPUT | ERROR | NONE
+type visaComponentState = CARDS_LOADING | OTP_INPUT | NONE
 
 type visaEncryptCardPayload = {
   primaryAccountNumber: string,
@@ -980,18 +980,21 @@ type visaEncryptCardPayload = {
 
 let getCardsVisaUnified = (~getCardsConfig) => vsdk.getCards(getCardsConfig)
 
-let loadVisaScript = (onLoadCallback, onErrorCallback) => {
-  let scriptSrc = "https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=498WCF39JVQVH1UK4TGG21leLAj_MJQoapP5f12IanfEYaSno&locale=en_US&cardBrands=visa,mastercard&dpaClientId=TestMerchant"
+let loadVisaScript = (
+  clickToPayToken: clickToPayToken,
+  isProd,
+  onLoadCallback,
+  onErrorCallback,
+) => {
+  let cardBrands = clickToPayToken.cardBrands->Array.joinWith(",")
+  let scriptSrc = isProd
+    ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=TestMerchant`
+    : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=TestMerchant`
   let script = createElement("script")
   script->setType("text/javascript")
   script->setSrc(scriptSrc)
-  script->setOnLoad(() => {
-    let _ = onLoadCallback()
-  })
-  script->setOnError(() => {
-    Console.log("Visa Script Load Error")
-    onErrorCallback()
-  })
+  script->setOnLoad(onLoadCallback)
+  script->setOnError(onErrorCallback)
   appendChildInBody(script)
 }
 
@@ -1105,6 +1108,7 @@ let checkoutVisaUnified = async (
   | true => {
       ...defaultConfig,
       encryptedCard,
+      //TODO: remove hardcoded data
       consumer: {
         consumerIdentity: {
           identityProvider: "SRC",
@@ -1126,6 +1130,7 @@ let checkoutVisaUnified = async (
     }
   }
   Console.log("proceding with checkout...")
+  Console.log(checkoutConfig)
   let res = await vsdk.checkout(checkoutConfig)
   Console.log(res)
   res

@@ -162,8 +162,6 @@ async function importPublicKey(certPem) {
       key_ops: ["encrypt"],
     };
 
-    console.log("JWK:", jwk); // For debugging
-
     // Import the JWK
     return await crypto.subtle.importKey(
       "jwk",
@@ -176,7 +174,6 @@ async function importPublicKey(certPem) {
       ["encrypt"]
     );
   } catch (error) {
-    console.error("Error importing key:", error);
     throw error;
   }
 }

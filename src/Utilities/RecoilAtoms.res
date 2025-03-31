@@ -125,5 +125,5 @@ let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFla
 
 let clickToPayProvider = Recoil.atom(
   "clickToPayProvider",
-  (VISA: ClickToPayHelpers.ctpProviderType),
+  (MASTERCARD: ClickToPayHelpers.ctpProviderType),
 )

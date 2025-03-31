@@ -15,7 +15,16 @@ let make = (
   let (isValid, setIsValid) = React.useState(_ => false)
   let (identifierType, setIdentifierType) = React.useState(_ => EMAIL_ADDRESS)
 
-  let (clickToPayProvider, _) = Recoil.useRecoilState(RecoilAtoms.clickToPayProvider)
+  let clickToPayProvider = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayProvider)
+
+  let updateCtpNotYouState = consumerIdentity => {
+    setClickToPayConfig(prev => {
+      ...prev,
+      clickToPayCards: Some([]),
+    })
+    setConsumerIdentity(_ => consumerIdentity)
+    setIsShowClickToPayNotYou(_ => false)
+  }
 
   let onContinue = consumerIdentity => {
     open Promise
@@ -23,26 +32,23 @@ let make = (
     | MASTERCARD =>
       ClickToPayHelpers.signOut()
       ->finally(() => {
-        setClickToPayConfig(prev => {
-          ...prev,
-          clickToPayCards: Some([]),
-        })
-        setIsShowClickToPayNotYou(_ => false)
-        setConsumerIdentity(_ => consumerIdentity)
+        updateCtpNotYouState(consumerIdentity)
       })
       ->catch(err => resolve(Error(err)))
       ->ignore
     | VISA =>
-      setClickToPayConfig(prev => {
-        ...prev,
-        clickToPayCards: Some([]),
-      })
-      setIsShowClickToPayNotYou(_ => false)
-      setConsumerIdentity(_ => consumerIdentity)
-      getVisaCards(
-        ~identityValue=consumerIdentity.identityValue,
-        ~identityType=consumerIdentity.identityType,
-      )
+      // TODO: Unbind the device id here
+      updateCtpNotYouState(consumerIdentity)
+
+      (
+        async _ => {
+          await getVisaCards(
+            ~identityValue=consumerIdentity.identityValue,
+            ~otp="",
+            ~identityType=consumerIdentity.identityType,
+          )
+        }
+      )()->ignore
     | NONE => ()
     }
   }

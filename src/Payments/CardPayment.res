@@ -78,7 +78,7 @@ let make = (
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
-  let (clickToPayProvider, _) = Recoil.useRecoilState(RecoilAtoms.clickToPayProvider)
+  let clickToPayProvider = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayProvider)
   React.useEffect(() => {
     if (
       cardBrand === "" ||

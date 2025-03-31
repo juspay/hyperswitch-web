@@ -6,7 +6,7 @@ let useClickToPay = (
   ~setAreClickToPayUIScriptsLoaded,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
-  let (clickToPayProvider, _) = Recoil.useRecoilState(RecoilAtoms.clickToPayProvider)
+  let clickToPayProvider = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayProvider)
   let (visaComponentState, setVisaComponentState) = React.useState(_ => NONE)
   let (maskedIdentity, setMaskedIdentity) = React.useState(_ => "")
   let (otpError, setOtpError) = React.useState(_ => "")
@@ -17,12 +17,14 @@ let useClickToPay = (
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let sessionsObj = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let isProd = publishableKey->String.startsWith("pk_prd_")
+  let (ctpToken: option<ClickToPayHelpers.clickToPayToken>, setCtpToken) = React.useState(_ => None)
 
-  let getVisaCards = async (
-    ~identityValue=clickToPayConfig.email,
-    ~otp="",
-    ~identityType=consumerIdentity.identityType,
-  ) => {
+  let getVisaCards: (
+    ~identityValue: string,
+    ~otp: string,
+    ~identityType: ClickToPayHelpers.identityType,
+  ) => promise<unit> = async (~identityValue, ~otp, ~identityType) => {
     let consumerIdentity = {
       identityProvider: "SRC",
       identityValue,
@@ -63,7 +65,6 @@ let useClickToPay = (
         // TODO: need to prompt user to add card
         setVisaComponentState(_ => NONE)
 
-        ()
       | FAILED
       | ERROR =>
         if otp != "" {
@@ -98,173 +99,140 @@ let useClickToPay = (
 
   let initVisaUnified = async email => {
     try {
-      let initConfig = {
-        dpaTransactionOptions: {
-          dpaLocale: "en_US",
-          paymentOptions: [
-            {
-              dpaDynamicDataTtlMinutes: 15,
-              dynamicDataType: #CARD_APPLICATION_CRYPTOGRAM_LONG_FORM,
+      switch ctpToken {
+      | Some(token) => {
+          let initConfig = {
+            dpaTransactionOptions: {
+              dpaLocale: token.locale,
+              paymentOptions: [
+                {
+                  dpaDynamicDataTtlMinutes: 15,
+                  dynamicDataType: #CARD_APPLICATION_CRYPTOGRAM_LONG_FORM,
+                },
+              ],
+              transactionAmount: {
+                transactionAmount: token.transactionAmount->Float.toString,
+                transactionCurrencyCode: token.transactionCurrencyCode,
+              },
+              dpaBillingPreference: "NONE",
+              consumerNationalIdentifierRequested: false,
+              payloadTypeIndicator: "FULL",
+              acquirerBIN: token.acquirerBIN,
+              acquirerMerchantId: token.acquirerMerchantId,
+              merchantCategoryCode: token.merchantCategoryCode,
+              merchantCountryCode: token.merchantCountryCode,
+              merchantOrderId: "fd65f14b-8155-47f0-bfa9-65ff9df0f760",
             },
-          ],
-          transactionAmount: {
-            transactionAmount: "123.94",
-            transactionCurrencyCode: "USD",
-          },
-          dpaBillingPreference: "NONE",
-          consumerNationalIdentifierRequested: false,
-          payloadTypeIndicator: "FULL",
-          acquirerBIN: "455555",
-          acquirerMerchantId: "12345678",
-          merchantCategoryCode: "4829",
-          merchantCountryCode: "US",
-          merchantOrderId: "fd65f14b-8155-47f0-bfa9-65ff9df0f760",
-        },
-        correlationId: "my-id",
-      }
+            correlationId: "my-id",
+          }
 
-      setVisaComponentState(_ => CARDS_LOADING)
-      let _ = await vsdk.initialize(initConfig)
-      let _ = await getVisaCards(~identityValue=email)
+          setVisaComponentState(_ => CARDS_LOADING)
+          let _ = await vsdk.initialize(initConfig)
+          let _ = await getVisaCards(~identityValue=email, ~otp="", ~identityType=EMAIL_ADDRESS)
+        }
+      | None => ()
+      }
     } catch {
     | _ => setVisaComponentState(_ => NONE)
     }
   }
-  let visaScriptOnLoadCallback = ssn => {
+
+  let getClickToPayToken = ssn => {
     let dict = ssn->getDictFromJson
     let clickToPaySessionObj = SessionsType.itemToObjMapper(dict, ClickToPayObject)
-    let clickToPayToken = SessionsType.getPaymentSessionObj(
-      clickToPaySessionObj.sessionsToken,
-      ClickToPay,
-    )
-    switch clickToPayToken {
-    | ClickToPayTokenOptional(optToken) => {
-        switch optToken {
-        | Some(token) => {
-            let clickToPayToken = ClickToPayHelpers.clickToPayTokenItemToObjMapper(token)
-            setTimeout(() => {
-              let availableCardBrands = ["mastercard", "visa"]
-              setClickToPayConfig(prev => {
-                ...prev,
-                isReady: Some(true),
-                availableCardBrands,
-                email: clickToPayToken.email,
-                dpaName: clickToPayToken.dpaName,
-              })
-            }, 6000)->ignore
-          }
-        | None =>
-          setClickToPayConfig(prev => {
-            ...prev,
-            isReady: Some(false),
-          })
-        }
-        ()
-      }
-    | _ =>
-      setClickToPayConfig(prev => {
-        ...prev,
-        isReady: Some(false),
-      })
+    switch SessionsType.getPaymentSessionObj(clickToPaySessionObj.sessionsToken, ClickToPay) {
+    | ClickToPayTokenOptional(Some(token)) =>
+      setCtpToken(_ => Some(ClickToPayHelpers.clickToPayTokenItemToObjMapper(token)))
+      Some(ClickToPayHelpers.clickToPayTokenItemToObjMapper(token))
+    | _ => None
     }
   }
 
-  let visaScriptOnErrorCallback = () => {
+  let setClickToPayNotReady = () =>
     setClickToPayConfig(prev => {
       ...prev,
       isReady: Some(false),
     })
+
+  let visaScriptOnLoadCallback = ssn => {
+    switch getClickToPayToken(ssn) {
+    | Some(clickToPayToken) => setTimeout(() => {
+        let availableCardBrands = ["mastercard", "visa"]
+        setClickToPayConfig(prev => {
+          ...prev,
+          isReady: Some(true),
+          availableCardBrands,
+          email: clickToPayToken.email,
+          dpaName: clickToPayToken.dpaName,
+        })
+      }, 6000)->ignore
+    | None => setClickToPayNotReady()
+    }
   }
 
   let loadVisaScript = async ssn => {
     try {
-      ClickToPayHelpers.loadVisaScript(
-        () => visaScriptOnLoadCallback(ssn),
-        visaScriptOnErrorCallback,
-      )
       ClickToPayHelpers.loadClickToPayUIScripts(
         loggerState,
         () => setAreClickToPayUIScriptsLoaded(_ => true),
-        () =>
-          setClickToPayConfig(prev => {
-            ...prev,
-            isReady: Some(false),
-          }),
+        setClickToPayNotReady,
       )
+      switch getClickToPayToken(ssn) {
+      | Some(clickToPayToken) =>
+        ClickToPayHelpers.loadVisaScript(
+          clickToPayToken,
+          isProd,
+          () => visaScriptOnLoadCallback(ssn),
+          setClickToPayNotReady,
+        )
+
+      | None => setClickToPayNotReady()
+      }
     } catch {
-    | _ =>
-      setClickToPayConfig(prev => {
-        ...prev,
-        isReady: Some(false),
-      })
+    | _ => setClickToPayNotReady()
     }
   }
 
   let loadMastercardClickToPayScript = ssn => {
     open Promise
-    let dict = ssn->getDictFromJson
-    let clickToPaySessionObj = SessionsType.itemToObjMapper(dict, ClickToPayObject)
-    let clickToPayToken = SessionsType.getPaymentSessionObj(
-      clickToPaySessionObj.sessionsToken,
-      ClickToPay,
-    )
-
-    switch clickToPayToken {
-    | ClickToPayTokenOptional(optToken) =>
-      switch optToken {
-      | Some(token) =>
-        let clickToPayToken = ClickToPayHelpers.clickToPayTokenItemToObjMapper(token)
-        let isProd = publishableKey->String.startsWith("pk_prd_")
-        ClickToPayHelpers.loadClickToPayScripts(loggerState)
-        ->then(_ => {
-          setAreClickToPayUIScriptsLoaded(_ => true)
-          resolve()
-        })
-        ->catch(_ => {
-          loggerState.setLogError(
-            ~value="ClickToPay UI Kit CSS Load Error",
-            ~eventName=CLICK_TO_PAY_SCRIPT,
-          )
-          resolve()
-        })
-        ->ignore
-        ClickToPayHelpers.loadMastercardScript(clickToPayToken, isProd, loggerState)
-        ->then(resp => {
-          let availableCardBrands =
-            resp
-            ->Utils.getDictFromJson
-            ->Utils.getArray("availableCardBrands")
-            ->Array.map(item => item->JSON.Decode.string->Option.getOr(""))
-            ->Array.filter(item => item !== "")
-
-          setClickToPayConfig(prev => {
-            ...prev,
-            isReady: Some(true),
-            availableCardBrands,
-            email: clickToPayToken.email,
-            dpaName: clickToPayToken.dpaName,
-          })
-          resolve()
-        })
-        ->catch(_ => {
-          setClickToPayConfig(prev => {
-            ...prev,
-            isReady: Some(false),
-          })
-          resolve()
-        })
-        ->ignore
-      | None =>
+    switch getClickToPayToken(ssn) {
+    | Some(clickToPayToken) =>
+      ClickToPayHelpers.loadClickToPayScripts(loggerState)
+      ->then(_ => {
+        setAreClickToPayUIScriptsLoaded(_ => true)
+        resolve()
+      })
+      ->catch(_ => {
+        loggerState.setLogError(
+          ~value="ClickToPay UI Kit CSS Load Error",
+          ~eventName=CLICK_TO_PAY_SCRIPT,
+        )
+        resolve()
+      })
+      ->ignore
+      ClickToPayHelpers.loadMastercardScript(clickToPayToken, isProd, loggerState)
+      ->then(resp => {
+        let availableCardBrands =
+          resp
+          ->Utils.getDictFromJson
+          ->Utils.getArray("availableCardBrands")
+          ->Array.map(item => item->JSON.Decode.string->Option.getOr(""))
+          ->Array.filter(item => item !== "")
         setClickToPayConfig(prev => {
           ...prev,
-          isReady: Some(false),
+          isReady: Some(true),
+          availableCardBrands,
+          email: clickToPayToken.email,
+          dpaName: clickToPayToken.dpaName,
         })
-      }
-    | _ =>
-      setClickToPayConfig(prev => {
-        ...prev,
-        isReady: Some(false),
+        resolve()
       })
+      ->catch(_ => {
+        setClickToPayNotReady()
+        resolve()
+      })
+      ->ignore
+    | None => setClickToPayNotReady()
     }
   }
 
@@ -277,7 +245,7 @@ let useClickToPay = (
       initVisaUnified(clickToPayConfig.email)->ignore
     }
     None
-  }, (clickToPayConfig.isReady, areClickToPayUIScriptsLoaded, clickToPayProvider))
+  }, (clickToPayConfig.isReady, areClickToPayUIScriptsLoaded, clickToPayProvider, ctpToken))
 
   React.useEffect(() => {
     if clickToPayConfig.email !== "" && consumerIdentity.identityValue === "" {
@@ -316,11 +284,7 @@ let useClickToPay = (
         | MASTERCARD => {
             let _ = loadMastercardClickToPayScript(ssn)
           }
-        | NONE =>
-          setClickToPayConfig(prev => {
-            ...prev,
-            isReady: Some(false),
-          })
+        | NONE => setClickToPayNotReady()
         }
       }
     | _ => ()

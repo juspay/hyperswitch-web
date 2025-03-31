@@ -14,11 +14,7 @@ let make = (
   ~paymentTokenVal,
   ~cvcProps,
   ~paymentType,
-  ~getVisaCards: (
-    ~identityValue: string=?,
-    ~otp: string=?,
-    ~identityType: ClickToPayHelpers.identityType=?,
-  ) => promise<unit>,
+  ~getVisaCards,
   ~visaComponentState,
   ~otpError,
   ~setOtpError,
@@ -41,8 +37,9 @@ let make = (
     }
   }
 
-  let (clickToPayProvider, _) = Recoil.useRecoilState(RecoilAtoms.clickToPayProvider)
+  let clickToPayProvider = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayProvider)
   let ctpCards = clickToPayConfig.clickToPayCards->Option.getOr([])
+
   let mastercardAuth = cards => {
     if cards->Array.length == 0 {
       if !isClickToPayAuthenticateError && clickToPayConfig.email !== "" {
@@ -65,7 +62,6 @@ let make = (
                     identityType: consumerIdentity.identityType,
                     identityValue: consumerIdentity.identityValue->String.replaceAll(" ", ""),
                   }
-                  Console.log(authenticateConsumerIdentity)
                   let authenticatePayload: ClickToPayHelpers.authenticateInputPayload = {
                     windowRef: iframeContentWindow,
                     consumerIdentity: authenticateConsumerIdentity,
@@ -158,83 +154,77 @@ let make = (
   }
 
   <>
-    <RenderIf
-      condition={ctpCards->Array.length == 0 &&
-      !isClickToPayAuthenticateError &&
-      clickToPayConfig.email !== ""}>
+    <RenderIf condition={!isClickToPayAuthenticateError && clickToPayConfig.email !== ""}>
       <ClickToPayHelpers.SrcMark
         cardBrands={clickToPayConfig.availableCardBrands->Array.joinWith(",")} height="32"
       />
     </RenderIf>
-    <div id="mastercard-account-verification" />
-    <RenderIf condition={clickToPayProvider == VISA && ctpCards->Array.length == 0}>
-      {switch visaComponentState {
-      | CARDS_LOADING => <ClickToPayUiComponents.LoadingState />
-      | OTP_INPUT =>
-        <ClickToPayUiComponents.OtpInput
-          getCards={otp => getVisaCards(~identityValue=consumerIdentity.identityValue, ~otp)}
-          otpError
-          setOtpError
-          maskedIdentity
-          setClickToPayRememberMe
-        />
-      | ERROR => <ClickToPayUiComponents.ErrorOccured />
-      | NONE => React.null
-      }}
-    </RenderIf>
-    {if isShowClickToPayNotYou {
+    {switch isShowClickToPayNotYou {
+    | true =>
       <ClickToPayNotYou
-        setIsShowClickToPayNotYou
-        isCTPAuthenticateNotYouClicked
-        setConsumerIdentity
-        getVisaCards={(~identityValue, ~identityType) =>
-          getVisaCards(~identityValue, ~identityType)->ignore}
+        setIsShowClickToPayNotYou isCTPAuthenticateNotYouClicked setConsumerIdentity getVisaCards
       />
-    } else {
-      switch clickToPayConfig.clickToPayCards {
-      | Some(cards) =>
-        switch cards->Array.length {
-        | 0 =>
-          switch clickToPayProvider {
-          | MASTERCARD =>
-            mastercardAuth(cards)
-            React.null
-          | VISA => React.null
+    | false =>
+      switch ctpCards->Array.length {
+      | 0 =>
+        switch clickToPayProvider {
+        | MASTERCARD =>
+          if !(clickToPayConfig.clickToPayCards->Option.isNone) {
+            mastercardAuth(ctpCards)
+          }
+          <div id="mastercard-account-verification" />
+        | VISA =>
+          switch visaComponentState {
+          | CARDS_LOADING => <ClickToPayUiComponents.LoadingState />
+          | OTP_INPUT =>
+            <>
+              <ClickToPayNotYou.ClickToPayNotYouText setIsShowClickToPayNotYou />
+              <div className="h-4 w-1" />
+              <ClickToPayUiComponents.OtpInput
+                getCards={otp => {
+                  (
+                    async _ => {
+                      await getVisaCards(
+                        ~identityValue=consumerIdentity.identityValue,
+                        ~otp,
+                        ~identityType=consumerIdentity.identityType,
+                      )
+                    }
+                  )()
+                }}
+                otpError
+                setOtpError
+                maskedIdentity
+                setClickToPayRememberMe
+              />
+            </>
           | NONE => React.null
           }
-        | _ =>
-          <>
-            <ClickToPayHelpers.SrcMark
-              cardBrands={clickToPayConfig.availableCardBrands->Array.joinWith(",")} height="32"
+        | NONE => React.null
+        }
+
+      | _ =>
+        <>
+          <ClickToPayNotYou.ClickToPayNotYouText setIsShowClickToPayNotYou />
+          {ctpCards
+          ->Array.mapWithIndex((obj, i) => {
+            let customerMethod =
+              obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider)
+            <SavedCardItem
+              key={"ctp_" ++ i->Int.toString}
+              setPaymentToken
+              isActive={paymentTokenVal == customerMethod.paymentToken}
+              paymentItem=customerMethod
+              brandIcon={customerMethod->CardUtils.getPaymentMethodBrand}
+              index=i
+              savedCardlength={ctpCards->Array.length}
+              cvcProps
+              paymentType
+              setRequiredFieldsBody
             />
-            <ClickToPayNotYou.ClickToPayNotYouText setIsShowClickToPayNotYou />
-            {cards
-            ->Array.mapWithIndex((obj, i) => {
-              let customerMethod =
-                obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider)
-              <SavedCardItem
-                key={"ctp_" ++ i->Int.toString}
-                setPaymentToken
-                isActive={paymentTokenVal == customerMethod.paymentToken}
-                paymentItem=customerMethod
-                brandIcon={customerMethod->CardUtils.getPaymentMethodBrand}
-                index=i
-                savedCardlength={cards->Array.length}
-                cvcProps
-                paymentType
-                setRequiredFieldsBody
-              />
-            })
-            ->React.array}
-          </>
-        }
-      | None => {
-          loggerState.setLogInfo(
-            ~value="Click to Pay cards not found",
-            ~eventName=CLICK_TO_PAY_FLOW,
-          )
-          React.null
-        }
+          })
+          ->React.array}
+        </>
       }
     }}
   </>

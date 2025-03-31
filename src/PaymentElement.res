@@ -67,7 +67,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     maskedIdentity,
     consumerIdentity,
     setConsumerIdentity,
-  ) = ClickToPayHooks.useClickToPay(
+  ) = ClickToPayHook.useClickToPay(
     ~areClickToPayUIScriptsLoaded,
     ~setSessions,
     ~setAreClickToPayUIScriptsLoaded,

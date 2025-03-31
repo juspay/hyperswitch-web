@@ -1,8 +1,7 @@
 open ClickToPayHelpers
+open Utils
 
-type event = {detail: Js.Nullable.t<Js.Json.t>, preventDefault: unit => unit}
-
-type callback = event => unit
+type callback = Js.Nullable.t<Js.Json.t> => unit
 type options = {signal: unit}
 type element = {
   id: string,
@@ -22,8 +21,6 @@ type listener = {
 
 type listners = array<listener>
 
-type elementDocument
-@val external myDocument: elementDocument = "document"
 @send external querySelector: (elementDocument, string) => Nullable.t<element> = "querySelector"
 
 type controller = {
@@ -49,36 +46,30 @@ module OtpInput = {
     ~maskedIdentity,
     ~setClickToPayRememberMe,
   ) => {
-    let (otpSubmitting, setOtpSubmitting) = React.useState(_ => false)
+    let (isOtpSubmitting, setIsOtpSubmitting) = React.useState(_ => false)
     let otpValueRef = React.useRef("")
     let (resendLoading, setResendLoading) = React.useState(_ => false)
-    let addListener = (element, event, callback, ~options=?) => {
-      switch element.addEventListener {
-      | Some(fn) => fn(event, callback, options)
-      | None => ()
-      }
-    }
+    let addListener = (~element, ~event, ~callback, ~options=?) =>
+      element.addEventListener->Option.forEach(func => func(event, callback, options))
 
     let callBacks = {
       otpChanged: ev => {
-        Console.log2("Otp changed", ev)
         setOtpError(_ => "")
-        switch Js.Nullable.toOption(ev.detail) {
-        | Some(value) =>
-          let val = JSON.Decode.string(value)->Option.getOr("")
-          if val->String.length == 6 {
-            Console.log2("OTP", value)
-            otpValueRef.current = val
+        ev
+        ->Js.Nullable.toOption
+        ->Option.forEach(value => {
+          let otp = value->getDictFromJson->getString("detail", "")
+          if otp->String.length == 6 {
+            otpValueRef.current = otp
           }
-        | None => Console.log("No OTP")
-        }
+        })
       },
       continueClicked: _ => {
         (
           async _ => {
-            setOtpSubmitting(_ => true)
+            setIsOtpSubmitting(_ => true)
             await getCards(otpValueRef.current)
-            setOtpSubmitting(_ => false)
+            setIsOtpSubmitting(_ => false)
           }
         )()->ignore
       },
@@ -93,10 +84,14 @@ module OtpInput = {
           }
         )()->ignore
       },
-      rememberMe: e => {
-        let dict = e.detail->Identity.anyTypeToJson->Utils.getDictFromJson
-        let rememberMe = dict->Utils.getBool("rememberMe", false)
-        setClickToPayRememberMe(_ => rememberMe)
+      rememberMe: ev => {
+        ev
+        ->Js.Nullable.toOption
+        ->Option.forEach(e => {
+          let dict = e->getDictFromJson
+          let rememberMe = dict->getDictFromDict("detail")->getBool("rememberMe", false)
+          setClickToPayRememberMe(_ => rememberMe)
+        })
       },
     }
 
@@ -111,13 +106,17 @@ module OtpInput = {
         {name: "rememberMe", callback: callBacks.rememberMe},
       ]
 
-      switch srcOtpInput {
-      | Some(element) =>
-        listeners->Array.forEach(listener =>
-          addListener(element, listener.name, listener.callback, ~options={signal: signal})
+      srcOtpInput->Option.forEach(element =>
+        listeners->Array.forEach(
+          listener =>
+            addListener(
+              ~element,
+              ~event=listener.name,
+              ~callback=listener.callback,
+              ~options={signal: signal},
+            ),
         )
-      | None => ()
-      }
+      )
 
       Some(() => controller.abort())
     })
@@ -134,18 +133,9 @@ module OtpInput = {
       maskedIdentityValue=maskedIdentity
       typeName=""
       isOtpValid=false
-      disableElements=otpSubmitting
+      disableElements=isOtpSubmitting
       displayRememberMe=true
       isOtpResendLoading=resendLoading
     />
-  }
-}
-
-module ErrorOccured = {
-  @react.component
-  let make = () => {
-    <div className="w-full aspect-square border border-black flex items-center justify-center">
-      {React.string("ERROR OCCURED")}
-    </div>
   }
 }
