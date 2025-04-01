@@ -11,6 +11,17 @@ const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
 const { SubresourceIntegrityPlugin } = require("webpack-subresource-integrity");
 
+const localhostSources = [
+  "http://localhost:8080",
+  "http://localhost:8207",
+  "http://localhost:3103",
+  "http://localhost:5252",
+  "http://127.0.0.1:8080",
+  "http://127.0.0.1:8207",
+  "http://127.0.0.1:3103",
+  "http://127.0.0.1:5252",
+];
+
 // List of authorized external script sources (for Content Security Policy)
 const authorizedScriptSources = [
   "'self'",
@@ -81,6 +92,7 @@ const authorizedFrameSources = [
   "https://sandbox.secure.checkout.visa.com/",
   "https://checkout.wallet.cat.earlywarning.io/",
   "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/",
+  ...localhostSources,
   // Add other trusted sources here
 ];
 
@@ -99,6 +111,7 @@ const authorizedConnectSources = [
   "https://pay.google.com",
   "https://google.com/pay",
   "https://www.sandbox.paypal.com",
+  ...localhostSources,
   // Add other trusted sources here
 ];
 
