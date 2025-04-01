@@ -123,7 +123,12 @@ module ErrorTextAndImage = {
 
 module ErrorCard = {
   @react.component
-  let make = (~error: Sentry.ErrorBoundary.fallbackArg, ~level, ~componentName) => {
+  let make = (
+    ~error: Sentry.ErrorBoundary.fallbackArg,
+    ~level,
+    ~componentName,
+    ~publishableKey,
+  ) => {
     let beaconApiCall = data => {
       if data->Array.length > 0 {
         let logData = data->Array.map(HyperLogger.logFileToObj)->JSON.Encode.array->JSON.stringify
@@ -142,7 +147,7 @@ module ErrorCard = {
 
         errorDict->Dict.set("componentName", componentName->JSON.Encode.string)
 
-        let errorLog: HyperLogger.logFile = {
+        let errorLog: HyperLoggerTypes.logFile = {
           logType: ERROR,
           timestamp: Date.now()->Float.toString,
           sessionId: "",
@@ -152,7 +157,7 @@ module ErrorCard = {
           internalMetadata: "",
           category: USER_ERROR,
           paymentId: "",
-          merchantId: "",
+          merchantId: publishableKey,
           browserName: HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),
           browserVersion: HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0"),
           platform: Window.Navigator.platform,
@@ -207,12 +212,18 @@ module ErrorCard = {
   }
 }
 
-let defaultFallback = (e, level, componentName) => {
-  <ErrorCard error=e level componentName />
+let defaultFallback = (e, level, componentName, publishableKey) => {
+  <ErrorCard error=e level componentName publishableKey />
 }
 @react.component
-let make = (~children, ~renderFallback=defaultFallback, ~level=PaymentMethod, ~componentName) => {
-  <Sentry.ErrorBoundary fallback={e => renderFallback(e, level, componentName)}>
+let make = (
+  ~children,
+  ~renderFallback=defaultFallback,
+  ~level=PaymentMethod,
+  ~componentName,
+  ~publishableKey="",
+) => {
+  <Sentry.ErrorBoundary fallback={e => renderFallback(e, level, componentName, publishableKey)}>
     children
   </Sentry.ErrorBoundary>
 }

@@ -17,14 +17,14 @@ let make = (
   ~sdkSessionId,
   ~publishableKey,
   ~profileId,
-  ~logger: option<HyperLogger.loggerMake>,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
+    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
@@ -541,7 +541,12 @@ let make = (
                     })
                     ->ignore
                   }
-                | _ => ()
+                | _ =>
+                  logger.setLogInfo(
+                    ~value="Connector Not Found",
+                    ~eventName=GOOGLE_PAY_FLOW,
+                    ~paymentMethod="GOOGLE_PAY",
+                  )
                 }
               } catch {
               | err => {
@@ -670,7 +675,12 @@ let make = (
                       event.source->Window.sendPostMessage(msg)
                     }
                   }
-                | _ => ()
+                | _ =>
+                  logger.setLogInfo(
+                    ~value="Connector Not Found",
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                  )
                 }
               }
             } else {

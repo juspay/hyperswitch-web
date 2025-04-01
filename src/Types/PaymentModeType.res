@@ -10,6 +10,7 @@ type payment =
   | CryptoCurrency
   | ACHTransfer
   | SepaTransfer
+  | InstantTransfer
   | BacsTransfer
   | ACHBankDebit
   | SepaBankDebit
@@ -40,7 +41,8 @@ let paymentMode = str => {
   | "bacs_debit" => BacsBankDebit
   | "becs_debit" => BecsBankDebit
   | "ach_transfer" => ACHTransfer
-  | "sepa_transfer" => SepaTransfer
+  | "sepa_bank_transfer" => SepaTransfer
+  | "instant_bank_transfer" => InstantTransfer
   | "bacs_transfer" => BacsTransfer
   | "bancontact_card" => BanContactCard
   | "google_pay" => GooglePay
@@ -63,7 +65,8 @@ let defaultOrder = [
   "affirm",
   "afterpay_clearpay",
   "ach_transfer",
-  "sepa_transfer",
+  "sepa_bank_transfer",
+  "instant_bank_transfer",
   "bacs_transfer",
   "ach_debit",
   "sepa_debit",

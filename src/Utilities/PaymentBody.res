@@ -71,10 +71,17 @@ let cardPaymentBody = (
   ]
 }
 
-let bancontactBody = () => [
-  ("payment_method", "bank_redirect"->JSON.Encode.string),
-  ("payment_method_type", "bancontact_card"->JSON.Encode.string),
-]
+let bancontactBody = () => {
+  let bancontactField =
+    [("bancontact_card", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
+  let bankRedirectField = [("bank_redirect", bancontactField)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "bank_redirect"->JSON.Encode.string),
+    ("payment_method_type", "bancontact_card"->JSON.Encode.string),
+    ("payment_method_data", bankRedirectField),
+  ]
+}
 
 let boletoBody = (~socialSecurityNumber) => [
   ("payment_method", "voucher"->JSON.Encode.string),
@@ -926,7 +933,12 @@ let eftBody = () => {
 let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
-  | "bank_transfer" => paymentMethodType->String.replace("_transfer", "")
+  | "bank_transfer" =>
+    if paymentMethodType != "sepa_bank_transfer" && paymentMethodType != "instant_bank_transfer" {
+      paymentMethodType->String.replace("_transfer", "")
+    } else {
+      paymentMethodType
+    }
   | _ => paymentMethodType
   }
 
@@ -949,7 +961,7 @@ let appendRedirectPaymentMethods = [
 ]
 
 let appendBankeDebitMethods = ["sepa"]
-let appendBankTransferMethods = ["sepa", "ach", "bacs", "multibanco"]
+let appendBankTransferMethods = ["ach", "bacs", "multibanco"]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {

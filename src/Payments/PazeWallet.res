@@ -4,7 +4,7 @@ open PazeTypes
 external digitalWalletSdk: digitalWalletSdk = "DIGITAL_WALLET_SDK"
 
 @react.component
-let make = (~logger: HyperLogger.loggerMake) => {
+let make = (~logger: HyperLoggerTypes.loggerMake) => {
   open Promise
   open Utils
 

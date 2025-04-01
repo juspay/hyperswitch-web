@@ -175,6 +175,19 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       ->getDictFromJson
       ->getJsonObjectFromDict("redirectionFlags")
       ->RecoilAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
+
+    /*
+     * Forces re-initialization of HyperLoader.
+     * If HyperLoader is already loaded and needs to reload with an updated publishable key,
+     * this flag ensures the script is remounted and re-executed.
+     */
+
+    let isForceInit =
+      options
+      ->Option.getOr(JSON.Encode.null)
+      ->getDictFromJson
+      ->getBool("isForceInit", false)
+
     let analyticsMetadata =
       options
       ->Option.getOr(JSON.Encode.null)
@@ -244,7 +257,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       Exn.raiseError("Insecure domain: " ++ Window.hrefWithoutSearch)
     }
     switch Window.getHyper->Nullable.toOption {
-    | Some(hyperMethod) => {
+    | Some(hyperMethod) if !isForceInit => {
         logger.setLogInfo(
           ~value="orca-sdk initiated",
           ~eventName=APP_REINITIATED,
@@ -252,6 +265,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
         hyperMethod
       }
+    | Some(_)
     | None =>
       let loaderTimestamp = Date.now()->Float.toString
 

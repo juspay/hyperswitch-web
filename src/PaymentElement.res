@@ -388,7 +388,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     <PaymentShimmer />
   }
   let checkoutEle = {
-    <ErrorBoundary key={selectedOption} componentName="PaymentElement">
+    <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
       {switch selectedOption->PaymentModeType.paymentMode {
       | Card => <CardPayment cardProps expiryProps cvcProps paymentType />
       | Klarna =>
@@ -402,6 +402,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | SepaTransfer =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankTransferLazy">
           <SepaBankTransferLazy paymentType />
+        </ReusableReactSuspense>
+      | InstantTransfer =>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="InstantBankTransferLazy">
+          <InstantBankTransferLazy paymentType />
         </ReusableReactSuspense>
       | BacsTransfer =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="BacsBankTransferLazy">

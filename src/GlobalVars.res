@@ -23,6 +23,6 @@ let getVersionFromStr = name =>
 @val external sdkVersion: string = "sdkVersion"
 let sdkVersionEnum = sdkVersion->getVersionFromStr
 let targetOrigin: string = "*"
-let isInteg = sdkUrl === "https://dev.hyperswitch.io"
-let isSandbox = sdkUrl === "https://beta.hyperswitch.io" || sdkUrl === "http://localhost:9050"
-let isProd = sdkUrl === "https://checkout.hyperswitch.io"
+@val external isInteg: bool = "isIntegrationEnv"
+@val external isSandbox: bool = "isSandboxEnv"
+@val external isProd: bool = "isProductionEnv"

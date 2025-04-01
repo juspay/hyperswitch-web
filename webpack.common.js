@@ -9,7 +9,100 @@ const TerserPlugin = require("terser-webpack-plugin");
 const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
+const { SubresourceIntegrityPlugin } = require("webpack-subresource-integrity");
 
+// List of authorized external script sources (for Content Security Policy)
+const authorizedScriptSources = [
+  "'self'",
+  "https://js.braintreegateway.com",
+  "https://tpgw.trustpay.eu/js/v1.js",
+  "https://test-tpgw.trustpay.eu/js/v1.js",
+  "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js",
+  "https://pay.google.com",
+  "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js",
+  "https://apple.com/apple-pay",
+  "https://x.klarnacdn.net/kp/lib/v1/api.js",
+  "https://www.paypal.com/sdk/js",
+  "https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js",
+  "https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js",
+  "https://cdn.plaid.com/link/v2/stable/link-initialize.js",
+  "https://www.sandbox.paypal.com",
+  "https://www.google.com/pay",
+  "https://sandbox.secure.checkout.visa.com",
+  "https://src.mastercard.com",
+  "https://sandbox.src.mastercard.com",
+  // Add other trusted sources here
+];
+
+// List of authorized external styles sources
+const authorizedStyleSources = [
+  "'self'",
+  "'unsafe-inline'",
+  "https://fonts.googleapis.com",
+  "http://fonts.googleapis.com",
+  "https://src.mastercard.com",
+  // Add other trusted sources here
+];
+
+// List of authorized external font sources
+const authorizedFontSources = [
+  "'self'",
+  "https://fonts.gstatic.com",
+  "http://fonts.gstatic.com",
+  // Add other trusted sources here
+];
+
+// List of authorized external image sources
+const authorizedImageSources = [
+  "'self'",
+  "https://www.gstatic.com",
+  "https://static.scarf.sh/a.png",
+  "https://www.paypalobjects.com",
+  "https://googleads.g.doubleclick.net",
+  "https://www.google.com",
+  "data: *",
+  // Add other trusted sources here
+];
+
+// List of authorized external frame sources
+const authorizedFrameSources = [
+  "'self'",
+  "https://checkout.hyperswitch.io",
+  "https://dev.hyperswitch.io",
+  "https://beta.hyperswitch.io",
+  "https://live.hyperswitch.io",
+  "https://integ.hyperswitch.io",
+  "https://app.hyperswitch.io",
+  "https://sandbox.hyperswitch.io",
+  "https://api.hyperswitch.io",
+  "https://pay.google.com",
+  "https://www.sandbox.paypal.com",
+  "https://sandbox.src.mastercard.com/",
+  "https://sandbox.secure.checkout.visa.com/",
+  "https://checkout.wallet.cat.earlywarning.io/",
+  "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/",
+  // Add other trusted sources here
+];
+
+// List of authorized external connect sources
+const authorizedConnectSources = [
+  "'self'",
+  "https://checkout.hyperswitch.io",
+  "https://dev.hyperswitch.io",
+  "https://beta.hyperswitch.io",
+  "https://live.hyperswitch.io",
+  "https://integ.hyperswitch.io",
+  "https://app.hyperswitch.io",
+  "https://sandbox.hyperswitch.io",
+  "https://api.hyperswitch.io",
+  "https://www.google.com/pay",
+  "https://pay.google.com",
+  "https://google.com/pay",
+  "https://www.sandbox.paypal.com",
+  // Add other trusted sources here
+];
+
+// Helper function to get environment variables with fallback
 const getEnvVariable = (variable, defaultValue) =>
   process.env[variable] ?? defaultValue;
 
@@ -30,11 +123,13 @@ const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
 */
 const sdkVersion = getEnvVariable("SDK_VERSION", "v1");
 
+// Repository info
 const repoVersion = require("./package.json").version;
 const repoName = require("./package.json").name;
 const repoPublicPath =
   sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersion}`;
 
+// Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
   if (customUrl) return customUrl;
   const urls = {
@@ -46,7 +141,10 @@ const getSdkUrl = (env, customUrl) => {
   return urls[env] || urls.local;
 };
 
+// Determine SDK URL
 const sdkUrl = getSdkUrl(sdkEnv, envSdkUrl);
+
+// Helper function to determine environment domains
 const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
   switch (sdkEnv) {
     case "prod":
@@ -58,9 +156,11 @@ const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
   }
 };
 
+// Environment endpoints
 const backendDomain = getEnvironmentDomain("checkout", "dev", "beta");
 const confirmDomain = getEnvironmentDomain("live", "integ", "app");
 
+// Backend and confirm endpoints
 const backendEndPoint =
   envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
 
@@ -72,13 +172,27 @@ const logEndpoint = envLoggingUrl;
 const loggingLevel = "DEBUG";
 const maxLogsPushedPerEventName = 100;
 
+// Function to determine the current environment type
+const getEnvironmentType = (env) => {
+  const envType = {
+    isLocal: env === "local",
+    isIntegrationEnv: env === "integ",
+    isProductionEnv: env === "prod",
+    isSandboxEnv: env === "sandbox" || env === "local",
+  };
+  return envType;
+};
+
+const { isLocal, isIntegrationEnv, isProductionEnv, isSandboxEnv } =
+  getEnvironmentType(sdkEnv);
+
 module.exports = (publicPath = "auto") => {
   const entries = {
     app: "./index.js",
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
   };
 
-  let definePluginValues = {
+  const definePluginValues = {
     repoName: JSON.stringify(repoName),
     repoVersion: JSON.stringify(repoVersion),
     publicPath: JSON.stringify(repoPublicPath),
@@ -92,6 +206,9 @@ module.exports = (publicPath = "auto") => {
     loggingLevel: JSON.stringify(loggingLevel),
     maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
     sdkVersion: JSON.stringify(sdkVersion),
+    isIntegrationEnv,
+    isSandboxEnv,
+    isProductionEnv,
   };
 
   const plugins = [
@@ -101,14 +218,55 @@ module.exports = (publicPath = "auto") => {
     }),
     new webpack.DefinePlugin(definePluginValues),
     new HtmlWebpackPlugin({
-      inject: false,
+      inject: true,
       template: "./public/build.html",
+      chunks: ["app"],
+      scriptLoading: "blocking",
+      // Add CSP meta tag
+      meta: {
+        "Content-Security-Policy": {
+          "http-equiv": "Content-Security-Policy",
+          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+            " "
+          )}; 
+          style-src ${authorizedStyleSources.join(" ")};
+          frame-src ${authorizedFrameSources.join(" ")};
+          img-src ${authorizedImageSources.join(" ")};
+          font-src ${authorizedFontSources.join(" ")}; 
+          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
+`,
+        },
+      },
     }),
     new HtmlWebpackPlugin({
       // Also generate a test.html
-      inject: false,
+      inject: true,
       filename: "fullscreenIndex.html",
       template: "./public/fullscreenIndexTemplate.html",
+      // Add CSP meta tag
+      meta: {
+        "Content-Security-Policy": {
+          "http-equiv": "Content-Security-Policy",
+          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+            " "
+          )};
+          style-src ${authorizedStyleSources.join(" ")};
+          frame-src ${authorizedFrameSources.join(" ")}; 
+          img-src ${authorizedImageSources.join(" ")};
+          font-src ${authorizedFontSources.join(" ")};
+          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
+          `,
+        },
+      },
+    }),
+    new SubresourceIntegrityPlugin({
+      hashFuncNames: ["sha384"],
+      enabled: process.env.NODE_ENV === "production",
+    }),
+    // Build-time verification plugin
+    new webpack.DefinePlugin({
+      // Custom verification to ensure SRI is enforced
+      __VERIFY_SRI__: JSON.stringify(process.env.NODE_ENV === "production"),
     }),
   ];
 
@@ -128,12 +286,12 @@ module.exports = (publicPath = "auto") => {
   ) {
     plugins.push(
       sentryWebpackPlugin({
-        org: "sentry",
-        project: "hyperswitch-react-sdk",
+        org: "hyperswitch",
+        project: "hyperswitch-web-react",
         authToken: process.env.SENTRY_AUTH_TOKEN,
         url: process.env.SENTRY_URL,
         release: {
-          name: "0.2",
+          name: "0.3",
           uploadLegacySourcemaps: {
             paths: ["dist"],
           },
@@ -143,37 +301,36 @@ module.exports = (publicPath = "auto") => {
   }
 
   return {
-    mode: sdkEnv === "local" ? "development" : "production",
-    devtool: sdkEnv === "local" ? "eval-source-map" : "source-map",
+    mode: isLocal ? "development" : "production",
+    devtool: isLocal ? "cheap-module-source-map" : "source-map",
     output: {
-      path:
-        sdkEnv && sdkEnv !== "local"
-          ? path.resolve(__dirname, "dist", sdkEnv, sdkVersion)
-          : path.resolve(__dirname, "dist"),
+      path: isLocal
+        ? path.resolve(__dirname, "dist")
+        : path.resolve(__dirname, "dist", sdkEnv, sdkVersion),
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,
+      hashFunction: "sha384",
     },
-    optimization:
-      sdkEnv === "local"
-        ? {}
-        : {
-            sideEffects: true,
-            minimize: true,
-            minimizer: [
-              new TerserPlugin({
-                terserOptions: {
-                  compress: {
-                    drop_console: false,
-                  },
-                  mangle: {
-                    keep_fnames: true, // Prevent function names from being mangled
-                    keep_classnames: true, // Prevent class names from being mangled
-                  },
+    optimization: isLocal
+      ? {}
+      : {
+          sideEffects: true,
+          minimize: true,
+          minimizer: [
+            new TerserPlugin({
+              terserOptions: {
+                compress: {
+                  drop_console: false,
                 },
-              }),
-            ],
-          },
+                mangle: {
+                  keep_fnames: true, // Prevent function names from being mangled
+                  keep_classnames: true, // Prevent class names from being mangled
+                },
+              },
+            }),
+          ],
+        },
     plugins,
     module: {
       rules: [
