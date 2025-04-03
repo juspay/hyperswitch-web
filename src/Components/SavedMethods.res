@@ -137,7 +137,7 @@ let make = (
     </div>
   }
 
-  let (isCVCValid, _, cvcNumber, _, _, _, _, _, _, setCvcError) = cvcProps
+  let {isCVCValid, cvcNumber, setCvcError} = cvcProps
   let complete = switch isCVCValid {
   | Some(val) => paymentTokenVal !== "" && val
   | _ => false

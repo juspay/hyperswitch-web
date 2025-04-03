@@ -2,55 +2,36 @@ open RecoilAtoms
 @react.component
 let make = (
   ~paymentType: CardThemeType.mode,
-  ~cardProps,
-  ~expiryProps,
-  ~cvcProps,
-  ~zipProps,
+  ~cardProps: CardUtils.cardProps,
+  ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
+  ~zipProps: CardUtils.zipProps,
   ~handleElementFocus,
   ~blurState,
   ~isFocus,
 ) => {
   let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (
+  let {
     isCardValid,
     setIsCardValid,
-    _,
     cardNumber,
     changeCardNumber,
     handleCardBlur,
     cardRef,
-    _,
-    _,
-    _,
     maxCardLength,
-    _,
-  ) = cardProps
+  } = cardProps
 
-  let (
+  let {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
     changeCardExpiry,
     handleExpiryBlur,
     expiryRef,
-    _,
-    _,
-    _,
-  ) = expiryProps
+  } = expiryProps
 
-  let (
-    isCVCValid,
-    setIsCVCValid,
-    cvcNumber,
-    _,
-    changeCVCNumber,
-    handleCVCBlur,
-    cvcRef,
-    _,
-    _,
-    _,
-  ) = cvcProps
+  let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef} = cvcProps
 
   let blur = blurState ? "blur(2px)" : ""
   let frameRef = React.useRef(Nullable.null)

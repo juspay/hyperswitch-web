@@ -127,46 +127,6 @@ let make = (
     logger,
   )
 
-  let defaultCardProps = (
-    None,
-    _ => (),
-    None,
-    "",
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    React.null,
-    "",
-    _ => (),
-    0,
-    "",
-  )
-
-  let defaultExpiryProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    _ => (),
-    "",
-    _ => (),
-  )
-
-  let defaultCvcProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    _ => (),
-    "",
-    _ => (),
-  )
-
   let (stateJson, setStatesJson) = React.useState(_ => None)
 
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
@@ -182,53 +142,45 @@ let make = (
     setCountry(val)
   }
 
-  let (
+  let {
     isCardValid,
     setIsCardValid,
-    _,
     cardNumber,
     changeCardNumber,
     handleCardBlur,
     cardRef,
     icon,
     cardError,
-    _,
     maxCardLength,
-    _,
-  ) = switch cardProps {
+  } = switch cardProps {
   | Some(cardProps) => cardProps
-  | None => defaultCardProps
+  | None => CardUtils.defaultCardProps
   }
 
-  let (
+  let {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
     changeCardExpiry,
     handleExpiryBlur,
     expiryRef,
-    _,
     expiryError,
-    _,
-  ) = switch expiryProps {
+  } = switch expiryProps {
   | Some(expiryProps) => expiryProps
-  | None => defaultExpiryProps
+  | None => CardUtils.defaultExpiryProps
   }
 
-  let (
+  let {
     isCVCValid,
     setIsCVCValid,
     cvcNumber,
-    _,
     changeCVCNumber,
     handleCVCBlur,
     cvcRef,
-    _,
     cvcError,
-    _,
-  ) = switch cvcProps {
+  } = switch cvcProps {
   | Some(cvcProps) => cvcProps
-  | None => defaultCvcProps
+  | None => CardUtils.defaultCvcProps
   }
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
