@@ -142,9 +142,24 @@ let make = (
     setCountry(val)
   }
 
-  let cardProps = CardUtils.useDefaultCardProps()
-  let expiryProps = CardUtils.useDefaultExpiryProps()
-  let cvcProps = CardUtils.useDefaultCvcProps()
+  let defaultCardProps = CardUtils.useDefaultCardProps()
+  let defaultExpiryProps = CardUtils.useDefaultExpiryProps()
+  let defaultCvcProps = CardUtils.useDefaultCvcProps()
+
+  let cardProps = switch cardProps {
+  | Some(props) => props
+  | None => defaultCardProps
+  }
+
+  let expiryProps = switch expiryProps {
+  | Some(props) => props
+  | None => defaultExpiryProps
+  }
+
+  let cvcProps = switch cvcProps {
+  | Some(props) => props
+  | None => defaultCvcProps
+  }
 
   let {
     isCardValid,
