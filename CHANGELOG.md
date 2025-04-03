@@ -1,3 +1,5 @@
+## [0.122.3](https://github.com/juspay/hyperswitch-web/compare/v0.122.2...v0.122.3) (2025-04-03)
+
 ## [0.122.2](https://github.com/juspay/hyperswitch-web/compare/v0.122.1...v0.122.2) (2025-04-02)
 
 ## [0.122.1](https://github.com/juspay/hyperswitch-web/compare/v0.122.0...v0.122.1) (2025-04-01)
