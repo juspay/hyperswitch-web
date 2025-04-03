@@ -11,6 +11,17 @@ const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
 const { SubresourceIntegrityPlugin } = require("webpack-subresource-integrity");
 
+const localhostSources = [
+  "http://localhost:8080",
+  "http://localhost:8207",
+  "http://localhost:3103",
+  "http://localhost:5252",
+  "http://127.0.0.1:8080",
+  "http://127.0.0.1:8207",
+  "http://127.0.0.1:3103",
+  "http://127.0.0.1:5252",
+];
+
 // List of authorized external script sources (for Content Security Policy)
 const authorizedScriptSources = [
   "'self'",
@@ -27,8 +38,10 @@ const authorizedScriptSources = [
   "https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js",
   "https://cdn.plaid.com/link/v2/stable/link-initialize.js",
   "https://www.sandbox.paypal.com",
+  "https://www.paypal.com",
   "https://www.google.com/pay",
   "https://sandbox.secure.checkout.visa.com",
+  "https://secure.checkout.visa.com",
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
   // Add other trusted sources here
@@ -72,15 +85,20 @@ const authorizedFrameSources = [
   "https://beta.hyperswitch.io",
   "https://live.hyperswitch.io",
   "https://integ.hyperswitch.io",
+  "https://integ-api.hyperswitch.io",
   "https://app.hyperswitch.io",
   "https://sandbox.hyperswitch.io",
   "https://api.hyperswitch.io",
   "https://pay.google.com",
   "https://www.sandbox.paypal.com",
-  "https://sandbox.src.mastercard.com/",
-  "https://sandbox.secure.checkout.visa.com/",
+  "https://www.paypal.com",
+  "https://sandbox.src.mastercard.com",
+  "https://src.mastercard.com",
+  "https://sandbox.secure.checkout.visa.com",
+  "https://secure.checkout.visa.com",
   "https://checkout.wallet.cat.earlywarning.io/",
   "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/",
+  ...localhostSources,
   // Add other trusted sources here
 ];
 
@@ -92,6 +110,7 @@ const authorizedConnectSources = [
   "https://beta.hyperswitch.io",
   "https://live.hyperswitch.io",
   "https://integ.hyperswitch.io",
+  "https://integ-api.hyperswitch.io",
   "https://app.hyperswitch.io",
   "https://sandbox.hyperswitch.io",
   "https://api.hyperswitch.io",
@@ -99,6 +118,8 @@ const authorizedConnectSources = [
   "https://pay.google.com",
   "https://google.com/pay",
   "https://www.sandbox.paypal.com",
+  "https://www.paypal.com",
+  ...localhostSources,
   // Add other trusted sources here
 ];
 
