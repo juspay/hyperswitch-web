@@ -1,223 +1,5 @@
-type apiLogType = Request | Response | NoResponse | Method | Err
-type logType = DEBUG | INFO | ERROR | WARNING | SILENT
-type logCategory = API | USER_ERROR | USER_EVENT | MERCHANT_EVENT
-
-type eventName =
-  | APP_RENDERED
-  | PAYMENT_METHOD_CHANGED
-  | PAYMENT_DATA_FILLED
-  | PAYMENT_ATTEMPT
-  | PAYMENT_SUCCESS
-  | PAYMENT_FAILED
-  | INPUT_FIELD_CHANGED
-  | RETRIEVE_CALL_INIT
-  | RETRIEVE_CALL
-  | AUTHENTICATION_CALL_INIT
-  | AUTHENTICATION_CALL
-  | CONFIRM_CALL_INIT
-  | CONFIRM_CALL
-  | CONFIRM_PAYOUT_CALL_INIT
-  | CONFIRM_PAYOUT_CALL
-  | SESSIONS_CALL_INIT
-  | SESSIONS_CALL
-  | PAYMENT_METHODS_CALL_INIT
-  | SAVED_PAYMENT_METHODS_CALL_INIT
-  | PAYMENT_METHODS_CALL
-  | SAVED_PAYMENT_METHODS_CALL
-  | CUSTOMER_PAYMENT_METHODS_CALL_INIT
-  | CUSTOMER_PAYMENT_METHODS_CALL
-  | CREATE_CUSTOMER_PAYMENT_METHODS_CALL_INIT
-  | CREATE_CUSTOMER_PAYMENT_METHODS_CALL
-  | TRUSTPAY_SCRIPT
-  | PM_AUTH_CONNECTOR_SCRIPT
-  | GOOGLE_PAY_SCRIPT
-  | APPLE_PAY_FLOW
-  | GOOGLE_PAY_FLOW
-  | PAYPAL_FLOW
-  | PAYPAL_SDK_FLOW
-  | KLARNA_CHECKOUT_FLOW
-  | APP_INITIATED
-  | APP_REINITIATED
-  | LOG_INITIATED
-  | LOADER_CALLED
-  | ORCA_ELEMENTS_CALLED
-  | PAYMENT_OPTIONS_PROVIDED
-  | BLUR
-  | FOCUS
-  | CLEAR
-  | CONFIRM_PAYMENT
-  | CONFIRM_CARD_PAYMENT
-  | SDK_CRASH
-  | INVALID_PK
-  | DEPRECATED_LOADSTRIPE
-  | REQUIRED_PARAMETER
-  | UNKNOWN_KEY
-  | UNKNOWN_VALUE
-  | TYPE_BOOL_ERROR
-  | TYPE_INT_ERROR
-  | TYPE_STRING_ERROR
-  | INVALID_FORMAT
-  | SDK_CONNECTOR_WARNING
-  | VALUE_OUT_OF_RANGE
-  | HTTP_NOT_ALLOWED
-  | INTERNAL_API_DOWN
-  | REDIRECTING_USER
-  | DISPLAY_BANK_TRANSFER_INFO_PAGE
-  | DISPLAY_QR_CODE_INFO_PAGE
-  | DISPLAY_VOUCHER
-  | DISPLAY_THREE_DS_SDK
-  | THREE_DS_METHOD
-  | THREE_DS_METHOD_RESULT
-  | PAYMENT_METHODS_RESPONSE
-  | LOADER_CHANGED
-  | PAYMENT_SESSION_INITIATED
-  | POLL_STATUS_CALL_INIT
-  | POLL_STATUS_CALL
-  | COMPLETE_AUTHORIZE_CALL_INIT
-  | COMPLETE_AUTHORIZE_CALL
-  | PLAID_SDK
-  | PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT
-  | PAYMENT_METHODS_AUTH_EXCHANGE_CALL
-  | PAYMENT_METHODS_AUTH_LINK_CALL_INIT
-  | PAYMENT_METHODS_AUTH_LINK_CALL
-  | PAYMENT_MANAGEMENT_ELEMENTS_CALLED
-  | DELETE_SAVED_PAYMENT_METHOD
-  | DELETE_PAYMENT_METHODS_CALL_INIT
-  | DELETE_PAYMENT_METHODS_CALL
-  | EXTERNAL_TAX_CALCULATION
-  | POST_SESSION_TOKENS_CALL
-  | POST_SESSION_TOKENS_CALL_INIT
-  | PAZE_SDK_FLOW
-  | SAMSUNG_PAY_SCRIPT
-  | SAMSUNG_PAY
-  | CLICK_TO_PAY_SCRIPT
-  | CLICK_TO_PAY_FLOW
-  | PAYMENT_METHOD_TYPE_DETECTION_FAILED
-
-let eventNameToStrMapper = (eventName: eventName) => (eventName :> string)
-
-let getPaymentId = clientSecret =>
-  String.split(clientSecret, "_secret_")->Array.get(0)->Option.getOr("")
-
-let convertToScreamingSnakeCase = text => {
-  text->String.trim->String.replaceRegExp(%re("/ /g"), "_")->String.toUpperCase
-}
-
-let toSnakeCaseWithSeparator = (str, separator) => {
-  str->Js.String2.unsafeReplaceBy0(%re("/[A-Z]/g"), (letter, _, _) =>
-    `${separator}${letter->String.toLowerCase}`
-  )
-}
-
-type maskableDetails = Email | CardDetails
-type source = Loader | Elements(CardThemeType.mode) | Headless
-
-type logFile = {
-  timestamp: string,
-  logType: logType,
-  category: logCategory,
-  source: string,
-  version: string,
-  value: string,
-  internalMetadata: string,
-  sessionId: string,
-  merchantId: string,
-  paymentId: string,
-  appId: string,
-  platform: string,
-  browserName: string,
-  browserVersion: string,
-  userAgent: string,
-  eventName: eventName,
-  latency: string,
-  firstEvent: bool,
-  paymentMethod: string,
-  metadata: JSON.t,
-  ephemeralKey: string,
-}
-
-type setlogApiValueType =
-  | ArrayType(array<(string, JSON.t)>)
-  | StringValue(string)
-
-type setLogInfo = (
-  ~value: string,
-  ~internalMetadata: string=?,
-  ~eventName: eventName,
-  ~timestamp: string=?,
-  ~latency: float=?,
-  ~logType: logType=?,
-  ~logCategory: logCategory=?,
-  ~paymentMethod: string=?,
-) => unit
-
-type loggerMake = {
-  setLogInfo: setLogInfo,
-  setLogError: setLogInfo,
-  setLogApi: (
-    ~value: setlogApiValueType,
-    ~internalMetadata: setlogApiValueType,
-    ~eventName: eventName,
-    ~timestamp: string=?,
-    ~logType: logType=?,
-    ~logCategory: logCategory=?,
-    ~paymentMethod: string=?,
-    ~apiLogType: apiLogType=?,
-    ~isPaymentSession: bool=?,
-  ) => unit,
-  setLogInitiated: unit => unit,
-  setConfirmPaymentValue: (~paymentType: string) => JSON.t,
-  sendLogs: unit => unit,
-  setSessionId: string => unit,
-  setClientSecret: string => unit,
-  setMerchantId: string => unit,
-  setMetadata: JSON.t => unit,
-  setSource: string => unit,
-  setEphemeralKey: string => unit,
-}
-
-let defaultLoggerConfig = {
-  sendLogs: () => (),
-  setClientSecret: _x => (),
-  setEphemeralKey: _x => (),
-  setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
-  setLogError: (
-    ~value as _,
-    ~internalMetadata as _=?,
-    ~eventName as _,
-    ~timestamp as _=?,
-    ~latency as _=?,
-    ~logType as _=?,
-    ~logCategory as _=?,
-    ~paymentMethod as _=?,
-  ) => (),
-  setLogApi: (
-    ~value as _,
-    ~internalMetadata as _,
-    ~eventName as _,
-    ~timestamp as _=?,
-    ~logType as _=?,
-    ~logCategory as _=?,
-    ~paymentMethod as _=?,
-    ~apiLogType as _=?,
-    ~isPaymentSession as _=?,
-  ) => (),
-  setLogInfo: (
-    ~value as _,
-    ~internalMetadata as _=?,
-    ~eventName as _,
-    ~timestamp as _=?,
-    ~latency as _=?,
-    ~logType as _=?,
-    ~logCategory as _=?,
-    ~paymentMethod as _=?,
-  ) => (),
-  setLogInitiated: () => (),
-  setMerchantId: _x => (),
-  setSessionId: _x => (),
-  setMetadata: _x => (),
-  setSource: _x => (),
-}
+open HyperLoggerTypes
+open LoggerUtils
 
 let logFileToObj = logFile => {
   [
@@ -289,115 +71,38 @@ let findVersion = (re, content) => {
   }
   version
 }
-
 let browserDetect = content => {
-  if RegExp.test("Instagram"->RegExp.fromString, content) {
-    let re = %re("/Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig")
-    let version = switch findVersion(re, content)
-    ->Array.get(1)
-    ->Option.getOr(Nullable.null)
-    ->Nullable.toOption {
-    | Some(a) => a
-    | None => ""
-    }
-    `Instagram-${version}`
-  } else if RegExp.test("FBAV"->RegExp.fromString, content) {
-    let re = %re("/FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig")
-    let version = switch findVersion(re, content)
-    ->Array.get(1)
-    ->Option.getOr(Nullable.null)
-    ->Nullable.toOption {
-    | Some(a) => a
-    | None => ""
-    }
-    `Facebook-${version}`
-  } else if RegExp.test("Twitter"->RegExp.fromString, content) {
-    let re = %re("/iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig")
-    let version = switch findVersion(re, content)
-    ->Array.get(1)
-    ->Option.getOr(Nullable.null)
-    ->Nullable.toOption {
-    | Some(a) => a
-    | None => ""
-    }
-    `Twitter-${version}`
-  } else if RegExp.test("LinkedIn"->RegExp.fromString, content) {
-    let re = %re("/LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig")
-    let version = switch findVersion(re, content)
-    ->Array.get(1)
-    ->Option.getOr(Nullable.null)
-    ->Nullable.toOption {
-    | Some(a) => a
-    | None => ""
-    }
-    `LinkedIn-${version}`
-  } else if RegExp.test("Edg"->RegExp.fromString, content) {
-    let re = %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig")
-    let version = switch findVersion(re, content)
-    ->Array.get(1)
-    ->Option.getOr(Nullable.null)
-    ->Nullable.toOption {
-    | Some(a) => a
-    | None => ""
-    }
-    `Microsoft Edge-${version}`
-  } else if RegExp.test("Chrome"->RegExp.fromString, content) {
-    let re = %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig")
-    let version = switch findVersion(re, content)
-    ->Array.get(1)
-    ->Option.getOr(Nullable.null)
-    ->Nullable.toOption {
-    | Some(a) => a
-    | None => ""
-    }
-    `Chrome-${version}`
-  } else if RegExp.test("Safari"->RegExp.fromString, content) {
-    let re = %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig")
-    let version = switch findVersion(re, content)
-    ->Array.get(1)
-    ->Option.getOr(Nullable.null)
-    ->Nullable.toOption {
-    | Some(a) => a
-    | None => ""
-    }
-    `Safari-${version}`
-  } else if RegExp.test("opera"->RegExp.fromString, content) {
-    let re = %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig")
-    let version = switch findVersion(re, content)
-    ->Array.get(1)
-    ->Option.getOr(Nullable.null)
-    ->Nullable.toOption {
-    | Some(a) => a
-    | None => ""
-    }
-    `Opera-${version}`
-  } else if (
-    RegExp.test("Firefox"->RegExp.fromString, content) ||
-    RegExp.test("fxios"->RegExp.fromString, content)
-  ) {
-    if RegExp.test("Firefox"->RegExp.fromString, content) {
-      let re = %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig")
-      let version = switch findVersion(re, content)
+  let patterns = [
+    ("Instagram", %re("/Instagram\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Instagram"),
+    ("FBAV", %re("/FBAV\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Facebook"),
+    ("Twitter", %re("/iPhone\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Twitter"),
+    ("LinkedIn", %re("/LinkedInApp\/([\d]+\.[\w]?\.?[\w]+)/ig"), "LinkedIn"),
+    ("Edg", %re("/Edg\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Microsoft Edge"),
+    ("Chrome", %re("/Chrome\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Chrome"),
+    ("Safari", %re("/Safari\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Safari"),
+    ("Opera", %re("/Opera\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Opera"),
+    ("Firefox", %re("/Firefox\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
+    ("fxios", %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig"), "Firefox"),
+  ]
+
+  switch patterns
+  ->Belt.Array.keepMap(((keyword, regex, name)) =>
+    if RegExp.test(keyword->RegExp.fromString, content) {
+      let version = switch findVersion(regex, content)
       ->Array.get(1)
       ->Option.getOr(Nullable.null)
       ->Nullable.toOption {
-      | Some(a) => a
+      | Some(v) => v
       | None => ""
       }
-      `Firefox-${version}`
+      Some(`${name}-${version}`)
     } else {
-      let re = %re("/fxios\/([\d]+\.[\w]?\.?[\w]+)/ig")
-      let version = switch findVersion(re, content)
-      ->Array.get(1)
-      ->Option.getOr(Nullable.null)
-      ->Nullable.toOption {
-      | Some(a) => a
-      | None => ""
-      }
-      `Firefox-${version}`
+      None
     }
-  } else {
-    "Others-0"
+  )
+  ->Belt.Array.get(0) {
+  | Some(result) => result
+  | None => "Others-0"
   }
 }
 

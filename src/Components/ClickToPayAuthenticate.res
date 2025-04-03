@@ -16,7 +16,6 @@ let make = (
   ~setPaymentToken,
   ~paymentTokenVal,
   ~cvcProps,
-  ~paymentType,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
   //TODO - To be discussed
@@ -159,7 +158,6 @@ let make = (
               index=i
               savedCardlength={cards->Array.length}
               cvcProps
-              paymentType
               setRequiredFieldsBody
             />
           })

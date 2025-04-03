@@ -2,7 +2,7 @@ open RecoilAtoms
 open Utils
 
 @react.component
-let make = (~paymentType: CardThemeType.mode) => {
+let make = () => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
@@ -47,9 +47,7 @@ let make = (~paymentType: CardThemeType.mode) => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields
-      paymentType paymentMethod="bank_transfer" paymentMethodType="ach" setRequiredFieldsBody
-    />
+    <DynamicFields paymentMethod="bank_transfer" paymentMethodType="ach" setRequiredFieldsBody />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="ach" />
     <InfoElement />
   </div>

@@ -77,6 +77,22 @@ let getStringFromJson = (json, default) => {
   json->JSON.Decode.string->Option.getOr(default)
 }
 
+let convertDictToArrayOfKeyStringTuples = dict => {
+  dict
+  ->Dict.toArray
+  ->Array.map(entries => {
+    let (x, val) = entries
+    (x, val->JSON.Decode.string->Option.getOr(""))
+  })
+}
+
+let mergeHeadersIntoDict = (~dict, ~headers) => {
+  headers->Array.forEach(entries => {
+    let (x, val) = entries
+    Dict.set(dict, x, val->JSON.Encode.string)
+  })
+}
+
 let getInt = (dict, key, default: int) => {
   dict
   ->Dict.get(key)
@@ -694,7 +710,7 @@ let handlePostMessageEvents = (
   ~complete,
   ~empty,
   ~paymentType,
-  ~loggerState: HyperLogger.loggerMake,
+  ~loggerState: HyperLoggerTypes.loggerMake,
   ~savedMethod=false,
 ) => {
   if complete && paymentType !== "" {

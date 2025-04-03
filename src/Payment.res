@@ -3,6 +3,7 @@ open CardThemeType
 open CardTheme
 open LoggerUtils
 open RecoilAtoms
+open PaymentTypeContext
 
 let setUserError = message => {
   Utils.postFailedSubmitResponse(~errortype="validation_error", ~message)
@@ -470,8 +471,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   if integrateError {
     <ErrorOccured />
   } else {
-    <RenderPaymentMethods
-      paymentType cardProps expiryProps cvcProps zipProps handleElementFocus blurState isFocus
-    />
+    <PaymentTypeContext.provider value={paymentType: paymentType}>
+      <RenderPaymentMethods
+        paymentType cardProps expiryProps cvcProps zipProps handleElementFocus blurState isFocus
+      />
+    </PaymentTypeContext.provider>
   }
 }

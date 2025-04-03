@@ -20,16 +20,20 @@ let paymentMode = str => {
 
 module WalletsSaveDetailsText = {
   @react.component
-  let make = (~paymentType) => {
+  let make = () => {
     open RecoilAtoms
     let {isGooglePay, isApplePay, isPaypal, isSamsungPay} = Recoil.useRecoilValueFromAtom(
       areOneClickWalletsRendered,
     )
     let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
     let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
+    let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
     <RenderIf
-      condition={PaymentUtils.isAppendingCustomerAcceptance(~isGuestCustomer, ~paymentType) &&
+      condition={PaymentUtils.isAppendingCustomerAcceptance(
+        ~isGuestCustomer,
+        ~paymentType=paymentMethodListValue.payment_type,
+      ) &&
       (isGooglePay || isApplePay || isPaypal || isSamsungPay)}>
       <div
         className="SaveWalletDetailsLabel flex items-center text-xs mt-2 text-left text-gray-400">
@@ -41,7 +45,7 @@ module WalletsSaveDetailsText = {
 }
 
 @react.component
-let make = (~sessions, ~walletOptions, ~paymentType) => {
+let make = (~sessions, ~walletOptions) => {
   open SessionsType
   let dict = sessions->Utils.getDictFromJson
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -102,12 +106,8 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
                       sessionObj=optToken
                       thirdPartySessionObj=googlePayThirdPartyOptToken
                       walletOptions
-                      paymentType
                     />
-                  | _ =>
-                    <GPayLazy
-                      sessionObj=optToken thirdPartySessionObj=None walletOptions paymentType
-                    />
+                  | _ => <GPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions />
                   }
                 | _ => React.null
                 }}
@@ -117,20 +117,20 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
                 {switch paypalToken {
                 | OtherTokenOptional(optToken) =>
                   switch (optToken, isPaypalSDKFlow, isPaypalRedirectFlow) {
-                  | (Some(token), true, _) => <PaypalSDKLazy sessionObj=token paymentType />
-                  | (_, _, true) => <PayPalLazy paymentType walletOptions />
+                  | (Some(token), true, _) => <PaypalSDKLazy sessionObj=token />
+                  | (_, _, true) => <PayPalLazy walletOptions />
                   | _ => React.null
                   }
                 | _ =>
                   <RenderIf condition={isPaypalRedirectFlow}>
-                    <PayPalLazy paymentType walletOptions />
+                    <PayPalLazy walletOptions />
                   </RenderIf>
                 }}
               </SessionPaymentWrapper>
             | ApplePayWallet =>
               switch applePayToken {
               | ApplePayTokenOptional(optToken) =>
-                <ApplePayLazy sessionObj=optToken walletOptions paymentType />
+                <ApplePayLazy sessionObj=optToken walletOptions />
               | _ => React.null
               }
             | SamsungPayWallet =>
@@ -174,6 +174,6 @@ let make = (~sessions, ~walletOptions, ~paymentType) => {
     })
     ->React.array}
     <Surcharge paymentMethod="wallet" paymentMethodType="google_pay" isForWallets=true />
-    <WalletsSaveDetailsText paymentType=paymentMethodListValue.payment_type />
+    <WalletsSaveDetailsText />
   </div>
 }

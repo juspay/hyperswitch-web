@@ -1,6 +1,6 @@
 {
   "name": "orca-payment-page",
-  "version": "0.119.9",
+  "version": "0.122.5",
   "main": "index.js",
   "private": true,
   "dependencies": {
@@ -16,15 +16,15 @@
     "webpack-merge": "^5.9.0"
   },
   "scripts": {
-    "build": "webpack --config webpack.common.js",
-    "build:v2": "cross-env SDK_VERSION=v2 webpack --config webpack.common.js",
-    "build:integ": "cross-env sdkEnv=integ webpack --config webpack.common.js",
+    "build": "NODE_ENV=production webpack --config webpack.common.js",
+    "build:v2": "cross-env NODE_ENV=production SDK_VERSION=v2 webpack --config webpack.common.js",
+    "build:integ": "cross-env NODE_ENV=production sdkEnv=integ webpack --config webpack.common.js",
     "build:playground": "npm run setup:playground && webpack --config webpack.common.js",
-    "build:sandbox": "cross-env sdkEnv=sandbox webpack --config webpack.common.js",
-    "build:prod": "cross-env sdkEnv=prod webpack --config webpack.common.js",
-    "build:integ:v2": "cross-env sdkEnv=integ SDK_VERSION=v2 webpack --config webpack.common.js",
-    "build:sandbox:v2": "cross-env sdkEnv=sandbox SDK_VERSION=v2 webpack --config webpack.common.js",
-    "build:prod:v2": "cross-env sdkEnv=prod SDK_VERSION=v2 webpack --config webpack.common.js",
+    "build:sandbox": "cross-env NODE_ENV=production sdkEnv=sandbox webpack --config webpack.common.js",
+    "build:prod": "cross-env NODE_ENV=production sdkEnv=prod webpack --config webpack.common.js",
+    "build:integ:v2": "cross-env NODE_ENV=production sdkEnv=integ SDK_VERSION=v2 webpack --config webpack.common.js",
+    "build:sandbox:v2": "cross-env NODE_ENV=production sdkEnv=sandbox SDK_VERSION=v2 webpack --config webpack.common.js",
+    "build:prod:v2": "cross-env NODE_ENV=production sdkEnv=prod SDK_VERSION=v2 webpack --config webpack.common.js",
     "deploy-to-s3": "node ./scripts/pushToS3.js",
     "postinstall": "cd Hyperswitch-React-Demo-App && npm i",
     "prepare": "husky install",
@@ -89,7 +89,8 @@
     "webpack": "^5.94.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.1.0"
+    "webpack-dev-server": "^5.1.0",
+    "webpack-subresource-integrity": "^5.2.0-rc.1"
   },
   "config": {
     "commitizen": {
@@ -162,5 +163,6 @@
       "@semantic-release/changelog",
       "@semantic-release/git"
     ]
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

@@ -2,36 +2,33 @@ open RecoilAtoms
 open Utils
 
 @react.component
-let make = (~paymentType) => {
+let make = () => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
-  let setComplete = Recoil.useSetRecoilState(fieldsComplete)
-  let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
-  let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
-  let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
-  let empty = email.value == "" || fullName.value == ""
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
-
-  React.useEffect(() => {
-    setComplete(_ => complete)
-    None
-  }, [complete])
+  UtilityHooks.useHandlePostMessages(
+    ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
+    ~empty=areRequiredFieldsEmpty,
+    ~paymentType="bank_transfer",
+  )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if complete {
+      if areRequiredFieldsValid && !areRequiredFieldsEmpty {
         let bodyArr =
-          PaymentBody.dynamicPaymentBody("bank_transfer", "sepa")->mergeAndFlattenToTuples(
-            requiredFieldsBody,
-          )
+          PaymentBody.dynamicPaymentBody(
+            "bank_transfer",
+            "sepa_bank_transfer",
+          )->mergeAndFlattenToTuples(requiredFieldsBody)
 
         intent(
           ~bodyArr,
@@ -44,12 +41,12 @@ let make = (~paymentType) => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, isManualRetryEnabled))
+  }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isManualRetryEnabled, requiredFieldsBody))
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <DynamicFields
-      paymentType paymentMethod="bank_transfer" paymentMethodType="sepa" setRequiredFieldsBody
+      paymentMethod="bank_transfer" paymentMethodType="sepa_bank_transfer" setRequiredFieldsBody
     />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="sepa" />
     <InfoElement />

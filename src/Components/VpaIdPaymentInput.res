@@ -2,7 +2,7 @@ open RecoilAtoms
 open Utils
 
 @react.component
-let make = (~paymentType) => {
+let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (vpaId, setVpaId) = Recoil.useLoggedRecoilState(userVpaId, "vpaId", loggerState)
@@ -52,7 +52,6 @@ let make = (~paymentType) => {
     value=vpaId
     onChange=changeVpaId
     onBlur
-    paymentType
     type_="text"
     name="vpaId"
     inputRef=vpaIdRef

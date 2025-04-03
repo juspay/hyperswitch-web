@@ -2,13 +2,7 @@ type target = {checked: bool}
 type event = {target: target}
 
 @react.component
-let make = (
-  ~cardProps,
-  ~expiryProps,
-  ~cvcProps,
-  ~isBancontact=false,
-  ~paymentType: CardThemeType.mode,
-) => {
+let make = (~cardProps, ~expiryProps, ~cvcProps, ~isBancontact=false) => {
   open PaymentType
   open PaymentModeType
   open Utils
@@ -347,9 +341,7 @@ let make = (
               onBlur=handleCardBlur
               rightIcon={icon}
               errorString=cardError
-              paymentType
               type_="tel"
-              appearance=config.appearance
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
@@ -372,9 +364,7 @@ let make = (
                   onChange=changeCardExpiry
                   onBlur=handleExpiryBlur
                   errorString=expiryError
-                  paymentType
                   type_="tel"
-                  appearance=config.appearance
                   maxLength=7
                   inputRef=expiryRef
                   placeholder=localeString.expiryPlaceholder
@@ -390,14 +380,12 @@ let make = (
                   onChange=changeCVCNumber
                   onBlur=handleCVCBlur
                   errorString=cvcError
-                  paymentType
                   rightIcon={CardUtils.setRightIconForCvc(
                     ~cardComplete,
                     ~cardEmpty,
                     ~cardInvalid,
                     ~color=themeObj.colorIconCardCvcError,
                   )}
-                  appearance=config.appearance
                   type_="tel"
                   className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
                   maxLength=4
@@ -425,7 +413,6 @@ let make = (
             </RenderIf>
           </RenderIf>
           <DynamicFields
-            paymentType
             paymentMethod
             paymentMethodType
             setRequiredFieldsBody
@@ -443,7 +430,7 @@ let make = (
             </div>
           </RenderIf>
           <RenderIf condition={!options.hideCardNicknameField && isCustomerAcceptanceRequired}>
-            <NicknamePaymentInput paymentType />
+            <NicknamePaymentInput />
           </RenderIf>
         </div>
       </div>

@@ -120,7 +120,7 @@ let defaultPaymentElement = {
   mount: _string => (),
   focus: () => (),
   clear: () => (),
-  onSDKHandleClick: fnArgument => (),
+  onSDKHandleClick: _fnArgument => (),
 }
 
 let create = (_componentType, _options) => {

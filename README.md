@@ -74,7 +74,7 @@ Ways to get started with Hyperswitch:
   - **`HYPERSWITCH_SECRET_KEY`:** The API key of your Hyperswitch account that is used to authenticate API requests from your merchant server.
 
   - **`HYPERSWITCH_SERVER_URL`:** The URL of the Hyperswitch backend server. You may use our Sandbox URL (https://sandbox.hyperswitch.io). To do this, go to the Hyperswitch Dashboard, find the "Developers" section, then click on [API Keys](https://app.hyperswitch.io/dashboard/developer-api-keys). Here you can generate an API key (`HYPERSWITCH_SECRET_KEY`) and copy your publishable key (`HYPERSWITCH_PUBLISHABLE_KEY`).<br>
-Alternatively, you can specify that your backend is running locally (e.g. http://localhost:8080). In this case, you will need to create the API key and publishable key locally. Read this [hyperswitch docs](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md) on how to do this.
+    Alternatively, you can specify that your backend is running locally (e.g. http://localhost:8080). In this case, you will need to create the API key and publishable key locally. Read this [hyperswitch docs](https://github.com/juspay/hyperswitch/blob/main/docs/try_local_system.md) on how to do this.
 
   - **`HYPERSWITCH_CLIENT_URL`:** The URL of your hosted Hyperswitch SDK (e.g. http://localhost:9050). You may also use our Sandbox URL (https://beta.hyperswitch.io/v1).
 
@@ -225,6 +225,10 @@ Please refer to our [FAQs page][faqs].
 - ApplePay
 - GooglePay
 - Klarna
+
+### Security Documentation
+
+For security compliance, we maintain an inventory of all third-party scripts used in this project with justifications for their necessity. You can view this documentation in our [Script Inventory](./docs/SCRIPT_INVENTORY.md) file.
 
 ## 💪 Join us in building Hyperswitch
 

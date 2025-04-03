@@ -1,6 +1,7 @@
 open RecoilAtoms
 open PaymentType
 open Utils
+open PaymentTypeContext
 
 type addressType = Line1 | Line2 | City | Postal | State | Country
 
@@ -33,11 +34,13 @@ let showField = (val: PaymentType.addressType, type_: addressType) => {
 }
 
 @react.component
-let make = (~paymentType, ~className="") => {
+let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
+  let contextPaymentType = usePaymentType()
+  let paymentType = paymentType->Option.getOr(contextPaymentType)
 
   let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
   let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", loggerState)
@@ -194,12 +197,12 @@ let make = (~paymentType, ~className="") => {
             value: ReactEvent.Form.target(ev)["value"],
           })
         }}
-        paymentType
         type_="text"
         name="line1"
         className
         inputRef=line1Ref
         placeholder=localeString.line1Placeholder
+        paymentType
       />
     </RenderIf>
     <RenderIf condition={showOtherFileds || hasDefaulltValues}>
@@ -215,12 +218,12 @@ let make = (~paymentType, ~className="") => {
                 value: ReactEvent.Form.target(ev)["value"],
               })
             }}
-            paymentType
             type_="text"
             name="line2"
             className
             inputRef=line2Ref
             placeholder=localeString.line2Placeholder
+            paymentType
           />
         </RenderIf>
         <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>
@@ -260,11 +263,11 @@ let make = (~paymentType, ~className="") => {
                   value: ReactEvent.Form.target(ev)["value"],
                 })
               }}
-              paymentType
               type_="text"
               name="city"
               inputRef=cityRef
               placeholder=localeString.cityLabel
+              paymentType
             />
           </RenderIf>
           <RenderIf condition={showField(showDetails.address, Postal) == Auto}>
@@ -274,11 +277,11 @@ let make = (~paymentType, ~className="") => {
               value=postalCode
               onBlur=onPostalBlur
               onChange=onPostalChange
-              paymentType
               className
               name="postal"
               inputRef=postalRef
               placeholder=localeString.postalCodeLabel
+              paymentType
             />
           </RenderIf>
         </div>

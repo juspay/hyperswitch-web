@@ -106,7 +106,7 @@ module AccountNumberCard = {
 
 let clearSpaces = str => str->String.replaceRegExp(%re("/\D+/g"), "")
 @react.component
-let make = (~setModalData, ~paymentType: CardThemeType.mode) => {
+let make = (~setModalData) => {
   let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
   let (routingNumber, setRoutingNumber) = React.useState(_ => "")
   let (iban, setIban) = React.useState(_ => "")
@@ -200,9 +200,7 @@ let make = (~setModalData, ~paymentType: CardThemeType.mode) => {
 
   let dynamicFieldsModalBody =
     <div className="flex flex-col item-center gap-5">
-      <DynamicFields
-        paymentType paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody
-      />
+      <DynamicFields paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody />
       <PayNowButton onClickHandler label="Done" />
     </div>
 
@@ -215,7 +213,7 @@ let make = (~setModalData, ~paymentType: CardThemeType.mode) => {
       </div>
       <div className="my-4">
         <AddressPaymentInput
-          paymentType=CardThemeType.Payment
+          paymentType=Payment
           className="focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
         />
       </div>
