@@ -142,6 +142,10 @@ let make = (
     setCountry(val)
   }
 
+  let cardProps = CardUtils.useDefaultCardProps()
+  let expiryProps = CardUtils.useDefaultExpiryProps()
+  let cvcProps = CardUtils.useDefaultCvcProps()
+
   let {
     isCardValid,
     setIsCardValid,
@@ -152,10 +156,7 @@ let make = (
     icon,
     cardError,
     maxCardLength,
-  } = switch cardProps {
-  | Some(cardProps) => cardProps
-  | None => CardUtils.defaultCardProps
-  }
+  } = cardProps
 
   let {
     isExpiryValid,
@@ -165,10 +166,7 @@ let make = (
     handleExpiryBlur,
     expiryRef,
     expiryError,
-  } = switch expiryProps {
-  | Some(expiryProps) => expiryProps
-  | None => CardUtils.defaultExpiryProps
-  }
+  } = expiryProps
 
   let {
     isCVCValid,
@@ -178,10 +176,7 @@ let make = (
     handleCVCBlur,
     cvcRef,
     cvcError,
-  } = switch cvcProps {
-  | Some(cvcProps) => cvcProps
-  | None => CardUtils.defaultCvcProps
-  }
+  } = cvcProps
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(

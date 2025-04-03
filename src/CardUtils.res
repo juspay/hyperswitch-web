@@ -29,19 +29,22 @@ type cardProps = {
   cardBrand: string,
 }
 
-let defaultCardProps: cardProps = {
-  isCardValid: None,
-  setIsCardValid: _ => (),
-  isCardSupported: None,
-  cardNumber: "",
-  changeCardNumber: _ => (),
-  handleCardBlur: _ => (),
-  cardRef: React.useRef(Nullable.null),
-  icon: React.null,
-  cardError: "",
-  setCardError: _ => (),
-  maxCardLength: 0,
-  cardBrand: "",
+let useDefaultCardProps = () => {
+  let cardRef = React.useRef(Nullable.null)
+  {
+    isCardValid: None,
+    setIsCardValid: _ => (),
+    isCardSupported: None,
+    cardNumber: "",
+    changeCardNumber: _ => (),
+    handleCardBlur: _ => (),
+    cardRef,
+    icon: React.null,
+    cardError: "",
+    setCardError: _ => (),
+    maxCardLength: 0,
+    cardBrand: "",
+  }
 }
 
 type expiryProps = {
@@ -56,16 +59,19 @@ type expiryProps = {
   setExpiryError: (string => string) => unit,
 }
 
-let defaultExpiryProps: expiryProps = {
-  isExpiryValid: None,
-  setIsExpiryValid: _ => (),
-  cardExpiry: "",
-  changeCardExpiry: _ => (),
-  handleExpiryBlur: _ => (),
-  expiryRef: React.useRef(Nullable.null),
-  onExpiryKeyDown: _ => (),
-  expiryError: "",
-  setExpiryError: _ => (),
+let useDefaultExpiryProps = () => {
+  let expiryRef = React.useRef(Nullable.null)
+  {
+    isExpiryValid: None,
+    setIsExpiryValid: _ => (),
+    cardExpiry: "",
+    changeCardExpiry: _ => (),
+    handleExpiryBlur: _ => (),
+    expiryRef,
+    onExpiryKeyDown: _ => (),
+    expiryError: "",
+    setExpiryError: _ => (),
+  }
 }
 
 type cvcProps = {
@@ -81,17 +87,20 @@ type cvcProps = {
   setCvcError: (string => string) => unit,
 }
 
-let defaultCvcProps: cvcProps = {
-  isCVCValid: None,
-  setIsCVCValid: _ => (),
-  cvcNumber: "",
-  setCvcNumber: _ => (),
-  changeCVCNumber: _ => (),
-  handleCVCBlur: _ => (),
-  cvcRef: React.useRef(Nullable.null),
-  onCvcKeyDown: _ => (),
-  cvcError: "",
-  setCvcError: _ => (),
+let useDefaultCvcProps = () => {
+  let cvcRef = React.useRef(Nullable.null)
+  {
+    isCVCValid: None,
+    setIsCVCValid: _ => (),
+    cvcNumber: "",
+    setCvcNumber: _ => (),
+    changeCVCNumber: _ => (),
+    handleCVCBlur: _ => (),
+    cvcRef,
+    onCvcKeyDown: _ => (),
+    cvcError: "",
+    setCvcError: _ => (),
+  }
 }
 
 type zipProps = {
@@ -105,15 +114,18 @@ type zipProps = {
   displayPincode: bool,
 }
 
-let defaultZipProps: zipProps = {
-  isZipValid: None,
-  setIsZipValid: _ => (),
-  zipCode: "",
-  changeZipCode: _ => (),
-  handleZipBlur: _ => (),
-  zipRef: React.useRef(Nullable.null),
-  onZipCodeKeyDown: _ => (),
-  displayPincode: false,
+let useDefaultZipProps = () => {
+  let zipRef = React.useRef(Nullable.null)
+  {
+    isZipValid: None,
+    setIsZipValid: _ => (),
+    zipCode: "",
+    changeZipCode: _ => (),
+    handleZipBlur: _ => (),
+    zipRef,
+    onZipCodeKeyDown: _ => (),
+    displayPincode: false,
+  }
 }
 
 @val external document: 'a = "document"
