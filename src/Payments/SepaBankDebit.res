@@ -3,7 +3,7 @@ open Utils
 open PaymentModeType
 
 @react.component
-let make = (~paymentType: CardThemeType.mode) => {
+let make = () => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -63,9 +63,7 @@ let make = (~paymentType: CardThemeType.mode) => {
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
         }>
-        <DynamicFields
-          paymentType paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody
-        />
+        <DynamicFields paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody />
         <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
         <Terms mode=SepaBankDebit />
       </div>

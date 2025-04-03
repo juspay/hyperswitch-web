@@ -3,7 +3,7 @@ open Utils
 open PaymentModeType
 
 @react.component
-let make = (~paymentType: CardThemeType.mode) => {
+let make = () => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
@@ -107,8 +107,8 @@ let make = (~paymentType: CardThemeType.mode) => {
     </RenderIf>
     <RenderIf condition={!isVerifyPMAuthConnectorConfigured}>
       <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
-        <FullNamePaymentInput paymentType={paymentType} />
-        <EmailPaymentInput paymentType />
+        <FullNamePaymentInput />
+        <EmailPaymentInput />
         <div className="flex flex-col">
           <AddBankAccount modalData setModalData />
           <RenderIf condition={bankError->String.length > 0}>
@@ -127,7 +127,7 @@ let make = (~paymentType: CardThemeType.mode) => {
         <Surcharge paymentMethod="bank_debit" paymentMethodType="ach" />
         <Terms mode=ACHBankDebit />
         <FullScreenPortal>
-          <BankDebitModal setModalData paymentType />
+          <BankDebitModal setModalData />
         </FullScreenPortal>
       </div>
     </RenderIf>

@@ -5,7 +5,6 @@ let make = (
   ~savedMethods: array<PaymentType.customerMethods>,
   ~loadSavedCards: PaymentType.savedCardsLoadState,
   ~cvcProps,
-  ~paymentType,
   ~sessions,
   ~isClickToPayAuthenticateError,
   ~setIsClickToPayAuthenticateError,
@@ -102,7 +101,6 @@ let make = (
           index=i
           savedCardlength
           cvcProps
-          paymentType
           setRequiredFieldsBody
         />
       )
@@ -134,7 +132,6 @@ let make = (
           setPaymentToken
           paymentTokenVal
           cvcProps
-          paymentType
         />
       }}
     </div>

@@ -55,7 +55,6 @@ let make = (
   ~index,
   ~savedCardlength,
   ~cvcProps,
-  ~paymentType,
   ~setRequiredFieldsBody,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
@@ -238,7 +237,6 @@ let make = (
                       onBlur=handleCVCBlur
                       errorString=""
                       inputFieldClassName="flex justify-start"
-                      paymentType
                       type_="tel"
                       className={`tracking-widest justify-start w-full`}
                       maxLength=4
@@ -277,7 +275,6 @@ let make = (
               </RenderIf>
               <RenderIf condition={isActive}>
                 <DynamicFields
-                  paymentType
                   paymentMethod=paymentItem.paymentMethod
                   paymentMethodType
                   setRequiredFieldsBody

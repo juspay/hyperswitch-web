@@ -11,7 +11,7 @@ module Loader = {
 let payPalIcon = <Icon size=35 width=90 name="paypal" />
 
 @react.component
-let make = (~paymentType, ~walletOptions) => {
+let make = (~walletOptions) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
@@ -147,9 +147,7 @@ let make = (~paymentType, ~walletOptions) => {
       </div>
     </button>
   } else {
-    <DynamicFields
-      paymentType paymentMethod="wallet" paymentMethodType="paypal" setRequiredFieldsBody
-    />
+    <DynamicFields paymentMethod="wallet" paymentMethodType="paypal" setRequiredFieldsBody />
   }
 }
 

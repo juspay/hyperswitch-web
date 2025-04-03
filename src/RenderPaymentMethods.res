@@ -109,7 +109,6 @@ let make = (
             onFocus=handleElementFocus
             type_="tel"
             maxLength=maxCardLength
-            paymentType
             inputRef=cardRef
             placeholder="1234 1234 1234 1234"
             id="card-number"
@@ -124,7 +123,6 @@ let make = (
             onBlur=handleExpiryBlur
             onFocus=handleElementFocus
             type_="tel"
-            paymentType
             maxLength=7
             inputRef=expiryRef
             placeholder=localeString.expiryPlaceholder
@@ -139,7 +137,6 @@ let make = (
             onChange=changeCVCNumber
             onBlur=handleCVCBlur
             onFocus=handleElementFocus
-            paymentType
             type_="tel"
             className={`tracking-widest w-auto`}
             maxLength=4

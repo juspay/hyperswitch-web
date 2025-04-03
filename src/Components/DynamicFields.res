@@ -18,7 +18,6 @@ module DynamicFieldsToRenderWrapper = {
 
 @react.component
 let make = (
-  ~paymentType,
   ~paymentMethod,
   ~paymentMethodType,
   ~setRequiredFieldsBody,
@@ -366,7 +365,6 @@ let make = (
               onBlur=handleCardBlur
               rightIcon={icon}
               errorString=cardError
-              paymentType
               type_="tel"
               maxLength=maxCardLength
               inputRef=cardRef
@@ -383,7 +381,6 @@ let make = (
               onChange=changeCardExpiry
               onBlur=handleExpiryBlur
               errorString=expiryError
-              paymentType
               type_="tel"
               maxLength=7
               inputRef=expiryRef
@@ -398,7 +395,6 @@ let make = (
               onChange=changeCVCNumber
               onBlur=handleCVCBlur
               errorString=cvcError
-              paymentType
               rightIcon={CardUtils.setRightIconForCvc(
                 ~cardEmpty,
                 ~cardInvalid,
@@ -421,7 +417,6 @@ let make = (
                 onChange=changeCardExpiry
                 onBlur=handleExpiryBlur
                 errorString=expiryError
-                paymentType
                 type_="tel"
                 maxLength=7
                 inputRef=expiryRef
@@ -435,7 +430,6 @@ let make = (
                 onChange=changeCVCNumber
                 onBlur=handleCVCBlur
                 errorString=cvcError
-                paymentType
                 rightIcon={CardUtils.setRightIconForCvc(
                   ~cardEmpty,
                   ~cardInvalid,
@@ -473,14 +467,13 @@ let make = (
                 </div>
               </RenderIf>
               <FullNamePaymentInput
-                paymentType
                 customFieldName={item->getCustomFieldName}
                 optionalRequiredFields={Some(requiredFields)}
               />
             </>
           | CryptoCurrencyNetworks => <CryptoCurrencyNetworks />
           | DateOfBirth => <DateOfBirth />
-          | VpaId => <VpaIdPaymentInput paymentType />
+          | VpaId => <VpaIdPaymentInput />
           | PixKey => <PixPaymentInput label="pixKey" />
           | PixCPF => <PixPaymentInput label="pixCPF" />
           | PixCNPJ => <PixPaymentInput label="pixCNPJ" />
@@ -505,7 +498,6 @@ let make = (
                   isValid: Some(value !== ""),
                 })
               }}
-              paymentType
               type_="text"
               name="bankAccountNumber"
               maxLength=42
@@ -567,8 +559,8 @@ let make = (
             ->Array.mapWithIndex((item, index) => {
               <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index}>
                 {switch item {
-                | BillingName => <BillingNamePaymentInput paymentType requiredFields />
-                | Email => <EmailPaymentInput paymentType />
+                | BillingName => <BillingNamePaymentInput requiredFields />
+                | Email => <EmailPaymentInput />
                 | PhoneNumber => <PhoneNumberPaymentInput />
                 | StateAndCity =>
                   <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""} overflow-hidden`}>
@@ -591,7 +583,6 @@ let make = (
                           isValid: Some(value !== ""),
                         })
                       }}
-                      paymentType
                       type_="text"
                       name="city"
                       inputRef=cityRef
@@ -638,7 +629,6 @@ let make = (
                         })
                       }}
                       onChange=onPostalChange
-                      paymentType
                       name="postal"
                       inputRef=postalRef
                       placeholder=localeString.postalCodeLabel
@@ -665,7 +655,6 @@ let make = (
                         isValid: Some(value !== ""),
                       })
                     }}
-                    paymentType
                     type_="text"
                     name="line1"
                     inputRef=line1Ref
@@ -692,7 +681,6 @@ let make = (
                         isValid: Some(value !== ""),
                       })
                     }}
-                    paymentType
                     type_="text"
                     name="line2"
                     inputRef=line2Ref
@@ -718,7 +706,6 @@ let make = (
                         isValid: Some(value !== ""),
                       })
                     }}
-                    paymentType
                     type_="text"
                     name="city"
                     inputRef=cityRef
@@ -752,7 +739,6 @@ let make = (
                       })
                     }}
                     onChange=onPostalChange
-                    paymentType
                     name="postal"
                     inputRef=postalRef
                     placeholder=localeString.postalCodeLabel

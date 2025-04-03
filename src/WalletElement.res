@@ -39,7 +39,7 @@ let make = (~paymentType) => {
         level={ErrorBoundary.RequestButton}
         componentName="WalletElement"
         publishableKey>
-        <PaymentRequestButtonElement sessions walletOptions paymentType />
+        <PaymentRequestButtonElement sessions walletOptions />
       </ErrorBoundary>
     </div>
   </RenderIf>

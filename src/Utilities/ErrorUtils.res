@@ -4,7 +4,6 @@ type stringType = Dynamic(string => string) | Static(string)
 type error = array<(HyperLoggerTypes.eventName, type_, string)>
 
 open HyperLoggerTypes
-open HyperLogger
 
 let errorWarning = [
   (

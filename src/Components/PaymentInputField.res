@@ -1,4 +1,6 @@
 open RecoilAtoms
+open PaymentTypeContext
+
 @react.component
 let make = (
   ~isValid=Some(true),
@@ -14,17 +16,19 @@ let make = (
   ~fieldName="",
   ~name="",
   ~type_="text",
-  ~paymentType: CardThemeType.mode,
   ~maxLength=?,
   ~pattern=?,
   ~placeholder="",
   ~className="",
   ~inputRef,
+  ~paymentType=?,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let contextPaymentType = usePaymentType()
+  let paymentType = paymentType->Option.getOr(contextPaymentType)
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 

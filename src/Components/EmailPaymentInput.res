@@ -2,7 +2,7 @@ open RecoilAtoms
 open Utils
 
 @react.component
-let make = (~paymentType) => {
+let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
@@ -63,7 +63,6 @@ let make = (~paymentType) => {
       value=email
       onChange=changeEmail
       onBlur
-      paymentType
       type_="email"
       inputRef=emailRef
       placeholder="Eg: johndoe@gmail.com"

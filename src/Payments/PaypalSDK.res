@@ -1,7 +1,8 @@
 open PaypalSDKTypes
+open PaymentTypeContext
 
 @react.component
-let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) => {
+let make = (~sessionObj: SessionsType.token) => {
   let {
     iframeId,
     publishableKey,
@@ -16,6 +17,7 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let paymentType = usePaymentType()
 
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
