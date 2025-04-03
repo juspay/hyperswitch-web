@@ -945,7 +945,7 @@ type checkoutConfig = {
   windowRef?: Window.window,
   dpaTransactionOptions: dpaTransactionOptionsVisa,
 }
-type visaInitConfig = {dpaTransactionOptions: dpaTransactionOptionsVisa, correlationId?: string}
+type visaInitConfig = {dpaTransactionOptions: dpaTransactionOptionsVisa}
 type getCardsConfig = {consumerIdentity: consumerIdentity, validationData?: string}
 type errorObj = {reason?: string}
 type profile = {maskedCards: array<clickToPayCard>}
@@ -960,6 +960,7 @@ type vsdk = {
   initialize: visaInitConfig => promise<{.}>,
   getCards: getCardsConfig => promise<getCardsResultType>,
   checkout: checkoutConfig => promise<JSON.t>,
+  unbindAppInstance: unit => promise<unit>,
 }
 
 let defaultProfile = {
@@ -979,6 +980,7 @@ type visaEncryptCardPayload = {
 @val external vsdk: vsdk = "window.VSDK"
 
 let getCardsVisaUnified = (~getCardsConfig) => vsdk.getCards(getCardsConfig)
+let signOutVisaUnified = () => vsdk.unbindAppInstance()
 
 let loadVisaScript = (
   clickToPayToken: clickToPayToken,
@@ -1045,12 +1047,11 @@ type visaCheckoutResponse = {
 let checkoutVisaUnified = async (
   ~srcDigitalCardId="",
   ~encryptedCard="",
-  ~acquirerBIN,
-  ~acquirerMerchantId,
-  ~merchantName,
   ~windowRef,
   ~newCard=false,
   ~rememberMe=false,
+  ~clickToPayToken: clickToPayToken,
+  ~orderId,
 ) => {
   let defaultConfig = {
     payloadTypeIndicatorCheckout: "FULL",
@@ -1068,10 +1069,10 @@ let checkoutVisaUnified = async (
         ],
         payloadRequested: "AUTHENTICATED",
       },
-      acquirerBIN,
-      acquirerMerchantId,
-      merchantName,
-      merchantOrderId: "fd65f14b-8155-47f0-bfa9-65ff9df0f760",
+      acquirerBIN: clickToPayToken.acquirerBIN,
+      acquirerMerchantId: clickToPayToken.acquirerMerchantId,
+      merchantName: clickToPayToken.dpaName,
+      merchantOrderId: orderId,
     },
   }
 
@@ -1149,6 +1150,8 @@ let handleProceedToPay = async (
   ~visaEncryptedCard: string="",
   ~clickToPayProvider,
   ~clickToPayRememberMe=false,
+  ~clickToPayToken,
+  ~orderId,
 ) => {
   let closeWindow = (status, payload: JSON.t) => {
     handleCloseClickToPayWindow()
@@ -1185,18 +1188,23 @@ let handleProceedToPay = async (
         }
       | VISA =>
         try {
-          let checkoutResp = await checkoutVisaUnified(
-            ~srcDigitalCardId,
-            ~acquirerBIN="455555",
-            ~acquirerMerchantId="12345678",
-            ~merchantName="TestMerchant",
-            ~windowRef=window,
-            ~rememberMe=clickToPayRememberMe,
-          )
-          let actionCode = checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
-          switch actionCode {
-          | "SUCCESS" => closeWindow(COMPLETE, checkoutResp)
-          | _ => closeWindow(ERROR, JSON.Encode.null)
+          switch clickToPayToken {
+          | Some(token) => {
+              let checkoutResp = await checkoutVisaUnified(
+                ~srcDigitalCardId,
+                ~clickToPayToken=token,
+                ~windowRef=window,
+                ~rememberMe=clickToPayRememberMe,
+                ~orderId,
+              )
+              let actionCode =
+                checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
+              switch actionCode {
+              | "SUCCESS" => closeWindow(COMPLETE, checkoutResp)
+              | _ => closeWindow(ERROR, JSON.Encode.null)
+              }
+            }
+          | None => closeWindow(ERROR, JSON.Encode.null)
           }
         } catch {
         | _ => closeWindow(ERROR, JSON.Encode.null)
@@ -1274,18 +1282,23 @@ let handleProceedToPay = async (
         }
       | VISA =>
         try {
-          let checkoutResp = await checkoutVisaUnified(
-            ~encryptedCard=visaEncryptedCard,
-            ~acquirerBIN="455555",
-            ~acquirerMerchantId="12345678",
-            ~merchantName="TestMerchant",
-            ~windowRef=window,
-            ~newCard=true,
-          )
-          let actionCode = checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
-          switch actionCode {
-          | "SUCCESS" => closeWindow(COMPLETE, checkoutResp)
-          | _ => closeWindow(ERROR, JSON.Encode.null)
+          switch clickToPayToken {
+          | Some(token) => {
+              let checkoutResp = await checkoutVisaUnified(
+                ~encryptedCard=visaEncryptedCard,
+                ~windowRef=window,
+                ~newCard=true,
+                ~clickToPayToken=token,
+                ~orderId,
+              )
+              let actionCode =
+                checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")
+              switch actionCode {
+              | "SUCCESS" => closeWindow(COMPLETE, checkoutResp)
+              | _ => closeWindow(ERROR, JSON.Encode.null)
+              }
+            }
+          | None => closeWindow(ERROR, JSON.Encode.null)
           }
         } catch {
         | _ => closeWindow(ERROR, JSON.Encode.null)

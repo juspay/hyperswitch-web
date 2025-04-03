@@ -10,12 +10,6 @@ let make = (
   ~isClickToPayAuthenticateError,
   ~setIsClickToPayAuthenticateError,
   ~getVisaCards,
-  ~visaComponentState,
-  ~otpError,
-  ~setOtpError,
-  ~maskedIdentity,
-  ~consumerIdentity,
-  ~setConsumerIdentity,
 ) => {
   open CardUtils
   open Utils
@@ -46,7 +40,7 @@ let make = (
   )
   let isGuestCustomer = useIsGuestCustomer()
 
-  let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {iframeId, clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
@@ -64,6 +58,7 @@ let make = (
     SamsungPay,
   )
   let (clickToPayRememberMe, setClickToPayRememberMe) = React.useState(_ => false)
+  let ctpHelperAtom = Recoil.useRecoilValueFromAtom(RecoilAtoms.ctpHelperAtom)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let savedCardlength = savedMethods->Array.length
@@ -107,12 +102,6 @@ let make = (
         cvcProps
         paymentType
         getVisaCards
-        visaComponentState
-        otpError
-        setOtpError
-        maskedIdentity
-        consumerIdentity
-        setConsumerIdentity
         setClickToPayRememberMe
       />
     </div>
@@ -189,6 +178,8 @@ let make = (
           ~logger=loggerState,
           ~clickToPayProvider,
           ~clickToPayRememberMe,
+          ~clickToPayToken=ctpHelperAtom.clickToPayToken,
+          ~orderId=clientSecret->Option.getOr(""),
         )
         ->then(resp => {
           Console.log2("Response", resp)

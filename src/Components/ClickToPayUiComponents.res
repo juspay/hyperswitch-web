@@ -39,14 +39,9 @@ module LoadingState = {
 
 module OtpInput = {
   @react.component
-  let make = (
-    ~getCards: string => promise<unit>,
-    ~otpError,
-    ~setOtpError,
-    ~maskedIdentity,
-    ~setClickToPayRememberMe,
-  ) => {
+  let make = (~getCards: string => promise<unit>, ~setClickToPayRememberMe) => {
     let (isOtpSubmitting, setIsOtpSubmitting) = React.useState(_ => false)
+    let (ctpHelperAtom, setCtpHelperAtom) = Recoil.useRecoilState(RecoilAtoms.ctpHelperAtom)
     let otpValueRef = React.useRef("")
     let (resendLoading, setResendLoading) = React.useState(_ => false)
     let addListener = (~element, ~event, ~callback, ~options=?) =>
@@ -54,7 +49,10 @@ module OtpInput = {
 
     let callBacks = {
       otpChanged: ev => {
-        setOtpError(_ => "")
+        setCtpHelperAtom(prev => {
+          ...prev,
+          otpError: "",
+        })
         ev
         ->Js.Nullable.toOption
         ->Option.forEach(value => {
@@ -74,7 +72,10 @@ module OtpInput = {
         )()->ignore
       },
       resendClicked: _ => {
-        setOtpError(_ => "")
+        setCtpHelperAtom(prev => {
+          ...prev,
+          otpError: "",
+        })
 
         (
           async _ => {
@@ -122,7 +123,7 @@ module OtpInput = {
     })
 
     <ClickToPayHelpers.SrcOtpInput
-      errorReason=otpError
+      errorReason=ctpHelperAtom.otpError
       locale="en-US"
       header=false
       network=" "
@@ -130,7 +131,7 @@ module OtpInput = {
       id="src-otp-input"
       cardBrand=""
       displayCancelOption=false
-      maskedIdentityValue=maskedIdentity
+      maskedIdentityValue=ctpHelperAtom.maskedIdentity
       typeName=""
       isOtpValid=false
       disableElements=isOtpSubmitting

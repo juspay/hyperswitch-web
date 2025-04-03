@@ -15,12 +15,6 @@ let make = (
   ~cvcProps,
   ~paymentType,
   ~getVisaCards,
-  ~visaComponentState,
-  ~otpError,
-  ~setOtpError,
-  ~maskedIdentity,
-  ~consumerIdentity,
-  ~setConsumerIdentity,
   ~setClickToPayRememberMe,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
@@ -30,6 +24,7 @@ let make = (
   let (isCTPAuthenticateNotYouClicked, setIsCTPAuthenticateNotYouClicked) = React.useState(_ =>
     false
   )
+  let ctpHelperAtom = Recoil.useRecoilValueFromAtom(RecoilAtoms.ctpHelperAtom)
 
   let closeComponentIfSavedMethodsAreEmpty = () => {
     if savedMethods->Array.length === 0 && loadSavedCards !== PaymentType.LoadingSavedCards {
@@ -59,8 +54,11 @@ let make = (
               switch iframe.contentWindow {
               | Some(iframeContentWindow) => {
                   let authenticateConsumerIdentity = {
-                    identityType: consumerIdentity.identityType,
-                    identityValue: consumerIdentity.identityValue->String.replaceAll(" ", ""),
+                    identityType: ctpHelperAtom.consumerIdentity.identityType,
+                    identityValue: ctpHelperAtom.consumerIdentity.identityValue->String.replaceAll(
+                      " ",
+                      "",
+                    ),
                   }
                   let authenticatePayload: ClickToPayHelpers.authenticateInputPayload = {
                     windowRef: iframeContentWindow,
@@ -161,9 +159,7 @@ let make = (
     </RenderIf>
     {switch isShowClickToPayNotYou {
     | true =>
-      <ClickToPayNotYou
-        setIsShowClickToPayNotYou isCTPAuthenticateNotYouClicked setConsumerIdentity getVisaCards
-      />
+      <ClickToPayNotYou setIsShowClickToPayNotYou isCTPAuthenticateNotYouClicked getVisaCards />
     | false =>
       switch ctpCards->Array.length {
       | 0 =>
@@ -174,7 +170,7 @@ let make = (
           }
           <div id="mastercard-account-verification" />
         | VISA =>
-          switch visaComponentState {
+          switch ctpHelperAtom.visaComponentState {
           | CARDS_LOADING => <ClickToPayUiComponents.LoadingState />
           | OTP_INPUT =>
             <>
@@ -185,16 +181,13 @@ let make = (
                   (
                     async _ => {
                       await getVisaCards(
-                        ~identityValue=consumerIdentity.identityValue,
+                        ~identityValue=ctpHelperAtom.consumerIdentity.identityValue,
                         ~otp,
-                        ~identityType=consumerIdentity.identityType,
+                        ~identityType=ctpHelperAtom.consumerIdentity.identityType,
                       )
                     }
                   )()
                 }}
-                otpError
-                setOtpError
-                maskedIdentity
                 setClickToPayRememberMe
               />
             </>

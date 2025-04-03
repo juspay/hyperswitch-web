@@ -7,18 +7,12 @@ let useClickToPay = (
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
   let clickToPayProvider = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayProvider)
-  let (visaComponentState, setVisaComponentState) = React.useState(_ => NONE)
-  let (maskedIdentity, setMaskedIdentity) = React.useState(_ => "")
-  let (otpError, setOtpError) = React.useState(_ => "")
-  let (consumerIdentity, setConsumerIdentity) = React.useState(_ => {
-    identityType: EMAIL_ADDRESS,
-    identityValue: "",
-  })
+  let (ctpHelperAtom, setCtpHelperAtom) = Recoil.useRecoilState(RecoilAtoms.ctpHelperAtom)
+
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let sessionsObj = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {publishableKey, clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isProd = publishableKey->String.startsWith("pk_prd_")
-  let (ctpToken: option<ClickToPayHelpers.clickToPayToken>, setCtpToken) = React.useState(_ => None)
 
   let getVisaCards: (
     ~identityValue: string,
@@ -48,22 +42,30 @@ let useClickToPay = (
             }
           | None => None
           }
-          setVisaComponentState(_ => NONE)
+          setCtpHelperAtom(prev => {
+            ...prev,
+            visaComponentState: NONE,
+          })
 
           //TODO: handle the case when no cards were found
 
-          let _ = setClickToPayConfig(prev => {
+          setClickToPayConfig(prev => {
             ...prev,
             clickToPayCards: cards,
           })
         }
-      | PENDING_CONSUMER_IDV => {
-          setVisaComponentState(_ => OTP_INPUT)
-          setMaskedIdentity(_ => cardsResult.maskedValidationChannel->Option.getOr(""))
-        }
+      | PENDING_CONSUMER_IDV =>
+        setCtpHelperAtom(prev => {
+          ...prev,
+          visaComponentState: OTP_INPUT,
+          maskedIdentity: cardsResult.maskedValidationChannel->Option.getOr(""),
+        })
       | ADD_CARD =>
         // TODO: need to prompt user to add card
-        setVisaComponentState(_ => NONE)
+        setCtpHelperAtom(prev => {
+          ...prev,
+          visaComponentState: NONE,
+        })
 
       | FAILED
       | ERROR =>
@@ -73,33 +75,56 @@ let useClickToPay = (
             switch err.reason {
             | Some(reason) =>
               switch reason {
-              | "VALIDATION_DATA_INVALID" => setOtpError(_ => "VALIDATION_DATA_INVALID")
+              | "VALIDATION_DATA_INVALID" =>
+                setCtpHelperAtom(prev => {
+                  ...prev,
+                  otpError: "VALIDATION_DATA_INVALID",
+                })
               | "OTP_SEND_FAILED" =>
                 //TODO: need to handle this case properly
                 Console.log("OTP_SEND_FAILED")
 
               | "ACCT_INACCESSIBLE" => //TODO: need to handle this case properly
                 ()
-              | _ => setOtpError(_ => "NONE")
+              | _ =>
+                setCtpHelperAtom(prev => {
+                  ...prev,
+                  otpError: "NONE",
+                })
               }
-            | None => setVisaComponentState(_ => NONE)
+            | None =>
+              setCtpHelperAtom(prev => {
+                ...prev,
+                visaComponentState: NONE,
+              })
             }
-          | None => setVisaComponentState(_ => NONE)
+          | None =>
+            setCtpHelperAtom(prev => {
+              ...prev,
+              visaComponentState: NONE,
+            })
           }
         } else {
           // TODO: handle this case we there is error in getting cards without otp
-          setVisaComponentState(_ => NONE)
+          setCtpHelperAtom(prev => {
+            ...prev,
+            visaComponentState: NONE,
+          })
           Console.log("get cards failed!")
         }
       }
     } catch {
-    | _ => setVisaComponentState(_ => NONE)
+    | _ =>
+      setCtpHelperAtom(prev => {
+        ...prev,
+        visaComponentState: NONE,
+      })
     }
   }
 
   let initVisaUnified = async email => {
     try {
-      switch ctpToken {
+      switch ctpHelperAtom.clickToPayToken {
       | Some(token) => {
           let initConfig = {
             dpaTransactionOptions: {
@@ -121,19 +146,25 @@ let useClickToPay = (
               acquirerMerchantId: token.acquirerMerchantId,
               merchantCategoryCode: token.merchantCategoryCode,
               merchantCountryCode: token.merchantCountryCode,
-              merchantOrderId: "fd65f14b-8155-47f0-bfa9-65ff9df0f760",
+              merchantOrderId: clientSecret->Option.getOr(""),
             },
-            correlationId: "my-id",
           }
 
-          setVisaComponentState(_ => CARDS_LOADING)
+          setCtpHelperAtom(prev => {
+            ...prev,
+            visaComponentState: CARDS_LOADING,
+          })
           let _ = await vsdk.initialize(initConfig)
           let _ = await getVisaCards(~identityValue=email, ~otp="", ~identityType=EMAIL_ADDRESS)
         }
       | None => ()
       }
     } catch {
-    | _ => setVisaComponentState(_ => NONE)
+    | _ =>
+      setCtpHelperAtom(prev => {
+        ...prev,
+        visaComponentState: NONE,
+      })
     }
   }
 
@@ -142,7 +173,10 @@ let useClickToPay = (
     let clickToPaySessionObj = SessionsType.itemToObjMapper(dict, ClickToPayObject)
     switch SessionsType.getPaymentSessionObj(clickToPaySessionObj.sessionsToken, ClickToPay) {
     | ClickToPayTokenOptional(Some(token)) =>
-      setCtpToken(_ => Some(ClickToPayHelpers.clickToPayTokenItemToObjMapper(token)))
+      setCtpHelperAtom(prev => {
+        ...prev,
+        clickToPayToken: ClickToPayHelpers.clickToPayTokenItemToObjMapper(token),
+      })
       Some(ClickToPayHelpers.clickToPayTokenItemToObjMapper(token))
     | _ => None
     }
@@ -157,11 +191,10 @@ let useClickToPay = (
   let visaScriptOnLoadCallback = ssn => {
     switch getClickToPayToken(ssn) {
     | Some(clickToPayToken) => setTimeout(() => {
-        let availableCardBrands = ["mastercard", "visa"]
         setClickToPayConfig(prev => {
           ...prev,
           isReady: Some(true),
-          availableCardBrands,
+          availableCardBrands: clickToPayToken.cardBrands,
           email: clickToPayToken.email,
           dpaName: clickToPayToken.dpaName,
         })
@@ -240,18 +273,27 @@ let useClickToPay = (
     if (
       clickToPayConfig.isReady == Some(true) &&
       clickToPayProvider == VISA &&
-      areClickToPayUIScriptsLoaded
+      areClickToPayUIScriptsLoaded &&
+      ctpHelperAtom.clickToPayToken->Option.isSome
     ) {
       initVisaUnified(clickToPayConfig.email)->ignore
     }
     None
-  }, (clickToPayConfig.isReady, areClickToPayUIScriptsLoaded, clickToPayProvider, ctpToken))
+  }, (
+    clickToPayConfig.isReady,
+    areClickToPayUIScriptsLoaded,
+    clickToPayProvider,
+    ctpHelperAtom.clickToPayToken,
+  ))
 
   React.useEffect(() => {
-    if clickToPayConfig.email !== "" && consumerIdentity.identityValue === "" {
-      setConsumerIdentity(_ => {
-        identityType: EMAIL_ADDRESS,
-        identityValue: clickToPayConfig.email,
+    if clickToPayConfig.email !== "" && ctpHelperAtom.consumerIdentity.identityValue === "" {
+      setCtpHelperAtom(prev => {
+        ...prev,
+        consumerIdentity: {
+          identityType: EMAIL_ADDRESS,
+          identityValue: clickToPayConfig.email,
+        },
       })
     }
     None
@@ -292,13 +334,5 @@ let useClickToPay = (
     None
   }, [sessionsObj])
 
-  (
-    getVisaCards,
-    visaComponentState,
-    otpError,
-    setOtpError,
-    maskedIdentity,
-    consumerIdentity,
-    setConsumerIdentity,
-  )
+  getVisaCards
 }

@@ -59,15 +59,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let layoutClass = CardUtils.getLayoutClass(layout)
 
-  let (
-    getVisaCards,
-    visaComponentState,
-    otpError,
-    setOtpError,
-    maskedIdentity,
-    consumerIdentity,
-    setConsumerIdentity,
-  ) = ClickToPayHook.useClickToPay(
+  let getVisaCards = ClickToPayHook.useClickToPay(
     ~areClickToPayUIScriptsLoaded,
     ~setSessions,
     ~setAreClickToPayUIScriptsLoaded,
@@ -485,12 +477,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           isClickToPayAuthenticateError
           setIsClickToPayAuthenticateError
           getVisaCards
-          visaComponentState
-          otpError
-          setOtpError
-          maskedIdentity
-          consumerIdentity
-          setConsumerIdentity
         />
       </RenderIf>
     }}

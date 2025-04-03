@@ -2,18 +2,14 @@ open ClickToPayHelpers
 open Utils
 
 @react.component
-let make = (
-  ~setIsShowClickToPayNotYou,
-  ~isCTPAuthenticateNotYouClicked,
-  ~setConsumerIdentity,
-  ~getVisaCards,
-) => {
+let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVisaCards) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
 
   let (identifier, setIdentifier) = React.useState(_ => "")
   let (isValid, setIsValid) = React.useState(_ => false)
   let (identifierType, setIdentifierType) = React.useState(_ => EMAIL_ADDRESS)
+  let setCtpHelperAtom = Recoil.useSetRecoilState(RecoilAtoms.ctpHelperAtom)
 
   let clickToPayProvider = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayProvider)
 
@@ -22,7 +18,10 @@ let make = (
       ...prev,
       clickToPayCards: Some([]),
     })
-    setConsumerIdentity(_ => consumerIdentity)
+    setCtpHelperAtom(prev => {
+      ...prev,
+      consumerIdentity,
+    })
     setIsShowClickToPayNotYou(_ => false)
   }
 
@@ -42,11 +41,24 @@ let make = (
 
       (
         async _ => {
-          await getVisaCards(
-            ~identityValue=consumerIdentity.identityValue,
-            ~otp="",
-            ~identityType=consumerIdentity.identityType,
-          )
+          setCtpHelperAtom(prev => {
+            ...prev,
+            visaComponentState: CARDS_LOADING,
+          })
+          try {
+            await signOutVisaUnified()
+            await getVisaCards(
+              ~identityValue=consumerIdentity.identityValue,
+              ~otp="",
+              ~identityType=consumerIdentity.identityType,
+            )
+          } catch {
+          | _ =>
+            setCtpHelperAtom(prev => {
+              ...prev,
+              visaComponentState: NONE,
+            })
+          }
         }
       )()->ignore
     | NONE => ()

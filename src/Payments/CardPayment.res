@@ -29,6 +29,8 @@ let make = (
   let (clickToPayRememberMe, setClickToPayRememberMe) = React.useState(_ => false)
   let ctpCards = clickToPayConfig.clickToPayCards->Option.getOr([])
   let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
+  let ctpHelperAtom = Recoil.useRecoilValueFromAtom(RecoilAtoms.ctpHelperAtom)
+  let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
   let (
     isCardValid,
@@ -211,6 +213,8 @@ let make = (
                   ~rememberMe=clickToPayRememberMe,
                   ~logger=loggerState,
                   ~clickToPayProvider,
+                  ~clickToPayToken=ctpHelperAtom.clickToPayToken,
+                  ~orderId=clientSecret->Option.getOr(""),
                 )
                 ->then(
                   resp => {
@@ -286,6 +290,8 @@ let make = (
                   ~rememberMe=clickToPayRememberMe,
                   ~logger=loggerState,
                   ~clickToPayProvider,
+                  ~clickToPayToken=ctpHelperAtom.clickToPayToken,
+                  ~orderId=clientSecret->Option.getOr(""),
                 )
                 ->then(res => {
                   let dict = res.payload->Utils.getDictFromJson
