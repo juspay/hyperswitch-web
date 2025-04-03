@@ -5,8 +5,7 @@ let make = (
   ~handleDeleteV2,
   ~handleUpdate,
 ) => {
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let {innerLayout} = config.appearance
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {hideExpiredPaymentMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let isCard = paymentItem.paymentMethodType === "card"
   let expiryMonth = paymentItem.paymentMethodData.card.expiryMonth
@@ -23,11 +22,6 @@ let make = (
   let (managePaymentMethod, setManagePaymentMethod) = Recoil.useRecoilState(
     RecoilAtomsV2.managePaymentMethod,
   )
-
-  let cardHolderName = switch paymentItem.paymentMethodData.card.cardHolderName {
-  | Some(val) => val
-  | _ => ""
-  }
 
   let handlemanage = () => {
     setManagePaymentMethod(_ => paymentItem.id)
@@ -140,62 +134,7 @@ let make = (
         </div>
       </div>
       <RenderIf condition={managePaymentMethod == paymentItem.id}>
-        <div
-          className="flex flex-col gap-3 items-stretch animate-slowShow"
-          style={
-            minWidth: "150px",
-            width: "100%",
-            padding: "0 0 1rem 0",
-            borderBottom: managePaymentMethod === paymentItem.id
-              ? `1px solid ${themeObj.borderColor}`
-              : "none",
-            borderTop: "none",
-            borderLeft: "none",
-            borderRight: "none",
-            borderRadius: "0px",
-            background: "transparent",
-            color: themeObj.colorTextSecondary,
-            boxShadow: "none",
-            opacity: {isCardExpired ? "0.7" : "1"},
-          }>
-          <div
-            className="flex flex-row w-full place-content-between"
-            style={
-              gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-            }>
-            <div className={innerLayout === Spaced ? "w-[70%]" : "w-[50%]"}>
-              <PaymentInputField
-                fieldName=localeString.cardNumberLabel
-                value={`**** **** **** ${paymentItem.paymentMethodData.card.last4Digits}`}
-                onChange={_ => ()}
-                paymentType=CardThemeType.Card
-                type_="tel"
-                appearance=config.appearance
-                inputRef={React.useRef(Nullable.null)}
-                name=TestUtils.expiryInputTestId
-                isDisabled=true
-              />
-            </div>
-            <div className={innerLayout === Spaced ? "w-[30%]" : "w-[50%]"}>
-              <PaymentInputField
-                fieldName=localeString.validThruText
-                value={`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}
-                onChange={_ => ()}
-                paymentType=CardThemeType.Card
-                type_="tel"
-                appearance=config.appearance
-                inputRef={React.useRef(Nullable.null)}
-                placeholder=localeString.expiryPlaceholder
-                name=TestUtils.expiryInputTestId
-                isDisabled=true
-              />
-            </div>
-          </div>
-          <FullNamePaymentInput
-            paymentType={PaymentMethodsManagement} fullNameValue=cardHolderName
-          />
-          <NicknamePaymentInput paymentType={PaymentMethodsManagement} nickNameValue=nickname />
-        </div>
+        <ManageSavedItem paymentItem managePaymentMethod isCardExpired expiryMonth expiryYear />
       </RenderIf>
     </div>
   </RenderIf>

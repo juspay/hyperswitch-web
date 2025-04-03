@@ -1507,3 +1507,46 @@ let isValidHexColor = (color: string): bool => {
   let hexRegex = %re("/^#([0-9a-f]{6}|[0-9a-f]{3})$/i")
   Js.Re.test_(hexRegex, color)
 }
+
+let validateName = (
+  val: string,
+  prev: RecoilAtomTypes.field,
+  localeString: LocaleStringTypes.localeStrings,
+) => {
+  let isValid = val !== "" && %re("/^\D*$/")->RegExp.test(val)
+  let errorString = if val === "" {
+    prev.errorString
+  } else if isValid {
+    ""
+  } else {
+    localeString.invalidCardHolderNameError
+  }
+  {
+    ...prev,
+    value: val,
+    isValid: Some(isValid),
+    errorString,
+  }
+}
+
+let validateNickname = (val: string, localeString: LocaleStringTypes.localeStrings) => {
+  let isValid = Some(val === "" || !(val->isDigitLimitExceeded(~digit=2)))
+  let errorString =
+    val !== "" && val->isDigitLimitExceeded(~digit=2) ? localeString.invalidNickNameError : ""
+
+  (isValid, errorString)
+}
+
+let setNickNameState = (
+  val,
+  prevState: RecoilAtomTypes.field,
+  localeString: LocaleStringTypes.localeStrings,
+) => {
+  let (isValid, errorString) = val->validateNickname(localeString)
+  {
+    ...prevState,
+    value: val,
+    isValid,
+    errorString,
+  }
+}

@@ -239,7 +239,7 @@ let make = (
           ]->Dict.fromArray
 
         preMountLoaderMountedPromise
-        ->then(_ => {
+        ->then(async _ => {
           let disableSavedPaymentMethods =
             newOptions
             ->getDictFromJson
@@ -248,28 +248,17 @@ let make = (
             disableSavedPaymentMethods &&
             !(expressCheckoutComponents->Array.includes(componentType))
           ) {
-            switch GlobalVars.sdkVersionEnum {
-            | V1 =>
-              fetchSavedPaymentMethods(mountedIframeRef, false, componentType)
-              ->then(_ => {
-                let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
-                preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-                resolve()
-              })
-              ->catch(_ => resolve())
-              ->ignore
-            | V2 =>
-              fetchPaymentManagementList(mountedIframeRef, false, componentType)
-              ->then(_ => {
-                let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
-                preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-                resolve()
-              })
-              ->catch(_ => resolve())
-              ->ignore
+            try {
+              switch GlobalVars.sdkVersionEnum {
+              | V1 => await fetchSavedPaymentMethods(mountedIframeRef, false, componentType)
+              | V2 => await fetchPaymentManagementList(mountedIframeRef, false, componentType)
+              }
+              let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
+              preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+            } catch {
+            | _ => ()
             }
           }
-          resolve()
         })
         ->catch(_ => resolve())
         ->ignore

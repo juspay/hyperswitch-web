@@ -15,33 +15,6 @@ let make = (
   let (fullName, setFullName) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
 
-  let validateName = (
-    val: string,
-    prev: RecoilAtomTypes.field,
-    localeString: LocaleStringTypes.localeStrings,
-  ) => {
-    let isValid = val !== "" && %re("/^\D*$/")->RegExp.test(val)
-    let errorString = if val === "" {
-      prev.errorString
-    } else if isValid {
-      ""
-    } else {
-      localeString.invalidCardHolderNameError
-    }
-    {
-      ...prev,
-      value: val,
-      isValid: Some(isValid),
-      errorString,
-    }
-  }
-
-  React.useEffect(() => {
-    setFullName(prev => validateName(fullNameValue, prev, localeString))
-
-    None
-  }, [])
-
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
     setFullName(prev => validateName(val, prev, localeString))

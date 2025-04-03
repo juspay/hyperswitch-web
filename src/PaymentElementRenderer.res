@@ -13,6 +13,20 @@ let make = (
   let sessions = Recoil.useRecoilValueFromAtom(sessions)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let setFullName = Recoil.useLoggedSetRecoilState(userFullName, "fullName", loggerState)
+  let setNickName = Recoil.useSetRecoilState(userCardNickName)
+  let (_, startTransition) = React.useTransition()
+
+  React.useEffect(() => {
+    startTransition(() => {
+      setFullName(prev => Utils.validateName("", prev, localeString))
+      setNickName(prev => Utils.setNickNameState("", prev, localeString))
+    })
+    None
+  }, [])
+
   switch GlobalVars.sdkVersionEnum {
   | V2 =>
     switch (sessions, paymentManagementList) {

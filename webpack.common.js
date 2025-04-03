@@ -88,6 +88,7 @@ const authorizedFrameSources = [
   "https://integ-api.hyperswitch.io",
   "https://app.hyperswitch.io",
   "https://sandbox.hyperswitch.io",
+  "https://integ-api.hyperswitch.io",
   "https://api.hyperswitch.io",
   "https://pay.google.com",
   "https://www.sandbox.paypal.com",
@@ -119,6 +120,7 @@ const authorizedConnectSources = [
   "https://google.com/pay",
   "https://www.sandbox.paypal.com",
   "https://www.paypal.com",
+  "https://integ-api.hyperswitch.io",
   ...localhostSources,
   // Add other trusted sources here
 ];

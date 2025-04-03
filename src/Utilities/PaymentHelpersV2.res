@@ -314,7 +314,7 @@ let deletePaymentMethodV2 = (
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/payment_methods/${pmSessionId}`
+  let uri = `${endpoint}/v2/payment-methods-session/${pmSessionId}`
   fetchApi(
     uri,
     ~method=#DELETE,
@@ -427,7 +427,7 @@ let savePaymentMethod = (
   })
 }
 
-let useSaveCard = (optLogger: option<HyperLogger.loggerMake>, paymentType: payment) => {
+let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: payment) => {
   open RecoilAtoms
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
