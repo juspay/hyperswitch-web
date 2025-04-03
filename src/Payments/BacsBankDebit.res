@@ -24,7 +24,7 @@ let cleanSortCode = str => str->String.replaceRegExp(%re("/-/g"), "")
 let make = (~paymentType: CardThemeType.mode) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
@@ -145,7 +145,6 @@ let make = (~paymentType: CardThemeType.mode) => {
             errorString=sortCodeError
             isValid={sortCodeError == "" ? None : Some(false)}
             type_="tel"
-            appearance=config.appearance
             maxLength=8
             onBlur=sortcodeBlur
             inputRef=sortCodeRef
@@ -157,7 +156,6 @@ let make = (~paymentType: CardThemeType.mode) => {
             onChange=changeAccNum
             paymentType
             type_="text"
-            appearance=config.appearance
             inputRef=accNumRef
             placeholder="00012345"
           />

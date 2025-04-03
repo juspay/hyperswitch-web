@@ -25,7 +25,7 @@ let formatSocialSecurityNumber = socialSecurityNumber => {
 @react.component
 let make = (~paymentType: CardThemeType.mode) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
@@ -94,7 +94,6 @@ let make = (~paymentType: CardThemeType.mode) => {
       errorString=socialSecurityNumberError
       isValid={socialSecurityNumberError == "" ? None : Some(false)}
       type_="tel"
-      appearance=config.appearance
       maxLength=14
       onBlur=socialSecurityNumberBlur
       inputRef=socialSecurityNumberRef

@@ -349,7 +349,6 @@ let make = (
               errorString=cardError
               paymentType
               type_="tel"
-              appearance=config.appearance
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
@@ -374,7 +373,6 @@ let make = (
                   errorString=expiryError
                   paymentType
                   type_="tel"
-                  appearance=config.appearance
                   maxLength=7
                   inputRef=expiryRef
                   placeholder=localeString.expiryPlaceholder
@@ -397,7 +395,6 @@ let make = (
                     ~cardInvalid,
                     ~color=themeObj.colorIconCardCvcError,
                   )}
-                  appearance=config.appearance
                   type_="tel"
                   className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
                   maxLength=4
