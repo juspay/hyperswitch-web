@@ -239,7 +239,6 @@ let make = (
                       errorString=""
                       inputFieldClassName="flex justify-start"
                       paymentType
-                      appearance=config.appearance
                       type_="tel"
                       className={`tracking-widest justify-start w-full`}
                       maxLength=4

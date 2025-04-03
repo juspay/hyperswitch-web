@@ -368,7 +368,6 @@ let make = (
               errorString=cardError
               paymentType
               type_="tel"
-              appearance=config.appearance
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
@@ -386,7 +385,6 @@ let make = (
               errorString=expiryError
               paymentType
               type_="tel"
-              appearance=config.appearance
               maxLength=7
               inputRef=expiryRef
               placeholder=localeString.expiryPlaceholder
@@ -407,7 +405,6 @@ let make = (
                 ~color=themeObj.colorIconCardCvcError,
                 ~cardComplete,
               )}
-              appearance=config.appearance
               type_="tel"
               className="tracking-widest w-full"
               maxLength=4
@@ -426,7 +423,6 @@ let make = (
                 errorString=expiryError
                 paymentType
                 type_="tel"
-                appearance=config.appearance
                 maxLength=7
                 inputRef=expiryRef
                 placeholder=localeString.expiryPlaceholder
@@ -446,7 +442,6 @@ let make = (
                   ~color=themeObj.colorIconCardCvcError,
                   ~cardComplete,
                 )}
-                appearance=config.appearance
                 type_="tel"
                 className="tracking-widest w-full"
                 maxLength=4

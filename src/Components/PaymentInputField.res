@@ -18,7 +18,6 @@ let make = (
   ~maxLength=?,
   ~pattern=?,
   ~placeholder="",
-  ~appearance: CardThemeType.appearance,
   ~className="",
   ~inputRef,
 ) => {
@@ -81,7 +80,7 @@ let make = (
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
     <RenderIf
       condition={fieldName->String.length > 0 &&
-      appearance.labels == Above &&
+      config.appearance.labels == Above &&
       innerLayout === Spaced}>
       <div
         className={`Label ${labelClass}`}
@@ -112,7 +111,7 @@ let make = (
           ?maxLength
           ?pattern
           className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
-          placeholder={appearance.labels == Above ? placeholder : ""}
+          placeholder={config.appearance.labels == Above ? placeholder : ""}
           value
           autoComplete="on"
           onChange
@@ -120,7 +119,7 @@ let make = (
           onFocus=handleFocus
           ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
         />
-        <RenderIf condition={appearance.labels == Floating}>
+        <RenderIf condition={config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} text-opacity-20 pointer-events-none`}
             style={
