@@ -130,7 +130,6 @@ let make = (
             onFocus=handleElementFocus
             type_="tel"
             maxLength=maxCardLength
-            paymentType
             inputRef=cardRef
             placeholder="1234 1234 1234 1234"
             isFocus

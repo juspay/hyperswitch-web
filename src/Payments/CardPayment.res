@@ -2,13 +2,7 @@ type target = {checked: bool}
 type event = {target: target}
 
 @react.component
-let make = (
-  ~cardProps,
-  ~expiryProps,
-  ~cvcProps,
-  ~isBancontact=false,
-  ~paymentType: CardThemeType.mode,
-) => {
+let make = (~cardProps, ~expiryProps, ~cvcProps, ~isBancontact=false) => {
   open PaymentType
   open PaymentModeType
   open Utils
@@ -347,7 +341,6 @@ let make = (
               onBlur=handleCardBlur
               rightIcon={icon}
               errorString=cardError
-              paymentType
               type_="tel"
               maxLength=maxCardLength
               inputRef=cardRef
@@ -371,7 +364,6 @@ let make = (
                   onChange=changeCardExpiry
                   onBlur=handleExpiryBlur
                   errorString=expiryError
-                  paymentType
                   type_="tel"
                   maxLength=7
                   inputRef=expiryRef
@@ -388,7 +380,6 @@ let make = (
                   onChange=changeCVCNumber
                   onBlur=handleCVCBlur
                   errorString=cvcError
-                  paymentType
                   rightIcon={CardUtils.setRightIconForCvc(
                     ~cardComplete,
                     ~cardEmpty,
@@ -422,7 +413,6 @@ let make = (
             </RenderIf>
           </RenderIf>
           <DynamicFields
-            paymentType
             paymentMethod
             paymentMethodType
             setRequiredFieldsBody
@@ -440,7 +430,7 @@ let make = (
             </div>
           </RenderIf>
           <RenderIf condition={!options.hideCardNicknameField && isCustomerAcceptanceRequired}>
-            <NicknamePaymentInput paymentType />
+            <NicknamePaymentInput />
           </RenderIf>
         </div>
       </div>

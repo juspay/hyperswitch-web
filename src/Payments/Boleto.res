@@ -23,7 +23,7 @@ let formatSocialSecurityNumber = socialSecurityNumber => {
 }
 
 @react.component
-let make = (~paymentType: CardThemeType.mode) => {
+let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
@@ -90,7 +90,6 @@ let make = (~paymentType: CardThemeType.mode) => {
       fieldName=localeString.socialSecurityNumberLabel
       value=socialSecurityNumber
       onChange=changeSocialSecurityNumber
-      paymentType
       errorString=socialSecurityNumberError
       isValid={socialSecurityNumberError == "" ? None : Some(false)}
       type_="tel"

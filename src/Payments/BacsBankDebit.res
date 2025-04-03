@@ -21,7 +21,7 @@ let formatSortCode = sortcode => {
 let cleanSortCode = str => str->String.replaceRegExp(%re("/-/g"), "")
 
 @react.component
-let make = (~paymentType: CardThemeType.mode) => {
+let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -141,7 +141,6 @@ let make = (~paymentType: CardThemeType.mode) => {
             fieldName=localeString.sortCodeText
             value=sortcode
             onChange=changeSortCode
-            paymentType
             errorString=sortCodeError
             isValid={sortCodeError == "" ? None : Some(false)}
             type_="tel"
@@ -154,15 +153,14 @@ let make = (~paymentType: CardThemeType.mode) => {
             fieldName=localeString.accountNumberText
             value=accountNumber
             onChange=changeAccNum
-            paymentType
             type_="text"
             inputRef=accNumRef
             placeholder="00012345"
           />
         </div>
-        <EmailPaymentInput paymentType />
-        <FullNamePaymentInput paymentType={paymentType} customFieldName=Some("Bank Holder Name") />
-        <AddressPaymentInput paymentType />
+        <EmailPaymentInput />
+        <FullNamePaymentInput customFieldName=Some("Bank Holder Name") />
+        <AddressPaymentInput />
         <Surcharge paymentMethod="bank_debit" paymentMethodType="bacs" />
       </div>
     </RenderIf>

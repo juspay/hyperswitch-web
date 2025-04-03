@@ -1,7 +1,7 @@
 open PaymentType
 open RecoilAtoms
 @react.component
-let make = (~paymentType) => {
+let make = () => {
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -72,8 +72,8 @@ let make = (~paymentType) => {
     style={
       gridGap: config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : "",
     }>
-    <EmailPaymentInput paymentType={paymentType} />
-    <FullNamePaymentInput paymentType={paymentType} />
+    <EmailPaymentInput />
+    <FullNamePaymentInput />
     <RenderIf condition={showAddressDetails.country == Auto}>
       <DropdownField
         appearance=config.appearance
