@@ -14,55 +14,120 @@ type cardIssuer =
   | INTERAC
   | NOTFOUND
 
-type cardProps = (
-  option<bool>,
-  (option<bool> => option<bool>) => unit,
-  option<bool>,
-  string,
-  JsxEvent.Form.t => unit,
-  JsxEvent.Focus.t => unit,
-  React.ref<Nullable.t<Dom.element>>,
-  React.element,
-  string,
-  (string => string) => unit,
-  int,
-  string,
-)
+type cardProps = {
+  isCardValid: option<bool>,
+  setIsCardValid: (option<bool> => option<bool>) => unit,
+  isCardSupported: option<bool>,
+  cardNumber: string,
+  changeCardNumber: JsxEvent.Form.t => unit,
+  handleCardBlur: JsxEvent.Focus.t => unit,
+  cardRef: React.ref<Nullable.t<Dom.element>>,
+  icon: React.element,
+  cardError: string,
+  setCardError: (string => string) => unit,
+  maxCardLength: int,
+  cardBrand: string,
+}
 
-type expiryProps = (
-  option<bool>,
-  (option<bool> => option<bool>) => unit,
-  string,
-  JsxEvent.Form.t => unit,
-  JsxEvent.Focus.t => unit,
-  React.ref<Nullable.t<Dom.element>>,
-  ReactEvent.Keyboard.t => unit,
-  string,
-  (string => string) => unit,
-)
+let useDefaultCardProps = () => {
+  let cardRef = React.useRef(Nullable.null)
+  {
+    isCardValid: None,
+    setIsCardValid: _ => (),
+    isCardSupported: None,
+    cardNumber: "",
+    changeCardNumber: _ => (),
+    handleCardBlur: _ => (),
+    cardRef,
+    icon: React.null,
+    cardError: "",
+    setCardError: _ => (),
+    maxCardLength: 0,
+    cardBrand: "",
+  }
+}
 
-type cvcProps = (
-  option<bool>,
-  (option<bool> => option<bool>) => unit,
-  string,
-  (string => string) => unit,
-  JsxEvent.Form.t => unit,
-  JsxEvent.Focus.t => unit,
-  React.ref<Nullable.t<Dom.element>>,
-  ReactEvent.Keyboard.t => unit,
-  string,
-  (string => string) => unit,
-)
-type zipProps = (
-  option<bool>,
-  (option<bool> => option<bool>) => unit,
-  string,
-  ReactEvent.Form.t => unit,
-  ReactEvent.Focus.t => unit,
-  React.ref<Nullable.t<Dom.element>>,
-  ReactEvent.Keyboard.t => unit,
-  bool,
-)
+type expiryProps = {
+  isExpiryValid: option<bool>,
+  setIsExpiryValid: (option<bool> => option<bool>) => unit,
+  cardExpiry: string,
+  changeCardExpiry: JsxEvent.Form.t => unit,
+  handleExpiryBlur: JsxEvent.Focus.t => unit,
+  expiryRef: React.ref<Nullable.t<Dom.element>>,
+  onExpiryKeyDown: ReactEvent.Keyboard.t => unit,
+  expiryError: string,
+  setExpiryError: (string => string) => unit,
+}
+
+let useDefaultExpiryProps = () => {
+  let expiryRef = React.useRef(Nullable.null)
+  {
+    isExpiryValid: None,
+    setIsExpiryValid: _ => (),
+    cardExpiry: "",
+    changeCardExpiry: _ => (),
+    handleExpiryBlur: _ => (),
+    expiryRef,
+    onExpiryKeyDown: _ => (),
+    expiryError: "",
+    setExpiryError: _ => (),
+  }
+}
+
+type cvcProps = {
+  isCVCValid: option<bool>,
+  setIsCVCValid: (option<bool> => option<bool>) => unit,
+  cvcNumber: string,
+  setCvcNumber: (string => string) => unit,
+  changeCVCNumber: JsxEvent.Form.t => unit,
+  handleCVCBlur: JsxEvent.Focus.t => unit,
+  cvcRef: React.ref<Nullable.t<Dom.element>>,
+  onCvcKeyDown: ReactEvent.Keyboard.t => unit,
+  cvcError: string,
+  setCvcError: (string => string) => unit,
+}
+
+let useDefaultCvcProps = () => {
+  let cvcRef = React.useRef(Nullable.null)
+  {
+    isCVCValid: None,
+    setIsCVCValid: _ => (),
+    cvcNumber: "",
+    setCvcNumber: _ => (),
+    changeCVCNumber: _ => (),
+    handleCVCBlur: _ => (),
+    cvcRef,
+    onCvcKeyDown: _ => (),
+    cvcError: "",
+    setCvcError: _ => (),
+  }
+}
+
+type zipProps = {
+  isZipValid: option<bool>,
+  setIsZipValid: (option<bool> => option<bool>) => unit,
+  zipCode: string,
+  changeZipCode: ReactEvent.Form.t => unit,
+  handleZipBlur: ReactEvent.Focus.t => unit,
+  zipRef: React.ref<Nullable.t<Dom.element>>,
+  onZipCodeKeyDown: ReactEvent.Keyboard.t => unit,
+  displayPincode: bool,
+}
+
+let useDefaultZipProps = () => {
+  let zipRef = React.useRef(Nullable.null)
+  {
+    isZipValid: None,
+    setIsZipValid: _ => (),
+    zipCode: "",
+    changeZipCode: _ => (),
+    handleZipBlur: _ => (),
+    zipRef,
+    onZipCodeKeyDown: _ => (),
+    displayPincode: false,
+  }
+}
+
 @val external document: 'a = "document"
 
 @send external focus: Dom.element => unit = "focus"

@@ -127,46 +127,6 @@ let make = (
     logger,
   )
 
-  let defaultCardProps = (
-    None,
-    _ => (),
-    None,
-    "",
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    React.null,
-    "",
-    _ => (),
-    0,
-    "",
-  )
-
-  let defaultExpiryProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    _ => (),
-    "",
-    _ => (),
-  )
-
-  let defaultCvcProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    _ => (),
-    "",
-    _ => (),
-  )
-
   let (stateJson, setStatesJson) = React.useState(_ => None)
 
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
@@ -182,54 +142,56 @@ let make = (
     setCountry(val)
   }
 
-  let (
+  let defaultCardProps = CardUtils.useDefaultCardProps()
+  let defaultExpiryProps = CardUtils.useDefaultExpiryProps()
+  let defaultCvcProps = CardUtils.useDefaultCvcProps()
+
+  let cardProps = switch cardProps {
+  | Some(props) => props
+  | None => defaultCardProps
+  }
+
+  let expiryProps = switch expiryProps {
+  | Some(props) => props
+  | None => defaultExpiryProps
+  }
+
+  let cvcProps = switch cvcProps {
+  | Some(props) => props
+  | None => defaultCvcProps
+  }
+
+  let {
     isCardValid,
     setIsCardValid,
-    _,
     cardNumber,
     changeCardNumber,
     handleCardBlur,
     cardRef,
     icon,
     cardError,
-    _,
     maxCardLength,
-    _,
-  ) = switch cardProps {
-  | Some(cardProps) => cardProps
-  | None => defaultCardProps
-  }
+  } = cardProps
 
-  let (
+  let {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
     changeCardExpiry,
     handleExpiryBlur,
     expiryRef,
-    _,
     expiryError,
-    _,
-  ) = switch expiryProps {
-  | Some(expiryProps) => expiryProps
-  | None => defaultExpiryProps
-  }
+  } = expiryProps
 
-  let (
+  let {
     isCVCValid,
     setIsCVCValid,
     cvcNumber,
-    _,
     changeCVCNumber,
     handleCVCBlur,
     cvcRef,
-    _,
     cvcError,
-    _,
-  ) = switch cvcProps {
-  | Some(cvcProps) => cvcProps
-  | None => defaultCvcProps
-  }
+  } = cvcProps
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(

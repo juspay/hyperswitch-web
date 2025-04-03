@@ -334,7 +334,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           "api-key": publishableKey,
         }
         let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
-        let paymentIntentID = clientSecret->getPaymentId
+        let paymentIntentID = clientSecret->Utils.getPaymentId
         let retrievePaymentUrl = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
         open Promise
         logApi(
