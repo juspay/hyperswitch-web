@@ -150,6 +150,21 @@ let clickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
   ]
 }
 
+let visaClickToPayBody = (~encryptedPayload, ~email) => {
+  let encPayload =
+    [
+      ("encypted_payload", encryptedPayload->JSON.Encode.string),
+      ("provider", "visa"->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("ctp_service_details", encPayload),
+    ("payment_method_type", "debit"->JSON.Encode.string),
+    ("email", email->JSON.Encode.string),
+  ]
+}
+
 let savedPaymentMethodBody = (
   ~paymentToken,
   ~customerId,

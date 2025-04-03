@@ -122,3 +122,28 @@ let defaultRedirectionFlags: redirectionFlags = {
   shouldRemoveBeforeUnloadEvents: false,
 }
 let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)
+
+let clickToPayProvider = Recoil.atom(
+  "clickToPayProvider",
+  (VISA: ClickToPayHelpers.ctpProviderType),
+)
+
+type defaultCtpHelperAtomValue = {
+  visaComponentState: ClickToPayHelpers.visaComponentState,
+  maskedIdentity: string,
+  otpError: string,
+  consumerIdentity: ClickToPayHelpers.consumerIdentity,
+  clickToPayToken?: ClickToPayHelpers.clickToPayToken,
+}
+
+let defaultCtpHelperAtomValue = {
+  visaComponentState: NONE,
+  maskedIdentity: "",
+  otpError: "",
+  consumerIdentity: {
+    identityType: EMAIL_ADDRESS,
+    identityValue: "",
+  },
+}
+
+let ctpHelperAtom = Recoil.atom("ctpHelperAtom", defaultCtpHelperAtomValue)

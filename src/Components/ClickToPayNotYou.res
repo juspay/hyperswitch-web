@@ -2,27 +2,67 @@ open ClickToPayHelpers
 open Utils
 
 @react.component
-let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~setConsumerIdentity) => {
+let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVisaCards) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
 
   let (identifier, setIdentifier) = React.useState(_ => "")
   let (isValid, setIsValid) = React.useState(_ => false)
   let (identifierType, setIdentifierType) = React.useState(_ => EMAIL_ADDRESS)
+  let setCtpHelperAtom = Recoil.useSetRecoilState(RecoilAtoms.ctpHelperAtom)
+
+  let clickToPayProvider = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayProvider)
+
+  let updateCtpNotYouState = consumerIdentity => {
+    setClickToPayConfig(prev => {
+      ...prev,
+      clickToPayCards: Some([]),
+    })
+    setCtpHelperAtom(prev => {
+      ...prev,
+      consumerIdentity,
+    })
+    setIsShowClickToPayNotYou(_ => false)
+  }
 
   let onContinue = consumerIdentity => {
     open Promise
-    ClickToPayHelpers.signOut()
-    ->finally(() => {
-      setClickToPayConfig(prev => {
-        ...prev,
-        clickToPayCards: Some([]),
+    switch clickToPayProvider {
+    | MASTERCARD =>
+      ClickToPayHelpers.signOut()
+      ->finally(() => {
+        updateCtpNotYouState(consumerIdentity)
       })
-      setIsShowClickToPayNotYou(_ => false)
-      setConsumerIdentity(_ => consumerIdentity)
-    })
-    ->catch(err => resolve(Error(err)))
-    ->ignore
+      ->catch(err => resolve(Error(err)))
+      ->ignore
+    | VISA =>
+      // TODO: Unbind the device id here
+      updateCtpNotYouState(consumerIdentity)
+
+      (
+        async _ => {
+          setCtpHelperAtom(prev => {
+            ...prev,
+            visaComponentState: CARDS_LOADING,
+          })
+          try {
+            await signOutVisaUnified()
+            await getVisaCards(
+              ~identityValue=consumerIdentity.identityValue,
+              ~otp="",
+              ~identityType=consumerIdentity.identityType,
+            )
+          } catch {
+          | _ =>
+            setCtpHelperAtom(prev => {
+              ...prev,
+              visaComponentState: NONE,
+            })
+          }
+        }
+      )()->ignore
+    | NONE => ()
+    }
   }
 
   let onBack = _ => {

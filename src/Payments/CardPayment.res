@@ -27,8 +27,10 @@ let make = (
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (clickToPayCardBrand, setClickToPayCardBrand) = React.useState(_ => "")
   let (clickToPayRememberMe, setClickToPayRememberMe) = React.useState(_ => false)
-
+  let ctpCards = clickToPayConfig.clickToPayCards->Option.getOr([])
   let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
+  let ctpHelperAtom = Recoil.useRecoilValueFromAtom(RecoilAtoms.ctpHelperAtom)
+  let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
   let (
     isCardValid,
@@ -78,7 +80,7 @@ let make = (
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
-
+  let clickToPayProvider = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayProvider)
   React.useEffect(() => {
     if (
       cardBrand === "" ||
@@ -169,9 +171,7 @@ let make = (
       defaultCardBody
     }
 
-    let isRecognizedClickToPayPayment =
-      clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length > 0 &&
-        clickToPayCardBrand !== ""
+    let isRecognizedClickToPayPayment = ctpCards->Array.length > 0 && clickToPayCardBrand !== ""
 
     let isUnrecognizedClickToPayPayment = isSaveDetailsWithClickToPay
 
@@ -191,72 +191,129 @@ let make = (
         if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
           ClickToPayHelpers.handleOpenClickToPayWindow()
 
-          ClickToPayHelpers.encryptCardForClickToPay(
-            ~cardNumber=cardNumber->CardUtils.clearSpaces,
-            ~expiryMonth=month,
-            ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
-            ~cvcNumber,
-            ~logger=loggerState,
-          )
-          ->then(res => {
-            switch res {
-            | Ok(res) =>
-              ClickToPayHelpers.handleProceedToPay(
-                ~encryptedCard=res,
-                ~isCheckoutWithNewCard=true,
-                ~isUnrecognizedUser={
-                  clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length == 0
-                },
-                ~email=email.value,
-                ~phoneNumber=phoneNumber.value,
-                ~countryCode=phoneNumber.countryCode->Option.getOr("")->String.replace("+", ""),
-                ~rememberMe=clickToPayRememberMe,
-                ~logger=loggerState,
-              )
-              ->then(
-                resp => {
-                  let dict = resp.payload->Utils.getDictFromJson
-                  let headers = dict->Utils.getDictFromDict("headers")
-                  let merchantTransactionId =
-                    headers->Utils.getString("merchant-transaction-id", "")
-                  let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
-                  let correlationId =
-                    dict
-                    ->Utils.getDictFromDict("checkoutResponseData")
-                    ->Utils.getString("srcCorrelationId", "")
+          switch clickToPayProvider {
+          | MASTERCARD =>
+            ClickToPayHelpers.encryptCardForClickToPay(
+              ~cardNumber=cardNumber->CardUtils.clearSpaces,
+              ~expiryMonth=month,
+              ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
+              ~cvcNumber,
+              ~logger=loggerState,
+            )
+            ->then(res => {
+              switch res {
+              | Ok(res) =>
+                ClickToPayHelpers.handleProceedToPay(
+                  ~encryptedCard=res,
+                  ~isCheckoutWithNewCard=true,
+                  ~isUnrecognizedUser=ctpCards->Array.length == 0,
+                  ~email=email.value,
+                  ~phoneNumber=phoneNumber.value,
+                  ~countryCode=phoneNumber.countryCode->Option.getOr("")->String.replace("+", ""),
+                  ~rememberMe=clickToPayRememberMe,
+                  ~logger=loggerState,
+                  ~clickToPayProvider,
+                  ~clickToPayToken=ctpHelperAtom.clickToPayToken,
+                  ~orderId=clientSecret->Option.getOr(""),
+                )
+                ->then(
+                  resp => {
+                    let dict = resp.payload->Utils.getDictFromJson
+                    let headers = dict->Utils.getDictFromDict("headers")
+                    let merchantTransactionId =
+                      headers->Utils.getString("merchant-transaction-id", "")
+                    let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
+                    let correlationId =
+                      dict
+                      ->Utils.getDictFromDict("checkoutResponseData")
+                      ->Utils.getString("srcCorrelationId", "")
 
-                  let clickToPayBody = PaymentBody.clickToPayBody(
-                    ~merchantTransactionId,
-                    ~correlationId,
-                    ~xSrcFlowId,
+                    let clickToPayBody = PaymentBody.clickToPayBody(
+                      ~merchantTransactionId,
+                      ~correlationId,
+                      ~xSrcFlowId,
+                    )
+                    intent(
+                      ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                      ~confirmParam=confirm.confirmParams,
+                      ~handleUserError=false,
+                      ~manualRetry=isManualRetryEnabled,
+                    )
+                    resolve()
+                  },
+                )
+                ->catch(_ => resolve())
+                ->ignore
+              | Error(err) =>
+                loggerState.setLogError(
+                  ~value=`Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
+                  ~eventName=CLICK_TO_PAY_FLOW,
+                )
+              }
+              resolve()
+            })
+            ->catch(err => {
+              loggerState.setLogError(
+                ~value=`Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
+              resolve()
+            })
+            ->ignore
+          | VISA => {
+              let expiry = cardExpiry->String.split("/")->Array.map(String.trim)
+              let month = expiry->Array.at(0)->Option.getOr("")
+              let year = "20" ++ expiry->Array.at(1)->Option.getOr("")
+              let jsonPair = (key, value) => (key, Js.Json.string(value))
+              let payload = [
+                jsonPair("primaryAccountNumber", cardNumber->String.split(" ")->Array.joinWith("")),
+                jsonPair("panExpirationMonth", month),
+                jsonPair("panExpirationYear", year),
+                jsonPair("cardSecurityCode", cvcNumber->String.trim),
+                jsonPair("cardHolderName", nickname.value->String.trim),
+              ]
+
+              let dict = Js.Dict.empty()
+              payload->Array.forEach(((key, value)) => Js.Dict.set(dict, key, value))
+              let cardPayloadJson = Js.Json.object_(dict)
+
+              let encryptCardAndMakePayment = async () => {
+                let res = await ClickToPayCardEncryption.encryptMessage(cardPayloadJson)
+
+                ClickToPayHelpers.handleProceedToPay(
+                  ~visaEncryptedCard=res,
+                  ~isCheckoutWithNewCard=true,
+                  ~isUnrecognizedUser=ctpCards->Array.length == 0,
+                  ~email=email.value,
+                  ~phoneNumber=phoneNumber.value,
+                  ~countryCode=phoneNumber.countryCode->Option.getOr("")->String.replace("+", ""),
+                  ~rememberMe=clickToPayRememberMe,
+                  ~logger=loggerState,
+                  ~clickToPayProvider,
+                  ~clickToPayToken=ctpHelperAtom.clickToPayToken,
+                  ~orderId=clientSecret->Option.getOr(""),
+                )
+                ->then(res => {
+                  let dict = res.payload->Utils.getDictFromJson
+                  let clickToPayBody = PaymentBody.visaClickToPayBody(
+                    ~email=clickToPayConfig.email,
+                    ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
                   )
                   intent(
-                    ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                    ~bodyArr=clickToPayBody,
                     ~confirmParam=confirm.confirmParams,
                     ~handleUserError=false,
                     ~manualRetry=isManualRetryEnabled,
                   )
                   resolve()
-                },
-              )
-              ->catch(_ => resolve())
-              ->ignore
-            | Error(err) =>
-              loggerState.setLogError(
-                ~value=`Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
-                ~eventName=CLICK_TO_PAY_FLOW,
-              )
+                })
+                ->catch(_ => resolve())
+                ->ignore
+              }
+              encryptCardAndMakePayment()->ignore
             }
-            resolve()
-          })
-          ->catch(err => {
-            loggerState.setLogError(
-              ~value=`Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
-              ~eventName=CLICK_TO_PAY_FLOW,
-            )
-            resolve()
-          })
-          ->ignore
+          | NONE => ()
+          }
         } else {
           intent(
             ~bodyArr={
