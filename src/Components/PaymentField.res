@@ -60,7 +60,9 @@ let make = (
   }
 
   let backgroundClass = switch paymentType {
-  | Payment => themeObj.colorBackground
+  | Payment
+  | PaymentMethodsManagement =>
+    themeObj.colorBackground
   | _ => "transparent"
   }
   let direction = if type_ == "password" || type_ == "tel" {

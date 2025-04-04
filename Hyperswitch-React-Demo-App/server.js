@@ -6,6 +6,7 @@ dotenv.config({ path: "./.env" });
 
 const app = express();
 const PORT = 5252;
+app.use(express.json());
 
 function getUrl(envVar, selfHostedValue) {
   return process.env[envVar] === selfHostedValue ? "" : process.env[envVar];

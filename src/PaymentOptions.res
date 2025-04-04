@@ -2,12 +2,16 @@ open RecoilAtoms
 module TabLoader = {
   @react.component
   let make = (~cardShimmerCount) => {
-    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
     open PaymentType
     open PaymentElementShimmer
-    switch paymentMethodList {
-    | SemiLoaded =>
+
+    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+    let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+
+    switch (GlobalVars.sdkVersion, paymentMethodList, paymentManagementList) {
+    | (V1, SemiLoaded, _)
+    | (V2, _, SemiLoadedV2) =>
       Array.make(~length=cardShimmerCount - 1, "")
       ->Array.mapWithIndex((_, i) => {
         <div
@@ -113,6 +117,7 @@ let make = (
   let displayIcon = ele => {
     <span className={`scale-90 animate-slowShow ${toggleIconElement ? "hidden" : ""}`}> ele </span>
   }
+
   <div className="w-full">
     <div
       ref={payOptionsRef->ReactDOM.Ref.domRef}
