@@ -96,6 +96,7 @@ export default function CheckoutForm() {
   }, [hyper, navigate]);
 
   const options = {
+    displayDefaultSavedPaymentIcon: false,
     wallets: {
       walletReturnUrl: `${window.location.origin}`,
       applePay: "auto",
