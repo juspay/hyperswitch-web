@@ -36,8 +36,6 @@ let make = (
   React.useEffect(() => {
     if savedMethodsV2->Array.length == 0 {
       setShowAddScreen(_ => true)
-    } else {
-      setShowAddScreen(_ => false)
     }
     None
   }, [savedMethodsV2->Array.length])

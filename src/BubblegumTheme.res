@@ -48,6 +48,7 @@ let bubblegum = {
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
+  disabledFieldColor: "#D6D6D6",
 }
 let bubblegumRules = theme =>
   {

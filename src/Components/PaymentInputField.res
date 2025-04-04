@@ -53,7 +53,9 @@ let make = (
   }
 
   let backgroundClass = switch paymentType {
-  | Payment => themeObj.colorBackground
+  | Payment
+  | PaymentMethodsManagement =>
+    themeObj.colorBackground
   | _ => "transparent"
   }
   let direction = if type_ == "password" || type_ == "tel" {
@@ -103,7 +105,7 @@ let make = (
       <div className={`relative w-full ${inputFieldClassName}`}>
         <input
           style={
-            background: isDisabled ? "#F6F8FA" : backgroundClass,
+            background: isDisabled ? themeObj.disabledFieldColor : backgroundClass,
             padding: themeObj.spacingUnit,
             width: fieldWidth,
             height,

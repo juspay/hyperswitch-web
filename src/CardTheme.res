@@ -332,6 +332,12 @@ let getVariables = (str, dict, default, logger) => {
         default.buttonBorderWidth,
         ~logger,
       ),
+      disabledFieldColor: getWarningString(
+        json,
+        "disabledFieldColor",
+        default.disabledFieldColor,
+        ~logger,
+      ),
     }
   })
   ->Option.getOr(default)
