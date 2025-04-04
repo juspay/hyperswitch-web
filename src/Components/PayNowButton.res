@@ -10,15 +10,17 @@ module Loader = {
   }
 }
 @react.component
-let make = (~onClickHandler=?, ~label=?, ~paymentType: CardThemeType.mode) => {
+let make = (~onClickHandler=?, ~label=?) => {
   open RecoilAtoms
   open Utils
+  open PaymentTypeContext
   let (showLoader, setShowLoader) = React.useState(() => false)
   let (isPayNowButtonDisable, setIsPayNowButtonDisable) = React.useState(() => false)
   let {themeObj, localeString} = configAtom->Recoil.useRecoilValueFromAtom
   let {sdkHandleConfirmPayment} = optionAtom->Recoil.useRecoilValueFromAtom
 
   let {sdkHandleSavePayment} = optionAtom->Recoil.useRecoilValueFromAtom
+  let paymentType = usePaymentType()
 
   let confirmPayload = sdkHandleConfirmPayment->PaymentBody.confirmPayloadForSDKButton
   let buttonText = switch paymentType {

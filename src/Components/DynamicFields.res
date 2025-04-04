@@ -18,7 +18,6 @@ module DynamicFieldsToRenderWrapper = {
 
 @react.component
 let make = (
-  ~paymentType,
   ~paymentMethod,
   ~paymentMethodType,
   ~setRequiredFieldsBody,
@@ -149,46 +148,6 @@ let make = (
     logger,
   )
 
-  let defaultCardProps = (
-    None,
-    _ => (),
-    None,
-    "",
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    React.null,
-    "",
-    _ => (),
-    0,
-    "",
-  )
-
-  let defaultExpiryProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    _ => (),
-    "",
-    _ => (),
-  )
-
-  let defaultCvcProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    _ => (),
-    "",
-    _ => (),
-  )
-
   let (stateJson, setStatesJson) = React.useState(_ => None)
 
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
@@ -204,54 +163,56 @@ let make = (
     setCountry(val)
   }
 
-  let (
+  let defaultCardProps = CardUtils.useDefaultCardProps()
+  let defaultExpiryProps = CardUtils.useDefaultExpiryProps()
+  let defaultCvcProps = CardUtils.useDefaultCvcProps()
+
+  let cardProps = switch cardProps {
+  | Some(props) => props
+  | None => defaultCardProps
+  }
+
+  let expiryProps = switch expiryProps {
+  | Some(props) => props
+  | None => defaultExpiryProps
+  }
+
+  let cvcProps = switch cvcProps {
+  | Some(props) => props
+  | None => defaultCvcProps
+  }
+
+  let {
     isCardValid,
     setIsCardValid,
-    _,
     cardNumber,
     changeCardNumber,
     handleCardBlur,
     cardRef,
     icon,
     cardError,
-    _,
     maxCardLength,
-    _,
-  ) = switch cardProps {
-  | Some(cardProps) => cardProps
-  | None => defaultCardProps
-  }
+  } = cardProps
 
-  let (
+  let {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
     changeCardExpiry,
     handleExpiryBlur,
     expiryRef,
-    _,
     expiryError,
-    _,
-  ) = switch expiryProps {
-  | Some(expiryProps) => expiryProps
-  | None => defaultExpiryProps
-  }
+  } = expiryProps
 
-  let (
+  let {
     isCVCValid,
     setIsCVCValid,
     cvcNumber,
-    _,
     changeCVCNumber,
     handleCVCBlur,
     cvcRef,
-    _,
     cvcError,
-    _,
-  ) = switch cvcProps {
-  | Some(cvcProps) => cvcProps
-  | None => defaultCvcProps
-  }
+  } = cvcProps
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
@@ -387,9 +348,7 @@ let make = (
               onBlur=handleCardBlur
               rightIcon={icon}
               errorString=cardError
-              paymentType
               type_="tel"
-              appearance=config.appearance
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
@@ -405,9 +364,7 @@ let make = (
               onChange=changeCardExpiry
               onBlur=handleExpiryBlur
               errorString=expiryError
-              paymentType
               type_="tel"
-              appearance=config.appearance
               maxLength=7
               inputRef=expiryRef
               placeholder=localeString.expiryPlaceholder
@@ -421,14 +378,12 @@ let make = (
               onChange=changeCVCNumber
               onBlur=handleCVCBlur
               errorString=cvcError
-              paymentType
               rightIcon={CardUtils.setRightIconForCvc(
                 ~cardEmpty,
                 ~cardInvalid,
                 ~color=themeObj.colorIconCardCvcError,
                 ~cardComplete,
               )}
-              appearance=config.appearance
               type_="tel"
               className="tracking-widest w-full"
               maxLength=4
@@ -445,9 +400,7 @@ let make = (
                 onChange=changeCardExpiry
                 onBlur=handleExpiryBlur
                 errorString=expiryError
-                paymentType
                 type_="tel"
-                appearance=config.appearance
                 maxLength=7
                 inputRef=expiryRef
                 placeholder=localeString.expiryPlaceholder
@@ -460,14 +413,12 @@ let make = (
                 onChange=changeCVCNumber
                 onBlur=handleCVCBlur
                 errorString=cvcError
-                paymentType
                 rightIcon={CardUtils.setRightIconForCvc(
                   ~cardEmpty,
                   ~cardInvalid,
                   ~color=themeObj.colorIconCardCvcError,
                   ~cardComplete,
                 )}
-                appearance=config.appearance
                 type_="tel"
                 className="tracking-widest w-full"
                 maxLength=4
@@ -499,14 +450,13 @@ let make = (
                 </div>
               </RenderIf>
               <FullNamePaymentInput
-                paymentType
                 customFieldName={item->getCustomFieldName}
                 optionalRequiredFields={Some(requiredFields)}
               />
             </>
           | CryptoCurrencyNetworks => <CryptoCurrencyNetworks />
           | DateOfBirth => <DateOfBirth />
-          | VpaId => <VpaIdPaymentInput paymentType />
+          | VpaId => <VpaIdPaymentInput />
           | PixKey => <PixPaymentInput label="pixKey" />
           | PixCPF => <PixPaymentInput label="pixCPF" />
           | PixCNPJ => <PixPaymentInput label="pixCNPJ" />
@@ -531,7 +481,6 @@ let make = (
                   isValid: Some(value !== ""),
                 })
               }}
-              paymentType
               type_="text"
               name="bankAccountNumber"
               maxLength=42
@@ -593,8 +542,8 @@ let make = (
             ->Array.mapWithIndex((item, index) => {
               <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index}>
                 {switch item {
-                | BillingName => <BillingNamePaymentInput paymentType requiredFields />
-                | Email => <EmailPaymentInput paymentType />
+                | BillingName => <BillingNamePaymentInput requiredFields />
+                | Email => <EmailPaymentInput />
                 | PhoneNumber => <PhoneNumberPaymentInput />
                 | StateAndCity =>
                   <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""} overflow-hidden`}>
@@ -617,7 +566,6 @@ let make = (
                           isValid: Some(value !== ""),
                         })
                       }}
-                      paymentType
                       type_="text"
                       name="city"
                       inputRef=cityRef
@@ -664,7 +612,6 @@ let make = (
                         })
                       }}
                       onChange=onPostalChange
-                      paymentType
                       name="postal"
                       inputRef=postalRef
                       placeholder=localeString.postalCodeLabel
@@ -691,7 +638,6 @@ let make = (
                         isValid: Some(value !== ""),
                       })
                     }}
-                    paymentType
                     type_="text"
                     name="line1"
                     inputRef=line1Ref
@@ -718,7 +664,6 @@ let make = (
                         isValid: Some(value !== ""),
                       })
                     }}
-                    paymentType
                     type_="text"
                     name="line2"
                     inputRef=line2Ref
@@ -744,7 +689,6 @@ let make = (
                         isValid: Some(value !== ""),
                       })
                     }}
-                    paymentType
                     type_="text"
                     name="city"
                     inputRef=cityRef
@@ -778,7 +722,6 @@ let make = (
                       })
                     }}
                     onChange=onPostalChange
-                    paymentType
                     name="postal"
                     inputRef=postalRef
                     placeholder=localeString.postalCodeLabel

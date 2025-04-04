@@ -2,55 +2,36 @@ open RecoilAtoms
 @react.component
 let make = (
   ~paymentType: CardThemeType.mode,
-  ~cardProps,
-  ~expiryProps,
-  ~cvcProps,
-  ~zipProps,
+  ~cardProps: CardUtils.cardProps,
+  ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
+  ~zipProps: CardUtils.zipProps,
   ~handleElementFocus,
   ~blurState,
   ~isFocus,
 ) => {
   let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (
+  let {
     isCardValid,
     setIsCardValid,
-    _,
     cardNumber,
     changeCardNumber,
     handleCardBlur,
     cardRef,
-    _,
-    _,
-    _,
     maxCardLength,
-    _,
-  ) = cardProps
+  } = cardProps
 
-  let (
+  let {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
     changeCardExpiry,
     handleExpiryBlur,
     expiryRef,
-    _,
-    _,
-    _,
-  ) = expiryProps
+  } = expiryProps
 
-  let (
-    isCVCValid,
-    setIsCVCValid,
-    cvcNumber,
-    _,
-    changeCVCNumber,
-    handleCVCBlur,
-    cvcRef,
-    _,
-    _,
-    _,
-  ) = cvcProps
+  let {isCVCValid, setIsCVCValid, cvcNumber, changeCVCNumber, handleCVCBlur, cvcRef} = cvcProps
 
   let blur = blurState ? "blur(2px)" : ""
   let frameRef = React.useRef(Nullable.null)
@@ -109,7 +90,6 @@ let make = (
             onFocus=handleElementFocus
             type_="tel"
             maxLength=maxCardLength
-            paymentType
             inputRef=cardRef
             placeholder="1234 1234 1234 1234"
             id="card-number"
@@ -124,7 +104,6 @@ let make = (
             onBlur=handleExpiryBlur
             onFocus=handleElementFocus
             type_="tel"
-            paymentType
             maxLength=7
             inputRef=expiryRef
             placeholder=localeString.expiryPlaceholder
@@ -139,7 +118,6 @@ let make = (
             onChange=changeCVCNumber
             onBlur=handleCVCBlur
             onFocus=handleElementFocus
-            paymentType
             type_="tel"
             className={`tracking-widest w-auto`}
             maxLength=4
@@ -154,7 +132,7 @@ let make = (
               <PaymentElementShimmer />
             </RenderIf>}
             componentName="PaymentManagementLazy">
-            <PaymentManagementLazy paymentType />
+            <PaymentManagementLazy paymentType cardProps cvcProps expiryProps />
           </ReusableReactSuspense>
         | PaymentMethodCollectElement
         | NONE => React.null

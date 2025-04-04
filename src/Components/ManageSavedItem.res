@@ -63,7 +63,6 @@ let make = (
           onChange={_ => ()}
           paymentType=CardThemeType.Card
           type_="tel"
-          appearance=config.appearance
           inputRef={React.useRef(Nullable.null)}
           name=TestUtils.expiryInputTestId
           isDisabled=true
@@ -76,7 +75,6 @@ let make = (
           onChange={_ => ()}
           paymentType=CardThemeType.Card
           type_="tel"
-          appearance=config.appearance
           inputRef={React.useRef(Nullable.null)}
           placeholder=localeString.expiryPlaceholder
           name=TestUtils.expiryInputTestId
@@ -84,7 +82,7 @@ let make = (
         />
       </div>
     </div>
-    <FullNamePaymentInput paymentType={PaymentMethodsManagement} />
-    <NicknamePaymentInput paymentType={PaymentMethodsManagement} />
+    <FullNamePaymentInput />
+    <NicknamePaymentInput />
   </div>
 }

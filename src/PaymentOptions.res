@@ -87,7 +87,7 @@ let make = (
   ~dropDownOptions: array<string>,
   ~checkoutEle: React.element,
   ~cardShimmerCount: int,
-  ~cardProps,
+  ~cardProps: CardUtils.cardProps,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -122,7 +122,7 @@ let make = (
     ->Array.find(item => item.paymentMethodName == selectedOption)
     ->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodFields)
 
-  let (_, _, _, _, _, _, _, _, _, _, _, cardBrand) = cardProps
+  let {cardBrand} = cardProps
   React.useEffect(() => {
     let intervalId = setInterval(() => {
       if dropDownOptionsDetails->Array.length > 1 {

@@ -1,7 +1,7 @@
 open Utils
 open Promise
 @react.component
-let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardThemeType.mode) => {
+let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
@@ -327,9 +327,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
       </div>
     </RenderIf>
   } else {
-    <DynamicFields
-      paymentType paymentMethod="wallet" paymentMethodType="apple_pay" setRequiredFieldsBody
-    />
+    <DynamicFields paymentMethod="wallet" paymentMethodType="apple_pay" setRequiredFieldsBody />
   }
 }
 

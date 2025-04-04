@@ -1,5 +1,5 @@
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~nickNameValue="") => {
+let make = () => {
   open RecoilAtoms
   open Utils
 
@@ -22,7 +22,6 @@ let make = (~paymentType: CardThemeType.mode, ~nickNameValue="") => {
     setValue=setNickName
     onChange
     onBlur
-    paymentType
     type_="userCardNickName"
     name="userCardNickName"
     inputRef={React.useRef(Nullable.null)}

@@ -3,12 +3,7 @@ open PaymentType
 open Utils
 
 @react.component
-let make = (
-  ~paymentType,
-  ~customFieldName=None,
-  ~optionalRequiredFields=None,
-  ~fullNameValue="",
-) => {
+let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -67,7 +62,6 @@ let make = (
       setValue=setFullName
       value=fullName
       onChange=changeName
-      paymentType
       onBlur
       type_="text"
       inputRef=nameRef

@@ -2,7 +2,12 @@ open PaymentType
 open RecoilAtoms
 
 @react.component
-let make = (~paymentType: CardThemeType.mode) => {
+let make = (
+  ~paymentType: CardThemeType.mode,
+  ~cardProps: CardUtils.cardProps,
+  ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
+) => {
   let divRef = React.useRef(Nullable.null)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {savedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -26,20 +31,20 @@ let make = (~paymentType: CardThemeType.mode) => {
   let cardType = React.useMemo1(() => {
     cardBrand->CardUtils.getCardType
   }, [cardBrand])
-  let (cardProps, expiryProps, cvcProps, _zipProps) = CommonCardProps.useCardProps(
-    ~logger,
-    ~supportedCardBrands,
-    ~cardType,
-    ~cardBrand,
-  )
+  // let (cardProps, expiryProps, cvcProps, _zipProps) = CommonCardProps.useCardProps(
+  //   ~logger,
+  //   ~supportedCardBrands,
+  //   ~cardType,
+  //   ~cardBrand,
+  // )
   let handleBack = _ => {
     setShowAddScreen(_ => false)
   }
-  let (isCardValid, _, isCardSupported, cardNumber, _, _, _, _, _, setCardError, _, _) = cardProps
+  let {isCardValid, isCardSupported, cardNumber, setCardError} = cardProps
 
-  let (isExpiryValid, _, cardExpiry, _, _, _, _, _, setExpiryError) = expiryProps
+  let {isExpiryValid, cardExpiry, setExpiryError} = expiryProps
 
-  let (isCVCValid, _, _, _, _, _, _, _, _, setCvcError) = cvcProps
+  let {isCVCValid, setCvcError} = cvcProps
 
   React.useEffect(() => {
     setCardBrand(_ => cardNumber->CardUtils.getCardBrand)
@@ -154,7 +159,7 @@ let make = (~paymentType: CardThemeType.mode) => {
         </RenderIf>
         <PaymentElementRendererLazy paymentType cardProps cvcProps expiryProps />
         <div className="mt-4">
-          <PayNowButton label="Save card" paymentType />
+          <PayNowButton label="Save card" />
         </div>
       </div>
     </RenderIf>

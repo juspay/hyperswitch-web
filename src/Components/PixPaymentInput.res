@@ -170,11 +170,11 @@ let make = (~label="") => {
         value=pixKey
         onChange=changePixKey
         onBlur=onBlurPixKey
-        paymentType=Payment
         type_="pixKey"
         name="pixKey"
         inputRef=pixKeyRef
         placeholder={localeString.pixKeyPlaceholder}
+        paymentType=Payment
       />
     </RenderIf>
     <RenderIf condition={label === "pixCPF"}>
@@ -184,12 +184,12 @@ let make = (~label="") => {
         value=pixCPF
         onChange=changePixCPF
         onBlur=onBlurPixCPF
-        paymentType=Payment
         type_="pixCPF"
         name="pixCPF"
         inputRef=pixCPFRef
         placeholder={localeString.pixCPFPlaceholder}
         maxLength=11
+        paymentType=Payment
       />
     </RenderIf>
     <RenderIf condition={label === "pixCNPJ"}>
@@ -199,12 +199,12 @@ let make = (~label="") => {
         value=pixCNPJ
         onChange=changePixCNPJ
         onBlur=onBlurPixCNPJ
-        paymentType=Payment
         type_="pixCNPJ"
         name="pixCNPJ"
         inputRef=pixCNPJRef
         placeholder={localeString.pixCNPJPlaceholder}
         maxLength=14
+        paymentType=Payment
       />
     </RenderIf>
   </>
