@@ -1342,7 +1342,7 @@ let walletElementPaymentType: array<CardThemeType.mode> = [
   ExpressCheckoutElement,
 ]
 
-let getIsWalletElementPaymentType = (paymentType: CardThemeType.mode) => {
+let checkIsWalletElement = (paymentType: CardThemeType.mode) => {
   walletElementPaymentType->Array.includes(paymentType)
 }
 

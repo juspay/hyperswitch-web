@@ -20,8 +20,8 @@ let getVersionFromStr = name =>
 @val external enableLogging: bool = "enableLogging"
 @val external loggingLevelStr: string = "loggingLevel"
 @val external maxLogsPushedPerEventName: int = "maxLogsPushedPerEventName"
-@val external sdkVersion: string = "sdkVersion"
-let sdkVersionEnum = sdkVersion->getVersionFromStr
+@val external sdkVersionStr: string = "sdkVersionValue"
+let sdkVersion = sdkVersionStr->getVersionFromStr
 let targetOrigin: string = "*"
 @val external isInteg: bool = "isIntegrationEnv"
 @val external isSandbox: bool = "isSandboxEnv"

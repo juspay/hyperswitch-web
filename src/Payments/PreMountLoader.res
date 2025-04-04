@@ -113,7 +113,7 @@ module PreMountLoaderForPMMElements = {
     ~profileId,
   ) => {
     useMessageHandler(() => {
-      switch GlobalVars.sdkVersionEnum {
+      switch GlobalVars.sdkVersion {
       | V1 => {
           let savedPaymentMethodsPromise = PaymentHelpers.fetchSavedPaymentMethodList(
             ~ephemeralKey,

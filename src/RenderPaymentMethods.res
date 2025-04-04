@@ -73,7 +73,7 @@ let make = (
         | Payment =>
           <ReusableReactSuspense
             loaderComponent={<RenderIf condition={showLoader}>
-              {paymentType->Utils.getIsWalletElementPaymentType
+              {paymentType->Utils.checkIsWalletElement
                 ? <WalletShimmer />
                 : <PaymentElementShimmer />}
             </RenderIf>}

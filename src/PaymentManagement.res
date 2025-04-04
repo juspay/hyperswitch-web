@@ -15,28 +15,10 @@ let make = (
   let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
   let (isLoading, setIsLoading) = React.useState(_ => false)
   let (showAddScreen, setShowAddScreen) = Recoil.useRecoilState(RecoilAtomsV2.showAddScreen)
-  let (cardBrand, setCardBrand) = Recoil.useRecoilState(cardBrand)
-  let (paymentMethodListValue, _setPaymentMethodListValue) = Recoil.useRecoilState(
-    PaymentUtils.paymentMethodListValue,
-  )
-  let (paymentManagementListValue, _setPaymentManagementListValue) = Recoil.useRecoilState(
+  let setCardBrand = Recoil.useSetRecoilState(cardBrand)
+  let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentManagementListValue,
   )
-  let (logger, _initTimestamp) = React.useMemo0(() => {
-    (HyperLogger.make(~source=Elements(PaymentMethodsManagement)), Date.now())
-  })
-  let supportedCardBrands = React.useMemo(() => {
-    paymentMethodListValue->PaymentUtils.getSupportedCardBrands
-  }, [paymentMethodListValue])
-  let cardType = React.useMemo1(() => {
-    cardBrand->CardUtils.getCardType
-  }, [cardBrand])
-  // let (cardProps, expiryProps, cvcProps, _zipProps) = CommonCardProps.useCardProps(
-  //   ~logger,
-  //   ~supportedCardBrands,
-  //   ~cardType,
-  //   ~cardBrand,
-  // )
   let handleBack = _ => {
     setShowAddScreen(_ => false)
   }
@@ -175,7 +157,7 @@ let make = (
       <RenderIf condition={isLoading}>
         <PaymentElementShimmer.SavedPaymentShimmer />
       </RenderIf>
-      <RenderIf condition={GlobalVars.sdkVersionEnum == V2}>
+      <RenderIf condition={GlobalVars.sdkVersion == V2}>
         <div
           className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
           style={

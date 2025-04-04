@@ -144,13 +144,13 @@ const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
 
 * The default SDK version is "v1".
 */
-const sdkVersion = getEnvVariable("SDK_VERSION", "v1");
+const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
 
 // Repository info
 const repoVersion = require("./package.json").version;
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersion}`;
+  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersionValue}`;
 
 // Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
@@ -228,7 +228,7 @@ module.exports = (publicPath = "auto") => {
     enableLogging: ENABLE_LOGGING,
     loggingLevel: JSON.stringify(loggingLevel),
     maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
-    sdkVersion: JSON.stringify(sdkVersion),
+    sdkVersionValue: JSON.stringify(sdkVersionValue),
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
@@ -329,7 +329,7 @@ module.exports = (publicPath = "auto") => {
     output: {
       path: isLocal
         ? path.resolve(__dirname, "dist")
-        : path.resolve(__dirname, "dist", sdkEnv, sdkVersion),
+        : path.resolve(__dirname, "dist", sdkEnv, sdkVersionValue),
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,

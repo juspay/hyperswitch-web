@@ -59,7 +59,7 @@ let make = (
 
   let requiredFieldsWithBillingDetails = React.useMemo(() => {
     if paymentMethod === "card" {
-      switch GlobalVars.sdkVersionEnum {
+      switch GlobalVars.sdkVersion {
       | V2 =>
         let creditRequiredFields =
           paymentManagementListValue.paymentMethodsEnabled

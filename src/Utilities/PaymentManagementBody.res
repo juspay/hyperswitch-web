@@ -38,7 +38,8 @@ let saveCardBody = (
   }
 
   [
-    ("payment_method", "card"->JSON.Encode.string),
+    ("payment_method_type", "card"->JSON.Encode.string),
+    ("payment_method_subtype", "card"->JSON.Encode.string),
     (
       "payment_method_data",
       [

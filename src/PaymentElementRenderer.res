@@ -10,7 +10,6 @@ let make = (
     (width - 40) / 110
   }
   let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
-  let sessions = Recoil.useRecoilValueFromAtom(sessions)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -27,32 +26,24 @@ let make = (
     None
   }, [])
 
-  switch GlobalVars.sdkVersionEnum {
-  | V2 =>
-    switch (sessions, paymentManagementList) {
-    | (_, LoadingV2) =>
-      <RenderIf condition=showLoader>
-        {paymentType->Utils.getIsWalletElementPaymentType
-          ? <WalletShimmer />
-          : <PaymentElementShimmer />}
-      </RenderIf>
-    | _ =>
-      paymentType->Utils.getIsWalletElementPaymentType
-        ? <WalletElement paymentType />
-        : <PaymentElementV2 cardProps expiryProps cvcProps paymentType />
-    }
-  | V1 =>
-    switch (sessions, paymentMethodList) {
-    | (_, Loading) =>
-      <RenderIf condition=showLoader>
-        {paymentType->Utils.getIsWalletElementPaymentType
-          ? <WalletShimmer />
-          : <PaymentElementShimmer />}
-      </RenderIf>
-    | _ =>
-      paymentType->Utils.getIsWalletElementPaymentType
-        ? <WalletElement paymentType />
-        : <PaymentElement cardProps expiryProps cvcProps paymentType />
+  let isLoading = switch (GlobalVars.sdkVersion, paymentMethodList, paymentManagementList) {
+  | (V1, Loading, _) => true
+  | (V2, _, LoadingV2) => true
+  | _ => false
+  }
+
+  let isWalletElement = paymentType->Utils.checkIsWalletElement
+
+  if isLoading {
+    <RenderIf condition=showLoader>
+      {isWalletElement ? <WalletShimmer /> : <PaymentElementShimmer />}
+    </RenderIf>
+  } else if isWalletElement {
+    <WalletElement paymentType />
+  } else {
+    switch GlobalVars.sdkVersion {
+    | V2 => <PaymentElementV2 cardProps expiryProps cvcProps paymentType />
+    | V1 => <PaymentElement cardProps expiryProps cvcProps paymentType />
     }
   }
 }

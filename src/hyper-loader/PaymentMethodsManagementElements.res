@@ -249,7 +249,7 @@ let make = (
             !(expressCheckoutComponents->Array.includes(componentType))
           ) {
             try {
-              switch GlobalVars.sdkVersionEnum {
+              switch GlobalVars.sdkVersion {
               | V1 => await fetchSavedPaymentMethods(mountedIframeRef, false, componentType)
               | V2 => await fetchPaymentManagementList(mountedIframeRef, false, componentType)
               }

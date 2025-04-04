@@ -64,7 +64,7 @@ let make = (
           paymentType=CardThemeType.Card
           type_="tel"
           inputRef={React.useRef(Nullable.null)}
-          name=TestUtils.expiryInputTestId
+          name=TestUtils.cardNoInputTestId
           isDisabled=true
         />
       </div>
