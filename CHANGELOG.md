@@ -1,3 +1,10 @@
+## [0.122.7](https://github.com/juspay/hyperswitch-web/compare/v0.122.6...v0.122.7) (2025-04-05)
+
+
+### Bug Fixes
+
+* bubblegum theme correction ([#984](https://github.com/juspay/hyperswitch-web/issues/984)) ([79d0572](https://github.com/juspay/hyperswitch-web/commit/79d05728af475291c0a2ab69d3b422985e4c5bb2))
+
 ## [0.122.6](https://github.com/juspay/hyperswitch-web/compare/v0.122.5...v0.122.6) (2025-04-03)
 
 ## [0.122.5](https://github.com/juspay/hyperswitch-web/compare/v0.122.4...v0.122.5) (2025-04-03)
