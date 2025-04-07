@@ -81,7 +81,7 @@ describe("Card CVC Checks", () => {
     it('user can enter 4 digit cvc on saved payment methods screen', () => {
         cy.wait(2000)
         getIframeBody()
-            .contains('div', '4 digit cvc test card')
+            .contains('div', '4 digit cvc t..')
             .should('exist')
             .trigger('click')
         cy.wait(1000)

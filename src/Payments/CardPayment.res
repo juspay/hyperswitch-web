@@ -2,7 +2,12 @@ type target = {checked: bool}
 type event = {target: target}
 
 @react.component
-let make = (~cardProps, ~expiryProps, ~cvcProps, ~isBancontact=false) => {
+let make = (
+  ~cardProps: CardUtils.cardProps,
+  ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
+  ~isBancontact=false,
+) => {
   open PaymentType
   open PaymentModeType
   open Utils
@@ -24,7 +29,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~isBancontact=false) => {
 
   let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
 
-  let (
+  let {
     isCardValid,
     setIsCardValid,
     isCardSupported,
@@ -37,32 +42,29 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~isBancontact=false) => {
     setCardError,
     maxCardLength,
     cardBrand,
-  ) = cardProps
+  } = cardProps
 
-  let (
+  let {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
     changeCardExpiry,
     handleExpiryBlur,
     expiryRef,
-    _,
     expiryError,
     setExpiryError,
-  ) = expiryProps
+  } = expiryProps
 
-  let (
+  let {
     isCVCValid,
     setIsCVCValid,
     cvcNumber,
-    _,
     changeCVCNumber,
     handleCVCBlur,
     cvcRef,
-    _,
     cvcError,
     setCvcError,
-  ) = cvcProps
+  } = cvcProps
   let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)

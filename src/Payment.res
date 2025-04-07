@@ -417,7 +417,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand />
   }, (cardType, paymentType, cardBrand, cardNumber))
 
-  let cardProps: CardUtils.cardProps = (
+  let cardProps: CardUtils.cardProps = {
     isCardValid,
     setIsCardValid,
     isCardSupported,
@@ -430,9 +430,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     setCardError,
     maxCardLength,
     cardBrand,
-  )
+  }
 
-  let expiryProps: CardUtils.expiryProps = (
+  let expiryProps: CardUtils.expiryProps = {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
@@ -442,9 +442,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     onExpiryKeyDown,
     expiryError,
     setExpiryError,
-  )
+  }
 
-  let cvcProps: CardUtils.cvcProps = (
+  let cvcProps: CardUtils.cvcProps = {
     isCVCValid,
     setIsCVCValid,
     cvcNumber,
@@ -455,9 +455,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     onCvcKeyDown,
     cvcError,
     setCvcError,
-  )
+  }
 
-  let zipProps: CardUtils.zipProps = (
+  let zipProps: CardUtils.zipProps = {
     isZipValid,
     setIsZipValid,
     zipCode,
@@ -466,7 +466,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     zipRef,
     onZipCodeKeyDown,
     displayPincode,
-  )
+  }
 
   if integrateError {
     <ErrorOccured />
