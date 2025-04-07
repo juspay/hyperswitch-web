@@ -124,6 +124,7 @@ let make = (
             inputRef=cardRef
             placeholder="1234 1234 1234 1234"
             isFocus
+            autocomplete="cc-number"
           />
         </div>
       </div>}
@@ -143,6 +144,7 @@ let make = (
             inputRef=expiryRef
             placeholder=localeString.expiryPlaceholder
             isFocus
+            autocomplete="cc-exp"
           />
         </div>
         <div className="w-1/5">
@@ -161,6 +163,7 @@ let make = (
             inputRef=cvcRef
             placeholder="123"
             isFocus
+            autocomplete="cc-csc"
           />
         </div>
         <RenderIf condition={!options.hidePostalCode}>

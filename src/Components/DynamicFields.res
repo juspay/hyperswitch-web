@@ -331,6 +331,7 @@ let make = (
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
+              autocomplete="cc-number"
             />
           | CardExpiryMonth
           | CardExpiryYear
@@ -347,6 +348,7 @@ let make = (
               maxLength=7
               inputRef=expiryRef
               placeholder=localeString.expiryPlaceholder
+              autocomplete="cc-exp"
             />
           | CardCvc =>
             <PaymentInputField
@@ -368,6 +370,7 @@ let make = (
               maxLength=4
               inputRef=cvcRef
               placeholder="123"
+              autocomplete="cc-csc"
             />
           | CardExpiryAndCvc =>
             <div className="flex gap-10">
@@ -383,6 +386,7 @@ let make = (
                 maxLength=7
                 inputRef=expiryRef
                 placeholder=localeString.expiryPlaceholder
+                autocomplete="cc-exp"
               />
               <PaymentInputField
                 fieldName=localeString.cvcTextLabel
@@ -403,6 +407,7 @@ let make = (
                 maxLength=4
                 inputRef=cvcRef
                 placeholder="123"
+                autocomplete="cc-csc"
               />
             </div>
           | Currency(currencyArr) =>

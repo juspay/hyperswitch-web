@@ -233,6 +233,7 @@ let make = (
                       placeholder="123"
                       height="1.8rem"
                       name={TestUtils.cardCVVInputTestId}
+                      autocomplete="cc-csc"
                     />
                   </div>
                 </div>

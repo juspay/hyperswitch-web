@@ -94,6 +94,7 @@ let make = (
             placeholder="1234 1234 1234 1234"
             id="card-number"
             isFocus
+            autocomplete="cc-number"
           />
         | CardExpiryElement =>
           <InputField
@@ -109,6 +110,7 @@ let make = (
             placeholder=localeString.expiryPlaceholder
             id="card-expiry"
             isFocus
+            autocomplete="cc-exp"
           />
         | CardCVCElement =>
           <InputField
@@ -125,6 +127,7 @@ let make = (
             placeholder="123"
             id="card-cvc"
             isFocus
+            autocomplete="cc-csc"
           />
         | PaymentMethodsManagement =>
           <ReusableReactSuspense
