@@ -1,7 +1,10 @@
-const webpack = require("webpack");
+// webpack.config.js
 const path = require("path");
+const webpack = require("webpack");
 const dotenv = require("dotenv").config();
-const tailwindcss = require("tailwindcss");
+const packageJson = require("./package.json");
+
+// Webpack plugins
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
@@ -10,212 +13,65 @@ const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
 const { SubresourceIntegrityPlugin } = require("webpack-subresource-integrity");
+const tailwindcss = require("tailwindcss");
 
-const localhostSources = [
-  "http://localhost:8080",
-  "http://localhost:8207",
-  "http://localhost:3103",
-  "http://localhost:5252",
-  "http://127.0.0.1:8080",
-  "http://127.0.0.1:8207",
-  "http://127.0.0.1:3103",
-  "http://127.0.0.1:5252",
-];
+// Import configurations
+const {
+  getContentSecurityPolicy,
+  getAuthorizedSources,
+} = require("./webpack/content-security-policy");
+const { getEnvironmentConfig } = require("./webpack/environment-config");
 
-// List of authorized external script sources (for Content Security Policy)
-const authorizedScriptSources = [
-  "'self'",
-  "https://js.braintreegateway.com",
-  "https://tpgw.trustpay.eu/js/v1.js",
-  "https://test-tpgw.trustpay.eu/js/v1.js",
-  "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js",
-  "https://pay.google.com",
-  "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js",
-  "https://apple.com/apple-pay",
-  "https://x.klarnacdn.net/kp/lib/v1/api.js",
-  "https://www.paypal.com/sdk/js",
-  "https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js",
-  "https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js",
-  "https://cdn.plaid.com/link/v2/stable/link-initialize.js",
-  "https://www.sandbox.paypal.com",
-  "https://www.paypal.com",
-  "https://www.google.com/pay",
-  "https://sandbox.secure.checkout.visa.com",
-  "https://secure.checkout.visa.com",
-  "https://src.mastercard.com",
-  "https://sandbox.src.mastercard.com",
-  // Add other trusted sources here
-];
-
-// List of authorized external styles sources
-const authorizedStyleSources = [
-  "'self'",
-  "'unsafe-inline'",
-  "https://fonts.googleapis.com",
-  "http://fonts.googleapis.com",
-  "https://src.mastercard.com",
-  // Add other trusted sources here
-];
-
-// List of authorized external font sources
-const authorizedFontSources = [
-  "'self'",
-  "https://fonts.gstatic.com",
-  "http://fonts.gstatic.com",
-  // Add other trusted sources here
-];
-
-// List of authorized external image sources
-const authorizedImageSources = [
-  "'self'",
-  "https://www.gstatic.com",
-  "https://static.scarf.sh/a.png",
-  "https://www.paypalobjects.com",
-  "https://googleads.g.doubleclick.net",
-  "https://www.google.com",
-  "data: *",
-  // Add other trusted sources here
-];
-
-// List of authorized external frame sources
-const authorizedFrameSources = [
-  "'self'",
-  "https://checkout.hyperswitch.io",
-  "https://dev.hyperswitch.io",
-  "https://beta.hyperswitch.io",
-  "https://live.hyperswitch.io",
-  "https://integ.hyperswitch.io",
-  "https://integ-api.hyperswitch.io",
-  "https://app.hyperswitch.io",
-  "https://sandbox.hyperswitch.io",
-  "https://api.hyperswitch.io",
-  "https://pay.google.com",
-  "https://www.sandbox.paypal.com",
-  "https://www.paypal.com",
-  "https://sandbox.src.mastercard.com",
-  "https://src.mastercard.com",
-  "https://sandbox.secure.checkout.visa.com",
-  "https://secure.checkout.visa.com",
-  "https://checkout.wallet.cat.earlywarning.io/",
-  "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/",
-  ...localhostSources,
-  // Add other trusted sources here
-];
-
-// List of authorized external connect sources
-const authorizedConnectSources = [
-  "'self'",
-  "https://checkout.hyperswitch.io",
-  "https://dev.hyperswitch.io",
-  "https://beta.hyperswitch.io",
-  "https://live.hyperswitch.io",
-  "https://integ.hyperswitch.io",
-  "https://integ-api.hyperswitch.io",
-  "https://app.hyperswitch.io",
-  "https://sandbox.hyperswitch.io",
-  "https://api.hyperswitch.io",
-  "https://www.google.com/pay",
-  "https://pay.google.com",
-  "https://google.com/pay",
-  "https://www.sandbox.paypal.com",
-  "https://www.paypal.com",
-  ...localhostSources,
-  // Add other trusted sources here
-];
-
-// Helper function to get environment variables with fallback
-const getEnvVariable = (variable, defaultValue) =>
-  process.env[variable] ?? defaultValue;
-
-const sdkEnv = getEnvVariable("sdkEnv", "local");
-const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
-const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
-const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
-const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
-
-/*
-* SDK Version Compatibility:
-
-* v0: Compatible with API v1
-* v1: Compatible with API v1
-* v2: Compatible with API v2
-
-* The default SDK version is "v1".
-*/
-const sdkVersion = getEnvVariable("SDK_VERSION", "v1");
-
-// Repository info
-const repoVersion = require("./package.json").version;
-const repoName = require("./package.json").name;
-const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersion}`;
-
-// Helper function to get SDK URL based on environment
-const getSdkUrl = (env, customUrl) => {
-  if (customUrl) return customUrl;
-  const urls = {
-    prod: "https://checkout.hyperswitch.io",
-    sandbox: "https://beta.hyperswitch.io",
-    integ: "https://dev.hyperswitch.io",
-    local: "http://localhost:9050",
-  };
-  return urls[env] || urls.local;
-};
-
-// Determine SDK URL
-const sdkUrl = getSdkUrl(sdkEnv, envSdkUrl);
-
-// Helper function to determine environment domains
-const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
-  switch (sdkEnv) {
-    case "prod":
-      return prodDomain;
-    case "integ":
-      return integDomain;
-    default:
-      return defaultDomain;
-  }
-};
-
-// Environment endpoints
-const backendDomain = getEnvironmentDomain("checkout", "dev", "beta");
-const confirmDomain = getEnvironmentDomain("live", "integ", "app");
-
-// Backend and confirm endpoints
-const backendEndPoint =
-  envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
-
-const confirmEndPoint =
-  envBackendUrl || `https://${confirmDomain}.hyperswitch.io/api`;
-
-const logEndpoint = envLoggingUrl;
-
-const loggingLevel = "DEBUG";
-const maxLogsPushedPerEventName = 100;
-
-// Function to determine the current environment type
-const getEnvironmentType = (env) => {
-  const envType = {
-    isLocal: env === "local",
-    isIntegrationEnv: env === "integ",
-    isProductionEnv: env === "prod",
-    isSandboxEnv: env === "sandbox" || env === "local",
-  };
-  return envType;
-};
-
-const { isLocal, isIntegrationEnv, isProductionEnv, isSandboxEnv } =
-  getEnvironmentType(sdkEnv);
-
+/**
+ * Main webpack configuration
+ * @param {string} [publicPath="auto"] - The public path for assets
+ * @returns {Object} webpack configuration
+ */
 module.exports = (publicPath = "auto") => {
+  // Environment and config variables
+  const sdkEnv = process.env.sdkEnv || "local";
+  const ENABLE_LOGGING = process.env.ENABLE_LOGGING === "true";
+  const sdkVersion = process.env.SDK_VERSION || "v1";
+  const NODE_ENV = process.env.NODE_ENV || "development";
+  const IS_PRODUCTION = NODE_ENV === "production";
+  const IS_LOCAL = sdkEnv === "local";
+
+  // Get environment configuration
+  const {
+    repoPublicPath,
+    sdkUrl,
+    backendEndPoint,
+    confirmEndPoint,
+    logEndpoint,
+    isProductionEnv,
+    isIntegrationEnv,
+    isSandboxEnv,
+  } = getEnvironmentConfig({
+    sdkEnv,
+    sdkVersion,
+    repoVersion: packageJson.version,
+    envSdkUrl: process.env.ENV_SDK_URL,
+    envBackendUrl: process.env.ENV_BACKEND_URL,
+    envLoggingUrl: process.env.ENV_LOGGING_URL,
+  });
+
+  // Get Content Security Policy sources
+  const authorizedSources = getAuthorizedSources();
+  const cspMetaTag = getContentSecurityPolicy({
+    ...authorizedSources,
+    logEndpoint,
+  });
+
+  // Define entry points
   const entries = {
     app: "./index.js",
     HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
   };
 
+  // Define environment variables for DefinePlugin
   const definePluginValues = {
-    repoName: JSON.stringify(repoName),
-    repoVersion: JSON.stringify(repoVersion),
+    repoName: JSON.stringify(packageJson.name),
+    repoVersion: JSON.stringify(packageJson.version),
     publicPath: JSON.stringify(repoPublicPath),
     sdkUrl: JSON.stringify(sdkUrl),
     backendEndPoint: JSON.stringify(backendEndPoint),
@@ -224,14 +80,15 @@ module.exports = (publicPath = "auto") => {
     sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
     sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
     enableLogging: ENABLE_LOGGING,
-    loggingLevel: JSON.stringify(loggingLevel),
-    maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
+    loggingLevel: JSON.stringify("DEBUG"),
+    maxLogsPushedPerEventName: JSON.stringify(100),
     sdkVersion: JSON.stringify(sdkVersion),
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
   };
 
+  // Configure plugins
   const plugins = [
     new MiniCssExtractPlugin(),
     new CopyPlugin({
@@ -243,55 +100,35 @@ module.exports = (publicPath = "auto") => {
       template: "./public/build.html",
       chunks: ["app"],
       scriptLoading: "blocking",
-      // Add CSP meta tag
       meta: {
         "Content-Security-Policy": {
           "http-equiv": "Content-Security-Policy",
-          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-            " "
-          )}; 
-          style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")};
-          img-src ${authorizedImageSources.join(" ")};
-          font-src ${authorizedFontSources.join(" ")}; 
-          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
-`,
+          content: cspMetaTag,
         },
       },
     }),
     new HtmlWebpackPlugin({
-      // Also generate a test.html
       inject: true,
       filename: "fullscreenIndex.html",
       template: "./public/fullscreenIndexTemplate.html",
-      // Add CSP meta tag
       meta: {
         "Content-Security-Policy": {
           "http-equiv": "Content-Security-Policy",
-          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-            " "
-          )};
-          style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")}; 
-          img-src ${authorizedImageSources.join(" ")};
-          font-src ${authorizedFontSources.join(" ")};
-          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
-          `,
+          content: cspMetaTag,
         },
       },
     }),
     new SubresourceIntegrityPlugin({
       hashFuncNames: ["sha384"],
-      enabled: process.env.NODE_ENV === "production",
+      enabled: IS_PRODUCTION,
     }),
-    // Build-time verification plugin
     new webpack.DefinePlugin({
-      // Custom verification to ensure SRI is enforced
-      __VERIFY_SRI__: JSON.stringify(process.env.NODE_ENV === "production"),
+      __VERIFY_SRI__: JSON.stringify(IS_PRODUCTION),
     }),
   ];
 
-  if (process.env.NODE_ENV === "production") {
+  // Add production-only plugins
+  if (IS_PRODUCTION) {
     plugins.push(
       new BundleAnalyzerPlugin({
         analyzerMode: "static",
@@ -301,6 +138,7 @@ module.exports = (publicPath = "auto") => {
     );
   }
 
+  // Add Sentry plugin if enabled
   if (
     process.env.SENTRY_AUTH_TOKEN &&
     process.env.IS_SENTRY_ENABLED === "true"
@@ -321,11 +159,34 @@ module.exports = (publicPath = "auto") => {
     );
   }
 
+  // Configure optimization
+  const optimization = IS_LOCAL
+    ? {}
+    : {
+        sideEffects: true,
+        minimize: true,
+        minimizer: [
+          new TerserPlugin({
+            terserOptions: {
+              compress: {
+                drop_console: false,
+              },
+              mangle: {
+                keep_fnames: true,
+                keep_classnames: true,
+              },
+            },
+          }),
+        ],
+      };
+
+  // Return webpack configuration
   return {
-    mode: isLocal ? "development" : "production",
-    devtool: isLocal ? "cheap-module-source-map" : "source-map",
+    mode: IS_LOCAL ? "development" : "production",
+    devtool: IS_LOCAL ? "cheap-module-source-map" : "source-map",
+    entry: entries,
     output: {
-      path: isLocal
+      path: IS_LOCAL
         ? path.resolve(__dirname, "dist")
         : path.resolve(__dirname, "dist", sdkEnv, sdkVersion),
       crossOriginLoading: "anonymous",
@@ -333,25 +194,7 @@ module.exports = (publicPath = "auto") => {
       publicPath: `${repoPublicPath}/`,
       hashFunction: "sha384",
     },
-    optimization: isLocal
-      ? {}
-      : {
-          sideEffects: true,
-          minimize: true,
-          minimizer: [
-            new TerserPlugin({
-              terserOptions: {
-                compress: {
-                  drop_console: false,
-                },
-                mangle: {
-                  keep_fnames: true, // Prevent function names from being mangled
-                  keep_classnames: true, // Prevent class names from being mangled
-                },
-              },
-            }),
-          ],
-        },
+    optimization,
     plugins,
     module: {
       rules: [
@@ -371,7 +214,7 @@ module.exports = (publicPath = "auto") => {
           ],
         },
         {
-          test: /\.jsx?$/, // Matches both .js and .jsx files
+          test: /\.jsx?$/,
           exclude: /node_modules/,
           use: {
             loader: "babel-loader",
@@ -383,7 +226,6 @@ module.exports = (publicPath = "auto") => {
         },
       ],
     },
-    entry: entries,
     resolve: {
       extensions: [".js", ".jsx"],
     },
