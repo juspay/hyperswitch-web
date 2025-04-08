@@ -1255,6 +1255,7 @@ let getThemePromise = dict => {
   | "midnight" => Some(ThemeImporter.importTheme("../MidnightTheme.bs.js"))
   | "charcoal" => Some(ThemeImporter.importTheme("../CharcoalTheme.bs.js"))
   | "soft" => Some(ThemeImporter.importTheme("../SoftTheme.bs.js"))
+  | "bubblegum" => Some(ThemeImporter.importTheme("../BubblegumTheme.bs.js"))
   | "none" => Some(ThemeImporter.importTheme("../NoTheme.bs.js"))
   | _ => None
   }

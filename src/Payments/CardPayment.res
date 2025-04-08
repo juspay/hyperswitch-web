@@ -3,11 +3,10 @@ type event = {target: target}
 
 @react.component
 let make = (
-  ~cardProps,
-  ~expiryProps,
-  ~cvcProps,
+  ~cardProps: CardUtils.cardProps,
+  ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
   ~isBancontact=false,
-  ~paymentType: CardThemeType.mode,
 ) => {
   open PaymentType
   open PaymentModeType
@@ -30,7 +29,7 @@ let make = (
 
   let nickname = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCardNickName)
 
-  let (
+  let {
     isCardValid,
     setIsCardValid,
     isCardSupported,
@@ -43,32 +42,29 @@ let make = (
     setCardError,
     maxCardLength,
     cardBrand,
-  ) = cardProps
+  } = cardProps
 
-  let (
+  let {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
     changeCardExpiry,
     handleExpiryBlur,
     expiryRef,
-    _,
     expiryError,
     setExpiryError,
-  ) = expiryProps
+  } = expiryProps
 
-  let (
+  let {
     isCVCValid,
     setIsCVCValid,
     cvcNumber,
-    _,
     changeCVCNumber,
     handleCVCBlur,
     cvcRef,
-    _,
     cvcError,
     setCvcError,
-  ) = cvcProps
+  } = cvcProps
   let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
@@ -347,9 +343,7 @@ let make = (
               onBlur=handleCardBlur
               rightIcon={icon}
               errorString=cardError
-              paymentType
               type_="tel"
-              appearance=config.appearance
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
@@ -357,6 +351,7 @@ let make = (
                 ? "border-b-0"
                 : ""}
               name=TestUtils.cardNoInputTestId
+              autocomplete="cc-number"
             />
             <div
               className="flex flex-row w-full place-content-between"
@@ -372,13 +367,12 @@ let make = (
                   onChange=changeCardExpiry
                   onBlur=handleExpiryBlur
                   errorString=expiryError
-                  paymentType
                   type_="tel"
-                  appearance=config.appearance
                   maxLength=7
                   inputRef=expiryRef
                   placeholder=localeString.expiryPlaceholder
                   name=TestUtils.expiryInputTestId
+                  autocomplete="cc-exp"
                 />
               </div>
               <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
@@ -390,20 +384,19 @@ let make = (
                   onChange=changeCVCNumber
                   onBlur=handleCVCBlur
                   errorString=cvcError
-                  paymentType
                   rightIcon={CardUtils.setRightIconForCvc(
                     ~cardComplete,
                     ~cardEmpty,
                     ~cardInvalid,
                     ~color=themeObj.colorIconCardCvcError,
                   )}
-                  appearance=config.appearance
                   type_="tel"
                   className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
                   maxLength=4
                   inputRef=cvcRef
                   placeholder="123"
                   name=TestUtils.cardCVVInputTestId
+                  autocomplete="cc-csc"
                 />
               </div>
             </div>
@@ -425,7 +418,6 @@ let make = (
             </RenderIf>
           </RenderIf>
           <DynamicFields
-            paymentType
             paymentMethod
             paymentMethodType
             setRequiredFieldsBody
@@ -443,7 +435,7 @@ let make = (
             </div>
           </RenderIf>
           <RenderIf condition={!options.hideCardNicknameField && isCustomerAcceptanceRequired}>
-            <NicknamePaymentInput paymentType />
+            <NicknamePaymentInput />
           </RenderIf>
         </div>
       </div>

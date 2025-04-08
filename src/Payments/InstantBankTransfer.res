@@ -2,7 +2,7 @@ open RecoilAtoms
 open Utils
 
 @react.component
-let make = (~paymentType) => {
+let make = () => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -47,10 +47,7 @@ let make = (~paymentType) => {
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <DynamicFields
-      paymentType
-      paymentMethod="bank_transfer"
-      paymentMethodType="instant_bank_transfer"
-      setRequiredFieldsBody
+      paymentMethod="bank_transfer" paymentMethodType="instant_bank_transfer" setRequiredFieldsBody
     />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="instant" />
     <InfoElement />
