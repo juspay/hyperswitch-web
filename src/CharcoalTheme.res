@@ -48,7 +48,7 @@ let charcoal = {
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
-  disabledFieldColor: "#D6D6D6",
+  disabledFieldColor: "#E1E5EA",
 }
 
 let charcoalRules = theme =>
