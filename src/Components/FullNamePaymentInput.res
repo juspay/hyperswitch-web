@@ -31,6 +31,11 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
     }
   }
 
+  React.useEffect(() => {
+    setFullName(prev => validateName(prev.value, prev, localeString))
+    None
+  }, [])
+
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
     setFullName(prev => validateName(val, prev, localeString))
