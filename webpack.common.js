@@ -119,6 +119,10 @@ const authorizedConnectSources = [
   "https://google.com/pay",
   "https://www.sandbox.paypal.com",
   "https://www.paypal.com",
+  "https://sandbox.secure.checkout.visa.com",
+  "https://secure.checkout.visa.com",
+  "https://src.mastercard.com",
+  "https://sandbox.src.mastercard.com",
   ...localhostSources,
   // Add other trusted sources here
 ];
