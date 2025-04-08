@@ -351,6 +351,7 @@ let make = (
                 ? "border-b-0"
                 : ""}
               name=TestUtils.cardNoInputTestId
+              autocomplete="cc-number"
             />
             <div
               className="flex flex-row w-full place-content-between"
@@ -371,6 +372,7 @@ let make = (
                   inputRef=expiryRef
                   placeholder=localeString.expiryPlaceholder
                   name=TestUtils.expiryInputTestId
+                  autocomplete="cc-exp"
                 />
               </div>
               <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
@@ -394,6 +396,7 @@ let make = (
                   inputRef=cvcRef
                   placeholder="123"
                   name=TestUtils.cardCVVInputTestId
+                  autocomplete="cc-csc"
                 />
               </div>
             </div>
