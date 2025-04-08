@@ -197,6 +197,8 @@ function getAuthorizedSources(options = {}) {
     ...formatDomains(CSP_DOMAINS.hyperswitch),
     ...formatDomains(CSP_DOMAINS.payment.google),
     ...formatDomains(CSP_DOMAINS.payment.paypal),
+    ...formatDomains(CSP_DOMAINS.payment.visa),
+    ...formatDomains(CSP_DOMAINS.payment.mastercard),
     ...localhostSources,
     ...(additionalSources.connect || []),
   ];
