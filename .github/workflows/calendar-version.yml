@@ -1,9 +1,9 @@
-name: Tag on Every Commit (Test)
+name: Calendar Versioning Tag
 
 on:
   push:
     branches:
-      - "**"
+      - main
 
 jobs:
   tag:
