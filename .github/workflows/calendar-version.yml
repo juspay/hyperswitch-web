@@ -34,6 +34,7 @@ jobs:
 
           git config --global user.name "Pritish Budhiraja"
           git config --global user.email "pritish.budhiraja@gmail.com"
+          git config --global user.signingkey "${{ secrets.GPG_KEY_ID }}"
           git config --global commit.gpgsign true
           git config --global tag.gpgSign true
           git config --global gpg.program gpg
