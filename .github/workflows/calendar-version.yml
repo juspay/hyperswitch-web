@@ -1,0 +1,44 @@
+name: Calendar Versioning Tag
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get formatted date (YYYY.MM.DD)
+        id: get-date
+        run: echo "date=$(date -u '+%Y.%m.%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch all tags
+        run: git fetch --tags
+
+      - name: Determine next tag version
+        id: get-next-tag
+        run: |
+          DATE_PREFIX=${{ steps.get-date.outputs.date }}
+          EXISTING_TAGS=$(git tag -l "${DATE_PREFIX}.*" | sort)
+          COUNT=$(echo "$EXISTING_TAGS" | grep -c . || true)
+          VERSION=$(printf "%02d" $COUNT)
+          TAG="${DATE_PREFIX}.${VERSION}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git tag ${{ steps.get-next-tag.outputs.tag }}
+          git push origin ${{ steps.get-next-tag.outputs.tag }}
+
+      - name: Create GitHub Release (auto-verified)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get-next-tag.outputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
