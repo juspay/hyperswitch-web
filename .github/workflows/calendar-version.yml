@@ -12,9 +12,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Get formatted date (DD.MM.YYYY)
+      - name: Get formatted date (YYYY.MM.DD)
         id: get-date
-        run: echo "date=$(date -u '+%d.%m.%Y')" >> "$GITHUB_OUTPUT"
+        run: echo "date=$(date -u '+%Y.%m.%d')" >> "$GITHUB_OUTPUT"
 
       - name: Fetch all tags
         run: git fetch --tags
@@ -25,8 +25,8 @@ jobs:
           DATE_PREFIX=${{ steps.get-date.outputs.date }}
           EXISTING_TAGS=$(git tag -l "${DATE_PREFIX}.*" | sort)
           COUNT=$(echo "$EXISTING_TAGS" | grep -c . || true)
-          NEXT_COUNT=$((COUNT + 1))
-          TAG="${DATE_PREFIX}.`printf "%02d" $NEXT_COUNT`"
+          VERSION=$(printf "%02d" $COUNT)
+          TAG="${DATE_PREFIX}.${VERSION}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
