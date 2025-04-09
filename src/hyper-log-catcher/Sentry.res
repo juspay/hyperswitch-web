@@ -1,6 +1,9 @@
 type integration
 type scope
 type instrumentation
+type transport
+type stackParser
+type client
 
 type tag = {mutable tag: string}
 type hint = {originalException: tag}
@@ -36,28 +39,11 @@ external newSentryReplay: unit => integration = "replayIntegration"
 @module("@sentry/react")
 external capture: Exn.t => unit = "captureException"
 
-// Define additional types needed for BrowserClient
-type transport
-type stackParser
-type client
-
 @module("@sentry/browser")
 external makeFetchTransport: transport = "makeFetchTransport"
 
 @module("@sentry/browser")
 external defaultStackParser: stackParser = "defaultStackParser"
-
-@module("@sentry/browser")
-external breadcrumbsIntegration: unit => integration = "breadcrumbsIntegration"
-
-@module("@sentry/browser")
-external dedupeIntegration: unit => integration = "dedupeIntegration"
-
-@module("@sentry/browser")
-external globalHandlersIntegration: unit => integration = "globalHandlersIntegration"
-
-@module("@sentry/browser")
-external linkedErrorsIntegration: unit => integration = "linkedErrorsIntegration"
 
 @module("@sentry/browser")
 external getCurrentScope: unit => scope = "getCurrentScope"
