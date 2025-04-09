@@ -5,27 +5,30 @@ on:
     branches:
       - "**"
 
-env:
-  GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
-
 jobs:
   tag:
     runs-on: ubuntu-latest
+    env:
+      GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up GPG
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
 
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg.conf
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg-agent.conf
+
+          gpgconf --kill gpg-agent || true
+          gpgconf --launch gpg-agent
 
           git config --global user.name "Pritish Budhiraja"
           git config --global user.email "pritish.budhiraja@gmail.com"
@@ -51,24 +54,15 @@ jobs:
           TAG="${DATE_PREFIX}.${VERSION}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Update package.json version and commit
-        env:
-          TAG_VERSION: ${{ steps.get-next-tag.outputs.tag }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Update package.json version
         run: |
+          TAG_VERSION="${{ steps.get-next-tag.outputs.tag }}"
           jq --arg v "$TAG_VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
           git add package.json
-
-          echo "$GPG_PASSPHRASE" | \
-            git commit -S --gpg-sign="$GPG_KEY_ID" --no-verify \
-            -m "chore: update package.json version to $TAG_VERSION" || echo "Nothing to commit"
-
+          git commit -m "chore: update package.json version to $TAG_VERSION"
           git push origin HEAD
 
-      - name: Create and push signed tag
-        env:
-          TAG_VERSION: ${{ steps.get-next-tag.outputs.tag }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      - name: GPG sign and push tag
         run: |
           echo "$GPG_PASSPHRASE" | \
             gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
@@ -76,5 +70,5 @@ jobs:
             --output /dev/null \
             --sign
 
-          git tag -s "$TAG_VERSION" -m "$TAG_VERSION"
-          git push origin "$TAG_VERSION"
+          git tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
+          git push origin "${{ steps.get-next-tag.outputs.tag }}"
