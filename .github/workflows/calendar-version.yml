@@ -3,7 +3,7 @@ name: Calendar Versioning Tag
 on:
   push:
     branches:
-      - main
+      - "**"
 
 jobs:
   tag:
@@ -20,23 +20,18 @@ jobs:
 
       - name: Setup GPG
         run: |
-          # Create a script that will provide the passphrase
-          cat > ~/.git-passphrase.sh <<EOF
-          #!/bin/sh
-          echo "\$GPG_PASSPHRASE"
-          EOF
-          chmod +x ~/.git-passphrase.sh
-
-          # Configure GPG to use this script for passphrases
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
-          cat > ~/.gnupg/gpg.conf <<EOF
-          batch
-          pinentry-mode loopback
-          EOF
-
           # Import the private key
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+          # Trust the key ultimately to avoid trust warnings
+          echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $GPG_KEY_ID trust
+
+          # Configure GPG to use loopback for passphrase input
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          gpg-connect-agent reloadagent /bye
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
@@ -48,9 +43,6 @@ jobs:
           git config --global commit.gpgsign true
           git config --global tag.gpgSign true
           git config --global gpg.program gpg
-
-          # Configure git to use our script for passphrase entry
-          git config --global gpg.passphrase.program ~/.git-passphrase.sh
 
       - name: Get formatted date (YYYY.MM.DD)
         id: get-date
@@ -72,6 +64,12 @@ jobs:
 
       - name: Create signed tag and push
         run: |
-          # Create and push the tag
-          GNUPGHOME="$HOME/.gnupg" git -c gpg.format=openpgp tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
+          # Write a script to provide the passphrase
+          echo '#!/bin/sh
+          echo "$GPG_PASSPHRASE"
+          ' > /tmp/passphrase-script.sh
+          chmod +x /tmp/passphrase-script.sh
+
+          # Create and push the tag using passphrase script
+          GNUPGHOME="$HOME/.gnupg" git -c gpg.passphrase.program=/tmp/passphrase-script.sh tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
           git push origin "${{ steps.get-next-tag.outputs.tag }}"
