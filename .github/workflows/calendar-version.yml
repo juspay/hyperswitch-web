@@ -35,3 +35,10 @@ jobs:
         run: |
           git tag ${{ steps.get-next-tag.outputs.tag }}
           git push origin ${{ steps.get-next-tag.outputs.tag }}
+
+      - name: Create GitHub Release (auto-verified)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get-next-tag.outputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
