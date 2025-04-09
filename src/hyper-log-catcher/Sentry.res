@@ -33,9 +33,52 @@ external reactRouterV6BrowserTracingIntegration: reactRouterV6BrowserTracingInte
 @module("@sentry/react")
 external newSentryReplay: unit => integration = "replayIntegration"
 
-
 @module("@sentry/react")
 external capture: Exn.t => unit = "captureException"
+
+// Define additional types needed for BrowserClient
+type transport
+type stackParser
+type client
+
+@module("@sentry/browser")
+external makeFetchTransport: transport = "makeFetchTransport"
+
+@module("@sentry/browser")
+external defaultStackParser: stackParser = "defaultStackParser"
+
+@module("@sentry/browser")
+external breadcrumbsIntegration: unit => integration = "breadcrumbsIntegration"
+
+@module("@sentry/browser")
+external dedupeIntegration: unit => integration = "dedupeIntegration"
+
+@module("@sentry/browser")
+external globalHandlersIntegration: unit => integration = "globalHandlersIntegration"
+
+@module("@sentry/browser")
+external linkedErrorsIntegration: unit => integration = "linkedErrorsIntegration"
+
+@module("@sentry/browser")
+external getCurrentScope: unit => scope = "getCurrentScope"
+
+type browserClientArg = {
+  dsn: string,
+  transport: transport,
+  stackParser: stackParser,
+  integrations: array<integration>,
+  tracesSampleRate: float,
+  tracePropagationTargets: array<string>,
+  replaysSessionSampleRate: float,
+  replaysOnErrorSampleRate: float,
+}
+
+// External for BrowserClient class
+@module("@sentry/browser") @new
+external createBrowserClient: browserClientArg => client = "BrowserClient"
+
+@send external init: (client, unit) => unit = "init"
+@send external setClient: (scope, client) => unit = "setClient"
 
 module ErrorBoundary = {
   type fallbackArg = {
@@ -53,8 +96,10 @@ module ErrorBoundary = {
 
 let initiateSentry = (~dsn) => {
   try {
-    initSentry({
+    let browserClient = createBrowserClient({
       dsn,
+      transport: makeFetchTransport,
+      stackParser: defaultStackParser,
       integrations: [
         newBrowserTracing(),
         reactRouterV6BrowserTracingIntegration({useEffect: React.useEffect0}),
@@ -70,6 +115,8 @@ let initiateSentry = (~dsn) => {
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
     })
+    getCurrentScope()->setClient(browserClient)
+    browserClient->init()
   } catch {
   | err => Console.error(err)
   }
@@ -77,14 +124,18 @@ let initiateSentry = (~dsn) => {
 
 let initiateSentryJs = (~dsn) => {
   try {
-    initSentry({
+    let browserClient = createBrowserClient({
       dsn,
+      transport: makeFetchTransport,
+      stackParser: defaultStackParser,
       integrations: [newBrowserTracing(), newSentryReplay()],
       tracesSampleRate: 1.0,
       tracePropagationTargets: ["localhost"],
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
     })
+    getCurrentScope()->setClient(browserClient)
+    browserClient->init()
   } catch {
   | err => Console.error(err)
   }

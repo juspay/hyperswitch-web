@@ -44,6 +44,7 @@ const authorizedScriptSources = [
   "https://secure.checkout.visa.com",
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
+  "blob:",
   // Add other trusted sources here
 ];
 
@@ -101,7 +102,13 @@ const authorizedFrameSources = [
   ...localhostSources,
   // Add other trusted sources here
 ];
-
+function extractBaseDSNUrl(dsn) {
+  const match = dsn.match(/^https:\/\/[^@]+@([^/]+)\//);
+  if (match && match[1]) {
+    return `https://${match[1]}`;
+  }
+  return null;
+}
 // List of authorized external connect sources
 const authorizedConnectSources = [
   "'self'",
@@ -123,6 +130,7 @@ const authorizedConnectSources = [
   "https://secure.checkout.visa.com",
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
+  extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
   // Add other trusted sources here
 ];
