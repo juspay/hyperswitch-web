@@ -8,9 +8,6 @@ on:
 jobs:
   tag:
     runs-on: ubuntu-latest
-    env:
-      GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
-      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
     steps:
       - name: Checkout code
@@ -18,31 +15,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup GPG
-        run: |
-          # Import the private key
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-
-          # Trust the key ultimately to avoid trust warnings
-          echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $GPG_KEY_ID trust
-
-          # Configure GPG to use loopback for passphrase input
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-          gpg-connect-agent reloadagent /bye
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-
-      - name: Configure Git
-        run: |
-          git config --global user.name "Pritish Budhiraja"
-          git config --global user.email "pritish.budhiraja@gmail.com"
-          git config --global user.signingkey "$GPG_KEY_ID"
-          git config --global commit.gpgsign true
-          git config --global tag.gpgSign true
-          git config --global gpg.program gpg
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
 
       - name: Get formatted date (YYYY.MM.DD)
         id: get-date
@@ -62,14 +42,12 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Creating tag: $TAG"
 
-      - name: Create signed tag and push
+      - name: Configure Git
         run: |
-          # Write a script to provide the passphrase
-          echo '#!/bin/sh
-          echo "$GPG_PASSPHRASE"
-          ' > /tmp/passphrase-script.sh
-          chmod +x /tmp/passphrase-script.sh
+          git config --global user.name "Pritish Budhiraja"
+          git config --global user.email "pritish.budhiraja@gmail.com"
 
-          # Create and push the tag using passphrase script
-          GNUPGHOME="$HOME/.gnupg" git -c gpg.passphrase.program=/tmp/passphrase-script.sh tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
+      - name: Create and push tag
+        run: |
+          git tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
           git push origin "${{ steps.get-next-tag.outputs.tag }}"
