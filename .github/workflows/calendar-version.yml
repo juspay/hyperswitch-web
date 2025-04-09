@@ -8,9 +8,6 @@ on:
 jobs:
   tag:
     runs-on: ubuntu-latest
-    env:
-      GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
-      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
     steps:
       - name: Checkout code
@@ -18,40 +15,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup GPG
-        run: |
-          # Create a script to echo the passphrase
-          echo '#!/bin/sh
-          echo "$GPG_PASSPHRASE"' > /tmp/echo-passphrase.sh
-          chmod +x /tmp/echo-passphrase.sh
-
-          # Setup GPG with appropriate config for non-interactive use
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
-          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
-          echo "pinentry-mode loopback" > ~/.gnupg/gpg.conf
-          echo "use-agent" >> ~/.gnupg/gpg.conf
-          echo "batch" >> ~/.gnupg/gpg.conf
-          echo "no-tty" >> ~/.gnupg/gpg.conf
-
-          # Import private key
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-
-          # Trust the key
-          echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key $GPG_KEY_ID trust
-
-          # Restart the agent
-          gpgconf --kill gpg-agent
-          gpg-agent --daemon
-
-      - name: Configure Git
-        run: |
-          git config --global user.name "Pritish Budhiraja"
-          git config --global user.email "pritish.budhiraja@gmail.com"
-          git config --global user.signingkey "$GPG_KEY_ID"
-          git config --global commit.gpgsign true
-          git config --global tag.gpgSign true
-          git config --global gpg.program gpg
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
 
       - name: Get formatted date (YYYY.MM.DD)
         id: get-date
@@ -66,23 +37,17 @@ jobs:
           DATE_PREFIX=${{ steps.get-date.outputs.date }}
           EXISTING_TAGS=$(git tag -l "${DATE_PREFIX}.*" | sort)
           COUNT=$(echo "$EXISTING_TAGS" | grep -c . || true)
-          NEXT_COUNT=$((COUNT + 0))
-          VERSION=$(printf "%02d" $NEXT_COUNT)
+          VERSION=$(printf "%02d" $COUNT)
           TAG="${DATE_PREFIX}.${VERSION}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Creating tag: $TAG"
 
-      - name: Create tag
+      - name: Configure Git
         run: |
-          # Create a basic unsigned tag first
-          git tag "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
+          git config --global user.name "Pritish Budhiraja"
+          git config --global user.email "pritish.budhiraja@gmail.com"
 
-          # Now create a detached signature for the tag object
-          TAG_OBJECT=$(git rev-parse "${{ steps.get-next-tag.outputs.tag }}")
-          git cat-file tag "${{ steps.get-next-tag.outputs.tag }}" | /tmp/echo-passphrase.sh | gpg --batch --pinentry-mode loopback --passphrase-fd 0 -u "$GPG_KEY_ID" --detach-sign -a -o "tag-signature.asc"
-
-          # Push the tag
+      - name: Create and push tag
+        run: |
+          git tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
           git push origin "${{ steps.get-next-tag.outputs.tag }}"
-
-          # Upload the signature to GitHub
-          echo "Tag object: $TAG_OBJECT was signed and pushed"
