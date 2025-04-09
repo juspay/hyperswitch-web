@@ -5,31 +5,34 @@ on:
     branches:
       - "**"
 
+env:
+  GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+
 jobs:
   tag:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up GPG key
-        run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          KEY_ID=$(gpg --list-secret-keys --with-colons | grep '^sec' | cut -d: -f5)
-          echo "GPG_KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
+      - name: Set up GPG
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-
-      - name: Configure Git and GPG
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --global user.signingkey "$GPG_KEY_ID"
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+
+          git config --global user.name "Pritish Budhiraja"
+          git config --global user.email "pritish.budhiraja@gmail.com"
           git config --global commit.gpgsign true
           git config --global tag.gpgSign true
-        env:
-          GPG_KEY_ID: ${{ env.GPG_KEY_ID }}
+          git config --global gpg.program gpg
+          git config --global gpg.format openpgp
 
       - name: Get formatted date (YYYY.MM.DD)
         id: get-date
@@ -48,29 +51,30 @@ jobs:
           TAG="${DATE_PREFIX}.${VERSION}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Update package.json version
+      - name: Update package.json version and commit
+        env:
+          TAG_VERSION: ${{ steps.get-next-tag.outputs.tag }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          TAG_VERSION="${{ steps.get-next-tag.outputs.tag }}"
           jq --arg v "$TAG_VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
           git add package.json
-          git commit -m "chore: update package.json version to $TAG_VERSION"
+
+          echo "$GPG_PASSPHRASE" | \
+            git commit -S --gpg-sign="$GPG_KEY_ID" --no-verify \
+            -m "chore: update package.json version to $TAG_VERSION" || echo "Nothing to commit"
+
           git push origin HEAD
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create and push signed tag
         env:
+          TAG_VERSION: ${{ steps.get-next-tag.outputs.tag }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "$GPG_PASSPHRASE" | \
             gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
             --local-user "$GPG_KEY_ID" \
-            -ab
+            --output /dev/null \
+            --sign
 
-          git tag -s ${{ steps.get-next-tag.outputs.tag }} \
-            -m "Calendar version tag ${{ steps.get-next-tag.outputs.tag }}" \
-            --local-user "$GPG_KEY_ID" \
-            --force
-
-          git push origin ${{ steps.get-next-tag.outputs.tag }}
+          git tag -s "$TAG_VERSION" -m "$TAG_VERSION"
+          git push origin "$TAG_VERSION"
