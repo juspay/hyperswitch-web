@@ -1,16 +1,35 @@
-name: Calendar Versioning Tag
+name: Calendar Versioning Tag (Test)
 
 on:
   push:
     branches:
-      - main
+      - "**"
 
 jobs:
   tag:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Set up GPG key
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          KEY_ID=$(gpg --list-secret-keys --with-colons | grep '^sec' | cut -d: -f5)
+          echo "GPG_KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      - name: Configure Git to use GPG
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.signingkey "$GPG_KEY_ID"
+          git config --global commit.gpgsign true
+          git config --global tag.gpgSign true
+        env:
+          GPG_KEY_ID: ${{ env.GPG_KEY_ID }}
 
       - name: Get formatted date (YYYY.MM.DD)
         id: get-date
@@ -29,16 +48,19 @@ jobs:
           TAG="${DATE_PREFIX}.${VERSION}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Create and push tag
+      - name: Create and push signed tag
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git tag ${{ steps.get-next-tag.outputs.tag }}
-          git push origin ${{ steps.get-next-tag.outputs.tag }}
+          echo "$GPG_PASSPHRASE" | \
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --local-user "$GPG_KEY_ID" \
+            -ab
 
-      - name: Create GitHub Release (auto-verified)
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.get-next-tag.outputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+          git tag -s ${{ steps.get-next-tag.outputs.tag }} \
+            -m "Calendar version tag ${{ steps.get-next-tag.outputs.tag }}" \
+            --local-user "$GPG_KEY_ID" \
+            --force
+
+          git push origin ${{ steps.get-next-tag.outputs.tag }}
