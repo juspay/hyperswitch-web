@@ -8,22 +8,49 @@ on:
 jobs:
   tag:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    env:
+      GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v5
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-          git_tag_gpgsign: true
+      - name: Setup GPG
+        run: |
+          # Create a script that will provide the passphrase
+          cat > ~/.git-passphrase.sh <<EOF
+          #!/bin/sh
+          echo "\$GPG_PASSPHRASE"
+          EOF
+          chmod +x ~/.git-passphrase.sh
+
+          # Configure GPG to use this script for passphrases
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          cat > ~/.gnupg/gpg.conf <<EOF
+          batch
+          pinentry-mode loopback
+          EOF
+
+          # Import the private key
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "Pritish Budhiraja"
+          git config --global user.email "pritish.budhiraja@gmail.com"
+          git config --global user.signingkey "$GPG_KEY_ID"
+          git config --global commit.gpgsign true
+          git config --global tag.gpgSign true
+          git config --global gpg.program gpg
+
+          # Configure git to use our script for passphrase entry
+          git config --global gpg.passphrase.program ~/.git-passphrase.sh
 
       - name: Get formatted date (YYYY.MM.DD)
         id: get-date
@@ -45,6 +72,6 @@ jobs:
 
       - name: Create signed tag and push
         run: |
-          # Create the tag on the current branch
-          git tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "Version ${{ steps.get-next-tag.outputs.tag }}"
+          # Create and push the tag
+          GNUPGHOME="$HOME/.gnupg" git -c gpg.format=openpgp tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
           git push origin "${{ steps.get-next-tag.outputs.tag }}"
