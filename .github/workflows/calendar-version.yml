@@ -8,36 +8,20 @@ on:
 jobs:
   tag:
     runs-on: ubuntu-latest
-    env:
-      GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
-      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Full history for better tag handling
+          fetch-depth: 0
 
       - name: Import GPG key
-        run: |
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          # Configure GPG for non-interactive signing
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-          gpg-connect-agent reloadagent /bye
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-
-      - name: Configure Git
-        run: |
-          git config --global user.name "Pritish Budhiraja"
-          git config --global user.email "pritish.budhiraja@gmail.com"
-          git config --global user.signingkey "$GPG_KEY_ID"
-          git config --global commit.gpgsign true
-          git config --global tag.gpgSign true
-          git config --global gpg.program gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
 
       - name: Get formatted date (YYYY.MM.DD)
         id: get-date
@@ -55,62 +39,16 @@ jobs:
           VERSION=$(printf "%02d" $COUNT)
           TAG="${DATE_PREFIX}.${VERSION}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Creating tag: $TAG"
 
       - name: Update version in package.json
         run: |
           TAG_VERSION=${{ steps.get-next-tag.outputs.tag }}
-          echo "Updating package.json version to $TAG_VERSION"
           jq --arg v "$TAG_VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
+          git add package.json
+          git commit -m "chore: update package.json version to $TAG_VERSION"
+          git push origin HEAD
 
-          # Echo before commit to verify changes
-          echo "Modified package.json:"
-          cat package.json | grep version
-
-          # Configure Git to use passphrase from environment
-          export GPG_TTY=$(tty)
-
-          # First try without explicit passphrase for debugging
-          if ! git add package.json; then
-            echo "Error adding package.json to git"
-            exit 1
-          fi
-
-          # Use echo to pipe the passphrase to git commit
-          echo "$GPG_PASSPHRASE" | git commit -m "chore: update package.json version to $TAG_VERSION" --gpg-sign="$GPG_KEY_ID" --no-verify
-          if [ $? -ne 0 ]; then
-            echo "Git commit failed, trying alternative signing method"
-            # Alternative approach if the first one fails
-            git commit -m "chore: update package.json version to $TAG_VERSION" 
-          fi
-
-          # Push with error checking
-          git push origin HEAD || {
-            echo "Push failed. Checking git status:"
-            git status
-            echo "Git log:"
-            git log -1
-            exit 1
-          }
-
-      - name: Create signed tag and push
+      - name: Create tag and push
         run: |
-          # Test GPG signing works
-          echo "Testing GPG signing..."
-          echo "test" | gpg --clearsign
-
-          # Create and push the tag with error handling
-          echo "Creating tag ${{ steps.get-next-tag.outputs.tag }}..."
-
-          # Try to sign the tag using the passphrase from environment
-          echo "$GPG_PASSPHRASE" | git tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
-
-          if [ $? -ne 0 ]; then
-            echo "Signed tag creation failed, trying unsigned tag as fallback"
-            git tag "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
-          fi
-
-          git push origin "${{ steps.get-next-tag.outputs.tag }}" || {
-            echo "Tag push failed."
-            exit 1
-          }
+          git tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
+          git push origin "${{ steps.get-next-tag.outputs.tag }}"
