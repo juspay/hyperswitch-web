@@ -21,11 +21,13 @@ jobs:
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
 
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          rm -f ~/.gnupg/gpg.conf ~/.gnupg/gpg-agent.conf
 
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg.conf
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg-agent.conf
+          echo "use-agent" > ~/.gnupg/gpg.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
 
           gpgconf --kill gpg-agent || true
           gpgconf --launch gpg-agent
