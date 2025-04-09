@@ -1,3 +1,12 @@
+## [0.122.9](https://github.com/juspay/hyperswitch-web/compare/v0.122.8...v0.122.9) (2025-04-08)
+
+
+### Bug Fixes
+
+* fullname input error correction ([#989](https://github.com/juspay/hyperswitch-web/issues/989)) ([c55dba0](https://github.com/juspay/hyperswitch-web/commit/c55dba0293612a21429d8b22efd9b556799eee3b))
+
+## [0.122.8](https://github.com/juspay/hyperswitch-web/compare/v0.122.7...v0.122.8) (2025-04-08)
+
 ## [0.122.7](https://github.com/juspay/hyperswitch-web/compare/v0.122.6...v0.122.7) (2025-04-05)
 
 

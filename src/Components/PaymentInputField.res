@@ -23,6 +23,7 @@ let make = (
   ~inputRef,
   ~paymentType=?,
   ~isDisabled=false,
+  ~autocomplete="on",
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
@@ -120,7 +121,7 @@ let make = (
           className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
           placeholder={config.appearance.labels == Above ? placeholder : ""}
           value
-          autoComplete="on"
+          autoComplete={autocomplete}
           onChange
           onBlur=handleBlur
           onFocus=handleFocus

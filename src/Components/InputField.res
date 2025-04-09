@@ -24,6 +24,7 @@ let make = (
   ~isFocus,
   ~labelClassName="",
   ~paymentType: option<CardThemeType.mode>=?,
+  ~autocomplete="on",
 ) => {
   open ElementType
   let (eleClassName, setEleClassName) = React.useState(_ => "input-base")
@@ -145,6 +146,7 @@ let make = (
         onChange
         onBlur=handleBlur
         onFocus=handleFocus
+        autoComplete={autocomplete}
         ariaLabel={`Type to fill ${fieldName} input`}
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>
