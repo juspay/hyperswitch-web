@@ -21,7 +21,7 @@ jobs:
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
-      - name: Configure Git to use GPG
+      - name: Configure Git and GPG
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -47,6 +47,16 @@ jobs:
           VERSION=$(printf "%02d" $COUNT)
           TAG="${DATE_PREFIX}.${VERSION}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Update package.json version
+        run: |
+          TAG_VERSION="${{ steps.get-next-tag.outputs.tag }}"
+          jq --arg v "$TAG_VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
+          git add package.json
+          git commit -m "chore: update package.json version to $TAG_VERSION"
+          git push origin HEAD
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create and push signed tag
         env:
