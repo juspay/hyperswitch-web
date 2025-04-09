@@ -12,9 +12,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Get date and generate tag prefix
+      - name: Get formatted date (DD.MM.YYYY)
         id: get-date
-        run: echo "date=$(date -u '+%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+        run: echo "date=$(date -u '+%d.%m.%Y')" >> "$GITHUB_OUTPUT"
 
       - name: Fetch all tags
         run: git fetch --tags
@@ -23,17 +23,15 @@ jobs:
         id: get-next-tag
         run: |
           DATE_PREFIX=${{ steps.get-date.outputs.date }}
-          EXISTING_TAGS=$(git tag -l "${DATE_PREFIX}-*" | sort)
+          EXISTING_TAGS=$(git tag -l "${DATE_PREFIX}.*" | sort)
           COUNT=$(echo "$EXISTING_TAGS" | grep -c . || true)
           NEXT_COUNT=$((COUNT + 1))
-          TAG="${DATE_PREFIX}-$(printf "%02d" $NEXT_COUNT)"
+          TAG="${DATE_PREFIX}.`printf "%02d" $NEXT_COUNT`"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "Pritish Budhiraja"
-          git config user.email "pritish.budhiraja@gmail.com"
           git tag ${{ steps.get-next-tag.outputs.tag }}
           git push origin ${{ steps.get-next-tag.outputs.tag }}
