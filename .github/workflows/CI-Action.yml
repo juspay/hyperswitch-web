@@ -37,6 +37,3 @@ jobs:
 
       - name: "Test React Hooks Properties"
         run: npm run test:hooks
-
-      - name: npm release
-        run: npx semantic-release --debug;
