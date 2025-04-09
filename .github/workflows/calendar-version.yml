@@ -23,6 +23,9 @@ jobs:
           git_user_signingkey: true
           git_commit_gpgsign: true
           git_tag_gpgsign: true
+          git_push_gpgsign: false
+          git_committer_name: "Pritish Budhiraja"
+          git_committer_email: "pritish.budhiraja@gmail.com" # Must match email associated with GPG key
 
       - name: Get formatted date (YYYY.MM.DD)
         id: get-date
@@ -37,17 +40,24 @@ jobs:
           DATE_PREFIX=${{ steps.get-date.outputs.date }}
           EXISTING_TAGS=$(git tag -l "${DATE_PREFIX}.*" | sort)
           COUNT=$(echo "$EXISTING_TAGS" | grep -c . || true)
-          VERSION=$(printf "%02d" $COUNT)
+          NEXT_COUNT=$((COUNT + 0))
+          VERSION=$(printf "%02d" $NEXT_COUNT)
           TAG="${DATE_PREFIX}.${VERSION}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Creating tag: $TAG"
-
-      - name: Configure Git
-        run: |
-          git config --global user.name "Pritish Budhiraja"
-          git config --global user.email "pritish.budhiraja@gmail.com"
 
       - name: Create and push tag
         run: |
           git tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
           git push origin "${{ steps.get-next-tag.outputs.tag }}"
+
+      - name: Export public key to GitHub
+        if: success()
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          fingerprint: true
+          workdir: .
+          git_config_global: true
