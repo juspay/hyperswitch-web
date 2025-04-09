@@ -3,7 +3,7 @@ name: Calendar Versioning Tag
 on:
   push:
     branches:
-      - main
+      - "**"
 
 jobs:
   tag:
