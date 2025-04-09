@@ -8,11 +8,15 @@ on:
 jobs:
   tag:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }} # or use a PAT with appropriate permissions
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v5
@@ -40,17 +44,43 @@ jobs:
           TAG="${DATE_PREFIX}.${VERSION}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Update version in package.json
+      - name: Create branch for package.json update
+        id: create-branch
         run: |
           TAG_VERSION=${{ steps.get-next-tag.outputs.tag }}
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          jq --arg v "$TAG_VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
-          git add package.json
-          git commit -m "chore: update package.json version to $TAG_VERSION"
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }} HEAD:main
+          BRANCH_NAME="version-update-${TAG_VERSION}"
+          echo "branch_name=${BRANCH_NAME}" >> "$GITHUB_OUTPUT"
+          git checkout -b ${BRANCH_NAME}
 
-      - name: Create tag and push
+          # Update package.json
+          jq --arg v "$TAG_VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
+
+          # Commit and push the branch
+          git add package.json
+          git commit -m "ci: update package.json version to ${TAG_VERSION}"
+          git push origin ${BRANCH_NAME}
+
+      - name: Create Pull Request
+        id: create-pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # or use a personal access token with appropriate permissions
+          commit-message: "ci: update package.json version to ${{ steps.get-next-tag.outputs.tag }}"
+          branch: ${{ steps.create-branch.outputs.branch_name }}
+          base: main
+          title: "ci: update package json version (${{ steps.get-next-tag.outputs.tag }})"
+          body: |
+            This PR automatically updates the package.json version to ${{ steps.get-next-tag.outputs.tag }}.
+
+            This is an automated PR created by the Calendar Versioning Tag workflow.
+          labels: |
+            automated
+            version-update
+          draft: false
+
+      # Optional: Wait for PR checks to complete and merge if possible
+      - name: Create signed tag
         run: |
-          git tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "${{ steps.get-next-tag.outputs.tag }}"
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }} "${{ steps.get-next-tag.outputs.tag }}"
+          # Create the tag on the current branch (the version update branch)
+          git tag -s "${{ steps.get-next-tag.outputs.tag }}" -m "Version ${{ steps.get-next-tag.outputs.tag }}"
+          git push origin "${{ steps.get-next-tag.outputs.tag }}"
