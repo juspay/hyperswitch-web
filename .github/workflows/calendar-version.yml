@@ -1,9 +1,9 @@
-name: Calendar Versioning Tag (Test)
+name: Calendar Versioning Tag
 
 on:
   push:
     branches:
-      - "**"
+      - main
 
 jobs:
   tag:
