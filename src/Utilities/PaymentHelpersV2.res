@@ -42,13 +42,12 @@ let intentCall = (
     ~bodyStr,
   )
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
     let url = makeUrl(confirmParam.return_url)
     url.searchParams.set("client_secret", clientSecret)
     url.searchParams.set("status", "failed")
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
-    if statusCode->String.charAt(0) !== "2" {
+    if !(res->Fetch.Response.ok) {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -281,8 +280,7 @@ let fetchPaymentManagementList = (
 
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    if !(res->Fetch.Response.ok) {
       res
       ->Fetch.Response.json
       ->then(_ => {
@@ -324,8 +322,7 @@ let deletePaymentMethodV2 = (
     ->JSON.stringify,
   )
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    if !(resp->Fetch.Response.ok) {
       resp
       ->Fetch.Response.json
       ->then(_ => {
@@ -367,8 +364,7 @@ let updatePaymentMethod = (
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
   )
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    if !(resp->Fetch.Response.ok) {
       resp
       ->Fetch.Response.json
       ->then(_ => {
@@ -409,8 +405,7 @@ let savePaymentMethod = (
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
   )
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    if !(resp->Fetch.Response.ok) {
       resp
       ->Fetch.Response.json
       ->then(_ => {
