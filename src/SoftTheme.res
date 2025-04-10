@@ -49,6 +49,7 @@ let soft = {
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
+  disabledFieldColor: "#303031",
 }
 
 let softRules = theme =>

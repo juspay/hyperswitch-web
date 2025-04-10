@@ -31,7 +31,7 @@ module.exports = (publicPath = "auto") => {
   // Environment and config variables
   const sdkEnv = process.env.sdkEnv || "local";
   const ENABLE_LOGGING = process.env.ENABLE_LOGGING === "true";
-  const sdkVersion = process.env.SDK_VERSION || "v1";
+  const sdkVersionValue = process.env.SDK_VERSION || "v1";
   const NODE_ENV = process.env.NODE_ENV || "development";
   const IS_PRODUCTION = NODE_ENV === "production";
   const IS_LOCAL = sdkEnv === "local";
@@ -48,7 +48,7 @@ module.exports = (publicPath = "auto") => {
     isSandboxEnv,
   } = getEnvironmentConfig({
     sdkEnv,
-    sdkVersion,
+    sdkVersionValue,
     repoVersion: packageJson.version,
     envSdkUrl: process.env.ENV_SDK_URL,
     envBackendUrl: process.env.ENV_BACKEND_URL,
@@ -82,7 +82,7 @@ module.exports = (publicPath = "auto") => {
     enableLogging: ENABLE_LOGGING,
     loggingLevel: JSON.stringify("DEBUG"),
     maxLogsPushedPerEventName: JSON.stringify(100),
-    sdkVersion: JSON.stringify(sdkVersion),
+    sdkVersionValue: JSON.stringify(sdkVersionValue),
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
@@ -188,7 +188,7 @@ module.exports = (publicPath = "auto") => {
     output: {
       path: IS_LOCAL
         ? path.resolve(__dirname, "dist")
-        : path.resolve(__dirname, "dist", sdkEnv, sdkVersion),
+        : path.resolve(__dirname, "dist", sdkEnv, sdkVersionValue),
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,
