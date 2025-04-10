@@ -134,8 +134,26 @@ let handleHyperApplePayMounted = (event: Types.event) => {
 
 addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMount")
 
-let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
+let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
+    let publishableKey = switch keys->JSON.Classify.classify {
+    | String(val) => val
+    | Object(json) =>
+      json
+      ->Dict.get("publishableKey")
+      ->Option.flatMap(JSON.Decode.string)
+      ->Option.getOr("")
+    | _ => ""
+    }
+    let profileId = switch keys->JSON.Classify.classify {
+    | String(_) => ""
+    | Object(json) =>
+      json
+      ->Dict.get("profileId")
+      ->Option.flatMap(JSON.Decode.string)
+      ->Option.getOr("")
+    | _ => ""
+    }
     let isPreloadEnabled =
       options
       ->Option.getOr(JSON.Encode.null)
@@ -324,6 +342,8 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       let iframeRef = ref([])
       let clientSecret = ref("")
       let ephemeralKey = ref("")
+      let pmSessionId = ref("")
+      let pmClientSecret = ref("")
       let setIframeRef = ref => {
         iframeRef.contents->Array.push(ref)->ignore
       }
@@ -538,6 +558,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
+          ~profileId,
           ~clientSecret={clientSecretId},
           ~logger=Some(logger),
           ~analyticsMetadata,
@@ -563,12 +584,26 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
 
+        let pmClientSecretId =
+          paymentMethodsManagementElementsOptionsDict
+          ->Option.flatMap(x => x->Dict.get("pmClientSecret"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+
+        let pmSessionIdVal =
+          paymentMethodsManagementElementsOptionsDict
+          ->Option.flatMap(x => x->Dict.get("pmSessionId"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+
         let paymentMethodsManagementElementsOptions =
           paymentMethodsManagementElementsOptionsDict->Option.mapOr(
             paymentMethodsManagementElementsOptions,
             JSON.Encode.object,
           )
         ephemeralKey := ephemeralKeyId
+        pmSessionId := pmSessionIdVal
+        pmClientSecret := pmClientSecretId
         Promise.make((resolve, _) => {
           logger.setEphemeralKey(ephemeralKeyId)
           resolve(JSON.Encode.null)
@@ -588,7 +623,10 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
+          ~profileId,
           ~ephemeralKey={ephemeralKeyId},
+          ~pmClientSecret={pmClientSecretId},
+          ~pmSessionId={pmSessionIdVal},
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
