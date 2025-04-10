@@ -1,6 +1,6 @@
 let logApi = (
   ~eventName,
-  ~statusCode="",
+  ~statusCode=0,
   ~data: JSON.t=Dict.make()->JSON.Encode.object,
   ~apiLogType: HyperLoggerTypes.apiLogType,
   ~url="",
@@ -14,21 +14,17 @@ let logApi = (
   let (value, internalMetadata) = switch apiLogType {
   | Request => ([("url", url->JSON.Encode.string)], [])
   | Response => (
-      [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.string)],
+      [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)],
       [("response", data)],
     )
   | NoResponse => (
-      [
-        ("url", url->JSON.Encode.string),
-        ("statusCode", "504"->JSON.Encode.string),
-        ("response", data),
-      ],
+      [("url", url->JSON.Encode.string), ("statusCode", 504->JSON.Encode.int), ("response", data)],
       [("response", data)],
     )
   | Err => (
       [
         ("url", url->JSON.Encode.string),
-        ("statusCode", statusCode->JSON.Encode.string),
+        ("statusCode", statusCode->JSON.Encode.int),
         ("response", data),
       ],
       [("response", data)],
