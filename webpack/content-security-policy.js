@@ -54,6 +54,19 @@ function getLocalhostSources() {
 }
 
 /**
+ * Extract base DSN URL from a DSN string
+ * @param {String} dsn - DSN string
+ * @returns {String|null} Base DSN URL or null if not found
+ */
+function extractBaseDSNUrl(dsn) {
+  const match = dsn.match(/^https:\/\/[^@]+@([^/]+)\//);
+  if (match && match[1]) {
+    return `https://${match[1]}`;
+  }
+  return null;
+}
+
+/**
  * Format domain list to include protocol
  * @param {Array} domains - List of domains
  * @param {String} protocol - Protocol to use (defaults to https)
@@ -99,7 +112,7 @@ function getAuthorizedSources(options = {}) {
 
   // Default sources that should always be included
   const defaultSources = {
-    script: ["'self'"],
+    script: ["'self'", "blob:"],
     style: ["'self'", "'unsafe-inline'"],
     font: ["'self'"],
     image: ["'self'", "data: *"],
@@ -199,6 +212,7 @@ function getAuthorizedSources(options = {}) {
     ...formatDomains(CSP_DOMAINS.payment.paypal),
     ...formatDomains(CSP_DOMAINS.payment.visa),
     ...formatDomains(CSP_DOMAINS.payment.mastercard),
+    extractBaseDSNUrl(process.env.SENTRY_DSN),
     ...localhostSources,
     ...(additionalSources.connect || []),
   ];
