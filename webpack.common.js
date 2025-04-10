@@ -88,6 +88,7 @@ const authorizedFrameSources = [
   "https://integ-api.hyperswitch.io",
   "https://app.hyperswitch.io",
   "https://sandbox.hyperswitch.io",
+  "https://integ-api.hyperswitch.io",
   "https://api.hyperswitch.io",
   "https://pay.google.com",
   "https://www.sandbox.paypal.com",
@@ -119,6 +120,7 @@ const authorizedConnectSources = [
   "https://google.com/pay",
   "https://www.sandbox.paypal.com",
   "https://www.paypal.com",
+  "https://integ-api.hyperswitch.io",
   "https://sandbox.secure.checkout.visa.com",
   "https://secure.checkout.visa.com",
   "https://src.mastercard.com",
@@ -146,13 +148,13 @@ const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
 
 * The default SDK version is "v1".
 */
-const sdkVersion = getEnvVariable("SDK_VERSION", "v1");
+const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
 
 // Repository info
 const repoVersion = require("./package.json").version;
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersion}`;
+  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersionValue}`;
 
 // Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
@@ -230,7 +232,7 @@ module.exports = (publicPath = "auto") => {
     enableLogging: ENABLE_LOGGING,
     loggingLevel: JSON.stringify(loggingLevel),
     maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
-    sdkVersion: JSON.stringify(sdkVersion),
+    sdkVersionValue: JSON.stringify(sdkVersionValue),
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
@@ -331,7 +333,7 @@ module.exports = (publicPath = "auto") => {
     output: {
       path: isLocal
         ? path.resolve(__dirname, "dist")
-        : path.resolve(__dirname, "dist", sdkEnv, sdkVersion),
+        : path.resolve(__dirname, "dist", sdkEnv, sdkVersionValue),
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,

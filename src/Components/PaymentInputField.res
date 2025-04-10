@@ -22,6 +22,7 @@ let make = (
   ~className="",
   ~inputRef,
   ~paymentType=?,
+  ~isDisabled=false,
   ~autocomplete="on",
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -53,7 +54,9 @@ let make = (
   }
 
   let backgroundClass = switch paymentType {
-  | Payment => themeObj.colorBackground
+  | Payment
+  | PaymentMethodsManagement =>
+    themeObj.colorBackground
   | _ => "transparent"
   }
   let direction = if type_ == "password" || type_ == "tel" {
@@ -103,13 +106,13 @@ let make = (
       <div className={`relative w-full ${inputFieldClassName}`}>
         <input
           style={
-            background: backgroundClass,
+            background: isDisabled ? themeObj.disabledFieldColor : backgroundClass,
             padding: themeObj.spacingUnit,
             width: fieldWidth,
             height,
           }
           dataTestId={name}
-          disabled=readOnly
+          disabled={isDisabled || readOnly}
           ref={inputRef->ReactDOM.Ref.domRef}
           type_
           name
