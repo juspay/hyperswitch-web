@@ -70,6 +70,7 @@ type themeClass = {
   buttonTextFontSize: string,
   buttonTextFontWeight: string,
   buttonBorderWidth: string,
+  disabledFieldColor: string,
 }
 type appearance = {
   theme: theme,
@@ -89,6 +90,8 @@ type configClass = {
   appearance: appearance,
   locale: string,
   ephemeralKey: string,
+  pmClientSecret: string,
+  pmSessionId: string,
   clientSecret: string,
   fonts: array<fonts>,
   loader: showLoader,
