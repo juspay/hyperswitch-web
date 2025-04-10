@@ -1,3 +1,10 @@
+## [0.122.10](https://github.com/juspay/hyperswitch-web/compare/v0.122.9...v0.122.10) (2025-04-09)
+
+
+### Bug Fixes
+
+* wrapped svg in symbol ([#991](https://github.com/juspay/hyperswitch-web/issues/991)) ([373de3b](https://github.com/juspay/hyperswitch-web/commit/373de3b8a9ddf41557a21d4bf955d79cab823874))
+
 ## [0.122.9](https://github.com/juspay/hyperswitch-web/compare/v0.122.8...v0.122.9) (2025-04-08)
 
 
