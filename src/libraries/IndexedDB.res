@@ -1,11 +1,8 @@
-// Basic types for IndexedDB
 type openDBRequest
 type db
 type transaction
 type objectStore
 type request
-
-// Use abstract types for events
 type event
 
 @val @scope("window") external indexedDB: 'a = "indexedDB"
@@ -18,15 +15,12 @@ type event
 @set external onerror: (openDBRequest, event => unit) => unit = "onerror"
 @set external onerrorRequest: (request, event => unit) => unit = "onerror"
 
-// Directly use the IDBRequest.result property to get the database
 @get external result: openDBRequest => db = "result"
 @get external resultFromRequest: request => 'a = "result"
 
-// For events, we need to access the target.result
 @get external getTarget: event => 'a = "target"
 @get external getResultFromTarget: 'a => 'b = "result"
 
-// Error handling
 @get external getTargetError: event => 'a = "target.error"
 @get external getErrorMessage: 'a => string = "message"
 
@@ -43,7 +37,6 @@ type event
 @set external setTransactionOnerror: (transaction, event => unit) => unit = "onerror"
 @set external setAddRequestOnsuccess: (request, event => unit) => unit = "onsuccess"
 
-// Helper to get result from event safely
 let dbCache: ref<option<db>> = ref(None)
 let getDbFromEvent = event => {
   switch dbCache.contents {
@@ -57,7 +50,6 @@ let getDbFromEvent = event => {
   }
 }
 
-// Setup database helper function
 let openDBAndGetRequest = (~dbName, ~objectStoreName) => {
   let request = indexedDB->open_(dbName, 1)
 
@@ -69,7 +61,6 @@ let openDBAndGetRequest = (~dbName, ~objectStoreName) => {
   request
 }
 
-// Safe error message extraction
 let getErrorMessageFromEvent = event => {
   try {
     let errorObj = getTargetError(event)
