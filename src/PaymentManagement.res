@@ -15,7 +15,7 @@ let make = (
   let (savedMethodsV2, setSavedMethodsV2) = Recoil.useRecoilState(RecoilAtomsV2.savedMethodsV2)
   let (isLoading, setIsLoading) = React.useState(_ => false)
   let (showAddScreen, setShowAddScreen) = Recoil.useRecoilState(RecoilAtomsV2.showAddScreen)
-  let setCardBrand = Recoil.useSetRecoilState(cardBrand)
+  let (cardBrandValue, setCardBrand) = Recoil.useRecoilState(cardBrand)
   let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentManagementListValue,
   )
@@ -92,7 +92,7 @@ let make = (
     | (_, _, true) => ""
     | (true, true, _) => ""
     | (true, _, _) => localeString.inValidCardErrorText
-    | (_, _, _) => CardUtils.getCardBrandInvalidError(~cardNumber, ~localeString)
+    | (_, _, _) => CardUtils.getCardBrandInvalidError(~cardBrand=cardBrandValue, ~localeString)
     }
     let cardError = isCardValid->Option.isSome ? cardError : ""
     setCardError(_ => cardError)

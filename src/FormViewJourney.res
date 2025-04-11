@@ -19,6 +19,10 @@ let make = (
   let formData = Recoil.useRecoilValueFromAtom(formDataAtom)
   let (activePmt, setActivePmt) = Recoil.useRecoilState(paymentMethodTypeAtom)
   let (validityDict, setValidityDict) = Recoil.useRecoilState(validityDictAtom)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let supportedCardBrands = React.useMemo(() => {
+    paymentMethodListValue->PaymentUtils.getSupportedCardBrands
+  }, [paymentMethodListValue])
 
   // Component states
   let (formSubmitted, setFormSubmitted) = React.useState(_ => false)
@@ -241,7 +245,7 @@ let make = (
             let key = BillingAddress(field.fieldType)->getPaymentMethodDataFieldKey
             let value = formData->Dict.get(key)->Option.getOr("")
             let validity =
-              BillingAddress(field.fieldType)->calculateValidity(value, ~default=Some(false))
+              BillingAddress(field.fieldType)->calculateValidity(value, "", ~default=Some(false))
             fieldValidity->Dict.set(key, validity)
             (fieldValidity, isAddressValid && validity != Some(false))
           })
@@ -274,8 +278,20 @@ let make = (
             ((fieldValidity, isPmdValid), field) => {
               let key = PayoutMethodData(field.fieldType)->getPaymentMethodDataFieldKey
               let value = formData->Dict.get(key)->Option.getOr("")
+              let validCardBrand = CardUtils.getFirstValidCardSchemeFromPML(
+                ~cardNumber=value,
+                ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
+              )
+              let newCardBrand = switch validCardBrand {
+              | Some(brand) => brand
+              | None => value->CardUtils.getCardBrand
+              }
               let validity =
-                PayoutMethodData(field.fieldType)->calculateValidity(value, ~default=Some(false))
+                PayoutMethodData(field.fieldType)->calculateValidity(
+                  value,
+                  newCardBrand,
+                  ~default=Some(false),
+                )
               fieldValidity->Dict.set(key, validity)
               (fieldValidity, isPmdValid && validity != Some(false))
             },

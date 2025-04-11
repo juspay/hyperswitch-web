@@ -20,6 +20,10 @@ let make = (
   let (formData, setFormData) = Recoil.useRecoilState(formDataAtom)
   let (activePmt, _) = Recoil.useRecoilState(paymentMethodTypeAtom)
   let (validityDict, setValidityDict) = Recoil.useRecoilState(validityDictAtom)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let supportedCardBrands = React.useMemo(() => {
+    paymentMethodListValue->PaymentUtils.getSupportedCardBrands
+  }, [paymentMethodListValue])
 
   // Component states
   let (currentView, setCurrentView) = React.useState(_ => formLayout->defaultView)
@@ -35,7 +39,7 @@ let make = (
     getPayoutDynamicFields(enabledPaymentMethodsWithDynamicFields, activePmt)
     ->Option.flatMap(payoutDynamicFields => {
       setPayoutDynamicFields(_ => payoutDynamicFields)
-      getDefaultsAndValidity(payoutDynamicFields)
+      getDefaultsAndValidity(payoutDynamicFields, supportedCardBrands)
     })
     ->Option.map(((values, validity)) => {
       setFormData(_ => values)
@@ -129,11 +133,17 @@ let make = (
 
     if isValid {
       switch key {
-      | PayoutMethodData(CardNumber) =>
-        setFormData(
-          PayoutMethodData(CardBrand)->getPaymentMethodDataFieldKey,
-          getCardBrand(updatedValue),
-        )
+      | PayoutMethodData(CardNumber) => {
+          let validCardBrand = getFirstValidCardSchemeFromPML(
+            ~cardNumber=updatedValue,
+            ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
+          )
+          let newCardBrand = switch validCardBrand {
+          | Some(brand) => brand
+          | None => updatedValue->CardUtils.getCardBrand
+          }
+          setFormData(PayoutMethodData(CardBrand)->getPaymentMethodDataFieldKey, newCardBrand)
+        }
       | _ => ()
       }
       setFormData(key->getPaymentMethodDataFieldKey, updatedValue)
@@ -153,7 +163,21 @@ let make = (
               value
               setValue={getVal => {
                 let updatedValue = getVal()
-                let isValid = calculateValidity(field, updatedValue, ~default=Some(false))
+                let validCardBrand = getFirstValidCardSchemeFromPML(
+                  ~cardNumber=updatedValue,
+                  ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
+                )
+                let newCardBrand = switch validCardBrand {
+                | Some(brand) => brand
+                | None => updatedValue->CardUtils.getCardBrand
+                }
+
+                let isValid = calculateValidity(
+                  field,
+                  updatedValue,
+                  newCardBrand,
+                  ~default=Some(false),
+                )
                 setValidityDictVal(key, isValid)
                 if isValid->Option.getOr(false) {
                   setFormData(key, updatedValue)
@@ -226,7 +250,16 @@ let make = (
       setIsValid={updatedValidityFn => key->setValidityDictVal(updatedValidityFn())}
       onBlur={ev => {
         let value = ReactEvent.Focus.target(ev)["value"]
-        let isValid = calculateValidity(field, value, ~default=None)
+        let validCardBrand = getFirstValidCardSchemeFromPML(
+          ~cardNumber=value,
+          ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
+        )
+        let newCardBrand = switch validCardBrand {
+        | Some(brand) => brand
+        | None => value->CardUtils.getCardBrand
+        }
+
+        let isValid = calculateValidity(field, value, newCardBrand, ~default=None)
         setValidityDictVal(key, isValid)
       }}
       type_={field->getPaymentMethodDataFieldInputType}
