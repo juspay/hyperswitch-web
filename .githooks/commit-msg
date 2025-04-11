@@ -1,0 +1,57 @@
+#!/bin/sh
+
+echo "*****~~~~~ Commit hook initiated ~~~~~~*****"
+
+commit_msg_file=$1
+commit_msg=$(cat "$commit_msg_file")
+
+# For formatting your code
+echo
+echo "*****~~~~~ Formatting - Check for unformatted files ~~~~~~*****"
+
+# Check for unformatted ReScript files
+npm run re:format
+
+echo
+echo "*****~~~~~ All files are formatted. ~~~~~~*****"
+echo
+
+#Trailing Space Check
+echo
+echo "*****~~~~~ Evaluating for trailing spaces ~~~~~~*****"
+
+find . -type f -name '.DS_Store' -exec rm {} +
+
+
+TRAIL_SRC=$(grep -r '[[:blank:]]$' src --exclude='*.bs.js' --exclude='*.resi')
+
+if [[ ! -z "$TRAIL_SRC" ]]
+then
+  echo "$TRAIL_SRC"
+  echo
+  echo "!Please remove trailing spaces before commiting changes"
+  echo "Usage of EditorConfig [https://editorconfig.org/#download] plugin is recommended for development "
+  exit 1
+fi
+echo
+echo "*****~~~~~ Done Evaluating ~~~~~~*****"
+
+echo
+echo "*****~~~~~ Commit message validation! ~~~~~*****"
+echo
+# Define your commit message convention (e.g., starts with "feat:", "fix:", etc.)
+commit_regex="^(Merge branch|(feat|fix|chore|refactor|docs|test|style|enhancement|ci):).+"
+
+
+
+if ! echo "$commit_msg" | grep -Ei "$commit_regex" ; then
+    echo "Aborting commit. Your commit message does not follow the conventional format."
+    echo "The commit message should begin with one of the following keywords followed by a colon: 'feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'ci' or 'style'. For example, it should be formatted like this: 'feat: <subject> - <description>'"
+    exit 1
+fi
+
+# If the commit message matches the convention, the script exits successfully.
+echo
+echo "*****~~~~~ Commit hook completed ~~~~~~*****"
+echo
+exit 0
