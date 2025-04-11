@@ -93,6 +93,7 @@ type eventName =
   | CLICK_TO_PAY_SCRIPT
   | CLICK_TO_PAY_FLOW
   | PAYMENT_METHOD_TYPE_DETECTION_FAILED
+  | NETWORK_STATE
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

@@ -190,6 +190,17 @@ let make = (
       Window.Navigator.sendBeacon(GlobalVars.logEndpoint, logData)
     }
   }
+  let sendCachedLogsFromIDB = async () => {
+    try {
+      let logs = await retrieveLogsFromIndexedDB()
+      if logs->Array.length > 0 {
+        beaconApiCall(logs)
+        await clearLogsFromIndexedDB()
+      }
+    } catch {
+    | _ => ()
+    }
+  }
 
   let clientSecret = getRefFromOption(clientSecret)
   let ephemeralKey = getRefFromOption(ephemeralKey)
@@ -208,6 +219,31 @@ let make = (
     sourceRef := value
   }
 
+  let clearLogFile = mainLogFile => {
+    let len = mainLogFile->Array.length
+    for _ in 0 to len - 1 {
+      mainLogFile->Array.pop->ignore
+    }
+  }
+
+  let sendLogsToIndexedDB = async () => {
+    try {
+      let _ = await saveLogsToIndexedDB(mainLogFile)
+      clearLogFile(mainLogFile)
+    } catch {
+    | _ => ()
+    }
+  }
+
+  let sendLogsOverNetwork = async () => {
+    try {
+      await sendCachedLogsFromIDB()
+      beaconApiCall(mainLogFile)
+      clearLogFile(mainLogFile)
+    } catch {
+    | _ => ()
+    }
+  }
   let rec sendLogs = () => {
     switch timeOut.contents {
     | Some(val) => {
@@ -216,10 +252,16 @@ let make = (
       }
     | None => timeOut := Some(setTimeout(() => sendLogs(), 20000))
     }
-    beaconApiCall(mainLogFile)
-    let len = mainLogFile->Array.length
-    for _ in 0 to len - 1 {
-      mainLogFile->Array.pop->ignore
+
+    let networkStatus = switch NetworkInformation.getNetworkState() {
+    | Value(val) => val
+    | CALCULATING => NetworkInformation.defaultNetworkState
+    }
+
+    if networkStatus.isOnline {
+      sendLogsOverNetwork()->ignore
+    } else {
+      sendLogsToIndexedDB()->ignore
     }
   }
 
@@ -245,6 +287,7 @@ let make = (
       DISPLAY_THREE_DS_SDK,
       APPLE_PAY_FLOW,
       PLAID_SDK,
+      NETWORK_STATE,
     ]
     arrayOfLogs
     ->Array.find(log => {
