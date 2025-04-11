@@ -8,9 +8,26 @@ let make = () => {
 
   let paymentMode = getQueryParamsDictforKey(url.search, "componentName")
   let paymentType = paymentMode->CardThemeType.getPaymentMode
+
+  let networkStatus = NetworkInformation.useNetworkInformation()
   let (logger, initTimestamp) = React.useMemo0(() => {
     (HyperLogger.make(~source=Elements(paymentType)), Date.now())
   })
+
+  React.useEffect1(() => {
+    switch networkStatus {
+    | Value(val) =>
+      logger.setLogInfo(
+        ~value=val->Identity.anyTypeToJson->JSON.stringify,
+        ~eventName=NETWORK_STATE,
+        ~logType=DEBUG,
+      )
+    | CALCULATING => ()
+    }
+
+    None
+  }, [networkStatus])
+
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
 
   React.useEffect(() => {
