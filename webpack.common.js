@@ -138,14 +138,20 @@ const authorizedConnectSources = [
 ];
 
 // Helper function to get environment variables with fallback
-const getEnvVariable = (variable, defaultValue) =>
-  process.env[variable] ?? defaultValue;
+const getEnvVariable = (variable, defaultValue) => {
+  const value = process.env[variable];
+  return value && value.length > 0 ? value : defaultValue;
+};
 
 const sdkEnv = getEnvVariable("sdkEnv", "local");
 const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
+const repoVersion = getEnvVariable(
+  "SDK_TAG_VERSION",
+  require("./package.json").version
+);
 
 /*
 * SDK Version Compatibility:
@@ -159,7 +165,6 @@ const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
 const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
 
 // Repository info
-const repoVersion = require("./package.json").version;
 const repoName = require("./package.json").name;
 const repoPublicPath =
   sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersionValue}`;
