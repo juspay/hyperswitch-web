@@ -14,12 +14,6 @@ type connection = {
 @val external navigatorOnLine: bool = "navigator.onLine"
 @val @scope("navigator") external connection: Js.Nullable.t<connection> = "connection"
 
-@val @scope("window")
-external addEventListener: (string, unit => unit) => unit = "addEventListener"
-
-@val @scope("window")
-external removeEventListener: (string, unit => unit) => unit = "removeEventListener"
-
 let defaultNetworkState = {
   isOnline: navigatorOnLine,
   effectiveType: "",
@@ -63,15 +57,15 @@ let useNetworkInformation = () => {
       }
     }
 
-    addEventListener("load", updateNetState)
-    addEventListener("online", updateNetState)
-    addEventListener("offline", updateNetState)
+    Window.addEventListener("load", updateNetState)
+    Window.addEventListener("online", updateNetState)
+    Window.addEventListener("offline", updateNetState)
 
     Some(
       () => {
-        removeEventListener("load", updateNetState)
-        removeEventListener("online", updateNetState)
-        removeEventListener("offline", updateNetState)
+        Window.removeEventListener("load", updateNetState)
+        Window.removeEventListener("online", updateNetState)
+        Window.removeEventListener("offline", updateNetState)
       },
     )
   }, [])
