@@ -73,7 +73,7 @@ let make = (
         | Payment =>
           <ReusableReactSuspense
             loaderComponent={<RenderIf condition={showLoader}>
-              {paymentType->Utils.getIsWalletElementPaymentType
+              {paymentType->Utils.checkIsWalletElement
                 ? <WalletShimmer />
                 : <PaymentElementShimmer />}
             </RenderIf>}
@@ -94,6 +94,7 @@ let make = (
             placeholder="1234 1234 1234 1234"
             id="card-number"
             isFocus
+            autocomplete="cc-number"
           />
         | CardExpiryElement =>
           <InputField
@@ -109,6 +110,7 @@ let make = (
             placeholder=localeString.expiryPlaceholder
             id="card-expiry"
             isFocus
+            autocomplete="cc-exp"
           />
         | CardCVCElement =>
           <InputField
@@ -125,6 +127,7 @@ let make = (
             placeholder="123"
             id="card-cvc"
             isFocus
+            autocomplete="cc-csc"
           />
         | PaymentMethodsManagement =>
           <ReusableReactSuspense
@@ -132,7 +135,7 @@ let make = (
               <PaymentElementShimmer />
             </RenderIf>}
             componentName="PaymentManagementLazy">
-            <PaymentManagementLazy />
+            <PaymentManagementLazy paymentType cardProps cvcProps expiryProps />
           </ReusableReactSuspense>
         | PaymentMethodCollectElement
         | NONE => React.null

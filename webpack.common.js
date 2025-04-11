@@ -44,6 +44,7 @@ const authorizedScriptSources = [
   "https://secure.checkout.visa.com",
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
+  "blob:",
   // Add other trusted sources here
 ];
 
@@ -88,6 +89,7 @@ const authorizedFrameSources = [
   "https://integ-api.hyperswitch.io",
   "https://app.hyperswitch.io",
   "https://sandbox.hyperswitch.io",
+  "https://integ-api.hyperswitch.io",
   "https://api.hyperswitch.io",
   "https://pay.google.com",
   "https://www.sandbox.paypal.com",
@@ -101,7 +103,13 @@ const authorizedFrameSources = [
   ...localhostSources,
   // Add other trusted sources here
 ];
-
+function extractBaseDSNUrl(dsn) {
+  const match = dsn.match(/^https:\/\/[^@]+@([^/]+)\//);
+  if (match && match[1]) {
+    return `https://${match[1]}`;
+  }
+  return null;
+}
 // List of authorized external connect sources
 const authorizedConnectSources = [
   "'self'",
@@ -119,19 +127,31 @@ const authorizedConnectSources = [
   "https://google.com/pay",
   "https://www.sandbox.paypal.com",
   "https://www.paypal.com",
+  "https://integ-api.hyperswitch.io",
+  "https://sandbox.secure.checkout.visa.com",
+  "https://secure.checkout.visa.com",
+  "https://src.mastercard.com",
+  "https://sandbox.src.mastercard.com",
+  extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
   // Add other trusted sources here
 ];
 
 // Helper function to get environment variables with fallback
-const getEnvVariable = (variable, defaultValue) =>
-  process.env[variable] ?? defaultValue;
+const getEnvVariable = (variable, defaultValue) => {
+  const value = process.env[variable];
+  return value && value.length > 0 ? value : defaultValue;
+};
 
 const sdkEnv = getEnvVariable("sdkEnv", "local");
 const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
+const repoVersion = getEnvVariable(
+  "SDK_TAG_VERSION",
+  require("./package.json").version
+);
 
 /*
 * SDK Version Compatibility:
@@ -142,13 +162,12 @@ const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
 
 * The default SDK version is "v1".
 */
-const sdkVersion = getEnvVariable("SDK_VERSION", "v1");
+const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
 
 // Repository info
-const repoVersion = require("./package.json").version;
 const repoName = require("./package.json").name;
 const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersion}`;
+  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersionValue}`;
 
 // Helper function to get SDK URL based on environment
 const getSdkUrl = (env, customUrl) => {
@@ -226,7 +245,7 @@ module.exports = (publicPath = "auto") => {
     enableLogging: ENABLE_LOGGING,
     loggingLevel: JSON.stringify(loggingLevel),
     maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
-    sdkVersion: JSON.stringify(sdkVersion),
+    sdkVersionValue: JSON.stringify(sdkVersionValue),
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
@@ -327,7 +346,7 @@ module.exports = (publicPath = "auto") => {
     output: {
       path: isLocal
         ? path.resolve(__dirname, "dist")
-        : path.resolve(__dirname, "dist", sdkEnv, sdkVersion),
+        : path.resolve(__dirname, "dist", sdkEnv, sdkVersionValue),
       crossOriginLoading: "anonymous",
       clean: true,
       publicPath: `${repoPublicPath}/`,

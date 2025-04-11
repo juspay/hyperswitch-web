@@ -42,8 +42,8 @@ let retrievePaymentIntent = (
   )
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = res->Fetch.Response.status
+    if !(res->Fetch.Response.ok) {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -103,8 +103,8 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
   )
   fetchApi(url, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray)
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = res->Fetch.Response.status
+    if !(res->Fetch.Response.ok) {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -188,8 +188,8 @@ let retrieveStatus = (~headers, ~customPodUri, pollID, logger) => {
   )
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = res->Fetch.Response.status
+    if !(res->Fetch.Response.ok) {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -339,14 +339,14 @@ let rec intentCall = (
     ~bodyStr,
   )
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
+    let statusCode = res->Fetch.Response.status
     let url = makeUrl(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
     url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
-    if statusCode->String.charAt(0) !== "2" {
+    if !(res->Fetch.Response.ok) {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -1347,8 +1347,8 @@ let fetchSessions = (
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
   )
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = resp->Fetch.Response.status
+    if !(resp->Fetch.Response.ok) {
       resp
       ->Fetch.Response.json
       ->then(data => {
@@ -1418,12 +1418,12 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~ur
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
   )
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->Int.toString
+    let statusCode = resp->Fetch.Response.status
 
     resp
     ->Fetch.Response.json
     ->then(data => {
-      if statusCode->String.charAt(0) !== "2" {
+      if !(resp->Fetch.Response.ok) {
         logApi(
           ~optLogger=Some(logger),
           ~url=uri,
@@ -1494,8 +1494,8 @@ let createPaymentMethod = (
     ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
   )
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = resp->Fetch.Response.status
+    if !(resp->Fetch.Response.ok) {
       resp
       ->Fetch.Response.json
       ->then(data => {
@@ -1559,8 +1559,8 @@ let fetchPaymentMethodList = (
   )
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = resp->Fetch.Response.status
+    if !(resp->Fetch.Response.ok) {
       resp
       ->Fetch.Response.json
       ->then(data => {
@@ -1626,8 +1626,8 @@ let fetchCustomerPaymentMethodList = (
   )
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = res->Fetch.Response.status
+    if !(res->Fetch.Response.ok) {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -1779,8 +1779,8 @@ let callAuthLink = (
     ~headers,
   )
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = res->Fetch.Response.status
+    if !(res->Fetch.Response.ok) {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -1882,8 +1882,8 @@ let callAuthExchange = (
     ~headers,
   )
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = res->Fetch.Response.status
+    if !(res->Fetch.Response.ok) {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -1974,8 +1974,8 @@ let fetchSavedPaymentMethodList = (
   )
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
-    let statusCode = res->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = res->Fetch.Response.status
+    if !(res->Fetch.Response.ok) {
       res
       ->Fetch.Response.json
       ->then(data => {
@@ -2037,8 +2037,8 @@ let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodU
   )
   fetchApi(uri, ~method=#DELETE, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = resp->Fetch.Response.status
+    if !(resp->Fetch.Response.ok) {
       resp
       ->Fetch.Response.json
       ->then(data => {
@@ -2118,8 +2118,8 @@ let calculateTax = (
     ~bodyStr=body->getJsonFromArrayOfJson->JSON.stringify,
   )
   ->then(resp => {
-    let statusCode = resp->Fetch.Response.status->Int.toString
-    if statusCode->String.charAt(0) !== "2" {
+    let statusCode = resp->Fetch.Response.status
+    if !(resp->Fetch.Response.ok) {
       resp
       ->Fetch.Response.json
       ->then(data => {

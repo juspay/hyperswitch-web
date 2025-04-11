@@ -33,6 +33,9 @@ let make = (
   open Utils
   open RecoilAtoms
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
+    PaymentUtils.paymentManagementListValue,
+  )
 
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
@@ -56,12 +59,30 @@ let make = (
 
   let requiredFieldsWithBillingDetails = React.useMemo(() => {
     if paymentMethod === "card" {
-      let creditRequiredFields = creditPaymentMethodTypes.required_fields
+      switch GlobalVars.sdkVersion {
+      | V2 =>
+        let creditRequiredFields =
+          paymentManagementListValue.paymentMethodsEnabled
+          ->Array.filter(item => {
+            item.paymentMethodSubType === "credit" && item.paymentMethodType === "card"
+          })
+          ->Array.get(0)
+          ->Option.getOr(PMMTypesV2.defaultPaymentMethods)
 
-      [
-        ...paymentMethodTypes.required_fields,
-        ...creditRequiredFields,
-      ]->removeRequiredFieldsDuplicates
+        let finalCreditRequiredFields = creditRequiredFields.requiredFields
+        [
+          ...paymentMethodTypes.required_fields,
+          ...finalCreditRequiredFields,
+        ]->removeRequiredFieldsDuplicates
+
+      | V1 =>
+        let creditRequiredFields = creditPaymentMethodTypes.required_fields
+
+        [
+          ...paymentMethodTypes.required_fields,
+          ...creditRequiredFields,
+        ]->removeRequiredFieldsDuplicates
+      }
     } else if dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType) {
       paymentMethodTypes.required_fields
     } else {
@@ -331,6 +352,7 @@ let make = (
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
+              autocomplete="cc-number"
             />
           | CardExpiryMonth
           | CardExpiryYear
@@ -347,6 +369,7 @@ let make = (
               maxLength=7
               inputRef=expiryRef
               placeholder=localeString.expiryPlaceholder
+              autocomplete="cc-exp"
             />
           | CardCvc =>
             <PaymentInputField
@@ -368,6 +391,7 @@ let make = (
               maxLength=4
               inputRef=cvcRef
               placeholder="123"
+              autocomplete="cc-csc"
             />
           | CardExpiryAndCvc =>
             <div className="flex gap-10">
@@ -383,6 +407,7 @@ let make = (
                 maxLength=7
                 inputRef=expiryRef
                 placeholder=localeString.expiryPlaceholder
+                autocomplete="cc-exp"
               />
               <PaymentInputField
                 fieldName=localeString.cvcTextLabel
@@ -403,6 +428,7 @@ let make = (
                 maxLength=4
                 inputRef=cvcRef
                 placeholder="123"
+                autocomplete="cc-csc"
               />
             </div>
           | Currency(currencyArr) =>

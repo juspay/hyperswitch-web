@@ -160,7 +160,7 @@ let paypalShippingDetails = (purchaseUnit, payerDetails: PaymentType.payerDetail
 let getOrderDetails = (orderDetails, paymentType) => {
   let orderDetailsDict = orderDetails->Utils.getDictFromJson
 
-  let isWalletElementPaymentType = paymentType->Utils.getIsWalletElementPaymentType
+  let isWalletElementPaymentType = paymentType->Utils.checkIsWalletElement
 
   let shippingAddressOverride = isWalletElementPaymentType
     ? orderDetailsDict->Utils.getJsonObjectFromDict("shipping_address_override")->getShippingDetails
