@@ -87,12 +87,11 @@ let make = (
                       resolve()
                     | Error(err) => {
                         let errException = err->formatException
-
-                        loggerState.setLogError(
-                          ~value=`Error authenticating consumer identity - ${errException->JSON.stringify}`,
-                          ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+                        setCtpLogError(
+                          ~loggerState,
+                          ~clickToPayProvider,
+                          ~error=`Error authenticating consumer identity - ${errException->JSON.stringify}`,
                         )
-
                         let exceptionMessage =
                           errException
                           ->getDictFromJson
@@ -116,11 +115,12 @@ let make = (
                     }
                   })
                   ->catch(err => {
-                    loggerState.setLogError(
-                      ~value=`Error authenticating consumer identity - ${err
+                    setCtpLogError(
+                      ~loggerState,
+                      ~clickToPayProvider,
+                      ~error=`Error authenticating consumer identity - ${err
                         ->formatException
                         ->JSON.stringify}`,
-                      ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
                     )
                     closeComponentIfSavedMethodsAreEmpty()
                     resolve()
@@ -134,9 +134,10 @@ let make = (
           }
         } catch {
         | err => {
-            loggerState.setLogError(
-              ~value=`Error - ${err->formatException->JSON.stringify}`,
-              ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+            setCtpLogError(
+              ~loggerState,
+              ~clickToPayProvider,
+              ~error=`Error - ${err->formatException->JSON.stringify}`,
             )
             closeComponentIfSavedMethodsAreEmpty()
           }

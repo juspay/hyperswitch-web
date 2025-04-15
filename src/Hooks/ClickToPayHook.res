@@ -104,9 +104,10 @@ let useClickToPay = (
                 })
 
               | "ACCT_INACCESSIBLE" =>
-                loggerState.setLogError(
-                  ~value=`Maximum getCard call attempts reached (ACCT_INACCESSIBLE) - ${reason}`,
-                  ~eventName=VISA_CLICK_TO_PAY_FLOW,
+                setCtpLogError(
+                  ~loggerState,
+                  ~clickToPayProvider,
+                  ~error=`Maximum getCard call attempts reached (ACCT_INACCESSIBLE) - ${reason}`,
                 )
                 setClickToPayConfig(prev => {
                   ...prev,
@@ -117,9 +118,10 @@ let useClickToPay = (
                   ...prev,
                   otpError: "NONE",
                 })
-                loggerState.setLogError(
-                  ~value=`get cards call failed - ${reason}`,
-                  ~eventName=VISA_CLICK_TO_PAY_FLOW,
+                setCtpLogError(
+                  ~loggerState,
+                  ~clickToPayProvider,
+                  ~error=`get cards call failed - ${reason}`,
                 )
               }
             | None =>
@@ -139,18 +141,16 @@ let useClickToPay = (
             ...prev,
             visaComponentState: NONE,
           })
-          loggerState.setLogError(
-            ~value="initial get cards call failed",
-            ~eventName=VISA_CLICK_TO_PAY_FLOW,
-          )
+          setCtpLogError(~loggerState, ~clickToPayProvider, ~error="initial get cards call failed")
         }
       }
     } catch {
     | err => {
         setClickToPayNotReady()
-        loggerState.setLogError(
-          ~value=`get cards call failed - ${err->Utils.formatException->JSON.stringify}`,
-          ~eventName=VISA_CLICK_TO_PAY_FLOW,
+        setCtpLogError(
+          ~loggerState,
+          ~clickToPayProvider,
+          ~error=`get cards call failed - ${err->Utils.formatException->JSON.stringify}`,
         )
       }
     }
@@ -175,9 +175,10 @@ let useClickToPay = (
     | err =>
       setClickToPayNotReady()
       closeComponentIfSavedMethodsAreEmpty()
-      loggerState.setLogError(
-        ~value=`SDK initialization failed - ${err->Utils.formatException->JSON.stringify}`,
-        ~eventName=VISA_CLICK_TO_PAY_FLOW,
+      setCtpLogError(
+        ~loggerState,
+        ~clickToPayProvider,
+        ~error=`SDK initialization failed - ${err->Utils.formatException->JSON.stringify}`,
       )
     }
   }
@@ -228,10 +229,7 @@ let useClickToPay = (
           () => visaScriptOnLoadCallback(ctpToken),
           () => {
             setClickToPayNotReady()
-            loggerState.setLogError(
-              ~value=`CTP UI script loading failed`,
-              ~eventName=VISA_CLICK_TO_PAY_FLOW,
-            )
+            setCtpLogError(~loggerState, ~clickToPayProvider, ~error="CTP UI script loading failed")
           },
         )
 
@@ -240,9 +238,10 @@ let useClickToPay = (
     } catch {
     | err => {
         setClickToPayNotReady()
-        loggerState.setLogError(
-          ~value=`CTP UI script loading failed - ${err->Utils.formatException->JSON.stringify}`,
-          ~eventName=VISA_CLICK_TO_PAY_FLOW,
+        setCtpLogError(
+          ~loggerState,
+          ~clickToPayProvider,
+          ~error=`CTP UI script loading failed - ${err->Utils.formatException->JSON.stringify}`,
         )
       }
     }

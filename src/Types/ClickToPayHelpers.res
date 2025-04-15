@@ -202,6 +202,43 @@ let clickToPayCardItemToObjMapper = (json: JSON.t): clickToPayCard => {
   }
 }
 
+type ctpLogType = {
+  ctpProvider: string,
+  message: string,
+}
+
+let getCtpLogValue = (clickToPayProvider, message) => {
+  let ctpProvider = switch clickToPayProvider {
+  | VISA => "VISA"
+  | MASTERCARD => "MASTERCARD"
+  | NONE => ""
+  }
+  {
+    ctpProvider,
+    message,
+  }
+  ->JSON.stringifyAny
+  ->Option.getOr("")
+}
+
+let setCtpLogError = (
+  ~loggerState: HyperLoggerTypes.loggerMake,
+  ~clickToPayProvider,
+  ~error="",
+) => {
+  loggerState.setLogError(
+    ~value=getCtpLogValue(clickToPayProvider, error),
+    ~eventName=CLICK_TO_PAY_FLOW,
+  )
+}
+
+let setCtpLogInfo = (~loggerState: HyperLoggerTypes.loggerMake, ~clickToPayProvider, ~info="") => {
+  loggerState.setLogInfo(
+    ~value=getCtpLogValue(clickToPayProvider, info),
+    ~eventName=CLICK_TO_PAY_FLOW,
+  )
+}
+
 type clickToPayToken = {
   dpaId: string,
   dpaName: string,
@@ -319,17 +356,21 @@ let initializeMastercardCheckout = (
 ) => {
   switch getOptionMastercardCheckoutServices {
   | Some(_) => {
-      logger.setLogInfo(
-        ~value="MastercardCheckoutServices constructor found",
-        ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+      setCtpLogInfo(
+        ~loggerState=logger,
+        ~clickToPayProvider=MASTERCARD,
+        ~info="MastercardCheckoutServices constructor found",
       )
       // Create new instance by calling the constructor
       mcCheckoutService := Some(getMastercardCheckoutServices())
 
       // Get recognition token
       let recognitionToken = getLocalStorage(~key=recognitionTokenCookieName)
-      logger.setLogInfo(~value="Recognition token fetched", ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW)
-
+      setCtpLogInfo(
+        ~loggerState=logger,
+        ~clickToPayProvider=MASTERCARD,
+        ~info="Recognition token fetched",
+      )
       // Construct params
       let params = {
         srcDpaId: clickToPayToken.dpaId,
@@ -369,53 +410,59 @@ let initializeMastercardCheckout = (
       try {
         switch mcCheckoutService.contents {
         | Some(service) => {
-            logger.setLogInfo(
-              ~value="Mastercard Checkout Service initialized",
-              ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+            setCtpLogInfo(
+              ~loggerState=logger,
+              ~clickToPayProvider=MASTERCARD,
+              ~info="Mastercard Checkout Service initialized",
             )
             service
             ->init(params)
             ->then(resp => {
-              logger.setLogInfo(
-                ~value="Mastercard Checkout initialized",
-                ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+              setCtpLogInfo(
+                ~loggerState=logger,
+                ~clickToPayProvider=MASTERCARD,
+                ~info="Mastercard Checkout initialized",
               )
               resolve(resp)
             })
             ->catch(err => {
-              logger.setLogError(
-                ~value=`Error initializing Mastercard Checkout - ${err
+              setCtpLogError(
+                ~loggerState=logger,
+                ~clickToPayProvider=MASTERCARD,
+                ~error=`Error initializing Mastercard Checkout - ${err
                   ->Utils.formatException
                   ->JSON.stringify}`,
-                ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
               )
               reject(err)
             })
           }
         | None => {
-            logger.setLogError(
-              ~value="Mastercard Checkout Service not initialized",
-              ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+            setCtpLogError(
+              ~loggerState=logger,
+              ~clickToPayProvider=MASTERCARD,
+              ~error="Mastercard Checkout Service not initialized",
             )
             reject(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
           }
         }
       } catch {
       | error => {
-          logger.setLogError(
-            ~value=`Error initializing Mastercard Checkout - ${error
+          setCtpLogError(
+            ~loggerState=logger,
+            ~clickToPayProvider=MASTERCARD,
+            ~error=`Error initializing Mastercard Checkout - ${error
               ->Utils.formatException
               ->JSON.stringify}`,
-            ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
           )
           reject(error)
         }
       }
     }
   | None => {
-      logger.setLogError(
-        ~value="MastercardCheckoutServices is not available",
-        ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+      setCtpLogError(
+        ~loggerState=logger,
+        ~clickToPayProvider=MASTERCARD,
+        ~error="MastercardCheckoutServices is not available",
       )
       reject(Exn.anyToExnInternal("MastercardCheckoutServices is not available"))
     }
@@ -427,22 +474,28 @@ let getCards = async (logger: HyperLoggerTypes.loggerMake) => {
     switch mcCheckoutService.contents {
     | Some(service) => {
         let cards = await service->getCards()
-        logger.setLogInfo(~value="Cards returned from API", ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW)
+        setCtpLogInfo(
+          ~loggerState=logger,
+          ~clickToPayProvider=MASTERCARD,
+          ~info="Cards returned from API",
+        )
         Ok(cards)
       }
     | None => {
-        logger.setLogError(
-          ~value="Mastercard Checkout Service not initialized",
-          ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+        setCtpLogError(
+          ~loggerState=logger,
+          ~clickToPayProvider=MASTERCARD,
+          ~error="Mastercard Checkout Service not initialized",
         )
         Ok([])
       }
     }
   } catch {
   | error => {
-      logger.setLogError(
-        ~value=`Error getting cards - ${error->Utils.formatException->JSON.stringify}`,
-        ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+      setCtpLogError(
+        ~loggerState=logger,
+        ~clickToPayProvider=MASTERCARD,
+        ~error=`Error getting cards - ${error->Utils.formatException->JSON.stringify}`,
       )
       Ok([])
     }
@@ -491,18 +544,20 @@ let authenticate = async (
         Ok(authentication)
       }
     | None => {
-        logger.setLogError(
-          ~value="Mastercard Checkout Service not initialized",
-          ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+        setCtpLogError(
+          ~loggerState=logger,
+          ~clickToPayProvider=MASTERCARD,
+          ~error="Mastercard Checkout Service not initialized",
         )
         Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
   | error => {
-      logger.setLogError(
-        ~value=`Error during authentication - ${error->Utils.formatException->JSON.stringify}`,
-        ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+      setCtpLogError(
+        ~loggerState=logger,
+        ~clickToPayProvider=MASTERCARD,
+        ~error=`Error during authentication - ${error->Utils.formatException->JSON.stringify}`,
       )
       Error(error)
     }
@@ -527,18 +582,20 @@ let checkoutWithCard = async (
         Ok(checkoutResp)
       }
     | None => {
-        logger.setLogError(
-          ~value="Mastercard Checkout Service not initialized",
-          ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+        setCtpLogError(
+          ~loggerState=logger,
+          ~clickToPayProvider=MASTERCARD,
+          ~error="Mastercard Checkout Service not initialized",
         )
         Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
   | error => {
-      logger.setLogError(
-        ~value=`Error during checkout with card - ${error->Utils.formatException->JSON.stringify}`,
-        ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+      setCtpLogError(
+        ~loggerState=logger,
+        ~clickToPayProvider=MASTERCARD,
+        ~error=`Error during checkout with card - ${error->Utils.formatException->JSON.stringify}`,
       )
       Error(error)
     }
@@ -561,26 +618,29 @@ let encryptCardForClickToPay = async (
   try {
     switch mcCheckoutService.contents {
     | Some(service) => {
-        logger.setLogInfo(
-          ~value="Encrypting card for Click to Pay",
-          ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+        setCtpLogInfo(
+          ~loggerState=logger,
+          ~clickToPayProvider=MASTERCARD,
+          ~info="Encrypting card for Click to Pay",
         )
         let encryptedCard = await service->encryptCard(card)
         Ok(encryptedCard)
       }
     | None => {
-        logger.setLogError(
-          ~value="Mastercard Checkout Service not initialized",
-          ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+        setCtpLogError(
+          ~loggerState=logger,
+          ~clickToPayProvider=MASTERCARD,
+          ~error="Mastercard Checkout Service not initialized",
         )
         Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
   | error => {
-      logger.setLogError(
-        ~value=`Error encrypting card - ${error->Utils.formatException->JSON.stringify}`,
-        ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+      setCtpLogError(
+        ~loggerState=logger,
+        ~clickToPayProvider=MASTERCARD,
+        ~error=`Error encrypting card - ${error->Utils.formatException->JSON.stringify}`,
       )
       Error(error)
     }
@@ -604,20 +664,22 @@ let checkoutWithNewCard = async (
         Ok(checkoutResp)
       }
     | None => {
-        logger.setLogError(
-          ~value="Mastercard Checkout Service not initialized",
-          ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+        setCtpLogError(
+          ~loggerState=logger,
+          ~clickToPayProvider=MASTERCARD,
+          ~error="Mastercard Checkout Service not initialized",
         )
         Error(Exn.anyToExnInternal("Mastercard Checkout Service not initialized"))
       }
     }
   } catch {
   | error => {
-      logger.setLogError(
-        ~value=`Error during checkout with new card - ${error
+      setCtpLogError(
+        ~loggerState=logger,
+        ~clickToPayProvider=MASTERCARD,
+        ~error=`Error during checkout with new card - ${error
           ->Utils.formatException
           ->JSON.stringify}`,
-        ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
       )
       Error(error)
     }
@@ -1237,9 +1299,10 @@ let handleProceedToPay = async (
               switch actionCode {
               | "SUCCESS" => closeWindow(COMPLETE, checkoutResp)
               | _ => {
-                  logger.setLogError(
-                    ~value=`Visa checkout failed with card, Action Code -> ${actionCode}`,
-                    ~eventName=VISA_CLICK_TO_PAY_FLOW,
+                  setCtpLogError(
+                    ~loggerState=logger,
+                    ~clickToPayProvider,
+                    ~error=`Visa checkout failed with card, Action Code -> ${actionCode}`,
                   )
                   closeWindow(ERROR, JSON.Encode.null)
                 }
@@ -1249,11 +1312,12 @@ let handleProceedToPay = async (
           }
         } catch {
         | err => {
-            logger.setLogError(
-              ~value=`Visa checkout failed with card - ${err
+            setCtpLogError(
+              ~loggerState=logger,
+              ~clickToPayProvider,
+              ~error=`Visa checkout failed with card - ${err
                 ->Utils.formatException
                 ->JSON.stringify}`,
-              ~eventName=VISA_CLICK_TO_PAY_FLOW,
             )
             closeWindow(ERROR, JSON.Encode.null)
           }
@@ -1261,11 +1325,10 @@ let handleProceedToPay = async (
       | NONE => closeWindow(ERROR, JSON.Encode.null)
       }
     | None => {
-        logger.setLogError(
-          ~value="Click to Pay window reference is null",
-          ~eventName=clickToPayProvider == MASTERCARD
-            ? MASTERCARD_CLICK_TO_PAY_FLOW
-            : VISA_CLICK_TO_PAY_FLOW,
+        setCtpLogError(
+          ~loggerState=logger,
+          ~clickToPayProvider,
+          ~error="Click to Pay window reference is null",
         )
         closeWindow(ERROR, JSON.Encode.null)
       }
@@ -1356,9 +1419,10 @@ let handleProceedToPay = async (
               switch actionCode {
               | "SUCCESS" => closeWindow(COMPLETE, checkoutResp)
               | _ => {
-                  logger.setLogError(
-                    ~value=`Visa checkout failed with new card, Action Code -> ${actionCode}`,
-                    ~eventName=VISA_CLICK_TO_PAY_FLOW,
+                  setCtpLogError(
+                    ~loggerState=logger,
+                    ~clickToPayProvider,
+                    ~error=`Visa checkout failed with new card, Action Code -> ${actionCode}`,
                   )
                   closeWindow(ERROR, JSON.Encode.null)
                 }
@@ -1368,11 +1432,12 @@ let handleProceedToPay = async (
           }
         } catch {
         | err => {
-            logger.setLogError(
-              ~value=`Visa checkout failed with new card - ${err
+            setCtpLogError(
+              ~loggerState=logger,
+              ~clickToPayProvider,
+              ~error=`Visa checkout failed with new card - ${err
                 ->Utils.formatException
                 ->JSON.stringify}`,
-              ~eventName=VISA_CLICK_TO_PAY_FLOW,
             )
             closeWindow(ERROR, JSON.Encode.null)
           }
@@ -1380,11 +1445,10 @@ let handleProceedToPay = async (
       | NONE => closeWindow(ERROR, JSON.Encode.null)
       }
     | None => {
-        logger.setLogError(
-          ~value="Click to Pay window reference is null",
-          ~eventName=clickToPayProvider == MASTERCARD
-            ? MASTERCARD_CLICK_TO_PAY_FLOW
-            : VISA_CLICK_TO_PAY_FLOW,
+        setCtpLogError(
+          ~loggerState=logger,
+          ~clickToPayProvider,
+          ~error="Click to Pay window reference is null",
         )
         closeWindow(ERROR, JSON.Encode.null)
       }
@@ -1402,11 +1466,10 @@ let handleProceedToPay = async (
     }
   } catch {
   | err => {
-      logger.setLogError(
-        ~value=`Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
-        ~eventName=clickToPayProvider == MASTERCARD
-          ? MASTERCARD_CLICK_TO_PAY_FLOW
-          : VISA_CLICK_TO_PAY_FLOW,
+      setCtpLogError(
+        ~loggerState=logger,
+        ~clickToPayProvider,
+        ~error=`Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
       )
       closeWindow(ERROR, JSON.Encode.null)
     }

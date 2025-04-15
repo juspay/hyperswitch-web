@@ -261,20 +261,24 @@ let make = (
                       )
                     }
                   | Error(err) =>
-                    loggerState.setLogError(
-                      ~value=`Error during checkout - ${err
+                    ClickToPayHelpers.setCtpLogError(
+                      ~loggerState,
+                      ~clickToPayProvider,
+                      ~error=`Error during checkout - ${err
                         ->Utils.formatException
                         ->JSON.stringify}`,
-                      ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
                     )
                   }
                 }
               )()->ignore
             } catch {
             | err =>
-              loggerState.setLogError(
-                ~value=`Error during checkout - ${err->Utils.formatException->JSON.stringify}`,
-                ~eventName=MASTERCARD_CLICK_TO_PAY_FLOW,
+              ClickToPayHelpers.setCtpLogError(
+                ~loggerState,
+                ~clickToPayProvider,
+                ~error=`Error during checkout - ${err
+                  ->Utils.formatException
+                  ->JSON.stringify}`,
               )
             }
 
@@ -332,11 +336,12 @@ let make = (
                     )
                   } catch {
                   | err =>
-                    loggerState.setLogError(
-                      ~value=`Error during checkout - ${err
+                    ClickToPayHelpers.setCtpLogError(
+                      ~loggerState,
+                      ~clickToPayProvider,
+                      ~error=`Error during checkout - ${err
                         ->Utils.formatException
                         ->JSON.stringify}`,
-                      ~eventName=VISA_CLICK_TO_PAY_FLOW,
                     )
                   }
                 }
