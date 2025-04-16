@@ -13,15 +13,6 @@ type listener = {
   callback: callback,
 }
 
-type listners = array<listener>
-
-type controller = {
-  abort: unit => unit,
-  signal: unit,
-}
-
-@new external abortController: unit => controller = "AbortController"
-
 module LoadingState = {
   @react.component
   let make = () => {
@@ -92,7 +83,7 @@ module OtpInput = {
 
     React.useEffect0(() => {
       let srcOtpInput = elementQuerySelector(myDocument, "src-otp-input")->Js.Nullable.toOption
-      let controller = abortController()
+      let controller = AbortController.make()
       let signal = controller.signal
       let listeners = [
         {name: "otpChanged", callback: callBacks.otpChanged},
