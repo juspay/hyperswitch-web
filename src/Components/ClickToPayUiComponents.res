@@ -13,15 +13,6 @@ type listener = {
   callback: callback,
 }
 
-type listners = array<listener>
-
-type controller = {
-  abort: unit => unit,
-  signal: unit,
-}
-
-@new external abortController: unit => controller = "AbortController"
-
 module LoadingState = {
   @react.component
   let make = () => {
@@ -32,6 +23,7 @@ module LoadingState = {
 module OtpInput = {
   @react.component
   let make = (~getCards: string => promise<unit>, ~setIsClickToPayRememberMe) => {
+    let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
     let (isOtpSubmitting, setIsOtpSubmitting) = React.useState(_ => false)
     let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(
       RecoilAtoms.clickToPayConfig,
@@ -48,7 +40,7 @@ module OtpInput = {
           otpError: "",
         })
         ev
-        ->Js.Nullable.toOption
+        ->Nullable.toOption
         ->Option.forEach(value => {
           let otp = value->getDictFromJson->getString("detail", "")
           if otp->String.length == 6 {
@@ -57,31 +49,54 @@ module OtpInput = {
         })
       },
       continueClicked: _ => {
-        (
-          async _ => {
+        let verifyUserAndGetCards = async () => {
+          try {
             setIsOtpSubmitting(_ => true)
             await getCards(otpValueRef.current)
             setIsOtpSubmitting(_ => false)
+          } catch {
+          | err =>
+            loggerState.setLogError(
+              ~value={
+                "message": `User validation failed - ${err->Utils.formatException->JSON.stringify}`,
+                "scheme": "VISA",
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
           }
-        )()->ignore
+        }
+        verifyUserAndGetCards()->ignore
       },
       resendClicked: _ => {
         setClickToPayConfig(prev => {
           ...prev,
           otpError: "",
         })
-
-        (
-          async _ => {
+        let resendOtp = async () => {
+          try {
             setResendLoading(_ => true)
             await getCards("")
             setResendLoading(_ => false)
+          } catch {
+          | err =>
+            loggerState.setLogError(
+              ~value={
+                "message": `resend otp failed - ${err->Utils.formatException->JSON.stringify}`,
+                "scheme": "VISA",
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
           }
-        )()->ignore
+        }
+        resendOtp()->ignore
       },
       rememberMe: ev => {
         ev
-        ->Js.Nullable.toOption
+        ->Nullable.toOption
         ->Option.forEach(e => {
           let dict = e->getDictFromJson
           let rememberMe = dict->getDictFromDict("detail")->getBool("rememberMe", false)
@@ -91,8 +106,8 @@ module OtpInput = {
     }
 
     React.useEffect0(() => {
-      let srcOtpInput = elementQuerySelector(myDocument, "src-otp-input")->Js.Nullable.toOption
-      let controller = abortController()
+      let srcOtpInput = elementQuerySelector(myDocument, "src-otp-input")->Nullable.toOption
+      let controller = AbortController.make()
       let signal = controller.signal
       let listeners = [
         {name: "otpChanged", callback: callBacks.otpChanged},

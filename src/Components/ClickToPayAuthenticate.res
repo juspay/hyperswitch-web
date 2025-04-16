@@ -87,10 +87,14 @@ let make = (
                       resolve()
                     | Error(err) => {
                         let errException = err->formatException
-                        setCtpLogError(
-                          ~loggerState,
-                          ~clickToPayProvider,
-                          ~error=`Error authenticating consumer identity - ${errException->JSON.stringify}`,
+                        loggerState.setLogError(
+                          ~value={
+                            "message": `Error authenticating consumer identity - ${errException->JSON.stringify}`,
+                            "scheme": clickToPayProvider,
+                          }
+                          ->JSON.stringifyAny
+                          ->Option.getOr(""),
+                          ~eventName=CLICK_TO_PAY_FLOW,
                         )
                         let exceptionMessage =
                           errException
@@ -115,12 +119,16 @@ let make = (
                     }
                   })
                   ->catch(err => {
-                    setCtpLogError(
-                      ~loggerState,
-                      ~clickToPayProvider,
-                      ~error=`Error authenticating consumer identity - ${err
-                        ->formatException
-                        ->JSON.stringify}`,
+                    loggerState.setLogError(
+                      ~value={
+                        "message": `Error authenticating consumer identity - ${err
+                          ->formatException
+                          ->JSON.stringify}`,
+                        "scheme": clickToPayProvider,
+                      }
+                      ->JSON.stringifyAny
+                      ->Option.getOr(""),
+                      ~eventName=CLICK_TO_PAY_FLOW,
                     )
                     closeComponentIfSavedMethodsAreEmpty()
                     resolve()
@@ -134,10 +142,14 @@ let make = (
           }
         } catch {
         | err => {
-            setCtpLogError(
-              ~loggerState,
-              ~clickToPayProvider,
-              ~error=`Error - ${err->formatException->JSON.stringify}`,
+            loggerState.setLogError(
+              ~value={
+                "message": `Error - ${err->formatException->JSON.stringify}`,
+                "scheme": clickToPayProvider,
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
             )
             closeComponentIfSavedMethodsAreEmpty()
           }

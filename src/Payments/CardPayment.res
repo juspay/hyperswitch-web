@@ -261,24 +261,32 @@ let make = (
                       )
                     }
                   | Error(err) =>
-                    ClickToPayHelpers.setCtpLogError(
-                      ~loggerState,
-                      ~clickToPayProvider,
-                      ~error=`Error during checkout - ${err
-                        ->Utils.formatException
-                        ->JSON.stringify}`,
+                    loggerState.setLogError(
+                      ~value={
+                        "message": `Error during checkout - ${err
+                          ->Utils.formatException
+                          ->JSON.stringify}`,
+                        "scheme": clickToPayProvider,
+                      }
+                      ->JSON.stringifyAny
+                      ->Option.getOr(""),
+                      ~eventName=CLICK_TO_PAY_FLOW,
                     )
                   }
                 }
               )()->ignore
             } catch {
             | err =>
-              ClickToPayHelpers.setCtpLogError(
-                ~loggerState,
-                ~clickToPayProvider,
-                ~error=`Error during checkout - ${err
-                  ->Utils.formatException
-                  ->JSON.stringify}`,
+              loggerState.setLogError(
+                ~value={
+                  "message": `Error during checkout - ${err
+                    ->Utils.formatException
+                    ->JSON.stringify}`,
+                  "scheme": clickToPayProvider,
+                }
+                ->JSON.stringifyAny
+                ->Option.getOr(""),
+                ~eventName=CLICK_TO_PAY_FLOW,
               )
             }
 
@@ -336,12 +344,16 @@ let make = (
                     )
                   } catch {
                   | err =>
-                    ClickToPayHelpers.setCtpLogError(
-                      ~loggerState,
-                      ~clickToPayProvider,
-                      ~error=`Error during checkout - ${err
-                        ->Utils.formatException
-                        ->JSON.stringify}`,
+                    loggerState.setLogError(
+                      ~value={
+                        "message": `Error during checkout - ${err
+                          ->Utils.formatException
+                          ->JSON.stringify}`,
+                        "scheme": clickToPayProvider,
+                      }
+                      ->JSON.stringifyAny
+                      ->Option.getOr(""),
+                      ~eventName=CLICK_TO_PAY_FLOW,
                     )
                   }
                 }
