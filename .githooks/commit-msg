@@ -1,0 +1,62 @@
+#!/bin/sh
+
+# ANSI color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo "${YELLOW}*****~~~~~ Commit hook initiated ~~~~~~*****${NC}"
+
+commit_msg_file=$1
+commit_msg=$(cat "$commit_msg_file")
+
+# Formatting
+echo
+echo "${YELLOW}*****~~~~~ Formatting - Check for unformatted files ~~~~~~*****${NC}"
+
+# Check for unformatted ReScript files
+npm run re:format
+
+echo
+echo "${GREEN}*****~~~~~ All files are formatted. ~~~~~~*****${NC}"
+echo
+
+# Trailing Space Check
+echo
+echo "${YELLOW}*****~~~~~ Evaluating for trailing spaces ~~~~~~*****${NC}"
+
+find . -type f -name '.DS_Store' -exec rm {} +
+
+TRAIL_SRC=$(grep -r '[[:blank:]]$' src --exclude='*.bs.js' --exclude='*.resi')
+
+if [[ ! -z "$TRAIL_SRC" ]]; then
+  echo "$TRAIL_SRC"
+  echo
+  echo "${RED}!Please remove trailing spaces before committing changes${NC}"
+  echo "${YELLOW}Usage of EditorConfig [https://editorconfig.org/#download] plugin is recommended for development${NC}"
+  exit 1
+fi
+
+echo
+echo "${GREEN}*****~~~~~ Done Evaluating ~~~~~~*****${NC}"
+
+# Commit Message Validation
+echo
+echo "${YELLOW}*****~~~~~ Commit message validation! ~~~~~*****${NC}"
+echo
+
+commit_regex="^(Merge branch|(feat|fix|chore|refactor|docs|test|style|enhancement|ci):).+"
+
+if ! echo "$commit_msg" | grep -Ei "$commit_regex" ; then
+    echo "${RED}Aborting commit. Your commit message does not follow the conventional format.${NC}"
+    echo "${YELLOW}The commit message should begin with one of the following keywords followed by a colon:${NC}"
+    echo "${YELLOW}'feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'ci', 'style', or 'enhancement'${NC}"
+    echo "${YELLOW}Example: 'feat: add new payment method support - integrated Razorpay'{NC}"
+    exit 1
+fi
+
+echo
+echo "${GREEN}*****~~~~~ Commit hook completed ~~~~~~*****${NC}"
+echo
+exit 0

@@ -48,10 +48,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let (isZipValid, setIsZipValid) = React.useState(_ => None)
   let (isCardSupported, setIsCardSupported) = React.useState(_ => None)
 
-  let maxCardLength = React.useMemo(() => {
-    getMaxLength(cardNumber)
-  }, (cardNumber, cardScheme, showFields))
-
   let cardBrand = getCardBrand(cardNumber)
   let isNotBancontact = selectedOption !== "bancontact_card" && cardBrand == ""
   let (cardBrand, setCardBrand) = React.useState(_ =>
@@ -63,10 +59,16 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
 
+  let maxCardLength = React.useMemo(() => {
+    getMaxLength(cardBrand)
+  }, (cardNumber, cardScheme, cardBrand, showFields))
+
   React.useEffect(() => {
-    setIsCardSupported(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
+    setIsCardSupported(_ =>
+      PaymentUtils.checkIsCardSupported(cardNumber, cardBrand, supportedCardBrands)
+    )
     None
-  }, (supportedCardBrands, cardNumber))
+  }, (supportedCardBrands, cardNumber, cardBrand))
 
   let cardType = React.useMemo1(() => {
     cardBrand->getCardType
@@ -119,14 +121,16 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     logInputChangeInfo("cardNumber", logger)
     let card = val->formatCardNumber(cardType)
     let clearValue = card->clearSpaces
-    setCardValid(clearValue, setIsCardValid)
+    setCardValid(clearValue, cardBrand, setIsCardValid)
     if (
       focusCardValid(clearValue, cardBrand) &&
-      PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false)
+      PaymentUtils.checkIsCardSupported(clearValue, cardBrand, supportedCardBrands)->Option.getOr(
+        false,
+      )
     ) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
-    if card->String.length > 6 && cardNumber->pincodeVisibility {
+    if card->String.length > 6 && cardBrand->pincodeVisibility {
       setDisplayPincode(_ => true)
     } else if card->String.length < 8 {
       setDisplayPincode(_ => false)
@@ -189,8 +193,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
-    if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
-      setIsCardValid(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
+    if cardNumberInRange(cardNumber, cardBrand)->Array.includes(true) && calculateLuhn(cardNumber) {
+      setIsCardValid(_ =>
+        PaymentUtils.checkIsCardSupported(cardNumber, cardBrand, supportedCardBrands)
+      )
     } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => Some(false))
     } else {
@@ -370,7 +376,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     | (_, _, true) => ""
     | (true, true, _) => ""
     | (true, _, _) => localeString.inValidCardErrorText
-    | (_, _, _) => CardUtils.getCardBrandInvalidError(~cardNumber, ~localeString)
+    | (_, _, _) => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
     }
     let cardError = isCardValid->Option.isSome ? cardError : ""
     setCardError(_ => cardError)
@@ -395,7 +401,15 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (isExpiryValid, isExpiryComplete(cardExpiry)))
 
   React.useEffect(() => {
-    setCardBrand(_ => cardNumber->CardUtils.getCardBrand)
+    let validCardBrand = getFirstValidCardSchemeFromPML(
+      ~cardNumber,
+      ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
+    )
+    let newCardBrand = switch validCardBrand {
+    | Some(brand) => brand
+    | None => cardNumber->CardUtils.getCardBrand
+    }
+    setCardBrand(_ => newCardBrand)
     None
   }, [cardNumber])
 
