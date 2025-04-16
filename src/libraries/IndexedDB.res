@@ -2,70 +2,115 @@ type openDBRequest
 type db
 type transaction
 type objectStore
-type request
+type request<'a>
 type event
 
-@val @scope("window") external indexedDB: 'a = "indexedDB"
+module IndexedDB = {
+  @val @scope("window") external instance: 'a = "indexedDB"
+  @send external open_: ('a, string, int) => openDBRequest = "open"
+}
 
-@send external open_: ('a, string, int) => openDBRequest = "open"
+module OpenDBRequest = {
+  @set external onupgradeneeded: (openDBRequest, event => unit) => unit = "onupgradeneeded"
+  @set external onsuccess: (openDBRequest, event => unit) => unit = "onsuccess"
+  @set external onerror: (openDBRequest, event => unit) => unit = "onerror"
+  @get external result: openDBRequest => db = "result"
+}
 
-@set external onupgradeneeded: (openDBRequest, event => unit) => unit = "onupgradeneeded"
-@set external onsuccess: (openDBRequest, event => unit) => unit = "onsuccess"
-@set external onsuccessRequest: (request, event => unit) => unit = "onsuccess"
-@set external onerror: (openDBRequest, event => unit) => unit = "onerror"
-@set external onerrorRequest: (request, event => unit) => unit = "onerror"
+module DB = {
+  @send external createObjectStore: (db, string, 'options) => objectStore = "createObjectStore"
+  @send external transaction: (db, array<string>, string) => transaction = "transaction"
+  @send external close: db => unit = "close"
+}
 
-@get external result: openDBRequest => db = "result"
-@get external resultFromRequest: request => 'a = "result"
+module Transaction = {
+  @send external objectStore: (transaction, string) => objectStore = "objectStore"
+  @set external oncomplete: (transaction, event => unit) => unit = "oncomplete"
+  @set external onerror: (transaction, event => unit) => unit = "onerror"
+}
 
-@get external getTarget: event => 'a = "target"
-@get external getResultFromTarget: 'a => 'b = "result"
+module ObjectStore = {
+  @send external add: (objectStore, 'data, 'key) => request<'a> = "add"
+  @send external put: (objectStore, 'data) => request<'a> = "put"
+  @send external getAll: objectStore => request<array<'a>> = "getAll"
+  @send external clear: objectStore => request<'a> = "clear"
+}
 
-@get external getTargetError: event => 'a = "target.error"
-@get external getErrorMessage: 'a => string = "message"
+module Request = {
+  @set external onsuccess: (request<'a>, event => unit) => unit = "onsuccess"
+  @set external onerror: (request<'a>, event => unit) => unit = "onerror"
+  @get external result: request<'a> => 'a = "result"
+}
 
-@send external createObjectStore: (db, string, 'options) => objectStore = "createObjectStore"
-@send external objectStore: (transaction, string) => objectStore = "objectStore"
-@send external transaction_: (db, array<string>, string) => transaction = "transaction"
-@send external add: (objectStore, 'data, 'key) => request = "add"
-@send external put: (objectStore, 'data) => request = "put"
-@send external getAll: objectStore => request = "getAll"
-@send external clear: objectStore => request = "clear"
-@send external close: db => unit = "close"
-
-@set external setTransactionOncomplete: (transaction, event => unit) => unit = "oncomplete"
-@set external setTransactionOnerror: (transaction, event => unit) => unit = "onerror"
-@set external setAddRequestOnsuccess: (request, event => unit) => unit = "onsuccess"
+module Event = {
+  @get external target: event => 'a = "target"
+  @get external targetError: event => 'a = "target.error"
+}
 
 let dbCache: ref<option<db>> = ref(None)
+
 let getDbFromEvent = event => {
   switch dbCache.contents {
   | Some(db) => db
   | None => {
-      let target = getTarget(event)
-      let db = getResultFromTarget(target)
+      let target = Event.target(event)
+      let db = target["result"]
       dbCache := Some(db)
       db
     }
   }
 }
 
-let openDBAndGetRequest = (~dbName, ~objectStoreName) => {
-  let request = indexedDB->open_(dbName, 1)
+let getErrorMessageFromEvent = event => {
+  try {
+    let errorObj = Event.targetError(event)
+    errorObj["message"]
+  } catch {
+  | _ => "Unknown error occurred"
+  }
+}
 
-  request->onupgradeneeded(event => {
+let openDBAndGetRequest = (~dbName, ~objectStoreName) => {
+  let request = IndexedDB.instance->IndexedDB.open_(dbName, 1)
+
+  request->OpenDBRequest.onupgradeneeded(event => {
     let db = getDbFromEvent(event)
-    let _ = db->createObjectStore(objectStoreName, {"keyPath": "timestamp", "autoIncrement": true})
+    let _ =
+      db->DB.createObjectStore(objectStoreName, {"keyPath": "timestamp", "autoIncrement": true})
   })
 
   request
 }
 
-let getErrorMessageFromEvent = event => {
-  try {
-    let errorObj = getTargetError(event)
-    getErrorMessage(errorObj)
-  } catch {
-  | _ => "Unknown error occurred"
-  }
+let setupDatabase = (~dbName, ~objectStoreName, ~onSuccess, ~onError) => {
+  let request = openDBAndGetRequest(~dbName, ~objectStoreName)
+
+  request->OpenDBRequest.onsuccess(event => {
+    let db = getDbFromEvent(event)
+    onSuccess(db)
+  })
+
+  request->OpenDBRequest.onerror(event => {
+    let errorMessage = getErrorMessageFromEvent(event)
+    onError(errorMessage)
+  })
+}
+
+let addData = (db, objectStoreName, data) => {
+  let transaction = db->DB.transaction([objectStoreName], "readwrite")
+  let store = transaction->Transaction.objectStore(objectStoreName)
+  let request = store->ObjectStore.add(data, data["timestamp"])
+
+  (request, transaction)
+}
+
+let getAllData = (db, objectStoreName, onSuccess) => {
+  let transaction = db->DB.transaction([objectStoreName], "readonly")
+  let store = transaction->Transaction.objectStore(objectStoreName)
+  let request = store->ObjectStore.getAll
+
+  request->Request.onsuccess(_ => {
+    let result = Request.result(request)
+    onSuccess(result)
+  })
 }
