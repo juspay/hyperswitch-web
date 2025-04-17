@@ -71,7 +71,7 @@ describe("External 3DS using Netcetera Checks", () => {
             cy.wrap($body)
                 .find('#cancel')
                 .click()
-            cy.contains("Payment Failed!").should("be.visible");
+            cy.contains("Payment failed. Please check your payment method.").should("be.visible");
         })
     })
 

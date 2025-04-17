@@ -2,63 +2,71 @@ import React from "react";
 import logo from "../public/assets/hyperswitchLogo.svg";
 import shirt from "../public/assets/shirt.png";
 import cap from "../public/assets/cap.png";
+
+const cartItems = [
+  {
+    id: 1,
+    name: "HS Tshirt",
+    price: 100,
+    image: shirt,
+    size: "37",
+    qty: 1,
+    color: "Black",
+  },
+  {
+    id: 2,
+    name: "HS Cap",
+    price: 100,
+    image: cap,
+    size: "2",
+    qty: 1,
+    color: "Black",
+  },
+];
+
 function Cart() {
+  const total = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+
   return (
-    <>
-      <div className="cart">
-        <div className="titleContainer">
-          <div className="title">
-            {" "}
-            <img className="logoImg" width="28px" src={logo} alt="" />{" "}
-            Hyperswitch Playground App
-          </div>
-          <div className="testMode">Test Mode</div>
+    <section className="cart">
+      <header className="titleContainer">
+        <div className="title">
+          <img className="logoImg" width="28" src={logo} alt="Hyperswitch logo" />
+          Hyperswitch Playground App
         </div>
-        <div className="ordersummary">Order Summary(2) </div>
-        <div className="items">
-          <div className="Item">
+        <div className="testMode">Test Mode</div>
+      </header>
+
+      <h2 className="ordersummary">Order Summary ({cartItems.length})</h2>
+
+      <div className="items">
+        {cartItems.map(({ id, name, price, image, size, qty, color }) => (
+          <div className="Item" key={id}>
             <div className="ItemContainer">
               <div className="itemImg">
-                <img src={shirt} alt="" />
+                <img src={image} alt={name} />
               </div>
               <div className="itemDetails">
-                <div className="name">HS Tshirt</div>
+                <div className="name">{name}</div>
                 <div className="props">
-                  Size: <span className="value">37 &nbsp;&nbsp;&nbsp;</span>
-                  Qty:<span className="value">1 </span>
+                  Size: <span className="value">{size}&nbsp;&nbsp;&nbsp;</span>
+                  Qty: <span className="value">{qty}</span>
                 </div>
                 <div className="props">
-                  Color: <span className="value">Black</span>
+                  Color: <span className="value">{color}</span>
                 </div>
               </div>
             </div>
-            <div> 100.00</div>
+            <div className="itemPrice">₹{price.toFixed(2)}</div>
           </div>
-          <div className="Item">
-            <div className="ItemContainer">
-              <div className="itemImg">
-                <img src={cap} alt="" />
-              </div>
-              <div className="itemDetails">
-                <div className="name">HS Cap</div>
-                <div className="props">
-                  Size: <span className="value">2 &nbsp;&nbsp;&nbsp;</span>
-                  Qty:<span className="value">1 </span>
-                </div>
-                <div className="props">
-                  Color: <span className="value">Black</span>
-                </div>
-              </div>
-            </div>
-            <div> 100.00</div>
-          </div>
-          <div className="ItemTotal">
-            <div className="total">Total Amount</div>
-            <div> 200.00</div>
-          </div>
+        ))}
+
+        <div className="ItemTotal">
+          <div className="total">Total Amount</div>
+          <div className="totalPrice">₹{total.toFixed(2)}</div>
         </div>
       </div>
-    </>
+    </section>
   );
 }
 
