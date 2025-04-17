@@ -15,6 +15,7 @@ let make = () => {
     headers,
     returnUrl,
   ) => {
+    isCompleteAuthorizeCalledRef.current = true
     let body = [
       ("client_secret", paymentIntentId->JSON.Encode.string),
       ("threeds_method_comp_ind", threeDsMethodComp->JSON.Encode.string),
@@ -77,7 +78,6 @@ let make = () => {
           timeoutRef.current->Option.forEach(clearTimeout)
 
           timeoutRef.current = Some(setTimeout(() => {
-              isCompleteAuthorizeCalledRef.current = true
               handleCompleteAuthorizeCall(
                 "N",
                 paymentIntentId,
