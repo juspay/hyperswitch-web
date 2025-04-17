@@ -100,6 +100,7 @@ const authorizedFrameSources = [
   "https://secure.checkout.visa.com",
   "https://checkout.wallet.cat.earlywarning.io/",
   "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/",
+  "https://sis-d.redsys.es",
   ...localhostSources,
   // Add other trusted sources here
 ];
