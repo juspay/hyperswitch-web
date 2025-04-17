@@ -6,10 +6,16 @@
     "mode": "classic"
   },
   "bsc-flags": ["-bs-super-errors", "-open RescriptCore"],
-  "sources": {
-    "dir": "src",
-    "subdirs": true
-  },
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": true
+    },
+    {
+      "dir": "shared-code/sdk-utils",
+      "subdirs" : true
+    }
+  ],
   "suffix": ".bs.js",
   "namespace": true,
   "ppx-flags": [],
