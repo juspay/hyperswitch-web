@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { HyperElements } from "@juspay-tech/react-hyper-js";
 import CheckoutForm from "./CheckoutForm";
-
-const getQueryParam = (param) => new URLSearchParams(window.location.search).get(param);
+import {
+  getQueryParam,
+  fetchConfigAndUrls,
+  getPaymentIntentData,
+  loadHyperScript,
+} from "./utils";
 
 function Payment() {
   const [hyperPromise, setHyperPromise] = useState(null);
@@ -16,85 +20,41 @@ function Payment() {
 
   const baseUrl = SELF_SERVER_URL || ENDPOINT;
 
-  const fetchPaymentData = async () => {
-    try {
-      const [configRes, urlsRes] = await Promise.all([
-        fetch(`${baseUrl}/config`),
-        fetch(`${baseUrl}/urls`),
-      ]);
-
-      if (!configRes.ok || !urlsRes.ok) {
-        throw new Error("Failed to fetch config or URL data");
-      }
-
-      const configData = await configRes.json();
-      const urlsData = await urlsRes.json();
-
-      const paymentIntentData = isCypressTestMode
-        ? { clientSecret: clientSecretQueryParam }
-        : await fetch(`${baseUrl}/create-payment-intent`).then((res) => {
-            if (!res.ok) throw new Error("Failed to fetch payment intent");
-            return res.json();
-          });
-
-      return { configData, urlsData, paymentIntentData };
-    } catch (err) {
-      console.error("Error fetching payment data:", err);
-      setError("Failed to load payment details. Please try again.");
-      return {};
-    }
-  };
-
-  const loadHyperScript = (clientUrl, publishableKey, customBackendUrl) => {
-    return new Promise((resolve, reject) => {
-      if (isScriptLoaded) return resolve(window.Hyper);
-
-      const script = document.createElement("script");
-      script.src = `${clientUrl}/HyperLoader.js`;
-      script.async = true;
-
-      script.onload = () => {
-        setIsScriptLoaded(true);
-        resolve(
-          window.Hyper(publishableKey, {
-            customBackendUrl,
-          })
-        );
-      };
-
-      script.onerror = () => {
-        reject("Failed to load HyperLoader.js");
-      };
-
-      document.head.appendChild(script);
-    });
-  };
-
   useEffect(() => {
     let isMounted = true;
 
     const initializePayment = async () => {
-      const { configData, urlsData, paymentIntentData } = await fetchPaymentData();
-
-      if (!configData || !urlsData || !paymentIntentData) return;
-
-      const publishableKey = isCypressTestMode
-        ? publishableKeyQueryParam
-        : configData.publishableKey;
-
       try {
-        const hyper = await loadHyperScript(
-          urlsData.clientUrl,
+        const { configData, urlsData } = await fetchConfigAndUrls(baseUrl);
+
+        const publishableKey = isCypressTestMode
+          ? publishableKeyQueryParam
+          : configData.publishableKey;
+
+        const paymentIntentData = await getPaymentIntentData({
+          baseUrl,
+          isCypressTestMode,
+          clientSecretQueryParam,
+          setError,
+        });
+
+        if (!paymentIntentData) return;
+
+        const hyper = await loadHyperScript({
+          clientUrl: urlsData.clientUrl,
           publishableKey,
-          urlsData.serverUrl
-        );
+          customBackendUrl: urlsData.serverUrl,
+          isScriptLoaded,
+          setIsScriptLoaded,
+        });
+
         if (isMounted) {
           setClientSecret(paymentIntentData.clientSecret);
           setHyperPromise(Promise.resolve(hyper));
         }
       } catch (err) {
-        console.error("Script load error:", err);
-        setError("Failed to load payment script. Please refresh.");
+        console.error("Initialization error:", err);
+        setError("Failed to load payment. Please refresh.");
       }
     };
 
@@ -117,7 +77,7 @@ function Payment() {
         <HyperElements
           hyper={hyperPromise}
           options={{
-            clientSecret: clientSecret,
+            clientSecret,
             appearance: {
               labels: "floating",
             },

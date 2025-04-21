@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { PaymentElement, useHyper, useElements } from "@juspay-tech/react-hyper-js";
+import {
+  PaymentElement,
+  useHyper,
+  useElements,
+} from "@juspay-tech/react-hyper-js";
 import { useNavigate } from "react-router-dom";
 import Cart from "./Cart";
 import Completion from "./Completion";
 import "./App.css";
+import {
+  getClientSecretFromUrl,
+  handlePaymentStatus,
+  paymentElementOptions,
+} from "./utils";
 
 export default function CheckoutForm() {
   const hyper = useHyper();
@@ -14,24 +23,7 @@ export default function CheckoutForm() {
   const [message, setMessage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const clientSecret = new URLSearchParams(window.location.search).get(
-    "payment_intent_client_secret"
-  );
-
-  const handlePaymentStatus = (status) => {
-    const statusMessages = {
-      succeeded: "Payment successful.",
-      processing: "Your payment is processing.",
-      requires_payment_method: "Your payment was not successful. Please try again.",
-      requires_capture: "Payment is authorized and requires manual capture.",
-      requires_customer_action: "Customer needs to take further action.",
-      failed: "Payment failed. Please check your payment method.",
-    };
-
-    const messageToSet = statusMessages[status] || `Unexpected payment status: ${status}`;
-    setMessage(messageToSet);
-    setIsSuccess(status === "succeeded");
-  };
+  const clientSecret = getClientSecretFromUrl();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,7 +46,7 @@ export default function CheckoutForm() {
       }
 
       if (status) {
-        handlePaymentStatus(status);
+        handlePaymentStatus(status, setMessage, setIsSuccess);
       }
     } catch (err) {
       setMessage(`Error confirming payment: ${err.message}`);
@@ -68,9 +60,11 @@ export default function CheckoutForm() {
 
     const fetchPaymentIntent = async () => {
       try {
-        const { paymentIntent } = await hyper.retrievePaymentIntent(clientSecret);
+        const { paymentIntent } = await hyper.retrievePaymentIntent(
+          clientSecret
+        );
         if (paymentIntent?.status) {
-          handlePaymentStatus(paymentIntent.status);
+          handlePaymentStatus(paymentIntent.status, setMessage, setIsSuccess);
         }
       } catch (err) {
         console.error("Error retrieving payment intent:", err);
@@ -80,20 +74,6 @@ export default function CheckoutForm() {
 
     fetchPaymentIntent();
   }, [hyper, clientSecret]);
-
-  const paymentElementOptions = {
-    displayDefaultSavedPaymentIcon: false,
-    wallets: {
-      walletReturnUrl: window.location.origin,
-      applePay: "auto",
-      googlePay: "auto",
-      style: {
-        theme: "dark",
-        type: "default",
-        height: 55,
-      },
-    },
-  };
 
   return (
     <div className="browser">
@@ -117,7 +97,10 @@ export default function CheckoutForm() {
             <div className="payment-form">
               <form id="payment-form" onSubmit={handleSubmit}>
                 <div className="paymentElement">
-                  <PaymentElement id="payment-element" options={paymentElementOptions} />
+                  <PaymentElement
+                    id="payment-element"
+                    options={paymentElementOptions}
+                  />
                 </div>
                 <button
                   disabled={isProcessing || !hyper || !elements}
