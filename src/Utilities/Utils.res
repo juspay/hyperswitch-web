@@ -1509,6 +1509,8 @@ let isValidHexColor = (color: string): bool => {
   Js.Re.test_(hexRegex, color)
 }
 
+let convertKeyValueToJsonStringPair = (key, value) => (key, JSON.Encode.string(value))
+
 let validateName = (
   val: string,
   prev: RecoilAtomTypes.field,

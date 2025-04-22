@@ -1,20 +1,6 @@
+open Window
 type contentRect = {height: float}
 
-type element = {
-  mutable getAttribute: string => string,
-  mutable src: string,
-  mutable async: bool,
-  mutable rel: string,
-  mutable href: string,
-  mutable \"as": string,
-  mutable crossorigin: string,
-  mutable \"type": string,
-  mutable id: string,
-  mutable width: string,
-  mutable height: string,
-  contentWindow: option<Window.window>,
-  setAttribute: (string, string) => unit,
-}
 type keys = {
   clientSecret: option<string>,
   ephemeralKey?: string,
