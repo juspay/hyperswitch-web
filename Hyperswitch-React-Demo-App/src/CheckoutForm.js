@@ -4,10 +4,11 @@ import {
   useHyper,
   useElements,
 } from "@juspay-tech/react-hyper-js";
-import { useNavigate } from "react-router-dom";
 import Cart from "./Cart";
 import Completion from "./Completion";
 import "./App.css";
+
+// Utility functions to help with payment flow
 import {
   getClientSecretFromUrl,
   handlePaymentStatus,
@@ -17,7 +18,6 @@ import {
 export default function CheckoutForm() {
   const hyper = useHyper();
   const elements = useElements();
-  const navigate = useNavigate();
 
   const [isSuccess, setIsSuccess] = useState(false);
   const [message, setMessage] = useState(null);
@@ -25,15 +25,18 @@ export default function CheckoutForm() {
 
   const clientSecret = getClientSecretFromUrl();
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Prevent submission if Hyper isn't ready or already processing
     if (!hyper || !elements || isProcessing) return;
 
     setIsProcessing(true);
     setMessage(null);
 
     try {
+      // Confirm the payment using Hyper.js SDK
       const { error, status } = await hyper.confirmPayment({
         elements,
         confirmParams: {
@@ -45,6 +48,7 @@ export default function CheckoutForm() {
         setMessage(error.message || "An unknown error occurred.");
       }
 
+      // Handle status returned by Hyper.js (e.g., succeeded, processing, failed)
       if (status) {
         handlePaymentStatus(status, setMessage, setIsSuccess);
       }
@@ -55,6 +59,7 @@ export default function CheckoutForm() {
     }
   };
 
+  // On mount or when `hyper` and `clientSecret` are ready, retrieve the payment intent
   useEffect(() => {
     if (!hyper || !clientSecret) return;
 
@@ -63,6 +68,8 @@ export default function CheckoutForm() {
         const { paymentIntent } = await hyper.retrievePaymentIntent(
           clientSecret
         );
+
+        // Update UI based on the payment status
         if (paymentIntent?.status) {
           handlePaymentStatus(paymentIntent.status, setMessage, setIsSuccess);
         }
