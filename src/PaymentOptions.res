@@ -121,7 +121,7 @@ let make = (
   <div className="w-full">
     <div
       ref={payOptionsRef->ReactDOM.Ref.domRef}
-      className="flex flex-row overflow-auto no-scrollbar"
+      className="TabHeader flex flex-row overflow-auto no-scrollbar"
       dataTestId={TestUtils.paymentMethodListTestId}
       style={
         columnGap: themeObj.spacingTab,
