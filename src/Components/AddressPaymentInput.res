@@ -131,10 +131,6 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
 
   React.useEffect(() => {
     checkPostalValidity(postalCode, setPostalCode)
-    None
-  }, country.value)
-
-  React.useEffect(() => {
     setState(prev => {
       ...prev,
       value: "",
