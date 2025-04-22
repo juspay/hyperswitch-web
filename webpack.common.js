@@ -149,6 +149,8 @@ const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
+const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
+const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
   "SDK_TAG_VERSION",
   require("./package.json").version
@@ -250,6 +252,8 @@ module.exports = (publicPath = "auto") => {
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
+    visaAPIKeyId: JSON.stringify(visaAPIKeyId),
+    visaAPICertificatePem: JSON.stringify(visaAPICertificatePem),
   };
 
   const plugins = [

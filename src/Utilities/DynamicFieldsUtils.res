@@ -104,7 +104,14 @@ let addBillingAddressIfUseBillingAddress = (
   }
 }
 
-let clickToPayFields: array<PaymentMethodsRecord.paymentMethodsFields> = [Email, PhoneNumber]
+let getClickToPayFields = (provider): array<PaymentMethodsRecord.paymentMethodsFields> => {
+  open ClickToPayHelpers
+  switch provider {
+  | MASTERCARD => [Email, PhoneNumber]
+  | VISA => [Email, PhoneNumber, FullName]
+  | NONE => []
+  }
+}
 
 let isClickToPayFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
   switch fieldType {
@@ -127,9 +134,13 @@ let removeClickToPayFieldsIfSaveDetailsWithClickToPay = (
   }
 }
 
-let addClickToPayFieldsIfSaveDetailsWithClickToPay = (fieldsArr, isSaveDetailsWithClickToPay) => {
+let addClickToPayFieldsIfSaveDetailsWithClickToPay = (
+  fieldsArr,
+  isSaveDetailsWithClickToPay,
+  clickToPayProvider,
+) => {
   if isSaveDetailsWithClickToPay {
-    [...fieldsArr, ...clickToPayFields]
+    [...fieldsArr, ...getClickToPayFields(clickToPayProvider)]
   } else {
     fieldsArr
   }
@@ -844,12 +855,13 @@ let updateDynamicFields = (
   arr: array<PaymentMethodsRecord.paymentMethodsFields>,
   billingAddress,
   isSaveDetailsWithClickToPay,
+  clickToPayProvider,
 ) => {
   arr
   ->Utils.removeDuplicate
   ->Array.filter(item => item !== None)
   ->addBillingAddressIfUseBillingAddress(billingAddress)
-  ->addClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay)
+  ->addClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay, clickToPayProvider)
   ->combineStateAndCity
   ->combineCountryAndPostal
   ->combineCardExpiryMonthAndYear
