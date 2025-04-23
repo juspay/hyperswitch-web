@@ -23,6 +23,9 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Update git submodules
+        run: git submodule update --init --recursive
+
       - name: Install dependencies
         run: npm install --ignore-scripts
 
