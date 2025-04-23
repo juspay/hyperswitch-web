@@ -1149,6 +1149,8 @@ let loadClickToPayUIScripts = (
   }
 }
 
+let formatOrderId = orderId => orderId->String.replace("pay_", "")->String.slice(~start=0, ~end=48)
+
 let getVisaInitConfig = (token: clickToPayToken, clientSecret) => {
   {
     dpaTransactionOptions: {
@@ -1170,7 +1172,7 @@ let getVisaInitConfig = (token: clickToPayToken, clientSecret) => {
       acquirerMerchantId: token.acquirerMerchantId,
       merchantCategoryCode: token.merchantCategoryCode,
       merchantCountryCode: token.merchantCountryCode,
-      merchantOrderId: clientSecret->Option.getOr(""),
+      merchantOrderId: clientSecret->Option.getOr("")->formatOrderId,
     },
   }
 }
@@ -1209,7 +1211,7 @@ let checkoutVisaUnified = async (
       acquirerBIN: clickToPayToken.acquirerBIN,
       acquirerMerchantId: clickToPayToken.acquirerMerchantId,
       merchantName: clickToPayToken.dpaName,
-      merchantOrderId: orderId,
+      merchantOrderId: orderId->formatOrderId,
     },
   }
 
