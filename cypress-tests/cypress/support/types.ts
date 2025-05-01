@@ -1,19 +1,18 @@
-
-export { }; // indicate that file is a module
+export {}; // indicate that file is a module
 
 export type CustomerData = {
-    cardNo: string
-    cardExpiry: string
-    cardCVV: string
-    cardHolderName: string
-    email: string
-    address: string
-    city: string
-    country: string
-    state: string
-    postalCode: string
-    threeDSCardNo: string
-}
+  cardNo: string;
+  cardExpiry: string;
+  cardCVV: string;
+  cardHolderName: string;
+  email: string;
+  address: string;
+  city: string;
+  country: string;
+  state: string;
+  postalCode: string;
+  threeDSCardNo: string;
+};
 
 declare global {
     namespace Cypress {
