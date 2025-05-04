@@ -31,7 +31,7 @@ let make = (
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
-
+  // Console.log3("Payment Type is==>", paymentType, themeObj.colorBackground)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
   let handleFocus = _ => {
@@ -70,6 +70,7 @@ let make = (
     "transition-all ease-in duration-75"
   }
   let floatinglabelClass = inputFocused ? "Label--floating" : "Label--resting"
+  // Console.log4("isValid====>", isValid, innerLayout, errorString)
   let getClassName = initialLabel => {
     if value->String.length == 0 {
       `${initialLabel}--empty`
@@ -106,7 +107,12 @@ let make = (
       <div className={`relative w-full ${inputFieldClassName}`}>
         <input
           style={
-            background: isDisabled ? themeObj.disabledFieldColor : backgroundClass,
+            background: isDisabled
+              ? themeObj.disabledFieldColor
+              : {
+                  // Console.log("here")
+                  backgroundClass
+                },
             padding: themeObj.spacingUnit,
             width: fieldWidth,
             height,

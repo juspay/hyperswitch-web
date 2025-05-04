@@ -419,6 +419,10 @@ let itemToObjMapper = (
     "elements",
     ~logger,
   )
+  Console.log2(
+    "Apperance deconde  ======>",
+    getAppearance("appearance", dict, default, defaultRules, logger),
+  )
   {
     appearance: getAppearance("appearance", dict, default, defaultRules, logger),
     locale: getWarningString(dict, "locale", "auto", ~logger),

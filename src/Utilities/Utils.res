@@ -1217,6 +1217,7 @@ let eventHandlerFunc = (
 
 let makeIframe = (element, url) => {
   open Types
+  Console.log("Here is the flow")
   Promise.make((resolve, _) => {
     let iframe = createElement("iframe")
     iframe.id = "orca-fullscreen"
@@ -1229,6 +1230,22 @@ let makeIframe = (element, url) => {
     element->appendChild(iframe)
   })
 }
+let makeIframe4 = (element, url) => {
+  open Types
+  Console.log("Here is the flow")
+  Promise.make((resolve, _) => {
+    let iframe = createElement("iframe")
+    iframe.id = "orca-inneriframe"
+    iframe.src = url
+    iframe.name = "fullscreen"
+    iframe.style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+    iframe.onload = () => {
+      resolve(Dict.make())
+    }
+    element->appendChild(iframe)
+  })
+}
+
 let makeForm = (element, url, id) => {
   open Types
   let form = createElement("form")

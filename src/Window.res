@@ -181,13 +181,20 @@ let iframePostMessage = (iframeRef: nullable<Dom.element>, message) => {
   switch iframeRef->Nullable.toOption {
   | Some(ref) =>
     try {
+      Console.log("SendingMessage")
       ref
       ->contentWindow
       ->sendPostMessage(message)
     } catch {
-    | _ => ()
+    | _ => {
+        Console.log("CtachingMessage")
+        ()
+      }
     }
-  | None => Console.error("This element does not exist or is not mounted yet.")
+  | None => {
+      Console.log("none")
+      Console.error("This element does not exist or is not mounted yet.")
+    }
   }
 }
 

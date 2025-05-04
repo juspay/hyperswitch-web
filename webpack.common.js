@@ -45,6 +45,8 @@ const authorizedScriptSources = [
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
   "blob:",
+  "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
+  "https://9d5d-103-159-11-202.ngrok-free.app ",
   // Add other trusted sources here
 ];
 
@@ -101,6 +103,9 @@ const authorizedFrameSources = [
   "https://checkout.wallet.cat.earlywarning.io/",
   "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/",
   "https://sis-d.redsys.es",
+  "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
+  "https://vgs-collect-keeper.apps.verygood.systems/vgs",
+  "https://js.verygoodvault.com/",
   ...localhostSources,
   // Add other trusted sources here
 ];
@@ -133,6 +138,9 @@ const authorizedConnectSources = [
   "https://secure.checkout.visa.com",
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
+  "wss://42a94f53ed3a798ac0c7b8b2ae230892.serveo.net",
+  "wss://42a94f53ed3a798ac0c7b8b2ae230892.serveo.net:9050/ws",
+  "https://vgs-collect-keeper.apps.verygood.systems/vgs",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
   // Add other trusted sources here

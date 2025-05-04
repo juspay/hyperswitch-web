@@ -128,11 +128,20 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         logger,
       )
       let appearance =
-        optionsAppearance == CardTheme.defaultAppearance ? config.appearance : optionsAppearance
+        optionsAppearance == CardTheme.defaultAppearance
+          ? {
+              Console.log("Inside default")
+              config.appearance
+            }
+          : {
+              Console.log("Inside options")
+              optionsAppearance
+            }
       let localeString = await CardTheme.getLocaleObject(
         optionsLocaleString == "" ? config.locale : optionsLocaleString,
       )
       let constantString = await CardTheme.getConstantStringsObject()
+      Console.log2("Here for config===>", appearance)
       setConfig(_ => {
         config: {
           appearance,

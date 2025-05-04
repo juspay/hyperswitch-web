@@ -136,6 +136,7 @@ addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMou
 
 let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
+    // Console.log3("Coming here==>", keys, options)
     let publishableKey = switch keys->JSON.Classify.classify {
     | String(val) => val
     | Object(json) =>
@@ -427,7 +428,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.flatMap(x => x->Dict.get("return_url"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
-
+        // Console.log2("url===in hyper==>", url)
         let postSubmitMessage = message => {
           iframeRef.contents->Array.forEach(ifR => {
             ifR->Window.iframePostMessage(message)
@@ -441,6 +442,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             let handleMessage = (event: Types.event) => {
               let json = event.data->anyTypeToJson
               let dict = json->getDictFromJson
+              // Console.log2("the dict in yoer==>", dict)
               switch dict->Dict.get("submitSuccessful") {
               | Some(val) =>
                 logApi(
@@ -454,6 +456,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
                 let returnUrl =
                   dict->Dict.get("url")->Option.flatMap(JSON.Decode.string)->Option.getOr(url)
 
+                // Console.log2("returnUrl==>", returnUrl)
                 if isOneClick {
                   iframeRef.contents->Array.forEach(
                     ifR => {
@@ -468,13 +471,17 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
                 let submitSuccessfulValue = val->JSON.Decode.bool->Option.getOr(false)
 
+                // Console.log4("the vaule===>", isSdkButton, submitSuccessfulValue, redirect)
                 if isSdkButton && submitSuccessfulValue {
                   Utils.replaceRootHref(returnUrl, redirectionFlags)
                 } else if submitSuccessfulValue && redirect === "always" {
+                  // Console.log("Finally")
                   Utils.replaceRootHref(returnUrl, redirectionFlags)
                 } else if !submitSuccessfulValue {
+                  // Console.log("77777")
                   resolve1(json)
                 } else {
+                  // Console.log("88888")
                   resolve1(data)
                 }
               | None => ()

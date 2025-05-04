@@ -320,7 +320,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let checkoutEle = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
       {switch selectedOption->PaymentModeType.paymentMode {
-      | Card => <CardPayment cardProps expiryProps cvcProps />
+      // | Card => <CardPayment cardProps expiryProps cvcProps />
+      // | Card => <ExternalVault />
+      | Card => <SecureCardIframe />
       | Klarna =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="KlarnaPaymentLazy">
           <KlarnaPaymentLazy />

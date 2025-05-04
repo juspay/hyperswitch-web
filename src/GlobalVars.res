@@ -14,6 +14,7 @@ let getVersionFromStr = name =>
 @val external backendEndPoint: string = "backendEndPoint"
 @val external confirmEndPoint: string = "confirmEndPoint"
 @val external sdkUrl: string = "sdkUrl"
+// let sdkUrl = "https://42a94f53ed3a798ac0c7b8b2ae230892.serveo.net"
 @val external logEndpoint: string = "logEndpoint"
 @val external sentryDSN: string = "sentryDSN"
 @val external sentryScriptUrl: string = "sentryScriptUrl"

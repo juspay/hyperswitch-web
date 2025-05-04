@@ -482,7 +482,222 @@ let rec intentCall = (
               ~eventName,
               ~isPaymentSession,
             )
-            let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
+            let val = `{
+    "payment_id": "pay_U4BcHpNRIis7z29ixH55",
+    "merchant_id": "merchant_1701168699",
+    "status": "requires_customer_action",
+    "amount": 6500,
+    "net_amount": 6500,
+    "shipping_cost": null,
+    "amount_capturable": 6500,
+    "amount_received": null,
+    "connector": "checkout",
+    "client_secret": "pay_U4BcHpNRIis7z29ixH55_secret_ig6rKZKyukorfQsEvplF",
+    "created": "2025-04-28T17:54:09.335Z",
+    "currency": "USD",
+    "customer_id": "hyperswitch_sdk_demo_id",
+    "customer": {
+        "id": "hyperswitch_sdk_demo_id",
+        "name": "John Doe",
+        "email": "user@gmail.com",
+        "phone": "999999999",
+        "phone_country_code": "+65"
+    },
+    "description": "Hello this is description",
+    "refunds": null,
+    "disputes": null,
+    "mandate_id": null,
+    "mandate_data": null,
+    "setup_future_usage": "on_session",
+    "off_session": null,
+    "capture_on": null,
+    "capture_method": "automatic",
+    "payment_method": "card",
+    "payment_method_data": {
+        "card": {
+            "last4": "3340",
+            "card_type": "DEBIT",
+            "card_network": "Mastercard",
+            "card_issuer": "MASTERCARD INTERNATIONAL",
+            "card_issuing_country": "UNITED STATES",
+            "card_isin": "530688",
+            "card_extended_bin": null,
+            "card_exp_month": "02",
+            "card_exp_year": "2026",
+            "card_holder_name": null,
+            "payment_checks": null,
+            "authentication_data": null
+        },
+        "billing": null
+    },
+    "payment_token": "token_UihP2BR32aKDGGD3DFxg",
+    "shipping": {
+        "address": {
+            "city": "Banglore",
+            "country": "US",
+            "line1": "sdsdfsdf",
+            "line2": "hsgdbhd",
+            "line3": "alsksoe",
+            "zip": "571201",
+            "state": "California",
+            "first_name": "John",
+            "last_name": "Doe"
+        },
+        "phone": {
+            "number": "123456789",
+            "country_code": "+1"
+        },
+        "email": null
+    },
+    "billing": {
+        "address": {
+            "city": "San Fransico",
+            "country": "US",
+            "line1": "1467",
+            "line2": "Harrison Street",
+            "line3": "Harrison Street",
+            "zip": "94122",
+            "state": "California",
+            "first_name": "joseph",
+            "last_name": "Doe"
+        },
+        "phone": {
+            "number": "8056594427",
+            "country_code": "+91"
+        },
+        "email": null
+    },
+    "order_details": [
+        {
+            "brand": null,
+            "amount": 6500,
+            "category": null,
+            "quantity": 1,
+            "tax_rate": null,
+            "product_id": null,
+            "product_name": "Apple iphone 15",
+            "product_type": null,
+            "sub_category": null,
+            "product_img_link": null,
+            "product_tax_code": null,
+            "total_tax_amount": null,
+            "requires_shipping": null
+        }
+    ],
+    "email": "user@gmail.com",
+    "name": "John Doe",
+    "phone": "999999999",
+    "return_url": "https://hyperswitch-demo-store.netlify.app/?isTestingMode=true&publishableKey=pk_snd_23ff7c6d50e5424ba2e88415772380cd&secretKey=snd_iIwvrJvmQIaYsE8xzdfrbwEdxqmt3xUkiAG3yvyDS6Gsu3aL8bdjDpnMyXb7ANQL&profileId=pro_1PEZIEJyHhhZ3WJTVIVM&environment=Sandbox",
+    "authentication_type": "three_ds",
+    "statement_descriptor_name": null,
+    "statement_descriptor_suffix": null,
+    "next_action": {
+        "type": "three_ds_invoke",
+        "three_ds_data": {
+            "three_ds_authentication_url": "https://app.hyperswitch.io/api/payments/pay_U4BcHpNRIis7z29ixH55/3ds/authentication",
+            "three_ds_authorize_url": "https://app.hyperswitch.io/api/payments/pay_U4BcHpNRIis7z29ixH55/merchant_1701168699/authorize/checkout",
+            "three_ds_method_details": {
+                "three_ds_method_key": "threeDSMethodData",
+                "three_ds_method_data_submission": true,
+                "three_ds_method_data": "eyJ0aHJlZURTTWV0aG9kTm90aWZpY2F0aW9uVVJMIjoiaHR0cHM6Ly9leGFtcGxlLmNvbS8zZHMtbWV0aG9kLW5vdGlmaWNhdGlvbi11cmwiLCJ0aHJlZURTU2VydmVyVHJhbnNJRCI6IjZmNzQ1MzdkLTM1YzAtNGQyYi1iMDE1LTI3ZWE5NzNjYzcyNCJ9",
+                "three_ds_method_url": "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/acs/3ds-method"
+            },
+            "poll_config": {
+                "poll_id": "external_authentication_pay_U4BcHpNRIis7z29ixH55",
+                "delay_in_secs": 2,
+                "frequency": 5
+            },
+            "message_version": "2.3.1",
+            "directory_server_id": "A000000004"
+        }
+    },
+    "cancellation_reason": null,
+    "error_code": null,
+    "error_message": null,
+    "unified_code": null,
+    "unified_message": null,
+    "payment_experience": null,
+    "payment_method_type": "debit",
+    "connector_label": null,
+    "business_country": null,
+    "business_label": null,
+    "business_sub_label": null,
+    "allowed_payment_method_types": null,
+    "ephemeral_key": null,
+    "manual_retry_allowed": null,
+    "connector_transaction_id": null,
+    "frm_message": null,
+    "metadata": {
+        "udf1": "value1",
+        "login_date": "2019-09-10T10:11:12Z",
+        "new_customer": "true"
+    },
+    "connector_metadata": {
+        "apple_pay": null,
+        "airwallex": null,
+        "noon": {
+            "order_category": "applepay"
+        },
+        "braintree": null,
+        "adyen": null
+    },
+    "feature_metadata": null,
+    "reference_id": null,
+    "payment_link": null,
+    "profile_id": "pro_1PEZIEJyHhhZ3WJTVIVM",
+    "surcharge_details": null,
+    "attempt_count": 1,
+    "merchant_decision": null,
+    "merchant_connector_id": "mca_OSSNv3tVVO0dp6HbLgsw",
+    "incremental_authorization_allowed": null,
+    "authorization_count": null,
+    "incremental_authorizations": null,
+    "external_authentication_details": {
+        "authentication_flow": null,
+        "electronic_commerce_indicator": null,
+        "status": "pending",
+        "ds_transaction_id": "6f74537d-35c0-4d2b-b015-27ea973cc724",
+        "version": "2.3.1",
+        "error_code": null,
+        "error_message": null
+    },
+    "external_3ds_authentication_attempted": true,
+    "expires_on": "2025-04-28T18:09:09.335Z",
+    "fingerprint": null,
+    "browser_info": {
+        "os_type": "macOS",
+        "language": "en-GB",
+        "time_zone": -330,
+        "ip_address": "49.36.239.194",
+        "os_version": "10.15.7",
+        "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+        "color_depth": 24,
+        "device_model": "Macintosh",
+        "java_enabled": true,
+        "screen_width": 1728,
+        "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        "screen_height": 1117,
+        "accept_language": "en-GB,en-US;q=0.9,en;q=0.8",
+        "java_script_enabled": true
+    },
+    "payment_method_id": null,
+    "payment_method_status": null,
+    "updated": "2025-04-28T17:54:30.351Z",
+    "split_payments": null,
+    "frm_metadata": null,
+    "extended_authorization_applied": null,
+    "capture_before": null,
+    "merchant_order_reference_id": null,
+    "order_tax_amount": null,
+    "connector_mandate_id": null,
+    "card_discovery": "manual",
+    "force_3ds_challenge": false,
+    "force_3ds_challenge_trigger": false,
+    "issuer_error_code": null,
+    "issuer_error_message": null
+}`->JSON.parseExn
+
+            let intent = PaymentConfirmTypes.itemToObjMapper(val->getDictFromJson)
             let paymentMethod = switch paymentType {
             | Card => "CARD"
             | _ => intent.payment_method_type
@@ -492,14 +707,23 @@ let rec intentCall = (
             url.searchParams.set("payment_intent_client_secret", clientSecret)
             url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
             url.searchParams.set("status", intent.status)
+            // Console.log2("url===>", url)
 
             let handleProcessingStatus = (paymentType, sdkHandleOneClickConfirmPayment) => {
+              // Console.log("here 119999")
               switch (paymentType, sdkHandleOneClickConfirmPayment) {
               | (Card, _)
               | (Gpay, false)
               | (Applepay, false)
               | (Paypal, false) =>
+                // Console.log4(
+                //   "here 1188777===>",
+                //   paymentType,
+                //   sdkHandleOneClickConfirmPayment,
+                //   isPaymentSession,
+                // )
                 if !isPaymentSession {
+                  // Console.log("here 456545651")
                   if isCallbackUsedVal->Option.getOr(false) {
                     handleOnCompleteDoThisMessage()
                   } else {
@@ -508,12 +732,14 @@ let rec intentCall = (
 
                   postSubmitResponse(~jsonData=data, ~url=url.href)
                 } else if confirmParam.redirect === Some("always") {
+                  // Console.log("Here 22")
                   if isCallbackUsedVal->Option.getOr(false) {
                     handleOnCompleteDoThisMessage()
                   } else {
                     handleOpenUrl(url.href)
                   }
                 } else {
+                  // Console.log("Here 33")
                   resolve(data)
                 }
               | _ =>
@@ -808,6 +1034,7 @@ let rec intentCall = (
               }
               resolve(data)
             } else if intent.status != "" {
+              // Console.log("here 11")
               if intent.status === "succeeded" {
                 handleLogging(
                   ~optLogger,
