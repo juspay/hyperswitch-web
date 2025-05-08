@@ -52,11 +52,17 @@ type elementRef
 @val @scope("document") external body: body = "body"
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
+@val @scope("window")
+external addEventListener2: (string, _ => promise<unit>) => unit = "addEventListener"
+
 @send
 external elementQuerySelector: (elementRef, string) => Nullable.t<element> = "querySelector"
 
 @val @scope("window")
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
+@val @scope("window")
+external removeEventListener2: (string, 'ev => promise<unit>) => unit = "removeEventListener"
+
 @val @scope("window") external btoa: string => string = "btoa"
 @new external date: date = "Date"
 @get external value: Dom.element => 'a = "value"

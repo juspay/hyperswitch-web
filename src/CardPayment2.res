@@ -80,7 +80,7 @@ let make = () => {
   React.useEffect0(() => {
     messageParentWindow([("innerIframeMountedCallback", true->JSON.Encode.bool)])
     Console.log("sentmessage==>")
-    let handle = (ev: Window.event) => {
+    let handle = async (ev: Window.event) => {
       let json = ev.data->safeParse
       let dict = json->Utils.getDictFromJson
       if dict->Dict.get("innerIframeMounted")->Option.isSome {
@@ -123,12 +123,11 @@ let make = () => {
         //     optionsAppearance
         //   }
         let localeString = config.locale
-        // await CardTheme.getLocaleObject(
-        //   optionsLocaleString == "" ?  : optionsLocaleString,
-        // )
-        // let constantString = await CardTheme.getConstantStringsObject()
-        setConfig(prev => {
-          ...prev,
+        let localeObject = await CardTheme.getLocaleObject(
+          localeString == "" ? "auto" : localeString,
+        )
+        let constantString = await CardTheme.getConstantStringsObject()
+        setConfig(_ => {
           config: {
             appearance: config.appearance,
             locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
@@ -140,14 +139,14 @@ let make = () => {
             loader: config.loader,
           },
           themeObj: appearance.variables,
-          // localeString,
-          // constantString,
-          // showLoader: config.loader == Auto || config.loader == Always,
+          localeString: localeObject,
+          constantString,
+          showLoader: config.loader == Auto || config.loader == Always,
         })
       }
     }
-    Window.addEventListener("message", handle)
-    Some(() => {Window.removeEventListener("message", handle)})
+    Window.addEventListener2("message", handle)
+    Some(() => {Window.removeEventListener2("message", handle)})
   })
 
   React.useEffect(() => {

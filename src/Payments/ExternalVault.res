@@ -14,7 +14,7 @@ type value2 = {
 // type iframetype = {width: string}
 
 type styleField = {width: string}
-let styleValue = {width: "200%"}
+let styleValue = {width: "100%"}
 type cssType = {
   display: string,
   boxSizing: string,
@@ -36,7 +36,7 @@ type cssType = {
 let cssValue = {
   display: "inline-block",
   boxSizing: "border-box",
-  width: "200%",
+  width: "100%",
   fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI",
   color: "#000000",
   \"&::placeholder": {
@@ -45,7 +45,7 @@ let cssValue = {
   fontSize: "16px",
   padding: "10px",
   paddingRight: "6px",
-  height: "64px", // equivalent to h-16 in Tailwind
+  height: "62px", // equivalent to h-16 in Tailwind
   lineHeight: "1.5rem",
   // display: "flex",
   // alignItems: "center",
@@ -68,30 +68,92 @@ let cssValue = {
 //   \"border-radius": string,
 //   //   background: string,
 // }
+type cardBrandInfo = {
+  \"type": string,
+  pattern: RescriptCore.Re.t,
+  format?: RescriptCore.Re.t,
+  length?: array<int>,
+  cvcLength?: array<int>,
+  luhn?: bool,
+  useExtendedBin?: bool,
+}
+
 type fieldOptions = {
   \"type": string,
   name: string,
   placeholder: string,
   validations: array<string>,
+  errorColor: string,
   showCardIcon?: bool,
+  addCardBrands?: array<cardBrandInfo>,
   css: cssType,
   style: styleField,
 }
+
 type returnValue = {
   field: (string, fieldOptions) => unit,
-  submit: (string, JSON.t, (JSON.t, JSON.t) => unit) => unit,
+  submit: (string, JSON.t, (int, JSON.t) => unit, JSON.t => unit) => unit,
 }
-type formState
+
 type vGSForm
 @send
 external field: (string, fieldOptions) => unit = "field"
 @val
-external create: (string, string, formState => unit) => returnValue = "VGSCollect.create"
+external create: (string, string, JSON.t => unit) => returnValue = "VGSCollect.create"
+
+// Define error state type
+type errorInfo = {
+  message: string,
+  details: JSON.t,
+  description: string,
+  code: int,
+}
+type errorField = {
+  errorMessages: array<string>,
+  isDirty: bool,
+  isEmpty: bool,
+  isFocused: bool,
+  isValid: bool,
+  isTouched: bool,
+  errors: array<errorInfo>,
+  name: string,
+}
+
+type cardNumberField = {
+  ...errorField,
+  cardType: option<string>,
+  last4: option<string>,
+  bin: option<string>,
+}
+
+type formErrors = {
+  card_holder?: errorField,
+  card_number?: errorField,
+  card_exp?: errorField,
+  card_cvc?: errorField,
+}
+
+let cardBrandPatterns = CardPattern.cardPatterns->Array.map(obj => {
+  let cardBrandName = obj.issuer->String.toLowerCase
+  let formatterCardName = cardBrandName == "americanexpress" ? "amex" : cardBrandName
+  let pattern = obj.pattern
+  let length = obj.length
+  let cvcLength = obj.cvcLength
+  {\"type": formatterCardName, pattern, length, cvcLength}
+})
 
 @react.component
 let make = () => {
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let supportedCardBrands = React.useMemo(() => {
+    paymentMethodListValue->PaymentUtils.getSupportedCardBrands
+  }, [paymentMethodListValue])
+  Js.log2("Supported Card Brands:", supportedCardBrands)
   let (vgsScriptLoaded, setVgsScriptLoaded) = React.useState(() => false)
   let vaultRef = React.useRef(Nullable.null)
+  let (formErrors, setFormErrors) = React.useState(() => Js.Dict.empty()->Obj.magic)
+  let (currentCardBrand, setCurrentCardBrand) = React.useState(() => None)
+  // let (customErrors, setCustomErrors) = React.useState(() => Js.Dict.empty()->Obj.magic)
   //   let (loggerState, _setLoggerState) = Recoil.useRecoilState(RecoilAtoms.loggerAtom)
 
   //   UtilityHooks.useHandlePostMessages(
@@ -121,10 +183,43 @@ let make = () => {
     })
     Window.body->Window.appendChild(vgsScript)
   }
+
+  let getErrorMessage = fieldName => {
+    switch Js.Dict.get(formErrors, fieldName) {
+    | Some(field) if field.errorMessages->Array.length > 0 => Some(field.errorMessages[0])
+    | _ => None
+    }
+  }
+
+  let hasError = fieldName => {
+    switch Js.Dict.get(formErrors, fieldName) {
+    | Some(_) => true
+    | None => false
+    }
+  }
+
+  let handleFieldState = state => {
+    Js.log2("VGS field state:", state)
+
+    // Extract card type if available
+    switch Js.Dict.get(state->Utils.getDictFromJson, "card_number")->Obj.magic {
+    | Some(cardField) =>
+      switch cardField.cardType {
+      | Some(cardType) => setCurrentCardBrand(_ => Some(cardType))
+      // Clear any custom error if the card brand changes
+      // let newErrors = Dict.copy(customErrors)
+      // newErrors->Js.Dict.set("card_number", None)
+      // setCustomErrors(_ => newErrors)
+      | _ => setCurrentCardBrand(_ => None)
+      }
+    | None => ()
+    }
+  }
+
   React.useEffect(() => {
     if vgsScriptLoaded {
       let vault = create("tnt6amq0tzx", "sandbox", state => {
-        // Js.log2("VGS field state:", state)()
+        handleFieldState(state)
         ()
       })
 
@@ -137,6 +232,7 @@ let make = () => {
           placeholder: "Joe Business",
           validations: ["required"],
           name: "card_holder",
+          errorColor: "#D8000C",
           // css: {
           //   color: "red",
           //   border: "solid 1px #1b1d1f",
@@ -154,7 +250,9 @@ let make = () => {
           name: "card_number",
           placeholder: "4111 1111 1111 1111",
           validations: ["required", "validCardNumber"],
+          errorColor: "#D8000C",
           showCardIcon: true,
+          addCardBrands: cardBrandPatterns,
           // css: {
           //   color: "#31708f",
           //   border: "solid 1px #1b1d1f",
@@ -174,6 +272,7 @@ let make = () => {
           name: "card_exp",
           placeholder: "MM / YY",
           validations: ["required", "validCardExpirationDate"],
+          errorColor: "#D8000C",
           // css: {
           //   color: "#31708f",
           //   border: "solid 1px #1b1d1f",
@@ -193,7 +292,8 @@ let make = () => {
           name: "card_cvc",
           placeholder: "123",
           validations: ["required", "validCardSecurityCode"],
-          // showCardIcon: true,
+          errorColor: "#D8000C",
+          showCardIcon: true,
           // css: {
           //   color: "#31708f",
           //   border: "solid 1px #1b1d1f",
@@ -209,11 +309,49 @@ let make = () => {
     }
     None
   }, [vgsScriptLoaded])
+
   mountVGSSDK()
+
+  let vgsCardTypeMapper = str => {
+    switch str {
+    | "amex" => "americanexpress"
+    | _ => str
+    }
+  }
+
+  let isCardBrandSupported = React.useCallback(() => {
+    switch currentCardBrand {
+    | Some(brand) =>
+      // Check if the brand is in the supported list
+      supportedCardBrands
+      ->Option.getOr([])
+      ->Array.some(supportedBrand =>
+        supportedBrand->String.toLowerCase == brand->vgsCardTypeMapper->String.toLowerCase
+      )
+    | None => true // If no brand detected yet, don't block submission
+    }
+  }, (currentCardBrand, supportedCardBrands))
+
   let submitCallback = React.useCallback((ev: Window.event) => {
     // ev->ReactEvent.Keyboard.preventDefault
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+
+    // if !isCardBrandSupported() {
+    //   // Set a custom error for unsupported card brand
+    //   let newErrors = Dict.copy(customErrors)
+    //   let errorMessage = switch currentCardBrand {
+    //   | Some(brand) => `Card brand "${brand}" is not supported`
+    //   | None => "Card brand not detected"
+    //   }
+    //   newErrors->Js.Dict.set("card_number", Some(errorMessage))
+    //   setCustomErrors(_ => newErrors)
+    //   // postFailedSubmitResponse(
+    //   //   ~errortype="validation_error",
+    //   //   ~message="Please fill supported card brand",
+    //   // )
+    // } else {
+    //   setCustomErrors(_ => Js.Dict.empty())
     if confirm.doSubmit {
       // Console.log2("coming here", ev)
       switch Window.window
@@ -232,50 +370,104 @@ let make = () => {
 
         switch Js.Nullable.toOption(vaultRef.current) {
         | Some(vault) =>
-          vault.submit("/post", "{}"->Identity.anyTypeToJson, (status, data) => {
-            Console.log2("Tokenized Data =>", data)
-            // set
-          })
+          // if !isCardBrandSupported() {
+          //   setFormErrors(_ => Js.Dict.empty()->Obj.magic)
+          //   postFailedSubmitResponse(
+          //     ~errortype="validation_error",
+          //     ~message=`Card brand ${currentCardBrand->Option.getOr("")} not supported`,
+          //   )
+          // } else {
+          vault.submit(
+            "/post",
+            "{}"->Identity.anyTypeToJson,
+            (status, data) => {
+              Js.Console.log2("Status =>", status)
+              if status == 200 {
+                Console.log2("Tokenized Data =>", data)
+                Console.log("Success")
+
+                setFormErrors(_ => Js.Dict.empty()->Obj.magic)
+              }
+
+              // set
+            },
+            error => {
+              Console.log2("Error =>", error)
+              postFailedSubmitResponse(
+                ~errortype="validation_error",
+                ~message="Please enter all fields",
+              )
+              setFormErrors(_ => error->Utils.getDictFromJson->Obj.magic)
+              // set
+            },
+          )
+        // }
+
         | None => Js.Console.error("Vault not initialized")
         }
       // `)
       | None => Js.Console.error("Form not found")
       }
     }
+    // }
   }, ())
+
   useSubmitPaymentData(submitCallback)
+
+  let getFieldClasses = fieldName => {
+    let baseClasses = "w-full h-16 relative mb-1 rounded px-[10px] border bg-white overflow-hidden form-field-vgs"
+    hasError(fieldName)
+      ? baseClasses ++ " border-red-500"
+      : baseClasses ++ " shadow-[0_0_3px_0px_#bcbcbc] border-transparent"
+  }
+
   <form id="vgs-collect-form">
-    <label> {"Name on card"->React.string} </label>
-    <div
-      id="cc-name"
-      className={`w-full h-16 relative mb-6 rounded shadow-[0_0_3px_0px_#bcbcbc] px-[10px] border border-transparent bg-white`}
-    />
-    <label> {"Card number"->React.string} </label>
-    <div
-      id="cc-number"
-      className={`w-full h-16 relative mb-6 rounded shadow-[0_0_3px_0px_#bcbcbc] px-[10px] border border-transparent bg-white`}
-      style={
-        display: "flex",
-        width: "100%",
-      }
-    />
-    <div className="flex flex-row w-full place-content-between">
+    <div className="mb-4">
+      <label className="block mb-1"> {"Name on card"->React.string} </label>
+      <div id="cc-name" className={getFieldClasses("card_holder")} />
+      {switch getErrorMessage("card_holder") {
+      | Some(errorMsg) =>
+        <p className="text-red-500 text-sm mt-1"> {errorMsg->Option.getOr("")->React.string} </p>
+      | None => React.null
+      }}
+    </div>
+    <div className="mb-4">
+      <label className="block mb-1"> {"Card number"->React.string} </label>
+      <div
+        id="cc-number"
+        className={getFieldClasses("card_number")}
+        style={
+          display: "flex",
+          width: "100%",
+        }
+      />
+      {switch getErrorMessage("card_number") {
+      | Some(errorMsg) =>
+        <p className="text-red-500 text-sm mt-1"> {errorMsg->Option.getOr("")->React.string} </p>
+      | None => React.null
+      }}
+    </div>
+    <div className="flex flex-row w-full place-content-between mb-6">
       <div className="w-[47%]">
-        <label> {"Exp. Date"->React.string} </label>
-        <div
-          id="cc-expiry"
-          className="w-full h-16 relative mb-6 rounded shadow-[0_0_3px_0px_#bcbcbc] px-[10px] border border-transparent bg-white"
-        />
+        <label className="block mb-1"> {"Exp. Date"->React.string} </label>
+        <div id="cc-expiry" className={getFieldClasses("card_exp")} />
+        {switch getErrorMessage("card_exp") {
+        | Some(errorMsg) =>
+          <p className="text-red-500 text-sm mt-1"> {errorMsg->Option.getOr("")->React.string} </p>
+        | None => React.null
+        }}
       </div>
       <div className="w-[47%]">
-        <label> {"CVV/CVC"->React.string} </label>
-        <div
-          id="cc-cvc"
-          className="w-full h-16 relative mb-6 rounded shadow-[0_0_3px_0px_#bcbcbc] px-[10px] border border-transparent bg-white"
-          style={display: "flex"}
-        />
+        <label className="block mb-1"> {"CVV/CVC"->React.string} </label>
+        <div id="cc-cvc" className={getFieldClasses("card_cvc")} style={display: "flex"} />
+        {switch getErrorMessage("card_cvc") {
+        | Some(errorMsg) =>
+          <p className="text-red-500 text-sm mt-1"> {errorMsg->Option.getOr("")->React.string} </p>
+        | None => React.null
+        }}
       </div>
     </div>
+
     // <button type_="submit"> {"Test your form"->React.string} </button>
   </form>
 }

@@ -14,3 +14,7 @@ input::-webkit-credentials-auto-fill-button,
 input::-webkit-contacts-auto-fill-button {
   width: 0 !important;
 }
+
+.form-field-vgs iframe {
+  width: 100%;
+}
