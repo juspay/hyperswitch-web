@@ -1149,7 +1149,13 @@ let loadClickToPayUIScripts = (
   }
 }
 
-let formatOrderId = orderId => orderId->String.replace("pay_", "")->String.slice(~start=0, ~end=48)
+let formatOrderId = orderId =>
+  orderId
+  ->String.replace("pay_", "")
+  ->String.split("_secret_")
+  ->Array.at(0)
+  ->Option.getOr("")
+  ->String.slice(~start=0, ~end=40)
 
 let getVisaInitConfig = (token: clickToPayToken, clientSecret) => {
   {
