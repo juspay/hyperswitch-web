@@ -265,8 +265,8 @@ module.exports = (publicPath = "auto") => {
     new HtmlWebpackPlugin({
       inject: true,
       template: "./public/build.html",
-      //       chunks: ["app"],
-      //       scriptLoading: "blocking",
+      chunks: ["app"],
+      scriptLoading: "blocking",
       //       // Add CSP meta tag
       //       meta: {
       //         "Content-Security-Policy": {
