@@ -268,20 +268,20 @@ module.exports = (publicPath = "auto") => {
       chunks: ["app"],
       scriptLoading: "blocking",
       // Add CSP meta tag
-      meta: {
-        "Content-Security-Policy": {
-          "http-equiv": "Content-Security-Policy",
-          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-            " "
-          )}; 
-          style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")};
-          img-src ${authorizedImageSources.join(" ")};
-          font-src ${authorizedFontSources.join(" ")}; 
-          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
-`,
-        },
-      },
+      //       meta: {
+      //         "Content-Security-Policy": {
+      //           "http-equiv": "Content-Security-Policy",
+      //           content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+      //             " "
+      //           )};
+      //           style-src ${authorizedStyleSources.join(" ")};
+      //           frame-src ${authorizedFrameSources.join(" ")};
+      //           img-src ${authorizedImageSources.join(" ")};
+      //           font-src ${authorizedFontSources.join(" ")};
+      //           connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
+      // `,
+      //         },
+      //       },
     }),
     new HtmlWebpackPlugin({
       // Also generate a test.html
@@ -289,20 +289,20 @@ module.exports = (publicPath = "auto") => {
       filename: "fullscreenIndex.html",
       template: "./public/fullscreenIndexTemplate.html",
       // Add CSP meta tag
-      meta: {
-        "Content-Security-Policy": {
-          "http-equiv": "Content-Security-Policy",
-          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-            " "
-          )};
-          style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")}; 
-          img-src ${authorizedImageSources.join(" ")};
-          font-src ${authorizedFontSources.join(" ")};
-          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
-          `,
-        },
-      },
+      // meta: {
+      //   "Content-Security-Policy": {
+      //     "http-equiv": "Content-Security-Policy",
+      //     content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+      //       " "
+      //     )};
+      //     style-src ${authorizedStyleSources.join(" ")};
+      //     frame-src ${authorizedFrameSources.join(" ")};
+      //     img-src ${authorizedImageSources.join(" ")};
+      //     font-src ${authorizedFontSources.join(" ")};
+      //     connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
+      //     `,
+      //   },
+      // },
     }),
     new SubresourceIntegrityPlugin({
       hashFuncNames: ["sha384"],
