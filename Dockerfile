@@ -1,26 +1,23 @@
-FROM node:20-alpine
+# Multi-platform Node 20 Alpine
+FROM --platform=$BUILDPLATFORM node:20-alpine
 
-# Add build essentials
+# Add build essentials for compiling native modules
 RUN apk add --no-cache make gcc g++ python3
 
 WORKDIR /usr/src/app
 
-# Copy package files
+# Copy package files and install dependencies
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install --ignore-scripts
 
-# Copy the rest of the application code
+# Copy the rest of the code
 COPY . .
 
-# First, build ReScript code and wait for it to complete
-RUN npm run re:build && \
-    # Then build the application with webpack
-    npm run build
+# Build ReScript first, then final build
+RUN npm run re:build && npm run build
 
+# Expose the port
 EXPOSE 9050
 
-# For development, use a start script that ensures ReScript watch mode
-# runs before starting webpack dev server
-CMD npm run re:build && npm run start
+# Development mode CMD
+CMD ["sh", "-c", "npm run re:build && npm run start"]
