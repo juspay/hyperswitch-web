@@ -26,6 +26,11 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
   }
   let nameRef = React.useRef(Nullable.null)
 
+  React.useEffect(() => {
+    setFullName(prev => validateName(prev.value, prev, localeString))
+    None
+  }, [])
+
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper

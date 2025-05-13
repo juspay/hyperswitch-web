@@ -19,6 +19,13 @@ module.exports = (endpoint, publicPath = "auto") => {
       path: path.resolve(__dirname, "dist"),
       clean: true,
     },
+    // Add this resolve section to fix the jsx-runtime issue
+    resolve: {
+      extensions: ['.js', '.jsx', '.json', '.mjs'],
+      alias: {
+        'react/jsx-runtime': require.resolve('react/jsx-runtime')
+      }
+    },
     optimization: {
       sideEffects: true,
       minimize: true,

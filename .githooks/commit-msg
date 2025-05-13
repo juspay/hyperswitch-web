@@ -46,13 +46,13 @@ echo
 echo "${YELLOW}*****~~~~~ Commit message validation! ~~~~~*****${NC}"
 echo
 
-commit_regex="^(Merge branch|(feat|fix|chore|refactor|docs|test|style|enhancement|ci):).+"
+commit_regex="^(Merge branch|(feat|fix|chore|refactor|docs|test|style|enhancement|ci|revert)(\([a-zA-Z0-9-]+\))?:).+"
 
 if ! echo "$commit_msg" | grep -Ei "$commit_regex" ; then
     echo "${RED}Aborting commit. Your commit message does not follow the conventional format.${NC}"
-    echo "${YELLOW}The commit message should begin with one of the following keywords followed by a colon:${NC}"
-    echo "${YELLOW}'feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'ci', 'style', or 'enhancement'${NC}"
-    echo "${YELLOW}Example: 'feat: add new payment method support - integrated Razorpay'{NC}"
+    echo "${YELLOW}The commit message should begin with one of the following keywords followed by a colon and an optional scope in parentheses:${NC}"
+    echo "${YELLOW}'feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'style', 'enhancement', 'revert', or 'ci'${NC}"
+    echo "${YELLOW}Example: 'feat(api): add user authentication endpoint' or 'fix(ui): resolve button alignment issue'${NC}"
     exit 1
 fi
 

@@ -6,11 +6,11 @@ let cardsToRender = (width: int) => {
   let noOfCards = (width - 40) / minWidth
   noOfCards
 }
+
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
 
-  let sessionsObj = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let {
     showCardFormByDefault,
     paymentMethodOrder,
@@ -24,11 +24,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let paymentMethodList = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGPayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
-  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
-  let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
+  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(RecoilAtoms.selectedOptionAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
@@ -58,6 +58,15 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, (clickToPayConfig, isClickToPayAuthenticateError))
 
   let layoutClass = CardUtils.getLayoutClass(layout)
+
+  let (getVisaCards, closeComponentIfSavedMethodsAreEmpty) = ClickToPayHook.useClickToPay(
+    ~areClickToPayUIScriptsLoaded,
+    ~setSessions,
+    ~setAreClickToPayUIScriptsLoaded,
+    ~savedMethods,
+    ~loadSavedCards,
+    ~setShowFields,
+  )
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
@@ -220,85 +229,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }
     None
   }, (paymentMethodList, walletList, paymentOptionsList, actualList, showCardFormByDefault))
-
-  let loadMastercardClickToPayScript = ssn => {
-    open Promise
-    let dict = ssn->getDictFromJson
-    let clickToPaySessionObj = SessionsType.itemToObjMapper(dict, ClickToPayObject)
-    let clickToPayToken = SessionsType.getPaymentSessionObj(
-      clickToPaySessionObj.sessionsToken,
-      ClickToPay,
-    )
-
-    switch clickToPayToken {
-    | ClickToPayTokenOptional(optToken) =>
-      switch optToken {
-      | Some(token) =>
-        let clickToPayToken = ClickToPayHelpers.clickToPayTokenItemToObjMapper(token)
-        let isProd = publishableKey->String.startsWith("pk_prd_")
-        ClickToPayHelpers.loadClickToPayScripts(loggerState)
-        ->then(_ => {
-          setAreClickToPayUIScriptsLoaded(_ => true)
-          resolve()
-        })
-        ->catch(_ => {
-          loggerState.setLogError(
-            ~value="ClickToPay UI Kit CSS Load Error",
-            ~eventName=CLICK_TO_PAY_SCRIPT,
-          )
-          resolve()
-        })
-        ->ignore
-        ClickToPayHelpers.loadMastercardScript(clickToPayToken, isProd, loggerState)
-        ->then(resp => {
-          let availableCardBrands =
-            resp
-            ->Utils.getDictFromJson
-            ->Utils.getArray("availableCardBrands")
-            ->Array.map(item => item->JSON.Decode.string->Option.getOr(""))
-            ->Array.filter(item => item !== "")
-
-          setClickToPayConfig(prev => {
-            ...prev,
-            isReady: Some(true),
-            availableCardBrands,
-            email: clickToPayToken.email,
-            dpaName: clickToPayToken.dpaName,
-          })
-          resolve()
-        })
-        ->catch(_ => {
-          setClickToPayConfig(prev => {
-            ...prev,
-            isReady: Some(false),
-          })
-          resolve()
-        })
-        ->ignore
-      | None =>
-        setClickToPayConfig(prev => {
-          ...prev,
-          isReady: Some(false),
-        })
-      }
-    | _ =>
-      setClickToPayConfig(prev => {
-        ...prev,
-        isReady: Some(false),
-      })
-    }
-  }
-
-  React.useEffect(() => {
-    switch sessionsObj {
-    | Loaded(ssn) => {
-        setSessions(_ => ssn)
-        loadMastercardClickToPayScript(ssn)
-      }
-    | _ => ()
-    }
-    None
-  }, [sessionsObj])
 
   React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
@@ -515,26 +445,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (paymentMethodList, customerPaymentMethods))
 
-  React.useEffect(() => {
-    let fetchCards = async () => {
-      switch clickToPayConfig.isReady {
-      | Some(true) =>
-        let cardsResult = await ClickToPayHelpers.getCards(loggerState)
-        switch cardsResult {
-        | Ok(cards) =>
-          setClickToPayConfig(prev => {
-            ...prev,
-            clickToPayCards: Some(cards),
-          })
-        | Error(_) => ()
-        }
-      | _ => ()
-      }
-    }
-    fetchCards()->ignore
-    None
-  }, [clickToPayConfig.isReady])
-
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div
@@ -563,6 +473,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           sessions
           isClickToPayAuthenticateError
           setIsClickToPayAuthenticateError
+          getVisaCards
+          closeComponentIfSavedMethodsAreEmpty
         />
       </RenderIf>
     }}
