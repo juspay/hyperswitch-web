@@ -68,3 +68,34 @@ export const stripeCards = {
 
 }
 
+export const redsysCards = {
+    threedsInvokeChallengeTestCard:{
+        cardNo: "4918019199883839",
+        cardScheme: "Visa",
+        cvc: "123",
+        card_exp_month:"12",
+        card_exp_year:"30",
+    },
+    threedsInvokeFrictionlessTestCard:{
+        cardNo: "4918019160034602",
+        cardScheme: "Visa",
+        cvc: "123",
+        card_exp_month:"12",
+        card_exp_year:"30",
+    },
+    challengeTestCard:{
+        cardNo: "4548817212493017",
+        cardScheme: "Visa",
+        cvc: "123",
+        card_exp_month:"12",
+        card_exp_year:"30",
+    },
+    frictionlessTestCard:{
+        cardNo: "4548814479727229",
+        cardScheme: "Visa",
+        cvc: "123",
+        card_exp_month:"12",
+        card_exp_year:"30",
+    }
+}
+
