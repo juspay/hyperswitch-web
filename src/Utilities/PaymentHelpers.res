@@ -536,6 +536,22 @@ let rec intentCall = (
                   ~paymentMethod,
                 )
                 handleOpenUrl(intent.nextAction.redirectToUrl)
+              } else if intent.nextAction.type_ == "redirect_inside_popup" {
+                let popupUrl = intent.nextAction.popupUrl
+                handleLogging(
+                  ~optLogger,
+                  ~value="",
+                  ~internalMetadata=popupUrl,
+                  ~eventName=THREE_DS_POPUP_REDIRECTION,
+                  ~paymentMethod,
+                )
+                let metaData = [("popupUrl", popupUrl->JSON.Encode.string)]->Dict.fromArray
+                messageParentWindow([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", `3dsRedirectionPopup`->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                  ("metadata", metaData->JSON.Encode.object),
+                ])
               } else if intent.nextAction.type_ == "display_bank_transfer_information" {
                 let metadata = switch intent.nextAction.bank_transfer_steps_and_charges_details {
                 | Some(obj) => obj->getDictFromJson
