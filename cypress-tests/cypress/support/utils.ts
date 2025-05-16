@@ -10,13 +10,17 @@ export const enum connectorEnum {
   TRUSTPAY,
   ADYEN,
   STRIPE,
-  NETCETERA
+  NETCETERA,
+  REDSYS,
+  MIFINITY
 }
 export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
   [connectorEnum.ADYEN, "pro_Kvqzu8WqBZsT1OjHlCj4"],
   [connectorEnum.STRIPE, "pro_5fVcCxU8MFTYozgtf0P8"],
-  [connectorEnum.NETCETERA, "pro_h9VHXnJx8s6W4KSZfSUL"]
+  [connectorEnum.NETCETERA, "pro_h9VHXnJx8s6W4KSZfSUL"],
+  [connectorEnum.REDSYS, "pro_6BcODfWXoRbntNHkNV1J"],
+  [connectorEnum.MIFINITY, "pro_reQgggKZjGvnmnJ7O10c"],
 ]);
 
 export const createPaymentBody = {
@@ -80,7 +84,7 @@ export const createPaymentBody = {
 
 }
 
-export const changeObjectKeyValue = (object: Record<string, any>, key: string, value: boolean | string) => {
+export const changeObjectKeyValue = (object: Record<string, any>, key: string, value: boolean | string | object) => {
   object[key] = value
 }
 
