@@ -107,7 +107,7 @@ let make = (
 
   //<...>//
 
-  let {clickToPayProvider} = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
 
   let fieldsArr = React.useMemo(() => {
     PaymentMethodsRecord.getPaymentMethodFields(
@@ -116,7 +116,7 @@ let make = (
       ~isSavedCardFlow,
       ~isAllStoredCardsHaveName,
     )
-    ->updateDynamicFields(billingAddress, isSaveDetailsWithClickToPay, clickToPayProvider)
+    ->updateDynamicFields(billingAddress, isSaveDetailsWithClickToPay, clickToPayConfig)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow, isSaveDetailsWithClickToPay))
