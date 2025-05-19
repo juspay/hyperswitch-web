@@ -81,26 +81,7 @@ const authorizedImageSources = [
 // List of authorized external frame sources
 const authorizedFrameSources = [
   "'self'",
-  "https://checkout.hyperswitch.io",
-  "https://dev.hyperswitch.io",
-  "https://beta.hyperswitch.io",
-  "https://live.hyperswitch.io",
-  "https://integ.hyperswitch.io",
-  "https://integ-api.hyperswitch.io",
-  "https://app.hyperswitch.io",
-  "https://sandbox.hyperswitch.io",
-  "https://integ-api.hyperswitch.io",
-  "https://api.hyperswitch.io",
-  "https://pay.google.com",
-  "https://www.sandbox.paypal.com",
-  "https://www.paypal.com",
-  "https://sandbox.src.mastercard.com",
-  "https://src.mastercard.com",
-  "https://sandbox.secure.checkout.visa.com",
-  "https://secure.checkout.visa.com",
-  "https://checkout.wallet.cat.earlywarning.io/",
-  "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/",
-  "https://sis-d.redsys.es",
+  "https:",
   ...localhostSources,
   // Add other trusted sources here
 ];
@@ -267,19 +248,21 @@ module.exports = (publicPath = "auto") => {
       template: "./public/build.html",
       chunks: ["app"],
       scriptLoading: "blocking",
-      // Add CSP meta tag
+      //       // Add CSP meta tag
       meta: {
         "Content-Security-Policy": {
           "http-equiv": "Content-Security-Policy",
           content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
             " "
-          )}; 
-          style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")};
-          img-src ${authorizedImageSources.join(" ")};
-          font-src ${authorizedFontSources.join(" ")}; 
-          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
-`,
+          )};
+                style-src ${authorizedStyleSources.join(" ")};
+                frame-src ${authorizedFrameSources.join(" ")};
+                img-src ${authorizedImageSources.join(" ")};
+                font-src ${authorizedFontSources.join(" ")};
+                connect-src ${authorizedConnectSources.join(
+                  " "
+                )} ${logEndpoint} ;
+      `,
         },
       },
     }),
@@ -296,7 +279,7 @@ module.exports = (publicPath = "auto") => {
             " "
           )};
           style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")}; 
+          frame-src ${authorizedFrameSources.join(" ")};
           img-src ${authorizedImageSources.join(" ")};
           font-src ${authorizedFontSources.join(" ")};
           connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
