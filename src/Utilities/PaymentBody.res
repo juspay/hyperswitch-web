@@ -153,7 +153,7 @@ let clickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
 let visaClickToPayBody = (~encryptedPayload, ~email) => {
   let encPayload =
     [
-      ("encypted_payload", encryptedPayload->JSON.Encode.string),
+      ("encrypted_payload", encryptedPayload->JSON.Encode.string),
       ("provider", "visa"->JSON.Encode.string),
     ]->Utils.getJsonFromArrayOfJson
 
