@@ -87,6 +87,7 @@ let make = () => {
     | "redsys3ds" => <Redsys3ds />
     | "3ds" => <ThreeDSMethod />
     | "voucherData" => <VoucherDisplay />
+    | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
     | "preMountLoader" => {
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
