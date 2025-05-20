@@ -198,7 +198,7 @@ let make = (
         await clearLogsFromIndexedDB()
       }
     } catch {
-    | _ => ()
+    | error => Console.error2("Error while sending logs over network", error)
     }
   }
 
@@ -231,7 +231,7 @@ let make = (
       let _ = await saveLogsToIndexedDB(mainLogFile)
       clearLogFile(mainLogFile)
     } catch {
-    | _ => ()
+    | error => Console.error2("Error while sending logs over network", error)
     }
   }
 
@@ -241,7 +241,7 @@ let make = (
       beaconApiCall(mainLogFile)
       clearLogFile(mainLogFile)
     } catch {
-    | _ => ()
+    | error => Console.error2("Error while sending logs over network", error)
     }
   }
   let rec sendLogs = () => {

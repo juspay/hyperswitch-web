@@ -14,7 +14,7 @@ let make = () => {
     (HyperLogger.make(~source=Elements(paymentType)), Date.now())
   })
 
-  React.useEffect1(() => {
+  React.useEffect(() => {
     switch networkStatus {
     | Value(val) =>
       logger.setLogInfo(

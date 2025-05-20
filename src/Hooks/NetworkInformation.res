@@ -5,25 +5,18 @@ type networkState = {
   rtt: float,
 }
 
-type connection = {
-  effectiveType: string,
-  downlink: float,
-  rtt: float,
-}
-
-@val external navigatorOnLine: bool = "navigator.onLine"
-@val @scope("navigator") external connection: Js.Nullable.t<connection> = "connection"
-
 let defaultNetworkState = {
-  isOnline: navigatorOnLine,
+  isOnline: Window.Navigator.navigatorOnLine,
   effectiveType: "",
   downlink: 0.,
   rtt: 0.,
 }
 
 type networkStateFromHook = CALCULATING | Value(networkState)
+
 let getNetworkState = () => {
-  let conn = connection->Js.Nullable.toOption
+  open Window.Navigator
+  let conn = connection->Nullable.toOption
 
   switch conn {
   | Some(conn) =>
@@ -42,8 +35,10 @@ let useNetworkInformation = () => {
   let (networkState, setNetworkState) = React.useState(_ => initialState)
 
   React.useEffect(() => {
+    open Window.Navigator
+
     let updateNetState = () => {
-      let conn = connection->Js.Nullable.toOption
+      let conn = connection->Nullable.toOption
 
       switch conn {
       | Some(conn) =>
