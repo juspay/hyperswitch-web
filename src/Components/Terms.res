@@ -1,5 +1,5 @@
 @react.component
-let make = (~mode: PaymentModeType.payment) => {
+let make = (~mode: PaymentModeType.payment, ~styles: JsxDOMStyle.t={}) => {
   open RecoilAtoms
   let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {customMessageForCardTerms, business, terms} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -18,7 +18,9 @@ let make = (~mode: PaymentModeType.payment) => {
   let (termsText, showTerm) = terms
 
   <RenderIf condition={showTerm == Auto || showTerm == Always}>
-    <div className="opacity-50 text-xs mb-2 text-left" style={color: themeObj.colorText}>
+    <div
+      className="TermsTextLabel opacity-50 text-xs mb-2 text-left"
+      style={...styles, color: themeObj.colorText}>
       {React.string(termsText)}
     </div>
   </RenderIf>

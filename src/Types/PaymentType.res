@@ -169,6 +169,12 @@ type sdkHandleConfirmPayment = {
   confirmParams: ConfirmType.confirmParams,
 }
 
+type sdkHandleSavePayment = {
+  handleSave: bool,
+  buttonText?: string,
+  confirmParams: ConfirmType.confirmParams,
+}
+
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
@@ -188,6 +194,7 @@ type options = {
   showCardFormByDefault: bool,
   billingAddress: billingAddress,
   sdkHandleConfirmPayment: sdkHandleConfirmPayment,
+  sdkHandleSavePayment: sdkHandleSavePayment,
   paymentMethodsHeaderText?: string,
   savedPaymentMethodsHeaderText?: string,
   hideExpiredPaymentMethods: bool,
@@ -195,6 +202,7 @@ type options = {
   hideCardNicknameField: bool,
   displayBillingDetails: bool,
   customMessageForCardTerms: string,
+  showShortSurchargeMessage: bool,
 }
 
 type payerDetails = {
@@ -336,6 +344,11 @@ let defaultSdkHandleConfirmPayment = {
   confirmParams: ConfirmType.defaultConfirm,
 }
 
+let defaultSdkHandleSavePayment = {
+  handleSave: false,
+  confirmParams: ConfirmType.defaultConfirm,
+}
+
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
@@ -355,11 +368,13 @@ let defaultOptions = {
   showCardFormByDefault: true,
   billingAddress: defaultBillingAddress,
   sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
+  sdkHandleSavePayment: defaultSdkHandleSavePayment,
   hideExpiredPaymentMethods: false,
   displayDefaultSavedPaymentIcon: true,
   hideCardNicknameField: false,
   displayBillingDetails: false,
   customMessageForCardTerms: "",
+  showShortSurchargeMessage: false,
 }
 
 let getLayout = (str, logger) => {
@@ -1061,7 +1076,13 @@ let getSdkHandleConfirmPaymentProps = dict => {
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
-let itemToObjMapper = (dict, logger, countryList) => {
+let getSdkHandleSavePaymentProps = dict => {
+  handleSave: dict->getBool("handleSave", false),
+  buttonText: ?dict->getOptionString("buttonText"),
+  confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
+}
+
+let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(
     [
       "defaultValues",
@@ -1079,6 +1100,7 @@ let itemToObjMapper = (dict, logger, countryList) => {
       "sdkHandleOneClickConfirmPayment",
       "showCardFormByDefault",
       "sdkHandleConfirmPayment",
+      "sdkHandleSavePayment",
       "paymentMethodsHeaderText",
       "savedPaymentMethodsHeaderText",
       "hideExpiredPaymentMethods",
@@ -1087,6 +1109,7 @@ let itemToObjMapper = (dict, logger, countryList) => {
       "hideCardNicknameField",
       "displayBillingDetails",
       "customMessageForCardTerms",
+      "showShortSurchargeMessage",
     ],
     dict,
     "options",
@@ -1126,6 +1149,9 @@ let itemToObjMapper = (dict, logger, countryList) => {
     sdkHandleConfirmPayment: dict
     ->getDictFromDict("sdkHandleConfirmPayment")
     ->getSdkHandleConfirmPaymentProps,
+    sdkHandleSavePayment: dict
+    ->getDictFromDict("sdkHandleSavePayment")
+    ->getSdkHandleSavePaymentProps,
     paymentMethodsHeaderText: ?getOptionString(dict, "paymentMethodsHeaderText"),
     savedPaymentMethodsHeaderText: ?getOptionString(dict, "savedPaymentMethodsHeaderText"),
     hideExpiredPaymentMethods: getBool(dict, "hideExpiredPaymentMethods", false),
@@ -1133,6 +1159,7 @@ let itemToObjMapper = (dict, logger, countryList) => {
     hideCardNicknameField: getBool(dict, "hideCardNicknameField", false),
     displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
+    showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
   }
 }
 
@@ -1155,14 +1182,19 @@ let itemToPayerDetailsObjectMapper = dict => {
 
 let convertClickToPayCardToCustomerMethod = (
   clickToPayCard: ClickToPayHelpers.clickToPayCard,
+  clickToPayProvider,
 ): customerMethods => {
-  paymentToken: clickToPayCard.srcDigitalCardId,
-  customerId: "", // Empty as Click to Pay doesn't provide this
-  paymentMethod: "card",
-  paymentMethodId: clickToPayCard.srcDigitalCardId,
-  paymentMethodIssuer: None,
-  card: {
-    scheme: Some(
+  let cardScheme = switch clickToPayProvider {
+  | ClickToPayHelpers.VISA =>
+    Some(
+      Some(clickToPayCard.paymentCardDescriptor)
+      ->Option.getOr("")
+      ->String.toLowerCase === "mastercard"
+        ? "Mastercard"
+        : "Visa",
+    )
+  | ClickToPayHelpers.MASTERCARD =>
+    Some(
       switch clickToPayCard.paymentCardDescriptor->String.toLowerCase {
       | "amex" => "AmericanExpress"
       | "mastercard" => "Mastercard"
@@ -1174,22 +1206,33 @@ let convertClickToPayCardToCustomerMethod = (
         ->String.toUpperCase
         ->String.concat(other->String.sliceToEnd(~start=1)->String.toLowerCase)
       },
-    ),
-    last4Digits: clickToPayCard.panLastFour,
-    expiryMonth: clickToPayCard.panExpirationMonth,
-    expiryYear: clickToPayCard.panExpirationYear,
-    cardToken: clickToPayCard.srcDigitalCardId,
-    cardHolderName: None,
-    nickname: clickToPayCard.digitalCardData.descriptorName,
-    isClickToPayCard: true,
-  },
-  paymentMethodType: Some("click_to_pay"),
-  defaultPaymentMethodSet: false, // Default to false as Click to Pay doesn't provide this
-  requiresCvv: false, // Click to Pay handles CVV internally
-  lastUsedAt: Js.Date.make()->Js.Date.toISOString, // Current timestamp as Click to Pay doesn't provide this
-  bank: {
-    mask: "", // Just use the mask field that exists in the type
-  },
-  recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
-  billing: defaultDisplayBillingDetails,
+    )
+  | ClickToPayHelpers.NONE => None
+  }
+  {
+    paymentToken: clickToPayCard.srcDigitalCardId,
+    customerId: "", // Empty as Click to Pay doesn't provide this
+    paymentMethod: "card",
+    paymentMethodId: clickToPayCard.srcDigitalCardId,
+    paymentMethodIssuer: None,
+    card: {
+      scheme: cardScheme,
+      last4Digits: clickToPayCard.panLastFour,
+      expiryMonth: clickToPayCard.panExpirationMonth,
+      expiryYear: clickToPayCard.panExpirationYear,
+      cardToken: clickToPayCard.srcDigitalCardId,
+      cardHolderName: None,
+      nickname: Some(clickToPayCard.digitalCardData.descriptorName)->Option.getOr(""),
+      isClickToPayCard: true,
+    },
+    paymentMethodType: Some("click_to_pay"),
+    defaultPaymentMethodSet: false, // Default to false as Click to Pay doesn't provide this
+    requiresCvv: false, // Click to Pay handles CVV internally
+    lastUsedAt: Js.Date.make()->Js.Date.toISOString, // Current timestamp as Click to Pay doesn't provide this
+    bank: {
+      mask: "", // Just use the mask field that exists in the type
+    },
+    recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
+    billing: defaultDisplayBillingDetails,
+  }
 }

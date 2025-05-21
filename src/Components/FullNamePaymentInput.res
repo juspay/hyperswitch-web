@@ -3,33 +3,12 @@ open PaymentType
 open Utils
 
 @react.component
-let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) => {
+let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (fullName, setFullName) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
-
-  let validateName = (
-    val: string,
-    prev: RecoilAtomTypes.field,
-    localeString: LocaleStringTypes.localeStrings,
-  ) => {
-    let isValid = val !== "" && %re("/^\D*$/")->RegExp.test(val)
-    let errorString = if val === "" {
-      prev.errorString
-    } else if isValid {
-      ""
-    } else {
-      localeString.invalidCardHolderNameError
-    }
-    {
-      ...prev,
-      value: val,
-      isValid: Some(isValid),
-      errorString,
-    }
-  }
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
@@ -46,6 +25,11 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
   | None => (localeString.fullNamePlaceholder, localeString.fullNameLabel)
   }
   let nameRef = React.useRef(Nullable.null)
+
+  React.useEffect(() => {
+    setFullName(prev => validateName(prev.value, prev, localeString))
+    None
+  }, [])
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -83,7 +67,6 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
       setValue=setFullName
       value=fullName
       onChange=changeName
-      paymentType
       onBlur
       type_="text"
       inputRef=nameRef

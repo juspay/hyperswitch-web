@@ -241,10 +241,17 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
-    paymentMethodName: "sepa_transfer",
+    paymentMethodName: "sepa_bank_transfer",
     icon: Some(icon("sepa", ~size=19)),
     fields: [],
     displayName: "SEPA Bank Transfer",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "instant_bank_transfer",
+    icon: Some(icon("bank", ~size=19)),
+    fields: [],
+    displayName: "Instant Bank Transfer",
     miniIcon: None,
   },
   {
@@ -560,6 +567,13 @@ let paymentMethodsFields = [
     fields: [InfoElement],
     icon: Some(icon("bhim_upi", ~size=19)),
     displayName: "UPI Collect",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "eft",
+    icon: Some(icon("eft", ~size=19)),
+    fields: [InfoElement],
+    displayName: "EFT",
     miniIcon: None,
   },
 ]

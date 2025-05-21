@@ -38,7 +38,7 @@ it("should complete the card payment successfully", () => {
     getIframeBody().get("#submit").click();
     
   cy.wait(3000);
-  cy.contains('Payment processing! Requires manual capture')
+  cy.contains('Payment is authorized and requires manual capture.')
   .should('be.visible');
 
 });

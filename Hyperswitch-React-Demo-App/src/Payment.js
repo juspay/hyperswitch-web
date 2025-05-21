@@ -1,91 +1,68 @@
-/* eslint-disable no-undef */
-import { useEffect, useState } from "react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { HyperElements } from "@juspay-tech/react-hyper-js";
 import CheckoutForm from "./CheckoutForm";
+import {
+  getQueryParam,
+  fetchConfigAndUrls,
+  getPaymentIntentData,
+  loadHyperScript,
+} from "./utils";
 
 function Payment() {
   const [hyperPromise, setHyperPromise] = useState(null);
   const [clientSecret, setClientSecret] = useState("");
+  const [error, setError] = useState(null);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
-  const queryParams = new URLSearchParams(window.location.search);
-  const isCypressTestMode = queryParams.get("isCypressTestMode");
-  const publishableKeyQueryParam = queryParams.get("publishableKey");
-  const clientSecretQueryParam = queryParams.get("clientSecret");
-  const url = SELF_SERVER_URL === "" ? ENDPOINT : SELF_SERVER_URL;
+  const isCypressTestMode = getQueryParam("isCypressTestMode") === "true";
+  const publishableKeyQueryParam = getQueryParam("publishableKey");
+  const clientSecretQueryParam = getQueryParam("clientSecret");
 
-  const getPaymentData = async () => {
-    try {
-      const [configResponse, urlsResponse] = await Promise.all([
-        fetch(`${url}/config`),
-        fetch(`${url}/urls`),
-      ]);
-
-      const paymentIntentResponse = isCypressTestMode
-        ? { clientSecret: clientSecretQueryParam }
-        : await fetch(`${url}/create-payment-intent`).then((res) => res.json());
-
-      if (!configResponse.ok || !urlsResponse.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const paymentDataArray = await Promise.all([
-        configResponse.json(),
-        urlsResponse.json(),
-      ]);
-
-      return [...paymentDataArray, paymentIntentResponse];
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
+  const baseUrl = SELF_SERVER_URL || ENDPOINT;
 
   useEffect(() => {
-    const fetchData = async () => {
+    let isMounted = true;
+
+    const initializePayment = async () => {
       try {
-        const [configData, urlsData, paymentIntentData] = await getPaymentData(
-          url
-        );
+        const { configData, urlsData } = await fetchConfigAndUrls(baseUrl);
 
-        const { publishableKey } = configData;
-        const { serverUrl, clientUrl } = urlsData;
-        const { clientSecret } = paymentIntentData;
-        setClientSecret(clientSecret);
-        const script = document.createElement("script");
-        script.src = `${clientUrl}/HyperLoader.js`;
-        document.head.appendChild(script);
-        script.onload = () => {
-          setHyperPromise(
-            new Promise((resolve) => {
-              resolve(
-                window.Hyper(
-                  isCypressTestMode ? publishableKeyQueryParam : publishableKey,
-                  {
-                    customBackendUrl: serverUrl,
-                  }
-                )
-              );
-            })
-          );
-        };
+        const publishableKey = isCypressTestMode
+          ? publishableKeyQueryParam
+          : configData.publishableKey;
 
-        script.onerror = () => {
-          setHyperPromise(
-            new Promise((_, reject) => {
-              reject("Script could not be loaded");
-            })
-          );
-        };
+        const paymentIntentData = await getPaymentIntentData({
+          baseUrl,
+          isCypressTestMode,
+          clientSecretQueryParam,
+          setError,
+        });
 
-        return () => {
-          document.head.removeChild(script);
-        };
-      } catch (error) {
-        console.error("Error fetching data:", error);
+        if (!paymentIntentData) return;
+
+        const hyper = await loadHyperScript({
+          clientUrl: urlsData.clientUrl,
+          publishableKey,
+          customBackendUrl: urlsData.serverUrl,
+          isScriptLoaded,
+          setIsScriptLoaded,
+        });
+
+        if (isMounted) {
+          setClientSecret(paymentIntentData.clientSecret);
+          setHyperPromise(Promise.resolve(hyper));
+        }
+      } catch (err) {
+        console.error("Initialization error:", err);
+        setError("Failed to load payment. Please refresh.");
       }
     };
 
-    fetchData();
+    initializePayment();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -93,13 +70,14 @@ function Payment() {
       <div className="heading">
         <h2>Hyperswitch Unified Checkout</h2>
       </div>
+
+      {error && <p className="text-red-600">{error}</p>}
+
       {clientSecret && hyperPromise && (
         <HyperElements
           hyper={hyperPromise}
           options={{
-            clientSecret: isCypressTestMode
-              ? clientSecretQueryParam
-              : clientSecret,
+            clientSecret,
             appearance: {
               labels: "floating",
             },

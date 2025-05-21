@@ -1,24 +1,13 @@
+open Window
 type contentRect = {height: float}
 
-type element = {
-  mutable getAttribute: string => string,
-  mutable src: string,
-  mutable async: bool,
-  mutable rel: string,
-  mutable href: string,
-  mutable \"as": string,
-  mutable crossorigin: string,
-  mutable \"type": string,
-  mutable id: string,
-  mutable width: string,
-  mutable height: string,
-  contentWindow: option<Window.window>,
-  setAttribute: (string, string) => unit,
-}
 type keys = {
   clientSecret: option<string>,
   ephemeralKey?: string,
+  pmSessionId?: string,
+  pmClientSecret?: string,
   publishableKey: string,
+  profileId: string,
   iframeId: string,
   parentURL: string,
   sdkHandleOneClickConfirmPayment: bool,
@@ -123,6 +112,11 @@ let updateKeys = (dict, keyPair, setKeys) => {
         ...prev,
         publishableKey: dict->Utils.getString(key, valueStr),
       })
+    | "profileId" =>
+      setKeys(prev => {
+        ...prev,
+        profileId: dict->Utils.getString(key, valueStr),
+      })
     | "parentURL" =>
       setKeys(prev => {
         ...prev,
@@ -140,6 +134,7 @@ let updateKeys = (dict, keyPair, setKeys) => {
 let defaultkeys = {
   clientSecret: None,
   publishableKey: "",
+  profileId: "",
   iframeId: "",
   parentURL: "*",
   sdkHandleOneClickConfirmPayment: true,

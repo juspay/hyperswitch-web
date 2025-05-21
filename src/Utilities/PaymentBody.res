@@ -67,10 +67,17 @@ let cardPaymentBody = (
   ]
 }
 
-let bancontactBody = () => [
-  ("payment_method", "bank_redirect"->JSON.Encode.string),
-  ("payment_method_type", "bancontact_card"->JSON.Encode.string),
-]
+let bancontactBody = () => {
+  let bancontactField =
+    [("bancontact_card", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
+  let bankRedirectField = [("bank_redirect", bancontactField)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "bank_redirect"->JSON.Encode.string),
+    ("payment_method_type", "bancontact_card"->JSON.Encode.string),
+    ("payment_method_data", bankRedirectField),
+  ]
+}
 
 let boletoBody = (~socialSecurityNumber) => [
   ("payment_method", "voucher"->JSON.Encode.string),
@@ -140,6 +147,21 @@ let clickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
   [
     ("payment_method", "card"->JSON.Encode.string),
     ("ctp_service_details", clickToPayServiceDetails),
+  ]
+}
+
+let visaClickToPayBody = (~encryptedPayload, ~email) => {
+  let encPayload =
+    [
+      ("encrypted_payload", encryptedPayload->JSON.Encode.string),
+      ("provider", "visa"->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("ctp_service_details", encPayload),
+    ("payment_method_type", "debit"->JSON.Encode.string),
+    ("email", email->JSON.Encode.string),
   ]
 }
 
@@ -904,10 +926,30 @@ let pazeBody = (~completeResponse) => {
   ]
 }
 
+let eftBody = () => {
+  open Utils
+  let eftProviderName = [("provider", "ozow"->JSON.Encode.string)]->getJsonFromArrayOfJson
+
+  let eftBankRedirectData = [("eft", eftProviderName)]->getJsonFromArrayOfJson
+
+  let paymentMethodData = [("bank_redirect", eftBankRedirectData)]->getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "bank_redirect"->JSON.Encode.string),
+    ("payment_method_type", "eft"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
-  | "bank_transfer" => paymentMethodType->String.replace("_transfer", "")
+  | "bank_transfer" =>
+    if paymentMethodType != "sepa_bank_transfer" && paymentMethodType != "instant_bank_transfer" {
+      paymentMethodType->String.replace("_transfer", "")
+    } else {
+      paymentMethodType
+    }
   | _ => paymentMethodType
   }
 
@@ -930,7 +972,7 @@ let appendRedirectPaymentMethods = [
 ]
 
 let appendBankeDebitMethods = ["sepa"]
-let appendBankTransferMethods = ["sepa", "ach", "bacs", "multibanco"]
+let appendBankTransferMethods = ["ach", "bacs", "multibanco"]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {
@@ -1040,5 +1082,6 @@ let getPaymentBody = (
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)
+  | "eft" => eftBody()
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }

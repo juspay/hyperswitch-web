@@ -3,7 +3,7 @@ open Utils
 open TaxCalculation
 
 let loadPaypalSDK = (
-  ~loggerState: HyperLogger.loggerMake,
+  ~loggerState: HyperLoggerTypes.loggerMake,
   ~sdkHandleOneClickConfirmPayment as _,
   ~buttonStyle,
   ~iframeId,
@@ -229,7 +229,7 @@ let loadPaypalSDK = (
 }
 
 let loadBraintreePaypalSdk = (
-  ~loggerState: HyperLogger.loggerMake,
+  ~loggerState: HyperLoggerTypes.loggerMake,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
   ~buttonStyle,

@@ -3,7 +3,7 @@ open RecoilAtomTypes
 open Utils
 
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
+let make = (~paymentMethodName: string) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
@@ -113,7 +113,6 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     className="DynamicFields flex flex-col animate-slowShow"
     style={gridGap: themeObj.spacingGridColumn}>
     <DynamicFields
-      paymentType
       paymentMethod=paymentMethodDetails.methodType
       paymentMethodType=paymentMethodName
       setRequiredFieldsBody

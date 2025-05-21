@@ -19,6 +19,8 @@ let dynamicFieldsEnabledPaymentMethods = [
   "mifinity",
   "upi_collect",
   "sepa",
+  "sepa_bank_transfer",
+  "instant_bank_transfer",
   "affirm",
   "walley",
   "ach",
@@ -102,8 +104,6 @@ let addBillingAddressIfUseBillingAddress = (
   }
 }
 
-let clickToPayFields: array<PaymentMethodsRecord.paymentMethodsFields> = [Email, PhoneNumber]
-
 let isClickToPayFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
   switch fieldType {
   | Email
@@ -125,11 +125,26 @@ let removeClickToPayFieldsIfSaveDetailsWithClickToPay = (
   }
 }
 
-let addClickToPayFieldsIfSaveDetailsWithClickToPay = (fieldsArr, isSaveDetailsWithClickToPay) => {
-  if isSaveDetailsWithClickToPay {
-    [...fieldsArr, ...clickToPayFields]
-  } else {
-    fieldsArr
+let addClickToPayFieldsIfSaveDetailsWithClickToPay = (
+  fieldsArr,
+  isSaveDetailsWithClickToPay,
+  clickToPayConfig,
+) => {
+  open ClickToPayHelpers
+  open PaymentMethodsRecord
+  let isRecognizedClickToPayPayment =
+    clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length != 0
+  let defaultCtpFields = [...fieldsArr, Email, PhoneNumber]
+  switch (
+    isSaveDetailsWithClickToPay,
+    clickToPayConfig.clickToPayProvider,
+    isRecognizedClickToPayPayment,
+  ) {
+  | (true, MASTERCARD, _) => defaultCtpFields
+  | (true, VISA, _)
+  | (false, VISA, true) =>
+    [...defaultCtpFields, FullName]
+  | _ => fieldsArr
   }
 }
 
@@ -184,7 +199,9 @@ let useRequiredFieldsEmptyAndValid = (
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
-  let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
+    areRequiredFieldsValid,
+  )
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
@@ -322,6 +339,17 @@ let useRequiredFieldsEmptyAndValid = (
     bankAccountNumber,
     cryptoCurrencyNetworks,
   ))
+
+  React.useEffect(() => {
+    switch (isCardValid, isExpiryValid, isCVCValid) {
+    | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
+      CardUtils.emitIsFormReadyForSubmission(
+        cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+      )
+    | _ => ()
+    }
+    None
+  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid))
 }
 
 let useSetInitialRequiredFields = (
@@ -831,12 +859,13 @@ let updateDynamicFields = (
   arr: array<PaymentMethodsRecord.paymentMethodsFields>,
   billingAddress,
   isSaveDetailsWithClickToPay,
+  clickToPayConfig,
 ) => {
   arr
   ->Utils.removeDuplicate
   ->Array.filter(item => item !== None)
   ->addBillingAddressIfUseBillingAddress(billingAddress)
-  ->addClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay)
+  ->addClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay, clickToPayConfig)
   ->combineStateAndCity
   ->combineCountryAndPostal
   ->combineCardExpiryMonthAndYear

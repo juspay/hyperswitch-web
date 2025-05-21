@@ -1,4 +1,6 @@
 open RecoilAtoms
+open PaymentTypeContext
+
 @react.component
 let make = (
   ~isValid,
@@ -14,7 +16,6 @@ let make = (
   ~errorStringClasses=?,
   ~fieldName="",
   ~type_="text",
-  ~paymentType: CardThemeType.mode,
   ~maxLength=?,
   ~pattern=?,
   ~placeholder="",
@@ -22,11 +23,15 @@ let make = (
   ~inputRef,
   ~isFocus,
   ~labelClassName="",
+  ~paymentType: option<CardThemeType.mode>=?,
+  ~autocomplete="on",
 ) => {
   open ElementType
   let (eleClassName, setEleClassName) = React.useState(_ => "input-base")
   let {iframeId, parentURL} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(elementOptions)
+  let contextPaymentType = usePaymentType()
+  let paymentType = paymentType->Option.getOr(contextPaymentType)
 
   let setFocus = (val: bool) => {
     switch onFocus {
@@ -40,7 +45,8 @@ let make = (
     | CardCVCElement
     | CardExpiryElement
     | CardNumberElement
-    | PaymentMethodCollectElement =>
+    | PaymentMethodCollectElement
+    | PaymentMethodsManagement =>
       setEleClassName(_ => val)
     | _ => ()
     }
@@ -140,6 +146,7 @@ let make = (
         onChange
         onBlur=handleBlur
         onFocus=handleFocus
+        autoComplete={autocomplete}
         ariaLabel={`Type to fill ${fieldName} input`}
       />
       <div className={`flex -ml-10  items-center`}> {rightIcon} </div>

@@ -16,14 +16,15 @@ let make = (
   ~clientSecret,
   ~sdkSessionId,
   ~publishableKey,
-  ~logger: option<HyperLogger.loggerMake>,
+  ~profileId,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
+    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
@@ -85,7 +86,7 @@ let make = (
       elem
     }
 
-    let locale = localOptions->getJsonStringFromDict("locale", "")
+    let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
     let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
     let clientSecretReMatch = Re.test(`.+_secret_[A-Za-z0-9]+`->Re.fromString, clientSecret)
@@ -348,6 +349,7 @@ let make = (
           ("paymentOptions", widgetOptions),
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
+          ("profileId", profileId->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
           ("blockConfirm", blockConfirm->JSON.Encode.bool),
@@ -539,7 +541,12 @@ let make = (
                     })
                     ->ignore
                   }
-                | _ => ()
+                | _ =>
+                  logger.setLogInfo(
+                    ~value="Connector Not Found",
+                    ~eventName=GOOGLE_PAY_FLOW,
+                    ~paymentMethod="GOOGLE_PAY",
+                  )
                 }
               } catch {
               | err => {
@@ -668,7 +675,12 @@ let make = (
                       event.source->Window.sendPostMessage(msg)
                     }
                   }
-                | _ => ()
+                | _ =>
+                  logger.setLogInfo(
+                    ~value="Connector Not Found",
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                  )
                 }
               }
             } else {

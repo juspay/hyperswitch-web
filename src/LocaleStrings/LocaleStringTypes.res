@@ -57,6 +57,7 @@ type localeStrings = {
   selectPaymentMethodText: string,
   card: string,
   surchargeMsgAmount: (string, string) => React.element,
+  shortSurchargeMessage: (string, string) => React.element,
   surchargeMsgAmountForCard: (string, string) => React.element,
   surchargeMsgAmountForOneClickWallets: string,
   billingNameLabel: string,

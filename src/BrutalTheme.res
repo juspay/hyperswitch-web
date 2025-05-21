@@ -48,6 +48,7 @@ let brutal = {
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
+  disabledFieldColor: "#F2F2F2",
 }
 let brutalRules = (theme: CardThemeType.themeClass) =>
   {
@@ -115,6 +116,9 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
     ".Input::placeholder": {
       "fontWeight": theme.fontWeightLight,
       "color": theme.colorTextPlaceholder,
+    },
+    ".InputLogo": {
+      "color": "#979797",
     },
     ".TabLabel": {
       "transition": "color .1s ease",

@@ -18,7 +18,6 @@ module DynamicFieldsToRenderWrapper = {
 
 @react.component
 let make = (
-  ~paymentType,
   ~paymentMethod,
   ~paymentMethodType,
   ~setRequiredFieldsBody,
@@ -34,6 +33,9 @@ let make = (
   open Utils
   open RecoilAtoms
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
+    PaymentUtils.paymentManagementListValue,
+  )
 
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
@@ -57,12 +59,30 @@ let make = (
 
   let requiredFieldsWithBillingDetails = React.useMemo(() => {
     if paymentMethod === "card" {
-      let creditRequiredFields = creditPaymentMethodTypes.required_fields
+      switch GlobalVars.sdkVersion {
+      | V2 =>
+        let creditRequiredFields =
+          paymentManagementListValue.paymentMethodsEnabled
+          ->Array.filter(item => {
+            item.paymentMethodSubType === "credit" && item.paymentMethodType === "card"
+          })
+          ->Array.get(0)
+          ->Option.getOr(PMMTypesV2.defaultPaymentMethods)
 
-      [
-        ...paymentMethodTypes.required_fields,
-        ...creditRequiredFields,
-      ]->removeRequiredFieldsDuplicates
+        let finalCreditRequiredFields = creditRequiredFields.requiredFields
+        [
+          ...paymentMethodTypes.required_fields,
+          ...finalCreditRequiredFields,
+        ]->removeRequiredFieldsDuplicates
+
+      | V1 =>
+        let creditRequiredFields = creditPaymentMethodTypes.required_fields
+
+        [
+          ...paymentMethodTypes.required_fields,
+          ...creditRequiredFields,
+        ]->removeRequiredFieldsDuplicates
+      }
     } else if dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType) {
       paymentMethodTypes.required_fields
     } else {
@@ -86,6 +106,9 @@ let make = (
   }, [savedMethod])
 
   //<...>//
+
+  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+
   let fieldsArr = React.useMemo(() => {
     PaymentMethodsRecord.getPaymentMethodFields(
       paymentMethodType,
@@ -93,7 +116,7 @@ let make = (
       ~isSavedCardFlow,
       ~isAllStoredCardsHaveName,
     )
-    ->updateDynamicFields(billingAddress, isSaveDetailsWithClickToPay)
+    ->updateDynamicFields(billingAddress, isSaveDetailsWithClickToPay, clickToPayConfig)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow, isSaveDetailsWithClickToPay))
@@ -128,57 +151,7 @@ let make = (
     logger,
   )
 
-  let defaultCardProps = (
-    None,
-    _ => (),
-    None,
-    "",
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    React.null,
-    "",
-    _ => (),
-    0,
-    "",
-  )
-
-  let defaultExpiryProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    _ => (),
-    "",
-    _ => (),
-  )
-
-  let defaultCvcProps = (
-    None,
-    _ => (),
-    "",
-    _ => (),
-    _ => (),
-    _ => (),
-    React.useRef(Nullable.null),
-    _ => (),
-    "",
-    _ => (),
-  )
-  let stateList = Recoil.useRecoilValueFromAtom(RecoilAtoms.stateAtom)
-
-  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
-  let stateNames = getStateNames(
-    stateList,
-    {
-      value: country,
-      isValid: None,
-      errorString: "",
-    },
-    countryList,
-  )
+  let (stateJson, setStatesJson) = React.useState(_ => None)
 
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
   let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))
@@ -193,54 +166,56 @@ let make = (
     setCountry(val)
   }
 
-  let (
+  let defaultCardProps = CardUtils.useDefaultCardProps()
+  let defaultExpiryProps = CardUtils.useDefaultExpiryProps()
+  let defaultCvcProps = CardUtils.useDefaultCvcProps()
+
+  let cardProps = switch cardProps {
+  | Some(props) => props
+  | None => defaultCardProps
+  }
+
+  let expiryProps = switch expiryProps {
+  | Some(props) => props
+  | None => defaultExpiryProps
+  }
+
+  let cvcProps = switch cvcProps {
+  | Some(props) => props
+  | None => defaultCvcProps
+  }
+
+  let {
     isCardValid,
     setIsCardValid,
-    _,
     cardNumber,
     changeCardNumber,
     handleCardBlur,
     cardRef,
     icon,
     cardError,
-    _,
     maxCardLength,
-    _,
-  ) = switch cardProps {
-  | Some(cardProps) => cardProps
-  | None => defaultCardProps
-  }
+  } = cardProps
 
-  let (
+  let {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
     changeCardExpiry,
     handleExpiryBlur,
     expiryRef,
-    _,
     expiryError,
-    _,
-  ) = switch expiryProps {
-  | Some(expiryProps) => expiryProps
-  | None => defaultExpiryProps
-  }
+  } = expiryProps
 
-  let (
+  let {
     isCVCValid,
     setIsCVCValid,
     cvcNumber,
-    _,
     changeCVCNumber,
     handleCVCBlur,
     cvcRef,
-    _,
     cvcError,
-    _,
-  ) = switch cvcProps {
-  | Some(cvcProps) => cvcProps
-  | None => defaultCvcProps
-  }
+  } = cvcProps
 
   let isCvcValidValue = CardUtils.getBoolOptionVal(isCVCValid)
   let (cardEmpty, cardComplete, cardInvalid) = CardUtils.useCardDetails(
@@ -360,12 +335,11 @@ let make = (
               onBlur=handleCardBlur
               rightIcon={icon}
               errorString=cardError
-              paymentType
               type_="tel"
-              appearance=config.appearance
               maxLength=maxCardLength
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
+              autocomplete="cc-number"
             />
           | CardExpiryMonth
           | CardExpiryYear
@@ -378,12 +352,11 @@ let make = (
               onChange=changeCardExpiry
               onBlur=handleExpiryBlur
               errorString=expiryError
-              paymentType
               type_="tel"
-              appearance=config.appearance
               maxLength=7
               inputRef=expiryRef
               placeholder=localeString.expiryPlaceholder
+              autocomplete="cc-exp"
             />
           | CardCvc =>
             <PaymentInputField
@@ -394,19 +367,18 @@ let make = (
               onChange=changeCVCNumber
               onBlur=handleCVCBlur
               errorString=cvcError
-              paymentType
               rightIcon={CardUtils.setRightIconForCvc(
                 ~cardEmpty,
                 ~cardInvalid,
                 ~color=themeObj.colorIconCardCvcError,
                 ~cardComplete,
               )}
-              appearance=config.appearance
               type_="tel"
               className="tracking-widest w-full"
               maxLength=4
               inputRef=cvcRef
               placeholder="123"
+              autocomplete="cc-csc"
             />
           | CardExpiryAndCvc =>
             <div className="flex gap-10">
@@ -418,12 +390,11 @@ let make = (
                 onChange=changeCardExpiry
                 onBlur=handleExpiryBlur
                 errorString=expiryError
-                paymentType
                 type_="tel"
-                appearance=config.appearance
                 maxLength=7
                 inputRef=expiryRef
                 placeholder=localeString.expiryPlaceholder
+                autocomplete="cc-exp"
               />
               <PaymentInputField
                 fieldName=localeString.cvcTextLabel
@@ -433,19 +404,18 @@ let make = (
                 onChange=changeCVCNumber
                 onBlur=handleCVCBlur
                 errorString=cvcError
-                paymentType
                 rightIcon={CardUtils.setRightIconForCvc(
                   ~cardEmpty,
                   ~cardInvalid,
                   ~color=themeObj.colorIconCardCvcError,
                   ~cardComplete,
                 )}
-                appearance=config.appearance
                 type_="tel"
                 className="tracking-widest w-full"
                 maxLength=4
                 inputRef=cvcRef
                 placeholder="123"
+                autocomplete="cc-csc"
               />
             </div>
           | Currency(currencyArr) =>
@@ -472,14 +442,13 @@ let make = (
                 </div>
               </RenderIf>
               <FullNamePaymentInput
-                paymentType
                 customFieldName={item->getCustomFieldName}
                 optionalRequiredFields={Some(requiredFields)}
               />
             </>
           | CryptoCurrencyNetworks => <CryptoCurrencyNetworks />
           | DateOfBirth => <DateOfBirth />
-          | VpaId => <VpaIdPaymentInput paymentType />
+          | VpaId => <VpaIdPaymentInput />
           | PixKey => <PixPaymentInput label="pixKey" />
           | PixCPF => <PixPaymentInput label="pixCPF" />
           | PixCNPJ => <PixPaymentInput label="pixCNPJ" />
@@ -504,7 +473,6 @@ let make = (
                   isValid: Some(value !== ""),
                 })
               }}
-              paymentType
               type_="text"
               name="bankAccountNumber"
               maxLength=42
@@ -566,8 +534,8 @@ let make = (
             ->Array.mapWithIndex((item, index) => {
               <DynamicFieldsToRenderWrapper key={index->Int.toString} index={index}>
                 {switch item {
-                | BillingName => <BillingNamePaymentInput paymentType requiredFields />
-                | Email => <EmailPaymentInput paymentType />
+                | BillingName => <BillingNamePaymentInput requiredFields />
+                | Email => <EmailPaymentInput />
                 | PhoneNumber => <PhoneNumberPaymentInput />
                 | StateAndCity =>
                   <div className={`flex ${isSpacedInnerLayout ? "gap-4" : ""} overflow-hidden`}>
@@ -590,7 +558,6 @@ let make = (
                           isValid: Some(value !== ""),
                         })
                       }}
-                      paymentType
                       type_="text"
                       name="city"
                       inputRef=cityRef
@@ -631,7 +598,6 @@ let make = (
                         })
                       }}
                       onChange=onPostalChange
-                      paymentType
                       name="postal"
                       inputRef=postalRef
                       placeholder=localeString.postalCodeLabel
@@ -658,7 +624,6 @@ let make = (
                         isValid: Some(value !== ""),
                       })
                     }}
-                    paymentType
                     type_="text"
                     name="line1"
                     inputRef=line1Ref
@@ -685,7 +650,6 @@ let make = (
                         isValid: Some(value !== ""),
                       })
                     }}
-                    paymentType
                     type_="text"
                     name="line2"
                     inputRef=line2Ref
@@ -711,7 +675,6 @@ let make = (
                         isValid: Some(value !== ""),
                       })
                     }}
-                    paymentType
                     type_="text"
                     name="city"
                     inputRef=cityRef
@@ -739,7 +702,6 @@ let make = (
                       })
                     }}
                     onChange=onPostalChange
-                    paymentType
                     name="postal"
                     inputRef=postalRef
                     placeholder=localeString.postalCodeLabel

@@ -3,6 +3,7 @@ open CardThemeType
 open CardTheme
 open LoggerUtils
 open RecoilAtoms
+open PaymentTypeContext
 
 let setUserError = message => {
   Utils.postFailedSubmitResponse(~errortype="validation_error", ~message)
@@ -18,6 +19,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
 
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
@@ -46,10 +48,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let (isZipValid, setIsZipValid) = React.useState(_ => None)
   let (isCardSupported, setIsCardSupported) = React.useState(_ => None)
 
-  let maxCardLength = React.useMemo(() => {
-    getMaxLength(cardNumber)
-  }, (cardNumber, cardScheme, showFields))
-
   let cardBrand = getCardBrand(cardNumber)
   let isNotBancontact = selectedOption !== "bancontact_card" && cardBrand == ""
   let (cardBrand, setCardBrand) = React.useState(_ =>
@@ -61,10 +59,16 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands
   }, [paymentMethodListValue])
 
+  let maxCardLength = React.useMemo(() => {
+    getMaxLength(cardBrand)
+  }, (cardNumber, cardScheme, cardBrand, showFields))
+
   React.useEffect(() => {
-    setIsCardSupported(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
+    setIsCardSupported(_ =>
+      PaymentUtils.checkIsCardSupported(cardNumber, cardBrand, supportedCardBrands)
+    )
     None
-  }, (supportedCardBrands, cardNumber))
+  }, (supportedCardBrands, cardNumber, cardBrand))
 
   let cardType = React.useMemo1(() => {
     cardBrand->getCardType
@@ -101,19 +105,32 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     None
   }, [cardBrand])
 
+  React.useEffect(() => {
+    switch (isCardValid, isExpiryValid, isCVCValid) {
+    | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
+      CardUtils.emitIsFormReadyForSubmission(
+        cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+      )
+    | _ => ()
+    }
+    None
+  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid))
+
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
     let card = val->formatCardNumber(cardType)
     let clearValue = card->clearSpaces
-    setCardValid(clearValue, setIsCardValid)
+    setCardValid(clearValue, cardBrand, setIsCardValid)
     if (
       focusCardValid(clearValue, cardBrand) &&
-      PaymentUtils.checkIsCardSupported(clearValue, supportedCardBrands)->Option.getOr(false)
+      PaymentUtils.checkIsCardSupported(clearValue, cardBrand, supportedCardBrands)->Option.getOr(
+        false,
+      )
     ) {
       handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
     }
-    if card->String.length > 6 && cardNumber->pincodeVisibility {
+    if card->String.length > 6 && cardBrand->pincodeVisibility {
       setDisplayPincode(_ => true)
     } else if card->String.length < 8 {
       setDisplayPincode(_ => false)
@@ -176,8 +193,10 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
 
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
-    if cardNumberInRange(cardNumber)->Array.includes(true) && calculateLuhn(cardNumber) {
-      setIsCardValid(_ => PaymentUtils.checkIsCardSupported(cardNumber, supportedCardBrands))
+    if cardNumberInRange(cardNumber, cardBrand)->Array.includes(true) && calculateLuhn(cardNumber) {
+      setIsCardValid(_ =>
+        PaymentUtils.checkIsCardSupported(cardNumber, cardBrand, supportedCardBrands)
+      )
     } else if cardNumber->String.length == 0 {
       setIsCardValid(_ => Some(false))
     } else {
@@ -357,7 +376,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     | (_, _, true) => ""
     | (true, true, _) => ""
     | (true, _, _) => localeString.inValidCardErrorText
-    | (_, _, _) => CardUtils.getCardBrandInvalidError(~cardNumber, ~localeString)
+    | (_, _, _) => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
     }
     let cardError = isCardValid->Option.isSome ? cardError : ""
     setCardError(_ => cardError)
@@ -382,7 +401,15 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, (isExpiryValid, isExpiryComplete(cardExpiry)))
 
   React.useEffect(() => {
-    setCardBrand(_ => cardNumber->CardUtils.getCardBrand)
+    let validCardBrand = getFirstValidCardSchemeFromPML(
+      ~cardNumber,
+      ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
+    )
+    let newCardBrand = switch validCardBrand {
+    | Some(brand) => brand
+    | None => cardNumber->CardUtils.getCardBrand
+    }
+    setCardBrand(_ => newCardBrand)
     None
   }, [cardNumber])
 
@@ -390,7 +417,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand />
   }, (cardType, paymentType, cardBrand, cardNumber))
 
-  let cardProps: CardUtils.cardProps = (
+  let cardProps: CardUtils.cardProps = {
     isCardValid,
     setIsCardValid,
     isCardSupported,
@@ -403,9 +430,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     setCardError,
     maxCardLength,
     cardBrand,
-  )
+  }
 
-  let expiryProps: CardUtils.expiryProps = (
+  let expiryProps: CardUtils.expiryProps = {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
@@ -415,9 +442,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     onExpiryKeyDown,
     expiryError,
     setExpiryError,
-  )
+  }
 
-  let cvcProps: CardUtils.cvcProps = (
+  let cvcProps: CardUtils.cvcProps = {
     isCVCValid,
     setIsCVCValid,
     cvcNumber,
@@ -428,9 +455,9 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     onCvcKeyDown,
     cvcError,
     setCvcError,
-  )
+  }
 
-  let zipProps: CardUtils.zipProps = (
+  let zipProps: CardUtils.zipProps = {
     isZipValid,
     setIsZipValid,
     zipCode,
@@ -439,13 +466,15 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     zipRef,
     onZipCodeKeyDown,
     displayPincode,
-  )
+  }
 
   if integrateError {
     <ErrorOccured />
   } else {
-    <RenderPaymentMethods
-      paymentType cardProps expiryProps cvcProps zipProps handleElementFocus blurState isFocus
-    />
+    <PaymentTypeContext.provider value={paymentType: paymentType}>
+      <RenderPaymentMethods
+        paymentType cardProps expiryProps cvcProps zipProps handleElementFocus blurState isFocus
+      />
+    </PaymentTypeContext.provider>
   }
 }

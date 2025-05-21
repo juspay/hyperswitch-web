@@ -48,6 +48,7 @@ let charcoal = {
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
+  disabledFieldColor: "#E1E5EA",
 }
 
 let charcoalRules = theme =>
@@ -117,6 +118,9 @@ let charcoalRules = theme =>
     ".Input::placeholder": {
       "fontWeight": theme.fontWeightLight,
       "color": theme.colorTextPlaceholder,
+    },
+    ".InputLogo": {
+      "color": "#979797",
     },
     ".TabLabel": {
       "transition": "color .1s ease",

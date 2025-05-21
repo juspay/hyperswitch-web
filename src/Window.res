@@ -16,6 +16,28 @@ type event = {key: string, data: string, origin: string}
 type date = {now: unit => string}
 type body
 type packageJson = {version: string}
+type callback = Nullable.t<JSON.t> => unit
+type options = {signal: unit}
+
+type element = {
+  mutable getAttribute: string => string,
+  mutable src: string,
+  mutable async: bool,
+  mutable rel: string,
+  mutable href: string,
+  mutable \"as": string,
+  mutable crossorigin: string,
+  mutable \"type": string,
+  mutable id: string,
+  mutable width: string,
+  mutable height: string,
+  contentWindow: option<window>,
+  setAttribute: (string, string) => unit,
+  addEventListener?: (string, callback, option<options>) => unit,
+}
+
+type elementRef
+@val external myDocument: elementRef = "document"
 
 /* External Declarations */
 @val external window: window = "window"
@@ -30,6 +52,8 @@ type packageJson = {version: string}
 @val @scope("document") external body: body = "body"
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
+@send
+external elementQuerySelector: (elementRef, string) => Nullable.t<element> = "querySelector"
 
 @val @scope("window")
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
@@ -172,11 +196,6 @@ let version = packageJson.version
 
 /* URL Handling */
 let hrefWithoutSearch = Location.origin ++ Location.pathname
-
-/* Environment Flags */
-let isSandbox = Location.hostname === "beta.hyperswitch.io"
-let isInteg = Location.hostname === "dev.hyperswitch.io"
-let isProd = Location.hostname === "checkout.hyperswitch.io"
 
 /* iFrame Detection */
 let isIframed = () =>

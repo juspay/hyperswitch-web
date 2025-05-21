@@ -48,6 +48,7 @@ let midnight = {
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
+  disabledFieldColor: "#24252D",
 }
 
 let midnightRules = theme =>
@@ -133,6 +134,9 @@ let midnightRules = theme =>
     ".Input::placeholder": {
       "fontWeight": theme.fontWeightLight,
       "color": theme.colorTextPlaceholder,
+    },
+    ".InputLogo": {
+      "color": "#979797",
     },
     ".TabLabel": {
       "transition": "color .1s ease",

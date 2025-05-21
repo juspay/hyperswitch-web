@@ -2,6 +2,7 @@ open Utils
 @react.component
 let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
   open RecoilAtoms
+  open RecoilAtomsV2
 
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
   let (keys, setKeys) = Recoil.useRecoilState(keys)
@@ -9,6 +10,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
+  let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
@@ -102,6 +104,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | KlarnaElement
     | PazeElement
     | ExpressCheckoutElement
+    | PaymentMethodsManagement
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger, countryList)
         setOptionsPayment(_ => paymentOptions)
@@ -138,6 +141,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           fonts: config.fonts,
           clientSecret: config.clientSecret,
           ephemeralKey: config.ephemeralKey,
+          pmClientSecret: config.pmClientSecret,
+          pmSessionId: config.pmSessionId,
           loader: config.loader,
         },
         themeObj: appearance.variables,
@@ -244,7 +249,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             } else {
               let sdkSessionId = dict->getString("sdkSessionId", "no-element")
               logger.setSessionId(sdkSessionId)
-              if Window.isInteg {
+              if GlobalVars.isInteg {
                 setBlockConfirm(_ => dict->getBool("blockConfirm", false))
               }
               setCustomPodUri(_ => dict->getString("customPodUri", ""))
@@ -274,10 +279,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
                 let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
+                let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
+                let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
                 setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
                   ephemeralKey,
+                  pmClientSecret,
+                  pmSessionId,
                 })
                 logger.setClientSecret(clientSecret)
 
@@ -314,6 +323,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
+                ("profileId", ""->JSON.Encode.string),
                 ("parentURL", "*"->JSON.Encode.string),
                 ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
               ]->Array.forEach(keyPair => {
@@ -331,10 +341,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
             let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
+            let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
+            let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
             setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
               ephemeralKey,
+              pmClientSecret,
+              pmSessionId,
             })
             logger.setClientSecret(clientSecret)
 
@@ -579,6 +593,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }
           | NoResult(_) => evalMethodsList()
           }
+        }
+        if dict->getDictIsSome("paymentManagementMethods") {
+          let paymentManagementMethods =
+            dict->PMMV2Helpers.createCustomerObjArr("paymentManagementMethods")
+          setPaymentManagementList(_ => paymentManagementMethods)
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
           setIsApplePayReady(_ => true)

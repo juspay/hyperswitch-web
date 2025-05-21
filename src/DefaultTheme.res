@@ -48,6 +48,7 @@ let default = {
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
+  disabledFieldColor: "#F6F8FA",
 }
 let defaultRules = theme =>
   {
@@ -126,6 +127,9 @@ let defaultRules = theme =>
     ".Input::placeholder": {
       "fontWeight": theme.fontWeightLight,
       "color": theme.colorTextPlaceholder,
+    },
+    ".InputLogo": {
+      "color": "#979797",
     },
     ".TabLabel": {
       "transition": "color .1s ease",

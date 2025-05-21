@@ -1,5 +1,7 @@
 open RecoilAtoms
 open RecoilAtomTypes
+open PaymentTypeContext
+
 @react.component
 let make = (
   ~setValue=?,
@@ -14,7 +16,7 @@ let make = (
   ~fieldName="",
   ~name="",
   ~type_="text",
-  ~paymentType: CardThemeType.mode,
+  ~paymentType: option<CardThemeType.mode>=?,
   ~maxLength=?,
   ~pattern=?,
   ~placeholder="",
@@ -28,6 +30,8 @@ let make = (
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
+  let contextPaymentType = usePaymentType()
+  let paymentType = paymentType->Option.getOr(contextPaymentType)
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
@@ -56,7 +60,9 @@ let make = (
   }
 
   let backgroundClass = switch paymentType {
-  | Payment => themeObj.colorBackground
+  | Payment
+  | PaymentMethodsManagement =>
+    themeObj.colorBackground
   | _ => "transparent"
   }
   let direction = if type_ == "password" || type_ == "tel" {
