@@ -27,7 +27,7 @@
     "build:sandbox:v2": "cross-env NODE_ENV=production sdkEnv=sandbox SDK_VERSION=v2 webpack --config webpack.common.js",
     "build:prod:v2": "cross-env NODE_ENV=production sdkEnv=prod SDK_VERSION=v2 webpack --config webpack.common.js",
     "deploy-to-s3": "node ./scripts/pushToS3.js",
-    "postinstall": "git config core.hooksPath .githooks && chmod +x .githooks/commit-msg && cd Hyperswitch-React-Demo-App && npm i",
+    "postinstall": "git config core.hooksPath .githooks && git submodule update --init --recursive && chmod +x .githooks/commit-msg && cd Hyperswitch-React-Demo-App && npm i",
     "re:build": "rescript",
     "re:clean": "rescript clean",
     "re:format": "rescript format -all",
