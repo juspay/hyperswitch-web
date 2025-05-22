@@ -106,7 +106,6 @@ let initializeCountryData = async (
   ~locale="en",
   ~logger=HyperLogger.make(~source=Elements(Payment)),
 ) => {
-  Js.log("Initializing country data")
   try {
     switch GlobalVars.countryDataRef.contents {
     | Some(data) => data
