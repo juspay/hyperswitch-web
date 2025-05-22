@@ -151,7 +151,18 @@ let make = (
     logger,
   )
 
-  let (stateJson, setStatesJson) = React.useState(_ => None)
+  let stateList = Recoil.useRecoilValueFromAtom(RecoilAtoms.stateAtom)
+
+  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
+  let stateNames = getStateNames(
+    stateList,
+    {
+      value: country,
+      isValid: None,
+      errorString: "",
+    },
+    countryList,
+  )
 
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
   let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))

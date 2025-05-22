@@ -26,7 +26,7 @@ let make = () => {
       | _ => {
           setCountry(_ => Country.country)
           try {
-            let fallbackStates = await AddressPaymentInput.importStates("./States.json")
+            let fallbackStates = await S3Utils.importStates("./States.json")
             setState(_ => fallbackStates.states)
           } catch {
           | _ => setState(_ => JSON.Encode.null)

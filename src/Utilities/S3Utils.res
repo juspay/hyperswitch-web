@@ -1,6 +1,11 @@
 open Country
 open Utils
 
+type dataModule = {states: JSON.t}
+
+@val
+external importStates: string => promise<dataModule> = "import"
+
 let decodeCountryArray = data => {
   data->Array.map(item =>
     switch item->JSON.Decode.object {
@@ -40,8 +45,10 @@ let getNormalizedLocale = locale => {
 
 let fetchCountryStateFromS3 = endpoint => {
   open Promise
-  Utils.fetchApi(endpoint, ~method=#GET)
-  ->GZipUtils.extractJson
+  let headers = Dict.make()
+  headers->Dict.set("Accept-Encoding", "br, gzip")
+  Utils.fetchApi(endpoint, ~method=#GET, ~headers)
+  ->Promise.then(resp => resp->Fetch.Response.json)
   ->then(data => {
     let val = decodeJsonTocountryStateData(data)
     switch val {
@@ -59,14 +66,15 @@ let getCountryStateData = async (
   ~logger=HyperLogger.make(~source=Elements(Payment)),
 ) => {
   let normalizedLocale = getNormalizedLocale(locale)
-  let endpoint = `${getBaseUrl}}/assets/v1/location/${normalizedLocale}`
+  let timestamp = Js.Date.now()->Float.toString
+  let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
 
   try {
     await fetchCountryStateFromS3(endpoint)
   } catch {
   | _ =>
     try {
-      await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/location/en`)
+      await fetchCountryStateFromS3(`${getBaseUrl}/assets/v1/jsons/location/en?v=${timestamp}`)
     } catch {
     | _ => {
         logger.setLogError(
@@ -78,7 +86,7 @@ let getCountryStateData = async (
 
         let fallbackCountries = country
         try {
-          let fallbackStates = await AddressPaymentInput.importStates("./../States.json")
+          let fallbackStates = await importStates("./../States.json")
           {
             countries: fallbackCountries,
             states: fallbackStates.states,
@@ -94,26 +102,27 @@ let getCountryStateData = async (
   }
 }
 
-let countryDataRef = ref(None)
-
-let initializeCountryData = async () => {
+let initializeCountryData = async (
+  ~locale="en",
+  ~logger=HyperLogger.make(~source=Elements(Payment)),
+) => {
+  Js.log("Initializing country data")
   try {
-    switch countryDataRef.contents {
+    switch GlobalVars.countryDataRef.contents {
     | Some(data) => data
     | None => {
-        let data = await getCountryStateData()
-        countryDataRef.contents = Some(data.countries)
+        let data = await getCountryStateData(~locale, ~logger)
+        GlobalVars.countryDataRef.contents = Some(data.countries)
         data.countries
       }
     }
   } catch {
-  | _ => Country.country
+  | _ => country
   }
 }
-let _ = initializeCountryData()
 
 let getCountryListData = () => {
-  switch countryDataRef.contents {
+  switch GlobalVars.countryDataRef.contents {
   | Some(data) => data
   | None => country
   }

@@ -1082,7 +1082,7 @@ let getSdkHandleSavePaymentProps = dict => {
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
-let itemToObjMapper = (dict, logger) => {
+let itemToObjMapper = (dict, logger, countryList) => {
   unknownKeysWarning(
     [
       "defaultValues",

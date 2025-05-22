@@ -26,3 +26,6 @@ let targetOrigin: string = "*"
 @val external isInteg: bool = "isIntegrationEnv"
 @val external isSandbox: bool = "isSandboxEnv"
 @val external isProd: bool = "isProductionEnv"
+@val external isRunningLocally: bool = "isRunningLocally"
+
+let countryDataRef: ref<option<array<Country.timezoneType>>> = ref(None)
