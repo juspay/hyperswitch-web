@@ -13,14 +13,7 @@ const getEnvVariable = (variable, defaultValue) => {
   return value && value.length > 0 ? value : defaultValue;
 };
 
-// Extract SDK version and other variables
 const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
-const repoVersion = getEnvVariable("SDK_TAG_VERSION", "0.1.0");
-const sdkEnv = getEnvVariable("sdkEnv", "local");
-
-// Define public path based on SDK version and environment
-const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersionValue}`;
 
 module.exports = (endpoint, publicPath = "auto") => {
   const entries = {
@@ -31,9 +24,8 @@ module.exports = (endpoint, publicPath = "auto") => {
     mode: "development",
     devtool: "source-map",
     output: {
-      path: path.resolve(__dirname, "dist", sdkEnv, sdkVersionValue),
+      path: path.resolve(__dirname, "dist"),
       clean: true,
-      publicPath: `${repoPublicPath}/`,
     },
     // Add this resolve section to fix the jsx-runtime issue
     resolve: {
@@ -59,7 +51,7 @@ module.exports = (endpoint, publicPath = "auto") => {
       new MiniCssExtractPlugin(),
       new CopyPlugin({
         patterns: [
-          { from: "public", to: "" },
+          { from: "public" },
           { from: path.resolve(__dirname, "server.js") },
         ],
       }),
@@ -72,8 +64,6 @@ module.exports = (endpoint, publicPath = "auto") => {
         SCRIPT_SRC: JSON.stringify(process.env.HYPERSWITCH_CLIENT_URL),
         SELF_SERVER_URL: JSON.stringify(process.env.SELF_SERVER_URL ?? ""),
         SDK_VERSION: JSON.stringify(sdkVersionValue),
-        REPO_VERSION: JSON.stringify(repoVersion),
-        PUBLIC_PATH: JSON.stringify(repoPublicPath),
       }),
       new BundleAnalyzerPlugin({
         analyzerMode: "static",
@@ -97,7 +87,7 @@ module.exports = (endpoint, publicPath = "auto") => {
           test: /\.(jpe?g|png|gif|svg)$/i,
           loader: "file-loader",
           options: {
-            name: "assets/[name].[ext]",
+            name: "/public/assets/[name].[ext]",
           },
         },
         {
