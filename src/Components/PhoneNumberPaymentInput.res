@@ -9,10 +9,9 @@ let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
   let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", loggerState)
-  let countryList = S3Utils.getCountryListData()
   let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
-  let clientCountry = getClientCountry(clientTimeZone, countryList)
-  let currentCountryCode = Utils.getCountryCode(clientCountry.countryName, countryList)
+  let clientCountry = getClientCountry(clientTimeZone)
+  let currentCountryCode = Utils.getCountryCode(clientCountry.countryName)
   let (displayValue, setDisplayValue) = React.useState(_ => "")
 
   let countryAndCodeCodeList =

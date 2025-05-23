@@ -86,7 +86,7 @@ let defaultHeadlessApplePayToken: headlessApplePayToken = {
 
 let jsonToPaymentRequestDataType: Dict.t<JSON.t> => paymentRequestData = jsonDict => {
   let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
-  let clientCountry = getClientCountry(clientTimeZone, S3Utils.getCountryListData())
+  let clientCountry = getClientCountry(clientTimeZone)
   let defaultCountryCode = clientCountry.isoAlpha2
 
   let getTotal = totalDict => {

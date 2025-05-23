@@ -43,7 +43,7 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
   }
 }
 
-let countryNames = Utils.getCountryNames(S3Utils.getCountryListData())
+let countryNames = Utils.getCountryNames(DataRefs.countryDataRef.contents)
 
 let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
   BillingName,
@@ -399,7 +399,7 @@ let useSetInitialRequiredFields = (
     "bankAccountNumber",
     logger,
   )
-  let countryList = S3Utils.getCountryListData()
+  let countryList = DataRefs.countryDataRef.contents
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -583,7 +583,7 @@ let useRequiredFieldsBody = (
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
-  let countryList = S3Utils.getCountryListData()
+  let countryList = DataRefs.countryDataRef.contents
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {

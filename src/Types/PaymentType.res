@@ -387,12 +387,12 @@ let getLayout = (str, logger) => {
     }
   }
 }
-let getAddress = (dict, str, logger, countryList) => {
+let getAddress = (dict, str, logger) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    let countryNames = getCountryNames(countryList)
+    let countryNames = getCountryNames(DataRefs.countryDataRef.contents)
     unknownKeysWarning(
       ["line1", "line2", "city", "state", "country", "postal_code"],
       json,
@@ -419,7 +419,7 @@ let getAddress = (dict, str, logger, countryList) => {
   })
   ->Option.getOr(defaultAddress)
 }
-let getBillingDetails = (dict, str, logger, countryList) => {
+let getBillingDetails = (dict, str, logger) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
@@ -434,20 +434,20 @@ let getBillingDetails = (dict, str, logger, countryList) => {
       name: getWarningString(json, "name", "", ~logger),
       email: getWarningString(json, "email", "", ~logger),
       phone: getWarningString(json, "phone", "", ~logger),
-      address: getAddress(json, "address", logger, countryList),
+      address: getAddress(json, "address", logger),
     }
   })
   ->Option.getOr(defaultBillingDetails)
 }
 
-let getDefaultValues = (dict, str, logger, countryList) => {
+let getDefaultValues = (dict, str, logger) => {
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
     unknownKeysWarning(["billingDetails"], json, "options.defaultValues", ~logger)
     let defaultValues: defaultValues = {
-      billingDetails: getBillingDetails(json, "billingDetails", logger, countryList),
+      billingDetails: getBillingDetails(json, "billingDetails", logger),
     }
     defaultValues
   })
@@ -1082,7 +1082,7 @@ let getSdkHandleSavePaymentProps = dict => {
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
-let itemToObjMapper = (dict, logger, countryList) => {
+let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(
     [
       "defaultValues",
@@ -1116,7 +1116,7 @@ let itemToObjMapper = (dict, logger, countryList) => {
     ~logger,
   )
   {
-    defaultValues: getDefaultValues(dict, "defaultValues", logger, countryList),
+    defaultValues: getDefaultValues(dict, "defaultValues", logger),
     business: getBusiness(dict, "business", logger),
     layout: getLayout(dict, "layout", logger),
     customerPaymentMethods: getCustomerMethods(dict, "customerPaymentMethods"),

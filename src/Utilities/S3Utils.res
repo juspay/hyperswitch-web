@@ -103,24 +103,10 @@ let initializeCountryData = async (
 ) => {
   try {
     let data = await getCountryStateData(~locale, ~logger)
-    GlobalVars.countryDataRef.contents = Some(data.countries)
-    GlobalVars.stateDataRef.contents = Some(data.states)
+    DataRefs.countryDataRef.contents = data.countries
+    DataRefs.stateDataRef.contents = data.states
     data
   } catch {
   | _ => {countries: country, states: JSON.Encode.null}
-  }
-}
-
-let getCountryListData = () => {
-  switch GlobalVars.countryDataRef.contents {
-  | Some(data) => data
-  | None => country
-  }
-}
-
-let getStateListData = () => {
-  switch GlobalVars.stateDataRef.contents {
-  | Some(data) => data
-  | None => JSON.Encode.null
   }
 }

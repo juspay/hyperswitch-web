@@ -58,11 +58,9 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let postalRef = React.useRef(Nullable.null)
 
   let (showOtherFileds, setShowOtherFields) = React.useState(_ => false)
-  let countryList = S3Utils.getCountryListData()
-  let stateList = S3Utils.getStateListData()
 
-  let stateNames = getStateNames(stateList, country, countryList)
-  let countryNames = getCountryNames(countryList)
+  let stateNames = getStateNames(country)
+  let countryNames = getCountryNames(DataRefs.countryDataRef.contents)
 
   let checkPostalValidity = (
     postal: RecoilAtomTypes.field,

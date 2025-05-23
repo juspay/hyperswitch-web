@@ -627,11 +627,11 @@ let getOptionsFromPaymentMethodFieldType = (dict, key, ~isAddressCountry=true) =
   switch options->Array.get(0)->Option.getOr("") {
   | "" => None
   | "ALL" => {
-      let countryArr = S3Utils.getCountryListData()->Array.map(item => item.countryName)
+      let countryArr = DataRefs.countryDataRef.contents->Array.map(item => item.countryName)
       isAddressCountry ? AddressCountry(countryArr) : ShippingAddressCountry(countryArr)
     }
   | _ => {
-      let countryArr = S3Utils.getCountryListData()->Array.reduce([], (acc, country) => {
+      let countryArr = DataRefs.countryDataRef.contents->Array.reduce([], (acc, country) => {
         if options->Array.includes(country.isoAlpha2) {
           acc->Array.push(country.countryName)
         }

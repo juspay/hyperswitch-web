@@ -1253,10 +1253,7 @@ let checkoutVisaUnified = async (
     }
   | true => {
       open Utils
-      let clientCountry = getClientCountry(
-        dateTimeFormat().resolvedOptions().timeZone,
-        S3Utils.getCountryListData(),
-      )
+      let clientCountry = getClientCountry(dateTimeFormat().resolvedOptions().timeZone)
       {
         ...defaultConfig,
         encryptedCard,

@@ -473,7 +473,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
 }
 
 let useStatesJson = setStatesJson => {
-  let stateList = S3Utils.getStateListData()
+  let stateList = DataRefs.stateDataRef.contents
 
   React.useEffect0(_ => {
     setStatesJson(_ => stateList)

@@ -40,7 +40,6 @@ let make = () => {
   let (sortcode, setSortcode) = React.useState(_ => "")
   let (accountNumber, setAccountNumber) = React.useState(_ => "")
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let countryList = S3Utils.getCountryListData()
 
   let (sortCodeError, setSortCodeError) = React.useState(_ => "")
 
@@ -98,7 +97,7 @@ let make = () => {
           ~city=city.value,
           ~zip=postalCode.value,
           ~state=state.value,
-          ~country=getCountryCode(country.value, countryList).isoAlpha2,
+          ~country=getCountryCode(country.value).isoAlpha2,
           ~bankAccountHolderName=fullName.value,
         )
         intent(

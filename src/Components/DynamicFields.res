@@ -150,19 +150,12 @@ let make = (
     "bankAccountNumber",
     logger,
   )
-
-  let stateList = S3Utils.getStateListData()
-  let countryList = S3Utils.getCountryListData()
-
-  let stateNames = getStateNames(
-    stateList,
-    {
-      value: country,
-      isValid: None,
-      errorString: "",
-    },
-    countryList,
-  )
+  let countryList = DataRefs.countryDataRef.contents
+  let stateNames = getStateNames({
+    value: country,
+    isValid: None,
+    errorString: "",
+  })
 
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
   let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))

@@ -27,6 +27,3 @@ let targetOrigin: string = "*"
 @val external isSandbox: bool = "isSandboxEnv"
 @val external isProd: bool = "isProductionEnv"
 @val external isLocal: bool = "isLocal"
-
-let countryDataRef: ref<option<array<Country.timezoneType>>> = ref(None)
-let stateDataRef: ref<option<RescriptCore.JSON.t>> = ref(None)
