@@ -59,7 +59,7 @@ module.exports = (endpoint, publicPath = "auto") => {
       new MiniCssExtractPlugin(),
       new CopyPlugin({
         patterns: [
-          { from: "public" },
+          { from: "public", to: "" },
           { from: path.resolve(__dirname, "server.js") },
         ],
       }),
@@ -97,7 +97,7 @@ module.exports = (endpoint, publicPath = "auto") => {
           test: /\.(jpe?g|png|gif|svg)$/i,
           loader: "file-loader",
           options: {
-            name: "/public/assets/[name].[ext]",
+            name: "assets/[name].[ext]",
           },
         },
         {
