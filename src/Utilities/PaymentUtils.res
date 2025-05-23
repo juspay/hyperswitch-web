@@ -473,7 +473,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
 }
 
 let useStatesJson = setStatesJson => {
-  let stateList = Recoil.useRecoilValueFromAtom(RecoilAtoms.stateAtom)
+  let stateList = S3Utils.getStateListData()
 
   React.useEffect0(_ => {
     setStatesJson(_ => stateList)

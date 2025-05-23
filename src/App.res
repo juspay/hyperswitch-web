@@ -12,31 +12,6 @@ let make = () => {
     (HyperLogger.make(~source=Elements(paymentType)), Date.now())
   })
 
-  let setCountry = Recoil.useSetRecoilState(RecoilAtoms.countryAtom)
-  let setState = Recoil.useSetRecoilState(RecoilAtoms.stateAtom)
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-
-  React.useEffect(() => {
-    let fetchData = async () => {
-      try {
-        let data = await S3Utils.getCountryStateData(~locale=localeString.locale)
-        setCountry(_ => data.countries)
-        setState(_ => data.states)
-      } catch {
-      | _ => {
-          setCountry(_ => Country.country)
-          try {
-            let fallbackStates = await S3Utils.importStates("./States.json")
-            setState(_ => fallbackStates.states)
-          } catch {
-          | _ => setState(_ => JSON.Encode.null)
-          }
-        }
-      }
-    }
-    fetchData()->ignore
-    None
-  }, [localeString.locale])
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
 
   React.useEffect(() => {

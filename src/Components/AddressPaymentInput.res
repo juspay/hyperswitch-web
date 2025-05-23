@@ -58,8 +58,9 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let postalRef = React.useRef(Nullable.null)
 
   let (showOtherFileds, setShowOtherFields) = React.useState(_ => false)
-  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
-  let stateList = Recoil.useRecoilValueFromAtom(RecoilAtoms.stateAtom)
+  let countryList = S3Utils.getCountryListData()
+  let stateList = S3Utils.getStateListData()
+
   let stateNames = getStateNames(stateList, country, countryList)
   let countryNames = getCountryNames(countryList)
 

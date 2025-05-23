@@ -23,7 +23,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (_, setPaymentMethodCollectOptions) = Recoil.useRecoilState(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
-  let countryList = Recoil.useRecoilValueFromAtom(countryAtom)
+  let countryList = S3Utils.getCountryListData()
 
   let divRef = React.useRef(Nullable.null)
 

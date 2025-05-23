@@ -16,7 +16,7 @@ let make = () => {
   )
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
-  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
+  let countryList = S3Utils.getCountryListData()
 
   let countryNames =
     Utils.getCountryNames(countryList)->DropdownField.updateArrayOfStringToOptionsTypeArray

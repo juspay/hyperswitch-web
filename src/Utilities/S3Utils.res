@@ -1,11 +1,6 @@
 open Country
 open Utils
 
-type dataModule = {states: JSON.t}
-
-@val
-external importStates: string => promise<dataModule> = "import"
-
 let decodeCountryArray = data => {
   data->Array.map(item =>
     switch item->JSON.Decode.object {
@@ -59,7 +54,7 @@ let fetchCountryStateFromS3 = endpoint => {
   ->catch(_ => reject(Exn.anyToExnInternal("Failed to fetch country state data")))
 }
 
-let getBaseUrl = GlobalVars.isRunningLocally ? "" : GlobalVars.sdkUrl
+let getBaseUrl = GlobalVars.isLocal ? "" : GlobalVars.sdkUrl
 
 let getCountryStateData = async (
   ~locale="en",
@@ -107,16 +102,12 @@ let initializeCountryData = async (
   ~logger=HyperLogger.make(~source=Elements(Payment)),
 ) => {
   try {
-    switch GlobalVars.countryDataRef.contents {
-    | Some(data) => data
-    | None => {
-        let data = await getCountryStateData(~locale, ~logger)
-        GlobalVars.countryDataRef.contents = Some(data.countries)
-        data.countries
-      }
-    }
+    let data = await getCountryStateData(~locale, ~logger)
+    GlobalVars.countryDataRef.contents = Some(data.countries)
+    GlobalVars.stateDataRef.contents = Some(data.states)
+    data
   } catch {
-  | _ => country
+  | _ => {countries: country, states: JSON.Encode.null}
   }
 }
 
@@ -124,5 +115,12 @@ let getCountryListData = () => {
   switch GlobalVars.countryDataRef.contents {
   | Some(data) => data
   | None => country
+  }
+}
+
+let getStateListData = () => {
+  switch GlobalVars.stateDataRef.contents {
+  | Some(data) => data
+  | None => JSON.Encode.null
   }
 }

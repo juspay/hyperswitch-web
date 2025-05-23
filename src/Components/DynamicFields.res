@@ -151,9 +151,9 @@ let make = (
     logger,
   )
 
-  let stateList = Recoil.useRecoilValueFromAtom(RecoilAtoms.stateAtom)
+  let stateList = S3Utils.getStateListData()
+  let countryList = S3Utils.getCountryListData()
 
-  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
   let stateNames = getStateNames(
     stateList,
     {

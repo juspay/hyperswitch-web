@@ -136,6 +136,3 @@ let defaultRedirectionFlags: redirectionFlags = {
   shouldRemoveBeforeUnloadEvents: false,
 }
 let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)
-
-let countryAtom = Recoil.atom("countryList", Country.country)
-let stateAtom = Recoil.atom("stateList", JSON.Encode.null)

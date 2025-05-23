@@ -18,6 +18,11 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
+type dataModule = {states: JSON.t}
+
+@val
+external importStates: string => promise<dataModule> = "import"
+
 open ErrorUtils
 
 let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object

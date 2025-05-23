@@ -233,7 +233,7 @@ module.exports = (publicPath = "auto") => {
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
-    isRunningLocally: sdkEnv === "local",
+    isLocal,
     visaAPIKeyId: JSON.stringify(visaAPIKeyId),
     visaAPICertificatePem: JSON.stringify(visaAPICertificatePem),
   };

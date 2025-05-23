@@ -29,7 +29,7 @@ let make = () => {
   let (postalCode, _) = Recoil.useLoggedRecoilState(userAddressPincode, "postal_code", loggerState)
   let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let countryList = Recoil.useRecoilValueFromAtom(RecoilAtoms.countryAtom)
+  let countryList = S3Utils.getCountryListData()
 
   let pmAuthMapper = React.useMemo1(
     () =>

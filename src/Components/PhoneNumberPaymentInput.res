@@ -9,7 +9,7 @@ let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
   let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", loggerState)
-  let countryList = Recoil.useRecoilValueFromAtom(countryAtom)
+  let countryList = S3Utils.getCountryListData()
   let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = getClientCountry(clientTimeZone, countryList)
   let currentCountryCode = Utils.getCountryCode(clientCountry.countryName, countryList)
