@@ -12,6 +12,7 @@ let make = (
   let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+  let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let setFullName = Recoil.useLoggedSetRecoilState(userFullName, "fullName", loggerState)
@@ -26,9 +27,16 @@ let make = (
     None
   }, [])
 
-  let isLoading = switch (GlobalVars.sdkVersion, paymentMethodList, paymentManagementList) {
-  | (V1, Loading, _) => true
-  | (V2, _, LoadingV2) => true
+  let isLoading = switch (
+    GlobalVars.sdkVersion,
+    paymentType,
+    paymentMethodList,
+    paymentManagementList,
+    paymentMethodsListV2,
+  ) {
+  | (V1, Payment, Loading, _, _)
+  | (V2, PaymentMethodsManagement, _, LoadingV2, _)
+  | (V2, Payment, _, _, LoadingV2) => true
   | _ => false
   }
 

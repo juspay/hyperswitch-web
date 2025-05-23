@@ -2,7 +2,7 @@ open RecoilAtoms
 
 @react.component
 let make = (
-  ~paymentItem: PMMTypesV2.customerMethods,
+  ~paymentItem: TypesV2.customerMethods,
   ~managePaymentMethod,
   ~isCardExpired,
   ~expiryMonth,

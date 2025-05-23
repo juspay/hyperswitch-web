@@ -161,8 +161,9 @@ let make = (
     let cardNetwork = [
       ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
     ]
-    let defaultCardBody = if isPMMFlow {
-      PaymentManagementBody.saveCardBody(
+    let defaultCardBody = switch (isPMMFlow, GlobalVars.sdkVersion) {
+    | (_, V1) =>
+      PaymentBody.cardPaymentBody(
         ~cardNumber,
         ~month,
         ~year,
@@ -171,8 +172,9 @@ let make = (
         ~cardBrand=cardNetwork,
         ~nickname=nickname.value,
       )
-    } else {
-      PaymentBody.cardPaymentBody(
+    | (true, _)
+    | (_, V2) =>
+      PaymentManagementBody.saveCardBody(
         ~cardNumber,
         ~month,
         ~year,
