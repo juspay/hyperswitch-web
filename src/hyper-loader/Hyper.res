@@ -341,6 +341,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let iframeRef = ref([])
       let clientSecret = ref("")
+      let paymentId = ref("")
       let ephemeralKey = ref("")
       let pmSessionId = ref("")
       let pmClientSecret = ref("")
@@ -540,8 +541,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.flatMap(x => x->Dict.get("clientSecret"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
+        let paymentIdVal =
+          elementsOptionsDict
+          ->Option.flatMap(x => x->Dict.get("paymentId"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         clientSecret := clientSecretId
+        paymentId := paymentIdVal
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
           resolve(JSON.Encode.null)
@@ -560,6 +567,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~publishableKey,
           ~profileId,
           ~clientSecret={clientSecretId},
+          ~paymentId={paymentIdVal},
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options

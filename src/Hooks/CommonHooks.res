@@ -3,6 +3,7 @@ type contentRect = {height: float}
 
 type keys = {
   clientSecret: option<string>,
+  paymentId: string,
   ephemeralKey?: string,
   pmSessionId?: string,
   pmClientSecret?: string,
@@ -117,6 +118,11 @@ let updateKeys = (dict, keyPair, setKeys) => {
         ...prev,
         profileId: dict->Utils.getString(key, valueStr),
       })
+    | "paymentId" =>
+      setKeys(prev => {
+        ...prev,
+        paymentId: dict->Utils.getString(key, valueStr),
+      })
     | "parentURL" =>
       setKeys(prev => {
         ...prev,
@@ -135,6 +141,7 @@ let defaultkeys = {
   clientSecret: None,
   publishableKey: "",
   profileId: "",
+  paymentId: "",
   iframeId: "",
   parentURL: "*",
   sdkHandleOneClickConfirmPayment: true,

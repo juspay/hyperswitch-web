@@ -1157,23 +1157,37 @@ let usePaymentIntent = (optLogger, paymentType) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
-      let headers = [
-        ("Content-Type", "application/json"),
-        ("api-key", confirmParam.publishableKey),
-        ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
-      ]
+      let headers = switch GlobalVars.sdkVersion {
+      | V1 => [
+          ("Content-Type", "application/json"),
+          ("api-key", confirmParam.publishableKey),
+          ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+        ]
+      | V2 => [
+          ("Content-Type", "application/json"),
+          ("authorization", `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`),
+          ("X-profile-id", keys.profileId),
+        ]
+      }
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
-      let body =
+      let body = switch GlobalVars.sdkVersion {
+      | V1 =>
         [("client_secret", clientSecret->JSON.Encode.string)]->Array.concatMany([
           returnUrlArr,
           manual_retry,
         ])
+      | V2 => []
+      }
+
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
+      let uri = switch GlobalVars.sdkVersion {
+      | V1 => `${endpoint}/payments/${paymentIntentID}/confirm`
+      | V2 => `${endpoint}/v2/payments/${keys.paymentId}/confirm-intent`
+      }
 
       let callIntent = body => {
         let contentLength = body->String.length->Int.toString

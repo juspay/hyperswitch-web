@@ -72,6 +72,7 @@ let make = () => {
     | "voucherData" => <VoucherDisplay />
     | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
     | "preMountLoader" => {
+        let paymentId = getQueryParamsDictforKey(url.search, "paymentId")
         let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
         let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
         let publishableKey = getQueryParamsDictforKey(url.search, "publishableKey")
@@ -93,6 +94,7 @@ let make = () => {
           profileId
           sessionId
           clientSecret
+          paymentId
           endpoint
           ephemeralKey
           pmSessionId

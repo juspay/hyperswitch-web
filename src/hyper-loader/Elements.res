@@ -14,6 +14,7 @@ let make = (
   options,
   setIframeRef,
   ~clientSecret,
+  ~paymentId,
   ~sdkSessionId,
   ~publishableKey,
   ~profileId,
@@ -72,7 +73,7 @@ let make = (
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"              allow="*"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"              allow="*"
               name="orca-payment"
               style="outline: none;"
             ></iframe>
@@ -89,8 +90,10 @@ let make = (
     let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
     let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
-    let clientSecretReMatch = Re.test(`.+_secret_[A-Za-z0-9]+`->Re.fromString, clientSecret)
-
+    let clientSecretReMatch = switch GlobalVars.sdkVersion {
+    | V1 => Some(Re.test(".+_secret_[A-Za-z0-9]+"->Re.fromString, clientSecret))
+    | V2 => None
+    }
     let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
     let isTaxCalculationEnabled = ref(false)
 
@@ -212,6 +215,31 @@ let make = (
       })
     }
 
+    let fetchPaymentsListV2 = (mountedIframeRef, componentType) => {
+      Promise.make((resolve, _) => {
+        let handlePaymentMethodsLoaded = (event: Types.event) => {
+          let json = event.data->anyTypeToJson
+          let dict = json->getDictFromJson
+          let isPaymentMethodsData = dict->getString("data", "") === "payment_methods_list_v2"
+          if isPaymentMethodsData {
+            resolve()
+            //Replicate V1 Behavior
+            //Checking Apple Pay and Google Pay
+            //Attach Event Listeners for Paze and Plaid
+            let msg = [("paymentsList", json)]->Dict.fromArray
+            mountedIframeRef->Window.iframePostMessage(msg)
+          }
+        }
+        let msg = [("sendPaymentMethodsListV2Response", true->JSON.Encode.bool)]->Dict.fromArray
+        addSmartEventListener(
+          "message",
+          handlePaymentMethodsLoaded,
+          `onPaymentMethodsLoaded-${componentType}`,
+        )
+        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+      })
+    }
+
     let fetchCustomerPaymentMethods = (
       mountedIframeRef,
       disableSavedPaymentMethods,
@@ -247,13 +275,17 @@ let make = (
       })
     }
 
-    !clientSecretReMatch
-      ? manageErrorWarning(
+    switch clientSecretReMatch {
+    | Some(val) =>
+      if !val {
+        manageErrorWarning(
           INVALID_FORMAT,
           ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
           ~logger,
         )
-      : ()
+      }
+    | None => ()
+    }
 
     let setElementIframeRef = ref => {
       iframeRef->Array.push(ref)->ignore
@@ -350,6 +382,7 @@ let make = (
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
           ("profileId", profileId->JSON.Encode.string),
+          ("paymentId", paymentId->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
           ("blockConfirm", blockConfirm->JSON.Encode.bool),
@@ -1343,27 +1376,39 @@ let make = (
         }
         preMountLoaderMountedPromise
         ->then(_ => {
-          let paymentMethodsPromise = fetchPaymentsList(mountedIframeRef, componentType)
           let disableSavedPaymentMethods =
             newOptions
             ->getDictFromJson
             ->getBool("displaySavedPaymentMethods", true) &&
               !(spmComponents->Array.includes(componentType))->not
-          let customerPaymentMethodsPromise = fetchCustomerPaymentMethods(
-            mountedIframeRef,
-            disableSavedPaymentMethods,
-            componentType,
-          )
           let sessionTokensPromise = fetchSessionTokens(mountedIframeRef)
-          Promise.all([
-            paymentMethodsPromise,
-            customerPaymentMethodsPromise,
-            sessionTokensPromise,
-          ])->then(_ => {
-            let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
-            preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-            resolve()
-          })
+          switch GlobalVars.sdkVersion {
+          | V1 => {
+              let paymentMethodsPromise = fetchPaymentsList(mountedIframeRef, componentType)
+              let customerPaymentMethodsPromise = fetchCustomerPaymentMethods(
+                mountedIframeRef,
+                disableSavedPaymentMethods,
+                componentType,
+              )
+              Promise.all([
+                paymentMethodsPromise,
+                customerPaymentMethodsPromise,
+                sessionTokensPromise,
+              ])->then(_ => {
+                let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
+                preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+                resolve()
+              })
+            }
+          | V2 => {
+              let paymentMethodsPromise = fetchPaymentsListV2(mountedIframeRef, componentType)
+              Promise.all([paymentMethodsPromise, sessionTokensPromise])->then(_ => {
+                let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
+                preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+                resolve()
+              })
+            }
+          }
         })
         ->catch(_ => resolve())
         ->ignore

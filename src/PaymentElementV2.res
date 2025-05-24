@@ -13,8 +13,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let {showCardFormByDefault, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+  let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentManagementListValue,
+  )
+  let (paymentsListValue, setPaymentsListValue) = Recoil.useRecoilState(
+    PaymentUtils.paymentsListValue,
   )
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, _setWalletOptions) = React.useState(_ => [])
@@ -37,20 +41,28 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   })
   React.useEffect(() => {
-    switch paymentManagementList {
-    | LoadedV2(paymentlist) =>
+    switch (paymentType, paymentManagementList, paymentMethodsListV2) {
+    | (Payment, _, LoadedV2(paymentlist)) =>
+      let plist = paymentlist
+      setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
+      setPaymentsListValue(_ => plist)
+    | (PaymentMethodsManagement, LoadedV2(paymentlist), _) =>
       let plist = paymentlist
 
       setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
       setPaymentManagementListValue(_ => plist)
-
-    | LoadErrorV2(_)
-    | SemiLoadedV2 =>
+    | (_, LoadErrorV2(_), _)
+    | (_, _, LoadErrorV2(_))
+    | (_, SemiLoadedV2, _)
+    | (_, _, SemiLoadedV2) =>
+      //For Payments CheckPriorityList && ShowCardFormByDefault
+      //For PaymentMethodsManagement Cards
       setPaymentOptions(_ => ["card"])
     | _ => ()
     }
+
     None
-  }, (paymentManagementList, paymentOptionsList, actualList))
+  }, (paymentManagementList, paymentOptionsList, actualList, paymentMethodsListV2))
 
   React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
@@ -100,7 +112,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       postFailedSubmitResponse(~errortype="validation_error", ~message="Select a payment method")
     }
   }, [selectedOption])
+
   useSubmitPaymentData(submitCallback)
+
   React.useEffect(() => {
     setSelectedOption(prev =>
       selectedOption !== ""
@@ -124,6 +138,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     paymentManagementList,
     selectedOption,
     showCardFormByDefault,
+    paymentMethodsListV2,
   ))
 
   let loader = () => {
@@ -135,6 +150,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     )
     <PaymentShimmer />
   }
+
   let checkoutEle = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement">
       {switch selectedOption->PaymentModeType.paymentMode {
@@ -151,15 +167,20 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   React.useEffect(() => {
     let evalMethodsList = () =>
-      switch paymentManagementList {
-      | SemiLoadedV2 | LoadErrorV2(_) | LoadedV2(_) =>
+      switch (paymentType, paymentManagementList, paymentMethodsListV2) {
+      | (Payment, _, SemiLoadedV2)
+      | (Payment, _, LoadErrorV2(_))
+      | (Payment, _, LoadedV2(_))
+      | (PaymentMethodsManagement, SemiLoadedV2, _)
+      | (PaymentMethodsManagement, LoadErrorV2(_), _)
+      | (PaymentMethodsManagement, LoadedV2(_), _) =>
         messageParentWindow([("ready", true->JSON.Encode.bool)])
       | _ => ()
       }
     evalMethodsList()
 
     None
-  }, [paymentManagementList])
+  }, [paymentManagementList, paymentMethodsListV2])
 
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
@@ -193,5 +214,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <PaymentElementShimmer />
       </RenderIf>
     }}
+    <PoweredBy />
   </>
 }

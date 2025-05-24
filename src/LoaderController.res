@@ -11,6 +11,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
   let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
+  let setPaymentMethodsListV2 = Recoil.useSetRecoilState(paymentMethodsListV2)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
@@ -323,6 +324,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
                 ("profileId", ""->JSON.Encode.string),
+                ("paymentId", ""->JSON.Encode.string),
                 ("parentURL", "*"->JSON.Encode.string),
                 ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
               ]->Array.forEach(keyPair => {
@@ -437,6 +439,52 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
             }
           }
+        }
+        if dict->getDictIsSome("paymentsList") {
+          let paymentMethodList = dict->getJsonObjectFromDict("paymentsList")
+          let listDict = paymentMethodList->getDictFromJson
+
+          let finalLoadLatency = if launchTime <= 0.0 {
+            0.0
+          } else {
+            Date.now() -. launchTime
+          }
+          let updatedState: TypesV2.loadstate =
+            paymentMethodList == Dict.make()->JSON.Encode.object
+              ? LoadErrorV2(paymentMethodList)
+              : switch listDict->Dict.get("error") {
+                | Some(_) => LoadErrorV2(paymentMethodList)
+                | None =>
+                  let isNonEmptyPaymentMethodList = switch listDict->Dict.get("response") {
+                  | Some(val) =>
+                    val->getDictFromJson->getArray("payment_methods_enabled")->Array.length > 0
+                  | None => false
+                  }
+                  isNonEmptyPaymentMethodList
+                    ? listDict->V2Helpers.createCustomerObjArr("response")
+                    : LoadErrorV2(paymentMethodList)
+                }
+
+          let evalMethodsList = () =>
+            switch updatedState {
+            | LoadedV2(_) =>
+              logger.setLogInfo(
+                ~value="Loaded",
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadLatency,
+              )
+            | LoadErrorV2(x) =>
+              logger.setLogError(
+                ~value="LoadError: " ++ x->JSON.stringify,
+                ~eventName=LOADER_CHANGED,
+                ~latency=finalLoadLatency,
+              )
+            | _ => ()
+            }
+
+          evalMethodsList()
+
+          setPaymentMethodsListV2(_ => updatedState)
         }
         if dict->getDictIsSome("paymentMethodList") {
           let paymentMethodList = dict->getJsonObjectFromDict("paymentMethodList")
@@ -595,7 +643,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("paymentManagementMethods") {
           let paymentManagementMethods =
-            dict->PMMV2Helpers.createCustomerObjArr("paymentManagementMethods")
+            dict->V2Helpers.createCustomerObjArr("paymentManagementMethods")
           setPaymentManagementList(_ => paymentManagementMethods)
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
