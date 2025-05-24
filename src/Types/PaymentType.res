@@ -392,8 +392,7 @@ let getAddress = (dict, str, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    let countryNames = []
-    Country.country->Array.map(item => countryNames->Array.push(item.countryName))->ignore
+    let countryNames = getCountryNames(DataRefs.countryDataRef.contents)
     unknownKeysWarning(
       ["line1", "line2", "city", "state", "country", "postal_code"],
       json,

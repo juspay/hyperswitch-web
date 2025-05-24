@@ -18,6 +18,11 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
+type dataModule = {states: JSON.t}
+
+@val
+external importStates: string => promise<dataModule> = "import"
+
 open ErrorUtils
 
 let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
@@ -411,7 +416,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
 }
 
 let getClientCountry = clientTimeZone => {
-  Country.country
+  DataRefs.countryDataRef.contents
   ->Array.find(item => item.timeZones->Array.find(i => i == clientTimeZone)->Option.isSome)
   ->Option.getOr(Country.defaultTimeZone)
 }
@@ -718,14 +723,14 @@ let handlePostMessageEvents = (
 let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
 
 let getCountryCode = country => {
-  Country.country
+  DataRefs.countryDataRef.contents
   ->Array.find(item => item.countryName == country)
   ->Option.getOr(Country.defaultTimeZone)
 }
 
-let getStateNames = (list: JSON.t, country: RecoilAtomTypes.field) => {
+let getStateNames = (country: RecoilAtomTypes.field) => {
   let options =
-    list
+    DataRefs.stateDataRef.contents
     ->getDictFromJson
     ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
     ->Option.getOr([])
@@ -733,7 +738,11 @@ let getStateNames = (list: JSON.t, country: RecoilAtomTypes.field) => {
   options->Array.reduce([], (arr, item) => {
     arr
     ->Array.push(
-      item->getDictFromJson->Dict.get("name")->Option.flatMap(JSON.Decode.string)->Option.getOr(""),
+      item
+      ->getDictFromJson
+      ->Dict.get("value")
+      ->Option.flatMap(JSON.Decode.string)
+      ->Option.getOr(""),
     )
     ->ignore
     arr
@@ -1355,7 +1364,7 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
   ->Option.flatMap(stateObj =>
     stateObj
     ->getDictFromJson
-    ->getOptionString("name")
+    ->getOptionString("value")
   )
   ->Option.getOr(stateCode)
 }
