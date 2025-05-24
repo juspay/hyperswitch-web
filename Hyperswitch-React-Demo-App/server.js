@@ -14,6 +14,7 @@ function getUrl(envVar, selfHostedValue) {
 
 const SERVER_URL = getUrl("HYPERSWITCH_SERVER_URL", "SELF_HOSTED_SERVER_URL");
 const CLIENT_URL = getUrl("HYPERSWITCH_CLIENT_URL", "SELF_HOSTED_CLIENT_URL");
+const SDK_VERSION = process.env.SDK_VERSION || "v1";
 
 app.use(express.static("./dist"));
 app.get("/", (req, res) => {
@@ -120,10 +121,24 @@ app.get("/create-payment-intent", async (_, res) => {
 });
 
 async function createPaymentIntent(request) {
-  const url =
+  const baseUrl =
     process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
     process.env.HYPERSWITCH_SERVER_URL;
-  const apiResponse = await fetch(`${url}/payments`, {
+
+  // Determine API endpoint based on SDK_VERSION
+  let apiEndpoint;
+
+  switch (SDK_VERSION) {
+    case "v2":
+      apiEndpoint = `${baseUrl}/v2/payments`;
+      break;
+    case "v1":
+    default:
+      apiEndpoint = `${baseUrl}/payments`;
+      break;
+  }
+
+  const apiResponse = await fetch(apiEndpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
