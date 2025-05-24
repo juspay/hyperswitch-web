@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: "20" # Specifies the version of Node.js to use
           cache: "npm" # Caches npm dependencies to speed up subsequent installs
-      
+
       - name: Update git submodules
         run: git submodule update --init --recursive
 
@@ -49,8 +49,8 @@ jobs:
 
       - name: Build and start local server
         run: |
-          npm run re:build && npm start &
-          echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm start &
+          npm run re:build && npm run start &
+          echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm run start:v1 &
           echo "Demo App started"
         # Builds the project and starts both the Hyperswitch Web and Demo App servers in the background
 

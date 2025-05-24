@@ -18,10 +18,14 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": " webpack --config webpack.dev.js && concurrently \"npm run start-client\" \"npm run start-server\"",
+    "start:v1": "SDK_VERSION=v1 npm run start-base",
+    "start:v2": "SDK_VERSION=v2 npm run start-base",
+    "start-base": "webpack --config webpack.common.js && concurrently \"npm run start-client\" \"npm run start-server\"",
     "start-client": "webpack serve --config webpack.dev.js",
     "start-server": "node dist/server.js",
-    "build": "webpack --config webpack.common.js",
+    "build:v1": "SDK_VERSION=v1 npm run build-base",
+    "build:v2": "SDK_VERSION=v2 npm run build-base",
+    "build-base": "webpack --config webpack.common.js",
     "format": "prettier --write \"**/*.{js,jsx}\""
   },
   "eslintConfig": {
