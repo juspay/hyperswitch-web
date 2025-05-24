@@ -44,6 +44,8 @@ const authorizedScriptSources = [
   "https://secure.checkout.visa.com",
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
+  "https://x.klarnacdn.net",
+  "https://js.playground.klarna.com",
   "blob:",
   // Add other trusted sources here
 ];
@@ -114,6 +116,8 @@ const authorizedConnectSources = [
   "https://secure.checkout.visa.com",
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
+  "https://eu.klarnaevt.com",
+  "https://eu.playground.klarnaevt.com",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
   // Add other trusted sources here
