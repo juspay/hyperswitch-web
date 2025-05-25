@@ -740,9 +740,7 @@ let getStateNames = (country: RecoilAtomTypes.field) => {
     ->Array.push(
       item
       ->getDictFromJson
-      ->Dict.get("value")
-      ->Option.flatMap(JSON.Decode.string)
-      ->Option.getOr(""),
+      ->getString("value", ""),
     )
     ->ignore
     arr

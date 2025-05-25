@@ -60,7 +60,8 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let (showOtherFileds, setShowOtherFields) = React.useState(_ => false)
 
   let stateNames = getStateNames(country)
-  let countryNames = getCountryNames(DataRefs.countryDataRef.contents)
+  let countryData = DataRefs.countryDataRef.contents
+  let countryNames = getCountryNames(countryData)
 
   let checkPostalValidity = (
     postal: RecoilAtomTypes.field,
