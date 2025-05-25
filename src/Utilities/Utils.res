@@ -927,6 +927,64 @@ let fetchApi = (
   })
 }
 
+let fetchApiWithLogging = async (
+  uri,
+  ~eventName,
+  ~logger,
+  ~onSuccess,
+  ~onFailure,
+  ~bodyStr="",
+  ~headers=?,
+  ~method,
+  ~customPodUri=None,
+  ~publishableKey=None,
+) => {
+  let headers = headers->Option.getOr(Dict.make())
+
+  // * Log request initiation
+  LogAPIResponse.logApiResponse(~logger, ~uri, ~eventName, ~status=Request)
+
+  try {
+    let body = switch method {
+    | #GET => None
+    | _ => Some(Fetch.Body.string(bodyStr))
+    }
+
+    let resp = await Fetch.fetch(
+      uri,
+      {
+        method,
+        ?body,
+        headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey),
+      },
+    )
+
+    let statusCode = resp->Fetch.Response.status
+
+    if resp->Fetch.Response.ok {
+      let data = await Fetch.Response.json(resp)
+      LogAPIResponse.logApiResponse(~logger, ~uri, ~eventName, ~status=Success, ~statusCode)
+      onSuccess(data)
+    } else {
+      let data = await resp->Fetch.Response.json
+      LogAPIResponse.logApiResponse(~logger, ~uri, ~eventName, ~status=Error, ~statusCode, ~data)
+      onFailure(data)
+    }
+  } catch {
+  | err => {
+      let exceptionMessage = err->formatException
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName,
+        ~status=Exception,
+        ~data=exceptionMessage,
+      )
+      onFailure(exceptionMessage)
+    }
+  }
+}
+
 let arrayJsonToCamelCase = arr => {
   arr->Array.map(item => {
     item->transformKeys(CamelCase)

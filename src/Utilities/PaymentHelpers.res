@@ -1570,70 +1570,42 @@ let fetchPaymentMethodList = async (
     ~customBackendBaseUrl=endpoint,
   )
 
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=PAYMENT_METHODS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
-  )
-
-  try {
-    let resp = await fetchApi(
-      uri,
-      ~method=#GET,
-      ~customPodUri=Some(customPodUri),
-      ~publishableKey=Some(publishableKey),
+  let onSuccess = data => {
+    LogAPIResponse.logApiResponse(
+      ~logger,
+      ~uri,
+      ~eventName=PAYMENT_METHODS_CALL,
+      ~status=Success,
+      ~statusCode=200,
+      ~data,
     )
 
-    let statusCode = resp->Fetch.Response.status
-
-    if !(resp->Fetch.Response.ok) {
-      let data = await resp->Fetch.Response.json
-
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~data,
-        ~statusCode,
-        ~apiLogType=Err,
-        ~eventName=PAYMENT_METHODS_CALL,
-        ~logType=ERROR,
-        ~logCategory=API,
-      )
-
-      JSON.Encode.null
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=PAYMENT_METHODS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-
-      await Fetch.Response.json(resp)
-    }
-  } catch {
-  | err => {
-      let exceptionMessage = err->formatException
-
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~apiLogType=NoResponse,
-        ~eventName=PAYMENT_METHODS_CALL,
-        ~logType=ERROR,
-        ~logCategory=API,
-        ~data=exceptionMessage,
-      )
-
-      JSON.Encode.null
-    }
+    data
   }
+
+  let onFailure = data => {
+    LogAPIResponse.logApiResponse(
+      ~logger,
+      ~uri,
+      ~eventName=PAYMENT_METHODS_CALL,
+      ~status=Error,
+      ~data,
+    )
+
+    JSON.Encode.null
+  }
+
+  await Utils.fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHODS_CALL_INIT,
+    ~logger,
+    ~bodyStr="",
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let fetchCustomerPaymentMethodList = (
