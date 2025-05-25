@@ -1,7 +1,7 @@
 open Country
-open Utils
 
 let decodeCountryArray = data => {
+  open Utils
   data->Array.map(item =>
     switch item->JSON.Decode.object {
     | Some(res) => {
@@ -15,6 +15,7 @@ let decodeCountryArray = data => {
 }
 
 let decodeJsonTocountryStateData = jsonData => {
+  open Utils
   switch jsonData->JSON.Decode.object {
   | Some(res) => {
       let countryArr = res->getArray("country")
@@ -29,19 +30,18 @@ let decodeJsonTocountryStateData = jsonData => {
 }
 
 let getNormalizedLocale = locale => {
-  if locale == "auto" {
-    Window.Navigator.language
-  } else if locale == "" {
-    "en"
-  } else {
-    locale
+  switch locale {
+  | "auto" => Window.Navigator.language
+  | "" => "en"
+  | _ => locale
   }
 }
 
 let fetchCountryStateFromS3 = endpoint => {
   open Promise
-  let headers = Dict.make()
-  headers->Dict.set("Accept-Encoding", "br, gzip")
+
+  let headers = [("Accept-Encoding", "br, gzip")]->Dict.fromArray
+
   Utils.fetchApi(endpoint, ~method=#GET, ~headers)
   ->Promise.then(resp => resp->Fetch.Response.json)
   ->then(data => {
@@ -61,7 +61,7 @@ let getCountryStateData = async (
   ~logger=HyperLogger.make(~source=Elements(Payment)),
 ) => {
   let normalizedLocale = getNormalizedLocale(locale)
-  let timestamp = Js.Date.now()->Float.toString
+  let timestamp = Date.now()->Float.toString
   let endpoint = `${getBaseUrl}/assets/v1/jsons/location/${normalizedLocale}?v=${timestamp}`
 
   try {
@@ -81,7 +81,7 @@ let getCountryStateData = async (
 
         let fallbackCountries = country
         try {
-          let fallbackStates = await importStates("./../States.json")
+          let fallbackStates = await Utils.importStates("./../States.json")
           {
             countries: fallbackCountries,
             states: fallbackStates.states,
