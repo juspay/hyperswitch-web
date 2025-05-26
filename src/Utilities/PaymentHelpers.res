@@ -1157,17 +1157,20 @@ let usePaymentIntent = (optLogger, paymentType) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
+      let contentTypeHeader = ("Content-Type", "application/json")
       let headers = switch GlobalVars.sdkVersion {
       | V1 => [
-          ("Content-Type", "application/json"),
+          contentTypeHeader,
           ("api-key", confirmParam.publishableKey),
           ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
         ]
-      | V2 => [
-          ("Content-Type", "application/json"),
-          ("authorization", `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`),
-          ("X-profile-id", keys.profileId),
-        ]
+      | V2 => {
+          let authorizationHeader = (
+            "authorization",
+            `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
+          )
+          [contentTypeHeader, authorizationHeader, ("X-profile-id", keys.profileId)]
+        }
       }
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
