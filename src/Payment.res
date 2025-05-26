@@ -59,7 +59,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let supportedCardBrands = React.useMemo(() => {
     switch (paymentMode, GlobalVars.sdkVersion) {
     | ("payment", V2) => paymentsListValue->PaymentUtilsV2.getSupportedCardBrandsV2
-    | (_, _) => paymentMethodListValue->PaymentUtils.getSupportedCardBrands
+    | _ => paymentMethodListValue->PaymentUtils.getSupportedCardBrands
     }
   }, (paymentMethodListValue, paymentsListValue))
 

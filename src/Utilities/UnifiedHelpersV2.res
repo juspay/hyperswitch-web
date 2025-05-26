@@ -2,7 +2,7 @@ open UnifiedPaymentsTypesV2
 open Utils
 open PaymentMethodsRecord
 
-let itemToPMMCustomerMapper = customerArray => {
+let itemToCustomerMapper = customerArray => {
   let customerMethods =
     customerArray
     ->Belt.Array.keepMap(JSON.Decode.object)
@@ -88,24 +88,24 @@ let itemToPaymentsEnabledMapper = methodsArray => {
   enabledMethods
 }
 
-let itemToPMMObjMapper = customerDict => {
+let itemToPaymentsObjMapper = customerDict => {
   {
     paymentMethodsEnabled: customerDict
     ->getArray("payment_methods_enabled")
     ->itemToPaymentsEnabledMapper,
     customerPaymentMethods: customerDict
     ->getArray("customer_payment_methods")
-    ->itemToPMMCustomerMapper,
+    ->itemToCustomerMapper,
   }
 }
 
-let createCustomerObjArr = (dict, key) => {
+let createPaymentsObjArr = (dict, key) => {
   let customerDict =
     dict
     ->Dict.get(key)
     ->Option.flatMap(JSON.Decode.object)
     ->Option.getOr(Dict.make())
-  let finalList = customerDict->itemToPMMObjMapper
+  let finalList = customerDict->itemToPaymentsObjMapper
   LoadedV2(finalList)
 }
 
@@ -143,4 +143,63 @@ let itemToPaymentDetails = cust => {
     lastUsedAt: getString(cust, "last_used_at", ""),
     bank: {mask: ""},
   }
+}
+
+let defaultAddress = {
+  city: "",
+  country: "",
+  line1: "",
+  line2: "",
+  line3: "",
+  zip: "",
+  state: "",
+  firstName: "",
+  lastName: "",
+}
+
+let defaultBilling = {
+  address: defaultAddress,
+  phone: {number: "", countryCode: ""},
+  email: "",
+}
+
+let defaultPaymentMethods = {
+  paymentMethodType: "",
+  paymentMethodSubtype: "",
+  requiredFields: [],
+  surchargeDetails: None,
+}
+
+let defaultCustomerMethods = {
+  id: "",
+  customerId: "",
+  paymentMethodType: "",
+  paymentMethodSubType: "",
+  recurringEnabled: false,
+  paymentMethodData: {
+    card: {
+      network: None,
+      last4Digits: "",
+      expiryMonth: "",
+      expiryYear: "",
+      cardHolderName: None,
+      nickname: None,
+      issuerCountry: None,
+      cardFingerprint: "",
+      cardIsin: "",
+      cardIssuer: "",
+      cardType: "",
+      savedToLocker: false,
+    },
+  },
+  isDefault: false,
+  requiresCvv: false,
+  lastUsedAt: "",
+  created: "",
+  bank: {mask: ""},
+}
+
+let defaultPaymentsList = {
+  paymentMethodsEnabled: [defaultPaymentMethods],
+  customerPaymentMethods: [defaultCustomerMethods],
 }

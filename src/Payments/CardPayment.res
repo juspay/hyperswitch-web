@@ -164,27 +164,15 @@ let make = (
 
     let defaultCardBody = switch GlobalVars.sdkVersion {
     | V1 =>
-      if isPMMFlow {
-        PaymentManagementBody.saveCardBody(
-          ~cardNumber,
-          ~month,
-          ~year,
-          ~cardHolderName=None,
-          ~cvcNumber,
-          ~cardBrand=cardNetwork,
-          ~nickname=nickname.value,
-        )
-      } else {
-        PaymentBody.cardPaymentBody(
-          ~cardNumber,
-          ~month,
-          ~year,
-          ~cardHolderName=None,
-          ~cvcNumber,
-          ~cardBrand=cardNetwork,
-          ~nickname=nickname.value,
-        )
-      }
+      PaymentBody.cardPaymentBody(
+        ~cardNumber,
+        ~month,
+        ~year,
+        ~cardHolderName=None,
+        ~cvcNumber,
+        ~cardBrand=cardNetwork,
+        ~nickname=nickname.value,
+      )
     | V2 =>
       PaymentManagementBody.saveCardBody(
         ~cardNumber,

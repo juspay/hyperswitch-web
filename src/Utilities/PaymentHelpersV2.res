@@ -534,8 +534,6 @@ let fetchSessions = (
   ~optLogger as _,
   ~customPodUri,
   ~endpoint,
-  ~isPaymentSession=false,
-  ~merchantHostname=Window.Location.hostname,
   ~profileId,
 ) => {
   open Promise

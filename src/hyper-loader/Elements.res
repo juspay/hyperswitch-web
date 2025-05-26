@@ -226,7 +226,7 @@ let make = (
             //Replicate V1 Behavior
             //Checking Apple Pay and Google Pay
             //Attach Event Listeners for Paze and Plaid
-            let msg = [("paymentsList", json)]->Dict.fromArray
+            let msg = [("paymentsListV2", json)]->Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
           }
         }
@@ -1380,33 +1380,24 @@ let make = (
             ->getBool("displaySavedPaymentMethods", true) &&
               !(spmComponents->Array.includes(componentType))->not
           let sessionTokensPromise = fetchSessionTokens(mountedIframeRef)
-          switch GlobalVars.sdkVersion {
-          | V1 => {
-              let paymentMethodsPromise = fetchPaymentsList(mountedIframeRef, componentType)
-              let customerPaymentMethodsPromise = fetchCustomerPaymentMethods(
+          let promises = switch GlobalVars.sdkVersion {
+          | V1 => [
+              fetchPaymentsList(mountedIframeRef, componentType),
+              fetchCustomerPaymentMethods(
                 mountedIframeRef,
                 disableSavedPaymentMethods,
                 componentType,
-              )
-              Promise.all([
-                paymentMethodsPromise,
-                customerPaymentMethodsPromise,
-                sessionTokensPromise,
-              ])->then(_ => {
-                let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
-                preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-                resolve()
-              })
-            }
-          | V2 => {
-              let paymentMethodsPromise = fetchPaymentsListV2(mountedIframeRef, componentType)
-              Promise.all([paymentMethodsPromise, sessionTokensPromise])->then(_ => {
-                let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
-                preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-                resolve()
-              })
-            }
+              ),
+              sessionTokensPromise,
+            ]
+          | V2 => [fetchPaymentsListV2(mountedIframeRef, componentType), sessionTokensPromise]
           }
+
+          Promise.all(promises)->then(_ => {
+            let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
+            preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+            resolve()
+          })
         })
         ->catch(_ => resolve())
         ->ignore

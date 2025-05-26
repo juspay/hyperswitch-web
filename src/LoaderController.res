@@ -440,9 +440,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }
           }
         }
-        if dict->getDictIsSome("paymentsList") {
-          let paymentMethodList = dict->getJsonObjectFromDict("paymentsList")
-          let listDict = paymentMethodList->getDictFromJson
+        if dict->getDictIsSome("paymentsListV2") {
+          let paymentsListV2 = dict->getJsonObjectFromDict("paymentsListV2")
+          let listDict = paymentsListV2->getDictFromJson
 
           let finalLoadLatency = if launchTime <= 0.0 {
             0.0
@@ -450,10 +450,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             Date.now() -. launchTime
           }
           let updatedState: UnifiedPaymentsTypesV2.loadstate =
-            paymentMethodList == Dict.make()->JSON.Encode.object
-              ? LoadErrorV2(paymentMethodList)
+            paymentsListV2 == Dict.make()->JSON.Encode.object
+              ? LoadErrorV2(paymentsListV2)
               : switch listDict->Dict.get("error") {
-                | Some(_) => LoadErrorV2(paymentMethodList)
+                | Some(_) => LoadErrorV2(paymentsListV2)
                 | None =>
                   let isNonEmptyPaymentMethodList = switch listDict->Dict.get("response") {
                   | Some(val) =>
@@ -461,8 +461,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                   | None => false
                   }
                   isNonEmptyPaymentMethodList
-                    ? listDict->V2Helpers.createCustomerObjArr("response")
-                    : LoadErrorV2(paymentMethodList)
+                    ? listDict->UnifiedHelpersV2.createPaymentsObjArr("response")
+                    : LoadErrorV2(paymentsListV2)
                 }
 
           let evalMethodsList = () =>
@@ -643,7 +643,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("paymentManagementMethods") {
           let paymentManagementMethods =
-            dict->V2Helpers.createCustomerObjArr("paymentManagementMethods")
+            dict->UnifiedHelpersV2.createPaymentsObjArr("paymentManagementMethods")
           setPaymentManagementList(_ => paymentManagementMethods)
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {

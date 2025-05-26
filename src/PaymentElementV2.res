@@ -17,9 +17,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentManagementListValue,
   )
-  let (paymentsListValue, setPaymentsListValue) = Recoil.useRecoilState(
-    PaymentUtils.paymentsListValue,
-  )
+  let setPaymentsListValue = Recoil.useSetRecoilState(PaymentUtils.paymentsListValue)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, _setWalletOptions) = React.useState(_ => [])
 

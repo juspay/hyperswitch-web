@@ -67,7 +67,7 @@ let make = (
             item.paymentMethodSubtype === "credit" && item.paymentMethodType === "card"
           })
           ->Array.get(0)
-          ->Option.getOr(UnifiedPaymentsTypesV2.defaultPaymentMethods)
+          ->Option.getOr(UnifiedHelpersV2.defaultPaymentMethods)
 
         let finalCreditRequiredFields = creditRequiredFields.requiredFields
         [

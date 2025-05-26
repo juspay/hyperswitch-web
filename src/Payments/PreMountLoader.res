@@ -118,7 +118,6 @@ module PreMountLoaderForElements = {
             ~optLogger=Some(logger),
             ~customPodUri,
             ~endpoint,
-            ~merchantHostname,
           )
 
           let messageHandler = (ev: Window.event) => {

@@ -56,7 +56,7 @@ let make = () => {
 
       if paymentMethodId != "" {
         setManagePaymentMethod(_ => "")
-        let updatedCard = dict->V2Helpers.itemToPaymentDetails
+        let updatedCard = dict->UnifiedHelpersV2.itemToPaymentDetails
         setSavedMethodsV2(prev => prev->updateSavedMethodV2(paymentMethodId, updatedCard))
       } else {
         Console.error2("Payment Id Empty ", res->JSON.stringify)

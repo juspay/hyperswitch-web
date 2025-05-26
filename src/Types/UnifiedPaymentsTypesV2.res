@@ -95,61 +95,7 @@ type loadstate = LoadingV2 | LoadedV2(paymentMethodsManagement) | SemiLoadedV2 |
 
 type paymentManagementList = loadstate
 
-let defaultAddress = {
-  city: "",
-  country: "",
-  line1: "",
-  line2: "",
-  line3: "",
-  zip: "",
-  state: "",
-  firstName: "",
-  lastName: "",
-}
-
-let defaultBilling = {
-  address: defaultAddress,
-  phone: {number: "", countryCode: ""},
-  email: "",
-}
-
-let defaultPaymentMethods = {
-  paymentMethodType: "",
-  paymentMethodSubtype: "",
-  requiredFields: [],
-  surchargeDetails: None,
-}
-
-let defaultCustomerMethods = {
-  id: "",
-  customerId: "",
-  paymentMethodType: "",
-  paymentMethodSubType: "",
-  recurringEnabled: false,
-  paymentMethodData: {
-    card: {
-      network: None,
-      last4Digits: "",
-      expiryMonth: "",
-      expiryYear: "",
-      cardHolderName: None,
-      nickname: None,
-      issuerCountry: None,
-      cardFingerprint: "",
-      cardIsin: "",
-      cardIssuer: "",
-      cardType: "",
-      savedToLocker: false,
-    },
-  },
-  isDefault: false,
-  requiresCvv: false,
-  lastUsedAt: "",
-  created: "",
-  bank: {mask: ""},
-}
-
-let defaultPaymentManagementList = {
-  paymentMethodsEnabled: [defaultPaymentMethods],
-  customerPaymentMethods: [defaultCustomerMethods],
+type paymentListLookupNew = {
+  walletsList: array<string>,
+  otherPaymentList: array<string>,
 }

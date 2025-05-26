@@ -27,7 +27,11 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
       otherPaymentList->Array.push("card")->ignore
     }
   })
-  (walletsList->Utils.removeDuplicate, otherPaymentList->Utils.removeDuplicate)
+
+  {
+    walletsList: walletsList->Utils.removeDuplicate,
+    otherPaymentList: otherPaymentList->Utils.removeDuplicate,
+  }
 }
 
 let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mode) => {
@@ -39,13 +43,8 @@ let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mo
     let resolvePaymentList = list =>
       switch list {
       | LoadedV2(paymentlist) =>
-        let (_wallets, otherOptions) = paymentListLookupNew(~paymentMethodListValue=paymentlist)
-        (
-          paymentOptions
-          ->Array.concat(otherOptions)
-          ->removeDuplicate,
-          otherOptions,
-        )
+        let {otherPaymentList} = paymentListLookupNew(~paymentMethodListValue=paymentlist)
+        ([...paymentOptions, ...otherPaymentList]->removeDuplicate, otherPaymentList)
       | _ => (["card"], [])
       }
 
