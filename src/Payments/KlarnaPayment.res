@@ -17,7 +17,7 @@ let make = () => {
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
 
-  let countryData = DataRefs.countryDataRef.contents
+  let countryData = CountryStateDataRefs.countryDataRef.contents
   let countryNames =
     Utils.getCountryNames(countryData)->DropdownField.updateArrayOfStringToOptionsTypeArray
 

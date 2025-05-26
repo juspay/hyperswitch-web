@@ -150,7 +150,7 @@ let make = (
     "bankAccountNumber",
     logger,
   )
-  let countryList = DataRefs.countryDataRef.contents
+  let countryList = CountryStateDataRefs.countryDataRef.contents
   let stateNames = getStateNames({
     value: country,
     isValid: None,

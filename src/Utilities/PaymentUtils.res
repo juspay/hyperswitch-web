@@ -473,7 +473,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
 }
 
 let useStatesJson = setStatesJson => {
-  let stateList = DataRefs.stateDataRef.contents
+  let stateList = CountryStateDataRefs.stateDataRef.contents
 
   React.useEffect0(_ => {
     setStatesJson(_ => stateList)

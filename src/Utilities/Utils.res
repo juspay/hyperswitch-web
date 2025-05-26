@@ -416,7 +416,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
 }
 
 let getClientCountry = clientTimeZone => {
-  DataRefs.countryDataRef.contents
+  CountryStateDataRefs.countryDataRef.contents
   ->Array.find(item => item.timeZones->Array.find(i => i == clientTimeZone)->Option.isSome)
   ->Option.getOr(Country.defaultTimeZone)
 }
@@ -708,8 +708,9 @@ let handlePostMessageEvents = (
   ~savedMethod=false,
 ) => {
   if complete && paymentType !== "" {
-    let value =
-      "Payment Data Filled" ++ (savedMethod ? ": Saved Payment Method" : ": New Payment Method")
+    let value = `Payment Data Filled: ${savedMethod
+        ? "Saved Payment Method"
+        : "New Payment Method"}`
     loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
   }
   messageParentWindow([
@@ -723,14 +724,14 @@ let handlePostMessageEvents = (
 let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
 
 let getCountryCode = country => {
-  DataRefs.countryDataRef.contents
+  CountryStateDataRefs.countryDataRef.contents
   ->Array.find(item => item.countryName == country)
   ->Option.getOr(Country.defaultTimeZone)
 }
 
 let getStateNames = (country: RecoilAtomTypes.field) => {
   let options =
-    DataRefs.stateDataRef.contents
+    CountryStateDataRefs.stateDataRef.contents
     ->getDictFromJson
     ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
     ->Option.getOr([])

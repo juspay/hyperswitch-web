@@ -102,9 +102,10 @@ let initializeCountryData = async (
   ~logger=HyperLogger.make(~source=Elements(Payment)),
 ) => {
   try {
+    open CountryStateDataRefs
     let data = await getCountryStateData(~locale, ~logger)
-    DataRefs.countryDataRef.contents = data.countries
-    DataRefs.stateDataRef.contents = data.states
+    countryDataRef.contents = data.countries
+    stateDataRef.contents = data.states
     data
   } catch {
   | _ => {countries: country, states: JSON.Encode.null}
