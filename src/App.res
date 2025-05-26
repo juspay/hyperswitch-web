@@ -11,7 +11,6 @@ let make = () => {
   let (logger, initTimestamp) = React.useMemo0(() => {
     (HyperLogger.make(~source=Elements(paymentType)), Date.now())
   })
-
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
 
   React.useEffect(() => {
