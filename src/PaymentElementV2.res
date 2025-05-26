@@ -34,28 +34,30 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~paymentOptions,
     ~paymentType,
   )
+
   React.useEffect0(() => {
     setShowFields(_ => true)
     None
   })
+
   React.useEffect(() => {
+    let updatePaymentOptions = () => {
+      setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
+    }
+
     switch (paymentManagementList, paymentMethodsListV2) {
     | (LoadedV2(paymentlist), _) =>
-      let plist = paymentlist
-
-      setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
-      setPaymentManagementListValue(_ => plist)
+      updatePaymentOptions()
+      setPaymentManagementListValue(_ => paymentlist)
     | (_, LoadedV2(paymentlist)) =>
-      let plist = paymentlist
-      setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
-      setPaymentsListValue(_ => plist)
-
+      updatePaymentOptions()
+      setPaymentsListValue(_ => paymentlist)
     | (LoadErrorV2(_), _)
     | (_, LoadErrorV2(_))
     | (SemiLoadedV2, _)
     | (_, SemiLoadedV2) =>
-      //For Payments CheckPriorityList && ShowCardFormByDefault
-      //For PaymentMethodsManagement Cards
+      // TODO - For Payments CheckPriorityList && ShowCardFormByDefault
+      // TODO - For PaymentMethodsManagement Cards
       setPaymentOptions(_ => ["card"])
     | _ => ()
     }
@@ -166,13 +168,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   React.useEffect(() => {
     let evalMethodsList = () =>
-      switch (paymentType, paymentManagementList, paymentMethodsListV2) {
-      | (Payment, _, SemiLoadedV2)
-      | (Payment, _, LoadErrorV2(_))
-      | (Payment, _, LoadedV2(_))
-      | (PaymentMethodsManagement, SemiLoadedV2, _)
-      | (PaymentMethodsManagement, LoadErrorV2(_), _)
-      | (PaymentMethodsManagement, LoadedV2(_), _) =>
+      switch (paymentManagementList, paymentMethodsListV2) {
+      | (SemiLoadedV2, _)
+      | (LoadErrorV2(_), _)
+      | (LoadedV2(_), _)
+      | (_, SemiLoadedV2)
+      | (_, LoadErrorV2(_))
+      | (_, LoadedV2(_)) =>
         messageParentWindow([("ready", true->JSON.Encode.bool)])
       | _ => ()
       }
