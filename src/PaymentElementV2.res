@@ -17,7 +17,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentManagementListValue,
   )
-  let setPaymentsListValue = Recoil.useSetRecoilState(PaymentUtils.paymentsListValue)
+  let setPaymentsListValue = Recoil.useSetRecoilState(RecoilAtomsV2.paymentsListValue)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, _setWalletOptions) = React.useState(_ => [])
 
@@ -39,20 +39,21 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   })
   React.useEffect(() => {
-    switch (paymentType, paymentManagementList, paymentMethodsListV2) {
-    | (Payment, _, LoadedV2(paymentlist)) =>
-      let plist = paymentlist
-      setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
-      setPaymentsListValue(_ => plist)
-    | (PaymentMethodsManagement, LoadedV2(paymentlist), _) =>
+    switch (paymentManagementList, paymentMethodsListV2) {
+    | (LoadedV2(paymentlist), _) =>
       let plist = paymentlist
 
       setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
       setPaymentManagementListValue(_ => plist)
-    | (_, LoadErrorV2(_), _)
-    | (_, _, LoadErrorV2(_))
-    | (_, SemiLoadedV2, _)
-    | (_, _, SemiLoadedV2) =>
+    | (_, LoadedV2(paymentlist)) =>
+      let plist = paymentlist
+      setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
+      setPaymentsListValue(_ => plist)
+
+    | (LoadErrorV2(_), _)
+    | (_, LoadErrorV2(_))
+    | (SemiLoadedV2, _)
+    | (_, SemiLoadedV2) =>
       //For Payments CheckPriorityList && ShowCardFormByDefault
       //For PaymentMethodsManagement Cards
       setPaymentOptions(_ => ["card"])

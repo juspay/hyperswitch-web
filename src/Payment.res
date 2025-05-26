@@ -19,7 +19,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let paymentsListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentsListValue)
+  let paymentsListValue = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
 
   let (cardNumber, setCardNumber) = React.useState(_ => "")

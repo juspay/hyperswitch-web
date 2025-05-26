@@ -3,7 +3,6 @@ let paymentManagementListValue = Recoil.atom(
   "paymentManagementListValue",
   UnifiedHelpersV2.defaultPaymentsList,
 )
-let paymentsListValue = Recoil.atom("paymentsListValue", UnifiedHelpersV2.defaultPaymentsList)
 
 let paymentListLookupNew = (
   list: PaymentMethodsRecord.paymentMethodList,

@@ -73,7 +73,8 @@ let make = (
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"              allow="*"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"
+              allow="*"
               name="orca-payment"
               style="outline: none;"
             ></iframe>
@@ -220,7 +221,7 @@ let make = (
         let handlePaymentMethodsLoaded = (event: Types.event) => {
           let json = event.data->anyTypeToJson
           let dict = json->getDictFromJson
-          let isPaymentMethodsData = dict->getString("data", "") === "payment_methods_list_v2"
+          let isPaymentMethodsData = dict->getString("data", "") === "paymentMethodsListV2"
           if isPaymentMethodsData {
             resolve()
             //Replicate V1 Behavior

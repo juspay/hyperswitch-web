@@ -124,7 +124,7 @@ module PreMountLoaderForElements = {
             open Utils
             let dict = ev.data->safeParse->getDictFromJson
             if dict->isKeyPresentInDict("sendPaymentMethodsListV2Response") {
-              paymentMethodsListPromise->sendPromiseData("payment_methods_list_v2")
+              paymentMethodsListPromise->sendPromiseData("paymentMethodsListV2")
             } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
               sessionTokensPromise->sendPromiseData("session_tokens")
             }
