@@ -221,7 +221,7 @@ let make = (
         let handlePaymentMethodsLoaded = (event: Types.event) => {
           let json = event.data->anyTypeToJson
           let dict = json->getDictFromJson
-          let isPaymentMethodsData = dict->getString("data", "") === "paymentMethodsListV2"
+          let isPaymentMethodsData = dict->getString("data", "") === "payment_methods_list_v2"
           if isPaymentMethodsData {
             resolve()
             //Replicate V1 Behavior

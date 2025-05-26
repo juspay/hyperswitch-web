@@ -124,7 +124,7 @@ let getMessageHandlerV2Elements = (
     open Utils
     let dict = ev.data->safeParse->getDictFromJson
     if dict->isKeyPresentInDict("sendPaymentMethodsListV2Response") {
-      paymentMethodsListPromise->sendPromiseData("paymentMethodsListV2")
+      paymentMethodsListPromise->sendPromiseData("payment_methods_list_v2")
     } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
       sessionTokensPromise->sendPromiseData("session_tokens")
     }
