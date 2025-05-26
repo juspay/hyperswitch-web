@@ -1597,7 +1597,7 @@ let fetchPaymentMethodList = async (
 
   await Utils.fetchApiWithLogging(
     uri,
-    ~eventName=PAYMENT_METHODS_CALL_INIT,
+    ~eventName="PAYMENT_METHODS_CALL",
     ~logger,
     ~bodyStr="",
     ~method=#GET,

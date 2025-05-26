@@ -94,6 +94,7 @@ type eventName =
   | CLICK_TO_PAY_FLOW
   | PAYMENT_METHOD_TYPE_DETECTION_FAILED
   | THREE_DS_POPUP_REDIRECTION
+  | UNKNOWN_EVENT
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless

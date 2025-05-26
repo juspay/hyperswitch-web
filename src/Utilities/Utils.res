@@ -939,10 +939,15 @@ let fetchApiWithLogging = async (
   ~customPodUri=None,
   ~publishableKey=None,
 ) => {
-  let headers = headers->Option.getOr(Dict.make())
+  open LoggerUtils
 
   // * Log request initiation
-  LogAPIResponse.logApiResponse(~logger, ~uri, ~eventName, ~status=Request)
+  LogAPIResponse.logApiResponse(
+    ~logger,
+    ~uri,
+    ~eventName=eventNameFromString(`${eventName}_INIT`),
+    ~status=Request,
+  )
 
   try {
     let body = switch method {
@@ -955,7 +960,12 @@ let fetchApiWithLogging = async (
       {
         method,
         ?body,
-        headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey),
+        headers: getHeaders(
+          ~headers=headers->Option.getOr(Dict.make()),
+          ~uri,
+          ~customPodUri,
+          ~publishableKey,
+        ),
       },
     )
 
@@ -963,11 +973,24 @@ let fetchApiWithLogging = async (
 
     if resp->Fetch.Response.ok {
       let data = await Fetch.Response.json(resp)
-      LogAPIResponse.logApiResponse(~logger, ~uri, ~eventName, ~status=Success, ~statusCode)
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=eventNameFromString(eventName),
+        ~status=Success,
+        ~statusCode,
+      )
       onSuccess(data)
     } else {
       let data = await resp->Fetch.Response.json
-      LogAPIResponse.logApiResponse(~logger, ~uri, ~eventName, ~status=Error, ~statusCode, ~data)
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=eventNameFromString(eventName),
+        ~status=Error,
+        ~statusCode,
+        ~data,
+      )
       onFailure(data)
     }
   } catch {
@@ -976,7 +999,7 @@ let fetchApiWithLogging = async (
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
-        ~eventName,
+        ~eventName=eventNameFromString(eventName),
         ~status=Exception,
         ~data=exceptionMessage,
       )
