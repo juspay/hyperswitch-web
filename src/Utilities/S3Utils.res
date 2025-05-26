@@ -74,7 +74,7 @@ let getCountryStateData = async (
     | _ => {
         logger.setLogError(
           ~value="Failed to fetch country state data",
-          ~eventName=S3_FETCH_COUNTRY_STATE_DATA,
+          ~eventName=S3_API,
           ~logType=ERROR,
           ~logCategory=USER_ERROR,
         )

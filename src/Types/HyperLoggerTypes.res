@@ -94,7 +94,7 @@ type eventName =
   | CLICK_TO_PAY_FLOW
   | PAYMENT_METHOD_TYPE_DETECTION_FAILED
   | THREE_DS_POPUP_REDIRECTION
-  | S3_FETCH_COUNTRY_STATE_DATA
+  | S3_API
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
