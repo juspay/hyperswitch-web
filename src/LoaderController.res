@@ -449,7 +449,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           } else {
             Date.now() -. launchTime
           }
-          let updatedState: TypesV2.loadstate =
+          let updatedState: UnifiedPaymentsTypesV2.loadstate =
             paymentMethodList == Dict.make()->JSON.Encode.object
               ? LoadErrorV2(paymentMethodList)
               : switch listDict->Dict.get("error") {

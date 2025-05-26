@@ -1,5 +1,10 @@
 @react.component
-let make = (~brandIcon, ~paymentItem: TypesV2.customerMethods, ~handleDeleteV2, ~handleUpdate) => {
+let make = (
+  ~brandIcon,
+  ~paymentItem: UnifiedPaymentsTypesV2.customerMethods,
+  ~handleDeleteV2,
+  ~handleUpdate,
+) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {hideExpiredPaymentMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let isCard = paymentItem.paymentMethodType === "card"

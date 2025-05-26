@@ -1,6 +1,6 @@
-open TypesV2
+open UnifiedPaymentsTypesV2
 
-let paymentListLookupNew = (~paymentMethodListValue: TypesV2.paymentMethodsManagement) => {
+let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) => {
   let walletsList = []
   let walletToBeDisplayedInTabs = [
     "mb_way",
@@ -56,13 +56,13 @@ let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mo
   }, (methodslist, paymentType))
 }
 
-let getCreditFieldsRequired = (~paymentManagementListValue: TypesV2.paymentMethodsManagement) => {
+let getCreditFieldsRequired = (~paymentManagementListValue: paymentMethodsManagement) => {
   paymentManagementListValue.paymentMethodsEnabled->Array.filter(item => {
     item.paymentMethodType === "card" && item.paymentMethodSubtype === "credit"
   })
 }
 
-let getSupportedCardBrandsV2 = (paymentsListValue: TypesV2.paymentMethodsManagement) => {
+let getSupportedCardBrandsV2 = (paymentsListValue: paymentMethodsManagement) => {
   let cardPaymentMethod =
     paymentsListValue.paymentMethodsEnabled->Array.find(ele => ele.paymentMethodType === "card")
 

@@ -1,5 +1,5 @@
-let paymentManagementList = Recoil.atom("paymentManagementList", TypesV2.LoadingV2)
+let paymentManagementList = Recoil.atom("paymentManagementList", UnifiedPaymentsTypesV2.LoadingV2)
 let showAddScreen = Recoil.atom("showAddScreen", false)
 let managePaymentMethod = Recoil.atom("managePaymentMethod", "")
-let savedMethodsV2 = Recoil.atom("savedMethodsV2", [TypesV2.defaultCustomerMethods])
-let paymentMethodsListV2 = Recoil.atom("paymentMethodsListV2", TypesV2.LoadingV2)
+let savedMethodsV2 = Recoil.atom("savedMethodsV2", [UnifiedPaymentsTypesV2.defaultCustomerMethods])
+let paymentMethodsListV2 = Recoil.atom("paymentMethodsListV2", UnifiedPaymentsTypesV2.LoadingV2)

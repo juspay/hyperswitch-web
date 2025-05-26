@@ -1,4 +1,4 @@
-let getWalletBrandIcon = (customerMethod: TypesV2.customerMethods) => {
+let getWalletBrandIcon = (customerMethod: UnifiedPaymentsTypesV2.customerMethods) => {
   let iconName = switch customerMethod.paymentMethodType {
   | "apple_pay" => "apple_pay_saved"
   | "google_pay" => "google_pay_saved"
@@ -9,7 +9,7 @@ let getWalletBrandIcon = (customerMethod: TypesV2.customerMethods) => {
   <Icon size=Utils.brandIconSize name=iconName />
 }
 
-let getPaymentMethodBrand = (customerMethod: TypesV2.customerMethods) => {
+let getPaymentMethodBrand = (customerMethod: UnifiedPaymentsTypesV2.customerMethods) => {
   switch customerMethod.paymentMethodType {
   | "wallet" => getWalletBrandIcon(customerMethod)
   | _ =>

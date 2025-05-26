@@ -1,4 +1,4 @@
-open TypesV2
+open UnifiedPaymentsTypesV2
 open Utils
 open PaymentMethodsRecord
 

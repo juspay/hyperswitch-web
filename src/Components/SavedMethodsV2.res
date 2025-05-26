@@ -13,19 +13,21 @@ let make = () => {
   let (_, setManagePaymentMethod) = Recoil.useRecoilState(RecoilAtomsV2.managePaymentMethod)
 
   let updateSavedMethodV2 = (
-    savedMethods: array<TypesV2.customerMethods>,
+    savedMethods: array<UnifiedPaymentsTypesV2.customerMethods>,
     paymentMethodId,
-    updatedCustomerMethod: TypesV2.customerMethods,
+    updatedCustomerMethod: UnifiedPaymentsTypesV2.customerMethods,
   ) => {
     savedMethods->Array.map(savedMethod =>
       savedMethod.id !== paymentMethodId ? savedMethod : updatedCustomerMethod
     )
   }
 
-  let removeSavedMethodV2 = (savedMethods: array<TypesV2.customerMethods>, paymentMethodId) =>
-    savedMethods->Array.filter(savedMethod => savedMethod.id !== paymentMethodId)
+  let removeSavedMethodV2 = (
+    savedMethods: array<UnifiedPaymentsTypesV2.customerMethods>,
+    paymentMethodId,
+  ) => savedMethods->Array.filter(savedMethod => savedMethod.id !== paymentMethodId)
 
-  let handleUpdate = async (paymentItem: TypesV2.customerMethods) => {
+  let handleUpdate = async (paymentItem: UnifiedPaymentsTypesV2.customerMethods) => {
     messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("param", "paymentloader"->JSON.Encode.string),
@@ -67,7 +69,7 @@ let make = () => {
     messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }
 
-  let handleDeleteV2 = async (paymentItem: TypesV2.customerMethods) => {
+  let handleDeleteV2 = async (paymentItem: UnifiedPaymentsTypesV2.customerMethods) => {
     messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("param", "paymentloader"->JSON.Encode.string),
