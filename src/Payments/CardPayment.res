@@ -161,19 +161,31 @@ let make = (
     let cardNetwork = [
       ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
     ]
-    let defaultCardBody = switch (isPMMFlow, GlobalVars.sdkVersion) {
-    | (_, V1) =>
-      PaymentBody.cardPaymentBody(
-        ~cardNumber,
-        ~month,
-        ~year,
-        ~cardHolderName=None,
-        ~cvcNumber,
-        ~cardBrand=cardNetwork,
-        ~nickname=nickname.value,
-      )
-    | (true, _)
-    | (_, V2) =>
+
+    let defaultCardBody = switch GlobalVars.sdkVersion {
+    | V1 =>
+      if isPMMFlow {
+        PaymentManagementBody.saveCardBody(
+          ~cardNumber,
+          ~month,
+          ~year,
+          ~cardHolderName=None,
+          ~cvcNumber,
+          ~cardBrand=cardNetwork,
+          ~nickname=nickname.value,
+        )
+      } else {
+        PaymentBody.cardPaymentBody(
+          ~cardNumber,
+          ~month,
+          ~year,
+          ~cardHolderName=None,
+          ~cvcNumber,
+          ~cardBrand=cardNetwork,
+          ~nickname=nickname.value,
+        )
+      }
+    | V2 =>
       PaymentManagementBody.saveCardBody(
         ~cardNumber,
         ~month,
@@ -184,6 +196,7 @@ let make = (
         ~nickname=nickname.value,
       )
     }
+
     let banContactBody = PaymentBody.bancontactBody()
     let cardBody = if isCustomerAcceptanceRequired {
       defaultCardBody->Array.concat(onSessionBody)
