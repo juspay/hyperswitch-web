@@ -276,15 +276,13 @@ let make = (
     }
 
     switch clientSecretReMatch {
-    | Some(val) =>
-      if !val {
-        manageErrorWarning(
-          INVALID_FORMAT,
-          ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
-          ~logger,
-        )
-      }
-    | None => ()
+    | Some(false) =>
+      manageErrorWarning(
+        INVALID_FORMAT,
+        ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
+        ~logger,
+      )
+    | _ => ()
     }
 
     let setElementIframeRef = ref => {
