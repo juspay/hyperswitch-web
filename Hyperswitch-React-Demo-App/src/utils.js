@@ -9,7 +9,7 @@ export const getPaymentIntentData = async ({
       return { clientSecret: clientSecretQueryParam };
     }
 
-    const res = await fetch(`${baseUrl}/create-payment-intent`);
+    const res = await fetch(`${baseUrl}/create-intent`);
     if (!res.ok) throw new Error("Failed to fetch payment intent");
 
     return await res.json();
@@ -43,6 +43,7 @@ export const loadHyperScript = ({
   clientUrl,
   publishableKey,
   customBackendUrl,
+  profileId,
   isScriptLoaded,
   setIsScriptLoaded,
 }) => {
@@ -56,9 +57,12 @@ export const loadHyperScript = ({
     script.onload = () => {
       setIsScriptLoaded(true);
       resolve(
-        window.Hyper(publishableKey, {
-          customBackendUrl,
-        })
+        window.Hyper(
+          { publishableKey, profileId },
+          {
+            customBackendUrl,
+          }
+        )
       );
     };
 
@@ -104,4 +108,23 @@ export const paymentElementOptions = {
       height: 55,
     },
   },
+};
+
+export const hyperOptionsV1 = (clientSecret) => {
+  return {
+    clientSecret,
+    appearance: {
+      labels: "floating",
+    },
+  };
+};
+
+export const hyperOptionsV2 = (clientSecret, paymentId) => {
+  return {
+    clientSecret,
+    paymentId,
+    appearance: {
+      labels: "floating",
+    },
+  };
 };

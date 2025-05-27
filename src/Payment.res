@@ -19,6 +19,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentsListValue = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
 
   let (cardNumber, setCardNumber) = React.useState(_ => "")
@@ -54,10 +55,17 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     !showFields && isNotBancontact ? cardScheme : cardBrand
   )
 
+  let paymentType = React.useMemo1(() => {
+    paymentMode->getPaymentMode
+  }, [paymentMode])
+
   let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showFields)
   let supportedCardBrands = React.useMemo(() => {
-    paymentMethodListValue->PaymentUtils.getSupportedCardBrands
-  }, [paymentMethodListValue])
+    switch (paymentType, GlobalVars.sdkVersion) {
+    | (Payment, V2) => paymentsListValue->PaymentUtilsV2.getSupportedCardBrandsV2
+    | _ => paymentMethodListValue->PaymentUtils.getSupportedCardBrands
+    }
+  }, (paymentMethodListValue, paymentsListValue))
 
   let maxCardLength = React.useMemo(() => {
     getMaxLength(cardBrand)
@@ -321,10 +329,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       }
     }
   }
-
-  let paymentType = React.useMemo1(() => {
-    paymentMode->getPaymentMode
-  }, [paymentMode])
 
   React.useEffect0(() => {
     open Utils

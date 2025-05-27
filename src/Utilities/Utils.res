@@ -18,6 +18,11 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
+type dataModule = {states: JSON.t}
+
+@val
+external importStates: string => promise<dataModule> = "import"
+
 open ErrorUtils
 
 let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
@@ -197,6 +202,8 @@ let getDictFromDict = (dict, key) => {
 let getBool = (dict, key, default) => {
   getOptionBool(dict, key)->Option.getOr(default)
 }
+
+let getOptionsDict = options => options->Option.getOr(JSON.Encode.null)->getDictFromJson
 
 let getBoolWithWarning = (dict, key, default, ~logger) => {
   switch dict->Dict.get(key) {
@@ -411,7 +418,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
 }
 
 let getClientCountry = clientTimeZone => {
-  Country.country
+  CountryStateDataRefs.countryDataRef.contents
   ->Array.find(item => item.timeZones->Array.find(i => i == clientTimeZone)->Option.isSome)
   ->Option.getOr(Country.defaultTimeZone)
 }
@@ -703,8 +710,9 @@ let handlePostMessageEvents = (
   ~savedMethod=false,
 ) => {
   if complete && paymentType !== "" {
-    let value =
-      "Payment Data Filled" ++ (savedMethod ? ": Saved Payment Method" : ": New Payment Method")
+    let value = `Payment Data Filled: ${savedMethod
+        ? "Saved Payment Method"
+        : "New Payment Method"}`
     loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
   }
   messageParentWindow([
@@ -718,14 +726,14 @@ let handlePostMessageEvents = (
 let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
 
 let getCountryCode = country => {
-  Country.country
+  CountryStateDataRefs.countryDataRef.contents
   ->Array.find(item => item.countryName == country)
   ->Option.getOr(Country.defaultTimeZone)
 }
 
-let getStateNames = (list: JSON.t, country: RecoilAtomTypes.field) => {
+let getStateNames = (country: RecoilAtomTypes.field) => {
   let options =
-    list
+    CountryStateDataRefs.stateDataRef.contents
     ->getDictFromJson
     ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
     ->Option.getOr([])
@@ -733,7 +741,9 @@ let getStateNames = (list: JSON.t, country: RecoilAtomTypes.field) => {
   options->Array.reduce([], (arr, item) => {
     arr
     ->Array.push(
-      item->getDictFromJson->Dict.get("name")->Option.flatMap(JSON.Decode.string)->Option.getOr(""),
+      item
+      ->getDictFromJson
+      ->getString("value", ""),
     )
     ->ignore
     arr
@@ -1457,7 +1467,7 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
   ->Option.flatMap(stateObj =>
     stateObj
     ->getDictFromJson
-    ->getOptionString("name")
+    ->getOptionString("value")
   )
   ->Option.getOr(stateCode)
 }
@@ -1643,4 +1653,11 @@ let setNickNameState = (
     isValid,
     errorString,
   }
+}
+
+let getStringFromDict = (dict, key, defaultValue: string) => {
+  dict
+  ->Option.flatMap(x => x->Dict.get(key))
+  ->Option.flatMap(JSON.Decode.string)
+  ->Option.getOr(defaultValue)
 }

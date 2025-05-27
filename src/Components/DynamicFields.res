@@ -64,10 +64,10 @@ let make = (
         let creditRequiredFields =
           paymentManagementListValue.paymentMethodsEnabled
           ->Array.filter(item => {
-            item.paymentMethodSubType === "credit" && item.paymentMethodType === "card"
+            item.paymentMethodSubtype === "credit" && item.paymentMethodType === "card"
           })
           ->Array.get(0)
-          ->Option.getOr(PMMTypesV2.defaultPaymentMethods)
+          ->Option.getOr(UnifiedHelpersV2.defaultPaymentMethods)
 
         let finalCreditRequiredFields = creditRequiredFields.requiredFields
         [
@@ -150,11 +150,15 @@ let make = (
     "bankAccountNumber",
     logger,
   )
-
-  let (stateJson, setStatesJson) = React.useState(_ => None)
+  let countryList = CountryStateDataRefs.countryDataRef.contents
+  let stateNames = getStateNames({
+    value: country,
+    isValid: None,
+    errorString: "",
+  })
 
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
-  let countryNames = getCountryNames(Country.getCountry(paymentMethodType))
+  let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))
 
   let setCurrency = val => {
     setCurrency(val)
@@ -227,22 +231,6 @@ let make = (
   React.useEffect0(() => {
     let bank = bankNames->Array.get(0)->Option.getOr("")
     setSelectedBank(_ => bank)
-    None
-  })
-
-  React.useEffect0(() => {
-    open Promise
-    AddressPaymentInput.importStates("./../States.json")
-    ->then(res => {
-      setStatesJson(_ => Some(res.states))
-      resolve()
-    })
-    ->catch(_ => {
-      setStatesJson(_ => None)
-      resolve()
-    })
-    ->ignore
-
     None
   })
 
@@ -580,20 +568,14 @@ let make = (
                       placeholder=localeString.cityLabel
                       className={isSpacedInnerLayout ? "" : "!border-r-0"}
                     />
-                    {switch stateJson {
-                    | Some(options) =>
+                    <RenderIf condition={stateNames->Array.length > 0}>
                       <PaymentDropDownField
                         fieldName=localeString.stateLabel
                         value=state
                         setValue=setState
-                        options={options->getStateNames({
-                          value: country,
-                          isValid: None,
-                          errorString: "",
-                        })}
+                        options={stateNames}
                       />
-                    | None => React.null
-                    }}
+                    </RenderIf>
                   </div>
                 | CountryAndPincode(countryArr) =>
                   let updatedCountryArray =
@@ -703,20 +685,14 @@ let make = (
                     placeholder=localeString.cityLabel
                   />
                 | AddressState =>
-                  switch stateJson {
-                  | Some(options) =>
+                  <RenderIf condition={stateNames->Array.length > 0}>
                     <PaymentDropDownField
                       fieldName=localeString.stateLabel
                       value=state
                       setValue=setState
-                      options={options->getStateNames({
-                        value: country,
-                        isValid: None,
-                        errorString: "",
-                      })}
+                      options={stateNames}
                     />
-                  | None => React.null
-                  }
+                  </RenderIf>
                 | AddressPincode =>
                   <PaymentField
                     fieldName=localeString.postalCodeLabel

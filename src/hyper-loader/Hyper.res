@@ -138,32 +138,22 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
     let publishableKey = switch keys->JSON.Classify.classify {
     | String(val) => val
-    | Object(json) =>
-      json
-      ->Dict.get("publishableKey")
-      ->Option.flatMap(JSON.Decode.string)
-      ->Option.getOr("")
+    | Object(json) => json->getString("publishableKey", "")
     | _ => ""
     }
     let profileId = switch keys->JSON.Classify.classify {
     | String(_) => ""
-    | Object(json) =>
-      json
-      ->Dict.get("profileId")
-      ->Option.flatMap(JSON.Decode.string)
-      ->Option.getOr("")
+    | Object(json) => json->getString("profileId", "")
     | _ => ""
     }
     let isPreloadEnabled =
       options
-      ->Option.getOr(JSON.Encode.null)
-      ->getDictFromJson
+      ->getOptionsDict
       ->getBool("isPreloadEnabled", true)
     // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
     let shouldUseTopRedirection =
       options
-      ->Option.getOr(JSON.Encode.null)
-      ->getDictFromJson
+      ->getOptionsDict
       ->getBool("shouldUseTopRedirection", false)
     let overridenDefaultRedirectionFlags: RecoilAtomTypes.redirectionFlags = {
       shouldUseTopRedirection,
@@ -171,8 +161,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     }
     let redirectionFlags =
       options
-      ->Option.getOr(JSON.Encode.null)
-      ->getDictFromJson
+      ->getOptionsDict
       ->getJsonObjectFromDict("redirectionFlags")
       ->RecoilAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
 
@@ -184,14 +173,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
     let isForceInit =
       options
-      ->Option.getOr(JSON.Encode.null)
-      ->getDictFromJson
+      ->getOptionsDict
       ->getBool("isForceInit", false)
 
     let analyticsMetadata =
       options
-      ->Option.getOr(JSON.Encode.null)
-      ->getDictFromJson
+      ->getOptionsDict
       ->getDictFromObj("analytics")
       ->getJsonObjectFromDict("metadata")
     if isPreloadEnabled {
@@ -211,13 +198,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let handleOnReady = (event: Types.event) => {
         let json = event.data->anyTypeToJson
         let dict = json->getDictFromJson
-        if (
-          dict
-          ->Dict.get("ready")
-          ->Option.getOr(JSON.Encode.bool(false))
-          ->JSON.Decode.bool
-          ->Option.getOr(false)
-        ) {
+        if dict->getBool("ready", false) {
           resolve(Date.now())
         }
       }
@@ -279,9 +260,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           if (
             publishableKey == "" ||
               !(
-                publishableKey->String.startsWith("pk_dev_") ||
-                publishableKey->String.startsWith("pk_snd_") ||
-                publishableKey->String.startsWith("pk_prd_")
+                ["pk_dev_", "pk_snd_", "pk_prd_"]->Array.some(prefix =>
+                  publishableKey->String.startsWith(prefix)
+                )
               )
           ) {
             manageErrorWarning(INVALID_PK, ~logger)
@@ -341,6 +322,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let iframeRef = ref([])
       let clientSecret = ref("")
+      let paymentId = ref("")
       let ephemeralKey = ref("")
       let pmSessionId = ref("")
       let pmClientSecret = ref("")
@@ -535,13 +517,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
 
-        let clientSecretId =
-          elementsOptionsDict
-          ->Option.flatMap(x => x->Dict.get("clientSecret"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
+        let clientSecretId = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
+        let paymentIdVal = elementsOptionsDict->Utils.getStringFromDict("paymentId", "")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         clientSecret := clientSecretId
+        paymentId := paymentIdVal
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
           resolve(JSON.Encode.null)
@@ -560,6 +540,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ~publishableKey,
           ~profileId,
           ~clientSecret={clientSecretId},
+          ~paymentId={paymentIdVal},
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
@@ -570,37 +551,19 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let paymentMethodsManagementElements = paymentMethodsManagementElementsOptions => {
+      let paymentMethodsManagementElements = pmManagementOptions => {
         open Promise
-        let paymentMethodsManagementElementsOptionsDict =
-          paymentMethodsManagementElementsOptions->JSON.Decode.object
-        paymentMethodsManagementElementsOptionsDict
+        let pmManagementOptionsDict = pmManagementOptions->JSON.Decode.object
+        pmManagementOptionsDict
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
 
-        let ephemeralKeyId =
-          paymentMethodsManagementElementsOptionsDict
-          ->Option.flatMap(x => x->Dict.get("ephemeralKey"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
+        let ephemeralKeyId = pmManagementOptionsDict->getStringFromDict("ephemeralKey", "")
+        let pmClientSecretId = pmManagementOptionsDict->getStringFromDict("pmClientSecret", "")
+        let pmSessionIdVal = pmManagementOptionsDict->getStringFromDict("pmSessionId", "")
 
-        let pmClientSecretId =
-          paymentMethodsManagementElementsOptionsDict
-          ->Option.flatMap(x => x->Dict.get("pmClientSecret"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
-
-        let pmSessionIdVal =
-          paymentMethodsManagementElementsOptionsDict
-          ->Option.flatMap(x => x->Dict.get("pmSessionId"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
-
-        let paymentMethodsManagementElementsOptions =
-          paymentMethodsManagementElementsOptionsDict->Option.mapOr(
-            paymentMethodsManagementElementsOptions,
-            JSON.Encode.object,
-          )
+        let pmManagementOptions =
+          pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
         ephemeralKey := ephemeralKeyId
         pmSessionId := pmSessionIdVal
         pmClientSecret := pmClientSecretId
@@ -619,7 +582,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         ->ignore
 
         PaymentMethodsManagementElements.make(
-          paymentMethodsManagementElementsOptions,
+          pmManagementOptions,
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,

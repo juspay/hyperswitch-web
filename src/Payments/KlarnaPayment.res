@@ -17,8 +17,9 @@ let make = () => {
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
 
+  let countryData = CountryStateDataRefs.countryDataRef.contents
   let countryNames =
-    Utils.getCountryNames(Country.country)->DropdownField.updateArrayOfStringToOptionsTypeArray
+    Utils.getCountryNames(countryData)->DropdownField.updateArrayOfStringToOptionsTypeArray
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {
@@ -27,7 +28,7 @@ let make = () => {
 
   open Utils
   let clientCountryCode =
-    Country.country
+    countryData
     ->Array.find(item => item.countryName == country)
     ->Option.getOr(Country.defaultTimeZone)
 
