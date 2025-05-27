@@ -1157,10 +1157,8 @@ let usePaymentIntent = (optLogger, paymentType) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
-      let contentTypeHeader = ("Content-Type", "application/json")
       let headers = switch GlobalVars.sdkVersion {
       | V1 => [
-          contentTypeHeader,
           ("api-key", confirmParam.publishableKey),
           ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
         ]
@@ -1169,7 +1167,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
             "authorization",
             `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
           )
-          [contentTypeHeader, authorizationHeader, ("X-profile-id", keys.profileId)]
+          [authorizationHeader, ("X-profile-id", keys.profileId)]
         }
       }
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
@@ -1187,10 +1185,11 @@ let usePaymentIntent = (optLogger, paymentType) => {
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let uri = switch GlobalVars.sdkVersion {
-      | V1 => `${endpoint}/payments/${paymentIntentID}/confirm`
-      | V2 => `${endpoint}/v2/payments/${keys.paymentId}/confirm-intent`
+      let path = switch GlobalVars.sdkVersion {
+      | V1 => `payments/${paymentIntentID}/confirm`
+      | V2 => `v2/payments/${keys.paymentId}/confirm-intent`
       }
+      let uri = `${endpoint}/${path}`
 
       let callIntent = body => {
         let contentLength = body->String.length->Int.toString
