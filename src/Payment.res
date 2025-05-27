@@ -55,10 +55,14 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
     !showFields && isNotBancontact ? cardScheme : cardBrand
   )
 
+  let paymentType = React.useMemo1(() => {
+    paymentMode->getPaymentMode
+  }, [paymentMode])
+
   let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showFields)
   let supportedCardBrands = React.useMemo(() => {
-    switch (paymentMode, GlobalVars.sdkVersion) {
-    | ("payment", V2) => paymentsListValue->PaymentUtilsV2.getSupportedCardBrandsV2
+    switch (paymentType, GlobalVars.sdkVersion) {
+    | (Payment, V2) => paymentsListValue->PaymentUtilsV2.getSupportedCardBrandsV2
     | _ => paymentMethodListValue->PaymentUtils.getSupportedCardBrands
     }
   }, (paymentMethodListValue, paymentsListValue))
@@ -325,10 +329,6 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
       }
     }
   }
-
-  let paymentType = React.useMemo1(() => {
-    paymentMode->getPaymentMode
-  }, [paymentMode])
 
   React.useEffect0(() => {
     open Utils
