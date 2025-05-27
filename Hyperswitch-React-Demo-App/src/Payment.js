@@ -6,11 +6,14 @@ import {
   fetchConfigAndUrls,
   getPaymentIntentData,
   loadHyperScript,
+  hyperOptionsV1,
+  hyperOptionsV2,
 } from "./utils";
 
 function Payment() {
   const [hyperPromise, setHyperPromise] = useState(null);
   const [clientSecret, setClientSecret] = useState("");
+  const [paymentId, setPaymentId] = useState("");
   const [error, setError] = useState(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
@@ -43,6 +46,7 @@ function Payment() {
         const hyper = await loadHyperScript({
           clientUrl: urlsData.clientUrl,
           publishableKey,
+          profileId: configData?.profileId,
           customBackendUrl: urlsData.serverUrl,
           isScriptLoaded,
           setIsScriptLoaded,
@@ -50,6 +54,9 @@ function Payment() {
 
         if (isMounted) {
           setClientSecret(paymentIntentData.clientSecret);
+          if (SDK_VERSION === "v2") {
+            setPaymentId(paymentIntentData.paymentId);
+          }
           setHyperPromise(Promise.resolve(hyper));
         }
       } catch (err) {
@@ -65,6 +72,13 @@ function Payment() {
     };
   }, []);
 
+  let selectedOptions;
+  if (SDK_VERSION === "v1") {
+    selectedOptions = hyperOptionsV1(clientSecret);
+  } else {
+    selectedOptions = hyperOptionsV2(clientSecret, paymentId);
+  }
+
   return (
     <div className="mainContainer">
       <div className="heading">
@@ -74,15 +88,7 @@ function Payment() {
       {error && <p className="text-red-600">{error}</p>}
 
       {clientSecret && hyperPromise && (
-        <HyperElements
-          hyper={hyperPromise}
-          options={{
-            clientSecret,
-            appearance: {
-              labels: "floating",
-            },
-          }}
-        >
+        <HyperElements hyper={hyperPromise} options={selectedOptions}>
           <CheckoutForm />
         </HyperElements>
       )}
