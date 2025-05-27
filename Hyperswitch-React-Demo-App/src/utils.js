@@ -8,14 +8,8 @@ export const getPaymentIntentData = async ({
     if (isCypressTestMode) {
       return { clientSecret: clientSecretQueryParam };
     }
-    let url;
 
-    if (SDK_VERSION === "v1") {
-      url = `${baseUrl}/create-payment-intent`;
-    } else {
-      url = `${baseUrl}/create-intent`;
-    }
-    const res = await fetch(url);
+    const res = await fetch(`${baseUrl}/create-intent`);
     if (!res.ok) throw new Error("Failed to fetch payment intent");
 
     return await res.json();
