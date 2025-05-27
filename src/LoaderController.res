@@ -445,11 +445,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           let paymentsListV2 = dict->getJsonObjectFromDict("paymentsListV2")
           let listDict = paymentsListV2->getDictFromJson
 
-          let finalLoadLatency = if launchTime <= 0.0 {
-            0.0
-          } else {
-            Date.now() -. launchTime
-          }
           let updatedState: UnifiedPaymentsTypesV2.loadstate =
             paymentsListV2 == Dict.make()->JSON.Encode.object
               ? LoadErrorV2(paymentsListV2)
@@ -468,18 +463,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
           let evalMethodsList = () =>
             switch updatedState {
-            | LoadedV2(_) =>
-              logger.setLogInfo(
-                ~value="Loaded",
-                ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadLatency,
-              )
+            | LoadedV2(_) => Console.info("Loaded payment methods list v2")
             | LoadErrorV2(x) =>
-              logger.setLogError(
-                ~value="LoadError: " ++ x->JSON.stringify,
-                ~eventName=LOADER_CHANGED,
-                ~latency=finalLoadLatency,
-              )
+              Console.error2("Error in loading payment methods list v2: ", x->JSON.stringify)
             | _ => ()
             }
 
