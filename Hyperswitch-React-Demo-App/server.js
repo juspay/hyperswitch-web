@@ -117,24 +117,19 @@ function createPaymentRequestV2() {
 
 app.get("/create-intent", async (req, res) => {
   try {
-    let paymentRequest;
-    let paymentIntent;
+    const paymentRequest =
+      SDK_VERSION === "v1" ? createPaymentRequest() : createPaymentRequestV2();
+    const paymentIntent = await createPaymentIntent(paymentRequest);
 
-    if (SDK_VERSION === "v1") {
-      paymentRequest = createPaymentRequest();
-      paymentIntent = await createPaymentIntent(paymentRequest);
-      return res.send({
-        clientSecret: paymentIntent.client_secret,
-      });
+    const response = {
+      clientSecret: paymentIntent.client_secret,
+    };
+
+    if (SDK_VERSION === "v2") {
+      response.paymentId = paymentIntent.id;
     }
 
-    // Default to V2
-    paymentRequest = createPaymentRequestV2();
-    paymentIntent = await createPaymentIntent(paymentRequest);
-    res.send({
-      clientSecret: paymentIntent.client_secret,
-      paymentId: paymentIntent.id,
-    });
+    res.send(response);
   } catch (err) {
     res.status(400).send({
       error: { message: err.message },
