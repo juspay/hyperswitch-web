@@ -36,6 +36,12 @@ type element = {
   addEventListener?: (string, callback, option<options>) => unit,
 }
 
+type connection = {
+  effectiveType: string,
+  downlink: float,
+  rtt: float,
+}
+
 type elementRef
 @val external myDocument: elementRef = "document"
 
@@ -114,6 +120,11 @@ module Navigator = {
 
   @val @scope("navigator")
   external sendBeacon: (string, string) => unit = "sendBeacon"
+
+  @val external navigatorOnLine: bool = "navigator.onLine"
+
+  @val @scope("navigator")
+  external connection: Js.Nullable.t<connection> = "connection"
 }
 
 module Location = {
