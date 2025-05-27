@@ -64,10 +64,10 @@ let make = (
         let creditRequiredFields =
           paymentManagementListValue.paymentMethodsEnabled
           ->Array.filter(item => {
-            item.paymentMethodSubType === "credit" && item.paymentMethodType === "card"
+            item.paymentMethodSubtype === "credit" && item.paymentMethodType === "card"
           })
           ->Array.get(0)
-          ->Option.getOr(PMMTypesV2.defaultPaymentMethods)
+          ->Option.getOr(UnifiedHelpersV2.defaultPaymentMethods)
 
         let finalCreditRequiredFields = creditRequiredFields.requiredFields
         [

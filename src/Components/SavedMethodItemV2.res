@@ -1,7 +1,7 @@
 @react.component
 let make = (
   ~brandIcon,
-  ~paymentItem: PMMTypesV2.customerMethods,
+  ~paymentItem: UnifiedPaymentsTypesV2.customerMethods,
   ~handleDeleteV2,
   ~handleUpdate,
 ) => {

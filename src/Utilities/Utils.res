@@ -203,6 +203,8 @@ let getBool = (dict, key, default) => {
   getOptionBool(dict, key)->Option.getOr(default)
 }
 
+let getOptionsDict = options => options->Option.getOr(JSON.Encode.null)->getDictFromJson
+
 let getBoolWithWarning = (dict, key, default, ~logger) => {
   switch dict->Dict.get(key) {
   | Some(val) =>
@@ -1549,4 +1551,11 @@ let setNickNameState = (
     isValid,
     errorString,
   }
+}
+
+let getStringFromDict = (dict, key, defaultValue: string) => {
+  dict
+  ->Option.flatMap(x => x->Dict.get(key))
+  ->Option.flatMap(JSON.Decode.string)
+  ->Option.getOr(defaultValue)
 }

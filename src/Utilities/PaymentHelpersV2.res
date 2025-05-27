@@ -488,3 +488,89 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
     }
   }
 }
+
+let fetchPaymentMethodList = (
+  ~clientSecret,
+  ~paymentId,
+  ~publishableKey,
+  ~logger as _,
+  ~customPodUri,
+  ~endpoint,
+  ~profileId,
+) => {
+  open Promise
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("x-profile-id", profileId),
+    ("Authorization", `publishable-key=${publishableKey},client-secret=${clientSecret}`),
+  ]
+  let uri = `${endpoint}/v2/payments/${paymentId}/payment-methods`
+
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
+  ->then(resp => {
+    if !(resp->Fetch.Response.ok) {
+      resp
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      Fetch.Response.json(resp)
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.error2("Error ", exceptionMessage)
+    JSON.Encode.null->resolve
+  })
+}
+
+let fetchSessions = (
+  ~clientSecret,
+  ~publishableKey,
+  ~paymentId,
+  ~wallets=[],
+  ~isDelayedSessionToken=false,
+  ~optLogger as _,
+  ~customPodUri,
+  ~endpoint,
+  ~profileId,
+) => {
+  open Promise
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("x-profile-id", profileId),
+    ("Authorization", `publishable-key=${publishableKey},client-secret=${clientSecret}`),
+  ]
+  let paymentIntentID = clientSecret->Utils.getPaymentId
+  let body =
+    [
+      ("payment_id", paymentIntentID->JSON.Encode.string),
+      ("client_secret", clientSecret->JSON.Encode.string),
+      ("wallets", wallets->JSON.Encode.array),
+      ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
+    ]->getJsonFromArrayOfJson
+  let uri = `${endpoint}/v2/payments/${paymentId}/create-external-sdk-tokens`
+  fetchApi(
+    uri,
+    ~method=#POST,
+    ~bodyStr=body->JSON.stringify,
+    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+  )
+  ->then(resp => {
+    if !(resp->Fetch.Response.ok) {
+      resp
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      Fetch.Response.json(resp)
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.error2("Error ", exceptionMessage)
+    JSON.Encode.null->resolve
+  })
+}
