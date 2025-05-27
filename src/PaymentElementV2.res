@@ -58,7 +58,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     | (_, SemiLoadedV2) =>
       // TODO - For Payments CheckPriorityList && ShowCardFormByDefault
       // TODO - For PaymentMethodsManagement Cards
-      setPaymentOptions(_ => ["card"])
+      setPaymentOptions(_ => [])
     | _ => ()
     }
 
