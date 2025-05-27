@@ -205,11 +205,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         }}
       </div>
     </RenderIf>
-    {switch paymentManagementList {
-    | LoadErrorV2(_) =>
+    {switch (paymentManagementList, paymentMethodsListV2) {
+    | (LoadErrorV2(_), _) =>
       <RenderIf condition={paymentManagementListValue.paymentMethodsEnabled->Array.length === 0}>
         <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
       </RenderIf>
+    | (_, LoadErrorV2(_)) => <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
     | _ =>
       <RenderIf condition={paymentOptions->Array.length == 0 && walletOptions->Array.length == 0}>
         <PaymentElementShimmer />
