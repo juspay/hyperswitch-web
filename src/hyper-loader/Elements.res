@@ -225,8 +225,8 @@ let make = (
           if isPaymentMethodsData {
             resolve()
             //Replicate V1 Behavior
-            //Checking Apple Pay and Google Pay
-            //Attach Event Listeners for Paze and Plaid
+            // TODO - Checking Apple Pay and Google Pay
+            // TODO - Attach Event Listeners for Paze and Plaid
             let msg = [("paymentsListV2", json)]->Dict.fromArray
             mountedIframeRef->Window.iframePostMessage(msg)
           }
