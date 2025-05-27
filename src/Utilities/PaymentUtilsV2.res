@@ -45,7 +45,7 @@ let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mo
       | LoadedV2(paymentlist) =>
         let {otherPaymentList} = paymentListLookupNew(~paymentMethodListValue=paymentlist)
         ([...paymentOptions, ...otherPaymentList]->removeDuplicate, otherPaymentList)
-      | _ => (["card"], [])
+      | _ => ([], [])
       }
 
     switch paymentType {
