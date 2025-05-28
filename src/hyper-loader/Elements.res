@@ -22,7 +22,9 @@ let make = (
   ~customBackendUrl,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
+  Console.log("Elements Make")
   try {
+    Console.log("Inside Try Elements Make")
     let iframeRef = []
     let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
@@ -451,6 +453,7 @@ let make = (
 
           switch dict->Dict.get("googlePayThirdPartyFlow") {
           | Some(googlePayThirdPartyOptSession) => {
+              Console.log("Google Pay Third Party Flow Triggered Got Session")
               let googlePayThirdPartySession = googlePayThirdPartyOptSession->getDictFromJson
 
               let baseDetails = {
@@ -477,10 +480,11 @@ let make = (
                 ->Option.getOr(JSON.Encode.null)
                 ->JSON.Decode.string
                 ->Option.getOr("")
-
+              Console.log("Before Try")
               try {
                 switch connector {
                 | "trustpay" => {
+                    Console.log("Coming Inside Trustpay Connector Flow")
                     let secrets =
                       googlePayThirdPartySession->getJsonFromDict("secrets", JSON.Encode.null)
 
@@ -542,6 +546,7 @@ let make = (
                     ->ignore
                   }
                 | _ =>
+                  Console.log("Not Found Connector TrustPay")
                   logger.setLogInfo(
                     ~value="Connector Not Found",
                     ~eventName=GOOGLE_PAY_FLOW,
