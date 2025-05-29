@@ -13,6 +13,7 @@ WORKDIR /app
 ENV ENV_BACKEND_URL=https://beta.hyperswitch.io/api
 # Install dependencies and build the project
 RUN npm_config_ignore_scripts=true npm install
+RUN git submodule update --init --recursive
 RUN npm run re:build
 RUN npm run build:sandbox
 # Stage 2: Serve the built assets
@@ -21,7 +22,7 @@ FROM nginx:alpine
 # Set working directory and copy the built assets from the builder stage
 WORKDIR /usr/share/nginx/html
 ARG sdkVersion
-ARG port=80
+ARG port=80 
 ARG nginxPath=/usr/share/nginx/html/web/$sdkVersion
 COPY --from=builder /app/dist/sandbox $nginxPath
 WORKDIR $nginxPath/v1
