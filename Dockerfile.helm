@@ -28,19 +28,8 @@ COPY --from=builder /app/dist/sandbox $nginxPath
 WORKDIR $nginxPath/v1
 
 # Add the embedded entrypoint script
-RUN printf '\
-echo "Starting build modifications..."\n\
-if [ -n "$envSdkUrl" ]; then\n\
-  sed -i'' -e "s|https://beta.hyperswitch.io/web%7C${envSdkUrl}/web%7Cg" app.js HyperLoader.js\n\
-fi\n\
-if [ -n "$envBackendUrl" ]; then\n\
-  sed -i'' -e "s|https://beta.hyperswitch.io/api%7C${envBackendUrl}%7Cg" app.js HyperLoader.js\n\
-fi\n\
-if [ -n "$envLogsUrl" ]; then\n\
-  sed -i'' -e "s|https://sandbox.hyperswitch.io/logs/sdk%7C${envLogsUrl}%7Cg" app.js HyperLoader.js\n\
-fi\n\
-echo "Build modifications completed."\n\
-exec "$@"' > /docker-entrypoint.d/change_urls.sh && chmod +x /docker-entrypoint.d/change_urls.sh
+COPY scripts/change_urls.sh /docker-entrypoint.d/change_urls.sh
+RUN chmod +x /docker-entrypoint.d/change_urls.sh
 
 # Use the embedded entrypoint script and run Nginx
 CMD ["nginx", "-g", "daemon off;"]
