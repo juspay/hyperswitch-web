@@ -3,6 +3,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: "rtl",
   cardNumberLabel: `رقم البطاقة`,
   inValidCardErrorText: `رقم البطاقة غير صالحة`,
+  inValidCvcErrorText: `رمز التحقق من البطاقة غير صالح.`,
+  inValidExpiryErrorText: `تاريخ انتهاء البطاقة غير صالح.`,
   inCompleteCVCErrorText: `رمز أمان بطاقتك غير مكتمل`,
   inCompleteExpiryErrorText: `تاريخ انتهاء صلاحية بطاقتك غير مكتمل`,
   enterValidCardNumberErrorText: `الرجاء إدخال رقم بطاقة صالح.`,
