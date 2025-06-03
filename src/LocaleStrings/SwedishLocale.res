@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: `Kortnummer`,
   inValidCardErrorText: `Kortnumret är ogiltigt.`,
+  inValidExpiryErrorText: `Kortets utgångsdatum är ogiltigt.`,
   inCompleteCVCErrorText: `Kortets säkerhetskod är ofullständig.`,
   inCompleteExpiryErrorText: `Kortets utgångsdatum är ofullständigt.`,
   enterValidCardNumberErrorText: `Ange ett giltigt kortnummer.`,
