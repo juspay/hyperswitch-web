@@ -3,7 +3,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: `Номер карты`,
   inValidCardErrorText: `Номер карты недействителен.`,
-  inValidCvcErrorText: `Неверный CVC-код карты.`,
   inValidExpiryErrorText: `Неверный срок действия карты.`,
   inCompleteCVCErrorText: `Неправильно указан код безопасности карты.`,
   inCompleteExpiryErrorText: `Неправильно указан срок действия карты.`,

@@ -8,11 +8,7 @@ let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?) => {
   let (focusClass, setFocusClass) = React.useState(_ => "input-empty")
 
   React.useEffect(() => {
-    if isFocused {
-      setFocusClass(_ => "VGSField--focused")
-    } else {
-      setFocusClass(_ => "input-empty")
-    }
+    setFocusClass(_ => isFocused ? "VGSField--focused" : "input-empty")
     None
   }, [isFocused])
 

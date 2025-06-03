@@ -3,7 +3,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: `Número de targeta`,
   inValidCardErrorText: `El número de targeta no és vàlid.`,
-  inValidCvcErrorText: `El CVC de la targeta no és vàlid.`,
   inValidExpiryErrorText: `La data de caducitat no és vàlida.`,
   inCompleteCVCErrorText: `El codi de seguretat de la targeta està incomplet.`,
   inCompleteExpiryErrorText: `La data de venciment de la targeta està incompleta.`,

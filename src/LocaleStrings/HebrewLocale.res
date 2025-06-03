@@ -3,7 +3,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: "rtl",
   cardNumberLabel: `מספר כרטיס`,
   inValidCardErrorText: `אינו תקין`,
-  inValidCvcErrorText: `קוד ה-CVC שגוי.`,
   inValidExpiryErrorText: `תוקף הכרטיס אינו תקף.`,
   inCompleteCVCErrorText: `קוד האבטחה של הכרטיס שלך אינו שלם`,
   inCompleteExpiryErrorText: `פרטי תוקף של הכרטיס שלך אינם מלאים`,

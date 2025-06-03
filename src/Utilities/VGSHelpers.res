@@ -34,7 +34,7 @@ let getErrorStr = (fieldname, ~empty=false, localeString: LocaleStringTypes.loca
   | ("card_cvc", true) => localeString.cvcNumberEmptyText
   | ("card_number", false) => localeString.enterValidCardNumberErrorText
   | ("card_exp", false) => localeString.inValidExpiryErrorText
-  | ("card_cvc", false) => localeString.inValidCvcErrorText
+  | ("card_cvc", false) => localeString.inCompleteCVCErrorText
   | _ => ""
   }
 }

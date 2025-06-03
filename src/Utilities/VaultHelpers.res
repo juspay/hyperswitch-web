@@ -1,17 +1,17 @@
-type vault = VGS | HS | NONE
+type vault = VeryGoodSecurity | Hyperswitch | None
 
 let getVaultModeFromName = val => {
   switch val {
-  | "vgs" => VGS
-  | "hyperswitch_payment_method" => HS
-  | _ => NONE
+  | "vgs" => VeryGoodSecurity
+  | "hyperswitch_payment_method" => Hyperswitch
+  | _ => None
   }
 }
 
 let getVaultNameFromMode = val => {
   switch val {
-  | VGS => "vgs"
-  | HS => "hyperswitch_payment_method"
+  | VeryGoodSecurity => "vgs"
+  | Hyperswitch => "hyperswitch_payment_method"
   | _ => ""
   }
 }

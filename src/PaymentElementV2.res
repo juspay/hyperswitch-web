@@ -165,8 +165,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       {switch selectedOption->PaymentModeType.paymentMode {
       | Card =>
         switch vaultMode {
-        | VGS => <VGSVault />
-        | _ => <CardPayment cardProps expiryProps cvcProps />
+        | VeryGoodSecurity => <VGSVault />
+        | Hyperswitch
+        | None =>
+          <CardPayment cardProps expiryProps cvcProps />
         }
       | _ =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">

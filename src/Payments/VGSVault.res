@@ -184,7 +184,11 @@ let make = (~isBancontact=false) => {
             />
           </div>
         </div>
-        <RenderIf condition={innerLayout === Compressed}>
+        <RenderIf
+          condition={innerLayout === Compressed &&
+            (vgsCardError->String.length > 0 ||
+            vgsExpiryError->String.length > 0 ||
+            vgsCVCError->String.length > 0)}>
           <div
             className="Error pt-1"
             style={
