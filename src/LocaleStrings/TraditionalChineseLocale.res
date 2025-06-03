@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: "卡號",
   inValidCardErrorText: "卡號無效。",
+  inValidExpiryErrorText: "卡片到期日無效。",
   inCompleteCVCErrorText: "您的卡片安全碼不完整。",
   inCompleteExpiryErrorText: "您的卡片到期日期不完整。",
   enterValidCardNumberErrorText: "請輸入有效的卡號。",
