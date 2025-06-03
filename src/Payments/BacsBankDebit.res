@@ -96,7 +96,10 @@ let make = () => {
           ~line2=line2.value,
           ~city=city.value,
           ~zip=postalCode.value,
-          ~state=state.value,
+          ~state=getStateCodeFromStateNameAndCountryCode(
+            state.value,
+            getCountryCode(country.value).isoAlpha2,
+          ),
           ~country=getCountryCode(country.value).isoAlpha2,
           ~bankAccountHolderName=fullName.value,
         )

@@ -63,7 +63,10 @@ let make = () => {
               ~country=getCountryCode(country.value).isoAlpha2,
               ~city=city.value,
               ~postalCode=postalCode.value,
-              ~state=state.value,
+              ~state=getStateCodeFromStateNameAndCountryCode(
+                state.value,
+                getCountryCode(country.value).isoAlpha2,
+              ),
             )
             intent(
               ~bodyArr=body,

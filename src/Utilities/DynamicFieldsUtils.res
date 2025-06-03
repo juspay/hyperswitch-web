@@ -591,7 +591,11 @@ let useRequiredFieldsBody = (
     | AddressLine2 => line2.value
     | AddressCity => city.value
     | AddressPincode => postalCode.value
-    | AddressState => state.value
+    | AddressState =>
+      Utils.getStateCodeFromStateNameAndCountryCode(
+        state.value,
+        Utils.getCountryCode(country).isoAlpha2,
+      )
     | BlikCode => blikCode.value->Utils.removeHyphen
     | PhoneNumber => phone.value
     | PhoneCountryCode => phone.countryCode->Option.getOr("")
@@ -1077,12 +1081,7 @@ let getApplePayRequiredFields = (
     | AddressLine1 => billingContact.addressLines->getAddressLine(0)
     | AddressLine2 => billingContact.addressLines->getAddressLine(1)
     | AddressCity => billingContact.locality
-    | AddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        billingContact.administrativeArea,
-        billingCountryCode,
-      )
+    | AddressState => billingContact.administrativeArea
     | Country
     | AddressCountry(_) => billingCountryCode
     | AddressPincode => billingContact.postalCode
@@ -1092,12 +1091,8 @@ let getApplePayRequiredFields = (
     | ShippingAddressLine1 => shippingContact.addressLines->getAddressLine(0)
     | ShippingAddressLine2 => shippingContact.addressLines->getAddressLine(1)
     | ShippingAddressCity => shippingContact.locality
-    | ShippingAddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        shippingContact.administrativeArea,
-        shippingCountryCode,
-      )
+    | ShippingAddressState => shippingContact.administrativeArea
+
     | ShippingAddressCountry(_) => shippingCountryCode
     | ShippingAddressPincode => shippingContact.postalCode
     | _ => ""
@@ -1127,12 +1122,7 @@ let getGooglePayRequiredFields = (
     | AddressLine1 => billingContact.address1
     | AddressLine2 => billingContact.address2
     | AddressCity => billingContact.locality
-    | AddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        billingContact.administrativeArea,
-        billingContact.countryCode,
-      )
+    | AddressState => billingContact.administrativeArea
     | Country
     | AddressCountry(_) =>
       billingContact.countryCode
@@ -1144,12 +1134,7 @@ let getGooglePayRequiredFields = (
     | ShippingAddressLine1 => shippingContact.address1
     | ShippingAddressLine2 => shippingContact.address2
     | ShippingAddressCity => shippingContact.locality
-    | ShippingAddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        shippingContact.administrativeArea,
-        shippingContact.countryCode,
-      )
+    | ShippingAddressState => shippingContact.administrativeArea
     | ShippingAddressCountry(_) => shippingContact.countryCode
     | ShippingAddressPincode => shippingContact.postalCode
     | _ => ""
@@ -1181,8 +1166,7 @@ let getPaypalRequiredFields = (
     | ShippingAddressCity => details.shippingAddress.city
     | ShippingAddressState => {
         let administrativeArea = details.shippingAddress.state->Option.getOr("")
-        let countryCode = details.shippingAddress.countryCode->Option.getOr("")
-        Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)->Some
+        administrativeArea->Some
       }
     | ShippingAddressCountry(_) => details.shippingAddress.countryCode
     | ShippingAddressPincode => details.shippingAddress.postalCode
@@ -1218,8 +1202,7 @@ let getKlarnaRequiredFields = (
     | ShippingAddressCity => shippingContact.city
     | ShippingAddressState => {
         let administrativeArea = shippingContact.region
-        let countryCode = shippingContact.country
-        Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+        administrativeArea
       }
     | ShippingAddressCountry(_) => shippingContact.country
     | ShippingAddressPincode => shippingContact.postal_code
