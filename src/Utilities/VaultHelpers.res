@@ -7,6 +7,7 @@ let getVaultModeFromName = val => {
   | _ => NONE
   }
 }
+
 let getVaultNameFromMode = val => {
   switch val {
   | VGS => "vgs"
@@ -14,6 +15,7 @@ let getVaultNameFromMode = val => {
   | _ => ""
   }
 }
+
 let getVaultName = (sessionObj: PaymentType.loadType) => {
   switch sessionObj {
   | Loaded(ssn) =>

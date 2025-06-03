@@ -15,6 +15,7 @@ let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?) => {
     }
     None
   }, [isFocused])
+
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
     <RenderIf
       condition={fieldName->String.length > 0 &&

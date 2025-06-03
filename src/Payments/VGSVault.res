@@ -1,100 +1,39 @@
 open Utils
 open VGSTypes
+open VGSHelpers
 
 @react.component
 let make = (~isBancontact=false) => {
+  let vaultMode = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.vaultMode)
+
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let ssn = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {innerLayout} = config.appearance
-  let ssn = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
-  let vaultMode = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.vaultMode)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
 
-  let (vgsScriptLoaded, setVgsScriptLoaded) = React.useState(() => false)
   let (isCardFocused, setIsCardFocused) = React.useState(() => None)
   let (isCVCFocused, setIsCVCFocused) = React.useState(() => None)
   let (isExpiryFocused, setIsExpiryFocused) = React.useState(() => None)
-  let (vgsCardError, setVgsCardError) = React.useState(() => "")
-  let (vgsExpiryError, setVgsExpiryError) = React.useState(() => "")
-  let (vgsCVCError, setVgsCVCError) = React.useState(() => "")
   let (form, setForm) = React.useState(() => None)
   let (id, setId) = React.useState(() => None)
   let (env, setEnv) = React.useState(() => None)
   let (cardField, setCardField) = React.useState(() => None)
   let (expiryField, setExpiryField) = React.useState(() => None)
   let (cvcField, setCVCField) = React.useState(() => None)
+  let (vgsCardError, setVgsCardError) = React.useState(() => "")
+  let (vgsExpiryError, setVgsExpiryError) = React.useState(() => "")
+  let (vgsCVCError, setVgsCVCError) = React.useState(() => "")
+  let (vgsScriptLoaded, setVgsScriptLoaded) = React.useState(() => false)
 
-  let setUserError = message => {
-    Utils.postFailedSubmitResponse(~errortype="validation_error", ~message)
-  }
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
 
-  VGSHelpers.useVGSEvents(
-    cardField,
-    expiryField,
-    cvcField,
-    setIsCardFocused,
-    setIsExpiryFocused,
-    setIsCVCFocused,
-    setVgsCardError,
-    setVgsExpiryError,
-    setVgsCVCError,
-  )
+  useVGSFocus(cardField, setIsCardFocused, setVgsCardError)
+  useVGSFocus(expiryField, setIsExpiryFocused, setVgsExpiryError)
+  useVGSFocus(cvcField, setIsCVCFocused, setVgsCVCError)
 
-  let handleCard = (dict, ~isSubmit=false) => {
-    let cardData = dict->Dict.get("card_number")->Option.flatMap(JSON.Decode.object)
-    let isCardFocused = cardData->VGSHelpers.getBoolValueFromOptionalDict("isFocused")
-    let isCardEmpty = cardData->VGSHelpers.getBoolValueFromOptionalDict("isEmpty")
-    let isCardValid = cardData->VGSHelpers.getBoolValueFromOptionalDict("isValid")
-    switch (isCardFocused, isCardEmpty, isCardValid, isSubmit) {
-    | (false, true, _, true) => {
-        setVgsCardError(_ => localeString.cardNumberEmptyText)
-        setUserError(localeString.enterFieldsText)
-      }
-    | (false, false, false, _) => {
-        setVgsCardError(_ => localeString.enterValidCardNumberErrorText)
-        setUserError(localeString.enterValidDetailsText)
-      }
-    | _ => ()
-    }
-  }
-  let handleExpiry = (dict, ~isSubmit=false) => {
-    let expiryData = dict->Dict.get("card_exp")->Option.flatMap(JSON.Decode.object)
-    let isExpiryFocused = expiryData->VGSHelpers.getBoolValueFromOptionalDict("isFocused")
-    let isExpiryEmpty = expiryData->VGSHelpers.getBoolValueFromOptionalDict("isEmpty")
-    let isExpiryValid = expiryData->VGSHelpers.getBoolValueFromOptionalDict("isValid")
-    switch (isExpiryFocused, isExpiryEmpty, isExpiryValid, isSubmit) {
-    | (false, true, _, true) => {
-        setVgsExpiryError(_ => localeString.cardExpiryDateEmptyText)
-        setUserError(localeString.enterFieldsText)
-      }
-    | (false, false, false, _) => {
-        setVgsExpiryError(_ => localeString.inValidExpiryErrorText)
-        setUserError(localeString.enterValidDetailsText)
-      }
-    | _ => ()
-    }
-  }
-  let handleCVC = (dict, ~isSubmit=false) => {
-    let cvcData = dict->Dict.get("card_cvc")->Option.flatMap(JSON.Decode.object)
-    let isCvcFocused = cvcData->VGSHelpers.getBoolValueFromOptionalDict("isFocused")
-    let isCvcEmpty = cvcData->VGSHelpers.getBoolValueFromOptionalDict("isEmpty")
-    let isCvcValid = cvcData->VGSHelpers.getBoolValueFromOptionalDict("isValid")
-    switch (isCvcFocused, isCvcEmpty, isCvcValid, isSubmit) {
-    | (false, true, _, true) => {
-        setVgsCVCError(_ => localeString.cvcNumberEmptyText)
-        setUserError(localeString.enterFieldsText)
-      }
-    | (false, false, false, _) => {
-        setVgsCVCError(_ => localeString.inValidCvcErrorText)
-        setUserError(localeString.enterValidDetailsText)
-      }
-    | _ => ()
-    }
-  }
-
-  let initializeVGS = (vault: VGSTypes.returnValue) => {
-    let cardNumberOptions: VGSTypes.fieldOptions = {
+  let initializeVGS = (vault: returnValue) => {
+    let cardNumberOptions = {
       \"type": "card-number",
       name: "card_number",
       placeholder: "1234 1234 1234 1234",
@@ -102,7 +41,7 @@ let make = (~isBancontact=false) => {
       showCardIcon: true,
     }
 
-    let cardExpiryOptions: VGSTypes.fieldOptions = {
+    let cardExpiryOptions = {
       \"type": "card-expiration-date",
       name: "card_exp",
       placeholder: localeString.expiryPlaceholder,
@@ -110,7 +49,7 @@ let make = (~isBancontact=false) => {
       showCardIcon: false,
     }
 
-    let cardCvcOptions: VGSTypes.fieldOptions = {
+    let cardCvcOptions = {
       \"type": "card-security-code",
       name: "card_cvc",
       placeholder: "123",
@@ -140,11 +79,11 @@ let make = (~isBancontact=false) => {
     })
     vgsScript->Window.elementOnload(_ => {
       setVgsScriptLoaded(_ => true)
-      let vault = VGSTypes.create(id->Option.getOr(""), env->Option.getOr(""), vgsState => {
-        let dict = vgsState->Utils.getDictFromJson
-        handleCard(dict)
-        handleExpiry(dict)
-        handleCVC(dict)
+      let vault = create(id->Option.getOr(""), env->Option.getOr(""), vgsState => {
+        let dict = vgsState->getDictFromJson
+        vgsErrorHandler(dict, "card_number", setVgsCardError, localeString)
+        vgsErrorHandler(dict, "card_exp", setVgsExpiryError, localeString)
+        vgsErrorHandler(dict, "card_cvc", setVgsCVCError, localeString)
       })
       initializeVGS(vault)
     })
@@ -179,7 +118,7 @@ let make = (~isBancontact=false) => {
           "/post",
           emptyPayload,
           (_, data) => {
-            let (cardNumber, month, year, cvcNumber) = VGSHelpers.getTokenizedData(data)
+            let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
             let cardBody = PaymentManagementBody.vgsCardBody(~cardNumber, ~month, ~year, ~cvcNumber)
             intent(
               ~bodyArr={
@@ -191,10 +130,10 @@ let make = (~isBancontact=false) => {
             )
           },
           err => {
-            let dict = err->Utils.getDictFromJson
-            handleCard(dict, ~isSubmit=true)
-            handleExpiry(dict, ~isSubmit=true)
-            handleCVC(dict, ~isSubmit=true)
+            let dict = err->getDictFromJson
+            vgsErrorHandler(dict, "card_number", ~isSubmit=true, setVgsCardError, localeString)
+            vgsErrorHandler(dict, "card_exp", ~isSubmit=true, setVgsExpiryError, localeString)
+            vgsErrorHandler(dict, "card_cvc", ~isSubmit=true, setVgsCVCError, localeString)
           },
         )
       | None => Console.error("VGS Vault not initialized for submission")
