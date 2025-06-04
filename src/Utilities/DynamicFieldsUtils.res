@@ -592,10 +592,7 @@ let useRequiredFieldsBody = (
     | AddressCity => city.value
     | AddressPincode => postalCode.value
     | AddressState =>
-      Utils.getStateCodeFromStateNameAndCountryCode(
-        state.value,
-        Utils.getCountryCode(country).isoAlpha2,
-      )
+      Utils.getStateCodeFromStateName(state.value, Utils.getCountryCode(country).isoAlpha2)
     | BlikCode => blikCode.value->Utils.removeHyphen
     | PhoneNumber => phone.value
     | PhoneCountryCode => phone.countryCode->Option.getOr("")

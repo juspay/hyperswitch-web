@@ -1370,28 +1370,32 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
   ->Option.getOr(stateCode)
 }
 
-let getStateCodeFromStateNameAndCountryCode = (stateName: string, countryCode: string) => {
-  let options =
+let getStateCodeFromStateName = (stateName: string, countryCode: string): string => {
+  // Get the state data for the specified country
+  let countryStates =
     CountryStateDataRefs.stateDataRef.contents
     ->getDictFromJson
     ->getOptionalArrayFromDict(countryCode)
 
-  options
-  ->Option.flatMap(
-    Array.find(_, item =>
-      item
+  // Find the state by name and extract its code
+  let stateCode =
+    countryStates
+    ->Option.flatMap(states =>
+      states->Array.find(state => {
+        let stateDict = state->getDictFromJson
+        let stateValue = stateDict->getString("value", "")
+        stateValue === stateName
+      })
+    )
+    ->Option.flatMap(foundState =>
+      foundState
       ->getDictFromJson
-      ->getString("value", "") === stateName
-    ),
-  )
-  ->Option.flatMap(stateObj =>
-    stateObj
-    ->getDictFromJson
-    ->getOptionString("code")
-  )
-  ->Option.getOr(stateName)
-}
+      ->getOptionString("code")
+    )
 
+  // Return the state code or fallback to the original state name
+  stateCode->Option.getOr(stateName)
+}
 let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")
 
 let compareLogic = (a, b) => {

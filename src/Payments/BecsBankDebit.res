@@ -63,7 +63,7 @@ let make = () => {
               ~country=getCountryCode(country.value).isoAlpha2,
               ~city=city.value,
               ~postalCode=postalCode.value,
-              ~state=getStateCodeFromStateNameAndCountryCode(
+              ~state=getStateCodeFromStateName(
                 state.value,
                 getCountryCode(country.value).isoAlpha2,
               ),
