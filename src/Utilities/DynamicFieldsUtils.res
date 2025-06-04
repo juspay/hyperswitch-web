@@ -1047,7 +1047,6 @@ let getApplePayRequiredFields = (
   ~billingContact: ApplePayTypes.billingContact,
   ~shippingContact: ApplePayTypes.shippingContact,
   ~requiredFields=defaultRequiredFieldsArray,
-  ~statesList,
 ) => {
   requiredFields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
@@ -1107,7 +1106,6 @@ let getGooglePayRequiredFields = (
   ~billingContact: GooglePayType.billingContact,
   ~shippingContact: GooglePayType.billingContact,
   ~requiredFields=defaultRequiredFieldsArray,
-  ~statesList,
   ~email,
 ) => {
   requiredFields->Array.reduce(Dict.make(), (acc, item) => {
@@ -1148,7 +1146,6 @@ let getGooglePayRequiredFields = (
 let getPaypalRequiredFields = (
   ~details: PaypalSDKTypes.details,
   ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
-  ~statesList,
 ) => {
   paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
@@ -1183,7 +1180,6 @@ let getPaypalRequiredFields = (
 let getKlarnaRequiredFields = (
   ~shippingContact: KlarnaSDKTypes.collected_shipping_address,
   ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
-  ~statesList,
 ) => {
   paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
