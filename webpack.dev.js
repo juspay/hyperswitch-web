@@ -20,7 +20,7 @@ const devServer = {
   },
   hot: true,
   host: "0.0.0.0",
-  port: 9050,
+  port: process.env.PORT || 9050,
   historyApiFallback: true,
   proxy: [
     {
