@@ -28,7 +28,7 @@ COPY --from=builder /app/dist/sandbox $nginxPath
 WORKDIR $nginxPath/v1
 
 # Add the embedded entrypoint script
-COPY scripts/change_urls.sh /docker-entrypoint.d/change_urls.sh
+COPY docker_helm_utils/change_urls.sh /docker-entrypoint.d/change_urls.sh
 RUN chmod +x /docker-entrypoint.d/change_urls.sh
 
 # Use the embedded entrypoint script and run Nginx
