@@ -16,14 +16,14 @@ let make = (~isBancontact=false) => {
   let (isCVCFocused, setIsCVCFocused) = React.useState(() => None)
   let (isExpiryFocused, setIsExpiryFocused) = React.useState(() => None)
   let (form, setForm) = React.useState(() => None)
-  let (id, setId) = React.useState(() => None)
-  let (env, setEnv) = React.useState(() => None)
   let (cardField, setCardField) = React.useState(() => None)
   let (expiryField, setExpiryField) = React.useState(() => None)
   let (cvcField, setCVCField) = React.useState(() => None)
   let (vgsCardError, setVgsCardError) = React.useState(() => "")
   let (vgsExpiryError, setVgsExpiryError) = React.useState(() => "")
   let (vgsCVCError, setVgsCVCError) = React.useState(() => "")
+  let (id, setId) = React.useState(() => "")
+  let (env, setEnv) = React.useState(() => "")
   let (vgsScriptLoaded, setVgsScriptLoaded) = React.useState(() => false)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
@@ -79,7 +79,7 @@ let make = (~isBancontact=false) => {
     })
     vgsScript->Window.elementOnload(_ => {
       setVgsScriptLoaded(_ => true)
-      let vault = create(id->Option.getOr(""), env->Option.getOr(""), vgsState => {
+      let vault = create(id, env, vgsState => {
         let dict = vgsState->getDictFromJson
         vgsErrorHandler(dict, "card_number", setVgsCardError, localeString)
         vgsErrorHandler(dict, "card_exp", setVgsExpiryError, localeString)
@@ -101,7 +101,7 @@ let make = (~isBancontact=false) => {
   }, (ssn, vaultMode))
 
   React.useEffect(() => {
-    if !vgsScriptLoaded && id->Option.isSome && env->Option.isSome {
+    if !vgsScriptLoaded && id != "" && env != "" {
       mountVGSSDK()
     }
     None

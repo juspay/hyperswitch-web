@@ -17,7 +17,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentManagementListValue,
   )
-  let ssn = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
+  let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let (vaultMode, setVaultMode) = Recoil.useRecoilState(RecoilAtomsV2.vaultMode)
   let setPaymentsListValue = Recoil.useSetRecoilState(RecoilAtomsV2.paymentsListValue)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
@@ -43,10 +43,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   })
 
   React.useEffect(() => {
-    let variable = VaultHelpers.getVaultName(ssn)
-    setVaultMode(_ => variable->VaultHelpers.getVaultModeFromName)
+    let vaultName = VaultHelpers.getVaultName(sessionToken)
+    setVaultMode(_ => vaultName->VaultHelpers.getVaultModeFromName)
     None
-  }, [ssn])
+  }, [sessionToken])
 
   React.useEffect(() => {
     let updatePaymentOptions = () => {

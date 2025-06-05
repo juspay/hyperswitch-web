@@ -1,3 +1,5 @@
+open Utils
+
 type vault = VeryGoodSecurity | Hyperswitch | None
 
 let getVaultModeFromName = val => {
@@ -18,63 +20,43 @@ let getVaultNameFromMode = val => {
 
 let getVaultName = (sessionObj: PaymentType.loadType) => {
   switch sessionObj {
-  | Loaded(ssn) =>
-    ssn
-    ->Utils.getDictFromJson
-    ->Dict.get("vault_details")
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.map(vaultDetailsDict => {
-      let keys = vaultDetailsDict->Js.Dict.keys
-      keys->Array.get(0)->Option.getOr("")
-    })
-    ->Option.getOr("")
+  | Loaded(session) =>
+    let dict = session->getDictFromJson
+    let vaultDetailsDict = dict->getDictFromDict("vault_details")
+    let keys = vaultDetailsDict->Dict.keysToArray
+    keys->Array.get(0)->Option.getOr("")
   | _ => ""
   }
 }
 
 let getVGSVaultDetails = (sessionObj: PaymentType.loadType, vaultName: string) => {
   switch sessionObj {
-  | Loaded(ssn) =>
-    ssn
-    ->Utils.getDictFromJson
-    ->Dict.get("vault_details")
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.flatMap(vaultDetailsDict => vaultDetailsDict->Dict.get(vaultName))
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.map(specificVaultDict => {
-      let externalVaultId =
-        specificVaultDict->Dict.get("external_vault_id")->Option.flatMap(JSON.Decode.string)
-      let env = specificVaultDict->Dict.get("env")->Option.flatMap(JSON.Decode.string)
-      (externalVaultId, env)
-    })
-    ->Option.getOr((None, None))
-  | _ => (None, None)
+  | Loaded(session) =>
+    let dict = session->getDictFromJson
+    let vgsVaultDict =
+      dict
+      ->getDictFromDict("vault_details")
+      ->getDictFromDict(vaultName)
+
+    let externalVaultId = vgsVaultDict->getString("external_vault_id", "")
+    let env = vgsVaultDict->getString("env", "")
+    (externalVaultId, env)
+  | _ => ("", "")
   }
 }
 
 let getHyperswitchVaultDetails = (sessionObj: PaymentType.loadType) => {
   switch sessionObj {
-  | Loaded(ssn) =>
-    ssn
-    ->Utils.getDictFromJson
-    ->Dict.get("vault_details")
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.flatMap(vaultDetailsDict => vaultDetailsDict->Dict.get("hyperswitch_payment_method"))
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.map(specificVaultDict => {
-      let paymentMethodSessionId =
-        specificVaultDict
-        ->Dict.get("payment_method_session_id")
-        ->Option.flatMap(JSON.Decode.string)
-        ->Option.getOr("")
-      let clientSecret =
-        specificVaultDict
-        ->Dict.get("client_secret")
-        ->Option.flatMap(JSON.Decode.string)
-        ->Option.getOr("")
-      (paymentMethodSessionId, clientSecret)
-    })
-    ->Option.getOr(("", ""))
+  | Loaded(session) =>
+    let dict = session->getDictFromJson
+    let hyperswitchVaultDict =
+      dict
+      ->getDictFromDict("vault_details")
+      ->getDictFromDict("hyperswitch_payment_method")
+
+    let paymentMethodSessionId = hyperswitchVaultDict->getString("payment_method_session_id", "")
+    let clientSecret = hyperswitchVaultDict->getString("client_secret", "")
+    (paymentMethodSessionId, clientSecret)
   | _ => ("", "")
   }
 }

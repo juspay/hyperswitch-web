@@ -1,3 +1,5 @@
+open Utils
+
 let useVGSFocus = (field: option<VGSTypes.field>, setFocus, setError) => {
   switch field {
   | Some(val) =>
@@ -9,20 +11,12 @@ let useVGSFocus = (field: option<VGSTypes.field>, setFocus, setError) => {
   | None => ()
   }
 }
-let getBoolValueFromOptionalDict = (dict, key) => {
-  dict
-  ->Option.getOr(Dict.make())
-  ->Dict.get(key)
-  ->Option.flatMap(JSON.Decode.bool)
-  ->Option.getOr(true)
-}
 
 let getTokenizedData = data => {
-  let dict = data->Utils.getDictFromJson
-  let cardNumber =
-    dict->Dict.get("card_number")->Option.flatMap(JSON.Decode.string)->Option.getOr("")
-  let cardExp = dict->Dict.get("card_exp")->Option.flatMap(JSON.Decode.string)->Option.getOr("")
-  let cardCvc = dict->Dict.get("card_cvc")->Option.flatMap(JSON.Decode.string)->Option.getOr("")
+  let dict = data->getDictFromJson
+  let cardNumber = dict->getString("card_number", "")
+  let cardExp = dict->getString("card_exp", "")
+  let cardCvc = dict->getString("card_cvc", "")
   let (month, year) = CardUtils.splitExpiryDates(cardExp)
   (cardNumber, month, year, cardCvc)
 }
@@ -53,9 +47,9 @@ let vgsErrorHandler = (
   let emptyErr = getErrorStr(fieldname, ~empty=true, localeString)
   let invalidErr = getErrorStr(fieldname, localeString)
   let dataDict = dict->Dict.get(fieldname)->Option.flatMap(JSON.Decode.object)
-  let isFocused = dataDict->getBoolValueFromOptionalDict("isFocused")
-  let isEmpty = dataDict->getBoolValueFromOptionalDict("isEmpty")
-  let isValid = dataDict->getBoolValueFromOptionalDict("isValid")
+  let isFocused = dataDict->Option.getOr(Dict.make())->getBool("isFocused", true)
+  let isEmpty = dataDict->Option.getOr(Dict.make())->getBool("isEmpty", true)
+  let isValid = dataDict->Option.getOr(Dict.make())->getBool("isValid", true)
   switch (isFocused, isEmpty, isValid, isSubmit) {
   | (false, true, _, true) => {
       setError(_ => emptyErr)
