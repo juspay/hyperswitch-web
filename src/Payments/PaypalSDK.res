@@ -31,8 +31,6 @@ let make = (~sessionObj: SessionsType.token) => {
   let clientScript =
     Window.document(Window.window)->Window.getElementById("braintree-client")->Nullable.toOption
 
-  let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
-
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (_, _, buttonType, _) = options.wallets.style.type_
   let (_, _, heightType, _, _) = options.wallets.style.height
@@ -62,7 +60,6 @@ let make = (~sessionObj: SessionsType.token) => {
     ~paymentMethodType="paypal",
   )
 
-  PaymentUtils.useStatesJson(setStatesJson)
   UtilityHooks.useHandlePostMessages(
     ~complete=isCompleted,
     ~empty=!isCompleted,
@@ -96,7 +93,6 @@ let make = (~sessionObj: SessionsType.token) => {
         ~options,
         ~publishableKey,
         ~paymentMethodTypes,
-        ~stateJson,
         ~confirm,
         ~completeAuthorize,
         ~handleCloseLoader,
@@ -113,32 +109,29 @@ let make = (~sessionObj: SessionsType.token) => {
 
   React.useEffect(() => {
     try {
-      if stateJson->Identity.jsonToNullableJson->Js.Nullable.isNullable->not {
-        switch sessionObj.connector {
-        | "paypal" => mountPaypalSDK()
-        | _ =>
-          switch (checkoutScript, clientScript) {
-          | (Some(_), Some(_)) =>
-            PaypalSDKHelpers.loadBraintreePaypalSdk(
-              ~loggerState,
-              ~sdkHandleOneClickConfirmPayment,
-              ~token,
-              ~buttonStyle,
-              ~iframeId,
-              ~paymentMethodListValue,
-              ~isGuestCustomer,
-              ~intent,
-              ~options,
-              ~orderDetails,
-              ~publishableKey,
-              ~paymentMethodTypes,
-              ~stateJson,
-              ~handleCloseLoader,
-              ~areOneClickWalletsRendered,
-              ~isManualRetryEnabled,
-            )
-          | _ => ()
-          }
+      switch sessionObj.connector {
+      | "paypal" => mountPaypalSDK()
+      | _ =>
+        switch (checkoutScript, clientScript) {
+        | (Some(_), Some(_)) =>
+          PaypalSDKHelpers.loadBraintreePaypalSdk(
+            ~loggerState,
+            ~sdkHandleOneClickConfirmPayment,
+            ~token,
+            ~buttonStyle,
+            ~iframeId,
+            ~paymentMethodListValue,
+            ~isGuestCustomer,
+            ~intent,
+            ~options,
+            ~orderDetails,
+            ~publishableKey,
+            ~paymentMethodTypes,
+            ~handleCloseLoader,
+            ~areOneClickWalletsRendered,
+            ~isManualRetryEnabled,
+          )
+        | _ => ()
         }
       }
     } catch {
@@ -151,7 +144,7 @@ let make = (~sessionObj: SessionsType.token) => {
       )
     }
     None
-  }, [stateJson])
+  }, [])
 
   <div id="paypal-button" className="w-full flex flex-row justify-center rounded-md h-auto" />
 }

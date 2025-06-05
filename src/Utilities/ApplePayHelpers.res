@@ -35,7 +35,6 @@ let getApplePayFromResponse = (
   ~billingContactDict,
   ~shippingContactDict,
   ~requiredFields=[],
-  ~stateJson,
   ~connectors,
   ~isPaymentSession=false,
   ~isSavedMethodsFlow=false,
@@ -45,18 +44,9 @@ let getApplePayFromResponse = (
   let shippingContact = shippingContactDict->ApplePayTypes.shippingContactItemToObjMapper
 
   let requiredFieldsBody = if isPaymentSession || isSavedMethodsFlow {
-    DynamicFieldsUtils.getApplePayRequiredFields(
-      ~billingContact,
-      ~shippingContact,
-      ~statesList=stateJson,
-    )
+    DynamicFieldsUtils.getApplePayRequiredFields(~billingContact, ~shippingContact)
   } else {
-    DynamicFieldsUtils.getApplePayRequiredFields(
-      ~billingContact,
-      ~shippingContact,
-      ~requiredFields,
-      ~statesList=stateJson,
-    )
+    DynamicFieldsUtils.getApplePayRequiredFields(~billingContact, ~shippingContact, ~requiredFields)
   }
 
   let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
@@ -219,11 +209,8 @@ let useHandleApplePayResponse = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
-  let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
-
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  PaymentUtils.useStatesJson(setStatesJson)
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
     ~paymentMethodListValue,
     ~paymentMethod="wallet",
@@ -249,7 +236,6 @@ let useHandleApplePayResponse = (
             ~billingContactDict,
             ~shippingContactDict,
             ~requiredFields=paymentMethodTypes.required_fields,
-            ~stateJson,
             ~connectors,
             ~isSavedMethodsFlow,
           )
@@ -295,14 +281,7 @@ let useHandleApplePayResponse = (
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
-  }, (
-    isInvokeSDKFlow,
-    processPayment,
-    stateJson,
-    isManualRetryEnabled,
-    isWallet,
-    requiredFieldsBody,
-  ))
+  }, (isInvokeSDKFlow, processPayment, isManualRetryEnabled, isWallet, requiredFieldsBody))
 }
 
 let handleApplePayButtonClicked = (
