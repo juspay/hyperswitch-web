@@ -583,6 +583,8 @@ let useRequiredFieldsBody = (
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
+  let countryCode = Utils.getCountryCode(country).isoAlpha2
+  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -591,8 +593,7 @@ let useRequiredFieldsBody = (
     | AddressLine2 => line2.value
     | AddressCity => city.value
     | AddressPincode => postalCode.value
-    | AddressState =>
-      Utils.getStateCodeFromStateName(state.value, Utils.getCountryCode(country).isoAlpha2)
+    | AddressState => stateCode
     | BlikCode => blikCode.value->Utils.removeHyphen
     | PhoneNumber => phone.value
     | PhoneCountryCode => phone.countryCode->Option.getOr("")

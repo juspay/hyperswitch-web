@@ -1371,13 +1371,11 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
 }
 
 let getStateCodeFromStateName = (stateName: string, countryCode: string): string => {
-  // Get the state data for the specified country
   let countryStates =
     CountryStateDataRefs.stateDataRef.contents
     ->getDictFromJson
     ->getOptionalArrayFromDict(countryCode)
 
-  // Find the state by name and extract its code
   let stateCode =
     countryStates
     ->Option.flatMap(states =>
@@ -1393,7 +1391,6 @@ let getStateCodeFromStateName = (stateName: string, countryCode: string): string
       ->getOptionString("code")
     )
 
-  // Return the state code or fallback to the original state name
   stateCode->Option.getOr(stateName)
 }
 let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")

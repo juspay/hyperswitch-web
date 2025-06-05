@@ -28,6 +28,8 @@ let make = () => {
   let (city, _) = Recoil.useLoggedRecoilState(userAddressCity, "city", loggerState)
   let (postalCode, _) = Recoil.useLoggedRecoilState(userAddressPincode, "postal_code", loggerState)
   let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
+  let countryCode = Utils.getCountryCode(country.value).isoAlpha2
+  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let pmAuthMapper = React.useMemo1(
@@ -80,10 +82,10 @@ let make = () => {
             ~cardHolderName=fullName.value,
             ~line1=line1.value,
             ~line2=line2.value,
-            ~country=getCountryCode(country.value).isoAlpha2,
+            ~country=countryCode,
             ~city=city.value,
             ~postalCode=postalCode.value,
-            ~state=getStateCodeFromStateName(state.value, getCountryCode(country.value).isoAlpha2),
+            ~stateCode,
           )
           intent(
             ~bodyArr=body,
