@@ -47,9 +47,15 @@ let vgsErrorHandler = (
   let emptyErr = getErrorStr(fieldname, ~empty=true, localeString)
   let invalidErr = getErrorStr(fieldname, localeString)
   let dataDict = dict->Dict.get(fieldname)->Option.flatMap(JSON.Decode.object)
-  let isFocused = dataDict->Option.getOr(Dict.make())->getBool("isFocused", true)
-  let isEmpty = dataDict->Option.getOr(Dict.make())->getBool("isEmpty", true)
-  let isValid = dataDict->Option.getOr(Dict.make())->getBool("isValid", true)
+
+  let getBoolFromDictOpt = (optDict, key, ~fallback=true) => {
+    optDict->Option.getOr(Dict.make())->getBool(key, fallback)
+  }
+
+  let isFocused = dataDict->getBoolFromDictOpt("isFocused")
+  let isEmpty = dataDict->getBoolFromDictOpt("isEmpty")
+  let isValid = dataDict->getBoolFromDictOpt("isValid")
+
   switch (isFocused, isEmpty, isValid, isSubmit) {
   | (false, true, _, true) => {
       setError(_ => emptyErr)
