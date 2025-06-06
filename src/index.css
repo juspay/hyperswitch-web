@@ -14,3 +14,16 @@ input::-webkit-credentials-auto-fill-button,
 input::-webkit-contacts-auto-fill-button {
   width: 0 !important;
 }
+
+div[id*="vgs-cc-"] {
+  display: block;
+  height: 48px;
+  /* margin-bottom: 15px; */
+  position: relative;
+}
+
+div[id*="vgs-cc-"] iframe {
+  height: 100% !important;
+  width: 100% !important;
+  border: none;
+}

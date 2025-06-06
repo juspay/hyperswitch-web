@@ -99,6 +99,9 @@ let softRules = theme =>
     ".Input:focus": {
       "boxShadow": `inset 8px 7px 7px #353637, inset -8px -6px 7px #434445`,
     },
+    ".VGSField--focused": {
+      "boxShadow": `inset 8px 7px 7px #353637, inset -8px -6px 7px #434445`,
+    },
     ".Input-Compressed:focus": {
       "boxShadow": `inset 8px 7px 7px #353637, inset -8px -6px 7px #434445`,
     },

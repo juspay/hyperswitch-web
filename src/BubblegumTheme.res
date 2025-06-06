@@ -118,6 +118,10 @@ let bubblegumRules = theme =>
       "border": `1px solid ${theme.colorPrimary}`,
       "boxShadow": `${theme.colorPrimary}4c 0px 0px 0px 3px`,
     },
+    ".VGSField--focused": {
+      "border": `1px solid ${theme.colorPrimary}`,
+      "boxShadow": `${theme.colorPrimary}4c 0px 0px 0px 3px`,
+    },
     ".Input-Compressed:focus": {
       "border": `1px solid ${theme.colorPrimary}`,
       "boxShadow": `${theme.colorPrimary}4c 0px 0px 0px 2px`,
