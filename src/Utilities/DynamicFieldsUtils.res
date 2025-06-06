@@ -583,6 +583,8 @@ let useRequiredFieldsBody = (
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
+  let countryCode = Utils.getCountryCode(country).isoAlpha2
+  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -591,7 +593,7 @@ let useRequiredFieldsBody = (
     | AddressLine2 => line2.value
     | AddressCity => city.value
     | AddressPincode => postalCode.value
-    | AddressState => state.value
+    | AddressState => stateCode
     | BlikCode => blikCode.value->Utils.removeHyphen
     | PhoneNumber => phone.value
     | PhoneCountryCode => phone.countryCode->Option.getOr("")
@@ -1046,7 +1048,6 @@ let getApplePayRequiredFields = (
   ~billingContact: ApplePayTypes.billingContact,
   ~shippingContact: ApplePayTypes.shippingContact,
   ~requiredFields=defaultRequiredFieldsArray,
-  ~statesList,
 ) => {
   requiredFields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
@@ -1077,12 +1078,7 @@ let getApplePayRequiredFields = (
     | AddressLine1 => billingContact.addressLines->getAddressLine(0)
     | AddressLine2 => billingContact.addressLines->getAddressLine(1)
     | AddressCity => billingContact.locality
-    | AddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        billingContact.administrativeArea,
-        billingCountryCode,
-      )
+    | AddressState => billingContact.administrativeArea
     | Country
     | AddressCountry(_) => billingCountryCode
     | AddressPincode => billingContact.postalCode
@@ -1092,12 +1088,8 @@ let getApplePayRequiredFields = (
     | ShippingAddressLine1 => shippingContact.addressLines->getAddressLine(0)
     | ShippingAddressLine2 => shippingContact.addressLines->getAddressLine(1)
     | ShippingAddressCity => shippingContact.locality
-    | ShippingAddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        shippingContact.administrativeArea,
-        shippingCountryCode,
-      )
+    | ShippingAddressState => shippingContact.administrativeArea
+
     | ShippingAddressCountry(_) => shippingCountryCode
     | ShippingAddressPincode => shippingContact.postalCode
     | _ => ""
@@ -1115,7 +1107,6 @@ let getGooglePayRequiredFields = (
   ~billingContact: GooglePayType.billingContact,
   ~shippingContact: GooglePayType.billingContact,
   ~requiredFields=defaultRequiredFieldsArray,
-  ~statesList,
   ~email,
 ) => {
   requiredFields->Array.reduce(Dict.make(), (acc, item) => {
@@ -1127,12 +1118,7 @@ let getGooglePayRequiredFields = (
     | AddressLine1 => billingContact.address1
     | AddressLine2 => billingContact.address2
     | AddressCity => billingContact.locality
-    | AddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        billingContact.administrativeArea,
-        billingContact.countryCode,
-      )
+    | AddressState => billingContact.administrativeArea
     | Country
     | AddressCountry(_) =>
       billingContact.countryCode
@@ -1144,12 +1130,7 @@ let getGooglePayRequiredFields = (
     | ShippingAddressLine1 => shippingContact.address1
     | ShippingAddressLine2 => shippingContact.address2
     | ShippingAddressCity => shippingContact.locality
-    | ShippingAddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        shippingContact.administrativeArea,
-        shippingContact.countryCode,
-      )
+    | ShippingAddressState => shippingContact.administrativeArea
     | ShippingAddressCountry(_) => shippingContact.countryCode
     | ShippingAddressPincode => shippingContact.postalCode
     | _ => ""
@@ -1166,7 +1147,6 @@ let getGooglePayRequiredFields = (
 let getPaypalRequiredFields = (
   ~details: PaypalSDKTypes.details,
   ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
-  ~statesList,
 ) => {
   paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
@@ -1181,8 +1161,7 @@ let getPaypalRequiredFields = (
     | ShippingAddressCity => details.shippingAddress.city
     | ShippingAddressState => {
         let administrativeArea = details.shippingAddress.state->Option.getOr("")
-        let countryCode = details.shippingAddress.countryCode->Option.getOr("")
-        Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)->Some
+        administrativeArea->Some
       }
     | ShippingAddressCountry(_) => details.shippingAddress.countryCode
     | ShippingAddressPincode => details.shippingAddress.postalCode
@@ -1202,7 +1181,6 @@ let getPaypalRequiredFields = (
 let getKlarnaRequiredFields = (
   ~shippingContact: KlarnaSDKTypes.collected_shipping_address,
   ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
-  ~statesList,
 ) => {
   paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
@@ -1218,8 +1196,7 @@ let getKlarnaRequiredFields = (
     | ShippingAddressCity => shippingContact.city
     | ShippingAddressState => {
         let administrativeArea = shippingContact.region
-        let countryCode = shippingContact.country
-        Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+        administrativeArea
       }
     | ShippingAddressCountry(_) => shippingContact.country
     | ShippingAddressPincode => shippingContact.postal_code

@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: `Numéro de carte`,
   inValidCardErrorText: `Le numéro de carte n'est pas valide.`,
+  inValidExpiryErrorText: `La date d’expiration est invalide.`,
   inCompleteCVCErrorText: `Le code de sécurité de votre carte est incomplet.`,
   inCompleteExpiryErrorText: `La date d'expiration de votre carte est incomplète.`,
   enterValidCardNumberErrorText: `Veuillez saisir un numéro de carte valide.`,

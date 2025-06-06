@@ -14,7 +14,6 @@ let loadPaypalSDK = (
   ~options: PaymentType.options,
   ~publishableKey,
   ~paymentMethodTypes,
-  ~stateJson,
   ~confirm: PaymentHelpersTypes.paymentIntent,
   ~completeAuthorize: PaymentHelpersTypes.completeAuthorize,
   ~handleCloseLoader,
@@ -168,7 +167,6 @@ let loadPaypalSDK = (
           let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
             ~details,
             ~paymentMethodTypes,
-            ~statesList=stateJson,
           )
 
           let (connectors, _) =
@@ -241,7 +239,6 @@ let loadBraintreePaypalSdk = (
   ~orderDetails,
   ~publishableKey,
   ~paymentMethodTypes,
-  ~stateJson,
   ~handleCloseLoader,
   ~areOneClickWalletsRendered: (
     RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
@@ -301,7 +298,6 @@ let loadBraintreePaypalSdk = (
                             let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
                               ~details=payload.details,
                               ~paymentMethodTypes,
-                              ~statesList=stateJson,
                             )
 
                             let paypalBody = body->mergeAndFlattenToTuples(requiredFieldsBody)

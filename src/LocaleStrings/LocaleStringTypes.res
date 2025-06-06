@@ -7,6 +7,7 @@ type localeStrings = {
   localeDirection: string,
   inValidCardErrorText: string,
   inCompleteCVCErrorText: string,
+  inValidExpiryErrorText: string,
   inCompleteExpiryErrorText: string,
   enterValidCardNumberErrorText: string,
   pastExpiryErrorText: string,
