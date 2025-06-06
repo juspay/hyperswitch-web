@@ -4,21 +4,26 @@ open LoggerUtils
 type responseStatus = Success | Error | Exception | Request
 
 let logApiResponse = (~logger, ~uri, ~eventName, ~status, ~statusCode=?, ~data=?) => {
-  let (apiLogType, logType, actualEventName) = switch status {
-  | Success => (Response, INFO, eventName)
-  | Error => (Err, ERROR, eventName)
-  | Exception => (NoResponse, ERROR, eventName)
-  | Request => (Request, INFO, eventName)
-  }
+  switch eventName {
+  | Some(actualEventName) =>
+    let (apiLogType, logType) = switch status {
+    | Success => (Response, INFO)
+    | Error => (Err, ERROR)
+    | Exception => (NoResponse, ERROR)
+    | Request => (Request, INFO)
+    }
 
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType,
-    ~eventName=actualEventName,
-    ~logType,
-    ~logCategory=API,
-    ~statusCode?,
-    ~data?,
-  )
+    logApi(
+      ~optLogger=Some(logger),
+      ~url=uri,
+      ~apiLogType,
+      ~eventName=actualEventName,
+      ~logType,
+      ~logCategory=API,
+      ~statusCode?,
+      ~data?,
+    )
+
+  | None => ()
+  }
 }

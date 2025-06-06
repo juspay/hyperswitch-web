@@ -1590,7 +1590,7 @@ let fetchPaymentMethodList = async (
     LogAPIResponse.logApiResponse(
       ~logger,
       ~uri,
-      ~eventName=PAYMENT_METHODS_CALL,
+      ~eventName=Some(PAYMENT_METHODS_CALL),
       ~status=Success,
       ~statusCode=200,
       ~data,
@@ -1603,7 +1603,7 @@ let fetchPaymentMethodList = async (
     LogAPIResponse.logApiResponse(
       ~logger,
       ~uri,
-      ~eventName=PAYMENT_METHODS_CALL,
+      ~eventName=Some(PAYMENT_METHODS_CALL),
       ~status=Error,
       ~data,
     )
@@ -1613,7 +1613,7 @@ let fetchPaymentMethodList = async (
 
   await Utils.fetchApiWithLogging(
     uri,
-    ~eventName="PAYMENT_METHODS_CALL",
+    ~eventName=PAYMENT_METHODS_CALL,
     ~logger,
     ~bodyStr="",
     ~method=#GET,
