@@ -22,7 +22,6 @@ let make = (~sessionObj: SessionsType.token) => {
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
 
   let setAreOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
-  let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
 
   let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
@@ -40,8 +39,6 @@ let make = (~sessionObj: SessionsType.token) => {
     ~paymentMethodType="klarna",
   )
 
-  PaymentUtils.useStatesJson(setStatesJson)
-
   UtilityHooks.useHandlePostMessages(
     ~complete=isCompleted,
     ~empty=!isCompleted,
@@ -49,11 +46,7 @@ let make = (~sessionObj: SessionsType.token) => {
   )
 
   React.useEffect(() => {
-    if (
-      status === "ready" &&
-      stateJson !== JSON.Encode.null &&
-      paymentMethodTypes !== PaymentMethodsRecord.defaultPaymentMethodType
-    ) {
+    if status === "ready" && paymentMethodTypes !== PaymentMethodsRecord.defaultPaymentMethodType {
       let klarnaWrapper = GooglePayType.getElementById(Utils.document, "klarna-payments")
       klarnaWrapper.innerHTML = ""
       klarnaInit.init({
@@ -92,7 +85,6 @@ let make = (~sessionObj: SessionsType.token) => {
                       let requiredFieldsBody = DynamicFieldsUtils.getKlarnaRequiredFields(
                         ~shippingContact,
                         ~paymentMethodTypes,
-                        ~statesList=stateJson,
                       )
 
                       let klarnaSDKBody = PaymentBody.klarnaSDKbody(
@@ -135,7 +127,7 @@ let make = (~sessionObj: SessionsType.token) => {
       )
     }
     None
-  }, (status, stateJson, paymentMethodTypes))
+  }, (status, paymentMethodTypes))
 
   <div style={height: `${height->Int.toString}px`} id="klarna-payments" className="w-full" />
 }

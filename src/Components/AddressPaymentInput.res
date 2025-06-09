@@ -5,11 +5,6 @@ open PaymentTypeContext
 
 type addressType = Line1 | Line2 | City | Postal | State | Country
 
-type dataModule = {states: JSON.t}
-
-@val
-external importStates: string => promise<dataModule> = "import"
-
 let getShowType = str => {
   switch str {
   | "auto" => Auto
@@ -62,10 +57,11 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let cityRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
 
-  let (stateJson, setStatesJson) = React.useState(_ => None)
   let (showOtherFileds, setShowOtherFields) = React.useState(_ => false)
 
-  let countryNames = getCountryNames(Country.country)
+  let stateNames = getStateNames(country)
+  let countryData = CountryStateDataRefs.countryDataRef.contents
+  let countryNames = getCountryNames(countryData)
 
   let checkPostalValidity = (
     postal: RecoilAtomTypes.field,
@@ -85,22 +81,6 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
       })
     }
   }
-
-  React.useEffect0(() => {
-    open Promise
-    importStates("./../States.json")
-    ->then(res => {
-      setStatesJson(_ => Some(res.states))
-      resolve()
-    })
-    ->catch(_ => {
-      setStatesJson(_ => None)
-      resolve()
-    })
-    ->ignore
-
-    None
-  })
 
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
@@ -131,10 +111,6 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
 
   React.useEffect(() => {
     checkPostalValidity(postalCode, setPostalCode)
-    None
-  }, country.value)
-
-  React.useEffect(() => {
     setState(prev => {
       ...prev,
       value: "",
@@ -236,18 +212,16 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               options=countryNames
             />
           </RenderIf>
-          <RenderIf condition={showField(showDetails.address, State) == Auto}>
-            {switch stateJson {
-            | Some(options) =>
-              <PaymentDropDownField
-                fieldName=localeString.stateLabel
-                value=state
-                className
-                setValue=setState
-                options={options->getStateNames(country)}
-              />
-            | None => React.null
-            }}
+          <RenderIf
+            condition={showField(showDetails.address, State) == Auto &&
+              stateNames->Array.length > 0}>
+            <PaymentDropDownField
+              fieldName=localeString.stateLabel
+              value=state
+              className
+              setValue=setState
+              options={stateNames}
+            />
           </RenderIf>
         </div>
         <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>

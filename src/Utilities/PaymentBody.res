@@ -4,7 +4,7 @@ let billingDetailsTuple = (
   ~line1,
   ~line2,
   ~city,
-  ~state,
+  ~stateCode,
   ~postalCode,
   ~country,
 ) => {
@@ -22,7 +22,7 @@ let billingDetailsTuple = (
           ("line1", line1->JSON.Encode.string),
           ("line2", line2->JSON.Encode.string),
           ("city", city->JSON.Encode.string),
-          ("state", state->JSON.Encode.string),
+          ("state", stateCode->JSON.Encode.string),
           ("zip", postalCode->JSON.Encode.string),
           ("country", country->JSON.Encode.string),
         ]->Utils.getJsonFromArrayOfJson,
@@ -150,6 +150,21 @@ let clickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
   ]
 }
 
+let visaClickToPayBody = (~encryptedPayload, ~email) => {
+  let encPayload =
+    [
+      ("encrypted_payload", encryptedPayload->JSON.Encode.string),
+      ("provider", "visa"->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("ctp_service_details", encPayload),
+    ("payment_method_type", "debit"->JSON.Encode.string),
+    ("email", email->JSON.Encode.string),
+  ]
+}
+
 let savedPaymentMethodBody = (
   ~paymentToken,
   ~customerId,
@@ -214,7 +229,7 @@ let achBankDebitBody = (
   ~country,
   ~city,
   ~postalCode,
-  ~state,
+  ~stateCode,
 ) =>
   bankDebitsCommonBody("ach")->Array.concat([
     (
@@ -226,7 +241,7 @@ let achBankDebitBody = (
           ~line1,
           ~line2,
           ~city,
-          ~state,
+          ~stateCode,
           ~postalCode,
           ~country,
         ),
@@ -256,7 +271,7 @@ let bacsBankDebitBody = (
   ~line2,
   ~city,
   ~zip,
-  ~state,
+  ~stateCode,
   ~country,
   ~bankAccountHolderName,
 ) =>
@@ -270,7 +285,7 @@ let bacsBankDebitBody = (
           ~line1,
           ~line2,
           ~city,
-          ~state,
+          ~stateCode,
           ~postalCode=zip,
           ~country,
         ),
@@ -300,7 +315,7 @@ let becsBankDebitBody = (
   ~country,
   ~city,
   ~postalCode,
-  ~state,
+  ~stateCode,
 ) =>
   bankDebitsCommonBody("becs")->Array.concat([
     (
@@ -312,7 +327,7 @@ let becsBankDebitBody = (
           ~line1,
           ~line2,
           ~city,
-          ~state,
+          ~stateCode,
           ~postalCode,
           ~country,
         ),

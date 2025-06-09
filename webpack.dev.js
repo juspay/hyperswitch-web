@@ -20,7 +20,7 @@ const devServer = {
   },
   hot: true,
   host: "0.0.0.0",
-  port: 9050,
+  port: process.env.PORT || 9050,
   historyApiFallback: true,
   proxy: [
     {
@@ -29,6 +29,15 @@ const devServer = {
       changeOrigin: true,
       secure: true,
       pathRewrite: { "^/payments": "" },
+    },
+    {
+      context: ["/assets/v1/jsons/location/"],
+      target: "https://beta.hyperswitch.io",
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: {
+        "^/assets/v1/jsons/location/": "/assets/v1/jsons/location/",
+      },
     },
     // Uncomment the following if needed for 3DS method proxying
     // {

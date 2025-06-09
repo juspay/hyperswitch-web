@@ -12,6 +12,7 @@ let countryDropDownTestId = "Country"
 let stateDropDownTestId = "State"
 let postalCodeInputTestId = "postal"
 let addNewCardIcon = "addNewCard"
+let datePickerPlaceHolderText = "Enter Date of Birth"
 
 /*
 {

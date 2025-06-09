@@ -1,6 +1,6 @@
-open PMMTypesV2
+open UnifiedPaymentsTypesV2
 
-let paymentListLookupNew = (~paymentMethodListValue: PMMTypesV2.paymentMethodsManagement) => {
+let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) => {
   let walletsList = []
   let walletToBeDisplayedInTabs = [
     "mb_way",
@@ -27,33 +27,54 @@ let paymentListLookupNew = (~paymentMethodListValue: PMMTypesV2.paymentMethodsMa
       otherPaymentList->Array.push("card")->ignore
     }
   })
-  (walletsList->Utils.removeDuplicate, otherPaymentList->Utils.removeDuplicate)
+
+  {
+    walletsList: walletsList->Utils.removeDuplicate,
+    otherPaymentList: otherPaymentList->Utils.removeDuplicate,
+  }
 }
 
-let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType) => {
+let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mode) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+  let paymentsList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
 
   React.useMemo(() => {
-    switch methodslist {
-    | LoadedV2(paymentlist) =>
-      let (_wallets, otherOptions) = paymentListLookupNew(~paymentMethodListValue=paymentlist)
+    let resolvePaymentList = list =>
+      switch list {
+      | LoadedV2(paymentlist) =>
+        let {otherPaymentList} = paymentListLookupNew(~paymentMethodListValue=paymentlist)
+        ([...paymentOptions, ...otherPaymentList]->removeDuplicate, otherPaymentList)
+      | _ => ([], [])
+      }
 
-      (
-        paymentOptions
-        ->Array.concat(otherOptions)
-        ->removeDuplicate,
-        otherOptions,
-      )
-    | _ => (["card"], [])
+    switch paymentType {
+    | Payment => resolvePaymentList(paymentsList)
+    | _ => resolvePaymentList(methodslist)
     }
   }, (methodslist, paymentType))
 }
 
-let getCreditFieldsRequired = (
-  ~paymentManagementListValue: PMMTypesV2.paymentMethodsManagement,
-) => {
+let getCreditFieldsRequired = (~paymentManagementListValue: paymentMethodsManagement) => {
   paymentManagementListValue.paymentMethodsEnabled->Array.filter(item => {
-    item.paymentMethodType === "card" && item.paymentMethodSubType === "credit"
+    item.paymentMethodType === "card" && item.paymentMethodSubtype === "credit"
   })
+}
+
+let getSupportedCardBrandsV2 = (paymentsListValue: paymentMethodsManagement) => {
+  let cardPaymentMethod =
+    paymentsListValue.paymentMethodsEnabled->Array.find(ele => ele.paymentMethodType === "card")
+
+  switch cardPaymentMethod {
+  | Some(cardPaymentMethod) =>
+    let cardNetworks = cardPaymentMethod.cardNetworks->Option.getOr([])
+    let cardNetworkNames =
+      cardNetworks->Array.map(ele =>
+        ele.cardNetwork->CardUtils.getCardStringFromType->String.toLowerCase
+      )
+
+    cardNetworkNames->Array.length > 0 ? Some(cardNetworkNames) : None
+
+  | None => None
+  }
 }

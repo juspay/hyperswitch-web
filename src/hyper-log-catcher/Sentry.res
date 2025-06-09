@@ -50,6 +50,7 @@ external getCurrentScope: unit => scope = "getCurrentScope"
 
 type browserClientArg = {
   dsn: string,
+  environment: string,
   transport: transport,
   stackParser: stackParser,
   integrations: array<integration>,
@@ -84,6 +85,7 @@ let initiateSentry = (~dsn) => {
   try {
     let browserClient = createBrowserClient({
       dsn,
+      environment: GlobalVars.isProd ? "production" : "development",
       transport: makeFetchTransport,
       stackParser: defaultStackParser,
       integrations: [
@@ -112,6 +114,7 @@ let initiateSentryJs = (~dsn) => {
   try {
     let browserClient = createBrowserClient({
       dsn,
+      environment: GlobalVars.isProd ? "production" : "development",
       transport: makeFetchTransport,
       stackParser: defaultStackParser,
       integrations: [newBrowserTracing(), newSentryReplay()],

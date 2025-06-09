@@ -18,6 +18,11 @@ type dateTimeFormat = {resolvedOptions: unit => options}
 
 @send external postMessage: (Dom.element, JSON.t, string) => unit = "postMessage"
 
+type dataModule = {states: JSON.t}
+
+@val
+external importStates: string => promise<dataModule> = "import"
+
 open ErrorUtils
 
 let getJsonFromArrayOfJson = arr => arr->Dict.fromArray->JSON.Encode.object
@@ -197,6 +202,8 @@ let getDictFromDict = (dict, key) => {
 let getBool = (dict, key, default) => {
   getOptionBool(dict, key)->Option.getOr(default)
 }
+
+let getOptionsDict = options => options->Option.getOr(JSON.Encode.null)->getDictFromJson
 
 let getBoolWithWarning = (dict, key, default, ~logger) => {
   switch dict->Dict.get(key) {
@@ -411,7 +418,7 @@ let rec transformKeys = (json: JSON.t, to: case) => {
 }
 
 let getClientCountry = clientTimeZone => {
-  Country.country
+  CountryStateDataRefs.countryDataRef.contents
   ->Array.find(item => item.timeZones->Array.find(i => i == clientTimeZone)->Option.isSome)
   ->Option.getOr(Country.defaultTimeZone)
 }
@@ -420,17 +427,6 @@ let removeDuplicate = arr => {
   arr->Array.filterWithIndex((item, i) => {
     arr->Array.indexOf(item) === i
   })
-}
-
-let isEmailValid = email => {
-  switch email->String.match(
-    %re(
-      "/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/"
-    ),
-  ) {
-  | Some(_match) => Some(true)
-  | None => email->String.length > 0 ? Some(false) : None
-  }
 }
 
 let isVpaIdValid = vpaId => {
@@ -714,8 +710,9 @@ let handlePostMessageEvents = (
   ~savedMethod=false,
 ) => {
   if complete && paymentType !== "" {
-    let value =
-      "Payment Data Filled" ++ (savedMethod ? ": Saved Payment Method" : ": New Payment Method")
+    let value = `Payment Data Filled: ${savedMethod
+        ? "Saved Payment Method"
+        : "New Payment Method"}`
     loggerState.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod=paymentType)
   }
   messageParentWindow([
@@ -729,14 +726,14 @@ let handlePostMessageEvents = (
 let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
 
 let getCountryCode = country => {
-  Country.country
+  CountryStateDataRefs.countryDataRef.contents
   ->Array.find(item => item.countryName == country)
   ->Option.getOr(Country.defaultTimeZone)
 }
 
-let getStateNames = (list: JSON.t, country: RecoilAtomTypes.field) => {
+let getStateNames = (country: RecoilAtomTypes.field) => {
   let options =
-    list
+    CountryStateDataRefs.stateDataRef.contents
     ->getDictFromJson
     ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
     ->Option.getOr([])
@@ -744,7 +741,9 @@ let getStateNames = (list: JSON.t, country: RecoilAtomTypes.field) => {
   options->Array.reduce([], (arr, item) => {
     arr
     ->Array.push(
-      item->getDictFromJson->Dict.get("name")->Option.flatMap(JSON.Decode.string)->Option.getOr(""),
+      item
+      ->getDictFromJson
+      ->getString("value", ""),
     )
     ->ignore
     arr
@@ -844,27 +843,41 @@ let delay = timeOut => {
   })
 }
 
-let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
-  let headerObj =
-    [
-      ("Content-Type", "application/json"),
-      ("X-Client-Version", Window.version),
-      ("X-Payment-Confirm-Source", "sdk"),
-      ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
-      ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
-      ("X-Client-Platform", "web"),
-    ]->Dict.fromArray
+let getHeaders = (
+  ~uri=?,
+  ~token=?,
+  ~customPodUri=None,
+  ~headers=Dict.make(),
+  ~publishableKey=None,
+): Fetch.Headers.t => {
+  let defaultHeaders = [
+    ("Content-Type", "application/json"),
+    ("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key")),
+    ("X-Client-Version", Window.version),
+    ("X-Payment-Confirm-Source", "sdk"),
+    ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+    ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+    ("X-Client-Platform", "web"),
+  ]
 
-  switch (token, uri) {
-  | (Some(tok), Some(_uriVal)) => headerObj->Dict.set("Authorization", tok)
-  | _ => ()
+  let authHeader = switch (token, uri) {
+  | (Some(tok), Some(_)) => [("Authorization", tok)]
+  | _ => []
   }
 
-  Dict.toArray(headers)->Array.forEach(entries => {
-    let (x, val) = entries
-    Dict.set(headerObj, x, val)
-  })
-  Fetch.Headers.fromObject(headerObj->dictToObj)
+  let customPodHeader = switch customPodUri {
+  | Some("") | None => []
+  | Some(uriVal) => [("x-feature", uriVal)]
+  }
+
+  let finalHeaders = [
+    ...defaultHeaders,
+    ...authHeader,
+    ...customPodHeader,
+    ...Dict.toArray(headers),
+  ]
+
+  Fetch.Headers.fromObject(Dict.fromArray(finalHeaders)->dictToObj)
 }
 
 let formatException = exc =>
@@ -893,7 +906,14 @@ let formatException = exc =>
   | _ => exc->Identity.anyTypeToJson
   }
 
-let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method) => {
+let fetchApi = (
+  uri,
+  ~bodyStr: string="",
+  ~headers=Dict.make(),
+  ~method: Fetch.method,
+  ~customPodUri=None,
+  ~publishableKey=None,
+) => {
   open Promise
   let body = switch method {
   | #GET => resolve(None)
@@ -905,7 +925,7 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
       {
         method,
         ?body,
-        headers: getHeaders(~headers, ~uri),
+        headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey),
       },
     )
     ->catch(err => {
@@ -915,6 +935,87 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
       resolve(resp)
     })
   })
+}
+
+let fetchApiWithLogging = async (
+  uri,
+  ~eventName,
+  ~logger,
+  ~onSuccess,
+  ~onFailure,
+  ~bodyStr="",
+  ~headers=?,
+  ~method,
+  ~customPodUri=None,
+  ~publishableKey=None,
+) => {
+  open LoggerUtils
+
+  // * Log request initiation
+  LogAPIResponse.logApiResponse(
+    ~logger,
+    ~uri,
+    ~eventName=apiEventInitMapper(eventName),
+    ~status=Request,
+  )
+
+  try {
+    let body = switch method {
+    | #GET => None
+    | _ => Some(Fetch.Body.string(bodyStr))
+    }
+
+    let resp = await Fetch.fetch(
+      uri,
+      {
+        method,
+        ?body,
+        headers: getHeaders(
+          ~headers=headers->Option.getOr(Dict.make()),
+          ~uri,
+          ~customPodUri,
+          ~publishableKey,
+        ),
+      },
+    )
+
+    let statusCode = resp->Fetch.Response.status
+
+    if resp->Fetch.Response.ok {
+      let data = await Fetch.Response.json(resp)
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=apiEventInitMapper(eventName),
+        ~status=Success,
+        ~statusCode,
+      )
+      onSuccess(data)
+    } else {
+      let data = await resp->Fetch.Response.json
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=apiEventInitMapper(eventName),
+        ~status=Error,
+        ~statusCode,
+        ~data,
+      )
+      onFailure(data)
+    }
+  } catch {
+  | err => {
+      let exceptionMessage = err->formatException
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=apiEventInitMapper(eventName),
+        ~status=Exception,
+        ~data=exceptionMessage,
+      )
+      onFailure(exceptionMessage)
+    }
+  }
 }
 
 let arrayJsonToCamelCase = arr => {
@@ -1366,11 +1467,34 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
   ->Option.flatMap(stateObj =>
     stateObj
     ->getDictFromJson
-    ->getOptionString("name")
+    ->getOptionString("value")
   )
   ->Option.getOr(stateCode)
 }
 
+let getStateCodeFromStateName = (stateName: string, countryCode: string): string => {
+  let countryStates =
+    CountryStateDataRefs.stateDataRef.contents
+    ->getDictFromJson
+    ->getOptionalArrayFromDict(countryCode)
+
+  let stateCode =
+    countryStates
+    ->Option.flatMap(states =>
+      states->Array.find(state => {
+        let stateDict = state->getDictFromJson
+        let stateValue = stateDict->getString("value", "")
+        stateValue === stateName
+      })
+    )
+    ->Option.flatMap(foundState =>
+      foundState
+      ->getDictFromJson
+      ->getOptionString("code")
+    )
+
+  stateCode->Option.getOr(stateName)
+}
 let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")
 
 let compareLogic = (a, b) => {
@@ -1509,6 +1633,8 @@ let isValidHexColor = (color: string): bool => {
   Js.Re.test_(hexRegex, color)
 }
 
+let convertKeyValueToJsonStringPair = (key, value) => (key, JSON.Encode.string(value))
+
 let validateName = (
   val: string,
   prev: RecoilAtomTypes.field,
@@ -1550,4 +1676,11 @@ let setNickNameState = (
     isValid,
     errorString,
   }
+}
+
+let getStringFromDict = (dict, key, defaultValue: string) => {
+  dict
+  ->Option.flatMap(x => x->Dict.get(key))
+  ->Option.flatMap(JSON.Decode.string)
+  ->Option.getOr(defaultValue)
 }

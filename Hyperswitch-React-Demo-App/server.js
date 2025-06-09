@@ -14,6 +14,7 @@ function getUrl(envVar, selfHostedValue) {
 
 const SERVER_URL = getUrl("HYPERSWITCH_SERVER_URL", "SELF_HOSTED_SERVER_URL");
 const CLIENT_URL = getUrl("HYPERSWITCH_CLIENT_URL", "SELF_HOSTED_CLIENT_URL");
+const SDK_VERSION = process.env.SDK_VERSION || "v1";
 
 app.use(express.static("./dist"));
 app.get("/", (req, res) => {
@@ -27,6 +28,7 @@ app.get("/completion", (req, res) => {
 app.get("/config", (req, res) => {
   res.send({
     publishableKey: process.env.HYPERSWITCH_PUBLISHABLE_KEY,
+    profileId: process.env.PROFILE_ID,
   });
 });
 
@@ -94,6 +96,12 @@ const paymentData = {
     },
   },
 };
+const paymentDataRequestV2 = {
+  amount_details: {
+    currency: "USD",
+    order_amount: 6540,
+  },
+};
 
 const profileId = process.env.PROFILE_ID;
 if (profileId) {
@@ -103,15 +111,25 @@ if (profileId) {
 function createPaymentRequest() {
   return paymentData;
 }
+function createPaymentRequestV2() {
+  return paymentDataRequestV2;
+}
 
-app.get("/create-payment-intent", async (_, res) => {
+app.get("/create-intent", async (req, res) => {
   try {
-    const paymentRequest = createPaymentRequest();
+    const paymentRequest =
+      SDK_VERSION === "v1" ? createPaymentRequest() : createPaymentRequestV2();
     const paymentIntent = await createPaymentIntent(paymentRequest);
 
-    res.send({
+    const response = {
       clientSecret: paymentIntent.client_secret,
-    });
+    };
+
+    if (SDK_VERSION === "v2") {
+      response.paymentId = paymentIntent.id;
+    }
+
+    res.send(response);
   } catch (err) {
     res.status(400).send({
       error: { message: err.message },
@@ -120,24 +138,44 @@ app.get("/create-payment-intent", async (_, res) => {
 });
 
 async function createPaymentIntent(request) {
-  const url =
+  const baseUrl =
     process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
     process.env.HYPERSWITCH_SERVER_URL;
-  const apiResponse = await fetch(`${url}/payments`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+
+  let apiEndpoint = "";
+  let headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (SDK_VERSION === "v1") {
+    apiEndpoint = `${baseUrl}/payments`;
+    headers = {
+      ...headers,
       Accept: "application/json",
       "api-key": process.env.HYPERSWITCH_SECRET_KEY,
-    },
+    };
+  } else {
+    apiEndpoint = `${baseUrl}/v2/payments/create-intent`;
+    headers = {
+      ...headers,
+      Authorization: `api-key=${process.env.HYPERSWITCH_SECRET_KEY}`,
+      "X-Profile-Id": process.env.PROFILE_ID,
+    };
+  }
+
+  const apiResponse = await fetch(apiEndpoint, {
+    method: "POST",
+    headers,
     body: JSON.stringify(request),
   });
+
   const paymentIntent = await apiResponse.json();
 
   if (paymentIntent.error) {
-    console.error("Error - ", paymentIntent.error);
+    console.error("Payment Intent Error:", paymentIntent.error);
     throw new Error(paymentIntent?.error?.message ?? "Something went wrong.");
   }
+
   return paymentIntent;
 }
 

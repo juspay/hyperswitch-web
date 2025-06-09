@@ -24,6 +24,11 @@ Without these scripts, payments through Braintree would not be possible, limitin
 
 ### PayPal SDK
 
+#### Scripts:
+
+- `https://www.paypal.com/sdk/js`
+- `https://www.sandbox.paypal.com/sdk/js`
+
 #### Justification:
 
 PayPal is one of the most widely used digital payment platforms globally. Integration with PayPal's SDK is essential for:
@@ -34,6 +39,10 @@ PayPal is one of the most widely used digital payment platforms globally. Integr
 - Providing a trusted payment option that many customers prefer
 
 ### Klarna
+
+#### Scripts:
+
+- `https://x.klarnacdn.net/kp/lib/v1/api.js`
 
 #### Justification:
 
@@ -46,6 +55,11 @@ Klarna integration enables Buy Now, Pay Later (BNPL) functionality, which has be
 
 ### Google Pay
 
+#### Scripts:
+
+- `https://pay.google.com`
+- `https://www.google.com/pay`
+
 #### Justification:
 
 Google Pay integration allows for fast, secure mobile payments for Android users. This script is essential for:
@@ -56,6 +70,11 @@ Google Pay integration allows for fast, secure mobile payments for Android users
 - Enabling tokenized payments for enhanced security
 
 ### Apple Pay
+
+#### Scripts:
+
+- `https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js`
+- `https://apple.com/apple-pay`
 
 #### Justification:
 
@@ -68,6 +87,11 @@ Apple Pay integration enables seamless payments for iOS users. This script is ne
 
 ### TrustPay
 
+#### Scripts:
+
+- `https://tpgw.trustpay.eu/js/v1.js`
+- `https://test-tpgw.trustpay.eu/js/v1.js`
+
 #### Justification:
 
 TrustPay enables alternative payment methods, particularly for European markets. This integration is necessary for:
@@ -77,9 +101,86 @@ TrustPay enables alternative payment methods, particularly for European markets.
 - Expanding payment method coverage for international merchants
 - Meeting local customer payment preferences
 
+### Visa ClickToPay Checkout
+
+#### Scripts:
+
+- `https://sandbox.secure.checkout.visa.com`
+- `https://secure.checkout.visa.com`
+
+#### Justification:
+
+Visa ClickToPay Checkout integration allows for secure and streamlined payments using Visa cards. This script is essential for:
+
+- Supporting Visa card payments
+- Providing a trusted and widely recognized payment option
+- Enhancing security through Visa's payment network
+
+### Mastercard ClickToPay
+
+#### Scripts:
+
+- `https://src.mastercard.com`
+- `https://sandbox.src.mastercard.com`
+
+#### Justification:
+
+Mastercard ClickToPay integration enables secure and convenient payments for Mastercard users. This script is necessary for:
+
+- Supporting Mastercard payments
+- Providing a seamless checkout experience
+- Enhancing security through Mastercard's payment network
+
+### Samsung Pay
+
+#### Scripts:
+
+- `https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js`
+
+#### Justification:
+
+Samsung Pay integration allows for mobile payments on Samsung devices. This script is essential for:
+
+- Supporting Samsung Pay as a payment option
+- Providing a streamlined checkout experience for Samsung users
+- Expanding payment options for Android users
+
+### Plaid
+
+#### Scripts:
+
+- `https://cdn.plaid.com/link/v2/stable/link-initialize.js`
+
+#### Justification:
+
+Plaid integration enables secure bank account linking for ACH payments. This script is necessary for:
+
+- Supporting direct bank transfers
+- Providing a seamless user experience for account verification
+- Enhancing security through Plaid's trusted platform
+
+### Paze
+
+#### Scripts:
+
+- `https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js`
+- `https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js`
+
+#### Justification:
+
+Early Warning Services integration enables Paze and other digital wallet payments. This script is necessary for:
+
+- Supporting real-time bank transfers
+- Providing a trusted payment option for U.S. customers
+- Expanding payment method coverage
+
 ## Monitoring and Error Tracking
 
 ### Sentry
+
+#### Scripts:
+
+- `https://browser.sentry-cdn.com`
 
 #### Justification:
 

@@ -13,19 +13,21 @@ let make = () => {
   let (_, setManagePaymentMethod) = Recoil.useRecoilState(RecoilAtomsV2.managePaymentMethod)
 
   let updateSavedMethodV2 = (
-    savedMethods: array<PMMTypesV2.customerMethods>,
+    savedMethods: array<UnifiedPaymentsTypesV2.customerMethods>,
     paymentMethodId,
-    updatedCustomerMethod: PMMTypesV2.customerMethods,
+    updatedCustomerMethod: UnifiedPaymentsTypesV2.customerMethods,
   ) => {
     savedMethods->Array.map(savedMethod =>
       savedMethod.id !== paymentMethodId ? savedMethod : updatedCustomerMethod
     )
   }
 
-  let removeSavedMethodV2 = (savedMethods: array<PMMTypesV2.customerMethods>, paymentMethodId) =>
-    savedMethods->Array.filter(savedMethod => savedMethod.id !== paymentMethodId)
+  let removeSavedMethodV2 = (
+    savedMethods: array<UnifiedPaymentsTypesV2.customerMethods>,
+    paymentMethodId,
+  ) => savedMethods->Array.filter(savedMethod => savedMethod.id !== paymentMethodId)
 
-  let handleUpdate = async (paymentItem: PMMTypesV2.customerMethods) => {
+  let handleUpdate = async (paymentItem: UnifiedPaymentsTypesV2.customerMethods) => {
     messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("param", "paymentloader"->JSON.Encode.string),
@@ -54,7 +56,7 @@ let make = () => {
 
       if paymentMethodId != "" {
         setManagePaymentMethod(_ => "")
-        let updatedCard = dict->PMMV2Helpers.itemToPaymentDetails
+        let updatedCard = dict->UnifiedHelpersV2.itemToPaymentDetails
         setSavedMethodsV2(prev => prev->updateSavedMethodV2(paymentMethodId, updatedCard))
       } else {
         Console.error2("Payment Id Empty ", res->JSON.stringify)
@@ -67,7 +69,7 @@ let make = () => {
     messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
   }
 
-  let handleDeleteV2 = async (paymentItem: PMMTypesV2.customerMethods) => {
+  let handleDeleteV2 = async (paymentItem: UnifiedPaymentsTypesV2.customerMethods) => {
     messageParentWindow([
       ("fullscreen", true->JSON.Encode.bool),
       ("param", "paymentloader"->JSON.Encode.string),

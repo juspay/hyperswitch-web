@@ -36,7 +36,7 @@ let make = (
   let blur = blurState ? "blur(2px)" : ""
   let frameRef = React.useRef(Nullable.null)
   <div
-    className={`flex flex-col justify-between `}
+    className={`flex flex-col justify-between PaymentMethodContainer`}
     style={
       color: themeObj.colorText,
       background: "transparent",

@@ -392,8 +392,8 @@ let getAddress = (dict, str, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    let countryNames = []
-    Country.country->Array.map(item => countryNames->Array.push(item.countryName))->ignore
+    let countryData = CountryStateDataRefs.countryDataRef.contents
+    let countryNames = getCountryNames(countryData)
     unknownKeysWarning(
       ["line1", "line2", "city", "state", "country", "postal_code"],
       json,
@@ -1183,14 +1183,19 @@ let itemToPayerDetailsObjectMapper = dict => {
 
 let convertClickToPayCardToCustomerMethod = (
   clickToPayCard: ClickToPayHelpers.clickToPayCard,
+  clickToPayProvider,
 ): customerMethods => {
-  paymentToken: clickToPayCard.srcDigitalCardId,
-  customerId: "", // Empty as Click to Pay doesn't provide this
-  paymentMethod: "card",
-  paymentMethodId: clickToPayCard.srcDigitalCardId,
-  paymentMethodIssuer: None,
-  card: {
-    scheme: Some(
+  let cardScheme = switch clickToPayProvider {
+  | ClickToPayHelpers.VISA =>
+    Some(
+      Some(clickToPayCard.paymentCardDescriptor)
+      ->Option.getOr("")
+      ->String.toLowerCase === "mastercard"
+        ? "Mastercard"
+        : "Visa",
+    )
+  | ClickToPayHelpers.MASTERCARD =>
+    Some(
       switch clickToPayCard.paymentCardDescriptor->String.toLowerCase {
       | "amex" => "AmericanExpress"
       | "mastercard" => "Mastercard"
@@ -1202,22 +1207,33 @@ let convertClickToPayCardToCustomerMethod = (
         ->String.toUpperCase
         ->String.concat(other->String.sliceToEnd(~start=1)->String.toLowerCase)
       },
-    ),
-    last4Digits: clickToPayCard.panLastFour,
-    expiryMonth: clickToPayCard.panExpirationMonth,
-    expiryYear: clickToPayCard.panExpirationYear,
-    cardToken: clickToPayCard.srcDigitalCardId,
-    cardHolderName: None,
-    nickname: clickToPayCard.digitalCardData.descriptorName,
-    isClickToPayCard: true,
-  },
-  paymentMethodType: Some("click_to_pay"),
-  defaultPaymentMethodSet: false, // Default to false as Click to Pay doesn't provide this
-  requiresCvv: false, // Click to Pay handles CVV internally
-  lastUsedAt: Js.Date.make()->Js.Date.toISOString, // Current timestamp as Click to Pay doesn't provide this
-  bank: {
-    mask: "", // Just use the mask field that exists in the type
-  },
-  recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
-  billing: defaultDisplayBillingDetails,
+    )
+  | ClickToPayHelpers.NONE => None
+  }
+  {
+    paymentToken: clickToPayCard.srcDigitalCardId,
+    customerId: "", // Empty as Click to Pay doesn't provide this
+    paymentMethod: "card",
+    paymentMethodId: clickToPayCard.srcDigitalCardId,
+    paymentMethodIssuer: None,
+    card: {
+      scheme: cardScheme,
+      last4Digits: clickToPayCard.panLastFour,
+      expiryMonth: clickToPayCard.panExpirationMonth,
+      expiryYear: clickToPayCard.panExpirationYear,
+      cardToken: clickToPayCard.srcDigitalCardId,
+      cardHolderName: None,
+      nickname: Some(clickToPayCard.digitalCardData.descriptorName)->Option.getOr(""),
+      isClickToPayCard: true,
+    },
+    paymentMethodType: Some("click_to_pay"),
+    defaultPaymentMethodSet: false, // Default to false as Click to Pay doesn't provide this
+    requiresCvv: false, // Click to Pay handles CVV internally
+    lastUsedAt: Js.Date.make()->Js.Date.toISOString, // Current timestamp as Click to Pay doesn't provide this
+    bank: {
+      mask: "", // Just use the mask field that exists in the type
+    },
+    recurringEnabled: true, // Since Click to Pay cards can be used for recurring payments
+    billing: defaultDisplayBillingDetails,
+  }
 }

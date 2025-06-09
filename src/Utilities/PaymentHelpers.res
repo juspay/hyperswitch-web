@@ -281,6 +281,8 @@ let rec intentCall = (
     ~bodyStr: string=?,
     ~headers: Dict.t<string>=?,
     ~method: Fetch.method,
+    ~customPodUri: option<string>=?,
+    ~publishableKey: option<string>=?,
   ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,
@@ -536,6 +538,22 @@ let rec intentCall = (
                   ~paymentMethod,
                 )
                 handleOpenUrl(intent.nextAction.redirectToUrl)
+              } else if intent.nextAction.type_ == "redirect_inside_popup" {
+                let popupUrl = intent.nextAction.popupUrl
+                handleLogging(
+                  ~optLogger,
+                  ~value="",
+                  ~internalMetadata=popupUrl,
+                  ~eventName=THREE_DS_POPUP_REDIRECTION,
+                  ~paymentMethod,
+                )
+                let metaData = [("popupUrl", popupUrl->JSON.Encode.string)]->Dict.fromArray
+                messageParentWindow([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", `3dsRedirectionPopup`->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                  ("metadata", metaData->JSON.Encode.object),
+                ])
               } else if intent.nextAction.type_ == "display_bank_transfer_information" {
                 let metadata = switch intent.nextAction.bank_transfer_steps_and_charges_details {
                 | Some(obj) => obj->getDictFromJson
@@ -1141,23 +1159,39 @@ let usePaymentIntent = (optLogger, paymentType) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
       let paymentIntentID = clientSecret->Utils.getPaymentId
-      let headers = [
-        ("Content-Type", "application/json"),
-        ("api-key", confirmParam.publishableKey),
-        ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
-      ]
+      let headers = switch GlobalVars.sdkVersion {
+      | V1 => [
+          ("api-key", confirmParam.publishableKey),
+          ("X-Client-Source", paymentTypeFromUrl->CardThemeType.getPaymentModeToStrMapper),
+        ]
+      | V2 => {
+          let authorizationHeader = (
+            "authorization",
+            `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
+          )
+          [authorizationHeader, ("X-profile-id", keys.profileId)]
+        }
+      }
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
       let manual_retry = manualRetry ? [("retry_action", "manual_retry"->JSON.Encode.string)] : []
-      let body =
+      let body = switch GlobalVars.sdkVersion {
+      | V1 =>
         [("client_secret", clientSecret->JSON.Encode.string)]->Array.concatMany([
           returnUrlArr,
           manual_retry,
         ])
+      | V2 => []
+      }
+
       let endpoint = ApiEndpoint.getApiEndPoint(
         ~publishableKey=confirmParam.publishableKey,
         ~isConfirmCall=isThirdPartyFlow,
       )
-      let uri = `${endpoint}/payments/${paymentIntentID}/confirm`
+      let path = switch GlobalVars.sdkVersion {
+      | V1 => `payments/${paymentIntentID}/confirm`
+      | V2 => `v2/payments/${keys.paymentId}/confirm-intent`
+      }
+      let uri = `${endpoint}/${path}`
 
       let callIntent = body => {
         let contentLength = body->String.length->Int.toString
@@ -1539,69 +1573,55 @@ let createPaymentMethod = (
   })
 }
 
-let fetchPaymentMethodList = (
+let fetchPaymentMethodList = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
   ~customPodUri,
   ~endpoint,
 ) => {
-  open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-  let uri = `${endpoint}/account/payment_methods?client_secret=${clientSecret}`
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=PAYMENT_METHODS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    FetchPaymentMethodList,
+    ~clientSecret,
+    ~customBackendBaseUrl=endpoint,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(resp => {
-    let statusCode = resp->Fetch.Response.status
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=PAYMENT_METHODS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=PAYMENT_METHODS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger=Some(logger),
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=PAYMENT_METHODS_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
+
+  let onSuccess = data => {
+    LogAPIResponse.logApiResponse(
+      ~logger,
+      ~uri,
+      ~eventName=Some(PAYMENT_METHODS_CALL),
+      ~status=Success,
+      ~statusCode=200,
+      ~data,
     )
-    JSON.Encode.null->resolve
-  })
+
+    data
+  }
+
+  let onFailure = data => {
+    LogAPIResponse.logApiResponse(
+      ~logger,
+      ~uri,
+      ~eventName=Some(PAYMENT_METHODS_CALL),
+      ~status=Error,
+      ~data,
+    )
+
+    JSON.Encode.null
+  }
+
+  await Utils.fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHODS_CALL,
+    ~logger,
+    ~bodyStr="",
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let fetchCustomerPaymentMethodList = (

@@ -21,6 +21,8 @@ let make = () => {
   let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let countryCode = Utils.getCountryCode(country.value).isoAlpha2
+  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
   let complete =
     email.value != "" &&
@@ -60,10 +62,10 @@ let make = () => {
               ~data,
               ~line1=line1.value,
               ~line2=line2.value,
-              ~country=getCountryCode(country.value).isoAlpha2,
+              ~country=countryCode,
               ~city=city.value,
               ~postalCode=postalCode.value,
-              ~state=state.value,
+              ~stateCode,
             )
             intent(
               ~bodyArr=body,

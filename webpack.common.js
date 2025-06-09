@@ -44,6 +44,8 @@ const authorizedScriptSources = [
   "https://secure.checkout.visa.com",
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
+  "https://x.klarnacdn.net",
+  "https://js.playground.klarna.com",
   "blob:",
   // Add other trusted sources here
 ];
@@ -81,25 +83,7 @@ const authorizedImageSources = [
 // List of authorized external frame sources
 const authorizedFrameSources = [
   "'self'",
-  "https://checkout.hyperswitch.io",
-  "https://dev.hyperswitch.io",
-  "https://beta.hyperswitch.io",
-  "https://live.hyperswitch.io",
-  "https://integ.hyperswitch.io",
-  "https://integ-api.hyperswitch.io",
-  "https://app.hyperswitch.io",
-  "https://sandbox.hyperswitch.io",
-  "https://integ-api.hyperswitch.io",
-  "https://api.hyperswitch.io",
-  "https://pay.google.com",
-  "https://www.sandbox.paypal.com",
-  "https://www.paypal.com",
-  "https://sandbox.src.mastercard.com",
-  "https://src.mastercard.com",
-  "https://sandbox.secure.checkout.visa.com",
-  "https://secure.checkout.visa.com",
-  "https://checkout.wallet.cat.earlywarning.io/",
-  "https://ndm-prev.3dss-non-prod.cloud.netcetera.com/",
+  "https:",
   ...localhostSources,
   // Add other trusted sources here
 ];
@@ -132,6 +116,8 @@ const authorizedConnectSources = [
   "https://secure.checkout.visa.com",
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
+  "https://eu.klarnaevt.com",
+  "https://eu.playground.klarnaevt.com",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
   // Add other trusted sources here
@@ -148,6 +134,8 @@ const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
+const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
+const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
 const repoVersion = getEnvVariable(
   "SDK_TAG_VERSION",
   require("./package.json").version
@@ -249,6 +237,9 @@ module.exports = (publicPath = "auto") => {
     isIntegrationEnv,
     isSandboxEnv,
     isProductionEnv,
+    isLocal,
+    visaAPIKeyId: JSON.stringify(visaAPIKeyId),
+    visaAPICertificatePem: JSON.stringify(visaAPICertificatePem),
   };
 
   const plugins = [
@@ -262,19 +253,21 @@ module.exports = (publicPath = "auto") => {
       template: "./public/build.html",
       chunks: ["app"],
       scriptLoading: "blocking",
-      // Add CSP meta tag
+      //       // Add CSP meta tag
       meta: {
         "Content-Security-Policy": {
           "http-equiv": "Content-Security-Policy",
           content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
             " "
-          )}; 
-          style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")};
-          img-src ${authorizedImageSources.join(" ")};
-          font-src ${authorizedFontSources.join(" ")}; 
-          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
-`,
+          )};
+                style-src ${authorizedStyleSources.join(" ")};
+                frame-src ${authorizedFrameSources.join(" ")};
+                img-src ${authorizedImageSources.join(" ")};
+                font-src ${authorizedFontSources.join(" ")};
+                connect-src ${authorizedConnectSources.join(
+                  " "
+                )} ${logEndpoint} ;
+      `,
         },
       },
     }),
@@ -291,7 +284,7 @@ module.exports = (publicPath = "auto") => {
             " "
           )};
           style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")}; 
+          frame-src ${authorizedFrameSources.join(" ")};
           img-src ${authorizedImageSources.join(" ")};
           font-src ${authorizedFontSources.join(" ")};
           connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
