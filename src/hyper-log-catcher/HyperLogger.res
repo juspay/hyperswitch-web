@@ -255,7 +255,7 @@ let make = (
 
     let networkStatus = switch NetworkInformation.getNetworkState() {
     | Value(val) => val
-    | CALCULATING => NetworkInformation.defaultNetworkState
+    | NOT_AVAILABLE => NetworkInformation.defaultNetworkState
     }
 
     if networkStatus.isOnline {

@@ -15,13 +15,13 @@ type connection = {
 @val @scope("navigator") external connection: Js.Nullable.t<connection> = "connection"
 
 let defaultNetworkState = {
-  isOnline: navigatorOnLine,
+  isOnline: true,
   effectiveType: "",
   downlink: 0.,
   rtt: 0.,
 }
 
-type networkStateFromHook = CALCULATING | Value(networkState)
+type networkStateFromHook = NOT_AVAILABLE | Value(networkState)
 let getNetworkState = () => {
   let conn = connection->Js.Nullable.toOption
 
@@ -33,12 +33,12 @@ let getNetworkState = () => {
       downlink: conn.downlink,
       rtt: conn.rtt,
     })
-  | None => CALCULATING
+  | None => NOT_AVAILABLE
   }
 }
 
 let useNetworkInformation = () => {
-  let initialState = CALCULATING
+  let initialState = NOT_AVAILABLE
   let (networkState, setNetworkState) = React.useState(_ => initialState)
 
   React.useEffect(() => {
@@ -53,7 +53,7 @@ let useNetworkInformation = () => {
           downlink: conn.downlink,
           rtt: conn.rtt,
         }))
-      | None => setNetworkState(_ => CALCULATING)
+      | None => setNetworkState(_ => NOT_AVAILABLE)
       }
     }
 

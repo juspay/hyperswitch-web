@@ -22,7 +22,7 @@ let make = () => {
         ~eventName=NETWORK_STATE,
         ~logType=DEBUG,
       )
-    | CALCULATING => ()
+    | NOT_AVAILABLE => ()
     }
 
     None
