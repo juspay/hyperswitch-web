@@ -281,6 +281,8 @@ let rec intentCall = (
     ~bodyStr: string=?,
     ~headers: Dict.t<string>=?,
     ~method: Fetch.method,
+    ~customPodUri: option<string>=?,
+    ~publishableKey: option<string>=?,
   ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,
@@ -1571,69 +1573,55 @@ let createPaymentMethod = (
   })
 }
 
-let fetchPaymentMethodList = (
+let fetchPaymentMethodList = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
   ~customPodUri,
   ~endpoint,
 ) => {
-  open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-  let uri = `${endpoint}/account/payment_methods?client_secret=${clientSecret}`
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=PAYMENT_METHODS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    FetchPaymentMethodList,
+    ~clientSecret,
+    ~customBackendBaseUrl=endpoint,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(resp => {
-    let statusCode = resp->Fetch.Response.status
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=PAYMENT_METHODS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=PAYMENT_METHODS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger=Some(logger),
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=PAYMENT_METHODS_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
+
+  let onSuccess = data => {
+    LogAPIResponse.logApiResponse(
+      ~logger,
+      ~uri,
+      ~eventName=Some(PAYMENT_METHODS_CALL),
+      ~status=Success,
+      ~statusCode=200,
+      ~data,
     )
-    JSON.Encode.null->resolve
-  })
+
+    data
+  }
+
+  let onFailure = data => {
+    LogAPIResponse.logApiResponse(
+      ~logger,
+      ~uri,
+      ~eventName=Some(PAYMENT_METHODS_CALL),
+      ~status=Error,
+      ~data,
+    )
+
+    JSON.Encode.null
+  }
+
+  await Utils.fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHODS_CALL,
+    ~logger,
+    ~bodyStr="",
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let fetchCustomerPaymentMethodList = (
