@@ -31,6 +31,7 @@ let logApiResponse = (
       ~data?,
       ~isPaymentSession?,
     )
-  | _ => ()
+
+  | None => ()
   }
 }
