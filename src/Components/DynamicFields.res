@@ -141,6 +141,8 @@ let make = (
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
   let bankAccountNumberRef = React.useRef(Nullable.null)
+  let destinationBankAccountIdRef = React.useRef(Nullable.null)
+  let sourceBankAccountIdRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
@@ -148,6 +150,16 @@ let make = (
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
     userBankAccountNumber,
     "bankAccountNumber",
+    logger,
+  )
+  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useLoggedRecoilState(
+    destinationBankAccountId,
+    "destinationBankAccountId",
+    logger,
+  )
+  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useLoggedRecoilState(
+    sourceBankAccountId,
+    "sourceBankAccountId",
     logger,
   )
   let countryList = CountryStateDataRefs.countryDataRef.contents
@@ -483,6 +495,58 @@ let make = (
               inputRef=bankAccountNumberRef
               placeholder="DE00 0000 0000 0000 0000 00"
             />
+          | DestinationBankAccountId =>
+            <PaymentField
+              fieldName="Destination Bank Account ID"
+              setValue={setDestinationBankAccountId}
+              value=destinationBankAccountId
+              onChange={ev => {
+                let value = ReactEvent.Form.target(ev)["value"]
+                setDestinationBankAccountId(_ => {
+                  isValid: Some(value !== ""),
+                  value,
+                  errorString: value !== "" ? "" : localeString.destinationBankAccountIdEmptyText,
+                })
+              }}
+              onBlur={ev => {
+                let value = ReactEvent.Focus.target(ev)["value"]
+                setDestinationBankAccountId(prev => {
+                  ...prev,
+                  isValid: Some(value !== ""),
+                })
+              }}
+              type_="text"
+              name="destinationBankAccountId"
+              maxLength=42
+              inputRef=destinationBankAccountIdRef
+              placeholder="DE00 0000 0000 0000 0000 00"
+            />
+          | SourceBankAccountId =>
+            <PaymentField
+              fieldName="Source Bank Account ID"
+              setValue={setSourceBankAccountId}
+              value=sourceBankAccountId
+              onChange={ev => {
+                let value = ReactEvent.Form.target(ev)["value"]
+                setSourceBankAccountId(_ => {
+                  isValid: Some(value !== ""),
+                  value,
+                  errorString: value !== "" ? "" : localeString.sourceBankAccountIdEmptyText,
+                })
+              }}
+              onBlur={ev => {
+                let value = ReactEvent.Focus.target(ev)["value"]
+                setSourceBankAccountId(prev => {
+                  ...prev,
+                  isValid: Some(value !== ""),
+                })
+              }}
+              type_="text"
+              name="sourceBankAccountId"
+              maxLength=42
+              inputRef=sourceBankAccountIdRef
+              placeholder="DE00 0000 0000 0000 0000 00"
+            />
           | Email
           | InfoElement
           | Country
@@ -779,6 +843,8 @@ let make = (
                 | LanguagePreference(_)
                 | BankAccountNumber
                 | IBAN
+                | DestinationBankAccountId
+                | SourceBankAccountId
                 | None => React.null
                 }}
               </DynamicFieldsToRenderWrapper>
