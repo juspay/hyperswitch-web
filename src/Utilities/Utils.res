@@ -987,7 +987,7 @@ let fetchApiWithLogging = async (
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
-        ~eventName=apiEventInitMapper(eventName),
+        ~eventName=Some(eventName),
         ~status=Success,
         ~statusCode,
         ~isPaymentSession,
@@ -998,7 +998,7 @@ let fetchApiWithLogging = async (
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
-        ~eventName=apiEventInitMapper(eventName),
+        ~eventName=Some(eventName),
         ~status=Error,
         ~statusCode,
         ~data,
@@ -1012,7 +1012,7 @@ let fetchApiWithLogging = async (
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
-        ~eventName=apiEventInitMapper(eventName),
+        ~eventName=Some(eventName),
         ~status=Exception,
         ~data=exceptionMessage,
         ~isPaymentSession,
