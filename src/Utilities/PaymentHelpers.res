@@ -1348,7 +1348,7 @@ let fetchSessions = (
   ~customPodUri,
   ~endpoint,
   ~isPaymentSession=false,
-  ~merchantHostname=Window.Location.hostname,
+  ~merchantHostname=Window.getRootHostName(),
 ) => {
   open Promise
   let headers = [
