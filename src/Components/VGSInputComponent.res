@@ -44,24 +44,7 @@ let make = (~fieldName="", ~id="", ~isFocused=false, ~errorStr=?) => {
               className={`Input Input--empty focus:outline-none transition-shadow ease-out duration-200 border border-gray-300 focus:border-[#006DF9] rounded-md text-sm ${focusClass}`}
             />
           </div>
-          <RenderIf condition={innerLayout === Spaced}>
-            {switch errorStr {
-            | Some(val) =>
-              <RenderIf condition={val->String.length > 0}>
-                <div
-                  className="Error pt-1"
-                  style={
-                    color: themeObj.colorDangerText,
-                    fontSize: themeObj.fontSizeSm,
-                    alignSelf: "start",
-                    textAlign: "left",
-                  }>
-                  {React.string(val)}
-                </div>
-              </RenderIf>
-            | None => React.null
-            }}
-          </RenderIf>
+          <ErrorComponent errorStr />
         </div>
       </div>
     </div>

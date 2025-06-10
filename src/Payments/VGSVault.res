@@ -1,6 +1,7 @@
 open Utils
 open VGSTypes
 open VGSHelpers
+open VGSConstants
 
 @react.component
 let make = (~isBancontact=false) => {
@@ -8,7 +9,7 @@ let make = (~isBancontact=false) => {
 
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let ssn = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
+  let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {innerLayout} = config.appearance
 
@@ -28,44 +29,21 @@ let make = (~isBancontact=false) => {
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
 
-  useVGSFocus(cardField, setIsCardFocused, setVgsCardError)
-  useVGSFocus(expiryField, setIsExpiryFocused, setVgsExpiryError)
-  useVGSFocus(cvcField, setIsCVCFocused, setVgsCVCError)
+  handleVGSField(cardField, setIsCardFocused, setVgsCardError)
+  handleVGSField(expiryField, setIsExpiryFocused, setVgsExpiryError)
+  handleVGSField(cvcField, setIsCVCFocused, setVgsCVCError)
 
   let initializeVGS = (vault: returnValue) => {
-    let cardNumberOptions = {
-      \"type": "card-number",
-      name: "card_number",
-      placeholder: "1234 1234 1234 1234",
-      validations: ["required", "validCardNumber"],
-      showCardIcon: true,
-    }
-
-    let cardExpiryOptions = {
-      \"type": "card-expiration-date",
-      name: "card_exp",
-      placeholder: localeString.expiryPlaceholder,
-      validations: ["required", "validCardExpirationDate"],
-      showCardIcon: false,
-    }
-
-    let cardCvcOptions = {
-      \"type": "card-security-code",
-      name: "card_cvc",
-      placeholder: "123",
-      validations: ["required", "validCardSecurityCode"],
-      showCardIcon: true,
-    }
-
     setCardField(_ => Some(vault.field("#vgs-cc-number", cardNumberOptions)))
-    setExpiryField(_ => Some(vault.field("#vgs-cc-expiry", cardExpiryOptions)))
+    setExpiryField(_ => Some(
+      vault.field("#vgs-cc-expiry", cardExpiryOptions(localeString.expiryPlaceholder)),
+    ))
     setCVCField(_ => Some(vault.field("#vgs-cc-cvc", cardCvcOptions)))
 
     setForm(_ => Some(vault))
   }
 
   let mountVGSSDK = () => {
-    let vgsScriptURL = `https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js`
     let vgsScript = Window.createElement("script")
     vgsScript->Window.setAttribute(
       "integrity",
@@ -81,9 +59,9 @@ let make = (~isBancontact=false) => {
       setVgsScriptLoaded(_ => true)
       let vault = create(id, env, vgsState => {
         let dict = vgsState->getDictFromJson
-        vgsErrorHandler(dict, "card_number", setVgsCardError, localeString)
-        vgsErrorHandler(dict, "card_exp", setVgsExpiryError, localeString)
-        vgsErrorHandler(dict, "card_cvc", setVgsCVCError, localeString)
+        setVgsCardError(_ => vgsErrorHandler(dict, "card_number", localeString))
+        setVgsExpiryError(_ => vgsErrorHandler(dict, "card_exp", localeString))
+        setVgsCVCError(_ => vgsErrorHandler(dict, "card_cvc", localeString))
       })
       initializeVGS(vault)
     })
@@ -92,13 +70,13 @@ let make = (~isBancontact=false) => {
 
   React.useEffect(() => {
     let (vaultId, vaultEnv) = VaultHelpers.getVGSVaultDetails(
-      ssn,
+      sessionToken,
       vaultMode->VaultHelpers.getVaultNameFromMode,
     )
     setEnv(_ => vaultEnv)
     setId(_ => vaultId)
     None
-  }, (ssn, vaultMode))
+  }, (sessionToken, vaultMode))
 
   React.useEffect(() => {
     if !vgsScriptLoaded && id != "" && env != "" {
@@ -131,9 +109,9 @@ let make = (~isBancontact=false) => {
           },
           err => {
             let dict = err->getDictFromJson
-            vgsErrorHandler(dict, "card_number", ~isSubmit=true, setVgsCardError, localeString)
-            vgsErrorHandler(dict, "card_exp", ~isSubmit=true, setVgsExpiryError, localeString)
-            vgsErrorHandler(dict, "card_cvc", ~isSubmit=true, setVgsCVCError, localeString)
+            setVgsCardError(_ => vgsErrorHandler(dict, "card_number", ~isSubmit=true, localeString))
+            setVgsExpiryError(_ => vgsErrorHandler(dict, "card_exp", ~isSubmit=true, localeString))
+            setVgsCVCError(_ => vgsErrorHandler(dict, "card_cvc", ~isSubmit=true, localeString))
           },
         )
       | None => Console.error("VGS Vault not initialized for submission")
@@ -156,7 +134,7 @@ let make = (~isBancontact=false) => {
             {React.string(localeString.cardHeader)}
           </div>
         </RenderIf>
-        <VGSInputDiv
+        <VGSInputComponent
           fieldName={localeString.cardNumberLabel}
           id="vgs-cc-number"
           isFocused={isCardFocused->Option.getOr(false)}
@@ -168,7 +146,7 @@ let make = (~isBancontact=false) => {
             gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
           }>
           <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
-            <VGSInputDiv
+            <VGSInputComponent
               fieldName={localeString.validThruText}
               id="vgs-cc-expiry"
               isFocused={isExpiryFocused->Option.getOr(false)}
@@ -176,7 +154,7 @@ let make = (~isBancontact=false) => {
             />
           </div>
           <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
-            <VGSInputDiv
+            <VGSInputComponent
               fieldName={localeString.cvcTextLabel}
               id="vgs-cc-cvc"
               isFocused={isCVCFocused->Option.getOr(false)}
@@ -184,22 +162,7 @@ let make = (~isBancontact=false) => {
             />
           </div>
         </div>
-        <RenderIf
-          condition={innerLayout === Compressed &&
-            (vgsCardError->String.length > 0 ||
-            vgsExpiryError->String.length > 0 ||
-            vgsCVCError->String.length > 0)}>
-          <div
-            className="Error pt-1"
-            style={
-              color: themeObj.colorDangerText,
-              fontSize: themeObj.fontSizeSm,
-              alignSelf: "start",
-              textAlign: "left",
-            }>
-            {React.string("Invalid input")}
-          </div>
-        </RenderIf>
+        <ErrorComponent cardError=vgsCardError expiryError=vgsExpiryError cvcError=vgsCVCError />
       </div>
     </div>
   </div>

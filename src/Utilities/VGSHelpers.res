@@ -1,6 +1,6 @@
 open Utils
 
-let useVGSFocus = (field: option<VGSTypes.field>, setFocus, setError) => {
+let handleVGSField = (field: option<VGSTypes.field>, setFocus, setError) => {
   switch field {
   | Some(val) =>
     val.on("focus", _ => {
@@ -33,7 +33,7 @@ let getErrorStr = (fieldname, ~empty=false, localeString: LocaleStringTypes.loca
   }
 }
 
-let setUserError = message => {
+let submitUserError = message => {
   Utils.postFailedSubmitResponse(~errortype="validation_error", ~message)
 }
 
@@ -41,7 +41,6 @@ let vgsErrorHandler = (
   dict,
   fieldname,
   ~isSubmit=false,
-  setError,
   localeString: LocaleStringTypes.localeStrings,
 ) => {
   let emptyErr = getErrorStr(fieldname, ~empty=true, localeString)
@@ -58,13 +57,13 @@ let vgsErrorHandler = (
 
   switch (isFocused, isEmpty, isValid, isSubmit) {
   | (false, true, _, true) => {
-      setError(_ => emptyErr)
-      setUserError(localeString.enterFieldsText)
+      submitUserError(localeString.enterFieldsText)
+      emptyErr
     }
   | (false, false, false, _) => {
-      setError(_ => invalidErr)
-      setUserError(localeString.enterValidDetailsText)
+      submitUserError(localeString.enterValidDetailsText)
+      invalidErr
     }
-  | _ => ()
+  | _ => ""
   }
 }
