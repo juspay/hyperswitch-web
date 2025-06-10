@@ -10,6 +10,8 @@ let intentCall = (
     ~bodyStr: string=?,
     ~headers: Dict.t<string>=?,
     ~method: Fetch.method,
+    ~customPodUri: option<string>=?,
+    ~publishableKey: option<string>=?,
   ) => promise<Fetch.Response.t>,
   ~uri,
   ~headers,
