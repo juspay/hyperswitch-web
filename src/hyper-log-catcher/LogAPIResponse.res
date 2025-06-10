@@ -8,12 +8,12 @@ let logApiResponse = (
   ~uri,
   ~eventName,
   ~status,
-  ~statusCode=None,
+  ~statusCode=?,
   ~data=?,
   ~isPaymentSession=?,
 ) => {
-  switch (eventName, statusCode) {
-  | (Some(actualEventName), Some(code)) =>
+  switch eventName {
+  | Some(actualEventName) =>
     let (apiLogType, logType) = switch status {
     | Success => (Response, INFO)
     | Error => (Err, ERROR)
@@ -27,7 +27,7 @@ let logApiResponse = (
       ~eventName=actualEventName,
       ~logType,
       ~logCategory=API,
-      ~statusCode=code,
+      ~statusCode?,
       ~data?,
       ~isPaymentSession?,
     )

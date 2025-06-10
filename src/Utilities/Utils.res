@@ -980,7 +980,7 @@ let fetchApiWithLogging = async (
       },
     )
 
-    let statusCode = Some(resp->Fetch.Response.status)
+    let statusCode = resp->Fetch.Response.status
 
     if resp->Fetch.Response.ok {
       let data = await Fetch.Response.json(resp)
@@ -992,7 +992,7 @@ let fetchApiWithLogging = async (
         ~statusCode,
         ~isPaymentSession,
       )
-      onSuccess(~data, ~statusCode)
+      onSuccess(data)
     } else {
       let data = await resp->Fetch.Response.json
       LogAPIResponse.logApiResponse(
@@ -1004,7 +1004,7 @@ let fetchApiWithLogging = async (
         ~data,
         ~isPaymentSession,
       )
-      onFailure(~data, ~statusCode)
+      onFailure(data)
     }
   } catch {
   | err => {
@@ -1017,7 +1017,7 @@ let fetchApiWithLogging = async (
         ~data=exceptionMessage,
         ~isPaymentSession,
       )
-      onFailure(~data=exceptionMessage, ~statusCode=None)
+      onFailure(exceptionMessage)
     }
   }
 }

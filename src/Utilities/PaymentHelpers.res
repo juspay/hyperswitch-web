@@ -1586,9 +1586,9 @@ let fetchPaymentMethodList = async (
     ~customBackendBaseUrl=endpoint,
   )
 
-  let onSuccess = (~data, ~statusCode as _) => data
+  let onSuccess = data => data
 
-  let onFailure = (~data as _, ~statusCode as _) => JSON.Encode.null
+  let onFailure = _ => JSON.Encode.null
 
   await Utils.fetchApiWithLogging(
     uri,
@@ -1617,9 +1617,9 @@ let fetchCustomerPaymentMethodList = async (
     ~customBackendBaseUrl=endpoint,
   )
 
-  let onSuccess = (~data, ~statusCode as _) => data
+  let onSuccess = data => data
 
-  let onFailure = (~data as _, ~statusCode as _) => JSON.Encode.null
+  let onFailure = _ => JSON.Encode.null
 
   await Utils.fetchApiWithLogging(
     uri,
