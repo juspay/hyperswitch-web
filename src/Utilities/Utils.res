@@ -843,27 +843,41 @@ let delay = timeOut => {
   })
 }
 
-let getHeaders = (~uri=?, ~token=?, ~headers=Dict.make()) => {
-  let headerObj =
-    [
-      ("Content-Type", "application/json"),
-      ("X-Client-Version", Window.version),
-      ("X-Payment-Confirm-Source", "sdk"),
-      ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
-      ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
-      ("X-Client-Platform", "web"),
-    ]->Dict.fromArray
+let getHeaders = (
+  ~uri=?,
+  ~token=?,
+  ~customPodUri=None,
+  ~headers=Dict.make(),
+  ~publishableKey=None,
+): Fetch.Headers.t => {
+  let defaultHeaders = [
+    ("Content-Type", "application/json"),
+    ("api-key", publishableKey->Option.map(key => key)->Option.getOr("invalid_key")),
+    ("X-Client-Version", Window.version),
+    ("X-Payment-Confirm-Source", "sdk"),
+    ("X-Browser-Name", HyperLogger.arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others")),
+    ("X-Browser-Version", HyperLogger.arrayOfNameAndVersion->Array.get(1)->Option.getOr("0")),
+    ("X-Client-Platform", "web"),
+  ]
 
-  switch (token, uri) {
-  | (Some(tok), Some(_uriVal)) => headerObj->Dict.set("Authorization", tok)
-  | _ => ()
+  let authHeader = switch (token, uri) {
+  | (Some(tok), Some(_)) => [("Authorization", tok)]
+  | _ => []
   }
 
-  Dict.toArray(headers)->Array.forEach(entries => {
-    let (x, val) = entries
-    Dict.set(headerObj, x, val)
-  })
-  Fetch.Headers.fromObject(headerObj->dictToObj)
+  let customPodHeader = switch customPodUri {
+  | Some("") | None => []
+  | Some(uriVal) => [("x-feature", uriVal)]
+  }
+
+  let finalHeaders = [
+    ...defaultHeaders,
+    ...authHeader,
+    ...customPodHeader,
+    ...Dict.toArray(headers),
+  ]
+
+  Fetch.Headers.fromObject(Dict.fromArray(finalHeaders)->dictToObj)
 }
 
 let formatException = exc =>
@@ -892,7 +906,14 @@ let formatException = exc =>
   | _ => exc->Identity.anyTypeToJson
   }
 
-let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.method) => {
+let fetchApi = (
+  uri,
+  ~bodyStr: string="",
+  ~headers=Dict.make(),
+  ~method: Fetch.method,
+  ~customPodUri=None,
+  ~publishableKey=None,
+) => {
   open Promise
   let body = switch method {
   | #GET => resolve(None)
@@ -904,7 +925,7 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
       {
         method,
         ?body,
-        headers: getHeaders(~headers, ~uri),
+        headers: getHeaders(~headers, ~uri, ~customPodUri, ~publishableKey),
       },
     )
     ->catch(err => {
@@ -914,6 +935,87 @@ let fetchApi = (uri, ~bodyStr: string="", ~headers=Dict.make(), ~method: Fetch.m
       resolve(resp)
     })
   })
+}
+
+let fetchApiWithLogging = async (
+  uri,
+  ~eventName,
+  ~logger,
+  ~onSuccess,
+  ~onFailure,
+  ~bodyStr="",
+  ~headers=?,
+  ~method,
+  ~customPodUri=None,
+  ~publishableKey=None,
+) => {
+  open LoggerUtils
+
+  // * Log request initiation
+  LogAPIResponse.logApiResponse(
+    ~logger,
+    ~uri,
+    ~eventName=apiEventInitMapper(eventName),
+    ~status=Request,
+  )
+
+  try {
+    let body = switch method {
+    | #GET => None
+    | _ => Some(Fetch.Body.string(bodyStr))
+    }
+
+    let resp = await Fetch.fetch(
+      uri,
+      {
+        method,
+        ?body,
+        headers: getHeaders(
+          ~headers=headers->Option.getOr(Dict.make()),
+          ~uri,
+          ~customPodUri,
+          ~publishableKey,
+        ),
+      },
+    )
+
+    let statusCode = resp->Fetch.Response.status
+
+    if resp->Fetch.Response.ok {
+      let data = await Fetch.Response.json(resp)
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=apiEventInitMapper(eventName),
+        ~status=Success,
+        ~statusCode,
+      )
+      onSuccess(data)
+    } else {
+      let data = await resp->Fetch.Response.json
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=apiEventInitMapper(eventName),
+        ~status=Error,
+        ~statusCode,
+        ~data,
+      )
+      onFailure(data)
+    }
+  } catch {
+  | err => {
+      let exceptionMessage = err->formatException
+      LogAPIResponse.logApiResponse(
+        ~logger,
+        ~uri,
+        ~eventName=apiEventInitMapper(eventName),
+        ~status=Exception,
+        ~data=exceptionMessage,
+      )
+      onFailure(exceptionMessage)
+    }
+  }
 }
 
 let arrayJsonToCamelCase = arr => {
