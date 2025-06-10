@@ -1586,30 +1586,9 @@ let fetchPaymentMethodList = async (
     ~customBackendBaseUrl=endpoint,
   )
 
-  let onSuccess = data => {
-    LogAPIResponse.logApiResponse(
-      ~logger,
-      ~uri,
-      ~eventName=Some(PAYMENT_METHODS_CALL),
-      ~status=Success,
-      ~statusCode=200,
-      ~data,
-    )
+  let onSuccess = (~data, ~statusCode as _) => data
 
-    data
-  }
-
-  let onFailure = data => {
-    LogAPIResponse.logApiResponse(
-      ~logger,
-      ~uri,
-      ~eventName=Some(PAYMENT_METHODS_CALL),
-      ~status=Error,
-      ~data,
-    )
-
-    JSON.Encode.null
-  }
+  let onFailure = (~data as _, ~statusCode as _) => JSON.Encode.null
 
   await Utils.fetchApiWithLogging(
     uri,
@@ -1624,74 +1603,36 @@ let fetchPaymentMethodList = async (
   )
 }
 
-let fetchCustomerPaymentMethodList = (
+let fetchCustomerPaymentMethodList = async (
   ~clientSecret,
   ~publishableKey,
-  ~endpoint,
-  ~optLogger,
+  ~logger,
   ~customPodUri,
+  ~endpoint,
   ~isPaymentSession=false,
 ) => {
-  open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-  let uri = `${endpoint}/customers/payment_methods?client_secret=${clientSecret}`
-  logApi(
-    ~optLogger,
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    FetchCustomerPaymentMethodList,
+    ~clientSecret,
+    ~customBackendBaseUrl=endpoint,
+  )
+
+  let onSuccess = (~data, ~statusCode as _) => data
+
+  let onFailure = (~data as _, ~statusCode as _) => JSON.Encode.null
+
+  await Utils.fetchApiWithLogging(
+    uri,
+    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~bodyStr="",
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
     ~isPaymentSession,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-          ~isPaymentSession,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger,
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-        ~isPaymentSession,
-      )
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger,
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
-      ~isPaymentSession,
-    )
-    JSON.Encode.null->resolve
-  })
 }
 
 let paymentIntentForPaymentSession = (
@@ -1932,7 +1873,7 @@ let callAuthExchange = (
       fetchCustomerPaymentMethodList(
         ~clientSecret=clientSecret->Option.getOr(""),
         ~publishableKey,
-        ~optLogger=Some(logger),
+        ~logger,
         ~customPodUri="",
         ~endpoint,
       )

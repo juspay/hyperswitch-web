@@ -64,7 +64,7 @@ let getMessageHandlerV1Elements = (
   let customerPaymentMethodsPromise = PaymentHelpers.fetchCustomerPaymentMethodList(
     ~clientSecret,
     ~publishableKey,
-    ~optLogger=Some(logger),
+    ~logger,
     ~customPodUri,
     ~endpoint,
   )

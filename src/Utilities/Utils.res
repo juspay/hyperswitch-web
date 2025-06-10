@@ -948,6 +948,7 @@ let fetchApiWithLogging = async (
   ~method,
   ~customPodUri=None,
   ~publishableKey=None,
+  ~isPaymentSession=false,
 ) => {
   open LoggerUtils
 
@@ -979,7 +980,7 @@ let fetchApiWithLogging = async (
       },
     )
 
-    let statusCode = resp->Fetch.Response.status
+    let statusCode = Some(resp->Fetch.Response.status)
 
     if resp->Fetch.Response.ok {
       let data = await Fetch.Response.json(resp)
@@ -989,8 +990,9 @@ let fetchApiWithLogging = async (
         ~eventName=apiEventInitMapper(eventName),
         ~status=Success,
         ~statusCode,
+        ~isPaymentSession,
       )
-      onSuccess(data)
+      onSuccess(~data, ~statusCode)
     } else {
       let data = await resp->Fetch.Response.json
       LogAPIResponse.logApiResponse(
@@ -1000,8 +1002,9 @@ let fetchApiWithLogging = async (
         ~status=Error,
         ~statusCode,
         ~data,
+        ~isPaymentSession,
       )
-      onFailure(data)
+      onFailure(~data, ~statusCode)
     }
   } catch {
   | err => {
@@ -1012,8 +1015,9 @@ let fetchApiWithLogging = async (
         ~eventName=apiEventInitMapper(eventName),
         ~status=Exception,
         ~data=exceptionMessage,
+        ~isPaymentSession,
       )
-      onFailure(exceptionMessage)
+      onFailure(~data=exceptionMessage, ~statusCode=None)
     }
   }
 }
