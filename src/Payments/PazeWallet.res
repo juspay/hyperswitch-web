@@ -4,7 +4,7 @@ open PazeTypes
 external digitalWalletSdk: digitalWalletSdk = "DIGITAL_WALLET_SDK"
 
 @react.component
-let make = (~logger: HyperLogger.loggerMake) => {
+let make = (~logger: HyperLoggerTypes.loggerMake) => {
   open Promise
   open Utils
 
@@ -31,7 +31,7 @@ let make = (~logger: HyperLogger.loggerMake) => {
 
           let loadPazeSDK = async _ => {
             try {
-              let val = await digitalWalletSdk.initialize({
+              let _ = await digitalWalletSdk.initialize({
                 client: {
                   id: clientId,
                   name: clientName,
@@ -39,14 +39,9 @@ let make = (~logger: HyperLogger.loggerMake) => {
                 },
               })
 
-              Console.log2("PAZE --- init completed", val)
-
               let canCheckout = await digitalWalletSdk.canCheckout({
                 emailAddress: emailAddress,
               })
-
-              Console.log("PAZE --- canCheckout completed")
-              Console.log2("PAZE --- canCheckout: ", canCheckout.consumerPresent)
 
               let transactionValue = {
                 transactionAmount,
@@ -68,8 +63,6 @@ let make = (~logger: HyperLogger.loggerMake) => {
                 shippingPreference: "ALL",
               })
 
-              Console.log("PAZE --- digitalWalletSdk.checkout completed")
-
               let completeObj = {
                 transactionOptions,
                 transactionId: "",
@@ -79,8 +72,6 @@ let make = (~logger: HyperLogger.loggerMake) => {
               }
 
               let completeResponse = await digitalWalletSdk.complete(completeObj)
-
-              Console.log("PAZE --- digitalWalletSdk.complete completed")
 
               messageParentWindow([
                 ("fullscreen", false->JSON.Encode.bool),

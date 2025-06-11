@@ -1,9 +1,8 @@
+open HyperLoggerTypes
+
 type type_ = Error | Warning
 type stringType = Dynamic(string => string) | Static(string)
-
-type error = array<(HyperLogger.eventName, type_, string)>
-
-open HyperLogger
+type error = array<(HyperLoggerTypes.eventName, type_, string)>
 
 let errorWarning = [
   (
@@ -107,9 +106,9 @@ let errorWarning = [
 ]
 
 let manageErrorWarning = (
-  key: HyperLogger.eventName,
+  key: HyperLoggerTypes.eventName,
   ~dynamicStr="",
-  ~logger: HyperLogger.loggerMake,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   let entry = errorWarning->Array.find(((value, _, _)) => value == key)
   switch entry {
@@ -120,7 +119,7 @@ let manageErrorWarning = (
       | Static(string) => string
       | Dynamic(fn) => fn(dynamicStr)
       }
-      let logType: HyperLogger.logType = switch type_ {
+      let logType: HyperLoggerTypes.logType = switch type_ {
       | Warning => WARNING
       | Error => ERROR
       }
@@ -154,7 +153,7 @@ let unknownPropValueWarning = (
   inValidValue,
   validValueArr,
   dictType,
-  ~logger: HyperLogger.loggerMake,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   let expectedValues =
     validValueArr
@@ -168,10 +167,10 @@ let unknownPropValueWarning = (
     ~logger,
   )
 }
-let valueOutRangeWarning = (num: int, dictType, range, ~logger: HyperLogger.loggerMake) => {
+let valueOutRangeWarning = (num: int, dictType, range, ~logger: HyperLoggerTypes.loggerMake) => {
   manageErrorWarning(
     VALUE_OUT_OF_RANGE,
     ~dynamicStr=`${num->Int.toString} value in ${dictType} Expected value between ${range}`,
-    ~logger: HyperLogger.loggerMake,
+    ~logger: HyperLoggerTypes.loggerMake,
   )
 }

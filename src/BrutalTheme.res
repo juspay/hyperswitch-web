@@ -48,6 +48,7 @@ let brutal = {
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
+  disabledFieldColor: "#F2F2F2",
 }
 let brutalRules = (theme: CardThemeType.themeClass) =>
   {
@@ -104,6 +105,10 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
       "transform": "translate(0.05em, 0.05em)",
       "boxShadow": "0.02em 0.02em",
     },
+    ".VGSField--focused": {
+      "transform": "translate(0.05em, 0.05em)",
+      "boxShadow": "0.02em 0.02em",
+    },
     ".Input-Compressed:focus": {
       "transform": "translate(0.02em, 0.02em)",
       "boxShadow": "0.01em 0.01em",
@@ -115,6 +120,9 @@ let brutalRules = (theme: CardThemeType.themeClass) =>
     ".Input::placeholder": {
       "fontWeight": theme.fontWeightLight,
       "color": theme.colorTextPlaceholder,
+    },
+    ".InputLogo": {
+      "color": "#979797",
     },
     ".TabLabel": {
       "transition": "color .1s ease",

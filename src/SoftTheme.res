@@ -49,6 +49,7 @@ let soft = {
   buttonTextFontSize: "16px",
   buttonTextFontWeight: "500",
   buttonBorderWidth: "0px",
+  disabledFieldColor: "#303031",
 }
 
 let softRules = theme =>
@@ -98,6 +99,9 @@ let softRules = theme =>
     ".Input:focus": {
       "boxShadow": `inset 8px 7px 7px #353637, inset -8px -6px 7px #434445`,
     },
+    ".VGSField--focused": {
+      "boxShadow": `inset 8px 7px 7px #353637, inset -8px -6px 7px #434445`,
+    },
     ".Input-Compressed:focus": {
       "boxShadow": `inset 8px 7px 7px #353637, inset -8px -6px 7px #434445`,
     },
@@ -107,6 +111,9 @@ let softRules = theme =>
     ".Input::placeholder": {
       "fontWeight": theme.fontWeightLight,
       "color": theme.colorTextPlaceholder,
+    },
+    ".InputLogo": {
+      "color": "#979797",
     },
     ".TabLabel": {
       "transition": "color .1s ease",

@@ -7,6 +7,10 @@ let make = (~label="") => {
   let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
+  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useRecoilState(
+    destinationBankAccountId,
+  )
+  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
 
   let pixKeyRef = React.useRef(Nullable.null)
   let pixCPFRef = React.useRef(Nullable.null)
@@ -157,6 +161,18 @@ let make = (~label="") => {
           errorString: localeString.pixCPFEmptyText,
         })
       }
+      if destinationBankAccountId.value == "" {
+        setDestinationBankAccountId(prev => {
+          ...prev,
+          errorString: localeString.destinationBankAccountIdEmptyText,
+        })
+      }
+      if sourceBankAccountId.value == "" {
+        setSourceBankAccountId(prev => {
+          ...prev,
+          errorString: localeString.sourceBankAccountIdEmptyText,
+        })
+      }
     }
   }, [pixCNPJ.value, pixKey.value, pixCPF.value])
 
@@ -170,11 +186,11 @@ let make = (~label="") => {
         value=pixKey
         onChange=changePixKey
         onBlur=onBlurPixKey
-        paymentType=Payment
         type_="pixKey"
         name="pixKey"
         inputRef=pixKeyRef
         placeholder={localeString.pixKeyPlaceholder}
+        paymentType=Payment
       />
     </RenderIf>
     <RenderIf condition={label === "pixCPF"}>
@@ -184,12 +200,12 @@ let make = (~label="") => {
         value=pixCPF
         onChange=changePixCPF
         onBlur=onBlurPixCPF
-        paymentType=Payment
         type_="pixCPF"
         name="pixCPF"
         inputRef=pixCPFRef
         placeholder={localeString.pixCPFPlaceholder}
         maxLength=11
+        paymentType=Payment
       />
     </RenderIf>
     <RenderIf condition={label === "pixCNPJ"}>
@@ -199,12 +215,12 @@ let make = (~label="") => {
         value=pixCNPJ
         onChange=changePixCNPJ
         onBlur=onBlurPixCNPJ
-        paymentType=Payment
         type_="pixCNPJ"
         name="pixCNPJ"
         inputRef=pixCNPJRef
         placeholder={localeString.pixCNPJPlaceholder}
         maxLength=14
+        paymentType=Payment
       />
     </RenderIf>
   </>

@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: `Número de targeta`,
   inValidCardErrorText: `El número de targeta no és vàlid.`,
+  inValidExpiryErrorText: `La data de caducitat no és vàlida.`,
   inCompleteCVCErrorText: `El codi de seguretat de la targeta està incomplet.`,
   inCompleteExpiryErrorText: `La data de venciment de la targeta està incompleta.`,
   enterValidCardNumberErrorText: `Introduïu un número de targeta vàlid.`,
@@ -14,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Línia d'adreça 1`,
   line1Placeholder: `Adreça postal`,
   line2Label: `Línia d'adreça 2`,
-  line2Placeholder: `Pis, número d'apartament, etc. (opcional)`,
+  line2Placeholder: `Pis, número d'apartament, etc.`,
   cityLabel: `Ciutat`,
   postalCodeLabel: `Codi postal`,
   stateLabel: `Estat`,
@@ -63,6 +64,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`Un import de recàrrec de${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}s'aplicarà per a aquesta transacció`})}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Tarifa :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Un recàrrec de fins a${Utils.nbsp}`)}
@@ -151,6 +156,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `La clau Pix no pot estar buida`,
   pixKeyPlaceholder: `Introdueix la clau Pix`,
   pixKeyLabel: `Clau Pix`,
+  destinationBankAccountIdEmptyText: `L'identificador del compte bancari de destinació no pot estar buit`,
+  sourceBankAccountIdEmptyText: `L'identificador del compte bancari d'origen no pot estar buit`,
   invalidCardHolderNameError: `El nom del titular de la targeta no pot contenir dígits`,
   invalidNickNameError: `El sobrenom no pot contenir més de 2 dígits`,
+  expiry: `caducitat`,
 }

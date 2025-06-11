@@ -46,6 +46,8 @@ type paymentMethodsFields =
   | LanguagePreference(array<string>)
   | BankAccountNumber
   | IBAN
+  | DestinationBankAccountId
+  | SourceBankAccountId
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -241,10 +243,17 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
-    paymentMethodName: "sepa_transfer",
+    paymentMethodName: "sepa_bank_transfer",
     icon: Some(icon("sepa", ~size=19)),
     fields: [],
     displayName: "SEPA Bank Transfer",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "instant_bank_transfer",
+    icon: Some(icon("bank", ~size=19)),
+    fields: [],
+    displayName: "Instant Bank Transfer",
     miniIcon: None,
   },
   {
@@ -562,6 +571,13 @@ let paymentMethodsFields = [
     displayName: "UPI Collect",
     miniIcon: None,
   },
+  {
+    paymentMethodName: "eft",
+    icon: Some(icon("eft", ~size=19)),
+    fields: [InfoElement],
+    displayName: "EFT",
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
@@ -604,20 +620,24 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_pix_key", _) => PixKey
   | ("user_bank_account_number", _) => BankAccountNumber
   | ("user_iban", _) => BankAccountNumber
+  | ("user_destination_bank_account_id", _) => DestinationBankAccountId
+  | ("user_source_bank_account_id", _) => SourceBankAccountId
   | _ => None
   }
 }
+
+let countryData = CountryStateDataRefs.countryDataRef.contents
 
 let getOptionsFromPaymentMethodFieldType = (dict, key, ~isAddressCountry=true) => {
   let options = dict->getArrayValFromJsonDict(key, "options")
   switch options->Array.get(0)->Option.getOr("") {
   | "" => None
   | "ALL" => {
-      let countryArr = Country.country->Array.map(item => item.countryName)
+      let countryArr = countryData->Array.map(item => item.countryName)
       isAddressCountry ? AddressCountry(countryArr) : ShippingAddressCountry(countryArr)
     }
   | _ => {
-      let countryArr = Country.country->Array.reduce([], (acc, country) => {
+      let countryArr = countryData->Array.reduce([], (acc, country) => {
         if options->Array.includes(country.isoAlpha2) {
           acc->Array.push(country.countryName)
         }

@@ -4,6 +4,7 @@ let make = (~paymentType) => {
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
+  let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
   let setPaymentMethodListValue = Recoil.useSetRecoilState(PaymentUtils.paymentMethodListValue)
 
@@ -36,8 +37,9 @@ let make = (~paymentType) => {
       <ErrorBoundary
         key="payment_request_buttons_all"
         level={ErrorBoundary.RequestButton}
-        componentName="WalletElement">
-        <PaymentRequestButtonElement sessions walletOptions paymentType />
+        componentName="WalletElement"
+        publishableKey>
+        <PaymentRequestButtonElement sessions walletOptions />
       </ErrorBoundary>
     </div>
   </RenderIf>

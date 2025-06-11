@@ -7,10 +7,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isSamsungPayReady = Recoil.useRecoilValueFromAtom(isSamsungPayReady)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
-  let {publishableKey, iframeId} = Recoil.useRecoilValueFromAtom(keys)
+  let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let status = CommonHooks.useScript("https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js")
   let isWallet = walletOptions->Array.includes("samsung_pay")
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
@@ -21,6 +20,8 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   | SamsungPay(val) => val
   | _ => 48
   }
+
+  SamsungPayHelpers.useHandleSamsungPayResponse(~intent, ~isWallet)
 
   let getSamsungPaymentsClient = _ =>
     SamsungPayType.samsung({
@@ -63,35 +64,6 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
     }
     None
   }, (status, sessionObj, isSamsungPayReady))
-
-  React.useEffect0(() => {
-    let handleSamsung = (ev: Window.event) => {
-      let json = ev.data->safeParse
-      let dict = json->getDictFromJson
-      if dict->Dict.get("samsungPayResponse")->Option.isSome {
-        let metadata = dict->getJsonObjectFromDict("samsungPayResponse")
-        let getBody = SamsungPayHelpers.getSamsungPayBodyFromResponse(~sPayResponse=metadata)
-        let body = PaymentBody.samsungPayBody(
-          ~metadata=getBody.paymentMethodData->Identity.anyTypeToJson,
-        )
-
-        intent(
-          ~bodyArr=body,
-          ~confirmParam={
-            return_url: options.wallets.walletReturnUrl,
-            publishableKey,
-          },
-          ~handleUserError=false,
-          ~manualRetry=isManualRetryEnabled,
-        )
-      }
-      if dict->Dict.get("samsungPayError")->Option.isSome {
-        messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-      }
-    }
-    Window.addEventListener("message", handleSamsung)
-    Some(() => {Window.removeEventListener("message", handleSamsung)})
-  })
 
   let isRenderSamsungPayButton = isSamsungPayReady && isWallet
 

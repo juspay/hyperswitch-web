@@ -3,10 +3,10 @@ open CardUtils
 @react.component
 let make = (
   ~paymentType: CardThemeType.mode,
-  ~cardProps,
-  ~expiryProps,
-  ~cvcProps,
-  ~zipProps,
+  ~cardProps: CardUtils.cardProps,
+  ~expiryProps: CardUtils.expiryProps,
+  ~cvcProps: CardUtils.cvcProps,
+  ~zipProps: CardUtils.zipProps,
   ~handleElementFocus,
   ~isFocus,
 ) => {
@@ -14,22 +14,18 @@ let make = (
   let options = Recoil.useRecoilValueFromAtom(elementOptions)
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
-  let (
+  let {
     isCardValid,
     setIsCardValid,
-    _,
     cardNumber,
     changeCardNumber,
     handleCardBlur,
     cardRef,
     icon,
-    _,
-    _,
     maxCardLength,
-    _,
-  ) = cardProps
+  } = cardProps
 
-  let (
+  let {
     isExpiryValid,
     setIsExpiryValid,
     cardExpiry,
@@ -37,24 +33,19 @@ let make = (
     handleExpiryBlur,
     expiryRef,
     onExpiryKeyDown,
-    _,
-    _,
-  ) = expiryProps
+  } = expiryProps
 
-  let (
+  let {
     isCVCValid,
     setIsCVCValid,
     cvcNumber,
-    _,
     changeCVCNumber,
     handleCVCBlur,
     cvcRef,
     onCvcKeyDown,
-    _,
-    _,
-  ) = cvcProps
+  } = cvcProps
 
-  let (
+  let {
     isZipValid,
     setIsZipValid,
     zipCode,
@@ -63,7 +54,7 @@ let make = (
     zipRef,
     onZipCodeKeyDown,
     displayPincode,
-  ) = zipProps
+  } = zipProps
 
   let isCardValidValue = getBoolOptionVal(isCardValid)
   let isExpiryValidValue = getBoolOptionVal(isExpiryValid)
@@ -130,10 +121,10 @@ let make = (
             onFocus=handleElementFocus
             type_="tel"
             maxLength=maxCardLength
-            paymentType
             inputRef=cardRef
             placeholder="1234 1234 1234 1234"
             isFocus
+            autocomplete="cc-number"
           />
         </div>
       </div>}
@@ -153,6 +144,7 @@ let make = (
             inputRef=expiryRef
             placeholder=localeString.expiryPlaceholder
             isFocus
+            autocomplete="cc-exp"
           />
         </div>
         <div className="w-1/5">
@@ -171,6 +163,7 @@ let make = (
             inputRef=cvcRef
             placeholder="123"
             isFocus
+            autocomplete="cc-csc"
           />
         </div>
         <RenderIf condition={!options.hidePostalCode}>

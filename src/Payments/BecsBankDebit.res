@@ -3,7 +3,7 @@ open RecoilAtomTypes
 open Utils
 
 @react.component
-let make = (~paymentType: CardThemeType.mode) => {
+let make = () => {
   let cleanBSB = str => str->String.replaceRegExp(%re("/-/g"), "")
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -21,6 +21,8 @@ let make = (~paymentType: CardThemeType.mode) => {
   let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let countryCode = Utils.getCountryCode(country.value).isoAlpha2
+  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
   let complete =
     email.value != "" &&
@@ -28,10 +30,6 @@ let make = (~paymentType: CardThemeType.mode) => {
     email.isValid->Option.getOr(false) &&
     switch modalData {
     | Some(data: ACHTypes.data) =>
-      Console.log2(
-        data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6,
-        "complete",
-      )
       data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6
     | None => false
     }
@@ -64,10 +62,10 @@ let make = (~paymentType: CardThemeType.mode) => {
               ~data,
               ~line1=line1.value,
               ~line2=line2.value,
-              ~country=getCountryCode(country.value).isoAlpha2,
+              ~country=countryCode,
               ~city=city.value,
               ~postalCode=postalCode.value,
-              ~state=state.value,
+              ~stateCode,
             )
             intent(
               ~bodyArr=body,
@@ -86,11 +84,11 @@ let make = (~paymentType: CardThemeType.mode) => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
-    <EmailPaymentInput paymentType />
-    <FullNamePaymentInput paymentType />
+    <EmailPaymentInput />
+    <FullNamePaymentInput />
     <AddBankAccount modalData setModalData />
     <FullScreenPortal>
-      <BankDebitModal setModalData paymentType />
+      <BankDebitModal setModalData />
     </FullScreenPortal>
     <Surcharge paymentMethod="bank_debit" paymentMethodType="becs" />
     <Terms mode=PaymentModeType.BecsBankDebit />

@@ -101,11 +101,11 @@ let make = (~integrateError, ~logger) => {
         ~body=pmdBody,
       )
       ->then(res => {
-        Console.log2("DEBUGG RES", res)
+        Console.warn2("DEBUGG RES", res)
         resolve()
       })
       ->catch(err => {
-        Console.log2("DEBUGG ERR", err)
+        Console.error2("DEBUGG ERR", err)
         resolve()
       })
       ->finally(() => {

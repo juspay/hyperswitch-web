@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: "rtl",
   cardNumberLabel: `رقم البطاقة`,
   inValidCardErrorText: `رقم البطاقة غير صالحة`,
+  inValidExpiryErrorText: `تاريخ انتهاء البطاقة غير صالح.`,
   inCompleteCVCErrorText: `رمز أمان بطاقتك غير مكتمل`,
   inCompleteExpiryErrorText: `تاريخ انتهاء صلاحية بطاقتك غير مكتمل`,
   enterValidCardNumberErrorText: `الرجاء إدخال رقم بطاقة صالح.`,
@@ -21,7 +22,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: `.عنوان الشارع`,
   line1EmptyText: `لا يمكن أن يكون سطر العنوان 1 فارغًا`,
   line2Label: `سطر العنوان 2`,
-  line2Placeholder: `مناسب ، رقم الوحدة ، إلخ (اختياري)`,
+  line2Placeholder: `مناسب ، رقم الوحدة ، إلخ`,
   line2EmptyText: `لا يمكن أن يكون سطر العنوان 2 فارغًا`,
   postalCodeLabel: `رمز بريدي`,
   postalCodeEmptyText: `لا يمكن أن يكون الرمز البريدي فارغًا`,
@@ -60,6 +61,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`سيتم تطبيق مبلغ إضافي من${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string(`${Utils.nbsp}على هذه المعاملة`)}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`الرسوم :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`سيتم تطبيق مبلغ إضافي يصل إلى${Utils.nbsp}`)}
@@ -152,6 +157,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `مفتاح Pix لا يمكن أن يكون فارغًا`,
   pixKeyPlaceholder: `أدخل مفتاح Pix`,
   pixKeyLabel: `مفتاح Pix`,
+  destinationBankAccountIdEmptyText: `لا يمكن أن يكون معرف الحساب المصرفي للوجهة فارغاً`,
+  sourceBankAccountIdEmptyText: `لا يمكن أن يكون معرف الحساب المصرفي المصدر فارغاً`,
   invalidCardHolderNameError: `اسم حامل البطاقة لا يمكن أن يحتوي على أرقام`,
   invalidNickNameError: `لا يمكن أن يحتوي الاسم المستعار على أكثر من رقمين`,
+  expiry: `انتهاء الصلاحية`,
 }

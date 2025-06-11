@@ -3,7 +3,7 @@ open RecoilAtomTypes
 open Utils
 
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
+let make = (~paymentMethodName: string) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
@@ -39,6 +39,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let countryList = CountryStateDataRefs.countryDataRef.contents
 
   React.useEffect(() => {
     setFieldComplete(_ => areRequiredFieldsValid)
@@ -59,7 +60,7 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     if confirm.doSubmit {
       if areRequiredFieldsValid {
         let countryCode =
-          Country.getCountry(paymentMethodName)
+          Country.getCountry(paymentMethodName, countryList)
           ->Array.filter(item => item.countryName == country)
           ->Array.get(0)
           ->Option.getOr(Country.defaultTimeZone)
@@ -113,7 +114,6 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     className="DynamicFields flex flex-col animate-slowShow"
     style={gridGap: themeObj.spacingGridColumn}>
     <DynamicFields
-      paymentType
       paymentMethod=paymentMethodDetails.methodType
       paymentMethodType=paymentMethodName
       setRequiredFieldsBody

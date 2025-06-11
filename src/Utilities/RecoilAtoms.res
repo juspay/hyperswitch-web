@@ -7,7 +7,7 @@ let elementOptions = Recoil.atom("elementOptions", ElementType.defaultOptions)
 let optionAtom = Recoil.atom("options", PaymentType.defaultOptions)
 let sessions = Recoil.atom("sessions", PaymentType.Loading)
 let paymentMethodList = Recoil.atom("paymentMethodList", PaymentType.Loading)
-let loggerAtom = Recoil.atom("component", HyperLogger.defaultLoggerConfig)
+let loggerAtom = Recoil.atom("component", LoggerUtils.defaultLoggerConfig)
 let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
 let customPodUri = Recoil.atom("customPodUri", "")
@@ -78,6 +78,8 @@ let userPixCNPJ = Recoil.atom("userPixCNPJ", defaultFieldValues)
 let isCompleteCallbackUsed = Recoil.atom("isCompleteCallbackUsed", false)
 let isPaymentButtonHandlerProvidedAtom = Recoil.atom("isPaymentButtonHandlerProvidedAtom", false)
 let userBankAccountNumber = Recoil.atom("userBankAccountNumber", defaultFieldValues)
+let destinationBankAccountId = Recoil.atom("destinationBankAccountId", defaultFieldValues)
+let sourceBankAccountId = Recoil.atom("sourceBankAccountId", defaultFieldValues)
 
 type areOneClickWalletsRendered = {
   isGooglePay: bool,
@@ -106,6 +108,12 @@ type clickToPayConfig = {
   email: string,
   clickToPayCards: option<array<ClickToPayHelpers.clickToPayCard>>,
   dpaName: string,
+  clickToPayProvider: ClickToPayHelpers.ctpProviderType,
+  visaComponentState: ClickToPayHelpers.visaComponentState,
+  maskedIdentity: string,
+  otpError: string,
+  consumerIdentity: ClickToPayHelpers.consumerIdentity,
+  clickToPayToken?: ClickToPayHelpers.clickToPayToken,
 }
 
 let defaultClickToPayConfig = {
@@ -114,6 +122,14 @@ let defaultClickToPayConfig = {
   email: "",
   clickToPayCards: None,
   dpaName: "",
+  clickToPayProvider: NONE,
+  visaComponentState: NONE,
+  maskedIdentity: "",
+  otpError: "",
+  consumerIdentity: {
+    identityType: EMAIL_ADDRESS,
+    identityValue: "",
+  },
 }
 
 let clickToPayConfig = Recoil.atom("clickToPayConfig", defaultClickToPayConfig)

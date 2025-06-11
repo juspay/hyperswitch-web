@@ -4,7 +4,7 @@ let billingDetailsTuple = (
   ~line1,
   ~line2,
   ~city,
-  ~state,
+  ~stateCode,
   ~postalCode,
   ~country,
 ) => {
@@ -22,7 +22,7 @@ let billingDetailsTuple = (
           ("line1", line1->JSON.Encode.string),
           ("line2", line2->JSON.Encode.string),
           ("city", city->JSON.Encode.string),
-          ("state", state->JSON.Encode.string),
+          ("state", stateCode->JSON.Encode.string),
           ("zip", postalCode->JSON.Encode.string),
           ("country", country->JSON.Encode.string),
         ]->Utils.getJsonFromArrayOfJson,
@@ -67,10 +67,17 @@ let cardPaymentBody = (
   ]
 }
 
-let bancontactBody = () => [
-  ("payment_method", "bank_redirect"->JSON.Encode.string),
-  ("payment_method_type", "bancontact_card"->JSON.Encode.string),
-]
+let bancontactBody = () => {
+  let bancontactField =
+    [("bancontact_card", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
+  let bankRedirectField = [("bank_redirect", bancontactField)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "bank_redirect"->JSON.Encode.string),
+    ("payment_method_type", "bancontact_card"->JSON.Encode.string),
+    ("payment_method_data", bankRedirectField),
+  ]
+}
 
 let boletoBody = (~socialSecurityNumber) => [
   ("payment_method", "voucher"->JSON.Encode.string),
@@ -143,6 +150,21 @@ let clickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
   ]
 }
 
+let visaClickToPayBody = (~encryptedPayload, ~email) => {
+  let encPayload =
+    [
+      ("encrypted_payload", encryptedPayload->JSON.Encode.string),
+      ("provider", "visa"->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("ctp_service_details", encPayload),
+    ("payment_method_type", "debit"->JSON.Encode.string),
+    ("email", email->JSON.Encode.string),
+  ]
+}
+
 let savedPaymentMethodBody = (
   ~paymentToken,
   ~customerId,
@@ -207,7 +229,7 @@ let achBankDebitBody = (
   ~country,
   ~city,
   ~postalCode,
-  ~state,
+  ~stateCode,
 ) =>
   bankDebitsCommonBody("ach")->Array.concat([
     (
@@ -219,7 +241,7 @@ let achBankDebitBody = (
           ~line1,
           ~line2,
           ~city,
-          ~state,
+          ~stateCode,
           ~postalCode,
           ~country,
         ),
@@ -249,7 +271,7 @@ let bacsBankDebitBody = (
   ~line2,
   ~city,
   ~zip,
-  ~state,
+  ~stateCode,
   ~country,
   ~bankAccountHolderName,
 ) =>
@@ -263,7 +285,7 @@ let bacsBankDebitBody = (
           ~line1,
           ~line2,
           ~city,
-          ~state,
+          ~stateCode,
           ~postalCode=zip,
           ~country,
         ),
@@ -293,7 +315,7 @@ let becsBankDebitBody = (
   ~country,
   ~city,
   ~postalCode,
-  ~state,
+  ~stateCode,
 ) =>
   bankDebitsCommonBody("becs")->Array.concat([
     (
@@ -305,7 +327,7 @@ let becsBankDebitBody = (
           ~line1,
           ~line2,
           ~city,
-          ~state,
+          ~stateCode,
           ~postalCode,
           ~country,
         ),
@@ -371,7 +393,7 @@ let klarnaSDKbody = (~token, ~connectors) => [
 
 let klarnaCheckoutBody = (~connectors) => {
   open Utils
-  let checkoutBody=[]->Utils.getJsonFromArrayOfJson
+  let checkoutBody = []->Utils.getJsonFromArrayOfJson
   let payLaterBody = [("klarna_checkout", checkoutBody)]->getJsonFromArrayOfJson
   let paymentMethodData = [("pay_later", payLaterBody)]->getJsonFromArrayOfJson
   [
@@ -569,11 +591,14 @@ let applePayThirdPartySdkBody = (~connectors) => [
   ),
 ]
 
-let cryptoBody = [
+let cryptoBody = () => [
   ("payment_method", "crypto"->JSON.Encode.string),
   ("payment_method_type", "crypto_currency"->JSON.Encode.string),
   ("payment_experience", "redirect_to_url"->JSON.Encode.string),
-  ("payment_method_data", []->Utils.getJsonFromArrayOfJson),
+  (
+    "payment_method_data",
+    [("crypto", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
+  ),
 ]
 
 let afterpayRedirectionBody = () => [
@@ -901,10 +926,30 @@ let pazeBody = (~completeResponse) => {
   ]
 }
 
+let eftBody = () => {
+  open Utils
+  let eftProviderName = [("provider", "ozow"->JSON.Encode.string)]->getJsonFromArrayOfJson
+
+  let eftBankRedirectData = [("eft", eftProviderName)]->getJsonFromArrayOfJson
+
+  let paymentMethodData = [("bank_redirect", eftBankRedirectData)]->getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "bank_redirect"->JSON.Encode.string),
+    ("payment_method_type", "eft"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
-  | "bank_transfer" => paymentMethodType->String.replace("_transfer", "")
+  | "bank_transfer" =>
+    if paymentMethodType != "sepa_bank_transfer" && paymentMethodType != "instant_bank_transfer" {
+      paymentMethodType->String.replace("_transfer", "")
+    } else {
+      paymentMethodType
+    }
   | _ => paymentMethodType
   }
 
@@ -927,7 +972,7 @@ let appendRedirectPaymentMethods = [
 ]
 
 let appendBankeDebitMethods = ["sepa"]
-let appendBankTransferMethods = ["sepa", "ach", "bacs", "multibanco"]
+let appendBankTransferMethods = ["ach", "bacs", "multibanco"]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {
@@ -997,7 +1042,7 @@ let getPaymentBody = (
 ) =>
   switch paymentMethodType {
   | "afterpay_clearpay" => afterpayRedirectionBody()
-  | "crypto_currency" => cryptoBody
+  | "crypto_currency" => cryptoBody()
   | "sofort" => sofortBody(~country, ~name=fullName, ~email)
   | "ideal" => iDealBody(~name=fullName, ~bankName=bank)
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
@@ -1037,5 +1082,6 @@ let getPaymentBody = (
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)
+  | "eft" => eftBody()
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }

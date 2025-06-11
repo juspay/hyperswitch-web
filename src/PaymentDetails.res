@@ -48,9 +48,14 @@ let details = [
     displayName: "ACH Transfer",
   },
   {
-    type_: "sepa_transfer",
+    type_: "sepa_bank_transfer",
     icon: Some(icon("ach", ~size=19)),
     displayName: "Sepa Transfer",
+  },
+  {
+    type_: "instant_bank_transfer",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Instant Transfer",
   },
   {
     type_: "bacs_transfer",
@@ -101,5 +106,10 @@ let details = [
     type_: "boleto",
     icon: Some(icon("boleto", ~size=21)),
     displayName: "Boleto",
+  },
+  {
+    type_: "eft",
+    icon: Some(icon("eft", ~size=19)),
+    displayName: "eft",
   },
 ]

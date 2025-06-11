@@ -38,6 +38,7 @@ describe("Card CVC Checks", () => {
 
 
     it('user can enter 4 digit cvc in card form', () => {
+        cy.wait(2000)
         getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click()
         getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(amexTestCard)
         getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type("0444")
@@ -47,6 +48,19 @@ describe("Card CVC Checks", () => {
 
 
     })
+
+    it('removing cvc and expiry on card brand change or after clearing card number', () => {
+        cy.wait(2000)
+        getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click()
+        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(amexTestCard)
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type("0444")
+        getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type("2412")
+        getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).clear()
+        getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).should('have.value', '');
+        getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).should('have.value', '');
+
+    })
+    
     it('user can enter 3 digit cvc on saved payment methods screen', () => {
         getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type('123').then(() => {
             getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).should('have.value', '123');
@@ -55,6 +69,7 @@ describe("Card CVC Checks", () => {
     })
 
     it('user can enter 3 digit cvc in card form', () => {
+        cy.wait(2000)
         getIframeBody().find(`[data-testid=${testIds.addNewCardIcon}]`).click()
         getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(visaTestCard)
         getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type("0444")
@@ -66,7 +81,7 @@ describe("Card CVC Checks", () => {
     it('user can enter 4 digit cvc on saved payment methods screen', () => {
         cy.wait(2000)
         getIframeBody()
-            .contains('div', '4 digit cvc test card')
+            .contains('div', '4 digit cvc t..')
             .should('exist')
             .trigger('click')
         cy.wait(1000)

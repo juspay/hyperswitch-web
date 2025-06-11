@@ -9,7 +9,6 @@ let make = (
   ~sessionObj: option<SessionsType.token>,
   ~thirdPartySessionObj: option<JSON.t>,
   ~walletOptions,
-  ~paymentType: CardThemeType.mode,
 ) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
@@ -233,9 +232,7 @@ let make = (
       />
     </RenderIf>
   } else {
-    <DynamicFields
-      paymentType paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody
-    />
+    <DynamicFields paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody />
   }
 }
 

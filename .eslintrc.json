@@ -11,6 +11,7 @@
   "plugins": ["react-hooks", "eslint-plugin-promise"],
   "rules": {
     "react-hooks/rules-of-hooks": "error",
-    "promise/catch-or-return": "error"
+    "promise/catch-or-return": "error",
+    "no-console": ["error", { "allow": ["warn", "error", "info"] }]
   }
 }

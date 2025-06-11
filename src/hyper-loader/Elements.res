@@ -14,16 +14,18 @@ let make = (
   options,
   setIframeRef,
   ~clientSecret,
+  ~paymentId,
   ~sdkSessionId,
   ~publishableKey,
-  ~logger: option<HyperLogger.loggerMake>,
+  ~profileId,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~analyticsMetadata,
   ~customBackendUrl,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
   try {
     let iframeRef = []
-    let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
+    let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
     let savedPaymentElement = Dict.make()
     let localOptions = options->JSON.Decode.object->Option.getOr(Dict.make())
 
@@ -71,7 +73,8 @@ let make = (
               id="orca-payment-element-iframeRef-${localSelectorString}"
               name="orca-payment-element-iframeRef-${localSelectorString}"
               title="Orca Payment Element Frame"
-              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"              allow="*"
+              src="${ApiEndpoint.sdkDomainUrl}/index.html?fullscreenType=${componentType}&publishableKey=${publishableKey}&clientSecret=${clientSecret}&paymentId=${paymentId}&profileId=${profileId}&sessionId=${sdkSessionId}&endpoint=${endpoint}&merchantHostname=${merchantHostname}&customPodUri=${customPodUri}"
+              allow="*"
               name="orca-payment"
               style="outline: none;"
             ></iframe>
@@ -85,11 +88,13 @@ let make = (
       elem
     }
 
-    let locale = localOptions->getJsonStringFromDict("locale", "")
+    let locale = localOptions->getJsonStringFromDict("locale", "auto")
     let loader = localOptions->getJsonStringFromDict("loader", "")
     let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
-    let clientSecretReMatch = Re.test(`.+_secret_[A-Za-z0-9]+`->Re.fromString, clientSecret)
-
+    let clientSecretReMatch = switch GlobalVars.sdkVersion {
+    | V1 => Some(Re.test(".+_secret_[A-Za-z0-9]+"->Re.fromString, clientSecret))
+    | V2 => None
+    }
     let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
     let isTaxCalculationEnabled = ref(false)
 
@@ -211,6 +216,31 @@ let make = (
       })
     }
 
+    let fetchPaymentsListV2 = (mountedIframeRef, componentType) => {
+      Promise.make((resolve, _) => {
+        let handlePaymentMethodsLoaded = (event: Types.event) => {
+          let json = event.data->anyTypeToJson
+          let dict = json->getDictFromJson
+          let isPaymentMethodsData = dict->getString("data", "") === "payment_methods_list_v2"
+          if isPaymentMethodsData {
+            resolve()
+            //Replicate V1 Behavior
+            // TODO - Checking Apple Pay and Google Pay
+            // TODO - Attach Event Listeners for Paze and Plaid
+            let msg = [("paymentsListV2", json)]->Dict.fromArray
+            mountedIframeRef->Window.iframePostMessage(msg)
+          }
+        }
+        let msg = [("sendPaymentMethodsListV2Response", true->JSON.Encode.bool)]->Dict.fromArray
+        addSmartEventListener(
+          "message",
+          handlePaymentMethodsLoaded,
+          `onPaymentMethodsLoaded-${componentType}`,
+        )
+        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+      })
+    }
+
     let fetchCustomerPaymentMethods = (
       mountedIframeRef,
       disableSavedPaymentMethods,
@@ -246,13 +276,15 @@ let make = (
       })
     }
 
-    !clientSecretReMatch
-      ? manageErrorWarning(
-          INVALID_FORMAT,
-          ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
-          ~logger,
-        )
-      : ()
+    switch clientSecretReMatch {
+    | Some(false) =>
+      manageErrorWarning(
+        INVALID_FORMAT,
+        ~dynamicStr="clientSecret is expected to be in format ******_secret_*****",
+        ~logger,
+      )
+    | _ => ()
+    }
 
     let setElementIframeRef = ref => {
       iframeRef->Array.push(ref)->ignore
@@ -348,6 +380,8 @@ let make = (
           ("paymentOptions", widgetOptions),
           ("iframeId", selectorString->JSON.Encode.string),
           ("publishableKey", publishableKey->JSON.Encode.string),
+          ("profileId", profileId->JSON.Encode.string),
+          ("paymentId", paymentId->JSON.Encode.string),
           ("endpoint", endpoint->JSON.Encode.string),
           ("sdkSessionId", sdkSessionId->JSON.Encode.string),
           ("blockConfirm", blockConfirm->JSON.Encode.bool),
@@ -389,7 +423,7 @@ let make = (
                     ]
                     messageTopWindow(msg)
                   } else {
-                    Console.log("CANNOT MAKE PAYMENT USING APPLE PAY")
+                    Console.error("CANNOT MAKE PAYMENT USING APPLE PAY")
                     logger.setLogInfo(
                       ~value="CANNOT MAKE PAYMENT USING APPLE PAY",
                       ~eventName=APPLE_PAY_FLOW,
@@ -400,7 +434,7 @@ let make = (
                 } catch {
                 | exn => {
                     let exnString = exn->anyTypeToJson->JSON.stringify
-                    Console.log("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
+                    Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
                     logger.setLogInfo(
                       ~value=exnString,
                       ~eventName=APPLE_PAY_FLOW,
@@ -430,8 +464,7 @@ let make = (
               } catch {
               | exn => {
                   let exnString = exn->anyTypeToJson->JSON.stringify
-
-                  Console.log("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
+                  Console.error("CANNOT MAKE PAYMENT USING APPLE PAY: " ++ exnString)
                   logger.setLogInfo(
                     ~value=exnString,
                     ~eventName=APPLE_PAY_FLOW,
@@ -540,7 +573,12 @@ let make = (
                     })
                     ->ignore
                   }
-                | _ => ()
+                | _ =>
+                  logger.setLogInfo(
+                    ~value="Connector Not Found",
+                    ~eventName=GOOGLE_PAY_FLOW,
+                    ~paymentMethod="GOOGLE_PAY",
+                  )
                 }
               } catch {
               | err => {
@@ -669,7 +707,12 @@ let make = (
                       event.source->Window.sendPostMessage(msg)
                     }
                   }
-                | _ => ()
+                | _ =>
+                  logger.setLogInfo(
+                    ~value="Connector Not Found",
+                    ~eventName=APPLE_PAY_FLOW,
+                    ~paymentMethod="APPLE_PAY",
+                  )
                 }
               }
             } else {
@@ -1174,7 +1217,7 @@ let make = (
                         "onGooglePayMessages",
                       )
                     } catch {
-                    | _ => Console.log("Error loading Gpay")
+                    | _ => Console.error("Error loading Gpay")
                     }
                   } else if wallets.googlePay === Never {
                     logger.setLogInfo(
@@ -1299,7 +1342,7 @@ let make = (
                         ~paymentMethod="SAMSUNG_PAY",
                         ~logType=ERROR,
                       )
-                      Console.log("Error loading Samsung Pay")
+                      Console.error("Error loading Samsung Pay")
                     }
                   } else if wallets.samsungPay === Never {
                     logger.setLogInfo(
@@ -1332,23 +1375,26 @@ let make = (
         }
         preMountLoaderMountedPromise
         ->then(_ => {
-          let paymentMethodsPromise = fetchPaymentsList(mountedIframeRef, componentType)
           let disableSavedPaymentMethods =
             newOptions
             ->getDictFromJson
             ->getBool("displaySavedPaymentMethods", true) &&
               !(spmComponents->Array.includes(componentType))->not
-          let customerPaymentMethodsPromise = fetchCustomerPaymentMethods(
-            mountedIframeRef,
-            disableSavedPaymentMethods,
-            componentType,
-          )
           let sessionTokensPromise = fetchSessionTokens(mountedIframeRef)
-          Promise.all([
-            paymentMethodsPromise,
-            customerPaymentMethodsPromise,
-            sessionTokensPromise,
-          ])->then(_ => {
+          let promises = switch GlobalVars.sdkVersion {
+          | V1 => [
+              fetchPaymentsList(mountedIframeRef, componentType),
+              fetchCustomerPaymentMethods(
+                mountedIframeRef,
+                disableSavedPaymentMethods,
+                componentType,
+              ),
+              sessionTokensPromise,
+            ]
+          | V2 => [fetchPaymentsListV2(mountedIframeRef, componentType), sessionTokensPromise]
+          }
+
+          Promise.all(promises)->then(_ => {
             let msg = [("cleanUpPreMountLoaderIframe", true->JSON.Encode.bool)]->Dict.fromArray
             preMountLoaderIframeDiv->Window.iframePostMessage(msg)
             resolve()

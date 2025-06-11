@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: `卡號`,
   inValidCardErrorText: `卡号无效。`,
+  inValidExpiryErrorText: `卡片有效期无效。`,
   inCompleteCVCErrorText: `您的卡片安全码不完整。`,
   inCompleteExpiryErrorText: `您的卡片到期日期不完整。`,
   enterValidCardNumberErrorText: `请输入有效的卡号。`,
@@ -15,7 +16,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: `街道地址`,
   line1EmptyText: `地址行 1 不能为空`,
   line2Label: `地址行 2`,
-  line2Placeholder: `公寓、单元号等（可选）`,
+  line2Placeholder: `公寓、单元号等`,
   line2EmptyText: `地址行 2 不能为空`,
   cityLabel: `城市`,
   cityEmptyText: `城市不能为空`,
@@ -60,6 +61,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`此交易将收取${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}的附加费用`})}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`费用 :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`此交易将收取最高${Utils.nbsp}`)}
@@ -149,6 +154,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pix 密钥不能为空`,
   pixKeyPlaceholder: `输入 Pix 密钥`,
   pixKeyLabel: `Pix 密钥`,
+  destinationBankAccountIdEmptyText: `目标银行账户ID不能为空`,
+  sourceBankAccountIdEmptyText: `源银行账户ID不能为空`,
   invalidCardHolderNameError: `持卡人姓名不能包含数字`,
   invalidNickNameError: `昵称不能包含超过2个数字`,
+  expiry: `到期`,
 }

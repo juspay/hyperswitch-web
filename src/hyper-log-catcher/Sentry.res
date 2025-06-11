@@ -1,6 +1,9 @@
 type integration
 type scope
 type instrumentation
+type transport
+type stackParser
+type client
 
 type tag = {mutable tag: string}
 type hint = {originalException: tag}
@@ -14,42 +17,55 @@ type sentryInitArg = {
   tracePropagationTargets: array<string>,
   replaysSessionSampleRate: float,
   replaysOnErrorSampleRate: float,
-  beforeSend: (event, hint) => option<event>,
 }
 
 external exnToJsExn: exn => option<Exn.t> = "%identity"
 
-@module("react")
-external useEffect: (unit => option<unit => unit>) => unit = "useEffect"
-type sentry
-@val @scope("window")
-external isSentryPresent: Nullable.t<sentry> = "Sentry"
-
 @module("@sentry/react")
 external initSentry: sentryInitArg => unit = "init"
 
-type newBrowserTracingArg = {routingInstrumentation: instrumentation}
-@new @module("@sentry/react")
-external newBrowserTracing: newBrowserTracingArg => integration = "BrowserTracing"
+@module("@sentry/react")
+external newBrowserTracing: unit => integration = "browserTracingIntegration"
+
+type reactRouterV6BrowserTracingIntegrationArg = {useEffect: (unit => option<unit => unit>) => unit}
 
 @module("@sentry/react")
-external reactRouterV6Instrumentation: ((unit => option<unit => unit>) => unit) => instrumentation =
-  "reactRouterV6Instrumentation"
+external reactRouterV6BrowserTracingIntegration: reactRouterV6BrowserTracingIntegrationArg => integration =
+  "reactRouterV6BrowserTracingIntegration"
 
-@new @module("@sentry/react")
-external newSentryReplay: unit => integration = "Replay"
+@module("@sentry/react")
+external newSentryReplay: unit => integration = "replayIntegration"
 
-@val @scope("Sentry")
-external initSentryJs: sentryInitArg => unit = "init"
-
-@val @scope("Sentry")
+@module("@sentry/react")
 external capture: Exn.t => unit = "captureException"
 
-@new
-external newSentryReplayJs: unit => integration = "Sentry.Replay"
+@module("@sentry/browser")
+external makeFetchTransport: transport = "makeFetchTransport"
 
-@new
-external newBrowserTracingJs: unit => integration = "Sentry.BrowserTracing"
+@module("@sentry/browser")
+external defaultStackParser: stackParser = "defaultStackParser"
+
+@module("@sentry/browser")
+external getCurrentScope: unit => scope = "getCurrentScope"
+
+type browserClientArg = {
+  dsn: string,
+  environment: string,
+  transport: transport,
+  stackParser: stackParser,
+  integrations: array<integration>,
+  tracesSampleRate: float,
+  tracePropagationTargets: array<string>,
+  replaysSessionSampleRate: float,
+  replaysOnErrorSampleRate: float,
+}
+
+// External for BrowserClient class
+@module("@sentry/browser") @new
+external createBrowserClient: browserClientArg => client = "BrowserClient"
+
+@send external init: (client, unit) => unit = "init"
+@send external setClient: (scope, client) => unit = "setClient"
 
 module ErrorBoundary = {
   type fallbackArg = {
@@ -67,12 +83,14 @@ module ErrorBoundary = {
 
 let initiateSentry = (~dsn) => {
   try {
-    initSentry({
+    let browserClient = createBrowserClient({
       dsn,
+      environment: GlobalVars.isProd ? "production" : "development",
+      transport: makeFetchTransport,
+      stackParser: defaultStackParser,
       integrations: [
-        newBrowserTracing({
-          routingInstrumentation: reactRouterV6Instrumentation(useEffect),
-        }),
+        newBrowserTracing(),
+        reactRouterV6BrowserTracingIntegration({useEffect: React.useEffect0}),
         newSentryReplay(),
       ],
       tracesSampleRate: 0.1,
@@ -84,44 +102,41 @@ let initiateSentry = (~dsn) => {
       ],
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
-      beforeSend: (event, hint) => {
-        hint.originalException.tag == "HyperTag" ? Some(event) : None
-      },
     })
+    getCurrentScope()->setClient(browserClient)
+    browserClient->init()
   } catch {
-  | err => Console.log(err)
+  | err => Console.error(err)
   }
 }
 
 let initiateSentryJs = (~dsn) => {
   try {
-    initSentryJs({
+    let browserClient = createBrowserClient({
       dsn,
-      integrations: [newBrowserTracingJs(), newSentryReplayJs()],
+      environment: GlobalVars.isProd ? "production" : "development",
+      transport: makeFetchTransport,
+      stackParser: defaultStackParser,
+      integrations: [newBrowserTracing(), newSentryReplay()],
       tracesSampleRate: 1.0,
       tracePropagationTargets: ["localhost"],
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
-      beforeSend: (event, hint) => {
-        hint.originalException.tag == "HyperTag" ? Some(event) : None
-      },
     })
+    getCurrentScope()->setClient(browserClient)
+    browserClient->init()
   } catch {
-  | err => Console.log(err)
+  | err => Console.error(err)
   }
 }
 
 let captureException = (err: exn) => {
-  switch isSentryPresent->Nullable.toOption {
-  | Some(_val) =>
-    let error = err->exnToJsExn
-    switch error {
-    | Some(e) =>
-      let z = e->toJson
-      z.tag = "HyperTag"
-      capture(toExn(z))
-    | None => ()
-    }
+  let error = err->exnToJsExn
+  switch error {
+  | Some(e) =>
+    let z = e->toJson
+    z.tag = "HyperTag"
+    capture(toExn(z))
   | None => ()
   }
 }

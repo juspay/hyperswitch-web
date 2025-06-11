@@ -10,19 +10,49 @@ let make = (
     (width - 40) / 110
   }
   let {showLoader} = Recoil.useRecoilValueFromAtom(configAtom)
-  let sessions = Recoil.useRecoilValueFromAtom(sessions)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-  switch (sessions, paymentMethodList) {
-  | (_, Loading) =>
+  let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+  let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let setFullName = Recoil.useLoggedSetRecoilState(userFullName, "fullName", loggerState)
+  let setNickName = Recoil.useSetRecoilState(userCardNickName)
+  let (_, startTransition) = React.useTransition()
+
+  React.useEffect(() => {
+    startTransition(() => {
+      setFullName(prev => Utils.validateName("", prev, localeString))
+      setNickName(prev => Utils.setNickNameState("", prev, localeString))
+    })
+    None
+  }, [])
+
+  let isLoading = switch (
+    GlobalVars.sdkVersion,
+    paymentType,
+    paymentMethodList,
+    paymentManagementList,
+    paymentMethodsListV2,
+  ) {
+  | (V1, Payment, Loading, _, _)
+  | (V2, PaymentMethodsManagement, _, LoadingV2, _)
+  | (V2, Payment, _, _, LoadingV2) => true
+  | _ => false
+  }
+
+  let isWalletElement = paymentType->Utils.checkIsWalletElement
+
+  if isLoading {
     <RenderIf condition=showLoader>
-      {paymentType->Utils.getIsWalletElementPaymentType
-        ? <WalletShimmer />
-        : <PaymentElementShimmer />}
+      {isWalletElement ? <WalletShimmer /> : <PaymentElementShimmer />}
     </RenderIf>
-  | _ =>
-    paymentType->Utils.getIsWalletElementPaymentType
-      ? <WalletElement paymentType />
-      : <PaymentElement cardProps expiryProps cvcProps paymentType />
+  } else if isWalletElement {
+    <WalletElement paymentType />
+  } else {
+    switch GlobalVars.sdkVersion {
+    | V2 => <PaymentElementV2 cardProps expiryProps cvcProps paymentType />
+    | V1 => <PaymentElement cardProps expiryProps cvcProps paymentType />
+    }
   }
 }
 

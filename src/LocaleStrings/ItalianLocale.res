@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `lrt`,
   cardNumberLabel: `Numero della carta`,
   inValidCardErrorText: `Il numero della carta non è valido.`,
+  inValidExpiryErrorText: `La data di scadenza non è valida.`,
   inCompleteCVCErrorText: `Il codice di sicurezza della carta è incompleto.`,
   inCompleteExpiryErrorText: `La data di scadenza della carta è incompleta.`,
   enterValidCardNumberErrorText: `Inserisci un numero di carta valido.`,
@@ -14,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Indirizzo (riga 1)`,
   line1Placeholder: `Indirizzo`,
   line2Label: `Indirizzo (riga 2)`,
-  line2Placeholder: `Appartamento, interno, ecc. (facoltativo)`,
+  line2Placeholder: `Appartamento, interno, ecc.`,
   cityLabel: `Città`,
   postalCodeLabel: `Codice di avviamento postale`,
   stateLabel: `Stato`,
@@ -63,6 +64,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`Un importo aggiuntivo di${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}verrà applicato per questa transazione`})}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Commissione :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Un importo di supplemento fino a${Utils.nbsp}`)}
@@ -151,6 +156,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `La chiave Pix non può essere vuota`,
   pixKeyPlaceholder: `Inserisci la chiave Pix`,
   pixKeyLabel: `Chiave Pix`,
+  destinationBankAccountIdEmptyText: `L'ID del conto bancario di destinazione non può essere vuoto`,
+  sourceBankAccountIdEmptyText: `L'ID del conto bancario di origine non può essere vuoto`,
   invalidCardHolderNameError: `Il nome del titolare della carta non può contenere cifre`,
   invalidNickNameError: `Il soprannome non può contenere più di 2 cifre`,
+  expiry: `scadenza`,
 }

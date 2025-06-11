@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: "ltr",
   cardNumberLabel: `カード番号`,
   inValidCardErrorText: `カード番号が無効です`,
+  inValidExpiryErrorText: `カードの有効期限が無効です。`,
   inCompleteCVCErrorText: `カードのセキュリティ コードが不完全です`,
   inCompleteExpiryErrorText: `カードの有効期限が不完全です`,
   enterValidCardNumberErrorText: `有効なカード番号を入力してください。`,
@@ -28,7 +29,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   stateLabel: `州`,
   stateEmptyText: `状態を空にすることはできません`,
   cityLabel: `街`,
-  line2Placeholder: `アパート、ユニット番号など（任意）`,
+  line2Placeholder: `アパート、ユニット番号など`,
   line2EmptyText: `住所行 2 を空にすることはできません`,
   countryLabel: `国`,
   cityEmptyText: `都市を空にすることはできません`,
@@ -60,6 +61,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`この取引には${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string(`${Utils.nbsp}の追加料金が適用されます`)}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`手数料 :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`この取引には${Utils.nbsp}`)}
@@ -150,6 +155,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pixキーは空にできません`,
   pixKeyPlaceholder: `Pixキーを入力`,
   pixKeyLabel: `Pixキー`,
+  destinationBankAccountIdEmptyText: `送金先銀行口座IDを入力してください`,
+  sourceBankAccountIdEmptyText: `送金元銀行口座IDを入力してください`,
   invalidCardHolderNameError: `カード所有者の名前に数字を含めることはできません`,
   invalidNickNameError: `ニックネームには2つ以上の数字を含めることはできません`,
+  expiry: `有効期限`,
 }

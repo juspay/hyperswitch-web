@@ -19,7 +19,7 @@ if (
     let script = Window.createElement("script")
     script->Window.elementSrc(GlobalVars.sentryScriptUrl)
     script->Window.elementOnerror(err => {
-      Console.log2("ERROR DURING LOADING Sentry on HyperLoader", err)
+      Console.error2("ERROR DURING LOADING Sentry on HyperLoader", err)
     })
     script->Window.elementOnload(() => {
       Sentry.initiateSentryJs(~dsn=GlobalVars.sentryDSN)
@@ -28,7 +28,7 @@ if (
       Window.body->Window.appendChild(script)
     })
   } catch {
-  | e => Console.log2("Sentry load exited", e)
+  | e => Console.error2("Sentry load exited", e)
   }
 }
 
@@ -134,18 +134,26 @@ let handleHyperApplePayMounted = (event: Types.event) => {
 
 addSmartEventListener("message", handleHyperApplePayMounted, "onHyperApplePayMount")
 
-let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
+let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
   try {
+    let publishableKey = switch keys->JSON.Classify.classify {
+    | String(val) => val
+    | Object(json) => json->getString("publishableKey", "")
+    | _ => ""
+    }
+    let profileId = switch keys->JSON.Classify.classify {
+    | String(_) => ""
+    | Object(json) => json->getString("profileId", "")
+    | _ => ""
+    }
     let isPreloadEnabled =
       options
-      ->Option.getOr(JSON.Encode.null)
-      ->getDictFromJson
+      ->getOptionsDict
       ->getBool("isPreloadEnabled", true)
     // INFO: kept for backwards compatibility - remove once removed from hyperswitch backend and deployed
     let shouldUseTopRedirection =
       options
-      ->Option.getOr(JSON.Encode.null)
-      ->getDictFromJson
+      ->getOptionsDict
       ->getBool("shouldUseTopRedirection", false)
     let overridenDefaultRedirectionFlags: RecoilAtomTypes.redirectionFlags = {
       shouldUseTopRedirection,
@@ -153,14 +161,24 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
     }
     let redirectionFlags =
       options
-      ->Option.getOr(JSON.Encode.null)
-      ->getDictFromJson
+      ->getOptionsDict
       ->getJsonObjectFromDict("redirectionFlags")
       ->RecoilAtomTypes.decodeRedirectionFlags(overridenDefaultRedirectionFlags)
+
+    /*
+     * Forces re-initialization of HyperLoader.
+     * If HyperLoader is already loaded and needs to reload with an updated publishable key,
+     * this flag ensures the script is remounted and re-executed.
+     */
+
+    let isForceInit =
+      options
+      ->getOptionsDict
+      ->getBool("isForceInit", false)
+
     let analyticsMetadata =
       options
-      ->Option.getOr(JSON.Encode.null)
-      ->getDictFromJson
+      ->getOptionsDict
       ->getDictFromObj("analytics")
       ->getJsonObjectFromDict("metadata")
     if isPreloadEnabled {
@@ -180,13 +198,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       let handleOnReady = (event: Types.event) => {
         let json = event.data->anyTypeToJson
         let dict = json->getDictFromJson
-        if (
-          dict
-          ->Dict.get("ready")
-          ->Option.getOr(JSON.Encode.bool(false))
-          ->JSON.Decode.bool
-          ->Option.getOr(false)
-        ) {
+        if dict->getBool("ready", false) {
           resolve(Date.now())
         }
       }
@@ -226,7 +238,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
       Exn.raiseError("Insecure domain: " ++ Window.hrefWithoutSearch)
     }
     switch Window.getHyper->Nullable.toOption {
-    | Some(hyperMethod) => {
+    | Some(hyperMethod) if !isForceInit => {
         logger.setLogInfo(
           ~value="orca-sdk initiated",
           ~eventName=APP_REINITIATED,
@@ -234,6 +246,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         )
         hyperMethod
       }
+    | Some(_)
     | None =>
       let loaderTimestamp = Date.now()->Float.toString
 
@@ -247,9 +260,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           if (
             publishableKey == "" ||
               !(
-                publishableKey->String.startsWith("pk_dev_") ||
-                publishableKey->String.startsWith("pk_snd_") ||
-                publishableKey->String.startsWith("pk_prd_")
+                ["pk_dev_", "pk_snd_", "pk_prd_"]->Array.some(prefix =>
+                  publishableKey->String.startsWith(prefix)
+                )
               )
           ) {
             manageErrorWarning(INVALID_PK, ~logger)
@@ -262,7 +275,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
             let script = Window.createElement("script")
             script->Window.elementSrc(scriptURL)
             script->Window.elementOnerror(err => {
-              Console.log2("ERROR DURING LOADING APPLE PAY", err)
+              Console.error2("ERROR DURING LOADING APPLE PAY", err)
             })
             Window.body->Window.appendChild(script)
           }
@@ -309,7 +322,10 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
 
       let iframeRef = ref([])
       let clientSecret = ref("")
+      let paymentId = ref("")
       let ephemeralKey = ref("")
+      let pmSessionId = ref("")
+      let pmClientSecret = ref("")
       let setIframeRef = ref => {
         iframeRef.contents->Array.push(ref)->ignore
       }
@@ -320,7 +336,7 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           "api-key": publishableKey,
         }
         let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
-        let paymentIntentID = clientSecret->getPaymentId
+        let paymentIntentID = clientSecret->Utils.getPaymentId
         let retrievePaymentUrl = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
         open Promise
         logApi(
@@ -339,8 +355,8 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           },
         )
         ->then(resp => {
-          let statusCode = resp->Fetch.Response.status->Int.toString
-          if statusCode->String.charAt(0) !== "2" {
+          let statusCode = resp->Fetch.Response.status
+          if !(resp->Fetch.Response.ok) {
             resp
             ->Fetch.Response.json
             ->then(data => {
@@ -501,13 +517,11 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
 
-        let clientSecretId =
-          elementsOptionsDict
-          ->Option.flatMap(x => x->Dict.get("clientSecret"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
+        let clientSecretId = elementsOptionsDict->Utils.getStringFromDict("clientSecret", "")
+        let paymentIdVal = elementsOptionsDict->Utils.getStringFromDict("paymentId", "")
         let elementsOptions = elementsOptionsDict->Option.mapOr(elementsOptions, JSON.Encode.object)
         clientSecret := clientSecretId
+        paymentId := paymentIdVal
         Promise.make((resolve, _) => {
           logger.setClientSecret(clientSecretId)
           resolve(JSON.Encode.null)
@@ -524,7 +538,9 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
+          ~profileId,
           ~clientSecret={clientSecretId},
+          ~paymentId={paymentIdVal},
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options
@@ -535,26 +551,22 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         )
       }
 
-      let paymentMethodsManagementElements = paymentMethodsManagementElementsOptions => {
+      let paymentMethodsManagementElements = pmManagementOptions => {
         open Promise
-        let paymentMethodsManagementElementsOptionsDict =
-          paymentMethodsManagementElementsOptions->JSON.Decode.object
-        paymentMethodsManagementElementsOptionsDict
+        let pmManagementOptionsDict = pmManagementOptions->JSON.Decode.object
+        pmManagementOptionsDict
         ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
         ->ignore
 
-        let ephemeralKeyId =
-          paymentMethodsManagementElementsOptionsDict
-          ->Option.flatMap(x => x->Dict.get("ephemeralKey"))
-          ->Option.flatMap(JSON.Decode.string)
-          ->Option.getOr("")
+        let ephemeralKeyId = pmManagementOptionsDict->getStringFromDict("ephemeralKey", "")
+        let pmClientSecretId = pmManagementOptionsDict->getStringFromDict("pmClientSecret", "")
+        let pmSessionIdVal = pmManagementOptionsDict->getStringFromDict("pmSessionId", "")
 
-        let paymentMethodsManagementElementsOptions =
-          paymentMethodsManagementElementsOptionsDict->Option.mapOr(
-            paymentMethodsManagementElementsOptions,
-            JSON.Encode.object,
-          )
+        let pmManagementOptions =
+          pmManagementOptionsDict->Option.mapOr(pmManagementOptions, JSON.Encode.object)
         ephemeralKey := ephemeralKeyId
+        pmSessionId := pmSessionIdVal
+        pmClientSecret := pmClientSecretId
         Promise.make((resolve, _) => {
           logger.setEphemeralKey(ephemeralKeyId)
           resolve(JSON.Encode.null)
@@ -570,11 +582,14 @@ let make = (publishableKey, options: option<JSON.t>, analyticsInfo: option<JSON.
         ->ignore
 
         PaymentMethodsManagementElements.make(
-          paymentMethodsManagementElementsOptions,
+          pmManagementOptions,
           setIframeRef,
           ~sdkSessionId=sessionID,
           ~publishableKey,
+          ~profileId,
           ~ephemeralKey={ephemeralKeyId},
+          ~pmClientSecret={pmClientSecretId},
+          ~pmSessionId={pmSessionIdVal},
           ~logger=Some(logger),
           ~analyticsMetadata,
           ~customBackendUrl=options

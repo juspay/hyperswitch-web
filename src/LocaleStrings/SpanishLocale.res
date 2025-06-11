@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: `Número de tarjeta`,
   inValidCardErrorText: `El número de la tarjeta no es válido.`,
+  inValidExpiryErrorText: `La fecha de caducidad no es válida.`,
   inCompleteCVCErrorText: `El código de seguridad de su tarjeta está incompleto.`,
   inCompleteExpiryErrorText: `La fecha de vencimiento de su tarjeta está incompleta.`,
   enterValidCardNumberErrorText: `Por favor ingrese un número de tarjeta válido.`,
@@ -14,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Línea de dirección 1`,
   line1Placeholder: `Dirección postal`,
   line2Label: `Línea de dirección 2`,
-  line2Placeholder: `Piso, número de departamento, etc. (opcional)`,
+  line2Placeholder: `Piso, número de departamento, etc.`,
   cityLabel: `Ciudad`,
   postalCodeLabel: `Código postal`,
   stateLabel: `Provincia/estado`,
@@ -63,6 +64,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`un monto de recargo de${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}se aplicará para esta transacción`})}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Tarifa :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Un monto de recargo de hasta${Utils.nbsp}`)}
@@ -150,6 +155,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `La clave Pix no puede estar vacía`,
   pixKeyPlaceholder: `Introduce la clave Pix`,
   pixKeyLabel: `Clave Pix`,
+  destinationBankAccountIdEmptyText: `El ID de la cuenta bancaria de destino no puede estar vacío`,
+  sourceBankAccountIdEmptyText: `El ID de la cuenta bancaria de origen no puede estar vacío`,
   invalidCardHolderNameError: `El nombre del titular de la tarjeta no puede contener dígitos`,
   invalidNickNameError: `El apodo no puede contener más de 2 dígitos`,
+  expiry: `expiración`,
 }

@@ -7,6 +7,7 @@ type localeStrings = {
   localeDirection: string,
   inValidCardErrorText: string,
   inCompleteCVCErrorText: string,
+  inValidExpiryErrorText: string,
   inCompleteExpiryErrorText: string,
   enterValidCardNumberErrorText: string,
   pastExpiryErrorText: string,
@@ -57,6 +58,7 @@ type localeStrings = {
   selectPaymentMethodText: string,
   card: string,
   surchargeMsgAmount: (string, string) => React.element,
+  shortSurchargeMessage: (string, string) => React.element,
   surchargeMsgAmountForCard: (string, string) => React.element,
   surchargeMsgAmountForOneClickWallets: string,
   billingNameLabel: string,
@@ -141,8 +143,11 @@ type localeStrings = {
   pixKeyEmptyText: string,
   pixKeyLabel: string,
   pixKeyPlaceholder: string,
+  destinationBankAccountIdEmptyText: string,
+  sourceBankAccountIdEmptyText: string,
   invalidCardHolderNameError: string,
   invalidNickNameError: string,
+  expiry: string,
 }
 
 type constantStrings = {

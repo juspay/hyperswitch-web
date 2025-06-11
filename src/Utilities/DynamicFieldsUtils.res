@@ -19,6 +19,8 @@ let dynamicFieldsEnabledPaymentMethods = [
   "mifinity",
   "upi_collect",
   "sepa",
+  "sepa_bank_transfer",
+  "instant_bank_transfer",
   "affirm",
   "walley",
   "ach",
@@ -41,7 +43,8 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
   }
 }
 
-let countryNames = Utils.getCountryNames(Country.country)
+let countryList = CountryStateDataRefs.countryDataRef.contents
+let countryNames = Utils.getCountryNames(countryList)
 
 let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
   BillingName,
@@ -102,8 +105,6 @@ let addBillingAddressIfUseBillingAddress = (
   }
 }
 
-let clickToPayFields: array<PaymentMethodsRecord.paymentMethodsFields> = [Email, PhoneNumber]
-
 let isClickToPayFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
   switch fieldType {
   | Email
@@ -125,11 +126,26 @@ let removeClickToPayFieldsIfSaveDetailsWithClickToPay = (
   }
 }
 
-let addClickToPayFieldsIfSaveDetailsWithClickToPay = (fieldsArr, isSaveDetailsWithClickToPay) => {
-  if isSaveDetailsWithClickToPay {
-    [...fieldsArr, ...clickToPayFields]
-  } else {
-    fieldsArr
+let addClickToPayFieldsIfSaveDetailsWithClickToPay = (
+  fieldsArr,
+  isSaveDetailsWithClickToPay,
+  clickToPayConfig,
+) => {
+  open ClickToPayHelpers
+  open PaymentMethodsRecord
+  let isRecognizedClickToPayPayment =
+    clickToPayConfig.clickToPayCards->Option.getOr([])->Array.length != 0
+  let defaultCtpFields = [...fieldsArr, Email, PhoneNumber]
+  switch (
+    isSaveDetailsWithClickToPay,
+    clickToPayConfig.clickToPayProvider,
+    isRecognizedClickToPayPayment,
+  ) {
+  | (true, MASTERCARD, _) => defaultCtpFields
+  | (true, VISA, _)
+  | (false, VISA, true) =>
+    [...defaultCtpFields, FullName]
+  | _ => fieldsArr
   }
 }
 
@@ -184,12 +200,16 @@ let useRequiredFieldsEmptyAndValid = (
   let country = Recoil.useRecoilValueFromAtom(userCountry)
   let selectedBank = Recoil.useRecoilValueFromAtom(userBank)
   let currency = Recoil.useRecoilValueFromAtom(userCurrency)
-  let setAreRequiredFieldsValid = Recoil.useSetRecoilState(areRequiredFieldsValid)
+  let (areRequiredFieldsValid, setAreRequiredFieldsValid) = Recoil.useRecoilState(
+    areRequiredFieldsValid,
+  )
   let setAreRequiredFieldsEmpty = Recoil.useSetRecoilState(areRequiredFieldsEmpty)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
+  let destinationBankAccountId = Recoil.useRecoilValueFromAtom(destinationBankAccountId)
+  let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
@@ -237,6 +257,8 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value !== ""
+      | DestinationBankAccountId => destinationBankAccountId.value !== ""
+      | SourceBankAccountId => sourceBankAccountId.value !== ""
       | _ => true
       }
     })
@@ -288,6 +310,8 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value === ""
+      | DestinationBankAccountId => destinationBankAccountId.value === ""
+      | SourceBankAccountId => sourceBankAccountId.value === ""
       | _ => false
       }
     })
@@ -320,8 +344,21 @@ let useRequiredFieldsEmptyAndValid = (
     cardExpiry,
     cvcNumber,
     bankAccountNumber,
+    destinationBankAccountId.value,
+    sourceBankAccountId.value,
     cryptoCurrencyNetworks,
   ))
+
+  React.useEffect(() => {
+    switch (isCardValid, isExpiryValid, isCVCValid) {
+    | (Some(cardValid), Some(expiryValid), Some(cvcValid)) =>
+      CardUtils.emitIsFormReadyForSubmission(
+        cardValid && expiryValid && cvcValid && areRequiredFieldsValid,
+      )
+    | _ => ()
+    }
+    None
+  }, (isCardValid, isExpiryValid, isCVCValid, areRequiredFieldsValid))
 }
 
 let useSetInitialRequiredFields = (
@@ -369,6 +406,16 @@ let useSetInitialRequiredFields = (
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
     userBankAccountNumber,
     "bankAccountNumber",
+    logger,
+  )
+  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useLoggedRecoilState(
+    destinationBankAccountId,
+    "destinationBankAccountId",
+    logger,
+  )
+  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useLoggedRecoilState(
+    sourceBankAccountId,
+    "sourceBankAccountId",
     logger,
   )
 
@@ -447,7 +494,7 @@ let useSetInitialRequiredFields = (
           setFields(setPostalCode, postalCode, requiredField, false)
           if value !== "" && country === "" {
             let countryCode =
-              Country.getCountry(paymentMethodType)
+              Country.getCountry(paymentMethodType, countryList)
               ->Array.filter(item => item.isoAlpha2 === value)
               ->Array.get(0)
               ->Option.getOr(Country.defaultTimeZone)
@@ -469,7 +516,7 @@ let useSetInitialRequiredFields = (
       | AddressCountry(_) =>
         if value !== "" {
           let defaultCountry =
-            Country.getCountry(paymentMethodType)
+            Country.getCountry(paymentMethodType, countryList)
             ->Array.filter(item => item.isoAlpha2 === value)
             ->Array.get(0)
             ->Option.getOr(Country.defaultTimeZone)
@@ -498,6 +545,10 @@ let useSetInitialRequiredFields = (
       | IBAN
       | BankAccountNumber =>
         setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
+      | DestinationBankAccountId =>
+        setFields(setDestinationBankAccountId, destinationBankAccountId, requiredField, false)
+      | SourceBankAccountId =>
+        setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
       | LanguagePreference(_)
       | SpecialField(_)
       | InfoElement
@@ -554,6 +605,10 @@ let useRequiredFieldsBody = (
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
+  let destinationBankAccountId = Recoil.useRecoilValueFromAtom(destinationBankAccountId)
+  let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
+  let countryCode = Utils.getCountryCode(country).isoAlpha2
+  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
   let getFieldValueFromFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
     switch fieldType {
@@ -562,7 +617,7 @@ let useRequiredFieldsBody = (
     | AddressLine2 => line2.value
     | AddressCity => city.value
     | AddressPincode => postalCode.value
-    | AddressState => state.value
+    | AddressState => stateCode
     | BlikCode => blikCode.value->Utils.removeHyphen
     | PhoneNumber => phone.value
     | PhoneCountryCode => phone.countryCode->Option.getOr("")
@@ -582,7 +637,7 @@ let useRequiredFieldsBody = (
       ).hyperSwitch
     | AddressCountry(_) => {
         let countryCode =
-          Country.getCountry(paymentMethodType)
+          Country.getCountry(paymentMethodType, countryList)
           ->Array.filter(item => item.countryName === country)
           ->Array.get(0)
           ->Option.getOr(Country.defaultTimeZone)
@@ -610,6 +665,8 @@ let useRequiredFieldsBody = (
     | IBAN
     | BankAccountNumber =>
       bankAccountNumber.value
+    | DestinationBankAccountId => destinationBankAccountId.value
+    | SourceBankAccountId => sourceBankAccountId.value
     | StateAndCity
     | CountryAndPincode(_)
     | SpecialField(_)
@@ -711,6 +768,8 @@ let useRequiredFieldsBody = (
     cryptoCurrencyNetworks,
     dateOfBirth,
     bankAccountNumber,
+    destinationBankAccountId,
+    sourceBankAccountId,
   ))
 }
 
@@ -731,6 +790,8 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | Currency(_)
   | VpaId
   | IBAN
+  | DestinationBankAccountId
+  | SourceBankAccountId
   | BankAccountNumber => true
   | _ => false
   }
@@ -829,12 +890,13 @@ let updateDynamicFields = (
   arr: array<PaymentMethodsRecord.paymentMethodsFields>,
   billingAddress,
   isSaveDetailsWithClickToPay,
+  clickToPayConfig,
 ) => {
   arr
   ->Utils.removeDuplicate
   ->Array.filter(item => item !== None)
   ->addBillingAddressIfUseBillingAddress(billingAddress)
-  ->addClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay)
+  ->addClickToPayFieldsIfSaveDetailsWithClickToPay(isSaveDetailsWithClickToPay, clickToPayConfig)
   ->combineStateAndCity
   ->combineCountryAndPostal
   ->combineCardExpiryMonthAndYear
@@ -1016,7 +1078,6 @@ let getApplePayRequiredFields = (
   ~billingContact: ApplePayTypes.billingContact,
   ~shippingContact: ApplePayTypes.shippingContact,
   ~requiredFields=defaultRequiredFieldsArray,
-  ~statesList,
 ) => {
   requiredFields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
@@ -1047,12 +1108,7 @@ let getApplePayRequiredFields = (
     | AddressLine1 => billingContact.addressLines->getAddressLine(0)
     | AddressLine2 => billingContact.addressLines->getAddressLine(1)
     | AddressCity => billingContact.locality
-    | AddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        billingContact.administrativeArea,
-        billingCountryCode,
-      )
+    | AddressState => billingContact.administrativeArea
     | Country
     | AddressCountry(_) => billingCountryCode
     | AddressPincode => billingContact.postalCode
@@ -1062,12 +1118,8 @@ let getApplePayRequiredFields = (
     | ShippingAddressLine1 => shippingContact.addressLines->getAddressLine(0)
     | ShippingAddressLine2 => shippingContact.addressLines->getAddressLine(1)
     | ShippingAddressCity => shippingContact.locality
-    | ShippingAddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        shippingContact.administrativeArea,
-        shippingCountryCode,
-      )
+    | ShippingAddressState => shippingContact.administrativeArea
+
     | ShippingAddressCountry(_) => shippingCountryCode
     | ShippingAddressPincode => shippingContact.postalCode
     | _ => ""
@@ -1085,7 +1137,6 @@ let getGooglePayRequiredFields = (
   ~billingContact: GooglePayType.billingContact,
   ~shippingContact: GooglePayType.billingContact,
   ~requiredFields=defaultRequiredFieldsArray,
-  ~statesList,
   ~email,
 ) => {
   requiredFields->Array.reduce(Dict.make(), (acc, item) => {
@@ -1097,12 +1148,7 @@ let getGooglePayRequiredFields = (
     | AddressLine1 => billingContact.address1
     | AddressLine2 => billingContact.address2
     | AddressCity => billingContact.locality
-    | AddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        billingContact.administrativeArea,
-        billingContact.countryCode,
-      )
+    | AddressState => billingContact.administrativeArea
     | Country
     | AddressCountry(_) =>
       billingContact.countryCode
@@ -1114,12 +1160,7 @@ let getGooglePayRequiredFields = (
     | ShippingAddressLine1 => shippingContact.address1
     | ShippingAddressLine2 => shippingContact.address2
     | ShippingAddressCity => shippingContact.locality
-    | ShippingAddressState =>
-      Utils.getStateNameFromStateCodeAndCountry(
-        statesList,
-        shippingContact.administrativeArea,
-        shippingContact.countryCode,
-      )
+    | ShippingAddressState => shippingContact.administrativeArea
     | ShippingAddressCountry(_) => shippingContact.countryCode
     | ShippingAddressPincode => shippingContact.postalCode
     | _ => ""
@@ -1136,7 +1177,6 @@ let getGooglePayRequiredFields = (
 let getPaypalRequiredFields = (
   ~details: PaypalSDKTypes.details,
   ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
-  ~statesList,
 ) => {
   paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
@@ -1151,8 +1191,7 @@ let getPaypalRequiredFields = (
     | ShippingAddressCity => details.shippingAddress.city
     | ShippingAddressState => {
         let administrativeArea = details.shippingAddress.state->Option.getOr("")
-        let countryCode = details.shippingAddress.countryCode->Option.getOr("")
-        Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)->Some
+        administrativeArea->Some
       }
     | ShippingAddressCountry(_) => details.shippingAddress.countryCode
     | ShippingAddressPincode => details.shippingAddress.postalCode
@@ -1172,7 +1211,6 @@ let getPaypalRequiredFields = (
 let getKlarnaRequiredFields = (
   ~shippingContact: KlarnaSDKTypes.collected_shipping_address,
   ~paymentMethodTypes: PaymentMethodsRecord.paymentMethodTypes,
-  ~statesList,
 ) => {
   paymentMethodTypes.required_fields->Array.reduce(Dict.make(), (acc, item) => {
     let requiredFieldsArr = item.required_field->String.split(".")
@@ -1188,8 +1226,7 @@ let getKlarnaRequiredFields = (
     | ShippingAddressCity => shippingContact.city
     | ShippingAddressState => {
         let administrativeArea = shippingContact.region
-        let countryCode = shippingContact.country
-        Utils.getStateNameFromStateCodeAndCountry(statesList, administrativeArea, countryCode)
+        administrativeArea
       }
     | ShippingAddressCountry(_) => shippingContact.country
     | ShippingAddressPincode => shippingContact.postal_code
