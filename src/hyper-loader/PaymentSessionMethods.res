@@ -19,7 +19,7 @@ let getCustomerSavedPaymentMethods = (
     ~publishableKey,
     ~endpoint,
     ~customPodUri,
-    ~optLogger=Some(logger),
+    ~logger,
     ~isPaymentSession=true,
   )
   ->then(customerDetails => {
