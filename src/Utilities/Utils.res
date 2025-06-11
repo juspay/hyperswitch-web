@@ -335,6 +335,19 @@ let postFailedSubmitResponse = (~errortype, ~message) => {
     ("error", errorDict->JSON.Encode.object),
   ])
 }
+
+let postFailedSubmitResponseTop = (~errortype, ~message) => {
+  let errorDict =
+    [
+      ("type", errortype->JSON.Encode.string),
+      ("message", message->JSON.Encode.string),
+    ]->Dict.fromArray
+  messageTopWindow([
+    ("submitSuccessful", false->JSON.Encode.bool),
+    ("error", errorDict->JSON.Encode.object),
+  ])
+}
+
 let postSubmitResponse = (~jsonData, ~url) => {
   messageParentWindow([
     ("submitSuccessful", true->JSON.Encode.bool),
