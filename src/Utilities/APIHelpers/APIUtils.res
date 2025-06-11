@@ -89,6 +89,7 @@
 //   `${baseUrl}/${path}`
 // }
 
+
 type apiCall = FetchPaymentMethodList | FetchCustomerPaymentMethodList | FetchSessions
 
 let generateApiUrl = (
