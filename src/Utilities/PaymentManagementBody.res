@@ -48,3 +48,20 @@ let saveCardBody = (
     ),
   ]
 }
+
+let vgsCardBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {
+  let cardBody = [
+    ("card_number", cardNumber->JSON.Encode.string),
+    ("card_exp_month", month->JSON.Encode.string),
+    ("card_exp_year", year->JSON.Encode.string),
+    ("card_cvc", cvcNumber->JSON.Encode.string),
+  ]
+
+  let paymentMethodData = [("card", cardBody->Utils.getJsonFromArrayOfJson)]
+
+  [
+    ("payment_method_type", "vgs_card"->JSON.Encode.string),
+    ("payment_method_subtype", "vgs_card"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData->Utils.getJsonFromArrayOfJson),
+  ]
+}

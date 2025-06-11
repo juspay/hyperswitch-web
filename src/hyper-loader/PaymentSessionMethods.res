@@ -19,7 +19,7 @@ let getCustomerSavedPaymentMethods = (
     ~publishableKey,
     ~endpoint,
     ~customPodUri,
-    ~optLogger=Some(logger),
+    ~logger,
     ~isPaymentSession=true,
   )
   ->then(customerDetails => {
@@ -309,7 +309,7 @@ let getCustomerSavedPaymentMethods = (
       PaymentHelpers.fetchSessions(
         ~clientSecret,
         ~publishableKey,
-        ~optLogger=Some(logger),
+        ~logger,
         ~customPodUri,
         ~endpoint,
       )
