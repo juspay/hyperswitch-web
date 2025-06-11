@@ -1339,23 +1339,18 @@ let usePaymentIntent = (optLogger, paymentType) => {
   }
 }
 
-let fetchSessions = (
+let fetchSessions = async (
   ~clientSecret,
   ~publishableKey,
   ~wallets=[],
   ~isDelayedSessionToken=false,
-  ~optLogger,
+  ~logger,
   ~customPodUri,
   ~endpoint,
   ~isPaymentSession=false,
   ~merchantHostname=Window.getRootHostName(),
 ) => {
-  open Promise
-  let headers = [
-    ("Content-Type", "application/json"),
-    ("api-key", publishableKey),
-    ("X-Merchant-Domain", merchantHostname),
-  ]
+  let headers = [("X-Merchant-Domain", merchantHostname)]->Dict.fromArray
   let paymentIntentID = clientSecret->Utils.getPaymentId
   let body =
     [
@@ -1364,69 +1359,25 @@ let fetchSessions = (
       ("wallets", wallets->JSON.Encode.array),
       ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
     ]->getJsonFromArrayOfJson
-  let uri = `${endpoint}/payments/session_tokens`
-  logApi(
-    ~optLogger,
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=SESSIONS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(FetchSessions, ~customBackendBaseUrl=endpoint)
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await Utils.fetchApiWithLogging(
+    uri,
+    ~eventName=SESSIONS_CALL,
+    ~logger,
+    ~bodyStr=body->JSON.stringify,
+    ~headers,
+    ~method=#POST,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
     ~isPaymentSession,
   )
-  fetchApi(
-    uri,
-    ~method=#POST,
-    ~bodyStr=body->JSON.stringify,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-  )
-  ->then(resp => {
-    let statusCode = resp->Fetch.Response.status
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=SESSIONS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-          ~isPaymentSession,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger,
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=SESSIONS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-        ~isPaymentSession,
-      )
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger,
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=SESSIONS_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
-      ~isPaymentSession,
-    )
-    JSON.Encode.null->resolve
-  })
 }
 
 let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~uri, ~body) => {

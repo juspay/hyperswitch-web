@@ -72,7 +72,7 @@ let getMessageHandlerV1Elements = (
   let sessionTokensPromise = PaymentHelpers.fetchSessions(
     ~clientSecret,
     ~publishableKey,
-    ~optLogger=Some(logger),
+    ~logger,
     ~customPodUri,
     ~endpoint,
     ~merchantHostname,
