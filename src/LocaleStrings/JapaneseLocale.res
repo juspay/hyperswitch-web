@@ -155,6 +155,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pixキーは空にできません`,
   pixKeyPlaceholder: `Pixキーを入力`,
   pixKeyLabel: `Pixキー`,
+  destinationBankAccountIdEmptyText: `送金先銀行口座IDを入力してください`,
+  sourceBankAccountIdEmptyText: `送金元銀行口座IDを入力してください`,
   invalidCardHolderNameError: `カード所有者の名前に数字を含めることはできません`,
   invalidNickNameError: `ニックネームには2つ以上の数字を含めることはできません`,
   expiry: `有効期限`,
