@@ -89,7 +89,7 @@
 //   `${baseUrl}/${path}`
 // }
 
-type apiCall = FetchPaymentMethodList | FetchCustomerPaymentMethodList
+type apiCall = FetchPaymentMethodList | FetchCustomerPaymentMethodList | FetchSessions
 
 let generateApiUrl = (
   apiCallType: apiCall,
@@ -108,6 +108,7 @@ let generateApiUrl = (
   let path = switch apiCallType {
   | FetchPaymentMethodList => `account/payment_methods?client_secret=${clientSecretVal}`
   | FetchCustomerPaymentMethodList => `customers/payment_methods?client_secret=${clientSecretVal}`
+  | FetchSessions => `payments/session_tokens`
   }
 
   `${baseUrl}/${path}`
