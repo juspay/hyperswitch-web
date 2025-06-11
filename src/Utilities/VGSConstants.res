@@ -1,5 +1,7 @@
 open VGSTypes
 
+let vgsScriptURL = `https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js`
+
 let cardNumberOptions = {
   \"type": "card-number",
   name: "card_number",
@@ -23,5 +25,3 @@ let cardCvcOptions = {
   validations: ["required", "validCardSecurityCode"],
   showCardIcon: true,
 }
-
-let vgsScriptURL = `https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js`

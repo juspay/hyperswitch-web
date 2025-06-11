@@ -34,7 +34,7 @@ let getErrorStr = (fieldname, ~empty=false, localeString: LocaleStringTypes.loca
 }
 
 let submitUserError = message => {
-  Utils.postFailedSubmitResponse(~errortype="validation_error", ~message)
+  postFailedSubmitResponse(~errortype="validation_error", ~message)
 }
 
 let vgsErrorHandler = (

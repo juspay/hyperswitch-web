@@ -57,12 +57,11 @@ let vgsCardBody = (~cardNumber, ~month, ~year, ~cvcNumber) => {
     ("card_cvc", cvcNumber->JSON.Encode.string),
   ]
 
+  let paymentMethodData = [("card", cardBody->Utils.getJsonFromArrayOfJson)]
+
   [
-    ("payment_method_type", "proxy_card"->JSON.Encode.string),
-    ("payment_method_subtype", "proxy_card"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [("card", cardBody->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
-    ),
+    ("payment_method_type", "vgs_card"->JSON.Encode.string),
+    ("payment_method_subtype", "vgs_card"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData->Utils.getJsonFromArrayOfJson),
   ]
 }
