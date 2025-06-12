@@ -341,7 +341,7 @@ let make = (
       | "samsungPay"
       | "paymentMethodsManagement"
       | "payment" => ()
-      | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger)
+      | str => Console.warn(`Unknown Key: ${str} type in create`)
       }
 
       let mountPostMessage = (

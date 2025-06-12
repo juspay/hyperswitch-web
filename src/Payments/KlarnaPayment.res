@@ -10,10 +10,7 @@ let make = () => {
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
-  let showAddressDetails = getShowAddressDetails(
-    ~billingDetails=fields.billingDetails,
-    ~logger=loggerState,
-  )
+  let showAddressDetails = getShowAddressDetails(~billingDetails=fields.billingDetails)
   let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
   let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
 

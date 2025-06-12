@@ -28,11 +28,6 @@ let loadPaypalSDK = (
 ) => {
   open Promise
 
-  loggerState.setLogInfo(
-    ~value="Paypal SDK Button Clicked",
-    ~eventName=PAYPAL_SDK_FLOW,
-    ~paymentMethod="PAYPAL",
-  )
   let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
   paypalWrapper.innerHTML = ""
   setIsCompleted(_ => true)
@@ -219,6 +214,13 @@ let loadPaypalSDK = (
     onError: _err => {
       handleCloseLoader()
     },
+    onClick: () => {
+      loggerState.setLogInfo(
+        ~value="Paypal SDK Button Clicked",
+        ~eventName=PAYPAL_SDK_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
+    },
   }).render("#paypal-button")
   areOneClickWalletsRendered(prev => {
     ...prev,
@@ -246,11 +248,6 @@ let loadBraintreePaypalSdk = (
   ~isManualRetryEnabled,
 ) => {
   open Promise
-  loggerState.setLogInfo(
-    ~value="Paypal Braintree SDK Button Clicked",
-    ~eventName=PAYPAL_SDK_FLOW,
-    ~paymentMethod="PAYPAL",
-  )
   makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
   ->then(result => {
     let result = result->JSON.Decode.bool->Option.getOr(false)
@@ -325,6 +322,13 @@ let loadBraintreePaypalSdk = (
                   },
                   onError: _err => {
                     handleCloseLoader()
+                  },
+                  onClick: () => {
+                    loggerState.setLogInfo(
+                      ~value="Paypal Braintree SDK Button Clicked",
+                      ~eventName=PAYPAL_SDK_FLOW,
+                      ~paymentMethod="PAYPAL",
+                    )
                   },
                 }).render("#paypal-button")
                 areOneClickWalletsRendered(

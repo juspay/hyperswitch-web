@@ -25,15 +25,6 @@ let errorWarning = [
     ),
   ),
   (
-    UNKNOWN_KEY,
-    Warning,
-    Dynamic(
-      str => {
-        `Unknown Key: ${str} is a unknown/invalid key, please provide a correct key. This might cause issue in the future`
-      },
-    ),
-  ),
-  (
     TYPE_BOOL_ERROR,
     Error,
     Dynamic(
@@ -66,15 +57,6 @@ let errorWarning = [
     Dynamic(
       str => {
         `Value out of range: '${str}'. Please provide a value inside the range`
-      },
-    ),
-  ),
-  (
-    UNKNOWN_VALUE,
-    Warning,
-    Dynamic(
-      str => {
-        `Unknown Value: ${str}. Please provide a correct value. This might cause issue in the future`
       },
     ),
   ),
@@ -137,35 +119,26 @@ let manageErrorWarning = (
   }
 }
 
-let unknownKeysWarning = (validKeysArr, dict: Dict.t<JSON.t>, dictType: string, ~logger) => {
+let unknownKeysWarning = (validKeysArr, dict: Dict.t<JSON.t>, dictType: string) => {
   dict
   ->Dict.toArray
   ->Array.forEach(((key, _)) => {
     if validKeysArr->Array.includes(key) {
       ()
     } else {
-      manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`'${key}' key in ${dictType}`, ~logger)
+      Console.warn(`Unknown Key: '${key}' key in ${dictType}`)
     }
   })
 }
 
-let unknownPropValueWarning = (
-  inValidValue,
-  validValueArr,
-  dictType,
-  ~logger: HyperLoggerTypes.loggerMake,
-) => {
+let unknownPropValueWarning = (inValidValue, validValueArr, dictType) => {
   let expectedValues =
     validValueArr
     ->Array.map(item => {
       `'${item}'`
     })
     ->Array.joinWith(", ")
-  manageErrorWarning(
-    UNKNOWN_VALUE,
-    ~dynamicStr=`'${inValidValue}' value in ${dictType}, Expected ${expectedValues}`,
-    ~logger,
-  )
+  Console.warn(`Unknown Value: '${inValidValue}' value in ${dictType}, Expected ${expectedValues}`)
 }
 let valueOutRangeWarning = (num: int, dictType, range, ~logger: HyperLoggerTypes.loggerMake) => {
   manageErrorWarning(

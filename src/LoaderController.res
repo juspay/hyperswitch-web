@@ -91,10 +91,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | Card =>
       setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
     | PaymentMethodCollectElement => {
-        let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(
-          optionsDict,
-          logger,
-        )
+        let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
       }
     | GooglePayElement

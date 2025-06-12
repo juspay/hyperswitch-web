@@ -80,6 +80,7 @@ type buttons = {
   onCancel: data => unit,
   onError?: err => unit,
   onShippingAddressChange?: JSON.t => promise<JSON.t>,
+  onClick?: unit => unit,
 }
 let getLabel = (var: PaymentType.paypalStyleType) => {
   switch var {

@@ -377,12 +377,12 @@ let defaultOptions = {
   showShortSurchargeMessage: false,
 }
 
-let getLayout = (str, logger) => {
+let getLayout = str => {
   switch str {
   | "tabs" => Tabs
   | "accordion" => Accordion
   | str => {
-      str->unknownPropValueWarning(["tabs", "accordion"], "options.layout", ~logger)
+      str->unknownPropValueWarning(["tabs", "accordion"], "options.layout")
       Tabs
     }
   }
@@ -398,7 +398,6 @@ let getAddress = (dict, str, logger) => {
       ["line1", "line2", "city", "state", "country", "postal_code"],
       json,
       "options.defaultValues.billingDetails.address",
-      ~logger,
     )
     let country = getWarningString(json, "country", "", ~logger)
     if country != "" {
@@ -406,7 +405,6 @@ let getAddress = (dict, str, logger) => {
         country,
         countryNames,
         "options.defaultValues.billingDetails.address.country",
-        ~logger,
       )
     }
     {
@@ -429,7 +427,6 @@ let getBillingDetails = (dict, str, logger) => {
       ["name", "email", "phone", "address"],
       json,
       "options.defaultValues.billingDetails",
-      ~logger,
     )
     {
       name: getWarningString(json, "name", "", ~logger),
@@ -446,7 +443,7 @@ let getDefaultValues = (dict, str, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    unknownKeysWarning(["billingDetails"], json, "options.defaultValues", ~logger)
+    unknownKeysWarning(["billingDetails"], json, "options.defaultValues")
     let defaultValues: defaultValues = {
       billingDetails: getBillingDetails(json, "billingDetails", logger),
     }
@@ -459,19 +456,19 @@ let getBusiness = (dict, str, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    unknownKeysWarning(["name"], json, "options.business", ~logger)
+    unknownKeysWarning(["name"], json, "options.business")
     {
       name: getWarningString(json, "name", "", ~logger),
     }
   })
   ->Option.getOr(defaultBusiness)
 }
-let getShowType = (str, key, logger) => {
+let getShowType = (str, key) => {
   switch str {
   | "auto" => Auto
   | "never" => Never
   | str => {
-      str->unknownPropValueWarning(["auto", "never"], key, ~logger)
+      str->unknownPropValueWarning(["auto", "never"], key)
       Auto
     }
   }
@@ -542,7 +539,7 @@ let getPayPalType = str => {
     Paypal(Paypal)
   }
 }
-let getTypeArray = (str, logger) => {
+let getTypeArray = str => {
   let goodVals = [
     "checkout",
     "pay",
@@ -563,44 +560,42 @@ let getTypeArray = (str, logger) => {
     "contribute",
   ]
   if !Array.includes(goodVals, str) {
-    str->unknownPropValueWarning(goodVals, "options.wallets.style.type", ~logger)
+    str->unknownPropValueWarning(goodVals, "options.wallets.style.type")
   }
   (str->getApplePayType, str->getGooglePayType, str->getPayPalType, str->getSamsungPayType)
 }
 
-let getShowDetails = (~billingDetails, ~logger) => {
+let getShowDetails = (~billingDetails) => {
   switch billingDetails {
   | JSONObject(obj) => obj
   | JSONString(str) =>
-    str->getShowType("fields.billingDetails", logger) == Never
-      ? defaultNeverBilling
-      : defaultBilling
+    str->getShowType("fields.billingDetails") == Never ? defaultNeverBilling : defaultBilling
   }
 }
-let getShowAddressDetails = (~billingDetails, ~logger) => {
+let getShowAddressDetails = (~billingDetails) => {
   switch billingDetails {
   | JSONObject(obj) =>
     switch obj.address {
     | JSONString(str) =>
-      str->getShowType("fields.billingDetails.address", logger) == Never
+      str->getShowType("fields.billingDetails.address") == Never
         ? defaultNeverShowAddress
         : defaultshowAddress
     | JSONObject(obj) => obj
     }
   | JSONString(str) =>
-    str->getShowType("fields.billingDetails", logger) == Never
+    str->getShowType("fields.billingDetails") == Never
       ? defaultNeverShowAddress
       : defaultshowAddress
   }
 }
 
-let getShowTerms: (string, string, 'a) => showTerms = (str, key, logger) => {
+let getShowTerms: (string, string) => showTerms = (str, key) => {
   switch str {
   | "auto" => Auto
   | "always" => Always
   | "never" => Never
   | str => {
-      str->unknownPropValueWarning(["auto", "always", "never"], key, ~logger)
+      str->unknownPropValueWarning(["auto", "always", "never"], key)
       Auto
     }
   }
@@ -614,27 +609,21 @@ let getShowAddress = (dict, str, logger) => {
     let x: showAddress = {
       line1: getWarningString(json, "line1", "auto", ~logger)->getShowType(
         "options.fields.address.line1",
-        logger,
       ),
       line2: getWarningString(json, "line2", "auto", ~logger)->getShowType(
         "options.fields.address.line2",
-        logger,
       ),
       city: getWarningString(json, "city", "auto", ~logger)->getShowType(
         "options.fields.address.city",
-        logger,
       ),
       state: getWarningString(json, "state", "auto", ~logger)->getShowType(
         "options.fields.address.state",
-        logger,
       ),
       country: getWarningString(json, "country", "auto", ~logger)->getShowType(
         "options.fields.address.country",
-        logger,
       ),
       postal_code: getWarningString(json, "postal_code", "auto", ~logger)->getShowType(
         "options.fields.name.postal_code",
-        logger,
       ),
     }
     x
@@ -646,18 +635,9 @@ let getDeatils = (val, logger) => {
   | String(str) => JSONString(str)
   | Object(json) =>
     JSONObject({
-      name: getWarningString(json, "name", "auto", ~logger)->getShowType(
-        "options.fields.name",
-        logger,
-      ),
-      email: getWarningString(json, "email", "auto", ~logger)->getShowType(
-        "options.fields.email",
-        logger,
-      ),
-      phone: getWarningString(json, "phone", "auto", ~logger)->getShowType(
-        "options.fields.phone",
-        logger,
-      ),
+      name: getWarningString(json, "name", "auto", ~logger)->getShowType("options.fields.name"),
+      email: getWarningString(json, "email", "auto", ~logger)->getShowType("options.fields.email"),
+      phone: getWarningString(json, "phone", "auto", ~logger)->getShowType("options.fields.phone"),
       address: JSONObject(getShowAddress(json, "address", logger)),
     })
   | _ => JSONString("")
@@ -683,7 +663,7 @@ let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
 }
 let getLayoutValues = (val, logger) => {
   switch val->JSON.Classify.classify {
-  | String(str) => StringLayout(str->getLayout(logger))
+  | String(str) => StringLayout(str->getLayout)
   | Object(json) =>
     ObjectLayout({
       let layoutType = getWarningString(json, "type", "tabs", ~logger)
@@ -691,14 +671,13 @@ let getLayoutValues = (val, logger) => {
         ["defaultCollapsed", "radios", "spacedAccordionItems", "type", "maxAccordionItems"],
         json,
         "options.layout",
-        ~logger,
       )
       {
         defaultCollapsed: getBoolWithWarning(json, "defaultCollapsed", false, ~logger),
         radios: getBoolWithWarning(json, "radios", false, ~logger),
         spacedAccordionItems: getBoolWithWarning(json, "spacedAccordionItems", false, ~logger),
         maxAccordionItems: getNumberWithWarning(json, "maxAccordionItems", 4, ~logger),
-        \"type": layoutType->getLayout(logger),
+        \"type": layoutType->getLayout,
       }
     })
   | _ => StringLayout(Tabs)
@@ -713,36 +692,24 @@ let getTerms = (dict, str, logger) => {
       ["auBecsDebit", "bancontact", "card", "ideal", "sepaDebit", "sofort", "usBankAccount"],
       json,
       "options.terms",
-      ~logger,
     )
     {
       auBecsDebit: getWarningString(json, "auBecsDebit", "auto", ~logger)->getShowTerms(
         "options.terms.auBecsDebit",
-        logger,
       ),
       bancontact: getWarningString(json, "bancontact", "auto", ~logger)->getShowTerms(
         "options.terms.bancontact",
-        logger,
       ),
-      card: getWarningString(json, "card", "auto", ~logger)->getShowTerms(
-        "options.terms.card",
-        logger,
-      ),
-      ideal: getWarningString(json, "ideal", "auto", ~logger)->getShowTerms(
-        "options.terms.ideal",
-        logger,
-      ),
+      card: getWarningString(json, "card", "auto", ~logger)->getShowTerms("options.terms.card"),
+      ideal: getWarningString(json, "ideal", "auto", ~logger)->getShowTerms("options.terms.ideal"),
       sepaDebit: getWarningString(json, "sepaDebit", "auto", ~logger)->getShowTerms(
         "options.terms.sepaDebit",
-        logger,
       ),
       sofort: getWarningString(json, "sofort", "auto", ~logger)->getShowTerms(
         "options.terms.sofort",
-        logger,
       ),
       usBankAccount: getWarningString(json, "usBankAccount", "auto", ~logger)->getShowTerms(
         "options.terms.usBankAccount",
-        logger,
       ),
     }
   })
@@ -814,13 +781,13 @@ let getKlarnaHeight: (int, 'a) => heightType = (val, logger) => {
   }
 }
 
-let getTheme = (str, logger) => {
+let getTheme = str => {
   switch str {
   | "outline" => Outline
   | "light" => Light
   | "dark" => Dark
   | _ =>
-    str->unknownPropValueWarning(["outline", "light", "dark"], "options.styles.theme", ~logger)
+    str->unknownPropValueWarning(["outline", "light", "dark"], "options.styles.theme")
     Dark
   }
 }
@@ -838,10 +805,10 @@ let getStyle = (dict, str, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    unknownKeysWarning(["type", "theme", "height"], json, "options.wallets.style", ~logger)
+    unknownKeysWarning(["type", "theme", "height"], json, "options.wallets.style")
     let style = {
-      type_: getWarningString(json, "type", "", ~logger)->getTypeArray(logger),
-      theme: getWarningString(json, "theme", "", ~logger)->getTheme(logger),
+      type_: getWarningString(json, "type", "", ~logger)->getTypeArray,
+      theme: getWarningString(json, "theme", "", ~logger)->getTheme,
       height: getNumberWithWarning(json, "height", 48, ~logger)->getHeightArray(logger),
       buttonRadius: getNumberWithWarning(json, "buttonRadius", 2, ~logger),
     }
@@ -858,34 +825,25 @@ let getWallets = (dict, str, logger) => {
       ["applePay", "googlePay", "style", "walletReturnUrl", "payPal", "klarna", "samsungPay"],
       json,
       "options.wallets",
-      ~logger,
     )
 
     {
       walletReturnUrl: getRequiredString(json, "walletReturnUrl", "", ~logger),
       applePay: getWarningString(json, "applePay", "auto", ~logger)->getShowType(
         "options.wallets.applePay",
-        logger,
       ),
       googlePay: getWarningString(json, "googlePay", "auto", ~logger)->getShowType(
         "options.wallets.googlePay",
-        logger,
       ),
       payPal: getWarningString(json, "payPal", "auto", ~logger)->getShowType(
         "options.wallets.payPal",
-        logger,
       ),
       klarna: getWarningString(json, "klarna", "auto", ~logger)->getShowType(
         "options.wallets.klarna",
-        logger,
       ),
-      paze: getWarningString(json, "paze", "auto", ~logger)->getShowType(
-        "options.wallets.paze",
-        logger,
-      ),
+      paze: getWarningString(json, "paze", "auto", ~logger)->getShowType("options.wallets.paze"),
       samsungPay: getWarningString(json, "samsungPay", "auto", ~logger)->getShowType(
         "options.wallets.samsungPay",
-        logger,
       ),
       style: getStyle(json, "style", logger),
     }
@@ -1046,7 +1004,6 @@ let getBillingAddress = (dict, str, logger) => {
       ["isUseBillingAddress", "usePrefilledValues"],
       json,
       "options.billingAddress",
-      ~logger,
     )
 
     {
@@ -1056,7 +1013,7 @@ let getBillingAddress = (dict, str, logger) => {
         "usePrefilledValues",
         "auto",
         ~logger,
-      )->getShowType("options.billingAddress.usePrefilledValues", logger),
+      )->getShowType("options.billingAddress.usePrefilledValues"),
     }
   })
   ->Option.getOr(defaultBillingAddress)
@@ -1114,7 +1071,6 @@ let itemToObjMapper = (dict, logger) => {
     ],
     dict,
     "options",
-    ~logger,
   )
   {
     defaultValues: getDefaultValues(dict, "defaultValues", logger),
@@ -1124,10 +1080,7 @@ let itemToObjMapper = (dict, logger) => {
     savedPaymentMethods: getCustomerMethods(dict, "customerPaymentMethods"),
     paymentMethodOrder: getOptionalStrArray(dict, "paymentMethodOrder"),
     fields: getFields(dict, "fields", logger),
-    branding: getWarningString(dict, "branding", "auto", ~logger)->getShowType(
-      "options.branding",
-      logger,
-    ),
+    branding: getWarningString(dict, "branding", "auto", ~logger)->getShowType("options.branding"),
     displaySavedPaymentMethodsCheckbox: getBoolWithWarning(
       dict,
       "displaySavedPaymentMethodsCheckbox",
