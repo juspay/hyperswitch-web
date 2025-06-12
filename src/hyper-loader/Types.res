@@ -58,6 +58,8 @@ type initPaymentSession = {
   getPaymentManagementMethods: unit => promise<JSON.t>,
 }
 
+type initAuthenticationSession = {startAuthenticationSession: unit => promise<JSON.t>}
+
 type confirmParams = {return_url: string}
 
 type confirmPaymentParams = {
@@ -74,6 +76,7 @@ type hyperInstance = {
   widgets: JSON.t => element,
   paymentRequest: JSON.t => JSON.t,
   initPaymentSession: JSON.t => initPaymentSession,
+  initAuthenticationSession: JSON.t => initAuthenticationSession,
   paymentMethodsManagementElements: JSON.t => element,
 }
 
@@ -176,6 +179,14 @@ let defaultInitPaymentSession: initPaymentSession = {
   getPaymentManagementMethods: defaultGetPaymentManagementMethods,
 }
 
+let defaultStartAuthenticationSession = () => {
+  Promise.resolve(JSON.Encode.null)
+}
+
+let defaultInitAuthenticationSession: initAuthenticationSession = {
+  startAuthenticationSession: defaultStartAuthenticationSession,
+}
+
 let defaultHyperInstance = {
   confirmOneClickPayment: oneClickConfirmPaymentFn,
   confirmPayment: confirmPaymentFn,
@@ -185,6 +196,7 @@ let defaultHyperInstance = {
   widgets: _ev => defaultElement,
   paymentRequest: _ev => JSON.Encode.null,
   initPaymentSession: _ev => defaultInitPaymentSession,
+  initAuthenticationSession: _ev => defaultInitAuthenticationSession,
   paymentMethodsManagementElements: _ev => defaultElement,
 }
 

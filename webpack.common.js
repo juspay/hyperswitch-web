@@ -46,6 +46,7 @@ const authorizedScriptSources = [
   "https://sandbox.src.mastercard.com",
   "https://x.klarnacdn.net",
   "https://js.playground.klarna.com",
+  "https://auth.app.hyperswitch.io",
   "blob:",
   // Add other trusted sources here
 ];
@@ -57,6 +58,7 @@ const authorizedStyleSources = [
   "https://fonts.googleapis.com",
   "http://fonts.googleapis.com",
   "https://src.mastercard.com",
+  "https://auth.app.hyperswitch.io",
   // Add other trusted sources here
 ];
 
@@ -65,6 +67,7 @@ const authorizedFontSources = [
   "'self'",
   "https://fonts.gstatic.com",
   "http://fonts.gstatic.com",
+  "https://auth.app.hyperswitch.io",
   // Add other trusted sources here
 ];
 
@@ -76,6 +79,7 @@ const authorizedImageSources = [
   "https://www.paypalobjects.com",
   "https://googleads.g.doubleclick.net",
   "https://www.google.com",
+  "https://auth.app.hyperswitch.io",
   "data: *",
   // Add other trusted sources here
 ];
@@ -118,6 +122,7 @@ const authorizedConnectSources = [
   "https://sandbox.src.mastercard.com",
   "https://eu.klarnaevt.com",
   "https://eu.playground.klarnaevt.com",
+  "https://auth.app.hyperswitch.io",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
   // Add other trusted sources here
@@ -254,22 +259,22 @@ module.exports = (publicPath = "auto") => {
       chunks: ["app"],
       scriptLoading: "blocking",
       //       // Add CSP meta tag
-      meta: {
-        "Content-Security-Policy": {
-          "http-equiv": "Content-Security-Policy",
-          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-            " "
-          )};
-                style-src ${authorizedStyleSources.join(" ")};
-                frame-src ${authorizedFrameSources.join(" ")};
-                img-src ${authorizedImageSources.join(" ")};
-                font-src ${authorizedFontSources.join(" ")};
-                connect-src ${authorizedConnectSources.join(
-                  " "
-                )} ${logEndpoint} ;
-      `,
-        },
-      },
+      // meta: {
+      //   "Content-Security-Policy": {
+      //     "http-equiv": "Content-Security-Policy",
+      //     content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+      //       " "
+      //     )};
+      //           style-src ${authorizedStyleSources.join(" ")};
+      //           frame-src ${authorizedFrameSources.join(" ")};
+      //           img-src ${authorizedImageSources.join(" ")};
+      //           font-src ${authorizedFontSources.join(" ")};
+      //           connect-src ${authorizedConnectSources.join(
+      //             " "
+      //           )} ${logEndpoint} ;
+      // `,
+      //   },
+      // },
     }),
     new HtmlWebpackPlugin({
       // Also generate a test.html
@@ -277,20 +282,20 @@ module.exports = (publicPath = "auto") => {
       filename: "fullscreenIndex.html",
       template: "./public/fullscreenIndexTemplate.html",
       // Add CSP meta tag
-      meta: {
-        "Content-Security-Policy": {
-          "http-equiv": "Content-Security-Policy",
-          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-            " "
-          )};
-          style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")};
-          img-src ${authorizedImageSources.join(" ")};
-          font-src ${authorizedFontSources.join(" ")};
-          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
-          `,
-        },
-      },
+      // meta: {
+      //   "Content-Security-Policy": {
+      //     "http-equiv": "Content-Security-Policy",
+      //     content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+      //       " "
+      //     )};
+      //     style-src ${authorizedStyleSources.join(" ")};
+      //     frame-src ${authorizedFrameSources.join(" ")};
+      //     img-src ${authorizedImageSources.join(" ")};
+      //     font-src ${authorizedFontSources.join(" ")};
+      //     connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
+      //     `,
+      //   },
+      // },
     }),
     new SubresourceIntegrityPlugin({
       hashFuncNames: ["sha384"],

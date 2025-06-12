@@ -19,12 +19,17 @@ let make = () => {
         ~value="Y",
         ~paymentMethod="CARD",
       )
-      messageParentWindow([
-        ("fullscreen", true->JSON.Encode.bool),
-        ("param", `3dsAuth`->JSON.Encode.string),
-        ("iframeId", iframeId->JSON.Encode.string),
-        ("metadata", stateMetadata),
-      ])
+      delay(1500)
+      ->Promise.then(_ => {
+        messageParentWindow([
+          ("fullscreen", true->JSON.Encode.bool),
+          ("param", `3dsAuth`->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+          ("metadata", stateMetadata),
+        ])
+        Promise.resolve()
+      })
+      ->ignore
     }
   }
 

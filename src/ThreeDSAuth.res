@@ -35,6 +35,7 @@ let make = () => {
         let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
         let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
         let publishableKey = metaDataDict->getString("publishableKey", "")
+        let isAuthenticationSession = metaDataDict->getBool("isAuthenticationSession", false)
         logger.setClientSecret(paymentIntentId)
         logger.setMerchantId(publishableKey)
         let headersDict =
@@ -42,12 +43,19 @@ let make = () => {
           ->getJsonObjectFromDict("headers")
           ->JSON.Decode.object
           ->Option.getOr(Dict.make())
-        threeDsAuthoriseUrl.current =
+        threeDsAuthoriseUrl.current = if isAuthenticationSession {
+          metaDataDict
+          ->getJsonObjectFromDict("threeDSData")
+          ->JSON.Decode.object
+          ->Option.getOr(Dict.make())
+          ->getString("post_auth_url", "")
+        } else {
           metaDataDict
           ->getJsonObjectFromDict("threeDSData")
           ->JSON.Decode.object
           ->Option.getOr(Dict.make())
           ->getString("three_ds_authorize_url", "")
+        }
         let headers = headersDict->convertDictToArrayOfKeyStringTuples
 
         let threeDsMethodComp = metaDataDict->getString("3dsMethodComp", "U")
@@ -57,6 +65,7 @@ let make = () => {
           ~clientSecret=paymentIntentId,
           ~threeDsMethodComp,
           ~headers,
+          ~isAuthenticationSession,
         )
         ->then(json => {
           let dict = json->getDictFromJson
@@ -69,7 +78,24 @@ let make = () => {
             )
             JSON.Encode.null->resolve
           } else {
-            let creq = dict->getString("challenge_request", "")
+            let threeDsDataDict =
+              metaDataDict
+              ->Dict.get("threeDSData")
+              ->Option.flatMap(JSON.Decode.object)
+              ->Option.getOr(Dict.make())
+
+            let threeDsUrl =
+              threeDsDataDict
+              ->Dict.get("three_ds_method_details")
+              ->Option.flatMap(JSON.Decode.object)
+              ->Option.flatMap(x => x->Dict.get("three_ds_method_url"))
+              ->Option.flatMap(JSON.Decode.string)
+              ->Option.getOr("")
+
+            let creq =
+              threeDsUrl->String.includes("3dsecure.io")
+                ? dict->getString("challenge_request", "")
+                : dict->getString("challenge_request", "")->Window.atob
             let transStatus = dict->getString("trans_status", "Y")
             let acsUrl = dict->getString("acs_url", "")
 
@@ -93,6 +119,8 @@ let make = () => {
                 form.target = "threeDsAuthFrame"
                 form.appendChild(input)
                 form.submit()
+              } else if isAuthenticationSession {
+                messageParentWindow([("openurl_if_required", ""->JSON.Encode.string)])
               } else {
                 handleFrictionLess()
               }

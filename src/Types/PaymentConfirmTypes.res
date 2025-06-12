@@ -57,6 +57,7 @@ type intent = {
   payment_method_type: string,
   manualRetryAllowed: bool,
   connectorTransactionId: string,
+  returnUrl: string,
 }
 open Utils
 
@@ -88,6 +89,7 @@ let defaultIntent = {
   payment_method_type: "",
   manualRetryAllowed: false,
   connectorTransactionId: "",
+  returnUrl: "",
 }
 
 let getAchCreditTransfer = (dict, str) => {
@@ -190,5 +192,6 @@ let itemToObjMapper = dict => {
     payment_method_type: getString(dict, "payment_method_type", ""),
     manualRetryAllowed: getBool(dict, "manual_retry_allowed", false),
     connectorTransactionId: getString(dict, "connector_transaction_id", ""),
+    returnUrl: getString(dict, "return_url", ""),
   }
 }

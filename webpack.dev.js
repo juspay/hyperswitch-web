@@ -47,6 +47,7 @@ const devServer = {
     //   secure: false,
     // },
   ],
+  allowedHosts: ["juspay-3ds-sdk.netlify.app"],
   headers: {
     "Cache-Control": "must-revalidate",
   },

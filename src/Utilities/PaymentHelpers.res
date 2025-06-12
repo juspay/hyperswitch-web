@@ -25,12 +25,100 @@ let retrievePaymentIntent = (
   ~optLogger,
   ~customPodUri,
   ~isForceSync=false,
+  ~isAuthenticationSession=false,
+  ~isSendLogToParent=false,
 ) => {
   open Promise
   let paymentIntentID = clientSecret->Utils.getPaymentId
   let endpoint = ApiEndpoint.getApiEndPoint()
   let forceSync = isForceSync ? "&force_sync=true" : ""
-  let uri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}${forceSync}`
+  let uri = if isAuthenticationSession {
+    `https://auth.app.hyperswitch.io/api/authenticate/${paymentIntentID}?client_secret=${clientSecret}`
+  } else {
+    `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}${forceSync}`
+  }
+
+  logApi(
+    ~optLogger,
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=RETRIEVE_CALL_INIT,
+    ~logType=INFO,
+    ~logCategory=API,
+  )
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
+  ->then(res => {
+    let statusCode = res->Fetch.Response.status
+    if !(res->Fetch.Response.ok) {
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        logApi(
+          ~optLogger,
+          ~url=uri,
+          ~data,
+          ~statusCode,
+          ~apiLogType=Err,
+          ~eventName=RETRIEVE_CALL,
+          ~logType=ERROR,
+          ~logCategory=API,
+        )
+        JSON.Encode.null->resolve
+      })
+    } else {
+      logApi(
+        ~optLogger,
+        ~url=uri,
+        ~statusCode,
+        ~apiLogType=Response,
+        ~eventName=RETRIEVE_CALL,
+        ~logType=INFO,
+        ~logCategory=API,
+      )
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        let headersJson =
+          headers
+          ->Array.map(
+            entries => {
+              let (x, val) = entries
+              (x, val->JSON.Encode.string)
+            },
+          )
+          ->getJsonFromArrayOfJson
+
+        if isSendLogToParent {
+          let request = [
+            ("url", uri->JSON.Encode.string),
+            ("method", "GET"->JSON.Encode.string),
+            ("headers", headersJson),
+          ]
+
+          let response =
+            [
+              ("status", statusCode->Int.toString->JSON.Encode.string),
+              ("data", data),
+            ]->getJsonFromArrayOfJson
+          messageParentWindow([
+            ("title", "Retrieve Authentication"->JSON.Encode.string),
+            ("request", request->getJsonFromArrayOfJson),
+            ("response", response),
+            ("type", "authentication_log"->JSON.Encode.string),
+          ])
+        }
+        resolve(data)
+      })
+    }
+  })
+  ->catch(e => {
+    Console.error2("Unable to retrieve payment details because of ", e)
+    JSON.Encode.null->resolve
+  })
+}
+
+let retrievePaymentIntentWithApiKey = (headers, ~optLogger, ~customPodUri, ~uri) => {
+  open Promise
 
   logApi(
     ~optLogger,
@@ -78,10 +166,21 @@ let retrievePaymentIntent = (
   })
 }
 
-let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
+let threeDsAuth = (
+  ~clientSecret,
+  ~optLogger,
+  ~threeDsMethodComp,
+  ~headers,
+  ~isAuthenticationSession=false,
+) => {
   let endpoint = ApiEndpoint.getApiEndPoint()
   let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
-  let url = `${endpoint}/payments/${paymentIntentID}/3ds/authentication`
+  let url = if isAuthenticationSession {
+    `https://auth.app.hyperswitch.io/api/authenticate/${paymentIntentID}/areq`
+  } else {
+    `${endpoint}/payments/${paymentIntentID}/3ds/authentication`
+  }
+
   let broswerInfo = BrowserSpec.broswerInfo
   let body =
     [
@@ -91,6 +190,21 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
     ]
     ->Array.concat(broswerInfo())
     ->getJsonFromArrayOfJson
+
+  let headersJson =
+    headers
+    ->Array.map(entries => {
+      let (x, val) = entries
+      (x, val->JSON.Encode.string)
+    })
+    ->getJsonFromArrayOfJson
+
+  let request = [
+    ("url", url->JSON.Encode.string),
+    ("method", "POST"->JSON.Encode.string),
+    ("headers", headersJson),
+    ("body", body),
+  ]
 
   open Promise
   logApi(
@@ -103,6 +217,7 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
   )
   fetchApi(url, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray)
   ->then(res => {
+    Console.log2("===> Resppp", res)
     let statusCode = res->Fetch.Response.status
     if !(res->Fetch.Response.ok) {
       res
@@ -126,7 +241,24 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
       })
     } else {
       logApi(~optLogger, ~url, ~statusCode, ~apiLogType=Response, ~eventName=AUTHENTICATION_CALL)
-      res->Fetch.Response.json
+      res
+      ->Fetch.Response.json
+      ->then(data => {
+        let response =
+          [
+            ("status", statusCode->Int.toString->JSON.Encode.string),
+            ("data", data),
+          ]->getJsonFromArrayOfJson
+        Console.log2("===> response", response)
+        messageParentWindow([
+          ("title", "Authentication Request"->JSON.Encode.string),
+          ("request", request->getJsonFromArrayOfJson),
+          ("response", response),
+          ("type", "authentication_log"->JSON.Encode.string),
+        ])
+
+        resolve(data)
+      })
     }
   })
   ->catch(err => {
@@ -273,6 +405,81 @@ let rec pollStatus = (~headers, ~customPodUri, ~pollId, ~interval, ~count, ~retu
       ~logger,
     )->then(res => resolve(res))
   })
+}
+
+let handleNextAction = (
+  ~intent: PaymentConfirmTypes.intent,
+  ~optLogger,
+  ~paymentMethod,
+  ~headers,
+  ~clientSecret,
+  ~iframeId,
+  ~url,
+  ~publishableKey,
+) => {
+  if intent.status == "processing" {
+    if intent.nextAction.type_ === "three_ds_invoke" {
+      let threeDsData =
+        intent.nextAction.three_ds_data
+        ->Option.flatMap(JSON.Decode.object)
+        ->Option.getOr(Dict.make())
+      let do3dsMethodCall =
+        threeDsData
+        ->Dict.get("three_ds_method_details")
+        ->Option.flatMap(JSON.Decode.object)
+        ->Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
+        ->Option.getOr(Dict.make()->JSON.Encode.object)
+        ->JSON.Decode.bool
+        ->getBoolValue
+
+      let headerObj = Dict.make()
+      headers->Array.forEach(entries => {
+        let (x, val) = entries
+        Dict.set(headerObj, x, val->JSON.Encode.string)
+      })
+      let metaData =
+        [
+          ("threeDSData", threeDsData->JSON.Encode.object),
+          ("paymentIntentId", clientSecret->JSON.Encode.string),
+          ("publishableKey", publishableKey->JSON.Encode.string),
+          ("headers", headerObj->JSON.Encode.object),
+          ("url", url.href->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+          ("isAuthenticationSession", true->JSON.Encode.bool),
+        ]->Dict.fromArray
+
+      handleLogging(
+        ~optLogger,
+        ~value=do3dsMethodCall ? "Y" : "N",
+        ~eventName=THREE_DS_METHOD,
+        ~paymentMethod,
+      )
+
+      Console.log2("===> do3dsMethodCall", do3dsMethodCall)
+
+      if do3dsMethodCall {
+        messageParentWindow([
+          ("fullscreen", true->JSON.Encode.bool),
+          ("param", `3ds`->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+          ("metadata", metaData->JSON.Encode.object),
+        ])
+      } else {
+        metaData->Dict.set("3dsMethodComp", "U"->JSON.Encode.string)
+        messageParentWindow([
+          ("fullscreen", true->JSON.Encode.bool),
+          ("param", `3dsAuth`->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+          ("metadata", metaData->JSON.Encode.object),
+        ])
+      }
+    } else {
+      let failedSubmitResponse = getFailedSubmitResponse(
+        ~errorType="confirm_payment_failed",
+        ~message="Payment failed. Try again!",
+      )
+    }
+  }
 }
 
 let rec intentCall = (

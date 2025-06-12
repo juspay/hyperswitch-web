@@ -1323,7 +1323,7 @@ let makeIframe = (element, url) => {
     iframe.id = "orca-fullscreen"
     iframe.src = url
     iframe.name = "fullscreen"
-    iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
+    iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 2147483646; "
     iframe.onload = () => {
       resolve(Dict.make())
     }
