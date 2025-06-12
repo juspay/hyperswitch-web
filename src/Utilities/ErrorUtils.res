@@ -25,15 +25,6 @@ let errorWarning = [
     ),
   ),
   (
-    UNKNOWN_KEY,
-    Warning,
-    Dynamic(
-      str => {
-        `Unknown Key: ${str} is a unknown/invalid key, please provide a correct key. This might cause issue in the future`
-      },
-    ),
-  ),
-  (
     TYPE_BOOL_ERROR,
     Error,
     Dynamic(
@@ -66,15 +57,6 @@ let errorWarning = [
     Dynamic(
       str => {
         `Value out of range: '${str}'. Please provide a value inside the range`
-      },
-    ),
-  ),
-  (
-    UNKNOWN_VALUE,
-    Warning,
-    Dynamic(
-      str => {
-        `Unknown Value: ${str}. Please provide a correct value. This might cause issue in the future`
       },
     ),
   ),
