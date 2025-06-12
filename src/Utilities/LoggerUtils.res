@@ -1,3 +1,4 @@
+open IndexedDB
 let logApi = (
   ~eventName,
   ~statusCode=0,
@@ -121,6 +122,111 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   setSessionId: _x => (),
   setMetadata: _x => (),
   setSource: _x => (),
+}
+
+let saveLogsToIndexedDB = (logs: array<HyperLoggerTypes.logFile>) => {
+  Promise.make((resolve, reject) => {
+    let request = openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs")
+
+    request->OpenDBRequest.onsuccess(_ => {
+      let db = OpenDBRequest.result(request)
+
+      if logs->Array.length > 0 {
+        let transaction = db->DB.transaction(["logs"], "readwrite")
+        let store = transaction->Transaction.objectStore("logs")
+
+        transaction->Transaction.oncomplete(
+          _ => {
+            db->DB.close
+            resolve()
+          },
+        )
+
+        transaction->Transaction.onerror(
+          _ => {
+            db->DB.close
+            reject()
+          },
+        )
+
+        logs->Array.forEach(
+          log => {
+            let _ = store->ObjectStore.put(log)
+          },
+        )
+      } else {
+        db->DB.close
+        reject()
+      }
+    })
+
+    request->OpenDBRequest.onerror(_ => {
+      reject()
+    })
+  })
+}
+
+let retrieveLogsFromIndexedDB = () => {
+  Promise.make((resolve, reject) => {
+    let request = openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs")
+
+    request->OpenDBRequest.onsuccess(_ => {
+      let db = OpenDBRequest.result(request)
+      let transaction = db->DB.transaction(["logs"], "readonly")
+      let store = transaction->Transaction.objectStore("logs")
+      let getAllRequest = store->ObjectStore.getAll
+
+      getAllRequest->Request.onsuccess(
+        _ => {
+          let result = Request.result(getAllRequest)
+          db->DB.close
+          resolve(result)
+        },
+      )
+
+      getAllRequest->Request.onerror(
+        _ => {
+          db->DB.close
+          reject([])
+        },
+      )
+    })
+
+    request->OpenDBRequest.onerror(_ => {
+      reject([])
+    })
+  })
+}
+
+let clearLogsFromIndexedDB = () => {
+  Promise.make((resolve, reject) => {
+    let request = openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs")
+
+    request->OpenDBRequest.onsuccess(_ => {
+      let db = OpenDBRequest.result(request)
+      let transaction = db->DB.transaction(["logs"], "readwrite")
+      let store = transaction->Transaction.objectStore("logs")
+      let clearRequest = store->ObjectStore.clear
+
+      clearRequest->Request.onsuccess(
+        _ => {
+          db->DB.close
+          resolve()
+        },
+      )
+
+      clearRequest->Request.onerror(
+        _ => {
+          db->DB.close
+          reject()
+        },
+      )
+    })
+
+    request->OpenDBRequest.onerror(_ => {
+      reject()
+    })
+  })
 }
 
 let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
