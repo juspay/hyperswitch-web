@@ -8,7 +8,7 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (fullName, setFullName) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
-  let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
+  let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]

@@ -9,10 +9,7 @@ let make = () => {
   let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
 
-  let showDetails = PaymentType.getShowDetails(
-    ~billingDetails=fields.billingDetails,
-    ~logger=loggerState,
-  )
+  let showDetails = PaymentType.getShowDetails(~billingDetails=fields.billingDetails)
 
   let emailRef = React.useRef(Nullable.null)
 
