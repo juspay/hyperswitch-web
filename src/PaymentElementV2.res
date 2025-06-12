@@ -10,7 +10,7 @@ let cardsToRender = (width: int) => {
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
-  let {showCardFormByDefault, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
@@ -134,7 +134,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           | SemiLoadedV2
           | LoadErrorV2(_) => "card"
           | LoadedV2(_) =>
-            paymentOptions->Array.includes(selectedOption) && showCardFormByDefault
+            paymentOptions->Array.includes(selectedOption)
               ? selectedOption
               : paymentOptions->Array.get(0)->Option.getOr("")
           | _ => paymentOptions->Array.get(0)->Option.getOr("")
@@ -146,7 +146,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     paymentOptions,
     paymentManagementList,
     selectedOption,
-    showCardFormByDefault,
     paymentMethodsListV2,
   ))
 

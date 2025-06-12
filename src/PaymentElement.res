@@ -12,7 +12,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let divRef = React.useRef(Nullable.null)
 
   let {
-    showCardFormByDefault,
     paymentMethodOrder,
     layout,
     customerPaymentMethods,
@@ -194,41 +193,32 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     | Loaded(paymentlist) =>
       let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
 
-      setPaymentOptions(_ =>
-        [
-          ...showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? ["card"] : [],
-          ...paymentOptionsList,
-        ]->removeDuplicate
-      )
+      setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
       setWalletOptions(_ => walletList)
       setPaymentMethodListValue(_ => plist)
-      showCardFormByDefault
-        ? if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
-            ErrorUtils.manageErrorWarning(
-              SDK_CONNECTOR_WARNING,
-              ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
-              ~logger=loggerState,
-            )
-          } else if !checkPriorityList(paymentMethodOrder) {
-            ErrorUtils.manageErrorWarning(
-              SDK_CONNECTOR_WARNING,
-              ~dynamicStr=`'paymentMethodOrder' is ${Array.joinWith(
-                  paymentMethodOrder->getOptionalArr,
-                  ", ",
-                )} . Please enable Card Payment as 1st priority to show it as default.`,
-              ~logger=loggerState,
-            )
-          }
-        : ()
+      if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
+        ErrorUtils.manageErrorWarning(
+          SDK_CONNECTOR_WARNING,
+          ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
+          ~logger=loggerState,
+        )
+      } else if !checkPriorityList(paymentMethodOrder) {
+        ErrorUtils.manageErrorWarning(
+          SDK_CONNECTOR_WARNING,
+          ~dynamicStr=`'paymentMethodOrder' is ${Array.joinWith(
+              paymentMethodOrder->getOptionalArr,
+              ", ",
+            )} . Please enable Card Payment as 1st priority to show it as default.`,
+          ~logger=loggerState,
+        )
+      }
     | LoadError(_)
     | SemiLoaded =>
-      setPaymentOptions(_ =>
-        showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? ["card"] : []
-      )
+      setPaymentOptions(_ => [])
     | _ => ()
     }
     None
-  }, (paymentMethodList, walletList, paymentOptionsList, actualList, showCardFormByDefault))
+  }, (paymentMethodList, walletList, paymentOptionsList, actualList))
 
   React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
@@ -288,22 +278,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         : switch paymentMethodList {
           | SemiLoaded
           | LoadError(_) =>
-            showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? "card" : ""
+            checkPriorityList(paymentMethodOrder) ? "card" : ""
           | Loaded(_) =>
-            paymentOptions->Array.includes(selectedOption) && showCardFormByDefault
+            paymentOptions->Array.includes(selectedOption)
               ? selectedOption
               : paymentOptions->Array.get(0)->Option.getOr("")
           | _ => paymentOptions->Array.get(0)->Option.getOr("")
           }
     )
     None
-  }, (
-    layoutClass.defaultCollapsed,
-    paymentOptions,
-    paymentMethodList,
-    selectedOption,
-    showCardFormByDefault,
-  ))
+  }, (layoutClass.defaultCollapsed, paymentOptions, paymentMethodList, selectedOption))
   let checkRenderOrComp = () => {
     walletOptions->Array.includes("paypal") || isShowOrPayUsing
   }
