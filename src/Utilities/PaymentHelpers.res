@@ -548,16 +548,15 @@ let rec intentCall = (
                   ~eventName=THREE_DS_POPUP_REDIRECTION,
                   ~paymentMethod,
                 )
-                let metaData =
-                  [
-                    ("popupUrl", popupUrl->JSON.Encode.string),
-                    ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
-                  ]->Dict.fromArray
+                let metaData = [
+                  ("popupUrl", popupUrl->JSON.Encode.string),
+                  ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
+                ]
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
                   ("param", `3dsRedirectionPopup`->JSON.Encode.string),
                   ("iframeId", iframeId->JSON.Encode.string),
-                  ("metadata", metaData->JSON.Encode.object),
+                  ("metadata", metaData->getJsonFromArrayOfJson),
                 ])
               } else if intent.nextAction.type_ == "display_bank_transfer_information" {
                 let metadata = switch intent.nextAction.bank_transfer_steps_and_charges_details {

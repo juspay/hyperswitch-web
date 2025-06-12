@@ -14,7 +14,7 @@ let make = () => {
 
   let handleOnClose = () =>
     if redirectResponseUrl == "" {
-      Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+      messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
     } else {
       let customEvent =

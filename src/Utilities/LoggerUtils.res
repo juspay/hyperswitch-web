@@ -324,6 +324,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | CLICK_TO_PAY_FLOW
   | PAYMENT_METHOD_TYPE_DETECTION_FAILED
   | THREE_DS_POPUP_REDIRECTION
+  | NETWORK_STATE
   | S3_API =>
     None
   }
