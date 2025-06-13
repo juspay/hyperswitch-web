@@ -92,7 +92,13 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
 
   let onSuccess = data => data
 
-  let onFailure = _ => JSON.Encode.null
+  let onFailure = data => {
+    let dict = data->getDictFromJson
+    let errorObj = PaymentError.itemToObjMapper(dict)
+    closePaymentLoaderIfAny()
+    postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
+    JSON.Encode.null
+  }
 
   await Utils.fetchApiWithLogging(
     url,
