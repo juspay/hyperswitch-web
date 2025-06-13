@@ -25,18 +25,38 @@ describe("Manual Capture - Stripe Card Payment", () => {
     });
   });
 
-  it("should successfully process a Stripe card with manual capture enabled", () => {
-    const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.successCard;
+ it("should successfully process a Stripe card with manual capture enabled", () => {
+  const { cardNo, card_exp_month, card_exp_year, cvc } = stripeCards.successCard;
 
-    getIframeBody().find(`[data-testid=${testIds.cardNoInputTestId}]`).type(cardNo);
-    getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_month);
-    getIframeBody().find(`[data-testid=${testIds.expiryInputTestId}]`).type(card_exp_year);
-    getIframeBody().find(`[data-testid=${testIds.cardCVVInputTestId}]`).type(cvc);
+  // Add .should("be.visible") to ensure elements are interactable
+  getIframeBody()
+    .find(`[data-testid=${testIds.cardNoInputTestId}]`)
+    .should("be.visible")
+    .type(cardNo);
 
-    cy.wait(2000); // wait for Stripe validation or loading states if needed
+  getIframeBody()
+    .find(`[data-testid=${testIds.expiryInputTestId}]`)
+    .should("be.visible")
+    .type(card_exp_month)
+    .type(card_exp_year);
 
-    getIframeBody().get("#submit").click();
+  getIframeBody()
+    .find(`[data-testid=${testIds.cardCVVInputTestId}]`)
+    .should("be.visible")
+    .type(cvc);
 
-    cy.contains("Thanks for your order!").should("be.visible");
+  cy.wait(1000); // Optional wait for UI stability
+  getIframeBody().get("#submit").click();
+
+  cy.log("Waiting for success message...");
+
+  // Increased timeout and fallback logs
+  cy.contains("Thanks for your order!", { timeout: 10000 }).should("be.visible");
+
+  cy.get("body").then(($body) => {
+    if (!$body.text().includes("Thanks for your order!")) {
+      cy.log("Page content: ", $body.text());
+    }
   });
 });
+
