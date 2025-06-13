@@ -89,8 +89,8 @@
 //   `${baseUrl}/${path}`
 // }
 
-
-type apiCall = FetchPaymentMethodList | FetchCustomerPaymentMethodList | FetchSessions
+type apiCall =
+  FetchPaymentMethodList | FetchCustomerPaymentMethodList | FetchSessions | FetchThreeDsAuth
 
 let generateApiUrl = (
   apiCallType: apiCall,
@@ -110,6 +110,10 @@ let generateApiUrl = (
   | FetchPaymentMethodList => `account/payment_methods?client_secret=${clientSecretVal}`
   | FetchCustomerPaymentMethodList => `customers/payment_methods?client_secret=${clientSecretVal}`
   | FetchSessions => `payments/session_tokens`
+  | FetchThreeDsAuth => {
+      let paymentIntentID = Utils.getPaymentId(clientSecretVal)
+      `payments/${paymentIntentID}/3ds/authentication`
+    }
   }
 
   `${baseUrl}/${path}`
