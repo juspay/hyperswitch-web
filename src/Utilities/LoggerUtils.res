@@ -37,7 +37,7 @@ let logApi = (
     logger.setLogApi(
       ~eventName,
       ~value=ArrayType(value),
-      ~internalMetadata=ArrayType(internalMetadata),
+      // ~internalMetadata=ArrayType(internalMetadata),
       ~logType,
       ~logCategory,
       ~apiLogType,
@@ -54,14 +54,20 @@ let logInputChangeInfo = (text, logger: HyperLoggerTypes.loggerMake) => {
 let handleLogging = (
   ~optLogger: option<HyperLoggerTypes.loggerMake>,
   ~value,
-  ~internalMetadata="",
+  // ~internalMetadata="",
   ~eventName,
   ~paymentMethod,
   ~logType: HyperLoggerTypes.logType=INFO,
 ) => {
   switch optLogger {
   | Some(logger) =>
-    logger.setLogInfo(~value, ~internalMetadata, ~eventName, ~paymentMethod, ~logType)
+    logger.setLogInfo(
+      ~value,
+      // ~internalMetadata,
+      ~eventName,
+      ~paymentMethod,
+      ~logType,
+    )
   | _ => ()
   }
 }
@@ -88,7 +94,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
   setLogError: (
     ~value as _,
-    ~internalMetadata as _=?,
+    // ~internalMetadata as _=?,
     ~eventName as _,
     ~timestamp as _=?,
     ~latency as _=?,
@@ -98,7 +104,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   ) => (),
   setLogApi: (
     ~value as _,
-    ~internalMetadata as _,
+    // ~internalMetadata as _,
     ~eventName as _,
     ~timestamp as _=?,
     ~logType as _=?,
@@ -109,7 +115,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   ) => (),
   setLogInfo: (
     ~value as _,
-    ~internalMetadata as _=?,
+    // ~internalMetadata as _=?,
     ~eventName as _,
     ~timestamp as _=?,
     ~latency as _=?,
