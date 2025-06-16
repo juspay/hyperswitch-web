@@ -39,7 +39,7 @@ let getVGSVaultDetails = (sessionObj: PaymentType.loadType, vaultName: string) =
       ->getDictFromDict(vaultName)
 
     let externalVaultId = vgsVaultDict->getString("external_vault_id", "")
-    let env = vgsVaultDict->getString("env", "")
+    let env = vgsVaultDict->getString("sdk_env", "")
     (externalVaultId, env)
   | _ => ("", "")
   }
