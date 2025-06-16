@@ -311,7 +311,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           logger.setLogError(
             ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT",
             ~eventName=GOOGLE_PAY_SCRIPT,
-            ~internalMetadata=err->formatException->JSON.stringify,
+            // ~internalMetadata=err->formatException->JSON.stringify,
             ~paymentMethod="GOOGLE_PAY",
           )
         })
@@ -329,7 +329,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           logger.setLogError(
             ~value="ERROR DURING LOADING SAMSUNG PAY SCRIPT",
             ~eventName=SAMSUNG_PAY_SCRIPT,
-            ~internalMetadata=err->formatException->JSON.stringify,
+            // ~internalMetadata=err->formatException->JSON.stringify,
             ~paymentMethod="SAMSUNG_PAY",
           )
         })

@@ -531,7 +531,7 @@ let rec intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=intent.nextAction.redirectToUrl,
+                  // ~internalMetadata=intent.nextAction.redirectToUrl,
                   ~eventName=REDIRECTING_USER,
                   ~paymentMethod,
                 )
@@ -541,7 +541,7 @@ let rec intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=popupUrl,
+                  // ~internalMetadata=popupUrl,
                   ~eventName=THREE_DS_POPUP_REDIRECTION,
                   ~paymentMethod,
                 )
@@ -563,7 +563,7 @@ let rec intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=dict->JSON.Encode.object->JSON.stringify,
+                  // ~internalMetadata=dict->JSON.Encode.object->JSON.stringify,
                   ~eventName=DISPLAY_BANK_TRANSFER_INFO_PAGE,
                   ~paymentMethod,
                 )
@@ -598,7 +598,7 @@ let rec intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=metaData->JSON.stringify,
+                  // ~internalMetadata=metaData->JSON.stringify,
                   ~eventName=DISPLAY_QR_CODE_INFO_PAGE,
                   ~paymentMethod,
                 )
@@ -704,7 +704,7 @@ let rec intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=metaData->JSON.Encode.object->JSON.stringify,
+                  // ~internalMetadata=metaData->JSON.Encode.object->JSON.stringify,
                   ~eventName=DISPLAY_VOUCHER,
                   ~paymentMethod,
                 )
@@ -775,7 +775,7 @@ let rec intentCall = (
                   handleLogging(
                     ~optLogger,
                     ~value=intent.nextAction.type_,
-                    ~internalMetadata=intent.nextAction.type_,
+                    // ~internalMetadata=intent.nextAction.type_,
                     ~eventName=REDIRECTING_USER,
                     ~paymentMethod,
                     ~logType=ERROR,
@@ -1198,7 +1198,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         | Card =>
           handleLogging(
             ~optLogger,
-            ~internalMetadata=loggerPayload,
+            // ~internalMetadata=loggerPayload,
             ~value=contentLength,
             ~eventName=PAYMENT_ATTEMPT,
             ~paymentMethod="CARD",
@@ -1209,7 +1209,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
               handleLogging(
                 ~optLogger,
                 ~value=contentLength,
-                ~internalMetadata=loggerPayload,
+                // ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
                 ~paymentMethod=json->getStringFromJson(""),
               )
@@ -2248,7 +2248,7 @@ let usePostSessionTokens = (
         | Card =>
           handleLogging(
             ~optLogger,
-            ~internalMetadata=loggerPayload,
+            // ~internalMetadata=loggerPayload,
             ~value=contentLength,
             ~eventName=PAYMENT_ATTEMPT,
             ~paymentMethod="CARD",
@@ -2259,7 +2259,7 @@ let usePostSessionTokens = (
               handleLogging(
                 ~optLogger,
                 ~value=contentLength,
-                ~internalMetadata=loggerPayload,
+                // ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
                 ~paymentMethod=json->getStringFromJson(""),
               )

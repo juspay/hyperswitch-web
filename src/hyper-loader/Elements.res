@@ -189,7 +189,7 @@ let make = (
                   logger.setLogError(
                     ~value="ERROR DURING LOADING TRUSTPAY APPLE PAY",
                     ~eventName=TRUSTPAY_SCRIPT,
-                    ~internalMetadata=err->formatException->JSON.stringify,
+                    // ~internalMetadata=err->formatException->JSON.stringify,
                   )
                 })
                 trustPayScript->Window.elementOnload(_ => {
@@ -512,7 +512,7 @@ let make = (
                     ->then(res => {
                       logger.setLogInfo(
                         ~value="TrustPay GooglePay Response",
-                        ~internalMetadata=res->JSON.stringify,
+                        // ~internalMetadata=res->JSON.stringify,
                         ~eventName=GOOGLE_PAY_FLOW,
                         ~paymentMethod="GOOGLE_PAY",
                       )
@@ -644,7 +644,7 @@ let make = (
                       )
                       logger.setLogInfo(
                         ~value="TrustPay ApplePay Success Response",
-                        ~internalMetadata=res->JSON.stringify,
+                        // ~internalMetadata=res->JSON.stringify,
                         ~eventName=APPLE_PAY_FLOW,
                         ~paymentMethod="APPLE_PAY",
                       )
