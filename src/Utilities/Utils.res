@@ -962,6 +962,7 @@ let fetchApiWithLogging = async (
   ~customPodUri=None,
   ~publishableKey=None,
   ~isPaymentSession=false,
+  ~onCatchCallback=None,
 ) => {
   open LoggerUtils
 
@@ -1030,7 +1031,10 @@ let fetchApiWithLogging = async (
         ~data=exceptionMessage,
         ~isPaymentSession,
       )
-      onFailure(exceptionMessage)
+      switch onCatchCallback {
+      | Some(fun) => await fun(exceptionMessage)
+      | None => onFailure(exceptionMessage)
+      }
     }
   }
 }

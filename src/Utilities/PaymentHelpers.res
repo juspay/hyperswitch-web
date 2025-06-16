@@ -100,15 +100,21 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
     JSON.Encode.null
   }
 
+  let onCatchCallback = err => {
+    Console.error2("Unable to call 3ds auth ", err)
+    Js.Exn.raiseError(err->JSON.stringify)
+  }
+
   await Utils.fetchApiWithLogging(
     url,
     ~eventName=AUTHENTICATION_CALL,
     ~logger,
-    ~headers,
-    ~bodyStr=body->JSON.stringify,
-    ~method=#POST,
     ~onSuccess,
     ~onFailure,
+    ~bodyStr=body->JSON.stringify,
+    ~headers,
+    ~method=#POST,
+    ~onCatchCallback=Some(onCatchCallback),
   )
 }
 
