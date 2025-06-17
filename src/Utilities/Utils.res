@@ -1023,6 +1023,14 @@ let fetchApiWithLogging = async (
   } catch {
   | err => {
       let exceptionMessage = err->formatException
+      Console.error2(
+        "Unexpected error while making request:",
+        {
+          "uri": uri,
+          "event": eventName,
+          "error": exceptionMessage,
+        },
+      )
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
@@ -1032,7 +1040,7 @@ let fetchApiWithLogging = async (
         ~isPaymentSession,
       )
       switch onCatchCallback {
-      | Some(fun) => await fun(exceptionMessage)
+      | Some(fun) => fun(exceptionMessage)
       | None => onFailure(exceptionMessage)
       }
     }

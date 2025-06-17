@@ -101,7 +101,7 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
   }
 
   let onCatchCallback = err => {
-    Console.error2("Unable to call 3ds auth ", err)
+    closePaymentLoaderIfAny()
     Js.Exn.raiseError(err->JSON.stringify)
   }
 
