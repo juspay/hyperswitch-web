@@ -82,7 +82,7 @@ let make = () => {
       logger.setLogError(
         ~value="Retrieve failed via Plaid",
         ~eventName=PLAID_SDK,
-        ~internalMetadata=err->formatException->JSON.stringify,
+        // ~internalMetadata=err->formatException->JSON.stringify,
         ~paymentMethod="PLAID",
       )
     }

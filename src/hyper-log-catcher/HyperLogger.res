@@ -27,7 +27,7 @@ let logFileToObj = logFile => {
     ("source", logFile.source->convertToScreamingSnakeCase->JSON.Encode.string),
     ("version", logFile.version->JSON.Encode.string),
     ("value", logFile.value->JSON.Encode.string),
-    ("internal_metadata", logFile.internalMetadata->JSON.Encode.string),
+    // ("internal_metadata", logFile.internalMetadata->JSON.Encode.string),
     ("session_id", logFile.sessionId->JSON.Encode.string),
     ("merchant_id", logFile.merchantId->JSON.Encode.string),
     ("payment_id", logFile.paymentId->JSON.Encode.string),
@@ -353,7 +353,7 @@ let make = (
             source: sourceString,
             version: GlobalVars.repoVersion,
             value: "",
-            internalMetadata: "",
+            // internalMetadata: "",
             category: USER_EVENT,
             paymentId: clientSecret.contents->getPaymentId,
             merchantId: merchantId.contents,
@@ -381,7 +381,7 @@ let make = (
             source: sourceString,
             version: GlobalVars.repoVersion,
             value: "",
-            internalMetadata: "",
+            // internalMetadata: "",
             category: USER_EVENT,
             paymentId: clientSecret.contents->getPaymentId,
             merchantId: merchantId.contents,
@@ -408,7 +408,7 @@ let make = (
 
   let setLogInfo = (
     ~value,
-    ~internalMetadata="",
+    // ~internalMetadata="",
     ~eventName,
     ~timestamp=?,
     ~latency=?,
@@ -432,7 +432,7 @@ let make = (
       source: sourceString,
       version: GlobalVars.repoVersion,
       value,
-      internalMetadata,
+      // internalMetadata,
       category: logCategory,
       paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
@@ -462,7 +462,7 @@ let make = (
 
   let setLogApi = (
     ~value: setlogApiValueType,
-    ~internalMetadata: setlogApiValueType,
+    // ~internalMetadata: setlogApiValueType,
     ~eventName,
     ~timestamp=?,
     ~logType=INFO,
@@ -486,10 +486,10 @@ let make = (
       | ArrayType(a) => a->Dict.fromArray->JSON.Encode.object->JSON.stringify
       | StringValue(a) => a
       },
-      internalMetadata: switch internalMetadata {
-      | ArrayType(a) => a->Dict.fromArray->JSON.Encode.object->JSON.stringify
-      | StringValue(a) => a
-      },
+      // internalMetadata: switch internalMetadata {
+      // | ArrayType(a) => a->Dict.fromArray->JSON.Encode.object->JSON.stringify
+      // | StringValue(a) => a
+      // },
       category: logCategory,
       paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
@@ -513,7 +513,7 @@ let make = (
 
   let setLogError = (
     ~value,
-    ~internalMetadata="",
+    // ~internalMetadata="",
     ~eventName,
     ~timestamp=?,
     ~latency=?,
@@ -536,7 +536,7 @@ let make = (
       source: sourceString,
       version: GlobalVars.repoVersion,
       value,
-      internalMetadata,
+      // internalMetadata,
       category: logCategory,
       paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
@@ -572,7 +572,7 @@ let make = (
       version: GlobalVars.repoVersion,
       category: USER_EVENT,
       value: "log initiated",
-      internalMetadata: "",
+      // internalMetadata: "",
       paymentId: clientSecret.contents->getPaymentId,
       merchantId: merchantId.contents,
       browserName: arrayOfNameAndVersion->Array.get(0)->Option.getOr("Others"),

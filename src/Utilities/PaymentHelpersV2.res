@@ -166,7 +166,7 @@ let intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=intent.nextAction.redirectToUrl,
+                  // ~internalMetadata=intent.nextAction.redirectToUrl,
                   ~eventName=REDIRECTING_USER,
                   ~paymentMethod,
                 )
@@ -182,7 +182,7 @@ let intentCall = (
                   handleLogging(
                     ~optLogger,
                     ~value=intent.nextAction.type_,
-                    ~internalMetadata=intent.nextAction.type_,
+                    // ~internalMetadata=intent.nextAction.type_,
                     ~eventName=REDIRECTING_USER,
                     ~paymentMethod,
                     ~logType=ERROR,

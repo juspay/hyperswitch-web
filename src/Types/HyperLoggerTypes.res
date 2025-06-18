@@ -107,7 +107,7 @@ type logFile = {
   source: string,
   version: string,
   value: string,
-  internalMetadata: string,
+  // internalMetadata: string,
   sessionId: string,
   merchantId: string,
   paymentId: string,
@@ -130,7 +130,7 @@ type setlogApiValueType =
 
 type setLogInfo = (
   ~value: string,
-  ~internalMetadata: string=?,
+  // ~internalMetadata: string=?,
   ~eventName: eventName,
   ~timestamp: string=?,
   ~latency: float=?,
@@ -144,7 +144,7 @@ type loggerMake = {
   setLogError: setLogInfo,
   setLogApi: (
     ~value: setlogApiValueType,
-    ~internalMetadata: setlogApiValueType,
+    // ~internalMetadata: setlogApiValueType,
     ~eventName: eventName,
     ~timestamp: string=?,
     ~logType: logType=?,
