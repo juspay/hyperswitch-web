@@ -735,7 +735,24 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let returnObject = {
+      let performSDKSessionRefresh = async clientSecret => {
+        let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
+        let session = await PaymentHelpers.fetchSessions(
+          ~clientSecret,
+          ~publishableKey,
+          ~logger,
+          ~endpoint,
+        )
+        iframeRef.contents->Array.forEach(ifR => {
+          ifR->Window.iframePostMessage([("sessions", session)]->Dict.fromArray)
+        })
+      }
+
+      let refreshSDKSessions = clientSecret => {
+        performSDKSessionRefresh(clientSecret)->ignore
+      }
+
+      let returnObject: hyperInstance = {
         confirmOneClickPayment,
         confirmPayment,
         elements,
@@ -745,6 +762,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentRequest,
         initPaymentSession,
         paymentMethodsManagementElements,
+        refreshSDKSessions,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject
