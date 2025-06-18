@@ -64,7 +64,8 @@ let paymentListLookupNew = (
     } else if (
       item.methodType == "bank_transfer" &&
         (item.paymentMethodName !== "sepa_bank_transfer" &&
-        item.paymentMethodName !== "instant_bank_transfer")
+        item.paymentMethodName !== "instant_bank_transfer" &&
+        item.paymentMethodName !== "instant_bank_transfer_finland")
     ) {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_transfer")->ignore
     } else if item.methodType == "card" {
@@ -260,7 +261,8 @@ let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
   } else if (
     paymentMethodType == "bank_transfer" &&
       (paymentMethodName !== "sepa_bank_transfer" &&
-      paymentMethodName !== "instant_bank_transfer")
+      paymentMethodName !== "instant_bank_transfer" &&
+      paymentMethodName !== "instant_bank_transfer_finland")
   ) {
     paymentMethodName->String.replace("_transfer", "")
   } else {

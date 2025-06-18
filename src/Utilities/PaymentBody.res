@@ -945,7 +945,11 @@ let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
   | "bank_transfer" =>
-    if paymentMethodType != "sepa_bank_transfer" && paymentMethodType != "instant_bank_transfer" {
+    if (
+      paymentMethodType != "sepa_bank_transfer" &&
+      paymentMethodType != "instant_bank_transfer" &&
+      paymentMethodType != "instant_bank_transfer_finland"
+    ) {
       paymentMethodType->String.replace("_transfer", "")
     } else {
       paymentMethodType
