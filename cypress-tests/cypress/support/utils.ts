@@ -91,6 +91,19 @@ export const changeObjectKeyValue = (
   object[key] = value;
 };
 
+export const deleteObjectKey = (object: Record<string, any>, key: string) => {
+  delete object[key]
+}
+
+export const generateRandomString=(length = 7)=> {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+}
+
 export const confirmBody = {
   client_secret: "",
   return_url: "http://localhost:9060/completion",
