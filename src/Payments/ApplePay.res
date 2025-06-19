@@ -5,6 +5,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
   )
@@ -318,6 +319,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
         } else {
           <button
             disabled=applePayClicked
+            style={
+              opacity: updateSession ? "0.5" : "1.0",
+              pointerEvents: updateSession ? "none" : "auto",
+            }
             className="apple-pay-button-with-text apple-pay-button-black-with-text"
             onClick={_ => onApplePayButtonClicked()}>
             <span className="text"> {React.string("Pay with")} </span>

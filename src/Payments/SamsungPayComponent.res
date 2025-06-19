@@ -7,6 +7,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let isSamsungPayReady = Recoil.useRecoilValueFromAtom(isSamsungPayReady)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
+  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
@@ -76,7 +77,11 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   }, [isRenderSamsungPayButton])
   <RenderIf condition={isRenderSamsungPayButton}>
     <div
-      style={height: `${height->Int.toString}px`}
+      style={
+        height: `${height->Int.toString}px`,
+        pointerEvents: updateSession ? "none" : "auto",
+        opacity: updateSession ? "0.5" : "1.0",
+      }
       id="samsungpay-container"
       className={`w-full flex flex-row justify-center rounded-md  [&>*]:w-full [&>button]:!bg-contain`}
     />
