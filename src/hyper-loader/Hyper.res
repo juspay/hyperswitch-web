@@ -736,19 +736,23 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       let sessionUpdate = async clientSecret => {
-        let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
-        let session = await PaymentHelpers.fetchSessions(
-          ~clientSecret,
-          ~publishableKey,
-          ~logger,
-          ~endpoint,
-        )
-        iframeRef.contents->Array.forEach(ifR => {
-          ifR->Window.iframePostMessage([("sessions", session)]->Dict.fromArray)
-          ifR->Window.iframePostMessage(
-            [("sessionUpdate", false->JSON.Encode.bool)]->Dict.fromArray,
+        try {
+          let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
+          let session = await PaymentHelpers.fetchSessions(
+            ~clientSecret,
+            ~publishableKey,
+            ~logger,
+            ~endpoint,
           )
-        })
+          iframeRef.contents->Array.forEach(ifR => {
+            ifR->Window.iframePostMessage([("sessions", session)]->Dict.fromArray)
+            ifR->Window.iframePostMessage(
+              [("sessionUpdate", false->JSON.Encode.bool)]->Dict.fromArray,
+            )
+          })
+        } catch {
+        | _ => ()
+        }
       }
 
       let completeUpdateIntent = clientSecret => {
