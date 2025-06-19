@@ -750,18 +750,14 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
               [("sessionUpdate", false->JSON.Encode.bool)]->Dict.fromArray,
             )
           })
-          [("updateCompleted", true->JSON.Encode.bool)]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          [("updateCompleted", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
         } catch {
         | Exn.Error(e) =>
           let errorMsg = Exn.message(e)->Option.getOr("Something went wrong!")
           [
             ("updateCompleted", false->JSON.Encode.bool),
             ("errorMessage", errorMsg->JSON.Encode.string),
-          ]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+          ]->getJsonFromArrayOfJson
         }
       }
 
@@ -773,10 +769,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         iframeRef.contents->Array.forEach(ifR => {
           ifR->Window.iframePostMessage([("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray)
         })
-        let msg =
-          [("updateInitiated", true->JSON.Encode.bool)]
-          ->Dict.fromArray
-          ->JSON.Encode.object
+        let msg = [("updateInitiated", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
         Promise.resolve(msg)
       }
 
