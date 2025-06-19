@@ -3,11 +3,6 @@ let paymentManagementListValue = Recoil.atom(
   "paymentManagementListValue",
   UnifiedHelpersV2.defaultPaymentsList,
 )
-let bankTransferList = [
-  "sepa_bank_transfer",
-  "instant_bank_transfer",
-  "instant_bank_transfer_finland",
-]
 
 let paymentListLookupNew = (
   list: PaymentMethodsRecord.paymentMethodList,
@@ -68,7 +63,7 @@ let paymentListLookupNew = (
       otherPaymentList->Array.push(item.paymentMethodName ++ "_debit")->ignore
     } else if (
       item.methodType === "bank_transfer" &&
-        !(bankTransferList->Array.includes(item.paymentMethodName))
+        !(Constants.bankTransferList->Array.includes(item.paymentMethodName))
     ) {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_transfer")->ignore
     } else if item.methodType == "card" {
@@ -262,7 +257,8 @@ let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
   if paymentMethodType == "bank_debit" {
     paymentMethodName->String.replace("_debit", "")
   } else if (
-    paymentMethodType === "bank_transfer" && !(bankTransferList->Array.includes(paymentMethodName))
+    paymentMethodType === "bank_transfer" &&
+      !(Constants.bankTransferList->Array.includes(paymentMethodName))
   ) {
     paymentMethodName->String.replace("_transfer", "")
   } else {
