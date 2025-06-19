@@ -47,7 +47,9 @@ let make = () => {
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
     <DynamicFields
-      paymentMethod="bank_transfer" paymentMethodType="instant_bank_transfer" setRequiredFieldsBody
+      paymentMethod="bank_transfer"
+      paymentMethodType="instant_bank_transfer_finland"
+      setRequiredFieldsBody
     />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="instant" />
     <InfoElement />

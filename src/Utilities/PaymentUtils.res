@@ -35,6 +35,11 @@ let paymentListLookupNew = (
     "mifinity",
   ]
   let otherPaymentList = []
+  let bankTransferList = [
+    "sepa_bank_transfer",
+    "instant_bank_transfer",
+    "instant_bank_transfer_finland",
+  ]
 
   if shouldDisplayApplePayInTabs {
     walletToBeDisplayedInTabs->Array.push("apple_pay")
@@ -62,10 +67,8 @@ let paymentListLookupNew = (
     } else if item.methodType == "bank_debit" {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_debit")->ignore
     } else if (
-      item.methodType == "bank_transfer" &&
-        (item.paymentMethodName !== "sepa_bank_transfer" &&
-        item.paymentMethodName !== "instant_bank_transfer" &&
-        item.paymentMethodName !== "instant_bank_transfer_finland")
+      item.methodType === "bank_transfer" &&
+        !(bankTransferList->Array.includes(item.paymentMethodName))
     ) {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_transfer")->ignore
     } else if item.methodType == "card" {
@@ -256,13 +259,16 @@ let getDisplayNameAndIcon = (
 }
 
 let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
+  let bankTransferMethods = [
+    "sepa_bank_transfer",
+    "instant_bank_transfer",
+    "instant_bank_transfer_finland",
+  ]
   if paymentMethodType == "bank_debit" {
     paymentMethodName->String.replace("_debit", "")
   } else if (
-    paymentMethodType == "bank_transfer" &&
-      (paymentMethodName !== "sepa_bank_transfer" &&
-      paymentMethodName !== "instant_bank_transfer" &&
-      paymentMethodName !== "instant_bank_transfer_finland")
+    paymentMethodType === "bank_transfer" &&
+      !(bankTransferMethods->Array.includes(paymentMethodName))
   ) {
     paymentMethodName->String.replace("_transfer", "")
   } else {
