@@ -270,7 +270,7 @@ let useHandleApplePayResponse = (
           ~value="Error in parsing Apple Pay Data",
           ~eventName=APPLE_PAY_FLOW,
           ~paymentMethod="APPLE_PAY",
-          ~internalMetadata=err->formatException->JSON.stringify,
+          // ~internalMetadata=err->formatException->JSON.stringify,
         )
       }
     }

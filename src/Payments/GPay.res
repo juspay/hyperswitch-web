@@ -194,7 +194,7 @@ let make = (
         loggerState.setLogError(
           ~value="Error in syncing GooglePay Payment",
           ~eventName=GOOGLE_PAY_FLOW,
-          ~internalMetadata=err->formatException->JSON.stringify,
+          // ~internalMetadata=err->formatException->JSON.stringify,
           ~paymentMethod="GOOGLE_PAY",
         )
       }
