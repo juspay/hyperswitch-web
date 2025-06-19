@@ -750,19 +750,33 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
               [("sessionUpdate", false->JSON.Encode.bool)]->Dict.fromArray,
             )
           })
+          [("updateCompleted", true->JSON.Encode.bool)]
+          ->Dict.fromArray
+          ->JSON.Encode.object
         } catch {
-        | _ => ()
+        | _ =>
+          [
+            ("updateCompleted", false->JSON.Encode.bool),
+            ("errorMessage", "Something went wrong"->JSON.Encode.string),
+          ]
+          ->Dict.fromArray
+          ->JSON.Encode.object
         }
       }
 
       let completeUpdateIntent = clientSecret => {
-        sessionUpdate(clientSecret)->ignore
+        sessionUpdate(clientSecret)
       }
 
       let initiateUpdateIntent = () => {
         iframeRef.contents->Array.forEach(ifR => {
           ifR->Window.iframePostMessage([("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray)
         })
+        let msg =
+          [("updateInitiated", true->JSON.Encode.bool)]
+          ->Dict.fromArray
+          ->JSON.Encode.object
+        Promise.resolve(msg)
       }
 
       let returnObject: hyperInstance = {
