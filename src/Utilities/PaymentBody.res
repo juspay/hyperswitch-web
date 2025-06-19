@@ -926,6 +926,16 @@ let pazeBody = (~completeResponse) => {
   ]
 }
 
+let revolutPayBody = () => {
+  let walletBody = [("revolut_pay", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson
+  let paymentMethodData = [("wallet", walletBody)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "revolut_pay"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
 let eftBody = () => {
   open Utils
   let eftProviderName = [("provider", "ozow"->JSON.Encode.string)]->getJsonFromArrayOfJson
@@ -969,6 +979,7 @@ let appendRedirectPaymentMethods = [
   "we_chat_pay",
   "ali_pay",
   "ali_pay_hk",
+  "revolut_pay",
 ]
 
 let appendBankeDebitMethods = ["sepa"]
@@ -1079,6 +1090,7 @@ let getPaymentBody = (
   | "przelewy24" => p24Body(~email)
   | "online_banking_fpx" => fpxOBBody(~bank)
   | "online_banking_thailand" => thailandOBBody(~bank)
+  | "revolut_pay" => revolutPayBody()
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)
