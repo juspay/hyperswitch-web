@@ -927,18 +927,15 @@ let pazeBody = (~completeResponse) => {
 }
 
 let revolutPayBody = () => {
-  let revolutPayRedirect =
-    [("revolut_pay_redirect", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson
-  let paymentMethodData = [("revolut_pay", revolutPayRedirect)]->Utils.getJsonFromArrayOfJson
+  let walletBody = [("revolut_pay", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson
+  let paymentMethodData = [("wallet", walletBody)]->Utils.getJsonFromArrayOfJson
 
   [
     ("payment_method", "wallet"->JSON.Encode.string),
     ("payment_method_type", "revolut_pay"->JSON.Encode.string),
-    ("payment_experience", "redirect_to_url"->JSON.Encode.string),
     ("payment_method_data", paymentMethodData),
   ]
 }
-
 let eftBody = () => {
   open Utils
   let eftProviderName = [("provider", "ozow"->JSON.Encode.string)]->getJsonFromArrayOfJson
