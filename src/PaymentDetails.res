@@ -38,6 +38,11 @@ let details = [
     displayName: "Affirm",
   },
   {
+    type_: "revolut_pay",
+    icon: Some(icon("revolut", ~size=19)),
+    displayName: "Revolut Pay",
+  },
+  {
     type_: "sofort",
     icon: Some(icon("sofort", ~size=19)),
     displayName: "Sofort",

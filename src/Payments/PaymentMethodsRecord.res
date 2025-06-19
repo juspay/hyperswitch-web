@@ -194,6 +194,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "revolut_pay",
+    fields: [InfoElement],
+    icon: Some(icon("revolut", ~size=20)),
+    displayName: "Revolut Pay",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "affirm",
     fields: [InfoElement],
     icon: Some(icon("affirm", ~size=20)),

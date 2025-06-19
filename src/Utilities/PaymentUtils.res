@@ -33,6 +33,7 @@ let paymentListLookupNew = (
     "momo",
     "touch_n_go",
     "mifinity",
+    "revolut_pay",
   ]
   let otherPaymentList = []
 

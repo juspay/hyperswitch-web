@@ -17,6 +17,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "local_bank_transfer_transfer",
   "afterpay_clearpay",
   "mifinity",
+  "revolut_pay",
   "upi_collect",
   "sepa",
   "sepa_bank_transfer",
