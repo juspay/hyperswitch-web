@@ -21,6 +21,7 @@ let make = (~walletOptions) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let isWallet = walletOptions->Array.includes("paypal")
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
 
   let (_, _, labelType, _) = options.wallets.style.type_
   let _label = switch labelType {
@@ -135,6 +136,8 @@ let make = (~walletOptions) => {
         borderRadius: `${options.wallets.style.buttonRadius->Int.toString}px`,
         width: "100%",
         backgroundColor: buttonColor,
+        pointerEvents: updateSession ? "none" : "auto",
+        opacity: updateSession ? "0.5" : "1.0",
       }
       onClick={_ => options.readOnly ? () : onPaypalClick()}>
       <div

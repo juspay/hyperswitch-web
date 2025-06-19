@@ -12,6 +12,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
+  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
@@ -129,7 +130,15 @@ let make = (~sessionObj: SessionsType.token) => {
     None
   }, (status, paymentMethodTypes))
 
-  <div style={height: `${height->Int.toString}px`} id="klarna-payments" className="w-full" />
+  <div
+    style={
+      height: `${height->Int.toString}px`,
+      pointerEvents: updateSession ? "none" : "auto",
+      opacity: updateSession ? "0.5" : "1.0",
+    }
+    id="klarna-payments"
+    className="w-full"
+  />
 }
 
 let default = make

@@ -196,7 +196,7 @@ let make = (
       let otherElements = componentType->isOtherElements
       switch componentType {
       | "paymentMethodsManagement" => ()
-      | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger)
+      | str => Console.warn(`Unknown Key: ${str} type in create`)
       }
 
       let mountPostMessage = (

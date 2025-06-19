@@ -735,7 +735,45 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let returnObject = {
+      let sessionUpdate = async clientSecret => {
+        try {
+          let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
+          let session = await PaymentHelpers.fetchSessions(
+            ~clientSecret,
+            ~publishableKey,
+            ~logger,
+            ~endpoint,
+          )
+          iframeRef.contents->Array.forEach(ifR => {
+            ifR->Window.iframePostMessage([("sessions", session)]->Dict.fromArray)
+            ifR->Window.iframePostMessage(
+              [("sessionUpdate", false->JSON.Encode.bool)]->Dict.fromArray,
+            )
+          })
+          [("updateCompleted", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
+        } catch {
+        | Exn.Error(e) =>
+          let errorMsg = Exn.message(e)->Option.getOr("Something went wrong!")
+          [
+            ("updateCompleted", false->JSON.Encode.bool),
+            ("errorMessage", errorMsg->JSON.Encode.string),
+          ]->getJsonFromArrayOfJson
+        }
+      }
+
+      let completeUpdateIntent = clientSecret => {
+        sessionUpdate(clientSecret)
+      }
+
+      let initiateUpdateIntent = () => {
+        iframeRef.contents->Array.forEach(ifR => {
+          ifR->Window.iframePostMessage([("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray)
+        })
+        let msg = [("updateInitiated", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
+        Promise.resolve(msg)
+      }
+
+      let returnObject: hyperInstance = {
         confirmOneClickPayment,
         confirmPayment,
         elements,
@@ -745,6 +783,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentRequest,
         initPaymentSession,
         paymentMethodsManagementElements,
+        completeUpdateIntent,
+        initiateUpdateIntent,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

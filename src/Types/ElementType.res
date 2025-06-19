@@ -56,12 +56,12 @@ type options = {
   showIcon: bool,
   disabled: bool,
 }
-let getIconStyle = (str, logger) => {
+let getIconStyle = str => {
   switch str {
   | "default" => Default
   | "solid" => Solid
   | str => {
-      str->unknownPropValueWarning(["default", "solid"], "options.iconStyle", ~logger)
+      str->unknownPropValueWarning(["default", "solid"], "options.iconStyle")
       Default
     }
   }
@@ -177,13 +177,13 @@ let rec getStyleObj = (dict, str, logger) => {
   })
   ->Option.getOr(defaultStyleClass)
 }
-let getTheme = (str, key, logger) => {
+let getTheme = (str, key) => {
   switch str {
   | "dark" => Dark
   | "light" => Light
   | "light-outline" => LightOutline
   | str => {
-      str->unknownPropValueWarning(["dark", "light", "light-outline"], key, ~logger)
+      str->unknownPropValueWarning(["dark", "light", "light-outline"], key)
       Dark
     }
   }
@@ -197,7 +197,6 @@ let getPaymentRequestButton = (dict, str, logger) => {
       type_: getWarningString(json, "type", "", ~logger),
       theme: getWarningString(json, "theme", "dark", ~logger)->getTheme(
         "elements.options.style.paymentRequestButton.theme",
-        logger,
       ),
       height: getWarningString(json, "height", "", ~logger),
     }
@@ -234,7 +233,6 @@ let itemToObjMapper = (dict, logger) => {
     ],
     dict,
     "options",
-    ~logger,
   )
 
   {
@@ -242,7 +240,7 @@ let itemToObjMapper = (dict, logger) => {
     style: getStyle(dict, "style", logger),
     value: getWarningString(dict, "value", "", ~logger),
     hidePostalCode: getBoolWithWarning(dict, "hidePostalCode", false, ~logger),
-    iconStyle: getWarningString(dict, "iconStyle", "default", ~logger)->getIconStyle(logger),
+    iconStyle: getWarningString(dict, "iconStyle", "default", ~logger)->getIconStyle,
     hideIcon: getBoolWithWarning(dict, "hideIcon", false, ~logger),
     showIcon: getBoolWithWarning(dict, "showIcon", false, ~logger),
     disabled: getBoolWithWarning(dict, "disabled", false, ~logger),

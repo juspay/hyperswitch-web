@@ -33,6 +33,7 @@ let paymentListLookupNew = (
     "momo",
     "touch_n_go",
     "mifinity",
+    "revolut_pay",
   ]
   let otherPaymentList = []
 
@@ -62,9 +63,8 @@ let paymentListLookupNew = (
     } else if item.methodType == "bank_debit" {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_debit")->ignore
     } else if (
-      item.methodType == "bank_transfer" &&
-        (item.paymentMethodName !== "sepa_bank_transfer" &&
-        item.paymentMethodName !== "instant_bank_transfer")
+      item.methodType === "bank_transfer" &&
+        !(Constants.bankTransferList->Array.includes(item.paymentMethodName))
     ) {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_transfer")->ignore
     } else if item.methodType == "card" {
@@ -258,9 +258,8 @@ let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
   if paymentMethodType == "bank_debit" {
     paymentMethodName->String.replace("_debit", "")
   } else if (
-    paymentMethodType == "bank_transfer" &&
-      (paymentMethodName !== "sepa_bank_transfer" &&
-      paymentMethodName !== "instant_bank_transfer")
+    paymentMethodType === "bank_transfer" &&
+      !(Constants.bankTransferList->Array.includes(paymentMethodName))
   ) {
     paymentMethodName->String.replace("_transfer", "")
   } else {
