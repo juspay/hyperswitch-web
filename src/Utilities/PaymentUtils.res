@@ -3,6 +3,11 @@ let paymentManagementListValue = Recoil.atom(
   "paymentManagementListValue",
   UnifiedHelpersV2.defaultPaymentsList,
 )
+let bankTransferList = [
+  "sepa_bank_transfer",
+  "instant_bank_transfer",
+  "instant_bank_transfer_finland",
+]
 
 let paymentListLookupNew = (
   list: PaymentMethodsRecord.paymentMethodList,
@@ -35,11 +40,6 @@ let paymentListLookupNew = (
     "mifinity",
   ]
   let otherPaymentList = []
-  let bankTransferList = [
-    "sepa_bank_transfer",
-    "instant_bank_transfer",
-    "instant_bank_transfer_finland",
-  ]
 
   if shouldDisplayApplePayInTabs {
     walletToBeDisplayedInTabs->Array.push("apple_pay")
@@ -259,16 +259,10 @@ let getDisplayNameAndIcon = (
 }
 
 let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
-  let bankTransferMethods = [
-    "sepa_bank_transfer",
-    "instant_bank_transfer",
-    "instant_bank_transfer_finland",
-  ]
   if paymentMethodType == "bank_debit" {
     paymentMethodName->String.replace("_debit", "")
   } else if (
-    paymentMethodType === "bank_transfer" &&
-      !(bankTransferMethods->Array.includes(paymentMethodName))
+    paymentMethodType === "bank_transfer" && !(bankTransferList->Array.includes(paymentMethodName))
   ) {
     paymentMethodName->String.replace("_transfer", "")
   } else {
