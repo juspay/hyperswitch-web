@@ -754,10 +754,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Dict.fromArray
           ->JSON.Encode.object
         } catch {
-        | _ =>
+        | Exn.Error(e) =>
+          let errorMsg = Exn.message(e)->Option.getOr("Something went wrong!")
           [
             ("updateCompleted", false->JSON.Encode.bool),
-            ("errorMessage", "Something went wrong"->JSON.Encode.string),
+            ("errorMessage", errorMsg->JSON.Encode.string),
           ]
           ->Dict.fromArray
           ->JSON.Encode.object
