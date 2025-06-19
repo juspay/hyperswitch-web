@@ -58,6 +58,11 @@ let details = [
     displayName: "Instant Transfer",
   },
   {
+    type_: "instant_bank_transfer_finland",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Instant Transfer Finland",
+  },
+  {
     type_: "bacs_transfer",
     icon: Some(icon("ach", ~size=19)),
     displayName: "Bacs Transfer",
