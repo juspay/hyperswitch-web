@@ -12,6 +12,7 @@ type payment =
   | SepaTransfer
   | InstantTransfer
   | InstantTransferFinland
+  | InstantTransferPoland
   | BacsTransfer
   | ACHBankDebit
   | SepaBankDebit
@@ -45,6 +46,7 @@ let paymentMode = str => {
   | "sepa_bank_transfer" => SepaTransfer
   | "instant_bank_transfer" => InstantTransfer
   | "instant_bank_transfer_finland" => InstantTransferFinland
+  | "instant_bank_transfer_poland" => InstantTransferPoland
   | "bacs_transfer" => BacsTransfer
   | "bancontact_card" => BanContactCard
   | "google_pay" => GooglePay
@@ -70,6 +72,7 @@ let defaultOrder = [
   "sepa_bank_transfer",
   "instant_bank_transfer",
   "instant_bank_transfer_finland",
+  "instant_bank_transfer_poland",
   "bacs_transfer",
   "ach_debit",
   "sepa_debit",
