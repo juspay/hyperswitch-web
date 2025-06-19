@@ -293,8 +293,6 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | INVALID_PK
   | DEPRECATED_LOADSTRIPE
   | REQUIRED_PARAMETER
-  | UNKNOWN_KEY
-  | UNKNOWN_VALUE
   | TYPE_BOOL_ERROR
   | TYPE_INT_ERROR
   | TYPE_STRING_ERROR
