@@ -21,6 +21,7 @@ let make = () => {
       | SepaTransfer
       | InstantTransfer
       | InstantTransferFinland
+      | InstantTransferPoland
       | Boleto =>
         localeString.bankDetailsText
       | _ => localeString.redirectText

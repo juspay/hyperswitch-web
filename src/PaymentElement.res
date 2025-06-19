@@ -342,6 +342,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           loaderComponent={loader()} componentName="InstantBankTransferFinlandLazy">
           <InstantBankTransferFinlandLazy />
         </ReusableReactSuspense>
+      | InstantTransferPoland =>
+        <ReusableReactSuspense
+          loaderComponent={loader()} componentName="InstantBankTransferPolandLazy">
+          <InstantBankTransferPolandLazy />
+        </ReusableReactSuspense>
       | BacsTransfer =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="BacsBankTransferLazy">
           <BacsBankTransferLazy />

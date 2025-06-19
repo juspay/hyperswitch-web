@@ -264,6 +264,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "instant_bank_transfer_poland",
+    icon: Some(icon("bank", ~size=19)),
+    fields: [],
+    displayName: "Instant Bank Transfer Poland",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "sepa_debit",
     icon: Some(icon("sepa", ~size=19, ~width=25)),
     displayName: "SEPA Debit",
