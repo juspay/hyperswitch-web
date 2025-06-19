@@ -78,10 +78,8 @@ let retrievePaymentIntent = (
   })
 }
 
-let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
-  let url = `${endpoint}/payments/${paymentIntentID}/3ds/authentication`
+let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) => {
+  let url = APIUtils.generateApiUrl(FetchThreeDsAuth, ~clientSecret)
   let broswerInfo = BrowserSpec.broswerInfo
   let body =
     [
@@ -92,57 +90,32 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
     ->Array.concat(broswerInfo())
     ->getJsonFromArrayOfJson
 
-  open Promise
-  logApi(
-    ~optLogger,
-    ~url,
-    ~apiLogType=Request,
-    ~eventName=AUTHENTICATION_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let onSuccess = data => data
+
+  let onFailure = data => {
+    let dict = data->getDictFromJson
+    let errorObj = PaymentError.itemToObjMapper(dict)
+    closePaymentLoaderIfAny()
+    postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
+    JSON.Encode.null
+  }
+
+  let onCatchCallback = err => {
+    closePaymentLoaderIfAny()
+    Js.Exn.raiseError(err->JSON.stringify)
+  }
+
+  await Utils.fetchApiWithLogging(
+    url,
+    ~eventName=AUTHENTICATION_CALL,
+    ~logger,
+    ~onSuccess,
+    ~onFailure,
+    ~bodyStr=body->JSON.stringify,
+    ~headers,
+    ~method=#POST,
+    ~onCatchCallback=Some(onCatchCallback),
   )
-  fetchApi(url, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray)
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=AUTHENTICATION_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        let dict = data->getDictFromJson
-        let errorObj = PaymentError.itemToObjMapper(dict)
-        closePaymentLoaderIfAny()
-        postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(~optLogger, ~url, ~statusCode, ~apiLogType=Response, ~eventName=AUTHENTICATION_CALL)
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Unable to call 3ds auth ", exceptionMessage)
-    logApi(
-      ~optLogger,
-      ~url,
-      ~eventName=AUTHENTICATION_CALL,
-      ~apiLogType=NoResponse,
-      ~data=exceptionMessage,
-      ~logType=ERROR,
-      ~logCategory=API,
-    )
-    reject(err)
-  })
 }
 
 let rec pollRetrievePaymentIntent = (

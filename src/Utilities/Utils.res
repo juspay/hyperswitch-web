@@ -962,6 +962,7 @@ let fetchApiWithLogging = async (
   ~customPodUri=None,
   ~publishableKey=None,
   ~isPaymentSession=false,
+  ~onCatchCallback=None,
 ) => {
   open LoggerUtils
 
@@ -1022,6 +1023,14 @@ let fetchApiWithLogging = async (
   } catch {
   | err => {
       let exceptionMessage = err->formatException
+      Console.error2(
+        "Unexpected error while making request:",
+        {
+          "uri": uri,
+          "event": eventName,
+          "error": exceptionMessage,
+        },
+      )
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
@@ -1030,7 +1039,10 @@ let fetchApiWithLogging = async (
         ~data=exceptionMessage,
         ~isPaymentSession,
       )
-      onFailure(exceptionMessage)
+      switch onCatchCallback {
+      | Some(fun) => fun(exceptionMessage)
+      | None => onFailure(exceptionMessage)
+      }
     }
   }
 }
