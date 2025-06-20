@@ -1,8 +1,11 @@
 module CoBadgeCardSchemeDropDown = {
   @react.component
   let make = (~eligibleCardSchemes, ~setCardBrand) => {
+    let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
     <select
       className="w-4"
+      onClick={_ =>
+        loggerState.setLogInfo(~value="CardSchemeMenu expanded", ~eventName=CARD_SCHEME_SELECTION)}
       onChange={ev => {
         let target = ev->ReactEvent.Form.target
         let value = target["value"]
@@ -42,9 +45,22 @@ let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand) => {
 
   let marginLeft = isCardCoBadged ? "-ml-2" : ""
 
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let isCoBadgedCardDetectedOnce = React.useRef(false)
+  let shouldShowCoBadgeCardSchemeDropDown =
+    isCardCoBadged && cardNumber->CardUtils.clearSpaces->String.length >= 16
+
+  React.useEffect1(() => {
+    if shouldShowCoBadgeCardSchemeDropDown && !isCoBadgedCardDetectedOnce.current {
+      isCoBadgedCardDetectedOnce.current = true
+      loggerState.setLogInfo(~value="Card detected as co-badged", ~eventName=CARD_SCHEME_SELECTION)
+    }
+    None
+  }, [shouldShowCoBadgeCardSchemeDropDown])
+
   <div className={`${animate} flex items-center ${marginLeft} hellow-rodl`}>
     cardBrandIcon
-    <RenderIf condition={isCardCoBadged && cardNumber->CardUtils.clearSpaces->String.length >= 16}>
+    <RenderIf condition={shouldShowCoBadgeCardSchemeDropDown}>
       <CoBadgeCardSchemeDropDown eligibleCardSchemes setCardBrand />
     </RenderIf>
   </div>

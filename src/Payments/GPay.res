@@ -191,7 +191,7 @@ let make = (
           syncPayment()
         }
       } catch {
-      | err =>
+      | _ =>
         loggerState.setLogError(
           ~value="Error in syncing GooglePay Payment",
           ~eventName=GOOGLE_PAY_FLOW,

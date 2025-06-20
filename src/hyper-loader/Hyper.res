@@ -288,7 +288,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let googlePayScriptURL = "https://pay.google.com/gp/p/js/pay.js"
         let googlePayScript = Window.createElement("script")
         googlePayScript->Window.elementSrc(googlePayScriptURL)
-        googlePayScript->Window.elementOnerror(err => {
+        googlePayScript->Window.elementOnerror(_ => {
           logger.setLogError(
             ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT",
             ~eventName=GOOGLE_PAY_SCRIPT,
@@ -306,7 +306,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let samsungPayScriptUrl = "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js"
         let samsungPayScript = Window.createElement("script")
         samsungPayScript->Window.elementSrc(samsungPayScriptUrl)
-        samsungPayScript->Window.elementOnerror(err => {
+        samsungPayScript->Window.elementOnerror(_ => {
           logger.setLogError(
             ~value="ERROR DURING LOADING SAMSUNG PAY SCRIPT",
             ~eventName=SAMSUNG_PAY_SCRIPT,
