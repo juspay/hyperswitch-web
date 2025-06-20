@@ -1,5 +1,9 @@
 type apiCall =
-  FetchPaymentMethodList | FetchCustomerPaymentMethodList | FetchSessions | FetchThreeDsAuth
+  | FetchPaymentMethodList
+  | FetchCustomerPaymentMethodList
+  | FetchSessions
+  | FetchThreeDsAuth
+  | FetchSavedPaymentMethodList
 
 let generateApiUrl = (
   apiCallType: apiCall,
@@ -21,6 +25,7 @@ let generateApiUrl = (
   | FetchCustomerPaymentMethodList => `customers/payment_methods?client_secret=${clientSecretVal}`
   | FetchSessions => `payments/session_tokens`
   | FetchThreeDsAuth => `payments/${paymentIntentID}/3ds/authentication`
+  | FetchSavedPaymentMethodList => `customers/payment_methods`
   }
 
   `${baseUrl}/${path}`

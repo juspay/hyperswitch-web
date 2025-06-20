@@ -459,12 +459,7 @@ let getCustomerSavedPaymentMethods = (
 
 let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~customPodUri, ~endpoint) => {
   let getSavedPaymentManagementMethodsList = _ => {
-    PaymentHelpers.fetchSavedPaymentMethodList(
-      ~ephemeralKey,
-      ~optLogger=Some(logger),
-      ~customPodUri,
-      ~endpoint,
-    )
+    PaymentHelpers.fetchSavedPaymentMethodList(~ephemeralKey, ~logger, ~customPodUri, ~endpoint)
     ->then(response => {
       response->resolve
     })
