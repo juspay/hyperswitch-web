@@ -251,7 +251,7 @@ let make = (
                         ->Utils.getDictFromDict("checkoutResponseData")
                         ->Utils.getString("srcCorrelationId", "")
 
-                      let clickToPayBody = PaymentBody.clickToPayBody(
+                      let clickToPayBody = PaymentBody.mastercardClickToPayBody(
                         ~merchantTransactionId,
                         ~correlationId,
                         ~xSrcFlowId,
