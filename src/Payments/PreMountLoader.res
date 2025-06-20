@@ -134,7 +134,7 @@ let getMessageHandlerV2Elements = (
 let getMessageHandlerV1PMM = (~ephemeralKey, ~logger, ~customPodUri, ~endpoint) => {
   let savedPaymentMethodsPromise = PaymentHelpers.fetchSavedPaymentMethodList(
     ~ephemeralKey,
-    ~optLogger=Some(logger),
+    ~logger,
     ~customPodUri,
     ~endpoint,
   )
