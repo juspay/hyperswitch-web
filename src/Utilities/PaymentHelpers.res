@@ -1174,7 +1174,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         let contentLength = body->String.length->Int.toString
         let maskedPayload =
           body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
-        let loggerPayload =
+        let _loggerPayload =
           [
             ("payload", maskedPayload->JSON.Encode.string),
             (
@@ -2102,7 +2102,7 @@ let usePostSessionTokens = (
         let contentLength = body->String.length->Int.toString
         let maskedPayload =
           body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
-        let loggerPayload =
+        let _loggerPayload =
           [
             ("payload", maskedPayload->JSON.Encode.string),
             (
