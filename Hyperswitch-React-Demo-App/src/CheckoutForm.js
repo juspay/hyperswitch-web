@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   PaymentElement,
   useHyper,
-  useElements,
+  useWidgets,
 } from "@juspay-tech/react-hyper-js";
 import Cart from "./Cart";
 import Completion from "./Completion";
@@ -17,7 +17,7 @@ import {
 
 export default function CheckoutForm() {
   const hyper = useHyper();
-  const elements = useElements();
+  const elements = useWidgets();
 
   const [isSuccess, setIsSuccess] = useState(false);
   const [message, setMessage] = useState(null);
