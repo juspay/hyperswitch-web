@@ -7,21 +7,24 @@ type apiCall =
   | DeletePaymentMethod
   | CalculateTax
   | CreatePaymentMethod
+  | RetrievePaymentIntent
 
 type apiParams = {
   clientSecret: option<string>,
   publishableKey: option<string>,
   customBackendBaseUrl: option<string>,
   paymentMethodId: option<string>,
+  falseSync: option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
-  let {clientSecret, publishableKey, customBackendBaseUrl, paymentMethodId} = params
+  let {clientSecret, publishableKey, customBackendBaseUrl, paymentMethodId, falseSync} = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
   let publishableKeyVal = publishableKey->Option.getOr("")
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
+  let falseSync = falseSync->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -41,6 +44,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let queryParams = switch apiCallType {
   | FetchPaymentMethodList => list{("client_secret", clientSecretVal)}
   | FetchCustomerPaymentMethodList => list{("client_secret", clientSecretVal)}
+  | RetrievePaymentIntent => list{("client_secret", clientSecretVal), ("false_sync", falseSync)}
   | FetchSessions
   | FetchThreeDsAuth
   | FetchSavedPaymentMethodList
@@ -59,6 +63,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | DeletePaymentMethod => `payment_methods/${paymentMethodIdVal}`
   | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
   | CreatePaymentMethod => "payment_methods"
+  | RetrievePaymentIntent => `payments/${paymentIntentID}`
   }
 
   `${baseUrl}/${path}${buildQueryParams(queryParams)}`

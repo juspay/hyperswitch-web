@@ -53,8 +53,8 @@ let make = () => {
     try {
       let json = await PaymentHelpers.retrievePaymentIntent(
         clientSecret,
-        headers,
-        ~optLogger=Some(logger),
+        headers->Dict.fromArray,
+        ~logger,
         ~customPodUri="",
         ~isForceSync=true,
       )

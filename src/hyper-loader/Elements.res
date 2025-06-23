@@ -524,8 +524,8 @@ let make = (
                       delay(2000)->then(_ =>
                         PaymentHelpers.pollRetrievePaymentIntent(
                           clientSecret,
-                          headers,
-                          ~optLogger=Some(logger),
+                          headers->Dict.fromArray,
+                          ~logger,
                           ~customPodUri,
                           ~isForceSync=true,
                         )
@@ -778,8 +778,8 @@ let make = (
             ->then(_ => {
               PaymentHelpers.retrievePaymentIntent(
                 clientSecret,
-                headers,
-                ~optLogger=Some(logger),
+                headers->Dict.fromArray,
+                ~logger,
                 ~customPodUri,
                 ~isForceSync=true,
               )
@@ -814,8 +814,8 @@ let make = (
           let retrievePaymentIntentWrapper = redirectUrl => {
             PaymentHelpers.retrievePaymentIntent(
               clientSecret,
-              headers,
-              ~optLogger=Some(logger),
+              headers->Dict.fromArray,
+              ~logger,
               ~customPodUri,
               ~isForceSync=true,
             )

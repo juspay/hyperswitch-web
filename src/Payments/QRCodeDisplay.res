@@ -128,8 +128,8 @@ let make = () => {
           try {
             let res = await PaymentHelpers.pollRetrievePaymentIntent(
               paymentIntentId,
-              headers->Dict.toArray,
-              ~optLogger=Some(logger),
+              headers,
+              ~logger,
               ~customPodUri,
             )
             Modal.close(setOpenModal)
@@ -150,8 +150,8 @@ let make = () => {
     try {
       let json = await PaymentHelpers.retrievePaymentIntent(
         clientSecret,
-        headers,
-        ~optLogger=Some(logger),
+        headers->Dict.fromArray,
+        ~logger,
         ~customPodUri,
       )
 
