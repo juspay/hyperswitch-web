@@ -172,7 +172,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
       <div className="flex justify-center items-center">
         <div>
           <ClickToPayHelpers.SrcMark
-            cardBrands={clickToPayConfig.availableCardBrands->Array.joinWith(",")} height="32"
+            cardBrands={clickToPayConfig.availableCardBrands->Array.join(",")} height="32"
           />
         </div>
       </div>

@@ -1098,7 +1098,7 @@ let getCardsVisaUnified = (~getCardsConfig) => vsdk.getCards(getCardsConfig)
 let signOutVisaUnified = () => vsdk.unbindAppInstance()
 
 let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorCallback) => {
-  let cardBrands = clickToPayToken.cardBrands->Array.joinWith(",")
+  let cardBrands = clickToPayToken.cardBrands->Array.join(",")
   let scriptSrc = GlobalVars.isProd
     ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=TestMerchant`
     : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=TestMerchant`

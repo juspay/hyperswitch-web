@@ -212,7 +212,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           } else if !checkPriorityList(paymentMethodOrder) {
             ErrorUtils.manageErrorWarning(
               SDK_CONNECTOR_WARNING,
-              ~dynamicStr=`'paymentMethodOrder' is ${Array.joinWith(
+              ~dynamicStr=`'paymentMethodOrder' is ${Array.join(
                   paymentMethodOrder->getOptionalArr,
                   ", ",
                 )} . Please enable Card Payment as 1st priority to show it as default.`,

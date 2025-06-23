@@ -43,7 +43,7 @@ let make = (~transferType) => {
     let text =
       keys
       ->Array.map(item => `${item->snakeToTitleCase} : ${getKeyValue(json, item)}`)
-      ->Array.joinWith(`\n`)
+      ->Array.join(`\n`)
     messageParentWindow([
       ("copy", true->JSON.Encode.bool),
       ("copyDetails", text->JSON.Encode.string),
