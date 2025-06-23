@@ -1441,7 +1441,7 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~ur
   })
 }
 
-let createPaymentMethod = (
+let createPaymentMethod = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
@@ -1449,72 +1449,36 @@ let createPaymentMethod = (
   ~endpoint,
   ~body,
 ) => {
-  open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-  let uri = `${endpoint}/payment_methods`
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    CreatePaymentMethod,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: Some(publishableKey),
+      paymentMethodId: None,
+    },
   )
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
   let body =
     body
     ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
     ->getJsonFromArrayOfJson
 
-  fetchApi(
+  await Utils.fetchApiWithLogging(
     uri,
-    ~method=#POST,
+    ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
+    ~logger,
     ~bodyStr=body->JSON.stringify,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~method=#POST,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
   )
-  ->then(resp => {
-    let statusCode = resp->Fetch.Response.status
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger=Some(logger),
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
-    )
-    JSON.Encode.null->resolve
-  })
 }
 
 let fetchPaymentMethodList = async (

@@ -6,6 +6,7 @@ type apiCall =
   | FetchSavedPaymentMethodList
   | DeletePaymentMethod
   | CalculateTax
+  | CreatePaymentMethod
 
 type apiParams = {
   clientSecret: option<string>,
@@ -44,7 +45,8 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | FetchThreeDsAuth
   | FetchSavedPaymentMethodList
   | DeletePaymentMethod
-  | CalculateTax =>
+  | CalculateTax
+  | CreatePaymentMethod =>
     list{}
   }
 
@@ -56,6 +58,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | FetchSavedPaymentMethodList => "customers/payment_methods"
   | DeletePaymentMethod => `payment_methods/${paymentMethodIdVal}`
   | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
+  | CreatePaymentMethod => "payment_methods"
   }
 
   `${baseUrl}/${path}${buildQueryParams(queryParams)}`
