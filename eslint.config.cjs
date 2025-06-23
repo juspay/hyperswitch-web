@@ -7,21 +7,6 @@ module.exports = [
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
-      globals: {
-        window: true,
-        document: true,
-        navigator: true,
-        screen: true,
-        parent: true,
-        open: true,
-        AbortController: true,
-        require: true,
-        repoVersion: true,
-        publicPath: true,
-        isProductionEnv: true,
-        sentryDSN: true,
-        sdkVersionValue: true,
-      },
     },
     plugins: {
       promise,
