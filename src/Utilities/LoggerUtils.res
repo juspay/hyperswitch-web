@@ -12,7 +12,7 @@ let logApi = (
   ~logCategory: HyperLoggerTypes.logCategory=API,
   ~isPaymentSession: bool=false,
 ) => {
-  let (value, internalMetadata) = switch apiLogType {
+  let (value, _) = switch apiLogType {
   | Request => ([("url", url->JSON.Encode.string)], [])
   | Response => (
       [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)],
@@ -329,6 +329,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | PAYMENT_METHOD_TYPE_DETECTION_FAILED
   | THREE_DS_POPUP_REDIRECTION
   | NETWORK_STATE
+  | CARD_SCHEME_SELECTION
   | S3_API =>
     None
   }

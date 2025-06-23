@@ -136,7 +136,7 @@ let make = (~sessionObj: SessionsType.token) => {
         }
       }
     } catch {
-    | err =>
+    | _ =>
       loggerState.setLogError(
         ~value="Error loading Paypal",
         ~eventName=PAYPAL_SDK_FLOW,

@@ -189,7 +189,7 @@ let make = (
                 let trustPayScript = Window.createElement("script")
                 logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT)
                 trustPayScript->Window.elementSrc(trustPayScriptURL)
-                trustPayScript->Window.elementOnerror(err => {
+                trustPayScript->Window.elementOnerror(_ => {
                   logger.setLogError(
                     ~value="ERROR DURING LOADING TRUSTPAY APPLE PAY",
                     ~eventName=TRUSTPAY_SCRIPT,
@@ -541,7 +541,7 @@ let make = (
                     })
 
                     Promise.race([polling, executeGooglePayment, timeOut])
-                    ->then(res => {
+                    ->then(_ => {
                       logger.setLogInfo(
                         ~value="TrustPay GooglePay Response",
                         // ~internalMetadata=res->JSON.stringify,
@@ -667,7 +667,7 @@ let make = (
                   try {
                     let trustpay = trustPayApi(secrets)
                     trustpay.finishApplePaymentV2(payment, paymentRequest, Window.Location.hostname)
-                    ->then(res => {
+                    ->then(_ => {
                       let value = "Payment Data Filled: New Payment Method"
                       logger.setLogInfo(
                         ~value,
