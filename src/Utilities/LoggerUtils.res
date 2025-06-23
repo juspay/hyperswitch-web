@@ -1,3 +1,4 @@
+open IndexedDB
 let logApi = (
   ~eventName,
   ~statusCode=0,
@@ -11,7 +12,7 @@ let logApi = (
   ~logCategory: HyperLoggerTypes.logCategory=API,
   ~isPaymentSession: bool=false,
 ) => {
-  let (value, internalMetadata) = switch apiLogType {
+  let (value, _) = switch apiLogType {
   | Request => ([("url", url->JSON.Encode.string)], [])
   | Response => (
       [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)],
@@ -36,7 +37,7 @@ let logApi = (
     logger.setLogApi(
       ~eventName,
       ~value=ArrayType(value),
-      ~internalMetadata=ArrayType(internalMetadata),
+      // ~internalMetadata=ArrayType(internalMetadata),
       ~logType,
       ~logCategory,
       ~apiLogType,
@@ -53,14 +54,20 @@ let logInputChangeInfo = (text, logger: HyperLoggerTypes.loggerMake) => {
 let handleLogging = (
   ~optLogger: option<HyperLoggerTypes.loggerMake>,
   ~value,
-  ~internalMetadata="",
+  // ~internalMetadata="",
   ~eventName,
   ~paymentMethod,
   ~logType: HyperLoggerTypes.logType=INFO,
 ) => {
   switch optLogger {
   | Some(logger) =>
-    logger.setLogInfo(~value, ~internalMetadata, ~eventName, ~paymentMethod, ~logType)
+    logger.setLogInfo(
+      ~value,
+      // ~internalMetadata,
+      ~eventName,
+      ~paymentMethod,
+      ~logType,
+    )
   | _ => ()
   }
 }
@@ -87,7 +94,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
   setLogError: (
     ~value as _,
-    ~internalMetadata as _=?,
+    // ~internalMetadata as _=?,
     ~eventName as _,
     ~timestamp as _=?,
     ~latency as _=?,
@@ -97,7 +104,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   ) => (),
   setLogApi: (
     ~value as _,
-    ~internalMetadata as _,
+    // ~internalMetadata as _,
     ~eventName as _,
     ~timestamp as _=?,
     ~logType as _=?,
@@ -108,7 +115,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   ) => (),
   setLogInfo: (
     ~value as _,
-    ~internalMetadata as _=?,
+    // ~internalMetadata as _=?,
     ~eventName as _,
     ~timestamp as _=?,
     ~latency as _=?,
@@ -121,6 +128,111 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   setSessionId: _x => (),
   setMetadata: _x => (),
   setSource: _x => (),
+}
+
+let saveLogsToIndexedDB = (logs: array<HyperLoggerTypes.logFile>) => {
+  Promise.make((resolve, reject) => {
+    let request = openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs")
+
+    request->OpenDBRequest.onsuccess(_ => {
+      let db = OpenDBRequest.result(request)
+
+      if logs->Array.length > 0 {
+        let transaction = db->DB.transaction(["logs"], "readwrite")
+        let store = transaction->Transaction.objectStore("logs")
+
+        transaction->Transaction.oncomplete(
+          _ => {
+            db->DB.close
+            resolve()
+          },
+        )
+
+        transaction->Transaction.onerror(
+          _ => {
+            db->DB.close
+            reject()
+          },
+        )
+
+        logs->Array.forEach(
+          log => {
+            let _ = store->ObjectStore.put(log)
+          },
+        )
+      } else {
+        db->DB.close
+        reject()
+      }
+    })
+
+    request->OpenDBRequest.onerror(_ => {
+      reject()
+    })
+  })
+}
+
+let retrieveLogsFromIndexedDB = () => {
+  Promise.make((resolve, reject) => {
+    let request = openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs")
+
+    request->OpenDBRequest.onsuccess(_ => {
+      let db = OpenDBRequest.result(request)
+      let transaction = db->DB.transaction(["logs"], "readonly")
+      let store = transaction->Transaction.objectStore("logs")
+      let getAllRequest = store->ObjectStore.getAll
+
+      getAllRequest->Request.onsuccess(
+        _ => {
+          let result = Request.result(getAllRequest)
+          db->DB.close
+          resolve(result)
+        },
+      )
+
+      getAllRequest->Request.onerror(
+        _ => {
+          db->DB.close
+          reject([])
+        },
+      )
+    })
+
+    request->OpenDBRequest.onerror(_ => {
+      reject([])
+    })
+  })
+}
+
+let clearLogsFromIndexedDB = () => {
+  Promise.make((resolve, reject) => {
+    let request = openDBAndGetRequest(~dbName="HyperLogger", ~objectStoreName="logs")
+
+    request->OpenDBRequest.onsuccess(_ => {
+      let db = OpenDBRequest.result(request)
+      let transaction = db->DB.transaction(["logs"], "readwrite")
+      let store = transaction->Transaction.objectStore("logs")
+      let clearRequest = store->ObjectStore.clear
+
+      clearRequest->Request.onsuccess(
+        _ => {
+          db->DB.close
+          resolve()
+        },
+      )
+
+      clearRequest->Request.onerror(
+        _ => {
+          db->DB.close
+          reject()
+        },
+      )
+    })
+
+    request->OpenDBRequest.onerror(_ => {
+      reject()
+    })
+  })
 }
 
 let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
@@ -181,8 +293,6 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | INVALID_PK
   | DEPRECATED_LOADSTRIPE
   | REQUIRED_PARAMETER
-  | UNKNOWN_KEY
-  | UNKNOWN_VALUE
   | TYPE_BOOL_ERROR
   | TYPE_INT_ERROR
   | TYPE_STRING_ERROR
@@ -218,6 +328,8 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | CLICK_TO_PAY_FLOW
   | PAYMENT_METHOD_TYPE_DETECTION_FAILED
   | THREE_DS_POPUP_REDIRECTION
+  | NETWORK_STATE
+  | CARD_SCHEME_SELECTION
   | S3_API =>
     None
   }

@@ -4,7 +4,6 @@ node_modules
 .netlify
 lib/bs
 public/*.LICENSE.txt
-package-lock.json
 public/app.js
 public/app.css
 .DS_Store
@@ -12,7 +11,6 @@ public/app.css
 **/*.bs.js
 .github/CODEOWNERS
 screenshots
-!cypress-tests/package-lock.json
 
 # yarn
 .pnp.*

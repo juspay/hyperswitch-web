@@ -92,7 +92,7 @@ let make = (
     let loader = localOptions->getJsonStringFromDict("loader", "")
     let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
     let clientSecretReMatch = switch GlobalVars.sdkVersion {
-    | V1 => Some(Re.test(".+_secret_[A-Za-z0-9]+"->Re.fromString, clientSecret))
+    | V1 => Some(RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret))
     | V2 => None
     }
     let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
@@ -189,11 +189,11 @@ let make = (
                 let trustPayScript = Window.createElement("script")
                 logger.setLogInfo(~value="TrustPay Script Loading", ~eventName=TRUSTPAY_SCRIPT)
                 trustPayScript->Window.elementSrc(trustPayScriptURL)
-                trustPayScript->Window.elementOnerror(err => {
+                trustPayScript->Window.elementOnerror(_ => {
                   logger.setLogError(
                     ~value="ERROR DURING LOADING TRUSTPAY APPLE PAY",
                     ~eventName=TRUSTPAY_SCRIPT,
-                    ~internalMetadata=err->formatException->JSON.stringify,
+                    // ~internalMetadata=err->formatException->JSON.stringify,
                   )
                 })
                 trustPayScript->Window.elementOnload(_ => {
@@ -341,7 +341,7 @@ let make = (
       | "samsungPay"
       | "paymentMethodsManagement"
       | "payment" => ()
-      | str => manageErrorWarning(UNKNOWN_KEY, ~dynamicStr=`${str} type in create`, ~logger)
+      | str => Console.warn(`Unknown Key: ${str} type in create`)
       }
 
       let mountPostMessage = (
@@ -541,10 +541,10 @@ let make = (
                     })
 
                     Promise.race([polling, executeGooglePayment, timeOut])
-                    ->then(res => {
+                    ->then(_ => {
                       logger.setLogInfo(
                         ~value="TrustPay GooglePay Response",
-                        ~internalMetadata=res->JSON.stringify,
+                        // ~internalMetadata=res->JSON.stringify,
                         ~eventName=GOOGLE_PAY_FLOW,
                         ~paymentMethod="GOOGLE_PAY",
                       )
@@ -667,7 +667,7 @@ let make = (
                   try {
                     let trustpay = trustPayApi(secrets)
                     trustpay.finishApplePaymentV2(payment, paymentRequest, Window.Location.hostname)
-                    ->then(res => {
+                    ->then(_ => {
                       let value = "Payment Data Filled: New Payment Method"
                       logger.setLogInfo(
                         ~value,
@@ -676,7 +676,7 @@ let make = (
                       )
                       logger.setLogInfo(
                         ~value="TrustPay ApplePay Success Response",
-                        ~internalMetadata=res->JSON.stringify,
+                        // ~internalMetadata=res->JSON.stringify,
                         ~eventName=APPLE_PAY_FLOW,
                         ~paymentMethod="APPLE_PAY",
                       )

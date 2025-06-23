@@ -18,6 +18,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
   let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
+  let setUpdateSession = Recoil.useSetRecoilState(updateSession)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {paymentMethodOrder} = optionsPayment
@@ -91,10 +92,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | Card =>
       setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
     | PaymentMethodCollectElement => {
-        let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(
-          optionsDict,
-          logger,
-        )
+        let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
       }
     | GooglePayElement
@@ -418,6 +416,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("sessions") {
           setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))
+        }
+        if dict->getDictIsSome("sessionUpdate") {
+          setUpdateSession(_ => {
+            dict->getJsonObjectFromDict("sessionUpdate")->JSON.Decode.bool->Option.getOr(false)
+          })
         }
         if dict->getDictIsSome("isReadyToPay") {
           setIsGooglePayReady(_ =>

@@ -16,6 +16,7 @@ let make = (
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let isSDKHandleClick = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
+  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Gpay)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
@@ -190,11 +191,11 @@ let make = (
           syncPayment()
         }
       } catch {
-      | err =>
+      | _ =>
         loggerState.setLogError(
           ~value="Error in syncing GooglePay Payment",
           ~eventName=GOOGLE_PAY_FLOW,
-          ~internalMetadata=err->formatException->JSON.stringify,
+          // ~internalMetadata=err->formatException->JSON.stringify,
           ~paymentMethod="GOOGLE_PAY",
         )
       }
@@ -226,7 +227,11 @@ let make = (
   if isWallet {
     <RenderIf condition={isRenderGooglePayButton}>
       <div
-        style={height: `${height->Int.toString}px`}
+        style={
+          height: `${height->Int.toString}px`,
+          pointerEvents: updateSession ? "none" : "auto",
+          opacity: updateSession ? "0.5" : "1.0",
+        }
         id="google-pay-button"
         className={`w-full flex flex-row justify-center rounded-md`}
       />

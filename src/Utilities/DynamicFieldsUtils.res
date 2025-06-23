@@ -28,6 +28,8 @@ let dynamicFieldsEnabledPaymentMethods = [
   "pay_bright",
   "multibanco_transfer",
   "paypal",
+  "instant_bank_transfer_finland",
+  "instant_bank_transfer_poland",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
@@ -208,6 +210,8 @@ let useRequiredFieldsEmptyAndValid = (
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
+  let destinationBankAccountId = Recoil.useRecoilValueFromAtom(destinationBankAccountId)
+  let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
@@ -255,6 +259,8 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value !== ""
+      | DestinationBankAccountId => destinationBankAccountId.value !== ""
+      | SourceBankAccountId => sourceBankAccountId.value !== ""
       | _ => true
       }
     })
@@ -306,6 +312,8 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value === ""
+      | DestinationBankAccountId => destinationBankAccountId.value === ""
+      | SourceBankAccountId => sourceBankAccountId.value === ""
       | _ => false
       }
     })
@@ -338,6 +346,8 @@ let useRequiredFieldsEmptyAndValid = (
     cardExpiry,
     cvcNumber,
     bankAccountNumber,
+    destinationBankAccountId.value,
+    sourceBankAccountId.value,
     cryptoCurrencyNetworks,
   ))
 
@@ -398,6 +408,16 @@ let useSetInitialRequiredFields = (
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
     userBankAccountNumber,
     "bankAccountNumber",
+    logger,
+  )
+  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useLoggedRecoilState(
+    destinationBankAccountId,
+    "destinationBankAccountId",
+    logger,
+  )
+  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useLoggedRecoilState(
+    sourceBankAccountId,
+    "sourceBankAccountId",
     logger,
   )
 
@@ -527,6 +547,10 @@ let useSetInitialRequiredFields = (
       | IBAN
       | BankAccountNumber =>
         setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
+      | DestinationBankAccountId =>
+        setFields(setDestinationBankAccountId, destinationBankAccountId, requiredField, false)
+      | SourceBankAccountId =>
+        setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
       | LanguagePreference(_)
       | SpecialField(_)
       | InfoElement
@@ -583,6 +607,8 @@ let useRequiredFieldsBody = (
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
+  let destinationBankAccountId = Recoil.useRecoilValueFromAtom(destinationBankAccountId)
+  let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
   let countryCode = Utils.getCountryCode(country).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
@@ -601,7 +627,7 @@ let useRequiredFieldsBody = (
     | Country => country
     | LanguagePreference(languageOptions) =>
       languageOptions->Array.includes(
-        configValue.config.locale->String.toUpperCase->String.split("-")->Array.joinWith("_"),
+        configValue.config.locale->String.toUpperCase->String.split("-")->Array.join("_"),
       )
         ? configValue.config.locale
         : "en"
@@ -641,6 +667,8 @@ let useRequiredFieldsBody = (
     | IBAN
     | BankAccountNumber =>
       bankAccountNumber.value
+    | DestinationBankAccountId => destinationBankAccountId.value
+    | SourceBankAccountId => sourceBankAccountId.value
     | StateAndCity
     | CountryAndPincode(_)
     | SpecialField(_)
@@ -742,6 +770,8 @@ let useRequiredFieldsBody = (
     cryptoCurrencyNetworks,
     dateOfBirth,
     bankAccountNumber,
+    destinationBankAccountId,
+    sourceBankAccountId,
   ))
 }
 
@@ -762,6 +792,8 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | Currency(_)
   | VpaId
   | IBAN
+  | DestinationBankAccountId
+  | SourceBankAccountId
   | BankAccountNumber => true
   | _ => false
   }

@@ -46,6 +46,8 @@ const authorizedScriptSources = [
   "https://sandbox.src.mastercard.com",
   "https://x.klarnacdn.net",
   "https://js.playground.klarna.com",
+  "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
+  "https://vgs-collect-keeper.apps.verygood.systems/vgs",
   "blob:",
   // Add other trusted sources here
 ];
@@ -117,6 +119,8 @@ const authorizedConnectSources = [
   "https://src.mastercard.com",
   "https://sandbox.src.mastercard.com",
   "https://eu.klarnaevt.com",
+  "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
+  "https://vgs-collect-keeper.apps.verygood.systems/vgs",
   "https://eu.playground.klarnaevt.com",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,

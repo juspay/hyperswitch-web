@@ -14,7 +14,7 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
     loggerState,
   )
 
-  let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
+  let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]

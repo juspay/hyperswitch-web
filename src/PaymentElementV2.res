@@ -17,6 +17,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
     PaymentUtils.paymentManagementListValue,
   )
+  let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
+  let (vaultMode, setVaultMode) = Recoil.useRecoilState(RecoilAtomsV2.vaultMode)
   let setPaymentsListValue = Recoil.useSetRecoilState(RecoilAtomsV2.paymentsListValue)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, _setWalletOptions) = React.useState(_ => [])
@@ -39,6 +41,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     setShowFields(_ => true)
     None
   })
+
+  React.useEffect(() => {
+    let vaultName = VaultHelpers.getVaultName(sessionToken)
+    setVaultMode(_ => vaultName->VaultHelpers.getVaultModeFromName)
+    None
+  }, [sessionToken])
 
   React.useEffect(() => {
     let updatePaymentOptions = () => {
@@ -154,7 +162,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let checkoutEle = {
     <ErrorBoundary key={selectedOption} componentName="PaymentElement">
       {switch selectedOption->PaymentModeType.paymentMode {
-      | Card => <CardPayment cardProps expiryProps cvcProps />
+      | Card =>
+        switch vaultMode {
+        | VeryGoodSecurity => <VGSVault />
+        | Hyperswitch
+        | None =>
+          <CardPayment cardProps expiryProps cvcProps />
+        }
       | _ =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />

@@ -64,7 +64,7 @@ let getMessageHandlerV1Elements = (
   let customerPaymentMethodsPromise = PaymentHelpers.fetchCustomerPaymentMethodList(
     ~clientSecret,
     ~publishableKey,
-    ~optLogger=Some(logger),
+    ~logger,
     ~customPodUri,
     ~endpoint,
   )
@@ -72,7 +72,7 @@ let getMessageHandlerV1Elements = (
   let sessionTokensPromise = PaymentHelpers.fetchSessions(
     ~clientSecret,
     ~publishableKey,
-    ~optLogger=Some(logger),
+    ~logger,
     ~customPodUri,
     ~endpoint,
     ~merchantHostname,
@@ -134,7 +134,7 @@ let getMessageHandlerV2Elements = (
 let getMessageHandlerV1PMM = (~ephemeralKey, ~logger, ~customPodUri, ~endpoint) => {
   let savedPaymentMethodsPromise = PaymentHelpers.fetchSavedPaymentMethodList(
     ~ephemeralKey,
-    ~optLogger=Some(logger),
+    ~logger,
     ~customPodUri,
     ~endpoint,
   )
