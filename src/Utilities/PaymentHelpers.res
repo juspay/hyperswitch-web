@@ -22,6 +22,7 @@ let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->J
 let retrievePaymentIntent = async (
   clientSecret,
   headers,
+  ~publishableKey,
   ~logger,
   ~customPodUri,
   ~isForceSync=false,
@@ -30,7 +31,7 @@ let retrievePaymentIntent = async (
     RetrievePaymentIntent,
     ~params={
       clientSecret: Some(clientSecret),
-      publishableKey: None,
+      publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
       paymentMethodId: None,
       falseSync: isForceSync ? Some("true") : None,
@@ -49,6 +50,7 @@ let retrievePaymentIntent = async (
     ~bodyStr="",
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
   )
@@ -106,12 +108,20 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
 let rec pollRetrievePaymentIntent = (
   clientSecret,
   headers,
+  ~publishableKey,
   ~logger,
   ~customPodUri,
   ~isForceSync=false,
 ) => {
   open Promise
-  retrievePaymentIntent(clientSecret, headers, ~logger, ~customPodUri, ~isForceSync)
+  retrievePaymentIntent(
+    clientSecret,
+    headers,
+    ~publishableKey,
+    ~logger,
+    ~customPodUri,
+    ~isForceSync,
+  )
   ->then(json => {
     let dict = json->getDictFromJson
     let status = dict->getString("status", "")
@@ -121,14 +131,28 @@ let rec pollRetrievePaymentIntent = (
     } else {
       delay(2000)
       ->then(_val => {
-        pollRetrievePaymentIntent(clientSecret, headers, ~logger, ~customPodUri, ~isForceSync)
+        pollRetrievePaymentIntent(
+          clientSecret,
+          headers,
+          ~publishableKey,
+          ~logger,
+          ~customPodUri,
+          ~isForceSync,
+        )
       })
       ->catch(_ => Promise.resolve(JSON.Encode.null))
     }
   })
   ->catch(e => {
     Console.error2("Unable to retrieve payment due to following error", e)
-    pollRetrievePaymentIntent(clientSecret, headers, ~logger, ~customPodUri, ~isForceSync)
+    pollRetrievePaymentIntent(
+      clientSecret,
+      headers,
+      ~publishableKey,
+      ~logger,
+      ~customPodUri,
+      ~isForceSync,
+    )
   })
 }
 

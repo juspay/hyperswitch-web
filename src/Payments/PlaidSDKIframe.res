@@ -48,13 +48,11 @@ let make = () => {
   }, [pmAuthConnectorsArr])
 
   let callbackOnSuccessOfPlaidPaymentsFlow = async () => {
-    let headers =
-      [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
-
     try {
       let json = await PaymentHelpers.retrievePaymentIntent(
         clientSecret,
-        headers,
+        Dict.make(),
+        ~publishableKey,
         ~logger,
         ~customPodUri="",
         ~isForceSync=true,
