@@ -41,7 +41,7 @@ let retrievePaymentIntent = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=RETRIEVE_CALL,
     ~headers,
@@ -90,7 +90,7 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
     Js.Exn.raiseError(err->JSON.stringify)
   }
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     url,
     ~eventName=AUTHENTICATION_CALL,
     ~logger,
@@ -287,7 +287,7 @@ let rec intentCall = (
   )
   let handleOpenUrl = url => {
     if isPaymentSession {
-      Utils.replaceRootHref(url, redirectionFlags)
+      replaceRootHref(url, redirectionFlags)
     } else {
       openUrl(url)
     }
@@ -1336,7 +1336,7 @@ let fetchSessions = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=SESSIONS_CALL,
     ~logger,
@@ -1447,7 +1447,7 @@ let createPaymentMethod = async (
     ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
     ->getJsonFromArrayOfJson
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
     ~logger,
@@ -1482,7 +1482,7 @@ let fetchPaymentMethodList = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=PAYMENT_METHODS_CALL,
     ~logger,
@@ -1518,7 +1518,7 @@ let fetchCustomerPaymentMethodList = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
     ~logger,
@@ -1833,7 +1833,7 @@ let fetchSavedPaymentMethodList = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=SAVED_PAYMENT_METHODS_CALL,
     ~logger,
@@ -1863,7 +1863,7 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=DELETE_PAYMENT_METHODS_CALL,
     ~logger,
@@ -1905,7 +1905,7 @@ let calculateTax = async (
     ("payment_method_type", paymentMethodType),
   ]
   sessionId->Option.mapOr((), id => body->Array.push(("session_id", id))->ignore)
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=EXTERNAL_TAX_CALCULATION,
     ~logger,
