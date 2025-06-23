@@ -130,7 +130,7 @@ let make = () => {
 
           try {
             let res = await PaymentHelpers.pollRetrievePaymentIntent(
-              ~headers=Dict.make(),
+              ~headers=headers->Dict.toArray->Dict.fromArray,
               paymentIntentId,
               ~publishableKey,
               ~logger,
