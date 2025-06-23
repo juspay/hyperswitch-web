@@ -79,7 +79,14 @@ let retrievePaymentIntent = (
 }
 
 let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) => {
-  let url = APIUtils.generateApiUrl(FetchThreeDsAuth, ~clientSecret)
+  let url = APIUtils.generateApiUrl(
+    FetchThreeDsAuth,
+    ~params={
+      clientSecret: Some(clientSecret),
+      publishableKey: None,
+      customBackendBaseUrl: None,
+    },
+  )
   let broswerInfo = BrowserSpec.broswerInfo
   let body =
     [
@@ -1336,7 +1343,14 @@ let fetchSessions = async (
       ("wallets", wallets->JSON.Encode.array),
       ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
     ]->getJsonFromArrayOfJson
-  let uri = APIUtils.generateApiUrl(FetchSessions, ~customBackendBaseUrl=endpoint)
+  let uri = APIUtils.generateApiUrl(
+    FetchSessions,
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: None,
+    },
+  )
 
   let onSuccess = data => data
 
@@ -1510,8 +1524,11 @@ let fetchPaymentMethodList = async (
 ) => {
   let uri = APIUtils.generateApiUrl(
     FetchPaymentMethodList,
-    ~clientSecret,
-    ~customBackendBaseUrl=endpoint,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: None,
+    },
   )
 
   let onSuccess = data => data
@@ -1541,8 +1558,11 @@ let fetchCustomerPaymentMethodList = async (
 ) => {
   let uri = APIUtils.generateApiUrl(
     FetchCustomerPaymentMethodList,
-    ~clientSecret,
-    ~customBackendBaseUrl=endpoint,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: None,
+    },
   )
 
   let onSuccess = data => data
@@ -1842,73 +1862,38 @@ let callAuthExchange = (
   })
 }
 
-let fetchSavedPaymentMethodList = (
+let fetchSavedPaymentMethodList = async (
   ~ephemeralKey,
   ~endpoint,
-  ~optLogger,
+  ~logger,
   ~customPodUri,
   ~isPaymentSession=false,
 ) => {
-  open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", ephemeralKey)]
-  let uri = `${endpoint}/customers/payment_methods`
-  logApi(
-    ~optLogger,
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=SAVED_PAYMENT_METHODS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    FetchSavedPaymentMethodList,
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: None,
+    },
+  )
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await Utils.fetchApiWithLogging(
+    uri,
+    ~eventName=SAVED_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~bodyStr="",
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(ephemeralKey),
+    ~onSuccess,
+    ~onFailure,
     ~isPaymentSession,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-          ~isPaymentSession,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger,
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-        ~isPaymentSession,
-      )
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger,
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
-      ~isPaymentSession,
-    )
-    JSON.Encode.null->resolve
-  })
 }
 
 let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodUri) => {
