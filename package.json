@@ -10,9 +10,9 @@
     "@sentry/react": "^9.9.0",
     "@sentry/webpack-plugin": "^3.2.2",
     "react": "^18.2.0",
-    "react-datepicker": "^6.9.0",
+    "react-datepicker": "^8.4.0",
     "react-dom": "^18.2.0",
-    "recoil": "^0.1.2",
+    "recoil": "^0.7.7",
     "webpack-merge": "^5.9.0"
   },
   "scripts": {
