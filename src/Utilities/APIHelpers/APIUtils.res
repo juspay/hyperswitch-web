@@ -24,7 +24,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let publishableKeyVal = publishableKey->Option.getOr("")
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
-  let falseSync = falseSync->Option.getOr("")
+  // let falseSync = falseSync->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -44,7 +44,11 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let queryParams = switch apiCallType {
   | FetchPaymentMethodList => list{("client_secret", clientSecretVal)}
   | FetchCustomerPaymentMethodList => list{("client_secret", clientSecretVal)}
-  | RetrievePaymentIntent => list{("client_secret", clientSecretVal), ("false_sync", falseSync)}
+  | RetrievePaymentIntent =>
+    switch falseSync {
+    | Some(val) => list{("client_secret", clientSecretVal), ("false_sync", val)}
+    | None => list{("client_secret", clientSecretVal)}
+    }
   | FetchSessions
   | FetchThreeDsAuth
   | FetchSavedPaymentMethodList
