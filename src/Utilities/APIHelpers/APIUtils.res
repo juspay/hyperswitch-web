@@ -24,14 +24,13 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let publishableKeyVal = publishableKey->Option.getOr("")
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
-  // let falseSync = falseSync->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
       ApiEndpoint.getApiEndPoint(~publishableKey=publishableKeyVal),
     )
 
-  let buildQueryParams = (params: list<(string, string)>) => {
+  let buildQueryParams = params =>
     switch params {
     | list{} => ""
     | _ =>
@@ -39,16 +38,22 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
       ->List.map(((key, value)) => `${key}=${value}`)
       ->List.reduce("", (acc, param) => acc === "" ? `?${param}` : `${acc}&${param}`)
     }
-  }
+
+  let defaultParams = list{
+    switch clientSecret {
+    | Some(cs) => Some(("client_secret", cs))
+    | None => None
+    },
+    switch falseSync {
+    | Some(fs) if apiCallType === RetrievePaymentIntent => Some(("false_sync", fs))
+    | _ => None
+    },
+  }->List.filterMap(x => x)
 
   let queryParams = switch apiCallType {
-  | FetchPaymentMethodList => list{("client_secret", clientSecretVal)}
-  | FetchCustomerPaymentMethodList => list{("client_secret", clientSecretVal)}
-  | RetrievePaymentIntent =>
-    switch falseSync {
-    | Some(val) => list{("client_secret", clientSecretVal), ("false_sync", val)}
-    | None => list{("client_secret", clientSecretVal)}
-    }
+  | FetchPaymentMethodList
+  | FetchCustomerPaymentMethodList
+  | RetrievePaymentIntent => defaultParams
   | FetchSessions
   | FetchThreeDsAuth
   | FetchSavedPaymentMethodList
