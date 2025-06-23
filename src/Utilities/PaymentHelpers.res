@@ -85,6 +85,7 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
       clientSecret: Some(clientSecret),
       publishableKey: None,
       customBackendBaseUrl: None,
+      paymentMethodId: None,
     },
   )
   let broswerInfo = BrowserSpec.broswerInfo
@@ -1349,6 +1350,7 @@ let fetchSessions = async (
       customBackendBaseUrl: Some(endpoint),
       clientSecret: None,
       publishableKey: None,
+      paymentMethodId: None,
     },
   )
 
@@ -1528,6 +1530,7 @@ let fetchPaymentMethodList = async (
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
+      paymentMethodId: None,
     },
   )
 
@@ -1562,6 +1565,7 @@ let fetchCustomerPaymentMethodList = async (
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
+      paymentMethodId: None,
     },
   )
 
@@ -1874,7 +1878,8 @@ let fetchSavedPaymentMethodList = async (
     ~params={
       customBackendBaseUrl: Some(endpoint),
       clientSecret: None,
-      publishableKey: None,
+      publishableKey: Some(ephemeralKey),
+      paymentMethodId: None,
     },
   )
 
@@ -1896,64 +1901,32 @@ let fetchSavedPaymentMethodList = async (
   )
 }
 
-let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodUri) => {
-  open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Content-Type", "application/json"), ("api-key", ephemeralKey)]
-  let uri = `${endpoint}/payment_methods/${paymentMethodId}`
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=DELETE_PAYMENT_METHODS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodUri) => {
+  let uri = APIUtils.generateApiUrl(
+    DeletePaymentMethod,
+    ~params={
+      customBackendBaseUrl: None,
+      clientSecret: None,
+      publishableKey: Some(ephemeralKey),
+      paymentMethodId: Some(paymentMethodId),
+    },
   )
-  fetchApi(uri, ~method=#DELETE, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(resp => {
-    let statusCode = resp->Fetch.Response.status
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=DELETE_PAYMENT_METHODS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=DELETE_PAYMENT_METHODS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger=Some(logger),
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=DELETE_PAYMENT_METHODS_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
-    )
-    JSON.Encode.null->resolve
-  })
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await Utils.fetchApiWithLogging(
+    uri,
+    ~eventName=DELETE_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~bodyStr="",
+    ~method=#DELETE,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(ephemeralKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let calculateTax = (

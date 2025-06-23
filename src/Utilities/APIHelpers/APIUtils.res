@@ -4,19 +4,22 @@ type apiCall =
   | FetchSessions
   | FetchThreeDsAuth
   | FetchSavedPaymentMethodList
+  | DeletePaymentMethod
 
 type apiParams = {
   clientSecret: option<string>,
   publishableKey: option<string>,
   customBackendBaseUrl: option<string>,
+  paymentMethodId: option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
-  let {clientSecret, publishableKey, customBackendBaseUrl} = params
+  let {clientSecret, publishableKey, customBackendBaseUrl, paymentMethodId} = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
   let publishableKeyVal = publishableKey->Option.getOr("")
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
+  let paymentMethodIdVal = paymentMethodId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -38,7 +41,8 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | FetchCustomerPaymentMethodList => list{("client_secret", clientSecretVal)}
   | FetchSessions
   | FetchThreeDsAuth
-  | FetchSavedPaymentMethodList =>
+  | FetchSavedPaymentMethodList
+  | DeletePaymentMethod =>
     list{}
   }
 
@@ -48,6 +52,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | FetchThreeDsAuth => `payments/${paymentIntentID}/3ds/authentication`
   | FetchCustomerPaymentMethodList
   | FetchSavedPaymentMethodList => "customers/payment_methods"
+  | DeletePaymentMethod => `payment_methods/${paymentMethodIdVal}`
   }
 
   `${baseUrl}/${path}${buildQueryParams(queryParams)}`
