@@ -804,7 +804,7 @@ let formatIBAN = iban => {
   let remaining = formatted->String.substringToEnd(~start=4)
 
   let chunks = switch remaining->String.match(%re(`/(.{1,4})/g`)) {
-  | Some(matches) => matches->Belt.Array.keepMap(x => x) // unwrap Some, drop None
+  | Some(matches) => matches->Belt.Array.keepMap(x => x)
   | None => []
   }
 
