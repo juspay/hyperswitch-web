@@ -1929,9 +1929,8 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
   )
 }
 
-let calculateTax = (
+let calculateTax = async (
   ~apiKey,
-  ~paymentId,
   ~clientSecret,
   ~paymentMethodType,
   ~shippingAddress,
@@ -1939,75 +1938,36 @@ let calculateTax = (
   ~customPodUri,
   ~sessionId,
 ) => {
-  open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Content-Type", "application/json"), ("api-key", apiKey)]
-  let uri = `${endpoint}/payments/${paymentId}/calculate_tax`
+  let uri = APIUtils.generateApiUrl(
+    CalculateTax,
+    ~params={
+      customBackendBaseUrl: None,
+      clientSecret: Some(clientSecret),
+      publishableKey: Some(apiKey),
+      paymentMethodId: None,
+    },
+  )
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
   let body = [
-    ("client_secret", clientSecret),
+    ("client_secret", clientSecret->JSON.Encode.string),
     ("shipping", shippingAddress),
     ("payment_method_type", paymentMethodType),
   ]
   sessionId->Option.mapOr((), id => body->Array.push(("session_id", id))->ignore)
-
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=EXTERNAL_TAX_CALCULATION,
-    ~logType=INFO,
-    ~logCategory=API,
-  )
-  fetchApi(
+  await Utils.fetchApiWithLogging(
     uri,
-    ~method=#POST,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~eventName=EXTERNAL_TAX_CALCULATION,
+    ~logger,
     ~bodyStr=body->getJsonFromArrayOfJson->JSON.stringify,
+    ~method=#POST,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(apiKey),
+    ~onSuccess,
+    ~onFailure,
   )
-  ->then(resp => {
-    let statusCode = resp->Fetch.Response.status
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=EXTERNAL_TAX_CALCULATION,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=EXTERNAL_TAX_CALCULATION,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      resp->Fetch.Response.json
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger=Some(logger),
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=EXTERNAL_TAX_CALCULATION,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
-    )
-    JSON.Encode.null->resolve
-  })
 }
 
 let usePostSessionTokens = (
