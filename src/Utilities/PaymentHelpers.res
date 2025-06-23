@@ -21,7 +21,7 @@ let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->J
 
 let retrievePaymentIntent = async (
   clientSecret,
-  headers,
+  ~headers,
   ~publishableKey,
   ~logger,
   ~customPodUri,
@@ -41,11 +41,15 @@ let retrievePaymentIntent = async (
   let onSuccess = data => data
 
   let onFailure = _ => JSON.Encode.null
+  let headerList = switch headers {
+  | Some(h) => h
+  | None => Dict.make()
+  }
 
   await fetchApiWithLogging(
     uri,
     ~eventName=RETRIEVE_CALL,
-    ~headers,
+    ~headers=headerList,
     ~logger,
     ~bodyStr="",
     ~method=#GET,
@@ -107,7 +111,7 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
 
 let rec pollRetrievePaymentIntent = (
   clientSecret,
-  headers,
+  ~headers,
   ~publishableKey,
   ~logger,
   ~customPodUri,
@@ -116,7 +120,7 @@ let rec pollRetrievePaymentIntent = (
   open Promise
   retrievePaymentIntent(
     clientSecret,
-    headers,
+    ~headers,
     ~publishableKey,
     ~logger,
     ~customPodUri,
@@ -133,7 +137,7 @@ let rec pollRetrievePaymentIntent = (
       ->then(_val => {
         pollRetrievePaymentIntent(
           clientSecret,
-          headers,
+          ~headers,
           ~publishableKey,
           ~logger,
           ~customPodUri,
@@ -147,7 +151,7 @@ let rec pollRetrievePaymentIntent = (
     Console.error2("Unable to retrieve payment due to following error", e)
     pollRetrievePaymentIntent(
       clientSecret,
-      headers,
+      ~headers,
       ~publishableKey,
       ~logger,
       ~customPodUri,

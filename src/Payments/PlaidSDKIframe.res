@@ -51,7 +51,7 @@ let make = () => {
     try {
       let json = await PaymentHelpers.retrievePaymentIntent(
         clientSecret,
-        Dict.make(),
+        ~headers=None,
         ~publishableKey,
         ~logger,
         ~customPodUri="",

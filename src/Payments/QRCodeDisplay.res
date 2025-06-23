@@ -131,7 +131,7 @@ let make = () => {
           try {
             let res = await PaymentHelpers.pollRetrievePaymentIntent(
               paymentIntentId,
-              headers,
+              ~headers=None,
               ~publishableKey,
               ~logger,
               ~customPodUri,
@@ -154,7 +154,7 @@ let make = () => {
     try {
       let json = await PaymentHelpers.retrievePaymentIntent(
         clientSecret,
-        headers->Dict.fromArray,
+        ~headers=Some(headers->Dict.fromArray),
         ~publishableKey,
         ~logger,
         ~customPodUri,
