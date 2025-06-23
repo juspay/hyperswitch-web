@@ -265,7 +265,7 @@ let useHandleApplePayResponse = (
           syncPayment()
         }
       } catch {
-      | err =>
+      | _ =>
         logger.setLogError(
           ~value="Error in parsing Apple Pay Data",
           ~eventName=APPLE_PAY_FLOW,
