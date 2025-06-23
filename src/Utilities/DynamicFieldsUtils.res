@@ -627,7 +627,7 @@ let useRequiredFieldsBody = (
     | Country => country
     | LanguagePreference(languageOptions) =>
       languageOptions->Array.includes(
-        configValue.config.locale->String.toUpperCase->String.split("-")->Array.joinWith("_"),
+        configValue.config.locale->String.toUpperCase->String.split("-")->Array.join("_"),
       )
         ? configValue.config.locale
         : "en"

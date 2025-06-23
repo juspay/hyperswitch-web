@@ -92,7 +92,7 @@ let make = (
     let loader = localOptions->getJsonStringFromDict("loader", "")
     let clientSecret = localOptions->getRequiredString("clientSecret", "", ~logger)
     let clientSecretReMatch = switch GlobalVars.sdkVersion {
-    | V1 => Some(Re.test(".+_secret_[A-Za-z0-9]+"->Re.fromString, clientSecret))
+    | V1 => Some(RegExp.test(".+_secret_[A-Za-z0-9]+"->RegExp.fromString, clientSecret))
     | V2 => None
     }
     let preMountLoaderIframeDiv = mountPreMountLoaderIframe()
