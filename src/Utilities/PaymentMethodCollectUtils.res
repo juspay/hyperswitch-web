@@ -814,7 +814,7 @@ let processAddressFields = (
           let lastName =
             nameSplits
             ->Array.slice(~start=1, ~end=nameSplits->Array.length)
-            ->Array.joinWith(" ")
+            ->Array.join(" ")
           if lastName->String.length > 0 {
             dataArr->Array.push((info, lastName))
             // Use first name as last name ?

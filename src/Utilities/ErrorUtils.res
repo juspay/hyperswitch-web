@@ -137,7 +137,7 @@ let unknownPropValueWarning = (inValidValue, validValueArr, dictType) => {
     ->Array.map(item => {
       `'${item}'`
     })
-    ->Array.joinWith(", ")
+    ->Array.join(", ")
   Console.warn(`Unknown Value: '${inValidValue}' value in ${dictType}, Expected ${expectedValues}`)
 }
 let valueOutRangeWarning = (num: int, dictType, range, ~logger: HyperLoggerTypes.loggerMake) => {
