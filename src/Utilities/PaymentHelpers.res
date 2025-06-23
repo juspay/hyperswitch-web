@@ -79,7 +79,14 @@ let retrievePaymentIntent = (
 }
 
 let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) => {
-  let url = APIUtils.generateApiUrl(FetchThreeDsAuth, ~clientSecret)
+  let url = APIUtils.generateApiUrl(
+    FetchThreeDsAuth,
+    ~params={
+      clientSecret: Some(clientSecret),
+      publishableKey: None,
+      customBackendBaseUrl: None,
+    },
+  )
   let broswerInfo = BrowserSpec.broswerInfo
   let body =
     [
@@ -1336,7 +1343,14 @@ let fetchSessions = async (
       ("wallets", wallets->JSON.Encode.array),
       ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
     ]->getJsonFromArrayOfJson
-  let uri = APIUtils.generateApiUrl(FetchSessions, ~customBackendBaseUrl=endpoint)
+  let uri = APIUtils.generateApiUrl(
+    FetchSessions,
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: None,
+    },
+  )
 
   let onSuccess = data => data
 
@@ -1510,8 +1524,11 @@ let fetchPaymentMethodList = async (
 ) => {
   let uri = APIUtils.generateApiUrl(
     FetchPaymentMethodList,
-    ~clientSecret,
-    ~customBackendBaseUrl=endpoint,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: None,
+    },
   )
 
   let onSuccess = data => data
@@ -1541,8 +1558,11 @@ let fetchCustomerPaymentMethodList = async (
 ) => {
   let uri = APIUtils.generateApiUrl(
     FetchCustomerPaymentMethodList,
-    ~clientSecret,
-    ~customBackendBaseUrl=endpoint,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: None,
+    },
   )
 
   let onSuccess = data => data
@@ -1849,7 +1869,14 @@ let fetchSavedPaymentMethodList = async (
   ~customPodUri,
   ~isPaymentSession=false,
 ) => {
-  let uri = APIUtils.generateApiUrl(FetchSavedPaymentMethodList, ~customBackendBaseUrl=endpoint)
+  let uri = APIUtils.generateApiUrl(
+    FetchSavedPaymentMethodList,
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: None,
+    },
+  )
 
   let onSuccess = data => data
 
