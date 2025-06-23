@@ -521,8 +521,8 @@ let make = (
                     let polling =
                       delay(2000)->then(_ =>
                         PaymentHelpers.pollRetrievePaymentIntent(
+                          ~headers=Dict.make(),
                           clientSecret,
-                          ~headers=None,
                           ~publishableKey,
                           ~logger,
                           ~customPodUri,
@@ -777,7 +777,6 @@ let make = (
             ->then(_ => {
               PaymentHelpers.retrievePaymentIntent(
                 clientSecret,
-                ~headers=None,
                 ~publishableKey,
                 ~logger,
                 ~customPodUri,
@@ -814,7 +813,6 @@ let make = (
           let retrievePaymentIntentWrapper = redirectUrl => {
             PaymentHelpers.retrievePaymentIntent(
               clientSecret,
-              ~headers=None,
               ~publishableKey,
               ~logger,
               ~customPodUri,

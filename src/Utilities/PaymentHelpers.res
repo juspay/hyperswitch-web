@@ -21,7 +21,7 @@ let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->J
 
 let retrievePaymentIntent = async (
   clientSecret,
-  ~headers,
+  ~headers=?,
   ~publishableKey,
   ~logger,
   ~customPodUri,
@@ -41,15 +41,16 @@ let retrievePaymentIntent = async (
   let onSuccess = data => data
 
   let onFailure = _ => JSON.Encode.null
-  let headerList = switch headers {
-  | Some(h) => h
+
+  let headers = switch headers {
+  | Some(providedHeaders) => providedHeaders
   | None => Dict.make()
   }
 
   await fetchApiWithLogging(
     uri,
     ~eventName=RETRIEVE_CALL,
-    ~headers=headerList,
+    ~headers,
     ~logger,
     ~bodyStr="",
     ~method=#GET,
