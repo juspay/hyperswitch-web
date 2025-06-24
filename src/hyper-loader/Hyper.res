@@ -330,67 +330,36 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         iframeRef.contents->Array.push(ref)->ignore
       }
 
-      let retrievePaymentIntentFn = clientSecret => {
-        let headers = {
-          "Accept": "application/json",
-          "api-key": publishableKey,
-        }
-        let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
-        let paymentIntentID = clientSecret->Utils.getPaymentId
-        let retrievePaymentUrl = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
-        open Promise
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=retrievePaymentUrl,
-          ~apiLogType=Request,
-          ~eventName=RETRIEVE_CALL_INIT,
-          ~logType=INFO,
-          ~logCategory=API,
-        )
-        Fetch.fetch(
-          retrievePaymentUrl,
-          {
-            method: #GET,
-            headers: Fetch.Headers.fromObject(headers),
+      let retrievePaymentIntentFn = async clientSecret => {
+        let uri = APIUtils.generateApiUrl(
+          RetrievePaymentIntent,
+          ~params={
+            clientSecret: Some(clientSecret),
+            publishableKey: Some(publishableKey),
+            customBackendBaseUrl: None,
+            paymentMethodId: None,
+            falseSync: None,
           },
         )
-        ->then(resp => {
-          let statusCode = resp->Fetch.Response.status
-          if !(resp->Fetch.Response.ok) {
-            resp
-            ->Fetch.Response.json
-            ->then(data => {
-              logApi(
-                ~optLogger=Some(logger),
-                ~url=retrievePaymentUrl,
-                ~data,
-                ~statusCode,
-                ~apiLogType=Err,
-                ~eventName=RETRIEVE_CALL,
-                ~logType=ERROR,
-                ~logCategory=API,
-              )
-              resolve()
-            })
-            ->catch(_ => resolve())
-            ->ignore
-          } else {
-            logApi(
-              ~optLogger=Some(logger),
-              ~url=retrievePaymentUrl,
-              ~statusCode,
-              ~apiLogType=Response,
-              ~eventName=RETRIEVE_CALL,
-              ~logType=INFO,
-              ~logCategory=API,
-            )
-          }
-          Fetch.Response.json(resp)
-        })
-        ->then(data => {
-          [("paymentIntent", data)]->getJsonFromArrayOfJson->Promise.resolve
-        })
-        ->catch(_ => Promise.resolve(JSON.Encode.null))
+
+        let onSuccess = data => [("paymentIntent", data)]->getJsonFromArrayOfJson
+
+        let onFailure = _ => JSON.Encode.null
+
+        let headers = Dict.make()
+
+        await fetchApiWithLogging(
+          uri,
+          ~eventName=RETRIEVE_CALL,
+          ~headers,
+          ~logger,
+          ~bodyStr="",
+          ~method=#GET,
+          ~customPodUri=None,
+          ~publishableKey=Some(publishableKey),
+          ~onSuccess,
+          ~onFailure,
+        )
       }
 
       let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
