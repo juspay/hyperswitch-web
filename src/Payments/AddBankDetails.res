@@ -83,7 +83,7 @@ let make = (~paymentMethodType) => {
       ~iframeId,
       ~paymentMethodType,
       ~pmAuthConnectorsArr,
-      ~optLogger=Some(logger),
+      ~logger,
     )->ignore
   }
 

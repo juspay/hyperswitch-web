@@ -8,6 +8,7 @@ type apiCall =
   | CalculateTax
   | CreatePaymentMethod
   | RetrievePaymentIntent
+  | CallAuthLink
 
 type apiParams = {
   clientSecret: option<string>,
@@ -59,7 +60,8 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | FetchSavedPaymentMethodList
   | DeletePaymentMethod
   | CalculateTax
-  | CreatePaymentMethod =>
+  | CreatePaymentMethod
+  | CallAuthLink =>
     list{}
   }
 
@@ -73,6 +75,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
   | CreatePaymentMethod => "payment_methods"
   | RetrievePaymentIntent => `payments/${paymentIntentID}`
+  | CallAuthLink => "payment_methods/auth/link"
   }
 
   `${baseUrl}/${path}${buildQueryParams(queryParams)}`
