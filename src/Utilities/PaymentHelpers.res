@@ -34,7 +34,7 @@ let retrievePaymentIntent = async (
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
       paymentMethodId: None,
-      falseSync: isForceSync ? Some("true") : None,
+      forceSync: isForceSync ? Some("true") : None,
     },
   )
 
@@ -68,7 +68,7 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
       publishableKey: None,
       customBackendBaseUrl: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
     },
   )
   let broswerInfo = BrowserSpec.broswerInfo
@@ -1360,7 +1360,7 @@ let fetchSessions = async (
       clientSecret: None,
       publishableKey: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
     },
   )
 
@@ -1466,7 +1466,7 @@ let createPaymentMethod = async (
       customBackendBaseUrl: Some(endpoint),
       publishableKey: Some(publishableKey),
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
     },
   )
 
@@ -1506,7 +1506,7 @@ let fetchPaymentMethodList = async (
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
     },
   )
 
@@ -1541,7 +1541,7 @@ let fetchCustomerPaymentMethodList = async (
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
     },
   )
 
@@ -1855,7 +1855,7 @@ let fetchSavedPaymentMethodList = async (
       clientSecret: None,
       publishableKey: Some(ephemeralKey),
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
     },
   )
 
@@ -1884,7 +1884,7 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
       clientSecret: None,
       publishableKey: Some(ephemeralKey),
       paymentMethodId: Some(paymentMethodId),
-      falseSync: None,
+      forceSync: None,
     },
   )
 
@@ -1920,7 +1920,7 @@ let calculateTax = async (
       clientSecret: Some(clientSecret),
       publishableKey: Some(apiKey),
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
     },
   )
   let onSuccess = data => data

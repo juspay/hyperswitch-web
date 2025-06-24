@@ -338,7 +338,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             publishableKey: Some(publishableKey),
             customBackendBaseUrl: None,
             paymentMethodId: None,
-            falseSync: None,
+            forceSync: None,
           },
         )
 
