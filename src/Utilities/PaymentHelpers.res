@@ -1674,7 +1674,7 @@ let callAuthLink = async (
       ("iframeId", iframeId->JSON.Encode.string),
       ("metadata", metaData),
     ])
-    data
+    JSON.Encode.null
   }
 
   let onFailure = _ => JSON.Encode.null
