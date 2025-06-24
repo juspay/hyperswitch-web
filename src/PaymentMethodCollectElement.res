@@ -115,13 +115,12 @@ let make = (~integrateError, ~logger) => {
 
     let confirmPayoutPromiseWrapper = () => {
       let endpoint = ApiEndpoint.getApiEndPoint()
-      let uri = `${endpoint}/payouts/${options.payoutId}/confirm`
       PaymentHelpers.confirmPayout(
         ~clientSecret=keys.clientSecret->Option.getOr(""),
         ~publishableKey=keys.publishableKey,
         ~logger,
         ~customPodUri="",
-        ~uri,
+        ~endpoint,
         ~body=pmdBody,
       )
       ->then(res => {

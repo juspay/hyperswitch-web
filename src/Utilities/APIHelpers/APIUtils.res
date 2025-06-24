@@ -11,6 +11,7 @@ type apiCall =
   | CallAuthLink
   | CallAuthExchange
   | RetrieveStatus
+  | ConfirmPayout
 
 type apiParams = {
   clientSecret: option<string>,
@@ -74,7 +75,8 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | CreatePaymentMethod
   | CallAuthLink
   | CallAuthExchange
-  | RetrieveStatus =>
+  | RetrieveStatus
+  | ConfirmPayout =>
     list{}
   }
 
@@ -91,6 +93,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | CallAuthLink => "payment_methods/auth/link"
   | CallAuthExchange => "payment_methods/auth/exchange"
   | RetrieveStatus => `poll/status/${pollIdVal}`
+  | ConfirmPayout => `payouts/${paymentIntentID}/confirm`
   }
 
   `${baseUrl}/${path}${buildQueryParams(queryParams)}`
