@@ -339,6 +339,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             customBackendBaseUrl: None,
             paymentMethodId: None,
             falseSync: None,
+            pollId: None,
           },
         )
 

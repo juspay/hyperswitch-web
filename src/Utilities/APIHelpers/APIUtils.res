@@ -10,6 +10,7 @@ type apiCall =
   | RetrievePaymentIntent
   | CallAuthLink
   | CallAuthExchange
+  | RetrieveStatus
 
 type apiParams = {
   clientSecret: option<string>,
@@ -17,15 +18,24 @@ type apiParams = {
   customBackendBaseUrl: option<string>,
   paymentMethodId: option<string>,
   falseSync: option<string>,
+  pollId: option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
-  let {clientSecret, publishableKey, customBackendBaseUrl, paymentMethodId, falseSync} = params
+  let {
+    clientSecret,
+    publishableKey,
+    customBackendBaseUrl,
+    paymentMethodId,
+    falseSync,
+    pollId,
+  } = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
   let publishableKeyVal = publishableKey->Option.getOr("")
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
+  let pollIdVal = pollId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -63,7 +73,8 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | CalculateTax
   | CreatePaymentMethod
   | CallAuthLink
-  | CallAuthExchange =>
+  | CallAuthExchange
+  | RetrieveStatus =>
     list{}
   }
 
@@ -79,6 +90,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | RetrievePaymentIntent => `payments/${paymentIntentID}`
   | CallAuthLink => "payment_methods/auth/link"
   | CallAuthExchange => "payment_methods/auth/exchange"
+  | RetrieveStatus => `poll/status/${pollIdVal}`
   }
 
   `${baseUrl}/${path}${buildQueryParams(queryParams)}`
