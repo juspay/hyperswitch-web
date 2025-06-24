@@ -35,6 +35,7 @@ let retrievePaymentIntent = async (
       customBackendBaseUrl: None,
       paymentMethodId: None,
       forceSync: isForceSync ? Some("true") : None,
+      pollId: None,
     },
   )
 
@@ -69,6 +70,7 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
       customBackendBaseUrl: None,
       paymentMethodId: None,
       forceSync: None,
+      pollId: None,
     },
   )
   let broswerInfo = BrowserSpec.broswerInfo
@@ -160,59 +162,47 @@ let rec pollRetrievePaymentIntent = (
   })
 }
 
-let retrieveStatus = (~headers, ~customPodUri, pollID, logger) => {
-  open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let uri = `${endpoint}/poll/status/${pollID}`
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=POLL_STATUS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger) => {
+  let uri = APIUtils.generateApiUrl(
+    RetrieveStatus,
+    ~params={
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      customBackendBaseUrl: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: Some(pollID),
+    },
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=POLL_STATUS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=POLL_STATUS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(e => {
-    Console.error2("Unable to Poll status details because of ", e)
-    JSON.Encode.null->resolve
-  })
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=POLL_STATUS_CALL,
+    ~logger,
+    ~bodyStr="",
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
-let rec pollStatus = (~headers, ~customPodUri, ~pollId, ~interval, ~count, ~returnUrl, ~logger) => {
+let rec pollStatus = (
+  ~publishableKey,
+  ~customPodUri,
+  ~pollId,
+  ~interval,
+  ~count,
+  ~returnUrl,
+  ~logger,
+) => {
   open Promise
-  retrieveStatus(~headers, ~customPodUri, pollId, logger)
+  retrieveStatus(~publishableKey, ~customPodUri, pollId, logger)
   ->then(json => {
     let dict = json->getDictFromJson
     let status = dict->getString("status", "")
@@ -227,7 +217,7 @@ let rec pollStatus = (~headers, ~customPodUri, ~pollId, ~interval, ~count, ~retu
         ->then(
           _ => {
             pollStatus(
-              ~headers,
+              ~publishableKey,
               ~customPodUri,
               ~pollId,
               ~interval,
@@ -250,7 +240,7 @@ let rec pollStatus = (~headers, ~customPodUri, ~pollId, ~interval, ~count, ~retu
   ->catch(e => {
     Console.error2("Unable to retrieve payment due to following error", e)
     pollStatus(
-      ~headers,
+      ~publishableKey,
       ~customPodUri,
       ~pollId,
       ~interval,
@@ -1361,6 +1351,7 @@ let fetchSessions = async (
       publishableKey: None,
       paymentMethodId: None,
       forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1467,6 +1458,7 @@ let createPaymentMethod = async (
       publishableKey: Some(publishableKey),
       paymentMethodId: None,
       forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1507,6 +1499,7 @@ let fetchPaymentMethodList = async (
       publishableKey: None,
       paymentMethodId: None,
       forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1542,6 +1535,7 @@ let fetchCustomerPaymentMethodList = async (
       publishableKey: None,
       paymentMethodId: None,
       forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1647,6 +1641,7 @@ let callAuthLink = async (
       customBackendBaseUrl: None,
       paymentMethodId: None,
       forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1709,6 +1704,7 @@ let callAuthExchange = async (
       customBackendBaseUrl: None,
       paymentMethodId: None,
       forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1721,7 +1717,7 @@ let callAuthExchange = async (
       ("public_token", publicToken->JSON.Encode.string),
     ]->getJsonFromArrayOfJson
 
-  let onSuccess = data => {
+  let onSuccess = _ => {
     let endpoint = ApiEndpoint.getApiEndPoint()
     fetchCustomerPaymentMethodList(
       ~clientSecret=clientSecret->Option.getOr(""),
@@ -1748,7 +1744,7 @@ let callAuthExchange = async (
       Promise.resolve(JSON.Encode.null)
     })
     ->ignore
-    data
+    JSON.Encode.null
   }
 
   let onFailure = _ => JSON.Encode.null
@@ -1780,6 +1776,7 @@ let fetchSavedPaymentMethodList = async (
       publishableKey: Some(ephemeralKey),
       paymentMethodId: None,
       forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1809,6 +1806,7 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
       publishableKey: Some(ephemeralKey),
       paymentMethodId: Some(paymentMethodId),
       forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1845,6 +1843,7 @@ let calculateTax = async (
       publishableKey: Some(apiKey),
       paymentMethodId: None,
       forceSync: None,
+      pollId: None,
     },
   )
   let onSuccess = data => data

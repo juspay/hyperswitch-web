@@ -723,7 +723,6 @@ let make = (
 
         let handlePollStatusMessage = (ev: Types.event) => {
           let eventDataObject = ev.data->anyTypeToJson
-          let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
           switch eventDataObject->getOptionalJsonFromJson("confirmParams") {
           | Some(obj) => redirect := obj->getDictFromJson->getString("redirect", "if_required")
           | None => ()
@@ -766,7 +765,7 @@ let make = (
             }
 
             PaymentHelpers.pollStatus(
-              ~headers,
+              ~publishableKey,
               ~customPodUri,
               ~pollId,
               ~interval,
