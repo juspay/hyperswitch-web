@@ -34,7 +34,7 @@ let retrievePaymentIntent = async (
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
       paymentMethodId: None,
-      falseSync: isForceSync ? Some("true") : None,
+      forceSync: isForceSync ? Some("true") : None,
       pollId: None,
     },
   )
@@ -53,7 +53,6 @@ let retrievePaymentIntent = async (
     ~eventName=RETRIEVE_CALL,
     ~headers,
     ~logger,
-    ~bodyStr="",
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
@@ -70,7 +69,7 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
       publishableKey: None,
       customBackendBaseUrl: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
@@ -171,7 +170,7 @@ let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger) => {
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: Some(pollID),
     },
   )
@@ -1150,7 +1149,11 @@ let usePaymentIntent = (optLogger, paymentType) => {
             "authorization",
             `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
           )
-          [authorizationHeader, ("X-profile-id", keys.profileId)]
+          [
+            authorizationHeader,
+            ("X-profile-id", keys.profileId),
+            ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
+          ]
         }
       }
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
@@ -1347,7 +1350,7 @@ let fetchSessions = async (
       clientSecret: None,
       publishableKey: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
@@ -1386,7 +1389,7 @@ let confirmPayout = async (
       customBackendBaseUrl: Some(endpoint),
       publishableKey: Some(publishableKey),
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
@@ -1428,7 +1431,7 @@ let createPaymentMethod = async (
       customBackendBaseUrl: Some(endpoint),
       publishableKey: Some(publishableKey),
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
@@ -1469,7 +1472,7 @@ let fetchPaymentMethodList = async (
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
@@ -1482,7 +1485,6 @@ let fetchPaymentMethodList = async (
     uri,
     ~eventName=PAYMENT_METHODS_CALL,
     ~logger,
-    ~bodyStr="",
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
@@ -1506,7 +1508,7 @@ let fetchCustomerPaymentMethodList = async (
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
@@ -1519,7 +1521,6 @@ let fetchCustomerPaymentMethodList = async (
     uri,
     ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
     ~logger,
-    ~bodyStr="",
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
@@ -1613,7 +1614,7 @@ let callAuthLink = async (
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
@@ -1642,7 +1643,7 @@ let callAuthLink = async (
       ("iframeId", iframeId->JSON.Encode.string),
       ("metadata", metaData),
     ])
-    data
+    JSON.Encode.null
   }
 
   let onFailure = _ => JSON.Encode.null
@@ -1676,7 +1677,7 @@ let callAuthExchange = async (
       publishableKey: Some(publishableKey),
       customBackendBaseUrl: None,
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
@@ -1690,7 +1691,7 @@ let callAuthExchange = async (
       ("public_token", publicToken->JSON.Encode.string),
     ]->getJsonFromArrayOfJson
 
-  let onSuccess = data => {
+  let onSuccess = _ => {
     let endpoint = ApiEndpoint.getApiEndPoint()
     fetchCustomerPaymentMethodList(
       ~clientSecret=clientSecret->Option.getOr(""),
@@ -1717,7 +1718,7 @@ let callAuthExchange = async (
       Promise.resolve(JSON.Encode.null)
     })
     ->ignore
-    data
+    JSON.Encode.null
   }
 
   let onFailure = _ => JSON.Encode.null
@@ -1748,7 +1749,7 @@ let fetchSavedPaymentMethodList = async (
       clientSecret: None,
       publishableKey: Some(ephemeralKey),
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
@@ -1761,7 +1762,6 @@ let fetchSavedPaymentMethodList = async (
     uri,
     ~eventName=SAVED_PAYMENT_METHODS_CALL,
     ~logger,
-    ~bodyStr="",
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(ephemeralKey),
@@ -1779,7 +1779,7 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
       clientSecret: None,
       publishableKey: Some(ephemeralKey),
       paymentMethodId: Some(paymentMethodId),
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
@@ -1792,7 +1792,6 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
     uri,
     ~eventName=DELETE_PAYMENT_METHODS_CALL,
     ~logger,
-    ~bodyStr="",
     ~method=#DELETE,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(ephemeralKey),
@@ -1817,7 +1816,7 @@ let calculateTax = async (
       clientSecret: Some(clientSecret),
       publishableKey: Some(apiKey),
       paymentMethodId: None,
-      falseSync: None,
+      forceSync: None,
       pollId: None,
     },
   )
