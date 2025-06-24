@@ -507,7 +507,7 @@ let fetchPaymentMethodList = (
     ("Authorization", `publishable-key=${publishableKey},client-secret=${clientSecret}`),
   ]
 
-  let headers = switch GlobalVars.xFeature {
+  let headers = switch customPodUri {
   | value if value != "" => [...baseHeaders, ("x-feature", value)]
   | _ => baseHeaders
   }
@@ -550,7 +550,7 @@ let fetchSessions = (
     ("Authorization", `publishable-key=${publishableKey},client-secret=${clientSecret}`),
   ]
 
-  let headers = switch GlobalVars.xFeature {
+  let headers = switch customPodUri {
   | value if value != "" => [...baseHeaders, ("x-feature", value)]
   | _ => baseHeaders
   }

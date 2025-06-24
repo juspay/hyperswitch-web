@@ -1157,7 +1157,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
           [
             authorizationHeader,
             ("X-profile-id", keys.profileId),
-            ...GlobalVars.xFeature != "" ? [("x-feature", GlobalVars.xFeature)] : [],
+            ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
           ]
         }
       }
