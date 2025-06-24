@@ -17,7 +17,7 @@ type apiParams = {
   publishableKey: option<string>,
   customBackendBaseUrl: option<string>,
   paymentMethodId: option<string>,
-  falseSync: option<string>,
+  forceSync: option<string>,
   pollId: option<string>,
 }
 
@@ -27,7 +27,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     publishableKey,
     customBackendBaseUrl,
     paymentMethodId,
-    falseSync,
+    forceSync,
     pollId,
   } = params
 
@@ -56,7 +56,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | Some(cs) => Some(("client_secret", cs))
     | None => None
     },
-    switch falseSync {
+    switch forceSync {
     | Some(fs) if apiCallType === RetrievePaymentIntent => Some(("false_sync", fs))
     | _ => None
     },

@@ -338,7 +338,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
             publishableKey: Some(publishableKey),
             customBackendBaseUrl: None,
             paymentMethodId: None,
-            falseSync: None,
+            forceSync: None,
             pollId: None,
           },
         )
@@ -351,7 +351,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           uri,
           ~eventName=RETRIEVE_CALL,
           ~logger,
-          ~bodyStr="",
           ~method=#GET,
           ~customPodUri=None,
           ~publishableKey=Some(publishableKey),
