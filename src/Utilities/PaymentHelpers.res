@@ -1669,7 +1669,7 @@ let callAuthLink = async (
       ("iframeId", iframeId->JSON.Encode.string),
       ("metadata", metaData),
     ])
-    data
+    JSON.Encode.null
   }
 
   let onFailure = _ => JSON.Encode.null
@@ -1717,7 +1717,7 @@ let callAuthExchange = async (
       ("public_token", publicToken->JSON.Encode.string),
     ]->getJsonFromArrayOfJson
 
-  let onSuccess = data => {
+  let onSuccess = _ => {
     let endpoint = ApiEndpoint.getApiEndPoint()
     fetchCustomerPaymentMethodList(
       ~clientSecret=clientSecret->Option.getOr(""),
@@ -1744,7 +1744,7 @@ let callAuthExchange = async (
       Promise.resolve(JSON.Encode.null)
     })
     ->ignore
-    data
+    JSON.Encode.null
   }
 
   let onFailure = _ => JSON.Encode.null
