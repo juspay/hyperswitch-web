@@ -884,17 +884,10 @@ let getHeaders = (
   | Some(uriVal) => [("x-feature", uriVal)]
   }
 
-  // Add x-feature header from GlobalVars if it has a non-empty value
-  let globalXFeatureHeader = switch GlobalVars.xFeature {
-  | value if value != "" => [("x-feature", value)]
-  | _ => []
-  }
-
   let finalHeaders = [
     ...defaultHeaders,
     ...authHeader,
     ...customPodHeader,
-    ...globalXFeatureHeader,
     ...Dict.toArray(headers),
   ]
 
