@@ -95,7 +95,7 @@ let make = (
     (isCardDetailsEmpty, isCardDetailsValid, isCardDetailsInvalid, isCardDetailsFocused)
   }, (cardProps, expiryProps, cvcProps, zipProps))
 
-  let concatString = Array.joinWith([cardEmpty, cardComplete, cardInvalid, cardFocused], "")
+  let concatString = Array.join([cardEmpty, cardComplete, cardInvalid, cardFocused], "")
 
   React.useEffect(() => {
     Utils.messageParentWindow([

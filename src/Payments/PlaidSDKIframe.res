@@ -78,11 +78,11 @@ let make = () => {
       }
       messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
     } catch {
-    | err =>
+    | _ =>
       logger.setLogError(
         ~value="Retrieve failed via Plaid",
         ~eventName=PLAID_SDK,
-        ~internalMetadata=err->formatException->JSON.stringify,
+        // ~internalMetadata=err->formatException->JSON.stringify,
         ~paymentMethod="PLAID",
       )
     }

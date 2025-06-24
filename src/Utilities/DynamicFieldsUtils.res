@@ -28,6 +28,8 @@ let dynamicFieldsEnabledPaymentMethods = [
   "pay_bright",
   "multibanco_transfer",
   "paypal",
+  "instant_bank_transfer_finland",
+  "instant_bank_transfer_poland",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
@@ -625,7 +627,7 @@ let useRequiredFieldsBody = (
     | Country => country
     | LanguagePreference(languageOptions) =>
       languageOptions->Array.includes(
-        configValue.config.locale->String.toUpperCase->String.split("-")->Array.joinWith("_"),
+        configValue.config.locale->String.toUpperCase->String.split("-")->Array.join("_"),
       )
         ? configValue.config.locale
         : "en"

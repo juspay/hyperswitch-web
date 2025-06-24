@@ -154,7 +154,7 @@ module ErrorCard = {
           source: "orca-elements",
           version: GlobalVars.repoVersion,
           value: errorDict->JSON.Encode.object->JSON.stringify,
-          internalMetadata: "",
+          // internalMetadata: "",
           category: USER_ERROR,
           paymentId: "",
           merchantId: publishableKey,

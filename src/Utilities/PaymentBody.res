@@ -136,12 +136,13 @@ let savedCardBody = (
   savedCardBody
 }
 
-let clickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
+let mastercardClickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
   let clickToPayServiceDetails =
     [
       ("merchant_transaction_id", merchantTransactionId->JSON.Encode.string),
       ("correlation_id", correlationId->JSON.Encode.string),
       ("x_src_flow_id", xSrcFlowId->JSON.Encode.string),
+      ("provider", "mastercard"->JSON.Encode.string),
     ]->Utils.getJsonFromArrayOfJson
 
   [
@@ -926,6 +927,16 @@ let pazeBody = (~completeResponse) => {
   ]
 }
 
+let revolutPayBody = () => {
+  let walletBody = [("revolut_pay", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson
+  let paymentMethodData = [("wallet", walletBody)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "revolut_pay"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
 let eftBody = () => {
   open Utils
   let eftProviderName = [("provider", "ozow"->JSON.Encode.string)]->getJsonFromArrayOfJson
@@ -945,7 +956,7 @@ let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
   | "bank_transfer" =>
-    if paymentMethodType != "sepa_bank_transfer" && paymentMethodType != "instant_bank_transfer" {
+    if !(Constants.bankTransferList->Array.includes(paymentMethodType)) {
       paymentMethodType->String.replace("_transfer", "")
     } else {
       paymentMethodType
@@ -969,6 +980,7 @@ let appendRedirectPaymentMethods = [
   "we_chat_pay",
   "ali_pay",
   "ali_pay_hk",
+  "revolut_pay",
 ]
 
 let appendBankeDebitMethods = ["sepa"]
@@ -1079,6 +1091,7 @@ let getPaymentBody = (
   | "przelewy24" => p24Body(~email)
   | "online_banking_fpx" => fpxOBBody(~bank)
   | "online_banking_thailand" => thailandOBBody(~bank)
+  | "revolut_pay" => revolutPayBody()
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)

@@ -78,10 +78,16 @@ let retrievePaymentIntent = (
   })
 }
 
-let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let paymentIntentID = String.split(clientSecret, "_secret_")[0]->Option.getOr("")
-  let url = `${endpoint}/payments/${paymentIntentID}/3ds/authentication`
+let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) => {
+  let url = APIUtils.generateApiUrl(
+    FetchThreeDsAuth,
+    ~params={
+      clientSecret: Some(clientSecret),
+      publishableKey: None,
+      customBackendBaseUrl: None,
+      paymentMethodId: None,
+    },
+  )
   let broswerInfo = BrowserSpec.broswerInfo
   let body =
     [
@@ -92,57 +98,32 @@ let threeDsAuth = (~clientSecret, ~optLogger, ~threeDsMethodComp, ~headers) => {
     ->Array.concat(broswerInfo())
     ->getJsonFromArrayOfJson
 
-  open Promise
-  logApi(
-    ~optLogger,
-    ~url,
-    ~apiLogType=Request,
-    ~eventName=AUTHENTICATION_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let onSuccess = data => data
+
+  let onFailure = data => {
+    let dict = data->getDictFromJson
+    let errorObj = PaymentError.itemToObjMapper(dict)
+    closePaymentLoaderIfAny()
+    postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
+    JSON.Encode.null
+  }
+
+  let onCatchCallback = err => {
+    closePaymentLoaderIfAny()
+    Js.Exn.raiseError(err->JSON.stringify)
+  }
+
+  await Utils.fetchApiWithLogging(
+    url,
+    ~eventName=AUTHENTICATION_CALL,
+    ~logger,
+    ~onSuccess,
+    ~onFailure,
+    ~bodyStr=body->JSON.stringify,
+    ~headers,
+    ~method=#POST,
+    ~onCatchCallback=Some(onCatchCallback),
   )
-  fetchApi(url, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray)
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=AUTHENTICATION_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        let dict = data->getDictFromJson
-        let errorObj = PaymentError.itemToObjMapper(dict)
-        closePaymentLoaderIfAny()
-        postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(~optLogger, ~url, ~statusCode, ~apiLogType=Response, ~eventName=AUTHENTICATION_CALL)
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Unable to call 3ds auth ", exceptionMessage)
-    logApi(
-      ~optLogger,
-      ~url,
-      ~eventName=AUTHENTICATION_CALL,
-      ~apiLogType=NoResponse,
-      ~data=exceptionMessage,
-      ~logType=ERROR,
-      ~logCategory=API,
-    )
-    reject(err)
-  })
 }
 
 let rec pollRetrievePaymentIntent = (
@@ -533,26 +514,30 @@ let rec intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=intent.nextAction.redirectToUrl,
+                  // ~internalMetadata=intent.nextAction.redirectToUrl,
                   ~eventName=REDIRECTING_USER,
                   ~paymentMethod,
                 )
                 handleOpenUrl(intent.nextAction.redirectToUrl)
               } else if intent.nextAction.type_ == "redirect_inside_popup" {
                 let popupUrl = intent.nextAction.popupUrl
+                let redirectResponseUrl = intent.nextAction.redirectResponseUrl
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=popupUrl,
+                  // ~internalMetadata=popupUrl,
                   ~eventName=THREE_DS_POPUP_REDIRECTION,
                   ~paymentMethod,
                 )
-                let metaData = [("popupUrl", popupUrl->JSON.Encode.string)]->Dict.fromArray
+                let metaData = [
+                  ("popupUrl", popupUrl->JSON.Encode.string),
+                  ("redirectResponseUrl", redirectResponseUrl->JSON.Encode.string),
+                ]
                 messageParentWindow([
                   ("fullscreen", true->JSON.Encode.bool),
                   ("param", `3dsRedirectionPopup`->JSON.Encode.string),
                   ("iframeId", iframeId->JSON.Encode.string),
-                  ("metadata", metaData->JSON.Encode.object),
+                  ("metadata", metaData->getJsonFromArrayOfJson),
                 ])
               } else if intent.nextAction.type_ == "display_bank_transfer_information" {
                 let metadata = switch intent.nextAction.bank_transfer_steps_and_charges_details {
@@ -565,7 +550,7 @@ let rec intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=dict->JSON.Encode.object->JSON.stringify,
+                  // ~internalMetadata=dict->JSON.Encode.object->JSON.stringify,
                   ~eventName=DISPLAY_BANK_TRANSFER_INFO_PAGE,
                   ~paymentMethod,
                 )
@@ -600,7 +585,7 @@ let rec intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=metaData->JSON.stringify,
+                  // ~internalMetadata=metaData->JSON.stringify,
                   ~eventName=DISPLAY_QR_CODE_INFO_PAGE,
                   ~paymentMethod,
                 )
@@ -706,7 +691,7 @@ let rec intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=metaData->JSON.Encode.object->JSON.stringify,
+                  // ~internalMetadata=metaData->JSON.Encode.object->JSON.stringify,
                   ~eventName=DISPLAY_VOUCHER,
                   ~paymentMethod,
                 )
@@ -777,7 +762,7 @@ let rec intentCall = (
                   handleLogging(
                     ~optLogger,
                     ~value=intent.nextAction.type_,
-                    ~internalMetadata=intent.nextAction.type_,
+                    // ~internalMetadata=intent.nextAction.type_,
                     ~eventName=REDIRECTING_USER,
                     ~paymentMethod,
                     ~logType=ERROR,
@@ -1169,7 +1154,11 @@ let usePaymentIntent = (optLogger, paymentType) => {
             "authorization",
             `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
           )
-          [authorizationHeader, ("X-profile-id", keys.profileId)]
+          [
+            authorizationHeader,
+            ("X-profile-id", keys.profileId),
+            ...GlobalVars.xFeature != "" ? [("x-feature", GlobalVars.xFeature)] : [],
+          ]
         }
       }
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
@@ -1197,7 +1186,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         let contentLength = body->String.length->Int.toString
         let maskedPayload =
           body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
-        let loggerPayload =
+        let _loggerPayload =
           [
             ("payload", maskedPayload->JSON.Encode.string),
             (
@@ -1216,7 +1205,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         | Card =>
           handleLogging(
             ~optLogger,
-            ~internalMetadata=loggerPayload,
+            // ~internalMetadata=loggerPayload,
             ~value=contentLength,
             ~eventName=PAYMENT_ATTEMPT,
             ~paymentMethod="CARD",
@@ -1227,7 +1216,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
               handleLogging(
                 ~optLogger,
                 ~value=contentLength,
-                ~internalMetadata=loggerPayload,
+                // ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
                 ~paymentMethod=json->getStringFromJson(""),
               )
@@ -1345,7 +1334,7 @@ let fetchSessions = async (
   ~wallets=[],
   ~isDelayedSessionToken=false,
   ~logger,
-  ~customPodUri,
+  ~customPodUri=?,
   ~endpoint,
   ~isPaymentSession=false,
   ~merchantHostname=Window.getRootHostName(),
@@ -1359,7 +1348,15 @@ let fetchSessions = async (
       ("wallets", wallets->JSON.Encode.array),
       ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
     ]->getJsonFromArrayOfJson
-  let uri = APIUtils.generateApiUrl(FetchSessions, ~customBackendBaseUrl=endpoint)
+  let uri = APIUtils.generateApiUrl(
+    FetchSessions,
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: None,
+      paymentMethodId: None,
+    },
+  )
 
   let onSuccess = data => data
 
@@ -1372,7 +1369,7 @@ let fetchSessions = async (
     ~bodyStr=body->JSON.stringify,
     ~headers,
     ~method=#POST,
-    ~customPodUri=Some(customPodUri),
+    ~customPodUri,
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
@@ -1448,7 +1445,7 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~ur
   })
 }
 
-let createPaymentMethod = (
+let createPaymentMethod = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
@@ -1456,72 +1453,36 @@ let createPaymentMethod = (
   ~endpoint,
   ~body,
 ) => {
-  open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-  let uri = `${endpoint}/payment_methods`
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    CreatePaymentMethod,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: Some(publishableKey),
+      paymentMethodId: None,
+    },
   )
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
   let body =
     body
     ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
     ->getJsonFromArrayOfJson
 
-  fetchApi(
+  await Utils.fetchApiWithLogging(
     uri,
-    ~method=#POST,
+    ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
+    ~logger,
     ~bodyStr=body->JSON.stringify,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~method=#POST,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
   )
-  ->then(resp => {
-    let statusCode = resp->Fetch.Response.status
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger=Some(logger),
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
-    )
-    JSON.Encode.null->resolve
-  })
 }
 
 let fetchPaymentMethodList = async (
@@ -1533,8 +1494,12 @@ let fetchPaymentMethodList = async (
 ) => {
   let uri = APIUtils.generateApiUrl(
     FetchPaymentMethodList,
-    ~clientSecret,
-    ~customBackendBaseUrl=endpoint,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: None,
+      paymentMethodId: None,
+    },
   )
 
   let onSuccess = data => data
@@ -1564,8 +1529,12 @@ let fetchCustomerPaymentMethodList = async (
 ) => {
   let uri = APIUtils.generateApiUrl(
     FetchCustomerPaymentMethodList,
-    ~clientSecret,
-    ~customBackendBaseUrl=endpoint,
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: None,
+      paymentMethodId: None,
+    },
   )
 
   let onSuccess = data => data
@@ -1865,138 +1834,71 @@ let callAuthExchange = (
   })
 }
 
-let fetchSavedPaymentMethodList = (
+let fetchSavedPaymentMethodList = async (
   ~ephemeralKey,
   ~endpoint,
-  ~optLogger,
+  ~logger,
   ~customPodUri,
   ~isPaymentSession=false,
 ) => {
-  open Promise
-  let headers = [("Content-Type", "application/json"), ("api-key", ephemeralKey)]
-  let uri = `${endpoint}/customers/payment_methods`
-  logApi(
-    ~optLogger,
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=SAVED_PAYMENT_METHODS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    FetchSavedPaymentMethodList,
+    ~params={
+      customBackendBaseUrl: Some(endpoint),
+      clientSecret: None,
+      publishableKey: Some(ephemeralKey),
+      paymentMethodId: None,
+    },
+  )
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await Utils.fetchApiWithLogging(
+    uri,
+    ~eventName=SAVED_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~bodyStr="",
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(ephemeralKey),
+    ~onSuccess,
+    ~onFailure,
     ~isPaymentSession,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-          ~isPaymentSession,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger,
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-        ~isPaymentSession,
-      )
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger,
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
-      ~isPaymentSession,
-    )
-    JSON.Encode.null->resolve
-  })
 }
 
-let deletePaymentMethod = (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodUri) => {
-  open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Content-Type", "application/json"), ("api-key", ephemeralKey)]
-  let uri = `${endpoint}/payment_methods/${paymentMethodId}`
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=DELETE_PAYMENT_METHODS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodUri) => {
+  let uri = APIUtils.generateApiUrl(
+    DeletePaymentMethod,
+    ~params={
+      customBackendBaseUrl: None,
+      clientSecret: None,
+      publishableKey: Some(ephemeralKey),
+      paymentMethodId: Some(paymentMethodId),
+    },
   )
-  fetchApi(uri, ~method=#DELETE, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(resp => {
-    let statusCode = resp->Fetch.Response.status
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=DELETE_PAYMENT_METHODS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=DELETE_PAYMENT_METHODS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger=Some(logger),
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=DELETE_PAYMENT_METHODS_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
-    )
-    JSON.Encode.null->resolve
-  })
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await Utils.fetchApiWithLogging(
+    uri,
+    ~eventName=DELETE_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~bodyStr="",
+    ~method=#DELETE,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(ephemeralKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
-let calculateTax = (
+let calculateTax = async (
   ~apiKey,
-  ~paymentId,
   ~clientSecret,
   ~paymentMethodType,
   ~shippingAddress,
@@ -2004,75 +1906,36 @@ let calculateTax = (
   ~customPodUri,
   ~sessionId,
 ) => {
-  open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let headers = [("Content-Type", "application/json"), ("api-key", apiKey)]
-  let uri = `${endpoint}/payments/${paymentId}/calculate_tax`
+  let uri = APIUtils.generateApiUrl(
+    CalculateTax,
+    ~params={
+      customBackendBaseUrl: None,
+      clientSecret: Some(clientSecret),
+      publishableKey: Some(apiKey),
+      paymentMethodId: None,
+    },
+  )
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
   let body = [
-    ("client_secret", clientSecret),
+    ("client_secret", clientSecret->JSON.Encode.string),
     ("shipping", shippingAddress),
     ("payment_method_type", paymentMethodType),
   ]
   sessionId->Option.mapOr((), id => body->Array.push(("session_id", id))->ignore)
-
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=EXTERNAL_TAX_CALCULATION,
-    ~logType=INFO,
-    ~logCategory=API,
-  )
-  fetchApi(
+  await Utils.fetchApiWithLogging(
     uri,
-    ~method=#POST,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
+    ~eventName=EXTERNAL_TAX_CALCULATION,
+    ~logger,
     ~bodyStr=body->getJsonFromArrayOfJson->JSON.stringify,
+    ~method=#POST,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(apiKey),
+    ~onSuccess,
+    ~onFailure,
   )
-  ->then(resp => {
-    let statusCode = resp->Fetch.Response.status
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=EXTERNAL_TAX_CALCULATION,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=EXTERNAL_TAX_CALCULATION,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      resp->Fetch.Response.json
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    logApi(
-      ~optLogger=Some(logger),
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=EXTERNAL_TAX_CALCULATION,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data=exceptionMessage,
-    )
-    JSON.Encode.null->resolve
-  })
 }
 
 let usePostSessionTokens = (
@@ -2125,7 +1988,7 @@ let usePostSessionTokens = (
         let contentLength = body->String.length->Int.toString
         let maskedPayload =
           body->safeParseOpt->Option.getOr(JSON.Encode.null)->maskPayload->JSON.stringify
-        let loggerPayload =
+        let _loggerPayload =
           [
             ("payload", maskedPayload->JSON.Encode.string),
             (
@@ -2144,7 +2007,7 @@ let usePostSessionTokens = (
         | Card =>
           handleLogging(
             ~optLogger,
-            ~internalMetadata=loggerPayload,
+            // ~internalMetadata=loggerPayload,
             ~value=contentLength,
             ~eventName=PAYMENT_ATTEMPT,
             ~paymentMethod="CARD",
@@ -2155,7 +2018,7 @@ let usePostSessionTokens = (
               handleLogging(
                 ~optLogger,
                 ~value=contentLength,
-                ~internalMetadata=loggerPayload,
+                // ~internalMetadata=loggerPayload,
                 ~eventName=PAYMENT_ATTEMPT,
                 ~paymentMethod=json->getStringFromJson(""),
               )
