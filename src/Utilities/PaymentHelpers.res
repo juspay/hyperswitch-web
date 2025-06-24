@@ -1160,7 +1160,11 @@ let usePaymentIntent = (optLogger, paymentType) => {
             "authorization",
             `publishable-key=${keys.publishableKey},client-secret=${clientSecret}`,
           )
-          [authorizationHeader, ("X-profile-id", keys.profileId)]
+          [
+            authorizationHeader,
+            ("X-profile-id", keys.profileId),
+            ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
+          ]
         }
       }
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
