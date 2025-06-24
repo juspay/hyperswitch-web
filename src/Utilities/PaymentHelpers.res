@@ -1630,104 +1630,64 @@ let paymentIntentForPaymentSession = (
   )
 }
 
-let callAuthLink = (
+let callAuthLink = async (
   ~publishableKey,
   ~clientSecret,
   ~paymentMethodType,
   ~pmAuthConnectorsArr,
   ~iframeId,
-  ~optLogger,
+  ~logger,
 ) => {
-  open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let uri = `${endpoint}/payment_methods/auth/link`
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
-
-  logApi(
-    ~optLogger,
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    CallAuthLink,
+    ~params={
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      customBackendBaseUrl: None,
+      paymentMethodId: None,
+      falseSync: None,
+    },
   )
 
-  fetchApi(
-    uri,
-    ~method=#POST,
-    ~bodyStr=[
+  let body =
+    [
       ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
       ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
       ("payment_method", "bank_debit"->JSON.Encode.string),
       ("payment_method_type", paymentMethodType->JSON.Encode.string),
-    ]
-    ->getJsonFromArrayOfJson
-    ->JSON.stringify,
-    ~headers,
-  )
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        let metaData =
-          [
-            ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
-            ("pmAuthConnectorArray", pmAuthConnectorsArr->anyTypeToJson),
-            ("publishableKey", publishableKey->JSON.Encode.string),
-            ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
-            ("isForceSync", false->JSON.Encode.bool),
-          ]->getJsonFromArrayOfJson
+    ]->getJsonFromArrayOfJson
 
-        messageParentWindow([
-          ("fullscreen", true->JSON.Encode.bool),
-          ("param", "plaidSDK"->JSON.Encode.string),
-          ("iframeId", iframeId->JSON.Encode.string),
-          ("metadata", metaData),
-        ])
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~statusCode,
-          ~apiLogType=Response,
-          ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
-          ~logType=INFO,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    }
-  })
-  ->catch(e => {
-    logApi(
-      ~optLogger,
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data={e->formatException},
-    )
-    Console.error2("Unable to retrieve payment_methods auth/link because of ", e)
-    JSON.Encode.null->resolve
-  })
+  let onSuccess = data => {
+    let metaData =
+      [
+        ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
+        ("pmAuthConnectorArray", pmAuthConnectorsArr->anyTypeToJson),
+        ("publishableKey", publishableKey->JSON.Encode.string),
+        ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
+        ("isForceSync", false->JSON.Encode.bool),
+      ]->getJsonFromArrayOfJson
+
+    messageParentWindow([
+      ("fullscreen", true->JSON.Encode.bool),
+      ("param", "plaidSDK"->JSON.Encode.string),
+      ("iframeId", iframeId->JSON.Encode.string),
+      ("metadata", metaData),
+    ])
+    data
+  }
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
+    ~logger,
+    ~bodyStr=body->JSON.stringify,
+    ~method=#POST,
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let callAuthExchange = (
