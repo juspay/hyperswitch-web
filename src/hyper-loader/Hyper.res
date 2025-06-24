@@ -346,12 +346,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         let onFailure = _ => JSON.Encode.null
 
-        let headers = Dict.make()
-
         await fetchApiWithLogging(
           uri,
           ~eventName=RETRIEVE_CALL,
-          ~headers,
           ~logger,
           ~bodyStr="",
           ~method=#GET,
