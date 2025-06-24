@@ -501,8 +501,6 @@ let make = (
                   googlePayThirdPartySession,
                 )
 
-              let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-
               let connector =
                 googlePayThirdPartySession
                 ->Dict.get("connector")
@@ -523,9 +521,10 @@ let make = (
                     let polling =
                       delay(2000)->then(_ =>
                         PaymentHelpers.pollRetrievePaymentIntent(
+                          ~headers=Dict.make(),
                           clientSecret,
-                          headers,
-                          ~optLogger=Some(logger),
+                          ~publishableKey,
+                          ~logger,
                           ~customPodUri,
                           ~isForceSync=true,
                         )
@@ -778,8 +777,8 @@ let make = (
             ->then(_ => {
               PaymentHelpers.retrievePaymentIntent(
                 clientSecret,
-                headers,
-                ~optLogger=Some(logger),
+                ~publishableKey,
+                ~logger,
                 ~customPodUri,
                 ~isForceSync=true,
               )
@@ -814,8 +813,8 @@ let make = (
           let retrievePaymentIntentWrapper = redirectUrl => {
             PaymentHelpers.retrievePaymentIntent(
               clientSecret,
-              headers,
-              ~optLogger=Some(logger),
+              ~publishableKey,
+              ~logger,
               ~customPodUri,
               ~isForceSync=true,
             )

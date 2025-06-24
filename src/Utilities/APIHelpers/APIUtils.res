@@ -7,16 +7,18 @@ type apiCall =
   | DeletePaymentMethod
   | CalculateTax
   | CreatePaymentMethod
+  | RetrievePaymentIntent
 
 type apiParams = {
   clientSecret: option<string>,
   publishableKey: option<string>,
   customBackendBaseUrl: option<string>,
   paymentMethodId: option<string>,
+  forceSync: option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
-  let {clientSecret, publishableKey, customBackendBaseUrl, paymentMethodId} = params
+  let {clientSecret, publishableKey, customBackendBaseUrl, paymentMethodId, forceSync} = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
   let publishableKeyVal = publishableKey->Option.getOr("")
@@ -28,7 +30,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
       ApiEndpoint.getApiEndPoint(~publishableKey=publishableKeyVal),
     )
 
-  let buildQueryParams = (params: list<(string, string)>) => {
+  let buildQueryParams = params =>
     switch params {
     | list{} => ""
     | _ =>
@@ -36,11 +38,22 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
       ->List.map(((key, value)) => `${key}=${value}`)
       ->List.reduce("", (acc, param) => acc === "" ? `?${param}` : `${acc}&${param}`)
     }
-  }
+
+  let defaultParams = list{
+    switch clientSecret {
+    | Some(cs) => Some(("client_secret", cs))
+    | None => None
+    },
+    switch forceSync {
+    | Some(fs) if apiCallType === RetrievePaymentIntent => Some(("false_sync", fs))
+    | _ => None
+    },
+  }->List.filterMap(x => x)
 
   let queryParams = switch apiCallType {
-  | FetchPaymentMethodList => list{("client_secret", clientSecretVal)}
-  | FetchCustomerPaymentMethodList => list{("client_secret", clientSecretVal)}
+  | FetchPaymentMethodList
+  | FetchCustomerPaymentMethodList
+  | RetrievePaymentIntent => defaultParams
   | FetchSessions
   | FetchThreeDsAuth
   | FetchSavedPaymentMethodList
@@ -59,6 +72,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | DeletePaymentMethod => `payment_methods/${paymentMethodIdVal}`
   | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
   | CreatePaymentMethod => "payment_methods"
+  | RetrievePaymentIntent => `payments/${paymentIntentID}`
   }
 
   `${baseUrl}/${path}${buildQueryParams(queryParams)}`
