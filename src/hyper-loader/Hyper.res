@@ -350,7 +350,6 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           uri,
           ~eventName=RETRIEVE_CALL,
           ~logger,
-          ~bodyStr="",
           ~method=#GET,
           ~customPodUri=None,
           ~publishableKey=Some(publishableKey),
