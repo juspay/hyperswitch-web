@@ -1690,114 +1690,78 @@ let callAuthLink = async (
   )
 }
 
-let callAuthExchange = (
+let callAuthExchange = async (
   ~publicToken,
   ~clientSecret,
   ~paymentMethodType,
   ~publishableKey,
   ~setOptionValue: (PaymentType.options => PaymentType.options) => unit,
-  ~optLogger,
+  ~logger,
 ) => {
   open Promise
   open PaymentType
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let logger = HyperLogger.make(~source=Elements(Payment))
-  let uri = `${endpoint}/payment_methods/auth/exchange`
-  let updatedBody = [
-    ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
-    ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
-    ("payment_method", "bank_debit"->JSON.Encode.string),
-    ("payment_method_type", paymentMethodType->JSON.Encode.string),
-    ("public_token", publicToken->JSON.Encode.string),
-  ]
-
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
-
-  logApi(
-    ~optLogger,
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    CallAuthExchange,
+    ~params={
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      customBackendBaseUrl: None,
+      paymentMethodId: None,
+      falseSync: None,
+    },
   )
 
-  fetchApi(
-    uri,
-    ~method=#POST,
-    ~bodyStr=updatedBody->getJsonFromArrayOfJson->JSON.stringify,
-    ~headers,
-  )
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger,
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      fetchCustomerPaymentMethodList(
-        ~clientSecret=clientSecret->Option.getOr(""),
-        ~publishableKey,
-        ~logger,
-        ~customPodUri="",
-        ~endpoint,
-      )
-      ->then(customerListResponse => {
-        let customerListResponse =
-          [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
-        setOptionValue(
-          prev => {
-            ...prev,
-            customerPaymentMethods: customerListResponse->createCustomerObjArr(
-              "customerPaymentMethods",
-            ),
-          },
-        )
-        JSON.Encode.null->resolve
-      })
-      ->catch(e => {
-        Console.error2(
-          "Unable to retrieve customer/payment_methods after auth/exchange because of ",
-          e,
-        )
-        JSON.Encode.null->resolve
-      })
-    }
-  })
-  ->catch(e => {
-    logApi(
-      ~optLogger,
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data={e->formatException},
+  let body =
+    [
+      ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
+      ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
+      ("payment_method", "bank_debit"->JSON.Encode.string),
+      ("payment_method_type", paymentMethodType->JSON.Encode.string),
+      ("public_token", publicToken->JSON.Encode.string),
+    ]->getJsonFromArrayOfJson
+
+  let onSuccess = data => {
+    let endpoint = ApiEndpoint.getApiEndPoint()
+    fetchCustomerPaymentMethodList(
+      ~clientSecret=clientSecret->Option.getOr(""),
+      ~publishableKey,
+      ~logger,
+      ~customPodUri="",
+      ~endpoint,
     )
-    Console.error2("Unable to retrieve payment_methods auth/exchange because of ", e)
-    JSON.Encode.null->resolve
-  })
+    ->then(customerListResponse => {
+      let customerListResponse = [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
+      setOptionValue(prev => {
+        ...prev,
+        customerPaymentMethods: customerListResponse->createCustomerObjArr(
+          "customerPaymentMethods",
+        ),
+      })
+      resolve(JSON.Encode.null)
+    })
+    ->catch(e => {
+      Console.error2(
+        "Unable to retrieve customer/payment_methods after auth/exchange because of ",
+        e,
+      )
+      Promise.resolve(JSON.Encode.null)
+    })
+    ->ignore
+    data
+  }
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
+    ~logger,
+    ~bodyStr=body->JSON.stringify,
+    ~method=#POST,
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let fetchSavedPaymentMethodList = async (
