@@ -8,7 +8,7 @@ let make = () => {
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
-  let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", loggerState)
+  let (phone, setPhone) = Recoil.useRecoilState(userPhoneNumber)
   let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
   let clientCountry = getClientCountry(clientTimeZone)
   let currentCountryCode = Utils.getCountryCode(clientCountry.countryName)
@@ -56,6 +56,7 @@ let make = () => {
 
   let changePhone = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\D|\s/g"), "")
+    LoggerUtils.logInputChangeInfo("phone", loggerState)
     setPhone(prev => {
       ...prev,
       countryCode: valueDropDown->getCountryCodeSplitValue,
@@ -97,7 +98,10 @@ let make = () => {
       maxLength=14
       dropDownOptions=phoneNumberCodeOptions
       valueDropDown
-      setValueDropDown
+      setValueDropDown={newValue => {
+        LoggerUtils.logInputChangeInfo("phoneCountryCode", loggerState)
+        setValueDropDown(newValue)
+      }}
       displayValue
       setDisplayValue
     />

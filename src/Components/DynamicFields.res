@@ -126,17 +126,13 @@ let make = (
 
   let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
 
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
-  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
-  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", logger)
-  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
-    userAddressPincode,
-    "postal_code",
-    logger,
-  )
+  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
+  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
+  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
+  let (state, setState) = Recoil.useRecoilState(userAddressState)
+  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
 
-  let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
+  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
@@ -147,21 +143,11 @@ let make = (
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
-    userBankAccountNumber,
-    "bankAccountNumber",
-    logger,
-  )
-  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useLoggedRecoilState(
+  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
+  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useRecoilState(
     destinationBankAccountId,
-    "destinationBankAccountId",
-    logger,
   )
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useLoggedRecoilState(
-    sourceBankAccountId,
-    "sourceBankAccountId",
-    logger,
-  )
+  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
   let countryList = CountryStateDataRefs.countryDataRef.contents
   let stateNames = getStateNames({
     value: country,
@@ -248,6 +234,7 @@ let make = (
 
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
+    LoggerUtils.logInputChangeInfo("postal_code", logger)
 
     if val !== "" {
       setPostalCode(_ => {
@@ -441,7 +428,10 @@ let make = (
               appearance=config.appearance
               fieldName=localeString.currencyLabel
               value=currency
-              setValue=setCurrency
+              setValue={newValue => {
+                LoggerUtils.logInputChangeInfo("currency", logger)
+                setCurrency(newValue)
+              }}
               disabled=false
               options=updatedCurrencyArray
             />
@@ -475,6 +465,7 @@ let make = (
               value=bankAccountNumber
               onChange={ev => {
                 let value = ReactEvent.Form.target(ev)["value"]
+                LoggerUtils.logInputChangeInfo("bankAccountNumber", logger)
                 setBankAccountNumber(_ => {
                   isValid: Some(value !== ""),
                   value,
@@ -502,6 +493,7 @@ let make = (
               value=destinationBankAccountId
               onChange={ev => {
                 let value = ReactEvent.Form.target(ev)["value"]
+                LoggerUtils.logInputChangeInfo("destinationBankAccountId", logger)
                 setDestinationBankAccountId(_ => {
                   isValid: Some(value !== ""),
                   value,
@@ -528,6 +520,7 @@ let make = (
               value=sourceBankAccountId
               onChange={ev => {
                 let value = ReactEvent.Form.target(ev)["value"]
+                LoggerUtils.logInputChangeInfo("sourceBankAccountId", logger)
                 setSourceBankAccountId(_ => {
                   isValid: Some(value !== ""),
                   value,
@@ -613,6 +606,7 @@ let make = (
                       value=city
                       onChange={ev => {
                         let value = ReactEvent.Form.target(ev)["value"]
+                        LoggerUtils.logInputChangeInfo("city", logger)
                         setCity(prev => {
                           isValid: Some(value !== ""),
                           value,
@@ -636,7 +630,10 @@ let make = (
                       <PaymentDropDownField
                         fieldName=localeString.stateLabel
                         value=state
-                        setValue=setState
+                        setValue={newValue => {
+                          LoggerUtils.logInputChangeInfo("state", logger)
+                          setState(newValue)
+                        }}
                         options={stateNames}
                       />
                     </RenderIf>
@@ -649,7 +646,10 @@ let make = (
                       appearance=config.appearance
                       fieldName=localeString.countryLabel
                       value=country
-                      setValue={setCountry}
+                      setValue={newValue => {
+                        LoggerUtils.logInputChangeInfo("country", logger)
+                        setCountry(newValue)
+                      }}
                       disabled=false
                       options=updatedCountryArray
                       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
@@ -679,6 +679,7 @@ let make = (
                     value=line1
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
+                      LoggerUtils.logInputChangeInfo("line1", logger)
                       setLine1(prev => {
                         isValid: Some(value !== ""),
                         value,
@@ -705,6 +706,7 @@ let make = (
                     value=line2
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
+                      LoggerUtils.logInputChangeInfo("line2", logger)
                       setLine2(prev => {
                         isValid: Some(value !== ""),
                         value,
@@ -730,6 +732,7 @@ let make = (
                     value=city
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
+                      LoggerUtils.logInputChangeInfo("city", logger)
                       setCity(prev => {
                         isValid: Some(value !== ""),
                         value,
@@ -753,14 +756,20 @@ let make = (
                     <PaymentDropDownField
                       fieldName=localeString.stateLabel
                       value=state
-                      setValue=setState
+                      setValue={newValue => {
+                        LoggerUtils.logInputChangeInfo("state", logger)
+                        setState(newValue)
+                      }}
                       options={stateNames}
                     />
                   </RenderIf>
                 | AddressPincode =>
                   <PaymentField
                     fieldName=localeString.postalCodeLabel
-                    setValue={setPostalCode}
+                    setValue={newValue => {
+                      LoggerUtils.logInputChangeInfo("postal_code", logger)
+                      setPostalCode(newValue)
+                    }}
                     value=postalCode
                     onBlur={ev => {
                       let value = ReactEvent.Focus.target(ev)["value"]
@@ -782,7 +791,10 @@ let make = (
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
-                    setValue=setCountry
+                    setValue={newValue => {
+                      LoggerUtils.logInputChangeInfo("country", logger)
+                      setCountry(newValue)
+                    }}
                     disabled=false
                     options=updatedCountryNames
                   />
@@ -793,7 +805,10 @@ let make = (
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
-                    setValue=setCountry
+                    setValue={newValue => {
+                      LoggerUtils.logInputChangeInfo("country", logger)
+                      setCountry(newValue)
+                    }}
                     disabled=false
                     options=updatedCountryArr
                   />
@@ -804,7 +819,10 @@ let make = (
                     appearance=config.appearance
                     fieldName=localeString.bankLabel
                     value=selectedBank
-                    setValue=setSelectedBank
+                    setValue={newValue => {
+                      LoggerUtils.logInputChangeInfo("bank", logger)
+                      setSelectedBank(newValue)
+                    }}
                     disabled=false
                     options=updatedBankNames
                   />

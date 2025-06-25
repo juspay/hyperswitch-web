@@ -13,6 +13,7 @@ let make = (
 ) => {
   // Recoil states
   let {config, constantString, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {enabledPaymentMethodsWithDynamicFields} = Recoil.useRecoilValueFromAtom(
     paymentMethodCollectOptionAtom,
   )
@@ -163,6 +164,7 @@ let make = (
               value
               setValue={getVal => {
                 let updatedValue = getVal()
+                LoggerUtils.logInputChangeInfo("addressCountry", loggerState)
                 let validCardBrand = getFirstValidCardSchemeFromPML(
                   ~cardNumber=updatedValue,
                   ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),

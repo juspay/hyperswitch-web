@@ -37,20 +37,12 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)
 
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", loggerState)
-  let (country, setCountry) = Recoil.useLoggedRecoilState(
-    userAddressCountry,
-    "country",
-    loggerState,
-  )
-  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", loggerState)
-  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
-    userAddressPincode,
-    "postal_code",
-    loggerState,
-  )
-  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
+  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
+  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
+  let (country, setCountry) = Recoil.useRecoilState(userAddressCountry)
+  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
+  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
+  let (state, setState) = Recoil.useRecoilState(userAddressState)
 
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
@@ -84,7 +76,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
 
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-
+    LoggerUtils.logInputChangeInfo("postal_code", loggerState)
     setPostalCode(prev => {
       ...prev,
       value: val,
@@ -168,6 +160,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
         value=line1
         onChange={ev => {
           setShowOtherFields(_ => true)
+          LoggerUtils.logInputChangeInfo("line1", loggerState)
           setLine1(prev => {
             ...prev,
             value: ReactEvent.Form.target(ev)["value"],
@@ -189,6 +182,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
             setValue={setLine2}
             value=line2
             onChange={ev => {
+              LoggerUtils.logInputChangeInfo("line2", loggerState)
               setLine2(prev => {
                 ...prev,
                 value: ReactEvent.Form.target(ev)["value"],
@@ -208,7 +202,10 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               fieldName=localeString.countryLabel
               value=country
               className
-              setValue=setCountry
+              setValue={newValue => {
+                LoggerUtils.logInputChangeInfo("country", loggerState)
+                setCountry(newValue)
+              }}
               options=countryNames
             />
           </RenderIf>
@@ -219,7 +216,10 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               fieldName=localeString.stateLabel
               value=state
               className
-              setValue=setState
+              setValue={newValue => {
+                LoggerUtils.logInputChangeInfo("state", loggerState)
+                setState(newValue)
+              }}
               options={stateNames}
             />
           </RenderIf>
@@ -232,6 +232,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               className
               value=city
               onChange={ev => {
+                LoggerUtils.logInputChangeInfo("city", loggerState)
                 setCity(prev => {
                   ...prev,
                   value: ReactEvent.Form.target(ev)["value"],

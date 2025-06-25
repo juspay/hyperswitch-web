@@ -6,7 +6,7 @@ open EmailValidation
 let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
+  let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let showDetails = PaymentType.getShowDetails(~billingDetails=fields.billingDetails)
@@ -15,6 +15,7 @@ let make = () => {
 
   let changeEmail = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
+    LoggerUtils.logInputChangeInfo("email", loggerState)
     setEmail(prev => {
       value: val,
       isValid: val->isEmailValid,

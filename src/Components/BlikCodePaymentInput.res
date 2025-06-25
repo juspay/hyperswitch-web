@@ -4,7 +4,7 @@ open Utils
 @react.component
 let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let (blikCode, setblikCode) = Recoil.useLoggedRecoilState(userBlikCode, "blikCode", loggerState)
+  let (blikCode, setblikCode) = Recoil.useRecoilState(userBlikCode)
 
   let blikCodeRef = React.useRef(Nullable.null)
   let formatBSB = bsb => {
@@ -23,6 +23,7 @@ let make = () => {
 
   let changeblikCode = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
+    LoggerUtils.logInputChangeInfo("blikCode", loggerState)
     setblikCode(prev => {
       ...prev,
       value: val->formatBSB,

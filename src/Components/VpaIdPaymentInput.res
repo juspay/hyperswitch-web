@@ -5,12 +5,13 @@ open Utils
 let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let (vpaId, setVpaId) = Recoil.useLoggedRecoilState(userVpaId, "vpaId", loggerState)
+  let (vpaId, setVpaId) = Recoil.useRecoilState(userVpaId)
 
   let vpaIdRef = React.useRef(Nullable.null)
 
   let changeVpaId = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
+    LoggerUtils.logInputChangeInfo("vpaId", loggerState)
     setVpaId(prev => {
       value: val,
       isValid: val->isVpaIdValid,
