@@ -196,24 +196,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       setPaymentOptions(_ => [...paymentOptionsList]->removeDuplicate)
       setWalletOptions(_ => walletList)
       setPaymentMethodListValue(_ => plist)
-      showCardFormByDefault
-        ? if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
-            ErrorUtils.manageErrorWarning(
-              SDK_CONNECTOR_WARNING,
-              ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
-              ~logger=loggerState,
-            )
-          } else if !checkPriorityList(paymentMethodOrder) {
-            ErrorUtils.manageErrorWarning(
-              SDK_CONNECTOR_WARNING,
-              ~dynamicStr=`'paymentMethodOrder' is ${Array.join(
-                  paymentMethodOrder->getOptionalArr,
-                  ", ",
-                )} . Please enable Card Payment as 1st priority to show it as default.`,
-              ~logger=loggerState,
-            )
-          }
-        : ()
+      if !checkPriorityList(paymentMethodOrder) {
+        ErrorUtils.manageErrorWarning(
+          SDK_CONNECTOR_WARNING,
+          ~dynamicStr=`'paymentMethodOrder' is ${Array.join(
+              paymentMethodOrder->getOptionalArr,
+              ", ",
+            )} . Please enable Card Payment as 1st priority to show it as default.`,
+          ~logger=loggerState,
+        )
+      }
     | LoadError(_)
     | SemiLoaded =>
       setPaymentOptions(_ => [])
