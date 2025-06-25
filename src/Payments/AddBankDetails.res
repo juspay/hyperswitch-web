@@ -42,7 +42,7 @@ let make = (~paymentMethodType) => {
             ~paymentMethodType,
             ~publishableKey,
             ~setOptionValue,
-            ~optLogger=Some(logger),
+            ~logger,
           )
           ->then(_ => {
             messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
@@ -83,7 +83,7 @@ let make = (~paymentMethodType) => {
       ~iframeId,
       ~paymentMethodType,
       ~pmAuthConnectorsArr,
-      ~optLogger=Some(logger),
+      ~logger,
     )->ignore
   }
 

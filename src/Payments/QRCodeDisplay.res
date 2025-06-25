@@ -59,6 +59,7 @@ let make = () => {
   let (return_url, setReturnUrl) = React.useState(_ => "")
   let (clientSecret, setClientSecret) = React.useState(_ => "")
   let (headers, setHeaders) = React.useState(_ => [])
+  let (publishableKey, setPublishableKey) = React.useState(_ => "")
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
   let (paymentMethodConfig, setPaymentMethodConfig) = React.useState(_ =>
@@ -81,6 +82,8 @@ let make = () => {
           let defaultConfig = getPaymentMethodConfig(parsedPaymentMethod)
 
           let qrData = metaDataDict->getString("qrData", "")
+          let publishableKey = metaDataDict->getString("publishableKey", "")
+          setPublishableKey(_ => publishableKey)
           setQrCode(_ => qrData)
 
           switch parsedPaymentMethod {
@@ -127,9 +130,10 @@ let make = () => {
 
           try {
             let res = await PaymentHelpers.pollRetrievePaymentIntent(
+              ~headers=headers->Dict.toArray->Dict.fromArray,
               paymentIntentId,
-              headers->Dict.toArray,
-              ~optLogger=Some(logger),
+              ~publishableKey,
+              ~logger,
               ~customPodUri,
             )
             Modal.close(setOpenModal)
@@ -150,8 +154,9 @@ let make = () => {
     try {
       let json = await PaymentHelpers.retrievePaymentIntent(
         clientSecret,
-        headers,
-        ~optLogger=Some(logger),
+        ~headers=headers->Dict.fromArray,
+        ~publishableKey,
+        ~logger,
         ~customPodUri,
       )
 
