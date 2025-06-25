@@ -164,7 +164,6 @@ let make = (
               value
               setValue={getVal => {
                 let updatedValue = getVal()
-                LoggerUtils.logInputChangeInfo("addressCountry", loggerState)
                 let validCardBrand = getFirstValidCardSchemeFromPML(
                   ~cardNumber=updatedValue,
                   ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
@@ -187,6 +186,7 @@ let make = (
               }}
               options={countries->DropdownField.updateArrayOfStringToOptionsTypeArray}
               disabled=false
+              logFieldName="addressCountry"
             />
           </div>
         } else {

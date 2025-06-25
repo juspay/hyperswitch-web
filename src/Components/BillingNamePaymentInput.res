@@ -14,7 +14,6 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    LoggerUtils.logInputChangeInfo("billingName", loggerState)
     setBillingName(prev => {
       value: val,
       isValid: Some(val !== ""),
@@ -71,6 +70,7 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
       placeholder
       className={config.appearance.innerLayout === Spaced ? "" : "!border-b-0"}
       name=TestUtils.cardHolderNameInputTestId
+      logFieldName="billingName"
     />
   </RenderIf>
 }

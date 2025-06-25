@@ -5,11 +5,9 @@ let make = () => {
 
   let (nickName, setNickName) = Recoil.useRecoilState(userCardNickName)
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
   let onChange = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    LoggerUtils.logInputChangeInfo("nickname", loggerState)
     setNickName(prev => setNickNameState(val, prev, localeString))
   }
 
@@ -29,5 +27,6 @@ let make = () => {
     inputRef={React.useRef(Nullable.null)}
     placeholder=localeString.nicknamePlaceholder
     maxLength=12
+    logFieldName="nickname"
   />
 }

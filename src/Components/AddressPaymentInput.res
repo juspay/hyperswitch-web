@@ -76,7 +76,6 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
 
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    LoggerUtils.logInputChangeInfo("postal_code", loggerState)
     setPostalCode(prev => {
       ...prev,
       value: val,
@@ -160,7 +159,6 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
         value=line1
         onChange={ev => {
           setShowOtherFields(_ => true)
-          LoggerUtils.logInputChangeInfo("line1", loggerState)
           setLine1(prev => {
             ...prev,
             value: ReactEvent.Form.target(ev)["value"],
@@ -172,6 +170,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
         inputRef=line1Ref
         placeholder=localeString.line1Placeholder
         paymentType
+        logFieldName="line1"
       />
     </RenderIf>
     <RenderIf condition={showOtherFileds || hasDefaulltValues}>
@@ -182,7 +181,6 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
             setValue={setLine2}
             value=line2
             onChange={ev => {
-              LoggerUtils.logInputChangeInfo("line2", loggerState)
               setLine2(prev => {
                 ...prev,
                 value: ReactEvent.Form.target(ev)["value"],
@@ -194,6 +192,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
             inputRef=line2Ref
             placeholder=localeString.line2Placeholder
             paymentType
+            logFieldName="line2"
           />
         </RenderIf>
         <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>
@@ -202,11 +201,9 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               fieldName=localeString.countryLabel
               value=country
               className
-              setValue={newValue => {
-                LoggerUtils.logInputChangeInfo("country", loggerState)
-                setCountry(newValue)
-              }}
+              setValue=setCountry
               options=countryNames
+              logFieldName="country"
             />
           </RenderIf>
           <RenderIf
@@ -216,11 +213,9 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               fieldName=localeString.stateLabel
               value=state
               className
-              setValue={newValue => {
-                LoggerUtils.logInputChangeInfo("state", loggerState)
-                setState(newValue)
-              }}
+              setValue=setState
               options={stateNames}
+              logFieldName="state"
             />
           </RenderIf>
         </div>
@@ -232,7 +227,6 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               className
               value=city
               onChange={ev => {
-                LoggerUtils.logInputChangeInfo("city", loggerState)
                 setCity(prev => {
                   ...prev,
                   value: ReactEvent.Form.target(ev)["value"],
@@ -243,6 +237,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               inputRef=cityRef
               placeholder=localeString.cityLabel
               paymentType
+              logFieldName="city"
             />
           </RenderIf>
           <RenderIf condition={showField(showDetails.address, Postal) == Auto}>
@@ -257,6 +252,7 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
               inputRef=postalRef
               placeholder=localeString.postalCodeLabel
               paymentType
+              logFieldName="postal_code"
             />
           </RenderIf>
         </div>

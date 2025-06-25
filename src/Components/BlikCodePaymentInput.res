@@ -23,7 +23,6 @@ let make = () => {
 
   let changeblikCode = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    LoggerUtils.logInputChangeInfo("blikCode", loggerState)
     setblikCode(prev => {
       ...prev,
       value: val->formatBSB,
@@ -67,6 +66,7 @@ let make = () => {
       inputRef=blikCodeRef
       placeholder="000 000"
       maxLength=7
+      logFieldName="blikCode"
     />
   </RenderIf>
 }

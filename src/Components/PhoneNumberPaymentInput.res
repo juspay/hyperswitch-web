@@ -56,7 +56,6 @@ let make = () => {
 
   let changePhone = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]->String.replaceRegExp(%re("/\D|\s/g"), "")
-    LoggerUtils.logInputChangeInfo("phone", loggerState)
     setPhone(prev => {
       ...prev,
       countryCode: valueDropDown->getCountryCodeSplitValue,
@@ -98,12 +97,10 @@ let make = () => {
       maxLength=14
       dropDownOptions=phoneNumberCodeOptions
       valueDropDown
-      setValueDropDown={newValue => {
-        LoggerUtils.logInputChangeInfo("phoneCountryCode", loggerState)
-        setValueDropDown(newValue)
-      }}
+      setValueDropDown
       displayValue
       setDisplayValue
+      logFieldName="phone"
     />
   </RenderIf>
 }

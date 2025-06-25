@@ -3,7 +3,6 @@ let make = () => {
   open DropdownField
   let currencyVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.userCurrency)
   let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
     RecoilAtoms.cryptoCurrencyNetworks,
   )
@@ -35,11 +34,9 @@ let make = () => {
     appearance=config.appearance
     fieldName=localeString.currencyNetwork
     value=cryptoCurrencyNetworks
-    setValue={newValue => {
-      LoggerUtils.logInputChangeInfo("cryptoCurrencyNetwork", loggerState)
-      setCryptoCurrencyNetworks(newValue)
-    }}
+    setValue=setCryptoCurrencyNetworks
     disabled=false
     options=dropdownOptions
+    logFieldName="cryptoCurrencyNetwork"
   />
 }

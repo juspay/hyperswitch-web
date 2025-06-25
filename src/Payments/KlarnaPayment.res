@@ -77,12 +77,10 @@ let make = () => {
         appearance=config.appearance
         fieldName=localeString.countryLabel
         value=country
-        setValue={newValue => {
-          LoggerUtils.logInputChangeInfo("country", loggerState)
-          setCountry(newValue)
-        }}
+        setValue=setCountry
         disabled=false
         options=countryNames
+        logFieldName="country"
       />
     </RenderIf>
     <Surcharge paymentMethod="pay_later" paymentMethodType="klarna" />

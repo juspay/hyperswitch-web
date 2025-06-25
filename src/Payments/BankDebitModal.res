@@ -331,10 +331,7 @@ let make = (~setModalData) => {
             appearance=config.appearance
             fieldName="Account type"
             value=accountType
-            setValue={newValue => {
-              LoggerUtils.logInputChangeInfo("accountType", loggerState)
-              setAccountType(newValue)
-            }}
+            setValue=setAccountType
             disabled=false
             options=[
               {
@@ -345,6 +342,7 @@ let make = (~setModalData) => {
               },
             ]
             className=" focus:outline-none border border-gray-300 focus:border-[#006DF9] rounded-md text-sm"
+            logFieldName="accountType"
           />
         </div>
       </RenderIf>

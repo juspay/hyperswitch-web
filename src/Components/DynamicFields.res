@@ -234,7 +234,6 @@ let make = (
 
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-    LoggerUtils.logInputChangeInfo("postal_code", logger)
 
     if val !== "" {
       setPostalCode(_ => {
@@ -428,12 +427,10 @@ let make = (
               appearance=config.appearance
               fieldName=localeString.currencyLabel
               value=currency
-              setValue={newValue => {
-                LoggerUtils.logInputChangeInfo("currency", logger)
-                setCurrency(newValue)
-              }}
+              setValue=setCurrency
               disabled=false
               options=updatedCurrencyArray
+              logFieldName="currency"
             />
           | FullName =>
             <>
@@ -465,7 +462,6 @@ let make = (
               value=bankAccountNumber
               onChange={ev => {
                 let value = ReactEvent.Form.target(ev)["value"]
-                LoggerUtils.logInputChangeInfo("bankAccountNumber", logger)
                 setBankAccountNumber(_ => {
                   isValid: Some(value !== ""),
                   value,
@@ -485,6 +481,7 @@ let make = (
               maxLength=42
               inputRef=bankAccountNumberRef
               placeholder="DE00 0000 0000 0000 0000 00"
+              logFieldName="bankAccountNumber"
             />
           | DestinationBankAccountId =>
             <PaymentField
@@ -493,7 +490,6 @@ let make = (
               value=destinationBankAccountId
               onChange={ev => {
                 let value = ReactEvent.Form.target(ev)["value"]
-                LoggerUtils.logInputChangeInfo("destinationBankAccountId", logger)
                 setDestinationBankAccountId(_ => {
                   isValid: Some(value !== ""),
                   value,
@@ -512,6 +508,7 @@ let make = (
               maxLength=42
               inputRef=destinationBankAccountIdRef
               placeholder="DE00 0000 0000 0000 0000 00"
+              logFieldName="destinationBankAccountId"
             />
           | SourceBankAccountId =>
             <PaymentField
@@ -520,7 +517,6 @@ let make = (
               value=sourceBankAccountId
               onChange={ev => {
                 let value = ReactEvent.Form.target(ev)["value"]
-                LoggerUtils.logInputChangeInfo("sourceBankAccountId", logger)
                 setSourceBankAccountId(_ => {
                   isValid: Some(value !== ""),
                   value,
@@ -539,6 +535,7 @@ let make = (
               maxLength=42
               inputRef=sourceBankAccountIdRef
               placeholder="DE00 0000 0000 0000 0000 00"
+              logFieldName="sourceBankAccountId"
             />
           | Email
           | InfoElement
@@ -606,7 +603,6 @@ let make = (
                       value=city
                       onChange={ev => {
                         let value = ReactEvent.Form.target(ev)["value"]
-                        LoggerUtils.logInputChangeInfo("city", logger)
                         setCity(prev => {
                           isValid: Some(value !== ""),
                           value,
@@ -625,16 +621,15 @@ let make = (
                       inputRef=cityRef
                       placeholder=localeString.cityLabel
                       className={isSpacedInnerLayout ? "" : "!border-r-0"}
+                      logFieldName="city"
                     />
                     <RenderIf condition={stateNames->Array.length > 0}>
                       <PaymentDropDownField
                         fieldName=localeString.stateLabel
                         value=state
-                        setValue={newValue => {
-                          LoggerUtils.logInputChangeInfo("state", logger)
-                          setState(newValue)
-                        }}
+                        setValue=setState
                         options={stateNames}
+                        logFieldName="state"
                       />
                     </RenderIf>
                   </div>
@@ -646,13 +641,11 @@ let make = (
                       appearance=config.appearance
                       fieldName=localeString.countryLabel
                       value=country
-                      setValue={newValue => {
-                        LoggerUtils.logInputChangeInfo("country", logger)
-                        setCountry(newValue)
-                      }}
+                      setValue=setCountry
                       disabled=false
                       options=updatedCountryArray
                       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
+                      logFieldName="country"
                     />
                     <PaymentField
                       fieldName=localeString.postalCodeLabel
@@ -670,6 +663,7 @@ let make = (
                       inputRef=postalRef
                       placeholder=localeString.postalCodeLabel
                       className={isSpacedInnerLayout ? "" : "!border-t-0"}
+                      logFieldName="postal_code"
                     />
                   </div>
                 | AddressLine1 =>
@@ -679,7 +673,6 @@ let make = (
                     value=line1
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
-                      LoggerUtils.logInputChangeInfo("line1", logger)
                       setLine1(prev => {
                         isValid: Some(value !== ""),
                         value,
@@ -698,6 +691,7 @@ let make = (
                     inputRef=line1Ref
                     placeholder=localeString.line1Placeholder
                     className={isSpacedInnerLayout ? "" : "!border-b-0"}
+                    logFieldName="line1"
                   />
                 | AddressLine2 =>
                   <PaymentField
@@ -706,7 +700,6 @@ let make = (
                     value=line2
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
-                      LoggerUtils.logInputChangeInfo("line2", logger)
                       setLine2(prev => {
                         isValid: Some(value !== ""),
                         value,
@@ -724,6 +717,7 @@ let make = (
                     name="line2"
                     inputRef=line2Ref
                     placeholder=localeString.line2Placeholder
+                    logFieldName="line2"
                   />
                 | AddressCity =>
                   <PaymentField
@@ -732,7 +726,6 @@ let make = (
                     value=city
                     onChange={ev => {
                       let value = ReactEvent.Form.target(ev)["value"]
-                      LoggerUtils.logInputChangeInfo("city", logger)
                       setCity(prev => {
                         isValid: Some(value !== ""),
                         value,
@@ -750,26 +743,22 @@ let make = (
                     name="city"
                     inputRef=cityRef
                     placeholder=localeString.cityLabel
+                    logFieldName="city"
                   />
                 | AddressState =>
                   <RenderIf condition={stateNames->Array.length > 0}>
                     <PaymentDropDownField
                       fieldName=localeString.stateLabel
                       value=state
-                      setValue={newValue => {
-                        LoggerUtils.logInputChangeInfo("state", logger)
-                        setState(newValue)
-                      }}
+                      setValue=setState
                       options={stateNames}
+                      logFieldName="state"
                     />
                   </RenderIf>
                 | AddressPincode =>
                   <PaymentField
                     fieldName=localeString.postalCodeLabel
-                    setValue={newValue => {
-                      LoggerUtils.logInputChangeInfo("postal_code", logger)
-                      setPostalCode(newValue)
-                    }}
+                    setValue=setPostalCode
                     value=postalCode
                     onBlur={ev => {
                       let value = ReactEvent.Focus.target(ev)["value"]
@@ -782,6 +771,7 @@ let make = (
                     name="postal"
                     inputRef=postalRef
                     placeholder=localeString.postalCodeLabel
+                    logFieldName="postal_code"
                   />
                 | BlikCode => <BlikCodePaymentInput />
                 | Country =>
@@ -791,12 +781,10 @@ let make = (
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
-                    setValue={newValue => {
-                      LoggerUtils.logInputChangeInfo("country", logger)
-                      setCountry(newValue)
-                    }}
+                    setValue=setCountry
                     disabled=false
                     options=updatedCountryNames
+                    logFieldName="country"
                   />
                 | AddressCountry(countryArr) =>
                   let updatedCountryArr =
@@ -805,12 +793,10 @@ let make = (
                     appearance=config.appearance
                     fieldName=localeString.countryLabel
                     value=country
-                    setValue={newValue => {
-                      LoggerUtils.logInputChangeInfo("country", logger)
-                      setCountry(newValue)
-                    }}
+                    setValue=setCountry
                     disabled=false
                     options=updatedCountryArr
+                    logFieldName="country"
                   />
                 | Bank =>
                   let updatedBankNames =
@@ -819,12 +805,10 @@ let make = (
                     appearance=config.appearance
                     fieldName=localeString.bankLabel
                     value=selectedBank
-                    setValue={newValue => {
-                      LoggerUtils.logInputChangeInfo("bank", logger)
-                      setSelectedBank(newValue)
-                    }}
+                    setValue=setSelectedBank
                     disabled=false
                     options=updatedBankNames
+                    logFieldName="bank"
                   />
                 | SpecialField(element) => element
                 | InfoElement =>

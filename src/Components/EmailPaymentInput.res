@@ -5,7 +5,6 @@ open EmailValidation
 @react.component
 let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
 
@@ -15,7 +14,6 @@ let make = () => {
 
   let changeEmail = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    LoggerUtils.logInputChangeInfo("email", loggerState)
     setEmail(prev => {
       value: val,
       isValid: val->isEmailValid,
@@ -66,6 +64,7 @@ let make = () => {
       inputRef=emailRef
       placeholder="Eg: johndoe@gmail.com"
       name=TestUtils.emailInputTestId
+      logFieldName="email"
     />
   </RenderIf>
 }

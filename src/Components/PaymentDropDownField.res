@@ -7,10 +7,12 @@ let make = (
   ~options,
   ~disabled=false,
   ~className="",
+  ~logFieldName=?,
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
@@ -55,6 +57,11 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
+    // Log the dropdown change if logFieldName is provided
+    switch logFieldName {
+    | Some(fieldName) => LoggerUtils.logInputChangeInfo(fieldName, loggerState)
+    | None => ()
+    }
     setValue(_ => {
       isValid: Some(true),
       value,

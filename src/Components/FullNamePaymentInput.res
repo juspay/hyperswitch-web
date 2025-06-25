@@ -6,13 +6,11 @@ open Utils
 let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    LoggerUtils.logInputChangeInfo("fullName", loggerState)
     setFullName(prev => validateName(val, prev, localeString))
   }
 
@@ -73,6 +71,7 @@ let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
       inputRef=nameRef
       placeholder
       name=TestUtils.fullNameInputTestId
+      logFieldName="fullName"
     />
   </RenderIf>
 }

@@ -10,12 +10,11 @@ let make = () => {
   let vpaIdRef = React.useRef(Nullable.null)
 
   let changeVpaId = ev => {
-    let val: string = ReactEvent.Form.target(ev)["value"]
-    LoggerUtils.logInputChangeInfo("vpaId", loggerState)
+    let val = ReactEvent.Form.target(ev)["value"]
     setVpaId(prev => {
+      isValid: Some(val->String.length > 0),
       value: val,
-      isValid: val->isVpaIdValid,
-      errorString: val->isVpaIdValid->Option.getOr(false) ? "" : prev.errorString,
+      errorString: val->String.length > 0 ? "" : localeString.vpaIdEmptyText,
     })
   }
   let onBlur = ev => {
@@ -57,5 +56,6 @@ let make = () => {
     name="vpaId"
     inputRef=vpaIdRef
     placeholder="Eg: johndoe@upi"
+    logFieldName="vpaId"
   />
 }
