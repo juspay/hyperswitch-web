@@ -24,7 +24,7 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   }, [paymentMode])
 
   let {cardProps, expiryProps, cvcProps, zipProps, blurState} = useCardForm(~logger, ~paymentType)
-  let {isCardValid, setCardError, cardNumber} = cardProps
+  let {isCardValid, setCardError, cardNumber, cardBrand} = cardProps
   let {isExpiryValid, setExpiryError, cardExpiry} = expiryProps
   let {isCVCValid, setCvcError, cvcNumber} = cvcProps
   let {isZipValid} = zipProps
@@ -51,20 +51,17 @@ let make = (~paymentMode, ~integrateError, ~logger) => {
   let submitValue = (_ev, confirmParam) => {
     let validFormat = switch paymentMode->getPaymentMode {
     | Card =>
-      cardProps.isCardValid->Option.getOr(false) &&
-      expiryProps.isExpiryValid->Option.getOr(false) &&
-      cvcProps.isCVCValid->Option.getOr(false)
+      isCardValid->Option.getOr(false) &&
+      isExpiryValid->Option.getOr(false) &&
+      isCVCValid->Option.getOr(false)
     | CardNumberElement =>
-      cardProps.isCardValid->Option.getOr(false) &&
-      checkCardCVC(getCardElementValue(iframeId, "card-cvc"), cardProps.cardBrand) &&
+      isCardValid->Option.getOr(false) &&
+      checkCardCVC(getCardElementValue(iframeId, "card-cvc"), cardBrand) &&
       checkCardExpiry(getCardElementValue(iframeId, "card-expiry"))
     | _ => true
     }
     let cardNetwork = [
-      (
-        "card_network",
-        cardProps.cardBrand != "" ? cardProps.cardBrand->JSON.Encode.string : JSON.Encode.null,
-      ),
+      ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
     ]
     if validFormat {
       let body = switch paymentMode->getPaymentMode {
