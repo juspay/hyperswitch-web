@@ -19,63 +19,46 @@ let getPaymentType = paymentMethodType =>
 
 let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
 
-let retrievePaymentIntent = (
+let retrievePaymentIntent = async (
   clientSecret,
-  headers,
-  ~optLogger,
+  ~headers=?,
+  ~publishableKey,
+  ~logger,
   ~customPodUri,
   ~isForceSync=false,
 ) => {
-  open Promise
-  let paymentIntentID = clientSecret->Utils.getPaymentId
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let forceSync = isForceSync ? "&force_sync=true" : ""
-  let uri = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}${forceSync}`
-
-  logApi(
-    ~optLogger,
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=RETRIEVE_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    RetrievePaymentIntent,
+    ~params={
+      clientSecret: Some(clientSecret),
+      publishableKey: Some(publishableKey),
+      customBackendBaseUrl: None,
+      paymentMethodId: None,
+      forceSync: isForceSync ? Some("true") : None,
+      pollId: None,
+    },
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=RETRIEVE_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger,
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=RETRIEVE_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(e => {
-    Console.error2("Unable to retrieve payment details because of ", e)
-    JSON.Encode.null->resolve
-  })
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  let headers = switch headers {
+  | Some(providedHeaders) => providedHeaders
+  | None => Dict.make()
+  }
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=RETRIEVE_CALL,
+    ~headers,
+    ~logger,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) => {
@@ -86,6 +69,8 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
       publishableKey: None,
       customBackendBaseUrl: None,
       paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
     },
   )
   let broswerInfo = BrowserSpec.broswerInfo
@@ -113,7 +98,7 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
     Js.Exn.raiseError(err->JSON.stringify)
   }
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     url,
     ~eventName=AUTHENTICATION_CALL,
     ~logger,
@@ -128,13 +113,21 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
 
 let rec pollRetrievePaymentIntent = (
   clientSecret,
-  headers,
-  ~optLogger,
+  ~headers,
+  ~publishableKey,
+  ~logger,
   ~customPodUri,
   ~isForceSync=false,
 ) => {
   open Promise
-  retrievePaymentIntent(clientSecret, headers, ~optLogger, ~customPodUri, ~isForceSync)
+  retrievePaymentIntent(
+    clientSecret,
+    ~headers,
+    ~publishableKey,
+    ~logger,
+    ~customPodUri,
+    ~isForceSync,
+  )
   ->then(json => {
     let dict = json->getDictFromJson
     let status = dict->getString("status", "")
@@ -144,70 +137,72 @@ let rec pollRetrievePaymentIntent = (
     } else {
       delay(2000)
       ->then(_val => {
-        pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~customPodUri, ~isForceSync)
+        pollRetrievePaymentIntent(
+          clientSecret,
+          ~headers,
+          ~publishableKey,
+          ~logger,
+          ~customPodUri,
+          ~isForceSync,
+        )
       })
       ->catch(_ => Promise.resolve(JSON.Encode.null))
     }
   })
   ->catch(e => {
     Console.error2("Unable to retrieve payment due to following error", e)
-    pollRetrievePaymentIntent(clientSecret, headers, ~optLogger, ~customPodUri, ~isForceSync)
+    pollRetrievePaymentIntent(
+      clientSecret,
+      ~headers,
+      ~publishableKey,
+      ~logger,
+      ~customPodUri,
+      ~isForceSync,
+    )
   })
 }
 
-let retrieveStatus = (~headers, ~customPodUri, pollID, logger) => {
-  open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let uri = `${endpoint}/poll/status/${pollID}`
-  logApi(
-    ~optLogger=Some(logger),
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=POLL_STATUS_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger) => {
+  let uri = APIUtils.generateApiUrl(
+    RetrieveStatus,
+    ~params={
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      customBackendBaseUrl: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: Some(pollID),
+    },
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=POLL_STATUS_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger=Some(logger),
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=POLL_STATUS_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      res->Fetch.Response.json
-    }
-  })
-  ->catch(e => {
-    Console.error2("Unable to Poll status details because of ", e)
-    JSON.Encode.null->resolve
-  })
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=POLL_STATUS_CALL,
+    ~logger,
+    ~bodyStr="",
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
-let rec pollStatus = (~headers, ~customPodUri, ~pollId, ~interval, ~count, ~returnUrl, ~logger) => {
+let rec pollStatus = (
+  ~publishableKey,
+  ~customPodUri,
+  ~pollId,
+  ~interval,
+  ~count,
+  ~returnUrl,
+  ~logger,
+) => {
   open Promise
-  retrieveStatus(~headers, ~customPodUri, pollId, logger)
+  retrieveStatus(~publishableKey, ~customPodUri, pollId, logger)
   ->then(json => {
     let dict = json->getDictFromJson
     let status = dict->getString("status", "")
@@ -222,7 +217,7 @@ let rec pollStatus = (~headers, ~customPodUri, ~pollId, ~interval, ~count, ~retu
         ->then(
           _ => {
             pollStatus(
-              ~headers,
+              ~publishableKey,
               ~customPodUri,
               ~pollId,
               ~interval,
@@ -245,7 +240,7 @@ let rec pollStatus = (~headers, ~customPodUri, ~pollId, ~interval, ~count, ~retu
   ->catch(e => {
     Console.error2("Unable to retrieve payment due to following error", e)
     pollStatus(
-      ~headers,
+      ~publishableKey,
       ~customPodUri,
       ~pollId,
       ~interval,
@@ -310,7 +305,7 @@ let rec intentCall = (
   )
   let handleOpenUrl = url => {
     if isPaymentSession {
-      Utils.replaceRootHref(url, redirectionFlags)
+      replaceRootHref(url, redirectionFlags)
     } else {
       openUrl(url)
     }
@@ -1157,7 +1152,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
           [
             authorizationHeader,
             ("X-profile-id", keys.profileId),
-            ...GlobalVars.xFeature != "" ? [("x-feature", GlobalVars.xFeature)] : [],
+            ...customPodUri != "" ? [("x-feature", customPodUri)] : [],
           ]
         }
       }
@@ -1355,6 +1350,8 @@ let fetchSessions = async (
       clientSecret: None,
       publishableKey: None,
       paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1362,7 +1359,7 @@ let fetchSessions = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=SESSIONS_CALL,
     ~logger,
@@ -1460,6 +1457,8 @@ let createPaymentMethod = async (
       customBackendBaseUrl: Some(endpoint),
       publishableKey: Some(publishableKey),
       paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1472,7 +1471,7 @@ let createPaymentMethod = async (
     ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
     ->getJsonFromArrayOfJson
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=CREATE_CUSTOMER_PAYMENT_METHODS_CALL,
     ~logger,
@@ -1499,6 +1498,8 @@ let fetchPaymentMethodList = async (
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
       paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1506,11 +1507,10 @@ let fetchPaymentMethodList = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=PAYMENT_METHODS_CALL,
     ~logger,
-    ~bodyStr="",
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
@@ -1534,6 +1534,8 @@ let fetchCustomerPaymentMethodList = async (
       customBackendBaseUrl: Some(endpoint),
       publishableKey: None,
       paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1541,11 +1543,10 @@ let fetchCustomerPaymentMethodList = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
     ~logger,
-    ~bodyStr="",
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
@@ -1624,214 +1625,140 @@ let paymentIntentForPaymentSession = (
   )
 }
 
-let callAuthLink = (
+let callAuthLink = async (
   ~publishableKey,
   ~clientSecret,
   ~paymentMethodType,
   ~pmAuthConnectorsArr,
   ~iframeId,
-  ~optLogger,
+  ~logger,
 ) => {
-  open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let uri = `${endpoint}/payment_methods/auth/link`
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
-
-  logApi(
-    ~optLogger,
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    CallAuthLink,
+    ~params={
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      customBackendBaseUrl: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+    },
   )
 
-  fetchApi(
-    uri,
-    ~method=#POST,
-    ~bodyStr=[
+  let body =
+    [
       ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
       ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
       ("payment_method", "bank_debit"->JSON.Encode.string),
       ("payment_method_type", paymentMethodType->JSON.Encode.string),
-    ]
-    ->getJsonFromArrayOfJson
-    ->JSON.stringify,
-    ~headers,
-  )
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        let metaData =
-          [
-            ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
-            ("pmAuthConnectorArray", pmAuthConnectorsArr->anyTypeToJson),
-            ("publishableKey", publishableKey->JSON.Encode.string),
-            ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
-            ("isForceSync", false->JSON.Encode.bool),
-          ]->getJsonFromArrayOfJson
+    ]->getJsonFromArrayOfJson
 
-        messageParentWindow([
-          ("fullscreen", true->JSON.Encode.bool),
-          ("param", "plaidSDK"->JSON.Encode.string),
-          ("iframeId", iframeId->JSON.Encode.string),
-          ("metadata", metaData),
-        ])
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~statusCode,
-          ~apiLogType=Response,
-          ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
-          ~logType=INFO,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    }
-  })
-  ->catch(e => {
-    logApi(
-      ~optLogger,
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data={e->formatException},
-    )
-    Console.error2("Unable to retrieve payment_methods auth/link because of ", e)
-    JSON.Encode.null->resolve
-  })
+  let onSuccess = data => {
+    let metaData =
+      [
+        ("linkToken", data->getDictFromJson->getString("link_token", "")->JSON.Encode.string),
+        ("pmAuthConnectorArray", pmAuthConnectorsArr->anyTypeToJson),
+        ("publishableKey", publishableKey->JSON.Encode.string),
+        ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
+        ("isForceSync", false->JSON.Encode.bool),
+      ]->getJsonFromArrayOfJson
+
+    messageParentWindow([
+      ("fullscreen", true->JSON.Encode.bool),
+      ("param", "plaidSDK"->JSON.Encode.string),
+      ("iframeId", iframeId->JSON.Encode.string),
+      ("metadata", metaData),
+    ])
+    JSON.Encode.null
+  }
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHODS_AUTH_LINK_CALL,
+    ~logger,
+    ~bodyStr=body->JSON.stringify,
+    ~method=#POST,
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
-let callAuthExchange = (
+let callAuthExchange = async (
   ~publicToken,
   ~clientSecret,
   ~paymentMethodType,
   ~publishableKey,
   ~setOptionValue: (PaymentType.options => PaymentType.options) => unit,
-  ~optLogger,
+  ~logger,
 ) => {
   open Promise
   open PaymentType
-  let endpoint = ApiEndpoint.getApiEndPoint()
-  let logger = HyperLogger.make(~source=Elements(Payment))
-  let uri = `${endpoint}/payment_methods/auth/exchange`
-  let updatedBody = [
-    ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
-    ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
-    ("payment_method", "bank_debit"->JSON.Encode.string),
-    ("payment_method_type", paymentMethodType->JSON.Encode.string),
-    ("public_token", publicToken->JSON.Encode.string),
-  ]
-
-  let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]->Dict.fromArray
-
-  logApi(
-    ~optLogger,
-    ~url=uri,
-    ~apiLogType=Request,
-    ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL_INIT,
-    ~logType=INFO,
-    ~logCategory=API,
+  let uri = APIUtils.generateApiUrl(
+    CallAuthExchange,
+    ~params={
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      customBackendBaseUrl: None,
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+    },
   )
 
-  fetchApi(
-    uri,
-    ~method=#POST,
-    ~bodyStr=updatedBody->getJsonFromArrayOfJson->JSON.stringify,
-    ~headers,
-  )
-  ->then(res => {
-    let statusCode = res->Fetch.Response.status
-    if !(res->Fetch.Response.ok) {
-      res
-      ->Fetch.Response.json
-      ->then(data => {
-        logApi(
-          ~optLogger,
-          ~url=uri,
-          ~data,
-          ~statusCode,
-          ~apiLogType=Err,
-          ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
-          ~logType=ERROR,
-          ~logCategory=API,
-        )
-        JSON.Encode.null->resolve
-      })
-    } else {
-      logApi(
-        ~optLogger,
-        ~url=uri,
-        ~statusCode,
-        ~apiLogType=Response,
-        ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
-        ~logType=INFO,
-        ~logCategory=API,
-      )
-      fetchCustomerPaymentMethodList(
-        ~clientSecret=clientSecret->Option.getOr(""),
-        ~publishableKey,
-        ~logger,
-        ~customPodUri="",
-        ~endpoint,
-      )
-      ->then(customerListResponse => {
-        let customerListResponse =
-          [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
-        setOptionValue(
-          prev => {
-            ...prev,
-            customerPaymentMethods: customerListResponse->createCustomerObjArr(
-              "customerPaymentMethods",
-            ),
-          },
-        )
-        JSON.Encode.null->resolve
-      })
-      ->catch(e => {
-        Console.error2(
-          "Unable to retrieve customer/payment_methods after auth/exchange because of ",
-          e,
-        )
-        JSON.Encode.null->resolve
-      })
-    }
-  })
-  ->catch(e => {
-    logApi(
-      ~optLogger,
-      ~url=uri,
-      ~apiLogType=NoResponse,
-      ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
-      ~logType=ERROR,
-      ~logCategory=API,
-      ~data={e->formatException},
+  let body =
+    [
+      ("client_secret", clientSecret->Option.getOr("")->JSON.Encode.string),
+      ("payment_id", clientSecret->Option.getOr("")->Utils.getPaymentId->JSON.Encode.string),
+      ("payment_method", "bank_debit"->JSON.Encode.string),
+      ("payment_method_type", paymentMethodType->JSON.Encode.string),
+      ("public_token", publicToken->JSON.Encode.string),
+    ]->getJsonFromArrayOfJson
+
+  let onSuccess = _ => {
+    let endpoint = ApiEndpoint.getApiEndPoint()
+    fetchCustomerPaymentMethodList(
+      ~clientSecret=clientSecret->Option.getOr(""),
+      ~publishableKey,
+      ~logger,
+      ~customPodUri="",
+      ~endpoint,
     )
-    Console.error2("Unable to retrieve payment_methods auth/exchange because of ", e)
-    JSON.Encode.null->resolve
-  })
+    ->then(customerListResponse => {
+      let customerListResponse = [("customerPaymentMethods", customerListResponse)]->Dict.fromArray
+      setOptionValue(prev => {
+        ...prev,
+        customerPaymentMethods: customerListResponse->createCustomerObjArr(
+          "customerPaymentMethods",
+        ),
+      })
+      resolve(JSON.Encode.null)
+    })
+    ->catch(e => {
+      Console.error2(
+        "Unable to retrieve customer/payment_methods after auth/exchange because of ",
+        e,
+      )
+      Promise.resolve(JSON.Encode.null)
+    })
+    ->ignore
+    JSON.Encode.null
+  }
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=PAYMENT_METHODS_AUTH_EXCHANGE_CALL,
+    ~logger,
+    ~bodyStr=body->JSON.stringify,
+    ~method=#POST,
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
 }
 
 let fetchSavedPaymentMethodList = async (
@@ -1848,6 +1775,8 @@ let fetchSavedPaymentMethodList = async (
       clientSecret: None,
       publishableKey: Some(ephemeralKey),
       paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1855,11 +1784,10 @@ let fetchSavedPaymentMethodList = async (
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=SAVED_PAYMENT_METHODS_CALL,
     ~logger,
-    ~bodyStr="",
     ~method=#GET,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(ephemeralKey),
@@ -1877,6 +1805,8 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
       clientSecret: None,
       publishableKey: Some(ephemeralKey),
       paymentMethodId: Some(paymentMethodId),
+      forceSync: None,
+      pollId: None,
     },
   )
 
@@ -1884,11 +1814,10 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
 
   let onFailure = _ => JSON.Encode.null
 
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=DELETE_PAYMENT_METHODS_CALL,
     ~logger,
-    ~bodyStr="",
     ~method=#DELETE,
     ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(ephemeralKey),
@@ -1913,6 +1842,8 @@ let calculateTax = async (
       clientSecret: Some(clientSecret),
       publishableKey: Some(apiKey),
       paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
     },
   )
   let onSuccess = data => data
@@ -1925,7 +1856,7 @@ let calculateTax = async (
     ("payment_method_type", paymentMethodType),
   ]
   sessionId->Option.mapOr((), id => body->Array.push(("session_id", id))->ignore)
-  await Utils.fetchApiWithLogging(
+  await fetchApiWithLogging(
     uri,
     ~eventName=EXTERNAL_TAX_CALCULATION,
     ~logger,

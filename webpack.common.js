@@ -140,7 +140,6 @@ const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
 const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
 const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
-const xFeature = getEnvVariable("X_FEATURE", "");
 const repoVersion = getEnvVariable(
   "SDK_TAG_VERSION",
   require("./package.json").version
@@ -245,7 +244,6 @@ module.exports = (publicPath = "auto") => {
     isLocal,
     visaAPIKeyId: JSON.stringify(visaAPIKeyId),
     visaAPICertificatePem: JSON.stringify(visaAPICertificatePem),
-    xFeature: JSON.stringify(xFeature),
   };
 
   const plugins = [
