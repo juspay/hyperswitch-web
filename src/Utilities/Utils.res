@@ -1714,3 +1714,7 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
 }
+
+let maskStr = str => str->Js.String2.replaceByRe(%re(`/\S/g`), "x")
+
+let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
