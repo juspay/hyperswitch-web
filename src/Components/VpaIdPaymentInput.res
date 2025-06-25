@@ -12,8 +12,8 @@ let make = () => {
     let val: string = ReactEvent.Form.target(ev)["value"]
     setVpaId(prev => {
       value: val,
-      isValid: Some(val->String.length > 0),
-      errorString: val->String.length > 0 ? "" : prev.errorString,
+      isValid: val->isVpaIdValid,
+      errorString: val->isVpaIdValid->Option.getOr(false) ? "" : prev.errorString,
     })
   }
   let onBlur = ev => {
