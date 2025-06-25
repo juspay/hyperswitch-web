@@ -448,7 +448,6 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
         ->filterPaymentMethods,
         otherOptions,
       )
-    | SemiLoaded => ([], [], [])
     | _ => ([], [], [])
     }
   }, (

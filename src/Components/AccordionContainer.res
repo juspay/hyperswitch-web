@@ -1,61 +1,5 @@
 open RecoilAtoms
-module Loader = {
-  @react.component
-  let make = (~cardShimmerCount) => {
-    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-    let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
-    let layoutClass = CardUtils.getLayoutClass(layout)
-    open PaymentType
-    open PaymentElementShimmer
-    switch paymentMethodList {
-    | SemiLoaded =>
-      Array.make(~length=cardShimmerCount - 1, "")
-      ->Array.mapWithIndex((_, i) => {
-        let borderStyle = layoutClass.spacedAccordionItems
-          ? themeObj.borderRadius
-          : i == cardShimmerCount - 2
-          ? `0px 0px ${themeObj.borderRadius} ${themeObj.borderRadius}`
-          : ""
-        <div
-          className={`AccordionItem flex flex-row gap-3 animate-pulse cursor-default place-items-center`}
-          key={i->Int.toString}
-          style={
-            minWidth: "80px",
-            minHeight: "60px",
-            overflowWrap: "hidden",
-            borderRadius: {borderStyle},
-            border: `1px solid ${themeObj.borderColor}`,
-            borderBottomStyle: {
-              (i == cardShimmerCount - 2 && !layoutClass.spacedAccordionItems) ||
-                layoutClass.spacedAccordionItems
-                ? "solid"
-                : "hidden"
-            },
-            borderTopStyle: {i == 0 && !layoutClass.spacedAccordionItems ? "hidden" : "solid"},
-            width: "100%",
-            marginBottom: layoutClass.spacedAccordionItems ? themeObj.spacingAccordionItem : "",
-            cursor: "pointer",
-          }>
-          <Shimmer classname="opacity-50 h-5 w-[10%] rounded-full">
-            <div
-              className="w-full h-full animate-pulse"
-              style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
-            />
-          </Shimmer>
-          <Shimmer classname="opacity-50 h-2 w-[30%] rounded-full">
-            <div
-              className="w-full h-full animate-pulse"
-              style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
-            />
-          </Shimmer>
-        </div>
-      })
-      ->React.array
-    | _ => React.null
-    }
-  }
-}
+
 @react.component
 let make = (
   ~paymentOptions: array<string>,
@@ -63,7 +7,6 @@ let make = (
   ~cardProps: CardUtils.cardProps,
 ) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (showMore, setShowMore) = React.useState(_ => false)
@@ -91,7 +34,6 @@ let make = (
       !showMore &&
       !layoutClass.spacedAccordionItems &&
       index == 0 &&
-      paymentMethodList == SemiLoaded &&
       cardOptionDetails->Array.length == 1
     ) {
       `${themeObj.borderRadius} ${themeObj.borderRadius} 0px 0px`
@@ -153,7 +95,6 @@ let make = (
         />
       })
       ->React.array}
-      <Loader cardShimmerCount=layoutClass.maxAccordionItems />
       <RenderIf condition={showMore}>
         {dropDownOptionsDetails
         ->Array.mapWithIndex((payOption, i) => {

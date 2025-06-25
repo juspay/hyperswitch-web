@@ -62,12 +62,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       setPaymentsListValue(_ => paymentlist)
     | (LoadErrorV2(_), _)
     | (_, LoadErrorV2(_))
-    | (SemiLoadedV2, _)
-    | (_, SemiLoadedV2) =>
+    | (_, _) =>
       // TODO - For Payments CheckPriorityList && ShowCardFormByDefault
       // TODO - For PaymentMethodsManagement Cards
       setPaymentOptions(_ => [])
-    | _ => ()
     }
 
     None
@@ -131,7 +129,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         : layoutClass.defaultCollapsed
         ? ""
         : switch paymentManagementList {
-          | SemiLoadedV2
           | LoadErrorV2(_) => "card"
           | LoadedV2(_) =>
             paymentOptions->Array.includes(selectedOption)
@@ -182,10 +179,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   React.useEffect(() => {
     let evalMethodsList = () =>
       switch (paymentManagementList, paymentMethodsListV2) {
-      | (SemiLoadedV2, _)
       | (LoadErrorV2(_), _)
       | (LoadedV2(_), _)
-      | (_, SemiLoadedV2)
       | (_, LoadErrorV2(_))
       | (_, LoadedV2(_)) =>
         messageParentWindow([("ready", true->JSON.Encode.bool)])

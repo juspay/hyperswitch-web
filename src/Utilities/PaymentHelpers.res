@@ -1307,7 +1307,6 @@ let usePaymentIntent = (optLogger, paymentType) => {
           )
           Console.warn("Please enable atleast one Payment method.")
         }
-      | SemiLoaded => intentWithoutMandate("")
       | _ =>
         postFailedSubmitResponse(
           ~errortype="payment_methods_loading",
@@ -2010,7 +2009,6 @@ let usePostSessionTokens = (
           )
           Console.warn("Please enable atleast one Payment method.")
         }
-      | SemiLoaded => intentWithoutMandate("")
       | _ =>
         postFailedSubmitResponse(
           ~errortype="payment_methods_loading",

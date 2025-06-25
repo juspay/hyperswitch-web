@@ -207,8 +207,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         )
       }
     | LoadError(_)
-    | SemiLoaded =>
-      setPaymentOptions(_ => [])
     | _ => ()
     }
     None
@@ -270,9 +268,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         : layoutClass.defaultCollapsed
         ? ""
         : switch paymentMethodList {
-          | SemiLoaded
-          | LoadError(_) =>
-            checkPriorityList(paymentMethodOrder) ? "card" : ""
+          | LoadError(_) => checkPriorityList(paymentMethodOrder) ? "card" : ""
           | Loaded(_) =>
             paymentOptions->Array.includes(selectedOption)
               ? selectedOption
@@ -414,8 +410,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   React.useEffect(() => {
     let evalMethodsList = () =>
       switch paymentMethodList {
-      | SemiLoaded | LoadError(_) | Loaded(_) =>
-        messageParentWindow([("ready", true->JSON.Encode.bool)])
+      | LoadError(_) | Loaded(_) => messageParentWindow([("ready", true->JSON.Encode.bool)])
       | _ => ()
       }
     if !displaySavedPaymentMethods {
