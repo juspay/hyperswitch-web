@@ -3,7 +3,6 @@ open Utils
 
 @react.component
 let make = () => {
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (blikCode, setblikCode) = Recoil.useRecoilState(userBlikCode)
 
   let blikCodeRef = React.useRef(Nullable.null)

@@ -124,8 +124,6 @@ let make = (
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
-  let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
-
   let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
   let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
   let (city, setCity) = Recoil.useRecoilState(userAddressCity)

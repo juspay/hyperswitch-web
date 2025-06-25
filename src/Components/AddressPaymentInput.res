@@ -32,7 +32,6 @@ let showField = (val: PaymentType.addressType, type_: addressType) => {
 let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
   let contextPaymentType = usePaymentType()
   let paymentType = paymentType->Option.getOr(contextPaymentType)

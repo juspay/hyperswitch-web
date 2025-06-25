@@ -13,7 +13,6 @@ let make = (
 ) => {
   // Recoil states
   let {config, constantString, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {enabledPaymentMethodsWithDynamicFields} = Recoil.useRecoilValueFromAtom(
     paymentMethodCollectOptionAtom,
   )

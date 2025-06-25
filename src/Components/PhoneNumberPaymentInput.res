@@ -6,7 +6,6 @@ let make = () => {
 
   let phoneRef = React.useRef(Nullable.null)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
   let (phone, setPhone) = Recoil.useRecoilState(userPhoneNumber)
   let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone

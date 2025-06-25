@@ -4,17 +4,16 @@ open Utils
 @react.component
 let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (vpaId, setVpaId) = Recoil.useRecoilState(userVpaId)
 
   let vpaIdRef = React.useRef(Nullable.null)
 
   let changeVpaId = ev => {
-    let val = ReactEvent.Form.target(ev)["value"]
+    let val: string = ReactEvent.Form.target(ev)["value"]
     setVpaId(prev => {
-      isValid: Some(val->String.length > 0),
       value: val,
-      errorString: val->String.length > 0 ? "" : localeString.vpaIdEmptyText,
+      isValid: Some(val->String.length > 0),
+      errorString: val->String.length > 0 ? "" : prev.errorString,
     })
   }
   let onBlur = ev => {
