@@ -32,7 +32,6 @@ let calculateTax = (
     ~paymentMethodType,
     ~shippingAddress,
     ~logger,
-    ~customPodUri="",
     ~sessionId,
   )
 }

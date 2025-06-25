@@ -19,13 +19,7 @@ let getPaymentType = paymentMethodType =>
 
 let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
 
-let retrievePaymentIntent = (
-  clientSecret,
-  headers,
-  ~optLogger,
-  ~customPodUri,
-  ~isForceSync=false,
-) => {
+let retrievePaymentIntent = (clientSecret, headers, ~optLogger, ~isForceSync=false) => {
   open Promise
   let paymentIntentID = clientSecret->Utils.getPaymentId
   let endpoint = ApiEndpoint.getApiEndPoint()
@@ -40,7 +34,7 @@ let retrievePaymentIntent = (
     ~logType=INFO,
     ~logCategory=API,
   )
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
+  fetchApi(uri, ~method=#GET, ~headers=headers->Dict.fromArray)
   ->then(res => {
     let statusCode = res->Fetch.Response.status
     if !(res->Fetch.Response.ok) {
@@ -134,7 +128,7 @@ let rec pollRetrievePaymentIntent = (
   ~isForceSync=false,
 ) => {
   open Promise
-  retrievePaymentIntent(clientSecret, headers, ~optLogger, ~customPodUri, ~isForceSync)
+  retrievePaymentIntent(clientSecret, headers, ~optLogger, ~isForceSync)
   ->then(json => {
     let dict = json->getDictFromJson
     let status = dict->getString("status", "")
@@ -1377,7 +1371,7 @@ let fetchSessions = async (
   )
 }
 
-let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~uri, ~body) => {
+let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~uri, ~body) => {
   open Promise
   let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
   logApi(
@@ -1393,12 +1387,7 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~ur
     ->Array.concat([("client_secret", clientSecret->JSON.Encode.string)])
     ->getJsonFromArrayOfJson
 
-  fetchApi(
-    uri,
-    ~method=#POST,
-    ~bodyStr=body->JSON.stringify,
-    ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
-  )
+  fetchApi(uri, ~method=#POST, ~bodyStr=body->JSON.stringify, ~headers=headers->Dict.fromArray)
   ->then(resp => {
     let statusCode = resp->Fetch.Response.status
 
@@ -1445,14 +1434,7 @@ let confirmPayout = (~clientSecret, ~publishableKey, ~logger, ~customPodUri, ~ur
   })
 }
 
-let createPaymentMethod = async (
-  ~clientSecret,
-  ~publishableKey,
-  ~logger,
-  ~customPodUri,
-  ~endpoint,
-  ~body,
-) => {
+let createPaymentMethod = async (~clientSecret, ~publishableKey, ~logger, ~endpoint, ~body) => {
   let uri = APIUtils.generateApiUrl(
     CreatePaymentMethod,
     ~params={
@@ -1478,7 +1460,6 @@ let createPaymentMethod = async (
     ~logger,
     ~bodyStr=body->JSON.stringify,
     ~method=#POST,
-    ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
@@ -1523,7 +1504,7 @@ let fetchCustomerPaymentMethodList = async (
   ~clientSecret,
   ~publishableKey,
   ~logger,
-  ~customPodUri,
+  ~customPodUri=?,
   ~endpoint,
   ~isPaymentSession=false,
 ) => {
@@ -1547,7 +1528,7 @@ let fetchCustomerPaymentMethodList = async (
     ~logger,
     ~bodyStr="",
     ~method=#GET,
-    ~customPodUri=Some(customPodUri),
+    ~customPodUri,
     ~publishableKey=Some(publishableKey),
     ~onSuccess,
     ~onFailure,
@@ -1794,7 +1775,6 @@ let callAuthExchange = (
         ~clientSecret=clientSecret->Option.getOr(""),
         ~publishableKey,
         ~logger,
-        ~customPodUri="",
         ~endpoint,
       )
       ->then(customerListResponse => {
@@ -1903,7 +1883,6 @@ let calculateTax = async (
   ~paymentMethodType,
   ~shippingAddress,
   ~logger,
-  ~customPodUri,
   ~sessionId,
 ) => {
   let uri = APIUtils.generateApiUrl(
@@ -1931,7 +1910,6 @@ let calculateTax = async (
     ~logger,
     ~bodyStr=body->getJsonFromArrayOfJson->JSON.stringify,
     ~method=#POST,
-    ~customPodUri=Some(customPodUri),
     ~publishableKey=Some(apiKey),
     ~onSuccess,
     ~onFailure,

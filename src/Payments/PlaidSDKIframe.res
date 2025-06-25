@@ -55,7 +55,6 @@ let make = () => {
         clientSecret,
         headers,
         ~optLogger=Some(logger),
-        ~customPodUri="",
         ~isForceSync=true,
       )
       let dict = json->getDictFromJson

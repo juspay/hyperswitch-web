@@ -18,7 +18,6 @@ let getCustomerSavedPaymentMethods = (
     ~clientSecret,
     ~publishableKey,
     ~endpoint,
-    ~customPodUri,
     ~logger,
     ~isPaymentSession=true,
   )

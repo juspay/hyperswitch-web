@@ -152,7 +152,6 @@ let make = () => {
         clientSecret,
         headers,
         ~optLogger=Some(logger),
-        ~customPodUri,
       )
 
       postSubmitResponse(~jsonData=json, ~url=return_url)

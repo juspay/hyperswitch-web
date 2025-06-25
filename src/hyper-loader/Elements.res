@@ -780,7 +780,6 @@ let make = (
                 clientSecret,
                 headers,
                 ~optLogger=Some(logger),
-                ~customPodUri,
                 ~isForceSync=true,
               )
               ->then(json => json->handleRetrievePaymentResponse)
@@ -816,7 +815,6 @@ let make = (
               clientSecret,
               headers,
               ~optLogger=Some(logger),
-              ~customPodUri,
               ~isForceSync=true,
             )
             ->then(json => json->handleRetrievePaymentResponse)
