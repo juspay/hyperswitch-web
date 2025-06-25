@@ -8,6 +8,7 @@ let make = (~token: SessionsType.token) => {
 
   let {iframeId, publishableKey, clientSecret} = Recoil.useRecoilValueFromAtom(keys)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -84,9 +85,10 @@ let make = (~token: SessionsType.token) => {
       backgroundColor: "#2B63FF",
       height: themeObj.buttonHeight,
       cursor: {showLoader ? "not-allowed" : "pointer"},
-      opacity: {showLoader ? "0.6" : "1"},
       width: themeObj.buttonWidth,
       border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
+      pointerEvents: updateSession ? "none" : "auto",
+      opacity: showLoader || updateSession ? "0.5" : "1.0",
     }>
     {showLoader ? <Spinner /> : <Icon name="paze" size=55 />}
   </button>

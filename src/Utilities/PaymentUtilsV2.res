@@ -23,6 +23,8 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
   paymentMethodListValue.paymentMethodsEnabled->Array.forEach(item => {
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodType) {
       otherPaymentList->Array.push(item.paymentMethodType)->ignore
+    } else if item.paymentMethodType == "bank_redirect" {
+      otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
     } else if item.paymentMethodType == "card" {
       otherPaymentList->Array.push("card")->ignore
     }

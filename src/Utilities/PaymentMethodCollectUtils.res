@@ -597,7 +597,7 @@ let defaultStatusInfo = {
   reason: None,
 }
 
-let itemToObjMapper = (dict, logger) => {
+let itemToObjMapper = dict => {
   unknownKeysWarning(
     [
       "enabledPaymentMethods",
@@ -616,7 +616,6 @@ let itemToObjMapper = (dict, logger) => {
     ],
     dict,
     "options",
-    ~logger,
   )
   let (enabledPaymentMethods, enabledPaymentMethodsWithDynamicFields) = switch dict->Dict.get(
     "enabledPaymentMethods",
@@ -815,7 +814,7 @@ let processAddressFields = (
           let lastName =
             nameSplits
             ->Array.slice(~start=1, ~end=nameSplits->Array.length)
-            ->Array.joinWith(" ")
+            ->Array.join(" ")
           if lastName->String.length > 0 {
             dataArr->Array.push((info, lastName))
             // Use first name as last name ?

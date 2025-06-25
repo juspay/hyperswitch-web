@@ -24,6 +24,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let intent = PaymentHelpers.usePostSessionTokens(Some(loggerState), Paypal, Wallet)
   let confirm = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   let sessions = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
+  let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
   let completeAuthorize = PaymentHelpers.useCompleteAuthorize(Some(loggerState), Paypal)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let checkoutScript =
@@ -135,18 +136,22 @@ let make = (~sessionObj: SessionsType.token) => {
         }
       }
     } catch {
-    | err =>
+    | _ =>
       loggerState.setLogError(
         ~value="Error loading Paypal",
         ~eventName=PAYPAL_SDK_FLOW,
-        ~internalMetadata=err->Utils.formatException->JSON.stringify,
+        // ~internalMetadata=err->Utils.formatException->JSON.stringify,
         ~paymentMethod="PAYPAL_SDK",
       )
     }
     None
   }, [])
 
-  <div id="paypal-button" className="w-full flex flex-row justify-center rounded-md h-auto" />
+  <div
+    id="paypal-button"
+    style={pointerEvents: updateSession ? "none" : "auto", opacity: updateSession ? "0.5" : "1.0"}
+    className="w-full flex flex-row justify-center rounded-md h-auto"
+  />
 }
 
 let default = make

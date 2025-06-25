@@ -194,6 +194,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "revolut_pay",
+    fields: [InfoElement],
+    icon: Some(icon("revolut", ~size=20)),
+    displayName: "Revolut Pay",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "affirm",
     fields: [InfoElement],
     icon: Some(icon("affirm", ~size=20)),
@@ -254,6 +261,20 @@ let paymentMethodsFields = [
     icon: Some(icon("bank", ~size=19)),
     fields: [],
     displayName: "Instant Bank Transfer",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "instant_bank_transfer_finland",
+    icon: Some(icon("bank", ~size=19)),
+    fields: [],
+    displayName: "Instant Bank Transfer Finland",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "instant_bank_transfer_poland",
+    icon: Some(icon("bank", ~size=19)),
+    fields: [],
+    displayName: "Instant Bank Transfer Poland",
     miniIcon: None,
   },
   {

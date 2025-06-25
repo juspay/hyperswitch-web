@@ -12,7 +12,7 @@ let logApi = (
   ~logCategory: HyperLoggerTypes.logCategory=API,
   ~isPaymentSession: bool=false,
 ) => {
-  let (value, internalMetadata) = switch apiLogType {
+  let (value, _) = switch apiLogType {
   | Request => ([("url", url->JSON.Encode.string)], [])
   | Response => (
       [("url", url->JSON.Encode.string), ("statusCode", statusCode->JSON.Encode.int)],
@@ -37,7 +37,7 @@ let logApi = (
     logger.setLogApi(
       ~eventName,
       ~value=ArrayType(value),
-      ~internalMetadata=ArrayType(internalMetadata),
+      // ~internalMetadata=ArrayType(internalMetadata),
       ~logType,
       ~logCategory,
       ~apiLogType,
@@ -54,14 +54,20 @@ let logInputChangeInfo = (text, logger: HyperLoggerTypes.loggerMake) => {
 let handleLogging = (
   ~optLogger: option<HyperLoggerTypes.loggerMake>,
   ~value,
-  ~internalMetadata="",
+  // ~internalMetadata="",
   ~eventName,
   ~paymentMethod,
   ~logType: HyperLoggerTypes.logType=INFO,
 ) => {
   switch optLogger {
   | Some(logger) =>
-    logger.setLogInfo(~value, ~internalMetadata, ~eventName, ~paymentMethod, ~logType)
+    logger.setLogInfo(
+      ~value,
+      // ~internalMetadata,
+      ~eventName,
+      ~paymentMethod,
+      ~logType,
+    )
   | _ => ()
   }
 }
@@ -88,7 +94,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   setConfirmPaymentValue: (~paymentType as _) => {Dict.make()->JSON.Encode.object},
   setLogError: (
     ~value as _,
-    ~internalMetadata as _=?,
+    // ~internalMetadata as _=?,
     ~eventName as _,
     ~timestamp as _=?,
     ~latency as _=?,
@@ -98,7 +104,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   ) => (),
   setLogApi: (
     ~value as _,
-    ~internalMetadata as _,
+    // ~internalMetadata as _,
     ~eventName as _,
     ~timestamp as _=?,
     ~logType as _=?,
@@ -109,7 +115,7 @@ let defaultLoggerConfig: HyperLoggerTypes.loggerMake = {
   ) => (),
   setLogInfo: (
     ~value as _,
-    ~internalMetadata as _=?,
+    // ~internalMetadata as _=?,
     ~eventName as _,
     ~timestamp as _=?,
     ~latency as _=?,
@@ -287,8 +293,6 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | INVALID_PK
   | DEPRECATED_LOADSTRIPE
   | REQUIRED_PARAMETER
-  | UNKNOWN_KEY
-  | UNKNOWN_VALUE
   | TYPE_BOOL_ERROR
   | TYPE_INT_ERROR
   | TYPE_STRING_ERROR
@@ -325,6 +329,7 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | PAYMENT_METHOD_TYPE_DETECTION_FAILED
   | THREE_DS_POPUP_REDIRECTION
   | NETWORK_STATE
+  | CARD_SCHEME_SELECTION
   | S3_API =>
     None
   }
