@@ -186,8 +186,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | (SemiLoadedV2, _)
       | (LoadErrorV2(_), _)
       | (LoadedV2(_), _)
-      | (_, SemiLoadedV2)
       | (_, LoadErrorV2(_))
+      | (_, SemiLoadedV2)
       | (_, LoadedV2(_)) =>
         messageParentWindow([("ready", true->JSON.Encode.bool)])
       | _ => ()
