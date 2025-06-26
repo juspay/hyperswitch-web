@@ -10,7 +10,7 @@ let cardsToRender = (width: int) => {
 @react.component
 let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mode) => {
   let divRef = React.useRef(Nullable.null)
-  let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let {showCardFormByDefault, layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(optionAtom)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
@@ -62,10 +62,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       setPaymentsListValue(_ => paymentlist)
     | (LoadErrorV2(_), _)
     | (_, LoadErrorV2(_))
-    | (_, _) =>
+    | (SemiLoadedV2, _)
+    | (_, SemiLoadedV2) =>
       // TODO - For Payments CheckPriorityList && ShowCardFormByDefault
       // TODO - For PaymentMethodsManagement Cards
       setPaymentOptions(_ => [])
+    | _ => ()
     }
 
     None
@@ -129,9 +131,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         : layoutClass.defaultCollapsed
         ? ""
         : switch paymentManagementList {
+          | SemiLoadedV2
           | LoadErrorV2(_) => "card"
           | LoadedV2(_) =>
-            paymentOptions->Array.includes(selectedOption)
+            paymentOptions->Array.includes(selectedOption) && showCardFormByDefault
               ? selectedOption
               : paymentOptions->Array.get(0)->Option.getOr("")
           | _ => paymentOptions->Array.get(0)->Option.getOr("")
@@ -143,6 +146,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     paymentOptions,
     paymentManagementList,
     selectedOption,
+    showCardFormByDefault,
     paymentMethodsListV2,
   ))
 
@@ -179,9 +183,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   React.useEffect(() => {
     let evalMethodsList = () =>
       switch (paymentManagementList, paymentMethodsListV2) {
+      | (SemiLoadedV2, _)
       | (LoadErrorV2(_), _)
       | (LoadedV2(_), _)
       | (_, LoadErrorV2(_))
+      | (_, SemiLoadedV2)
       | (_, LoadedV2(_)) =>
         messageParentWindow([("ready", true->JSON.Encode.bool)])
       | _ => ()
