@@ -2,36 +2,45 @@ open RecoilAtoms
 module TabLoader = {
   @react.component
   let make = (~cardShimmerCount) => {
+    open PaymentType
     open PaymentElementShimmer
+
+    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+    let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
     let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
 
-    Array.make(~length=cardShimmerCount - 1, "")
-    ->Array.mapWithIndex((_, i) => {
-      <div
-        className={`Tab flex flex-col gap-3 animate-pulse cursor-default`}
-        key={i->Int.toString}
-        style={
-          minWidth: "5rem",
-          overflowWrap: "hidden",
-          width: "100%",
-          padding: themeObj.spacingUnit,
-          cursor: "pointer",
-        }>
-        <Shimmer classname="opacity-50 w-1/3">
-          <div
-            className="w-full h-3 animate-pulse"
-            style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
-          />
-        </Shimmer>
-        <Shimmer classname="opacity-50">
-          <div
-            className="w-full h-2 animate-pulse"
-            style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
-          />
-        </Shimmer>
-      </div>
-    })
-    ->React.array
+    switch (GlobalVars.sdkVersion, paymentMethodList, paymentManagementList) {
+    | (V1, SemiLoaded, _)
+    | (V2, _, SemiLoadedV2) =>
+      Array.make(~length=cardShimmerCount - 1, "")
+      ->Array.mapWithIndex((_, i) => {
+        <div
+          className={`Tab flex flex-col gap-3 animate-pulse cursor-default`}
+          key={i->Int.toString}
+          style={
+            minWidth: "5rem",
+            overflowWrap: "hidden",
+            width: "100%",
+            padding: themeObj.spacingUnit,
+            cursor: "pointer",
+          }>
+          <Shimmer classname="opacity-50 w-1/3">
+            <div
+              className="w-full h-3 animate-pulse"
+              style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
+            />
+          </Shimmer>
+          <Shimmer classname="opacity-50">
+            <div
+              className="w-full h-2 animate-pulse"
+              style={backgroundColor: themeObj.colorPrimary, opacity: "10%"}
+            />
+          </Shimmer>
+        </div>
+      })
+      ->React.array
+    | _ => React.null
+    }
   }
 }
 

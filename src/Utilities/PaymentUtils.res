@@ -353,7 +353,9 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
 
-  let {paymentMethodOrder} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let {showCardFormByDefault, paymentMethodOrder} = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.optionAtom,
+  )
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
   let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
@@ -448,6 +450,10 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
         ->filterPaymentMethods,
         otherOptions,
       )
+    | SemiLoaded =>
+      showCardFormByDefault && checkPriorityList(paymentMethodOrder)
+        ? ([], ["card"], [])
+        : ([], [], [])
     | _ => ([], [], [])
     }
   }, (
@@ -461,6 +467,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     areAllGooglePayRequiredFieldsPrefilled,
     isApplePayReady,
     isGooglePayReady,
+    showCardFormByDefault,
   ))
 }
 

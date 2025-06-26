@@ -91,7 +91,7 @@ type paymentMethodsManagement = {
   customerPaymentMethods: array<customerMethods>,
 }
 
-type loadstate = LoadingV2 | LoadedV2(paymentMethodsManagement) | LoadErrorV2(JSON.t)
+type loadstate = LoadingV2 | LoadedV2(paymentMethodsManagement) | SemiLoadedV2 | LoadErrorV2(JSON.t)
 
 type paymentManagementList = loadstate
 

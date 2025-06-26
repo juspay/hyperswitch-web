@@ -191,6 +191,7 @@ type options = {
   customMethodNames: customMethodNames,
   branding: showType,
   payButtonStyle: style,
+  showCardFormByDefault: bool,
   billingAddress: billingAddress,
   sdkHandleConfirmPayment: sdkHandleConfirmPayment,
   sdkHandleSavePayment: sdkHandleSavePayment,
@@ -364,6 +365,7 @@ let defaultOptions = {
   wallets: defaultWallets,
   payButtonStyle: defaultStyle,
   customMethodNames: [],
+  showCardFormByDefault: true,
   billingAddress: defaultBillingAddress,
   sdkHandleConfirmPayment: defaultSdkHandleConfirmPayment,
   sdkHandleSavePayment: defaultSdkHandleSavePayment,
@@ -1050,9 +1052,11 @@ let itemToObjMapper = (dict, logger) => {
       "readOnly",
       "terms",
       "wallets",
+      "showCardFormByDefault",
       "displaySavedPaymentMethodsCheckbox",
       "displaySavedPaymentMethods",
       "sdkHandleOneClickConfirmPayment",
+      "showCardFormByDefault",
       "sdkHandleConfirmPayment",
       "sdkHandleSavePayment",
       "paymentMethodsHeaderText",
@@ -1094,6 +1098,7 @@ let itemToObjMapper = (dict, logger) => {
     wallets: getWallets(dict, "wallets", logger),
     customMethodNames: getCustomMethodNames(dict, "customMethodNames"),
     payButtonStyle: getStyle(dict, "payButtonStyle", logger),
+    showCardFormByDefault: getBool(dict, "showCardFormByDefault", true),
     billingAddress: getBillingAddress(dict, "billingAddress", logger),
     sdkHandleConfirmPayment: dict
     ->getDictFromDict("sdkHandleConfirmPayment")
@@ -1112,7 +1117,7 @@ let itemToObjMapper = (dict, logger) => {
   }
 }
 
-type loadType = Loading | Loaded(JSON.t) | LoadError(JSON.t)
+type loadType = Loading | Loaded(JSON.t) | SemiLoaded | LoadError(JSON.t)
 
 let getIsStoredPaymentMethodHasName = (savedMethod: customerMethods) => {
   savedMethod.card.cardHolderName->Option.getOr("")->String.length > 0

@@ -21,7 +21,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setUpdateSession = Recoil.useSetRecoilState(updateSession)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
-  let {paymentMethodOrder} = optionsPayment
+  let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
   let (_, setPaymentMethodCollectOptions) = Recoil.useRecoilState(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
@@ -164,6 +164,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     ])
     logger.setLogInitiated()
     let updatedState: PaymentType.loadType = switch paymentMethodList {
+    | Loading =>
+      showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
     let finalLoadLatency = if launchTime <= 0.0 {
@@ -176,6 +178,10 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       logger.setLogInfo(~value="Loaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
     | Loading =>
       logger.setLogInfo(~value="Loading", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
+    | SemiLoaded => {
+        setPaymentMethodList(_ => updatedState)
+        logger.setLogInfo(~value="SemiLoaded", ~eventName=LOADER_CHANGED, ~latency=finalLoadLatency)
+      }
     | LoadError(x) =>
       logger.setLogError(
         ~value="LoadError: " ++ x->JSON.stringify,
@@ -641,7 +647,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     }
     handleMessage(handleFun, "Error in parsing sent Data")
-  }, (paymentMethodOrder, optionsPayment))
+  }, (showCardFormByDefault, paymentMethodOrder, optionsPayment))
 
   let observer = ResizeObserver.newResizerObserver(entries => {
     entries
