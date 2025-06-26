@@ -87,6 +87,7 @@ let make = () => {
     | "redsys3ds" => <Redsys3ds />
     | "3ds" => <ThreeDSMethod />
     | "voucherData" => <VoucherDisplay />
+    | "cardVault" => <CardVault />
     | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
     | "preMountLoader" => {
         let paymentId = getQueryParamsDictforKey(url.search, "paymentId")
