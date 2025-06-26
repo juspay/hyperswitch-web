@@ -164,12 +164,14 @@ let make = () => {
 
       let dict = res->getDictFromJson
       let sessionResponse = dict->getStrArray("associated_payment_methods")
-      let paymentToken = sessionResponse->Array.get(0)->Option.getOr("")
-      if paymentToken != "" {
-        let msg = [("paymentToken", paymentToken->JSON.Encode.string)]->Dict.fromArray
+      let paymentToken = sessionResponse->Array.get(0)
+      if paymentToken->Option.isNone {
+        let msg =
+          [("paymentToken", paymentToken->Option.getOr("")->JSON.Encode.string)]->Dict.fromArray
+
         ev.source->Window.sendPostMessage(msg)
       } else {
-        Console.error2("Payment token not found ", res->JSON.stringify)
+        Console.error("Payment token not found ")
       }
     } catch {
     | err =>
