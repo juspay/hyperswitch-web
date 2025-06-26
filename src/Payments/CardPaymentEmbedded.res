@@ -51,71 +51,83 @@ let make = () => {
     messageParentWindow([("innerIframeMountedCallback", true->JSON.Encode.bool)])
     let handle = (ev: Window.event) => {
       let handleIframeValues = async () => {
-        let json = ev.data->safeParse
-        let dict = json->Utils.getDictFromJson
-        if dict->Dict.get("innerIframeMounted")->Option.isSome {
-          let metadata = dict->getJsonObjectFromDict("metadata")
-          let metadataDict = metadata->Utils.getDictFromJson
+        try {
+          let json = ev.data->safeParse
+          let dict = json->Utils.getDictFromJson
 
-          setPaymentMethodsList(_ => {
-            metadataDict->UnifiedHelpersV2.createPaymentsObjArr("paymentList")
-          })
-          let (
-            config,
-            pmSessionId,
-            pmClientSecret,
-            vaultPublishableKey,
-            vaultProfileId,
-            endpoint,
-            customPodUri,
-          ) = HyperVaultHelpers.getDetails(metadataDict)
+          if dict->Dict.get("innerIframeMounted")->Option.isSome {
+            let metadata = dict->getJsonObjectFromDict("metadata")
+            let metadataDict = metadata->Utils.getDictFromJson
 
-          setCustomPodUri(_ => customPodUri)
-          ApiEndpoint.setApiEndPoint(endpoint)
-          setKeys(prev => {
-            ...prev,
-            pmSessionId,
-            pmClientSecret,
-          })
-          setVaultPublishableKey(_ => vaultPublishableKey)
-          setVaultProfileId(_ => vaultProfileId)
-          let configValue = switch config {
-          | Some(val) => val->getDictFromJson
-          | None => Dict.make()
+            setPaymentMethodsList(_ => {
+              metadataDict->UnifiedHelpersV2.createPaymentsObjArr("paymentList")
+            })
+
+            let {
+              config,
+              pmSessionId,
+              pmClientSecret,
+              vaultPublishableKey,
+              vaultProfileId,
+              endpoint,
+              customPodUri,
+            } = HyperVaultHelpers.extractVaultMetadata(metadataDict)
+
+            setCustomPodUri(_ => customPodUri)
+            ApiEndpoint.setApiEndPoint(endpoint)
+
+            setKeys(prev => {
+              ...prev,
+              pmSessionId,
+              pmClientSecret,
+            })
+
+            setVaultPublishableKey(_ => vaultPublishableKey)
+            setVaultProfileId(_ => vaultProfileId)
+
+            let configValue = config->getDictFromJson
+
+            let {
+              appearance,
+              locale,
+              fonts,
+              clientSecret,
+              ephemeralKey,
+              pmSessionId: themePmSessionId,
+              pmClientSecret: themePmClientSecret,
+              loader,
+            } = CardTheme.itemToObjMapper(
+              configValue,
+              DefaultTheme.default,
+              DefaultTheme.defaultRules,
+              logger,
+            )
+
+            let localeObject = await CardTheme.getLocaleObject(locale == "" ? "auto" : locale)
+            let constantString = await CardTheme.getConstantStringsObject()
+
+            setConfig(_ => {
+              config: {
+                appearance,
+                locale: locale === "auto" ? Window.Navigator.language : locale,
+                fonts,
+                clientSecret,
+                ephemeralKey,
+                pmClientSecret: themePmClientSecret,
+                pmSessionId: themePmSessionId,
+                loader,
+              },
+              themeObj: appearance.variables,
+              localeString: localeObject,
+              constantString,
+              showLoader: loader == Auto || loader == Always,
+            })
           }
-          let config = CardTheme.itemToObjMapper(
-            configValue,
-            DefaultTheme.default,
-            DefaultTheme.defaultRules,
-            logger,
-          )
-
-          let appearance = config.appearance
-
-          let localeString = config.locale
-          let localeObject = await CardTheme.getLocaleObject(
-            localeString == "" ? "auto" : localeString,
-          )
-          let constantString = await CardTheme.getConstantStringsObject()
-
-          setConfig(_ => {
-            config: {
-              appearance: config.appearance,
-              locale: config.locale === "auto" ? Window.Navigator.language : config.locale,
-              fonts: config.fonts,
-              clientSecret: config.clientSecret,
-              ephemeralKey: config.ephemeralKey,
-              pmClientSecret: config.pmClientSecret,
-              pmSessionId: config.pmSessionId,
-              loader: config.loader,
-            },
-            themeObj: appearance.variables,
-            localeString: localeObject,
-            constantString,
-            showLoader: config.loader == Auto || config.loader == Always,
-          })
+        } catch {
+        | Exn.Error(_) => Console.error("Error in handling - handleIframeValues")
         }
       }
+
       handleIframeValues()->ignore
     }
     Window.addEventListener("message", handle)

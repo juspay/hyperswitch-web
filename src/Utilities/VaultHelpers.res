@@ -63,10 +63,11 @@ let getHyperswitchVaultDetails = (sessionObj: PaymentType.loadType) => {
       ->getDictFromDict("vault_details")
       ->getDictFromDict("hyperswitch_vault")
 
-    let pmSessionId = hyperswitchVaultDict->getString("payment_method_session_id", "")
-    let pmClientSecret = hyperswitchVaultDict->getString("client_secret", "")
-    let vaultPublishableKey = hyperswitchVaultDict->getString("publishable_key", "")
-    let vaultProfileId = hyperswitchVaultDict->getString("profile_id", "")
+    let getVaultValue = key => hyperswitchVaultDict->getString(key, "")
+    let pmSessionId = getVaultValue("payment_method_session_id")
+    let pmClientSecret = getVaultValue("client_secret")
+    let vaultPublishableKey = getVaultValue("publishable_key")
+    let vaultProfileId = getVaultValue("profile_id")
 
     {pmSessionId, pmClientSecret, vaultPublishableKey, vaultProfileId}
   | _ => {pmSessionId: "", pmClientSecret: "", vaultPublishableKey: "", vaultProfileId: ""}
