@@ -166,7 +166,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | Card =>
         switch vaultMode {
         | VeryGoodSecurity => <VGSVault />
-        | Hyperswitch => <CardIframe />
+        | Hyperswitch => <CardIframeContainer />
         | None => <CardPayment cardProps expiryProps cvcProps />
         }
       | _ =>
