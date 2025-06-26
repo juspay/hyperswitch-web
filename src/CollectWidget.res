@@ -185,7 +185,6 @@ let make = (
               }}
               options={countries->DropdownField.updateArrayOfStringToOptionsTypeArray}
               disabled=false
-              logFieldName="addressCountry"
             />
           </div>
         } else {

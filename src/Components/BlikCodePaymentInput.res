@@ -65,7 +65,6 @@ let make = () => {
       inputRef=blikCodeRef
       placeholder="000 000"
       maxLength=7
-      logFieldName="blikCode"
     />
   </RenderIf>
 }

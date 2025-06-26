@@ -27,7 +27,6 @@ let make = (
   ~disabled=false,
   ~className="",
   ~width="w-full",
-  ~logFieldName=?,
 ) => {
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -45,10 +44,10 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
-    // Log the dropdown change if logFieldName is provided
-    switch logFieldName {
-    | Some(fieldName) => LoggerUtils.logInputChangeInfo(fieldName, loggerState)
-    | None => ()
+
+    // Log the dropdown change using fieldName
+    if fieldName->String.length > 0 {
+      LoggerUtils.logInputChangeInfo(fieldName, loggerState)
     }
     setValue(_ => value)
     if isDisplayValueVisible {

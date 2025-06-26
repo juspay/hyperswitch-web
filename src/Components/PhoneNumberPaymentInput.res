@@ -99,7 +99,6 @@ let make = () => {
       setValueDropDown
       displayValue
       setDisplayValue
-      logFieldName="phone"
     />
   </RenderIf>
 }

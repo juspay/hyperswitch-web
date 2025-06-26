@@ -80,7 +80,6 @@ let make = () => {
         setValue=setCountry
         disabled=false
         options=countryNames
-        logFieldName="country"
       />
     </RenderIf>
     <Surcharge paymentMethod="pay_later" paymentMethodType="klarna" />

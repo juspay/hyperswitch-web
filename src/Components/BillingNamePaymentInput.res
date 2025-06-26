@@ -69,7 +69,6 @@ let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) 
       placeholder
       className={config.appearance.innerLayout === Spaced ? "" : "!border-b-0"}
       name=TestUtils.cardHolderNameInputTestId
-      logFieldName="billingName"
     />
   </RenderIf>
 }

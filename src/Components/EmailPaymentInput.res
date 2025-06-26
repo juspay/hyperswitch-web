@@ -64,7 +64,6 @@ let make = () => {
       inputRef=emailRef
       placeholder="Eg: johndoe@gmail.com"
       name=TestUtils.emailInputTestId
-      logFieldName="email"
     />
   </RenderIf>
 }

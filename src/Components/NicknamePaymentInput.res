@@ -27,6 +27,5 @@ let make = () => {
     inputRef={React.useRef(Nullable.null)}
     placeholder=localeString.nicknamePlaceholder
     maxLength=12
-    logFieldName="nickname"
   />
 }

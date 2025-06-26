@@ -37,6 +37,5 @@ let make = () => {
     setValue=setCryptoCurrencyNetworks
     disabled=false
     options=dropdownOptions
-    logFieldName="cryptoCurrencyNetwork"
   />
 }

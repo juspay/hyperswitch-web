@@ -428,7 +428,6 @@ let make = (
               setValue=setCurrency
               disabled=false
               options=updatedCurrencyArray
-              logFieldName="currency"
             />
           | FullName =>
             <>
@@ -479,7 +478,6 @@ let make = (
               maxLength=42
               inputRef=bankAccountNumberRef
               placeholder="DE00 0000 0000 0000 0000 00"
-              logFieldName="bankAccountNumber"
             />
           | DestinationBankAccountId =>
             <PaymentField
@@ -506,7 +504,6 @@ let make = (
               maxLength=42
               inputRef=destinationBankAccountIdRef
               placeholder="DE00 0000 0000 0000 0000 00"
-              logFieldName="destinationBankAccountId"
             />
           | SourceBankAccountId =>
             <PaymentField
@@ -533,7 +530,6 @@ let make = (
               maxLength=42
               inputRef=sourceBankAccountIdRef
               placeholder="DE00 0000 0000 0000 0000 00"
-              logFieldName="sourceBankAccountId"
             />
           | Email
           | InfoElement
@@ -619,7 +615,6 @@ let make = (
                       inputRef=cityRef
                       placeholder=localeString.cityLabel
                       className={isSpacedInnerLayout ? "" : "!border-r-0"}
-                      logFieldName="city"
                     />
                     <RenderIf condition={stateNames->Array.length > 0}>
                       <PaymentDropDownField
@@ -627,7 +622,6 @@ let make = (
                         value=state
                         setValue=setState
                         options={stateNames}
-                        logFieldName="state"
                       />
                     </RenderIf>
                   </div>
@@ -643,7 +637,6 @@ let make = (
                       disabled=false
                       options=updatedCountryArray
                       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
-                      logFieldName="country"
                     />
                     <PaymentField
                       fieldName=localeString.postalCodeLabel
@@ -661,7 +654,6 @@ let make = (
                       inputRef=postalRef
                       placeholder=localeString.postalCodeLabel
                       className={isSpacedInnerLayout ? "" : "!border-t-0"}
-                      logFieldName="postal_code"
                     />
                   </div>
                 | AddressLine1 =>
@@ -689,7 +681,6 @@ let make = (
                     inputRef=line1Ref
                     placeholder=localeString.line1Placeholder
                     className={isSpacedInnerLayout ? "" : "!border-b-0"}
-                    logFieldName="line1"
                   />
                 | AddressLine2 =>
                   <PaymentField
@@ -715,7 +706,6 @@ let make = (
                     name="line2"
                     inputRef=line2Ref
                     placeholder=localeString.line2Placeholder
-                    logFieldName="line2"
                   />
                 | AddressCity =>
                   <PaymentField
@@ -741,7 +731,6 @@ let make = (
                     name="city"
                     inputRef=cityRef
                     placeholder=localeString.cityLabel
-                    logFieldName="city"
                   />
                 | AddressState =>
                   <RenderIf condition={stateNames->Array.length > 0}>
@@ -750,7 +739,6 @@ let make = (
                       value=state
                       setValue=setState
                       options={stateNames}
-                      logFieldName="state"
                     />
                   </RenderIf>
                 | AddressPincode =>
@@ -769,7 +757,6 @@ let make = (
                     name="postal"
                     inputRef=postalRef
                     placeholder=localeString.postalCodeLabel
-                    logFieldName="postal_code"
                   />
                 | BlikCode => <BlikCodePaymentInput />
                 | Country =>
@@ -782,7 +769,6 @@ let make = (
                     setValue=setCountry
                     disabled=false
                     options=updatedCountryNames
-                    logFieldName="country"
                   />
                 | AddressCountry(countryArr) =>
                   let updatedCountryArr =
@@ -794,7 +780,6 @@ let make = (
                     setValue=setCountry
                     disabled=false
                     options=updatedCountryArr
-                    logFieldName="country"
                   />
                 | Bank =>
                   let updatedBankNames =
@@ -806,7 +791,6 @@ let make = (
                     setValue=setSelectedBank
                     disabled=false
                     options=updatedBankNames
-                    logFieldName="bank"
                   />
                 | SpecialField(element) => element
                 | InfoElement =>

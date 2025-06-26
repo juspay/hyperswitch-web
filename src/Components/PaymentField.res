@@ -24,7 +24,6 @@ let make = (
   ~inputRef,
   ~displayValue=?,
   ~setDisplayValue=?,
-  ~logFieldName=?,
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -97,10 +96,9 @@ let make = (
 
   // Wrap onChange to include logging
   let wrappedOnChange = ev => {
-    // Log the input change if logFieldName is provided
-    switch logFieldName {
-    | Some(fieldName) => LoggerUtils.logInputChangeInfo(fieldName, loggerState)
-    | None => ()
+    // Log the input change using the name parameter
+    if name->String.length > 0 {
+      LoggerUtils.logInputChangeInfo(name, loggerState)
     }
     // Call the original onChange handler
     onChange(ev)
@@ -136,7 +134,6 @@ let make = (
           displayValue={displayValue->Option.getOr("")}
           setDisplayValue={setDisplayValue->Option.getOr(_ => ())}
           isDisplayValueVisible=true
-          logFieldName="phoneCountryCode"
         />
       </RenderIf>
       <RenderIf
