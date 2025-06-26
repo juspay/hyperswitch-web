@@ -2,6 +2,15 @@ open Utils
 
 type vault = VeryGoodSecurity | Hyperswitch | None
 
+type hyperVaultType = {vaultId: string, vaultEnv: string}
+
+type vgsVaultType = {
+  pmSessionId: string,
+  pmClientSecret: string,
+  vaultPublishableKey: string,
+  vaultProfileId: string,
+}
+
 let getVaultModeFromName = val => {
   switch val {
   | "vgs" => VeryGoodSecurity
@@ -38,10 +47,10 @@ let getVGSVaultDetails = (sessionObj: PaymentType.loadType, vaultName: string) =
       ->getDictFromDict("vault_details")
       ->getDictFromDict(vaultName)
 
-    let externalVaultId = vgsVaultDict->getString("external_vault_id", "")
-    let env = vgsVaultDict->getString("sdk_env", "")
-    (externalVaultId, env)
-  | _ => ("", "")
+    let vaultId = vgsVaultDict->getString("external_vault_id", "")
+    let vaultEnv = vgsVaultDict->getString("sdk_env", "")
+    {vaultId, vaultEnv}
+  | _ => {vaultId: "", vaultEnv: ""}
   }
 }
 
@@ -54,11 +63,12 @@ let getHyperswitchVaultDetails = (sessionObj: PaymentType.loadType) => {
       ->getDictFromDict("vault_details")
       ->getDictFromDict("hyperswitch_vault")
 
-    let paymentMethodSessionId = hyperswitchVaultDict->getString("payment_method_session_id", "")
-    let clientSecret = hyperswitchVaultDict->getString("client_secret", "")
-    let publishableKey = hyperswitchVaultDict->getString("publishable_key", "")
-    let profileId = hyperswitchVaultDict->getString("profile_id", "")
-    (paymentMethodSessionId, clientSecret, publishableKey, profileId)
-  | _ => ("", "", "", "")
+    let pmSessionId = hyperswitchVaultDict->getString("payment_method_session_id", "")
+    let pmClientSecret = hyperswitchVaultDict->getString("client_secret", "")
+    let vaultPublishableKey = hyperswitchVaultDict->getString("publishable_key", "")
+    let vaultProfileId = hyperswitchVaultDict->getString("profile_id", "")
+
+    {pmSessionId, pmClientSecret, vaultPublishableKey, vaultProfileId}
+  | _ => {pmSessionId: "", pmClientSecret: "", vaultPublishableKey: "", vaultProfileId: ""}
   }
 }

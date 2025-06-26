@@ -5,7 +5,7 @@ let make = () => {
   open RecoilAtomsV2
 
   let config = Recoil.useRecoilValueFromAtom(configAtom)
-  let (keys, setKeys) = Recoil.useRecoilState(keys)
+  let setKeys = Recoil.useSetRecoilState(keys)
   let session = Recoil.useRecoilValueFromAtom(sessions)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
@@ -44,12 +44,13 @@ let make = () => {
       let json = ev.data->Identity.anyTypeToJson
       let dict = json->Utils.getDictFromJson
       if dict->Dict.get("innerIframeMountedCallback")->Option.isSome {
-        let (
+        let {
           pmSessionId,
           pmClientSecret,
           vaultPublishableKey,
           vaultProfileId,
-        ) = VaultHelpers.getHyperswitchVaultDetails(session)
+        } = VaultHelpers.getHyperswitchVaultDetails(session)
+
         setKeys(prev => {
           ...prev,
           pmClientSecret,
