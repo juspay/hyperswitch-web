@@ -2,14 +2,22 @@
 let make = () => {
   open Utils
   open RecoilAtoms
+  open RecoilAtomsV2
 
   let config = Recoil.useRecoilValueFromAtom(configAtom)
-  let paymentsListValue = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
   let (keys, setKeys) = Recoil.useRecoilState(keys)
-  let setVaultPublishableKey = Recoil.useSetRecoilState(RecoilAtomsV2.vaultPublishableKey)
-  let setVaultProfileId = Recoil.useSetRecoilState(RecoilAtomsV2.vaultProfileId)
-  let ssn = Recoil.useRecoilValueFromAtom(sessions)
+  let session = Recoil.useRecoilValueFromAtom(sessions)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+
+  let paymentsListValue = Recoil.useRecoilValueFromAtom(paymentsListValue)
+  let setVaultPublishableKey = Recoil.useSetRecoilState(vaultPublishableKey)
+  let setVaultProfileId = Recoil.useSetRecoilState(vaultProfileId)
+
   let (innerIframeHeight, setInnerIframeHeight) = React.useState(_ => "0px")
+
+  let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
 
   React.useEffect(() => {
     let handleMessage = (ev: Window.event) => {
@@ -41,7 +49,7 @@ let make = () => {
           pmClientSecret,
           vaultPublishableKey,
           vaultProfileId,
-        ) = VaultHelpers.getHyperswitchVaultDetails(ssn)
+        ) = VaultHelpers.getHyperswitchVaultDetails(session)
         setKeys(prev => {
           ...prev,
           pmClientSecret,
@@ -49,25 +57,19 @@ let make = () => {
         })
         setVaultPublishableKey(_ => vaultPublishableKey)
         setVaultProfileId(_ => vaultProfileId)
-        let supportedCardBrandsValue = paymentsListValue->PaymentUtilsV2.getSupportedCardBrandsV2
 
-        let metaData = [
-          ("config", config.config->Identity.anyTypeToJson),
-          ("pmSessionId", pmSessionId->JSON.Encode.string),
-          ("pmClientSecret", pmClientSecret->JSON.Encode.string),
-          ("vaultPublishableKey", vaultPublishableKey->JSON.Encode.string),
-          ("vaultProfileId", vaultProfileId->JSON.Encode.string),
-          (
-            "supportedCardBrands",
-            supportedCardBrandsValue
-            ->Option.getOr([])
-            ->Array.map(JSON.Encode.string)
-            ->JSON.Encode.array,
-          ),
-          ("paymentList", paymentsListValue->Identity.anyTypeToJson),
-        ]->getJsonFromArrayOfJson
+        let metaData =
+          [
+            ("config", config.config->Identity.anyTypeToJson),
+            ("pmSessionId", pmSessionId->JSON.Encode.string),
+            ("pmClientSecret", pmClientSecret->JSON.Encode.string),
+            ("vaultPublishableKey", vaultPublishableKey->JSON.Encode.string),
+            ("vaultProfileId", vaultProfileId->JSON.Encode.string),
+            ("paymentList", paymentsListValue->Identity.anyTypeToJson),
+            ("endpoint", ApiEndpoint.getApiEndPoint()->JSON.Encode.string),
+            ("customPodUri", customPodUri->JSON.Encode.string),
+          ]->getJsonFromArrayOfJson
         let innerIframe = Window.querySelector(`#orca-inneriframe`)
-        Console.log2("innerIframeMountedCallback==>", metaData)
         innerIframe->Window.iframePostMessage(
           [("metadata", metaData), ("innerIframeMounted", true->JSON.Encode.bool)]->Dict.fromArray,
         )
@@ -83,14 +85,23 @@ let make = () => {
     if confirm.doSubmit {
       let innerIframe = Window.querySelector(`#orca-inneriframe`)
       innerIframe->Window.iframePostMessage(
-        [("tokenizeCard", true->JSON.Encode.bool)]->Dict.fromArray,
+        [("generateToken", true->JSON.Encode.bool)]->Dict.fromArray,
       )
       let handle = (ev: Window.event) => {
         let json = ev.data->safeParse
         let dict = json->getDictFromJson
-        if dict->Dict.get("tokenReceived")->Option.isSome {
-          Console.log2("Tokenized data==>", ev.data)
-          // TODO - Do Intent/Confirm call V2 on getting token
+        if dict->Dict.get("paymentToken")->Option.isSome {
+          let json = ev.data->safeParse
+          let dict = json->Utils.getDictFromJson
+          let token = dict->getString("paymentToken", "")
+          let cardBody = PaymentManagementBody.hyperswitchVaultBody(token)
+
+          intent(
+            ~bodyArr=cardBody,
+            ~confirmParam=confirm.confirmParams,
+            ~handleUserError=false,
+            ~manualRetry=isManualRetryEnabled,
+          )
         }
       }
       Window.addEventListener("message", handle)

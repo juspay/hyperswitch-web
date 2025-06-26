@@ -5,7 +5,7 @@ type vault = VeryGoodSecurity | Hyperswitch | None
 let getVaultModeFromName = val => {
   switch val {
   | "vgs" => VeryGoodSecurity
-  | "hyperswitch_payment_method" => Hyperswitch
+  | "hyperswitch_vault" => Hyperswitch
   | _ => None
   }
 }
@@ -13,7 +13,7 @@ let getVaultModeFromName = val => {
 let getVaultNameFromMode = val => {
   switch val {
   | VeryGoodSecurity => "vgs"
-  | Hyperswitch => "hyperswitch_payment_method"
+  | Hyperswitch => "hyperswitch_vault"
   | _ => ""
   }
 }
@@ -52,7 +52,7 @@ let getHyperswitchVaultDetails = (sessionObj: PaymentType.loadType) => {
     let hyperswitchVaultDict =
       dict
       ->getDictFromDict("vault_details")
-      ->getDictFromDict("hyperswitch_payment_method")
+      ->getDictFromDict("hyperswitch_vault")
 
     let paymentMethodSessionId = hyperswitchVaultDict->getString("payment_method_session_id", "")
     let clientSecret = hyperswitchVaultDict->getString("client_secret", "")
