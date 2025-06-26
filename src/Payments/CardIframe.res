@@ -119,7 +119,7 @@ let make = () => {
     }>
     <iframe
       id="orca-inneriframe"
-      src={`${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=cardIframe`}
+      src={`${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=cardVault`}
       style={
         width: "100%",
         height: "100%",
