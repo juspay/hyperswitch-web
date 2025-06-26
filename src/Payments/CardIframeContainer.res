@@ -22,7 +22,7 @@ let make = () => {
   React.useEffect(() => {
     let handleMessage = (ev: Window.event) => {
       let json = ev.data->Identity.anyTypeToJson
-      let dict = json->Utils.getDictFromJson
+      let dict = json->getDictFromJson
 
       switch dict->Dict.get("cardIframeContentHeight") {
       | Some(heightValue) =>
@@ -42,7 +42,7 @@ let make = () => {
   React.useEffect(() => {
     let handle = (ev: Window.event) => {
       let json = ev.data->Identity.anyTypeToJson
-      let dict = json->Utils.getDictFromJson
+      let dict = json->getDictFromJson
       if dict->Dict.get("innerIframeMountedCallback")->Option.isSome {
         let {
           pmSessionId,
@@ -93,7 +93,7 @@ let make = () => {
         let dict = json->getDictFromJson
         if dict->Dict.get("paymentToken")->Option.isSome {
           let json = ev.data->safeParse
-          let dict = json->Utils.getDictFromJson
+          let dict = json->getDictFromJson
           let token = dict->getString("paymentToken", "")
           let cardBody = PaymentManagementBody.hyperswitchVaultBody(token)
 
