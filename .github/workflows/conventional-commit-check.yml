@@ -14,7 +14,6 @@ on:
       - checks_requested
 
 permissions:
-  repository-projects: read
   pull-requests: write
 
 jobs:
@@ -28,6 +27,8 @@ jobs:
         if: ${{ github.event_name == 'pull_request_target' }}
         uses: actions/github-script@v7
         continue-on-error: true
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         with:
           script: |
             const title = process.env.PR_TITLE;
@@ -51,14 +52,14 @@ Examples:
 
             console.log(`✅ PR title "${title}" follows conventional commit format`);
             return true;
-          env:
-            PR_TITLE: ${{ github.event.pull_request.title }}
 
       - name: Verify commit message follows conventional commit standards
         id: commit_message_check
         if: ${{ github.event_name == 'merge_group' }}
         uses: actions/github-script@v7
         continue-on-error: false
+        env:
+          COMMIT_MESSAGE: ${{ github.event.merge_group.head_commit.message }}
         with:
           script: |
             const message = process.env.COMMIT_MESSAGE;
@@ -72,8 +73,6 @@ Examples:
 
             console.log(`✅ Commit message follows conventional commit format`);
             return true;
-          env:
-            COMMIT_MESSAGE: ${{ github.event.merge_group.head_commit.message }}
 
       - name: Attach 'S-conventions-not-followed' label if PR title check failed
         if: ${{ github.event_name == 'pull_request_target' && steps.pr_title_check.outcome == 'failure' }}
@@ -81,7 +80,7 @@ Examples:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh --repo ${{ github.event.repository.full_name }} pr edit --add-label 'S-conventions-not-followed' ${{ github.event.pull_request.number }}
+          gh pr edit ${{ github.event.pull_request.number }} --add-label 'S-conventions-not-followed'
           echo "::error::PR title does not follow conventional commit standards"
           exit 1
 
@@ -91,4 +90,4 @@ Examples:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh --repo ${{ github.event.repository.full_name }} pr edit --remove-label 'S-conventions-not-followed' ${{ github.event.pull_request.number }}
+          gh pr edit ${{ github.event.pull_request.number }} --remove-label 'S-conventions-not-followed'
