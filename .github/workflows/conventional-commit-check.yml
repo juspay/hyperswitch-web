@@ -30,28 +30,29 @@ jobs:
         continue-on-error: true
         with:
           script: |
-            const title = '${{ github.event.pull_request.title }}';
+            const title = process.env.PR_TITLE;
 
-            // Conventional commit regex pattern
             const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?!?: .+/;
 
             if (!conventionalCommitRegex.test(title)) {
               core.setFailed(`PR title "${title}" does not follow conventional commit format.
-              
-              Expected format: type(scope): description
-              
-              Valid types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert
-              
-              Examples:
-              - feat: add new user authentication
-              - fix(auth): resolve login redirect issue
-              - docs: update API documentation
-              - feat!: breaking change to user API`);
+
+Expected format: type(scope): description
+
+Valid types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert
+
+Examples:
+- feat: add new user authentication
+- fix(auth): resolve login redirect issue
+- docs: update API documentation
+- feat!: breaking change to user API`);
               return false;
             }
 
             console.log(`✅ PR title "${title}" follows conventional commit format`);
             return true;
+          env:
+            PR_TITLE: ${{ github.event.pull_request.title }}
 
       - name: Verify commit message follows conventional commit standards
         id: commit_message_check
@@ -60,9 +61,8 @@ jobs:
         continue-on-error: false
         with:
           script: |
-            const message = `${{ github.event.merge_group.head_commit.message }}`;
+            const message = process.env.COMMIT_MESSAGE;
 
-            // Conventional commit regex pattern
             const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?!?: .+/;
 
             if (!conventionalCommitRegex.test(message)) {
@@ -72,6 +72,8 @@ jobs:
 
             console.log(`✅ Commit message follows conventional commit format`);
             return true;
+          env:
+            COMMIT_MESSAGE: ${{ github.event.merge_group.head_commit.message }}
 
       - name: Attach 'S-conventions-not-followed' label if PR title check failed
         if: ${{ github.event_name == 'pull_request_target' && steps.pr_title_check.outcome == 'failure' }}
@@ -88,4 +90,5 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh --repo ${{ github.event.repository.full_name }} pr edit --remove-label 'S-conventions-not-followed' ${{ github.event.pull_request.number }}
+        run: |
+          gh --repo ${{ github.event.repository.full_name }} pr edit --remove-label 'S-conventions-not-followed' ${{ github.event.pull_request.number }}
