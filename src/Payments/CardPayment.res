@@ -7,7 +7,7 @@ let make = (
   ~expiryProps: CardUtils.expiryProps,
   ~cvcProps: CardUtils.cvcProps,
   ~isBancontact=false,
-  ~isVault=false,
+  ~isVault=None,
 ) => {
   open PaymentType
   open PaymentModeType
@@ -439,12 +439,14 @@ let make = (
 
   let compressedLayoutStyleForCvcError =
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
+  let vaultClass = switch isVault {
+  | Some(_) => "mb-[4px] mr-[4px] ml-[4px] mt-[4px]"
+  | None => ""
+  }
 
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
-      <div
-        className={`flex flex-col ${isVault ? "mb-[4px] mr-[4px] ml-[4px]" : ""}`}
-        style={gridGap: themeObj.spacingGridColumn}>
+      <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
         <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
           <RenderIf condition={innerLayout === Compressed}>
             <div

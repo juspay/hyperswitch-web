@@ -226,7 +226,7 @@ let make = () => {
   }, (cardNumber, cardExpiry, cvcNumber))
 
   <div ref={contentRef->ReactDOM.Ref.domRef}>
-    <CardPayment cardProps expiryProps cvcProps isVault=true />
+    <CardPayment cardProps expiryProps cvcProps isVault=Some(true) />
   </div>
 }
 
