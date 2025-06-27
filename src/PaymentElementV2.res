@@ -166,9 +166,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | Card =>
         switch vaultMode {
         | VeryGoodSecurity => <VGSVault />
-        | Hyperswitch
-        | None =>
-          <CardPayment cardProps expiryProps cvcProps />
+        | Hyperswitch => <CardIframeContainer />
+        | None => <CardPayment cardProps expiryProps cvcProps />
         }
       | _ =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
@@ -186,8 +185,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       | (SemiLoadedV2, _)
       | (LoadErrorV2(_), _)
       | (LoadedV2(_), _)
-      | (_, SemiLoadedV2)
       | (_, LoadErrorV2(_))
+      | (_, SemiLoadedV2)
       | (_, LoadedV2(_)) =>
         messageParentWindow([("ready", true->JSON.Encode.bool)])
       | _ => ()
