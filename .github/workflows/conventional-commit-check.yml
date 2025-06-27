@@ -38,15 +38,15 @@ jobs:
             if (!conventionalCommitRegex.test(title)) {
               core.setFailed(`PR title "${title}" does not follow conventional commit format.
 
-Expected format: type(scope): description
+            Expected format: type(scope): description
 
-Valid types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert
+            Valid types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert
 
-Examples:
-- feat: add new user authentication
-- fix(auth): resolve login redirect issue
-- docs: update API documentation
-- feat!: breaking change to user API`);
+            Examples:
+            - feat: add new user authentication
+            - fix(auth): resolve login redirect issue
+            - docs: update API documentation
+            - feat!: breaking change to user API`);
               return false;
             }
 
