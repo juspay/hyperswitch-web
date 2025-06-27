@@ -7,6 +7,7 @@ let make = (
   ~expiryProps: CardUtils.expiryProps,
   ~cvcProps: CardUtils.cvcProps,
   ~isBancontact=false,
+  ~isVault=false,
 ) => {
   open PaymentType
   open PaymentModeType
@@ -441,7 +442,9 @@ let make = (
 
   <div className="animate-slowShow">
     <RenderIf condition={showFields || isBancontact}>
-      <div className="flex flex-col" style={gridGap: themeObj.spacingGridColumn}>
+      <div
+        className={`flex flex-col ${isVault ? "mb-[4px] mr-[4px] ml-[4px]" : ""}`}
+        style={gridGap: themeObj.spacingGridColumn}>
         <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
           <RenderIf condition={innerLayout === Compressed}>
             <div
