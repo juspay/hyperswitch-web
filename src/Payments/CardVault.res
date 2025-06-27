@@ -165,7 +165,7 @@ let make = () => {
       let dict = res->getDictFromJson
       let sessionResponse = dict->getStrArray("associated_payment_methods")
       let paymentToken = sessionResponse->Array.get(0)
-      if paymentToken->Option.isNone {
+      if paymentToken->Option.isSome {
         let msg =
           [("paymentToken", paymentToken->Option.getOr("")->JSON.Encode.string)]->Dict.fromArray
 
@@ -226,7 +226,7 @@ let make = () => {
   }, (cardNumber, cardExpiry, cvcNumber))
 
   <div ref={contentRef->ReactDOM.Ref.domRef}>
-    <CardPayment cardProps expiryProps cvcProps />
+    <CardPayment cardProps expiryProps cvcProps isVault=Some(true) />
   </div>
 }
 
