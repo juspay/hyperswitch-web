@@ -453,9 +453,13 @@ let samsungPayBody = (~metadata) => {
 }
 
 let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) => {
+  let (paymentMethodType, paymentMethodSubtype) = switch GlobalVars.sdkVersion {
+  | V2 => ("payment_method_type", "payment_method_subtype")
+  | V1 => ("payment_method", "payment_method_type")
+  }
   let gPayBody = [
-    ("payment_method", "wallet"->JSON.Encode.string),
-    ("payment_method_type", "google_pay"->JSON.Encode.string),
+    (paymentMethodType, "wallet"->JSON.Encode.string),
+    (paymentMethodSubtype, "google_pay"->JSON.Encode.string),
     (
       "payment_method_data",
       [

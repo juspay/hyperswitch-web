@@ -23,6 +23,10 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
   paymentMethodListValue.paymentMethodsEnabled->Array.forEach(item => {
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodType) {
       otherPaymentList->Array.push(item.paymentMethodType)->ignore
+    } else if item.paymentMethodType == "wallet" {
+      if item.paymentMethodSubtype !== "paypal" {
+        walletsList->Array.push(item.paymentMethodSubtype)->ignore
+      }
     } else if item.paymentMethodType == "bank_redirect" {
       otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
     } else if item.paymentMethodType == "card" {
@@ -45,9 +49,15 @@ let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mo
     let resolvePaymentList = list =>
       switch list {
       | LoadedV2(paymentlist) =>
-        let {otherPaymentList} = paymentListLookupNew(~paymentMethodListValue=paymentlist)
-        ([...paymentOptions, ...otherPaymentList]->removeDuplicate, otherPaymentList)
-      | _ => ([], [])
+        let {walletsList, otherPaymentList} = paymentListLookupNew(
+          ~paymentMethodListValue=paymentlist,
+        )
+        (
+          walletsList->removeDuplicate->Utils.getWalletPaymentMethod(paymentType),
+          [...paymentOptions, ...otherPaymentList]->removeDuplicate,
+          otherPaymentList,
+        )
+      | _ => ([], [], [])
       }
 
     switch paymentType {
