@@ -25,6 +25,8 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
       otherPaymentList->Array.push(item.paymentMethodType)->ignore
     } else if item.paymentMethodType == "bank_redirect" {
       otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
+    } else if item.paymentMethodType == "bank_debit" {
+      otherPaymentList->Array.push(item.paymentMethodSubtype ++ "_debit")->ignore
     } else if item.paymentMethodType == "card" {
       otherPaymentList->Array.push("card")->ignore
     }
