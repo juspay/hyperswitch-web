@@ -108,7 +108,7 @@ let make = (
     makeOneClickHandlerPromise(isSDKHandleClick)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
-        if isInvokeSDKFlow {
+        if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
           if isDelayedSessionToken {
             messageParentWindow([
               ("fullscreen", true->JSON.Encode.bool),
