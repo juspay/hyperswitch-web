@@ -389,8 +389,7 @@ let savePaymentMethod = (
   ~pmClientSecret,
   ~publishableKey,
   ~profileId,
-  ~logger as _,
-  ~customPodUri,
+  ~customPodUri="",
 ) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()

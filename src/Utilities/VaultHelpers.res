@@ -2,10 +2,19 @@ open Utils
 
 type vault = VeryGoodSecurity | Hyperswitch | None
 
+type hyperVaultType = {vaultId: string, vaultEnv: string}
+
+type vgsVaultType = {
+  pmSessionId: string,
+  pmClientSecret: string,
+  vaultPublishableKey: string,
+  vaultProfileId: string,
+}
+
 let getVaultModeFromName = val => {
   switch val {
   | "vgs" => VeryGoodSecurity
-  | "hyperswitch_payment_method" => Hyperswitch
+  | "hyperswitch_vault" => Hyperswitch
   | _ => None
   }
 }
@@ -13,7 +22,7 @@ let getVaultModeFromName = val => {
 let getVaultNameFromMode = val => {
   switch val {
   | VeryGoodSecurity => "vgs"
-  | Hyperswitch => "hyperswitch_payment_method"
+  | Hyperswitch => "hyperswitch_vault"
   | _ => ""
   }
 }
@@ -38,10 +47,10 @@ let getVGSVaultDetails = (sessionObj: PaymentType.loadType, vaultName: string) =
       ->getDictFromDict("vault_details")
       ->getDictFromDict(vaultName)
 
-    let externalVaultId = vgsVaultDict->getString("external_vault_id", "")
-    let env = vgsVaultDict->getString("sdk_env", "")
-    (externalVaultId, env)
-  | _ => ("", "")
+    let vaultId = vgsVaultDict->getString("external_vault_id", "")
+    let vaultEnv = vgsVaultDict->getString("sdk_env", "")
+    {vaultId, vaultEnv}
+  | _ => {vaultId: "", vaultEnv: ""}
   }
 }
 
@@ -52,11 +61,15 @@ let getHyperswitchVaultDetails = (sessionObj: PaymentType.loadType) => {
     let hyperswitchVaultDict =
       dict
       ->getDictFromDict("vault_details")
-      ->getDictFromDict("hyperswitch_payment_method")
+      ->getDictFromDict("hyperswitch_vault")
 
-    let paymentMethodSessionId = hyperswitchVaultDict->getString("payment_method_session_id", "")
-    let clientSecret = hyperswitchVaultDict->getString("client_secret", "")
-    (paymentMethodSessionId, clientSecret)
-  | _ => ("", "")
+    let getVaultValue = key => hyperswitchVaultDict->getString(key, "")
+    let pmSessionId = getVaultValue("payment_method_session_id")
+    let pmClientSecret = getVaultValue("client_secret")
+    let vaultPublishableKey = getVaultValue("publishable_key")
+    let vaultProfileId = getVaultValue("profile_id")
+
+    {pmSessionId, pmClientSecret, vaultPublishableKey, vaultProfileId}
+  | _ => {pmSessionId: "", pmClientSecret: "", vaultPublishableKey: "", vaultProfileId: ""}
   }
 }

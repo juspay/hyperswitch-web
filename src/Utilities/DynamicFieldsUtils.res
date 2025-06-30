@@ -367,59 +367,32 @@ let useSetInitialRequiredFields = (
   ~requiredFields: array<PaymentMethodsRecord.required_fields>,
   ~paymentMethodType,
 ) => {
-  let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", logger)
-  let (fullName, setFullName) = Recoil.useLoggedRecoilState(userFullName, "fullName", logger)
-  let (billingName, setBillingName) = Recoil.useLoggedRecoilState(
-    userBillingName,
-    "billingName",
-    logger,
-  )
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
-  let (phone, setPhone) = Recoil.useLoggedRecoilState(userPhoneNumber, "phone", logger)
-  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", logger)
-  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
-  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
-    userAddressPincode,
-    "postal_code",
-    logger,
-  )
-  let (blikCode, setBlikCode) = Recoil.useLoggedRecoilState(userBlikCode, "blikCode", logger)
-  let (pixCNPJ, setPixCNPJ) = Recoil.useLoggedRecoilState(userPixCNPJ, "pixCNPJ", logger)
-  let (pixCPF, setPixCPF) = Recoil.useLoggedRecoilState(userPixCPF, "pixCPF", logger)
-  let (pixKey, setPixKey) = Recoil.useLoggedRecoilState(userPixKey, "pixKey", logger)
+  let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
+  let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
+  let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
+  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
+  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
+  let (phone, setPhone) = Recoil.useRecoilState(userPhoneNumber)
+  let (state, setState) = Recoil.useRecoilState(userAddressState)
+  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
+  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
+  let (blikCode, setBlikCode) = Recoil.useRecoilState(userBlikCode)
+  let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
+  let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
+  let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
 
-  let (country, setCountry) = Recoil.useLoggedRecoilState(userCountry, "country", logger)
-  let (selectedBank, setSelectedBank) = Recoil.useLoggedRecoilState(
-    userBank,
-    "selectedBank",
-    logger,
-  )
-  let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
+  let (country, setCountry) = Recoil.useRecoilState(userCountry)
+  let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
+  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
   let (cryptoCurrencyNetworks, setCryptoCurrencyNetworks) = Recoil.useRecoilState(
     cryptoCurrencyNetworks,
   )
-  let (dateOfBirth, setDateOfBirth) = Recoil.useLoggedRecoilState(
-    dateOfBirth,
-    "dateOfBirth",
-    logger,
-  )
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
-    userBankAccountNumber,
-    "bankAccountNumber",
-    logger,
-  )
-  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useLoggedRecoilState(
+  let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
+  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
+  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useRecoilState(
     destinationBankAccountId,
-    "destinationBankAccountId",
-    logger,
   )
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useLoggedRecoilState(
-    sourceBankAccountId,
-    "sourceBankAccountId",
-    logger,
-  )
+  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -906,16 +879,11 @@ let updateDynamicFields = (
 }
 
 let useSubmitCallback = () => {
-  let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
-  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", logger)
-  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
-    userAddressPincode,
-    "postal_code",
-    logger,
-  )
-  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
+  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
+  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
+  let (state, setState) = Recoil.useRecoilState(userAddressState)
+  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
+  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)

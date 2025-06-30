@@ -128,6 +128,14 @@ let useDefaultZipProps = () => {
   }
 }
 
+type commonCardProps = {
+  cardProps: cardProps,
+  expiryProps: expiryProps,
+  cvcProps: cvcProps,
+  zipProps: zipProps,
+  blurState: bool,
+}
+
 @val external document: 'a = "document"
 
 @send external focus: Dom.element => unit = "focus"

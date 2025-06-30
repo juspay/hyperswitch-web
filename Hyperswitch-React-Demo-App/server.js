@@ -2,12 +2,22 @@ const fetch = require("node-fetch");
 const express = require("express");
 const { resolve } = require("path");
 const dotenv = require("dotenv");
+const rateLimit = require("express-rate-limit");
+
 dotenv.config({ path: "./.env" });
 
 const app = express();
 const PORT = 5252;
+
 app.use(express.json());
 
+// ✅ Simple rate limiter: 60 requests per minute per IP
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // limit each IP to 60 requests per windowMs
+});
+
+// Helper: get URL from env or fallback
 function getUrl(envVar, selfHostedValue) {
   return process.env[envVar] === selfHostedValue ? "" : process.env[envVar];
 }
@@ -16,23 +26,19 @@ const SERVER_URL = getUrl("HYPERSWITCH_SERVER_URL", "SELF_HOSTED_SERVER_URL");
 const CLIENT_URL = getUrl("HYPERSWITCH_CLIENT_URL", "SELF_HOSTED_CLIENT_URL");
 const SDK_VERSION = process.env.SDK_VERSION || "v1";
 
+// ✅ Serve static files automatically (index.html, assets)
 app.use(express.static("./dist"));
-app.get("/", (req, res) => {
-  const path = resolve("./dist/index.html");
-  res.sendFile(path);
-});
-app.get("/completion", (req, res) => {
-  const path = resolve("./dist/index.html");
-  res.sendFile(path);
-});
-app.get("/config", (req, res) => {
+
+// ✅ Dynamic routes are rate-limited for safety
+
+app.get("/config", limiter, (req, res) => {
   res.send({
     publishableKey: process.env.HYPERSWITCH_PUBLISHABLE_KEY,
     profileId: process.env.PROFILE_ID,
   });
 });
 
-app.get("/urls", (req, res) => {
+app.get("/urls", limiter, (req, res) => {
   res.send({
     serverUrl: SERVER_URL,
     clientUrl: CLIENT_URL,
@@ -96,6 +102,7 @@ const paymentData = {
     },
   },
 };
+
 const paymentDataRequestV2 = {
   amount_details: {
     currency: "USD",
@@ -111,11 +118,12 @@ if (profileId) {
 function createPaymentRequest() {
   return paymentData;
 }
+
 function createPaymentRequestV2() {
   return paymentDataRequestV2;
 }
 
-app.get("/create-intent", async (req, res) => {
+app.get("/create-intent", limiter, async (req, res) => {
   try {
     const paymentRequest =
       SDK_VERSION === "v1" ? createPaymentRequest() : createPaymentRequestV2();
