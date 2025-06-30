@@ -205,6 +205,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           | _ => React.null
           }}
         </SessionPaymentWrapper>
+      | SepaBankDebit =>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
+          <SepaBankDebitLazy />
+        </ReusableReactSuspense>
       | _ =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />

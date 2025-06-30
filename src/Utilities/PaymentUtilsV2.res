@@ -29,6 +29,8 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
       }
     } else if item.paymentMethodType == "bank_redirect" {
       otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
+    } else if item.paymentMethodType == "bank_debit" {
+      otherPaymentList->Array.push(item.paymentMethodSubtype ++ "_debit")->ignore
     } else if item.paymentMethodType == "card" {
       otherPaymentList->Array.push("card")->ignore
     }
@@ -90,4 +92,46 @@ let getSupportedCardBrandsV2 = (paymentsListValue: paymentMethodsManagement) => 
 
   | None => None
   }
+}
+
+let getPaymentMethodTypeFromListV2 = (~paymentsListValueV2, ~paymentMethod, ~paymentMethodType) => {
+  open UnifiedHelpersV2
+  paymentsListValueV2.paymentMethodsEnabled
+  ->Array.find(item => {
+    item.paymentMethodSubtype === paymentMethodType && item.paymentMethodType === paymentMethod
+  })
+  ->Option.getOr(defaultPaymentMethods)
+}
+
+let usePaymentMethodTypeFromListV2 = (~paymentsListValueV2, ~paymentMethod, ~paymentMethodType) => {
+  React.useMemo(() => {
+    getPaymentMethodTypeFromListV2(
+      ~paymentsListValueV2,
+      ~paymentMethod,
+      ~paymentMethodType=PaymentUtils.getPaymentMethodName(
+        ~paymentMethodType=paymentMethod,
+        ~paymentMethodName=paymentMethodType,
+      ),
+    )
+  }, (paymentsListValueV2, paymentMethod, paymentMethodType))
+}
+
+let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManagement) => {
+  open PaymentMethodsRecord
+  let paymentMethodArr = plist.paymentMethodsEnabled
+
+  paymentMethodArr->Array.map(paymentMethodObject => {
+    let methodType = paymentMethodObject.paymentMethodType
+    let handleUserError = methodType === "wallet"
+    let paymentMethodName = paymentMethodObject.paymentMethodSubtype
+    // TODO - Handle Bank Names and Payment Experience
+    {
+      paymentMethodName,
+      fields: getPaymentMethodFields(paymentMethodName, paymentMethodObject.requiredFields),
+      paymentFlow: [],
+      handleUserError,
+      methodType,
+      bankNames: [],
+    }
+  })
 }
