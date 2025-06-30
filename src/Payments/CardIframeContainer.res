@@ -19,6 +19,10 @@ let make = () => {
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
 
+  let setUserError = message => {
+    postFailedSubmitResponse(~errortype="validation_error", ~message)
+  }
+
   React.useEffect(() => {
     let handleMessage = (ev: Window.event) => {
       let json = ev.data->Identity.anyTypeToJson
@@ -88,12 +92,11 @@ let make = () => {
       innerIframe->Window.iframePostMessage(
         [("generateToken", true->JSON.Encode.bool)]->Dict.fromArray,
       )
-      let handle = (ev: Window.event) => {
-        let json = ev.data->safeParse
+      let handle = (ev: Types.event) => {
+        open Identity
+        let json = ev.data->anyTypeToJson->getStringFromJson("")->safeParse
         let dict = json->getDictFromJson
         if dict->Dict.get("paymentToken")->Option.isSome {
-          let json = ev.data->safeParse
-          let dict = json->getDictFromJson
           let token = dict->getString("paymentToken", "")
           let cardBody = PaymentManagementBody.hyperswitchVaultBody(token)
 
@@ -103,9 +106,12 @@ let make = () => {
             ~handleUserError=false,
             ~manualRetry=isManualRetryEnabled,
           )
+        } else if dict->Dict.get("errorMsg")->Option.isSome {
+          let errorMsg = dict->getString("errorMsg", "")
+          setUserError(errorMsg)
         }
       }
-      Window.addEventListener("message", handle)
+      EventListenerManager.addSmartEventListener("message", handle, "handleCardVaultToken")
     }
   }, ())
   useSubmitPaymentData(submitCallback)

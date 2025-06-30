@@ -171,10 +171,14 @@ let make = () => {
 
         ev.source->Window.sendPostMessage(msg)
       } else {
+        let msg = [("errorMsg", "Payment token not found"->JSON.Encode.string)]->Dict.fromArray
+        ev.source->Window.sendPostMessage(msg)
         Console.error("Payment token not found ")
       }
     } catch {
     | err =>
+      let msg = [("errorMsg", "Something went wrong."->JSON.Encode.string)]->Dict.fromArray
+      ev.source->Window.sendPostMessage(msg)
       let exceptionMessage = err->formatException->JSON.stringify
       Console.error2("Unable to Save Card ", exceptionMessage)
     }
