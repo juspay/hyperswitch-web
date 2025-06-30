@@ -1,22 +1,20 @@
-let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentMethod=false) => {
-  let resolvedPaymentMethodType =
-    paymentMethod->PaymentBody.getPaymentMethodType(paymentMethodTypeInput)
+open Utils
 
-  let paymentMethodExperienceKey = PaymentBody.appendPaymentMethodExperience(
+let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentMethod=false) => {
+  open PaymentBody
+
+  let resolvedPaymentMethodType = paymentMethod->getPaymentMethodType(paymentMethodTypeInput)
+
+  let paymentMethodExperienceKey = appendPaymentMethodExperience(
     ~paymentMethod,
     ~paymentMethodType=resolvedPaymentMethodType,
     ~isQrPaymentMethod,
   )
 
-  let paymentMethodData =
-    [
-      (
-        paymentMethod,
-        [
-          (paymentMethodExperienceKey, Dict.make()->JSON.Encode.object),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson
+  let paymentMethodBody =
+    [(paymentMethodExperienceKey, Dict.make()->JSON.Encode.object)]->getJsonFromArrayOfJson
+
+  let paymentMethodData = [(paymentMethod, paymentMethodBody)]->getJsonFromArrayOfJson
 
   let baseBody = [
     ("payment_method_type", paymentMethod->JSON.Encode.string),
@@ -24,5 +22,5 @@ let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentM
     ("payment_method_data", paymentMethodData),
   ]
 
-  baseBody->PaymentBody.appendPaymentExperience(resolvedPaymentMethodType)
+  baseBody->appendPaymentExperience(resolvedPaymentMethodType)
 }
