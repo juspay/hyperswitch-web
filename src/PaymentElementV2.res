@@ -40,10 +40,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   )
 
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
-  let dict = sessions->getDictFromJson
-  let sessionObj = SessionsType.itemToObjMapper(dict, Others)
+  let sessionsDict = sessions->getDictFromJson
+  let sessionObj = SessionsType.itemToObjMapper(sessionsDict, Others)
   let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
-  let googlePayThirdPartySessionObj = SessionsType.itemToObjMapper(dict, GooglePayThirdPartyObject)
+  let googlePayThirdPartySessionObj = SessionsType.itemToObjMapper(
+    sessionsDict,
+    GooglePayThirdPartyObject,
+  )
   let googlePayThirdPartyToken = SessionsType.getPaymentSessionObj(
     googlePayThirdPartySessionObj.sessionsToken,
     Gpay,
