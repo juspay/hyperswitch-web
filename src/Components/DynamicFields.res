@@ -124,19 +124,13 @@ let make = (
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
-  let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
+  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
+  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
+  let (state, setState) = Recoil.useRecoilState(userAddressState)
+  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
 
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
-  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
-  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", logger)
-  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
-    userAddressPincode,
-    "postal_code",
-    logger,
-  )
-
-  let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
+  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
@@ -147,21 +141,11 @@ let make = (
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
-    userBankAccountNumber,
-    "bankAccountNumber",
-    logger,
-  )
-  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useLoggedRecoilState(
+  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
+  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useRecoilState(
     destinationBankAccountId,
-    "destinationBankAccountId",
-    logger,
   )
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useLoggedRecoilState(
-    sourceBankAccountId,
-    "sourceBankAccountId",
-    logger,
-  )
+  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
   let countryList = CountryStateDataRefs.countryDataRef.contents
   let stateNames = getStateNames({
     value: country,
@@ -649,7 +633,7 @@ let make = (
                       appearance=config.appearance
                       fieldName=localeString.countryLabel
                       value=country
-                      setValue={setCountry}
+                      setValue=setCountry
                       disabled=false
                       options=updatedCountryArray
                       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
@@ -760,7 +744,7 @@ let make = (
                 | AddressPincode =>
                   <PaymentField
                     fieldName=localeString.postalCodeLabel
-                    setValue={setPostalCode}
+                    setValue=setPostalCode
                     value=postalCode
                     onBlur={ev => {
                       let value = ReactEvent.Focus.target(ev)["value"]
