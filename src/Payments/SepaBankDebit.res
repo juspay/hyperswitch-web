@@ -35,7 +35,7 @@ let make = () => {
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     let body = switch GlobalVars.sdkVersion {
     | V1 => PaymentBody.dynamicPaymentBody("bank_debit", "sepa")
-    | V2 => PaymentManagementBody.dynamicPaymentBodyV2("bank_debit", "sepa")
+    | V2 => PaymentBodyV2.dynamicPaymentBodyV2("bank_debit", "sepa")
     }
     if confirm.doSubmit {
       if areRequiredFieldsValid && !areRequiredFieldsEmpty {
