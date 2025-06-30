@@ -11,8 +11,8 @@ let make = () => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
   let showAddressDetails = getShowAddressDetails(~billingDetails=fields.billingDetails)
-  let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
-  let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
+  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
+  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
 
   let countryData = CountryStateDataRefs.countryDataRef.contents
   let countryNames =

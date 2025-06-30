@@ -13,9 +13,8 @@ let make = (
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let setFullName = Recoil.useLoggedSetRecoilState(userFullName, "fullName", loggerState)
+  let setFullName = Recoil.useSetRecoilState(userFullName)
   let setNickName = Recoil.useSetRecoilState(userCardNickName)
   let (_, startTransition) = React.useTransition()
 
