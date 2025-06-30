@@ -169,6 +169,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         | Hyperswitch => <CardIframeContainer />
         | None => <CardPayment cardProps expiryProps cvcProps />
         }
+      | SepaBankDebit =>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
+          <SepaBankDebitLazy />
+        </ReusableReactSuspense>
       | _ =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
