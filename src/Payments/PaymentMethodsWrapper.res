@@ -1,5 +1,6 @@
 open RecoilAtoms
 open RecoilAtomTypes
+open PaymentTypeContext
 open Utils
 
 @react.component
@@ -12,6 +13,13 @@ let make = (~paymentMethodName: string) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentManagementList = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentManagementListValue)
+  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let contextPaymentType = usePaymentType()
+  let listValue = switch contextPaymentType {
+  | PaymentMethodsManagement => paymentManagementList
+  | _ => paymentsListValueV2
+  }
   let optionPaymentMethodDetails =
     paymentMethodListValue
     ->PaymentMethodsRecord.buildFromPaymentList
@@ -19,8 +27,18 @@ let make = (~paymentMethodName: string) => {
       x.paymentMethodName ===
         PaymentUtils.getPaymentMethodName(~paymentMethodType=x.methodType, ~paymentMethodName)
     )
-  let paymentMethodDetails =
-    optionPaymentMethodDetails->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
+  let optionPaymentMethodDetailsV2 =
+    listValue
+    ->PaymentUtilsV2.buildFromPaymentListV2
+    ->Array.find(x =>
+      x.paymentMethodName ===
+        PaymentUtils.getPaymentMethodName(~paymentMethodType=x.methodType, ~paymentMethodName)
+    )
+  let paymentMethodDetails = switch GlobalVars.sdkVersion {
+  | V1 => optionPaymentMethodDetails->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
+  | V2 =>
+    optionPaymentMethodDetailsV2->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
+  }
   let paymentFlow =
     paymentMethodDetails.paymentFlow
     ->Array.get(0)
