@@ -6,13 +6,8 @@ open Utils
 let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) => {
   let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
-  let (billingName, setBillingName) = Recoil.useLoggedRecoilState(
-    userBillingName,
-    "billingName",
-    loggerState,
-  )
+  let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
 
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 

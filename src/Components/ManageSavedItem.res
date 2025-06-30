@@ -9,10 +9,9 @@ let make = (
   ~expiryYear,
 ) => {
   let (_, startTransition) = React.useTransition()
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {innerLayout} = config.appearance
-  let setFullName = Recoil.useLoggedSetRecoilState(userFullName, "fullName", loggerState)
+  let setFullName = Recoil.useSetRecoilState(userFullName)
   let setNickName = Recoil.useSetRecoilState(userCardNickName)
 
   let cardHolderName = switch paymentItem.paymentMethodData.card.cardHolderName {

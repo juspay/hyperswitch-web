@@ -6,8 +6,7 @@ open Utils
 let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let (fullName, setFullName) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
+  let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
   let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
   let changeName = ev => {

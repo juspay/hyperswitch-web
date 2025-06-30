@@ -19,21 +19,3 @@ external useSetRecoilState: recoilAtom<'valueT> => ('valueT => 'valueT) => unit 
 
 @module("recoil")
 external useRecoilValueFromAtom: recoilAtom<'valueT> => 'valueT = "useRecoilValue"
-
-let useLoggedRecoilState = (atomName, type_, logger: HyperLoggerTypes.loggerMake) => {
-  let (state, setState) = useRecoilState(atomName)
-  let newSetState = value => {
-    LoggerUtils.logInputChangeInfo(type_, logger)
-    setState(value)
-  }
-  (state, newSetState)
-}
-
-let useLoggedSetRecoilState = (atomName, type_, logger: HyperLoggerTypes.loggerMake) => {
-  let setState = useSetRecoilState(atomName)
-  let newSetState = value => {
-    LoggerUtils.logInputChangeInfo(type_, logger)
-    setState(value)
-  }
-  newSetState
-}
