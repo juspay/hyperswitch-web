@@ -1,0 +1,227 @@
+name: Update Changelog
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "Pritish Budhiraja"
+          git config --global user.email "pritish.budhiraja@gmail.com"
+
+      - name: Get current tag
+        id: current-tag
+        run: |
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          echo "tag=$CURRENT_TAG" >> "$GITHUB_OUTPUT"
+          echo "Current tag: $CURRENT_TAG"
+
+      - name: Get previous tag
+        id: previous-tag
+        run: |
+          CURRENT_TAG=${{ steps.current-tag.outputs.tag }}
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -A1 "^${CURRENT_TAG}$" | tail -n1)
+          if [ "$PREVIOUS_TAG" = "$CURRENT_TAG" ]; then
+            # If no previous tag found, get the first commit
+            PREVIOUS_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+          echo "tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
+          echo "Previous tag: $PREVIOUS_TAG"
+
+      - name: Generate changelog content
+        id: generate-changelog
+        run: |
+          CURRENT_TAG=${{ steps.current-tag.outputs.tag }}
+          PREVIOUS_TAG=${{ steps.previous-tag.outputs.tag }}
+          CURRENT_DATE=$(date -u '+%Y-%m-%d')
+
+          # Get commits between tags
+          COMMITS=$(git log --pretty=format:"%h %s" ${PREVIOUS_TAG}..${CURRENT_TAG} --no-merges)
+
+          # Initialize changelog content
+          CHANGELOG_CONTENT="## [${CURRENT_TAG}](https://github.com/juspay/hyperswitch-web/compare/${PREVIOUS_TAG}...${CURRENT_TAG}) (${CURRENT_DATE})"
+          CHANGELOG_CONTENT="${CHANGELOG_CONTENT}\n"
+
+          # Categorize commits
+          FEATURES=""
+          BUG_FIXES=""
+          CHORES=""
+          REFACTORS=""
+          TESTS=""
+          CI=""
+          DOCS=""
+          REVERTS=""
+          OTHERS=""
+
+          while IFS= read -r commit; do
+            if [ -n "$commit" ]; then
+              HASH=$(echo "$commit" | cut -d' ' -f1)
+              MESSAGE=$(echo "$commit" | cut -d' ' -f2-)
+              
+              # Extract PR number if present
+              PR_NUM=$(echo "$MESSAGE" | grep -o '#[0-9]\+' | head -1)
+              
+              # Format commit entry
+              if [ -n "$PR_NUM" ]; then
+                ENTRY="- ${MESSAGE} ([${HASH}](https://github.com/juspay/hyperswitch-web/commit/${HASH}))"
+              else
+                ENTRY="- ${MESSAGE} ([${HASH}](https://github.com/juspay/hyperswitch-web/commit/${HASH}))"
+              fi
+              
+              # Categorize based on commit message
+              case "$MESSAGE" in
+                feat*|feature*|add*|Added*|added*)
+                  FEATURES="${FEATURES}${ENTRY}\n"
+                  ;;
+                fix*|Fix*|fixed*|Fixed*|bug*|Bug*)
+                  BUG_FIXES="${BUG_FIXES}${ENTRY}\n"
+                  ;;
+                chore*|Chore*|chores*)
+                  CHORES="${CHORES}${ENTRY}\n"
+                  ;;
+                refactor*|Refactor*|refactors*)
+                  REFACTORS="${REFACTORS}${ENTRY}\n"
+                  ;;
+                test*|Test*|tests*)
+                  TESTS="${TESTS}${ENTRY}\n"
+                  ;;
+                ci*|CI*|workflow*|Workflow*)
+                  CI="${CI}${ENTRY}\n"
+                  ;;
+                doc*|Doc*|docs*|Docs*)
+                  DOCS="${DOCS}${ENTRY}\n"
+                  ;;
+                revert*|Revert*)
+                  REVERTS="${REVERTS}${ENTRY}\n"
+                  ;;
+                *)
+                  OTHERS="${OTHERS}${ENTRY}\n"
+                  ;;
+              esac
+            fi
+          done <<< "$COMMITS"
+
+          # Build changelog sections
+          if [ -n "$FEATURES" ]; then
+            CHANGELOG_CONTENT="${CHANGELOG_CONTENT}\n### Features\n\n${FEATURES}"
+          fi
+
+          if [ -n "$BUG_FIXES" ]; then
+            CHANGELOG_CONTENT="${CHANGELOG_CONTENT}\n### Bug Fixes\n\n${BUG_FIXES}"
+          fi
+
+          if [ -n "$CHORES" ]; then
+            CHANGELOG_CONTENT="${CHANGELOG_CONTENT}\n### Chores\n\n${CHORES}"
+          fi
+
+          if [ -n "$REFACTORS" ]; then
+            CHANGELOG_CONTENT="${CHANGELOG_CONTENT}\n### Refactors\n\n${REFACTORS}"
+          fi
+
+          if [ -n "$TESTS" ]; then
+            CHANGELOG_CONTENT="${CHANGELOG_CONTENT}\n### Tests\n\n${TESTS}"
+          fi
+
+          if [ -n "$CI" ]; then
+            CHANGELOG_CONTENT="${CHANGELOG_CONTENT}\n### CI\n\n${CI}"
+          fi
+
+          if [ -n "$DOCS" ]; then
+            CHANGELOG_CONTENT="${CHANGELOG_CONTENT}\n### Documentation\n\n${DOCS}"
+          fi
+
+          if [ -n "$REVERTS" ]; then
+            CHANGELOG_CONTENT="${CHANGELOG_CONTENT}\n### Reverts\n\n${REVERTS}"
+          fi
+
+          if [ -n "$OTHERS" ]; then
+            CHANGELOG_CONTENT="${CHANGELOG_CONTENT}\n### Others\n\n${OTHERS}"
+          fi
+
+          # Save to file for next step
+          echo -e "$CHANGELOG_CONTENT" > /tmp/new_changelog_entry.md
+          echo "Generated changelog entry for tag: $CURRENT_TAG"
+
+      - name: Update CHANGELOG.md
+        run: |
+          CURRENT_TAG=${{ steps.current-tag.outputs.tag }}
+
+          # Check if tag already exists in changelog
+          if grep -q "## \[${CURRENT_TAG}\]" CHANGELOG.md; then
+            echo "Tag ${CURRENT_TAG} already exists in CHANGELOG.md, skipping update"
+            exit 0
+          fi
+
+          # Create temporary file with new content
+          {
+            cat /tmp/new_changelog_entry.md
+            echo ""
+            cat CHANGELOG.md
+          } > /tmp/updated_changelog.md
+
+          # Replace the original file
+          mv /tmp/updated_changelog.md CHANGELOG.md
+
+          echo "Updated CHANGELOG.md with entry for tag: $CURRENT_TAG"
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if git diff --quiet CHANGELOG.md; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No changes to commit"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected in CHANGELOG.md"
+          fi
+
+      - name: Commit and push changes
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          CURRENT_TAG=${{ steps.current-tag.outputs.tag }}
+
+          git add CHANGELOG.md
+          git commit -S -m "chore: update CHANGELOG.md for release ${CURRENT_TAG}
+
+          - Auto-generated changelog entry for tag ${CURRENT_TAG}
+          - Categorized commits since previous release
+          - Added links to commits and comparisons"
+
+          # Push to main branch
+          git push origin HEAD:main
+
+      - name: Create release
+        if: steps.check-changes.outputs.has_changes == 'true'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.current-tag.outputs.tag }}
+          release_name: Release ${{ steps.current-tag.outputs.tag }}
+          body_path: /tmp/new_changelog_entry.md
+          draft: false
+          prerelease: false
