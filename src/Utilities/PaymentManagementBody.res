@@ -78,28 +78,31 @@ let hyperswitchVaultBody = token => {
   ]
 }
 
-let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodType, ~isQrPaymentMethod=false) => {
-  let paymentMethodType = paymentMethod->PaymentBody.getPaymentMethodType(paymentMethodType)
-  [
+let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentMethod=false) => {
+  let resolvedPaymentMethodType =
+    paymentMethod->PaymentBody.getPaymentMethodType(paymentMethodTypeInput)
+
+  let paymentMethodExperienceKey = PaymentBody.appendPaymentMethodExperience(
+    ~paymentMethod,
+    ~paymentMethodType=resolvedPaymentMethodType,
+    ~isQrPaymentMethod,
+  )
+
+  let paymentMethodData =
+    [
+      (
+        paymentMethod,
+        [
+          (paymentMethodExperienceKey, Dict.make()->JSON.Encode.object),
+        ]->Utils.getJsonFromArrayOfJson,
+      ),
+    ]->Utils.getJsonFromArrayOfJson
+
+  let baseBody = [
     ("payment_method_type", paymentMethod->JSON.Encode.string),
-    ("payment_method_subtype", paymentMethodType->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          paymentMethod,
-          [
-            (
-              PaymentBody.appendPaymentMethodExperience(
-                ~paymentMethod,
-                ~paymentMethodType,
-                ~isQrPaymentMethod,
-              ),
-              Dict.make()->JSON.Encode.object,
-            ),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ]->PaymentBody.appendPaymentExperience(paymentMethodType)
+    ("payment_method_subtype", resolvedPaymentMethodType->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+
+  baseBody->PaymentBody.appendPaymentExperience(resolvedPaymentMethodType)
 }
