@@ -80,7 +80,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr edit ${{ github.event.pull_request.number }} --add-label 'S-conventions-not-followed'
+          gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --add-label 'S-conventions-not-followed'
           echo "::error::PR title does not follow conventional commit standards"
           exit 1
 
@@ -90,4 +90,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr edit ${{ github.event.pull_request.number }} --remove-label 'S-conventions-not-followed'
+          gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --remove-label 'S-conventions-not-followed'
