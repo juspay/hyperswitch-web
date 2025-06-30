@@ -1,5 +1,6 @@
 open PaymentType
 open Utils
+open PaymentUtils
 
 let cardsToRender = (width: int) => {
   let minWidth = 130
@@ -33,7 +34,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
   let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
-    PaymentUtils.paymentMethodListValue,
+    paymentMethodListValue,
   )
 
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
@@ -110,7 +111,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
 
         let sortSavedMethodsBasedOnPriority =
-          finalSavedPaymentMethods->PaymentUtils.sortCustomerMethodsBasedOnPriority(
+          finalSavedPaymentMethods->sortCustomerMethodsBasedOnPriority(
             paymentOrder,
             ~displayDefaultSavedPaymentIcon,
           )
@@ -167,7 +168,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [savedMethods])
 
-  let (walletList, paymentOptionsList, actualList) = PaymentUtils.useGetPaymentMethodList(
+  let (walletList, paymentOptionsList, actualList) = useGetPaymentMethodList(
     ~paymentOptions,
     ~paymentType,
     ~sessions,
@@ -304,9 +305,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     selectedOption,
     showCardFormByDefault,
   ))
-  let checkRenderOrComp = () => {
-    walletOptions->Array.includes("paypal") || isShowOrPayUsing
-  }
 
   let loader = () => {
     handlePostMessageEvents(
@@ -506,7 +504,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <RenderIf
           condition={paymentOptions->Array.length > 0 &&
           walletOptions->Array.length > 0 &&
-          checkRenderOrComp()}>
+          checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
           <Or />
         </RenderIf>
         {switch layoutClass.\"type" {

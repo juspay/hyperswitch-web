@@ -23,6 +23,10 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
   paymentMethodListValue.paymentMethodsEnabled->Array.forEach(item => {
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodType) {
       otherPaymentList->Array.push(item.paymentMethodType)->ignore
+    } else if item.paymentMethodType == "wallet" {
+      if item.paymentMethodSubtype !== "paypal" {
+        walletsList->Array.push(item.paymentMethodSubtype)->ignore
+      }
     } else if item.paymentMethodType == "bank_redirect" {
       otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
     } else if item.paymentMethodType == "bank_debit" {
@@ -43,19 +47,26 @@ let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mo
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let paymentsList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
 
-  React.useMemo(() => {
-    let resolvePaymentList = list =>
-      switch list {
-      | LoadedV2(paymentlist) =>
-        let {otherPaymentList} = paymentListLookupNew(~paymentMethodListValue=paymentlist)
-        ([...paymentOptions, ...otherPaymentList]->removeDuplicate, otherPaymentList)
-      | _ => ([], [])
-      }
+  let resolvePaymentList = list => {
+    switch list {
+    | LoadedV2(paymentlist) =>
+      let {walletsList, otherPaymentList} = paymentListLookupNew(
+        ~paymentMethodListValue=paymentlist,
+      )
+      let wallets = walletsList->removeDuplicate->Utils.getWalletPaymentMethod(paymentType)
+      let payments = [...paymentOptions, ...otherPaymentList]->removeDuplicate
 
-    switch paymentType {
-    | Payment => resolvePaymentList(paymentsList)
-    | _ => resolvePaymentList(methodslist)
+      (wallets, payments, otherPaymentList)
+    | _ => ([], [], [])
     }
+  }
+
+  React.useMemo(() => {
+    let listToUse = switch paymentType {
+    | Payment => paymentsList
+    | _ => methodslist
+    }
+    resolvePaymentList(listToUse)
   }, (methodslist, paymentType))
 }
 

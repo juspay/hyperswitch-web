@@ -1,6 +1,7 @@
 open PaymentType
 open RecoilAtoms
 open Utils
+open PaymentUtils
 
 let cardsToRender = (width: int) => {
   let minWidth = 130
@@ -15,13 +16,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
-    PaymentUtils.paymentManagementListValue,
+    paymentManagementListValue,
   )
   let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let (vaultMode, setVaultMode) = Recoil.useRecoilState(RecoilAtomsV2.vaultMode)
   let setPaymentsListValue = Recoil.useSetRecoilState(RecoilAtomsV2.paymentsListValue)
+  let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
-  let (walletOptions, _setWalletOptions) = React.useState(_ => [])
+  let (walletOptions, setWalletOptions) = React.useState(_ => [])
 
   let (cardsContainerWidth, setCardsContainerWidth) = React.useState(_ => 0)
   let layoutClass = CardUtils.getLayoutClass(layout)
@@ -32,9 +34,22 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
 
-  let (paymentOptionsList, actualList) = PaymentUtilsV2.useGetPaymentMethodListV2(
+  let (walletsList, paymentOptionsList, actualList) = PaymentUtilsV2.useGetPaymentMethodListV2(
     ~paymentOptions,
     ~paymentType,
+  )
+
+  let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
+  let sessionsDict = sessions->getDictFromJson
+  let sessionObj = SessionsType.itemToObjMapper(sessionsDict, Others)
+  let gPayToken = SessionsType.getPaymentSessionObj(sessionObj.sessionsToken, Gpay)
+  let googlePayThirdPartySessionObj = SessionsType.itemToObjMapper(
+    sessionsDict,
+    GooglePayThirdPartyObject,
+  )
+  let googlePayThirdPartyToken = SessionsType.getPaymentSessionObj(
+    googlePayThirdPartySessionObj.sessionsToken,
+    Gpay,
   )
 
   React.useEffect0(() => {
@@ -45,6 +60,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   React.useEffect(() => {
     let vaultName = VaultHelpers.getVaultName(sessionToken)
     setVaultMode(_ => vaultName->VaultHelpers.getVaultModeFromName)
+    switch sessionToken {
+    | Loaded(val) => setSessions(_ => val)
+    | _ => ()
+    }
     None
   }, [sessionToken])
 
@@ -58,6 +77,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       updatePaymentOptions()
       setPaymentManagementListValue(_ => paymentlist)
     | (_, LoadedV2(paymentlist)) =>
+      setWalletOptions(_ => walletsList)
       updatePaymentOptions()
       setPaymentsListValue(_ => paymentlist)
     | (LoadErrorV2(_), _)
@@ -169,11 +189,51 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         | Hyperswitch => <CardIframeContainer />
         | None => <CardPayment cardProps expiryProps cvcProps />
         }
+      | GooglePay =>
+        <SessionPaymentWrapper type_={Wallet}>
+          {switch gPayToken {
+          | OtherTokenOptional(optToken) =>
+            <ReusableReactSuspense loaderComponent={loader()} componentName="GPayLazy">
+              {switch googlePayThirdPartyToken {
+              | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
+                <GPayLazy
+                  sessionObj=optToken thirdPartySessionObj=googlePayThirdPartyOptToken walletOptions
+                />
+              | _ => <GPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions />
+              }}
+            </ReusableReactSuspense>
+          | _ => React.null
+          }}
+        </SessionPaymentWrapper>
       | SepaBankDebit =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
           <SepaBankDebitLazy />
         </ReusableReactSuspense>
-      | _ =>
+      | Klarna
+      | Sofort
+      | AfterPay
+      | Affirm
+      | GiroPay
+      | Ideal
+      | EPS
+      | CryptoCurrency
+      | ACHTransfer
+      | SepaTransfer
+      | InstantTransfer
+      | InstantTransferFinland
+      | InstantTransferPoland
+      | BacsTransfer
+      | ACHBankDebit
+      | BacsBankDebit
+      | BecsBankDebit
+      | BanContactCard
+      | ApplePay
+      | RevolutPay
+      | SamsungPay
+      | Boleto
+      | PayPal
+      | EFT
+      | Unknown =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
         </ReusableReactSuspense>
@@ -208,6 +268,18 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     </RenderIf>
     <RenderIf condition={paymentOptions->Array.length > 0 || walletOptions->Array.length > 0}>
       <div className="flex flex-col place-items-center">
+        <ErrorBoundary
+          key="payment_request_buttons_all"
+          level={ErrorBoundary.RequestButton}
+          componentName="PaymentRequestButtonElement">
+          <PaymentRequestButtonElement sessions walletOptions />
+        </ErrorBoundary>
+        <RenderIf
+          condition={paymentOptions->Array.length > 0 &&
+          walletOptions->Array.length > 0 &&
+          checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
+          <Or />
+        </RenderIf>
         {switch layoutClass.\"type" {
         | Tabs =>
           <PaymentOptions
