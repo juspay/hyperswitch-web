@@ -1,6 +1,7 @@
 open PaymentType
 open RecoilAtoms
 open Utils
+open PaymentUtils
 
 let cardsToRender = (width: int) => {
   let minWidth = 130
@@ -15,7 +16,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let (paymentManagementListValue, setPaymentManagementListValue) = Recoil.useRecoilState(
-    PaymentUtils.paymentManagementListValue,
+    paymentManagementListValue,
   )
   let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let (vaultMode, setVaultMode) = Recoil.useRecoilState(RecoilAtomsV2.vaultMode)
@@ -228,10 +229,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [paymentManagementList, paymentMethodsListV2])
 
-  let checkRenderOrComp = () => {
-    walletOptions->Array.includes("paypal") || isShowOrPayUsing
-  }
-
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div className="text-2xl font-semibold text-[#151619] mb-6">
@@ -249,7 +246,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <RenderIf
           condition={paymentOptions->Array.length > 0 &&
           walletOptions->Array.length > 0 &&
-          checkRenderOrComp()}>
+          checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
           <Or />
         </RenderIf>
         {switch layoutClass.\"type" {
