@@ -45,25 +45,26 @@ let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mo
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let paymentsList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
 
-  React.useMemo(() => {
-    let resolvePaymentList = list =>
-      switch list {
-      | LoadedV2(paymentlist) =>
-        let {walletsList, otherPaymentList} = paymentListLookupNew(
-          ~paymentMethodListValue=paymentlist,
-        )
-        (
-          walletsList->removeDuplicate->Utils.getWalletPaymentMethod(paymentType),
-          [...paymentOptions, ...otherPaymentList]->removeDuplicate,
-          otherPaymentList,
-        )
-      | _ => ([], [], [])
-      }
+  let resolvePaymentList = list => {
+    switch list {
+    | LoadedV2(paymentlist) =>
+      let {walletsList, otherPaymentList} = paymentListLookupNew(
+        ~paymentMethodListValue=paymentlist,
+      )
+      let wallets = walletsList->removeDuplicate->Utils.getWalletPaymentMethod(paymentType)
+      let payments = [...paymentOptions, ...otherPaymentList]->removeDuplicate
 
-    switch paymentType {
-    | Payment => resolvePaymentList(paymentsList)
-    | _ => resolvePaymentList(methodslist)
+      (wallets, payments, otherPaymentList)
+    | _ => ([], [], [])
     }
+  }
+
+  React.useMemo(() => {
+    let listToUse = switch paymentType {
+    | Payment => paymentsList
+    | _ => methodslist
+    }
+    resolvePaymentList(listToUse)
   }, (methodslist, paymentType))
 }
 
