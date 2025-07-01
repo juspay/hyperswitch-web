@@ -35,6 +35,8 @@ type voucherDetails = {
 
 type nextAction = {
   redirectToUrl: string,
+  popupUrl: string,
+  redirectResponseUrl: string,
   type_: string,
   bank_transfer_steps_and_charges_details: option<JSON.t>,
   session_token: option<JSON.t>,
@@ -43,6 +45,9 @@ type nextAction = {
   voucher_details: option<voucherDetails>,
   display_to_timestamp: option<float>,
   next_action_data: option<JSON.t>,
+  display_text: option<string>,
+  border_color: option<string>,
+  iframe_data: option<JSON.t>,
 }
 type intent = {
   nextAction: nextAction,
@@ -62,6 +67,8 @@ let defaultRedirectTourl = {
 }
 let defaultNextAction = {
   redirectToUrl: "",
+  popupUrl: "",
+  redirectResponseUrl: "",
   type_: "",
   bank_transfer_steps_and_charges_details: None,
   session_token: None,
@@ -70,6 +77,9 @@ let defaultNextAction = {
   voucher_details: None,
   display_to_timestamp: None,
   next_action_data: None,
+  display_text: None,
+  border_color: None,
+  iframe_data: None,
 }
 let defaultIntent = {
   nextAction: defaultNextAction,
@@ -134,6 +144,8 @@ let getNextAction = (dict, str) => {
   ->Option.map(json => {
     {
       redirectToUrl: getString(json, "redirect_to_url", ""),
+      popupUrl: getString(json, "popup_url", ""),
+      redirectResponseUrl: getString(json, "redirect_response_url", ""),
       type_: getString(json, "type", ""),
       bank_transfer_steps_and_charges_details: Some(
         getJsonObjFromDict(
@@ -164,6 +176,9 @@ let getNextAction = (dict, str) => {
         ->Option.map(json => json->getVoucherDetails)
       },
       next_action_data: Some(json->getDictFromDict("next_action_data")->JSON.Encode.object),
+      display_text: json->getOptionString("display_text"),
+      border_color: json->getOptionString("border_color"),
+      iframe_data: Some(json->Utils.getJsonObjectFromDict("iframe_data")),
     }
   })
   ->Option.getOr(defaultNextAction)

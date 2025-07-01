@@ -1,4 +1,8 @@
 let paymentMethodListValue = Recoil.atom("paymentMethodListValue", PaymentMethodsRecord.defaultList)
+let paymentManagementListValue = Recoil.atom(
+  "paymentManagementListValue",
+  UnifiedHelpersV2.defaultPaymentsList,
+)
 
 let paymentListLookupNew = (
   list: PaymentMethodsRecord.paymentMethodList,
@@ -10,6 +14,7 @@ let paymentListLookupNew = (
   ~areAllGooglePayRequiredFieldsPrefilled,
   ~isGooglePayReady,
   ~shouldDisplayApplePayInTabs,
+  ~shouldDisplayPayPalInTabs,
 ) => {
   let pmList = list->PaymentMethodsRecord.buildFromPaymentList
   let walletsList = []
@@ -27,13 +32,17 @@ let paymentListLookupNew = (
     "gcash",
     "momo",
     "touch_n_go",
-    "samsung_pay",
     "mifinity",
+    "revolut_pay",
   ]
   let otherPaymentList = []
 
   if shouldDisplayApplePayInTabs {
     walletToBeDisplayedInTabs->Array.push("apple_pay")
+  }
+
+  if shouldDisplayPayPalInTabs {
+    walletToBeDisplayedInTabs->Array.push("paypal")
   }
 
   if (
@@ -53,7 +62,10 @@ let paymentListLookupNew = (
       }
     } else if item.methodType == "bank_debit" {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_debit")->ignore
-    } else if item.methodType == "bank_transfer" {
+    } else if (
+      item.methodType === "bank_transfer" &&
+        !(Constants.bankTransferList->Array.includes(item.paymentMethodName))
+    ) {
       otherPaymentList->Array.push(item.paymentMethodName ++ "_transfer")->ignore
     } else if item.methodType == "card" {
       otherPaymentList->Array.push("card")->ignore
@@ -70,6 +82,7 @@ let paymentListLookupNew = (
         let isInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
         let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
 
+        // To be fixed for Klarna Checkout - PR - https://github.com/juspay/hyperswitch-web/pull/851
         if isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience {
           walletsList->Array.push(item.paymentMethodName)->ignore
         } else if isRedirectExperience {
@@ -91,8 +104,8 @@ type exp = Redirect | SDK
 type paylater = Klarna(exp) | AfterPay(exp) | Affirm(exp)
 type wallet = Gpay(exp) | ApplePay(exp) | Paypal(exp)
 type card = Credit(exp) | Debit(exp)
-type banks = Sofort | Eps | GiroPay | Ideal
-type transfer = ACH | Sepa | Bacs
+type banks = Sofort | Eps | GiroPay | Ideal | EFT
+type transfer = ACH | Sepa | Bacs | Instant
 type connectorType =
   | PayLater(paylater)
   | Wallets(wallet)
@@ -135,6 +148,7 @@ let getMethodType = method => {
     | Eps => "eps"
     | GiroPay => "giropay"
     | Ideal => "ideal"
+    | EFT => "eft"
     }
   | BankDebit(val)
   | BankTransfer(val) =>
@@ -142,6 +156,7 @@ let getMethodType = method => {
     | ACH => "ach"
     | Bacs => "bacs"
     | Sepa => "sepa"
+    | Instant => "instant"
     }
   | Crypto => "crypto_currency"
   }
@@ -242,7 +257,10 @@ let getDisplayNameAndIcon = (
 let getPaymentMethodName = (~paymentMethodType, ~paymentMethodName) => {
   if paymentMethodType == "bank_debit" {
     paymentMethodName->String.replace("_debit", "")
-  } else if paymentMethodType == "bank_transfer" {
+  } else if (
+    paymentMethodType === "bank_transfer" &&
+      !(Constants.bankTransferList->Array.includes(paymentMethodName))
+  ) {
     paymentMethodName->String.replace("_transfer", "")
   } else {
     paymentMethodName
@@ -305,6 +323,32 @@ let getIsKlarnaSDKFlow = sessions => {
   }
 }
 
+let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
+  open Utils
+
+  let sessionObj =
+    sessions
+    ->getDictFromJson
+    ->SessionsType.itemToObjMapper(Others)
+
+  let {
+    paypalToken,
+    isPaypalSDKFlow,
+    isPaypalRedirectFlow,
+  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
+
+  let isPaypalTokenExist = switch paypalToken {
+  | OtherTokenOptional(optToken) =>
+    switch optToken {
+    | Some(_) => true
+    | _ => false
+    }
+  | _ => false
+  }
+
+  (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist)
+}
+
 let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
@@ -332,8 +376,19 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     ~paymentMethodType="google_pay",
   )
 
+  let areAllPaypalRequiredFieldsPreFilled = useAreAllRequiredFieldsPrefilled(
+    ~paymentMethodListValue,
+    ~paymentMethod="wallet",
+    ~paymentMethodType="paypal",
+  )
+
   let isApplePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isApplePayReady)
   let isGooglePayReady = Recoil.useRecoilValueFromAtom(RecoilAtoms.isGooglePayReady)
+
+  let (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist) = usePaypalFlowStatus(
+    ~sessions,
+    ~paymentMethodListValue,
+  )
 
   React.useMemo(() => {
     switch methodslist {
@@ -347,16 +402,26 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
         !areAllApplePayRequiredFieldsPrefilled &&
         isApplePayReady
 
+      let isShowPaypal = optionAtomValue.wallets.payPal === Auto
+
+      let shouldDisplayPayPalInTabs =
+        isShowPaypal &&
+        !paymentMethodListValue.collect_billing_details_from_wallets &&
+        !areAllPaypalRequiredFieldsPreFilled &&
+        isPaypalRedirectFlow &&
+        (!isPaypalSDKFlow || !isPaypalTokenExist)
+
       let (wallets, otherOptions) =
         plist->paymentListLookupNew(
           ~order=paymentOrder,
-          ~isShowPaypal=optionAtomValue.wallets.payPal === Auto,
+          ~isShowPaypal,
           ~isShowKlarnaOneClick=optionAtomValue.wallets.klarna === Auto,
           ~isKlarnaSDKFlow,
           ~paymentMethodListValue=plist,
           ~areAllGooglePayRequiredFieldsPrefilled,
           ~isGooglePayReady,
           ~shouldDisplayApplePayInTabs,
+          ~shouldDisplayPayPalInTabs,
         )
 
       let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
@@ -402,28 +467,22 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     areAllGooglePayRequiredFieldsPrefilled,
     isApplePayReady,
     isGooglePayReady,
+    showCardFormByDefault,
   ))
 }
 
 let useStatesJson = setStatesJson => {
-  React.useEffect0(_ => {
-    let fetchStates = async () => {
-      try {
-        let res = await AddressPaymentInput.importStates("./../States.json")
-        setStatesJson(_ => res.states)
-      } catch {
-      | err => Console.error2("Error importing states:", err)
-      }
-    }
+  let stateList = CountryStateDataRefs.stateDataRef.contents
 
-    fetchStates()->ignore
+  React.useEffect0(_ => {
+    setStatesJson(_ => stateList)
     None
   })
 }
 
 let getStateJson = async _ => {
   try {
-    let res = await AddressPaymentInput.importStates("./../States.json")
+    let res = await S3Utils.getCountryStateData()
     res.states
   } catch {
   | err =>
@@ -503,10 +562,9 @@ let getSupportedCardBrands = (paymentMethodListValue: PaymentMethodsRecord.payme
   }
 }
 
-let checkIsCardSupported = (cardNumber, supportedCardBrands) => {
-  let cardBrand = cardNumber->CardUtils.getCardBrand
+let checkIsCardSupported = (cardNumber, cardBrand, supportedCardBrands) => {
   let clearValue = cardNumber->CardUtils.clearSpaces
-  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
+  if cardBrand == "" {
     Some(CardUtils.cardValid(clearValue, cardBrand))
   } else if CardUtils.cardValid(clearValue, cardBrand) {
     switch supportedCardBrands {
@@ -516,4 +574,78 @@ let checkIsCardSupported = (cardNumber, supportedCardBrands) => {
   } else {
     None
   }
+}
+
+let emitMessage = paymentMethodInfo =>
+  Utils.messageParentWindow([("paymentMethodInfo", paymentMethodInfo->JSON.Encode.object)])
+
+let emitPaymentMethodInfo = (~paymentMethod, ~paymentMethodType, ~cardBrand=CardUtils.NOTFOUND) => {
+  if cardBrand === CardUtils.NOTFOUND {
+    emitMessage(
+      [
+        ("paymentMethod", paymentMethod->JSON.Encode.string),
+        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+      ]->Dict.fromArray,
+    )
+  } else {
+    emitMessage(
+      [
+        ("paymentMethod", paymentMethod->JSON.Encode.string),
+        ("paymentMethodType", paymentMethodType->JSON.Encode.string),
+        ("cardBrand", cardBrand->CardUtils.getCardStringFromType->JSON.Encode.string),
+      ]->Dict.fromArray,
+    )
+  }
+}
+
+let useEmitPaymentMethodInfo = (
+  ~paymentMethodName,
+  ~paymentMethods: array<PaymentMethodsRecord.methods>,
+  ~cardBrand,
+) => {
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+
+  React.useEffect(() => {
+    if paymentMethodName->String.includes("_debit") {
+      emitPaymentMethodInfo(~paymentMethod="bank_debit", ~paymentMethodType=paymentMethodName)
+    } else if paymentMethodName->String.includes("_transfer") {
+      emitPaymentMethodInfo(~paymentMethod="bank_transfer", ~paymentMethodType=paymentMethodName)
+    } else if paymentMethodName === "card" {
+      emitPaymentMethodInfo(
+        ~paymentMethod="card",
+        ~paymentMethodType="debit",
+        ~cardBrand=cardBrand->CardUtils.getCardType,
+      )
+    } else {
+      let finalOptionalPaymentMethodTypeValue =
+        paymentMethods
+        ->Array.filter(paymentMethodData =>
+          paymentMethodData.payment_method_types
+          ->Array.filter(
+            paymentMethodType => paymentMethodType.payment_method_type === paymentMethodName,
+          )
+          ->Array.length > 0
+        )
+        ->Array.get(0)
+
+      switch finalOptionalPaymentMethodTypeValue {
+      | Some(finalPaymentMethodType) =>
+        emitPaymentMethodInfo(
+          ~paymentMethod=finalPaymentMethodType.payment_method,
+          ~paymentMethodType=paymentMethodName,
+        )
+      | None =>
+        loggerState.setLogError(
+          ~value="Payment method type not found",
+          ~eventName=PAYMENT_METHOD_TYPE_DETECTION_FAILED,
+        )
+      }
+    }
+
+    None
+  }, (paymentMethodName, cardBrand, paymentMethods))
+}
+
+let checkRenderOrComp = (~walletOptions, isShowOrPayUsing) => {
+  walletOptions->Array.includes("paypal") || isShowOrPayUsing
 }

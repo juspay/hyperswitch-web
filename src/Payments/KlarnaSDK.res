@@ -12,6 +12,7 @@ let make = (~sessionObj: SessionsType.token) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
+  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
@@ -22,9 +23,8 @@ let make = (~sessionObj: SessionsType.token) => {
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
 
   let setAreOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
-  let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
 
-  let (_, _, _, heightType) = options.wallets.style.height
+  let (_, _, _, heightType, _) = options.wallets.style.height
   let height = switch heightType {
   | Klarna(val) => val
   | _ => 48
@@ -40,8 +40,6 @@ let make = (~sessionObj: SessionsType.token) => {
     ~paymentMethodType="klarna",
   )
 
-  PaymentUtils.useStatesJson(setStatesJson)
-
   UtilityHooks.useHandlePostMessages(
     ~complete=isCompleted,
     ~empty=!isCompleted,
@@ -49,11 +47,7 @@ let make = (~sessionObj: SessionsType.token) => {
   )
 
   React.useEffect(() => {
-    if (
-      status === "ready" &&
-      stateJson !== JSON.Encode.null &&
-      paymentMethodTypes !== PaymentMethodsRecord.defaultPaymentMethodType
-    ) {
+    if status === "ready" && paymentMethodTypes !== PaymentMethodsRecord.defaultPaymentMethodType {
       let klarnaWrapper = GooglePayType.getElementById(Utils.document, "klarna-payments")
       klarnaWrapper.innerHTML = ""
       klarnaInit.init({
@@ -66,6 +60,7 @@ let make = (~sessionObj: SessionsType.token) => {
           theme: options.wallets.style.theme == Dark ? "default" : "outlined",
           shape: "default",
           on_click: authorize => {
+            PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="klarna")
             makeOneClickHandlerPromise(sdkHandleIsThere)->then(
               result => {
                 let result = result->JSON.Decode.bool->Option.getOr(false)
@@ -91,7 +86,6 @@ let make = (~sessionObj: SessionsType.token) => {
                       let requiredFieldsBody = DynamicFieldsUtils.getKlarnaRequiredFields(
                         ~shippingContact,
                         ~paymentMethodTypes,
-                        ~statesList=stateJson,
                       )
 
                       let klarnaSDKBody = PaymentBody.klarnaSDKbody(
@@ -134,9 +128,17 @@ let make = (~sessionObj: SessionsType.token) => {
       )
     }
     None
-  }, (status, stateJson, paymentMethodTypes))
+  }, (status, paymentMethodTypes))
 
-  <div style={height: `${height->Int.toString}px`} id="klarna-payments" className="w-full" />
+  <div
+    style={
+      height: `${height->Int.toString}px`,
+      pointerEvents: updateSession ? "none" : "auto",
+      opacity: updateSession ? "0.5" : "1.0",
+    }
+    id="klarna-payments"
+    className="w-full"
+  />
 }
 
 let default = make

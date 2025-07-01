@@ -8,7 +8,7 @@ let getCustomerSavedPaymentMethods = (
   ~endpoint,
   ~logger,
   ~customPodUri,
-  ~shouldUseTopRedirection,
+  ~redirectionFlags,
 ) => {
   open ApplePayTypes
   open GooglePayType
@@ -19,7 +19,7 @@ let getCustomerSavedPaymentMethods = (
     ~publishableKey,
     ~endpoint,
     ~customPodUri,
-    ~optLogger=Some(logger),
+    ~logger,
     ~isPaymentSession=true,
   )
   ->then(customerDetails => {
@@ -116,7 +116,7 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
-            ~shouldUseTopRedirection,
+            ~redirectionFlags,
           )
         }
       | None =>
@@ -138,12 +138,11 @@ let getCustomerSavedPaymentMethods = (
         let billingContactDict = payment.billingContact->Utils.getDictFromJson
         let shippingContactDict = payment.shippingContact->Utils.getDictFromJson
 
-        let completeApplePayPayment = stateJson => {
+        let completeApplePayPayment = () => {
           let applePayBody = ApplePayHelpers.getApplePayFromResponse(
             ~token,
             ~billingContactDict,
             ~shippingContactDict,
-            ~stateJson,
             ~connectors=[],
             ~isPaymentSession=true,
           )
@@ -165,28 +164,14 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
-            ~shouldUseTopRedirection,
+            ~redirectionFlags,
           )->then(val => {
             val->resolvePromise
             resolve()
           })
         }
 
-        PaymentUtils.getStateJson()
-        ->then(stateJson => {
-          logger.setLogInfo(
-            ~value="States Loaded",
-            ~eventName=APPLE_PAY_FLOW,
-            ~paymentMethod="APPLE_PAY",
-          )
-          stateJson->completeApplePayPayment
-        })
-        ->catch(err => {
-          let value = "Error Loading States : " ++ err->Identity.anyTypeToJson->JSON.stringify
-          logger.setLogInfo(~value, ~eventName=APPLE_PAY_FLOW, ~paymentMethod="APPLE_PAY")
-          completeApplePayPayment(JSON.Encode.null)
-        })
-        ->ignore
+        completeApplePayPayment()->ignore
       }
 
       ApplePayHelpers.startApplePaySession(
@@ -214,12 +199,11 @@ let getCustomerSavedPaymentMethods = (
         let value = "Payment Data Filled: New Payment Method"
         logger.setLogInfo(~value, ~eventName=PAYMENT_DATA_FILLED, ~paymentMethod="GOOGLE_PAY")
 
-        let completeGooglePayPayment = stateJson => {
+        let completeGooglePayPayment = () => {
           let body = GooglePayHelpers.getGooglePayBodyFromResponse(
             ~gPayResponse=metadata,
             ~isGuestCustomer,
             ~connectors=[],
-            ~stateJson,
             ~isPaymentSession=true,
           )
 
@@ -234,28 +218,11 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
-            ~shouldUseTopRedirection,
+            ~redirectionFlags,
           )
         }
 
-        PaymentUtils.getStateJson()
-        ->then(
-          stateJson => {
-            logger.setLogInfo(
-              ~value="States Loaded",
-              ~eventName=GOOGLE_PAY_FLOW,
-              ~paymentMethod="GOOGLE_PAY",
-            )
-            stateJson->completeGooglePayPayment
-          },
-        )
-        ->catch(
-          err => {
-            let value = "Error Loading States : " ++ err->Identity.anyTypeToJson->JSON.stringify
-            logger.setLogInfo(~value, ~eventName=GOOGLE_PAY_FLOW, ~paymentMethod="GOOGLE_PAY")
-            completeGooglePayPayment(JSON.Encode.null)
-          },
-        )
+        completeGooglePayPayment()
       })
       ->catch(err => {
         logger.setLogInfo(
@@ -309,7 +276,7 @@ let getCustomerSavedPaymentMethods = (
             ~clientSecret,
             ~logger,
             ~customPodUri,
-            ~shouldUseTopRedirection,
+            ~redirectionFlags,
           )
         }
       | None =>
@@ -342,7 +309,7 @@ let getCustomerSavedPaymentMethods = (
       PaymentHelpers.fetchSessions(
         ~clientSecret,
         ~publishableKey,
-        ~optLogger=Some(logger),
+        ~logger,
         ~customPodUri,
         ~endpoint,
       )
@@ -423,6 +390,17 @@ let getCustomerSavedPaymentMethods = (
             resolve()
           },
         )
+        ->catch(
+          err => {
+            logger.setLogInfo(
+              ~value=err->Identity.anyTypeToJson->JSON.stringify,
+              ~eventName=GOOGLE_PAY_FLOW,
+              ~paymentMethod="GOOGLE_PAY",
+              ~logType=DEBUG,
+            )
+            resolve()
+          },
+        )
         ->ignore
 
         switch applePayToken {
@@ -481,12 +459,7 @@ let getCustomerSavedPaymentMethods = (
 
 let getPaymentManagementMethods = (~ephemeralKey, ~logger, ~customPodUri, ~endpoint) => {
   let getSavedPaymentManagementMethodsList = _ => {
-    PaymentHelpers.fetchSavedPaymentMethodList(
-      ~ephemeralKey,
-      ~optLogger=Some(logger),
-      ~customPodUri,
-      ~endpoint,
-    )
+    PaymentHelpers.fetchSavedPaymentMethodList(~ephemeralKey, ~logger, ~customPodUri, ~endpoint)
     ->then(response => {
       response->resolve
     })

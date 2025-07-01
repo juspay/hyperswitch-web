@@ -597,7 +597,7 @@ let defaultStatusInfo = {
   reason: None,
 }
 
-let itemToObjMapper = (dict, logger) => {
+let itemToObjMapper = dict => {
   unknownKeysWarning(
     [
       "enabledPaymentMethods",
@@ -616,7 +616,6 @@ let itemToObjMapper = (dict, logger) => {
     ],
     dict,
     "options",
-    ~logger,
   )
   let (enabledPaymentMethods, enabledPaymentMethodsWithDynamicFields) = switch dict->Dict.get(
     "enabledPaymentMethods",
@@ -642,10 +641,10 @@ let itemToObjMapper = (dict, logger) => {
   }
 }
 
-let calculateValidity = (key, value, ~default=None) => {
+let calculateValidity = (key, value, cardBrand, ~default=None) => {
   switch key {
   | PayoutMethodData(CardNumber) =>
-    if cardNumberInRange(value)->Array.includes(true) && calculateLuhn(value) {
+    if cardNumberInRange(value, cardBrand)->Array.includes(true) && calculateLuhn(value) {
       Some(true)
     } else if value->String.length == 0 {
       default
@@ -815,7 +814,7 @@ let processAddressFields = (
           let lastName =
             nameSplits
             ->Array.slice(~start=1, ~end=nameSplits->Array.length)
-            ->Array.joinWith(" ")
+            ->Array.join(" ")
           if lastName->String.length > 0 {
             dataArr->Array.push((info, lastName))
             // Use first name as last name ?
@@ -966,7 +965,7 @@ let getPayoutDynamicFields = (
     }
   })
 
-let getDefaultsAndValidity = payoutDynamicFields => {
+let getDefaultsAndValidity = (payoutDynamicFields, supportedCardBrands) => {
   payoutDynamicFields.address
   ->Option.map(address => {
     address->Array.reduce((Dict.make(), Dict.make()), ((values, validity), field) => {
@@ -977,7 +976,15 @@ let getDefaultsAndValidity = payoutDynamicFields => {
       ->Option.map(
         value => {
           let key = BillingAddress(field.fieldType)
-          let isValid = calculateValidity(key, value)
+          let validCardBrand = getFirstValidCardSchemeFromPML(
+            ~cardNumber=value,
+            ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
+          )
+          let newCardBrand = switch validCardBrand {
+          | Some(brand) => brand
+          | None => value->CardUtils.getCardBrand
+          }
+          let isValid = calculateValidity(key, value, newCardBrand)
           let keyStr = key->getPaymentMethodDataFieldKey
           values->Dict.set(keyStr, value)
           validity->Dict.set(keyStr, isValid)
@@ -995,7 +1002,15 @@ let getDefaultsAndValidity = payoutDynamicFields => {
       switch field.value {
       | Some(value) => {
           let key = PayoutMethodData(field.fieldType)
-          let isValid = calculateValidity(key, value)
+          let validCardBrand = getFirstValidCardSchemeFromPML(
+            ~cardNumber=value,
+            ~enabledCardSchemes=supportedCardBrands->Option.getOr([]),
+          )
+          let newCardBrand = switch validCardBrand {
+          | Some(brand) => brand
+          | None => value->CardUtils.getCardBrand
+          }
+          let isValid = calculateValidity(key, value, newCardBrand)
           let keyStr = key->getPaymentMethodDataFieldKey
           values->Dict.set(keyStr, value)
           validity->Dict.set(keyStr, isValid)

@@ -57,13 +57,25 @@ module Loader = {
   }
 }
 @react.component
-let make = (~paymentOptions: array<string>, ~checkoutEle: React.element) => {
+let make = (
+  ~paymentOptions: array<string>,
+  ~checkoutEle: React.element,
+  ~cardProps: CardUtils.cardProps,
+) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
   let (showMore, setShowMore) = React.useState(_ => false)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let {cardBrand} = cardProps
+
+  PaymentUtils.useEmitPaymentMethodInfo(
+    ~paymentMethodName=selectedOption,
+    ~paymentMethods=paymentMethodListValue.payment_methods,
+    ~cardBrand,
+  )
 
   let cardOptionDetails =
     paymentOptions

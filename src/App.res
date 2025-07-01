@@ -1,15 +1,34 @@
 @react.component
 let make = () => {
+  open CardUtils
+
   let url = RescriptReactRouter.useUrl()
   let (integrateError, setIntegrateErrorError) = React.useState(() => false)
   let setLoggerState = Recoil.useSetRecoilState(RecoilAtoms.loggerAtom)
 
-  let paymentMode = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
+  let paymentMode = getQueryParamsDictforKey(url.search, "componentName")
   let paymentType = paymentMode->CardThemeType.getPaymentMode
+
+  let networkStatus = NetworkInformation.useNetworkInformation()
   let (logger, initTimestamp) = React.useMemo0(() => {
     (HyperLogger.make(~source=Elements(paymentType)), Date.now())
   })
-  let fullscreenMode = CardUtils.getQueryParamsDictforKey(url.search, "fullscreenType")
+
+  React.useEffect1(() => {
+    switch networkStatus {
+    | Value(val) =>
+      logger.setLogInfo(
+        ~value=val->Identity.anyTypeToJson->JSON.stringify,
+        ~eventName=NETWORK_STATE,
+        ~logType=DEBUG,
+      )
+    | NOT_AVAILABLE => ()
+    }
+
+    None
+  }, [networkStatus])
+
+  let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
 
   React.useEffect(() => {
     setLoggerState(_ => logger)
@@ -34,7 +53,7 @@ let make = () => {
               logger,
             )
 
-            CardUtils.generateFontsLink(config.fonts)
+            generateFontsLink(config.fonts)
             let dict = config.appearance.rules->Utils.getDictFromJson
             if dict->Dict.toArray->Array.length > 0 {
               Utils.generateStyleSheet("", dict, "mystyle")
@@ -56,36 +75,48 @@ let make = () => {
   | _ =>
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
+    | "clickToPayLearnMore" => <ClickToPayLearnMore />
     | "plaidSDK" => <PlaidSDKIframe />
-    | "pazeWallet" => <PazeWallet />
+    | "pazeWallet" => <PazeWallet logger />
     | "fullscreen" =>
       <div id="fullscreen">
         <FullScreenDivDriver />
       </div>
     | "qrData" => <QRCodeDisplay />
     | "3dsAuth" => <ThreeDSAuth />
+    | "redsys3ds" => <Redsys3ds />
     | "3ds" => <ThreeDSMethod />
     | "voucherData" => <VoucherDisplay />
+    | "cardVault" => <CardVault />
+    | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
     | "preMountLoader" => {
-        let clientSecret = CardUtils.getQueryParamsDictforKey(url.search, "clientSecret")
-        let sessionId = CardUtils.getQueryParamsDictforKey(url.search, "sessionId")
-        let publishableKey = CardUtils.getQueryParamsDictforKey(url.search, "publishableKey")
-        let endpoint = CardUtils.getQueryParamsDictforKey(url.search, "endpoint")
-        let ephemeralKey = CardUtils.getQueryParamsDictforKey(url.search, "ephemeralKey")
+        let paymentId = getQueryParamsDictforKey(url.search, "paymentId")
+        let clientSecret = getQueryParamsDictforKey(url.search, "clientSecret")
+        let sessionId = getQueryParamsDictforKey(url.search, "sessionId")
+        let publishableKey = getQueryParamsDictforKey(url.search, "publishableKey")
+        let profileId = getQueryParamsDictforKey(url.search, "profileId")
+        let endpoint = getQueryParamsDictforKey(url.search, "endpoint")
+        let ephemeralKey = getQueryParamsDictforKey(url.search, "ephemeralKey")
+        let pmClientSecret = getQueryParamsDictforKey(url.search, "pmClientSecret")
+        let pmSessionId = getQueryParamsDictforKey(url.search, "pmSessionId")
         let hyperComponentName =
-          CardUtils.getQueryParamsDictforKey(
+          getQueryParamsDictforKey(
             url.search,
             "hyperComponentName",
           )->Types.getHyperComponentNameFromStr
-        let merchantHostname = CardUtils.getQueryParamsDictforKey(url.search, "merchantHostname")
-        let customPodUri = CardUtils.getQueryParamsDictforKey(url.search, "customPodUri")
+        let merchantHostname = getQueryParamsDictforKey(url.search, "merchantHostname")
+        let customPodUri = getQueryParamsDictforKey(url.search, "customPodUri")
 
         <PreMountLoader
           publishableKey
+          profileId
           sessionId
           clientSecret
+          paymentId
           endpoint
           ephemeralKey
+          pmSessionId
+          pmClientSecret
           hyperComponentName
           merchantHostname
           customPodUri

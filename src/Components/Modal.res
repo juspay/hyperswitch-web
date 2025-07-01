@@ -62,7 +62,7 @@ let make = (
         },
       }>
       <div className="absolute top-0 left-0 w-full flex flex-col">
-        <RenderIf condition={testMode && !Window.isProd}>
+        <RenderIf condition={testMode && !GlobalVars.isProd}>
           <div
             className="w-full h-6 text-[#885706] bg-[#FDD486] text-xs flex justify-center items-center font-semibold">
             {React.string("TEST DATA")}

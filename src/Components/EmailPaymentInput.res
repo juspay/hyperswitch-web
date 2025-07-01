@@ -1,15 +1,14 @@
 open RecoilAtoms
-open PaymentType
 open Utils
+open EmailValidation
 
 @react.component
-let make = (~paymentType) => {
+let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
+  let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
 
-  let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
+  let showDetails = PaymentType.getShowDetails(~billingDetails=fields.billingDetails)
 
   let emailRef = React.useRef(Nullable.null)
 
@@ -61,7 +60,6 @@ let make = (~paymentType) => {
       value=email
       onChange=changeEmail
       onBlur
-      paymentType
       type_="email"
       inputRef=emailRef
       placeholder="Eg: johndoe@gmail.com"

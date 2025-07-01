@@ -14,6 +14,7 @@ type mode =
   | GooglePayElement
   | PayPalElement
   | ApplePayElement
+  | SamsungPayElement
   | KlarnaElement
   | PazeElement
   | ExpressCheckoutElement
@@ -69,6 +70,7 @@ type themeClass = {
   buttonTextFontSize: string,
   buttonTextFontWeight: string,
   buttonBorderWidth: string,
+  disabledFieldColor: string,
 }
 type appearance = {
   theme: theme,
@@ -88,6 +90,8 @@ type configClass = {
   appearance: appearance,
   locale: string,
   ephemeralKey: string,
+  pmClientSecret: string,
+  pmSessionId: string,
   clientSecret: string,
   fonts: array<fonts>,
   loader: showLoader,
@@ -104,6 +108,7 @@ let getPaymentMode = val => {
   | "payPal" => PayPalElement
   | "applePay" => ApplePayElement
   | "paymentMethodCollect" => PaymentMethodCollectElement
+  | "samsungPay" => SamsungPayElement
   | "klarna" => KlarnaElement
   | "expressCheckout" => ExpressCheckoutElement
   | "paze" => PazeElement

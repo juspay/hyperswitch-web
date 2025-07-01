@@ -35,7 +35,6 @@ let getApplePayFromResponse = (
   ~billingContactDict,
   ~shippingContactDict,
   ~requiredFields=[],
-  ~stateJson,
   ~connectors,
   ~isPaymentSession=false,
   ~isSavedMethodsFlow=false,
@@ -45,18 +44,9 @@ let getApplePayFromResponse = (
   let shippingContact = shippingContactDict->ApplePayTypes.shippingContactItemToObjMapper
 
   let requiredFieldsBody = if isPaymentSession || isSavedMethodsFlow {
-    DynamicFieldsUtils.getApplePayRequiredFields(
-      ~billingContact,
-      ~shippingContact,
-      ~statesList=stateJson,
-    )
+    DynamicFieldsUtils.getApplePayRequiredFields(~billingContact, ~shippingContact)
   } else {
-    DynamicFieldsUtils.getApplePayRequiredFields(
-      ~billingContact,
-      ~shippingContact,
-      ~requiredFields,
-      ~statesList=stateJson,
-    )
+    DynamicFieldsUtils.getApplePayRequiredFields(~billingContact, ~shippingContact, ~requiredFields)
   }
 
   let bodyDict = PaymentBody.applePayBody(~token, ~connectors)
@@ -68,7 +58,7 @@ let startApplePaySession = (
   ~paymentRequest,
   ~applePaySessionRef,
   ~applePayPresent,
-  ~logger: HyperLogger.loggerMake,
+  ~logger: HyperLoggerTypes.loggerMake,
   ~callBackFunc,
   ~resolvePromise,
   ~clientSecret,
@@ -82,7 +72,7 @@ let startApplePaySession = (
     try {
       session.abort()
     } catch {
-    | error => Console.log2("Abort fail", error)
+    | error => Console.error2("Abort fail", error)
     }
   | None => ()
   }
@@ -189,10 +179,9 @@ let startApplePaySession = (
     let payment = event.payment
     payment->callBackFunc
   }
-  ssn.oncancel = _ev => {
+  ssn.oncancel = _ => {
     applePaySessionRef := Nullable.null
-    logInfo(Console.log("Apple Pay Payment Cancelled"))
-    logger.setLogInfo(
+    logger.setLogError(
       ~value="Apple Pay Payment Cancelled",
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
@@ -218,12 +207,10 @@ let useHandleApplePayResponse = (
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-
-  let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
+  let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  PaymentUtils.useStatesJson(setStatesJson)
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
     ~paymentMethodListValue,
     ~paymentMethod="wallet",
@@ -249,7 +236,6 @@ let useHandleApplePayResponse = (
             ~billingContactDict,
             ~shippingContactDict,
             ~requiredFields=paymentMethodTypes.required_fields,
-            ~stateJson,
             ~connectors,
             ~isSavedMethodsFlow,
           )
@@ -279,7 +265,13 @@ let useHandleApplePayResponse = (
           syncPayment()
         }
       } catch {
-      | _ => logInfo(Console.log("Error in parsing Apple Pay Data"))
+      | _ =>
+        logger.setLogError(
+          ~value="Error in parsing Apple Pay Data",
+          ~eventName=APPLE_PAY_FLOW,
+          ~paymentMethod="APPLE_PAY",
+          // ~internalMetadata=err->formatException->JSON.stringify,
+        )
       }
     }
     Window.addEventListener("message", handleApplePayMessages)
@@ -289,14 +281,7 @@ let useHandleApplePayResponse = (
         Window.removeEventListener("message", handleApplePayMessages)
       },
     )
-  }, (
-    isInvokeSDKFlow,
-    processPayment,
-    stateJson,
-    isManualRetryEnabled,
-    isWallet,
-    requiredFieldsBody,
-  ))
+  }, (isInvokeSDKFlow, processPayment, isManualRetryEnabled, isWallet, requiredFieldsBody))
 }
 
 let handleApplePayButtonClicked = (

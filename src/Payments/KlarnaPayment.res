@@ -1,7 +1,7 @@
 open PaymentType
 open RecoilAtoms
 @react.component
-let make = (~paymentType) => {
+let make = () => {
   let (loggerState, _setLoggerState) = Recoil.useRecoilState(loggerAtom)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -10,15 +10,13 @@ let make = (~paymentType) => {
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
-  let showAddressDetails = getShowAddressDetails(
-    ~billingDetails=fields.billingDetails,
-    ~logger=loggerState,
-  )
-  let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
-  let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
+  let showAddressDetails = getShowAddressDetails(~billingDetails=fields.billingDetails)
+  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
+  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
 
+  let countryData = CountryStateDataRefs.countryDataRef.contents
   let countryNames =
-    Utils.getCountryNames(Country.country)->DropdownField.updateArrayOfStringToOptionsTypeArray
+    Utils.getCountryNames(countryData)->DropdownField.updateArrayOfStringToOptionsTypeArray
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {
@@ -27,7 +25,7 @@ let make = (~paymentType) => {
 
   open Utils
   let clientCountryCode =
-    Country.country
+    countryData
     ->Array.find(item => item.countryName == country)
     ->Option.getOr(Country.defaultTimeZone)
 
@@ -72,8 +70,8 @@ let make = (~paymentType) => {
     style={
       gridGap: config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : "",
     }>
-    <EmailPaymentInput paymentType={paymentType} />
-    <FullNamePaymentInput paymentType={paymentType} />
+    <EmailPaymentInput />
+    <FullNamePaymentInput />
     <RenderIf condition={showAddressDetails.country == Auto}>
       <DropdownField
         appearance=config.appearance

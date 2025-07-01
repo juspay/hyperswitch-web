@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: `Número do cartão`,
   inValidCardErrorText: `O número do cartão é inválido.`,
+  inValidExpiryErrorText: `A validade do cartão é inválida.`,
   inCompleteCVCErrorText: `O código de segurança do seu cartão está incompleto.`,
   inCompleteExpiryErrorText: `A data de validade do seu cartão está incompleta.`,
   enterValidCardNumberErrorText: `Insira um número de cartão válido..`,
@@ -14,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Linha de endereço 1`,
   line1Placeholder: `Nome de rua`,
   line2Label: `Linha de endereço 2`,
-  line2Placeholder: `Apartamento, número de porta, etc. (opcional)`,
+  line2Placeholder: `Apartamento, número de porta, etc.`,
   cityLabel: `Localidade`,
   postalCodeLabel: `Código postal`,
   stateLabel: `Distrito`,
@@ -63,6 +64,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`Um valor adicional de${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}será aplicado para esta transação`})}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Taxa :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Um valor adicional de até${Utils.nbsp}`)}
@@ -150,4 +155,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `A chave Pix não pode estar vazia`,
   pixKeyPlaceholder: `Digite a chave Pix`,
   pixKeyLabel: `Chave Pix`,
+  destinationBankAccountIdEmptyText: `O ID da conta bancária de destino não pode estar vazio`,
+  sourceBankAccountIdEmptyText: `O ID da conta bancária de origem não pode estar vazio`,
+  invalidCardHolderNameError: `O nome do titular do cartão não pode conter dígitos`,
+  invalidNickNameError: `O apelido não pode conter mais de 2 dígitos`,
+  expiry: `termo`,
 }

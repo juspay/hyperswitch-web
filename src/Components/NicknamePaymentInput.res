@@ -1,19 +1,31 @@
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~value, ~setValue) => {
-  let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+let make = () => {
+  open RecoilAtoms
+  open Utils
+
+  let (nickName, setNickName) = Recoil.useRecoilState(userCardNickName)
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   let onChange = ev => {
-    let val = ReactEvent.Form.target(ev)["value"]
-    setValue(_ => val)
+    let val: string = ReactEvent.Form.target(ev)["value"]
+    setNickName(prev => setNickNameState(val, prev, localeString))
   }
 
-  <PaymentInputField
+  let onBlur = ev => {
+    let val: string = ReactEvent.Focus.target(ev)["value"]
+    setNickName(prev => setNickNameState(val, prev, localeString))
+  }
+
+  <PaymentField
     fieldName=localeString.cardNickname
-    value
+    value=nickName
+    setValue=setNickName
     onChange
-    paymentType
-    appearance=config.appearance
+    onBlur
+    type_="userCardNickName"
+    name="userCardNickName"
     inputRef={React.useRef(Nullable.null)}
     placeholder=localeString.nicknamePlaceholder
+    maxLength=12
   />
 }

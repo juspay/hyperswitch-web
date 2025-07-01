@@ -80,6 +80,7 @@ type buttons = {
   onCancel: data => unit,
   onError?: err => unit,
   onShippingAddressChange?: JSON.t => promise<JSON.t>,
+  onClick?: unit => unit,
 }
 let getLabel = (var: PaymentType.paypalStyleType) => {
   switch var {
@@ -160,7 +161,7 @@ let paypalShippingDetails = (purchaseUnit, payerDetails: PaymentType.payerDetail
 let getOrderDetails = (orderDetails, paymentType) => {
   let orderDetailsDict = orderDetails->Utils.getDictFromJson
 
-  let isWalletElementPaymentType = paymentType->Utils.getIsWalletElementPaymentType
+  let isWalletElementPaymentType = paymentType->Utils.checkIsWalletElement
 
   let shippingAddressOverride = isWalletElementPaymentType
     ? orderDetailsDict->Utils.getJsonObjectFromDict("shipping_address_override")->getShippingDetails
@@ -179,7 +180,7 @@ let getOrderDetails = (orderDetails, paymentType) => {
   }
 }
 
-let shippingAddressItemToObjMapper=dict=>{
+let shippingAddressItemToObjMapper = dict => {
   recipientName: dict->Utils.getOptionString("recipientName"),
   line1: dict->Utils.getOptionString("line1"),
   line2: dict->Utils.getOptionString("line2"),

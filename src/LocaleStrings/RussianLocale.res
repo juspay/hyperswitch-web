@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: `Номер карты`,
   inValidCardErrorText: `Номер карты недействителен.`,
+  inValidExpiryErrorText: `Неверный срок действия карты.`,
   inCompleteCVCErrorText: `Неправильно указан код безопасности карты.`,
   inCompleteExpiryErrorText: `Неправильно указан срок действия карты.`,
   enterValidCardNumberErrorText: `Пожалуйста, введите действительный номер карты.`,
@@ -14,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Адресная строка 1`,
   line1Placeholder: `Улица`,
   line2Label: `Адресная строка 2`,
-  line2Placeholder: `Квартира, номер блока и т. д. (необязательно)`,
+  line2Placeholder: `Квартира, номер блока и т. д.`,
   cityLabel: `Город`,
   postalCodeLabel: `Почтовый индекс`,
   stateLabel: `Область`,
@@ -65,6 +66,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string({
       `${Utils.nbsp}будет применено к этой транзакции`
     })}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Комиссия :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Сумма доплаты до${Utils.nbsp}`)}
@@ -158,4 +163,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Ключ Pix не может быть пустым`,
   pixKeyPlaceholder: `Введите ключ Pix`,
   pixKeyLabel: `Ключ Pix`,
+  destinationBankAccountIdEmptyText: `Идентификатор банковского счета назначения не может быть пустым`,
+  sourceBankAccountIdEmptyText: `Идентификатор исходного банковского счета не может быть пустым`,
+  invalidCardHolderNameError: `Имя владельца карты не может содержать цифры`,
+  invalidNickNameError: `Псевдоним не может содержать более 2 цифр`,
+  expiry: `истечение срока действия`,
 }

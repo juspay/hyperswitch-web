@@ -17,7 +17,7 @@ let pmAuthConnectorToScriptUrlMapper = authConnector => {
 let mountAuthConnectorScript = (
   ~authConnector,
   ~onScriptLoaded,
-  ~logger: HyperLogger.loggerMake,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   let authConnector = authConnector->Option.getOr("")
   let pmAuthConnectorScriptUrl =
@@ -47,7 +47,7 @@ let mountAuthConnectorScript = (
 let mountAllRequriedAuthConnectorScripts = (
   ~pmAuthConnectorsArr,
   ~onScriptLoaded,
-  ~logger: HyperLogger.loggerMake,
+  ~logger: HyperLoggerTypes.loggerMake,
 ) => {
   pmAuthConnectorsArr->Array.forEach(item => {
     mountAuthConnectorScript(~authConnector=item, ~onScriptLoaded, ~logger)

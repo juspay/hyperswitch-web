@@ -4,6 +4,7 @@ open RecoilAtoms
 
 @react.component
 let make = (~integrateError, ~logger) => {
+  open Promise
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let keys = Recoil.useRecoilValueFromAtom(keys)
@@ -90,83 +91,7 @@ let make = (~integrateError, ~logger) => {
     let flow = options.flow
     let pmdBody = flow->formBody(pmd)
 
-    switch flow {
-    | PayoutLinkInitiate => {
-        let endpoint = ApiEndpoint.getApiEndPoint()
-        let uri = `${endpoint}/payouts/${options.payoutId}/confirm`
-        // Create payment method
-        open Promise
-        PaymentHelpers.confirmPayout(
-          ~clientSecret=keys.clientSecret->Option.getOr(""),
-          ~publishableKey=keys.publishableKey,
-          ~logger,
-          ~customPodUri="",
-          ~uri,
-          ~body=pmdBody,
-        )
-        ->then(res => {
-          let data = res->decodePayoutConfirmResponse
-          switch data {
-          | Some(SuccessResponse(res)) => {
-              let updatedStatusInfo = {
-                payoutId: res.payoutId,
-                status: res.status,
-                message: res.status->getPayoutStatusMessage(localeString),
-                code: res.errorCode,
-                errorMessage: res.errorMessage,
-                reason: None,
-              }
-              setStatusInfo(_ => updatedStatusInfo)
-            }
-          | Some(ErrorResponse(err)) => {
-              let updatedStatusInfo = {
-                payoutId: options.payoutId,
-                status: Failed,
-                message: localeString.payoutStatusFailedMessage,
-                code: Some(err.code),
-                errorMessage: Some(err.message),
-                reason: err.reason,
-              }
-              setStatusInfo(_ => updatedStatusInfo)
-            }
-          | None => {
-              let updatedStatusInfo = {
-                payoutId: options.payoutId,
-                status: Failed,
-                message: localeString.payoutStatusFailedMessage,
-                code: None,
-                errorMessage: None,
-                reason: None,
-              }
-              setStatusInfo(_ => updatedStatusInfo)
-            }
-          }
-          resolve()
-        })
-        ->catch(err => {
-          Console.error2("CRITICAL - Payouts confirm failed with unknown error", err)
-          let updatedStatusInfo = {
-            payoutId: options.payoutId,
-            status: Failed,
-            message: localeString.payoutStatusFailedMessage,
-            code: None,
-            errorMessage: None,
-            reason: None,
-          }
-          setStatusInfo(_ => updatedStatusInfo)
-          resolve()
-        })
-        ->finally(() => {
-          setShowStatus(_ => true)
-          setLoader(_ => false)
-        })
-        ->ignore
-      }
-    | PayoutMethodCollect =>
-      pmdBody->Array.push(("customer_id", options.customerId->JSON.Encode.string))
-
-      // Create payment method
-      open Promise
+    let createPaymentMethodPromiseWrapped = () => {
       PaymentHelpers.createPaymentMethod(
         ~clientSecret=keys.clientSecret->Option.getOr(""),
         ~publishableKey=keys.publishableKey,
@@ -176,17 +101,92 @@ let make = (~integrateError, ~logger) => {
         ~body=pmdBody,
       )
       ->then(res => {
-        Console.log2("DEBUGG RES", res)
+        Console.warn2("DEBUGG RES", res)
         resolve()
       })
       ->catch(err => {
-        Console.log2("DEBUGG ERR", err)
+        Console.error2("DEBUGG ERR", err)
         resolve()
       })
       ->finally(() => {
         setLoader(_ => false)
       })
-      ->ignore
+    }
+
+    let confirmPayoutPromiseWrapper = () => {
+      let endpoint = ApiEndpoint.getApiEndPoint()
+      PaymentHelpers.confirmPayout(
+        ~clientSecret=keys.clientSecret->Option.getOr(""),
+        ~publishableKey=keys.publishableKey,
+        ~logger,
+        ~customPodUri="",
+        ~endpoint,
+        ~body=pmdBody,
+      )
+      ->then(res => {
+        let data = res->decodePayoutConfirmResponse
+        switch data {
+        | Some(SuccessResponse(res)) => {
+            let updatedStatusInfo = {
+              payoutId: res.payoutId,
+              status: res.status,
+              message: res.status->getPayoutStatusMessage(localeString),
+              code: res.errorCode,
+              errorMessage: res.errorMessage,
+              reason: None,
+            }
+            setStatusInfo(_ => updatedStatusInfo)
+          }
+        | Some(ErrorResponse(err)) => {
+            let updatedStatusInfo = {
+              payoutId: options.payoutId,
+              status: Failed,
+              message: localeString.payoutStatusFailedMessage,
+              code: Some(err.code),
+              errorMessage: Some(err.message),
+              reason: err.reason,
+            }
+            setStatusInfo(_ => updatedStatusInfo)
+          }
+        | None => {
+            let updatedStatusInfo = {
+              payoutId: options.payoutId,
+              status: Failed,
+              message: localeString.payoutStatusFailedMessage,
+              code: None,
+              errorMessage: None,
+              reason: None,
+            }
+            setStatusInfo(_ => updatedStatusInfo)
+          }
+        }
+        resolve()
+      })
+      ->catch(err => {
+        Console.error2("CRITICAL - Payouts confirm failed with unknown error", err)
+        let updatedStatusInfo = {
+          payoutId: options.payoutId,
+          status: Failed,
+          message: localeString.payoutStatusFailedMessage,
+          code: None,
+          errorMessage: None,
+          reason: None,
+        }
+        setStatusInfo(_ => updatedStatusInfo)
+        resolve()
+      })
+      ->finally(() => {
+        setShowStatus(_ => true)
+        setLoader(_ => false)
+      })
+    }
+
+    switch flow {
+    | PayoutLinkInitiate =>
+      confirmPayoutPromiseWrapper()->then(_ => resolve())->catch(_ => resolve())->ignore
+    | PayoutMethodCollect =>
+      pmdBody->Array.push(("customer_id", options.customerId->JSON.Encode.string))
+      createPaymentMethodPromiseWrapped()->then(_ => resolve())->catch(_ => resolve())->ignore
     }
   }
 

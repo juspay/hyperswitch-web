@@ -2,37 +2,43 @@ const fetch = require("node-fetch");
 const express = require("express");
 const { resolve } = require("path");
 const dotenv = require("dotenv");
-const hyper = require("@juspay-tech/hyperswitch-node");
+const rateLimit = require("express-rate-limit");
+
 dotenv.config({ path: "./.env" });
 
 const app = express();
 const PORT = 5252;
 
-const hyperswitch = hyper(process.env.HYPERSWITCH_SECRET_KEY);
+app.use(express.json());
 
+// ✅ Simple rate limiter: 60 requests per minute per IP
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // limit each IP to 60 requests per windowMs
+});
+
+// Helper: get URL from env or fallback
 function getUrl(envVar, selfHostedValue) {
   return process.env[envVar] === selfHostedValue ? "" : process.env[envVar];
 }
 
 const SERVER_URL = getUrl("HYPERSWITCH_SERVER_URL", "SELF_HOSTED_SERVER_URL");
 const CLIENT_URL = getUrl("HYPERSWITCH_CLIENT_URL", "SELF_HOSTED_CLIENT_URL");
+const SDK_VERSION = process.env.SDK_VERSION || "v1";
 
+// ✅ Serve static files automatically (index.html, assets)
 app.use(express.static("./dist"));
-app.get("/", (req, res) => {
-  const path = resolve("./dist/index.html");
-  res.sendFile(path);
-});
-app.get("/completion", (req, res) => {
-  const path = resolve("./dist/index.html");
-  res.sendFile(path);
-});
-app.get("/config", (req, res) => {
+
+// ✅ Dynamic routes are rate-limited for safety
+
+app.get("/config", limiter, (req, res) => {
   res.send({
     publishableKey: process.env.HYPERSWITCH_PUBLISHABLE_KEY,
+    profileId: process.env.PROFILE_ID,
   });
 });
 
-app.get("/urls", (req, res) => {
+app.get("/urls", limiter, (req, res) => {
   res.send({
     serverUrl: SERVER_URL,
     clientUrl: CLIENT_URL,
@@ -95,7 +101,14 @@ const paymentData = {
       country_code: "+91",
     },
   },
-}
+};
+
+const paymentDataRequestV2 = {
+  amount_details: {
+    currency: "USD",
+    order_amount: 6540,
+  },
+};
 
 const profileId = process.env.PROFILE_ID;
 if (profileId) {
@@ -106,14 +119,25 @@ function createPaymentRequest() {
   return paymentData;
 }
 
-app.get("/create-payment-intent", async (_, res) => {
+function createPaymentRequestV2() {
+  return paymentDataRequestV2;
+}
+
+app.get("/create-intent", limiter, async (req, res) => {
   try {
-    const paymentRequest = createPaymentRequest();
+    const paymentRequest =
+      SDK_VERSION === "v1" ? createPaymentRequest() : createPaymentRequestV2();
     const paymentIntent = await createPaymentIntent(paymentRequest);
 
-    res.send({
+    const response = {
       clientSecret: paymentIntent.client_secret,
-    });
+    };
+
+    if (SDK_VERSION === "v2") {
+      response.paymentId = paymentIntent.id;
+    }
+
+    res.send(response);
   } catch (err) {
     res.status(400).send({
       error: { message: err.message },
@@ -122,29 +146,45 @@ app.get("/create-payment-intent", async (_, res) => {
 });
 
 async function createPaymentIntent(request) {
-  if (SERVER_URL) {
-    const url =
-      process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
-      process.env.HYPERSWITCH_SERVER_URL;
-    const apiResponse = await fetch(`${url}/payments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "api-key": process.env.HYPERSWITCH_SECRET_KEY,
-      },
-      body: JSON.stringify(request),
-    });
-    const paymentIntent = await apiResponse.json();
+  const baseUrl =
+    process.env.HYPERSWITCH_SERVER_URL_FOR_DEMO_APP ||
+    process.env.HYPERSWITCH_SERVER_URL;
 
-    if (paymentIntent.error) {
-      console.error("Error - ", paymentIntent.error);
-      throw new Error(paymentIntent?.error?.message ?? "Something went wrong.");
-    }
-    return paymentIntent;
+  let apiEndpoint = "";
+  let headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (SDK_VERSION === "v1") {
+    apiEndpoint = `${baseUrl}/payments`;
+    headers = {
+      ...headers,
+      Accept: "application/json",
+      "api-key": process.env.HYPERSWITCH_SECRET_KEY,
+    };
   } else {
-    return await hyperswitch?.paymentIntents?.create(request);
+    apiEndpoint = `${baseUrl}/v2/payments/create-intent`;
+    headers = {
+      ...headers,
+      Authorization: `api-key=${process.env.HYPERSWITCH_SECRET_KEY}`,
+      "X-Profile-Id": process.env.PROFILE_ID,
+    };
   }
+
+  const apiResponse = await fetch(apiEndpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(request),
+  });
+
+  const paymentIntent = await apiResponse.json();
+
+  if (paymentIntent.error) {
+    console.error("Payment Intent Error:", paymentIntent.error);
+    throw new Error(paymentIntent?.error?.message ?? "Something went wrong.");
+  }
+
+  return paymentIntent;
 }
 
 app.listen(PORT, () => {

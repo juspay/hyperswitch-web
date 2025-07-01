@@ -46,6 +46,8 @@ type paymentMethodsFields =
   | LanguagePreference(array<string>)
   | BankAccountNumber
   | IBAN
+  | DestinationBankAccountId
+  | SourceBankAccountId
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -192,6 +194,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "revolut_pay",
+    fields: [InfoElement],
+    icon: Some(icon("revolut", ~size=20)),
+    displayName: "Revolut Pay",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "affirm",
     fields: [InfoElement],
     icon: Some(icon("affirm", ~size=20)),
@@ -241,10 +250,31 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
-    paymentMethodName: "sepa_transfer",
+    paymentMethodName: "sepa_bank_transfer",
     icon: Some(icon("sepa", ~size=19)),
     fields: [],
     displayName: "SEPA Bank Transfer",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "instant_bank_transfer",
+    icon: Some(icon("bank", ~size=19)),
+    fields: [],
+    displayName: "Instant Bank Transfer",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "instant_bank_transfer_finland",
+    icon: Some(icon("bank", ~size=19)),
+    fields: [],
+    displayName: "Instant Bank Transfer Finland",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "instant_bank_transfer_poland",
+    icon: Some(icon("bank", ~size=19)),
+    fields: [],
+    displayName: "Instant Bank Transfer Poland",
     miniIcon: None,
   },
   {
@@ -452,10 +482,10 @@ let paymentMethodsFields = [
   },
   {
     paymentMethodName: "classic",
-    icon: Some(icon("cashtocode", ~size=50)),
+    icon: Some(icon("cash_voucher", ~size=19, ~width=50)),
     displayName: "Cash / Voucher",
     fields: [InfoElement],
-    miniIcon: Some(icon("cashtocode", ~size=19)),
+    miniIcon: Some(icon("cash_voucher", ~size=19)),
   },
   {
     paymentMethodName: "online_banking_fpx",
@@ -515,10 +545,10 @@ let paymentMethodsFields = [
   },
   {
     paymentMethodName: "evoucher",
-    icon: Some(icon("cashtocode", ~size=50)),
+    icon: Some(icon("cash_voucher", ~size=19, ~width=50)),
     displayName: "E-Voucher",
     fields: [InfoElement],
-    miniIcon: Some(icon("cashtocode", ~size=19)),
+    miniIcon: Some(icon("cash_voucher", ~size=19)),
   },
   {
     paymentMethodName: "pix_transfer",
@@ -532,6 +562,13 @@ let paymentMethodsFields = [
     icon: Some(icon("boleto", ~size=21, ~width=25)),
     displayName: "Boleto",
     fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "paypal",
+    icon: Some(icon("paypal", ~size=21, ~width=25)),
+    displayName: "Paypal",
+    fields: [],
     miniIcon: None,
   },
   {
@@ -553,6 +590,13 @@ let paymentMethodsFields = [
     fields: [InfoElement],
     icon: Some(icon("bhim_upi", ~size=19)),
     displayName: "UPI Collect",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "eft",
+    icon: Some(icon("eft", ~size=19)),
+    fields: [InfoElement],
+    displayName: "EFT",
     miniIcon: None,
   },
 ]
@@ -597,20 +641,24 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_pix_key", _) => PixKey
   | ("user_bank_account_number", _) => BankAccountNumber
   | ("user_iban", _) => BankAccountNumber
+  | ("user_destination_bank_account_id", _) => DestinationBankAccountId
+  | ("user_source_bank_account_id", _) => SourceBankAccountId
   | _ => None
   }
 }
+
+let countryData = CountryStateDataRefs.countryDataRef.contents
 
 let getOptionsFromPaymentMethodFieldType = (dict, key, ~isAddressCountry=true) => {
   let options = dict->getArrayValFromJsonDict(key, "options")
   switch options->Array.get(0)->Option.getOr("") {
   | "" => None
   | "ALL" => {
-      let countryArr = Country.country->Array.map(item => item.countryName)
+      let countryArr = countryData->Array.map(item => item.countryName)
       isAddressCountry ? AddressCountry(countryArr) : ShippingAddressCountry(countryArr)
     }
   | _ => {
-      let countryArr = Country.country->Array.reduce([], (acc, country) => {
+      let countryArr = countryData->Array.reduce([], (acc, country) => {
         if options->Array.includes(country.isoAlpha2) {
           acc->Array.push(country.countryName)
         }

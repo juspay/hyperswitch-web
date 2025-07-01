@@ -1,2 +1,2 @@
 @react.component
-let default: unit => React.element
+let default: (~walletOptions: array<string>) => React.element

@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: "rtl",
   cardNumberLabel: `מספר כרטיס`,
   inValidCardErrorText: `אינו תקין`,
+  inValidExpiryErrorText: `תוקף הכרטיס אינו תקף.`,
   inCompleteCVCErrorText: `קוד האבטחה של הכרטיס שלך אינו שלם`,
   inCompleteExpiryErrorText: `פרטי תוקף של הכרטיס שלך אינם מלאים`,
   enterValidCardNumberErrorText: `נא להזין מספר כרטיס תקף.`,
@@ -15,7 +16,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: `כתובת רחוב`,
   line1EmptyText: `שורת כתובת 1 לא יכולה להיות ריקה`,
   line2Label: `כתובת - שורה 2`,
-  line2Placeholder: `דירה, יחידה, וכדומה (אופציונלי)`,
+  line2Placeholder: `דירה, יחידה, וכדומה`,
   line2EmptyText: `שורת כתובת 2 לא יכולה להיות ריקה`,
   cityLabel: `עיר`,
   cityEmptyText: `עיר לא יכולה להיות ריקה`,
@@ -60,6 +61,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`סכום היטל של${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string(`${Utils.nbsp}יוחל עבור עסקה זו`)}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`עמלה :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`סכום היטל של עד${Utils.nbsp}`)}
@@ -150,4 +155,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `מפתח Pix לא יכול להיות ריק`,
   pixKeyPlaceholder: `הכנס מפתח Pix`,
   pixKeyLabel: `מפתח Pix`,
+  destinationBankAccountIdEmptyText: `מזהה חשבון בנק יעד לא יכול להיות ריק`,
+  sourceBankAccountIdEmptyText: `מזהה חשבון בנק מקור לא יכול להיות ריק`,
+  invalidCardHolderNameError: `שם בעל הכרטיס לא יכול לכלול ספרות`,
+  invalidNickNameError: `הכינוי לא יכול לכלול יותר משתי ספרות`,
+  expiry: `תְפוּגָה`,
 }

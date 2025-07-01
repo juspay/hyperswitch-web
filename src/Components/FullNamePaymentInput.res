@@ -3,30 +3,20 @@ open PaymentType
 open Utils
 
 @react.component
-let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) => {
+let make = (~customFieldName=None, ~optionalRequiredFields=None) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-
-  let (fullName, setFullName) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
-
-  let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
+  let (fullName, setFullName) = Recoil.useRecoilState(userFullName)
+  let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]
-    setFullName(prev => {
-      value: val,
-      isValid: Some(val !== ""),
-      errorString: val !== "" ? "" : prev.errorString,
-    })
+    setFullName(prev => validateName(val, prev, localeString))
   }
 
   let onBlur = ev => {
     let val: string = ReactEvent.Focus.target(ev)["value"]
-    setFullName(prev => {
-      ...prev,
-      isValid: Some(val !== ""),
-    })
+    setFullName(prev => validateName(val, prev, localeString))
   }
 
   let (placeholder, fieldName) = switch customFieldName {
@@ -34,6 +24,11 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
   | None => (localeString.fullNamePlaceholder, localeString.fullNameLabel)
   }
   let nameRef = React.useRef(Nullable.null)
+
+  React.useEffect(() => {
+    setFullName(prev => validateName(prev.value, prev, localeString))
+    None
+  }, [])
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -43,6 +38,11 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
         setFullName(prev => {
           ...prev,
           errorString: fieldName->localeString.nameEmptyText,
+        })
+      } else if !(fullName.isValid->Option.getOr(false)) {
+        setFullName(prev => {
+          ...prev,
+          errorString: localeString.invalidCardHolderNameError,
         })
       } else {
         switch optionalRequiredFields {
@@ -66,7 +66,6 @@ let make = (~paymentType, ~customFieldName=None, ~optionalRequiredFields=None) =
       setValue=setFullName
       value=fullName
       onChange=changeName
-      paymentType
       onBlur
       type_="text"
       inputRef=nameRef

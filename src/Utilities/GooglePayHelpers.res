@@ -6,7 +6,6 @@ let getGooglePayBodyFromResponse = (
   ~paymentMethodListValue=PaymentMethodsRecord.defaultList,
   ~connectors,
   ~requiredFields=[],
-  ~stateJson,
   ~isPaymentSession=false,
   ~isSavedMethodsFlow=false,
 ) => {
@@ -37,18 +36,12 @@ let getGooglePayBodyFromResponse = (
     ->getString("email", "")
 
   let requiredFieldsBody = if isPaymentSession || isSavedMethodsFlow {
-    DynamicFieldsUtils.getGooglePayRequiredFields(
-      ~billingContact,
-      ~shippingContact,
-      ~statesList=stateJson,
-      ~email,
-    )
+    DynamicFieldsUtils.getGooglePayRequiredFields(~billingContact, ~shippingContact, ~email)
   } else {
     DynamicFieldsUtils.getGooglePayRequiredFields(
       ~billingContact,
       ~shippingContact,
       ~requiredFields,
-      ~statesList=stateJson,
       ~email,
     )
   }
@@ -90,10 +83,6 @@ let useHandleGooglePayResponse = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let isGuestCustomer = UtilityHooks.useIsGuestCustomer()
 
-  let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
-
-  PaymentUtils.useStatesJson(setStatesJson)
-
   let paymentMethodTypes = DynamicFieldsUtils.usePaymentMethodTypeFromList(
     ~paymentMethodListValue,
     ~paymentMethod="wallet",
@@ -112,7 +101,6 @@ let useHandleGooglePayResponse = (
           ~paymentMethodListValue,
           ~connectors,
           ~requiredFields=paymentMethodTypes.required_fields,
-          ~stateJson,
           ~isSavedMethodsFlow,
         )
 
@@ -140,7 +128,7 @@ let useHandleGooglePayResponse = (
     }
     Window.addEventListener("message", handle)
     Some(() => {Window.removeEventListener("message", handle)})
-  }, (paymentMethodTypes, stateJson, isManualRetryEnabled, requiredFieldsBody, isWallet))
+  }, (paymentMethodTypes, isManualRetryEnabled, requiredFieldsBody, isWallet))
 }
 
 let handleGooglePayClicked = (~sessionObj, ~componentName, ~iframeId, ~readOnly) => {

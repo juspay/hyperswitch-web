@@ -1,9 +1,10 @@
 open RecoilAtoms
 open RecoilAtomTypes
+open PaymentTypeContext
 open Utils
 
 @react.component
-let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
+let make = (~paymentMethodName: string) => {
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
@@ -12,6 +13,13 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentManagementList = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentManagementListValue)
+  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let contextPaymentType = usePaymentType()
+  let listValue = switch contextPaymentType {
+  | PaymentMethodsManagement => paymentManagementList
+  | _ => paymentsListValueV2
+  }
   let optionPaymentMethodDetails =
     paymentMethodListValue
     ->PaymentMethodsRecord.buildFromPaymentList
@@ -19,8 +27,18 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
       x.paymentMethodName ===
         PaymentUtils.getPaymentMethodName(~paymentMethodType=x.methodType, ~paymentMethodName)
     )
-  let paymentMethodDetails =
-    optionPaymentMethodDetails->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
+  let optionPaymentMethodDetailsV2 =
+    listValue
+    ->PaymentUtilsV2.buildFromPaymentListV2
+    ->Array.find(x =>
+      x.paymentMethodName ===
+        PaymentUtils.getPaymentMethodName(~paymentMethodType=x.methodType, ~paymentMethodName)
+    )
+  let paymentMethodDetails = switch GlobalVars.sdkVersion {
+  | V1 => optionPaymentMethodDetails->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
+  | V2 =>
+    optionPaymentMethodDetailsV2->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
+  }
   let paymentFlow =
     paymentMethodDetails.paymentFlow
     ->Array.get(0)
@@ -28,9 +46,9 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
       Some(flow)
     })
     ->Option.getOr(RedirectToURL)
-  let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
-  let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
-  let (currency, _) = Recoil.useLoggedRecoilState(userCurrency, "currency", loggerState)
+  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
+  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
+  let currency = Recoil.useRecoilValueFromAtom(userCurrency)
   let (country, _) = Recoil.useRecoilState(userCountry)
   let (selectedBank, _) = Recoil.useRecoilState(userBank)
   let setFieldComplete = Recoil.useSetRecoilState(fieldsComplete)
@@ -39,18 +57,17 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
-
-  let complete = areRequiredFieldsValid
+  let countryList = CountryStateDataRefs.countryDataRef.contents
 
   React.useEffect(() => {
-    setFieldComplete(_ => complete)
+    setFieldComplete(_ => areRequiredFieldsValid)
     None
-  }, [complete])
+  }, [areRequiredFieldsValid])
 
   let empty = areRequiredFieldsEmpty
 
   UtilityHooks.useHandlePostMessages(
-    ~complete,
+    ~complete=areRequiredFieldsValid,
     ~empty,
     ~paymentType=paymentMethodDetails.paymentMethodName,
   )
@@ -59,9 +76,9 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     let json = ev.data->safeParse
     let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
-      if complete {
+      if areRequiredFieldsValid {
         let countryCode =
-          Country.getCountry(paymentMethodName)
+          Country.getCountry(paymentMethodName, countryList)
           ->Array.filter(item => item.countryName == country)
           ->Array.get(0)
           ->Option.getOr(Country.defaultTimeZone)
@@ -105,14 +122,16 @@ let make = (~paymentType: CardThemeType.mode, ~paymentMethodName: string) => {
     paymentMethodName,
     isManualRetryEnabled,
     phoneNumber.value,
-    (selectedBank, currency, requiredFieldsBody),
+    selectedBank,
+    currency,
+    requiredFieldsBody,
+    areRequiredFieldsValid,
   ))
   useSubmitPaymentData(submitCallback)
   <div
     className="DynamicFields flex flex-col animate-slowShow"
     style={gridGap: themeObj.spacingGridColumn}>
     <DynamicFields
-      paymentType
       paymentMethod=paymentMethodDetails.methodType
       paymentMethodType=paymentMethodName
       setRequiredFieldsBody

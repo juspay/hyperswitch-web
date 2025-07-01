@@ -4,7 +4,7 @@ let billingDetailsTuple = (
   ~line1,
   ~line2,
   ~city,
-  ~state,
+  ~stateCode,
   ~postalCode,
   ~country,
 ) => {
@@ -22,7 +22,7 @@ let billingDetailsTuple = (
           ("line1", line1->JSON.Encode.string),
           ("line2", line2->JSON.Encode.string),
           ("city", city->JSON.Encode.string),
-          ("state", state->JSON.Encode.string),
+          ("state", stateCode->JSON.Encode.string),
           ("zip", postalCode->JSON.Encode.string),
           ("country", country->JSON.Encode.string),
         ]->Utils.getJsonFromArrayOfJson,
@@ -35,7 +35,7 @@ let cardPaymentBody = (
   ~cardNumber,
   ~month,
   ~year,
-  ~cardHolderName,
+  ~cardHolderName=None,
   ~cvcNumber,
   ~cardBrand,
   ~nickname="",
@@ -44,10 +44,13 @@ let cardPaymentBody = (
     ("card_number", cardNumber->CardUtils.clearSpaces->JSON.Encode.string),
     ("card_exp_month", month->JSON.Encode.string),
     ("card_exp_year", year->JSON.Encode.string),
-    ("card_holder_name", cardHolderName->JSON.Encode.string),
     ("card_cvc", cvcNumber->JSON.Encode.string),
     ("card_issuer", ""->JSON.Encode.string),
   ]
+
+  cardHolderName
+  ->Option.map(name => cardBody->Array.push(("card_holder_name", name->JSON.Encode.string))->ignore)
+  ->ignore
 
   if nickname != "" {
     cardBody->Array.push(("nick_name", nickname->JSON.Encode.string))->ignore
@@ -64,10 +67,17 @@ let cardPaymentBody = (
   ]
 }
 
-let bancontactBody = () => [
-  ("payment_method", "bank_redirect"->JSON.Encode.string),
-  ("payment_method_type", "bancontact_card"->JSON.Encode.string),
-]
+let bancontactBody = () => {
+  let bancontactField =
+    [("bancontact_card", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
+  let bankRedirectField = [("bank_redirect", bancontactField)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "bank_redirect"->JSON.Encode.string),
+    ("payment_method_type", "bancontact_card"->JSON.Encode.string),
+    ("payment_method_data", bankRedirectField),
+  ]
+}
 
 let boletoBody = (~socialSecurityNumber) => [
   ("payment_method", "voucher"->JSON.Encode.string),
@@ -124,6 +134,36 @@ let savedCardBody = (
   }
 
   savedCardBody
+}
+
+let mastercardClickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
+  let clickToPayServiceDetails =
+    [
+      ("merchant_transaction_id", merchantTransactionId->JSON.Encode.string),
+      ("correlation_id", correlationId->JSON.Encode.string),
+      ("x_src_flow_id", xSrcFlowId->JSON.Encode.string),
+      ("provider", "mastercard"->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("ctp_service_details", clickToPayServiceDetails),
+  ]
+}
+
+let visaClickToPayBody = (~encryptedPayload, ~email) => {
+  let encPayload =
+    [
+      ("encrypted_payload", encryptedPayload->JSON.Encode.string),
+      ("provider", "visa"->JSON.Encode.string),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "card"->JSON.Encode.string),
+    ("ctp_service_details", encPayload),
+    ("payment_method_type", "debit"->JSON.Encode.string),
+    ("email", email->JSON.Encode.string),
+  ]
 }
 
 let savedPaymentMethodBody = (
@@ -190,7 +230,7 @@ let achBankDebitBody = (
   ~country,
   ~city,
   ~postalCode,
-  ~state,
+  ~stateCode,
 ) =>
   bankDebitsCommonBody("ach")->Array.concat([
     (
@@ -202,7 +242,7 @@ let achBankDebitBody = (
           ~line1,
           ~line2,
           ~city,
-          ~state,
+          ~stateCode,
           ~postalCode,
           ~country,
         ),
@@ -232,7 +272,7 @@ let bacsBankDebitBody = (
   ~line2,
   ~city,
   ~zip,
-  ~state,
+  ~stateCode,
   ~country,
   ~bankAccountHolderName,
 ) =>
@@ -246,7 +286,7 @@ let bacsBankDebitBody = (
           ~line1,
           ~line2,
           ~city,
-          ~state,
+          ~stateCode,
           ~postalCode=zip,
           ~country,
         ),
@@ -276,7 +316,7 @@ let becsBankDebitBody = (
   ~country,
   ~city,
   ~postalCode,
-  ~state,
+  ~stateCode,
 ) =>
   bankDebitsCommonBody("becs")->Array.concat([
     (
@@ -288,7 +328,7 @@ let becsBankDebitBody = (
           ~line1,
           ~line2,
           ~city,
-          ~state,
+          ~stateCode,
           ~postalCode,
           ~country,
         ),
@@ -352,6 +392,20 @@ let klarnaSDKbody = (~token, ~connectors) => [
   ),
 ]
 
+let klarnaCheckoutBody = (~connectors) => {
+  open Utils
+  let checkoutBody = []->Utils.getJsonFromArrayOfJson
+  let payLaterBody = [("klarna_checkout", checkoutBody)]->getJsonFromArrayOfJson
+  let paymentMethodData = [("pay_later", payLaterBody)]->getJsonFromArrayOfJson
+  [
+    ("payment_method", "pay_later"->JSON.Encode.string),
+    ("payment_method_type", "klarna"->JSON.Encode.string),
+    ("payment_experience", "redirect_to_url"->JSON.Encode.string),
+    ("connector", connectors->getArrofJsonString->JSON.Encode.array),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let paypalRedirectionBody = (~connectors) => [
   ("payment_method", "wallet"->JSON.Encode.string),
   ("payment_method_type", "paypal"->JSON.Encode.string),
@@ -386,41 +440,50 @@ let paypalSdkBody = (~token, ~connectors) => [
   ),
 ]
 
-let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) => {
-  let gPayBody = [
-    ("payment_method", "wallet"->JSON.Encode.string),
-    ("payment_method_type", "google_pay"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "wallet",
-          [
-            (
-              "google_pay",
-              [
-                ("type", payObj.paymentMethodData.\"type"->JSON.Encode.string),
-                ("description", payObj.paymentMethodData.description->JSON.Encode.string),
-                ("info", payObj.paymentMethodData.info->Utils.transformKeys(Utils.SnakeCase)),
-                (
-                  "tokenization_data",
-                  payObj.paymentMethodData.tokenizationData->Utils.transformKeys(Utils.SnakeCase),
-                ),
-              ]->Utils.getJsonFromArrayOfJson,
-            ),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ]
+let samsungPayBody = (~metadata) => {
+  let paymentCredential = [("payment_credential", metadata)]->Utils.getJsonFromArrayOfJson
+  let spayBody = [("samsung_pay", paymentCredential)]->Utils.getJsonFromArrayOfJson
+  let paymentMethodData = [("wallet", spayBody)]->Utils.getJsonFromArrayOfJson
 
-  if connectors->Array.length > 0 {
-    gPayBody
-    ->Array.push(("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array))
-    ->ignore
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "samsung_pay"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
+let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) => {
+  open Utils
+  let (paymentMethodTypeKey, paymentMethodSubtypeKey) = switch GlobalVars.sdkVersion {
+  | V1 => ("payment_method", "payment_method_type")
+  | V2 => ("payment_method_type", "payment_method_subtype")
   }
 
-  gPayBody
+  let paymentMethodData = {
+    let paymentMethodData = payObj.paymentMethodData
+
+    [
+      ("type", paymentMethodData.\"type"->JSON.Encode.string),
+      ("description", paymentMethodData.description->JSON.Encode.string),
+      ("info", paymentMethodData.info->transformKeys(SnakeCase)),
+      ("tokenization_data", paymentMethodData.tokenizationData->transformKeys(SnakeCase)),
+    ]->getJsonFromArrayOfJson
+  }
+
+  let walletData = [("google_pay", paymentMethodData)]->getJsonFromArrayOfJson
+
+  let paymentMethodDataJson = [("wallet", walletData)]->getJsonFromArrayOfJson
+
+  let baseBody = [
+    (paymentMethodTypeKey, "wallet"->JSON.Encode.string),
+    (paymentMethodSubtypeKey, "google_pay"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodDataJson),
+  ]
+
+  switch connectors->Array.length > 0 {
+  | true => [("connector", connectors->getArrofJsonString->JSON.Encode.array)]
+  | false => baseBody
+  }
 }
 
 let gpayRedirectBody = (~connectors: array<string>) => [
@@ -526,11 +589,14 @@ let applePayThirdPartySdkBody = (~connectors) => [
   ),
 ]
 
-let cryptoBody = [
+let cryptoBody = () => [
   ("payment_method", "crypto"->JSON.Encode.string),
   ("payment_method_type", "crypto_currency"->JSON.Encode.string),
   ("payment_experience", "redirect_to_url"->JSON.Encode.string),
-  ("payment_method_data", []->Utils.getJsonFromArrayOfJson),
+  (
+    "payment_method_data",
+    [("crypto", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
+  ),
 ]
 
 let afterpayRedirectionBody = () => [
@@ -858,10 +924,40 @@ let pazeBody = (~completeResponse) => {
   ]
 }
 
+let revolutPayBody = () => {
+  let walletBody = [("revolut_pay", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson
+  let paymentMethodData = [("wallet", walletBody)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "revolut_pay"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+let eftBody = () => {
+  open Utils
+  let eftProviderName = [("provider", "ozow"->JSON.Encode.string)]->getJsonFromArrayOfJson
+
+  let eftBankRedirectData = [("eft", eftProviderName)]->getJsonFromArrayOfJson
+
+  let paymentMethodData = [("bank_redirect", eftBankRedirectData)]->getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "bank_redirect"->JSON.Encode.string),
+    ("payment_method_type", "eft"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
-  | "bank_transfer" => paymentMethodType->String.replace("_transfer", "")
+  | "bank_transfer" =>
+    if !(Constants.bankTransferList->Array.includes(paymentMethodType)) {
+      paymentMethodType->String.replace("_transfer", "")
+    } else {
+      paymentMethodType
+    }
   | _ => paymentMethodType
   }
 
@@ -881,10 +977,11 @@ let appendRedirectPaymentMethods = [
   "we_chat_pay",
   "ali_pay",
   "ali_pay_hk",
+  "revolut_pay",
 ]
 
 let appendBankeDebitMethods = ["sepa"]
-let appendBankTransferMethods = ["sepa", "ach", "bacs", "multibanco"]
+let appendBankTransferMethods = ["ach", "bacs", "multibanco"]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {
@@ -954,7 +1051,7 @@ let getPaymentBody = (
 ) =>
   switch paymentMethodType {
   | "afterpay_clearpay" => afterpayRedirectionBody()
-  | "crypto_currency" => cryptoBody
+  | "crypto_currency" => cryptoBody()
   | "sofort" => sofortBody(~country, ~name=fullName, ~email)
   | "ideal" => iDealBody(~name=fullName, ~bankName=bank)
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
@@ -991,8 +1088,10 @@ let getPaymentBody = (
   | "przelewy24" => p24Body(~email)
   | "online_banking_fpx" => fpxOBBody(~bank)
   | "online_banking_thailand" => thailandOBBody(~bank)
+  | "revolut_pay" => revolutPayBody()
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)
+  | "eft" => eftBody()
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }

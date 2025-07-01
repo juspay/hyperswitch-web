@@ -27,9 +27,8 @@ let calculateTax = (
   ~sessionId=None,
 ) => {
   PaymentHelpers.calculateTax(
-    ~clientSecret=clientSecret->JSON.Encode.string,
+    ~clientSecret,
     ~apiKey=publishableKey,
-    ~paymentId=clientSecret->getPaymentId,
     ~paymentMethodType,
     ~shippingAddress,
     ~logger,

@@ -48,21 +48,15 @@ let make = () => {
           ->JSON.Decode.object
           ->Option.getOr(Dict.make())
           ->getString("three_ds_authorize_url", "")
-        let headers =
-          headersDict
-          ->Dict.toArray
-          ->Array.map(entries => {
-            let (x, val) = entries
-            (x, val->JSON.Decode.string->Option.getOr(""))
-          })
+        let headers = headersDict->convertDictToArrayOfKeyStringTuples
 
         let threeDsMethodComp = metaDataDict->getString("3dsMethodComp", "U")
         open Promise
         PaymentHelpers.threeDsAuth(
-          ~optLogger=Some(logger),
+          ~logger,
           ~clientSecret=paymentIntentId,
           ~threeDsMethodComp,
-          ~headers,
+          ~headers=headers->Dict.fromArray,
         )
         ->then(json => {
           let dict = json->getDictFromJson
@@ -147,6 +141,7 @@ let make = () => {
       <iframe
         id="threeDsAuthFrame"
         name="threeDsAuthFrame"
+        title="3D Secure Authentication Frame"
         style={
           minHeight: "500px",
           outline: "none",

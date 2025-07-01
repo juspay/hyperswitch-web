@@ -4,6 +4,7 @@ type oneClickWallets = {
 }
 let oneClickWallets = [
   {paymentMethodType: "apple_pay", displayName: "ApplePay"},
+  {paymentMethodType: "samsung_pay", displayName: "SamsungPay"},
   {paymentMethodType: "paypal", displayName: "Paypal"},
   {paymentMethodType: "google_pay", displayName: "GooglePay"},
   {paymentMethodType: "klarna", displayName: "Klarna"},
@@ -23,6 +24,7 @@ let useSurchargeDetailsForOneClickWallets = (~paymentMethodListValue) => {
     oneClickWallets->Array.reduce([], (acc, wallet) => {
       let (isWalletBtnRendered, paymentMethod) = switch wallet.paymentMethodType {
       | "apple_pay" => (areOneClickWalletsRendered.isApplePay, "wallet")
+      | "samsung_pay" => (areOneClickWalletsRendered.isSamsungPay, "wallet")
       | "paypal" => (areOneClickWalletsRendered.isPaypal, "wallet")
       | "google_pay" => (areOneClickWalletsRendered.isGooglePay, "wallet")
       | "klarna" => (areOneClickWalletsRendered.isKlarna, "pay_later")
@@ -54,23 +56,28 @@ let useSurchargeDetailsForOneClickWallets = (~paymentMethodListValue) => {
 
 let useMessageGetter = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {showShortSurchargeMessage} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
   let getMessage = (
     ~surchargeDetails: PaymentMethodsRecord.surchargeDetails,
     ~paymentMethod,
     ~paymentMethodListValue: PaymentMethodsRecord.paymentMethodList,
   ) => {
+    let currency = paymentMethodListValue.currency
     let surchargeValue = surchargeDetails.displayTotalSurchargeAmount->Float.toString
 
-    let localeStrForSurcharge = if paymentMethod === "card" {
-      localeString.surchargeMsgAmountForCard(paymentMethodListValue.currency, surchargeValue)
+    if showShortSurchargeMessage {
+      Some(localeString.shortSurchargeMessage(currency, surchargeValue))
     } else {
-      localeString.surchargeMsgAmount(paymentMethodListValue.currency, surchargeValue)
+      let message = if paymentMethod === "card" {
+        localeString.surchargeMsgAmountForCard(currency, surchargeValue)
+      } else {
+        localeString.surchargeMsgAmount(currency, surchargeValue)
+      }
+
+      Some(message)
     }
-
-    Some(localeStrForSurcharge)
   }
-
   getMessage
 }
 

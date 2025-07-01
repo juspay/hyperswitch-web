@@ -38,6 +38,11 @@ let details = [
     displayName: "Affirm",
   },
   {
+    type_: "revolut_pay",
+    icon: Some(icon("revolut", ~size=19)),
+    displayName: "Revolut Pay",
+  },
+  {
     type_: "sofort",
     icon: Some(icon("sofort", ~size=19)),
     displayName: "Sofort",
@@ -48,9 +53,24 @@ let details = [
     displayName: "ACH Transfer",
   },
   {
-    type_: "sepa_transfer",
+    type_: "sepa_bank_transfer",
     icon: Some(icon("ach", ~size=19)),
     displayName: "Sepa Transfer",
+  },
+  {
+    type_: "instant_bank_transfer",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Instant Transfer",
+  },
+  {
+    type_: "instant_bank_transfer_finland",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Instant Transfer Finland",
+  },
+  {
+    type_: "instant_bank_transfer_poland",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Instant Transfer Poland",
   },
   {
     type_: "bacs_transfer",
@@ -101,5 +121,10 @@ let details = [
     type_: "boleto",
     icon: Some(icon("boleto", ~size=21)),
     displayName: "Boleto",
+  },
+  {
+    type_: "eft",
+    icon: Some(icon("eft", ~size=19)),
+    displayName: "eft",
   },
 ]

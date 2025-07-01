@@ -1,13 +1,9 @@
 open RecoilAtoms
 open PaymentType
 open Utils
+open PaymentTypeContext
 
 type addressType = Line1 | Line2 | City | Postal | State | Country
-
-type dataModule = {states: JSON.t}
-
-@val
-external importStates: string => promise<dataModule> = "import"
 
 let getShowType = str => {
   switch str {
@@ -33,36 +29,30 @@ let showField = (val: PaymentType.addressType, type_: addressType) => {
 }
 
 @react.component
-let make = (~paymentType, ~className="") => {
+let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let {localeString, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
+  let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
+  let contextPaymentType = usePaymentType()
+  let paymentType = paymentType->Option.getOr(contextPaymentType)
 
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", loggerState)
-  let (country, setCountry) = Recoil.useLoggedRecoilState(
-    userAddressCountry,
-    "country",
-    loggerState,
-  )
-  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", loggerState)
-  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
-    userAddressPincode,
-    "postal_code",
-    loggerState,
-  )
-  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
+  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
+  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
+  let (country, setCountry) = Recoil.useRecoilState(userAddressCountry)
+  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
+  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
+  let (state, setState) = Recoil.useRecoilState(userAddressState)
 
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
 
-  let (stateJson, setStatesJson) = React.useState(_ => None)
   let (showOtherFileds, setShowOtherFields) = React.useState(_ => false)
 
-  let countryNames = getCountryNames(Country.country)
+  let stateNames = getStateNames(country)
+  let countryData = CountryStateDataRefs.countryDataRef.contents
+  let countryNames = getCountryNames(countryData)
 
   let checkPostalValidity = (
     postal: RecoilAtomTypes.field,
@@ -83,25 +73,8 @@ let make = (~paymentType, ~className="") => {
     }
   }
 
-  React.useEffect0(() => {
-    open Promise
-    importStates("./../States.json")
-    ->then(res => {
-      setStatesJson(_ => Some(res.states))
-      resolve()
-    })
-    ->catch(_ => {
-      setStatesJson(_ => None)
-      resolve()
-    })
-    ->ignore
-
-    None
-  })
-
   let onPostalChange = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
-
     setPostalCode(prev => {
       ...prev,
       value: val,
@@ -128,10 +101,6 @@ let make = (~paymentType, ~className="") => {
 
   React.useEffect(() => {
     checkPostalValidity(postalCode, setPostalCode)
-    None
-  }, country.value)
-
-  React.useEffect(() => {
     setState(prev => {
       ...prev,
       value: "",
@@ -194,12 +163,12 @@ let make = (~paymentType, ~className="") => {
             value: ReactEvent.Form.target(ev)["value"],
           })
         }}
-        paymentType
         type_="text"
         name="line1"
         className
         inputRef=line1Ref
         placeholder=localeString.line1Placeholder
+        paymentType
       />
     </RenderIf>
     <RenderIf condition={showOtherFileds || hasDefaulltValues}>
@@ -215,12 +184,12 @@ let make = (~paymentType, ~className="") => {
                 value: ReactEvent.Form.target(ev)["value"],
               })
             }}
-            paymentType
             type_="text"
             name="line2"
             className
             inputRef=line2Ref
             placeholder=localeString.line2Placeholder
+            paymentType
           />
         </RenderIf>
         <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>
@@ -233,18 +202,16 @@ let make = (~paymentType, ~className="") => {
               options=countryNames
             />
           </RenderIf>
-          <RenderIf condition={showField(showDetails.address, State) == Auto}>
-            {switch stateJson {
-            | Some(options) =>
-              <PaymentDropDownField
-                fieldName=localeString.stateLabel
-                value=state
-                className
-                setValue=setState
-                options={options->getStateNames(country)}
-              />
-            | None => React.null
-            }}
+          <RenderIf
+            condition={showField(showDetails.address, State) == Auto &&
+              stateNames->Array.length > 0}>
+            <PaymentDropDownField
+              fieldName=localeString.stateLabel
+              value=state
+              className
+              setValue=setState
+              options={stateNames}
+            />
           </RenderIf>
         </div>
         <div className="flex flex-row" style={gridGap: themeObj.spacingGridRow}>
@@ -260,11 +227,11 @@ let make = (~paymentType, ~className="") => {
                   value: ReactEvent.Form.target(ev)["value"],
                 })
               }}
-              paymentType
               type_="text"
               name="city"
               inputRef=cityRef
               placeholder=localeString.cityLabel
+              paymentType
             />
           </RenderIf>
           <RenderIf condition={showField(showDetails.address, Postal) == Auto}>
@@ -274,11 +241,11 @@ let make = (~paymentType, ~className="") => {
               value=postalCode
               onBlur=onPostalBlur
               onChange=onPostalChange
-              paymentType
               className
               name="postal"
               inputRef=postalRef
               placeholder=localeString.postalCodeLabel
+              paymentType
             />
           </RenderIf>
         </div>

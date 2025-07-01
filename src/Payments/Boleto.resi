@@ -1,5 +1,5 @@
 let cleanSocialSecurityNumber: string => string
 let formatSocialSecurityNumber: string => string
-@react.component
-let make: (~paymentType: CardThemeType.mode) => React.element
-let default: props<CardThemeType.mode> => React.element
+type props = {}
+let make: props => React.element
+let default: props => React.element

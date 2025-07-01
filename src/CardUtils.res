@@ -14,55 +14,128 @@ type cardIssuer =
   | INTERAC
   | NOTFOUND
 
-type cardProps = (
-  option<bool>,
-  (option<bool> => option<bool>) => unit,
-  option<bool>,
-  string,
-  JsxEvent.Form.t => unit,
-  JsxEvent.Focus.t => unit,
-  React.ref<Nullable.t<Dom.element>>,
-  React.element,
-  string,
-  (string => string) => unit,
-  int,
-  string,
-)
+type cardProps = {
+  isCardValid: option<bool>,
+  setIsCardValid: (option<bool> => option<bool>) => unit,
+  isCardSupported: option<bool>,
+  cardNumber: string,
+  changeCardNumber: JsxEvent.Form.t => unit,
+  handleCardBlur: JsxEvent.Focus.t => unit,
+  cardRef: React.ref<Nullable.t<Dom.element>>,
+  icon: React.element,
+  cardError: string,
+  setCardError: (string => string) => unit,
+  maxCardLength: int,
+  cardBrand: string,
+}
 
-type expiryProps = (
-  option<bool>,
-  (option<bool> => option<bool>) => unit,
-  string,
-  JsxEvent.Form.t => unit,
-  JsxEvent.Focus.t => unit,
-  React.ref<Nullable.t<Dom.element>>,
-  ReactEvent.Keyboard.t => unit,
-  string,
-  (string => string) => unit,
-)
+let useDefaultCardProps = () => {
+  let cardRef = React.useRef(Nullable.null)
+  {
+    isCardValid: None,
+    setIsCardValid: _ => (),
+    isCardSupported: None,
+    cardNumber: "",
+    changeCardNumber: _ => (),
+    handleCardBlur: _ => (),
+    cardRef,
+    icon: React.null,
+    cardError: "",
+    setCardError: _ => (),
+    maxCardLength: 0,
+    cardBrand: "",
+  }
+}
 
-type cvcProps = (
-  option<bool>,
-  (option<bool> => option<bool>) => unit,
-  string,
-  (string => string) => unit,
-  JsxEvent.Form.t => unit,
-  JsxEvent.Focus.t => unit,
-  React.ref<Nullable.t<Dom.element>>,
-  ReactEvent.Keyboard.t => unit,
-  string,
-  (string => string) => unit,
-)
-type zipProps = (
-  option<bool>,
-  (option<bool> => option<bool>) => unit,
-  string,
-  ReactEvent.Form.t => unit,
-  ReactEvent.Focus.t => unit,
-  React.ref<Nullable.t<Dom.element>>,
-  ReactEvent.Keyboard.t => unit,
-  bool,
-)
+type expiryProps = {
+  isExpiryValid: option<bool>,
+  setIsExpiryValid: (option<bool> => option<bool>) => unit,
+  cardExpiry: string,
+  changeCardExpiry: JsxEvent.Form.t => unit,
+  handleExpiryBlur: JsxEvent.Focus.t => unit,
+  expiryRef: React.ref<Nullable.t<Dom.element>>,
+  onExpiryKeyDown: ReactEvent.Keyboard.t => unit,
+  expiryError: string,
+  setExpiryError: (string => string) => unit,
+}
+
+let useDefaultExpiryProps = () => {
+  let expiryRef = React.useRef(Nullable.null)
+  {
+    isExpiryValid: None,
+    setIsExpiryValid: _ => (),
+    cardExpiry: "",
+    changeCardExpiry: _ => (),
+    handleExpiryBlur: _ => (),
+    expiryRef,
+    onExpiryKeyDown: _ => (),
+    expiryError: "",
+    setExpiryError: _ => (),
+  }
+}
+
+type cvcProps = {
+  isCVCValid: option<bool>,
+  setIsCVCValid: (option<bool> => option<bool>) => unit,
+  cvcNumber: string,
+  setCvcNumber: (string => string) => unit,
+  changeCVCNumber: JsxEvent.Form.t => unit,
+  handleCVCBlur: JsxEvent.Focus.t => unit,
+  cvcRef: React.ref<Nullable.t<Dom.element>>,
+  onCvcKeyDown: ReactEvent.Keyboard.t => unit,
+  cvcError: string,
+  setCvcError: (string => string) => unit,
+}
+
+let useDefaultCvcProps = () => {
+  let cvcRef = React.useRef(Nullable.null)
+  {
+    isCVCValid: None,
+    setIsCVCValid: _ => (),
+    cvcNumber: "",
+    setCvcNumber: _ => (),
+    changeCVCNumber: _ => (),
+    handleCVCBlur: _ => (),
+    cvcRef,
+    onCvcKeyDown: _ => (),
+    cvcError: "",
+    setCvcError: _ => (),
+  }
+}
+
+type zipProps = {
+  isZipValid: option<bool>,
+  setIsZipValid: (option<bool> => option<bool>) => unit,
+  zipCode: string,
+  changeZipCode: ReactEvent.Form.t => unit,
+  handleZipBlur: ReactEvent.Focus.t => unit,
+  zipRef: React.ref<Nullable.t<Dom.element>>,
+  onZipCodeKeyDown: ReactEvent.Keyboard.t => unit,
+  displayPincode: bool,
+}
+
+let useDefaultZipProps = () => {
+  let zipRef = React.useRef(Nullable.null)
+  {
+    isZipValid: None,
+    setIsZipValid: _ => (),
+    zipCode: "",
+    changeZipCode: _ => (),
+    handleZipBlur: _ => (),
+    zipRef,
+    onZipCodeKeyDown: _ => (),
+    displayPincode: false,
+  }
+}
+
+type commonCardProps = {
+  cardProps: cardProps,
+  expiryProps: expiryProps,
+  cvcProps: cvcProps,
+  zipProps: zipProps,
+  blurState: bool,
+}
+
 @val external document: 'a = "document"
 
 @send external focus: Dom.element => unit = "focus"
@@ -156,7 +229,7 @@ let getStrFromIndex = (arr: array<string>, index) => {
 let formatCVCNumber = (val, cardType) => {
   let clearValue = val->clearSpaces
   let obj = getobjFromCardPattern(cardType)
-  clearValue->slice(0, obj.maxCVCLenth)
+  clearValue->slice(0, obj.maxCVCLength)
 }
 
 let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
@@ -176,12 +249,12 @@ let formatCardNumber = (val, cardType) => {
   let clearValue = val->clearSpaces
   let formatedCard = switch cardType {
   | AMEX => `${clearValue->slice(0, 4)} ${clearValue->slice(4, 10)} ${clearValue->slice(10, 15)}`
-  | DINERSCLUB =>
-    `${clearValue->slice(0, 4)} ${clearValue->slice(4, 10)} ${clearValue->slice(10, 14)}`
+  | DINERSCLUB
   | MASTERCARD
   | DISCOVER
   | SODEXO
   | RUPAY
+  | UNIONPAY
   | VISA =>
     `${clearValue->slice(0, 4)} ${clearValue->slice(4, 8)} ${clearValue->slice(
         8,
@@ -348,8 +421,8 @@ let getCardBrandIcon = (cardType, paymentType) => {
   | SODEXO => <Icon size=brandIconSize name="card" />
   | RUPAY => <Icon size=brandIconSize name="rupay-card" />
   | JCB => <Icon size=brandIconSize name="jcb-card" />
-  | CARTESBANCAIRES => <Icon size=brandIconSize name="card" />
-  | UNIONPAY => <Icon size=brandIconSize name="card" />
+  | CARTESBANCAIRES => <Icon size=brandIconSize name="cartesbancaires-card" />
+  | UNIONPAY => <Icon size=brandIconSize name="union-pay" />
   | INTERAC => <Icon size=brandIconSize name="interac" />
   | NOTFOUND =>
     switch paymentType {
@@ -362,6 +435,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
     | GooglePayElement
     | PayPalElement
     | ApplePayElement
+    | SamsungPayElement
     | KlarnaElement
     | ExpressCheckoutElement
     | PaymentMethodsManagement
@@ -379,7 +453,10 @@ let getExpiryValidity = cardExpiry => {
   let valid = if currentYear == year->toInt && month->toInt >= currentMonth && month->toInt <= 12 {
     true
   } else if (
-    year->toInt > currentYear && year->toInt < 2075 && month->toInt >= 1 && month->toInt <= 12
+    year->toInt > currentYear &&
+    year->toInt < Date.getFullYear(Js.Date.fromFloat(Date.now())) + 100 &&
+    month->toInt >= 1 &&
+    month->toInt <= 12
   ) {
     true
   } else {
@@ -391,9 +468,9 @@ let isExipryValid = val => {
   val->String.length > 0 && getExpiryValidity(val) && isExpiryComplete(val)
 }
 
-let cardNumberInRange = val => {
+let cardNumberInRange = (val, cardBrand) => {
   let clearValue = val->clearSpaces
-  let obj = getobjFromCardPattern(val->getCardBrand)
+  let obj = getobjFromCardPattern(cardBrand)
   let cardLengthInRange = obj.length->Array.map(item => {
     clearValue->String.length == item
   })
@@ -404,7 +481,7 @@ let max = (a, b) => {
 }
 
 let getMaxLength = val => {
-  let obj = getobjFromCardPattern(val->getCardBrand)
+  let obj = getobjFromCardPattern(val)
   let maxValue = obj.length->Array.reduce(0, max)
   if maxValue <= 12 {
     maxValue + 2
@@ -453,23 +530,40 @@ let generateFontsLink = (fonts: array<CardThemeType.fonts>) => {
     ->ignore
   }
 }
+
 let maxCardLength = cardBrand => {
   let obj = getobjFromCardPattern(cardBrand)
   Array.reduce(obj.length, 0, (acc, val) => max(acc, val))
 }
 
+let isCardLengthValid = (cardBrand, cardNumberLength) => {
+  let obj = getobjFromCardPattern(cardBrand)
+  Array.includes(obj.length, cardNumberLength)
+}
+
 let cardValid = (cardNumber, cardBrand) => {
   let clearValueLength = cardNumber->clearSpaces->String.length
-  if cardBrand == "" && (GlobalVars.isInteg || GlobalVars.isSandbox) {
-    Utils.checkIsTestCardWildcard(cardNumber)
+  isCardLengthValid(cardBrand, clearValueLength) && calculateLuhn(cardNumber)
+}
+
+let focusCardValid = (cardNumber, cardBrand) => {
+  let clearValueLength = cardNumber->clearSpaces->String.length
+  if cardBrand == "" {
+    clearValueLength == maxCardLength(cardBrand) && calculateLuhn(cardNumber)
   } else {
     (clearValueLength == maxCardLength(cardBrand) ||
       (cardBrand === "Visa" && clearValueLength == 16)) && calculateLuhn(cardNumber)
   }
 }
+
 let blurRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
   ref.current->Nullable.toOption->Option.forEach(input => input->blur)->ignore
 }
+
+let focusRef = (ref: React.ref<Nullable.t<Dom.element>>) => {
+  ref.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
+}
+
 let handleInputFocus = (
   ~currentRef: React.ref<Nullable.t<Dom.element>>,
   ~destinationRef: React.ref<Nullable.t<Dom.element>>,
@@ -542,8 +636,7 @@ let commonKeyDownEvent = (ev, srcRef, destRef, srcEle, destEle, setEle) => {
   }
 }
 
-let pincodeVisibility = cardNumber => {
-  let brand = getCardBrand(cardNumber)
+let pincodeVisibility = brand => {
   let brandPattern =
     CardPattern.cardPatterns
     ->Array.filter(obj => obj.issuer == brand)
@@ -560,15 +653,13 @@ let swapCardOption = (cardOpts: array<string>, dropOpts: array<string>, selected
   (cardOpts, temp)
 }
 
-let setCardValid = (cardnumber, setIsCardValid) => {
-  let cardBrand = getCardBrand(cardnumber)
+let setCardValid = (cardnumber, cardBrand, setIsCardValid) => {
+  let isCardMaxLength = cardnumber->String.length == maxCardLength(cardBrand)
   if cardValid(cardnumber, cardBrand) {
     setIsCardValid(_ => Some(true))
-  } else if (
-    !cardValid(cardnumber, cardBrand) && cardnumber->String.length == maxCardLength(cardBrand)
-  ) {
+  } else if !cardValid(cardnumber, cardBrand) && isCardMaxLength {
     setIsCardValid(_ => Some(false))
-  } else if !(cardnumber->String.length == maxCardLength(cardBrand)) {
+  } else if !isCardMaxLength {
     setIsCardValid(_ => None)
   }
 }
@@ -601,9 +692,9 @@ let getAllBanknames = obj => {
 }
 
 let clientTimeZone = dateTimeFormat().resolvedOptions().timeZone
-let clientCountry = Utils.getClientCountry(clientTimeZone)
 
 let postalRegex = (postalCodes: array<PostalCodeType.postalCodes>, ~country=?) => {
+  let clientCountry = Utils.getClientCountry(clientTimeZone)
   let country = country->Option.getOr(clientCountry.isoAlpha2)
   let countryPostal = Utils.getCountryPostal(country, postalCodes)
   countryPostal.regex
@@ -637,6 +728,7 @@ let getWalletBrandIcon = (customerMethod: PaymentType.customerMethods) => {
   let iconName = switch customerMethod.paymentMethodType {
   | Some("apple_pay") => "apple_pay_saved"
   | Some("google_pay") => "google_pay_saved"
+  | Some("samsung_pay") => "samsung_pay_saved"
   | Some("paypal") => "paypal"
   | _ => "default-card"
   }
@@ -667,6 +759,17 @@ let getAllMatchedCardSchemes = cardNumber => {
   })
 }
 
+let isCardSchemeEnabled = (~cardScheme, ~enabledCardSchemes) => {
+  enabledCardSchemes->Array.includes(cardScheme)
+}
+
+let getFirstValidCardSchemeFromPML = (~cardNumber, ~enabledCardSchemes) => {
+  let allMatchedCards = getAllMatchedCardSchemes(cardNumber->clearSpaces)
+  allMatchedCards->Array.find(card =>
+    isCardSchemeEnabled(~cardScheme=card->String.toLowerCase, ~enabledCardSchemes)
+  )
+}
+
 let getEligibleCoBadgedCardSchemes = (~matchedCardSchemes, ~enabledCardSchemes) => {
   matchedCardSchemes->Array.filter(ele => {
     enabledCardSchemes->Array.includes(ele->String.toLowerCase)
@@ -677,12 +780,17 @@ let getCardBrandFromStates = (cardBrand, cardScheme, showFields) => {
   !showFields ? cardScheme : cardBrand
 }
 
-let getCardBrandInvalidError = (
-  ~cardNumber,
-  ~localeString: OrcaPaymentPage.LocaleStringTypes.localeStrings,
-) => {
-  switch cardNumber->getCardBrand {
+let getCardBrandInvalidError = (~cardBrand, ~localeString: LocaleStringTypes.localeStrings) => {
+  switch cardBrand {
   | "" => localeString.enterValidCardNumberErrorText
   | cardBrandValue => localeString.cardBrandConfiguredErrorText(cardBrandValue)
   }
 }
+
+let emitExpiryDate = formattedExpiry =>
+  Utils.messageParentWindow([("expiryDate", formattedExpiry->JSON.Encode.string)])
+
+let emitIsFormReadyForSubmission = isFormReadyForSubmission =>
+  Utils.messageParentWindow([
+    ("isFormReadyForSubmission", isFormReadyForSubmission->JSON.Encode.bool),
+  ])

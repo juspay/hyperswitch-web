@@ -1,10 +1,11 @@
 open Utils
 open Promise
 @react.component
-let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardThemeType.mode) => {
+let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.isPaymentButtonHandlerProvidedAtom,
   )
@@ -26,6 +27,12 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let isWallet = walletOptions->Array.includes("apple_pay")
+
+  let (heightType, _, _, _, _) = options.wallets.style.height
+  let height = switch heightType {
+  | ApplePay(val) => val
+  | _ => 48
+  }
 
   UtilityHooks.useHandlePostMessages(
     ~complete=areRequiredFieldsValid,
@@ -98,7 +105,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
   let css = `@supports (-webkit-appearance: -apple-pay-button) {
     .apple-pay-loader-div {
       background-color: ${loaderDivBackgroundColor};
-      height: 3rem;
+      height: ${height->Int.toString}px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -135,7 +142,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
     .apple-pay-button-black-with-text {
         -apple-pay-button-style: ${buttonColor};
         width: 100%;
-        height: 3rem;
+        height: ${height->Int.toString}px;
         display: flex;
         cursor: pointer;
         border-radius: ${options.wallets.style.buttonRadius->Int.toString}px;
@@ -212,6 +219,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
       ~eventName=APPLE_PAY_FLOW,
       ~paymentMethod="APPLE_PAY",
     )
+    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="apple_pay")
     setApplePayClicked(_ => true)
     makeOneClickHandlerPromise(sdkHandleIsThere)
     ->then(result => {
@@ -265,6 +273,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
       }
       resolve()
     })
+    ->catch(_ => {
+      resolve()
+    })
     ->ignore
   }
 
@@ -308,6 +319,10 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
         } else {
           <button
             disabled=applePayClicked
+            style={
+              opacity: updateSession ? "0.5" : "1.0",
+              pointerEvents: updateSession ? "none" : "auto",
+            }
             className="apple-pay-button-with-text apple-pay-button-black-with-text"
             onClick={_ => onApplePayButtonClicked()}>
             <span className="text"> {React.string("Pay with")} </span>
@@ -317,9 +332,7 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions, ~paymentType: CardTheme
       </div>
     </RenderIf>
   } else {
-    <DynamicFields
-      paymentType paymentMethod="wallet" paymentMethodType="apple_pay" setRequiredFieldsBody
-    />
+    <DynamicFields paymentMethod="wallet" paymentMethodType="apple_pay" setRequiredFieldsBody />
   }
 }
 

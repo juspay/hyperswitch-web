@@ -1,4 +1,6 @@
 open RecoilAtoms
+open PaymentTypeContext
+
 @react.component
 let make = (
   ~isValid=Some(true),
@@ -14,18 +16,21 @@ let make = (
   ~fieldName="",
   ~name="",
   ~type_="text",
-  ~paymentType: CardThemeType.mode,
   ~maxLength=?,
   ~pattern=?,
   ~placeholder="",
-  ~appearance: CardThemeType.appearance,
   ~className="",
   ~inputRef,
+  ~paymentType=?,
+  ~isDisabled=false,
+  ~autocomplete="on",
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
+  let contextPaymentType = usePaymentType()
+  let paymentType = paymentType->Option.getOr(contextPaymentType)
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
@@ -49,7 +54,9 @@ let make = (
   }
 
   let backgroundClass = switch paymentType {
-  | Payment => themeObj.colorBackground
+  | Payment
+  | PaymentMethodsManagement =>
+    themeObj.colorBackground
   | _ => "transparent"
   }
   let direction = if type_ == "password" || type_ == "tel" {
@@ -75,12 +82,13 @@ let make = (
   }
   let labelClass = getClassName("Label")
   let inputClass = getClassName("Input")
+  let inputLogoClass = getClassName("InputLogo")
   let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
 
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
     <RenderIf
       condition={fieldName->String.length > 0 &&
-      appearance.labels == Above &&
+      config.appearance.labels == Above &&
       innerLayout === Spaced}>
       <div
         className={`Label ${labelClass}`}
@@ -89,7 +97,8 @@ let make = (
           fontSize: themeObj.fontSizeLg,
           marginBottom: "5px",
           opacity: "0.6",
-        }>
+        }
+        ariaHidden=true>
         {React.string(fieldName)}
       </div>
     </RenderIf>
@@ -97,27 +106,28 @@ let make = (
       <div className={`relative w-full ${inputFieldClassName}`}>
         <input
           style={
-            background: backgroundClass,
+            background: isDisabled ? themeObj.disabledFieldColor : backgroundClass,
             padding: themeObj.spacingUnit,
             width: fieldWidth,
             height,
           }
           dataTestId={name}
-          disabled=readOnly
+          disabled={isDisabled || readOnly}
           ref={inputRef->ReactDOM.Ref.domRef}
           type_
           name
           ?maxLength
           ?pattern
           className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
-          placeholder={appearance.labels == Above ? placeholder : ""}
+          placeholder={config.appearance.labels == Above ? placeholder : ""}
           value
-          autoComplete="on"
+          autoComplete={autocomplete}
           onChange
           onBlur=handleBlur
           onFocus=handleFocus
+          ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
         />
-        <RenderIf condition={appearance.labels == Floating}>
+        <RenderIf condition={config.appearance.labels == Floating}>
           <div
             className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass} text-opacity-20 pointer-events-none`}
             style={
@@ -126,12 +136,15 @@ let make = (
               },
               fontSize: {inputFocused || value->String.length > 0 ? themeObj.fontSizeXs : ""},
               opacity: "0.6",
-            }>
+            }
+            ariaHidden=true>
             {React.string(fieldName)}
           </div>
         </RenderIf>
       </div>
-      <div className="relative flex -ml-10 items-center"> {rightIcon} </div>
+      <div className={`InputLogo ${inputLogoClass} relative flex -ml-10 items-center`}>
+        {rightIcon}
+      </div>
     </div>
     <RenderIf condition={innerLayout === Spaced}>
       {switch errorString {

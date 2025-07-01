@@ -1,120 +1,94 @@
-import { PaymentElement } from "@juspay-tech/react-hyper-js";
+import React, { useState, useEffect } from "react";
+import {
+  PaymentElement,
+  useHyper,
+  useWidgets,
+} from "@juspay-tech/react-hyper-js";
 import Cart from "./Cart";
-import { useState, useEffect } from "react";
-import { useHyper, useElements } from "@juspay-tech/react-hyper-js";
-import { useNavigate } from "react-router-dom";
-import React from "react";
 import Completion from "./Completion";
 import "./App.css";
 
+// Utility functions to help with payment flow
+import {
+  getClientSecretFromUrl,
+  handlePaymentStatus,
+  paymentElementOptions,
+} from "./utils";
+
 export default function CheckoutForm() {
   const hyper = useHyper();
-  const elements = useElements();
-  const navigate = useNavigate();
-  const [isSuccess, setSuccess] = useState(false);
+  const elements = useWidgets();
+
+  const [isSuccess, setIsSuccess] = useState(false);
   const [message, setMessage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  function handlePaymentStatus(status) {
-    switch (status) {
-      case "succeeded":
-        setMessage("Payment successful");
-        setSuccess(true);
-        break;
-      case "processing":
-        setMessage("Your payment is processing.");
-        break;
-      case "requires_payment_method":
-        setMessage("Your payment was not successful, please try again.");
-        break;
-      case "requires_capture":
-        setMessage("Payment processing! Requires manual capture");
-        break;
-      case "requires_customer_action":
-        setMessage("Customer needs to take action to confirm this payment");
-        break;
-      case "failed":
-        setMessage("Payment Failed!");
-        break;
-      default:
-        setMessage(`Something went wrong. (Status: ${status})`);
-        break;
-    }
-  }
+  const clientSecret = getClientSecretFromUrl();
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!hyper || !elements) {
-      // Hyper.js has not yet loaded.
-      // Make sure to disable form submission until Hyper.js has loaded.
-      return;
-    }
+    // Prevent submission if Hyper isn't ready or already processing
+    if (!hyper || !elements || isProcessing) return;
 
     setIsProcessing(true);
+    setMessage(null);
 
     try {
+      // Confirm the payment using Hyper.js SDK
       const { error, status } = await hyper.confirmPayment({
         elements,
         confirmParams: {
-          // Make sure to change this to your payment completion page
-          return_url: `${window.location.origin}`,
+          return_url: window.location.origin,
         },
       });
 
       if (error) {
-        setMessage(error.message);
-      } else {
-        setMessage("Unexpected Error");
+        setMessage(error.message || "An unknown error occurred.");
       }
 
+      // Handle status returned by Hyper.js (e.g., succeeded, processing, failed)
       if (status) {
-        console.log("-status", status);
-        handlePaymentStatus(status);
+        handlePaymentStatus(status, setMessage, setIsSuccess);
       }
-    } catch (error) {
-      setMessage("Error confirming payment: " + error.message);
+    } catch (err) {
+      setMessage(`Error confirming payment: ${err.message}`);
     } finally {
       setIsProcessing(false);
     }
   };
 
+  // On mount or when `hyper` and `clientSecret` are ready, retrieve the payment intent
   useEffect(() => {
-    if (!hyper) {
-      return;
-    }
-    const clientSecret = new URLSearchParams(window.location.search).get(
-      "payment_intent_client_secret"
-    );
-    if (!clientSecret) {
-      return;
-    }
-    hyper.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
-      console.log("-retrieve called", paymentIntent?.status);
-      handlePaymentStatus(paymentIntent?.status);
-    });
-  }, [hyper, navigate]);
+    if (!hyper || !clientSecret) return;
 
-  const options = {
-    wallets: {
-      walletReturnUrl: `${window.location.origin}`,
-      applePay: "auto",
-      googlePay: "auto",
-      style: {
-        theme: "dark",
-        type: "default",
-        height: 55,
-      },
-    },
-  };
+    const fetchPaymentIntent = async () => {
+      try {
+        const { paymentIntent } = await hyper.retrievePaymentIntent(
+          clientSecret
+        );
+
+        // Update UI based on the payment status
+        if (paymentIntent?.status) {
+          handlePaymentStatus(paymentIntent.status, setMessage, setIsSuccess);
+        }
+      } catch (err) {
+        console.error("Error retrieving payment intent:", err);
+        setMessage("Unable to retrieve payment details.");
+      }
+    };
+
+    fetchPaymentIntent();
+  }, [hyper, clientSecret]);
 
   return (
     <div className="browser">
       <div className="toolbar">
         <div className="controls">
-          <div className="btn close"></div>
-          <div className="btn min"></div>
-          <div className="btn max"></div>
+          <div className="btn close" />
+          <div className="btn min" />
+          <div className="btn max" />
         </div>
       </div>
       <div className="tabbar">
@@ -130,7 +104,10 @@ export default function CheckoutForm() {
             <div className="payment-form">
               <form id="payment-form" onSubmit={handleSubmit}>
                 <div className="paymentElement">
-                  <PaymentElement id="payment-element" options={options} />
+                  <PaymentElement
+                    id="payment-element"
+                    options={paymentElementOptions}
+                  />
                 </div>
                 <button
                   disabled={isProcessing || !hyper || !elements}
@@ -140,7 +117,6 @@ export default function CheckoutForm() {
                     {isProcessing ? "Processing..." : "Pay now"}
                   </span>
                 </button>
-                {/* Show any error or success messages */}
                 {message && <div id="payment-message">{message}</div>}
               </form>
             </div>

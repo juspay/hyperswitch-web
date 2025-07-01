@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: `ltr`,
   cardNumberLabel: `Numéro de carte`,
   inValidCardErrorText: `Le numéro de carte n'est pas valide.`,
+  inValidExpiryErrorText: `La date d’expiration est invalide.`,
   inCompleteCVCErrorText: `Le code de sécurité de votre carte est incomplet.`,
   inCompleteExpiryErrorText: `La date d'expiration de votre carte est incomplète.`,
   enterValidCardNumberErrorText: `Veuillez saisir un numéro de carte valide.`,
@@ -14,7 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Label: `Adresse ligne 1`,
   line1Placeholder: `Rue`,
   line2Label: `Adresse ligne 2`,
-  line2Placeholder: `Appartement, numéro d'unité, etc. (facultatif)`,
+  line2Placeholder: `Appartement, numéro d'unité, etc.`,
   cityLabel: `Ville`,
   postalCodeLabel: `Code postal`,
   stateLabel: `État`,
@@ -63,6 +64,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`Un montant supplémentaire de${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}sera appliqué pour cette transaction`})}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Frais :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`Un montant supplémentaire pouvant aller jusqu'à${Utils.nbsp}`)}
@@ -151,4 +156,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `La clé Pix ne peut pas être vide`,
   pixKeyPlaceholder: `Entrez la clé Pix`,
   pixKeyLabel: `Clé Pix`,
+  destinationBankAccountIdEmptyText: `L'identifiant du compte bancaire de destination ne peut pas être vide`,
+  sourceBankAccountIdEmptyText: `L'identifiant du compte bancaire source ne peut pas être vide`,
+  invalidCardHolderNameError: `Le nom du titulaire de la carte ne peut pas contenir de chiffres`,
+  invalidNickNameError: `Le surnom ne peut pas contenir plus de 2 chiffres`,
+  expiry: `expiration`,
 }

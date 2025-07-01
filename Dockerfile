@@ -1,9 +1,11 @@
 FROM node:20-alpine
 
-# Set the working directory
+# Add build essentials
+RUN apk add --no-cache make gcc g++ python3
+
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json to install dependencies
+# Copy package files
 COPY package*.json ./
 
 # Install dependencies
@@ -12,14 +14,13 @@ RUN npm install --ignore-scripts
 # Copy the rest of the application code
 COPY . .
 
-# Build the rescript code
-RUN npm run re:build
+# First, build ReScript code and wait for it to complete
+RUN npm run re:build && \
+    # Then build the application with webpack
+    npm run build
 
-# Build the application
-RUN npm run build
-
-# Expose the port that the Webpack dev server will run on
 EXPOSE 9050
 
-# Start the Webpack dev server
-CMD ["npm", "run", "start"]
+# For development, use a start script that ensures ReScript watch mode
+# runs before starting webpack dev server
+CMD npm run re:build && npm run start

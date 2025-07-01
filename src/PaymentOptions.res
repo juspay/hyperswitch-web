@@ -2,12 +2,16 @@ open RecoilAtoms
 module TabLoader = {
   @react.component
   let make = (~cardShimmerCount) => {
-    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
-    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
     open PaymentType
     open PaymentElementShimmer
-    switch paymentMethodList {
-    | SemiLoaded =>
+
+    let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+    let paymentManagementList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
+    let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+
+    switch (GlobalVars.sdkVersion, paymentMethodList, paymentManagementList) {
+    | (V1, SemiLoaded, _)
+    | (V2, _, SemiLoadedV2) =>
       Array.make(~length=cardShimmerCount - 1, "")
       ->Array.mapWithIndex((_, i) => {
         <div
@@ -47,6 +51,7 @@ let make = (
   ~dropDownOptions: array<string>,
   ~checkoutEle: React.element,
   ~cardShimmerCount: int,
+  ~cardProps: CardUtils.cardProps,
 ) => {
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly, customMethodNames} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -56,6 +61,7 @@ let make = (
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(selectedOptionAtom)
   let (moreIconIndex, setMoreIconIndex) = React.useState(_ => 0)
   let (toggleIconElement, setToggleIconElement) = React.useState(_ => false)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   React.useEffect(() => {
     let width = switch payOptionsRef.current->Nullable.toOption {
     | Some(ref) => ref->Window.Element.clientWidth
@@ -80,6 +86,7 @@ let make = (
     ->Array.find(item => item.paymentMethodName == selectedOption)
     ->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodFields)
 
+  let {cardBrand} = cardProps
   React.useEffect(() => {
     let intervalId = setInterval(() => {
       if dropDownOptionsDetails->Array.length > 1 {
@@ -101,13 +108,20 @@ let make = (
     )
   }, [dropDownOptionsDetails])
 
+  PaymentUtils.useEmitPaymentMethodInfo(
+    ~paymentMethodName=selectedPaymentOption.paymentMethodName,
+    ~paymentMethods=paymentMethodListValue.payment_methods,
+    ~cardBrand,
+  )
+
   let displayIcon = ele => {
     <span className={`scale-90 animate-slowShow ${toggleIconElement ? "hidden" : ""}`}> ele </span>
   }
+
   <div className="w-full">
     <div
       ref={payOptionsRef->ReactDOM.Ref.domRef}
-      className="flex flex-row overflow-auto no-scrollbar"
+      className="TabHeader flex flex-row overflow-auto no-scrollbar"
       dataTestId={TestUtils.paymentMethodListTestId}
       style={
         columnGap: themeObj.spacingTab,

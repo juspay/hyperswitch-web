@@ -6,13 +6,13 @@ let portalNodes = Recoil.atom("portalNodes", PortalState.defaultDict)
 let elementOptions = Recoil.atom("elementOptions", ElementType.defaultOptions)
 let optionAtom = Recoil.atom("options", PaymentType.defaultOptions)
 let sessions = Recoil.atom("sessions", PaymentType.Loading)
+let updateSession = Recoil.atom("updateSession", false)
 let paymentMethodList = Recoil.atom("paymentMethodList", PaymentType.Loading)
-let loggerAtom = Recoil.atom("component", HyperLogger.defaultLoggerConfig)
+let loggerAtom = Recoil.atom("component", LoggerUtils.defaultLoggerConfig)
 let sessionId = Recoil.atom("sessionId", "")
 let isConfirmBlocked = Recoil.atom("isConfirmBlocked", false)
 let customPodUri = Recoil.atom("customPodUri", "")
 let selectedOptionAtom = Recoil.atom("selectedOption", "")
-let shouldUseTopRedirectionAtom = Recoil.atom("shouldUseTopRedirection", false)
 let paymentTokenAtom = Recoil.atom(
   "paymentToken",
   {
@@ -50,8 +50,10 @@ let userPhoneNumber = Recoil.atom(
     countryCode: "",
   },
 )
+let userCardNickName = Recoil.atom("userCardNickName", defaultFieldValues)
 let isGooglePayReady = Recoil.atom("isGooglePayReady", false)
 let isApplePayReady = Recoil.atom("isApplePayReady", false)
+let isSamsungPayReady = Recoil.atom("isSamsungPayReady", false)
 let userCountry = Recoil.atom("userCountry", "")
 let userBank = Recoil.atom("userBank", "")
 let userAddressline1 = Recoil.atom("userAddressline1", defaultFieldValues)
@@ -77,12 +79,15 @@ let userPixCNPJ = Recoil.atom("userPixCNPJ", defaultFieldValues)
 let isCompleteCallbackUsed = Recoil.atom("isCompleteCallbackUsed", false)
 let isPaymentButtonHandlerProvidedAtom = Recoil.atom("isPaymentButtonHandlerProvidedAtom", false)
 let userBankAccountNumber = Recoil.atom("userBankAccountNumber", defaultFieldValues)
+let destinationBankAccountId = Recoil.atom("destinationBankAccountId", defaultFieldValues)
+let sourceBankAccountId = Recoil.atom("sourceBankAccountId", defaultFieldValues)
 
 type areOneClickWalletsRendered = {
   isGooglePay: bool,
   isApplePay: bool,
   isPaypal: bool,
   isKlarna: bool,
+  isSamsungPay: bool,
 }
 
 let defaultAreOneClickWalletsRendered = {
@@ -90,9 +95,47 @@ let defaultAreOneClickWalletsRendered = {
   isApplePay: false,
   isPaypal: false,
   isKlarna: false,
+  isSamsungPay: false,
 }
 
 let areOneClickWalletsRendered = Recoil.atom(
   "areOneClickWalletsBtnRendered",
   defaultAreOneClickWalletsRendered,
 )
+
+type clickToPayConfig = {
+  isReady: option<bool>,
+  availableCardBrands: array<string>,
+  email: string,
+  clickToPayCards: option<array<ClickToPayHelpers.clickToPayCard>>,
+  dpaName: string,
+  clickToPayProvider: ClickToPayHelpers.ctpProviderType,
+  visaComponentState: ClickToPayHelpers.visaComponentState,
+  maskedIdentity: string,
+  otpError: string,
+  consumerIdentity: ClickToPayHelpers.consumerIdentity,
+  clickToPayToken?: ClickToPayHelpers.clickToPayToken,
+}
+
+let defaultClickToPayConfig = {
+  isReady: None,
+  availableCardBrands: [],
+  email: "",
+  clickToPayCards: None,
+  dpaName: "",
+  clickToPayProvider: NONE,
+  visaComponentState: NONE,
+  maskedIdentity: "",
+  otpError: "",
+  consumerIdentity: {
+    identityType: EMAIL_ADDRESS,
+    identityValue: "",
+  },
+}
+
+let clickToPayConfig = Recoil.atom("clickToPayConfig", defaultClickToPayConfig)
+let defaultRedirectionFlags: redirectionFlags = {
+  shouldUseTopRedirection: false,
+  shouldRemoveBeforeUnloadEvents: false,
+}
+let redirectionFlagsAtom = Recoil.atom("redirectionFlags", defaultRedirectionFlags)

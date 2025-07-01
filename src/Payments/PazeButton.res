@@ -8,6 +8,7 @@ let make = (~token: SessionsType.token) => {
 
   let {iframeId, publishableKey, clientSecret} = Recoil.useRecoilValueFromAtom(keys)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let setIsShowOrPayUsing = Recoil.useSetRecoilState(isShowOrPayUsing)
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -16,6 +17,12 @@ let make = (~token: SessionsType.token) => {
   let paymentIntentID = clientSecret->Option.getOr("")->getPaymentId
   let (showLoader, setShowLoader) = React.useState(() => false)
   let onClick = _ => {
+    loggerState.setLogInfo(
+      ~value="Paze SDK Button Clicked",
+      ~eventName=PAZE_SDK_FLOW,
+      ~paymentMethod="PAZE",
+    )
+    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paze")
     setShowLoader(_ => true)
     let metadata =
       [
@@ -45,6 +52,11 @@ let make = (~token: SessionsType.token) => {
       let dict = json->Utils.getDictFromJson->getDictFromDict("data")
       if dict->getBool("isPaze", false) {
         setShowLoader(_ => false)
+        messageParentWindow([
+          ("fullscreen", true->JSON.Encode.bool),
+          ("param", "paymentloader"->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+        ])
         if dict->getOptionString("completeResponse")->Option.isSome {
           let completeResponse = dict->getString("completeResponse", "")
           intent(
@@ -73,9 +85,10 @@ let make = (~token: SessionsType.token) => {
       backgroundColor: "#2B63FF",
       height: themeObj.buttonHeight,
       cursor: {showLoader ? "not-allowed" : "pointer"},
-      opacity: {showLoader ? "0.6" : "1"},
       width: themeObj.buttonWidth,
       border: `${themeObj.buttonBorderWidth} solid ${themeObj.buttonBorderColor}`,
+      pointerEvents: updateSession ? "none" : "auto",
+      opacity: showLoader || updateSession ? "0.5" : "1.0",
     }>
     {showLoader ? <Spinner /> : <Icon name="paze" size=55 />}
   </button>

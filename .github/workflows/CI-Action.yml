@@ -7,6 +7,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,20 +26,20 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Update git submodules
+        run: git submodule update --init --recursive
+
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
 
       - name: Display Node.js version
         run: node --version
 
-      - name: "Rescript Code Compile"
+      - name: Rescript Code Compile
         run: npm run re:build
 
-      - name: "Build"
+      - name: Build
         run: npm run build
 
-      - name: "Test React Hooks Properties"
+      - name: Test React Hooks Properties
         run: npm run test:hooks
-
-      - name: npm release
-        run: npx semantic-release --debug;

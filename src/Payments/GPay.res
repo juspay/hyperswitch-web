@@ -9,7 +9,6 @@ let make = (
   ~sessionObj: option<SessionsType.token>,
   ~thirdPartySessionObj: option<JSON.t>,
   ~walletOptions,
-  ~paymentType: CardThemeType.mode,
 ) => {
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
@@ -17,6 +16,7 @@ let make = (
   let {iframeId} = Recoil.useRecoilValueFromAtom(keys)
   let isSDKHandleClick = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(keys)
+  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Gpay)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
@@ -77,8 +77,8 @@ let make = (
 
   GooglePayHelpers.useHandleGooglePayResponse(~connectors, ~intent, ~isWallet, ~requiredFieldsBody)
 
-  let (_, buttonType, _) = options.wallets.style.type_
-  let (_, heightType, _, _) = options.wallets.style.height
+  let (_, buttonType, _, _) = options.wallets.style.type_
+  let (_, heightType, _, _, _) = options.wallets.style.height
   let height = switch heightType {
   | GooglePay(val) => val
   | _ => 48
@@ -104,10 +104,11 @@ let make = (
       ~eventName=GOOGLE_PAY_FLOW,
       ~paymentMethod="GOOGLE_PAY",
     )
+    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="google_pay")
     makeOneClickHandlerPromise(isSDKHandleClick)->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
-        if isInvokeSDKFlow {
+        if isInvokeSDKFlow || GlobalVars.sdkVersion == V2 {
           if isDelayedSessionToken {
             messageParentWindow([
               ("fullscreen", true->JSON.Encode.bool),
@@ -190,7 +191,13 @@ let make = (
           syncPayment()
         }
       } catch {
-      | _ => logInfo(Console.log("Error in syncing GooglePay Payment"))
+      | _ =>
+        loggerState.setLogError(
+          ~value="Error in syncing GooglePay Payment",
+          ~eventName=GOOGLE_PAY_FLOW,
+          // ~internalMetadata=err->formatException->JSON.stringify,
+          ~paymentMethod="GOOGLE_PAY",
+        )
       }
     }
     Window.addEventListener("message", handleGooglePayMessages)
@@ -220,15 +227,17 @@ let make = (
   if isWallet {
     <RenderIf condition={isRenderGooglePayButton}>
       <div
-        style={height: `${height->Int.toString}px`}
+        style={
+          height: `${height->Int.toString}px`,
+          pointerEvents: updateSession ? "none" : "auto",
+          opacity: updateSession ? "0.5" : "1.0",
+        }
         id="google-pay-button"
         className={`w-full flex flex-row justify-center rounded-md`}
       />
     </RenderIf>
   } else {
-    <DynamicFields
-      paymentType paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody
-    />
+    <DynamicFields paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody />
   }
 }
 

@@ -4,11 +4,11 @@ let make = (
   options,
   ~clientSecret,
   ~publishableKey,
-  ~logger: option<HyperLogger.loggerMake>,
+  ~logger: option<HyperLoggerTypes.loggerMake>,
   ~ephemeralKey,
-  ~shouldUseTopRedirection,
+  ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
-  let logger = logger->Option.getOr(HyperLogger.defaultLoggerConfig)
+  let logger = logger->Option.getOr(LoggerUtils.defaultLoggerConfig)
   let customPodUri =
     options
     ->JSON.Decode.object
@@ -25,7 +25,7 @@ let make = (
         ~endpoint,
         ~logger,
         ~customPodUri,
-        ~shouldUseTopRedirection,
+        ~redirectionFlags,
       ),
     getPaymentManagementMethods: _ =>
       PaymentSessionMethods.getPaymentManagementMethods(

@@ -26,11 +26,7 @@ let make = () => {
   let (error, setError) = React.useState(_ => false)
   let (isNotEligible, setIsNotEligible) = React.useState(_ => false)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let (dateOfBirth, setDateOfBirth) = Recoil.useLoggedRecoilState(
-    RecoilAtoms.dateOfBirth,
-    "dateOfBirth",
-    loggerState,
-  )
+  let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(RecoilAtoms.dateOfBirth)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -50,6 +46,7 @@ let make = () => {
     | Some(val) => val->checkIs18OrAbove
     | None => false
     }
+    LoggerUtils.logInputChangeInfo("dateOfBirth", loggerState)
     setDateOfBirth(_ => date)
     setIsNotEligible(_ => !isAbove18)
   }

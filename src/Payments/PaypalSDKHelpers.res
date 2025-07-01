@@ -3,7 +3,7 @@ open Utils
 open TaxCalculation
 
 let loadPaypalSDK = (
-  ~loggerState: HyperLogger.loggerMake,
+  ~loggerState: HyperLoggerTypes.loggerMake,
   ~sdkHandleOneClickConfirmPayment as _,
   ~buttonStyle,
   ~iframeId,
@@ -14,7 +14,6 @@ let loadPaypalSDK = (
   ~options: PaymentType.options,
   ~publishableKey,
   ~paymentMethodTypes,
-  ~stateJson,
   ~confirm: PaymentHelpersTypes.paymentIntent,
   ~completeAuthorize: PaymentHelpersTypes.completeAuthorize,
   ~handleCloseLoader,
@@ -27,11 +26,8 @@ let loadPaypalSDK = (
   ~sessions: PaymentType.loadType,
   ~clientSecret,
 ) => {
-  loggerState.setLogInfo(
-    ~value="Paypal SDK Button Clicked",
-    ~eventName=PAYPAL_SDK_FLOW,
-    ~paymentMethod="PAYPAL",
-  )
+  open Promise
+
   let paypalWrapper = GooglePayType.getElementById(Utils.document, "paypal-button")
   paypalWrapper.innerHTML = ""
   setIsCompleted(_ => true)
@@ -56,7 +52,8 @@ let loadPaypalSDK = (
     style: buttonStyle,
     fundingSource: paypal["FUNDING"]["PAYPAL"],
     createOrder: () => {
-      makeOneClickHandlerPromise(sdkHandleIsThere)->Promise.then(result => {
+      PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
+      makeOneClickHandlerPromise(sdkHandleIsThere)->then(result => {
         let result = result->JSON.Decode.bool->Option.getOr(false)
         if result {
           messageParentWindow([
@@ -72,7 +69,7 @@ let loadPaypalSDK = (
             ~paymentType=paymentMethodListValue.payment_type,
             ~body,
           )
-          Promise.make((resolve, _) => {
+          make((resolve, _) => {
             if paypalNextAction == "post_session_tokens" {
               postSessionTokens(
                 ~bodyArr=modifiedPaymentBody,
@@ -109,7 +106,7 @@ let loadPaypalSDK = (
             ~eventName=PAYPAL_SDK_FLOW,
             ~paymentMethod="PAYPAL",
           )
-          Promise.resolve("")
+          resolve("")
         }
       })
     },
@@ -139,13 +136,13 @@ let loadPaypalSDK = (
           ~sessionId=data->getDictFromJson->Dict.get("orderID"),
         )
       } else {
-        JSON.Encode.null->Promise.resolve
+        JSON.Encode.null->resolve
       }
     },
     onApprove: (_data, actions) => {
       if !options.readOnly {
         actions.order.get()
-        ->Promise.then(val => {
+        ->then(val => {
           let purchaseUnit =
             val
             ->getDictFromJson
@@ -165,7 +162,6 @@ let loadPaypalSDK = (
           let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
             ~details,
             ~paymentMethodTypes,
-            ~statesList=stateJson,
           )
 
           let (connectors, _) =
@@ -185,7 +181,7 @@ let loadPaypalSDK = (
             ->getArrayOfTupleFromDict
 
           let confirmBody = bodyArr->Array.concatMany([modifiedPaymentBody])
-          Promise.make((_resolve, _) => {
+          make((_resolve, _) => {
             if paypalNextAction == "post_session_tokens" {
               confirm(
                 ~bodyArr=confirmBody,
@@ -208,6 +204,7 @@ let loadPaypalSDK = (
             }
           })
         })
+        ->catch(_ => resolve())
         ->ignore
       }
     },
@@ -217,6 +214,13 @@ let loadPaypalSDK = (
     onError: _err => {
       handleCloseLoader()
     },
+    onClick: () => {
+      loggerState.setLogInfo(
+        ~value="Paypal SDK Button Clicked",
+        ~eventName=PAYPAL_SDK_FLOW,
+        ~paymentMethod="PAYPAL",
+      )
+    },
   }).render("#paypal-button")
   areOneClickWalletsRendered(prev => {
     ...prev,
@@ -225,7 +229,7 @@ let loadPaypalSDK = (
 }
 
 let loadBraintreePaypalSdk = (
-  ~loggerState: HyperLogger.loggerMake,
+  ~loggerState: HyperLoggerTypes.loggerMake,
   ~sdkHandleOneClickConfirmPayment,
   ~token,
   ~buttonStyle,
@@ -237,20 +241,15 @@ let loadBraintreePaypalSdk = (
   ~orderDetails,
   ~publishableKey,
   ~paymentMethodTypes,
-  ~stateJson,
   ~handleCloseLoader,
   ~areOneClickWalletsRendered: (
     RecoilAtoms.areOneClickWalletsRendered => RecoilAtoms.areOneClickWalletsRendered
   ) => unit,
   ~isManualRetryEnabled,
 ) => {
-  loggerState.setLogInfo(
-    ~value="Paypal Braintree SDK Button Clicked",
-    ~eventName=PAYPAL_SDK_FLOW,
-    ~paymentMethod="PAYPAL",
-  )
+  open Promise
   makeOneClickHandlerPromise(sdkHandleOneClickConfirmPayment)
-  ->Promise.then(result => {
+  ->then(result => {
     let result = result->JSON.Decode.bool->Option.getOr(false)
     if result {
       braintree.client.create({authorization: token}, (clientErr, clientInstance) => {
@@ -296,7 +295,6 @@ let loadBraintreePaypalSdk = (
                             let requiredFieldsBody = DynamicFieldsUtils.getPaypalRequiredFields(
                               ~details=payload.details,
                               ~paymentMethodTypes,
-                              ~statesList=stateJson,
                             )
 
                             let paypalBody = body->mergeAndFlattenToTuples(requiredFieldsBody)
@@ -325,6 +323,13 @@ let loadBraintreePaypalSdk = (
                   onError: _err => {
                     handleCloseLoader()
                   },
+                  onClick: () => {
+                    loggerState.setLogInfo(
+                      ~value="Paypal Braintree SDK Button Clicked",
+                      ~eventName=PAYPAL_SDK_FLOW,
+                      ~paymentMethod="PAYPAL",
+                    )
+                  },
                 }).render("#paypal-button")
                 areOneClickWalletsRendered(
                   prev => {
@@ -338,7 +343,8 @@ let loadBraintreePaypalSdk = (
         )
       })->ignore
     }
-    Promise.resolve()
+    resolve()
   })
+  ->catch(_ => resolve())
   ->ignore
 }

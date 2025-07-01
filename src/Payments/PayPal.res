@@ -11,7 +11,7 @@ module Loader = {
 let payPalIcon = <Icon size=35 width=90 name="paypal" />
 
 @react.component
-let make = () => {
+let make = (~walletOptions) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let (paypalClicked, setPaypalClicked) = React.useState(_ => false)
   let sdkHandleIsThere = Recoil.useRecoilValueFromAtom(isPaymentButtonHandlerProvidedAtom)
@@ -19,13 +19,16 @@ let make = () => {
   let options = Recoil.useRecoilValueFromAtom(optionAtom)
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(areOneClickWalletsRendered)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let isWallet = walletOptions->Array.includes("paypal")
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
+  let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
 
-  let (_, _, labelType) = options.wallets.style.type_
+  let (_, _, labelType, _) = options.wallets.style.type_
   let _label = switch labelType {
   | Paypal(val) => val->PaypalSDKTypes.getLabel
   | _ => Paypal->PaypalSDKTypes.getLabel
   }
-  let (_, _, heightType, _) = options.wallets.style.height
+  let (_, _, heightType, _, _) = options.wallets.style.height
   let height = switch heightType {
   | Paypal(val) => val
   | _ => 48
@@ -47,6 +50,7 @@ let make = () => {
       ~eventName=PAYPAL_FLOW,
       ~paymentMethod="PAYPAL",
     )
+    PaymentUtils.emitPaymentMethodInfo(~paymentMethod="wallet", ~paymentMethodType="paypal")
     setPaypalClicked(_ => true)
     open Promise
     Utils.makeOneClickHandlerPromise(sdkHandleIsThere)
@@ -56,12 +60,16 @@ let make = () => {
         let (connectors, _) =
           paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
         let body = PaymentBody.paypalRedirectionBody(~connectors)
-
-        let modifiedPaymentBody = PaymentUtils.appendedCustomerAcceptance(
+        let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
           ~isGuestCustomer,
           ~paymentType=paymentMethodListValue.payment_type,
           ~body,
         )
+        let modifiedPaymentBody = if isWallet {
+          basePaymentBody
+        } else {
+          basePaymentBody->Utils.mergeAndFlattenToTuples(requiredFieldsBody)
+        }
 
         intent(
           ~bodyArr=modifiedPaymentBody,
@@ -77,6 +85,7 @@ let make = () => {
       }
       resolve()
     })
+    ->catch(_ => resolve())
     ->ignore
   }
 
@@ -88,24 +97,61 @@ let make = () => {
     None
   })
 
-  <button
-    style={
-      display: "inline-block",
-      color: textColor,
-      height: `${height->Int.toString}px`,
-      borderRadius: `${options.wallets.style.buttonRadius->Int.toString}px`,
-      width: "100%",
-      backgroundColor: buttonColor,
-    }
-    onClick={_ => options.readOnly ? () : onPaypalClick()}>
-    <div className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
-      {if !paypalClicked {
-        payPalIcon
-      } else {
-        <Loader />
-      }}
-    </div>
-  </button>
+  let useSubmitCallback = (~isWallet) => {
+    let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+    let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
+    let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+
+    React.useCallback((ev: Window.event) => {
+      if !isWallet {
+        let json = ev.data->Utils.safeParse
+        let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+        if confirm.doSubmit && areRequiredFieldsValid && !areRequiredFieldsEmpty {
+          onPaypalClick(ev)
+        } else if areRequiredFieldsEmpty {
+          Utils.postFailedSubmitResponse(
+            ~errortype="validation_error",
+            ~message=localeString.enterFieldsText,
+          )
+        } else if !areRequiredFieldsValid {
+          Utils.postFailedSubmitResponse(
+            ~errortype="validation_error",
+            ~message=localeString.enterValidDetailsText,
+          )
+        }
+      }
+    }, (areRequiredFieldsValid, areRequiredFieldsEmpty, isWallet, iframeId))
+  }
+
+  let submitCallback = useSubmitCallback(~isWallet)
+  Utils.useSubmitPaymentData(submitCallback)
+
+  if isWallet {
+    <button
+      style={
+        display: "inline-block",
+        color: textColor,
+        height: `${height->Int.toString}px`,
+        borderRadius: `${options.wallets.style.buttonRadius->Int.toString}px`,
+        width: "100%",
+        backgroundColor: buttonColor,
+        pointerEvents: updateSession ? "none" : "auto",
+        opacity: updateSession ? "0.5" : "1.0",
+      }
+      onClick={_ => options.readOnly ? () : onPaypalClick()}>
+      <div
+        className="justify-center" style={display: "flex", flexDirection: "row", color: textColor}>
+        {if !paypalClicked {
+          payPalIcon
+        } else {
+          <Loader />
+        }}
+      </div>
+    </button>
+  } else {
+    <DynamicFields paymentMethod="wallet" paymentMethodType="paypal" setRequiredFieldsBody />
+  }
 }
 
 let default = make

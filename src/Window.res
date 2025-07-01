@@ -16,6 +16,28 @@ type event = {key: string, data: string, origin: string}
 type date = {now: unit => string}
 type body
 type packageJson = {version: string}
+type callback = Nullable.t<JSON.t> => unit
+type options = {signal: unit}
+
+type element = {
+  mutable getAttribute: string => string,
+  mutable src: string,
+  mutable async: bool,
+  mutable rel: string,
+  mutable href: string,
+  mutable \"as": string,
+  mutable crossorigin: string,
+  mutable \"type": string,
+  mutable id: string,
+  mutable width: string,
+  mutable height: string,
+  contentWindow: option<window>,
+  setAttribute: (string, string) => unit,
+  addEventListener?: (string, callback, option<options>) => unit,
+}
+
+type elementRef
+@val external myDocument: elementRef = "document"
 
 /* External Declarations */
 @val external window: window = "window"
@@ -30,6 +52,9 @@ type packageJson = {version: string}
 @val @scope("document") external body: body = "body"
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
+@send
+external elementQuerySelector: (elementRef, string) => Nullable.t<element> = "querySelector"
+
 @val @scope("window")
 external removeEventListener: (string, 'ev => unit) => unit = "removeEventListener"
 @val @scope("window") external btoa: string => string = "btoa"
@@ -46,7 +71,7 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @get external name: window => string = "name"
 @get external contentWindow: Dom.element => Dom.element = "contentWindow"
 @get external style: Dom.element => style = "style"
-@send external getAttribute: (Dom.element, string) => option<string> = "getAttribute"
+@send external getAttribute: (Dom.element, string) => Nullable.t<string> = "getAttribute"
 @send external postMessage: (Dom.element, string, string) => unit = "postMessage"
 @send external postMessageJSON: (Dom.element, JSON.t, string) => unit = "postMessage"
 @send external getElementById: (document, string) => Nullable.t<Dom.element> = "getElementById"
@@ -66,6 +91,9 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @set external setHeight: (style, string) => unit = "height"
 @set external windowOnload: (window, unit => unit) => unit = "onload"
 @set external setHyper: (window, Types.hyperInstance) => unit = "HyperMethod"
+
+@send external closeWindow: window => unit = "close"
+@val external windowOpen: (string, string, string) => Nullable.t<window> = "open"
 
 /* Module Definitions */
 module Navigator = {
@@ -130,6 +158,12 @@ module Top = {
   }
 }
 
+module LocalStorage = {
+  @scope(("window", "localStorage")) @val external setItem: (string, string) => unit = "setItem"
+  @scope(("window", "localStorage")) @val external getItem: string => Nullable.t<string> = "getItem"
+  @scope(("window", "localStorage")) @val external removeItem: string => unit = "removeItem"
+}
+
 module Element = {
   @get external clientWidth: Dom.element => int = "clientWidth"
 }
@@ -162,11 +196,6 @@ let version = packageJson.version
 
 /* URL Handling */
 let hrefWithoutSearch = Location.origin ++ Location.pathname
-
-/* Environment Flags */
-let isSandbox = Location.hostname === "beta.hyperswitch.io"
-let isInteg = Location.hostname === "dev.hyperswitch.io"
-let isProd = Location.hostname === "checkout.hyperswitch.io"
 
 /* iFrame Detection */
 let isIframed = () =>
@@ -203,23 +232,3 @@ let getRootHostName = () =>
     }
   | false => Location.hostname
   }
-
-/* Redirect Handling */
-let replaceRootHref = (href: string, shouldUseTopRedirection: bool) => {
-  switch shouldUseTopRedirection {
-  | true =>
-    try {
-      Top.Location.replace(href)
-    } catch {
-    | e => {
-        Js.Console.error3(
-          "Failed to redirect root document",
-          e,
-          `Using [window.location.replace] for redirection`,
-        )
-        Location.replace(href)
-      }
-    }
-  | false => Location.replace(href)
-  }
-}

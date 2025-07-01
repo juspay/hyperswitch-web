@@ -3,6 +3,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   localeDirection: "ltr",
   cardNumberLabel: "Card Number",
   inValidCardErrorText: "Card number is invalid.",
+  inValidExpiryErrorText: "Card expiry is invalid.",
   inCompleteCVCErrorText: "Your card's security code is incomplete.",
   inCompleteExpiryErrorText: "Your card's expiration date is incomplete.",
   enterValidCardNumberErrorText: "Please enter a valid card number.",
@@ -15,7 +16,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   line1Placeholder: "Street address",
   line1EmptyText: "Address line 1 cannot be empty",
   line2Label: "Address line 2",
-  line2Placeholder: "Apt., unit number, etc (optional)",
+  line2Placeholder: "Apt., unit number, etc",
   line2EmptyText: "Address line 2 cannot be empty",
   cityLabel: "City",
   cityEmptyText: "City cannot be empty",
@@ -60,6 +61,10 @@ let localeStrings: LocaleStringTypes.localeStrings = {
     {React.string(`A surcharge amount of${Utils.nbsp}`)}
     <strong> {React.string(`${currency} ${str}`)} </strong>
     {React.string({`${Utils.nbsp}will be applied for this transaction`})}
+  </>,
+  shortSurchargeMessage: (currency, amount) => <>
+    {React.string(`Fee :${Utils.nbsp}`)}
+    <strong> {React.string(`${currency} ${amount}`)} </strong>
   </>,
   surchargeMsgAmountForCard: (currency, str) => <>
     {React.string(`A surcharge amount of upto${Utils.nbsp}`)}
@@ -149,4 +154,9 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pix key cannot be empty`,
   pixKeyPlaceholder: `Enter Pix key`,
   pixKeyLabel: `Pix key`,
+  destinationBankAccountIdEmptyText: `Destination Bank Account ID cannot be empty`,
+  sourceBankAccountIdEmptyText: `Source Bank Account ID cannot be empty`,
+  invalidCardHolderNameError: `Card Holder's name cannot have digits`,
+  invalidNickNameError: `Nickname cannot have more than 2 digits`,
+  expiry: `expiry`,
 }

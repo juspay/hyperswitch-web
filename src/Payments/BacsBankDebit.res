@@ -21,25 +21,27 @@ let formatSortCode = sortcode => {
 let cleanSortCode = str => str->String.replaceRegExp(%re("/-/g"), "")
 
 @react.component
-let make = (~paymentType: CardThemeType.mode) => {
+let make = () => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
-  let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
-  let (line1, _) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
-  let (line2, _) = Recoil.useLoggedRecoilState(userAddressline2, "line2", loggerState)
-  let (country, _) = Recoil.useLoggedRecoilState(userAddressCountry, "country", loggerState)
-  let (city, _) = Recoil.useLoggedRecoilState(userAddressCity, "city", loggerState)
-  let (postalCode, _) = Recoil.useLoggedRecoilState(userAddressPincode, "postal_code", loggerState)
-  let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
-  let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
+  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
+  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
+  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
+  let country = Recoil.useRecoilValueFromAtom(userAddressCountry)
+  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
+  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
+  let state = Recoil.useRecoilValueFromAtom(userAddressState)
+  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
   let (sortcode, setSortcode) = React.useState(_ => "")
   let (accountNumber, setAccountNumber) = React.useState(_ => "")
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let countryCode = Utils.getCountryCode(country.value).isoAlpha2
+  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
   let (sortCodeError, setSortCodeError) = React.useState(_ => "")
 
@@ -96,8 +98,8 @@ let make = (~paymentType: CardThemeType.mode) => {
           ~line2=line2.value,
           ~city=city.value,
           ~zip=postalCode.value,
-          ~state=state.value,
-          ~country=getCountryCode(country.value).isoAlpha2,
+          ~stateCode,
+          ~country=countryCode,
           ~bankAccountHolderName=fullName.value,
         )
         intent(
@@ -141,11 +143,9 @@ let make = (~paymentType: CardThemeType.mode) => {
             fieldName=localeString.sortCodeText
             value=sortcode
             onChange=changeSortCode
-            paymentType
             errorString=sortCodeError
             isValid={sortCodeError == "" ? None : Some(false)}
             type_="tel"
-            appearance=config.appearance
             maxLength=8
             onBlur=sortcodeBlur
             inputRef=sortCodeRef
@@ -155,16 +155,14 @@ let make = (~paymentType: CardThemeType.mode) => {
             fieldName=localeString.accountNumberText
             value=accountNumber
             onChange=changeAccNum
-            paymentType
             type_="text"
-            appearance=config.appearance
             inputRef=accNumRef
             placeholder="00012345"
           />
         </div>
-        <EmailPaymentInput paymentType />
-        <FullNamePaymentInput paymentType={paymentType} customFieldName=Some("Bank Holder Name") />
-        <AddressPaymentInput paymentType />
+        <EmailPaymentInput />
+        <FullNamePaymentInput customFieldName=Some("Bank Holder Name") />
+        <AddressPaymentInput />
         <Surcharge paymentMethod="bank_debit" paymentMethodType="bacs" />
       </div>
     </RenderIf>

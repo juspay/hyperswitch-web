@@ -5,12 +5,24 @@ let make = (
   ~savedMethods: array<PaymentType.customerMethods>,
   ~loadSavedCards: PaymentType.savedCardsLoadState,
   ~cvcProps,
-  ~paymentType,
   ~sessions,
+  ~isClickToPayAuthenticateError,
+  ~setIsClickToPayAuthenticateError,
+  ~getVisaCards,
+  ~closeComponentIfSavedMethodsAreEmpty,
 ) => {
   open CardUtils
   open Utils
   open UtilityHooks
+  open Promise
+
+  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+
+  let {clickToPayProvider} = clickToPayConfig
+  let customerMethods =
+    clickToPayConfig.clickToPayCards
+    ->Option.getOr([])
+    ->Array.map(obj => obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider))
 
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
@@ -28,7 +40,7 @@ let make = (
   )
   let isGuestCustomer = useIsGuestCustomer()
 
-  let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+  let {iframeId, clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
 
@@ -40,14 +52,21 @@ let make = (
   let applePaySessionObj = SessionsType.itemToObjMapper(dict, ApplePayObject)
   let applePayToken = SessionsType.getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
 
+  let samsungPaySessionObj = SessionsType.itemToObjMapper(dict, SamsungPayObject)
+  let samsungPayToken = SessionsType.getPaymentSessionObj(
+    samsungPaySessionObj.sessionsToken,
+    SamsungPay,
+  )
+  let (isClickToPayRememberMe, setIsClickToPayRememberMe) = React.useState(_ => false)
+
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let savedCardlength = savedMethods->Array.length
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
   let bottomElement = {
-    <div className="PickerItemContainer">
+    <div
+      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
       {savedMethods
       ->Array.mapWithIndex((obj, i) =>
         <SavedCardItem
@@ -59,15 +78,29 @@ let make = (
           index=i
           savedCardlength
           cvcProps
-          paymentType
           setRequiredFieldsBody
         />
       )
       ->React.array}
+      <RenderIf condition={clickToPayConfig.isReady == Some(true)}>
+        <ClickToPayAuthenticate
+          loggerState
+          savedMethods
+          setShowFields
+          isClickToPayAuthenticateError
+          setIsClickToPayAuthenticateError
+          setPaymentToken
+          paymentTokenVal
+          cvcProps
+          getVisaCards
+          setIsClickToPayRememberMe
+          closeComponentIfSavedMethodsAreEmpty
+        />
+      </RenderIf>
     </div>
   }
 
-  let (isCVCValid, _, cvcNumber, _, _, _, _, _, _, setCvcError) = cvcProps
+  let {isCVCValid, cvcNumber, setCvcError} = cvcProps
   let complete = switch isCVCValid {
   | Some(val) => paymentTokenVal !== "" && val
   | _ => false
@@ -75,6 +108,7 @@ let make = (
   let empty = cvcNumber == ""
   let customerMethod = React.useMemo(_ =>
     savedMethods
+    ->Array.concat(customerMethods)
     ->Array.filter(savedMethod => savedMethod.paymentToken === paymentTokenVal)
     ->Array.get(0)
     ->Option.getOr(PaymentType.defaultCustomerMethods)
@@ -88,13 +122,16 @@ let make = (
     !isUnknownPaymentMethod &&
     (!isCardPaymentMethod || isCardPaymentMethodValid)
 
-  let paymentType = customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
+  let paymentMethodType =
+    customerMethod.paymentMethodType->Option.getOr(customerMethod.paymentMethod)
 
-  useHandlePostMessages(~complete, ~empty, ~paymentType, ~savedMethod=true)
+  useHandlePostMessages(~complete, ~empty, ~paymentType=paymentMethodType, ~savedMethod=true)
 
   GooglePayHelpers.useHandleGooglePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
 
   ApplePayHelpers.useHandleApplePayResponse(~connectors=[], ~intent, ~isSavedMethodsFlow=true)
+
+  SamsungPayHelpers.useHandleSamsungPayResponse(~intent, ~isSavedMethodsFlow=true)
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
@@ -128,7 +165,64 @@ let make = (
     }
 
     if confirm.doSubmit {
-      if (
+      if customerMethod.card.isClickToPayCard {
+        ClickToPayHelpers.handleProceedToPay(
+          ~srcDigitalCardId=customerMethod.paymentToken,
+          ~logger=loggerState,
+          ~clickToPayProvider,
+          ~isClickToPayRememberMe,
+          ~clickToPayToken=clickToPayConfig.clickToPayToken,
+          ~orderId=clientSecret->Option.getOr(""),
+        )
+        ->then(resp => {
+          let dict = resp.payload->Utils.getDictFromJson
+
+          switch clickToPayProvider {
+          | MASTERCARD => {
+              let headers = dict->Utils.getDictFromDict("headers")
+              let merchantTransactionId = headers->Utils.getString("merchant-transaction-id", "")
+              let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
+              let correlationId =
+                dict
+                ->Utils.getDictFromDict("checkoutResponseData")
+                ->Utils.getString("srcCorrelationId", "")
+
+              let clickToPayBody = PaymentBody.mastercardClickToPayBody(
+                ~merchantTransactionId,
+                ~correlationId,
+                ~xSrcFlowId,
+              )
+              intent(
+                ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+                ~confirmParam=confirm.confirmParams,
+                ~handleUserError=false,
+                ~manualRetry=isManualRetryEnabled,
+              )
+            }
+          | VISA => {
+              let clickToPayBody = PaymentBody.visaClickToPayBody(
+                ~email=clickToPayConfig.email,
+                ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
+              )
+              intent(
+                ~bodyArr=clickToPayBody,
+                ~confirmParam=confirm.confirmParams,
+                ~handleUserError=false,
+                ~manualRetry=isManualRetryEnabled,
+              )
+            }
+          | NONE => ()
+          }
+          resolve(resp)
+        })
+        ->catch(_ =>
+          resolve({
+            ClickToPayHelpers.status: ERROR,
+            payload: JSON.Encode.null,
+          })
+        )
+        ->ignore
+      } else if (
         areRequiredFieldsValid &&
         !isUnknownPaymentMethod &&
         (!isCardPaymentMethod || isCardPaymentMethodValid) &&
@@ -160,6 +254,24 @@ let make = (
               ~sessionObj=optToken,
               ~componentName,
               ~paymentMethodListValue,
+            )
+          | _ =>
+            // TODO - To be replaced with proper error message
+            intent(
+              ~bodyArr=savedPaymentMethodBody->mergeAndFlattenToTuples(requiredFieldsBody),
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+            )
+          }
+        | Some("samsung_pay") =>
+          switch samsungPayToken {
+          | SamsungPayTokenOptional(optToken) =>
+            SamsungPayHelpers.handleSamsungPayClicked(
+              ~componentName,
+              ~sessionObj=optToken->Option.getOr(JSON.Encode.null)->getDictFromJson,
+              ~iframeId,
+              ~readOnly,
             )
           | _ =>
             // TODO - To be replaced with proper error message
@@ -221,17 +333,12 @@ let make = (
   ))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
-    {if savedCardlength === 0 && (loadSavedCards === PaymentType.LoadingSavedCards || !showFields) {
-      <div
-        className="Label flex flex-row gap-3 items-end cursor-pointer"
-        style={
-          fontSize: "14px",
-          color: themeObj.colorPrimary,
-          fontWeight: "400",
-          marginTop: "25px",
-        }>
-        <PaymentElementShimmer.SavedPaymentShimmer />
-      </div>
+    {if (
+      savedCardlength === 0 &&
+      clickToPayConfig.isReady->Option.isNone &&
+      (loadSavedCards === PaymentType.LoadingSavedCards || !showFields)
+    ) {
+      <PaymentElementShimmer.SavedPaymentCardShimmer />
     } else {
       <RenderIf condition={!showFields}> {bottomElement} </RenderIf>
     }}
@@ -243,14 +350,12 @@ let make = (
     <RenderIf
       condition={displaySavedPaymentMethodsCheckbox &&
       paymentMethodListValue.payment_type === SETUP_MANDATE}>
-      <div
-        className="opacity-50 text-xs mb-2 text-left"
-        style={
-          color: themeObj.colorText,
+      <Terms
+        mode={Card}
+        styles={
           marginTop: themeObj.spacingGridColumn,
-        }>
-        <Terms mode={Card} />
-      </div>
+        }
+      />
     </RenderIf>
     <RenderIf condition={!showFields}>
       <div
@@ -262,6 +367,16 @@ let make = (
           width: "fit-content",
           color: themeObj.colorPrimary,
         }
+        role="button"
+        ariaLabel="Click to use more payment methods"
+        tabIndex=0
+        onKeyDown={event => {
+          let key = JsxEvent.Keyboard.key(event)
+          let keyCode = JsxEvent.Keyboard.keyCode(event)
+          if key == "Enter" || keyCode == 13 {
+            setShowFields(_ => true)
+          }
+        }}
         dataTestId={TestUtils.addNewCardIcon}
         onClick={_ => setShowFields(_ => true)}>
         <Icon name="circle-plus" size=22 />

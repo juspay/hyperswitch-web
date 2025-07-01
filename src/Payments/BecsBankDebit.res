@@ -3,7 +3,7 @@ open RecoilAtomTypes
 open Utils
 
 @react.component
-let make = (~paymentType: CardThemeType.mode) => {
+let make = () => {
   let cleanBSB = str => str->String.replaceRegExp(%re("/-/g"), "")
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
@@ -11,16 +11,18 @@ let make = (~paymentType: CardThemeType.mode) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let (modalData, setModalData) = React.useState(_ => None)
 
-  let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
-  let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
-  let (line1, _) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
-  let (line2, _) = Recoil.useLoggedRecoilState(userAddressline2, "line2", loggerState)
-  let (country, _) = Recoil.useLoggedRecoilState(userAddressCountry, "country", loggerState)
-  let (city, _) = Recoil.useLoggedRecoilState(userAddressCity, "city", loggerState)
-  let (postalCode, _) = Recoil.useLoggedRecoilState(userAddressPincode, "postal_code", loggerState)
-  let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
+  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
+  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
+  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
+  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
+  let country = Recoil.useRecoilValueFromAtom(userAddressCountry)
+  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
+  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
+  let state = Recoil.useRecoilValueFromAtom(userAddressState)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let countryCode = Utils.getCountryCode(country.value).isoAlpha2
+  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
   let complete =
     email.value != "" &&
@@ -28,10 +30,6 @@ let make = (~paymentType: CardThemeType.mode) => {
     email.isValid->Option.getOr(false) &&
     switch modalData {
     | Some(data: ACHTypes.data) =>
-      Console.log2(
-        data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6,
-        "complete",
-      )
       data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6
     | None => false
     }
@@ -64,10 +62,10 @@ let make = (~paymentType: CardThemeType.mode) => {
               ~data,
               ~line1=line1.value,
               ~line2=line2.value,
-              ~country=getCountryCode(country.value).isoAlpha2,
+              ~country=countryCode,
               ~city=city.value,
               ~postalCode=postalCode.value,
-              ~state=state.value,
+              ~stateCode,
             )
             intent(
               ~bodyArr=body,
@@ -86,11 +84,11 @@ let make = (~paymentType: CardThemeType.mode) => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
-    <EmailPaymentInput paymentType />
-    <FullNamePaymentInput paymentType />
+    <EmailPaymentInput />
+    <FullNamePaymentInput />
     <AddBankAccount modalData setModalData />
     <FullScreenPortal>
-      <BankDebitModal setModalData paymentType />
+      <BankDebitModal setModalData />
     </FullScreenPortal>
     <Surcharge paymentMethod="bank_debit" paymentMethodType="becs" />
     <Terms mode=PaymentModeType.BecsBankDebit />

@@ -2,6 +2,7 @@ open Utils
 @react.component
 let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTimestamp) => {
   open RecoilAtoms
+  open RecoilAtomsV2
 
   let (configAtom, setConfig) = Recoil.useRecoilState(configAtom)
   let (keys, setKeys) = Recoil.useRecoilState(keys)
@@ -9,11 +10,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
+  let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
+  let setPaymentMethodsListV2 = Recoil.useSetRecoilState(paymentMethodsListV2)
   let setSessionId = Recoil.useSetRecoilState(sessionId)
   let setBlockConfirm = Recoil.useSetRecoilState(isConfirmBlocked)
   let setCustomPodUri = Recoil.useSetRecoilState(customPodUri)
   let setIsGooglePayReady = Recoil.useSetRecoilState(isGooglePayReady)
   let setIsApplePayReady = Recoil.useSetRecoilState(isApplePayReady)
+  let setIsSamsungPayReady = Recoil.useSetRecoilState(isSamsungPayReady)
+  let setUpdateSession = Recoil.useSetRecoilState(updateSession)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
   let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
@@ -28,14 +33,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   let messageParentWindow = data => messageParentWindow(data, ~targetOrigin=keys.parentURL)
 
-  let setUserFullName = Recoil.useLoggedSetRecoilState(userFullName, "fullName", logger)
-  let setUserEmail = Recoil.useLoggedSetRecoilState(userEmailAddress, "email", logger)
-  let setUserAddressline1 = Recoil.useLoggedSetRecoilState(userAddressline1, "line1", logger)
-  let setUserAddressline2 = Recoil.useLoggedSetRecoilState(userAddressline2, "line2", logger)
-  let setUserAddressCity = Recoil.useLoggedSetRecoilState(userAddressCity, "city", logger)
-  let setUserAddressPincode = Recoil.useLoggedSetRecoilState(userAddressPincode, "pin", logger)
-  let setUserAddressState = Recoil.useLoggedSetRecoilState(userAddressState, "state", logger)
-  let setUserAddressCountry = Recoil.useLoggedSetRecoilState(userAddressCountry, "country", logger)
+  let setUserFullName = Recoil.useSetRecoilState(userFullName)
+  let setUserEmail = Recoil.useSetRecoilState(userEmailAddress)
+  let setUserAddressline1 = Recoil.useSetRecoilState(userAddressline1)
+  let setUserAddressline2 = Recoil.useSetRecoilState(userAddressline2)
+  let setUserAddressCity = Recoil.useSetRecoilState(userAddressCity)
+  let setUserAddressPincode = Recoil.useSetRecoilState(userAddressPincode)
+  let setUserAddressState = Recoil.useSetRecoilState(userAddressState)
+  let setUserAddressCountry = Recoil.useSetRecoilState(userAddressCountry)
   let setCountry = Recoil.useSetRecoilState(userCountry)
   let setIsCompleteCallbackUsed = Recoil.useSetRecoilState(isCompleteCallbackUsed)
   let setIsPaymentButtonHandlerProvided = Recoil.useSetRecoilState(
@@ -87,18 +92,17 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | Card =>
       setOptions(_ => ElementType.itemToObjMapper(optionsDict, logger))
     | PaymentMethodCollectElement => {
-        let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(
-          optionsDict,
-          logger,
-        )
+        let paymentMethodCollectOptions = PaymentMethodCollectUtils.itemToObjMapper(optionsDict)
         setPaymentMethodCollectOptions(_ => paymentMethodCollectOptions)
       }
     | GooglePayElement
     | PayPalElement
     | ApplePayElement
+    | SamsungPayElement
     | KlarnaElement
     | PazeElement
     | ExpressCheckoutElement
+    | PaymentMethodsManagement
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
         setOptionsPayment(_ => paymentOptions)
@@ -128,6 +132,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         optionsLocaleString == "" ? config.locale : optionsLocaleString,
       )
       let constantString = await CardTheme.getConstantStringsObject()
+      let _ = await S3Utils.initializeCountryData(~locale=config.locale, ~logger)
       setConfig(_ => {
         config: {
           appearance,
@@ -135,6 +140,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           fonts: config.fonts,
           clientSecret: config.clientSecret,
           ephemeralKey: config.ephemeralKey,
+          pmClientSecret: config.pmClientSecret,
+          pmSessionId: config.pmSessionId,
           loader: config.loader,
         },
         themeObj: appearance.variables,
@@ -147,7 +154,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     }
   }
 
-  let updateShouldUseTopRedirection = UtilityHooks.useUpdateShouldUseTopRedirection()
+  let updateRedirectionFlags = UtilityHooks.useUpdateRedirectionFlags()
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMounted", true->JSON.Encode.bool)])
@@ -241,7 +248,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             } else {
               let sdkSessionId = dict->getString("sdkSessionId", "no-element")
               logger.setSessionId(sdkSessionId)
-              if Window.isInteg {
+              if GlobalVars.isInteg {
                 setBlockConfirm(_ => dict->getBool("blockConfirm", false))
               }
               setCustomPodUri(_ => dict->getString("customPodUri", ""))
@@ -271,20 +278,31 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
                 let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
                 let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
+                let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
+                let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
                 setKeys(prev => {
                   ...prev,
                   clientSecret: Some(clientSecret),
                   ephemeralKey,
+                  pmClientSecret,
+                  pmSessionId,
                 })
                 logger.setClientSecret(clientSecret)
 
                 // Update top redirection atom
-                updateShouldUseTopRedirection(paymentOptions)
+                updateRedirectionFlags(paymentOptions)
 
                 switch getThemePromise(paymentOptions) {
                 | Some(promise) =>
-                  promise->then(res => {
+                  promise
+                  ->then(res => {
                     dict->setConfigs(res)
+                  })
+                  ->catch(_ => {
+                    dict->setConfigs({
+                      default: DefaultTheme.default,
+                      defaultRules: DefaultTheme.defaultRules,
+                    })
                   })
                 | None =>
                   dict->setConfigs({
@@ -304,6 +322,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
               [
                 ("iframeId", "no-element"->JSON.Encode.string),
                 ("publishableKey", ""->JSON.Encode.string),
+                ("profileId", ""->JSON.Encode.string),
+                ("paymentId", ""->JSON.Encode.string),
                 ("parentURL", "*"->JSON.Encode.string),
                 ("sdkHandleOneClickConfirmPayment", true->JSON.Encode.bool),
               ]->Array.forEach(keyPair => {
@@ -321,20 +341,31 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
             let clientSecret = getWarningString(paymentOptions, "clientSecret", "", ~logger)
             let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
+            let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
+            let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
             setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
               ephemeralKey,
+              pmClientSecret,
+              pmSessionId,
             })
             logger.setClientSecret(clientSecret)
 
             // Update top redirection atom
-            updateShouldUseTopRedirection(paymentOptions)
+            updateRedirectionFlags(paymentOptions)
 
             switch getThemePromise(paymentOptions) {
             | Some(promise) =>
-              promise->then(res => {
+              promise
+              ->then(res => {
                 dict->setConfigs(res)
+              })
+              ->catch(_ => {
+                dict->setConfigs({
+                  default: DefaultTheme.default,
+                  defaultRules: DefaultTheme.defaultRules,
+                })
               })
 
             | None =>
@@ -366,8 +397,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           }
           switch getThemePromise(optionsDict) {
           | Some(promise) =>
-            promise->then(res => {
+            promise
+            ->then(res => {
               dict->setConfigs(res)
+            })
+            ->catch(_ => {
+              dict->setConfigs({
+                default: DefaultTheme.default,
+                defaultRules: DefaultTheme.defaultRules,
+              })
             })
 
           | None =>
@@ -380,10 +418,18 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         if dict->getDictIsSome("sessions") {
           setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))
         }
+        if dict->getDictIsSome("sessionUpdate") {
+          setUpdateSession(_ => {
+            dict->getJsonObjectFromDict("sessionUpdate")->JSON.Decode.bool->Option.getOr(false)
+          })
+        }
         if dict->getDictIsSome("isReadyToPay") {
           setIsGooglePayReady(_ =>
             dict->getJsonObjectFromDict("isReadyToPay")->JSON.Decode.bool->Option.getOr(false)
           )
+        }
+        if dict->getDictIsSome("isSamsungPayReady") {
+          setIsSamsungPayReady(_ => dict->getBool("isSamsungPayReady", false))
         }
         if (
           dict->getDictIsSome("customBackendUrl") &&
@@ -397,6 +443,38 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             | endpoint => ApiEndpoint.setApiEndPoint(endpoint)
             }
           }
+        }
+        if dict->getDictIsSome("paymentsListV2") {
+          let paymentsListV2 = dict->getJsonObjectFromDict("paymentsListV2")
+          let listDict = paymentsListV2->getDictFromJson
+
+          let updatedState: UnifiedPaymentsTypesV2.loadstate =
+            paymentsListV2 == Dict.make()->JSON.Encode.object
+              ? LoadErrorV2(paymentsListV2)
+              : switch listDict->Dict.get("error") {
+                | Some(_) => LoadErrorV2(paymentsListV2)
+                | None =>
+                  let isNonEmptyPaymentMethodList = switch listDict->Dict.get("response") {
+                  | Some(val) =>
+                    val->getDictFromJson->getArray("payment_methods_enabled")->Array.length > 0
+                  | None => false
+                  }
+                  isNonEmptyPaymentMethodList
+                    ? listDict->UnifiedHelpersV2.createPaymentsObjArr("response")
+                    : LoadErrorV2(paymentsListV2)
+                }
+
+          let evalMethodsList = () =>
+            switch updatedState {
+            | LoadedV2(_) => Console.info("Loaded payment methods list v2")
+            | LoadErrorV2(x) =>
+              Console.error2("Error in loading payment methods list v2: ", x->JSON.stringify)
+            | _ => ()
+            }
+
+          evalMethodsList()
+
+          setPaymentMethodsListV2(_ => updatedState)
         }
         if dict->getDictIsSome("paymentMethodList") {
           let paymentMethodList = dict->getJsonObjectFromDict("paymentMethodList")
@@ -552,6 +630,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             }
           | NoResult(_) => evalMethodsList()
           }
+        }
+        if dict->getDictIsSome("paymentManagementMethods") {
+          let paymentManagementMethods =
+            dict->UnifiedHelpersV2.createPaymentsObjArr("paymentManagementMethods")
+          setPaymentManagementList(_ => paymentManagementMethods)
         }
         if dict->Dict.get("applePayCanMakePayments")->Option.isSome {
           setIsApplePayReady(_ => true)

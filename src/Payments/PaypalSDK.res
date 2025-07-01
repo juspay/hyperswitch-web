@@ -1,7 +1,8 @@
 open PaypalSDKTypes
+open PaymentTypeContext
 
 @react.component
-let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) => {
+let make = (~sessionObj: SessionsType.token) => {
   let {
     iframeId,
     publishableKey,
@@ -16,12 +17,14 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
+  let paymentType = usePaymentType()
 
   let token = sessionObj.token
   let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
   let intent = PaymentHelpers.usePostSessionTokens(Some(loggerState), Paypal, Wallet)
   let confirm = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   let sessions = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
+  let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
   let completeAuthorize = PaymentHelpers.useCompleteAuthorize(Some(loggerState), Paypal)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let checkoutScript =
@@ -29,11 +32,9 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
   let clientScript =
     Window.document(Window.window)->Window.getElementById("braintree-client")->Nullable.toOption
 
-  let (stateJson, setStatesJson) = React.useState(_ => JSON.Encode.null)
-
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let (_, _, buttonType) = options.wallets.style.type_
-  let (_, _, heightType, _) = options.wallets.style.height
+  let (_, _, buttonType, _) = options.wallets.style.type_
+  let (_, _, heightType, _, _) = options.wallets.style.height
   let buttonStyle = {
     layout: "vertical",
     color: options.wallets.style.theme == Outline
@@ -60,7 +61,6 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
     ~paymentMethodType="paypal",
   )
 
-  PaymentUtils.useStatesJson(setStatesJson)
   UtilityHooks.useHandlePostMessages(
     ~complete=isCompleted,
     ~empty=!isCompleted,
@@ -94,7 +94,6 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
         ~options,
         ~publishableKey,
         ~paymentMethodTypes,
-        ~stateJson,
         ~confirm,
         ~completeAuthorize,
         ~handleCloseLoader,
@@ -111,41 +110,48 @@ let make = (~sessionObj: SessionsType.token, ~paymentType: CardThemeType.mode) =
 
   React.useEffect(() => {
     try {
-      if stateJson->Identity.jsonToNullableJson->Js.Nullable.isNullable->not {
-        switch sessionObj.connector {
-        | "paypal" => mountPaypalSDK()
-        | _ =>
-          switch (checkoutScript, clientScript) {
-          | (Some(_), Some(_)) =>
-            PaypalSDKHelpers.loadBraintreePaypalSdk(
-              ~loggerState,
-              ~sdkHandleOneClickConfirmPayment,
-              ~token,
-              ~buttonStyle,
-              ~iframeId,
-              ~paymentMethodListValue,
-              ~isGuestCustomer,
-              ~intent,
-              ~options,
-              ~orderDetails,
-              ~publishableKey,
-              ~paymentMethodTypes,
-              ~stateJson,
-              ~handleCloseLoader,
-              ~areOneClickWalletsRendered,
-              ~isManualRetryEnabled,
-            )
-          | _ => ()
-          }
+      switch sessionObj.connector {
+      | "paypal" => mountPaypalSDK()
+      | _ =>
+        switch (checkoutScript, clientScript) {
+        | (Some(_), Some(_)) =>
+          PaypalSDKHelpers.loadBraintreePaypalSdk(
+            ~loggerState,
+            ~sdkHandleOneClickConfirmPayment,
+            ~token,
+            ~buttonStyle,
+            ~iframeId,
+            ~paymentMethodListValue,
+            ~isGuestCustomer,
+            ~intent,
+            ~options,
+            ~orderDetails,
+            ~publishableKey,
+            ~paymentMethodTypes,
+            ~handleCloseLoader,
+            ~areOneClickWalletsRendered,
+            ~isManualRetryEnabled,
+          )
+        | _ => ()
         }
       }
     } catch {
-    | _err => Utils.logInfo(Console.log("Error loading Paypal"))
+    | _ =>
+      loggerState.setLogError(
+        ~value="Error loading Paypal",
+        ~eventName=PAYPAL_SDK_FLOW,
+        // ~internalMetadata=err->Utils.formatException->JSON.stringify,
+        ~paymentMethod="PAYPAL_SDK",
+      )
     }
     None
-  }, [stateJson])
+  }, [])
 
-  <div id="paypal-button" className="w-full flex flex-row justify-center rounded-md h-auto" />
+  <div
+    id="paypal-button"
+    style={pointerEvents: updateSession ? "none" : "auto", opacity: updateSession ? "0.5" : "1.0"}
+    className="w-full flex flex-row justify-center rounded-md h-auto"
+  />
 }
 
 let default = make

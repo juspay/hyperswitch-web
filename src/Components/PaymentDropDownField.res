@@ -11,6 +11,7 @@ let make = (
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let dropdownRef = React.useRef(Nullable.null)
   let (inputFocused, setInputFocused) = React.useState(_ => false)
   let {parentURL} = Recoil.useRecoilValueFromAtom(keys)
@@ -55,6 +56,11 @@ let make = (
   let handleChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
+
+    // Log the dropdown change using fieldName
+    if fieldName->String.length > 0 {
+      LoggerUtils.logInputChangeInfo(fieldName, loggerState)
+    }
     setValue(_ => {
       isValid: Some(true),
       value,
@@ -78,7 +84,8 @@ let make = (
             fontSize: themeObj.fontSizeLg,
             marginBottom: "5px",
             opacity: "0.6",
-          }>
+          }
+          ariaHidden=true>
           {React.string(fieldName)}
         </div>
       </RenderIf>
@@ -96,7 +103,8 @@ let make = (
           disabled={readOnly || disabled}
           onFocus={handleFocus}
           onChange=handleChange
-          className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}>
+          className={`${inputClassStyles} ${inputClass} ${className} w-full appearance-none outline-none overflow-hidden whitespace-nowrap text-ellipsis ${cursorClass}`}
+          ariaLabel={`${fieldName} option tab`}>
           {options
           ->Array.mapWithIndex((item: string, i) => {
             <option key={Int.toString(i)} value=item> {React.string(item)} </option>
@@ -114,7 +122,8 @@ let make = (
                 inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
               },
               opacity: "0.6",
-            }>
+            }
+            ariaHidden=true>
             {React.string(fieldName)}
           </div>
         </RenderIf>
