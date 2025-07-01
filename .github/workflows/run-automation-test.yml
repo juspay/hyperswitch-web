@@ -7,10 +7,15 @@ on:
     branches:
       - main
 
+# ✅ Add explicit permissions block for least privilege
+permissions:
+  contents: read
+
 jobs:
   cypress:
     runs-on: ubuntu-latest
     environment: Testing
+
     env:
       HS_Prof_Id: ${{ secrets.PROFILE_ID }}
       HS_Server_Url: "https://sandbox.hyperswitch.io"
@@ -50,7 +55,8 @@ jobs:
       - name: Build and start local server
         run: |
           npm run re:build && npm run start &
-          echo "Hyperswitch Web started" && cd Hyperswitch-React-Demo-App && npm run start &
+          echo "Hyperswitch Web started"
+          cd Hyperswitch-React-Demo-App && npm run start &
           echo "Demo App started"
         # Builds the project and starts both the Hyperswitch Web and Demo App servers in the background
 

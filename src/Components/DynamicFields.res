@@ -30,13 +30,19 @@ let make = (
   ~isSaveDetailsWithClickToPay=false,
 ) => {
   open DynamicFieldsUtils
+  open PaymentTypeContext
   open Utils
   open RecoilAtoms
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentManagementListValue,
   )
-
+  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let contextPaymentType = usePaymentType()
+  let listValue = switch contextPaymentType {
+  | PaymentMethodsManagement => paymentManagementListValue
+  | _ => paymentsListValueV2
+  }
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -51,8 +57,20 @@ let make = (
     ~paymentMethodType,
   )
 
+  let paymentMethodTypesV2 = PaymentUtilsV2.usePaymentMethodTypeFromListV2(
+    ~paymentsListValueV2=listValue,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
   let creditPaymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
     ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType="credit",
+  )
+
+  let creditPaymentMethodTypesV2 = PaymentUtilsV2.usePaymentMethodTypeFromListV2(
+    ~paymentsListValueV2=listValue,
     ~paymentMethod,
     ~paymentMethodType="credit",
   )
@@ -62,7 +80,7 @@ let make = (
       switch GlobalVars.sdkVersion {
       | V2 =>
         let creditRequiredFields =
-          paymentManagementListValue.paymentMethodsEnabled
+          listValue.paymentMethodsEnabled
           ->Array.filter(item => {
             item.paymentMethodSubtype === "credit" && item.paymentMethodType === "card"
           })
@@ -84,15 +102,20 @@ let make = (
         ]->removeRequiredFieldsDuplicates
       }
     } else if dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType) {
-      paymentMethodTypes.required_fields
+      switch GlobalVars.sdkVersion {
+      | V1 => paymentMethodTypes.required_fields
+      | V2 => paymentMethodTypesV2.requiredFields
+      }
     } else {
       []
     }
   }, (
     paymentMethod,
     paymentMethodTypes.required_fields,
+    paymentMethodTypesV2.requiredFields,
     paymentMethodType,
     creditPaymentMethodTypes.required_fields,
+    creditPaymentMethodTypesV2.requiredFields,
   ))
 
   let requiredFields = React.useMemo(() => {
@@ -124,19 +147,13 @@ let make = (
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
-  let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
+  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
+  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
+  let (state, setState) = Recoil.useRecoilState(userAddressState)
+  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
 
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
-  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
-  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", logger)
-  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
-    userAddressPincode,
-    "postal_code",
-    logger,
-  )
-
-  let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
+  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
@@ -147,21 +164,11 @@ let make = (
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
-    userBankAccountNumber,
-    "bankAccountNumber",
-    logger,
-  )
-  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useLoggedRecoilState(
+  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
+  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useRecoilState(
     destinationBankAccountId,
-    "destinationBankAccountId",
-    logger,
   )
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useLoggedRecoilState(
-    sourceBankAccountId,
-    "sourceBankAccountId",
-    logger,
-  )
+  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
   let countryList = CountryStateDataRefs.countryDataRef.contents
   let stateNames = getStateNames({
     value: country,
@@ -169,6 +176,7 @@ let make = (
     errorString: "",
   })
 
+  // TODO - Handle Bank Names for V2
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
   let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))
 
@@ -649,7 +657,7 @@ let make = (
                       appearance=config.appearance
                       fieldName=localeString.countryLabel
                       value=country
-                      setValue={setCountry}
+                      setValue=setCountry
                       disabled=false
                       options=updatedCountryArray
                       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
@@ -760,7 +768,7 @@ let make = (
                 | AddressPincode =>
                   <PaymentField
                     fieldName=localeString.postalCodeLabel
-                    setValue={setPostalCode}
+                    setValue=setPostalCode
                     value=postalCode
                     onBlur={ev => {
                       let value = ReactEvent.Focus.target(ev)["value"]

@@ -453,40 +453,37 @@ let samsungPayBody = (~metadata) => {
 }
 
 let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) => {
-  let gPayBody = [
-    ("payment_method", "wallet"->JSON.Encode.string),
-    ("payment_method_type", "google_pay"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "wallet",
-          [
-            (
-              "google_pay",
-              [
-                ("type", payObj.paymentMethodData.\"type"->JSON.Encode.string),
-                ("description", payObj.paymentMethodData.description->JSON.Encode.string),
-                ("info", payObj.paymentMethodData.info->Utils.transformKeys(Utils.SnakeCase)),
-                (
-                  "tokenization_data",
-                  payObj.paymentMethodData.tokenizationData->Utils.transformKeys(Utils.SnakeCase),
-                ),
-              ]->Utils.getJsonFromArrayOfJson,
-            ),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ]
-
-  if connectors->Array.length > 0 {
-    gPayBody
-    ->Array.push(("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array))
-    ->ignore
+  open Utils
+  let (paymentMethodTypeKey, paymentMethodSubtypeKey) = switch GlobalVars.sdkVersion {
+  | V1 => ("payment_method", "payment_method_type")
+  | V2 => ("payment_method_type", "payment_method_subtype")
   }
 
-  gPayBody
+  let paymentMethodData = {
+    let paymentMethodData = payObj.paymentMethodData
+
+    [
+      ("type", paymentMethodData.\"type"->JSON.Encode.string),
+      ("description", paymentMethodData.description->JSON.Encode.string),
+      ("info", paymentMethodData.info->transformKeys(SnakeCase)),
+      ("tokenization_data", paymentMethodData.tokenizationData->transformKeys(SnakeCase)),
+    ]->getJsonFromArrayOfJson
+  }
+
+  let walletData = [("google_pay", paymentMethodData)]->getJsonFromArrayOfJson
+
+  let paymentMethodDataJson = [("wallet", walletData)]->getJsonFromArrayOfJson
+
+  let baseBody = [
+    (paymentMethodTypeKey, "wallet"->JSON.Encode.string),
+    (paymentMethodSubtypeKey, "google_pay"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodDataJson),
+  ]
+
+  switch connectors->Array.length > 0 {
+  | true => [("connector", connectors->getArrofJsonString->JSON.Encode.array)]
+  | false => baseBody
+  }
 }
 
 let gpayRedirectBody = (~connectors: array<string>) => [
