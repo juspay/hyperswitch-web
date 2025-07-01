@@ -8,8 +8,8 @@ let default = () => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
-  let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
-  let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
+  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
+  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let setComplete = Recoil.useSetRecoilState(fieldsComplete)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())

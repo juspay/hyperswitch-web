@@ -288,11 +288,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let googlePayScriptURL = "https://pay.google.com/gp/p/js/pay.js"
         let googlePayScript = Window.createElement("script")
         googlePayScript->Window.elementSrc(googlePayScriptURL)
-        googlePayScript->Window.elementOnerror(err => {
+        googlePayScript->Window.elementOnerror(_ => {
           logger.setLogError(
             ~value="ERROR DURING LOADING GOOGLE PAY SCRIPT",
             ~eventName=GOOGLE_PAY_SCRIPT,
-            ~internalMetadata=err->formatException->JSON.stringify,
+            // ~internalMetadata=err->formatException->JSON.stringify,
             ~paymentMethod="GOOGLE_PAY",
           )
         })
@@ -306,11 +306,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         let samsungPayScriptUrl = "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js"
         let samsungPayScript = Window.createElement("script")
         samsungPayScript->Window.elementSrc(samsungPayScriptUrl)
-        samsungPayScript->Window.elementOnerror(err => {
+        samsungPayScript->Window.elementOnerror(_ => {
           logger.setLogError(
             ~value="ERROR DURING LOADING SAMSUNG PAY SCRIPT",
             ~eventName=SAMSUNG_PAY_SCRIPT,
-            ~internalMetadata=err->formatException->JSON.stringify,
+            // ~internalMetadata=err->formatException->JSON.stringify,
             ~paymentMethod="SAMSUNG_PAY",
           )
         })
@@ -330,67 +330,33 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         iframeRef.contents->Array.push(ref)->ignore
       }
 
-      let retrievePaymentIntentFn = clientSecret => {
-        let headers = {
-          "Accept": "application/json",
-          "api-key": publishableKey,
-        }
-        let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
-        let paymentIntentID = clientSecret->Utils.getPaymentId
-        let retrievePaymentUrl = `${endpoint}/payments/${paymentIntentID}?client_secret=${clientSecret}`
-        open Promise
-        logApi(
-          ~optLogger=Some(logger),
-          ~url=retrievePaymentUrl,
-          ~apiLogType=Request,
-          ~eventName=RETRIEVE_CALL_INIT,
-          ~logType=INFO,
-          ~logCategory=API,
-        )
-        Fetch.fetch(
-          retrievePaymentUrl,
-          {
-            method: #GET,
-            headers: Fetch.Headers.fromObject(headers),
+      let retrievePaymentIntentFn = async clientSecret => {
+        let uri = APIUtils.generateApiUrl(
+          RetrievePaymentIntent,
+          ~params={
+            clientSecret: Some(clientSecret),
+            publishableKey: Some(publishableKey),
+            customBackendBaseUrl: None,
+            paymentMethodId: None,
+            forceSync: None,
+            pollId: None,
           },
         )
-        ->then(resp => {
-          let statusCode = resp->Fetch.Response.status
-          if !(resp->Fetch.Response.ok) {
-            resp
-            ->Fetch.Response.json
-            ->then(data => {
-              logApi(
-                ~optLogger=Some(logger),
-                ~url=retrievePaymentUrl,
-                ~data,
-                ~statusCode,
-                ~apiLogType=Err,
-                ~eventName=RETRIEVE_CALL,
-                ~logType=ERROR,
-                ~logCategory=API,
-              )
-              resolve()
-            })
-            ->catch(_ => resolve())
-            ->ignore
-          } else {
-            logApi(
-              ~optLogger=Some(logger),
-              ~url=retrievePaymentUrl,
-              ~statusCode,
-              ~apiLogType=Response,
-              ~eventName=RETRIEVE_CALL,
-              ~logType=INFO,
-              ~logCategory=API,
-            )
-          }
-          Fetch.Response.json(resp)
-        })
-        ->then(data => {
-          [("paymentIntent", data)]->getJsonFromArrayOfJson->Promise.resolve
-        })
-        ->catch(_ => Promise.resolve(JSON.Encode.null))
+
+        let onSuccess = data => [("paymentIntent", data)]->getJsonFromArrayOfJson
+
+        let onFailure = _ => JSON.Encode.null
+
+        await fetchApiWithLogging(
+          uri,
+          ~eventName=RETRIEVE_CALL,
+          ~logger,
+          ~method=#GET,
+          ~customPodUri=None,
+          ~publishableKey=Some(publishableKey),
+          ~onSuccess,
+          ~onFailure,
+        )
       }
 
       let confirmPaymentWrapper = (payload, isOneClick, result, ~isSdkButton=false) => {
@@ -735,7 +701,45 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
-      let returnObject = {
+      let sessionUpdate = async clientSecret => {
+        try {
+          let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
+          let session = await PaymentHelpers.fetchSessions(
+            ~clientSecret,
+            ~publishableKey,
+            ~logger,
+            ~endpoint,
+          )
+          iframeRef.contents->Array.forEach(ifR => {
+            ifR->Window.iframePostMessage([("sessions", session)]->Dict.fromArray)
+            ifR->Window.iframePostMessage(
+              [("sessionUpdate", false->JSON.Encode.bool)]->Dict.fromArray,
+            )
+          })
+          [("updateCompleted", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
+        } catch {
+        | Exn.Error(e) =>
+          let errorMsg = Exn.message(e)->Option.getOr("Something went wrong!")
+          [
+            ("updateCompleted", false->JSON.Encode.bool),
+            ("errorMessage", errorMsg->JSON.Encode.string),
+          ]->getJsonFromArrayOfJson
+        }
+      }
+
+      let completeUpdateIntent = clientSecret => {
+        sessionUpdate(clientSecret)
+      }
+
+      let initiateUpdateIntent = () => {
+        iframeRef.contents->Array.forEach(ifR => {
+          ifR->Window.iframePostMessage([("sessionUpdate", true->JSON.Encode.bool)]->Dict.fromArray)
+        })
+        let msg = [("updateInitiated", true->JSON.Encode.bool)]->getJsonFromArrayOfJson
+        Promise.resolve(msg)
+      }
+
+      let returnObject: hyperInstance = {
         confirmOneClickPayment,
         confirmPayment,
         elements,
@@ -745,6 +749,8 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentRequest,
         initPaymentSession,
         paymentMethodsManagementElements,
+        completeUpdateIntent,
+        initiateUpdateIntent,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

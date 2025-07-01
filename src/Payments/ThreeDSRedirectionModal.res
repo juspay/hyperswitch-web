@@ -1,8 +1,10 @@
 open Utils
+type customEvent = {openurl_if_required: string}
 
 @react.component
 let make = () => {
   let (popupUrl, setPopupUrl) = React.useState(_ => "")
+  let (redirectResponseUrl, setRedirectResponseUrl) = React.useState(_ => "")
   let (openModal, setOpenModal) = React.useState(_ => false)
   let (loader, setloader) = React.useState(_ => false)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
@@ -10,10 +12,19 @@ let make = () => {
   let eventsToSendToParent = ["openurl_if_required"]
   eventsToSendToParent->UtilityHooks.useSendEventsToParent
 
-  let handleOnClose = () => {
-    Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-    postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
-  }
+  let handleOnClose = () =>
+    if redirectResponseUrl == "" {
+      messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+      postFailedSubmitResponse(~errortype="error", ~message="Something went wrong.")
+    } else {
+      let customEvent =
+        {
+          openurl_if_required: redirectResponseUrl,
+        }
+        ->Identity.anyTypeToJson
+        ->getDictFromJson
+      messageParentWindow(customEvent->Dict.toArray)
+    }
 
   React.useEffect0(() => {
     messageParentWindow([("iframeMountedCallback", true->JSON.Encode.bool)])
@@ -26,7 +37,9 @@ let make = () => {
           let metadata = dict->getJsonObjectFromDict("metadata")
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
           let popupUrl = metaDataDict->getString("popupUrl", "")
+          let redirectResponseUrl = metaDataDict->getString("redirectResponseUrl", "")
           setPopupUrl(_ => popupUrl)
+          setRedirectResponseUrl(_ => redirectResponseUrl)
           setloader(_ => false)
         }
       } catch {

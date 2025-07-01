@@ -6,15 +6,10 @@ open Utils
 let make = (~customFieldName=None, ~requiredFields as optionalRequiredFields=?) => {
   let {config, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
-  let (billingName, setBillingName) = Recoil.useLoggedRecoilState(
-    userBillingName,
-    "billingName",
-    loggerState,
-  )
+  let (billingName, setBillingName) = Recoil.useRecoilState(userBillingName)
 
-  let showDetails = getShowDetails(~billingDetails=fields.billingDetails, ~logger=loggerState)
+  let showDetails = getShowDetails(~billingDetails=fields.billingDetails)
 
   let changeName = ev => {
     let val: string = ReactEvent.Form.target(ev)["value"]

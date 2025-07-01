@@ -136,12 +136,13 @@ let savedCardBody = (
   savedCardBody
 }
 
-let clickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
+let mastercardClickToPayBody = (~merchantTransactionId, ~correlationId, ~xSrcFlowId) => {
   let clickToPayServiceDetails =
     [
       ("merchant_transaction_id", merchantTransactionId->JSON.Encode.string),
       ("correlation_id", correlationId->JSON.Encode.string),
       ("x_src_flow_id", xSrcFlowId->JSON.Encode.string),
+      ("provider", "mastercard"->JSON.Encode.string),
     ]->Utils.getJsonFromArrayOfJson
 
   [
@@ -452,40 +453,37 @@ let samsungPayBody = (~metadata) => {
 }
 
 let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) => {
-  let gPayBody = [
-    ("payment_method", "wallet"->JSON.Encode.string),
-    ("payment_method_type", "google_pay"->JSON.Encode.string),
-    (
-      "payment_method_data",
-      [
-        (
-          "wallet",
-          [
-            (
-              "google_pay",
-              [
-                ("type", payObj.paymentMethodData.\"type"->JSON.Encode.string),
-                ("description", payObj.paymentMethodData.description->JSON.Encode.string),
-                ("info", payObj.paymentMethodData.info->Utils.transformKeys(Utils.SnakeCase)),
-                (
-                  "tokenization_data",
-                  payObj.paymentMethodData.tokenizationData->Utils.transformKeys(Utils.SnakeCase),
-                ),
-              ]->Utils.getJsonFromArrayOfJson,
-            ),
-          ]->Utils.getJsonFromArrayOfJson,
-        ),
-      ]->Utils.getJsonFromArrayOfJson,
-    ),
-  ]
-
-  if connectors->Array.length > 0 {
-    gPayBody
-    ->Array.push(("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array))
-    ->ignore
+  open Utils
+  let (paymentMethodTypeKey, paymentMethodSubtypeKey) = switch GlobalVars.sdkVersion {
+  | V1 => ("payment_method", "payment_method_type")
+  | V2 => ("payment_method_type", "payment_method_subtype")
   }
 
-  gPayBody
+  let paymentMethodData = {
+    let paymentMethodData = payObj.paymentMethodData
+
+    [
+      ("type", paymentMethodData.\"type"->JSON.Encode.string),
+      ("description", paymentMethodData.description->JSON.Encode.string),
+      ("info", paymentMethodData.info->transformKeys(SnakeCase)),
+      ("tokenization_data", paymentMethodData.tokenizationData->transformKeys(SnakeCase)),
+    ]->getJsonFromArrayOfJson
+  }
+
+  let walletData = [("google_pay", paymentMethodData)]->getJsonFromArrayOfJson
+
+  let paymentMethodDataJson = [("wallet", walletData)]->getJsonFromArrayOfJson
+
+  let baseBody = [
+    (paymentMethodTypeKey, "wallet"->JSON.Encode.string),
+    (paymentMethodSubtypeKey, "google_pay"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodDataJson),
+  ]
+
+  switch connectors->Array.length > 0 {
+  | true => [("connector", connectors->getArrofJsonString->JSON.Encode.array)]
+  | false => baseBody
+  }
 }
 
 let gpayRedirectBody = (~connectors: array<string>) => [
@@ -926,6 +924,16 @@ let pazeBody = (~completeResponse) => {
   ]
 }
 
+let revolutPayBody = () => {
+  let walletBody = [("revolut_pay", Dict.make()->JSON.Encode.object)]->Utils.getJsonFromArrayOfJson
+  let paymentMethodData = [("wallet", walletBody)]->Utils.getJsonFromArrayOfJson
+
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "revolut_pay"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
 let eftBody = () => {
   open Utils
   let eftProviderName = [("provider", "ozow"->JSON.Encode.string)]->getJsonFromArrayOfJson
@@ -945,7 +953,7 @@ let getPaymentMethodType = (paymentMethod, paymentMethodType) =>
   switch paymentMethod {
   | "bank_debit" => paymentMethodType->String.replace("_debit", "")
   | "bank_transfer" =>
-    if paymentMethodType != "sepa_bank_transfer" && paymentMethodType != "instant_bank_transfer" {
+    if !(Constants.bankTransferList->Array.includes(paymentMethodType)) {
       paymentMethodType->String.replace("_transfer", "")
     } else {
       paymentMethodType
@@ -969,6 +977,7 @@ let appendRedirectPaymentMethods = [
   "we_chat_pay",
   "ali_pay",
   "ali_pay_hk",
+  "revolut_pay",
 ]
 
 let appendBankeDebitMethods = ["sepa"]
@@ -1079,6 +1088,7 @@ let getPaymentBody = (
   | "przelewy24" => p24Body(~email)
   | "online_banking_fpx" => fpxOBBody(~bank)
   | "online_banking_thailand" => thailandOBBody(~bank)
+  | "revolut_pay" => revolutPayBody()
   | "classic"
   | "evoucher" =>
     rewardBody(~paymentMethodType)

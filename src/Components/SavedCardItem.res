@@ -243,7 +243,7 @@ let make = (
                 <div className="tracking-wide text-sm text-left gap-2 mt-4 ml-2">
                   <div className="font-semibold"> {React.string(billingDetailsText)} </div>
                   <div className="font-normal">
-                    {React.string(Array.joinWith(billingDetailsArray, ", "))}
+                    {React.string(Array.join(billingDetailsArray, ", "))}
                   </div>
                 </div>
               </RenderIf>

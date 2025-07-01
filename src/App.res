@@ -8,9 +8,26 @@ let make = () => {
 
   let paymentMode = getQueryParamsDictforKey(url.search, "componentName")
   let paymentType = paymentMode->CardThemeType.getPaymentMode
+
+  let networkStatus = NetworkInformation.useNetworkInformation()
   let (logger, initTimestamp) = React.useMemo0(() => {
     (HyperLogger.make(~source=Elements(paymentType)), Date.now())
   })
+
+  React.useEffect1(() => {
+    switch networkStatus {
+    | Value(val) =>
+      logger.setLogInfo(
+        ~value=val->Identity.anyTypeToJson->JSON.stringify,
+        ~eventName=NETWORK_STATE,
+        ~logType=DEBUG,
+      )
+    | NOT_AVAILABLE => ()
+    }
+
+    None
+  }, [networkStatus])
+
   let fullscreenMode = getQueryParamsDictforKey(url.search, "fullscreenType")
 
   React.useEffect(() => {
@@ -70,6 +87,7 @@ let make = () => {
     | "redsys3ds" => <Redsys3ds />
     | "3ds" => <ThreeDSMethod />
     | "voucherData" => <VoucherDisplay />
+    | "cardVault" => <CardVault />
     | "3dsRedirectionPopup" => <ThreeDSRedirectionModal />
     | "preMountLoader" => {
         let paymentId = getQueryParamsDictforKey(url.search, "paymentId")
