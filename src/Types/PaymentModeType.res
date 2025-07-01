@@ -11,6 +11,8 @@ type payment =
   | ACHTransfer
   | SepaTransfer
   | InstantTransfer
+  | InstantTransferFinland
+  | InstantTransferPoland
   | BacsTransfer
   | ACHBankDebit
   | SepaBankDebit
@@ -19,11 +21,12 @@ type payment =
   | BanContactCard
   | GooglePay
   | ApplePay
+  | RevolutPay
   | SamsungPay
   | Boleto
   | PayPal
   | EFT
-  | NONE
+  | Unknown
 
 let paymentMode = str => {
   switch str {
@@ -43,15 +46,18 @@ let paymentMode = str => {
   | "ach_transfer" => ACHTransfer
   | "sepa_bank_transfer" => SepaTransfer
   | "instant_bank_transfer" => InstantTransfer
+  | "instant_bank_transfer_finland" => InstantTransferFinland
+  | "instant_bank_transfer_poland" => InstantTransferPoland
   | "bacs_transfer" => BacsTransfer
   | "bancontact_card" => BanContactCard
   | "google_pay" => GooglePay
   | "apple_pay" => ApplePay
+  | "revolut_pay" => RevolutPay
   | "samsung_pay" => SamsungPay
   | "boleto" => Boleto
   | "paypal" => PayPal
   | "eft" => EFT
-  | _ => NONE
+  | _ => Unknown
   }
 }
 
@@ -67,6 +73,8 @@ let defaultOrder = [
   "ach_transfer",
   "sepa_bank_transfer",
   "instant_bank_transfer",
+  "instant_bank_transfer_finland",
+  "instant_bank_transfer_poland",
   "bacs_transfer",
   "ach_debit",
   "sepa_debit",
@@ -80,4 +88,5 @@ let defaultOrder = [
   "bancontact_card",
   "boleto",
   "eft",
+  "revolut_pay",
 ]

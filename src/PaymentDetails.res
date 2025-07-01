@@ -38,6 +38,11 @@ let details = [
     displayName: "Affirm",
   },
   {
+    type_: "revolut_pay",
+    icon: Some(icon("revolut", ~size=19)),
+    displayName: "Revolut Pay",
+  },
+  {
     type_: "sofort",
     icon: Some(icon("sofort", ~size=19)),
     displayName: "Sofort",
@@ -56,6 +61,16 @@ let details = [
     type_: "instant_bank_transfer",
     icon: Some(icon("bank", ~size=19)),
     displayName: "Instant Transfer",
+  },
+  {
+    type_: "instant_bank_transfer_finland",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Instant Transfer Finland",
+  },
+  {
+    type_: "instant_bank_transfer_poland",
+    icon: Some(icon("bank", ~size=19)),
+    displayName: "Instant Transfer Poland",
   },
   {
     type_: "bacs_transfer",

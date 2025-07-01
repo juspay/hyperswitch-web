@@ -263,7 +263,7 @@ let toKebabCase = str => {
       item
     }
   })
-  ->Array.joinWith("")
+  ->Array.join("")
 }
 
 let handleMessage = (fun, _errorMessage) => {
@@ -585,7 +585,7 @@ let constructClass = (~classname, ~dict) => {
             | None => ""
             }
           })
-        `.${classname}${key} {${style->Array.joinWith(";")}}`
+        `.${classname}${key} {${style->Array.join(";")}}`
 
       | None => ""
       }
@@ -602,7 +602,7 @@ let constructClass = (~classname, ~dict) => {
             | None => ""
             }
           })
-        `${key} {${style->Array.joinWith(";")}} `
+        `${key} {${style->Array.join(";")}} `
 
       | None => ""
       }
@@ -619,9 +619,9 @@ let constructClass = (~classname, ~dict) => {
   ->ignore
 
   if classname->String.length == 0 {
-    `${modifiedArr->Array.joinWith(";")} ${puseduoArr->Array.joinWith(" ")}`
+    `${modifiedArr->Array.join(";")} ${puseduoArr->Array.join(" ")}`
   } else {
-    `.${classname} {${modifiedArr->Array.joinWith(";")}} ${puseduoArr->Array.joinWith(" ")}`
+    `.${classname} {${modifiedArr->Array.join(";")}} ${puseduoArr->Array.join(" ")}`
   }
 }
 
@@ -688,7 +688,7 @@ let addSize = (str: string, value: float, unit: sizeunit) => {
     let val =
       arr
       ->Array.slice(~start=0, ~end={arr->Array.length - unitInString->String.length})
-      ->Array.joinWith("")
+      ->Array.join("")
       ->Float.fromString
       ->Option.getOr(0.0)
     (val +. value)->Float.toString ++ unitInString
@@ -794,7 +794,7 @@ let snakeToTitleCase = str => {
   ->Array.map(item => {
     item->String.charAt(0)->String.toUpperCase ++ item->String.sliceToEnd(~start=1)
   })
-  ->Array.joinWith(" ")
+  ->Array.join(" ")
 }
 
 let formatIBAN = iban => {
@@ -804,10 +804,11 @@ let formatIBAN = iban => {
   let remaining = formatted->String.substringToEnd(~start=4)
 
   let chunks = switch remaining->String.match(%re(`/(.{1,4})/g`)) {
-  | Some(matches) => matches
+  | Some(matches) => matches->Belt.Array.keepMap(x => x)
   | None => []
   }
-  `${countryCode}${codeLastTwo} ${chunks->Array.joinWith(" ")}`->String.trim
+
+  `${countryCode}${codeLastTwo} ${chunks->Array.join(" ")}`->String.trim
 }
 
 let formatBSB = bsb => {
@@ -962,6 +963,7 @@ let fetchApiWithLogging = async (
   ~customPodUri=None,
   ~publishableKey=None,
   ~isPaymentSession=false,
+  ~onCatchCallback=None,
 ) => {
   open LoggerUtils
 
@@ -1022,6 +1024,14 @@ let fetchApiWithLogging = async (
   } catch {
   | err => {
       let exceptionMessage = err->formatException
+      Console.error2(
+        "Unexpected error while making request:",
+        {
+          "uri": uri,
+          "event": eventName,
+          "error": exceptionMessage,
+        },
+      )
       LogAPIResponse.logApiResponse(
         ~logger,
         ~uri,
@@ -1030,7 +1040,10 @@ let fetchApiWithLogging = async (
         ~data=exceptionMessage,
         ~isPaymentSession,
       )
-      onFailure(exceptionMessage)
+      switch onCatchCallback {
+      | Some(fun) => fun(exceptionMessage)
+      | None => onFailure(exceptionMessage)
+      }
     }
   }
 }
@@ -1547,7 +1560,7 @@ let toSpacedUpperCase = (~str, ~delimiter) =>
   str
   ->String.toUpperCase
   ->String.split(delimiter)
-  ->Array.joinWith(" ")
+  ->Array.join(" ")
 
 let handleFailureResponse = (~message, ~errorType) =>
   [
@@ -1579,7 +1592,7 @@ let getFirstAndLastNameFromFullName = fullName => {
     ->Array.get(0)
     ->Option.flatMap(x => Some(x->JSON.Encode.string))
     ->Option.getOr(JSON.Encode.null)
-  let lastNameStr = nameStrings->Array.sliceToEnd(~start=1)->Array.joinWith(" ")->String.trim
+  let lastNameStr = nameStrings->Array.sliceToEnd(~start=1)->Array.join(" ")->String.trim
   let lastNameJson = lastNameStr === "" ? JSON.Encode.null : lastNameStr->JSON.Encode.string
 
   (firstName, lastNameJson)

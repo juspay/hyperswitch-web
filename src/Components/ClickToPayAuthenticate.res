@@ -217,9 +217,7 @@ let make = (
 
   <>
     <RenderIf condition={!isClickToPayAuthenticateError && email !== ""}>
-      <ClickToPayHelpers.SrcMark
-        cardBrands={availableCardBrands->Array.joinWith(",")} height="32"
-      />
+      <ClickToPayHelpers.SrcMark cardBrands={availableCardBrands->Array.join(",")} height="32" />
     </RenderIf>
     {if isShowClickToPayNotYou {
       <ClickToPayNotYou setIsShowClickToPayNotYou isCTPAuthenticateNotYouClicked getVisaCards />

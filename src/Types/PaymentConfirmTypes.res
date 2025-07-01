@@ -36,6 +36,7 @@ type voucherDetails = {
 type nextAction = {
   redirectToUrl: string,
   popupUrl: string,
+  redirectResponseUrl: string,
   type_: string,
   bank_transfer_steps_and_charges_details: option<JSON.t>,
   session_token: option<JSON.t>,
@@ -67,6 +68,7 @@ let defaultRedirectTourl = {
 let defaultNextAction = {
   redirectToUrl: "",
   popupUrl: "",
+  redirectResponseUrl: "",
   type_: "",
   bank_transfer_steps_and_charges_details: None,
   session_token: None,
@@ -143,6 +145,7 @@ let getNextAction = (dict, str) => {
     {
       redirectToUrl: getString(json, "redirect_to_url", ""),
       popupUrl: getString(json, "popup_url", ""),
+      redirectResponseUrl: getString(json, "redirect_response_url", ""),
       type_: getString(json, "type", ""),
       bank_transfer_steps_and_charges_details: Some(
         getJsonObjFromDict(

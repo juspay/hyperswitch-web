@@ -10,8 +10,8 @@ let make = () => {
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
-  let (email, _) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
-  let (fullName, _) = Recoil.useLoggedRecoilState(userFullName, "fullName", loggerState)
+  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
+  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
 
@@ -22,12 +22,12 @@ let make = () => {
   let (modalData, setModalData) = React.useState(_ => None)
 
   let toolTipRef = React.useRef(Nullable.null)
-  let (line1, _) = Recoil.useLoggedRecoilState(userAddressline1, "line1", loggerState)
-  let (line2, _) = Recoil.useLoggedRecoilState(userAddressline2, "line2", loggerState)
-  let (country, _) = Recoil.useLoggedRecoilState(userAddressCountry, "country", loggerState)
-  let (city, _) = Recoil.useLoggedRecoilState(userAddressCity, "city", loggerState)
-  let (postalCode, _) = Recoil.useLoggedRecoilState(userAddressPincode, "postal_code", loggerState)
-  let (state, _) = Recoil.useLoggedRecoilState(userAddressState, "state", loggerState)
+  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
+  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
+  let country = Recoil.useRecoilValueFromAtom(userAddressCountry)
+  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
+  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
+  let state = Recoil.useRecoilValueFromAtom(userAddressState)
   let countryCode = Utils.getCountryCode(country.value).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)

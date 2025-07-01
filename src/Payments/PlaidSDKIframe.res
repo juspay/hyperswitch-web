@@ -48,13 +48,11 @@ let make = () => {
   }, [pmAuthConnectorsArr])
 
   let callbackOnSuccessOfPlaidPaymentsFlow = async () => {
-    let headers = [("Content-Type", "application/json"), ("api-key", publishableKey)]
-
     try {
       let json = await PaymentHelpers.retrievePaymentIntent(
         clientSecret,
-        headers,
-        ~optLogger=Some(logger),
+        ~publishableKey,
+        ~logger,
         ~customPodUri="",
         ~isForceSync=true,
       )
@@ -78,11 +76,11 @@ let make = () => {
       }
       messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
     } catch {
-    | err =>
+    | _ =>
       logger.setLogError(
         ~value="Retrieve failed via Plaid",
         ~eventName=PLAID_SDK,
-        ~internalMetadata=err->formatException->JSON.stringify,
+        // ~internalMetadata=err->formatException->JSON.stringify,
         ~paymentMethod="PLAID",
       )
     }

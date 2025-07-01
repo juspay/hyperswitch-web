@@ -78,7 +78,7 @@ let make = (~isBancontact=false) => {
   }
 
   React.useEffect(() => {
-    let (vaultId, vaultEnv) = VaultHelpers.getVGSVaultDetails(
+    let {vaultId, vaultEnv} = VaultHelpers.getVGSVaultDetails(
       sessionToken,
       vaultMode->VaultHelpers.getVaultNameFromMode,
     )

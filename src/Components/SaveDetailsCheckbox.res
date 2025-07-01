@@ -38,11 +38,13 @@ let make = (~isChecked, ~setIsChecked) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
   let {business, customMessageForCardTerms} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
   let css = saveDetailsCssStyle(themeObj)
   let onChange = ev => {
     let target = ev->ReactEvent.Form.target
     let value = target["checked"]
+    LoggerUtils.logInputChangeInfo("saveDetails", loggerState)
     setIsChecked(_ => value)
   }
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)

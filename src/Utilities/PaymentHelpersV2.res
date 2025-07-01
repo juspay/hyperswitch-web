@@ -166,7 +166,7 @@ let intentCall = (
                 handleLogging(
                   ~optLogger,
                   ~value="",
-                  ~internalMetadata=intent.nextAction.redirectToUrl,
+                  // ~internalMetadata=intent.nextAction.redirectToUrl,
                   ~eventName=REDIRECTING_USER,
                   ~paymentMethod,
                 )
@@ -182,7 +182,7 @@ let intentCall = (
                   handleLogging(
                     ~optLogger,
                     ~value=intent.nextAction.type_,
-                    ~internalMetadata=intent.nextAction.type_,
+                    // ~internalMetadata=intent.nextAction.type_,
                     ~eventName=REDIRECTING_USER,
                     ~paymentMethod,
                     ~logType=ERROR,
@@ -389,8 +389,7 @@ let savePaymentMethod = (
   ~pmClientSecret,
   ~publishableKey,
   ~profileId,
-  ~logger as _,
-  ~customPodUri,
+  ~customPodUri="",
 ) => {
   open Promise
   let endpoint = ApiEndpoint.getApiEndPoint()
@@ -501,11 +500,16 @@ let fetchPaymentMethodList = (
   ~profileId,
 ) => {
   open Promise
-  let headers = [
+  let baseHeaders = [
     ("Content-Type", "application/json"),
     ("x-profile-id", profileId),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${clientSecret}`),
   ]
+
+  let headers = switch customPodUri {
+  | value if value != "" => [...baseHeaders, ("x-feature", value)]
+  | _ => baseHeaders
+  }
   let uri = `${endpoint}/v2/payments/${paymentId}/payment-methods`
 
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
@@ -539,11 +543,16 @@ let fetchSessions = (
   ~profileId,
 ) => {
   open Promise
-  let headers = [
+  let baseHeaders = [
     ("Content-Type", "application/json"),
     ("x-profile-id", profileId),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${clientSecret}`),
   ]
+
+  let headers = switch customPodUri {
+  | value if value != "" => [...baseHeaders, ("x-feature", value)]
+  | _ => baseHeaders
+  }
   let paymentIntentID = clientSecret->Utils.getPaymentId
   let body =
     [

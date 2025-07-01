@@ -2,7 +2,7 @@ open CardThemeType
 open Utils
 open ErrorUtils
 
-let getTheme = (val, logger) => {
+let getTheme = val => {
   switch val->String.toLowerCase {
   | "default" => Default
   | "brutal" => Brutal
@@ -15,7 +15,6 @@ let getTheme = (val, logger) => {
       str->unknownPropValueWarning(
         ["default", "midnight", "brutal", "charcoal", "soft", "bubblegum", "none"],
         "appearance.theme",
-        ~logger,
       )
       Default
     }
@@ -29,13 +28,13 @@ let getInnerLayout = str => {
   }
 }
 
-let getShowLoader = (str, logger) => {
+let getShowLoader = str => {
   switch str {
   | "auto" => Auto
   | "always" => Always
   | "never" => Never
   | str => {
-      str->unknownPropValueWarning(["auto", "always", "never"], "loader", ~logger)
+      str->unknownPropValueWarning(["auto", "always", "never"], "loader")
       Auto
     }
   }
@@ -177,7 +176,7 @@ let getVariables = (str, dict, default, logger) => {
       "buttonTextFontWeight",
       "buttonBorderWidth",
     ]
-    unknownKeysWarning(validKeys, json, "appearance.variables", ~logger)
+    unknownKeysWarning(validKeys, json, "appearance.variables")
     {
       fontFamily: getWarningString(json, "fontFamily", default.fontFamily, ~logger),
       fontSizeBase: getWarningString(json, "fontSizeBase", default.fontSizeBase, ~logger),
@@ -354,17 +353,12 @@ let getAppearance = (
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    unknownKeysWarning(
-      ["theme", "variables", "rules", "labels", "innerLayout"],
-      json,
-      "appearance",
-      ~logger,
-    )
+    unknownKeysWarning(["theme", "variables", "rules", "labels", "innerLayout"], json, "appearance")
 
     let rulesJson = defaultRules(getVariables("variables", json, default, logger))
 
     {
-      theme: getWarningString(json, "theme", "default", ~logger)->getTheme(logger),
+      theme: getWarningString(json, "theme", "default", ~logger)->getTheme,
       componentType: getWarningString(json, "componentType", "", ~logger),
       variables: getVariables("variables", json, default, logger),
       rules: mergeJsons(rulesJson, getJsonObjectFromDict(json, "rules")),
@@ -374,7 +368,7 @@ let getAppearance = (
       | "floating" => Floating
       | "none" => Never
       | str => {
-          str->unknownPropValueWarning(["above", "floating", "never"], "appearance.labels", ~logger)
+          str->unknownPropValueWarning(["above", "floating", "never"], "appearance.labels")
           Above
         }
       },
@@ -389,7 +383,7 @@ let getFonts = (str, dict, logger) => {
   ->Option.getOr([])
   ->Belt.Array.keepMap(JSON.Decode.object)
   ->Array.map(json => {
-    unknownKeysWarning(["cssSrc", "family", "src", "weight"], json, "fonts", ~logger)
+    unknownKeysWarning(["cssSrc", "family", "src", "weight"], json, "fonts")
     {
       cssSrc: getWarningString(json, "cssSrc", "", ~logger),
       family: getWarningString(json, "family", "", ~logger),
@@ -417,7 +411,6 @@ let itemToObjMapper = (
     ],
     dict,
     "elements",
-    ~logger,
   )
   {
     appearance: getAppearance("appearance", dict, default, defaultRules, logger),
@@ -427,6 +420,6 @@ let itemToObjMapper = (
     ephemeralKey: getWarningString(dict, "ephemeralKey", "", ~logger),
     pmSessionId: getWarningString(dict, "pmSessionId", "", ~logger),
     pmClientSecret: getWarningString(dict, "pmClientSecret", "", ~logger),
-    loader: getWarningString(dict, "loader", "auto", ~logger)->getShowLoader(logger),
+    loader: getWarningString(dict, "loader", "auto", ~logger)->getShowLoader,
   }
 }

@@ -51,8 +51,6 @@ type eventName =
   | INVALID_PK
   | DEPRECATED_LOADSTRIPE
   | REQUIRED_PARAMETER
-  | UNKNOWN_KEY
-  | UNKNOWN_VALUE
   | TYPE_BOOL_ERROR
   | TYPE_INT_ERROR
   | TYPE_STRING_ERROR
@@ -93,8 +91,10 @@ type eventName =
   | CLICK_TO_PAY_SCRIPT
   | CLICK_TO_PAY_FLOW
   | PAYMENT_METHOD_TYPE_DETECTION_FAILED
+  | NETWORK_STATE
   | THREE_DS_POPUP_REDIRECTION
   | S3_API
+  | CARD_SCHEME_SELECTION
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
@@ -106,7 +106,7 @@ type logFile = {
   source: string,
   version: string,
   value: string,
-  internalMetadata: string,
+  // internalMetadata: string,
   sessionId: string,
   merchantId: string,
   paymentId: string,
@@ -129,7 +129,7 @@ type setlogApiValueType =
 
 type setLogInfo = (
   ~value: string,
-  ~internalMetadata: string=?,
+  // ~internalMetadata: string=?,
   ~eventName: eventName,
   ~timestamp: string=?,
   ~latency: float=?,
@@ -143,7 +143,7 @@ type loggerMake = {
   setLogError: setLogInfo,
   setLogApi: (
     ~value: setlogApiValueType,
-    ~internalMetadata: setlogApiValueType,
+    // ~internalMetadata: setlogApiValueType,
     ~eventName: eventName,
     ~timestamp: string=?,
     ~logType: logType=?,

@@ -1,116 +1,100 @@
-// TODO - This is the expected structure of the APIUtils module. Giving one example of how to structure the API calls.
+type apiCall =
+  | FetchPaymentMethodList
+  | FetchCustomerPaymentMethodList
+  | FetchSessions
+  | FetchThreeDsAuth
+  | FetchSavedPaymentMethodList
+  | DeletePaymentMethod
+  | CalculateTax
+  | CreatePaymentMethod
+  | RetrievePaymentIntent
+  | CallAuthLink
+  | CallAuthExchange
+  | RetrieveStatus
+  | ConfirmPayout
 
-// type apiCall =
-//   // * Payments
-//   | RetrievePaymentIntent
-//   | PostSessionTokens
-//   | PaymentsConfirm
+type apiParams = {
+  clientSecret: option<string>,
+  publishableKey: option<string>,
+  customBackendBaseUrl: option<string>,
+  paymentMethodId: option<string>,
+  forceSync: option<string>,
+  pollId: option<string>,
+}
 
-//   // * 3DS
-//   | ThreeDsAuth
-//   | PollStatus
+let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
+  let {
+    clientSecret,
+    publishableKey,
+    customBackendBaseUrl,
+    paymentMethodId,
+    forceSync,
+    pollId,
+  } = params
 
-//   // * Sessions
-//   | FetchSessions
-
-//   // * Payouts
-//   | ConfirmPayout
-
-//   // * Payment Methods
-//   | CreatePaymentMethod
-//   | DeletePaymentMethod
-//   | FetchPaymentMethodList
-//   | FetchCustomerPaymentMethodList
-//   | FetchSavedPaymentMethodList
-
-//   // * Authentication
-//   | CallAuthLink
-//   | CallAuthExchange
-
-//   // * Tax Calculation
-//   | CalculateTax
-
-// let generateApiUrl = (
-//   apiCallType: apiCall,
-//   ~clientSecret=?,
-//   ~publishableKey=?,
-//   ~pollID=?,
-//   ~paymentId=?,
-// ) => {
-//   let clientSecretVal = clientSecret->Option.getOr("")
-//   let publishableKeyVal = publishableKey->Option.getOr("")
-//   let pollIDVal = pollID->Option.getOr("")
-//   let paymentIdVal = paymentId->Option.getOr("")
-
-//   let baseUrl = ApiEndpoint.getApiEndPoint(~publishableKey=publishableKeyVal)
-
-//   let extractPaymentIntentID = () => String.split(clientSecretVal, "_secret_")[0]->Option.getOr("")
-
-//   let path = switch apiCallType {
-//   | RetrievePaymentIntent =>
-//     let paymentIntentID = Utils.getPaymentId(clientSecretVal)
-//     `payments/${paymentIntentID}?client_secret=${clientSecretVal}`
-
-//   | ThreeDsAuth =>
-//     let paymentIntentID = extractPaymentIntentID()
-//     `payments/${paymentIntentID}/3ds/authentication`
-
-//   | PollStatus => `poll/status/${pollIDVal}`
-
-//   | FetchSessions => `payments/session_tokens`
-
-//   | ConfirmPayout => `payouts/${paymentIdVal}/confirm`
-
-//   | CreatePaymentMethod => `payment_methods`
-
-//   | FetchPaymentMethodList => `account/payment_methods?client_secret=${clientSecretVal}`
-
-//   | FetchCustomerPaymentMethodList => `customers/payment_methods?client_secret=${clientSecretVal}`
-
-//   | PaymentsConfirm =>
-//     let paymentIntentID = extractPaymentIntentID()
-//     `payments/${paymentIntentID}/confirm`
-
-//   | CallAuthLink => `payment_methods/auth/link`
-
-//   | CallAuthExchange => `payment_methods/auth/exchange`
-
-//   | FetchSavedPaymentMethodList => `customers/payment_methods`
-
-//   | DeletePaymentMethod => `payment_methods`
-
-//   | CalculateTax => `payments/${paymentIdVal}/calculate_tax`
-
-//   | PostSessionTokens =>
-//     let paymentIntentID = Utils.getPaymentId(clientSecretVal)
-//     `payments/${paymentIntentID}/post_session_tokens`
-//   }
-
-//   `${baseUrl}/${path}`
-// }
-
-
-type apiCall = FetchPaymentMethodList | FetchCustomerPaymentMethodList | FetchSessions
-
-let generateApiUrl = (
-  apiCallType: apiCall,
-  ~clientSecret=?,
-  ~publishableKey=?,
-  ~customBackendBaseUrl=?,
-) => {
   let clientSecretVal = clientSecret->Option.getOr("")
   let publishableKeyVal = publishableKey->Option.getOr("")
+  let paymentIntentID = Utils.getPaymentId(clientSecretVal)
+  let paymentMethodIdVal = paymentMethodId->Option.getOr("")
+  let pollIdVal = pollId->Option.getOr("")
 
-  let baseUrl = switch customBackendBaseUrl {
-  | Some(url) => url
-  | None => ApiEndpoint.getApiEndPoint(~publishableKey=publishableKeyVal)
+  let baseUrl =
+    customBackendBaseUrl->Option.getOr(
+      ApiEndpoint.getApiEndPoint(~publishableKey=publishableKeyVal),
+    )
+
+  let buildQueryParams = params =>
+    switch params {
+    | list{} => ""
+    | _ =>
+      params
+      ->List.map(((key, value)) => `${key}=${value}`)
+      ->List.reduce("", (acc, param) => acc === "" ? `?${param}` : `${acc}&${param}`)
+    }
+
+  let defaultParams = list{
+    switch clientSecret {
+    | Some(cs) => Some(("client_secret", cs))
+    | None => None
+    },
+    switch forceSync {
+    | Some(fs) if apiCallType === RetrievePaymentIntent => Some(("false_sync", fs))
+    | _ => None
+    },
+  }->List.filterMap(x => x)
+
+  let queryParams = switch apiCallType {
+  | FetchPaymentMethodList
+  | FetchCustomerPaymentMethodList
+  | RetrievePaymentIntent => defaultParams
+  | FetchSessions
+  | FetchThreeDsAuth
+  | FetchSavedPaymentMethodList
+  | DeletePaymentMethod
+  | CalculateTax
+  | CreatePaymentMethod
+  | CallAuthLink
+  | CallAuthExchange
+  | RetrieveStatus
+  | ConfirmPayout =>
+    list{}
   }
 
   let path = switch apiCallType {
-  | FetchPaymentMethodList => `account/payment_methods?client_secret=${clientSecretVal}`
-  | FetchCustomerPaymentMethodList => `customers/payment_methods?client_secret=${clientSecretVal}`
-  | FetchSessions => `payments/session_tokens`
+  | FetchPaymentMethodList => "account/payment_methods"
+  | FetchSessions => "payments/session_tokens"
+  | FetchThreeDsAuth => `payments/${paymentIntentID}/3ds/authentication`
+  | FetchCustomerPaymentMethodList
+  | FetchSavedPaymentMethodList => "customers/payment_methods"
+  | DeletePaymentMethod => `payment_methods/${paymentMethodIdVal}`
+  | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
+  | CreatePaymentMethod => "payment_methods"
+  | RetrievePaymentIntent => `payments/${paymentIntentID}`
+  | CallAuthLink => "payment_methods/auth/link"
+  | CallAuthExchange => "payment_methods/auth/exchange"
+  | RetrieveStatus => `poll/status/${pollIdVal}`
+  | ConfirmPayout => `payouts/${paymentIntentID}/confirm`
   }
 
-  `${baseUrl}/${path}`
+  `${baseUrl}/${path}${buildQueryParams(queryParams)}`
 }

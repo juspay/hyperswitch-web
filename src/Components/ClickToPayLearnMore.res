@@ -24,7 +24,7 @@ let make = () => {
           ->Utils.getArray("cardBrands")
           ->Array.map(x => x->JSON.Decode.string->Option.getOr(""))
           ->Array.filter(x => x !== "")
-          ->Array.joinWith(",")
+          ->Array.join(",")
 
         if cardBrands === "" {
           closeClickToPayModal()

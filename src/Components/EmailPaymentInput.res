@@ -5,14 +5,10 @@ open EmailValidation
 @react.component
 let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let (email, setEmail) = Recoil.useLoggedRecoilState(userEmailAddress, "email", loggerState)
+  let (email, setEmail) = Recoil.useRecoilState(userEmailAddress)
   let {fields} = Recoil.useRecoilValueFromAtom(optionAtom)
 
-  let showDetails = PaymentType.getShowDetails(
-    ~billingDetails=fields.billingDetails,
-    ~logger=loggerState,
-  )
+  let showDetails = PaymentType.getShowDetails(~billingDetails=fields.billingDetails)
 
   let emailRef = React.useRef(Nullable.null)
 
