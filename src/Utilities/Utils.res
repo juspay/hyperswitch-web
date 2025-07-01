@@ -670,8 +670,7 @@ let getOptionalArr = arr => {
 }
 
 let checkPriorityList = paymentMethodOrder => {
-  paymentMethodOrder->getOptionalArr->Array.get(0)->Option.getOr("") == "card" ||
-    paymentMethodOrder->Option.isNone
+  paymentMethodOrder->getOptionalArr->Array.get(0)->Option.getOr("") == "card"
 }
 type sizeunit = Pixel | Rem | Em
 let addSize = (str: string, value: float, unit: sizeunit) => {
