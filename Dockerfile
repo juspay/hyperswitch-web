@@ -1,26 +1,29 @@
+# Use Node 20 with Alpine
 FROM node:20-alpine
 
-# Add build essentials
-RUN apk add --no-cache make gcc g++ python3
+# Install build essentials + git (for submodules)
+RUN apk add --no-cache make gcc g++ python3 git
 
+# Set working dir
 WORKDIR /usr/src/app
 
-# Copy package files
+# Copy only package files first — enables Docker cache
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies WITHOUT postinstall (so playground install is skipped)
 RUN npm install --ignore-scripts
 
-# Copy the rest of the application code
+# Pull required submodules manually — this ensures `shared-code` exists
+RUN npm run setup:submodules
+
+# Copy the rest of the source code
 COPY . .
 
-# First, build ReScript code and wait for it to complete
-RUN npm run re:build && \
-    # Then build the application with webpack
-    npm run build
+# Compile ReScript & then bundle with Webpack
+RUN npm run re:build && npm run build
 
+# Expose your desired port
 EXPOSE 9050
 
-# For development, use a start script that ensures ReScript watch mode
-# runs before starting webpack dev server
+# Default container start command
 CMD npm run re:build && npm run start
