@@ -481,7 +481,7 @@ let gpayBody = (~payObj: GooglePayType.paymentData, ~connectors: array<string>) 
   ]
 
   switch connectors->Array.length > 0 {
-  | true => [("connector", connectors->getArrofJsonString->JSON.Encode.array)]
+  | true => [...baseBody, ("connector", connectors->getArrofJsonString->JSON.Encode.array)]
   | false => baseBody
   }
 }
