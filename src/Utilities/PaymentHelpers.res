@@ -1310,16 +1310,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
         }
       | (V2, _, LoadedV2(data)) =>
         if data.paymentMethodsEnabled->Array.length > 0 {
-          switch paymentType {
-          | Card
-          | Gpay
-          | Applepay
-          | KlarnaRedirect
-          | Paypal
-          | BankDebits =>
-            intentWithoutMandate("")
-          | _ => intentWithoutMandate("")
-          }
+          intentWithoutMandate("")
         } else {
           postFailedSubmitResponse(
             ~errortype="payment_methods_empty",
