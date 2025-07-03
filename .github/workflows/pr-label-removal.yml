@@ -17,31 +17,38 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
-      - name: Get existing labels
+      - name: Remove all labels and add closed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          TOKEN=$GITHUB_TOKEN
 
-          # Add your repository name if it's not the default branch
-          REPO_NAME=$(basename $GITHUB_REPOSITORY)
+          echo "PR number: $PR_NUMBER"
 
-          # Get existing labels on the PR
-          EXISTING_LABELS=$(curl -s -H "Authorization: Bearer ${{ secrets.AUTO_RELEASE_PAT }}" \
+          # Fetch labels safely
+          RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER" \
-            | jq -r '.labels | map(.name) | join(" ")')
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}")
 
-          echo $EXISTING_LABELS
+          echo "API Response: $RESPONSE"
 
-           # Remove existing labels
+          EXISTING_LABELS=$(echo "$RESPONSE" | jq -r '[.labels[]?.name] | join(" ")')
+
+          echo "Existing labels: $EXISTING_LABELS"
+
+          # Remove labels if any
           for LABEL in $EXISTING_LABELS; do
+            echo "Removing label: $LABEL"
             curl -X DELETE \
-              -H 'Accept: application/vnd.github.v3+json' \
-              -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-              "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/${LABEL}"
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${LABEL}"
           done
 
-      - name: Add new label
-        run: |
-          export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          gh pr edit ${{ github.event.pull_request.number }} --add-label "closed"
+          # Add closed label
+          echo "Adding closed label"
+          curl -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            --data '{"labels":["closed"]}' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels"
