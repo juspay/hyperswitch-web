@@ -599,6 +599,76 @@ let paymentMethodsFields = [
     displayName: "EFT",
     miniIcon: None,
   },
+  {
+    paymentMethodName: "seven_eleven",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Seven Eleven",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "lawson",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Lawson",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "mini_stop",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Mini Stop",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "family_mart",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Family Mart",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "seicomart",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Seicomart",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "pay_easy",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Pay Easy",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "alfamart",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Alfamart",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "indomaret",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Indomaret",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "oxxo",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Oxxo",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "pay_safe_card",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "PaysafeCard",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
@@ -1053,11 +1123,93 @@ let paymentTypeToStringMapper = payment_type => {
   }
 }
 
+let mergePaymentMethodTypes = (
+  existingTypes: array<paymentMethodTypes>,
+  newTypes: array<paymentMethodTypes>,
+) => {
+  let mergedTypes = existingTypes->Array.copy
+
+  newTypes->Array.forEach(newType => {
+    let existingTypeIndex =
+      mergedTypes->Array.findIndex(existingType =>
+        existingType.payment_method_type === newType.payment_method_type
+      )
+
+    if existingTypeIndex === -1 {
+      // If payment method type doesn't exist, add it
+      mergedTypes->Array.push(newType)->ignore
+    } else {
+      // If payment method type exists, merge the payment experiences
+      let existingType =
+        mergedTypes->Array.get(existingTypeIndex)->Option.getOr(defaultPaymentMethodType)
+      let mergedExperiences = existingType.payment_experience->Array.copy
+
+      newType.payment_experience->Array.forEach(newExperience => {
+        let experienceExists =
+          mergedExperiences->Array.some(
+            existingExperience =>
+              existingExperience.payment_experience_type ===
+                newExperience.payment_experience_type &&
+                existingExperience.eligible_connectors->Array.every(
+                  connector => newExperience.eligible_connectors->Array.includes(connector),
+                ),
+          )
+
+        if !experienceExists {
+          mergedExperiences->Array.push(newExperience)->ignore
+        }
+      })
+
+      // Update the existing type with merged experiences
+      mergedTypes[existingTypeIndex] = {
+        ...existingType,
+        payment_experience: mergedExperiences,
+      }
+    }
+  })
+
+  mergedTypes
+}
+
+let mergeDuplicatePaymentMethods = (paymentMethods: array<methods>) => {
+  let mergedMethods = []
+  let processedMethods = Dict.make()
+
+  paymentMethods->Array.forEach(method => {
+    let existingMethod = processedMethods->Dict.get(method.payment_method)
+
+    switch existingMethod {
+    | Some(existing) => {
+        // Merge payment method types
+        let mergedTypes = mergePaymentMethodTypes(
+          existing.payment_method_types,
+          method.payment_method_types,
+        )
+
+        // Update the existing method with merged types
+        let updatedMethod = {
+          ...existing,
+          payment_method_types: mergedTypes,
+        }
+
+        processedMethods->Dict.set(method.payment_method, updatedMethod)
+      }
+    | None => processedMethods->Dict.set(method.payment_method, method)
+    }
+  })
+
+  // Convert back to array
+  processedMethods->Dict.valuesToArray
+}
+
 let itemToObjMapper = dict => {
+  let paymentMethods = getMethodsArr(dict, "payment_methods")
+  let mergedPaymentMethods = mergeDuplicatePaymentMethods(paymentMethods)
+
   {
     redirect_url: getString(dict, "redirect_url", ""),
     currency: getString(dict, "currency", ""),
-    payment_methods: getMethodsArr(dict, "payment_methods"),
+    payment_methods: mergedPaymentMethods,
     mandate_payment: getMandate(dict, "mandate_payment"),
     payment_type: getString(dict, "payment_type", "")->paymentTypeMapper,
     merchant_name: getString(dict, "merchant_name", ""),

@@ -17,7 +17,7 @@ let make = (~transferType) => {
   | "achBankTransfer" => ("ach_credit_transfer", "ACH")
   | "bacsBankTransfer" => ("bacs_bank_instructions", "BACS")
   | "sepaBankTransfer" => ("sepa_bank_instructions", "SEPA")
-  | _ => ("", "")
+  | _ => ("doku_bank_transfer_instructions", "")
   }
 
   let (isCopied, setIsCopied) = React.useState(_ => false)

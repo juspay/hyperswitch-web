@@ -30,6 +30,16 @@ let dynamicFieldsEnabledPaymentMethods = [
   "paypal",
   "instant_bank_transfer_finland",
   "instant_bank_transfer_poland",
+  "seven_eleven",
+  "mini_stop",
+  "family_mart",
+  "seicomart",
+  "pay_easy",
+  "lawson",
+  "alfamart",
+  "indomaret",
+  "oxxo",
+  "pay_safe_card",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
