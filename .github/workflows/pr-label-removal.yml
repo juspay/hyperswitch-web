@@ -5,10 +5,6 @@ on:
     types:
       - closed
 
-permissions:
-  contents: read
-  issues: write
-
 jobs:
   pr-label:
     runs-on: ubuntu-latest
