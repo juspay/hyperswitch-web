@@ -14,18 +14,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Remove all labels and add closed
+      - name: Remove all labels and add 'closed'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "Reading PR number..."
           PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-
           echo "PR number: $PR_NUMBER"
 
-          # Fetch labels safely
+          echo "Fetching current labels..."
           RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}")
@@ -36,17 +36,19 @@ jobs:
 
           echo "Existing labels: $EXISTING_LABELS"
 
-          # Remove labels if any
-          for LABEL in $EXISTING_LABELS; do
-            echo "Removing label: $LABEL"
-            curl -X DELETE \
-              -H "Authorization: Bearer $GH_TOKEN" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${LABEL}"
-          done
+          if [ -z "$EXISTING_LABELS" ]; then
+            echo "No labels to remove."
+          else
+            for LABEL in $EXISTING_LABELS; do
+              echo "Removing label: $LABEL"
+              curl -X DELETE \
+                -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${LABEL}"
+            done
+          fi
 
-          # Add closed label
-          echo "Adding closed label"
+          echo "Adding 'closed' label..."
           curl -X POST \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
