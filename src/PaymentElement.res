@@ -193,11 +193,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     switch paymentMethodList {
     | Loaded(paymentlist) =>
       let plist = paymentlist->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
-      // Merge duplicate payment methods
-      let mergedPaymentMethods = PaymentMethodsRecord.mergeDuplicatePaymentMethods(
-        plist.payment_methods,
-      )
-      let mergedPlist = {...plist, payment_methods: mergedPaymentMethods}
 
       setPaymentOptions(_ =>
         [
@@ -206,7 +201,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         ]->removeDuplicate
       )
       setWalletOptions(_ => walletList)
-      setPaymentMethodListValue(_ => mergedPlist)
+      setPaymentMethodListValue(_ => plist)
 
       if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
         ErrorUtils.manageErrorWarning(

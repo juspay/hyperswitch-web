@@ -903,8 +903,6 @@ let useSubmitCallback = () => {
   let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
   let (city, setCity) = Recoil.useRecoilState(userAddressCity)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
-  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   React.useCallback((ev: Window.event) => {
@@ -941,19 +939,8 @@ let useSubmitCallback = () => {
           errorString: localeString.cityEmptyText,
         })
       }
-      if areRequiredFieldsEmpty {
-        Utils.postFailedSubmitResponse(
-          ~errortype="validation_error",
-          ~message=localeString.enterFieldsText,
-        )
-      } else if !areRequiredFieldsValid {
-        Utils.postFailedSubmitResponse(
-          ~errortype="validation_error",
-          ~message=localeString.enterValidDetailsText,
-        )
-      }
     }
-  }, (line1, line2, state, city, postalCode, areRequiredFieldsValid, areRequiredFieldsEmpty))
+  }, (line1, line2, state, city, postalCode))
 }
 
 let usePaymentMethodTypeFromList = (

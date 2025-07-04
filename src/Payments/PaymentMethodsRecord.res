@@ -1172,93 +1172,11 @@ let paymentTypeToStringMapper = payment_type => {
   }
 }
 
-let mergePaymentMethodTypes = (
-  existingTypes: array<paymentMethodTypes>,
-  newTypes: array<paymentMethodTypes>,
-) => {
-  let mergedTypes = existingTypes->Array.copy
-
-  newTypes->Array.forEach(newType => {
-    let existingTypeIndex =
-      mergedTypes->Array.findIndex(existingType =>
-        existingType.payment_method_type === newType.payment_method_type
-      )
-
-    if existingTypeIndex === -1 {
-      // If payment method type doesn't exist, add it
-      mergedTypes->Array.push(newType)->ignore
-    } else {
-      // If payment method type exists, merge the payment experiences
-      let existingType =
-        mergedTypes->Array.get(existingTypeIndex)->Option.getOr(defaultPaymentMethodType)
-      let mergedExperiences = existingType.payment_experience->Array.copy
-
-      newType.payment_experience->Array.forEach(newExperience => {
-        let experienceExists =
-          mergedExperiences->Array.some(
-            existingExperience =>
-              existingExperience.payment_experience_type ===
-                newExperience.payment_experience_type &&
-                existingExperience.eligible_connectors->Array.every(
-                  connector => newExperience.eligible_connectors->Array.includes(connector),
-                ),
-          )
-
-        if !experienceExists {
-          mergedExperiences->Array.push(newExperience)->ignore
-        }
-      })
-
-      // Update the existing type with merged experiences
-      mergedTypes[existingTypeIndex] = {
-        ...existingType,
-        payment_experience: mergedExperiences,
-      }
-    }
-  })
-
-  mergedTypes
-}
-
-let mergeDuplicatePaymentMethods = (paymentMethods: array<methods>) => {
-  let mergedMethods = []
-  let processedMethods = Dict.make()
-
-  paymentMethods->Array.forEach(method => {
-    let existingMethod = processedMethods->Dict.get(method.payment_method)
-
-    switch existingMethod {
-    | Some(existing) => {
-        // Merge payment method types
-        let mergedTypes = mergePaymentMethodTypes(
-          existing.payment_method_types,
-          method.payment_method_types,
-        )
-
-        // Update the existing method with merged types
-        let updatedMethod = {
-          ...existing,
-          payment_method_types: mergedTypes,
-        }
-
-        processedMethods->Dict.set(method.payment_method, updatedMethod)
-      }
-    | None => processedMethods->Dict.set(method.payment_method, method)
-    }
-  })
-
-  // Convert back to array
-  processedMethods->Dict.valuesToArray
-}
-
 let itemToObjMapper = dict => {
-  let paymentMethods = getMethodsArr(dict, "payment_methods")
-  let mergedPaymentMethods = mergeDuplicatePaymentMethods(paymentMethods)
-
   {
     redirect_url: getString(dict, "redirect_url", ""),
     currency: getString(dict, "currency", ""),
-    payment_methods: mergedPaymentMethods,
+    payment_methods: getMethodsArr(dict, "payment_methods"),
     mandate_payment: getMandate(dict, "mandate_payment"),
     payment_type: getString(dict, "payment_type", "")->paymentTypeMapper,
     merchant_name: getString(dict, "merchant_name", ""),

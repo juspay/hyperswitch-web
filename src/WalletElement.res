@@ -18,13 +18,8 @@ let make = (~paymentType) => {
     switch methodslist {
     | Loaded(paymentlist) =>
       let plist = paymentlist->Utils.getDictFromJson->PaymentMethodsRecord.itemToObjMapper
-      // Merge duplicate payment methods
-      let mergedPaymentMethods = PaymentMethodsRecord.mergeDuplicatePaymentMethods(
-        plist.payment_methods,
-      )
-      let mergedPlist = {...plist, payment_methods: mergedPaymentMethods}
       setWalletOptions(_ => walletList)
-      setPaymentMethodListValue(_ => mergedPlist)
+      setPaymentMethodListValue(_ => plist)
     | _ => ()
     }
     None
