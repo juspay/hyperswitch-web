@@ -32,7 +32,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
-  let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let setShowPaymentElementScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentElementScreen)
 
   let (walletsList, paymentOptionsList, actualList) = PaymentUtilsV2.useGetPaymentMethodListV2(
     ~paymentOptions,
@@ -53,7 +53,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   )
 
   React.useEffect0(() => {
-    setShowFields(_ => true)
+    setShowPaymentElementScreen(_ => true)
     None
   })
 
@@ -84,7 +84,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     | (_, LoadErrorV2(_))
     | (SemiLoadedV2, _)
     | (_, SemiLoadedV2) =>
-      // TODO - For Payments CheckPriorityList && ShowCardFormByDefault
+      // TODO - For Payments CheckPriorityList
       // TODO - For PaymentMethodsManagement Cards
       setPaymentOptions(_ => [])
     | _ => ()

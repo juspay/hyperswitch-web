@@ -30,7 +30,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(RecoilAtoms.selectedOptionAtom)
-  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let (showPaymentElementScreen, setShowPaymentElementScreen) = Recoil.useRecoilState(
+    RecoilAtoms.showPaymentElementScreen,
+  )
   let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     paymentMethodListValue,
@@ -65,13 +67,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~setAreClickToPayUIScriptsLoaded,
     ~savedMethods,
     ~loadSavedCards,
-    ~setShowFields,
+    ~setShowPaymentElementScreen,
   )
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
-        setShowFields(_ => isShowPaymentMethodsDependingOnClickToPay->not)
+        setShowPaymentElementScreen(_ => isShowPaymentMethodsDependingOnClickToPay->not)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
       }
     | (_, LoadingSavedCards) => ()
@@ -121,14 +123,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             ? NoResult(isGuestCustomer)
             : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
         )
-        setShowFields(_ =>
+        setShowPaymentElementScreen(_ =>
           finalSavedPaymentMethods->Array.length == 0 &&
             isShowPaymentMethodsDependingOnClickToPay->not
         )
       }
     | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
-        setShowFields(_ => true && isShowPaymentMethodsDependingOnClickToPay->not)
+        setShowPaymentElementScreen(_ => true && isShowPaymentMethodsDependingOnClickToPay->not)
       }
     }
 
@@ -407,6 +409,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           }}
         </SessionPaymentWrapper>
       | _ =>
+        Console.log("Coming insinde PAyment Methods WRapper")
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
         </ReusableReactSuspense>
@@ -415,7 +418,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }
 
   let paymentLabel = if displaySavedPaymentMethods {
-    showFields
+    showPaymentElementScreen
       ? optionAtomValue.paymentMethodsHeaderText
       : optionAtomValue.savedPaymentMethodsHeaderText
   } else {
@@ -461,7 +464,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       }
     } else {
       <RenderIf
-        condition={!showFields &&
+        condition={!showPaymentElementScreen &&
         (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay)}>
         <SavedMethods
           paymentToken
@@ -479,7 +482,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }}
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
-      showFields &&
+      showPaymentElementScreen &&
       clickToPayConfig.isReady->Option.isSome}>
       <div
         className="flex flex-col place-items-center"
@@ -514,7 +517,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     </RenderIf>
     <RenderIf
       condition={((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
-        isShowPaymentMethodsDependingOnClickToPay) && showFields}>
+        isShowPaymentMethodsDependingOnClickToPay) && showPaymentElementScreen}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
@@ -531,10 +534,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           let key = JsxEvent.Keyboard.key(event)
           let keyCode = JsxEvent.Keyboard.keyCode(event)
           if key == "Enter" || keyCode == 13 {
-            setShowFields(_ => false)
+            setShowPaymentElementScreen(_ => false)
           }
         }}
-        onClick={_ => setShowFields(_ => false)}>
+        onClick={_ => setShowPaymentElementScreen(_ => false)}>
         <Icon name="circle_dots" size=20 width=19 />
         {React.string(localeString.useExistingPaymentMethods)}
       </div>

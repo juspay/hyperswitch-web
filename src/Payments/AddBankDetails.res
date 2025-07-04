@@ -18,7 +18,7 @@ let make = (~paymentMethodType) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let setOptionValue = Recoil.useSetRecoilState(RecoilAtoms.optionAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let setShowPaymentElementScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentElementScreen)
   let (showLoader, setShowLoader) = React.useState(() => false)
   let logger = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
@@ -46,7 +46,7 @@ let make = (~paymentMethodType) => {
           )
           ->then(_ => {
             messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-            setShowFields(_ => false)
+            setShowPaymentElementScreen(_ => false)
             JSON.Encode.null->resolve
           })
           ->catch(_ => JSON.Encode.null->resolve)

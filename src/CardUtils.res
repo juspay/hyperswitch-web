@@ -776,8 +776,8 @@ let getEligibleCoBadgedCardSchemes = (~matchedCardSchemes, ~enabledCardSchemes) 
   })
 }
 
-let getCardBrandFromStates = (cardBrand, cardScheme, showFields) => {
-  !showFields ? cardScheme : cardBrand
+let getCardBrandFromStates = (cardBrand, cardScheme, showPaymentElementScreen) => {
+  !showPaymentElementScreen ? cardScheme : cardBrand
 }
 
 let getCardBrandInvalidError = (~cardBrand, ~localeString: LocaleStringTypes.localeStrings) => {

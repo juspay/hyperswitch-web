@@ -36,7 +36,7 @@ let saveDetailsCssStyle = (themeObj: CardThemeType.themeClass) => {
 @react.component
 let make = (~isChecked, ~setIsChecked) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
+  let showPaymentElementScreen = Recoil.useRecoilValueFromAtom(RecoilAtoms.showPaymentElementScreen)
   let {business, customMessageForCardTerms} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
 
@@ -52,7 +52,7 @@ let make = (~isChecked, ~setIsChecked) => {
     ? ("Checkbox--checked", "CheckboxInput--checked", "CheckboxLabel--checked")
     : ("", "", "")
 
-  let saveCardCheckboxLabel = if showFields {
+  let saveCardCheckboxLabel = if showPaymentElementScreen {
     localeString.saveCardDetails
   } else if customMessageForCardTerms->String.length > 0 {
     customMessageForCardTerms

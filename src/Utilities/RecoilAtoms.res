@@ -20,7 +20,7 @@ let paymentTokenAtom = Recoil.atom(
     customerId: "",
   },
 )
-let showCardFieldsAtom = Recoil.atom("showCardFields", false)
+let showPaymentElementScreen = Recoil.atom("showPaymentElementScreen", false)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")
 let paymentMethodCollectOptionAtom = Recoil.atom(

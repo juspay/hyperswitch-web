@@ -25,7 +25,9 @@ let make = (
     ->Array.map(obj => obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider))
 
   let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let (showPaymentElementScreen, setShowPaymentElementScreen) = Recoil.useRecoilState(
+    RecoilAtoms.showPaymentElementScreen,
+  )
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
@@ -86,7 +88,7 @@ let make = (
         <ClickToPayAuthenticate
           loggerState
           savedMethods
-          setShowFields
+          setShowPaymentElementScreen
           isClickToPayAuthenticateError
           setIsClickToPayAuthenticateError
           setPaymentToken
@@ -336,11 +338,11 @@ let make = (
     {if (
       savedCardlength === 0 &&
       clickToPayConfig.isReady->Option.isNone &&
-      (loadSavedCards === PaymentType.LoadingSavedCards || !showFields)
+      (loadSavedCards === PaymentType.LoadingSavedCards || !showPaymentElementScreen)
     ) {
       <PaymentElementShimmer.SavedPaymentCardShimmer />
     } else {
-      <RenderIf condition={!showFields}> {bottomElement} </RenderIf>
+      <RenderIf condition={!showPaymentElementScreen}> {bottomElement} </RenderIf>
     }}
     <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
       <div className="pt-4 pb-2 flex items-center justify-start">
@@ -357,7 +359,7 @@ let make = (
         }
       />
     </RenderIf>
-    <RenderIf condition={!showFields}>
+    <RenderIf condition={!showPaymentElementScreen}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
@@ -374,11 +376,11 @@ let make = (
           let key = JsxEvent.Keyboard.key(event)
           let keyCode = JsxEvent.Keyboard.keyCode(event)
           if key == "Enter" || keyCode == 13 {
-            setShowFields(_ => true)
+            setShowPaymentElementScreen(_ => true)
           }
         }}
         dataTestId={TestUtils.addNewCardIcon}
-        onClick={_ => setShowFields(_ => true)}>
+        onClick={_ => setShowPaymentElementScreen(_ => true)}>
         <Icon name="circle-plus" size=22 />
         {React.string(localeString.morePaymentMethods)}
       </div>

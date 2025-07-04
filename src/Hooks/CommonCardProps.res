@@ -7,7 +7,7 @@ open RecoilAtoms
 let useCardForm = (~logger, ~paymentType) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
-  let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
+  let showPaymentElementScreen = Recoil.useRecoilValueFromAtom(showPaymentElementScreen)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -38,10 +38,10 @@ let useCardForm = (~logger, ~paymentType) => {
   let cardBrand = getCardBrand(cardNumber)
   let isNotBancontact = selectedOption !== "bancontact_card" && cardBrand == ""
   let (cardBrand, setCardBrand) = React.useState(_ =>
-    !showFields && isNotBancontact ? cardScheme : cardBrand
+    !showPaymentElementScreen && isNotBancontact ? cardScheme : cardBrand
   )
 
-  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showFields)
+  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentElementScreen)
   let supportedCardBrands = React.useMemo(() => {
     switch (paymentType, GlobalVars.sdkVersion) {
     | (Payment, V2) => paymentsListValue->PaymentUtilsV2.getSupportedCardBrandsV2
@@ -51,7 +51,7 @@ let useCardForm = (~logger, ~paymentType) => {
 
   let maxCardLength = React.useMemo(() => {
     getMaxLength(cardBrand)
-  }, (cardNumber, cardScheme, cardBrand, showFields))
+  }, (cardNumber, cardScheme, cardBrand, showPaymentElementScreen))
 
   React.useEffect(() => {
     setIsCardSupported(_ =>
@@ -82,7 +82,7 @@ let useCardForm = (~logger, ~paymentType) => {
     setIsExpiryValid(_ => None)
     setIsCVCValid(_ => None)
     None
-  }, [showFields])
+  }, [showPaymentElementScreen])
 
   React.useEffect(() => {
     if prevCardBrandRef.current !== "" {
@@ -102,7 +102,7 @@ let useCardForm = (~logger, ~paymentType) => {
     setCardError(_ => "")
     setExpiryError(_ => "")
     None
-  }, (paymentToken.paymentToken, showFields))
+  }, (paymentToken.paymentToken, showPaymentElementScreen))
 
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
