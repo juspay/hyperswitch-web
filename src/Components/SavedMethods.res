@@ -333,12 +333,15 @@ let make = (
     savedMethods,
   ))
 
+  let enableSavedPaymentShimmer = React.useMemo(() => {
+    savedCardlength === 0 &&
+      (loadSavedCards === PaymentType.LoadingSavedCards ||
+      !showPaymentMethodsScreen ||
+      clickToPayConfig.isReady->Option.isNone)
+  }, (savedCardlength, loadSavedCards, showPaymentMethodsScreen, clickToPayConfig.isReady))
+
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
-    {if (
-      savedCardlength === 0 &&
-      clickToPayConfig.isReady->Option.isNone &&
-      (loadSavedCards === PaymentType.LoadingSavedCards || !showPaymentMethodsScreen)
-    ) {
+    {if enableSavedPaymentShimmer {
       <PaymentElementShimmer.SavedPaymentCardShimmer />
     } else {
       <RenderIf condition={!showPaymentMethodsScreen}> {bottomElement} </RenderIf>
@@ -358,7 +361,7 @@ let make = (
         }
       />
     </RenderIf>
-    <RenderIf condition={!showPaymentMethodsScreen}>
+    <RenderIf condition={!enableSavedPaymentShimmer}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
