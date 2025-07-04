@@ -78,8 +78,8 @@ let make = (
   let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
-  let (showPaymentElementScreen, setShowPaymentElementScreen) = Recoil.useRecoilState(
-    RecoilAtoms.showPaymentElementScreen,
+  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
+    RecoilAtoms.showPaymentMethodsScreen,
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
@@ -134,7 +134,7 @@ let make = (
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect(() => {
     setComplete(_ => complete)
-    setShowPaymentElementScreen(_ => true)
+    setShowPaymentMethodsScreen(_ => true)
     None
   }, [complete])
 
@@ -210,7 +210,7 @@ let make = (
       let validFormat =
         (isBancontact || isCardDetailsValid) && isNicknameValid && areRequiredFieldsValid
 
-      if validFormat && (showPaymentElementScreen || isBancontact) {
+      if validFormat && (showPaymentMethodsScreen || isBancontact) {
         if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
           ClickToPayHelpers.handleOpenClickToPayWindow()
 
@@ -446,7 +446,7 @@ let make = (
   }
 
   <div className="animate-slowShow">
-    <RenderIf condition={showPaymentElementScreen || isBancontact}>
+    <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
         <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
           <RenderIf condition={innerLayout === Compressed}>
@@ -568,7 +568,7 @@ let make = (
         </div>
       </div>
     </RenderIf>
-    <RenderIf condition={showPaymentElementScreen || isBancontact}>
+    <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <Surcharge paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType} />
     </RenderIf>
     <RenderIf condition={!isBancontact}>

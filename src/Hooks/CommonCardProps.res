@@ -7,7 +7,7 @@ open RecoilAtoms
 let useCardForm = (~logger, ~paymentType) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
-  let showPaymentElementScreen = Recoil.useRecoilValueFromAtom(showPaymentElementScreen)
+  let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(showPaymentMethodsScreen)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -38,10 +38,10 @@ let useCardForm = (~logger, ~paymentType) => {
   let cardBrand = getCardBrand(cardNumber)
   let isNotBancontact = selectedOption !== "bancontact_card" && cardBrand == ""
   let (cardBrand, setCardBrand) = React.useState(_ =>
-    !showPaymentElementScreen && isNotBancontact ? cardScheme : cardBrand
+    !showPaymentMethodsScreen && isNotBancontact ? cardScheme : cardBrand
   )
 
-  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentElementScreen)
+  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentMethodsScreen)
   let supportedCardBrands = React.useMemo(() => {
     switch (paymentType, GlobalVars.sdkVersion) {
     | (Payment, V2) => paymentsListValue->PaymentUtilsV2.getSupportedCardBrandsV2
@@ -51,7 +51,7 @@ let useCardForm = (~logger, ~paymentType) => {
 
   let maxCardLength = React.useMemo(() => {
     getMaxLength(cardBrand)
-  }, (cardNumber, cardScheme, cardBrand, showPaymentElementScreen))
+  }, (cardNumber, cardScheme, cardBrand, showPaymentMethodsScreen))
 
   React.useEffect(() => {
     setIsCardSupported(_ =>
@@ -82,7 +82,7 @@ let useCardForm = (~logger, ~paymentType) => {
     setIsExpiryValid(_ => None)
     setIsCVCValid(_ => None)
     None
-  }, [showPaymentElementScreen])
+  }, [showPaymentMethodsScreen])
 
   React.useEffect(() => {
     if prevCardBrandRef.current !== "" {
@@ -102,7 +102,7 @@ let useCardForm = (~logger, ~paymentType) => {
     setCardError(_ => "")
     setExpiryError(_ => "")
     None
-  }, (paymentToken.paymentToken, showPaymentElementScreen))
+  }, (paymentToken.paymentToken, showPaymentMethodsScreen))
 
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]

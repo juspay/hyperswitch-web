@@ -32,7 +32,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (cardOptions: array<string>, setCardOptions) = React.useState(_ => [])
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
 
-  let setShowPaymentElementScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentElementScreen)
+  let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
 
   let (walletsList, paymentOptionsList, actualList) = PaymentUtilsV2.useGetPaymentMethodListV2(
     ~paymentOptions,
@@ -53,7 +53,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   )
 
   React.useEffect0(() => {
-    setShowPaymentElementScreen(_ => true)
+    setShowPaymentMethodsScreen(_ => true)
     None
   })
 

@@ -6,7 +6,7 @@ open Utils
 let make = (
   ~loggerState,
   ~savedMethods,
-  ~setShowPaymentElementScreen,
+  ~setShowPaymentMethodsScreen,
   ~isClickToPayAuthenticateError,
   ~setIsClickToPayAuthenticateError,
   ~setPaymentToken,
@@ -82,7 +82,7 @@ let make = (
                         setIsClickToPayAuthenticateError(_ => true)
                       }
                       if cards->Array.length === 0 && savedMethods->Array.length === 0 {
-                        setShowPaymentElementScreen(_ => true)
+                        setShowPaymentMethodsScreen(_ => true)
                       }
                       resolve()
                     | Error(err) => {
