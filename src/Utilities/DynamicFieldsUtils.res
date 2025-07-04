@@ -40,6 +40,14 @@ let dynamicFieldsEnabledPaymentMethods = [
   "indomaret",
   "oxxo",
   "pay_safe_card",
+  "alma",
+  "permata_bank_transfer_transfer",
+  "bca_bank_transfer_transfer",
+  "bni_va_transfer",
+  "bri_va_transfer",
+  "cimb_va_transfer",
+  "danamon_va_transfer",
+  "mandiri_va_transfer",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
@@ -895,7 +903,8 @@ let useSubmitCallback = () => {
   let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
   let (city, setCity) = Recoil.useRecoilState(userAddressCity)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
-
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   React.useCallback((ev: Window.event) => {
@@ -932,8 +941,19 @@ let useSubmitCallback = () => {
           errorString: localeString.cityEmptyText,
         })
       }
+      if areRequiredFieldsEmpty {
+        Utils.postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterFieldsText,
+        )
+      } else if !areRequiredFieldsValid {
+        Utils.postFailedSubmitResponse(
+          ~errortype="validation_error",
+          ~message=localeString.enterValidDetailsText,
+        )
+      }
     }
-  }, (line1, line2, state, city, postalCode))
+  }, (line1, line2, state, city, postalCode, areRequiredFieldsValid, areRequiredFieldsEmpty))
 }
 
 let usePaymentMethodTypeFromList = (

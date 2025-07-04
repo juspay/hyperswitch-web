@@ -1,10 +1,17 @@
 open Utils
 let getKeyValue = (json, str) => {
-  json
-  ->Dict.get(str)
-  ->Option.getOr(Dict.make()->JSON.Encode.object)
-  ->JSON.Decode.string
-  ->Option.getOr("")
+  let value = json->Dict.get(str)->Option.getOr(Dict.make()->JSON.Encode.object)
+
+  // Try to decode as string first
+  switch value->JSON.Decode.string {
+  | Some(stringValue) => stringValue
+  | None =>
+    // If string decoding fails, try to decode as number and convert to string
+    switch value->JSON.Decode.float {
+    | Some(numberValue) => numberValue->Float.toString
+    | None => ""
+    }
+  }
 }
 
 @react.component

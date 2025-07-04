@@ -124,7 +124,14 @@ let make = () => {
       }
     | "achBankTransfer"
     | "bacsBankTransfer"
-    | "sepaBankTransfer" =>
+    | "sepaBankTransfer"
+    | "permata_bank_transferBankTransfer"
+    | "bca_bank_transferBankTransfer"
+    | "bni_vaBankTransfer"
+    | "bri_vaBankTransfer"
+    | "cimb_vaBankTransfer"
+    | "danamon_vaBankTransfer"
+    | "mandiri_vaBankTransfer" =>
       <BankTransfersPopup transferType=fullscreenMode />
     | _ =>
       <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>

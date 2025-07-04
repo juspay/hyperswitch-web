@@ -43,6 +43,15 @@ let make = (
   | PaymentMethodsManagement => paymentManagementListValue
   | _ => paymentsListValueV2
   }
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+
+  UtilityHooks.useHandlePostMessages(
+    ~complete=areRequiredFieldsValid && !areRequiredFieldsEmpty,
+    ~empty=areRequiredFieldsEmpty,
+    ~paymentType=paymentMethod,
+  )
+
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None

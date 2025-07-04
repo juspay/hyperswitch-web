@@ -669,6 +669,55 @@ let paymentMethodsFields = [
     fields: [InfoElement],
     miniIcon: None,
   },
+  {
+    paymentMethodName: "permata_bank_transfer_transfer",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Permata Bank",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "bca_bank_transfer_transfer",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "BCA Bank",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "bni_va_transfer",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "BNI VA",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "bri_va_transfer",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "BRI VA",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "cimb_va_transfer",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "CIMB VA",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "danamon_va_transfer",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Danamon VA",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "mandiri_va_transfer",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Mandiri VA",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {
