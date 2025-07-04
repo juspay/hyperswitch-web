@@ -67,7 +67,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~setAreClickToPayUIScriptsLoaded,
     ~savedMethods,
     ~loadSavedCards,
-    ~setShowPaymentMethodsScreen,
   )
 
   React.useEffect(() => {

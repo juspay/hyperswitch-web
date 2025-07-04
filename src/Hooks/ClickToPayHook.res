@@ -6,9 +6,9 @@ let useClickToPay = (
   ~setAreClickToPayUIScriptsLoaded,
   ~savedMethods,
   ~loadSavedCards,
-  ~setShowPaymentMethodsScreen,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
+  let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
   let {clickToPayProvider, isReady} = clickToPayConfig
   let setClickToPayProvider = provider =>
     setClickToPayConfig(prev => {
