@@ -88,7 +88,6 @@ let make = (
         <ClickToPayAuthenticate
           loggerState
           savedMethods
-          setShowPaymentMethodsScreen
           isClickToPayAuthenticateError
           setIsClickToPayAuthenticateError
           setPaymentToken

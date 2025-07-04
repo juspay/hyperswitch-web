@@ -6,7 +6,6 @@ open Utils
 let make = (
   ~loggerState,
   ~savedMethods,
-  ~setShowPaymentMethodsScreen,
   ~isClickToPayAuthenticateError,
   ~setIsClickToPayAuthenticateError,
   ~setPaymentToken,
@@ -17,6 +16,7 @@ let make = (
   ~closeComponentIfSavedMethodsAreEmpty,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
+  let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
   let (_, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let (isShowClickToPayNotYou, setIsShowClickToPayNotYou) = React.useState(_ => false)
   let (isCTPAuthenticateNotYouClicked, setIsCTPAuthenticateNotYouClicked) = React.useState(_ =>
