@@ -54,17 +54,24 @@ let make = () => {
               `${paymentMethod->snakeToTitleCase} voucher was successfully generated! If the document hasn't started downloading automatically, click `,
             )}
             <a
-              className="text font-medium text-sm text-[#006DF9] underline"
-              href=downloadUrl
+              className={`text font-medium text-sm underline ${downloadUrl == ""
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-[#006DF9]"}`}
+              href={downloadUrl}
+              target="_blank"
               ref={linkRef->ReactDOM.Ref.domRef}
-              onClick={_ => {
-                setDownloadCounter(c => c + 1)
-                LoggerUtils.handleLogging(
-                  ~optLogger=Some(logger),
-                  ~value=downloadCounter->Int.toString,
-                  ~eventName=DISPLAY_VOUCHER,
-                  ~paymentMethod,
-                )
+              onClick={ev => {
+                if downloadUrl == "" {
+                  ReactEvent.Mouse.preventDefault(ev)
+                } else {
+                  setDownloadCounter(c => c + 1)
+                  LoggerUtils.handleLogging(
+                    ~optLogger=Some(logger),
+                    ~value=downloadCounter->Int.toString,
+                    ~eventName=DISPLAY_VOUCHER,
+                    ~paymentMethod,
+                  )
+                }
               }}>
               {React.string("here")}
             </a>

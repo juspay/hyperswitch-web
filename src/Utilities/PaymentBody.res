@@ -978,10 +978,20 @@ let appendRedirectPaymentMethods = [
   "ali_pay",
   "ali_pay_hk",
   "revolut_pay",
+  "alma",
 ]
 
 let appendBankeDebitMethods = ["sepa"]
-let appendBankTransferMethods = ["ach", "bacs", "multibanco"]
+let appendBankTransferMethods = [
+  "ach",
+  "bacs",
+  "multibanco",
+  "bni_va",
+  "bri_va",
+  "cimb_va",
+  "danamon_va",
+  "mandiri_va",
+]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
   if isQrPaymentMethod {
@@ -1015,6 +1025,16 @@ let appendPaymentExperience = (paymentBodyArr, paymentMethodType) =>
   } else {
     paymentBodyArr
   }
+
+let oxxoBody = () => {
+  open Utils
+  let paymentMethodData = [("voucher", "oxxo"->JSON.Encode.string)]->getJsonFromArrayOfJson
+  [
+    ("payment_method", "voucher"->JSON.Encode.string),
+    ("payment_method_type", "oxxo"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
 
 let dynamicPaymentBody = (paymentMethod, paymentMethodType, ~isQrPaymentMethod=false) => {
   let paymentMethodType = paymentMethod->getPaymentMethodType(paymentMethodType)
@@ -1093,5 +1113,6 @@ let getPaymentBody = (
   | "evoucher" =>
     rewardBody(~paymentMethodType)
   | "eft" => eftBody()
+  | "oxxo" => oxxoBody()
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }
