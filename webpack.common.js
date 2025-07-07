@@ -48,6 +48,7 @@ const authorizedScriptSources = [
   "https://js.playground.klarna.com",
   "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
   "https://vgs-collect-keeper.apps.verygood.systems/vgs",
+  "https://static-na.payments-amazon.com",
   "blob:",
   // Add other trusted sources here
 ];
@@ -122,6 +123,7 @@ const authorizedConnectSources = [
   "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
   "https://vgs-collect-keeper.apps.verygood.systems/vgs",
   "https://eu.playground.klarnaevt.com",
+  "https://apay-us.amazon.com",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
   // Add other trusted sources here
