@@ -718,6 +718,34 @@ let paymentMethodsFields = [
     fields: [InfoElement],
     miniIcon: None,
   },
+  {
+    paymentMethodName: "momo_atm",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Momo ATM",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "knet",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Knet",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "swish",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Swish",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "benefit",
+    icon: Some(icon("boleto", ~size=21, ~width=25)),
+    displayName: "Benefit",
+    fields: [InfoElement],
+    miniIcon: None,
+  },
 ]
 
 type required_fields = {

@@ -48,6 +48,11 @@ let dynamicFieldsEnabledPaymentMethods = [
   "cimb_va_transfer",
   "danamon_va_transfer",
   "mandiri_va_transfer",
+  "knet",
+  "swish",
+  "online_banking_poland",
+  "momo_atm",
+  "benefit",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {

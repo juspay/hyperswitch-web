@@ -1036,6 +1036,19 @@ let oxxoBody = () => {
   ]
 }
 
+let swishBody = () => {
+  open Utils
+  let paymentMethodData =
+    [
+      ("wallet", [("swish_qr", Dict.make()->JSON.Encode.object)]->getJsonFromArrayOfJson),
+    ]->getJsonFromArrayOfJson
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_type", "swish"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
+
 let dynamicPaymentBody = (paymentMethod, paymentMethodType, ~isQrPaymentMethod=false) => {
   let paymentMethodType = paymentMethod->getPaymentMethodType(paymentMethodType)
   [
@@ -1114,5 +1127,6 @@ let getPaymentBody = (
     rewardBody(~paymentMethodType)
   | "eft" => eftBody()
   | "oxxo" => oxxoBody()
+  | "swish" => swishBody()
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }
