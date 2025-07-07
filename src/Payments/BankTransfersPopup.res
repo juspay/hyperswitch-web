@@ -24,7 +24,14 @@ let make = (~transferType) => {
   | "achBankTransfer" => ("ach_credit_transfer", "ACH")
   | "bacsBankTransfer" => ("bacs_bank_instructions", "BACS")
   | "sepaBankTransfer" => ("sepa_bank_instructions", "SEPA")
-  | _ => ("doku_bank_transfer_instructions", "")
+  | "permata_bank_transferBankTransfer" => ("doku_bank_transfer_instructions", "Permata")
+  | "bca_bank_transferBankTransfer" => ("doku_bank_transfer_instructions", "BCA")
+  | "bni_vaBankTransfer" => ("doku_bank_transfer_instructions", "BNI VA")
+  | "bri_vaBankTransfer" => ("doku_bank_transfer_instructions", "BRI VA")
+  | "cimb_vaBankTransfer" => ("doku_bank_transfer_instructions", "Cimb VA")
+  | "danamon_vaBankTransfer" => ("doku_bank_transfer_instructions", "Danamon VA")
+  | "mandiri_vaBankTransfer" => ("doku_bank_transfer_instructions", "Mandiri VA")
+  | _ => ("", "")
   }
 
   let (isCopied, setIsCopied) = React.useState(_ => false)
