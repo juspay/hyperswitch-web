@@ -45,6 +45,23 @@ let make = () => {
     Modal.close(setOpenModal)
   }
 
+  let downloadUrlStyles =
+    downloadUrl->String.length === 0 ? "text-gray-400 cursor-not-allowed" : "text-[#006DF9]"
+
+  let onClick = ev => {
+    if downloadUrl == "" {
+      ReactEvent.Mouse.preventDefault(ev)
+    } else {
+      setDownloadCounter(c => c + 1)
+      LoggerUtils.handleLogging(
+        ~optLogger=Some(logger),
+        ~value=downloadCounter->Int.toString,
+        ~eventName=DISPLAY_VOUCHER,
+        ~paymentMethod,
+      )
+    }
+  }
+
   <Modal showClose=false openModal setOpenModal loader>
     <div className="flex flex-col h-full justify-between items-center">
       <div className="flex flex-col max-w-md justify-between items-center">
@@ -54,25 +71,11 @@ let make = () => {
               `${paymentMethod->snakeToTitleCase} voucher was successfully generated! If the document hasn't started downloading automatically, click `,
             )}
             <a
-              className={`text font-medium text-sm underline ${downloadUrl == ""
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-[#006DF9]"}`}
+              className={`text font-medium text-sm underline ${downloadUrlStyles}`}
               href={downloadUrl}
               target="_blank"
               ref={linkRef->ReactDOM.Ref.domRef}
-              onClick={ev => {
-                if downloadUrl == "" {
-                  ReactEvent.Mouse.preventDefault(ev)
-                } else {
-                  setDownloadCounter(c => c + 1)
-                  LoggerUtils.handleLogging(
-                    ~optLogger=Some(logger),
-                    ~value=downloadCounter->Int.toString,
-                    ~eventName=DISPLAY_VOUCHER,
-                    ~paymentMethod,
-                  )
-                }
-              }}>
+              onClick>
               {React.string("here")}
             </a>
             {React.string(" to download it.")}
