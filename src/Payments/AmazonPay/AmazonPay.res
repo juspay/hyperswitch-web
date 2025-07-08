@@ -71,7 +71,6 @@ type shippingAddressResponse = {
   totalShippingAmount: amountDetails,
   totalBaseAmount: amountDetails,
   totalTaxAmount: amountDetails,
-  totalOrderAmount: amountDetails,
   totalChargeAmount: amountDetails,
   totalDiscountAmount: amountDetails,
   deliveryOptions: array<deliveryOption>,
@@ -81,7 +80,6 @@ type deliveryOptionResponse = {
   totalShippingAmount: amountDetails,
   totalBaseAmount: amountDetails,
   totalTaxAmount: amountDetails,
-  totalOrderAmount: amountDetails,
   totalChargeAmount: amountDetails,
   totalDiscountAmount: amountDetails,
 }
@@ -172,127 +170,72 @@ let getAmazonPayConfig = (sessionToken: amazonPayTokenType): amazonPayConfigType
   let taxAmount = sessionToken.totalTaxAmount->Float.fromString->Option.getOr(0.0)
   let shippingAmount = sessionToken.totalShippingAmount->Float.fromString->Option.getOr(0.0)
   let totalOrderAmount = (baseAmount +. taxAmount +. shippingAmount)->Float.toString
-  let sanitizedMerchantId = sessionToken.merchantId->String.replaceRegExp(%re("/\s+/g"), "")
+
+  Console.log(sessionToken)
 
   {
     merchantId: "A3UJN62U20X4GB",
-    ledgerCurrency: "USD",
+    ledgerCurrency: sessionToken.ledgerCurrency,
     sandbox: true,
     checkoutLanguage: "en_US",
     productType: "PayAndShip",
     placement: "Checkout",
     buttonColor: "Gold",
     estimatedOrderAmount: {
-      amount: "110.44",
-      currencyCode: "USD",
+      amount: totalOrderAmount,
+      currencyCode: sessionToken.ledgerCurrency,
     },
     checkoutSessionConfig: {
       storeId: "amzn1.application-oa2-client.43ee1af277a94b6c8efd9118dd6c156c",
       scopes: ["name", "email", "phoneNumber", "billingAddress"],
       paymentDetails: {
-        paymentIntent: "AuthorizeWithCapture",
+        paymentIntent: sessionToken.paymentIntent,
         canHandlePendingAuthorization: false,
       },
     },
     onInitCheckout: _event => {
       Console.log("Checkout initialized successfully!")
+      let currencyCode = sessionToken.ledgerCurrency
       {
-        totalShippingAmount: {amount: "50.00", currencyCode: "USD"},
-        totalBaseAmount: {amount: "50.44", currencyCode: "USD"},
-        totalTaxAmount: {amount: "10.00", currencyCode: "USD"},
-        totalChargeAmount: {amount: "110.44", currencyCode: "USD"},
-        totalDiscountAmount: {amount: "0.00", currencyCode: "USD"},
-        deliveryOptions: [
-          {
-            id: "standard-delivery",
-            price: {amount: "20.00", currencyCode: "USD"},
-            shippingMethod: {
-              shippingMethodName: "standard-courier",
-              shippingMethodCode: "standard-courier",
-            },
-            isDefault: true,
-          },
-          {
-            id: "express-delivery",
-            price: {amount: "50.00", currencyCode: "USD"},
-            shippingMethod: {
-              shippingMethodName: "express-courier",
-              shippingMethodCode: "express-courier",
-            },
-            isDefault: false,
-          },
-        ],
+        totalShippingAmount: {amount: sessionToken.totalShippingAmount, currencyCode},
+        totalBaseAmount: {amount: sessionToken.totalBaseAmount, currencyCode},
+        totalTaxAmount: {amount: sessionToken.totalTaxAmount, currencyCode},
+        totalChargeAmount: {amount: totalOrderAmount, currencyCode},
+        totalDiscountAmount: {amount: "0.00", currencyCode},
+        deliveryOptions: sessionToken.deliveryOptions,
       }
     },
     onShippingAddressSelection: _event => {
       Console.log("Shipping address updated")
+      let currencyCode = sessionToken.ledgerCurrency
+
       {
-        totalShippingAmount: {amount: "50.00", currencyCode: "USD"},
-        totalBaseAmount: {amount: "50.44", currencyCode: "USD"},
-        totalTaxAmount: {amount: "10.00", currencyCode: "USD"},
-        totalOrderAmount: {amount: "110.44", currencyCode: "USD"},
-        totalChargeAmount: {amount: "110.44", currencyCode: "USD"},
-        totalDiscountAmount: {amount: "0.00", currencyCode: "USD"},
-        deliveryOptions: [
-          {
-            id: "standard-delivery",
-            price: {amount: "20.00", currencyCode: "USD"},
-            shippingMethod: {
-              shippingMethodName: "standard-courier",
-              shippingMethodCode: "standard-courier",
-            },
-            isDefault: true,
-          },
-          {
-            id: "express-delivery",
-            price: {amount: "50.00", currencyCode: "USD"},
-            shippingMethod: {
-              shippingMethodName: "express-courier",
-              shippingMethodCode: "express-courier",
-            },
-            isDefault: false,
-          },
-        ],
+        totalShippingAmount: {amount: sessionToken.totalShippingAmount, currencyCode},
+        totalBaseAmount: {amount: sessionToken.totalBaseAmount, currencyCode},
+        totalTaxAmount: {amount: sessionToken.totalTaxAmount, currencyCode},
+        totalChargeAmount: {amount: totalOrderAmount, currencyCode},
+        totalDiscountAmount: {amount: "0.00", currencyCode},
+        deliveryOptions: sessionToken.deliveryOptions,
       }
     },
     onDeliveryOptionSelection: event => {
       Console.log("Delivery option updated")
-      let deliveryOptions = [
-        {
-          id: "standard-delivery",
-          price: {amount: "20.00", currencyCode: "USD"},
-          shippingMethod: {
-            shippingMethodName: "standard-courier",
-            shippingMethodCode: "standard-courier",
-          },
-          isDefault: true,
-        },
-        {
-          id: "express-delivery",
-          price: {amount: "50.00", currencyCode: "USD"},
-          shippingMethod: {
-            shippingMethodName: "express-courier",
-            shippingMethodCode: "express-courier",
-          },
-          isDefault: false,
-        },
-      ]
-
+      let deliveryOptions = sessionToken.deliveryOptions
+      let currencyCode = sessionToken.ledgerCurrency
       let selectedOption =
         deliveryOptions->Array.find(option => option.id === event.deliveryOptions.id)
-      let newShippingAmount = selectedOption->Option.mapOr("50.00", option => option.price.amount)
-      let baseAmount = 50.44
-      let taxAmount = 10.00
-      let shippingAmount = newShippingAmount->Float.fromString->Option.getOr(50.00)
+      let newShippingAmount = selectedOption->Option.mapOr("0.0", option => option.price.amount)
+      let baseAmount = sessionToken.totalBaseAmount->Float.fromString->Option.getOr(0.0)
+      let taxAmount = sessionToken.totalTaxAmount->Float.fromString->Option.getOr(0.0)
+      let shippingAmount = newShippingAmount->Float.fromString->Option.getOr(0.0)
       let newTotalAmount = (baseAmount +. taxAmount +. shippingAmount)->Float.toString
 
       {
-        totalShippingAmount: {amount: newShippingAmount, currencyCode: "USD"},
-        totalBaseAmount: {amount: "50.44", currencyCode: "USD"},
-        totalTaxAmount: {amount: "10.00", currencyCode: "USD"},
-        totalOrderAmount: {amount: newTotalAmount, currencyCode: "USD"},
-        totalChargeAmount: {amount: newTotalAmount, currencyCode: "USD"},
-        totalDiscountAmount: {amount: "0.00", currencyCode: "USD"},
+        totalShippingAmount: {amount: newShippingAmount, currencyCode},
+        totalBaseAmount: {amount: sessionToken.totalBaseAmount, currencyCode},
+        totalTaxAmount: {amount: sessionToken.totalTaxAmount, currencyCode},
+        totalChargeAmount: {amount: newTotalAmount, currencyCode},
+        totalDiscountAmount: {amount: "0.00", currencyCode},
       }
     },
     onCompleteCheckout: _event => {
@@ -314,27 +257,20 @@ external renderAmazonPayButton: (~buttonId: string, ~config: amazonPayConfigType
 let make = (~amazonPayToken) => {
   let token = amazonPayToken->amazonPayTokenMapper
   let config = getAmazonPayConfig(token)
-  let status = CommonHooks.useScript("https://static-na.payments-amazon.com/checkout.js")
-  let isAmazonPayReady = React.useRef(false)
+  let scriptLoadStatus = CommonHooks.useScript("https://static-na.payments-amazon.com/checkout.js")
+  let isAmazonPayRenderedOnce = React.useRef(false)
 
-  React.useEffect1(() => {
-    if isAmazonPayReady.current {
-      Console.log("Amazon Pay is already ready, skipping re-render")
-      renderAmazonPayButton(~buttonId="#AmazonPayButton", ~config)
-    }
-    None
-  }, [isAmazonPayReady.current])
-
-  React.useEffect2(() => {
-    if status == "ready" && config.merchantId != "" {
+  React.useEffect3(() => {
+    if scriptLoadStatus == "ready" && config.merchantId != "" && !isAmazonPayRenderedOnce.current {
       try {
-        isAmazonPayReady.current = true
+        renderAmazonPayButton(~buttonId="#AmazonPayButton", ~config)
+        isAmazonPayRenderedOnce.current = true
       } catch {
       | e => Console.error2("Error rendering Amazon Pay button:", e)
       }
     }
     None
-  }, (config, status))
+  }, (config, scriptLoadStatus, isAmazonPayRenderedOnce.current))
 
   <div id="AmazonPayButton" />
 }
