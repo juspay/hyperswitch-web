@@ -1038,10 +1038,8 @@ let oxxoBody = () => {
 
 let swishBody = () => {
   open Utils
-  let paymentMethodData =
-    [
-      ("wallet", [("swish_qr", Dict.make()->JSON.Encode.object)]->getJsonFromArrayOfJson),
-    ]->getJsonFromArrayOfJson
+  let swishQr = [("swish_qr", Dict.make()->JSON.Encode.object)]->getJsonFromArrayOfJson
+  let paymentMethodData = [("wallet", swishQr)]->getJsonFromArrayOfJson
   [
     ("payment_method", "wallet"->JSON.Encode.string),
     ("payment_method_type", "swish"->JSON.Encode.string),
