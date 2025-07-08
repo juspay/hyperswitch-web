@@ -12,13 +12,39 @@ let handleVGSField = (field: option<VGSTypes.field>, setFocus, setError) => {
   }
 }
 
+let getExpiryToken = dict => {
+  open VGSTypes
+  let expiryDetails =
+    dict
+    ->Dict.get("card_exp")
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.map(val => {
+      {
+        month: val
+        ->Dict.get("ExpirationMonth")
+        ->Option.flatMap(JSON.Decode.string)
+        ->Option.getOr(""),
+        year: val
+        ->Dict.get("ExpirationYear")
+        ->Option.flatMap(JSON.Decode.string)
+        ->Option.getOr(""),
+      }
+    })
+  switch expiryDetails {
+  | Some(val) => {month: val.month, year: val.year}
+  | None => {
+      month: "",
+      year: "",
+    }
+  }
+}
+
 let getTokenizedData = data => {
   let dict = data->getDictFromJson
+  let expiryDetails = getExpiryToken(dict)
   let cardNumber = dict->getString("card_number", "")
-  let cardExp = dict->getString("card_exp", "")
   let cardCvc = dict->getString("card_cvc", "")
-  let (month, year) = CardUtils.splitExpiryDates(cardExp)
-  (cardNumber, month, year, cardCvc)
+  (cardNumber, expiryDetails.month, expiryDetails.year, cardCvc)
 }
 
 let getErrorStr = (fieldname, ~empty=false, localeString: LocaleStringTypes.localeStrings) => {
