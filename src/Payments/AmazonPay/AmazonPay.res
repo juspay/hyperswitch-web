@@ -172,21 +172,55 @@ type amazonPayData = {checkout_session_id: string}
 
 type wallet = {amazon_pay: amazonPayData}
 
-let amazonPayBody = amazonCheckoutSessionId => {
+type shippingAddress = {
+  line1: string,
+  line2: string,
+  line3: string,
+  city: string,
+  state: string,
+  zip: string,
+  country: string,
+  first_name: string,
+  last_name: string,
+}
+
+type shippingPhone = {number: string}
+
+type shipping = {
+  address: shippingAddress,
+  phone: shippingPhone,
+}
+
+let amazonPayBody = (amazonCheckoutSessionId, shipping) => {
   let wallet = {
     amazon_pay: {
       checkout_session_id: amazonCheckoutSessionId,
     },
   }
-  let paymentMethodData =
-    [
-      ("wallet", wallet->Identity.anyTypeToJson),
-      ("capture_method", "automatic"->JSON.Encode.string),
-      ("payment_experience", "invoke_sdk_client"->JSON.Encode.string),
-      ("payment_method_type", "amazon_pay"->JSON.Encode.string),
-    ]->Utils.getJsonFromArrayOfJson
+  let paymentMethodData = [("wallet", wallet->Identity.anyTypeToJson)]->Utils.getJsonFromArrayOfJson
+  [
+    ("payment_method", "wallet"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+    ("capture_method", "automatic"->JSON.Encode.string),
+    ("payment_experience", "invoke_sdk_client"->JSON.Encode.string),
+    ("payment_method_type", "amazon_pay"->JSON.Encode.string),
+    ("shipping", shipping->Identity.anyTypeToJson),
+  ]
+}
 
-  [("payment_method", "wallet"->JSON.Encode.string), ("payment_method_data", paymentMethodData)]
+let defaultShipping = {
+  address: {
+    line1: "",
+    line2: "",
+    line3: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "",
+    first_name: "",
+    last_name: "",
+  },
+  phone: {number: ""},
 }
 
 let useAmazonPay = () => {
@@ -195,6 +229,7 @@ let useAmazonPay = () => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), AmazonPay)
   let {publishableKey} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
+  let shippingAddressRef = React.useRef(defaultShipping)
 
   let getAmazonPayConfig = (sessionToken: amazonPayTokenType): amazonPayConfigType<'a> => {
     let baseAmount = sessionToken.totalBaseAmount->Float.fromString->Option.getOr(0.0)
@@ -224,8 +259,43 @@ let useAmazonPay = () => {
           canHandlePendingAuthorization: false,
         },
       },
-      onInitCheckout: _event => {
-        Console.log("Checkout initialized successfully!")
+      onInitCheckout: event => {
+        let eventDict = event->getDictFromJson
+        let shippingAddressDict = eventDict->getDictFromDict("shippingAddress")
+        let fullName = shippingAddressDict->getString("name", "")
+        let addressLine1 = shippingAddressDict->getString("addressLine1", "")
+        let addressLine2 = shippingAddressDict->getString("addressLine2", "")
+        let addressLine3 = shippingAddressDict->getString("addressLine3", "")
+        let city = shippingAddressDict->getString("city", "")
+        let state = shippingAddressDict->getString("stateOrRegion", "")
+        let zip = shippingAddressDict->getString("postalCode", "")
+        let country = shippingAddressDict->getString("countryCode", "")
+        let phoneNumber = shippingAddressDict->getString("phoneNumber", "")
+
+        let (firstName, lastName) = fullName->Utils.getFirstAndLastNameFromFullName
+
+        let shippingAddress = {
+          line1: addressLine1,
+          line2: addressLine2,
+          line3: addressLine3,
+          city,
+          state,
+          zip,
+          country,
+          first_name: firstName->JSON.Decode.string->Option.getOr(""),
+          last_name: lastName->JSON.Decode.string->Option.getOr(""),
+        }
+
+        let shippingPhone = {number: phoneNumber}
+
+        let shipping = {
+          address: shippingAddress,
+          phone: shippingPhone,
+        }
+
+        shippingAddressRef.current = shipping
+
+        Console.log2("Checkout initialized successfully!", shipping)
         let currencyCode = sessionToken.ledgerCurrency
         {
           totalShippingAmount: {amount: sessionToken.totalShippingAmount, currencyCode},
@@ -278,7 +348,7 @@ let useAmazonPay = () => {
         let amazonCheckoutSessionId = checkoutResponseDict->getString("amazonCheckoutSessionId", "")
 
         intent(
-          ~bodyArr=amazonPayBody(amazonCheckoutSessionId),
+          ~bodyArr=amazonPayBody(amazonCheckoutSessionId, shippingAddressRef.current),
           ~confirmParam={
             return_url: options.wallets.walletReturnUrl,
             publishableKey,
@@ -290,8 +360,13 @@ let useAmazonPay = () => {
         Console.log2("Checkout event details:", event)
         {status: "success"}
       },
-      onCancel: _event => {
-        Console.log("Checkout was cancelled by user")
+      onCancel: event => {
+        Console.log2("Checkout was cancelled by user", event)
+        Utils.postFailedSubmitResponse(
+          ~message="Amazon Pay checkout was cancelled by user",
+          ~errortype="user_cancelled",
+        )
+        Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       },
     }
   }
@@ -302,6 +377,8 @@ let useAmazonPay = () => {
 let make = (~amazonPayToken) => {
   let token = amazonPayToken->amazonPayTokenMapper
   let getAmazonPayConfig = useAmazonPay()
+  let {iframeId} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+
   let config = getAmazonPayConfig(token)
   let scriptLoadStatus = CommonHooks.useScript("https://static-na.payments-amazon.com/checkout.js")
   let isAmazonPayRenderedOnce = React.useRef(false)
@@ -318,5 +395,13 @@ let make = (~amazonPayToken) => {
     None
   }, (config, scriptLoadStatus, isAmazonPayRenderedOnce.current))
 
-  <div id="AmazonPayButton" />
+  <div
+    onClick={_ =>
+      Utils.messageParentWindow([
+        ("fullscreen", true->JSON.Encode.bool),
+        ("param", "paymentloader"->JSON.Encode.string),
+        ("iframeId", iframeId->JSON.Encode.string),
+      ])}
+    id="AmazonPayButton"
+  />
 }
