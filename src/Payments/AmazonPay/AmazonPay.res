@@ -362,11 +362,15 @@ let useAmazonPay = () => {
       },
       onCancel: event => {
         Console.log2("Checkout was cancelled by user", event)
-        Utils.postFailedSubmitResponse(
-          ~message="Amazon Pay checkout was cancelled by user",
-          ~errortype="user_cancelled",
+        intent(
+          ~bodyArr=amazonPayBody("", shippingAddressRef.current),
+          ~confirmParam={
+            return_url: options.wallets.walletReturnUrl,
+            publishableKey,
+          },
+          ~handleUserError=true,
+          ~manualRetry=isManualRetryEnabled,
         )
-        Utils.messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
       },
     }
   }
