@@ -48,6 +48,7 @@ const authorizedScriptSources = [
   "https://js.playground.klarna.com",
   "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
   "https://vgs-collect-keeper.apps.verygood.systems/vgs",
+  "https://static-na.payments-amazon.com",
   "blob:",
   // Add other trusted sources here
 ];
@@ -122,6 +123,7 @@ const authorizedConnectSources = [
   "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
   "https://vgs-collect-keeper.apps.verygood.systems/vgs",
   "https://eu.playground.klarnaevt.com",
+  "https://apay-us.amazon.com",
   extractBaseDSNUrl(process.env.SENTRY_DSN),
   ...localhostSources,
   // Add other trusted sources here
@@ -258,22 +260,22 @@ module.exports = (publicPath = "auto") => {
       chunks: ["app"],
       scriptLoading: "blocking",
       //       // Add CSP meta tag
-      meta: {
-        "Content-Security-Policy": {
-          "http-equiv": "Content-Security-Policy",
-          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-            " "
-          )};
-                style-src ${authorizedStyleSources.join(" ")};
-                frame-src ${authorizedFrameSources.join(" ")};
-                img-src ${authorizedImageSources.join(" ")};
-                font-src ${authorizedFontSources.join(" ")};
-                connect-src ${authorizedConnectSources.join(
-                  " "
-                )} ${logEndpoint} ;
-      `,
-        },
-      },
+      // meta: {
+      //   "Content-Security-Policy": {
+      //     "http-equiv": "Content-Security-Policy",
+      //     content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+      //       " "
+      //     )};
+      //           style-src ${authorizedStyleSources.join(" ")};
+      //           frame-src ${authorizedFrameSources.join(" ")};
+      //           img-src ${authorizedImageSources.join(" ")};
+      //           font-src ${authorizedFontSources.join(" ")};
+      //           connect-src ${authorizedConnectSources.join(
+      //             " "
+      //           )} ${logEndpoint} ;
+      // `,
+      //   },
+      // },
     }),
     new HtmlWebpackPlugin({
       // Also generate a test.html
@@ -281,20 +283,20 @@ module.exports = (publicPath = "auto") => {
       filename: "fullscreenIndex.html",
       template: "./public/fullscreenIndexTemplate.html",
       // Add CSP meta tag
-      meta: {
-        "Content-Security-Policy": {
-          "http-equiv": "Content-Security-Policy",
-          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-            " "
-          )};
-          style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")};
-          img-src ${authorizedImageSources.join(" ")};
-          font-src ${authorizedFontSources.join(" ")};
-          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
-          `,
-        },
-      },
+      // meta: {
+      //   "Content-Security-Policy": {
+      //     "http-equiv": "Content-Security-Policy",
+      //     content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+      //       " "
+      //     )};
+      //     style-src ${authorizedStyleSources.join(" ")};
+      //     frame-src ${authorizedFrameSources.join(" ")};
+      //     img-src ${authorizedImageSources.join(" ")};
+      //     font-src ${authorizedFontSources.join(" ")};
+      //     connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
+      //     `,
+      //   },
+      // },
     }),
     new SubresourceIntegrityPlugin({
       hashFuncNames: ["sha384"],
