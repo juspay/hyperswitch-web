@@ -17,7 +17,7 @@ let cardExpiryOptions = (~expiryPlaceholder, ~vault) => {
   validations: ["required", "validCardExpirationDate"],
   yearLength: 2,
   showCardIcon: false,
-  serializers: [VGS.separate({monthName: "ExpirationMonth", yearName: "ExpirationYear"})],
+  serializers: [VGS.separate({monthName: "card_exp_month", yearName: "card_exp_year"})],
 }
 
 let cardCvcOptions = {

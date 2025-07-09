@@ -14,28 +14,10 @@ let handleVGSField = (field: option<VGSTypes.field>, setFocus, setError) => {
 
 let getExpiryToken = dict => {
   open VGSTypes
-  let expiryDetails =
-    dict
-    ->Dict.get("card_exp")
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.map(val => {
-      {
-        month: val
-        ->Dict.get("ExpirationMonth")
-        ->Option.flatMap(JSON.Decode.string)
-        ->Option.getOr(""),
-        year: val
-        ->Dict.get("ExpirationYear")
-        ->Option.flatMap(JSON.Decode.string)
-        ->Option.getOr(""),
-      }
-    })
-  switch expiryDetails {
-  | Some(val) => {month: val.month, year: val.year}
-  | None => {
-      month: "",
-      year: "",
-    }
+  let cardExpiry = dict->getDictFromDict("card_exp")
+  {
+    month: cardExpiry->getString("card_exp_month", ""),
+    year: cardExpiry->getString("card_exp_year", ""),
   }
 }
 
