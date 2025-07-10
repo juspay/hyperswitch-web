@@ -36,10 +36,13 @@ let make = (~isBancontact=false) => {
   handleVGSField(expiryField, setIsExpiryFocused, setVgsExpiryError)
   handleVGSField(cvcField, setIsCVCFocused, setVgsCVCError)
 
-  let initializeVGSFields = (vault: returnValue) => {
+  let initializeVGSFields = (vault: vgsCollect) => {
     setCardField(_ => Some(vault.field("#vgs-cc-number", cardNumberOptions)))
     setExpiryField(_ => Some(
-      vault.field("#vgs-cc-expiry", cardExpiryOptions(localeString.expiryPlaceholder)),
+      vault.field(
+        "#vgs-cc-expiry",
+        cardExpiryOptions(~expiryPlaceholder=localeString.expiryPlaceholder, ~vault),
+      ),
     ))
     setCVCField(_ => Some(vault.field("#vgs-cc-cvc", cardCvcOptions)))
     setForm(_ => Some(vault))
