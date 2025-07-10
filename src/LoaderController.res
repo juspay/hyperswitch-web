@@ -47,7 +47,12 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     isPaymentButtonHandlerProvidedAtom,
   )
 
-  let optionsCallback = (optionsPayment: PaymentType.options) => {
+  let optionsCallback = async (optionsPayment: PaymentType.options) => {
+    try {
+      let _ = await S3Utils.initializeCountryData(~locale=config.locale, ~logger)
+    } catch {
+    | _ => ()
+    }
     [
       (optionsPayment.defaultValues.billingDetails.name, setUserFullName),
       (optionsPayment.defaultValues.billingDetails.email, setUserEmail),
@@ -67,11 +72,21 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     })
 
-    setUserAddressCountry(prev => {
-      ...prev,
-      value: optionsPayment.defaultValues.billingDetails.address.country,
-    })
-    setCountry(_ => optionsPayment.defaultValues.billingDetails.address.country)
+    if optionsPayment.defaultValues.billingDetails.address.country === "" {
+      let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
+      let clientCountry = getClientCountry(clientTimeZone)
+      setUserAddressCountry(prev => {
+        ...prev,
+        value: clientCountry.countryName,
+      })
+      setCountry(_ => clientCountry.countryName)
+    } else {
+      setUserAddressCountry(prev => {
+        ...prev,
+        value: optionsPayment.defaultValues.billingDetails.address.country,
+      })
+      setCountry(_ => optionsPayment.defaultValues.billingDetails.address.country)
+    }
   }
 
   let updateOptions = dict => {
@@ -97,7 +112,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | Payment => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
         setOptionsPayment(_ => paymentOptions)
-        optionsCallback(paymentOptions)
+        optionsCallback(paymentOptions)->ignore
       }
     | _ => ()
     }
@@ -123,14 +138,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         optionsLocaleString == "" ? config.locale : optionsLocaleString,
       )
       let constantString = await CardTheme.getConstantStringsObject()
-      let _ = await S3Utils.initializeCountryData(~locale=config.locale, ~logger)
-      let clientTimeZone = CardUtils.dateTimeFormat().resolvedOptions().timeZone
-      let clientCountry = Utils.getClientCountry(clientTimeZone)
-      setUserAddressCountry(prev => {
-        ...prev,
-        value: clientCountry.countryName,
-      })
-      setCountry(_ => clientCountry.countryName)
       setConfig(_ => {
         config: {
           appearance,
