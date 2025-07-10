@@ -14,9 +14,11 @@ let make = () => {
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
 
-  let countryData = CountryStateDataRefs.countryDataRef.contents
-  let countryNames =
-    Utils.getCountryNames(countryData)->DropdownField.updateArrayOfStringToOptionsTypeArray
+  let countryNames = React.useMemo(() => {
+    Utils.getCountryNames(
+      CountryStateDataRefs.countryDataRef.contents,
+    )->DropdownField.updateArrayOfStringToOptionsTypeArray
+  }, [CountryStateDataRefs.countryDataRef.contents])
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {
@@ -24,10 +26,11 @@ let make = () => {
   }
 
   open Utils
-  let clientCountryCode =
-    countryData
+  let clientCountryCode = React.useMemo(() => {
+    CountryStateDataRefs.countryDataRef.contents
     ->Array.find(item => item.countryName == country)
     ->Option.getOr(Country.defaultTimeZone)
+  }, [CountryStateDataRefs.countryDataRef.contents])
 
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""
@@ -62,7 +65,7 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, country, isManualRetryEnabled))
+  }, (email, fullName, country, isManualRetryEnabled, clientCountryCode))
   useSubmitPaymentData(submitCallback)
 
   <div

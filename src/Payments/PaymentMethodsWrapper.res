@@ -57,7 +57,6 @@ let make = (~paymentMethodName: string) => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
-  let countryList = CountryStateDataRefs.countryDataRef.contents
 
   React.useEffect(() => {
     setFieldComplete(_ => areRequiredFieldsValid)
@@ -78,7 +77,7 @@ let make = (~paymentMethodName: string) => {
     if confirm.doSubmit {
       if areRequiredFieldsValid {
         let countryCode =
-          Country.getCountry(paymentMethodName, countryList)
+          Country.getCountry(paymentMethodName, CountryStateDataRefs.countryDataRef.contents)
           ->Array.filter(item => item.countryName == country)
           ->Array.get(0)
           ->Option.getOr(Country.defaultTimeZone)
@@ -126,6 +125,7 @@ let make = (~paymentMethodName: string) => {
     currency,
     requiredFieldsBody,
     areRequiredFieldsValid,
+    CountryStateDataRefs.countryDataRef.contents,
   ))
   useSubmitPaymentData(submitCallback)
   <div
