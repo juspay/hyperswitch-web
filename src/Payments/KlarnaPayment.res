@@ -15,9 +15,9 @@ let make = () => {
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
 
   let countryNames = React.useMemo(() => {
-    Utils.getCountryNames(
-      CountryStateDataRefs.countryDataRef.contents,
-    )->DropdownField.updateArrayOfStringToOptionsTypeArray
+    DropdownField.updateArrayOfStringToOptionsTypeArray(
+      Utils.getCountryNames(CountryStateDataRefs.countryDataRef.contents),
+    )
   }, [CountryStateDataRefs.countryDataRef.contents])
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)

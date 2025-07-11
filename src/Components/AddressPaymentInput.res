@@ -51,10 +51,9 @@ let make = (~className="", ~paymentType: option<CardThemeType.mode>=?) => {
   let (showOtherFileds, setShowOtherFields) = React.useState(_ => false)
 
   let stateNames = getStateNames(country)
-  let countryNames = React.useMemo(
-    () => {getCountryNames(CountryStateDataRefs.countryDataRef.contents)},
-    [CountryStateDataRefs.countryDataRef.contents],
-  )
+  let countryNames = React.useMemo(() => {
+    getCountryNames(CountryStateDataRefs.countryDataRef.contents)
+  }, [CountryStateDataRefs.countryDataRef.contents])
 
   let checkPostalValidity = (
     postal: RecoilAtomTypes.field,
