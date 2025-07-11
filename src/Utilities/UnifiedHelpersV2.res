@@ -80,6 +80,7 @@ let itemToPaymentsEnabledMapper = methodsArray => {
         surchargeDetails: dict->getSurchargeDetails,
         paymentMethodType: getString(dict, "payment_method_type", ""),
         paymentMethodSubtype,
+        bankNames: dict->getStrArray("bank_names"),
         requiredFields: dict->getDynamicFieldsFromJsonDictV2(
           paymentMethodSubtype == "bancontact_card",
         ),

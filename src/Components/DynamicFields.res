@@ -176,8 +176,11 @@ let make = (
     errorString: "",
   })
 
-  // TODO - Handle Bank Names for V2
-  let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
+  let bankNames = switch GlobalVars.sdkVersion {
+  | V2 =>
+    Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypesV2.bankNames->Option.getOr([]))
+  | V1 => Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
+  }
   let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))
 
   let setCurrency = val => {

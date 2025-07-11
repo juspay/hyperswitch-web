@@ -88,7 +88,23 @@ let make = (~paymentMethodName: string) => {
           ->Array.filter(item => item.displayName == selectedBank)
           ->Array.get(0)
           ->Option.getOr(Bank.defaultBank)
-        let body =
+
+        let paymentBody = switch GlobalVars.sdkVersion {
+        | V2 =>
+          PaymentBodyV2.getPaymentBody(
+            ~paymentMethod=paymentMethodDetails.methodType,
+            ~paymentMethodType=paymentMethodName,
+            ~country=countryCode.isoAlpha2,
+            ~fullName=fullName.value,
+            ~email=email.value,
+            ~bank=bank.hyperSwitch,
+            ~blikCode=blikCode.value->removeHyphen,
+            ~phoneNumber=cleanPhoneNumber(
+              phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
+            ),
+            ~paymentExperience=paymentFlow,
+          )
+        | V1 =>
           PaymentBody.getPaymentBody(
             ~paymentMethod=paymentMethodDetails.methodType,
             ~paymentMethodType=paymentMethodName,
@@ -101,7 +117,9 @@ let make = (~paymentMethodName: string) => {
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
             ),
             ~paymentExperience=paymentFlow,
-          )->mergeAndFlattenToTuples(requiredFieldsBody)
+          )
+        }
+        let body = paymentBody->mergeAndFlattenToTuples(requiredFieldsBody)
 
         intent(
           ~bodyArr=body,

@@ -31,6 +31,7 @@ type paymentMethodEnabled = {
   cardNetworks?: array<cardNetwork>,
   paymentMethodType: string,
   paymentMethodSubtype: string,
+  bankNames?: array<string>,
   requiredFields: array<PaymentMethodsRecord.required_fields>,
   surchargeDetails: option<PaymentMethodsRecord.surchargeDetails>,
 }
