@@ -614,7 +614,7 @@ let country = [
   {
     isoAlpha2: "IN",
     countryName: "India",
-    timeZones: ["Asia/Kolkata"],
+    timeZones: ["Asia/Kolkata", "Asia/Calcutta"],
   },
   {
     isoAlpha2: "ID",

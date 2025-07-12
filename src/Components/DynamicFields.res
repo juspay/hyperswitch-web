@@ -169,7 +169,7 @@ let make = (
     destinationBankAccountId,
   )
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
-  let countryList = CountryStateDataRefs.countryDataRef.contents
+
   let stateNames = getStateNames({
     value: country,
     isValid: None,
@@ -178,7 +178,11 @@ let make = (
 
   // TODO - Handle Bank Names for V2
   let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
-  let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))
+  let countryNames = React.useMemo(() => {
+    getCountryNames(
+      Country.getCountry(paymentMethodType, CountryStateDataRefs.countryDataRef.contents),
+    )
+  }, [CountryStateDataRefs.countryDataRef.contents])
 
   let setCurrency = val => {
     setCurrency(val)
