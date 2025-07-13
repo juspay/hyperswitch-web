@@ -1122,6 +1122,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+  let paymentMethodListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
@@ -1279,9 +1280,9 @@ let usePaymentIntent = (optLogger, paymentType) => {
         callIntent(bodyStr)
       }
 
-      switch paymentMethodList {
-      | LoadError(data)
-      | Loaded(data) =>
+      switch (GlobalVars.sdkVersion, paymentMethodList, paymentMethodListV2) {
+      | (V1, LoadError(data), _)
+      | (V1, Loaded(data), _) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
@@ -1307,7 +1308,19 @@ let usePaymentIntent = (optLogger, paymentType) => {
           )
           Console.warn("Please enable atleast one Payment method.")
         }
-      | SemiLoaded => intentWithoutMandate("")
+      | (V2, _, LoadedV2(data)) =>
+        if data.paymentMethodsEnabled->Array.length > 0 {
+          intentWithoutMandate("")
+        } else {
+          postFailedSubmitResponse(
+            ~errortype="payment_methods_empty",
+            ~message="Payment Failed. Try again!",
+          )
+          Console.warn("Please enable atleast one Payment method.")
+        }
+      | (V1, SemiLoaded, _)
+      | (V2, _, SemiLoadedV2) =>
+        intentWithoutMandate("")
       | _ =>
         postFailedSubmitResponse(
           ~errortype="payment_methods_loading",

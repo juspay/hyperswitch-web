@@ -58,7 +58,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | None => None
     },
     switch forceSync {
-    | Some(fs) if apiCallType === RetrievePaymentIntent => Some(("false_sync", fs))
+    | Some(fs) if apiCallType === RetrievePaymentIntent => Some(("force_sync", fs))
     | _ => None
     },
   }->List.filterMap(x => x)
