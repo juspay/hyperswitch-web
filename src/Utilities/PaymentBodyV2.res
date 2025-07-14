@@ -25,30 +25,22 @@ let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentM
   baseBody->appendPaymentExperience(resolvedPaymentMethodType)
 }
 
-let epsBody = (~name, ~bankName) => [
-  ("payment_method_type", "bank_redirect"->JSON.Encode.string),
-  ("payment_method_subtype", "eps"->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "bank_redirect",
-        [
-          (
-            "eps",
-            [
-              (
-                "billing_details",
-                [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson,
-              ),
-              ("bank_name", (bankName === "" ? "american_express" : bankName)->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
+let epsBody = (~name, ~bankName) => {
+  let billingDetails = [("billing_name", name->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
+  let bankDetail = (bankName === "" ? "american_express" : bankName)->JSON.Encode.string
+
+  let epsDetails =
+    [("billing_details", billingDetails), ("bank_name", bankDetail)]->Utils.getJsonFromArrayOfJson
+
+  let bankRedirectBody = [("eps", epsDetails)]->Utils.getJsonFromArrayOfJson
+
+  let paymentMethodData = [("bank_redirect", bankRedirectBody)]->Utils.getJsonFromArrayOfJson
+  [
+    ("payment_method_type", "bank_redirect"->JSON.Encode.string),
+    ("payment_method_subtype", "eps"->JSON.Encode.string),
+    ("payment_method_data", paymentMethodData),
+  ]
+}
 
 let getPaymentBody = (
   ~paymentMethod,
