@@ -83,6 +83,9 @@ let itemToPaymentsEnabledMapper = methodsArray => {
         requiredFields: dict->getDynamicFieldsFromJsonDictV2(
           paymentMethodSubtype == "bancontact_card",
         ),
+        paymentExperience: dict
+        ->getArray("payment_experience")
+        ->Array.map(item => item->JSON.Decode.string->Option.getOr("")->getPaymentExperienceType),
       }
     })
   enabledMethods
@@ -168,6 +171,7 @@ let defaultPaymentMethods = {
   paymentMethodSubtype: "",
   requiredFields: [],
   surchargeDetails: None,
+  paymentExperience: [],
 }
 
 let defaultCustomerMethods = {
