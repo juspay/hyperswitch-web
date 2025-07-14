@@ -1,4 +1,5 @@
 open RecoilAtoms
+open CountryStateDataRefs
 
 let dynamicFieldsEnabledPaymentMethods = [
   "crypto_currency",
@@ -45,6 +46,21 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
   }
 }
 
+let getBillingAddressFields = (countryDataContent): array<
+  PaymentMethodsRecord.paymentMethodsFields,
+> => {
+  open Utils
+  [
+    BillingName,
+    AddressLine1,
+    AddressLine2,
+    AddressCity,
+    AddressState,
+    AddressCountry(getCountryNames(countryDataContent)),
+    AddressPincode,
+  ]
+}
+
 let isBillingAddressFieldType = (fieldType: PaymentMethodsRecord.paymentMethodsFields) => {
   switch fieldType {
   | BillingName
@@ -87,15 +103,7 @@ let addBillingAddressIfUseBillingAddress = (
   fieldsArr,
   billingAddress: PaymentType.billingAddress,
 ) => {
-  let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
-    BillingName,
-    AddressLine1,
-    AddressLine2,
-    AddressCity,
-    AddressState,
-    AddressCountry(Utils.getCountryNames(CountryStateDataRefs.countryDataRef.contents)),
-    AddressPincode,
-  ]
+  let billingAddressFields = getBillingAddressFields(countryDataRef.contents)
   if billingAddress.isUseBillingAddress {
     fieldsArr->Array.concat(billingAddressFields)
   } else {
@@ -465,7 +473,7 @@ let useSetInitialRequiredFields = (
           setFields(setPostalCode, postalCode, requiredField, false)
           if value !== "" && country === "" {
             let countryCode =
-              Country.getCountry(paymentMethodType, CountryStateDataRefs.countryDataRef.contents)
+              Country.getCountry(paymentMethodType, countryDataRef.contents)
               ->Array.filter(item => item.isoAlpha2 === value)
               ->Array.get(0)
               ->Option.getOr(Country.defaultTimeZone)
@@ -487,7 +495,7 @@ let useSetInitialRequiredFields = (
       | AddressCountry(_) =>
         if value !== "" {
           let defaultCountry =
-            Country.getCountry(paymentMethodType, CountryStateDataRefs.countryDataRef.contents)
+            Country.getCountry(paymentMethodType, countryDataRef.contents)
             ->Array.filter(item => item.isoAlpha2 === value)
             ->Array.get(0)
             ->Option.getOr(Country.defaultTimeZone)
@@ -608,7 +616,7 @@ let useRequiredFieldsBody = (
       ).hyperSwitch
     | AddressCountry(_) => {
         let countryCode =
-          Country.getCountry(paymentMethodType, CountryStateDataRefs.countryDataRef.contents)
+          Country.getCountry(paymentMethodType, countryDataRef.contents)
           ->Array.filter(item => item.countryName === country)
           ->Array.get(0)
           ->Option.getOr(Country.defaultTimeZone)
@@ -658,15 +666,7 @@ let useRequiredFieldsBody = (
 
   let addBillingDetailsIfUseBillingAddress = requiredFieldsBody => {
     if billingAddress.isUseBillingAddress {
-      let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [
-        BillingName,
-        AddressLine1,
-        AddressLine2,
-        AddressCity,
-        AddressState,
-        AddressCountry(Utils.getCountryNames(CountryStateDataRefs.countryDataRef.contents)),
-        AddressPincode,
-      ]
+      let billingAddressFields = getBillingAddressFields(countryDataRef.contents)
       billingAddressFields->Array.reduce(requiredFieldsBody, (acc, item) => {
         let value = item->getFieldValueFromFieldType
         if item === BillingName {
@@ -750,7 +750,7 @@ let useRequiredFieldsBody = (
     bankAccountNumber,
     destinationBankAccountId,
     sourceBankAccountId,
-    CountryStateDataRefs.countryDataRef.contents,
+    countryDataRef.contents,
   ))
 }
 

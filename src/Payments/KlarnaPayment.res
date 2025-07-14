@@ -14,11 +14,9 @@ let make = () => {
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
 
-  let countryNames = React.useMemo(() => {
-    DropdownField.updateArrayOfStringToOptionsTypeArray(
-      Utils.getCountryNames(CountryStateDataRefs.countryDataRef.contents),
-    )
-  }, [CountryStateDataRefs.countryDataRef.contents])
+  let countryData = CommonHooks.useCountryData()
+  let countryNames =
+    Utils.getCountryNames(countryData)->DropdownField.updateArrayOfStringToOptionsTypeArray
 
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
   let setCountry = val => {
@@ -26,11 +24,10 @@ let make = () => {
   }
 
   open Utils
-  let clientCountryCode = React.useMemo(() => {
-    CountryStateDataRefs.countryDataRef.contents
+  let clientCountryCode =
+    countryData
     ->Array.find(item => item.countryName == country)
     ->Option.getOr(Country.defaultTimeZone)
-  }, [CountryStateDataRefs.countryDataRef.contents])
 
   let complete = email.value != "" && fullName.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == "" || fullName.value == ""

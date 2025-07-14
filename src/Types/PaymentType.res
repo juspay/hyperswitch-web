@@ -386,11 +386,12 @@ let getLayout = str => {
   }
 }
 let getAddress = (dict, str, logger) => {
+  open CountryStateDataRefs
   dict
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    let countryNames = getCountryNames(CountryStateDataRefs.countryDataRef.contents)
+    let countryNames = getCountryNames(countryDataRef.contents)
     unknownKeysWarning(
       ["line1", "line2", "city", "state", "country", "postal_code"],
       json,

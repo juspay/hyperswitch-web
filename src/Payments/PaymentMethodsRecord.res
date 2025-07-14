@@ -648,19 +648,16 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
 }
 
 let getOptionsFromPaymentMethodFieldType = (dict, key, ~isAddressCountry=true) => {
+  open CountryStateDataRefs
   let options = dict->getArrayValFromJsonDict(key, "options")
   switch options->Array.get(0)->Option.getOr("") {
   | "" => None
   | "ALL" => {
-      let countryArr =
-        CountryStateDataRefs.countryDataRef.contents->Array.map(item => item.countryName)
+      let countryArr = countryDataRef.contents->Array.map(item => item.countryName)
       isAddressCountry ? AddressCountry(countryArr) : ShippingAddressCountry(countryArr)
     }
   | _ => {
-      let countryArr = CountryStateDataRefs.countryDataRef.contents->Array.reduce([], (
-        acc,
-        country,
-      ) => {
+      let countryArr = countryDataRef.contents->Array.reduce([], (acc, country) => {
         if options->Array.includes(country.isoAlpha2) {
           acc->Array.push(country.countryName)
         }

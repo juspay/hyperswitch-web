@@ -2,6 +2,7 @@ open RecoilAtoms
 open RecoilAtomTypes
 open PaymentTypeContext
 open Utils
+open CountryStateDataRefs
 
 @react.component
 let make = (~paymentMethodName: string) => {
@@ -77,7 +78,7 @@ let make = (~paymentMethodName: string) => {
     if confirm.doSubmit {
       if areRequiredFieldsValid {
         let countryCode =
-          Country.getCountry(paymentMethodName, CountryStateDataRefs.countryDataRef.contents)
+          Country.getCountry(paymentMethodName, countryDataRef.contents)
           ->Array.filter(item => item.countryName == country)
           ->Array.get(0)
           ->Option.getOr(Country.defaultTimeZone)
@@ -125,7 +126,7 @@ let make = (~paymentMethodName: string) => {
     currency,
     requiredFieldsBody,
     areRequiredFieldsValid,
-    CountryStateDataRefs.countryDataRef.contents,
+    countryDataRef.contents,
   ))
   useSubmitPaymentData(submitCallback)
   <div
