@@ -34,6 +34,7 @@ type paymentMethodEnabled = {
   bankNames?: array<string>,
   requiredFields: array<PaymentMethodsRecord.required_fields>,
   surchargeDetails: option<PaymentMethodsRecord.surchargeDetails>,
+  paymentExperience?: array<PaymentMethodsRecord.paymentFlow>,
 }
 
 type bank = {mask: string}
