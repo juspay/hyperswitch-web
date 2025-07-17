@@ -31,13 +31,12 @@ jobs:
               }
             `;
 
-            const result = await github.graphql(query, {
+            const { repository: { pullRequest: pr } } = await github.graphql(query, {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              number: context.issue.number,
+              number: context.issue.number
             });
 
-            const pr = result.repository.pullRequest;
             const textToCheck = `${pr.title} ${pr.body || ''}`;
 
             const issuePatterns = [
@@ -48,47 +47,49 @@ jobs:
 
             const linkedIssues = new Set();
 
+            // Find linked issues from patterns
             for (const pattern of issuePatterns) {
               for (const match of textToCheck.matchAll(pattern)) {
                 if (match[1]) linkedIssues.add(match[1]);
               }
             }
 
-            // Add issues from closingIssuesReferences
-            pr.closingIssuesReferences.nodes.forEach(node => linkedIssues.add(node.number.toString()));
+            // Add issues from GitHub's closing references
+            pr.closingIssuesReferences.nodes.forEach(node => {
+              linkedIssues.add(node.number.toString());
+            });
 
+            // Check if no issues are linked
             if (linkedIssues.size === 0) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `
-## 🚫 Missing Linked Issue
+                body: \`## 🚫 Missing Linked Issue
 
 Hi 👋 This pull request does not appear to be linked to any open issue yet.
 
-Linking your PR to an issue helps keep the project tidy and ensures the issue is closed automatically when the PR merges.
+Linking your PR to an issue helps keep the project tidy and ensures the issue is closed automatically.
 
 ### ✔️ How to fix this
 
-- Add a keyword like \`Fixes #123\` or \`Closes #456\` to your PR **description** or a **commit message**.
+- Add a keyword like \\\`Fixes #123\\\` or \\\`Closes #456\\\` to your PR **description** or a **commit message**.
 - Or link it manually using the **"Linked issues"** panel in the PR sidebar.
 
-✅ **Tip:** You can link multiple issues.  
-🚫 **Note:** If only one issue is linked, it must be open for this check to pass.
+> ✅ **Tip:** You can link multiple issues.  
+> 🚫 **Note:** If only one issue is linked, it must be open for this check to pass.
 
 Once linked, this check will pass automatically on your next push or when you re-run the workflow.
 
-Thanks for helping maintain the project! 🙌
-`
+Thanks for helping maintainers! 🙌\`
               });
               core.setFailed('❌ No linked issue found.');
               return;
             }
 
-            // Now check if the linked issues are open
             let openIssues = 0;
 
+            // Check status of each linked issue
             for (const issueNumber of linkedIssues) {
               const issueQuery = `
                 query($owner: String!, $repo: String!, $number: Int!) {
@@ -99,24 +100,25 @@ Thanks for helping maintain the project! 🙌
                   }
                 }
               `;
-              const issueResult = await github.graphql(issueQuery, {
+
+              const { repository: { issue } } = await github.graphql(issueQuery, {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                number: parseInt(issueNumber, 10),
+                number: parseInt(issueNumber, 10)
               });
 
-              if (issueResult.repository.issue.state === 'OPEN') {
+              if (issue.state === 'OPEN') {
                 openIssues++;
               }
             }
 
+            // If only one issue is linked and it's closed, fail the check
             if (linkedIssues.size === 1 && openIssues === 0) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `
-## 🚫 Linked Issue is Closed
+                body: \`## 🚫 Linked Issue is Closed
 
 Hi 👋 This pull request links only **one issue**, but that issue is **closed**.
 
@@ -127,14 +129,10 @@ To pass this check, the linked issue must be **open** — or link an additional 
 - Reopen the linked issue if appropriate.
 - Or link another relevant **open** issue via the PR description or the **"Linked issues"** panel.
 
-Once an open issue is linked, this check will pass automatically on your next push or when you re-run the workflow.
-
-Thanks for helping maintain the project! 🚀
-`
+Thanks for keeping the project healthy! 🚀\`
               });
               core.setFailed('❌ Linked issue is closed.');
-              return;
+            } else {
+              console.log(\`✅ PR is linked to issue(s): \${Array.from(linkedIssues).join(', ')}\`);
+              console.log(\`✅ Number of open issues: \${openIssues}\`);
             }
-
-            console.log(`✅ Linked issues: ${Array.from(linkedIssues).join(', ')}`);
-            console.log(`✅ Open issues found: ${openIssues}`);
