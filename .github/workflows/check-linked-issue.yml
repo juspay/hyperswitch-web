@@ -100,7 +100,10 @@ jobs:
                 body: "## 🚫 Linked Issue is Closed\n\nHi 👋 This pull request links only **one issue**, but that issue is **closed**.\n\nTo pass this check, the linked issue must be **open** — or link an additional open issue.\n\n### ✔️ How to fix this\n\n- Reopen the linked issue if appropriate.\n- Or link another relevant **open** issue via the PR description or the **\"Linked issues\"** panel.\n\nThanks for keeping the project healthy! 🚀"
               });
               core.setFailed('❌ Linked issue is closed.');
-            } else {
-              console.log(`✅ PR is linked to issue(s): ${Array.from(linkedIssues).join(', ')}`);
-              console.log(`✅ Number of open issues: ${openIssues}`);
+              return;
             }
+
+            console.log(`✅ PR is linked to issue(s): ${Array.from(linkedIssues).join(', ')}`);
+            console.log(`✅ Number of open issues: ${openIssues}`);
+            core.notice('✅ Check passed: PR is linked correctly.');
+            return;
