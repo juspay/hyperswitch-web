@@ -38,6 +38,43 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Check admin permissions
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              // Get the user who triggered the workflow
+              const actor = context.actor;
+              console.log(`🔍 Checking permissions for user: ${actor}`);
+              
+              // Check if the user has admin permissions
+              const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: actor
+              });
+              
+              console.log(`📋 User permission level: ${permission.permission}`);
+              
+              // Allow admin and maintain permissions
+              const allowedPermissions = ['admin', 'maintain'];
+              
+              if (!allowedPermissions.includes(permission.permission)) {
+                console.log(`❌ Access denied for user: ${actor}`);
+                console.log(`   Required permission: admin or maintain`);
+                console.log(`   Current permission: ${permission.permission}`);
+                
+                core.setFailed(`🚫 Access Denied: Only repository admins can run this workflow. Your permission level: ${permission.permission}`);
+                return;
+              }
+              
+              console.log(`✅ Access granted for user: ${actor} (${permission.permission})`);
+              
+            } catch (error) {
+              console.log(`❌ Error checking permissions: ${error.message}`);
+              core.setFailed(`🚫 Permission check failed: ${error.message}`);
+            }
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
