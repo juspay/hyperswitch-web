@@ -7,10 +7,11 @@ on:
 
 jobs:
   check-linked-issue:
+    name: Ensure PR has linked issue # 👈 Must EXACTLY match your branch protection rule!
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ensure PR has linked issue
+      - name: Ensure PR is linked to an issue
         uses: actions/github-script@v7
         with:
           script: |
@@ -62,7 +63,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: "## 🚫 Missing Linked Issue\n\nHi 👋 This pull request does not appear to be linked to any open issue yet.\n\nLinking your PR to an issue helps keep the project tidy and ensures the issue is closed automatically.\n\n### ✔️ How to fix this\n\n- Add a keyword like `Fixes #123` or `Closes #456` to your PR **description** or a **commit message**.\n- Or link it manually using the **\"Linked issues\"** panel in the PR sidebar.\n\n> ✅ **Tip:** You can link multiple issues.  \n> 🚫 **Note:** If only one issue is linked, it must be open for this check to pass.\n\nOnce linked, this check will pass automatically on your next push or when you re-run the workflow.\n\nThanks for helping maintainers! 🙌"
+                body: "## 🚫 Missing Linked Issue\n\nHi 👋 This pull request does not appear to be linked to any open issue yet.\n\nLinking your PR to an issue helps keep the project tidy and ensures the issue is closed automatically.\n\n### ✔️ How to fix this\n\n- Add a keyword like `Fixes #123` or `Closes #456` to your PR **description** or a **commit message**.\n- Or link it manually using the **\"Linked issues\"** panel in the PR sidebar.\n\n> ✅ **Tip:** You can link multiple issues.\n> 🚫 **Note:** If only one issue is linked, it must be open for this check to pass.\n\nOnce linked, this check will pass automatically on your next push or when you re-run the workflow.\n\nThanks for helping maintainers! 🙌"
               });
               core.setFailed('❌ No linked issue found.');
               return;
@@ -100,10 +101,7 @@ jobs:
                 body: "## 🚫 Linked Issue is Closed\n\nHi 👋 This pull request links only **one issue**, but that issue is **closed**.\n\nTo pass this check, the linked issue must be **open** — or link an additional open issue.\n\n### ✔️ How to fix this\n\n- Reopen the linked issue if appropriate.\n- Or link another relevant **open** issue via the PR description or the **\"Linked issues\"** panel.\n\nThanks for keeping the project healthy! 🚀"
               });
               core.setFailed('❌ Linked issue is closed.');
-              return;
+            } else {
+              console.log(`✅ PR is linked to issue(s): ${Array.from(linkedIssues).join(', ')}`);
+              console.log(`✅ Number of open issues: ${openIssues}`);
             }
-
-            console.log(`✅ PR is linked to issue(s): ${Array.from(linkedIssues).join(', ')}`);
-            console.log(`✅ Number of open issues: ${openIssues}`);
-            core.notice('✅ Check passed: PR is linked correctly.');
-            return;
