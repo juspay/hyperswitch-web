@@ -1,0 +1,439 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_mode:
+        description: "Version selection mode"
+        required: true
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - manual
+      version_type:
+        description: "Auto-bump type (only used if mode is 'auto')"
+        required: false
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      manual_version:
+        description: "Manual version (only used if mode is 'manual')"
+        required: false
+        type: string
+      release_notes:
+        description: "Release notes (optional)"
+        required: false
+        type: string
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Validate and process version
+        id: version
+        run: |
+          # Get current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "📋 Current version: $CURRENT_VERSION"
+
+          # Function to bump version
+          bump_version() {
+            local version=$1
+            local type=$2
+            
+            IFS='.' read -ra VERSION_PARTS <<< "$version"
+            local major=${VERSION_PARTS[0]}
+            local minor=${VERSION_PARTS[1]}
+            local patch=${VERSION_PARTS[2]}
+            
+            case $type in
+              "major")
+                major=$((major + 1))
+                minor=0
+                patch=0
+                ;;
+              "minor")
+                minor=$((minor + 1))
+                patch=0
+                ;;
+              "patch")
+                patch=$((patch + 1))
+                ;;
+            esac
+            
+            echo "$major.$minor.$patch"
+          }
+
+          # Function to compare versions (returns 0 if new_version >= current_version, 1 if new_version < current_version)
+          is_version_valid() {
+            local new_version=$1
+            local current_version=$2
+            
+            echo "🔍 Debug: Comparing versions - new: $new_version, current: $current_version"
+            
+            # Split versions into arrays
+            IFS='.' read -ra NEW_PARTS <<< "$new_version"
+            IFS='.' read -ra CURRENT_PARTS <<< "$current_version"
+            
+            # Compare major, minor, patch
+            for i in 0 1 2; do
+              local new_part=${NEW_PARTS[$i]:-0}
+              local current_part=${CURRENT_PARTS[$i]:-0}
+              
+              echo "🔍 Debug: Comparing part $i - new: $new_part, current: $current_part"
+              
+              if [ "$new_part" -gt "$current_part" ]; then
+                echo "🔍 Debug: New version is higher (part $i: $new_part > $current_part)"
+                return 0  # new_version > current_version (valid)
+              elif [ "$new_part" -lt "$current_part" ]; then
+                echo "🔍 Debug: New version is lower (part $i: $new_part < $current_part)"
+                return 1  # new_version < current_version (invalid)
+              fi
+              # If equal, continue to next part
+            done
+            
+            echo "🔍 Debug: Versions are equal"
+            return 0  # new_version == current_version (valid)
+          }
+
+          # Determine version based on mode
+          VERSION_MODE="${{ github.event.inputs.version_mode }}"
+
+          echo "🔍 Debug: VERSION_MODE = '$VERSION_MODE'"
+          echo "🔍 Debug: Manual version input = '${{ github.event.inputs.manual_version }}'"
+
+          if [ "$VERSION_MODE" = "auto" ]; then
+            # Auto-bump version
+            VERSION_TYPE="${{ github.event.inputs.version_type }}"
+            NEW_VERSION=$(bump_version "$CURRENT_VERSION" "$VERSION_TYPE")
+            echo "🔄 Auto-bumping $VERSION_TYPE version: $CURRENT_VERSION → $NEW_VERSION"
+          elif [ "$VERSION_MODE" = "manual" ]; then
+            # Manual version
+            NEW_VERSION="${{ github.event.inputs.manual_version }}"
+            
+            echo "🔍 Debug: Processing manual version: '$NEW_VERSION'"
+            
+            if [ -z "$NEW_VERSION" ] || [ "$NEW_VERSION" = "null" ]; then
+              echo "❌ VALIDATION FAILED: Manual version cannot be empty when mode is 'manual'"
+              echo "   Please provide a valid version number (e.g., 1.2.3)"
+              echo "🚫 Workflow stopped due to validation failure."
+              exit 1
+            fi
+            
+            # Validate version format (basic semver check)
+            if ! [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "❌ VALIDATION FAILED: Invalid version format: '$NEW_VERSION'"
+              echo "   Version must follow semantic versioning format (e.g., 1.2.3)"
+              echo "🚫 Workflow stopped due to validation failure."
+              exit 1
+            fi
+            
+            echo "🔍 Debug: About to validate version comparison..."
+            
+            # Check if new version is not lower than current version
+            if is_version_valid "$NEW_VERSION" "$CURRENT_VERSION"; then
+              echo "✅ Validation passed: Using manual version: $CURRENT_VERSION → $NEW_VERSION"
+            else
+              echo "❌ VALIDATION FAILED: Manual version $NEW_VERSION is LOWER than current version $CURRENT_VERSION"
+              echo "   New version must be equal to or higher than the current version"
+              echo "   Current: $CURRENT_VERSION"
+              echo "   Provided: $NEW_VERSION"
+              echo "   Please provide a version >= $CURRENT_VERSION"
+              echo ""
+              echo "🚫 Workflow stopped due to validation failure. No PR, tag, or release will be created."
+              exit 1
+            fi
+          else
+            echo "❌ VALIDATION FAILED: Invalid version mode: '$VERSION_MODE'"
+            echo "   Valid modes are: 'auto' or 'manual'"
+            echo "🚫 Workflow stopped due to validation failure."
+            exit 1
+          fi
+
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Version will be bumped from $CURRENT_VERSION to $NEW_VERSION"
+
+      - name: Update package.json version
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+
+          # Update package.json
+          node -e "
+            const fs = require('fs');
+            const pkg = require('./package.json');
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+          echo "✅ Updated package.json to version $NEW_VERSION"
+
+      - name: Create version bump branch and commit
+        id: version_bump
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          BRANCH_NAME="release/bump-version-to-$NEW_VERSION"
+
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+
+          # Check if branch exists remotely and delete it
+          if git ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1; then
+            echo "🗑️ Branch $BRANCH_NAME already exists remotely, deleting it"
+            git push origin --delete "$BRANCH_NAME" || true
+          fi
+
+          # Check if branch exists locally and delete it
+          if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
+            echo "🗑️ Branch $BRANCH_NAME exists locally, deleting it"
+            git branch -D "$BRANCH_NAME" || true
+          fi
+
+          # Create and switch to new branch
+          git checkout -b "$BRANCH_NAME"
+
+          git add package.json
+          git commit -m "chore: bump version to $NEW_VERSION"
+          git push origin "$BRANCH_NAME"
+
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Created branch $BRANCH_NAME and committed version bump"
+
+      - name: Create Pull Request (with fallback)
+        id: cpr
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const newVersion = '${{ steps.version.outputs.new_version }}';
+            const branchName = '${{ steps.version_bump.outputs.branch_name }}';
+            const repoUrl = `https://github.com/${{ github.repository }}`;
+            const prUrl = `${repoUrl}/compare/master...${branchName}?expand=1`;
+
+            const prBody = `## Version Bump to ${newVersion}
+
+            This PR bumps the version from ${{ steps.version.outputs.current_version }} to ${newVersion}.
+
+            **Changes:**
+            - Updated \`package.json\` version field
+
+            This PR was automatically created by the manual release workflow.
+
+            Please review and merge this PR to proceed with the release process.`;
+
+            try {
+              // Try to create PR automatically
+              const pr = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `chore: bump version to ${newVersion}`,
+                head: branchName,
+                base: 'master',
+                body: prBody
+              });
+
+              console.log(`✅ Successfully created PR automatically: ${pr.data.html_url}`);
+
+              // Set outputs for success case
+              core.setOutput('pull-request-number', pr.data.number);
+              core.setOutput('pull-request-url', pr.data.html_url);
+              core.setOutput('pull-request-operation', 'created');
+              core.setOutput('pull-request-branch', branchName);
+
+            } catch (error) {
+              console.log(`⚠️ Failed to create PR automatically: ${error.message}`);
+              console.log(`🔗 Create PR manually at: ${prUrl}`);
+
+              // Set outputs for failure case
+              core.setOutput('pull-request-number', '');
+              core.setOutput('pull-request-url', '');
+              core.setOutput('pull-request-operation', 'failed');
+              core.setOutput('pull-request-branch', branchName);
+            }
+
+      - name: Display PR Creation Results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const newVersion = '${{ steps.version.outputs.new_version }}';
+            const prNumber = '${{ steps.cpr.outputs.pull-request-number }}';
+            const prUrl = '${{ steps.cpr.outputs.pull-request-url }}';
+            const prOperation = '${{ steps.cpr.outputs.pull-request-operation }}';
+            const branchName = '${{ steps.cpr.outputs.pull-request-branch }}' || `release/bump-version-to-${newVersion}`;
+            const repoUrl = `https://github.com/${{ github.repository }}`;
+            const manualPrUrl = `${repoUrl}/compare/master...${branchName}?expand=1`;
+
+            const prBody = `## Version Bump to ${newVersion}
+
+            This PR bumps the version from ${{ steps.version.outputs.current_version }} to ${newVersion}.
+
+            **Changes:**
+            - Updated \`package.json\` version field
+
+            This PR was created following the manual release workflow.
+
+            Please review and merge this PR to proceed with the release process.`;
+
+            if (prNumber) {
+              console.log(`✅ Successfully ${prOperation} PR #${prNumber}: ${prUrl}`);
+              
+              // Success summary
+              core.summary
+                .addHeading('🎉 Version Bump PR Created Successfully')
+                .addTable([
+                  [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'PR Number', header: true}, {data: 'Operation', header: true}],
+                  ['${{ steps.version.outputs.current_version }}', newVersion, `#${prNumber}`, prOperation]
+                ])
+                .addLink('View Pull Request', prUrl)
+                .addRaw('<br><br>**Next Steps:** Review and merge the PR above, then the release will be ready!')
+                .write();
+            } else {
+              console.log(`⚠️ Automatic PR creation failed or no changes detected`);
+              console.log(`🔗 Create PR manually at: ${manualPrUrl}`);
+              
+              // Fallback summary with manual instructions
+              core.summary
+                .addHeading('📋 Version Bump Changes Ready')
+                .addTable([
+                  [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'Branch', header: true}],
+                  ['${{ steps.version.outputs.current_version }}', newVersion, branchName]
+                ])
+                .addHeading('⚠️ Automatic PR Creation Failed')
+                .addRaw(`<p><strong>Reason:</strong> The peter-evans/create-pull-request action failed or detected no changes.</p>`)
+                .addHeading('🔧 How to Enable Automatic PR Creation')
+                .addRaw(`<p>To enable automatic PR creation, you have several options:</p>`)
+                .addList([
+                  '**Option 1:** Go to Settings → Actions → General → Workflow permissions → Check "Allow GitHub Actions to create and approve pull requests"',
+                  '**Option 2:** Create a Personal Access Token (PAT) with repo permissions and add it as GH_PAT secret',
+                  '**Option 3:** Use the manual PR creation below (current fallback)'
+                ])
+                .addHeading('🔗 Create Pull Request Manually')
+                .addRaw(`<p><strong>Changes are ready!</strong> Please create the PR manually using the link below.</p>`)
+                .addLink('Click here to create the PR', manualPrUrl)
+                .addHeading('📝 Suggested PR Details')
+                .addRaw(`<p><strong>Title:</strong> <code>chore: bump version to ${newVersion}</code></p>`)
+                .addRaw(`<p><strong>Description:</strong></p>`)
+                .addCodeBlock(prBody, 'markdown')
+                .addRaw('<br><br>**Next Steps:** Create and merge the PR above, then the release will be ready!')
+                .write();
+            }
+
+      - name: Generate release notes for manual use
+        id: release_notes
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          CURRENT_VERSION="${{ steps.version.outputs.current_version }}"
+
+          # Get commits since last version
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" $LAST_TAG..HEAD)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --max-count=10)
+          fi
+
+          # Prepare release notes
+          RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
+
+          if [ -z "$RELEASE_NOTES" ]; then
+            RELEASE_NOTES="## What's Changed
+
+          $COMMITS
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/$LAST_TAG...v$NEW_VERSION"
+          fi
+
+          # Save release notes to file for display
+          echo "$RELEASE_NOTES" > release_notes.md
+          echo "✅ Generated release notes for manual use"
+
+      - name: Create and push tag
+        id: tag
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          TAG_NAME="v$NEW_VERSION"
+
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
+
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Created and pushed tag: $TAG_NAME"
+
+      - name: Create GitHub Release (Draft)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const newVersion = '${{ steps.version.outputs.new_version }}';
+            const tagName = '${{ steps.tag.outputs.tag_name }}';
+            const releaseNotes = fs.readFileSync('release_notes.md', 'utf8');
+
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tagName,
+              name: `Release ${tagName}`,
+              body: releaseNotes,
+              draft: true,
+              prerelease: false
+            });
+
+            console.log(`✅ Created draft release: ${release.data.html_url}`);
+
+            // Add a summary
+            core.summary
+              .addHeading('🚀 Release Created Successfully')
+              .addTable([
+                [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'Tag', header: true}],
+                ['${{ steps.version.outputs.current_version }}', newVersion, tagName]
+              ])
+              .addLink('View Draft Release', release.data.html_url)
+              .write();
+
+      - name: Display next steps
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const newVersion = '${{ steps.version.outputs.new_version }}';
+            const branchName = '${{ steps.cpr.outputs.pull-request-branch }}';
+
+            // Add detailed next steps to summary
+            core.summary
+              .addHeading('📋 Next Steps - Review and Publish')
+              .addTable([
+                [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'Branch', header: true}],
+                ['${{ steps.version.outputs.current_version }}', newVersion, branchName || 'release/bump-version-to-' + newVersion]
+              ])
+              .addHeading('🔄 Manual Steps Required')
+              .addList([
+                '1. Review and merge the version bump PR above',
+                '2. Review and publish the draft release above',
+                '3. The tag has already been created and pushed'
+              ])
+              .addRaw('<br><br>**Note:** The draft release and tag have been created automatically. Just review and merge the PR, then publish the release!')
+              .write();
+
+      - name: Cleanup
+        run: |
+          rm -f release_notes.md
