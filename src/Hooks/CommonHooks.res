@@ -1,4 +1,5 @@
 open Window
+open CountryStateDataRefs
 type contentRect = {height: float}
 
 type keys = {
@@ -145,4 +146,8 @@ let defaultkeys = {
   iframeId: "",
   parentURL: "*",
   sdkHandleOneClickConfirmPayment: true,
+}
+
+let useCountryData = () => {
+  React.useMemo(() => countryDataRef.contents, [countryDataRef.contents])
 }

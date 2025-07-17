@@ -14,7 +14,7 @@ let make = () => {
   let fullName = Recoil.useRecoilValueFromAtom(userFullName)
   let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
 
-  let countryData = CountryStateDataRefs.countryDataRef.contents
+  let countryData = CommonHooks.useCountryData()
   let countryNames =
     Utils.getCountryNames(countryData)->DropdownField.updateArrayOfStringToOptionsTypeArray
 
@@ -62,7 +62,7 @@ let make = () => {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, country, isManualRetryEnabled))
+  }, (email, fullName, country, isManualRetryEnabled, clientCountryCode))
   useSubmitPaymentData(submitCallback)
 
   <div
