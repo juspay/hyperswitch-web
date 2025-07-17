@@ -1,4 +1,4 @@
-name: Check Linked Issue
+name: Ensure PR has linked issue
 
 on:
   pull_request:
@@ -31,12 +31,13 @@ jobs:
               }
             `;
 
-            const { repository: { pullRequest: pr } } = await github.graphql(query, {
+            const result = await github.graphql(query, {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              number: context.issue.number
+              number: context.issue.number,
             });
 
+            const pr = result.repository.pullRequest;
             const textToCheck = `${pr.title} ${pr.body || ''}`;
 
             const issuePatterns = [
@@ -47,19 +48,15 @@ jobs:
 
             const linkedIssues = new Set();
 
-            // Find linked issues from patterns
             for (const pattern of issuePatterns) {
               for (const match of textToCheck.matchAll(pattern)) {
                 if (match[1]) linkedIssues.add(match[1]);
               }
             }
 
-            // Add issues from GitHub's closing references
-            pr.closingIssuesReferences.nodes.forEach(node => {
-              linkedIssues.add(node.number.toString());
-            });
+            // Add issues from closingIssuesReferences
+            pr.closingIssuesReferences.nodes.forEach(node => linkedIssues.add(node.number.toString()));
 
-            // Check if no issues are linked
             if (linkedIssues.size === 0) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -70,7 +67,7 @@ jobs:
 
 Hi 👋 This pull request does not appear to be linked to any open issue yet.
 
-Linking your PR to an issue helps keep the project tidy and ensures the issue is closed automatically.
+Linking your PR to an issue helps keep the project tidy and ensures the issue is closed automatically when the PR merges.
 
 ### ✔️ How to fix this
 
@@ -82,16 +79,16 @@ Linking your PR to an issue helps keep the project tidy and ensures the issue is
 
 Once linked, this check will pass automatically on your next push or when you re-run the workflow.
 
-Thanks for helping maintainers! 🙌
+Thanks for helping maintain the project! 🙌
 `
               });
               core.setFailed('❌ No linked issue found.');
               return;
             }
 
+            // Now check if the linked issues are open
             let openIssues = 0;
 
-            // Check status of each linked issue
             for (const issueNumber of linkedIssues) {
               const issueQuery = `
                 query($owner: String!, $repo: String!, $number: Int!) {
@@ -102,19 +99,17 @@ Thanks for helping maintainers! 🙌
                   }
                 }
               `;
-
-              const { repository: { issue } } = await github.graphql(issueQuery, {
+              const issueResult = await github.graphql(issueQuery, {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                number: parseInt(issueNumber, 10)
+                number: parseInt(issueNumber, 10),
               });
 
-              if (issue.state === 'OPEN') {
+              if (issueResult.repository.issue.state === 'OPEN') {
                 openIssues++;
               }
             }
 
-            // If only one issue is linked and it's closed, fail the check
             if (linkedIssues.size === 1 && openIssues === 0) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -136,7 +131,8 @@ Thanks for keeping the project healthy! 🚀
 `
               });
               core.setFailed('❌ Linked issue is closed.');
-            } else {
-              console.log(`✅ PR is linked to issue(s): ${Array.from(linkedIssues).join(', ')}`);
-              console.log(`✅ Number of open issues: ${openIssues}`);
+              return;
             }
+
+            console.log(`✅ Linked issues: ${Array.from(linkedIssues).join(', ')}`);
+            console.log(`✅ Open issues found: ${openIssues}`);
