@@ -109,3 +109,46 @@ let getShippingAddressFromEvent = event => {
     phone: {number: phoneNumber},
   }
 }
+
+let handleOnInitCheckout = (
+  event,
+  shippingAddressRef: React.ref<shipping>,
+  defaultShippingAmount,
+  currencyCode,
+  sessionToken: amazonPayTokenType,
+  totalOrderAmount,
+) => {
+  shippingAddressRef.current = event->getShippingAddressFromEvent
+
+  {
+    totalShippingAmount: {amount: defaultShippingAmount, currencyCode},
+    totalBaseAmount: {amount: sessionToken.totalBaseAmount, currencyCode},
+    totalTaxAmount: {amount: sessionToken.totalTaxAmount, currencyCode},
+    totalChargeAmount: {amount: totalOrderAmount, currencyCode},
+    totalDiscountAmount: {amount: "0.00", currencyCode},
+    deliveryOptions: sessionToken.deliveryOptions,
+  }
+}
+
+// Shared function for onInitCheckout and onShippingAddressSelection
+// Both handlers return identical values with updated shipping address
+let handleOnShippingAddressSelection = handleOnInitCheckout
+
+let handleOnDeliveryOptionSelection = (event, currencyCode, sessionToken: amazonPayTokenType) => {
+  let selectedOption =
+    sessionToken.deliveryOptions->Array.find(option => option.id === event.deliveryOptions.id)
+
+  let newShippingAmount = selectedOption->Option.mapOr("0.0", option => option.price.amount)
+  let baseAmount = sessionToken.totalBaseAmount->Float.fromString->Option.getOr(0.0)
+  let taxAmount = sessionToken.totalTaxAmount->Float.fromString->Option.getOr(0.0)
+  let shippingAmount = newShippingAmount->Float.fromString->Option.getOr(0.0)
+  let newTotalAmount = (baseAmount +. taxAmount +. shippingAmount)->Float.toString
+
+  {
+    totalShippingAmount: {amount: newShippingAmount, currencyCode},
+    totalBaseAmount: {amount: sessionToken.totalBaseAmount, currencyCode},
+    totalTaxAmount: {amount: sessionToken.totalTaxAmount, currencyCode},
+    totalChargeAmount: {amount: newTotalAmount, currencyCode},
+    totalDiscountAmount: {amount: "0.00", currencyCode},
+  }
+}

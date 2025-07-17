@@ -45,62 +45,40 @@ let useAmazonPay = token => {
           canHandlePendingAuthorization: false,
         },
       },
-      onInitCheckout: event => {
-        shippingAddressRef.current = event->getShippingAddressFromEvent
-
-        {
-          totalShippingAmount: {amount: defaultShippingAmount, currencyCode},
-          totalBaseAmount: {amount: sessionToken.totalBaseAmount, currencyCode},
-          totalTaxAmount: {amount: sessionToken.totalTaxAmount, currencyCode},
-          totalChargeAmount: {amount: totalOrderAmount, currencyCode},
-          totalDiscountAmount: {amount: "0.00", currencyCode},
-          deliveryOptions: sessionToken.deliveryOptions,
-        }
-      },
-      onShippingAddressSelection: event => {
-        shippingAddressRef.current = event->getShippingAddressFromEvent
-
-        {
-          totalShippingAmount: {amount: defaultShippingAmount, currencyCode},
-          totalBaseAmount: {amount: sessionToken.totalBaseAmount, currencyCode},
-          totalTaxAmount: {amount: sessionToken.totalTaxAmount, currencyCode},
-          totalChargeAmount: {amount: totalOrderAmount, currencyCode},
-          totalDiscountAmount: {amount: "0.00", currencyCode},
-          deliveryOptions: sessionToken.deliveryOptions,
-        }
-      },
-      onDeliveryOptionSelection: event => {
-        let selectedOption =
-          sessionToken.deliveryOptions->Array.find(option => option.id === event.deliveryOptions.id)
-        let newShippingAmount = selectedOption->Option.mapOr("0.0", option => option.price.amount)
-        let baseAmount = sessionToken.totalBaseAmount->Float.fromString->Option.getOr(0.0)
-        let taxAmount = sessionToken.totalTaxAmount->Float.fromString->Option.getOr(0.0)
-        let shippingAmount = newShippingAmount->Float.fromString->Option.getOr(0.0)
-        let newTotalAmount = (baseAmount +. taxAmount +. shippingAmount)->Float.toString
-
-        {
-          totalShippingAmount: {amount: newShippingAmount, currencyCode},
-          totalBaseAmount: {amount: sessionToken.totalBaseAmount, currencyCode},
-          totalTaxAmount: {amount: sessionToken.totalTaxAmount, currencyCode},
-          totalChargeAmount: {amount: newTotalAmount, currencyCode},
-          totalDiscountAmount: {amount: "0.00", currencyCode},
-        }
-      },
-      onCompleteCheckout: event => {
-        let amazonCheckoutSessionId =
-          event->getDictFromJson->getString("amazonCheckoutSessionId", "")
-
+      onInitCheckout: e =>
+        handleOnInitCheckout(
+          e,
+          shippingAddressRef,
+          defaultShippingAmount,
+          currencyCode,
+          sessionToken,
+          totalOrderAmount,
+        ),
+      onShippingAddressSelection: e =>
+        handleOnShippingAddressSelection(
+          e,
+          shippingAddressRef,
+          defaultShippingAmount,
+          currencyCode,
+          sessionToken,
+          totalOrderAmount,
+        ),
+      onDeliveryOptionSelection: e =>
+        handleOnDeliveryOptionSelection(e, currencyCode, sessionToken),
+      onCompleteCheckout: event =>
         intent(
-          ~bodyArr=amazonPayBody(amazonCheckoutSessionId, shippingAddressRef.current),
+          ~bodyArr=amazonPayBody(
+            event->getDictFromJson->getString("amazonCheckoutSessionId", ""),
+            shippingAddressRef.current,
+          ),
           ~confirmParam={
             return_url: options.wallets.walletReturnUrl,
             publishableKey,
           },
           ~handleUserError=true,
           ~manualRetry=isManualRetryEnabled,
-        )
-      },
-      onCancel: _ => {
+        ),
+      onCancel: _ =>
         intent(
           ~bodyArr=amazonPayBody("", shippingAddressRef.current),
           ~confirmParam={
@@ -109,8 +87,7 @@ let useAmazonPay = token => {
           },
           ~handleUserError=true,
           ~manualRetry=isManualRetryEnabled,
-        )
-      },
+        ),
     }
   }
 

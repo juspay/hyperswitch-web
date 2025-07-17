@@ -53,15 +53,6 @@ type amountDetails = {
   currencyCode: string,
 }
 
-type cartDetails = {
-  totalShippingAmount: amountDetails,
-  totalBaseAmount: amountDetails,
-  totalTaxAmount: amountDetails,
-  totalChargeAmount: amountDetails,
-  totalDiscountAmount: amountDetails,
-  deliveryOptions: array<deliveryOption>,
-}
-
 type shippingAddressResponse = {
   totalShippingAmount: amountDetails,
   totalBaseAmount: amountDetails,
@@ -93,7 +84,7 @@ type amazonPayConfigType = {
   buttonColor: string,
   estimatedOrderAmount: estimatedOrderAmount,
   checkoutSessionConfig: checkoutSessionConfig,
-  onInitCheckout: JSON.t => cartDetails,
+  onInitCheckout: JSON.t => shippingAddressResponse,
   onShippingAddressSelection: JSON.t => shippingAddressResponse,
   onDeliveryOptionSelection: deliveryOptionEvent => deliveryOptionResponse,
   onCompleteCheckout: JSON.t => unit,
