@@ -3,7 +3,7 @@ name: "Auto Assign"
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, reopened, synchronize]
 
 jobs:
   auto-assign:
