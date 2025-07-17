@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ensure PR is linked to an issue
+      - name: Ensure PR has linked issue
         uses: actions/github-script@v7
         with:
           script: |
