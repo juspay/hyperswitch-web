@@ -1,4 +1,4 @@
-name: Manual Release
+name: Stable Release
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
         type: choice
         options:
           - auto
-          - manual
+          - stable
       version_type:
         description: "Auto-bump type (only used if mode is 'auto')"
         required: false
@@ -20,8 +20,8 @@ on:
           - patch
           - minor
           - major
-      manual_version:
-        description: "Manual version (only used if mode is 'manual')"
+      stable_version:
+        description: "Stable version (only used if mode is 'stable')"
         required: false
         type: string
       release_notes:
@@ -158,21 +158,21 @@ jobs:
           VERSION_MODE="${{ github.event.inputs.version_mode }}"
 
           echo "🔍 Debug: VERSION_MODE = '$VERSION_MODE'"
-          echo "🔍 Debug: Manual version input = '${{ github.event.inputs.manual_version }}'"
+          echo "🔍 Debug: Stable version input = '${{ github.event.inputs.stable_version }}'"
 
           if [ "$VERSION_MODE" = "auto" ]; then
             # Auto-bump version
             VERSION_TYPE="${{ github.event.inputs.version_type }}"
             NEW_VERSION=$(bump_version "$CURRENT_VERSION" "$VERSION_TYPE")
             echo "🔄 Auto-bumping $VERSION_TYPE version: $CURRENT_VERSION → $NEW_VERSION"
-          elif [ "$VERSION_MODE" = "manual" ]; then
-            # Manual version
-            NEW_VERSION="${{ github.event.inputs.manual_version }}"
+          elif [ "$VERSION_MODE" = "stable" ]; then
+            # Stable version
+            NEW_VERSION="${{ github.event.inputs.stable_version }}"
             
-            echo "🔍 Debug: Processing manual version: '$NEW_VERSION'"
+            echo "🔍 Debug: Processing stable version: '$NEW_VERSION'"
             
             if [ -z "$NEW_VERSION" ] || [ "$NEW_VERSION" = "null" ]; then
-              echo "❌ VALIDATION FAILED: Manual version cannot be empty when mode is 'manual'"
+              echo "❌ VALIDATION FAILED: Stable version cannot be empty when mode is 'stable'"
               echo "   Please provide a valid version number (e.g., 1.2.3)"
               echo "🚫 Workflow stopped due to validation failure."
               exit 1
@@ -190,9 +190,9 @@ jobs:
             
             # Check if new version is not lower than current version
             if is_version_valid "$NEW_VERSION" "$CURRENT_VERSION"; then
-              echo "✅ Validation passed: Using manual version: $CURRENT_VERSION → $NEW_VERSION"
+              echo "✅ Validation passed: Using stable version: $CURRENT_VERSION → $NEW_VERSION"
             else
-              echo "❌ VALIDATION FAILED: Manual version $NEW_VERSION is LOWER than current version $CURRENT_VERSION"
+              echo "❌ VALIDATION FAILED: Stable version $NEW_VERSION is LOWER than current version $CURRENT_VERSION"
               echo "   New version must be equal to or higher than the current version"
               echo "   Current: $CURRENT_VERSION"
               echo "   Provided: $NEW_VERSION"
@@ -203,7 +203,7 @@ jobs:
             fi
           else
             echo "❌ VALIDATION FAILED: Invalid version mode: '$VERSION_MODE'"
-            echo "   Valid modes are: 'auto' or 'manual'"
+            echo "   Valid modes are: 'auto' or 'stable'"
             echo "🚫 Workflow stopped due to validation failure."
             exit 1
           fi
@@ -274,7 +274,7 @@ jobs:
             **Changes:**
             - Updated \`package.json\` version field
 
-            This PR was automatically created by the manual release workflow.
+            This PR was automatically created by the stable release workflow.
 
             Please review and merge this PR to proceed with the release process.`;
 
@@ -283,7 +283,7 @@ jobs:
               const pr = await github.rest.pulls.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: `chore: bump version to ${newVersion}`,
+                title: `release: v${newVersion}`,
                 head: branchName,
                 base: 'master',
                 body: prBody
@@ -327,7 +327,7 @@ jobs:
             **Changes:**
             - Updated \`package.json\` version field
 
-            This PR was created following the manual release workflow.
+            This PR was created following the stable release workflow.
 
             Please review and merge this PR to proceed with the release process.`;
 
@@ -368,7 +368,7 @@ jobs:
                 .addRaw(`<p><strong>Changes are ready!</strong> Please create the PR manually using the link below.</p>`)
                 .addLink('Click here to create the PR', manualPrUrl)
                 .addHeading('📝 Suggested PR Details')
-                .addRaw(`<p><strong>Title:</strong> <code>chore: bump version to ${newVersion}</code></p>`)
+                .addRaw(`<p><strong>Title:</strong> <code>release: v${newVersion}</code></p>`)
                 .addRaw(`<p><strong>Description:</strong></p>`)
                 .addCodeBlock(prBody, 'markdown')
                 .addRaw('<br><br>**Next Steps:** Create and merge the PR above, then the release will be ready!')
