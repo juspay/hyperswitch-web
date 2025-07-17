@@ -13,14 +13,14 @@ let useAmazonPay = token => {
   let shippingAddressRef = React.useRef(defaultShipping)
 
   let getAmazonPayConfig = (sessionToken: amazonPayTokenType): amazonPayConfigType => {
-    let baseAmount = sessionToken.totalBaseAmount->Float.fromString->Option.getOr(0.0)
-    let taxAmount = sessionToken.totalTaxAmount->Float.fromString->Option.getOr(0.0)
+    let baseAmount = sessionToken.totalBaseAmount->getFloatFromString(0.0)
+    let taxAmount = sessionToken.totalTaxAmount->getFloatFromString(0.0)
     let defaultShippingAmount =
       sessionToken.deliveryOptions
       ->Array.find(option => option.isDefault)
       ->Option.mapOr("0.0", option => option.price.amount)
 
-    let shippingAmount = defaultShippingAmount->Float.fromString->Option.getOr(0.0)
+    let shippingAmount = defaultShippingAmount->getFloatFromString(0.0)
 
     let totalOrderAmount = (baseAmount +. taxAmount +. shippingAmount)->Float.toString
     let currencyCode = sessionToken.ledgerCurrency

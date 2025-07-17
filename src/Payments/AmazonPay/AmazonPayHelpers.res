@@ -103,8 +103,8 @@ let getShippingAddressFromEvent = event => {
       state,
       zip,
       country,
-      first_name: firstName->JSON.Decode.string->Option.getOr(""),
-      last_name: lastName->JSON.Decode.string->Option.getOr(""),
+      first_name: firstName->getStringFromJson(""),
+      last_name: lastName->getStringFromJson(""),
     },
     phone: {number: phoneNumber},
   }
@@ -139,9 +139,9 @@ let handleOnDeliveryOptionSelection = (event, currencyCode, sessionToken: amazon
     sessionToken.deliveryOptions->Array.find(option => option.id === event.deliveryOptions.id)
 
   let newShippingAmount = selectedOption->Option.mapOr("0.0", option => option.price.amount)
-  let baseAmount = sessionToken.totalBaseAmount->Float.fromString->Option.getOr(0.0)
-  let taxAmount = sessionToken.totalTaxAmount->Float.fromString->Option.getOr(0.0)
-  let shippingAmount = newShippingAmount->Float.fromString->Option.getOr(0.0)
+  let baseAmount = sessionToken.totalBaseAmount->getFloatFromString(0.0)
+  let taxAmount = sessionToken.totalTaxAmount->getFloatFromString(0.0)
+  let shippingAmount = newShippingAmount->getFloatFromString(0.0)
   let newTotalAmount = (baseAmount +. taxAmount +. shippingAmount)->Float.toString
 
   {
