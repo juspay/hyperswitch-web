@@ -31,6 +31,20 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
       otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
     } else if item.paymentMethodType == "bank_debit" {
       otherPaymentList->Array.push(item.paymentMethodSubtype ++ "_debit")->ignore
+    } else if item.paymentMethodType == "pay_later" {
+      if item.paymentMethodSubtype === "klarna" {
+        let klarnaPaymentMethodExperience = V2Helpers.getPaymentExperienceTypeFromPML(
+          ~paymentMethodList=paymentMethodListValue,
+          ~paymentMethodName=item.paymentMethodType,
+          ~paymentMethodType=item.paymentMethodSubtype,
+        )
+
+        let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
+
+        if isRedirectExperience {
+          otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
+        }
+      }
     } else if item.paymentMethodType == "card" {
       otherPaymentList->Array.push("card")->ignore
     }

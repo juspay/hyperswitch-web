@@ -188,6 +188,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         | Hyperswitch => <CardIframeContainer />
         | None => <CardPayment cardProps expiryProps cvcProps />
         }
+      | Klarna =>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="KlarnaPaymentLazy">
+          <KlarnaPaymentLazy />
+        </ReusableReactSuspense>
       | GooglePay =>
         <SessionPaymentWrapper type_={Wallet}>
           {switch gPayToken {
@@ -208,7 +212,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
           <SepaBankDebitLazy />
         </ReusableReactSuspense>
-      | Klarna
       | Sofort
       | AfterPay
       | Affirm
