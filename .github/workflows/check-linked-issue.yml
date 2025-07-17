@@ -74,8 +74,8 @@ Linking your PR to an issue helps keep the project tidy and ensures the issue is
 - Add a keyword like \`Fixes #123\` or \`Closes #456\` to your PR **description** or a **commit message**.
 - Or link it manually using the **"Linked issues"** panel in the PR sidebar.
 
-> ✅ **Tip:** You can link multiple issues.  
-> 🚫 **Note:** If only one issue is linked, it must be open for this check to pass.
+✅ **Tip:** You can link multiple issues.  
+🚫 **Note:** If only one issue is linked, it must be open for this check to pass.
 
 Once linked, this check will pass automatically on your next push or when you re-run the workflow.
 
@@ -127,7 +127,9 @@ To pass this check, the linked issue must be **open** — or link an additional 
 - Reopen the linked issue if appropriate.
 - Or link another relevant **open** issue via the PR description or the **"Linked issues"** panel.
 
-Thanks for keeping the project healthy! 🚀
+Once an open issue is linked, this check will pass automatically on your next push or when you re-run the workflow.
+
+Thanks for helping maintain the project! 🚀
 `
               });
               core.setFailed('❌ Linked issue is closed.');
