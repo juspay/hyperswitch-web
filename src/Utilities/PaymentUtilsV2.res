@@ -124,14 +124,15 @@ let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManage
     let methodType = paymentMethodObject.paymentMethodType
     let handleUserError = methodType === "wallet"
     let paymentMethodName = paymentMethodObject.paymentMethodSubtype
-    // TODO - Handle Bank Names and Payment Experience
+    let bankNamesList = paymentMethodObject.bankNames->Option.getOr([])
+    // TODO - Handle Payment Experience
     {
       paymentMethodName,
       fields: getPaymentMethodFields(paymentMethodName, paymentMethodObject.requiredFields),
       paymentFlow: [],
       handleUserError,
       methodType,
-      bankNames: [],
+      bankNames: bankNamesList,
     }
   })
 }
