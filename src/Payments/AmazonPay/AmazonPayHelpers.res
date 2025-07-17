@@ -5,18 +5,14 @@ external renderAmazonPayButton: (~buttonId: string, ~config: amazonPayConfigType
   "amazon.Pay.renderJSButton"
 
 let deliveryPriceMapper = dict => {
-  {
-    amount: dict->getInt("amount", 0),
-    displayAmount: dict->getString("display_amount", ""),
-    currencyCode: dict->getString("currency_code", ""),
-  }
+  amount: dict->getInt("amount", 0),
+  displayAmount: dict->getString("display_amount", ""),
+  currencyCode: dict->getString("currency_code", ""),
 }
 
 let shippingMethodMapper = dict => {
-  {
-    shippingMethodName: dict->getString("shipping_method_name", ""),
-    shippingMethodCode: dict->getString("shipping_method_code", ""),
-  }
+  shippingMethodName: dict->getString("shipping_method_name", ""),
+  shippingMethodCode: dict->getString("shipping_method_code", ""),
 }
 
 let deliveryOptionMapper = dict => {
@@ -33,18 +29,16 @@ let deliveryOptionMapper = dict => {
 }
 
 let amazonPayTokenMapper = dict => {
-  {
-    walletName: dict->getString("wallet_name", ""),
-    merchantId: dict->getString("merchant_id", ""),
-    ledgerCurrency: dict->getString("ledger_currency", ""),
-    storeId: dict->getString("store_id", ""),
-    paymentIntent: dict->getString("payment_intent", ""),
-    totalTaxAmount: dict->getString("total_tax_amount", ""),
-    totalBaseAmount: dict->getString("total_base_amount", ""),
-    deliveryOptions: dict
-    ->getArray("delivery_options")
-    ->Array.map(item => item->getDictFromJson->deliveryOptionMapper),
-  }
+  walletName: dict->getString("wallet_name", ""),
+  merchantId: dict->getString("merchant_id", ""),
+  ledgerCurrency: dict->getString("ledger_currency", ""),
+  storeId: dict->getString("store_id", ""),
+  paymentIntent: dict->getString("payment_intent", ""),
+  totalTaxAmount: dict->getString("total_tax_amount", ""),
+  totalBaseAmount: dict->getString("total_base_amount", ""),
+  deliveryOptions: dict
+  ->getArray("delivery_options")
+  ->Array.map(item => item->getDictFromJson->deliveryOptionMapper),
 }
 
 let amazonPayBody = (amazonCheckoutSessionId, shipping) => {
