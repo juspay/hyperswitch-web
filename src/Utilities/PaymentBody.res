@@ -406,21 +406,21 @@ let klarnaCheckoutBody = (~connectors) => {
   ]
 }
 
-let paypalRedirectionBody = (~connectors) => [
-  ("payment_method", "wallet"->JSON.Encode.string),
-  ("payment_method_type", "paypal"->JSON.Encode.string),
-  ("payment_experience", "redirect_to_url"->JSON.Encode.string),
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  (
-    "payment_method_data",
-    [
-      (
-        "wallet",
-        [("paypal_redirect", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
+let paypalRedirectionBody = () => {
+  let (paymentMethodTypeKey, paymentMethodSubtypeKey) = switch GlobalVars.sdkVersion {
+  | V1 => ("payment_method", "payment_method_type")
+  | V2 => ("payment_method_type", "payment_method_subtype")
+  }
+
+  let paypalRedirectField =
+    [("paypal_redirect", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
+  let walletData = [("wallet", paypalRedirectField)]->Utils.getJsonFromArrayOfJson
+  [
+    (paymentMethodTypeKey, "wallet"->JSON.Encode.string),
+    (paymentMethodSubtypeKey, "paypal"->JSON.Encode.string),
+    ("payment_method_data", walletData),
+  ]
+}
 
 let paypalSdkBody = (~token, ~connectors) => [
   ("payment_method", "wallet"->JSON.Encode.string),

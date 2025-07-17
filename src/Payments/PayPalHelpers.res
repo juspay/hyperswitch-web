@@ -7,14 +7,27 @@ type paypalExperienceData = {
   isPaypalRedirectFlow: bool,
 }
 
-let usePaymentMethodExperience = (~paymentMethodListValue, ~sessionObj: sessions) => {
+let usePaymentMethodExperience = (
+  ~paymentMethodListValue,
+  ~paymentMethodsListV2: UnifiedPaymentsTypesV2.paymentMethodsManagement,
+  ~sessionObj: sessions,
+) => {
   let paypalPaymentMethodExperience = React.useMemo(() => {
-    getPaymentExperienceTypeFromPML(
-      ~paymentMethodList=paymentMethodListValue,
-      ~paymentMethodName="wallet",
-      ~paymentMethodType="paypal",
-    )
-  }, [paymentMethodListValue])
+    switch GlobalVars.sdkVersion {
+    | V1 =>
+      getPaymentExperienceTypeFromPML(
+        ~paymentMethodList=paymentMethodListValue,
+        ~paymentMethodName="wallet",
+        ~paymentMethodType="paypal",
+      )
+    | V2 =>
+      V2Helpers.getPaymentExperienceTypeFromPML(
+        ~paymentMethodList=paymentMethodsListV2,
+        ~paymentMethodName="wallet",
+        ~paymentMethodType="paypal",
+      )
+    }
+  }, (paymentMethodListValue, paymentMethodsListV2))
 
   let paypalToken = React.useMemo(
     () => getPaymentSessionObj(sessionObj.sessionsToken, Paypal),

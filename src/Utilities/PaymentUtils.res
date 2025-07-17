@@ -323,7 +323,11 @@ let getIsKlarnaSDKFlow = sessions => {
   }
 }
 
-let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
+let usePaypalFlowStatus = (
+  ~sessions,
+  ~paymentMethodListValue,
+  ~paymentMethodsListV2: UnifiedPaymentsTypesV2.paymentMethodsManagement,
+) => {
   open Utils
 
   let sessionObj =
@@ -335,7 +339,11 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
     paypalToken,
     isPaypalSDKFlow,
     isPaypalRedirectFlow,
-  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
+  } = PayPalHelpers.usePaymentMethodExperience(
+    ~paymentMethodListValue,
+    ~paymentMethodsListV2,
+    ~sessionObj,
+  )
 
   let isPaypalTokenExist = switch paypalToken {
   | OtherTokenOptional(optToken) =>
@@ -361,6 +369,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
   let isKlarnaSDKFlow = getIsKlarnaSDKFlow(sessions)
 
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(paymentMethodListValue)
+  let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
 
   let areAllApplePayRequiredFieldsPrefilled = useAreAllRequiredFieldsPrefilled(
     ~paymentMethodListValue,
@@ -386,6 +395,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
   let (isPaypalSDKFlow, isPaypalRedirectFlow, isPaypalTokenExist) = usePaypalFlowStatus(
     ~sessions,
     ~paymentMethodListValue,
+    ~paymentMethodsListV2,
   )
 
   React.useMemo(() => {
