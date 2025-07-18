@@ -265,7 +265,7 @@ jobs:
             const newVersion = '${{ steps.version.outputs.new_version }}';
             const branchName = '${{ steps.version_bump.outputs.branch_name }}';
             const repoUrl = `https://github.com/${{ github.repository }}`;
-            const prUrl = `${repoUrl}/compare/master...${branchName}?expand=1`;
+            const prUrl = `${repoUrl}/compare/main...${branchName}?expand=1`;
 
             const prBody = `## Version Bump to ${newVersion}
 
@@ -285,7 +285,7 @@ jobs:
                 repo: context.repo.repo,
                 title: `release: v${newVersion}`,
                 head: branchName,
-                base: 'master',
+                base: 'main',
                 body: prBody
               });
 
@@ -318,7 +318,7 @@ jobs:
             const prOperation = '${{ steps.cpr.outputs.pull-request-operation }}';
             const branchName = '${{ steps.cpr.outputs.pull-request-branch }}' || `release/bump-version-to-${newVersion}`;
             const repoUrl = `https://github.com/${{ github.repository }}`;
-            const manualPrUrl = `${repoUrl}/compare/master...${branchName}?expand=1`;
+            const manualPrUrl = `${repoUrl}/compare/main...${branchName}?expand=1`;
 
             const prBody = `## Version Bump to ${newVersion}
 
