@@ -31,6 +31,20 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
       otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
     } else if item.paymentMethodType == "bank_debit" {
       otherPaymentList->Array.push(item.paymentMethodSubtype ++ "_debit")->ignore
+    } else if item.paymentMethodType == "pay_later" {
+      if item.paymentMethodSubtype === "klarna" {
+        let klarnaPaymentMethodExperience = V2Helpers.getPaymentExperienceTypeFromPML(
+          ~paymentMethodList=paymentMethodListValue,
+          ~paymentMethodName=item.paymentMethodType,
+          ~paymentMethodType=item.paymentMethodSubtype,
+        )
+
+        let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
+
+        if isRedirectExperience {
+          otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
+        }
+      }
     } else if item.paymentMethodType == "card" {
       otherPaymentList->Array.push("card")->ignore
     }
@@ -117,22 +131,24 @@ let usePaymentMethodTypeFromListV2 = (~paymentsListValueV2, ~paymentMethod, ~pay
 }
 
 let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManagement) => {
-  open PaymentMethodsRecord
   let paymentMethodArr = plist.paymentMethodsEnabled
-
   paymentMethodArr->Array.map(paymentMethodObject => {
     let methodType = paymentMethodObject.paymentMethodType
     let handleUserError = methodType === "wallet"
     let paymentMethodName = paymentMethodObject.paymentMethodSubtype
     let bankNamesList = paymentMethodObject.bankNames->Option.getOr([])
     // TODO - Handle Payment Experience
-    {
+    let value: PaymentMethodsRecord.paymentMethodsContent = {
       paymentMethodName,
-      fields: getPaymentMethodFields(paymentMethodName, paymentMethodObject.requiredFields),
+      fields: PaymentMethodsRecord.getPaymentMethodFields(
+        paymentMethodName,
+        paymentMethodObject.requiredFields,
+      ),
       paymentFlow: [],
       handleUserError,
       methodType,
       bankNames: bankNamesList,
     }
+    value
   })
 }
