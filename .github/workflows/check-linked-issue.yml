@@ -38,6 +38,16 @@ jobs:
               number: context.issue.number
             });
 
+            // Check PR body for issue references
+            const prTitle = pr.title || '';
+
+            // Skip check for release PRs
+            if (prTitle.startsWith('release: v')) {
+              console.log('🔄 Skipping linked issue check for release PR');
+              core.notice('✅ Release PR - linked issue check skipped');
+              return;
+            }
+
             const textToCheck = `${pr.title} ${pr.body || ''}`;
 
             const issuePatterns = [
