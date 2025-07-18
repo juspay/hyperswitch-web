@@ -57,9 +57,7 @@ let make = (~walletOptions) => {
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
-        let (connectors, _) =
-          paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
-        let body = PaymentBody.paypalRedirectionBody(~connectors)
+        let body = PaymentBody.paypalRedirectionBody()
         let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
           ~isGuestCustomer,
           ~paymentType=paymentMethodListValue.payment_type,
