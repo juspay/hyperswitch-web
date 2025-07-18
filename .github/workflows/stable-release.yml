@@ -4,15 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       version_mode:
-        description: "Version selection mode"
+        description: "Version mode"
         required: true
         default: "auto"
         type: choice
         options:
           - auto
-          - stable
+          - custom
       version_type:
-        description: "Auto-bump type (only used if mode is 'auto')"
+        description: "Auto-bump type (patch/minor/major)"
         required: false
         default: "patch"
         type: choice
@@ -21,7 +21,7 @@ on:
           - minor
           - major
       stable_version:
-        description: "Stable version (only used if mode is 'stable')"
+        description: "Custom version number (e.g., 1.2.3) (only used in custom mode)"
         required: false
         type: string
       release_notes:
@@ -158,21 +158,21 @@ jobs:
           VERSION_MODE="${{ github.event.inputs.version_mode }}"
 
           echo "🔍 Debug: VERSION_MODE = '$VERSION_MODE'"
-          echo "🔍 Debug: Stable version input = '${{ github.event.inputs.stable_version }}'"
+          echo "🔍 Debug: Custom version input = '${{ github.event.inputs.stable_version }}'"
 
           if [ "$VERSION_MODE" = "auto" ]; then
             # Auto-bump version
             VERSION_TYPE="${{ github.event.inputs.version_type }}"
             NEW_VERSION=$(bump_version "$CURRENT_VERSION" "$VERSION_TYPE")
             echo "🔄 Auto-bumping $VERSION_TYPE version: $CURRENT_VERSION → $NEW_VERSION"
-          elif [ "$VERSION_MODE" = "stable" ]; then
-            # Stable version
+          elif [ "$VERSION_MODE" = "custom" ]; then
+            # Custom version
             NEW_VERSION="${{ github.event.inputs.stable_version }}"
             
-            echo "🔍 Debug: Processing stable version: '$NEW_VERSION'"
+            echo "🔍 Debug: Processing custom version: '$NEW_VERSION'"
             
             if [ -z "$NEW_VERSION" ] || [ "$NEW_VERSION" = "null" ]; then
-              echo "❌ VALIDATION FAILED: Stable version cannot be empty when mode is 'stable'"
+              echo "❌ VALIDATION FAILED: Custom version cannot be empty when mode is 'custom'"
               echo "   Please provide a valid version number (e.g., 1.2.3)"
               echo "🚫 Workflow stopped due to validation failure."
               exit 1
@@ -190,9 +190,9 @@ jobs:
             
             # Check if new version is not lower than current version
             if is_version_valid "$NEW_VERSION" "$CURRENT_VERSION"; then
-              echo "✅ Validation passed: Using stable version: $CURRENT_VERSION → $NEW_VERSION"
+              echo "✅ Validation passed: Using custom version: $CURRENT_VERSION → $NEW_VERSION"
             else
-              echo "❌ VALIDATION FAILED: Stable version $NEW_VERSION is LOWER than current version $CURRENT_VERSION"
+              echo "❌ VALIDATION FAILED: Custom version $NEW_VERSION is LOWER than current version $CURRENT_VERSION"
               echo "   New version must be equal to or higher than the current version"
               echo "   Current: $CURRENT_VERSION"
               echo "   Provided: $NEW_VERSION"
@@ -203,7 +203,7 @@ jobs:
             fi
           else
             echo "❌ VALIDATION FAILED: Invalid version mode: '$VERSION_MODE'"
-            echo "   Valid modes are: 'auto' or 'stable'"
+            echo "   Valid modes are: 'auto' or 'custom'"
             echo "🚫 Workflow stopped due to validation failure."
             exit 1
           fi
