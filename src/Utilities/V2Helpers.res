@@ -1,15 +1,11 @@
-open UnifiedPaymentsTypesV2
 let getPaymentExperienceTypeFromPML = (
-  ~paymentMethodList: paymentMethodsManagement,
+  ~paymentMethodList: UnifiedPaymentsTypesV2.paymentMethodsManagement,
   ~paymentMethodName,
   ~paymentMethodType,
 ) => {
-  paymentMethodList.paymentMethodsEnabled
-  ->Array.filter(paymentMethod =>
-    paymentMethod.paymentMethodType === paymentMethodName &&
-      paymentMethod.paymentMethodSubtype === paymentMethodType
-  )
-  ->Array.get(0)
-  ->Option.flatMap(val => val.paymentExperience)
-  ->Option.getOr([])
+  paymentMethodList.paymentMethodsEnabled->Array.reduce([], (acc, ele) => {
+    ele.paymentMethodType === paymentMethodName && ele.paymentMethodSubtype === paymentMethodType
+      ? [...acc, ...ele.paymentExperience->Option.getOr([])]
+      : acc
+  })
 }
