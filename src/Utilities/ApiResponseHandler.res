@@ -4,19 +4,24 @@ open LoggerUtils
 open IntentCallTypes
 open URLModule
 open ApiContextHelper
+open PaymentConfirmTypes
+open Promise
 
-// Import functions from PaymentHelpers
+let handleOpenUrl = (url, isPaymentSession, redirectionFlags) => {
+  if isPaymentSession {
+    replaceRootHref(url, redirectionFlags)
+  } else {
+    openUrl(url)
+  }
+}
+
 let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
 
-// Handle default processing status behavior
-let rec handleProcessingStatusDefault = (params: intentCallParams, data: JSON.t): promise<
-  JSON.t,
-> => {
-  open Promise
-
+let handleProcessingStatusDefault = (intent, params: intentCallParams, data) => {
   let url = makeUrl(params.confirmParam.return_url)
   url.searchParams.set("payment_intent_client_secret", params.clientSecret)
   url.searchParams.set("payment_id", params.clientSecret->Utils.getPaymentId)
+  url.searchParams.set("status", intent.status)
 
   switch (params.paymentType, params.sdkHandleOneClickConfirmPayment) {
   | (Card, _)
@@ -35,14 +40,7 @@ let rec handleProcessingStatusDefault = (params: intentCallParams, data: JSON.t)
       if params.isCallbackUsedVal->Option.getOr(false) {
         handleOnCompleteDoThisMessage()
       } else {
-        let handleOpenUrl = url => {
-          if params.isPaymentSession {
-            replaceRootHref(url, params.redirectionFlags)
-          } else {
-            openUrl(url)
-          }
-        }
-        handleOpenUrl(url.href)
+        handleOpenUrl(url.href, params.isPaymentSession, params.redirectionFlags)
       }
       resolve(data)
     } else {
@@ -53,59 +51,28 @@ let rec handleProcessingStatusDefault = (params: intentCallParams, data: JSON.t)
       closePaymentLoaderIfAny()
       handleOnCompleteDoThisMessage()
     } else {
-      let handleOpenUrl = url => {
-        if params.isPaymentSession {
-          replaceRootHref(url, params.redirectionFlags)
-        } else {
-          openUrl(url)
-        }
-      }
-      handleOpenUrl(url.href)
+      handleOpenUrl(url.href, params.isPaymentSession, params.redirectionFlags)
     }
     resolve(data)
   }
 }
 
-// Handle final payment statuses
-and handleFinalStatus = (
-  intent: PaymentConfirmTypes.intent,
-  params: intentCallParams,
-  data: JSON.t,
-  paymentMethod: string,
-  _url: URLModule.url,
-): promise<JSON.t> => {
-  if intent.status === "succeeded" {
-    handleLogging(
-      ~optLogger=params.optLogger,
-      ~value=intent.status,
-      ~eventName=PAYMENT_SUCCESS,
-      ~paymentMethod,
-    )
-  } else if intent.status === "failed" {
-    handleLogging(
-      ~optLogger=params.optLogger,
-      ~value=intent.status,
-      ~eventName=PAYMENT_FAILED,
-      ~paymentMethod,
-    )
+let handleFinalStatus = (intent, params, data, paymentMethod) => {
+  let {optLogger, setIsManualRetryEnabled} = params
+
+  switch intent.status {
+  | "succeeded" =>
+    handleLogging(~optLogger, ~value=intent.status, ~eventName=PAYMENT_SUCCESS, ~paymentMethod)
+  | "failed" =>
+    handleLogging(~optLogger, ~value=intent.status, ~eventName=PAYMENT_FAILED, ~paymentMethod)
+    setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
+  | _ => ()
   }
 
-  if intent.status === "failed" {
-    params.setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
-  }
-
-  handleProcessingStatusDefault(params, data)
+  handleProcessingStatusDefault(intent, params, data)
 }
 
-// Handle processing status
-and handleProcessingStatus = (
-  intent: PaymentConfirmTypes.intent,
-  params: intentCallParams,
-  data: JSON.t,
-  _paymentMethod: string,
-): promise<JSON.t> => {
-  open Promise
-
+let handleProcessingStatus = (intent, params, data, _paymentMethod) => {
   if intent.nextAction.type_ == "third_party_sdk_session_token" {
     let sessionToken = switch intent.nextAction.session_token {
     | Some(token) => token->getDictFromJson
@@ -126,7 +93,7 @@ and handleProcessingStatus = (
     }
     resolve(data)
   } else {
-    handleProcessingStatusDefault(params, data)
+    handleProcessingStatusDefault(intent, params, data)
   }
 }
 
@@ -135,27 +102,27 @@ let processSuccessResponse = (
   data: JSON.t,
   context: apiCallContext,
   params: intentCallParams,
+  statusCode,
 ): promise<JSON.t> => {
-  open Promise
-
+  let {eventName} = context
+  let {optLogger, isPaymentSession, clientSecret} = params
   logApi(
-    ~optLogger=params.optLogger,
+    ~optLogger,
     ~url=params.uri,
-    ~statusCode=200,
+    ~statusCode,
     ~apiLogType=Response,
-    ~eventName=context.eventName,
-    ~isPaymentSession=params.isPaymentSession,
+    ~eventName,
+    ~isPaymentSession,
   )
 
-  let intent = PaymentConfirmTypes.itemToObjMapper(data->getDictFromJson)
+  let intent = itemToObjMapper(data->getDictFromJson)
   let paymentMethod = getPaymentMethodFromParams(params)
 
   let url = makeUrl(params.confirmParam.return_url)
-  url.searchParams.set("payment_intent_client_secret", params.clientSecret)
-  url.searchParams.set("payment_id", params.clientSecret->Utils.getPaymentId)
+  url.searchParams.set("payment_intent_client_secret", clientSecret)
+  url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
   url.searchParams.set("status", intent.status)
 
-  // Handle different payment statuses
   if intent.status == "requires_customer_action" {
     NextActionHandler.handleNextAction(intent, params, data, url)
   } else if intent.status == "requires_payment_method" {
@@ -173,16 +140,14 @@ let processSuccessResponse = (
   } else if intent.status == "processing" {
     handleProcessingStatus(intent, params, data, paymentMethod)
   } else if intent.status != "" {
-    // Handle final statuses (succeeded, failed, etc.)
-    handleFinalStatus(intent, params, data, paymentMethod, url)
+    handleFinalStatus(intent, params, data, paymentMethod)
+  } else if !isPaymentSession {
+    postFailedSubmitResponse(
+      ~errortype="confirm_payment_failed",
+      ~message="Payment failed. Try again!",
+    )
+    resolve(data)
   } else {
-    // Handle empty status
-    if !params.isPaymentSession {
-      postFailedSubmitResponse(
-        ~errortype="confirm_payment_failed",
-        ~message="Payment failed. Try again!",
-      )
-    }
     let failedSubmitResponse = getFailedSubmitResponse(
       ~errorType="confirm_payment_failed",
       ~message="Payment failed. Try again!",
@@ -198,19 +163,30 @@ let handleApiError = (
   params: intentCallParams,
   statusCode: int,
 ): promise<JSON.t> => {
-  open Promise
+  let {isConfirm, eventName} = context
+  let {
+    paymentType,
+    optLogger,
+    isPaymentSession,
+    bodyStr,
+    uri,
+    handleUserError,
+    confirmParam,
+    clientSecret,
+    redirectionFlags,
+  } = params
 
-  if context.isConfirm {
-    let paymentMethod = switch params.paymentType {
+  if isConfirm {
+    let paymentMethod = switch paymentType {
     | Card => "CARD"
     | _ =>
-      params.bodyStr
+      bodyStr
       ->safeParse
       ->getDictFromJson
       ->getString("payment_method_type", "")
     }
     handleLogging(
-      ~optLogger=params.optLogger,
+      ~optLogger,
       ~value=errorData->JSON.stringify,
       ~eventName=PAYMENT_FAILED,
       ~paymentMethod,
@@ -218,39 +194,32 @@ let handleApiError = (
   }
 
   logApi(
-    ~optLogger=params.optLogger,
-    ~url=params.uri,
+    ~optLogger,
+    ~url=uri,
     ~data=errorData,
     ~statusCode,
     ~apiLogType=Err,
-    ~eventName=context.eventName,
+    ~eventName,
     ~logType=ERROR,
     ~logCategory=API,
-    ~isPaymentSession=params.isPaymentSession,
+    ~isPaymentSession,
   )
 
   let dict = errorData->getDictFromJson
   let errorObj = PaymentError.itemToObjMapper(dict)
 
-  if !params.isPaymentSession {
+  if !isPaymentSession {
     closePaymentLoaderIfAny()
     postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
   }
 
-  if params.handleUserError {
-    let url = makeUrl(params.confirmParam.return_url)
-    url.searchParams.set("payment_intent_client_secret", params.clientSecret)
+  if handleUserError {
+    let url = makeUrl(confirmParam.return_url)
+    url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
-    url.searchParams.set("payment_id", params.clientSecret->Utils.getPaymentId)
+    url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
 
-    let handleOpenUrl = url => {
-      if params.isPaymentSession {
-        replaceRootHref(url, params.redirectionFlags)
-      } else {
-        openUrl(url)
-      }
-    }
-    handleOpenUrl(url.href)
+    handleOpenUrl(url.href, isPaymentSession, redirectionFlags)
     resolve(JSON.Encode.null)
   } else {
     let failedSubmitResponse = getFailedSubmitResponse(
@@ -261,12 +230,9 @@ let handleApiError = (
   }
 }
 
-// Handle network errors and determine retry strategy
 let handleNetworkError = (error: exn, context: apiCallContext, params: intentCallParams): promise<
   JSON.t,
 > => {
-  open Promise
-
   let exceptionMessage = error->formatException
   logApi(
     ~optLogger=params.optLogger,
@@ -281,7 +247,6 @@ let handleNetworkError = (error: exn, context: apiCallContext, params: intentCal
   )
 
   if params.counter >= 5 {
-    // Max retries reached
     if !params.isPaymentSession {
       closePaymentLoaderIfAny()
       postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
@@ -290,17 +255,10 @@ let handleNetworkError = (error: exn, context: apiCallContext, params: intentCal
     if params.handleUserError {
       let url = makeUrl(params.confirmParam.return_url)
       url.searchParams.set("payment_intent_client_secret", params.clientSecret)
-      url.searchParams.set("payment_id", params.clientSecret->Utils.getPaymentId)
       url.searchParams.set("status", "failed")
+      url.searchParams.set("payment_id", params.clientSecret->Utils.getPaymentId)
 
-      let handleOpenUrl = url => {
-        if params.isPaymentSession {
-          replaceRootHref(url, params.redirectionFlags)
-        } else {
-          openUrl(url)
-        }
-      }
-      handleOpenUrl(url.href)
+      handleOpenUrl(url.href, params.isPaymentSession, params.redirectionFlags)
       resolve(JSON.Encode.null)
     } else {
       let failedSubmitResponse = getFailedSubmitResponse(

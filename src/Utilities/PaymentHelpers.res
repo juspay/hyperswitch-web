@@ -254,18 +254,11 @@ let rec pollStatus = (
 }
 
 let intentCall = async (
-  ~fetchApi: (
-    string,
-    ~bodyStr: string=?,
-    ~headers: Dict.t<string>=?,
-    ~method: Fetch.method,
-    ~customPodUri: option<string>=?,
-    ~publishableKey: option<string>=?,
-  ) => promise<Fetch.Response.t>,
+  ~fetchApi,
   ~uri,
   ~headers,
   ~bodyStr,
-  ~confirmParam: ConfirmType.confirmParams,
+  ~confirmParam,
   ~clientSecret,
   ~optLogger,
   ~handleUserError,
@@ -281,8 +274,7 @@ let intentCall = async (
   ~componentName="payment",
   ~redirectionFlags,
 ) => {
-  // Create intent call parameters for the modular architecture
-  let params: IntentCallTypes.intentCallParams = {
+  let params = {
     fetchApi,
     uri,
     headers,
@@ -304,36 +296,34 @@ let intentCall = async (
     redirectionFlags,
   }
 
-  // 1. Create API call context
   let context = ApiContextHelper.createApiCallContext(uri)
 
-  // 2. Log API request
-  ApiLogger.logRequest(context, params)
+  logApi(
+    ~optLogger,
+    ~url=uri,
+    ~apiLogType=Request,
+    ~eventName=context.initEventName,
+    ~isPaymentSession,
+  )
 
   try {
-    // 3. Make API call
-    let response = await fetchApi(
+    let res = await fetchApi(
       uri,
       ~method=fetchMethod,
       ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri),
       ~bodyStr,
     )
 
-    let statusCode = response->Fetch.Response.status
+    let statusCode = res->Fetch.Response.status
+    let dataJson = await res->Fetch.Response.json
 
-    if response->Fetch.Response.ok {
-      // Handle successful response - extract JSON first
-      let successData = await response->Fetch.Response.json
-      await ApiResponseHandler.processSuccessResponse(successData, context, params)
+    if res->Fetch.Response.ok {
+      await ApiResponseHandler.processSuccessResponse(dataJson, context, params, statusCode)
     } else {
-      // Handle error response
-      let errorData = await response->Fetch.Response.json
-      await ApiResponseHandler.handleApiError(errorData, context, params, statusCode)
+      await ApiResponseHandler.handleApiError(dataJson, context, params, statusCode)
     }
   } catch {
-  | networkError =>
-    // Handle network errors and retries
-    await ApiResponseHandler.handleNetworkError(networkError, context, params)
+  | err => await ApiResponseHandler.handleNetworkError(err, context, params)
   }
 }
 
