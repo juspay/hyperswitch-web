@@ -404,13 +404,13 @@ let handleNextAction = (intent, params, data, url) => {
           }
         }
         handleOpenUrl(url.href)
-        Promise.resolve(JSON.Encode.null)
+        resolve(JSON.Encode.null)
       } else {
         let failedSubmitResponse = getFailedSubmitResponse(
           ~errorType="confirm_payment_failed",
           ~message="Payment failed. Try again!",
         )
-        Promise.resolve(failedSubmitResponse)
+        resolve(failedSubmitResponse)
       }
     }
   }

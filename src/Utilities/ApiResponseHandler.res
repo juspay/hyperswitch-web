@@ -28,7 +28,7 @@ let createApiCallContext = uri => {
   }
 }
 
-let getPaymentMethodFromParams = (params: intentCallParams): string => {
+let getPaymentMethodFromParams = params => {
   switch params.paymentType {
   | Card => "CARD"
   | Gpay => "GOOGLE_PAY"
@@ -48,7 +48,7 @@ let handleOpenUrl = (url, isPaymentSession, redirectionFlags) => {
 
 let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
 
-let handleProcessingStatusDefault = (intent, params: intentCallParams, data) => {
+let handleProcessingStatusDefault = (intent, params, data) => {
   let url = makeUrl(params.confirmParam.return_url)
   url.searchParams.set("payment_intent_client_secret", params.clientSecret)
   url.searchParams.set("payment_id", params.clientSecret->getPaymentId)
@@ -128,13 +128,7 @@ let handleProcessingStatus = (intent, params, data, _paymentMethod) => {
   }
 }
 
-// Process successful API response
-let processSuccessResponse = (
-  data: JSON.t,
-  context: apiCallContext,
-  params: intentCallParams,
-  statusCode,
-): promise<JSON.t> => {
+let processSuccessResponse = (data, context: apiCallContext, params, statusCode) => {
   let {eventName} = context
   let {optLogger, isPaymentSession, clientSecret} = params
   logApi(
@@ -187,13 +181,7 @@ let processSuccessResponse = (
   }
 }
 
-// Handle API error response
-let handleApiError = (
-  errorData: JSON.t,
-  context: apiCallContext,
-  params: intentCallParams,
-  statusCode: int,
-): promise<JSON.t> => {
+let handleApiError = (errorData, context: apiCallContext, params, statusCode) => {
   let {isConfirm, eventName} = context
   let {
     paymentType,
@@ -261,9 +249,7 @@ let handleApiError = (
   }
 }
 
-let handleNetworkError = (error: exn, context: apiCallContext, params: intentCallParams): promise<
-  JSON.t,
-> => {
+let handleNetworkError = (error, context: apiCallContext, params) => {
   let exceptionMessage = error->formatException
   logApi(
     ~optLogger=params.optLogger,
