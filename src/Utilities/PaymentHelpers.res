@@ -296,7 +296,7 @@ let intentCall = async (
     redirectionFlags,
   }
 
-  let context = ApiContextHelper.createApiCallContext(uri)
+  let context = ApiResponseHandler.createApiCallContext(uri)
 
   logApi(
     ~optLogger,

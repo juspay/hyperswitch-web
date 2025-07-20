@@ -1,4 +1,3 @@
-// Type definitions for intent call processing
 open PaymentHelpersTypes
 
 type intentCallParams = {
@@ -30,22 +29,12 @@ type intentCallParams = {
   redirectionFlags: RecoilAtomTypes.redirectionFlags,
 }
 
-type intentCallResult =
-  | Success(JSON.t)
-  | Failure(string, string) // errorType, message
-  | Retry(intentCallParams)
-
 type apiCallContext = {
   eventName: HyperLoggerTypes.eventName,
   initEventName: HyperLoggerTypes.eventName,
   isConfirm: bool,
   isCompleteAuthorize: bool,
   isPostSessionTokens: bool,
-}
-
-type voucherDetails = {
-  download_url: string,
-  reference: string,
 }
 
 type nextActionType =
@@ -55,13 +44,7 @@ type nextActionType =
   | QrCodeInformation(string, string, string, float) // qrData, displayText, borderColor, expiryTime
   | ThreeDsInvoke(Dict.t<JSON.t>)
   | InvokeHiddenIframe(Dict.t<JSON.t>)
-  | DisplayVoucherInfo(voucherDetails)
+  | DisplayVoucherInfo(PaymentConfirmTypes.voucherDetails)
   | ThirdPartySdkSessionToken(Dict.t<JSON.t>)
   | InvokeSdkClient(JSON.t)
   | Unknown(string)
-
-type retryConfig = {
-  maxRetries: int,
-  currentRetry: int,
-  retryDelay: int,
-}

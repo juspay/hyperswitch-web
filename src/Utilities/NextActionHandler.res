@@ -1,12 +1,22 @@
 open Utils
-open PaymentHelpersTypes
 open LoggerUtils
 open Identity
+open Promise
+open PaymentConfirmTypes
 open IntentCallTypes
-open ApiContextHelper
+open URLModule
 
-// Parse next action from intent
-let parseNextAction = (intent: PaymentConfirmTypes.intent): nextActionType => {
+let getPaymentMethodFromParams = params => {
+  switch params.paymentType {
+  | Card => "CARD"
+  | Gpay => "GOOGLE_PAY"
+  | Applepay => "APPLE_PAY"
+  | Paypal => "PAYPAL"
+  | _ => "OTHER"
+  }
+}
+
+let parseNextAction = intent => {
   switch intent.nextAction.type_ {
   | "redirect_to_url" => RedirectToUrl(intent.nextAction.redirectToUrl)
   | "redirect_inside_popup" =>
@@ -35,7 +45,7 @@ let parseNextAction = (intent: PaymentConfirmTypes.intent): nextActionType => {
       InvokeHiddenIframe(iframeData)
     }
   | "display_voucher_information" => {
-      let voucherData: voucherDetails = switch intent.nextAction.voucher_details {
+      let voucherData = switch intent.nextAction.voucher_details {
       | Some(details) => {
           download_url: details.download_url,
           reference: details.reference,
@@ -62,9 +72,7 @@ let parseNextAction = (intent: PaymentConfirmTypes.intent): nextActionType => {
   }
 }
 
-// Handle redirect to URL
-let handleRedirectToUrl = (url: string, params: intentCallParams): promise<JSON.t> => {
-  open Promise
+let handleRedirectToUrl = (url, params) => {
   let paymentMethod = switch params.paymentType {
   | Card => "CARD"
   | _ => ""
@@ -84,13 +92,7 @@ let handleRedirectToUrl = (url: string, params: intentCallParams): promise<JSON.
   resolve(JSON.Encode.null)
 }
 
-// Handle redirect inside popup
-let handleRedirectInsidePopup = (
-  popupUrl: string,
-  redirectResponseUrl: string,
-  params: intentCallParams,
-): promise<JSON.t> => {
-  open Promise
+let handleRedirectInsidePopup = (popupUrl, redirectResponseUrl, params) => {
   let paymentMethod = switch params.paymentType {
   | Card => "CARD"
   | _ => ""
@@ -118,14 +120,7 @@ let handleRedirectInsidePopup = (
   resolve(JSON.Encode.null)
 }
 
-// Handle display bank transfer information
-let handleDisplayBankTransferInfo = (
-  bankTransferDetails: option<JSON.t>,
-  params: intentCallParams,
-  data: JSON.t,
-  url: URLModule.url,
-): promise<JSON.t> => {
-  open Promise
+let handleDisplayBankTransferInfo = (bankTransferDetails, params, data, url) => {
   let paymentMethod = switch params.paymentType {
   | Card => "CARD"
   | _ => ""
@@ -167,17 +162,7 @@ let handleDisplayBankTransferInfo = (
   resolve(data)
 }
 
-// Handle QR code information
-let handleQrCodeInformation = (
-  qrData: string,
-  displayText: string,
-  borderColor: string,
-  expiryTime: float,
-  params: intentCallParams,
-  data: JSON.t,
-  url: URLModule.url,
-): promise<JSON.t> => {
-  open Promise
+let handleQrCodeInformation = (qrData, displayText, borderColor, expiryTime, params, data, url) => {
   let paymentMethod = switch params.paymentType {
   | Card => "CARD"
   | _ => ""
@@ -218,13 +203,7 @@ let handleQrCodeInformation = (
   resolve(data)
 }
 
-// Handle 3DS invocation
-let handleThreeDsInvoke = (
-  threeDsData: Dict.t<JSON.t>,
-  params: intentCallParams,
-  url: URLModule.url,
-): promise<JSON.t> => {
-  open Promise
+let handleThreeDsInvoke = (threeDsData, params, url) => {
   let paymentMethod = switch params.paymentType {
   | Card => "CARD"
   | _ => ""
@@ -279,13 +258,7 @@ let handleThreeDsInvoke = (
   resolve(JSON.Encode.null)
 }
 
-// Handle hidden iframe invocation
-let handleInvokeHiddenIframe = (
-  iframeData: Dict.t<JSON.t>,
-  params: intentCallParams,
-  url: URLModule.url,
-): promise<JSON.t> => {
-  open Promise
+let handleInvokeHiddenIframe = (iframeData, params, url) => {
   let headerObj = Dict.make()
   mergeHeadersIntoDict(~dict=headerObj, ~headers=params.headers)
 
@@ -310,14 +283,7 @@ let handleInvokeHiddenIframe = (
   resolve(JSON.Encode.null)
 }
 
-// Handle voucher information display
-let handleDisplayVoucherInfo = (
-  voucherData: voucherDetails,
-  params: intentCallParams,
-  data: JSON.t,
-  url: URLModule.url,
-): promise<JSON.t> => {
-  open Promise
+let handleDisplayVoucherInfo = (voucherData, params, data, url) => {
   let paymentMethod = switch params.paymentType {
   | Card => "CARD"
   | _ => ""
@@ -347,13 +313,7 @@ let handleDisplayVoucherInfo = (
   resolve(JSON.Encode.null)
 }
 
-// Handle third party SDK session token
-let handleThirdPartySdkSessionToken = (
-  sessionToken: Dict.t<JSON.t>,
-  params: intentCallParams,
-  data: JSON.t,
-): promise<JSON.t> => {
-  open Promise
+let handleThirdPartySdkSessionToken = (sessionToken, params, data) => {
   let walletName = sessionToken->getString("wallet_name", "")
 
   let message = switch walletName {
@@ -392,11 +352,7 @@ let handleThirdPartySdkSessionToken = (
   resolve(data)
 }
 
-// Handle SDK client invocation
-let handleInvokeSdkClient = (nextActionData: JSON.t, intent: PaymentConfirmTypes.intent): promise<
-  JSON.t,
-> => {
-  open Promise
+let handleInvokeSdkClient = (nextActionData, intent) => {
   let response =
     [
       ("orderId", intent.connectorTransactionId->JSON.Encode.string),
@@ -406,13 +362,7 @@ let handleInvokeSdkClient = (nextActionData: JSON.t, intent: PaymentConfirmTypes
   resolve(response)
 }
 
-// Main next action dispatcher
-let handleNextAction = (
-  intent: PaymentConfirmTypes.intent,
-  params: intentCallParams,
-  data: JSON.t,
-  url: URLModule.url,
-): promise<JSON.t> => {
+let handleNextAction = (intent, params, data, url) => {
   let nextAction = parseNextAction(intent)
 
   switch nextAction {
@@ -429,7 +379,6 @@ let handleNextAction = (
     handleThirdPartySdkSessionToken(sessionToken, params, data)
   | InvokeSdkClient(nextActionData) => handleInvokeSdkClient(nextActionData, intent)
   | Unknown(actionType) => {
-      // Handle unknown action types
       if !params.isPaymentSession {
         postFailedSubmitResponse(
           ~errortype="confirm_payment_failed",

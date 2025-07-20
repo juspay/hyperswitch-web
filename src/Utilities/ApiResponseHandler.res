@@ -3,9 +3,40 @@ open PaymentHelpersTypes
 open LoggerUtils
 open IntentCallTypes
 open URLModule
-open ApiContextHelper
 open PaymentConfirmTypes
 open Promise
+open HyperLoggerTypes
+
+let createApiCallContext = uri => {
+  let isConfirm = uri->String.includes("/confirm")
+  let isCompleteAuthorize = uri->String.includes("/complete_authorize")
+  let isPostSessionTokens = uri->String.includes("/post_session_tokens")
+
+  let (eventName, initEventName) = switch (isConfirm, isCompleteAuthorize, isPostSessionTokens) {
+  | (true, _, _) => (CONFIRM_CALL, CONFIRM_CALL_INIT)
+  | (_, true, _) => (COMPLETE_AUTHORIZE_CALL, COMPLETE_AUTHORIZE_CALL_INIT)
+  | (_, _, true) => (POST_SESSION_TOKENS_CALL, POST_SESSION_TOKENS_CALL_INIT)
+  | _ => (RETRIEVE_CALL, RETRIEVE_CALL_INIT)
+  }
+
+  {
+    eventName,
+    initEventName,
+    isConfirm,
+    isCompleteAuthorize,
+    isPostSessionTokens,
+  }
+}
+
+let getPaymentMethodFromParams = (params: intentCallParams): string => {
+  switch params.paymentType {
+  | Card => "CARD"
+  | Gpay => "GOOGLE_PAY"
+  | Applepay => "APPLE_PAY"
+  | Paypal => "PAYPAL"
+  | _ => "OTHER"
+  }
+}
 
 let handleOpenUrl = (url, isPaymentSession, redirectionFlags) => {
   if isPaymentSession {
@@ -20,7 +51,7 @@ let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->J
 let handleProcessingStatusDefault = (intent, params: intentCallParams, data) => {
   let url = makeUrl(params.confirmParam.return_url)
   url.searchParams.set("payment_intent_client_secret", params.clientSecret)
-  url.searchParams.set("payment_id", params.clientSecret->Utils.getPaymentId)
+  url.searchParams.set("payment_id", params.clientSecret->getPaymentId)
   url.searchParams.set("status", intent.status)
 
   switch (params.paymentType, params.sdkHandleOneClickConfirmPayment) {
@@ -120,7 +151,7 @@ let processSuccessResponse = (
 
   let url = makeUrl(params.confirmParam.return_url)
   url.searchParams.set("payment_intent_client_secret", clientSecret)
-  url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
+  url.searchParams.set("payment_id", clientSecret->getPaymentId)
   url.searchParams.set("status", intent.status)
 
   if intent.status == "requires_customer_action" {
@@ -217,7 +248,7 @@ let handleApiError = (
     let url = makeUrl(confirmParam.return_url)
     url.searchParams.set("payment_intent_client_secret", clientSecret)
     url.searchParams.set("status", "failed")
-    url.searchParams.set("payment_id", clientSecret->Utils.getPaymentId)
+    url.searchParams.set("payment_id", clientSecret->getPaymentId)
 
     handleOpenUrl(url.href, isPaymentSession, redirectionFlags)
     resolve(JSON.Encode.null)
@@ -256,7 +287,7 @@ let handleNetworkError = (error: exn, context: apiCallContext, params: intentCal
       let url = makeUrl(params.confirmParam.return_url)
       url.searchParams.set("payment_intent_client_secret", params.clientSecret)
       url.searchParams.set("status", "failed")
-      url.searchParams.set("payment_id", params.clientSecret->Utils.getPaymentId)
+      url.searchParams.set("payment_id", params.clientSecret->getPaymentId)
 
       handleOpenUrl(url.href, params.isPaymentSession, params.redirectionFlags)
       resolve(JSON.Encode.null)
