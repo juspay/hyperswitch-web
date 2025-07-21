@@ -116,7 +116,10 @@ let usePaymentMethodTypeFromListV2 = (~paymentsListValueV2, ~paymentMethod, ~pay
   }, (paymentsListValueV2, paymentMethod, paymentMethodType))
 }
 
-let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManagement) => {
+let buildFromPaymentListV2 = (
+  plist: UnifiedPaymentsTypesV2.paymentMethodsManagement,
+  ~localeString,
+) => {
   open PaymentMethodsRecord
   let paymentMethodArr = plist.paymentMethodsEnabled
 
@@ -128,7 +131,11 @@ let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManage
     // TODO - Handle Payment Experience
     {
       paymentMethodName,
-      fields: getPaymentMethodFields(paymentMethodName, paymentMethodObject.requiredFields),
+      fields: getPaymentMethodFields(
+        ~localeString,
+        paymentMethodName,
+        paymentMethodObject.requiredFields,
+      ),
       paymentFlow: [],
       handleUserError,
       methodType,
