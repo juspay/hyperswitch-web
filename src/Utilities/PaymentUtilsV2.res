@@ -1,6 +1,6 @@
 open UnifiedPaymentsTypesV2
 
-let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) => {
+let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement, ~showPaypal) => {
   let walletsList = []
   let walletToBeDisplayedInTabs = [
     "mb_way",
@@ -19,12 +19,12 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
     "mifinity",
   ]
   let otherPaymentList = []
-
+  // TODO - Paypal Redirect Tabs Flow
   paymentMethodListValue.paymentMethodsEnabled->Array.forEach(item => {
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodType) {
       otherPaymentList->Array.push(item.paymentMethodType)->ignore
     } else if item.paymentMethodType == "wallet" {
-      if item.paymentMethodSubtype !== "paypal" {
+      if item.paymentMethodSubtype !== "paypal" || showPaypal {
         walletsList->Array.push(item.paymentMethodSubtype)->ignore
       }
     } else if item.paymentMethodType == "bank_redirect" {
@@ -46,12 +46,15 @@ let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mo
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let paymentsList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
+  let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let showPaypal = optionAtomValue.wallets.payPal === Auto
 
   let resolvePaymentList = list => {
     switch list {
     | LoadedV2(paymentlist) =>
       let {walletsList, otherPaymentList} = paymentListLookupNew(
         ~paymentMethodListValue=paymentlist,
+        ~showPaypal,
       )
       let wallets = walletsList->removeDuplicate->Utils.getWalletPaymentMethod(paymentType)
       let payments = [...paymentOptions, ...otherPaymentList]->removeDuplicate
