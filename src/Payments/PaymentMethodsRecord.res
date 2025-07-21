@@ -48,6 +48,7 @@ type paymentMethodsFields =
   | IBAN
   | DestinationBankAccountId
   | SourceBankAccountId
+  | BSBNumber
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
   switch paymentMethodField {
@@ -643,6 +644,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_iban", _) => BankAccountNumber
   | ("user_destination_bank_account_id", _) => DestinationBankAccountId
   | ("user_source_bank_account_id", _) => SourceBankAccountId
+  | ("user_bsb_number", _) => BSBNumber
   | _ => None
   }
 }

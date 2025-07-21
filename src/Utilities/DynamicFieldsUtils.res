@@ -25,6 +25,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "walley",
   "ach",
   "bacs",
+  "becs",
   "pay_bright",
   "multibanco_transfer",
   "paypal",
@@ -212,6 +213,7 @@ let useRequiredFieldsEmptyAndValid = (
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
   let destinationBankAccountId = Recoil.useRecoilValueFromAtom(destinationBankAccountId)
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
+  let bsbNumber = Recoil.useRecoilValueFromAtom(bsbNumber)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
 
@@ -261,6 +263,7 @@ let useRequiredFieldsEmptyAndValid = (
         bankAccountNumber.value !== ""
       | DestinationBankAccountId => destinationBankAccountId.value !== ""
       | SourceBankAccountId => sourceBankAccountId.value !== ""
+      | BSBNumber => bsbNumber.value !== "" && bsbNumber.value->Utils.cleanBSB->String.length === 6
       | _ => true
       }
     })
@@ -314,6 +317,7 @@ let useRequiredFieldsEmptyAndValid = (
         bankAccountNumber.value === ""
       | DestinationBankAccountId => destinationBankAccountId.value === ""
       | SourceBankAccountId => sourceBankAccountId.value === ""
+      | BSBNumber => bsbNumber.value === ""
       | _ => false
       }
     })
@@ -348,6 +352,7 @@ let useRequiredFieldsEmptyAndValid = (
     bankAccountNumber,
     destinationBankAccountId.value,
     sourceBankAccountId.value,
+    bsbNumber.value,
     cryptoCurrencyNetworks,
   ))
 
@@ -393,6 +398,7 @@ let useSetInitialRequiredFields = (
     destinationBankAccountId,
   )
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
+  let (bsbNumber, setBsbNumber) = Recoil.useRecoilState(bsbNumber)
 
   React.useEffect(() => {
     let getNameValue = (item: PaymentMethodsRecord.required_fields) => {
@@ -524,6 +530,7 @@ let useSetInitialRequiredFields = (
         setFields(setDestinationBankAccountId, destinationBankAccountId, requiredField, false)
       | SourceBankAccountId =>
         setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
+      | BSBNumber => setFields(setBsbNumber, bsbNumber, requiredField, false)
       | LanguagePreference(_)
       | SpecialField(_)
       | InfoElement
@@ -582,6 +589,7 @@ let useRequiredFieldsBody = (
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
   let destinationBankAccountId = Recoil.useRecoilValueFromAtom(destinationBankAccountId)
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
+  let bsbNumber = Recoil.useRecoilValueFromAtom(bsbNumber)
   let countryCode = Utils.getCountryCode(country).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
 
@@ -642,6 +650,7 @@ let useRequiredFieldsBody = (
       bankAccountNumber.value
     | DestinationBankAccountId => destinationBankAccountId.value
     | SourceBankAccountId => sourceBankAccountId.value
+    | BSBNumber => bsbNumber.value
     | StateAndCity
     | CountryAndPincode(_)
     | SpecialField(_)
@@ -745,6 +754,7 @@ let useRequiredFieldsBody = (
     bankAccountNumber,
     destinationBankAccountId,
     sourceBankAccountId,
+    bsbNumber,
   ))
 }
 
@@ -767,6 +777,7 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | IBAN
   | DestinationBankAccountId
   | SourceBankAccountId
+  | BSBNumber
   | BankAccountNumber => true
   | _ => false
   }

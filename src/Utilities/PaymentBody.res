@@ -502,9 +502,9 @@ let gpayRedirectBody = (~connectors: array<string>) => [
 ]
 
 let gPayThirdPartySdkBody = (~connectors) => [
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  ("payment_method", "wallet"->JSON.Encode.string),
-  ("payment_method_type", "google_pay"->JSON.Encode.string),
+  // ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
+  ("payment_method_type", "wallet"->JSON.Encode.string),
+  ("payment_method_subtype", "google_pay"->JSON.Encode.string),
   (
     "payment_method_data",
     [
@@ -980,7 +980,7 @@ let appendRedirectPaymentMethods = [
   "revolut_pay",
 ]
 
-let appendBankeDebitMethods = ["sepa"]
+let appendBankeDebitMethods = ["sepa", "becs"]
 let appendBankTransferMethods = ["ach", "bacs", "multibanco"]
 
 let getPaymentMethodSuffix = (~paymentMethodType, ~paymentMethod, ~isQrPaymentMethod) => {
