@@ -156,6 +156,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix-sleutel`,
   destinationBankAccountIdEmptyText: `Bestemmings bankrekeningnummer mag niet leeg zijn`,
   sourceBankAccountIdEmptyText: `Bron bankrekeningnummer mag niet leeg zijn`,
+  bsbNumberEmptyText: `BSB-nummer mag niet leeg zijn`,
+  bsbNumberInvalidText: `Ongeldig BSB-nummer`,
   invalidCardHolderNameError: `De naam van de kaarthouder mag geen cijfers bevatten`,
   invalidNickNameError: `De bijnaam mag niet meer dan 2 cijfers bevatten`,
   expiry: `vervaldatum`,

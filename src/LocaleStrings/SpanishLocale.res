@@ -157,6 +157,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Clave Pix`,
   destinationBankAccountIdEmptyText: `El ID de la cuenta bancaria de destino no puede estar vacío`,
   sourceBankAccountIdEmptyText: `El ID de la cuenta bancaria de origen no puede estar vacío`,
+  bsbNumberEmptyText: `El número BSB no puede estar vacío`,
+  bsbNumberInvalidText: `Número BSB inválido`,
   invalidCardHolderNameError: `El nombre del titular de la tarjeta no puede contener dígitos`,
   invalidNickNameError: `El apodo no puede contener más de 2 dígitos`,
   expiry: `expiración`,

@@ -570,7 +570,7 @@ let make = (
                 setBsbNumber(_ => {
                   isValid: Some(value !== ""),
                   value: value->Utils.formatBSB,
-                  errorString: value !== "" ? "" : "BSB Number cannot be empty",
+                  errorString: value !== "" ? "" : localeString.bsbNumberEmptyText,
                 })
               }}
               onBlur={ev => {
@@ -581,10 +581,10 @@ let make = (
                   ...prev,
                   isValid: Some(isBsbValid),
                   errorString: isBsbEmpty
-                    ? "BSB Number cannot be empty"
+                    ? localeString.bsbNumberEmptyText
                     : isBsbValid
                     ? ""
-                    : "Invalid BSB Number",
+                    : localeString.bsbNumberInvalidText,
                 })
               }}
               type_="text"
