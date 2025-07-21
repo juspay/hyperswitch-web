@@ -1,13 +1,12 @@
 open Utils
 open PaymentHelpersTypes
-open LoggerUtils
 open IntentCallTypes
 open URLModule
 open PaymentConfirmTypes
 open Promise
-open HyperLoggerTypes
 
 let createApiCallContext = uri => {
+  open HyperLoggerTypes
   let isConfirm = uri->String.includes("/confirm")
   let isCompleteAuthorize = uri->String.includes("/complete_authorize")
   let isPostSessionTokens = uri->String.includes("/post_session_tokens")
@@ -48,6 +47,23 @@ let handleOpenUrl = (url, isPaymentSession, redirectionFlags) => {
 
 let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
 
+let handleFailureRedirection = (params, errorType, message) => {
+  let {handleUserError, confirmParam, clientSecret, isPaymentSession, redirectionFlags} = params
+
+  if handleUserError {
+    let url = makeUrl(confirmParam.return_url)
+    url.searchParams.set("payment_intent_client_secret", clientSecret)
+    url.searchParams.set("status", "failed")
+    url.searchParams.set("payment_id", clientSecret->getPaymentId)
+
+    handleOpenUrl(url.href, isPaymentSession, redirectionFlags)
+    resolve(JSON.Encode.null)
+  } else {
+    let failedSubmitResponse = getFailedSubmitResponse(~errorType, ~message)
+    resolve(failedSubmitResponse)
+  }
+}
+
 let handleProcessingStatusDefault = (intent, params, data) => {
   let url = makeUrl(params.confirmParam.return_url)
   url.searchParams.set("payment_intent_client_secret", params.clientSecret)
@@ -66,16 +82,12 @@ let handleProcessingStatusDefault = (intent, params, data) => {
         closePaymentLoaderIfAny()
       }
       postSubmitResponse(~jsonData=data, ~url=url.href)
-      resolve(data)
     } else if params.confirmParam.redirect === Some("always") {
       if params.isCallbackUsedVal->Option.getOr(false) {
         handleOnCompleteDoThisMessage()
       } else {
         handleOpenUrl(url.href, params.isPaymentSession, params.redirectionFlags)
       }
-      resolve(data)
-    } else {
-      resolve(data)
     }
   | _ =>
     if params.isCallbackUsedVal->Option.getOr(false) {
@@ -84,8 +96,8 @@ let handleProcessingStatusDefault = (intent, params, data) => {
     } else {
       handleOpenUrl(url.href, params.isPaymentSession, params.redirectionFlags)
     }
-    resolve(data)
   }
+  resolve(data)
 }
 
 let handleFinalStatus = (intent, params, data, paymentMethod) => {
@@ -93,9 +105,19 @@ let handleFinalStatus = (intent, params, data, paymentMethod) => {
 
   switch intent.status {
   | "succeeded" =>
-    handleLogging(~optLogger, ~value=intent.status, ~eventName=PAYMENT_SUCCESS, ~paymentMethod)
+    LoggerUtils.handleLogging(
+      ~optLogger,
+      ~value=intent.status,
+      ~eventName=PAYMENT_SUCCESS,
+      ~paymentMethod,
+    )
   | "failed" =>
-    handleLogging(~optLogger, ~value=intent.status, ~eventName=PAYMENT_FAILED, ~paymentMethod)
+    LoggerUtils.handleLogging(
+      ~optLogger,
+      ~value=intent.status,
+      ~eventName=PAYMENT_FAILED,
+      ~paymentMethod,
+    )
     setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
   | _ => ()
   }
@@ -105,10 +127,7 @@ let handleFinalStatus = (intent, params, data, paymentMethod) => {
 
 let handleProcessingStatus = (intent, params, data, _paymentMethod) => {
   if intent.nextAction.type_ == "third_party_sdk_session_token" {
-    let sessionToken = switch intent.nextAction.session_token {
-    | Some(token) => token->getDictFromJson
-    | None => Dict.make()
-    }
+    let sessionToken = intent.nextAction.session_token->Option.mapOr(Dict.make(), getDictFromJson)
     let walletName = sessionToken->getString("wallet_name", "")
     let message = switch walletName {
     | "apple_pay" => [
@@ -131,7 +150,7 @@ let handleProcessingStatus = (intent, params, data, _paymentMethod) => {
 let processSuccessResponse = (data, context: apiCallContext, params, statusCode) => {
   let {eventName} = context
   let {optLogger, isPaymentSession, clientSecret} = params
-  logApi(
+  LoggerUtils.logApi(
     ~optLogger,
     ~url=params.uri,
     ~statusCode,
@@ -148,9 +167,9 @@ let processSuccessResponse = (data, context: apiCallContext, params, statusCode)
   url.searchParams.set("payment_id", clientSecret->getPaymentId)
   url.searchParams.set("status", intent.status)
 
-  if intent.status == "requires_customer_action" {
-    NextActionHandler.handleNextAction(intent, params, data, url)
-  } else if intent.status == "requires_payment_method" {
+  switch intent.status {
+  | "requires_customer_action" => NextActionHandler.handleNextAction(intent, params, data, url)
+  | "requires_payment_method" =>
     if intent.nextAction.type_ === "invoke_sdk_client" {
       let nextActionData = intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
       let response =
@@ -162,49 +181,35 @@ let processSuccessResponse = (data, context: apiCallContext, params, statusCode)
     } else {
       resolve(data)
     }
-  } else if intent.status == "processing" {
-    handleProcessingStatus(intent, params, data, paymentMethod)
-  } else if intent.status != "" {
-    handleFinalStatus(intent, params, data, paymentMethod)
-  } else if !isPaymentSession {
-    postFailedSubmitResponse(
-      ~errortype="confirm_payment_failed",
-      ~message="Payment failed. Try again!",
-    )
-    resolve(data)
-  } else {
-    let failedSubmitResponse = getFailedSubmitResponse(
-      ~errorType="confirm_payment_failed",
-      ~message="Payment failed. Try again!",
-    )
-    resolve(failedSubmitResponse)
+  | "processing" => handleProcessingStatus(intent, params, data, paymentMethod)
+  | "" =>
+    if !isPaymentSession {
+      postFailedSubmitResponse(
+        ~errortype="confirm_payment_failed",
+        ~message="Payment failed. Try again!",
+      )
+      resolve(data)
+    } else {
+      handleFailureRedirection(params, "confirm_payment_failed", "Payment failed. Try again!")
+    }
+  | _ => handleFinalStatus(intent, params, data, paymentMethod)
   }
 }
 
 let handleApiError = (errorData, context: apiCallContext, params, statusCode) => {
   let {isConfirm, eventName} = context
-  let {
-    paymentType,
-    optLogger,
-    isPaymentSession,
-    bodyStr,
-    uri,
-    handleUserError,
-    confirmParam,
-    clientSecret,
-    redirectionFlags,
-  } = params
+  let {paymentType, optLogger, isPaymentSession, bodyStr, uri} = params
 
   if isConfirm {
     let paymentMethod = switch paymentType {
-    | Card => "CARD"
+    | Card | Gpay | Applepay | Paypal => getPaymentMethodFromParams(params)
     | _ =>
       bodyStr
       ->safeParse
       ->getDictFromJson
       ->getString("payment_method_type", "")
     }
-    handleLogging(
+    LoggerUtils.handleLogging(
       ~optLogger,
       ~value=errorData->JSON.stringify,
       ~eventName=PAYMENT_FAILED,
@@ -212,7 +217,7 @@ let handleApiError = (errorData, context: apiCallContext, params, statusCode) =>
     )
   }
 
-  logApi(
+  LoggerUtils.logApi(
     ~optLogger,
     ~url=uri,
     ~data=errorData,
@@ -232,29 +237,15 @@ let handleApiError = (errorData, context: apiCallContext, params, statusCode) =>
     postFailedSubmitResponse(~errortype=errorObj.error.type_, ~message=errorObj.error.message)
   }
 
-  if handleUserError {
-    let url = makeUrl(confirmParam.return_url)
-    url.searchParams.set("payment_intent_client_secret", clientSecret)
-    url.searchParams.set("status", "failed")
-    url.searchParams.set("payment_id", clientSecret->getPaymentId)
-
-    handleOpenUrl(url.href, isPaymentSession, redirectionFlags)
-    resolve(JSON.Encode.null)
-  } else {
-    let failedSubmitResponse = getFailedSubmitResponse(
-      ~errorType=errorObj.error.type_,
-      ~message=errorObj.error.message,
-    )
-    resolve(failedSubmitResponse)
-  }
+  handleFailureRedirection(params, errorObj.error.type_, errorObj.error.message)
 }
 
 let handleNetworkError = (error, context: apiCallContext, params) => {
   let exceptionMessage = error->formatException
-  logApi(
-    ~optLogger=params.optLogger,
-    ~url=params.uri,
-    ~statusCode=0,
+  let {optLogger, uri} = params
+  LoggerUtils.logApi(
+    ~optLogger,
+    ~url=uri,
     ~apiLogType=NoResponse,
     ~data=exceptionMessage,
     ~eventName=context.eventName,
@@ -269,21 +260,7 @@ let handleNetworkError = (error, context: apiCallContext, params) => {
       postFailedSubmitResponse(~errortype="server_error", ~message="Something went wrong")
     }
 
-    if params.handleUserError {
-      let url = makeUrl(params.confirmParam.return_url)
-      url.searchParams.set("payment_intent_client_secret", params.clientSecret)
-      url.searchParams.set("status", "failed")
-      url.searchParams.set("payment_id", params.clientSecret->getPaymentId)
-
-      handleOpenUrl(url.href, params.isPaymentSession, params.redirectionFlags)
-      resolve(JSON.Encode.null)
-    } else {
-      let failedSubmitResponse = getFailedSubmitResponse(
-        ~errorType="server_error",
-        ~message="Something went wrong",
-      )
-      resolve(failedSubmitResponse)
-    }
+    handleFailureRedirection(params, "server_error", "Something went wrong")
   } else {
     // Retry with retrieve call
     // This would need to call the main intentCall function recursively

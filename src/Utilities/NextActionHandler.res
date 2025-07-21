@@ -58,10 +58,7 @@ let parseNextAction = intent => {
       DisplayVoucherInfo(voucherData)
     }
   | "third_party_sdk_session_token" => {
-      let sessionToken = switch intent.nextAction.session_token {
-      | Some(token) => token->getDictFromJson
-      | None => Dict.make()
-      }
+      let sessionToken = intent.nextAction.session_token->Option.mapOr(Dict.make(), getDictFromJson)
       ThirdPartySdkSessionToken(sessionToken)
     }
   | "invoke_sdk_client" => {
