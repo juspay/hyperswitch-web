@@ -5,6 +5,16 @@ open URLModule
 open PaymentConfirmTypes
 open Promise
 
+let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
+
+let handleOpenUrl = (url, isPaymentSession, redirectionFlags) => {
+  if isPaymentSession {
+    replaceRootHref(url, redirectionFlags)
+  } else {
+    openUrl(url)
+  }
+}
+
 let createApiCallContext = uri => {
   open HyperLoggerTypes
   let isConfirm = uri->String.includes("/confirm")
@@ -27,26 +37,6 @@ let createApiCallContext = uri => {
   }
 }
 
-let getPaymentMethodFromParams = params => {
-  switch params.paymentType {
-  | Card => "CARD"
-  | Gpay => "GOOGLE_PAY"
-  | Applepay => "APPLE_PAY"
-  | Paypal => "PAYPAL"
-  | _ => "OTHER"
-  }
-}
-
-let handleOpenUrl = (url, isPaymentSession, redirectionFlags) => {
-  if isPaymentSession {
-    replaceRootHref(url, redirectionFlags)
-  } else {
-    openUrl(url)
-  }
-}
-
-let closePaymentLoaderIfAny = () => messageParentWindow([("fullscreen", false->JSON.Encode.bool)])
-
 let handleFailureRedirection = (params, errorType, message) => {
   let {handleUserError, confirmParam, clientSecret, isPaymentSession, redirectionFlags} = params
 
@@ -64,7 +54,7 @@ let handleFailureRedirection = (params, errorType, message) => {
   }
 }
 
-let handleProcessingStatusDefault = (params, data, url) => {
+let handleStatusDefault = (params, data, url) => {
   switch (params.paymentType, params.sdkHandleOneClickConfirmPayment) {
   | (Card, _)
   | (Gpay, false)
@@ -113,7 +103,7 @@ let handleProcessingStatus = (intent, params, data, _paymentMethod, url) => {
     }
     resolve(data)
   } else {
-    handleProcessingStatusDefault(params, data, url)
+    handleStatusDefault(params, data, url)
   }
 }
 
@@ -131,7 +121,7 @@ let handleRequiresPaymentMethod = (intent, data) => {
   }
 }
 
-let handleSucceededStatus = (intent, params, paymentMethod) => {
+let handleSucceededStatus = (intent, params, paymentMethod, data, url) => {
   let {optLogger} = params
   LoggerUtils.handleLogging(
     ~optLogger,
@@ -139,9 +129,10 @@ let handleSucceededStatus = (intent, params, paymentMethod) => {
     ~eventName=PAYMENT_SUCCESS,
     ~paymentMethod,
   )
+  handleStatusDefault(params, data, url)
 }
 
-let handleFailedStatus = (intent, params, paymentMethod) => {
+let handleFailedStatus = (intent, params, paymentMethod, data, url) => {
   let {optLogger, setIsManualRetryEnabled} = params
   LoggerUtils.handleLogging(
     ~optLogger,
@@ -150,6 +141,7 @@ let handleFailedStatus = (intent, params, paymentMethod) => {
     ~paymentMethod,
   )
   setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
+  handleStatusDefault(params, data, url)
 }
 
 let handleEmptyStatus = (params, data) => {
@@ -161,13 +153,17 @@ let handleEmptyStatus = (params, data) => {
     )
     resolve(data)
   } else {
-    handleFailureRedirection(params, "confirm_payment_failed", "Payment failed. Try again!")
+    let failedSubmitResponse = getFailedSubmitResponse(
+      ~errorType="confirm_payment_failed",
+      ~message="Payment failed. Try again!",
+    )
+    resolve(failedSubmitResponse)
   }
 }
 
 let processSuccessResponse = (data, context: apiCallContext, params, statusCode) => {
   let {eventName} = context
-  let {optLogger, isPaymentSession, clientSecret} = params
+  let {optLogger, isPaymentSession, clientSecret, paymentType} = params
   LoggerUtils.logApi(
     ~optLogger,
     ~url=params.uri,
@@ -178,7 +174,10 @@ let processSuccessResponse = (data, context: apiCallContext, params, statusCode)
   )
 
   let intent = itemToObjMapper(data->getDictFromJson)
-  let paymentMethod = getPaymentMethodFromParams(params)
+  let paymentMethod = switch paymentType {
+  | Card => "CARD"
+  | _ => intent.payment_method_type
+  }
 
   let url = makeUrl(params.confirmParam.return_url)
   url.searchParams.set("payment_intent_client_secret", clientSecret)
@@ -189,14 +188,10 @@ let processSuccessResponse = (data, context: apiCallContext, params, statusCode)
   | "requires_customer_action" => NextActionHandler.handleNextAction(intent, params, data, url)
   | "requires_payment_method" => handleRequiresPaymentMethod(intent, data)
   | "processing" => handleProcessingStatus(intent, params, data, paymentMethod, url)
+  | "succeeded" => handleSucceededStatus(intent, params, paymentMethod, data, url)
+  | "failed" => handleFailedStatus(intent, params, paymentMethod, data, url)
   | "" => handleEmptyStatus(params, data)
-  | otherStatus =>
-    switch otherStatus {
-    | "succeeded" => handleSucceededStatus(intent, params, paymentMethod)
-    | "failed" => handleFailedStatus(intent, params, paymentMethod)
-    | _ => ()
-    }
-    handleProcessingStatusDefault(params, data, url)
+  | _ => handleStatusDefault(params, data, url)
   }
 }
 
@@ -206,7 +201,7 @@ let handleApiError = (errorData, context: apiCallContext, params, statusCode) =>
 
   if isConfirm {
     let paymentMethod = switch paymentType {
-    | Card | Gpay | Applepay | Paypal => getPaymentMethodFromParams(params)
+    | Card => "CARD"
     | _ =>
       bodyStr
       ->safeParse

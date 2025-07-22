@@ -316,6 +316,7 @@ let intentCall = async (
 
     let statusCode = res->Fetch.Response.status
     let dataJson = await res->Fetch.Response.json
+    messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
     if res->Fetch.Response.ok {
       await ApiResponseHandler.processSuccessResponse(dataJson, context, params, statusCode)
