@@ -107,20 +107,6 @@ let handleProcessingStatus = (intent, params, data, _paymentMethod, url) => {
   }
 }
 
-let handleRequiresPaymentMethod = (intent, data) => {
-  if intent.nextAction.type_ === "invoke_sdk_client" {
-    let nextActionData = intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
-    let response =
-      [
-        ("orderId", intent.connectorTransactionId->JSON.Encode.string),
-        ("nextActionData", nextActionData),
-      ]->getJsonFromArrayOfJson
-    resolve(response)
-  } else {
-    resolve(data)
-  }
-}
-
 let handleSucceededStatus = (intent, params, paymentMethod, data, url) => {
   let {optLogger} = params
   LoggerUtils.handleLogging(
@@ -158,6 +144,20 @@ let handleEmptyStatus = (params, data) => {
       ~message="Payment failed. Try again!",
     )
     resolve(failedSubmitResponse)
+  }
+}
+
+let handleRequiresPaymentMethod = (intent, data) => {
+  if intent.nextAction.type_ === "invoke_sdk_client" {
+    let nextActionData = intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
+    let response =
+      [
+        ("orderId", intent.connectorTransactionId->JSON.Encode.string),
+        ("nextActionData", nextActionData),
+      ]->getJsonFromArrayOfJson
+    resolve(response)
+  } else {
+    resolve(data)
   }
 }
 

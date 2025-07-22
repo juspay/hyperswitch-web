@@ -295,8 +295,8 @@ let intentCall = async (
     componentName,
     redirectionFlags,
   }
-
-  let context = ApiResponseHandler.createApiCallContext(uri)
+  open ApiResponseHandler
+  let context = createApiCallContext(uri)
 
   logApi(
     ~optLogger,
@@ -318,13 +318,12 @@ let intentCall = async (
     let dataJson = await res->Fetch.Response.json
     messageParentWindow([("confirmParams", confirmParam->anyTypeToJson)])
 
-    if res->Fetch.Response.ok {
-      await ApiResponseHandler.processSuccessResponse(dataJson, context, params, statusCode)
-    } else {
-      await ApiResponseHandler.handleApiError(dataJson, context, params, statusCode)
+    switch res->Fetch.Response.ok {
+    | true => await processSuccessResponse(dataJson, context, params, statusCode)
+    | false => await handleApiError(dataJson, context, params, statusCode)
     }
   } catch {
-  | err => await ApiResponseHandler.handleNetworkError(err, context, params)
+  | err => await handleNetworkError(err, context, params)
   }
 }
 
