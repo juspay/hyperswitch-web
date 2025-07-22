@@ -208,34 +208,13 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
           <SepaBankDebitLazy />
         </ReusableReactSuspense>
-      | Klarna
-      | Sofort
-      | AfterPay
-      | Affirm
-      | GiroPay
+
       | Ideal
-      | EPS
-      | CryptoCurrency
-      | ACHTransfer
-      | SepaTransfer
-      | InstantTransfer
-      | InstantTransferFinland
-      | InstantTransferPoland
-      | BacsTransfer
-      | ACHBankDebit
-      | BacsBankDebit
-      | BecsBankDebit
-      | BanContactCard
-      | ApplePay
-      | RevolutPay
-      | SamsungPay
-      | Boleto
-      | PayPal
-      | EFT
-      | Unknown =>
+      | EPS =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
         </ReusableReactSuspense>
+      | _ => React.null
       }}
     </ErrorBoundary>
   }
