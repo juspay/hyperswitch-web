@@ -29,7 +29,7 @@ let make = (~paymentMethodName: string) => {
     )
   let optionPaymentMethodDetailsV2 =
     listValue
-    ->PaymentUtilsV2.buildFromPaymentListV2
+    ->PaymentMethodsRecordV2.buildFromPaymentListV2
     ->Array.find(x =>
       x.paymentMethodName ===
         PaymentUtils.getPaymentMethodName(~paymentMethodType=x.methodType, ~paymentMethodName)

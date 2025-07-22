@@ -188,10 +188,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         | Hyperswitch => <CardIframeContainer />
         | None => <CardPayment cardProps expiryProps cvcProps />
         }
-      | Klarna =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="KlarnaPaymentLazy">
-          <KlarnaPaymentLazy />
-        </ReusableReactSuspense>
       | GooglePay =>
         <SessionPaymentWrapper type_={Wallet}>
           {switch gPayToken {
@@ -212,33 +208,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <ReusableReactSuspense loaderComponent={loader()} componentName="SepaBankDebitLazy">
           <SepaBankDebitLazy />
         </ReusableReactSuspense>
-      | Sofort
-      | AfterPay
-      | Affirm
-      | GiroPay
+      | Klarna =>
+        <ReusableReactSuspense loaderComponent={loader()} componentName="KlarnaPaymentLazy">
+          <KlarnaPaymentLazy />
+        </ReusableReactSuspense>
       | Ideal
-      | EPS
-      | CryptoCurrency
-      | ACHTransfer
-      | SepaTransfer
-      | InstantTransfer
-      | InstantTransferFinland
-      | InstantTransferPoland
-      | BacsTransfer
-      | ACHBankDebit
-      | BacsBankDebit
-      | BecsBankDebit
-      | BanContactCard
-      | ApplePay
-      | RevolutPay
-      | SamsungPay
-      | Boleto
-      | PayPal
-      | EFT
-      | Unknown =>
+      | EPS =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
         </ReusableReactSuspense>
+      | _ => React.null
       }}
     </ErrorBoundary>
   }
