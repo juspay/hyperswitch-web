@@ -36,15 +36,3 @@ type apiCallContext = {
   isCompleteAuthorize: bool,
   isPostSessionTokens: bool,
 }
-
-type nextActionType =
-  | RedirectToUrl(string)
-  | RedirectInsidePopup(string, string) // popupUrl, redirectResponseUrl
-  | DisplayBankTransferInfo(option<JSON.t>)
-  | QrCodeInformation(string, string, string, float) // qrData, displayText, borderColor, expiryTime
-  | ThreeDsInvoke(Dict.t<JSON.t>)
-  | InvokeHiddenIframe(Dict.t<JSON.t>)
-  | DisplayVoucherInfo(PaymentConfirmTypes.voucherDetails)
-  | ThirdPartySdkSessionToken(Dict.t<JSON.t>)
-  | InvokeSdkClient(JSON.t)
-  | Unknown(string)

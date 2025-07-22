@@ -64,12 +64,7 @@ let handleFailureRedirection = (params, errorType, message) => {
   }
 }
 
-let handleProcessingStatusDefault = (intent, params, data) => {
-  let url = makeUrl(params.confirmParam.return_url)
-  url.searchParams.set("payment_intent_client_secret", params.clientSecret)
-  url.searchParams.set("payment_id", params.clientSecret->getPaymentId)
-  url.searchParams.set("status", intent.status)
-
+let handleProcessingStatusDefault = (params, data, url) => {
   switch (params.paymentType, params.sdkHandleOneClickConfirmPayment) {
   | (Card, _)
   | (Gpay, false)
@@ -100,32 +95,7 @@ let handleProcessingStatusDefault = (intent, params, data) => {
   resolve(data)
 }
 
-let handleFinalStatus = (intent, params, data, paymentMethod) => {
-  let {optLogger, setIsManualRetryEnabled} = params
-
-  switch intent.status {
-  | "succeeded" =>
-    LoggerUtils.handleLogging(
-      ~optLogger,
-      ~value=intent.status,
-      ~eventName=PAYMENT_SUCCESS,
-      ~paymentMethod,
-    )
-  | "failed" =>
-    LoggerUtils.handleLogging(
-      ~optLogger,
-      ~value=intent.status,
-      ~eventName=PAYMENT_FAILED,
-      ~paymentMethod,
-    )
-    setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
-  | _ => ()
-  }
-
-  handleProcessingStatusDefault(intent, params, data)
-}
-
-let handleProcessingStatus = (intent, params, data, _paymentMethod) => {
+let handleProcessingStatus = (intent, params, data, _paymentMethod, url) => {
   if intent.nextAction.type_ == "third_party_sdk_session_token" {
     let sessionToken = intent.nextAction.session_token->Option.mapOr(Dict.make(), getDictFromJson)
     let walletName = sessionToken->getString("wallet_name", "")
@@ -143,7 +113,55 @@ let handleProcessingStatus = (intent, params, data, _paymentMethod) => {
     }
     resolve(data)
   } else {
-    handleProcessingStatusDefault(intent, params, data)
+    handleProcessingStatusDefault(params, data, url)
+  }
+}
+
+let handleRequiresPaymentMethod = (intent, data) => {
+  if intent.nextAction.type_ === "invoke_sdk_client" {
+    let nextActionData = intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
+    let response =
+      [
+        ("orderId", intent.connectorTransactionId->JSON.Encode.string),
+        ("nextActionData", nextActionData),
+      ]->getJsonFromArrayOfJson
+    resolve(response)
+  } else {
+    resolve(data)
+  }
+}
+
+let handleSucceededStatus = (intent, params, paymentMethod) => {
+  let {optLogger} = params
+  LoggerUtils.handleLogging(
+    ~optLogger,
+    ~value=intent.status,
+    ~eventName=PAYMENT_SUCCESS,
+    ~paymentMethod,
+  )
+}
+
+let handleFailedStatus = (intent, params, paymentMethod) => {
+  let {optLogger, setIsManualRetryEnabled} = params
+  LoggerUtils.handleLogging(
+    ~optLogger,
+    ~value=intent.status,
+    ~eventName=PAYMENT_FAILED,
+    ~paymentMethod,
+  )
+  setIsManualRetryEnabled(_ => intent.manualRetryAllowed)
+}
+
+let handleEmptyStatus = (params, data) => {
+  let {isPaymentSession} = params
+  if !isPaymentSession {
+    postFailedSubmitResponse(
+      ~errortype="confirm_payment_failed",
+      ~message="Payment failed. Try again!",
+    )
+    resolve(data)
+  } else {
+    handleFailureRedirection(params, "confirm_payment_failed", "Payment failed. Try again!")
   }
 }
 
@@ -169,30 +187,16 @@ let processSuccessResponse = (data, context: apiCallContext, params, statusCode)
 
   switch intent.status {
   | "requires_customer_action" => NextActionHandler.handleNextAction(intent, params, data, url)
-  | "requires_payment_method" =>
-    if intent.nextAction.type_ === "invoke_sdk_client" {
-      let nextActionData = intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
-      let response =
-        [
-          ("orderId", intent.connectorTransactionId->JSON.Encode.string),
-          ("nextActionData", nextActionData),
-        ]->getJsonFromArrayOfJson
-      resolve(response)
-    } else {
-      resolve(data)
+  | "requires_payment_method" => handleRequiresPaymentMethod(intent, data)
+  | "processing" => handleProcessingStatus(intent, params, data, paymentMethod, url)
+  | "" => handleEmptyStatus(params, data)
+  | otherStatus =>
+    switch otherStatus {
+    | "succeeded" => handleSucceededStatus(intent, params, paymentMethod)
+    | "failed" => handleFailedStatus(intent, params, paymentMethod)
+    | _ => ()
     }
-  | "processing" => handleProcessingStatus(intent, params, data, paymentMethod)
-  | "" =>
-    if !isPaymentSession {
-      postFailedSubmitResponse(
-        ~errortype="confirm_payment_failed",
-        ~message="Payment failed. Try again!",
-      )
-      resolve(data)
-    } else {
-      handleFailureRedirection(params, "confirm_payment_failed", "Payment failed. Try again!")
-    }
-  | _ => handleFinalStatus(intent, params, data, paymentMethod)
+    handleProcessingStatusDefault(params, data, url)
   }
 }
 

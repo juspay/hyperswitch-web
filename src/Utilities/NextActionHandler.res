@@ -6,75 +6,13 @@ open PaymentConfirmTypes
 open IntentCallTypes
 open URLModule
 
-let getPaymentMethodFromParams = params => {
+let getPaymentMethod = params =>
   switch params.paymentType {
-  | Card => "CARD"
-  | Gpay => "GOOGLE_PAY"
-  | Applepay => "APPLE_PAY"
-  | Paypal => "PAYPAL"
-  | _ => "OTHER"
-  }
-}
-
-let parseNextAction = intent => {
-  switch intent.nextAction.type_ {
-  | "redirect_to_url" => RedirectToUrl(intent.nextAction.redirectToUrl)
-  | "redirect_inside_popup" =>
-    RedirectInsidePopup(intent.nextAction.popupUrl, intent.nextAction.redirectResponseUrl)
-  | "display_bank_transfer_information" =>
-    DisplayBankTransferInfo(intent.nextAction.bank_transfer_steps_and_charges_details)
-  | "qr_code_information" => {
-      let qrData = intent.nextAction.image_data_url->Option.getOr("")
-      let displayText = intent.nextAction.display_text->Option.getOr("")
-      let borderColor = intent.nextAction.border_color->Option.getOr("")
-      let expiryTime = intent.nextAction.display_to_timestamp->Option.getOr(0.0)
-      QrCodeInformation(qrData, displayText, borderColor, expiryTime)
-    }
-  | "three_ds_invoke" => {
-      let threeDsData =
-        intent.nextAction.three_ds_data
-        ->Option.flatMap(JSON.Decode.object)
-        ->Option.getOr(Dict.make())
-      ThreeDsInvoke(threeDsData)
-    }
-  | "invoke_hidden_iframe" => {
-      let iframeData =
-        intent.nextAction.iframe_data
-        ->Option.flatMap(JSON.Decode.object)
-        ->Option.getOr(Dict.make())
-      InvokeHiddenIframe(iframeData)
-    }
-  | "display_voucher_information" => {
-      let voucherData = switch intent.nextAction.voucher_details {
-      | Some(details) => {
-          download_url: details.download_url,
-          reference: details.reference,
-        }
-      | None => {
-          download_url: "",
-          reference: "",
-        }
-      }
-      DisplayVoucherInfo(voucherData)
-    }
-  | "third_party_sdk_session_token" => {
-      let sessionToken = intent.nextAction.session_token->Option.mapOr(Dict.make(), getDictFromJson)
-      ThirdPartySdkSessionToken(sessionToken)
-    }
-  | "invoke_sdk_client" => {
-      let nextActionData = intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
-      InvokeSdkClient(nextActionData)
-    }
-  | actionType => Unknown(actionType)
-  }
-}
-
-let handleRedirectToUrl = (url, params) => {
-  let paymentMethod = switch params.paymentType {
   | Card => "CARD"
   | _ => ""
   }
 
+let handleRedirectToUrl = (params, intent, paymentMethod) => {
   handleLogging(~optLogger=params.optLogger, ~value="", ~eventName=REDIRECTING_USER, ~paymentMethod)
 
   let handleOpenUrl = url => {
@@ -85,22 +23,21 @@ let handleRedirectToUrl = (url, params) => {
     }
   }
 
-  handleOpenUrl(url)
+  let redirectUrl = intent.nextAction.redirectToUrl
+  handleOpenUrl(redirectUrl)
   resolve(JSON.Encode.null)
 }
 
-let handleRedirectInsidePopup = (popupUrl, redirectResponseUrl, params) => {
-  let paymentMethod = switch params.paymentType {
-  | Card => "CARD"
-  | _ => ""
-  }
-
+let handleRedirectInsidePopup = (params, intent, paymentMethod) => {
   handleLogging(
     ~optLogger=params.optLogger,
     ~value="",
     ~eventName=THREE_DS_POPUP_REDIRECTION,
     ~paymentMethod,
   )
+
+  let popupUrl = intent.nextAction.popupUrl
+  let redirectResponseUrl = intent.nextAction.redirectResponseUrl
 
   let metaData = [
     ("popupUrl", popupUrl->JSON.Encode.string),
@@ -117,12 +54,8 @@ let handleRedirectInsidePopup = (popupUrl, redirectResponseUrl, params) => {
   resolve(JSON.Encode.null)
 }
 
-let handleDisplayBankTransferInfo = (bankTransferDetails, params, data, url) => {
-  let paymentMethod = switch params.paymentType {
-  | Card => "CARD"
-  | _ => ""
-  }
-
+let handleDisplayBankTransferInfo = (params, data, url, intent, paymentMethod) => {
+  let bankTransferDetails = intent.nextAction.bank_transfer_steps_and_charges_details
   let metadata = switch bankTransferDetails {
   | Some(obj) => obj->getDictFromJson
   | None => Dict.make()
@@ -159,11 +92,11 @@ let handleDisplayBankTransferInfo = (bankTransferDetails, params, data, url) => 
   resolve(data)
 }
 
-let handleQrCodeInformation = (qrData, displayText, borderColor, expiryTime, params, data, url) => {
-  let paymentMethod = switch params.paymentType {
-  | Card => "CARD"
-  | _ => ""
-  }
+let handleQrCodeInformation = (params, data, url, intent, paymentMethod) => {
+  let qrData = intent.nextAction.image_data_url->Option.getOr("")
+  let displayText = intent.nextAction.display_text->Option.getOr("")
+  let borderColor = intent.nextAction.border_color->Option.getOr("")
+  let expiryTime = intent.nextAction.display_to_timestamp->Option.getOr(0.0)
 
   let headerObj = Dict.make()
   mergeHeadersIntoDict(~dict=headerObj, ~headers=params.headers)
@@ -200,20 +133,13 @@ let handleQrCodeInformation = (qrData, displayText, borderColor, expiryTime, par
   resolve(data)
 }
 
-let handleThreeDsInvoke = (threeDsData, params, url) => {
-  let paymentMethod = switch params.paymentType {
-  | Card => "CARD"
-  | _ => ""
-  }
+let handleThreeDsInvoke = (params, url, intent, paymentMethod) => {
+  let threeDsData = intent.nextAction.three_ds_data->decodeJsonToDict
 
   let do3dsMethodCall =
     threeDsData
-    ->Dict.get("three_ds_method_details")
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.flatMap(x => x->Dict.get("three_ds_method_data_submission"))
-    ->Option.getOr(Dict.make()->JSON.Encode.object)
-    ->JSON.Decode.bool
-    ->getBoolValue
+    ->getDictFromObj("three_ds_method_details")
+    ->getBool("three_ds_method_data_submission", false)
 
   let headerObj = Dict.make()
   mergeHeadersIntoDict(~dict=headerObj, ~headers=params.headers)
@@ -255,9 +181,11 @@ let handleThreeDsInvoke = (threeDsData, params, url) => {
   resolve(JSON.Encode.null)
 }
 
-let handleInvokeHiddenIframe = (iframeData, params, url) => {
+let handleInvokeHiddenIframe = (params, url, intent) => {
   let headerObj = Dict.make()
   mergeHeadersIntoDict(~dict=headerObj, ~headers=params.headers)
+
+  let iframeData = intent.nextAction.iframe_data->decodeJsonToDict
 
   let metaData =
     [
@@ -280,10 +208,16 @@ let handleInvokeHiddenIframe = (iframeData, params, url) => {
   resolve(JSON.Encode.null)
 }
 
-let handleDisplayVoucherInfo = (voucherData, params, data, url) => {
-  let paymentMethod = switch params.paymentType {
-  | Card => "CARD"
-  | _ => ""
+let handleDisplayVoucherInfo = (params, data, url, intent, paymentMethod) => {
+  let voucherData = switch intent.nextAction.voucher_details {
+  | Some(details) => {
+      download_url: details.download_url,
+      reference: details.reference,
+    }
+  | None => {
+      download_url: "",
+      reference: "",
+    }
   }
 
   let headerObj = Dict.make()
@@ -310,7 +244,8 @@ let handleDisplayVoucherInfo = (voucherData, params, data, url) => {
   resolve(JSON.Encode.null)
 }
 
-let handleThirdPartySdkSessionToken = (sessionToken, params, data) => {
+let handleThirdPartySdkSessionToken = (params, data, intent) => {
+  let sessionToken = intent.nextAction.session_token->Option.mapOr(Dict.make(), getDictFromJson)
   let walletName = sessionToken->getString("wallet_name", "")
 
   let message = switch walletName {
@@ -349,7 +284,8 @@ let handleThirdPartySdkSessionToken = (sessionToken, params, data) => {
   resolve(data)
 }
 
-let handleInvokeSdkClient = (nextActionData, intent) => {
+let handleInvokeSdkClient = intent => {
+  let nextActionData = intent.nextAction.next_action_data->Option.getOr(JSON.Encode.null)
   let response =
     [
       ("orderId", intent.connectorTransactionId->JSON.Encode.string),
@@ -359,56 +295,58 @@ let handleInvokeSdkClient = (nextActionData, intent) => {
   resolve(response)
 }
 
-let handleNextAction = (intent, params, data, url) => {
-  let nextAction = parseNextAction(intent)
+let handleUnknownNextAction = (unknownNextAction, params, url, paymentMethod) => {
+  if !params.isPaymentSession {
+    postFailedSubmitResponse(
+      ~errortype="confirm_payment_failed",
+      ~message="Payment failed. Try again!",
+    )
+  }
 
-  switch nextAction {
-  | RedirectToUrl(redirectUrl) => handleRedirectToUrl(redirectUrl, params)
-  | RedirectInsidePopup(popupUrl, redirectResponseUrl) =>
-    handleRedirectInsidePopup(popupUrl, redirectResponseUrl, params)
-  | DisplayBankTransferInfo(details) => handleDisplayBankTransferInfo(details, params, data, url)
-  | QrCodeInformation(qrData, displayText, borderColor, expiryTime) =>
-    handleQrCodeInformation(qrData, displayText, borderColor, expiryTime, params, data, url)
-  | ThreeDsInvoke(threeDsData) => handleThreeDsInvoke(threeDsData, params, url)
-  | InvokeHiddenIframe(iframeData) => handleInvokeHiddenIframe(iframeData, params, url)
-  | DisplayVoucherInfo(voucherData) => handleDisplayVoucherInfo(voucherData, params, data, url)
-  | ThirdPartySdkSessionToken(sessionToken) =>
-    handleThirdPartySdkSessionToken(sessionToken, params, data)
-  | InvokeSdkClient(nextActionData) => handleInvokeSdkClient(nextActionData, intent)
-  | Unknown(actionType) => {
-      if !params.isPaymentSession {
-        postFailedSubmitResponse(
-          ~errortype="confirm_payment_failed",
-          ~message="Payment failed. Try again!",
-        )
-      }
+  if params.uri->String.includes("force_sync=true") {
+    handleLogging(
+      ~optLogger=params.optLogger,
+      ~value=unknownNextAction,
+      ~eventName=REDIRECTING_USER,
+      ~paymentMethod,
+      ~logType=ERROR,
+    )
 
-      if params.uri->String.includes("force_sync=true") {
-        let paymentMethod = getPaymentMethodFromParams(params)
-        handleLogging(
-          ~optLogger=params.optLogger,
-          ~value=actionType,
-          ~eventName=REDIRECTING_USER,
-          ~paymentMethod,
-          ~logType=ERROR,
-        )
-
-        let handleOpenUrl = url => {
-          if params.isPaymentSession {
-            replaceRootHref(url, params.redirectionFlags)
-          } else {
-            openUrl(url)
-          }
-        }
-        handleOpenUrl(url.href)
-        resolve(JSON.Encode.null)
+    let handleOpenUrl = url => {
+      if params.isPaymentSession {
+        replaceRootHref(url, params.redirectionFlags)
       } else {
-        let failedSubmitResponse = getFailedSubmitResponse(
-          ~errorType="confirm_payment_failed",
-          ~message="Payment failed. Try again!",
-        )
-        resolve(failedSubmitResponse)
+        openUrl(url)
       }
     }
+    handleOpenUrl(url.href)
+    resolve(JSON.Encode.null)
+  } else {
+    let failedSubmitResponse = getFailedSubmitResponse(
+      ~errorType="confirm_payment_failed",
+      ~message="Payment failed. Try again!",
+    )
+    resolve(failedSubmitResponse)
+  }
+}
+
+let handleNextAction = (intent, params, data, url) => {
+  let paymentMethod = switch params.paymentType {
+  | Card => "CARD"
+  | _ => intent.payment_method_type
+  }
+  switch intent.nextAction.type_ {
+  | "redirect_to_url" => handleRedirectToUrl(params, intent, paymentMethod)
+  | "redirect_inside_popup" => handleRedirectInsidePopup(params, intent, paymentMethod)
+  | "display_bank_transfer_information" =>
+    handleDisplayBankTransferInfo(params, data, url, intent, paymentMethod)
+  | "qr_code_information" => handleQrCodeInformation(params, data, url, intent, paymentMethod)
+  | "three_ds_invoke" => handleThreeDsInvoke(params, url, intent, paymentMethod)
+  | "invoke_hidden_iframe" => handleInvokeHiddenIframe(params, url, intent)
+  | "display_voucher_information" =>
+    handleDisplayVoucherInfo(params, data, url, intent, paymentMethod)
+  | "third_party_sdk_session_token" => handleThirdPartySdkSessionToken(params, data, intent)
+  | "invoke_sdk_client" => handleInvokeSdkClient(intent)
+  | unknownNextAction => handleUnknownNextAction(unknownNextAction, params, url, paymentMethod)
   }
 }
