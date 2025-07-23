@@ -21,7 +21,6 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
   let otherPaymentList = []
 
   // TODO - Handle Each Payment Method Similar to V1
-  // TODO - Handle Each Payment Method Similar to V1
   paymentMethodListValue.paymentMethodsEnabled->Array.forEach(item => {
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodType) {
       otherPaymentList->Array.push(item.paymentMethodType)->ignore
