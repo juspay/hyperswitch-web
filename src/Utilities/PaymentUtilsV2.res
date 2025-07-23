@@ -21,16 +21,25 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
   let otherPaymentList = []
 
   // TODO - Handle Each Payment Method Similar to V1
+  // TODO - Handle Each Payment Method Similar to V1
   paymentMethodListValue.paymentMethodsEnabled->Array.forEach(item => {
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodType) {
       otherPaymentList->Array.push(item.paymentMethodType)->ignore
     } else if item.paymentMethodType == "wallet" {
       if item.paymentMethodSubtype !== "paypal" {
         // || isShowPaypal
+        // || isShowPaypal
         walletsList->Array.push(item.paymentMethodSubtype)->ignore
       }
     } else if item.paymentMethodType == "bank_debit" {
       otherPaymentList->Array.push(item.paymentMethodSubtype ++ "_debit")->ignore
+    } // else if (
+    //   item.methodType === "bank_transfer" &&
+    //     !(Constants.bankTransferList->Array.includes(item.paymentMethodName))
+    // ) {
+    //   otherPaymentList->Array.push(item.paymentMethodName ++ "_transfer")->ignore
+    // }
+    else if item.paymentMethodType == "card" {
     } // else if (
     //   item.methodType === "bank_transfer" &&
     //     !(Constants.bankTransferList->Array.includes(item.paymentMethodName))

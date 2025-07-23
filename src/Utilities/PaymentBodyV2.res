@@ -58,12 +58,12 @@ let getPaymentBody = (
   ~paymentMethod,
   ~paymentMethodType,
   ~fullName,
-  ~email,
-  ~country,
+  ~email as _,
+  ~country as _,
   ~bank,
-  ~blikCode,
-  ~paymentExperience: PaymentMethodsRecord.paymentFlow=RedirectToURL,
-  ~phoneNumber,
+  ~blikCode as _,
+  ~paymentExperience as _: PaymentMethodsRecord.paymentFlow=RedirectToURL,
+  ~phoneNumber as _,
 ) =>
   switch paymentMethodType {
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
