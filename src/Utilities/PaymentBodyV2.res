@@ -62,7 +62,7 @@ let getPaymentBody = (
   ~country as _,
   ~bank,
   ~blikCode as _,
-  ~paymentExperience as _: PaymentMethodsRecord.paymentFlow=RedirectToURL,
+  ~paymentExperience: PaymentMethodsRecord.paymentFlow=RedirectToURL,
   ~phoneNumber as _,
 ) =>
   switch paymentMethodType {
