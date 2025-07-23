@@ -12,7 +12,7 @@ describe("Card payment flow test", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "customer_id",
-    "hyperswitch_sdk_demo_id"
+    "hyperswitch_sdk_demo_id",
   );
 
   beforeEach(() => {
@@ -30,7 +30,7 @@ describe("Card payment flow test", () => {
 
   it("orca-payment-element iframe loaded", () => {
     cy.get(
-      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element"
+      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element",
     )
       .should("be.visible")
       .its("0.contentDocument")
