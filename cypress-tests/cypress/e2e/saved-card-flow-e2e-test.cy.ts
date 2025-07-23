@@ -43,7 +43,7 @@ describe("Card payment flow test", () => {
       .find(`[data-testid=${testIds.addNewCardIcon}]`)
       .then(($element) => {
         if ($element.length > 0) {
-          getIframeBody().find("[data-testid=cvvInput]").type("123");
+          getIframeBody().find("[data-testid=cvvInput]").type("1234");
           getIframeBody().get("#submit").click();
           cy.wait(2000);
           cy.contains("Thanks for your order!").should("be.visible");
