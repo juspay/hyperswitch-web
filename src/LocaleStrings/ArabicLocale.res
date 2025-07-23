@@ -159,6 +159,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `مفتاح Pix`,
   destinationBankAccountIdEmptyText: `لا يمكن أن يكون معرف الحساب المصرفي للوجهة فارغاً`,
   sourceBankAccountIdEmptyText: `لا يمكن أن يكون معرف الحساب المصرفي المصدر فارغاً`,
+  bsbNumberEmptyText: `رقم BSB لا يمكن أن يكون فارغًا`,
+  bsbNumberInvalidText: `رقم BSB غير صالح`,
   invalidCardHolderNameError: `اسم حامل البطاقة لا يمكن أن يحتوي على أرقام`,
   invalidNickNameError: `لا يمكن أن يحتوي الاسم المستعار على أكثر من رقمين`,
   expiry: `انتهاء الصلاحية`,

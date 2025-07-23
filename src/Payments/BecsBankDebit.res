@@ -1,98 +1,73 @@
 open RecoilAtoms
-open RecoilAtomTypes
 open Utils
+open PaymentModeType
 
 @react.component
 let make = () => {
-  let cleanBSB = str => str->String.replaceRegExp(%re("/-/g"), "")
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let setComplete = Recoil.useSetRecoilState(fieldsComplete)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
-  let (modalData, setModalData) = React.useState(_ => None)
-
-  let fullName = Recoil.useRecoilValueFromAtom(userFullName)
-  let email = Recoil.useRecoilValueFromAtom(userEmailAddress)
-  let line1 = Recoil.useRecoilValueFromAtom(userAddressline1)
-  let line2 = Recoil.useRecoilValueFromAtom(userAddressline2)
-  let country = Recoil.useRecoilValueFromAtom(userAddressCountry)
-  let city = Recoil.useRecoilValueFromAtom(userAddressCity)
-  let postalCode = Recoil.useRecoilValueFromAtom(userAddressPincode)
-  let state = Recoil.useRecoilValueFromAtom(userAddressState)
+  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
+  let {config, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
-  let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let countryCode = Utils.getCountryCode(country.value).isoAlpha2
-  let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
+  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
 
-  let complete =
-    email.value != "" &&
-    fullName.value != "" &&
-    email.isValid->Option.getOr(false) &&
-    switch modalData {
-    | Some(data: ACHTypes.data) =>
-      data.accountNumber->String.length == 9 && data.sortCode->cleanBSB->String.length == 6
-    | None => false
-    }
+  let pmAuthMapper = React.useMemo1(
+    () =>
+      PmAuthConnectorUtils.findPmAuthAllPMAuthConnectors(paymentMethodListValue.payment_methods),
+    [paymentMethodListValue.payment_methods],
+  )
 
-  let empty =
-    email.value == "" ||
-    fullName.value == "" ||
-    switch modalData {
-    | Some(data: ACHTypes.data) => data.accountNumber == "" && data.sortCode == ""
-    | None => true
-    }
+  let isVerifyPMAuthConnectorConfigured =
+    displaySavedPaymentMethods && pmAuthMapper->Dict.get("becs")->Option.isSome
 
-  UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="becs_bank_debit")
-
-  React.useEffect(() => {
-    setComplete(_ => complete)
-    None
-  }, [complete])
+  UtilityHooks.useHandlePostMessages(
+    ~complete=areRequiredFieldsValid,
+    ~empty=areRequiredFieldsEmpty,
+    ~paymentType="becs_bank_debit",
+  )
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
-    let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
+    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+    let body = PaymentBody.dynamicPaymentBody("bank_debit", "becs")
+
     if confirm.doSubmit {
-      if complete {
-        switch modalData {
-        | Some(data: ACHTypes.data) => {
-            let body = PaymentBody.becsBankDebitBody(
-              ~fullName=fullName.value,
-              ~email=email.value,
-              ~data,
-              ~line1=line1.value,
-              ~line2=line2.value,
-              ~country=countryCode,
-              ~city=city.value,
-              ~postalCode=postalCode.value,
-              ~stateCode,
-            )
-            intent(
-              ~bodyArr=body,
-              ~confirmParam=confirm.confirmParams,
-              ~handleUserError=false,
-              ~manualRetry=isManualRetryEnabled,
-            )
-          }
-        | None => ()
-        }
+      if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+        let becsBody =
+          body
+          ->getJsonFromArrayOfJson
+          ->flattenObject(true)
+          ->mergeTwoFlattenedJsonDicts(requiredFieldsBody)
+          ->getArrayOfTupleFromDict
+        intent(
+          ~bodyArr=becsBody,
+          ~confirmParam=confirm.confirmParams,
+          ~handleUserError=false,
+          ~manualRetry=isManualRetryEnabled,
+        )
       } else {
         postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
       }
     }
-  }, (email, fullName, modalData, isManualRetryEnabled))
+  }, (isManualRetryEnabled, areRequiredFieldsValid, areRequiredFieldsEmpty, requiredFieldsBody))
+
   useSubmitPaymentData(submitCallback)
 
-  <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingGridColumn}>
-    <EmailPaymentInput />
-    <FullNamePaymentInput />
-    <AddBankAccount modalData setModalData />
-    <FullScreenPortal>
-      <BankDebitModal setModalData />
-    </FullScreenPortal>
-    <Surcharge paymentMethod="bank_debit" paymentMethodType="becs" />
-    <Terms mode=PaymentModeType.BecsBankDebit />
-  </div>
+  isVerifyPMAuthConnectorConfigured
+    ? <AddBankDetails paymentMethodType="becs" />
+    : <div
+        className="flex flex-col animate-slowShow"
+        style={
+          gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
+        }>
+        <DynamicFields paymentMethod="bank_debit" paymentMethodType="becs" setRequiredFieldsBody />
+        <Surcharge paymentMethod="bank_debit" paymentMethodType="becs" />
+        <Terms mode={BecsBankDebit} />
+      </div>
 }
 
 let default = make

@@ -156,6 +156,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix 密钥`,
   destinationBankAccountIdEmptyText: `目标银行账户ID不能为空`,
   sourceBankAccountIdEmptyText: `源银行账户ID不能为空`,
+  bsbNumberEmptyText: `BSB号码不能为空`,
+  bsbNumberInvalidText: `无效的BSB号码`,
   invalidCardHolderNameError: `持卡人姓名不能包含数字`,
   invalidNickNameError: `昵称不能包含超过2个数字`,
   expiry: `到期`,

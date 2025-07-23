@@ -156,6 +156,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyLabel: `Pix-nyckel`,
   destinationBankAccountIdEmptyText: `Destinations bankkonto-ID kan inte vara tomt`,
   sourceBankAccountIdEmptyText: `Käll bankkonto-ID kan inte vara tomt`,
+  bsbNumberEmptyText: `BSB-numret får inte vara tomt`,
+  bsbNumberInvalidText: `Ogiltigt BSB-nummer`,
   invalidCardHolderNameError: `Kortinnehavarens namn får inte innehålla siffror`,
   invalidNickNameError: `Smeknamnet får inte innehålla mer än 2 siffror`,
   expiry: `upphörande`,
