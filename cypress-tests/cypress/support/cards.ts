@@ -89,3 +89,61 @@ export const redsysCards = {
     ...redsysCardsDefaultData,
   },
 };
+
+const trustpayCardsDefaultData = {
+  cardScheme: "Visa",
+  cvc: "123",
+  card_exp_month: "12",
+  card_exp_year: "30",
+};
+
+export const trustpayCards = {
+  successCard: {
+    cardNo: "4200000000000000",
+    ...trustpayCardsDefaultData,
+  },
+  threeDSCard: {
+    cardNo: "4200000000000067",
+    ...trustpayCardsDefaultData,
+  },
+  invalidCard: {
+    cardNo: "400000000000000",
+    ...trustpayCardsDefaultData,
+  },
+};
+
+const cybersourceCardsDefaultData = {
+  cardScheme: "Visa",
+  cvc: "123",
+  card_exp_month: "12",
+  card_exp_year: "30",
+};
+
+export const cybersourceCards = {
+  successCard: {
+    cardNo: "4242424242424242",
+    ...cybersourceCardsDefaultData,
+  },
+  invalidCard: {
+    cardNo: "400000000000000",
+    ...cybersourceCardsDefaultData,
+  },
+};
+
+const bankOfAmericaCardsDefaultData = {
+  cardScheme: "Visa",
+  cvc: "123",
+  card_exp_month: "12",
+  card_exp_year: "30",
+};
+
+export const bankOfAmericaCards = {
+  successCard: {
+    cardNo: "4242424242424242",
+    ...bankOfAmericaCardsDefaultData,
+  },
+  invalidCard: {
+    cardNo: "400000000000000",
+    ...bankOfAmericaCardsDefaultData,
+  },
+};
