@@ -17,7 +17,7 @@ describe("Card payment flow test", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.MIFINITY)
+    connectorProfileIdMapping.get(connectorEnum.MIFINITY),
   );
   changeObjectKeyValue(createPaymentBody, "currency", "EUR");
   changeObjectKeyValue(createPaymentBody, "billing", {
@@ -64,7 +64,7 @@ describe("Card payment flow test", () => {
     getIframeBody().contains("div", "Mifinity").click();
     const today = new Date();
     const formattedDate = `${String(today.getDate()).padStart(2, "0")}-${String(
-      today.getMonth() + 1
+      today.getMonth() + 1,
     ).padStart(2, "0")}-${today.getFullYear()}`;
     getIframeBody()
       .find(`input[placeholder="${testIds.datePickerPlaceHolderText}"]`)
