@@ -17,7 +17,7 @@ describe("Card payment flow test", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.CRYPTOPAY)
+    connectorProfileIdMapping.get(connectorEnum.CRYPTOPAY),
   );
 
   beforeEach(() => {
@@ -50,7 +50,7 @@ describe("Card payment flow test", () => {
       .then(() => {
         cy.url().should(
           "include",
-          "hosted-business-sandbox.cryptopay.me/invoices"
+          "hosted-business-sandbox.cryptopay.me/invoices",
         );
       });
   });
