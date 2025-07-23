@@ -31,6 +31,29 @@ let dynamicFieldsEnabledPaymentMethods = [
   "paypal",
   "instant_bank_transfer_finland",
   "instant_bank_transfer_poland",
+  "seven_eleven",
+  "mini_stop",
+  "family_mart",
+  "seicomart",
+  "pay_easy",
+  "lawson",
+  "alfamart",
+  "indomaret",
+  "oxxo",
+  "pay_safe_card",
+  "alma",
+  "permata_bank_transfer_transfer",
+  "bca_bank_transfer_transfer",
+  "bni_va_transfer",
+  "bri_va_transfer",
+  "cimb_va_transfer",
+  "danamon_va_transfer",
+  "mandiri_va_transfer",
+  "knet",
+  "swish",
+  "online_banking_poland",
+  "momo_atm",
+  "benefit",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
@@ -886,7 +909,6 @@ let useSubmitCallback = () => {
   let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
   let (city, setCity) = Recoil.useRecoilState(userAddressCity)
   let {billingAddress} = Recoil.useRecoilValueFromAtom(optionAtom)
-
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
 
   React.useCallback((ev: Window.event) => {
