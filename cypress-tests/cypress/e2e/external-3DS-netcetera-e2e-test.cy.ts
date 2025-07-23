@@ -14,12 +14,12 @@ describe("External 3DS using Netcetera Checks", () => {
   changeObjectKeyValue(
     createPaymentBody,
     "profile_id",
-    connectorProfileIdMapping.get(connectorEnum.NETCETERA)
+    connectorProfileIdMapping.get(connectorEnum.NETCETERA),
   );
   changeObjectKeyValue(
     createPaymentBody,
     "request_external_three_ds_authentication",
-    true
+    true,
   );
   changeObjectKeyValue(createPaymentBody, "authentication_type", "three_ds");
   let iframeSelector =
@@ -40,7 +40,7 @@ describe("External 3DS using Netcetera Checks", () => {
 
   it("orca-payment-element iframe loaded", () => {
     cy.get(
-      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element"
+      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element",
     )
       .should("be.visible")
       .its("0.contentDocument")
@@ -92,7 +92,7 @@ describe("External 3DS using Netcetera Checks", () => {
       cy.wait(2000);
       cy.wrap($body).find("#cancel").click();
       cy.contains("Payment failed. Please check your payment method.").should(
-        "be.visible"
+        "be.visible",
       );
     });
   });

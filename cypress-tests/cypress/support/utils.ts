@@ -90,7 +90,7 @@ export const createPaymentBody = {
 export const changeObjectKeyValue = (
   object: Record<string, any>,
   key: string,
-  value: boolean | string | object
+  value: boolean | string | object,
 ) => {
   object[key] = value;
 };
