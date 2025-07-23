@@ -24,7 +24,7 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 import "cypress-iframe";
-import { createPaymentBody } from "./utils"
+import { createPaymentBody } from "./utils";
 import * as testIds from "../../../src/Utilities/TestUtils.bs";
 // commands.js or your custom support file
 const iframeSelector =
@@ -50,13 +50,18 @@ Cypress.Commands.add("hardReload", () => {
   cy.wrap(
     Cypress.automation("remote:debugger:protocol", {
       command: "Network.clearBrowserCache",
-    })
+    }),
   );
 });
 
 Cypress.Commands.add(
   "testDynamicFields",
-  (customerData, testIdsToRemoveArr = [], isThreeDSEnabled = false, publishableKey) => {
+  (
+    customerData,
+    testIdsToRemoveArr = [],
+    isThreeDSEnabled = false,
+    publishableKey,
+  ) => {
     const mapping = {
       [testIds.cardNoInputTestId]: customerData.cardNo,
       [testIds.expiryInputTestId]: customerData.cardExpiry,
@@ -95,11 +100,11 @@ Cypress.Commands.add(
         let paymentMethods = response.body.payment_methods;
 
         const foundElement = paymentMethods.find(
-          (element) => element.payment_method === "card"
+          (element) => element.payment_method === "card",
         );
 
         const ele = foundElement.payment_method_types.find(
-          (element) => element.payment_method_type === "debit"
+          (element) => element.payment_method_type === "debit",
         );
         console.log(ele.required_fields);
 
@@ -143,41 +148,46 @@ Cypress.Commands.add(
         });
       });
     });
-  }
+  },
 );
 
+Cypress.Commands.add(
+  "createPaymentIntent",
+  (secretKey: string, createPaymentBody: any) => {
+    return cy
+      .request({
+        method: "POST",
+        url: "https://sandbox.hyperswitch.io/payments",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "api-key": secretKey,
+        },
+        body: JSON.stringify(createPaymentBody),
+      })
+      .then((response) => {
+        expect(response.headers["content-type"]).to.include("application/json");
+        expect(response.body).to.have.property("client_secret");
+        const clientSecret = response.body.client_secret;
+        cy.log(clientSecret);
+        cy.log(response.toString());
 
-Cypress.Commands.add("createPaymentIntent", (secretKey: string, createPaymentBody: any) => {
-  return cy
-    .request({
-      method: "POST",
-      url: "https://sandbox.hyperswitch.io/payments",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "api-key": secretKey,
-      },
-      body: JSON.stringify(createPaymentBody),
-    })
-    .then((response) => {
-      expect(response.headers["content-type"]).to.include("application/json");
-      expect(response.body).to.have.property("client_secret");
-      const clientSecret = response.body.client_secret;
-      cy.log(clientSecret);
-      cy.log(response.toString());
-
-      globalState["clientSecret"] = clientSecret;
-    });
-});
+        globalState["clientSecret"] = clientSecret;
+      });
+  },
+);
 
 Cypress.Commands.add("getGlobalState", (key: any) => {
   return globalState[key];
 });
 
 Cypress.Commands.add("nestedIFrame", (selector, callback) => {
-  cy.iframe("#orca-fullscreen").find(selector).should("exist").should("be.visible").then(($ele) => {
-    const $body =
-      $ele.contents().find('body')
-    callback($body);
-  })
+  cy.iframe("#orca-fullscreen")
+    .find(selector)
+    .should("exist")
+    .should("be.visible")
+    .then(($ele) => {
+      const $body = $ele.contents().find("body");
+      callback($body);
+    });
 });
