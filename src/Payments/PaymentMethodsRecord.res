@@ -224,7 +224,7 @@ let paymentMethodsFields = [
   {
     paymentMethodName: "klarna",
     icon: Some(icon("klarna", ~size=19)),
-    fields: [],
+    fields: [InfoElement],
     displayName: "Klarna",
     miniIcon: None,
   },

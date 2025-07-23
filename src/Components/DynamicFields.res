@@ -820,15 +820,7 @@ let make = (
                     options=updatedBankNames
                   />
                 | SpecialField(element) => element
-                | InfoElement =>
-                  <>
-                    <Surcharge paymentMethod paymentMethodType />
-                    {if fieldsArr->Array.length > 1 {
-                      bottomElement
-                    } else {
-                      <Block bottomElement />
-                    }}
-                  </>
+                | InfoElement
                 | PixKey
                 | PixCPF
                 | PixCNPJ
@@ -864,7 +856,7 @@ let make = (
           </div>
         </div>
       </RenderIf>
-      <RenderIf condition={isOnlyInfoElementPresent}>
+      <RenderIf condition={isInfoElementPresent}>
         {<>
           <Surcharge paymentMethod paymentMethodType />
           {if fieldsArr->Array.length > 1 {
