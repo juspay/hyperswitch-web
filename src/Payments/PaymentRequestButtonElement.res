@@ -100,14 +100,19 @@ let make = (~sessions, ~walletOptions) => {
               <SessionPaymentWrapper type_={Wallet}>
                 {switch gPayToken {
                 | OtherTokenOptional(optToken) =>
-                  switch googlePayThirdPartyToken {
-                  | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
-                    <GPayLazy
-                      sessionObj=optToken
-                      thirdPartySessionObj=googlePayThirdPartyOptToken
-                      walletOptions
-                    />
-                  | _ => <GPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions />
+                  let connector = optToken->Option.map(token => token.connector)->Option.getOr("")
+                  switch connector {
+                  | "authorizedotnet" => <GPayBraintree sessionObj=optToken />
+                  | _ =>
+                    switch googlePayThirdPartyToken {
+                    | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>
+                      <GPayLazy
+                        sessionObj=optToken
+                        thirdPartySessionObj=googlePayThirdPartyOptToken
+                        walletOptions
+                      />
+                    | _ => <GPayLazy sessionObj=optToken thirdPartySessionObj=None walletOptions />
+                    }
                   }
                 | _ => React.null
                 }}
