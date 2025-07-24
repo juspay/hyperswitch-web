@@ -349,18 +349,6 @@ let becsBankDebitBody = (
     ),
   ])
 
-let klarnaRedirectionBody = () => {
-  let klarnaRedirectField =
-    [("klarna_redirect", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
-  let paymentMethodData = [("pay_later", klarnaRedirectField)]->Utils.getJsonFromArrayOfJson
-
-  [
-    ("payment_method", "pay_later"->JSON.Encode.string),
-    ("payment_method_type", "klarna"->JSON.Encode.string),
-    ("payment_method_data", paymentMethodData),
-  ]
-}
-
 let klarnaSDKbody = (~token, ~connectors) => [
   ("payment_method", "pay_later"->JSON.Encode.string),
   ("payment_method_type", "klarna"->JSON.Encode.string),
@@ -965,6 +953,7 @@ let appendRedirectPaymentMethods = [
   "ali_pay",
   "ali_pay_hk",
   "revolut_pay",
+  "klarna",
 ]
 
 let appendBankeDebitMethods = ["sepa"]
@@ -1080,10 +1069,6 @@ let getPaymentBody = (
   | "evoucher" =>
     rewardBody(~paymentMethodType)
   | "eft" => eftBody()
-  | "klarna" =>
-    switch paymentExperience {
-    | RedirectToURL => klarnaRedirectionBody()
-    | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
-    }
+  | "klarna" => dynamicPaymentBody(paymentMethod, paymentMethodType)
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }

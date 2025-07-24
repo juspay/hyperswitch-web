@@ -42,18 +42,6 @@ let epsBody = (~name, ~bankName) => {
   ]
 }
 
-let klarnaRedirectionBody = () => {
-  let klarnaRedirectField =
-    [("klarna_redirect", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
-  let paymentMethodData = [("pay_later", klarnaRedirectField)]->Utils.getJsonFromArrayOfJson
-
-  [
-    ("payment_method_type", "pay_later"->JSON.Encode.string),
-    ("payment_method_subtype", "klarna"->JSON.Encode.string),
-    ("payment_method_data", paymentMethodData),
-  ]
-}
-
 let getPaymentBody = (
   ~paymentMethod,
   ~paymentMethodType,
@@ -62,15 +50,11 @@ let getPaymentBody = (
   ~country as _,
   ~bank,
   ~blikCode as _,
-  ~paymentExperience: PaymentMethodsRecord.paymentFlow=RedirectToURL,
+  ~paymentExperience as _: PaymentMethodsRecord.paymentFlow=RedirectToURL,
   ~phoneNumber as _,
 ) =>
   switch paymentMethodType {
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
-  | "klarna" =>
-    switch paymentExperience {
-    | RedirectToURL => klarnaRedirectionBody()
-    | _ => dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
-    }
+  | "klarna" => dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
   | _ => dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
   }
