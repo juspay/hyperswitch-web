@@ -649,19 +649,6 @@ let getArrofJsonString = (arr: array<string>) => {
   arr->Array.map(item => item->JSON.Encode.string)
 }
 
-let getPaymentDetails = (arr: array<string>) => {
-  let finalArr = []
-  arr
-  ->Array.map(item => {
-    let optionalVal = PaymentDetails.details->Array.find(i => i.type_ == item)
-    switch optionalVal {
-    | Some(val) => finalArr->Array.push(val)->ignore
-    | None => ()
-    }
-  })
-  ->ignore
-  finalArr
-}
 let getOptionalArr = arr => {
   switch arr {
   | Some(val) => val

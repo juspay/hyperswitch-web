@@ -1,4 +1,7 @@
-let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManagement) => {
+let buildFromPaymentListV2 = (
+  plist: UnifiedPaymentsTypesV2.paymentMethodsManagement,
+  ~localeString,
+) => {
   let paymentMethodArr = plist.paymentMethodsEnabled
   paymentMethodArr->Array.map(paymentMethodObject => {
     let methodType = paymentMethodObject.paymentMethodType
@@ -11,6 +14,7 @@ let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManage
       fields: PaymentMethodsRecord.getPaymentMethodFields(
         paymentMethodName,
         paymentMethodObject.requiredFields,
+        ~localeString,
       ),
       paymentFlow: [],
       handleUserError,
