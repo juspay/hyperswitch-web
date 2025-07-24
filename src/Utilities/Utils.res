@@ -431,7 +431,8 @@ let rec transformKeys = (json: JSON.t, to: case) => {
 }
 
 let getClientCountry = clientTimeZone => {
-  CountryStateDataRefs.countryDataRef.contents
+  open CountryStateDataRefs
+  countryDataRef.contents
   ->Array.find(item => item.timeZones->Array.find(i => i == clientTimeZone)->Option.isSome)
   ->Option.getOr(Country.defaultTimeZone)
 }
@@ -738,14 +739,16 @@ let handlePostMessageEvents = (
 let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
 
 let getCountryCode = country => {
-  CountryStateDataRefs.countryDataRef.contents
+  open CountryStateDataRefs
+  countryDataRef.contents
   ->Array.find(item => item.countryName == country)
   ->Option.getOr(Country.defaultTimeZone)
 }
 
 let getStateNames = (country: RecoilAtomTypes.field) => {
+  open CountryStateDataRefs
   let options =
-    CountryStateDataRefs.stateDataRef.contents
+    stateDataRef.contents
     ->getDictFromJson
     ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
     ->Option.getOr([])
