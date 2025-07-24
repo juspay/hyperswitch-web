@@ -1,6 +1,6 @@
 open RecoilAtoms
 open Utils
-open EmailValidation
+open CardValidations
 
 @react.component
 let make = () => {

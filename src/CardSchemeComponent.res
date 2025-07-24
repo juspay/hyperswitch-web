@@ -34,7 +34,7 @@ let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand) => {
   let enabledCardSchemes =
     paymentMethodListValue->PaymentUtils.getSupportedCardBrands->Option.getOr([])
 
-  let matchedCardSchemes = cardNumber->CardUtils.clearSpaces->CardUtils.getAllMatchedCardSchemes
+  let matchedCardSchemes = cardNumber->CardValidations.clearSpaces->CardValidations.getAllMatchedCardSchemes
 
   let eligibleCardSchemes = CardUtils.getEligibleCoBadgedCardSchemes(
     ~matchedCardSchemes,
@@ -48,7 +48,7 @@ let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isCoBadgedCardDetectedOnce = React.useRef(false)
   let shouldShowCoBadgeCardSchemeDropDown =
-    isCardCoBadged && cardNumber->CardUtils.clearSpaces->String.length >= 16
+    isCardCoBadged && cardNumber->CardValidations.clearSpaces->String.length >= 16
 
   React.useEffect1(() => {
     if shouldShowCoBadgeCardSchemeDropDown && !isCoBadgedCardDetectedOnce.current {

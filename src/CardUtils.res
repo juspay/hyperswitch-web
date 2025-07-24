@@ -1,3 +1,5 @@
+open CardValidations
+
 type cardIssuer =
   | VISA
   | MASTERCARD
@@ -145,7 +147,6 @@ type options = {timeZone: string}
 type dateTimeFormat = {resolvedOptions: unit => options}
 @val @scope("Intl") external dateTimeFormat: unit => dateTimeFormat = "DateTimeFormat"
 
-let toInt = val => val->Int.fromString->Option.getOr(0)
 let toString = val => val->Int.toString
 
 let getQueryParamsDictforKey = (searchParams, keyName) => {
@@ -204,33 +205,6 @@ let getCardStringFromType = val => {
   }
 }
 
-let getobjFromCardPattern = cardBrand => {
-  let patternsDict = CardPattern.cardPatterns
-  patternsDict
-  ->Array.filter(item => {
-    cardBrand === item.issuer
-  })
-  ->Array.get(0)
-  ->Option.getOr(CardPattern.defaultCardPattern)
-}
-
-let clearSpaces = value => {
-  value->String.replaceRegExp(%re("/\D+/g"), "")
-}
-
-let slice = (val, start: int, end: int) => {
-  val->String.slice(~start, ~end)
-}
-
-let getStrFromIndex = (arr: array<string>, index) => {
-  arr->Array.get(index)->Option.getOr("")
-}
-
-let formatCVCNumber = (val, cardType) => {
-  let clearValue = val->clearSpaces
-  let obj = getobjFromCardPattern(cardType)
-  clearValue->slice(0, obj.maxCVCLength)
-}
 
 let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
   let tempTimeDateString = dateTimeIsoString->String.replace("Z", "")
@@ -269,13 +243,6 @@ let formatCardNumber = (val, cardType) => {
 
   formatedCard->String.trim
 }
-let splitExpiryDates = val => {
-  let split = val->String.split("/")
-  let value = split->Array.map(item => item->String.trim)
-  let month = value->Array.get(0)->Option.getOr("")
-  let year = value->Array.get(1)->Option.getOr("")
-  (month, year)
-}
 let getExpiryDates = val => {
   let date = Date.make()->Date.toISOString
   let (month, year) = splitExpiryDates(val)
@@ -296,24 +263,6 @@ let isExpiryComplete = val => {
   month->String.length == 2 && year->String.length == 2
 }
 
-let formatCardExpiryNumber = val => {
-  let clearValue = val->clearSpaces
-  let expiryVal = clearValue->toInt
-  let formatted = if expiryVal >= 2 && expiryVal <= 9 && clearValue->String.length == 1 {
-    `0${clearValue} / `
-  } else if clearValue->String.length == 2 && expiryVal > 12 {
-    let val = clearValue->String.split("")
-    `0${val->getStrFromIndex(0)} / ${val->getStrFromIndex(1)}`
-  } else {
-    clearValue
-  }
-
-  if clearValue->String.length >= 3 {
-    `${formatted->slice(0, 2)} / ${formatted->slice(2, 4)}`
-  } else {
-    formatted
-  }
-}
 
 let getCardBrand = cardNumber => {
   try {
@@ -750,18 +699,6 @@ let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
   }
 }
 
-let getAllMatchedCardSchemes = cardNumber => {
-  CardPattern.cardPatterns->Array.reduce([], (acc, item) => {
-    if String.match(cardNumber, item.pattern)->Option.isSome {
-      acc->Array.push(item.issuer)
-    }
-    acc
-  })
-}
-
-let isCardSchemeEnabled = (~cardScheme, ~enabledCardSchemes) => {
-  enabledCardSchemes->Array.includes(cardScheme)
-}
 
 let getFirstValidCardSchemeFromPML = (~cardNumber, ~enabledCardSchemes) => {
   let allMatchedCards = getAllMatchedCardSchemes(cardNumber->clearSpaces)
