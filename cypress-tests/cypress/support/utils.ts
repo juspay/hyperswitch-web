@@ -12,6 +12,8 @@ export const enum connectorEnum {
   REDSYS,
   MIFINITY,
   CRYPTOPAY,
+  BANK_OF_AMERICA,
+  CYBERSOURCE,
 }
 export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
@@ -21,6 +23,8 @@ export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.REDSYS, "pro_6BcODfWXoRbntNHkNV1J"],
   [connectorEnum.MIFINITY, "pro_reQgggKZjGvnmnJ7O10c"],
   [connectorEnum.CRYPTOPAY, "pro_cy1AdBRB5jfCuiWgJUZM"],
+  [connectorEnum.BANK_OF_AMERICA, "pro_Y90w9nPTg5eBOblKa2L9"],
+  [connectorEnum.CYBERSOURCE, "pro_h9VHXnJx8s6W4KSZfSUL"],
 ]);
 
 export const createPaymentBody = {
@@ -86,7 +90,7 @@ export const createPaymentBody = {
 export const changeObjectKeyValue = (
   object: Record<string, any>,
   key: string,
-  value: boolean | string | object
+  value: boolean | string | object,
 ) => {
   object[key] = value;
 };

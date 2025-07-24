@@ -18,6 +18,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "afterpay_clearpay",
   "mifinity",
   "upi_collect",
+  "upi_intent",
   "sepa",
   "sepa_bank_transfer",
   "instant_bank_transfer",
