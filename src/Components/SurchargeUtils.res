@@ -2,12 +2,24 @@ type oneClickWallets = {
   paymentMethodType: string,
   displayName: string,
 }
-let oneClickWallets = [
-  {paymentMethodType: "apple_pay", displayName: "ApplePay"},
-  {paymentMethodType: "samsung_pay", displayName: "SamsungPay"},
-  {paymentMethodType: "paypal", displayName: "Paypal"},
-  {paymentMethodType: "google_pay", displayName: "GooglePay"},
-  {paymentMethodType: "klarna", displayName: "Klarna"},
+let oneClickWallets = (~localeString: LocaleStringTypes.localeStrings) => [
+  {
+    paymentMethodType: "apple_pay",
+    displayName: localeString.payment_methods_apple_pay,
+  },
+  {
+    paymentMethodType: "samsung_pay",
+    displayName: localeString.payment_methods_samsung_pay,
+  },
+  {
+    paymentMethodType: "paypal",
+    displayName: localeString.payment_methods_paypal,
+  },
+  {
+    paymentMethodType: "google_pay",
+    displayName: localeString.payment_methods_google_pay,
+  },
+  {paymentMethodType: "klarna", displayName: localeString.payment_methods_klarna},
 ]
 
 type walletSurchargeDetails = {
@@ -19,9 +31,10 @@ let useSurchargeDetailsForOneClickWallets = (~paymentMethodListValue) => {
   let areOneClickWalletsRendered = Recoil.useRecoilValueFromAtom(
     RecoilAtoms.areOneClickWalletsRendered,
   )
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   React.useMemo(() => {
-    oneClickWallets->Array.reduce([], (acc, wallet) => {
+    oneClickWallets(~localeString)->Array.reduce([], (acc, wallet) => {
       let (isWalletBtnRendered, paymentMethod) = switch wallet.paymentMethodType {
       | "apple_pay" => (areOneClickWalletsRendered.isApplePay, "wallet")
       | "samsung_pay" => (areOneClickWalletsRendered.isSamsungPay, "wallet")
