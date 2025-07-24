@@ -164,6 +164,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_afterpay_clearpay: `After Pay`,
   payment_methods_google_pay: `Google Pay`,
   payment_methods_apple_pay: `Apple Pay`,
+  payment_methods_samsung_pay: "Samsung Pay",
   payment_methods_mb_way: `Mb Way`,
   payment_methods_mobile_pay: `Mobile Pay`,
   payment_methods_ali_pay: `Ali Pay`,

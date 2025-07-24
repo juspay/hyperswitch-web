@@ -151,6 +151,7 @@ type localeStrings = {
   payment_methods_afterpay_clearpay: string,
   payment_methods_google_pay: string,
   payment_methods_apple_pay: string,
+  payment_methods_samsung_pay: string,
   payment_methods_mb_way: string,
   payment_methods_mobile_pay: string,
   payment_methods_ali_pay: string,
