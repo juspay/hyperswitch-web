@@ -224,7 +224,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
   {
     paymentMethodName: "klarna",
     icon: Some(icon("klarna", ~size=19)),
-    fields: [Email, FullName, InfoElement],
+    fields: [InfoElement],
     displayName: localeString.payment_methods_klarna,
     miniIcon: None,
   },

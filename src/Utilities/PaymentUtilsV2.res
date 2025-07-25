@@ -39,35 +39,32 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement) =
     // }
     else if item.paymentMethodType == "card" {
       otherPaymentList->Array.push("card")->ignore
-    } else {
-      // else if item.methodType == "reward" {
-      //   otherPaymentList->Array.push(item.paymentMethodName)->ignore
-      // }
-      // else if item.paymentMethodType == "pay_later" {
-      // TODO -  For Klarna Paymemt Method
-      // if item.paymentMethodSubtype === "klarna" {
-      //   let klarnaPaymentMethodExperience = PaymentMethodsRecordV2.getPaymentExperienceTypeFromPML(
-      //     ~paymentMethodList=paymentMethodListValue,
-      //     ~paymentMethodName=item.paymentMethodType,
-      //     ~paymentMethodType=item.paymentMethodSubtype,
-      //   )
+    } // else if item.methodType == "reward" {
+    //   otherPaymentList->Array.push(item.paymentMethodName)->ignore
+    // }
+    else if item.paymentMethodType == "pay_later" {
+      if item.paymentMethodSubtype === "klarna" {
+        let klarnaPaymentMethodExperience = PaymentMethodsRecordV2.getPaymentExperienceTypeFromPML(
+          ~paymentMethodList=paymentMethodListValue,
+          ~paymentMethodName=item.paymentMethodType,
+          ~paymentMethodType=item.paymentMethodSubtype,
+        )
 
-      //   let isInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
-      //   let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
+        // let isInvokeSDKExperience = klarnaPaymentMethodExperience->Array.includes(InvokeSDK)
+        let isRedirectExperience = klarnaPaymentMethodExperience->Array.includes(RedirectToURL)
 
-      //   // To be fixed for Klarna Checkout - PR - https://github.com/juspay/hyperswitch-web/pull/851
-      //   if isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience {
-      //     walletsList->Array.push(item.paymentMethodName)->ignore
-      //   } else
-      //   if isRedirectExperience {
-      //     otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
-      //   }
-      // }
+        // To be fixed for Klarna Checkout - PR - https://github.com/juspay/hyperswitch-web/pull/851
+        // if isKlarnaSDKFlow && isShowKlarnaOneClick && isInvokeSDKExperience {
+        //   walletsList->Array.push(item.paymentMethodName)->ignore
+        // } else
+        if isRedirectExperience {
+          otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
+        }
+      }
       // else {
       //   otherPaymentList->Array.push(item.paymentMethodName)->ignore
       // }
-      // }
-
+    } else {
       otherPaymentList->Array.push(item.paymentMethodSubtype)->ignore
     }
   })
