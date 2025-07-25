@@ -769,7 +769,8 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | IBAN
   | DestinationBankAccountId
   | SourceBankAccountId
-  | BankAccountNumber => true
+  | BankAccountNumber
+  | InfoElement => true
   | _ => false
   }
 }

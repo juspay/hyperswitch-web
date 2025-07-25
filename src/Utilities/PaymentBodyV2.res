@@ -55,6 +55,5 @@ let getPaymentBody = (
 ) =>
   switch paymentMethodType {
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
-  | "klarna" => dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
   | _ => dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
   }

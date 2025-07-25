@@ -336,14 +336,9 @@ let make = (
     fieldsArr->Array.filter(field => !(field->isFieldTypeToRenderOutsideBilling))
   }, [fieldsArr])
 
-  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Array.includes(InfoElement)
+  let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
 
-  let isOnlyInfoElementPresent =
-    dynamicFieldsToRenderInsideBilling->Array.length === 1 && isInfoElementPresent
-
-  let isRenderDynamicFieldsInsideBilling =
-    dynamicFieldsToRenderInsideBilling->Array.length > 0 &&
-      (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
+  let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
 
@@ -857,18 +852,15 @@ let make = (
           </div>
         </div>
       </RenderIf>
+      <Surcharge paymentMethod paymentMethodType />
       <RenderIf condition={isInfoElementPresent}>
         {<>
-          <Surcharge paymentMethod paymentMethodType />
           {if fieldsArr->Array.length > 1 {
             bottomElement
           } else {
             <Block bottomElement />
           }}
         </>}
-      </RenderIf>
-      <RenderIf condition={!isInfoElementPresent}>
-        <Surcharge paymentMethod paymentMethodType />
       </RenderIf>
     </>}
   </RenderIf>

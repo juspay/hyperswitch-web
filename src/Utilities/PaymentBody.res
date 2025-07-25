@@ -1069,6 +1069,5 @@ let getPaymentBody = (
   | "evoucher" =>
     rewardBody(~paymentMethodType)
   | "eft" => eftBody()
-  | "klarna" => dynamicPaymentBody(paymentMethod, paymentMethodType)
   | _ => dynamicPaymentBody(paymentMethod, paymentMethodType)
   }
