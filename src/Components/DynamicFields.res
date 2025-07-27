@@ -38,6 +38,7 @@ let make = (
     PaymentUtils.paymentManagementListValue,
   )
   let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let contextPaymentType = usePaymentType()
   let listValue = switch contextPaymentType {
   | PaymentMethodsManagement => paymentManagementListValue
@@ -138,13 +139,13 @@ let make = (
       requiredFields,
       ~isSavedCardFlow,
       ~isAllStoredCardsHaveName,
+      ~localeString,
     )
     ->updateDynamicFields(billingAddress, isSaveDetailsWithClickToPay, clickToPayConfig)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow, isSaveDetailsWithClickToPay))
 
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
@@ -335,14 +336,9 @@ let make = (
     fieldsArr->Array.filter(field => !(field->isFieldTypeToRenderOutsideBilling))
   }, [fieldsArr])
 
-  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Array.includes(InfoElement)
+  let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
 
-  let isOnlyInfoElementPresent =
-    dynamicFieldsToRenderInsideBilling->Array.length === 1 && isInfoElementPresent
-
-  let isRenderDynamicFieldsInsideBilling =
-    dynamicFieldsToRenderInsideBilling->Array.length > 0 &&
-      (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
+  let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
 
@@ -820,15 +816,7 @@ let make = (
                     options=updatedBankNames
                   />
                 | SpecialField(element) => element
-                | InfoElement =>
-                  <>
-                    <Surcharge paymentMethod paymentMethodType />
-                    {if fieldsArr->Array.length > 1 {
-                      bottomElement
-                    } else {
-                      <Block bottomElement />
-                    }}
-                  </>
+                | InfoElement
                 | PixKey
                 | PixCPF
                 | PixCNPJ
@@ -864,18 +852,15 @@ let make = (
           </div>
         </div>
       </RenderIf>
-      <RenderIf condition={isOnlyInfoElementPresent}>
+      <Surcharge paymentMethod paymentMethodType />
+      <RenderIf condition={isInfoElementPresent}>
         {<>
-          <Surcharge paymentMethod paymentMethodType />
           {if fieldsArr->Array.length > 1 {
             bottomElement
           } else {
             <Block bottomElement />
           }}
         </>}
-      </RenderIf>
-      <RenderIf condition={!isInfoElementPresent}>
-        <Surcharge paymentMethod paymentMethodType />
       </RenderIf>
     </>}
   </RenderIf>

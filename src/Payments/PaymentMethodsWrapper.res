@@ -9,7 +9,7 @@ let make = (~paymentMethodName: string) => {
   let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
   let blikCode = Recoil.useRecoilValueFromAtom(userBlikCode)
   let phoneNumber = Recoil.useRecoilValueFromAtom(userPhoneNumber)
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -22,14 +22,14 @@ let make = (~paymentMethodName: string) => {
   }
   let optionPaymentMethodDetails =
     paymentMethodListValue
-    ->PaymentMethodsRecord.buildFromPaymentList
+    ->PaymentMethodsRecord.buildFromPaymentList(~localeString)
     ->Array.find(x =>
       x.paymentMethodName ===
         PaymentUtils.getPaymentMethodName(~paymentMethodType=x.methodType, ~paymentMethodName)
     )
   let optionPaymentMethodDetailsV2 =
     listValue
-    ->PaymentUtilsV2.buildFromPaymentListV2
+    ->PaymentMethodsRecordV2.buildFromPaymentListV2(~localeString)
     ->Array.find(x =>
       x.paymentMethodName ===
         PaymentUtils.getPaymentMethodName(~paymentMethodType=x.methodType, ~paymentMethodName)
