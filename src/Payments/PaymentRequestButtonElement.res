@@ -102,7 +102,7 @@ let make = (~sessions, ~walletOptions) => {
                 | OtherTokenOptional(optToken) =>
                   let connector = optToken->Option.map(token => token.connector)->Option.getOr("")
                   switch connector {
-                  | "stripe" => <GPayBraintree sessionObj=optToken />
+                  | "braintree" => <GPayBraintreeLazy sessionObj=optToken />
                   | _ =>
                     switch googlePayThirdPartyToken {
                     | GooglePayThirdPartyTokenOptional(googlePayThirdPartyOptToken) =>

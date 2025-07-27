@@ -28,15 +28,36 @@ external removeEventListener: (element, string, event => unit) => unit = "remove
 
 let useScript = (src: string, ~\"type"="") => {
   let (status, setStatus) = React.useState(_ => src != "" ? "loading" : "idle")
+
+  let setAttributeFromEvent = (script, event: event) => {
+    setStatus(_ => event.\"type" === "load" ? "ready" : "error")
+    script.setAttribute("data-status", event.\"type" === "load" ? "ready" : "error")
+  }
+
+  let addListeners = element => {
+    element->addEventListener("load", e => setAttributeFromEvent(element, e))
+    element->addEventListener("error", e => setAttributeFromEvent(element, e))
+  }
+  let removeListeners = element => {
+    element->removeEventListener("load", e => setAttributeFromEvent(element, e))
+    element->removeEventListener("error", e => setAttributeFromEvent(element, e))
+  }
+
   React.useEffect(() => {
     if src == "" {
       setStatus(_ => "idle")
     }
     let script = querySelector(`script[src="${src}"]`)
     switch script->Nullable.toOption {
-    | Some(dom) =>
-      setStatus(_ => dom.getAttribute("data-status"))
-      None
+    | Some(elem) =>
+      let loadStatus = elem.getAttribute("data-status")
+      setStatus(_ => loadStatus)
+      if loadStatus == "loading" {
+        addListeners(elem)
+        Some(() => removeListeners(elem))
+      } else {
+        None
+      }
     | None =>
       let script = createElement("script")
       script.src = src
@@ -45,19 +66,9 @@ let useScript = (src: string, ~\"type"="") => {
       }
       script.async = true
       script.setAttribute("data-status", "loading")
+      addListeners(script)
       appendChild(script)
-      let setAttributeFromEvent = (event: event) => {
-        setStatus(_ => event.\"type" === "load" ? "ready" : "error")
-        script.setAttribute("data-status", event.\"type" === "load" ? "ready" : "error")
-      }
-      script->addEventListener("load", setAttributeFromEvent)
-      script->addEventListener("error", setAttributeFromEvent)
-      Some(
-        () => {
-          script->removeEventListener("load", setAttributeFromEvent)
-          script->removeEventListener("error", setAttributeFromEvent)
-        },
-      )
+      Some(() => removeListeners(script))
     }
   }, [src])
   status

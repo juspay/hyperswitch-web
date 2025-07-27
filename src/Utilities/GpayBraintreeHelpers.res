@@ -20,8 +20,8 @@ let environment = GlobalVars.isProd ? "PRODUCTION" : "TEST"
 let buttonSizeMode = "fill"
 let buttonType = "checkout"
 
-let braintreeClientUrl = "https://js.braintreegateway.com/web/3.92.1/js/client.min.js"
-let braintreeGPayUrl = "https://js.braintreegateway.com/web/3.92.1/js/google-payment.min.js"
+let braintreeClientUrl = "https://js.braintreegateway.com/web/3.124.0/js/client.min.js"
+let braintreeGPayUrl = "https://js.braintreegateway.com/web/3.124.0/js/google-payment.min.js"
 let googlePayUrl = "https://pay.google.com/gp/p/js/pay.js"
 
 let createTransactionInfo = (sessionToken: SessionsType.token) => {
@@ -43,4 +43,27 @@ let createGooglePayConfig = clientInstance => {
     "googlePayVersion": googlePayVersion,
     "googleMerchantId": googleMerchantId,
   }->Identity.anyTypeToJson
+}
+
+let createPayObj = (payloadDict): GooglePayType.paymentData => {
+  let description = payloadDict->Utils.getString("description", "")
+  let detailsDict = payloadDict->Utils.getDictFromDict("details")
+  let cardNetwork = detailsDict->Utils.getString("cardType", "")
+  let lastFour = detailsDict->Utils.getString("lastFour", "")
+  let nonce = payloadDict->Utils.getString("nonce", "")
+
+  {
+    paymentMethodData: {
+      description,
+      info: {
+        "card_network": cardNetwork->String.toUpperCase,
+        "card_details": lastFour,
+      }->Identity.anyTypeToJson,
+      tokenizationData: {
+        "type": "PAYMENT_GATEWAY",
+        "token": nonce,
+      }->Identity.anyTypeToJson,
+      \"type": "CARD",
+    },
+  }
 }
