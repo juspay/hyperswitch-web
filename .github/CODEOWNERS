@@ -1,22 +1,16 @@
-- @akash-c-k @ArushKapoorJuspay @PritishBudhiraja @seekshiva @sakksham7 @aritro2002 @Sanskar2001
+*                     @seekshiva @ArushKapoorJuspay @Sanskar2001
 
-* @PritishBudhiraja @seekshiva @ArushKapoorJuspay @Sanskar2001
-docs/ @akash-c-k
-LICENSE @akash-c-k
-README.md @akash-c-k
-SECURITY.md @akash-c-k
-.gitignore @ArushKapoorJuspay @PritishBudhiraja
+Hyperswitch-React-Demo-App/ @ArushKapoorJuspay @aritro2002 @sakksham7 @Sanskar2001 @AbhishekChorotiya
 
-Hyperswitch-React-Demo-App/ @PritishBudhiraja @seekshiva @ArushKapoorJuspay @aritro2002 @sakksham7 @Sanskar2001
+.husky/               @seekshiva  
+.github/              @seekshiva
 
-.husky/ @PritishBudhiraja @seekshiva
-.github/ @PritishBudhiraja @seekshiva
+aws/                  @seekshiva
 
-aws/ @seekshiva
+webpack.dev.js        @ArushKapoorJuspay @seekshiva  
+webpack.common.js     @ArushKapoorJuspay @seekshiva
 
-webpack.dev.js @ArushKapoorJuspay @PritishBudhiraja @seekshiva
-webpack.common.js @ArushKapoorJuspay @PritishBudhiraja @seekshiva
-
-src/ @seekshiva @PritishBudhiraja @ArushKapoorJuspay @sakksham7 @aritro2002
+src/                  @seekshiva @ArushKapoorJuspay @sakksham7 @aritro2002 @AbhishekChorotiya  
 src/hyper-log-catcher @Sanskar2001
-cypress-tests/ @seekshiva @Sanskar2001
+
+cypress-tests/        @Sanskar2001

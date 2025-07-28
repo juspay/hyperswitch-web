@@ -18,6 +18,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "afterpay_clearpay",
   "mifinity",
   "upi_collect",
+  "upi_intent",
   "sepa",
   "sepa_bank_transfer",
   "instant_bank_transfer",
@@ -30,6 +31,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "paypal",
   "instant_bank_transfer_finland",
   "instant_bank_transfer_poland",
+  "klarna",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
@@ -767,7 +769,8 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | IBAN
   | DestinationBankAccountId
   | SourceBankAccountId
-  | BankAccountNumber => true
+  | BankAccountNumber
+  | InfoElement => true
   | _ => false
   }
 }
