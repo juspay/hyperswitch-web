@@ -27,7 +27,6 @@ let useCardForm = (~logger, ~paymentType) => {
   let expiryRef = React.useRef(Nullable.null)
   let cvcRef = React.useRef(Nullable.null)
   let zipRef = React.useRef(Nullable.null)
-  let prevCardBrandRef = React.useRef("")
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
   let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
@@ -85,13 +84,10 @@ let useCardForm = (~logger, ~paymentType) => {
   }, [showPaymentMethodsScreen])
 
   React.useEffect(() => {
-    if prevCardBrandRef.current !== "" {
-      setCvcNumber(_ => "")
-      setCardExpiry(_ => "")
-      setIsExpiryValid(_ => None)
-      setIsCVCValid(_ => None)
-    }
-    prevCardBrandRef.current = cardBrand
+    setCvcNumber(_ => "")
+    setCardExpiry(_ => "")
+    setIsExpiryValid(_ => None)
+    setIsCVCValid(_ => None)
     None
   }, [cardBrand])
 
@@ -124,7 +120,7 @@ let useCardForm = (~logger, ~paymentType) => {
       setDisplayPincode(_ => false)
     }
     setCardNumber(_ => card)
-    if card->String.length == 0 && prevCardBrandRef.current !== "" {
+    if card->String.length == 0 {
       setCvcNumber(_ => "")
       setCardExpiry(_ => "")
       setIsExpiryValid(_ => None)
