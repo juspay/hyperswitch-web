@@ -37,7 +37,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
     paymentMethodListValue,
   )
-  let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
 
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
@@ -189,11 +188,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     paypalToken,
     isPaypalSDKFlow,
     isPaypalRedirectFlow,
-  } = PayPalHelpers.usePaymentMethodExperience(
-    ~paymentMethodListValue,
-    ~paymentMethodsListV2,
-    ~sessionObj,
-  )
+  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
 
   React.useEffect(() => {
     switch paymentMethodList {
