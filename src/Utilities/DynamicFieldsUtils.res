@@ -212,7 +212,6 @@ let useRequiredFieldsEmptyAndValid = (
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
-  let destinationBankAccountId = Recoil.useRecoilValueFromAtom(destinationBankAccountId)
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
 
   let fieldsArrWithBillingAddress = fieldsArr->addBillingAddressIfUseBillingAddress(billingAddress)
@@ -261,7 +260,6 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value !== ""
-      | DestinationBankAccountId => destinationBankAccountId.value !== ""
       | SourceBankAccountId => sourceBankAccountId.value !== ""
       | _ => true
       }
@@ -314,7 +312,6 @@ let useRequiredFieldsEmptyAndValid = (
       | BankAccountNumber
       | IBAN =>
         bankAccountNumber.value === ""
-      | DestinationBankAccountId => destinationBankAccountId.value === ""
       | SourceBankAccountId => sourceBankAccountId.value === ""
       | _ => false
       }
@@ -348,7 +345,6 @@ let useRequiredFieldsEmptyAndValid = (
     cardExpiry,
     cvcNumber,
     bankAccountNumber,
-    destinationBankAccountId.value,
     sourceBankAccountId.value,
     cryptoCurrencyNetworks,
   ))
@@ -391,9 +387,6 @@ let useSetInitialRequiredFields = (
   )
   let (dateOfBirth, setDateOfBirth) = Recoil.useRecoilState(dateOfBirth)
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
-  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useRecoilState(
-    destinationBankAccountId,
-  )
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
 
   React.useEffect(() => {
@@ -522,8 +515,6 @@ let useSetInitialRequiredFields = (
       | IBAN
       | BankAccountNumber =>
         setFields(setBankAccountNumber, bankAccountNumber, requiredField, false)
-      | DestinationBankAccountId =>
-        setFields(setDestinationBankAccountId, destinationBankAccountId, requiredField, false)
       | SourceBankAccountId =>
         setFields(setSourceBankAccountId, sourceBankAccountId, requiredField, false)
       | LanguagePreference(_)
@@ -582,7 +573,6 @@ let useRequiredFieldsBody = (
   let cryptoCurrencyNetworks = Recoil.useRecoilValueFromAtom(cryptoCurrencyNetworks)
   let dateOfBirth = Recoil.useRecoilValueFromAtom(dateOfBirth)
   let bankAccountNumber = Recoil.useRecoilValueFromAtom(userBankAccountNumber)
-  let destinationBankAccountId = Recoil.useRecoilValueFromAtom(destinationBankAccountId)
   let sourceBankAccountId = Recoil.useRecoilValueFromAtom(sourceBankAccountId)
   let countryCode = Utils.getCountryCode(country).isoAlpha2
   let stateCode = Utils.getStateCodeFromStateName(state.value, countryCode)
@@ -642,7 +632,6 @@ let useRequiredFieldsBody = (
     | IBAN
     | BankAccountNumber =>
       bankAccountNumber.value
-    | DestinationBankAccountId => destinationBankAccountId.value
     | SourceBankAccountId => sourceBankAccountId.value
     | StateAndCity
     | CountryAndPincode(_)
@@ -745,7 +734,6 @@ let useRequiredFieldsBody = (
     cryptoCurrencyNetworks,
     dateOfBirth,
     bankAccountNumber,
-    destinationBankAccountId,
     sourceBankAccountId,
   ))
 }
@@ -767,7 +755,6 @@ let isFieldTypeToRenderOutsideBilling = (fieldType: PaymentMethodsRecord.payment
   | Currency(_)
   | VpaId
   | IBAN
-  | DestinationBankAccountId
   | SourceBankAccountId
   | BankAccountNumber
   | InfoElement => true

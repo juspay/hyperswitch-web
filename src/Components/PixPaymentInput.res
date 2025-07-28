@@ -7,9 +7,6 @@ let make = (~label="") => {
   let (pixCNPJ, setPixCNPJ) = Recoil.useRecoilState(userPixCNPJ)
   let (pixCPF, setPixCPF) = Recoil.useRecoilState(userPixCPF)
   let (pixKey, setPixKey) = Recoil.useRecoilState(userPixKey)
-  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useRecoilState(
-    destinationBankAccountId,
-  )
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
 
   let pixKeyRef = React.useRef(Nullable.null)
@@ -159,12 +156,6 @@ let make = (~label="") => {
         setPixCPF(prev => {
           ...prev,
           errorString: localeString.pixCPFEmptyText,
-        })
-      }
-      if destinationBankAccountId.value == "" {
-        setDestinationBankAccountId(prev => {
-          ...prev,
-          errorString: localeString.destinationBankAccountIdEmptyText,
         })
       }
       if sourceBankAccountId.value == "" {
