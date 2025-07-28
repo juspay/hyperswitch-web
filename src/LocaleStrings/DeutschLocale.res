@@ -155,7 +155,6 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   pixKeyEmptyText: `Pix-Schlüssel darf nicht leer sein`,
   pixKeyPlaceholder: `Geben Sie den Pix-Schlüssel ein`,
   pixKeyLabel: `Pix-Schlüssel`,
-  destinationBankAccountIdEmptyText: `Ziel-Bankkonten-ID darf nicht leer sein`,
   sourceBankAccountIdEmptyText: `Quell-Bankkonten-ID darf nicht leer sein`,
   invalidCardHolderNameError: `Der Name des Karteninhabers darf keine Ziffern enthalten`,
   invalidNickNameError: `Der Spitzname darf nicht mehr als 2 Ziffern enthalten`,

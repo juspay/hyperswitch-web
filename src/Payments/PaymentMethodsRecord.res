@@ -46,7 +46,6 @@ type paymentMethodsFields =
   | LanguagePreference(array<string>)
   | BankAccountNumber
   | IBAN
-  | DestinationBankAccountId
   | SourceBankAccountId
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
@@ -648,7 +647,6 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_pix_key", _) => PixKey
   | ("user_bank_account_number", _) => BankAccountNumber
   | ("user_iban", _) => BankAccountNumber
-  | ("user_destination_bank_account_id", _) => DestinationBankAccountId
   | ("user_source_bank_account_id", _) => SourceBankAccountId
   | _ => None
   }

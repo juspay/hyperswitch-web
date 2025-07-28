@@ -143,7 +143,6 @@ type localeStrings = {
   pixKeyEmptyText: string,
   pixKeyLabel: string,
   pixKeyPlaceholder: string,
-  destinationBankAccountIdEmptyText: string,
   sourceBankAccountIdEmptyText: string,
   invalidCardHolderNameError: string,
   invalidNickNameError: string,
