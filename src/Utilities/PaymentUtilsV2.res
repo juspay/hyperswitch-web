@@ -1,6 +1,6 @@
 open UnifiedPaymentsTypesV2
 
-let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement, ~showPaypal) => {
+let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement, ~isShowPaypal) => {
   let walletsList = []
   let walletToBeDisplayedInTabs = [
     "mb_way",
@@ -25,7 +25,7 @@ let paymentListLookupNew = (~paymentMethodListValue: paymentMethodsManagement, ~
     if walletToBeDisplayedInTabs->Array.includes(item.paymentMethodType) {
       otherPaymentList->Array.push(item.paymentMethodType)->ignore
     } else if item.paymentMethodType == "wallet" {
-      if item.paymentMethodSubtype !== "paypal" || showPaypal {
+      if item.paymentMethodSubtype !== "paypal" || isShowPaypal {
         walletsList->Array.push(item.paymentMethodSubtype)->ignore
       }
     } else if item.paymentMethodType == "bank_debit" {
@@ -79,14 +79,14 @@ let useGetPaymentMethodListV2 = (~paymentOptions, ~paymentType: CardThemeType.mo
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentManagementList)
   let paymentsList = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
-  let showPaypal = optionAtomValue.wallets.payPal === Auto
+  let isShowPaypal = optionAtomValue.wallets.payPal === Auto
 
   let resolvePaymentList = list => {
     switch list {
     | LoadedV2(paymentlist) =>
       let {walletsList, otherPaymentList} = paymentListLookupNew(
         ~paymentMethodListValue=paymentlist,
-        ~showPaypal,
+        ~isShowPaypal,
       )
       let wallets = walletsList->removeDuplicate->Utils.getWalletPaymentMethod(paymentType)
       let payments = [...paymentOptions, ...otherPaymentList]->removeDuplicate
