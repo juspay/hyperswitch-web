@@ -40,7 +40,7 @@ let usePaymentMethodExperienceV2 = (
   ~sessionObj: sessions,
 ) => {
   let paypalPaymentMethodExperience = React.useMemo(() => {
-    V2Helpers.getPaymentExperienceTypeFromPML(
+    PaymentMethodsRecordV2.getPaymentExperienceTypeFromPML(
       ~paymentMethodList=paymentMethodsListV2,
       ~paymentMethodName="wallet",
       ~paymentMethodType="paypal",
