@@ -62,6 +62,30 @@ let make = (~sessions, ~walletOptions) => {
   let applePaySessionObj = itemToObjMapper(dict, ApplePayObject)
   let applePayToken = getPaymentSessionObj(applePaySessionObj.sessionsToken, ApplePay)
 
+  let xyz = {
+    "wallet_name": "apple_pay",
+    "payment_request_data": {
+      "country_code": "AU",
+      "currency_code": "USD",
+      "total": {
+        "label": "applepay",
+        "type": "final",
+        "amount": "29.99",
+      },
+      "merchant_capabilities": ["supports3DS"],
+      "supported_networks": ["visa", "masterCard", "amex", "discover"],
+      "merchant_identifier": "merchant.com.adyen.san",
+    },
+    "connector": "braintree",
+    "delayed_session_token": false,
+    "sdk_next_action": {
+      "next_action": "confirm",
+    },
+    "connector_reference_id": null,
+    "connector_sdk_public_key": null,
+    "connector_merchant_id": null,
+  }->Identity.anyTypeToJson
+
   let samsungPaySessionObj = itemToObjMapper(dict, SamsungPayObject)
   let samsungPayToken = getPaymentSessionObj(samsungPaySessionObj.sessionsToken, SamsungPay)
 
@@ -116,6 +140,14 @@ let make = (~sessions, ~walletOptions) => {
                   }
                 | _ => React.null
                 }}
+                {
+                  let dict = xyz->Utils.getDictFromJson
+                  let connector = dict->Utils.getString("connector", "")
+                  switch connector {
+                  | "braintree" => <ApplePayBraintree sessionObj=xyz />
+                  | _ => <ApplePayLazy sessionObj=Some(xyz) walletOptions />
+                  }
+                }
               </SessionPaymentWrapper>
             | PaypalWallet =>
               <SessionPaymentWrapper type_={Wallet}>
@@ -132,12 +164,23 @@ let make = (~sessions, ~walletOptions) => {
                   </RenderIf>
                 }}
               </SessionPaymentWrapper>
-            | ApplePayWallet =>
-              switch applePayToken {
-              | ApplePayTokenOptional(optToken) =>
-                <ApplePayLazy sessionObj=optToken walletOptions />
-              | _ => React.null
-              }
+            | ApplePayWallet => // switch applePayToken {
+              // | ApplePayTokenOptional(optToken) =>
+              //   switch optToken {
+              //   | Some(token) => {
+              // let dict = token->Utils.getDictFromJson
+              // let connector = dict->Utils.getString("connector", "")
+              // switch connector {
+              // | "braintree" => <ApplePayBraintree sessionObj=token />
+              // | _ => <ApplePayLazy sessionObj=Some(token) walletOptions />
+              // }
+              React.null
+            //     }
+            //   | None => React.null
+            //   }
+
+            // | _ => React.null
+            // }
             | SamsungPayWallet =>
               switch samsungPayToken {
               | SamsungPayTokenOptional(optToken) =>

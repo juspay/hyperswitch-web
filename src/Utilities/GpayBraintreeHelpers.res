@@ -7,9 +7,19 @@ external braintreeClientCreate: (authorization, clientCreateCallback) => unit =
 @val
 external braintreeGPayPaymentCreate: (JSON.t, paymentCreateCallback) => unit =
   "braintree.googlePayment.create"
+@val
+external braintreeApplePayPaymentCreate: (JSON.t, applePayCreateCallback) => unit =
+  "braintree.applePay.create"
+
+@val
+external braintreeApplePaySession: nullable<unit> = "window.ApplePaySession"
 
 @new
 external newGPayPaymentClient: environment => paymentClient = "google.payments.api.PaymentsClient"
+@new
+external newApplePaySession: (int, JSON.t) => applePaySessions = "window.ApplePaySession"
+@val
+external applePaySession: applePaySessions = "window.ApplePaySession"
 
 @send
 external appendChildElement: (Dom.element, Dom.element) => unit = "appendChild"
@@ -22,9 +32,10 @@ let buttonType = "checkout"
 
 let braintreeClientUrl = "https://js.braintreegateway.com/web/3.124.0/js/client.min.js"
 let braintreeGPayUrl = "https://js.braintreegateway.com/web/3.124.0/js/google-payment.min.js"
+let braintreeApplePayUrl = "https://js.braintreegateway.com/web/3.124.0/js/apple-pay.min.js"
 let googlePayUrl = "https://pay.google.com/gp/p/js/pay.js"
 
-let createTransactionInfo = (sessionToken: SessionsType.token) => {
+let createGpayTransactionInfo = (sessionToken: SessionsType.token) => {
   let transactionDict = sessionToken.transaction_info->Utils.getDictFromJson
   {
     "transactionInfo": {
@@ -37,11 +48,30 @@ let createTransactionInfo = (sessionToken: SessionsType.token) => {
   }->Identity.anyTypeToJson
 }
 
+let createApplePayTransactionInfo = (sessionToken: JSON.t) => {
+  let sessionTokenDict = sessionToken->Utils.getDictFromJson
+  let paymentRequestDataDict = sessionTokenDict->Utils.getDictFromDict("payment_request_data")
+  let transactionDict = paymentRequestDataDict->Utils.getDictFromDict("total")
+
+  {
+    "total": {
+      "label": transactionDict->Utils.getString("label", ""),
+      "amount": transactionDict->Utils.getString("amount", ""),
+    },
+    "requiredBillingContactFields": ["postalAddress"],
+  }->Identity.anyTypeToJson
+}
+
 let createGooglePayConfig = clientInstance => {
   {
     "client": clientInstance,
     "googlePayVersion": googlePayVersion,
     "googleMerchantId": googleMerchantId,
+  }->Identity.anyTypeToJson
+}
+let createApplePayConfig = clientInstance => {
+  {
+    "client": clientInstance,
   }->Identity.anyTypeToJson
 }
 
