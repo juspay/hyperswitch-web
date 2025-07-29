@@ -278,7 +278,7 @@ let fetchPaymentManagementList = (
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/v2/payment-methods-session/${pmSessionId}/list-payment-methods`
+  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/list-payment-methods`
 
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(res => {
@@ -314,7 +314,7 @@ let deletePaymentMethodV2 = (
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/v2/payment-methods-session/${pmSessionId}`
+  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}`
   fetchApi(
     uri,
     ~method=#DELETE,
@@ -357,7 +357,7 @@ let updatePaymentMethod = (
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
     ("Content-Type", "application/json"),
   ]
-  let uri = `${endpoint}/v2/payment-methods-session/${pmSessionId}/update-saved-payment-method`
+  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
   fetchApi(
     uri,
@@ -398,7 +398,7 @@ let savePaymentMethod = (
     ("Content-Type", "application/json"),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/v2/payment-methods-session/${pmSessionId}/confirm`
+  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/confirm`
   fetchApi(
     uri,
     ~method=#POST,
@@ -448,7 +448,7 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
         ("x-profile-id", keys.profileId),
       ]
       let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey=confirmParam.publishableKey)
-      let uri = `${endpoint}/v2/payment-methods-session/${pmSessionId}/confirm`
+      let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/confirm`
 
       let browserInfo = BrowserSpec.broswerInfo
       let returnUrlArr = [("return_url", confirmParam.return_url->JSON.Encode.string)]
