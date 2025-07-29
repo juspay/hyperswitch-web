@@ -27,6 +27,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let expiryRef = React.useRef(Nullable.null)
   let cvcRef = React.useRef(Nullable.null)
   let zipRef = React.useRef(Nullable.null)
+  let isCoBadgedCardDetectedOnce = React.useRef(false)
   let prevCardBrandRef = React.useRef("")
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
@@ -85,7 +86,7 @@ let useCardForm = (~logger, ~paymentType) => {
   }, [showPaymentMethodsScreen])
 
   React.useEffect(() => {
-    if prevCardBrandRef.current !== "" {
+    if !isCoBadgedCardDetectedOnce.current {
       setCvcNumber(_ => "")
       setCardExpiry(_ => "")
       setIsExpiryValid(_ => None)
@@ -297,7 +298,7 @@ let useCardForm = (~logger, ~paymentType) => {
   }, [cardNumber])
 
   let icon = React.useMemo(() => {
-    <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand />
+    <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand isCoBadgedCardDetectedOnce />
   }, (cardType, paymentType, cardBrand, cardNumber))
 
   let cardProps: CardUtils.cardProps = {
