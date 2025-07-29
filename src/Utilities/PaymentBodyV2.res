@@ -42,6 +42,17 @@ let epsBody = (~name, ~bankName) => {
   ]
 }
 
+let paypalRedirectionBody = () => {
+  let paypalRedirectField =
+    [("paypal_redirect", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
+  let walletData = [("wallet", paypalRedirectField)]->Utils.getJsonFromArrayOfJson
+  [
+    ("payment_method_type", "wallet"->JSON.Encode.string),
+    ("payment_method_subtype", "paypal"->JSON.Encode.string),
+    ("payment_method_data", walletData),
+  ]
+}
+
 let getPaymentBody = (
   ~paymentMethod,
   ~paymentMethodType,
