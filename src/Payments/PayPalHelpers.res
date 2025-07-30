@@ -7,14 +7,17 @@ type paypalExperienceData = {
   isPaypalRedirectFlow: bool,
 }
 
-let usePaypalTokenAndFlowFromExperience = (~paypalExperience, ~sessionObj: sessions) => {
+let usePaypalTokenAndFlowFromExperience = (
+  ~paypalPaymentMethodExperience,
+  ~sessionObj: sessions,
+) => {
   let paypalToken = React.useMemo(
     () => getPaymentSessionObj(sessionObj.sessionsToken, Paypal),
     [sessionObj],
   )
 
-  let isPaypalSDKFlow = paypalExperience->Array.includes(InvokeSDK)
-  let isPaypalRedirectFlow = paypalExperience->Array.includes(RedirectToURL)
+  let isPaypalSDKFlow = paypalPaymentMethodExperience->Array.includes(InvokeSDK)
+  let isPaypalRedirectFlow = paypalPaymentMethodExperience->Array.includes(RedirectToURL)
 
   {
     paypalToken,
@@ -32,7 +35,7 @@ let usePaymentMethodExperience = (~paymentMethodListValue, ~sessionObj: sessions
     )
   }, [paymentMethodListValue])
 
-  usePaypalTokenAndFlowFromExperience(~paypalExperience=paypalPaymentMethodExperience, ~sessionObj)
+  usePaypalTokenAndFlowFromExperience(~paypalPaymentMethodExperience, ~sessionObj)
 }
 
 let usePaymentMethodExperienceV2 = (
@@ -47,5 +50,5 @@ let usePaymentMethodExperienceV2 = (
     )
   }, [paymentMethodsListV2])
 
-  usePaypalTokenAndFlowFromExperience(~paypalExperience=paypalPaymentMethodExperience, ~sessionObj)
+  usePaypalTokenAndFlowFromExperience(~paypalPaymentMethodExperience, ~sessionObj)
 }

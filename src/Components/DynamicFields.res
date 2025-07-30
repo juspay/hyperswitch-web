@@ -37,7 +37,7 @@ let make = (
   let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentManagementListValue,
   )
-  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodListValueV2)
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let contextPaymentType = usePaymentType()
   let listValue = switch contextPaymentType {

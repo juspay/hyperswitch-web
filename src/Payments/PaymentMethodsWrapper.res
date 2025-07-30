@@ -14,7 +14,7 @@ let make = (~paymentMethodName: string) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentManagementListValue)
-  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodListValueV2)
   let contextPaymentType = usePaymentType()
   let listValue = switch contextPaymentType {
   | PaymentMethodsManagement => paymentManagementList

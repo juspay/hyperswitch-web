@@ -11,7 +11,7 @@ let make = () => {
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
-  let paymentsListValue = Recoil.useRecoilValueFromAtom(paymentsListValue)
+  let paymentsListValue = Recoil.useRecoilValueFromAtom(paymentMethodListValueV2)
   let setVaultPublishableKey = Recoil.useSetRecoilState(vaultPublishableKey)
   let setVaultProfileId = Recoil.useSetRecoilState(vaultProfileId)
 

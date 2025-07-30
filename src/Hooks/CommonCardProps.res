@@ -11,7 +11,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let paymentsListValue = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let paymentsListValue = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodListValueV2)
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
