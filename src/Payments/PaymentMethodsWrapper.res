@@ -97,7 +97,7 @@ let make = (~paymentMethodName: string) => {
             ~country=countryCode.isoAlpha2,
             ~fullName=fullName.value,
             ~email=email.value,
-            ~bank=bank.hyperSwitch,
+            ~bank=bank.value,
             ~blikCode=blikCode.value->removeHyphen,
             ~phoneNumber=cleanPhoneNumber(
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
@@ -111,7 +111,7 @@ let make = (~paymentMethodName: string) => {
             ~country=countryCode.isoAlpha2,
             ~fullName=fullName.value,
             ~email=email.value,
-            ~bank=bank.hyperSwitch,
+            ~bank=bank.value,
             ~blikCode=blikCode.value->removeHyphen,
             ~phoneNumber=cleanPhoneNumber(
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
