@@ -546,7 +546,7 @@ let getCountryNames = (list: array<Country.timezoneType>) => {
 
 let getBankNames = (list: Bank.bankList, allBanks: array<string>) => {
   list->Array.reduce([], (arr, item) => {
-    if allBanks->Array.includes(item.hyperSwitch) {
+    if allBanks->Array.includes(item.value) {
       arr->Array.push(item.displayName)->ignore
     }
     arr
@@ -554,8 +554,7 @@ let getBankNames = (list: Bank.bankList, allBanks: array<string>) => {
 }
 
 let getBankKeys = (str, banks: Bank.bankList, default) => {
-  let bank = banks->Array.find(item => item.displayName == str)->Option.getOr(default)
-  bank.hyperSwitch
+  (banks->Array.find(item => item.displayName == str)->Option.getOr(default)).value
 }
 
 let constructClass = (~classname, ~dict) => {

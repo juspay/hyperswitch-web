@@ -601,7 +601,7 @@ let useRequiredFieldsBody = (
         Bank.getBanks(paymentMethodType)
         ->Array.find(item => item.displayName == selectedBank)
         ->Option.getOr(Bank.defaultBank)
-      ).hyperSwitch
+      ).value
     | AddressCountry(_) => {
         let countryCode =
           Country.getCountry(paymentMethodType, countryList)
