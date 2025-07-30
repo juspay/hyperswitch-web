@@ -17,12 +17,16 @@ describe("Cybersource Card Payment flow test", () => {
     changeObjectKeyValue(
       createPaymentBody,
       "profile_id",
-      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE)
+      connectorProfileIdMapping.get(connectorEnum.CYBERSOURCE),
     );
   });
 
   it("should complete the card payment successfully (No 3DS)", () => {
-    changeObjectKeyValue(createPaymentBody, "authentication_type", "no_three_ds");
+    changeObjectKeyValue(
+      createPaymentBody,
+      "authentication_type",
+      "no_three_ds",
+    );
     changeObjectKeyValue(createPaymentBody, "customer_id", "new_customer_id");
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
@@ -45,7 +49,11 @@ describe("Cybersource Card Payment flow test", () => {
   });
 
   it("should fail with an invalid card number", () => {
-    changeObjectKeyValue(createPaymentBody, "authentication_type", "no_three_ds");
+    changeObjectKeyValue(
+      createPaymentBody,
+      "authentication_type",
+      "no_three_ds",
+    );
     cy.createPaymentIntent(secretKey, createPaymentBody).then(() => {
       cy.getGlobalState("clientSecret").then((clientSecret) => {
         cy.visit(getClientURL(clientSecret, publishableKey));
