@@ -549,7 +549,8 @@ let make = (
           | ShippingAddressState
           | PhoneCountryCode
           | LanguagePreference(_)
-          | ShippingAddressCountry(_) => React.null
+          | ShippingAddressCountry(_)
+          | BankList(_) => React.null
           }}
         </DynamicFieldsToRenderWrapper>
       })
@@ -773,6 +774,20 @@ let make = (
                     setValue=setCountry
                     disabled=false
                     options=updatedCountryArr
+                  />
+                | BankList(bankArr) =>
+                  let updatedBankNames =
+                    Utils.getBankDisplayNamesFromEpsList(
+                      bankArr,
+                      Bank.epsBanks,
+                    )->DropdownField.updateArrayOfStringToOptionsTypeArray
+                  <DropdownField
+                    appearance=config.appearance
+                    fieldName=localeString.bankLabel
+                    value=selectedBank
+                    setValue=setSelectedBank
+                    disabled=false
+                    options=updatedBankNames
                   />
                 | Bank =>
                   let updatedBankNames =
