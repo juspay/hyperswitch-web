@@ -1547,14 +1547,6 @@ let toSpacedUpperCase = (~str, ~delimiter) =>
   ->String.split(delimiter)
   ->Array.join(" ")
 
-let getBankDisplayNamesFromEpsList = (bankArr: array<string>, epsBanks: Bank.bankList) => {
-  bankArr->Array.filterMap(bankName => {
-    epsBanks
-    ->Array.find(bank => bank.value === bankName)
-    ->Option.map(bank => bank.displayName)
-  })
-}
-
 let handleFailureResponse = (~message, ~errorType) =>
   [
     (

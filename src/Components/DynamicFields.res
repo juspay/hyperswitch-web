@@ -777,10 +777,9 @@ let make = (
                   />
                 | BankList(bankArr) =>
                   let updatedBankNames =
-                    Utils.getBankDisplayNamesFromEpsList(
-                      bankArr,
-                      Bank.epsBanks,
-                    )->DropdownField.updateArrayOfStringToOptionsTypeArray
+                    Bank.getBanks(paymentMethodType)
+                    ->getBankNames(bankArr)
+                    ->DropdownField.updateArrayOfStringToOptionsTypeArray
                   <DropdownField
                     appearance=config.appearance
                     fieldName=localeString.bankLabel
