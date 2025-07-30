@@ -1548,9 +1548,9 @@ let toSpacedUpperCase = (~str, ~delimiter) =>
   ->Array.join(" ")
 
 let getBankDisplayNamesFromEpsList = (bankArr: array<string>, epsBanks: Bank.bankList) => {
-  bankArr->Array.filterMap(hyperswitchValue => {
+  bankArr->Array.filterMap(bankName => {
     epsBanks
-    ->Array.find(bank => bank.hyperSwitch === hyperswitchValue)
+    ->Array.find(bank => bank.value === bankName)
     ->Option.map(bank => bank.displayName)
   })
 }
