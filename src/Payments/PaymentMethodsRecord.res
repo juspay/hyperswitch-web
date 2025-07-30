@@ -9,6 +9,7 @@ type paymentMethodsFields =
   | InfoElement
   | Country
   | Bank
+  | BankList(array<string>)
   | SpecialField(React.element)
   | None
   | BillingName
@@ -692,6 +693,10 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
   | "language_preference" => {
       let options = dict->getArrayValFromJsonDict("language_preference", "options")
       LanguagePreference(options)
+    }
+  | "user_bank_options" => {
+      let options = dict->getArrayValFromJsonDict("user_bank_options", "options")
+      BankList(options)
     }
   | _ => None
   }

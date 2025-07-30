@@ -533,6 +533,7 @@ let useSetInitialRequiredFields = (
       | ShippingAddressPincode
       | ShippingAddressState
       | ShippingAddressCountry(_)
+      | BankList(_)
       | VpaId
       | None => ()
       }
@@ -647,6 +648,7 @@ let useRequiredFieldsBody = (
     | ShippingAddressPincode
     | ShippingAddressState
     | ShippingAddressCountry(_)
+    | BankList(_)
     | None => ""
     }
   }
