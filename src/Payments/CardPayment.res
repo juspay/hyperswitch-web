@@ -220,7 +220,7 @@ let make = (
               (
                 async () => {
                   let res = await ClickToPayHelpers.encryptCardForClickToPay(
-                    ~cardNumber=cardNumber->CardUtils.clearSpaces,
+                    ~cardNumber=cardNumber->CardValidations.clearSpaces,
                     ~expiryMonth=month,
                     ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
                     ~cvcNumber,

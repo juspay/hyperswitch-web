@@ -537,7 +537,7 @@ let fetchSessions = (
   ~paymentId,
   ~wallets=[],
   ~isDelayedSessionToken=false,
-  ~optLogger as _,
+  ~logger as _,
   ~customPodUri,
   ~endpoint,
   ~profileId,
