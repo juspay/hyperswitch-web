@@ -1,5 +1,3 @@
-open CardValidations
-
 type cardIssuer =
   | VISA
   | MASTERCARD
@@ -206,6 +204,7 @@ let getCardStringFromType = val => {
 }
 
 let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
+  open CardValidations
   let tempTimeDateString = dateTimeIsoString->String.replace("Z", "")
   let tempTimeDate = tempTimeDateString->String.split("T")
 
@@ -219,9 +218,14 @@ let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
 }
 
 let formatCardNumber = (val, cardType) => {
-  let clearValue = val->clearSpaces
+  open String
+  let clearValue = val->CardValidations.clearSpaces
   let formatedCard = switch cardType {
-  | AMEX => `${clearValue->slice(0, 4)} ${clearValue->slice(4, 10)} ${clearValue->slice(10, 15)}`
+  | AMEX =>
+    `${clearValue->slice(~start=0, ~end=4)} ${clearValue->slice(
+        ~start=4,
+        ~end=10,
+      )} ${clearValue->slice(~start=10, ~end=15)}`
   | DINERSCLUB
   | MASTERCARD
   | DISCOVER
@@ -229,22 +233,28 @@ let formatCardNumber = (val, cardType) => {
   | RUPAY
   | UNIONPAY
   | VISA =>
-    `${clearValue->slice(0, 4)} ${clearValue->slice(4, 8)} ${clearValue->slice(
-        8,
-        12,
-      )} ${clearValue->slice(12, 16)} ${clearValue->slice(16, 19)}`
+    `${clearValue->slice(~start=0, ~end=4)} ${clearValue->slice(
+        ~start=4,
+        ~end=8,
+      )} ${clearValue->slice(~start=8, ~end=12)} ${clearValue->slice(
+        ~start=12,
+        ~end=16,
+      )} ${clearValue->slice(~start=16, ~end=19)}`
   | _ =>
-    `${clearValue->slice(0, 4)} ${clearValue->slice(4, 8)} ${clearValue->slice(
-        8,
-        12,
-      )} ${clearValue->slice(12, 19)}`
+    `${clearValue->slice(~start=0, ~end=4)} ${clearValue->slice(
+        ~start=4,
+        ~end=8,
+      )} ${clearValue->slice(~start=8, ~end=12)} ${clearValue->slice(
+        ~start=12,
+        ~end=16,
+      )} ${clearValue->slice(~start=16, ~end=19)}`
   }
 
-  formatedCard->String.trim
+  formatedCard->trim
 }
 let getExpiryDates = val => {
   let date = Date.make()->Date.toISOString
-  let (month, year) = splitExpiryDates(val)
+  let (month, year) = CardValidations.splitExpiryDates(val)
   let (_, currentYear) = getCurrentMonthAndYear(date)
   let prefix = currentYear->Int.toString->String.slice(~start=0, ~end=2)
   (month, `${prefix}${year}`)
@@ -258,7 +268,7 @@ let formatExpiryToTwoDigit = expiry => {
 }
 
 let isExpiryComplete = val => {
-  let (month, year) = splitExpiryDates(val)
+  let (month, year) = CardValidations.splitExpiryDates(val)
   month->String.length == 2 && year->String.length == 2
 }
 
@@ -324,6 +334,7 @@ let getCardBrand = cardNumber => {
 }
 
 let calculateLuhn = value => {
+  open CardValidations
   let card = value->clearSpaces
   let splitArr = card->String.split("")
   splitArr->Array.reverse
@@ -394,6 +405,7 @@ let getCardBrandIcon = (cardType, paymentType) => {
 }
 
 let getExpiryValidity = cardExpiry => {
+  open CardValidations
   let date = Date.make()->Date.toISOString
   let (month, year) = getExpiryDates(cardExpiry)
   let (currentMonth, currentYear) = getCurrentMonthAndYear(date)
@@ -416,6 +428,7 @@ let isExipryValid = val => {
 }
 
 let cardNumberInRange = (val, cardBrand) => {
+  open CardValidations
   let clearValue = val->clearSpaces
   let obj = getobjFromCardPattern(cardBrand)
   let cardLengthInRange = obj.length->Array.map(item => {
@@ -428,6 +441,7 @@ let max = (a, b) => {
 }
 
 let getMaxLength = val => {
+  open CardValidations
   let obj = getobjFromCardPattern(val)
   let maxValue = obj.length->Array.reduce(0, max)
   if maxValue <= 12 {
@@ -442,6 +456,7 @@ let getMaxLength = val => {
 }
 
 let cvcNumberInRange = (val, cardBrand) => {
+  open CardValidations
   let clearValue = val->clearSpaces
   let obj = getobjFromCardPattern(cardBrand)
   let cvcLengthInRange = obj.cvcLength->Array.map(item => {
@@ -479,21 +494,22 @@ let generateFontsLink = (fonts: array<CardThemeType.fonts>) => {
 }
 
 let maxCardLength = cardBrand => {
-  let obj = getobjFromCardPattern(cardBrand)
+  let obj = CardValidations.getobjFromCardPattern(cardBrand)
   Array.reduce(obj.length, 0, (acc, val) => max(acc, val))
 }
 
 let isCardLengthValid = (cardBrand, cardNumberLength) => {
-  let obj = getobjFromCardPattern(cardBrand)
+  let obj = CardValidations.getobjFromCardPattern(cardBrand)
   Array.includes(obj.length, cardNumberLength)
 }
 
 let cardValid = (cardNumber, cardBrand) => {
-  let clearValueLength = cardNumber->clearSpaces->String.length
+  let clearValueLength = cardNumber->CardValidations.clearSpaces->String.length
   isCardLengthValid(cardBrand, clearValueLength) && calculateLuhn(cardNumber)
 }
 
 let focusCardValid = (cardNumber, cardBrand) => {
+  open CardValidations
   let clearValueLength = cardNumber->clearSpaces->String.length
   if cardBrand == "" {
     clearValueLength == maxCardLength(cardBrand) && calculateLuhn(cardNumber)
@@ -578,7 +594,7 @@ let commonKeyDownEvent = (ev, srcRef, destRef, srcEle, destEle, setEle) => {
   let key = ReactEvent.Keyboard.keyCode(ev)
   if key == 8 && srcEle == "" {
     handleInputFocus(~currentRef=srcRef, ~destinationRef=destRef)
-    setEle(_ => slice(destEle, 0, -1))
+    setEle(_ => destEle->String.slice(~start=0, ~end=-1))
     ev->ReactEvent.Keyboard.preventDefault
   }
 }
@@ -698,9 +714,11 @@ let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
 }
 
 let getFirstValidCardSchemeFromPML = (~cardNumber, ~enabledCardSchemes) => {
-  let allMatchedCards = getAllMatchedCardSchemes(cardNumber->clearSpaces)
+  let allMatchedCards = CardValidations.getAllMatchedCardSchemes(
+    cardNumber->CardValidations.clearSpaces,
+  )
   allMatchedCards->Array.find(card =>
-    isCardSchemeEnabled(~cardScheme=card->String.toLowerCase, ~enabledCardSchemes)
+    CardValidations.isCardSchemeEnabled(~cardScheme=card->String.toLowerCase, ~enabledCardSchemes)
   )
 }
 
