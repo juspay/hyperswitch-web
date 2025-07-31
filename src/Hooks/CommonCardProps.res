@@ -27,6 +27,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let expiryRef = React.useRef(Nullable.null)
   let cvcRef = React.useRef(Nullable.null)
   let zipRef = React.useRef(Nullable.null)
+  let isCoBadgedCardDetectedOnce = React.useRef(false)
   let prevCardBrandRef = React.useRef("")
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
@@ -65,7 +66,7 @@ let useCardForm = (~logger, ~paymentType) => {
   }, [cardBrand])
 
   React.useEffect(() => {
-    let obj = getobjFromCardPattern(cardBrand)
+    let obj = CardValidations.getobjFromCardPattern(cardBrand)
     let cvcLength = obj.maxCVCLength
     if (
       cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true) &&
@@ -85,7 +86,7 @@ let useCardForm = (~logger, ~paymentType) => {
   }, [showPaymentMethodsScreen])
 
   React.useEffect(() => {
-    if prevCardBrandRef.current !== "" {
+    if !isCoBadgedCardDetectedOnce.current {
       setCvcNumber(_ => "")
       setCardExpiry(_ => "")
       setIsExpiryValid(_ => None)
@@ -108,7 +109,7 @@ let useCardForm = (~logger, ~paymentType) => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
     let card = val->formatCardNumber(cardType)
-    let clearValue = card->clearSpaces
+    let clearValue = card->CardValidations.clearSpaces
     setCardValid(clearValue, cardBrand, setIsCardValid)
     if (
       focusCardValid(clearValue, cardBrand) &&
@@ -136,7 +137,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let changeCardExpiry = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardExpiry", logger)
-    let formattedExpiry = val->formatCardExpiryNumber
+    let formattedExpiry = val->CardValidations.formatCardExpiryNumber
     if isExipryValid(formattedExpiry) {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
       emitExpiryDate(formattedExpiry)
@@ -148,7 +149,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let changeCVCNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardCVC", logger)
-    let cvc = val->formatCVCNumber(cardBrand)
+    let cvc = val->CardValidations.formatCVCNumber(cardBrand)
     setCvcNumber(_ => cvc)
     if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
       zipRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore
@@ -297,7 +298,7 @@ let useCardForm = (~logger, ~paymentType) => {
   }, [cardNumber])
 
   let icon = React.useMemo(() => {
-    <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand />
+    <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand isCoBadgedCardDetectedOnce />
   }, (cardType, paymentType, cardBrand, cardNumber))
 
   let cardProps: CardUtils.cardProps = {

@@ -115,7 +115,7 @@ let getMessageHandlerV2Elements = (
     ~paymentId,
     ~profileId,
     ~publishableKey,
-    ~optLogger=Some(logger),
+    ~logger,
     ~customPodUri,
     ~endpoint,
   )

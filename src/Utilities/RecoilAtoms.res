@@ -79,7 +79,6 @@ let userPixCNPJ = Recoil.atom("userPixCNPJ", defaultFieldValues)
 let isCompleteCallbackUsed = Recoil.atom("isCompleteCallbackUsed", false)
 let isPaymentButtonHandlerProvidedAtom = Recoil.atom("isPaymentButtonHandlerProvidedAtom", false)
 let userBankAccountNumber = Recoil.atom("userBankAccountNumber", defaultFieldValues)
-let destinationBankAccountId = Recoil.atom("destinationBankAccountId", defaultFieldValues)
 let sourceBankAccountId = Recoil.atom("sourceBankAccountId", defaultFieldValues)
 
 type areOneClickWalletsRendered = {

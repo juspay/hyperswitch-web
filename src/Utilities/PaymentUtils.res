@@ -35,6 +35,7 @@ let paymentListLookupNew = (
     "touch_n_go",
     "mifinity",
     "revolut_pay",
+    "skrill",
   ]
   let otherPaymentList = []
 
@@ -560,7 +561,7 @@ let getSupportedCardBrands = (paymentMethodListValue: PaymentMethodsRecord.payme
 }
 
 let checkIsCardSupported = (cardNumber, cardBrand, supportedCardBrands) => {
-  let clearValue = cardNumber->CardUtils.clearSpaces
+  let clearValue = cardNumber->CardValidations.clearSpaces
   if cardBrand == "" {
     Some(CardUtils.cardValid(clearValue, cardBrand))
   } else if CardUtils.cardValid(clearValue, cardBrand) {

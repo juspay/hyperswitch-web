@@ -9,6 +9,7 @@ type paymentMethodsFields =
   | InfoElement
   | Country
   | Bank
+  | BankList(array<string>)
   | SpecialField(React.element)
   | None
   | BillingName
@@ -46,7 +47,6 @@ type paymentMethodsFields =
   | LanguagePreference(array<string>)
   | BankAccountNumber
   | IBAN
-  | DestinationBankAccountId
   | SourceBankAccountId
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
@@ -586,6 +586,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     miniIcon: None,
   },
   {
+    paymentMethodName: "skrill",
+    fields: [InfoElement],
+    icon: Some(icon("skrill", ~size=19)),
+    displayName: "Skrill",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "upi_collect",
     fields: [InfoElement],
     icon: Some(icon("bhim_upi", ~size=19)),
@@ -648,7 +655,6 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_pix_key", _) => PixKey
   | ("user_bank_account_number", _) => BankAccountNumber
   | ("user_iban", _) => BankAccountNumber
-  | ("user_destination_bank_account_id", _) => DestinationBankAccountId
   | ("user_source_bank_account_id", _) => SourceBankAccountId
   | _ => None
   }
@@ -694,6 +700,10 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
   | "language_preference" => {
       let options = dict->getArrayValFromJsonDict("language_preference", "options")
       LanguagePreference(options)
+    }
+  | "user_bank_options" => {
+      let options = dict->getArrayValFromJsonDict("user_bank_options", "options")
+      BankList(options)
     }
   | _ => None
   }
