@@ -586,6 +586,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "skrill",
+    fields: [InfoElement],
+    icon: Some(icon("skrill", ~size=19)),
+    displayName: "Skrill",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "upi_collect",
     fields: [InfoElement],
     icon: Some(icon("bhim_upi", ~size=19)),
