@@ -609,7 +609,7 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
   {
     paymentMethodName: "bluecode",
     fields: [InfoElement],
-    icon: Some(icon("bluecodehh")),
+    icon: Some(icon("bluecode")),
     displayName: "Bluecode",
     miniIcon: None,
   },
