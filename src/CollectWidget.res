@@ -90,7 +90,7 @@ let make = (
     // Empty string is valid (no error)
     | (_, _, "") => (true, "")
     | (PayoutMethodData(CardExpDate(_)), "number" | "tel", _) => {
-        let formattedExpiry = formatCardExpiryNumber(value)
+        let formattedExpiry = CardValidations.formatCardExpiryNumber(value)
         if isExipryValid(formattedExpiry) {
           handleInputFocus(~currentRef=cardExpRef, ~destinationRef=cardHolderRef)
         }
@@ -103,7 +103,7 @@ let make = (
           ->Option.getOr(""),
         )
         let formattedCardNumber = formatCardNumber(value, cardType)
-        if cardValid(clearSpaces(formattedCardNumber), getCardStringFromType(cardType)) {
+        if cardValid(CardValidations.clearSpaces(formattedCardNumber), getCardStringFromType(cardType)) {
           handleInputFocus(~currentRef=cardNumberRef, ~destinationRef=cardExpRef)
         }
         (true, formattedCardNumber)

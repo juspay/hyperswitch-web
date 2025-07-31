@@ -62,7 +62,7 @@ let make = (~modalData, ~setModalData) => {
     | Some(data: ACHTypes.data) =>
       let last4digts =
         data.iban !== ""
-          ? data.iban->CardUtils.clearSpaces->String.sliceToEnd(~start=-4)
+          ? data.iban->CardValidations.clearSpaces->String.sliceToEnd(~start=-4)
           : data.accountNumber->String.sliceToEnd(~start=-4)
 
       <div className="flex flex-row justify-between w-full relative animate-slowShow">

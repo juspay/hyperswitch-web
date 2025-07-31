@@ -613,7 +613,7 @@ let useRequiredFieldsBody = (
         countryCode.isoAlpha2
       }
     | BillingName => billingName.value
-    | CardNumber => cardNumber->CardUtils.clearSpaces
+    | CardNumber => cardNumber->CardValidations.clearSpaces
     | CardExpiryMonth =>
       let (month, _) = CardUtils.getExpiryDates(cardExpiry)
       month
