@@ -1,5 +1,6 @@
 open PaymentType
 open Utils
+open PaymentUtils
 
 let cardsToRender = (width: int) => {
   let minWidth = 130
@@ -12,7 +13,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   let divRef = React.useRef(Nullable.null)
 
   let {
-    showCardFormByDefault,
     paymentMethodOrder,
     layout,
     customerPaymentMethods,
@@ -30,10 +30,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
   let (selectedOption, setSelectedOption) = Recoil.useRecoilState(RecoilAtoms.selectedOptionAtom)
-  let (showFields, setShowFields) = Recoil.useRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
+    RecoilAtoms.showPaymentMethodsScreen,
+  )
   let (paymentToken, setPaymentToken) = Recoil.useRecoilState(RecoilAtoms.paymentTokenAtom)
   let (paymentMethodListValue, setPaymentMethodListValue) = Recoil.useRecoilState(
-    PaymentUtils.paymentMethodListValue,
+    paymentMethodListValue,
   )
 
   let (sessions, setSessions) = React.useState(_ => Dict.make()->JSON.Encode.object)
@@ -65,13 +67,12 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     ~setAreClickToPayUIScriptsLoaded,
     ~savedMethods,
     ~loadSavedCards,
-    ~setShowFields,
   )
 
   React.useEffect(() => {
     switch (displaySavedPaymentMethods, customerPaymentMethods) {
     | (false, _) => {
-        setShowFields(_ => isShowPaymentMethodsDependingOnClickToPay->not)
+        setShowPaymentMethodsScreen(_ => isShowPaymentMethodsDependingOnClickToPay->not)
         setLoadSavedCards(_ => LoadedSavedCards([], true))
       }
     | (_, LoadingSavedCards) => ()
@@ -110,7 +111,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
 
         let sortSavedMethodsBasedOnPriority =
-          finalSavedPaymentMethods->PaymentUtils.sortCustomerMethodsBasedOnPriority(
+          finalSavedPaymentMethods->sortCustomerMethodsBasedOnPriority(
             paymentOrder,
             ~displayDefaultSavedPaymentIcon,
           )
@@ -121,14 +122,14 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             ? NoResult(isGuestCustomer)
             : LoadedSavedCards(finalSavedPaymentMethods, isGuestCustomer)
         )
-        setShowFields(_ =>
+        setShowPaymentMethodsScreen(_ =>
           finalSavedPaymentMethods->Array.length == 0 &&
             isShowPaymentMethodsDependingOnClickToPay->not
         )
       }
     | (_, NoResult(isGuestCustomer)) => {
         setLoadSavedCards(_ => NoResult(isGuestCustomer))
-        setShowFields(_ => true && isShowPaymentMethodsDependingOnClickToPay->not)
+        setShowPaymentMethodsScreen(_ => true && isShowPaymentMethodsDependingOnClickToPay->not)
       }
     }
 
@@ -167,7 +168,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, [savedMethods])
 
-  let (walletList, paymentOptionsList, actualList) = PaymentUtils.useGetPaymentMethodList(
+  let (walletList, paymentOptionsList, actualList) = useGetPaymentMethodList(
     ~paymentOptions,
     ~paymentType,
     ~sessions,
@@ -196,39 +197,37 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
       setPaymentOptions(_ =>
         [
-          ...showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? ["card"] : [],
+          ...checkPriorityList(paymentMethodOrder) ? ["card"] : [],
           ...paymentOptionsList,
         ]->removeDuplicate
       )
       setWalletOptions(_ => walletList)
       setPaymentMethodListValue(_ => plist)
-      showCardFormByDefault
-        ? if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
-            ErrorUtils.manageErrorWarning(
-              SDK_CONNECTOR_WARNING,
-              ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
-              ~logger=loggerState,
-            )
-          } else if !checkPriorityList(paymentMethodOrder) {
-            ErrorUtils.manageErrorWarning(
-              SDK_CONNECTOR_WARNING,
-              ~dynamicStr=`'paymentMethodOrder' is ${Array.join(
-                  paymentMethodOrder->getOptionalArr,
-                  ", ",
-                )} . Please enable Card Payment as 1st priority to show it as default.`,
-              ~logger=loggerState,
-            )
-          }
-        : ()
+
+      if !(actualList->Array.includes(selectedOption)) && selectedOption !== "" {
+        ErrorUtils.manageErrorWarning(
+          SDK_CONNECTOR_WARNING,
+          ~dynamicStr="Please enable Card Payment in the dashboard, or 'ShowCard.FormByDefault' to false.",
+          ~logger=loggerState,
+        )
+      } else if !checkPriorityList(paymentMethodOrder) {
+        ErrorUtils.manageErrorWarning(
+          SDK_CONNECTOR_WARNING,
+          ~dynamicStr=`'paymentMethodOrder' is ${Array.join(
+              paymentMethodOrder->getOptionalArr,
+              ", ",
+            )} . Please enable Card Payment as 1st priority to show it as default.`,
+          ~logger=loggerState,
+        )
+      }
+
     | LoadError(_)
     | SemiLoaded =>
-      setPaymentOptions(_ =>
-        showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? ["card"] : []
-      )
+      setPaymentOptions(_ => checkPriorityList(paymentMethodOrder) ? ["card"] : [])
     | _ => ()
     }
     None
-  }, (paymentMethodList, walletList, paymentOptionsList, actualList, showCardFormByDefault))
+  }, (paymentMethodList, walletList, paymentOptionsList, actualList))
 
   React.useEffect(() => {
     if layoutClass.\"type" == Tabs {
@@ -288,25 +287,16 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         : switch paymentMethodList {
           | SemiLoaded
           | LoadError(_) =>
-            showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? "card" : ""
+            checkPriorityList(paymentMethodOrder) ? "card" : ""
           | Loaded(_) =>
-            paymentOptions->Array.includes(selectedOption) && showCardFormByDefault
+            paymentOptions->Array.includes(selectedOption)
               ? selectedOption
               : paymentOptions->Array.get(0)->Option.getOr("")
           | _ => paymentOptions->Array.get(0)->Option.getOr("")
           }
     )
     None
-  }, (
-    layoutClass.defaultCollapsed,
-    paymentOptions,
-    paymentMethodList,
-    selectedOption,
-    showCardFormByDefault,
-  ))
-  let checkRenderOrComp = () => {
-    walletOptions->Array.includes("paypal") || isShowOrPayUsing
-  }
+  }, (layoutClass.defaultCollapsed, paymentOptions, paymentMethodList, selectedOption))
 
   let loader = () => {
     handlePostMessageEvents(
@@ -321,10 +311,6 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     <ErrorBoundary key={selectedOption} componentName="PaymentElement" publishableKey>
       {switch selectedOption->PaymentModeType.paymentMode {
       | Card => <CardPayment cardProps expiryProps cvcProps />
-      | Klarna =>
-        <ReusableReactSuspense loaderComponent={loader()} componentName="KlarnaPaymentLazy">
-          <KlarnaPaymentLazy />
-        </ReusableReactSuspense>
       | ACHTransfer =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="ACHBankTransferLazy">
           <ACHBankTransferLazy />
@@ -426,7 +412,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }
 
   let paymentLabel = if displaySavedPaymentMethods {
-    showFields
+    showPaymentMethodsScreen
       ? optionAtomValue.paymentMethodsHeaderText
       : optionAtomValue.savedPaymentMethodsHeaderText
   } else {
@@ -472,7 +458,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       }
     } else {
       <RenderIf
-        condition={!showFields &&
+        condition={!showPaymentMethodsScreen &&
         (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay)}>
         <SavedMethods
           paymentToken
@@ -490,7 +476,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }}
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
-      showFields &&
+      showPaymentMethodsScreen &&
       clickToPayConfig.isReady->Option.isSome}>
       <div
         className="flex flex-col place-items-center"
@@ -506,7 +492,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <RenderIf
           condition={paymentOptions->Array.length > 0 &&
           walletOptions->Array.length > 0 &&
-          checkRenderOrComp()}>
+          checkRenderOrComp(~walletOptions, isShowOrPayUsing)}>
           <Or />
         </RenderIf>
         {switch layoutClass.\"type" {
@@ -525,7 +511,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     </RenderIf>
     <RenderIf
       condition={((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
-        isShowPaymentMethodsDependingOnClickToPay) && showFields}>
+        isShowPaymentMethodsDependingOnClickToPay) && showPaymentMethodsScreen}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
@@ -542,10 +528,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
           let key = JsxEvent.Keyboard.key(event)
           let keyCode = JsxEvent.Keyboard.keyCode(event)
           if key == "Enter" || keyCode == 13 {
-            setShowFields(_ => false)
+            setShowPaymentMethodsScreen(_ => false)
           }
         }}
-        onClick={_ => setShowFields(_ => false)}>
+        onClick={_ => setShowPaymentMethodsScreen(_ => false)}>
         <Icon name="circle_dots" size=20 width=19 />
         {React.string(localeString.useExistingPaymentMethods)}
       </div>

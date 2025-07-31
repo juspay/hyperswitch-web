@@ -1,6 +1,6 @@
 {
   "name": "orca-payment-page",
-  "version": "0.122.10",
+  "version": "0.123.0",
   "main": "index.js",
   "private": true,
   "dependencies": {
@@ -27,13 +27,16 @@
     "build:sandbox:v2": "cross-env NODE_ENV=production sdkEnv=sandbox SDK_VERSION=v2 webpack --config webpack.common.js",
     "build:prod:v2": "cross-env NODE_ENV=production sdkEnv=prod SDK_VERSION=v2 webpack --config webpack.common.js",
     "deploy-to-s3": "node ./scripts/pushToS3.js",
-    "postinstall": "git config core.hooksPath .githooks && git submodule update --init --recursive && chmod +x .githooks/commit-msg && cd Hyperswitch-React-Demo-App && npm i",
+    "setup:hooks": "git config core.hooksPath .githooks && chmod +x .githooks/commit-msg",
+    "setup:submodules": "git submodule update --init --recursive",
+    "setup:playground": "cd Hyperswitch-React-Demo-App && npm i",
+    "postinstall": "npm run setup:hooks && npm run update:submodules && npm run setup:playground",
+    "update:submodules": "bash ./scripts/update-submodules.sh",
     "re:build": "rescript",
     "re:clean": "rescript clean",
     "re:format": "rescript format -all",
     "re:start": "rescript -w",
-    "setup:playground": "npm run postinstall && cd Hyperswitch-React-Demo-App && node promptScript.js",
-    "start": "cross-env sdkEnv=local webpack serve --config webpack.dev.js",
+    "start": "npm run update:submodules && cross-env sdkEnv=local webpack serve --config webpack.dev.js",
     "start:playground": "npm run setup:playground && npm run start",
     "test": "cd cypress-tests && npm run cypress:run",
     "test:hooks": "eslint src/"

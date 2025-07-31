@@ -21,7 +21,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setUpdateSession = Recoil.useSetRecoilState(updateSession)
   let (divH, setDivH) = React.useState(_ => 0.0)
   let (launchTime, setLaunchTime) = React.useState(_ => 0.0)
-  let {showCardFormByDefault, paymentMethodOrder} = optionsPayment
+  let {paymentMethodOrder} = optionsPayment
   let (_, setPaymentMethodCollectOptions) = Recoil.useRecoilState(paymentMethodCollectOptionAtom)
   let url = RescriptReactRouter.useUrl()
   let componentName = CardUtils.getQueryParamsDictforKey(url.search, "componentName")
@@ -33,14 +33,14 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
 
   let messageParentWindow = data => messageParentWindow(data, ~targetOrigin=keys.parentURL)
 
-  let setUserFullName = Recoil.useLoggedSetRecoilState(userFullName, "fullName", logger)
-  let setUserEmail = Recoil.useLoggedSetRecoilState(userEmailAddress, "email", logger)
-  let setUserAddressline1 = Recoil.useLoggedSetRecoilState(userAddressline1, "line1", logger)
-  let setUserAddressline2 = Recoil.useLoggedSetRecoilState(userAddressline2, "line2", logger)
-  let setUserAddressCity = Recoil.useLoggedSetRecoilState(userAddressCity, "city", logger)
-  let setUserAddressPincode = Recoil.useLoggedSetRecoilState(userAddressPincode, "pin", logger)
-  let setUserAddressState = Recoil.useLoggedSetRecoilState(userAddressState, "state", logger)
-  let setUserAddressCountry = Recoil.useLoggedSetRecoilState(userAddressCountry, "country", logger)
+  let setUserFullName = Recoil.useSetRecoilState(userFullName)
+  let setUserEmail = Recoil.useSetRecoilState(userEmailAddress)
+  let setUserAddressline1 = Recoil.useSetRecoilState(userAddressline1)
+  let setUserAddressline2 = Recoil.useSetRecoilState(userAddressline2)
+  let setUserAddressCity = Recoil.useSetRecoilState(userAddressCity)
+  let setUserAddressPincode = Recoil.useSetRecoilState(userAddressPincode)
+  let setUserAddressState = Recoil.useSetRecoilState(userAddressState)
+  let setUserAddressCountry = Recoil.useSetRecoilState(userAddressCountry)
   let setCountry = Recoil.useSetRecoilState(userCountry)
   let setIsCompleteCallbackUsed = Recoil.useSetRecoilState(isCompleteCallbackUsed)
   let setIsPaymentButtonHandlerProvided = Recoil.useSetRecoilState(
@@ -164,8 +164,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     ])
     logger.setLogInitiated()
     let updatedState: PaymentType.loadType = switch paymentMethodList {
-    | Loading =>
-      showCardFormByDefault && checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
+    | Loading => checkPriorityList(paymentMethodOrder) ? SemiLoaded : Loading
     | x => x
     }
     let finalLoadLatency = if launchTime <= 0.0 {
@@ -647,7 +646,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
       }
     }
     handleMessage(handleFun, "Error in parsing sent Data")
-  }, (showCardFormByDefault, paymentMethodOrder, optionsPayment))
+  }, (paymentMethodOrder, optionsPayment))
 
   let observer = ResizeObserver.newResizerObserver(entries => {
     entries

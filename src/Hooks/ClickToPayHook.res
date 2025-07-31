@@ -6,9 +6,9 @@ let useClickToPay = (
   ~setAreClickToPayUIScriptsLoaded,
   ~savedMethods,
   ~loadSavedCards,
-  ~setShowFields,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
+  let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
   let {clickToPayProvider, isReady} = clickToPayConfig
   let setClickToPayProvider = provider =>
     setClickToPayConfig(prev => {
@@ -22,7 +22,7 @@ let useClickToPay = (
 
   let closeComponentIfSavedMethodsAreEmpty = () => {
     if savedMethods->Array.length === 0 && loadSavedCards !== PaymentType.LoadingSavedCards {
-      setShowFields(_ => true)
+      setShowPaymentMethodsScreen(_ => true)
     }
   }
 

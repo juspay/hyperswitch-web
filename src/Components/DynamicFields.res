@@ -30,13 +30,20 @@ let make = (
   ~isSaveDetailsWithClickToPay=false,
 ) => {
   open DynamicFieldsUtils
+  open PaymentTypeContext
   open Utils
   open RecoilAtoms
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentManagementListValue,
   )
-
+  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
+  let contextPaymentType = usePaymentType()
+  let listValue = switch contextPaymentType {
+  | PaymentMethodsManagement => paymentManagementListValue
+  | _ => paymentsListValueV2
+  }
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())
     None
@@ -51,8 +58,20 @@ let make = (
     ~paymentMethodType,
   )
 
+  let paymentMethodTypesV2 = PaymentUtilsV2.usePaymentMethodTypeFromListV2(
+    ~paymentsListValueV2=listValue,
+    ~paymentMethod,
+    ~paymentMethodType,
+  )
+
   let creditPaymentMethodTypes = PaymentUtils.usePaymentMethodTypeFromList(
     ~paymentMethodListValue,
+    ~paymentMethod,
+    ~paymentMethodType="credit",
+  )
+
+  let creditPaymentMethodTypesV2 = PaymentUtilsV2.usePaymentMethodTypeFromListV2(
+    ~paymentsListValueV2=listValue,
     ~paymentMethod,
     ~paymentMethodType="credit",
   )
@@ -62,7 +81,7 @@ let make = (
       switch GlobalVars.sdkVersion {
       | V2 =>
         let creditRequiredFields =
-          paymentManagementListValue.paymentMethodsEnabled
+          listValue.paymentMethodsEnabled
           ->Array.filter(item => {
             item.paymentMethodSubtype === "credit" && item.paymentMethodType === "card"
           })
@@ -84,15 +103,20 @@ let make = (
         ]->removeRequiredFieldsDuplicates
       }
     } else if dynamicFieldsEnabledPaymentMethods->Array.includes(paymentMethodType) {
-      paymentMethodTypes.required_fields
+      switch GlobalVars.sdkVersion {
+      | V1 => paymentMethodTypes.required_fields
+      | V2 => paymentMethodTypesV2.requiredFields
+      }
     } else {
       []
     }
   }, (
     paymentMethod,
     paymentMethodTypes.required_fields,
+    paymentMethodTypesV2.requiredFields,
     paymentMethodType,
     creditPaymentMethodTypes.required_fields,
+    creditPaymentMethodTypesV2.requiredFields,
   ))
 
   let requiredFields = React.useMemo(() => {
@@ -115,53 +139,33 @@ let make = (
       requiredFields,
       ~isSavedCardFlow,
       ~isAllStoredCardsHaveName,
+      ~localeString,
     )
     ->updateDynamicFields(billingAddress, isSaveDetailsWithClickToPay, clickToPayConfig)
     ->Belt.SortArray.stableSortBy(PaymentMethodsRecord.sortPaymentMethodFields)
     //<...>//
   }, (requiredFields, isAllStoredCardsHaveName, isSavedCardFlow, isSaveDetailsWithClickToPay))
 
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
-  let logger = Recoil.useRecoilValueFromAtom(loggerAtom)
+  let (line1, setLine1) = Recoil.useRecoilState(userAddressline1)
+  let (line2, setLine2) = Recoil.useRecoilState(userAddressline2)
+  let (city, setCity) = Recoil.useRecoilState(userAddressCity)
+  let (state, setState) = Recoil.useRecoilState(userAddressState)
+  let (postalCode, setPostalCode) = Recoil.useRecoilState(userAddressPincode)
 
-  let (line1, setLine1) = Recoil.useLoggedRecoilState(userAddressline1, "line1", logger)
-  let (line2, setLine2) = Recoil.useLoggedRecoilState(userAddressline2, "line2", logger)
-  let (city, setCity) = Recoil.useLoggedRecoilState(userAddressCity, "city", logger)
-  let (state, setState) = Recoil.useLoggedRecoilState(userAddressState, "state", logger)
-  let (postalCode, setPostalCode) = Recoil.useLoggedRecoilState(
-    userAddressPincode,
-    "postal_code",
-    logger,
-  )
-
-  let (currency, setCurrency) = Recoil.useLoggedRecoilState(userCurrency, "currency", logger)
+  let (currency, setCurrency) = Recoil.useRecoilState(userCurrency)
   let line1Ref = React.useRef(Nullable.null)
   let line2Ref = React.useRef(Nullable.null)
   let cityRef = React.useRef(Nullable.null)
   let bankAccountNumberRef = React.useRef(Nullable.null)
-  let destinationBankAccountIdRef = React.useRef(Nullable.null)
   let sourceBankAccountIdRef = React.useRef(Nullable.null)
   let postalRef = React.useRef(Nullable.null)
   let (selectedBank, setSelectedBank) = Recoil.useRecoilState(userBank)
   let (country, setCountry) = Recoil.useRecoilState(userCountry)
 
-  let (bankAccountNumber, setBankAccountNumber) = Recoil.useLoggedRecoilState(
-    userBankAccountNumber,
-    "bankAccountNumber",
-    logger,
-  )
-  let (destinationBankAccountId, setDestinationBankAccountId) = Recoil.useLoggedRecoilState(
-    destinationBankAccountId,
-    "destinationBankAccountId",
-    logger,
-  )
-  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useLoggedRecoilState(
-    sourceBankAccountId,
-    "sourceBankAccountId",
-    logger,
-  )
+  let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
+  let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
   let countryList = CountryStateDataRefs.countryDataRef.contents
   let stateNames = getStateNames({
     value: country,
@@ -169,7 +173,11 @@ let make = (
     errorString: "",
   })
 
-  let bankNames = Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
+  let bankNames = switch GlobalVars.sdkVersion {
+  | V2 =>
+    Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypesV2.bankNames->Option.getOr([]))
+  | V1 => Bank.getBanks(paymentMethodType)->getBankNames(paymentMethodTypes.bank_names)
+  }
   let countryNames = getCountryNames(Country.getCountry(paymentMethodType, countryList))
 
   let setCurrency = val => {
@@ -324,14 +332,9 @@ let make = (
     fieldsArr->Array.filter(field => !(field->isFieldTypeToRenderOutsideBilling))
   }, [fieldsArr])
 
-  let isInfoElementPresent = dynamicFieldsToRenderInsideBilling->Array.includes(InfoElement)
+  let isInfoElementPresent = dynamicFieldsToRenderOutsideBilling->Array.includes(InfoElement)
 
-  let isOnlyInfoElementPresent =
-    dynamicFieldsToRenderInsideBilling->Array.length === 1 && isInfoElementPresent
-
-  let isRenderDynamicFieldsInsideBilling =
-    dynamicFieldsToRenderInsideBilling->Array.length > 0 &&
-      (dynamicFieldsToRenderInsideBilling->Array.length > 1 || !isOnlyInfoElementPresent)
+  let isRenderDynamicFieldsInsideBilling = dynamicFieldsToRenderInsideBilling->Array.length > 0
 
   let spacedStylesForBiilingDetails = isSpacedInnerLayout ? "p-2" : "my-2"
 
@@ -495,32 +498,6 @@ let make = (
               inputRef=bankAccountNumberRef
               placeholder="DE00 0000 0000 0000 0000 00"
             />
-          | DestinationBankAccountId =>
-            <PaymentField
-              fieldName="Destination Bank Account ID"
-              setValue={setDestinationBankAccountId}
-              value=destinationBankAccountId
-              onChange={ev => {
-                let value = ReactEvent.Form.target(ev)["value"]
-                setDestinationBankAccountId(_ => {
-                  isValid: Some(value !== ""),
-                  value,
-                  errorString: value !== "" ? "" : localeString.destinationBankAccountIdEmptyText,
-                })
-              }}
-              onBlur={ev => {
-                let value = ReactEvent.Focus.target(ev)["value"]
-                setDestinationBankAccountId(prev => {
-                  ...prev,
-                  isValid: Some(value !== ""),
-                })
-              }}
-              type_="text"
-              name="destinationBankAccountId"
-              maxLength=42
-              inputRef=destinationBankAccountIdRef
-              placeholder="DE00 0000 0000 0000 0000 00"
-            />
           | SourceBankAccountId =>
             <PaymentField
               fieldName="Source Bank Account ID"
@@ -572,7 +549,8 @@ let make = (
           | ShippingAddressState
           | PhoneCountryCode
           | LanguagePreference(_)
-          | ShippingAddressCountry(_) => React.null
+          | ShippingAddressCountry(_)
+          | BankList(_) => React.null
           }}
         </DynamicFieldsToRenderWrapper>
       })
@@ -649,7 +627,7 @@ let make = (
                       appearance=config.appearance
                       fieldName=localeString.countryLabel
                       value=country
-                      setValue={setCountry}
+                      setValue=setCountry
                       disabled=false
                       options=updatedCountryArray
                       className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
@@ -760,7 +738,7 @@ let make = (
                 | AddressPincode =>
                   <PaymentField
                     fieldName=localeString.postalCodeLabel
-                    setValue={setPostalCode}
+                    setValue=setPostalCode
                     value=postalCode
                     onBlur={ev => {
                       let value = ReactEvent.Focus.target(ev)["value"]
@@ -797,6 +775,19 @@ let make = (
                     disabled=false
                     options=updatedCountryArr
                   />
+                | BankList(bankArr) =>
+                  let updatedBankNames =
+                    Bank.getBanks(paymentMethodType)
+                    ->getBankNames(bankArr)
+                    ->DropdownField.updateArrayOfStringToOptionsTypeArray
+                  <DropdownField
+                    appearance=config.appearance
+                    fieldName=localeString.bankLabel
+                    value=selectedBank
+                    setValue=setSelectedBank
+                    disabled=false
+                    options=updatedBankNames
+                  />
                 | Bank =>
                   let updatedBankNames =
                     bankNames->DropdownField.updateArrayOfStringToOptionsTypeArray
@@ -809,15 +800,7 @@ let make = (
                     options=updatedBankNames
                   />
                 | SpecialField(element) => element
-                | InfoElement =>
-                  <>
-                    <Surcharge paymentMethod paymentMethodType />
-                    {if fieldsArr->Array.length > 1 {
-                      bottomElement
-                    } else {
-                      <Block bottomElement />
-                    }}
-                  </>
+                | InfoElement
                 | PixKey
                 | PixCPF
                 | PixCNPJ
@@ -843,7 +826,6 @@ let make = (
                 | LanguagePreference(_)
                 | BankAccountNumber
                 | IBAN
-                | DestinationBankAccountId
                 | SourceBankAccountId
                 | None => React.null
                 }}
@@ -853,18 +835,15 @@ let make = (
           </div>
         </div>
       </RenderIf>
-      <RenderIf condition={isOnlyInfoElementPresent}>
+      <Surcharge paymentMethod paymentMethodType />
+      <RenderIf condition={isInfoElementPresent}>
         {<>
-          <Surcharge paymentMethod paymentMethodType />
           {if fieldsArr->Array.length > 1 {
             bottomElement
           } else {
             <Block bottomElement />
           }}
         </>}
-      </RenderIf>
-      <RenderIf condition={!isInfoElementPresent}>
-        <Surcharge paymentMethod paymentMethodType />
       </RenderIf>
     </>}
   </RenderIf>
