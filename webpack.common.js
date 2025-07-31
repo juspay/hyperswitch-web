@@ -258,7 +258,7 @@ module.exports = (publicPath = "auto") => {
       template: "./public/build.html",
       chunks: ["app"],
       scriptLoading: "blocking",
-      //       // Add CSP meta tag conditionally
+      // Add CSP meta tag conditionally
       meta: DISABLE_CSP
         ? {}
         : {
