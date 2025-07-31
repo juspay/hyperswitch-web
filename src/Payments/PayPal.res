@@ -57,9 +57,10 @@ let make = (~walletOptions) => {
     ->then(result => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
-        let (connectors, _) =
-          paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(Redirect)))
-        let body = PaymentBody.paypalRedirectionBody(~connectors)
+        let body = switch GlobalVars.sdkVersion {
+        | V1 => PaymentBody.dynamicPaymentBody("wallet", "paypal")
+        | V2 => PaymentBodyV2.dynamicPaymentBodyV2("wallet", "paypal")
+        }
         let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
           ~isGuestCustomer,
           ~paymentType=paymentMethodListValue.payment_type,

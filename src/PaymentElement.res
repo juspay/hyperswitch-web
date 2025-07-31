@@ -184,11 +184,10 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     googlePayThirdPartySessionObj.sessionsToken,
     Gpay,
   )
-  let {
-    paypalToken,
-    isPaypalSDKFlow,
-    isPaypalRedirectFlow,
-  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
+  let {paypalToken, isPaypalSDKFlow, isPaypalRedirectFlow} = PayPalHelpers.usePaymentMethodData(
+    ~paymentMethodListValue,
+    ~sessionObj,
+  )
 
   React.useEffect(() => {
     switch paymentMethodList {
