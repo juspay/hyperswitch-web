@@ -586,6 +586,13 @@ let paymentMethodsFields = [
     miniIcon: None,
   },
   {
+    paymentMethodName: "bluecode",
+    fields: [InfoElement],
+    icon: Some(icon("bluecodehh")),
+    displayName: "Bluecode",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "upi_collect",
     fields: [InfoElement],
     icon: Some(icon("bhim_upi", ~size=19)),
