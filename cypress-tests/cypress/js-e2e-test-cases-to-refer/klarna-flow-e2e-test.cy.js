@@ -8,7 +8,7 @@ describe("klarna payment flow test", () => {
     cy.wrap(
       Cypress.automation("remote:debugger:protocol", {
         command: "Network.clearBrowserCache",
-      })
+      }),
     );
 
     cy.fixture("testCustomer").then((customer) => {
@@ -27,7 +27,7 @@ describe("klarna payment flow test", () => {
 
   it("orca-payment-element iframe loaded", () => {
     cy.get(
-      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element"
+      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element",
     )
       .should("be.visible")
       .its("0.contentDocument")
@@ -60,7 +60,7 @@ describe("klarna payment flow test", () => {
 
     enterValueInIframe(
       `[data-testid=${testIds.fullNameInputTestId}]`,
-      customerData.cardHolderName
+      customerData.cardHolderName,
     );
     // enterValueInIframe(
     //   `[data-testid=${testIds.emailInputTestId}]`,
@@ -68,7 +68,7 @@ describe("klarna payment flow test", () => {
     // );
     selectValueInIframe(
       `[data-testid=${testIds.countryDropDownTestId}]`,
-      customerData.country
+      customerData.country,
     );
 
     cy.get("#submit").click();

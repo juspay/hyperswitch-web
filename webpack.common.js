@@ -270,7 +270,7 @@ module.exports = (publicPath = "auto") => {
                 font-src ${authorizedFontSources.join(" ")};
                 connect-src ${authorizedConnectSources.join(
                   " "
-                )} ${logEndpoint} ;
+                )} ${logEndpoint} ${backendEndPoint};
       `,
         },
       },
@@ -291,7 +291,9 @@ module.exports = (publicPath = "auto") => {
           frame-src ${authorizedFrameSources.join(" ")};
           img-src ${authorizedImageSources.join(" ")};
           font-src ${authorizedFontSources.join(" ")};
-          connect-src ${authorizedConnectSources.join(" ")} ${logEndpoint} ;
+          connect-src ${authorizedConnectSources.join(
+            " "
+          )} ${logEndpoint} ${backendEndPoint};
           `,
         },
       },

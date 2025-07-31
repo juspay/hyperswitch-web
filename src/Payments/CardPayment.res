@@ -78,8 +78,9 @@ let make = (
   let {displaySavedPaymentMethodsCheckbox} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
   let saveCard = PaymentHelpersV2.useSaveCard(Some(loggerState), Card)
-  let showFields = Recoil.useRecoilValueFromAtom(RecoilAtoms.showCardFieldsAtom)
-  let setShowFields = Recoil.useSetRecoilState(RecoilAtoms.showCardFieldsAtom)
+  let (showPaymentMethodsScreen, setShowPaymentMethodsScreen) = Recoil.useRecoilState(
+    RecoilAtoms.showPaymentMethodsScreen,
+  )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
 
@@ -133,7 +134,7 @@ let make = (
   let empty = cardNumber == "" || cardExpiry == "" || cvcNumber == ""
   React.useEffect(() => {
     setComplete(_ => complete)
-    setShowFields(_ => true)
+    setShowPaymentMethodsScreen(_ => true)
     None
   }, [complete])
 
@@ -209,7 +210,7 @@ let make = (
       let validFormat =
         (isBancontact || isCardDetailsValid) && isNicknameValid && areRequiredFieldsValid
 
-      if validFormat && (showFields || isBancontact) {
+      if validFormat && (showPaymentMethodsScreen || isBancontact) {
         if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
           ClickToPayHelpers.handleOpenClickToPayWindow()
 
@@ -219,7 +220,7 @@ let make = (
               (
                 async () => {
                   let res = await ClickToPayHelpers.encryptCardForClickToPay(
-                    ~cardNumber=cardNumber->CardUtils.clearSpaces,
+                    ~cardNumber=cardNumber->CardValidations.clearSpaces,
                     ~expiryMonth=month,
                     ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
                     ~cvcNumber,
@@ -445,7 +446,7 @@ let make = (
   }
 
   <div className="animate-slowShow">
-    <RenderIf condition={showFields || isBancontact}>
+    <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
         <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
           <RenderIf condition={innerLayout === Compressed}>
@@ -567,7 +568,7 @@ let make = (
         </div>
       </div>
     </RenderIf>
-    <RenderIf condition={showFields || isBancontact}>
+    <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
       <Surcharge paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType} />
     </RenderIf>
     <RenderIf condition={!isBancontact}>

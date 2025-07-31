@@ -15,8 +15,9 @@ let paymentListLookupNew = (
   ~isGooglePayReady,
   ~shouldDisplayApplePayInTabs,
   ~shouldDisplayPayPalInTabs,
+  ~localeString,
 ) => {
-  let pmList = list->PaymentMethodsRecord.buildFromPaymentList
+  let pmList = list->PaymentMethodsRecord.buildFromPaymentList(~localeString)
   let walletsList = []
   let walletToBeDisplayedInTabs = [
     "mb_way",
@@ -35,6 +36,7 @@ let paymentListLookupNew = (
     "mifinity",
     "bluecode",
     "revolut_pay",
+    "skrill",
   ]
   let otherPaymentList = []
 
@@ -353,10 +355,9 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
 let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
   open Utils
   let methodslist = Recoil.useRecoilValueFromAtom(RecoilAtoms.paymentMethodList)
+  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
-  let {showCardFormByDefault, paymentMethodOrder} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.optionAtom,
-  )
+  let {paymentMethodOrder} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let optionAtomValue = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
 
   let paymentOrder = paymentMethodOrder->getOptionalArr->removeDuplicate
@@ -423,6 +424,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
           ~isGooglePayReady,
           ~shouldDisplayApplePayInTabs,
           ~shouldDisplayPayPalInTabs,
+          ~localeString,
         )
 
       let klarnaPaymentMethodExperience = PaymentMethodsRecord.getPaymentExperienceTypeFromPML(
@@ -451,10 +453,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
         ->filterPaymentMethods,
         otherOptions,
       )
-    | SemiLoaded =>
-      showCardFormByDefault && checkPriorityList(paymentMethodOrder)
-        ? ([], ["card"], [])
-        : ([], [], [])
+    | SemiLoaded => checkPriorityList(paymentMethodOrder) ? ([], ["card"], []) : ([], [], [])
     | _ => ([], [], [])
     }
   }, (
@@ -468,7 +467,6 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     areAllGooglePayRequiredFieldsPrefilled,
     isApplePayReady,
     isGooglePayReady,
-    showCardFormByDefault,
   ))
 }
 
@@ -564,7 +562,7 @@ let getSupportedCardBrands = (paymentMethodListValue: PaymentMethodsRecord.payme
 }
 
 let checkIsCardSupported = (cardNumber, cardBrand, supportedCardBrands) => {
-  let clearValue = cardNumber->CardUtils.clearSpaces
+  let clearValue = cardNumber->CardValidations.clearSpaces
   if cardBrand == "" {
     Some(CardUtils.cardValid(clearValue, cardBrand))
   } else if CardUtils.cardValid(clearValue, cardBrand) {
@@ -645,4 +643,8 @@ let useEmitPaymentMethodInfo = (
 
     None
   }, (paymentMethodName, cardBrand, paymentMethods))
+}
+
+let checkRenderOrComp = (~walletOptions, isShowOrPayUsing) => {
+  walletOptions->Array.includes("paypal") || isShowOrPayUsing
 }

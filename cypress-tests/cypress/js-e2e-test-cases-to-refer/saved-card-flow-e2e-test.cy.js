@@ -1,6 +1,7 @@
 describe("Card Payment Flow Test", () => {
   let customerData;
-  const iframeSelector = "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
+  const iframeSelector =
+    "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element";
   const thankYouMessage = "Thanks for your order!";
 
   beforeEach(() => {
@@ -14,7 +15,7 @@ describe("Card Payment Flow Test", () => {
 
   it("should load the page successfully", () => {
     // Page load is validated by the presence of subsequent elements
-    cy.url().should('eq', 'http://localhost:9060');
+    cy.url().should("eq", "http://localhost:9060");
   });
 
   it("should render the title correctly", () => {
@@ -24,9 +25,9 @@ describe("Card Payment Flow Test", () => {
   it("should load the Orca payment element iframe", () => {
     cy.get(iframeSelector)
       .should("be.visible")
-      .then(iframe => {
+      .then((iframe) => {
         // Check iframe content document loaded
-        cy.wrap(iframe.contents().find('body')).should('be.visible');
+        cy.wrap(iframe.contents().find("body")).should("be.visible");
       });
   });
 

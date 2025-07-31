@@ -101,7 +101,7 @@ let make = (
 
       // * Sending card expiry to handle cases where the card expires before the use date.
       `${expiryMonth}${String.substring(~start=2, ~end=4, expiryYear)}`
-      ->formatCardExpiryNumber
+      ->CardValidations.formatCardExpiryNumber
       ->emitExpiryDate
 
       PaymentUtils.emitPaymentMethodInfo(

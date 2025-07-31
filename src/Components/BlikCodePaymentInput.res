@@ -3,14 +3,13 @@ open Utils
 
 @react.component
 let make = () => {
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let (blikCode, setblikCode) = Recoil.useLoggedRecoilState(userBlikCode, "blikCode", loggerState)
+  let (blikCode, setblikCode) = Recoil.useRecoilState(userBlikCode)
 
   let blikCodeRef = React.useRef(Nullable.null)
   let formatBSB = bsb => {
     let formatted = bsb->String.replaceRegExp(%re("/\D+/g"), "")
-    let firstPart = formatted->CardUtils.slice(0, 3)
-    let secondPart = formatted->CardUtils.slice(3, 6)
+    let firstPart = formatted->CardValidations.slice(0, 3)
+    let secondPart = formatted->CardValidations.slice(3, 6)
 
     if formatted->String.length <= 3 {
       firstPart

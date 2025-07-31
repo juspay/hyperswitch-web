@@ -26,7 +26,7 @@ type payment =
   | Boleto
   | PayPal
   | EFT
-  | NONE
+  | Unknown
 
 let paymentMode = str => {
   switch str {
@@ -57,7 +57,7 @@ let paymentMode = str => {
   | "boleto" => Boleto
   | "paypal" => PayPal
   | "eft" => EFT
-  | _ => NONE
+  | _ => Unknown
   }
 }
 

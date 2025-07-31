@@ -4,8 +4,7 @@ open Utils
 @react.component
 let make = () => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
-  let loggerState = Recoil.useRecoilValueFromAtom(loggerAtom)
-  let (vpaId, setVpaId) = Recoil.useLoggedRecoilState(userVpaId, "vpaId", loggerState)
+  let (vpaId, setVpaId) = Recoil.useRecoilState(userVpaId)
 
   let vpaIdRef = React.useRef(Nullable.null)
 
