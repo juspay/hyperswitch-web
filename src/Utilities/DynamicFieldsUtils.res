@@ -17,6 +17,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "local_bank_transfer_transfer",
   "afterpay_clearpay",
   "mifinity",
+  "bluecode",
   "upi_collect",
   "upi_intent",
   "sepa",
@@ -33,6 +34,8 @@ let dynamicFieldsEnabledPaymentMethods = [
   "instant_bank_transfer_poland",
   "klarna",
   "skrill",
+  "flexiti",
+  "breadpay",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {

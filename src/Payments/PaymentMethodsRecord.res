@@ -236,6 +236,20 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     miniIcon: None,
   },
   {
+    paymentMethodName: "flexiti",
+    icon: Some(icon("flexiti", ~size=19)),
+    fields: [InfoElement],
+    displayName: "Flixiti",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "breadpay",
+    icon: Some(icon("breadpay", ~size=19)),
+    fields: [InfoElement],
+    displayName: "Breadpay",
+    miniIcon: None,
+  },
+  {
     paymentMethodName: "ach_transfer",
     icon: Some(icon("ach", ~size=19)),
     fields: [],
@@ -590,6 +604,13 @@ let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) =
     fields: [InfoElement],
     icon: Some(icon("skrill", ~size=19)),
     displayName: "Skrill",
+    miniIcon: None,
+  },
+  {
+    paymentMethodName: "bluecode",
+    fields: [InfoElement],
+    icon: Some(icon("bluecode")),
+    displayName: "Bluecode",
     miniIcon: None,
   },
   {

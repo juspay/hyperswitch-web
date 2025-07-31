@@ -34,6 +34,7 @@ let paymentListLookupNew = (
     "momo",
     "touch_n_go",
     "mifinity",
+    "bluecode",
     "revolut_pay",
     "skrill",
   ]

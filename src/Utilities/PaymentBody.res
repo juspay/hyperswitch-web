@@ -939,6 +939,8 @@ let appendRedirectPaymentMethods = [
   "revolut_pay",
   "klarna",
   "paypal",
+  "breadpay",
+  "flexiti",
 ]
 
 let appendBankeDebitMethods = ["sepa"]
