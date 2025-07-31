@@ -103,7 +103,12 @@ let make = (
           ->Option.getOr(""),
         )
         let formattedCardNumber = formatCardNumber(value, cardType)
-        if cardValid(CardValidations.clearSpaces(formattedCardNumber), getCardStringFromType(cardType)) {
+        if (
+          cardValid(
+            CardValidations.clearSpaces(formattedCardNumber),
+            getCardStringFromType(cardType),
+          )
+        ) {
           handleInputFocus(~currentRef=cardNumberRef, ~destinationRef=cardExpRef)
         }
         (true, formattedCardNumber)
