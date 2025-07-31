@@ -32,6 +32,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "instant_bank_transfer_finland",
   "instant_bank_transfer_poland",
   "klarna",
+  "skrill",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {
@@ -533,6 +534,7 @@ let useSetInitialRequiredFields = (
       | ShippingAddressPincode
       | ShippingAddressState
       | ShippingAddressCountry(_)
+      | BankList(_)
       | VpaId
       | None => ()
       }
@@ -601,7 +603,7 @@ let useRequiredFieldsBody = (
         Bank.getBanks(paymentMethodType)
         ->Array.find(item => item.displayName == selectedBank)
         ->Option.getOr(Bank.defaultBank)
-      ).hyperSwitch
+      ).value
     | AddressCountry(_) => {
         let countryCode =
           Country.getCountry(paymentMethodType, countryList)
@@ -611,7 +613,7 @@ let useRequiredFieldsBody = (
         countryCode.isoAlpha2
       }
     | BillingName => billingName.value
-    | CardNumber => cardNumber->CardUtils.clearSpaces
+    | CardNumber => cardNumber->CardValidations.clearSpaces
     | CardExpiryMonth =>
       let (month, _) = CardUtils.getExpiryDates(cardExpiry)
       month
@@ -647,6 +649,7 @@ let useRequiredFieldsBody = (
     | ShippingAddressPincode
     | ShippingAddressState
     | ShippingAddressCountry(_)
+    | BankList(_)
     | None => ""
     }
   }
