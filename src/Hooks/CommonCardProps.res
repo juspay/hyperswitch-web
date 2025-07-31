@@ -11,7 +11,9 @@ let useCardForm = (~logger, ~paymentType) => {
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let paymentsListValue = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
+    RecoilAtomsV2.paymentMethodListValueV2,
+  )
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -45,10 +47,10 @@ let useCardForm = (~logger, ~paymentType) => {
   let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentMethodsScreen)
   let supportedCardBrands = React.useMemo(() => {
     switch (paymentType, GlobalVars.sdkVersion) {
-    | (Payment, V2) => paymentsListValue->PaymentUtilsV2.getSupportedCardBrandsV2
+    | (Payment, V2) => paymentMethodListValueV2->PaymentUtilsV2.getSupportedCardBrandsV2
     | _ => paymentMethodListValue->PaymentUtils.getSupportedCardBrands
     }
-  }, (paymentMethodListValue, paymentsListValue))
+  }, (paymentMethodListValue, paymentMethodListValueV2))
 
   let maxCardLength = React.useMemo(() => {
     getMaxLength(cardBrand)
