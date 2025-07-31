@@ -546,7 +546,7 @@ let getCountryNames = (list: array<Country.timezoneType>) => {
 
 let getBankNames = (list: Bank.bankList, allBanks: array<string>) => {
   list->Array.reduce([], (arr, item) => {
-    if allBanks->Array.includes(item.hyperSwitch) {
+    if allBanks->Array.includes(item.value) {
       arr->Array.push(item.displayName)->ignore
     }
     arr
@@ -554,8 +554,7 @@ let getBankNames = (list: Bank.bankList, allBanks: array<string>) => {
 }
 
 let getBankKeys = (str, banks: Bank.bankList, default) => {
-  let bank = banks->Array.find(item => item.displayName == str)->Option.getOr(default)
-  bank.hyperSwitch
+  (banks->Array.find(item => item.displayName == str)->Option.getOr(default)).value
 }
 
 let constructClass = (~classname, ~dict) => {
@@ -649,19 +648,6 @@ let getArrofJsonString = (arr: array<string>) => {
   arr->Array.map(item => item->JSON.Encode.string)
 }
 
-let getPaymentDetails = (arr: array<string>) => {
-  let finalArr = []
-  arr
-  ->Array.map(item => {
-    let optionalVal = PaymentDetails.details->Array.find(i => i.type_ == item)
-    switch optionalVal {
-    | Some(val) => finalArr->Array.push(val)->ignore
-    | None => ()
-    }
-  })
-  ->ignore
-  finalArr
-}
 let getOptionalArr = arr => {
   switch arr {
   | Some(val) => val

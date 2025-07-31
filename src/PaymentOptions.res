@@ -78,13 +78,17 @@ let make = (
     CardUtils.blurRef(selectRef)
   }
 
-  let cardOptionDetails = cardOptions->PaymentMethodsRecord.getPaymentDetails
+  let cardOptionDetails = cardOptions->PaymentMethodsRecord.getPaymentDetails(~localeString)
 
-  let dropDownOptionsDetails = dropDownOptions->PaymentMethodsRecord.getPaymentDetails
+  let dropDownOptionsDetails =
+    dropDownOptions->PaymentMethodsRecord.getPaymentDetails(~localeString)
+
+  let allOptions = cardOptionDetails->Array.concat(dropDownOptionsDetails)
+
   let selectedPaymentOption =
-    PaymentMethodsRecord.paymentMethodsFields
+    allOptions
     ->Array.find(item => item.paymentMethodName == selectedOption)
-    ->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodFields)
+    ->Option.getOr(PaymentMethodsRecord.defaultPaymentFieldsInfo)
 
   let {cardBrand} = cardProps
   React.useEffect(() => {
@@ -172,19 +176,15 @@ let make = (
               color: "transparent",
             }>
             <option value=selectedPaymentOption.paymentMethodName disabled={true}>
-              {React.string(
-                selectedPaymentOption.displayName === "Card"
-                  ? localeString.card
-                  : {
-                      let (name, _) = PaymentUtils.getDisplayNameAndIcon(
-                        customMethodNames,
-                        selectedPaymentOption.paymentMethodName,
-                        selectedPaymentOption.displayName,
-                        selectedPaymentOption.icon,
-                      )
-                      name
-                    },
-              )}
+              {
+                let (name, _) = PaymentUtils.getDisplayNameAndIcon(
+                  customMethodNames,
+                  selectedPaymentOption.paymentMethodName,
+                  selectedPaymentOption.displayName,
+                  selectedPaymentOption.icon,
+                )
+                React.string(name)
+              }
             </option>
             {dropDownOptionsDetails
             ->Array.mapWithIndex((item, i) => {
@@ -192,19 +192,15 @@ let make = (
                 key={Int.toString(i)}
                 value=item.paymentMethodName
                 style={color: themeObj.colorPrimary}>
-                {React.string(
-                  item.displayName === "card"
-                    ? localeString.card
-                    : {
-                        let (name, _) = PaymentUtils.getDisplayNameAndIcon(
-                          customMethodNames,
-                          item.paymentMethodName,
-                          item.displayName,
-                          item.icon,
-                        )
-                        name
-                      },
-                )}
+                {
+                  let (name, _) = PaymentUtils.getDisplayNameAndIcon(
+                    customMethodNames,
+                    item.paymentMethodName,
+                    item.displayName,
+                    item.icon,
+                  )
+                  React.string(name)
+                }
               </option>
             })
             ->React.array}

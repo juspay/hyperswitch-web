@@ -349,31 +349,6 @@ let becsBankDebitBody = (
     ),
   ])
 
-let klarnaRedirectionBody = (~fullName, ~email, ~country, ~connectors) => [
-  ("payment_method", "pay_later"->JSON.Encode.string),
-  ("payment_method_type", "klarna"->JSON.Encode.string),
-  ("payment_experience", "redirect_to_url"->JSON.Encode.string),
-  ("connector", connectors->Utils.getArrofJsonString->JSON.Encode.array),
-  ("name", fullName->JSON.Encode.string),
-  (
-    "payment_method_data",
-    [
-      (
-        "pay_later",
-        [
-          (
-            "klarna_redirect",
-            [
-              ("billing_email", email->JSON.Encode.string),
-              ("billing_country", country->JSON.Encode.string),
-            ]->Utils.getJsonFromArrayOfJson,
-          ),
-        ]->Utils.getJsonFromArrayOfJson,
-      ),
-    ]->Utils.getJsonFromArrayOfJson,
-  ),
-]
-
 let klarnaSDKbody = (~token, ~connectors) => [
   ("payment_method", "pay_later"->JSON.Encode.string),
   ("payment_method_type", "klarna"->JSON.Encode.string),
@@ -978,6 +953,7 @@ let appendRedirectPaymentMethods = [
   "ali_pay",
   "ali_pay_hk",
   "revolut_pay",
+  "klarna",
 ]
 
 let appendBankeDebitMethods = ["sepa"]

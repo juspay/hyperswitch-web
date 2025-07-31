@@ -9,6 +9,7 @@ type paymentMethodsFields =
   | InfoElement
   | Country
   | Bank
+  | BankList(array<string>)
   | SpecialField(React.element)
   | None
   | BillingName
@@ -46,7 +47,6 @@ type paymentMethodsFields =
   | LanguagePreference(array<string>)
   | BankAccountNumber
   | IBAN
-  | DestinationBankAccountId
   | SourceBankAccountId
 
 let getPaymentMethodsFieldsOrder = paymentMethodField => {
@@ -129,424 +129,424 @@ let defaultPaymentMethodFields = {
 
 let icon = (~size=22, ~width=size, name) => <Icon size width name />
 
-let paymentMethodsFields = [
+let getPaymentMethodsFields = (~localeString: LocaleStringTypes.localeStrings) => [
   {
     paymentMethodName: "afterpay_clearpay",
     fields: [InfoElement],
     icon: Some(icon("afterpay", ~size=19)),
-    displayName: "After Pay",
+    displayName: localeString.payment_methods_afterpay_clearpay,
     miniIcon: None,
   },
   {
     paymentMethodName: "google_pay",
     fields: [],
     icon: Some(icon("google_pay", ~size=19, ~width=25)),
-    displayName: "Google Pay",
+    displayName: localeString.payment_methods_google_pay,
     miniIcon: None,
   },
   {
     paymentMethodName: "apple_pay",
     fields: [],
     icon: Some(icon("apple_pay", ~size=19, ~width=25)),
-    displayName: "Apple Pay",
+    displayName: localeString.payment_methods_apple_pay,
     miniIcon: None,
   },
   {
     paymentMethodName: "mb_way",
     fields: [SpecialField(<PhoneNumberPaymentInput />), InfoElement],
     icon: Some(icon("mbway", ~size=19)),
-    displayName: "Mb Way",
+    displayName: localeString.payment_methods_mb_way,
     miniIcon: None,
   },
   {
     paymentMethodName: "mobile_pay",
     fields: [InfoElement],
     icon: Some(icon("mobilepay", ~size=19)),
-    displayName: "Mobile Pay",
+    displayName: localeString.payment_methods_mobile_pay,
     miniIcon: None,
   },
   {
     paymentMethodName: "ali_pay",
     fields: [InfoElement],
     icon: Some(icon("alipay", ~size=19)),
-    displayName: "Ali Pay",
+    displayName: localeString.payment_methods_ali_pay,
     miniIcon: None,
   },
   {
     paymentMethodName: "ali_pay_hk",
     fields: [InfoElement],
     icon: Some(icon("alipayhk", ~size=19)),
-    displayName: "Ali Pay HK",
+    displayName: localeString.payment_methods_ali_pay_hk,
     miniIcon: None,
   },
   {
     paymentMethodName: "we_chat_pay",
     fields: [InfoElement],
     icon: Some(icon("wechatpay", ~size=19)),
-    displayName: "WeChat",
+    displayName: localeString.payment_methods_we_chat_pay,
     miniIcon: None,
   },
   {
     paymentMethodName: "duit_now",
     fields: [InfoElement],
     icon: Some(icon("duitNow", ~size=20)),
-    displayName: "DuitNow",
+    displayName: localeString.payment_methods_duit_now,
     miniIcon: None,
   },
   {
     paymentMethodName: "revolut_pay",
     fields: [InfoElement],
     icon: Some(icon("revolut", ~size=20)),
-    displayName: "Revolut Pay",
+    displayName: localeString.payment_methods_revolut_pay,
     miniIcon: None,
   },
   {
     paymentMethodName: "affirm",
     fields: [InfoElement],
     icon: Some(icon("affirm", ~size=20)),
-    displayName: "Affirm",
+    displayName: localeString.payment_methods_affirm,
     miniIcon: None,
   },
   {
     paymentMethodName: "crypto_currency",
     fields: [InfoElement],
     icon: Some(icon("crypto", ~size=19)),
-    displayName: "Crypto",
+    displayName: localeString.payment_methods_crypto_currency,
     miniIcon: None,
   },
   {
     paymentMethodName: "card",
     icon: Some(icon("default-card", ~size=19)),
     fields: [],
-    displayName: "Card",
+    displayName: localeString.payment_methods_card,
     miniIcon: None,
   },
   {
     paymentMethodName: "klarna",
     icon: Some(icon("klarna", ~size=19)),
-    fields: [Email, FullName, InfoElement],
-    displayName: "Klarna",
+    fields: [InfoElement],
+    displayName: localeString.payment_methods_klarna,
     miniIcon: None,
   },
   {
     paymentMethodName: "sofort",
     icon: Some(icon("sofort", ~size=19)),
     fields: [InfoElement],
-    displayName: "Sofort",
+    displayName: localeString.payment_methods_sofort,
     miniIcon: None,
   },
   {
     paymentMethodName: "ach_transfer",
     icon: Some(icon("ach", ~size=19)),
     fields: [],
-    displayName: "ACH Bank Transfer",
+    displayName: localeString.payment_methods_ach_transfer,
     miniIcon: None,
   },
   {
     paymentMethodName: "bacs_transfer",
     icon: Some(icon("bank", ~size=19)),
     fields: [],
-    displayName: "BACS Bank Transfer",
+    displayName: localeString.payment_methods_bacs_transfer,
     miniIcon: None,
   },
   {
     paymentMethodName: "sepa_bank_transfer",
     icon: Some(icon("sepa", ~size=19)),
     fields: [],
-    displayName: "SEPA Bank Transfer",
+    displayName: localeString.payment_methods_sepa_bank_transfer,
     miniIcon: None,
   },
   {
     paymentMethodName: "instant_bank_transfer",
     icon: Some(icon("bank", ~size=19)),
     fields: [],
-    displayName: "Instant Bank Transfer",
+    displayName: localeString.payment_methods_instant_bank_transfer,
     miniIcon: None,
   },
   {
     paymentMethodName: "instant_bank_transfer_finland",
     icon: Some(icon("bank", ~size=19)),
     fields: [],
-    displayName: "Instant Bank Transfer Finland",
+    displayName: localeString.payment_methods_instant_bank_transfer_finland,
     miniIcon: None,
   },
   {
     paymentMethodName: "instant_bank_transfer_poland",
     icon: Some(icon("bank", ~size=19)),
     fields: [],
-    displayName: "Instant Bank Transfer Poland",
+    displayName: localeString.payment_methods_instant_bank_transfer_poland,
     miniIcon: None,
   },
   {
     paymentMethodName: "sepa_debit",
     icon: Some(icon("sepa", ~size=19, ~width=25)),
-    displayName: "SEPA Debit",
+    displayName: localeString.payment_methods_sepa_debit,
     fields: [],
     miniIcon: None,
   },
   {
     paymentMethodName: "giropay",
     icon: Some(icon("giropay", ~size=19, ~width=25)),
-    displayName: "GiroPay",
+    displayName: localeString.payment_methods_giropay,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "eps",
     icon: Some(icon("eps", ~size=19, ~width=25)),
-    displayName: "EPS",
+    displayName: localeString.payment_methods_eps,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "walley",
     icon: Some(icon("walley", ~size=19, ~width=25)),
-    displayName: "Walley",
+    displayName: localeString.payment_methods_walley,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "pay_bright",
     icon: Some(icon("paybright", ~size=19, ~width=25)),
-    displayName: "Pay Bright",
+    displayName: localeString.payment_methods_pay_bright,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "ach_debit",
     icon: Some(icon("ach", ~size=19)),
-    displayName: "ACH Debit",
+    displayName: localeString.payment_methods_ach_debit,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "bacs_debit",
     icon: Some(icon("bank", ~size=21)),
-    displayName: "BACS Debit",
+    displayName: localeString.payment_methods_bacs_debit,
     fields: [InfoElement],
     miniIcon: Some(icon("bank", ~size=19)),
   },
   {
     paymentMethodName: "becs_debit",
     icon: Some(icon("bank", ~size=21)),
-    displayName: "BECS Debit",
+    displayName: localeString.payment_methods_becs_debit,
     fields: [InfoElement],
     miniIcon: Some(icon("bank", ~size=19)),
   },
   {
     paymentMethodName: "blik",
     icon: Some(icon("blik", ~size=19, ~width=25)),
-    displayName: "Blik",
+    displayName: localeString.payment_methods_blik,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "trustly",
     icon: Some(icon("trustly", ~size=19, ~width=25)),
-    displayName: "Trustly",
+    displayName: localeString.payment_methods_trustly,
     fields: [Country, InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "bancontact_card",
     icon: Some(icon("bancontact", ~size=19, ~width=25)),
-    displayName: "Bancontact Card",
+    displayName: localeString.payment_methods_bancontact_card,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "online_banking_czech_republic",
     icon: Some(icon("bank", ~size=19, ~width=25)),
-    displayName: "Online Banking CzechR",
+    displayName: localeString.payment_methods_online_banking_czech_republic,
     fields: [Bank, InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "online_banking_slovakia",
     icon: Some(icon("bank", ~size=19, ~width=25)),
-    displayName: "Online Banking Slovakia",
+    displayName: localeString.payment_methods_online_banking_slovakia,
     fields: [Bank, InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "online_banking_finland",
     icon: Some(icon("bank", ~size=19, ~width=25)),
-    displayName: "Online Banking Finland",
+    displayName: localeString.payment_methods_online_banking_finland,
     fields: [Bank, InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "online_banking_poland",
     icon: Some(icon("bank", ~size=19, ~width=25)),
-    displayName: "Online Banking Poland",
+    displayName: localeString.payment_methods_online_banking_poland,
     fields: [Bank, InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "ideal",
     icon: Some(icon("ideal", ~size=19, ~width=25)),
-    displayName: "iDEAL",
+    displayName: localeString.payment_methods_ideal,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "ban_connect",
     icon: None,
-    displayName: "Ban Connect",
+    displayName: localeString.payment_methods_ban_connect,
     fields: [],
     miniIcon: None,
   },
   {
     paymentMethodName: "ach_bank_debit",
     icon: Some(icon("ach-bank-debit", ~size=19, ~width=25)),
-    displayName: "ACH Direct Debit",
+    displayName: localeString.payment_methods_ach_bank_debit,
     fields: [],
     miniIcon: None,
   },
   {
     paymentMethodName: "przelewy24",
     icon: Some(icon("p24", ~size=19)),
-    displayName: "Przelewy24",
+    displayName: localeString.payment_methods_przelewy24,
     fields: [Email, Bank, InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "interac",
     icon: Some(icon("interac", ~size=19)),
-    displayName: "Interac",
+    displayName: localeString.payment_methods_interac,
     fields: [Email, Country, InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "twint",
     icon: Some(icon("twint", ~size=19)),
-    displayName: "Twint",
+    displayName: localeString.payment_methods_twint,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "vipps",
     icon: Some(icon("vipps", ~size=19)),
-    displayName: "Vipps",
+    displayName: localeString.payment_methods_vipps,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "dana",
     icon: Some(icon("dana", ~size=19)),
-    displayName: "Dana",
+    displayName: localeString.payment_methods_dana,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "go_pay",
     icon: Some(icon("go_pay", ~size=19)),
-    displayName: "Go Pay",
+    displayName: localeString.payment_methods_go_pay,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "kakao_pay",
     icon: Some(icon("kakao_pay", ~size=19)),
-    displayName: "Kakao Pay",
+    displayName: localeString.payment_methods_kakao_pay,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "gcash",
     icon: Some(icon("gcash", ~size=19)),
-    displayName: "GCash",
+    displayName: localeString.payment_methods_gcash,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "momo",
     icon: Some(icon("momo", ~size=19)),
-    displayName: "Momo",
+    displayName: localeString.payment_methods_momo,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "touch_n_go",
     icon: Some(icon("touch_n_go", ~size=19)),
-    displayName: "Touch N Go",
+    displayName: localeString.payment_methods_touch_n_go,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "bizum",
     icon: Some(icon("bizum", ~size=19)),
-    displayName: "Bizum",
+    displayName: localeString.payment_methods_bizum,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "classic",
     icon: Some(icon("cash_voucher", ~size=19, ~width=50)),
-    displayName: "Cash / Voucher",
+    displayName: localeString.payment_methods_classic,
     fields: [InfoElement],
     miniIcon: Some(icon("cash_voucher", ~size=19)),
   },
   {
     paymentMethodName: "online_banking_fpx",
     icon: Some(icon("online_banking_fpx", ~size=19)),
-    displayName: "Online Banking Fpx",
+    displayName: localeString.payment_methods_online_banking_fpx,
     fields: [Bank, InfoElement], // add more fields for these payment methods
     miniIcon: None,
   },
   {
     paymentMethodName: "online_banking_thailand",
     icon: Some(icon("online_banking_thailand", ~size=19)),
-    displayName: "Online Banking Thailand",
+    displayName: localeString.payment_methods_online_banking_thailand,
     fields: [Bank, InfoElement], // add more fields for these payment methods
     miniIcon: None,
   },
   {
     paymentMethodName: "alma",
     icon: Some(icon("alma", ~size=19)),
-    displayName: "Alma",
+    displayName: localeString.payment_methods_alma,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "atome",
     icon: Some(icon("atome", ~size=19)),
-    displayName: "Atome",
+    displayName: localeString.payment_methods_atome,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "multibanco_transfer",
     icon: Some(icon("multibanco", ~size=19)),
-    displayName: "Multibanco",
+    displayName: localeString.payment_methods_multibanco_transfer,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "card_redirect",
     icon: Some(icon("default-card", ~size=19)),
-    displayName: "Card",
+    displayName: localeString.payment_methods_card_redirect,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "open_banking_uk",
     icon: Some(icon("bank", ~size=19)),
-    displayName: "Pay by Bank",
+    displayName: localeString.payment_methods_open_banking_uk,
     fields: [InfoElement],
     miniIcon: Some(icon("bank", ~size=19)),
   },
   {
     paymentMethodName: "open_banking_pis",
     icon: Some(icon("bank", ~size=19)),
-    displayName: "Open Banking",
+    displayName: localeString.payment_methods_open_banking_pis,
     fields: [InfoElement],
     miniIcon: Some(icon("bank", ~size=19)),
   },
   {
     paymentMethodName: "evoucher",
     icon: Some(icon("cash_voucher", ~size=19, ~width=50)),
-    displayName: "E-Voucher",
+    displayName: localeString.payment_methods_evoucher,
     fields: [InfoElement],
     miniIcon: Some(icon("cash_voucher", ~size=19)),
   },
@@ -554,20 +554,20 @@ let paymentMethodsFields = [
     paymentMethodName: "pix_transfer",
     fields: [InfoElement],
     icon: Some(icon("pix", ~size=26, ~width=40)),
-    displayName: "Pix",
+    displayName: localeString.payment_methods_pix_transfer,
     miniIcon: None,
   },
   {
     paymentMethodName: "boleto",
     icon: Some(icon("boleto", ~size=21, ~width=25)),
-    displayName: "Boleto",
+    displayName: localeString.payment_methods_boleto,
     fields: [InfoElement],
     miniIcon: None,
   },
   {
     paymentMethodName: "paypal",
     icon: Some(icon("paypal", ~size=21, ~width=25)),
-    displayName: "Paypal",
+    displayName: localeString.payment_methods_paypal,
     fields: [],
     miniIcon: None,
   },
@@ -575,21 +575,21 @@ let paymentMethodsFields = [
     paymentMethodName: "local_bank_transfer_transfer",
     fields: [InfoElement],
     icon: Some(icon("union-pay", ~size=19, ~width=30)),
-    displayName: "Union Pay",
+    displayName: localeString.payment_methods_local_bank_transfer_transfer,
     miniIcon: None,
   },
   {
     paymentMethodName: "mifinity",
     fields: [InfoElement],
     icon: Some(icon("mifinity")),
-    displayName: "Mifinity",
+    displayName: localeString.payment_methods_mifinity,
     miniIcon: None,
   },
   {
     paymentMethodName: "upi_collect",
     fields: [InfoElement],
     icon: Some(icon("bhim_upi", ~size=19)),
-    displayName: "UPI Collect",
+    displayName: localeString.payment_methods_upi_collect,
     miniIcon: None,
   },
   {
@@ -603,7 +603,7 @@ let paymentMethodsFields = [
     paymentMethodName: "eft",
     icon: Some(icon("eft", ~size=19)),
     fields: [InfoElement],
-    displayName: "EFT",
+    displayName: localeString.payment_methods_eft,
     miniIcon: None,
   },
 ]
@@ -648,7 +648,6 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   | ("user_pix_key", _) => PixKey
   | ("user_bank_account_number", _) => BankAccountNumber
   | ("user_iban", _) => BankAccountNumber
-  | ("user_destination_bank_account_id", _) => DestinationBankAccountId
   | ("user_source_bank_account_id", _) => SourceBankAccountId
   | _ => None
   }
@@ -694,6 +693,10 @@ let getPaymentMethodsFieldTypeFromDict = dict => {
   | "language_preference" => {
       let options = dict->getArrayValFromJsonDict("language_preference", "options")
       LanguagePreference(options)
+    }
+  | "user_bank_options" => {
+      let options = dict->getArrayValFromJsonDict("user_bank_options", "options")
+      BankList(options)
     }
   | _ => None
   }
@@ -741,6 +744,7 @@ let getIsAnyBillingDetailEmpty = (requiredFields: array<required_fields>) => {
 let getPaymentMethodFields = (
   paymentMethod,
   requiredFields: array<required_fields>,
+  ~localeString,
   ~isSavedCardFlow=false,
   ~isAllStoredCardsHaveName=false,
 ) => {
@@ -763,7 +767,7 @@ let getPaymentMethodFields = (
   })
   requiredFieldsArr->Array.concat(
     (
-      paymentMethodsFields
+      getPaymentMethodsFields(~localeString)
       ->Array.find(x => x.paymentMethodName === paymentMethod)
       ->Option.getOr({
         paymentMethodName: "",
@@ -776,8 +780,9 @@ let getPaymentMethodFields = (
   )
 }
 
-let getPaymentDetails = (arr: array<string>) => {
+let getPaymentDetails = (arr: array<string>, ~localeString) => {
   let finalArr = []
+  let paymentMethodsFields = getPaymentMethodsFields(~localeString)
   arr
   ->Array.map(item => {
     let optionalVal = paymentMethodsFields->Array.find(i => i.paymentMethodName == item)
@@ -1077,7 +1082,7 @@ let itemToObjMapper = dict => {
   }
 }
 
-let buildFromPaymentList = (plist: paymentMethodList) => {
+let buildFromPaymentList = (plist: paymentMethodList, ~localeString) => {
   let paymentMethodArr = plist.payment_methods
 
   paymentMethodArr
@@ -1094,7 +1099,11 @@ let buildFromPaymentList = (plist: paymentMethodList) => {
       )
       {
         paymentMethodName,
-        fields: getPaymentMethodFields(paymentMethodName, individualPaymentMethod.required_fields),
+        fields: getPaymentMethodFields(
+          paymentMethodName,
+          individualPaymentMethod.required_fields,
+          ~localeString,
+        ),
         paymentFlow: paymentExperience,
         handleUserError,
         methodType,

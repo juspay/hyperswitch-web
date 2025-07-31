@@ -1,4 +1,7 @@
-let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManagement) => {
+let buildFromPaymentListV2 = (
+  plist: UnifiedPaymentsTypesV2.paymentMethodsManagement,
+  ~localeString,
+) => {
   let paymentMethodArr = plist.paymentMethodsEnabled
   paymentMethodArr->Array.map(paymentMethodObject => {
     let methodType = paymentMethodObject.paymentMethodType
@@ -11,6 +14,7 @@ let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManage
       fields: PaymentMethodsRecord.getPaymentMethodFields(
         paymentMethodName,
         paymentMethodObject.requiredFields,
+        ~localeString,
       ),
       paymentFlow: [],
       handleUserError,
@@ -18,5 +22,17 @@ let buildFromPaymentListV2 = (plist: UnifiedPaymentsTypesV2.paymentMethodsManage
       bankNames: bankNamesList,
     }
     value
+  })
+}
+
+let getPaymentExperienceTypeFromPML = (
+  ~paymentMethodList: UnifiedPaymentsTypesV2.paymentMethodsManagement,
+  ~paymentMethodName,
+  ~paymentMethodType,
+) => {
+  paymentMethodList.paymentMethodsEnabled->Array.reduce([], (acc, ele) => {
+    ele.paymentMethodType === paymentMethodName && ele.paymentMethodSubtype === paymentMethodType
+      ? [...acc, ...ele.paymentExperience->Option.getOr([])]
+      : acc
   })
 }

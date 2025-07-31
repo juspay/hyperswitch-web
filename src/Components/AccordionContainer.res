@@ -62,7 +62,7 @@ let make = (
   ~checkoutEle: React.element,
   ~cardProps: CardUtils.cardProps,
 ) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
+  let {themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
   let {layout} = Recoil.useRecoilValueFromAtom(optionAtom)
   let layoutClass = CardUtils.getLayoutClass(layout)
@@ -79,11 +79,11 @@ let make = (
 
   let cardOptionDetails =
     paymentOptions
-    ->PaymentMethodsRecord.getPaymentDetails
+    ->PaymentMethodsRecord.getPaymentDetails(~localeString)
     ->Array.slice(~start=0, ~end=layoutClass.maxAccordionItems)
   let dropDownOptionsDetails =
     paymentOptions
-    ->PaymentMethodsRecord.getPaymentDetails
+    ->PaymentMethodsRecord.getPaymentDetails(~localeString)
     ->Array.sliceToEnd(~start=layoutClass.maxAccordionItems)
 
   let getBorderRadiusStyleForCardOptionDetails = index => {

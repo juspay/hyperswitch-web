@@ -22,7 +22,13 @@ module CoBadgeCardSchemeDropDown = {
 }
 
 @react.component
-let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand) => {
+let make = (
+  ~cardNumber,
+  ~paymentType,
+  ~cardBrand,
+  ~setCardBrand,
+  ~isCoBadgedCardDetectedOnce: React.ref<bool>,
+) => {
   let cardType = React.useMemo1(_ => cardBrand->CardUtils.getCardType, [cardBrand])
   let animate = cardType == NOTFOUND ? "animate-slideLeft" : "animate-slideRight"
   let cardBrandIcon = React.useMemo1(
@@ -46,7 +52,6 @@ let make = (~cardNumber, ~paymentType, ~cardBrand, ~setCardBrand) => {
   let marginLeft = isCardCoBadged ? "-ml-2" : ""
 
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-  let isCoBadgedCardDetectedOnce = React.useRef(false)
   let shouldShowCoBadgeCardSchemeDropDown =
     isCardCoBadged && cardNumber->CardValidations.clearSpaces->String.length >= 16
 
