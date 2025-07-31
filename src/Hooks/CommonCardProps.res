@@ -7,7 +7,7 @@ open RecoilAtoms
 let useCardForm = (~logger, ~paymentType) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
-  let showFields = Recoil.useRecoilValueFromAtom(showCardFieldsAtom)
+  let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(showPaymentMethodsScreen)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
@@ -27,6 +27,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let expiryRef = React.useRef(Nullable.null)
   let cvcRef = React.useRef(Nullable.null)
   let zipRef = React.useRef(Nullable.null)
+  let isCoBadgedCardDetectedOnce = React.useRef(false)
   let prevCardBrandRef = React.useRef("")
 
   let (isCardValid, setIsCardValid) = React.useState(_ => None)
@@ -38,10 +39,10 @@ let useCardForm = (~logger, ~paymentType) => {
   let cardBrand = getCardBrand(cardNumber)
   let isNotBancontact = selectedOption !== "bancontact_card" && cardBrand == ""
   let (cardBrand, setCardBrand) = React.useState(_ =>
-    !showFields && isNotBancontact ? cardScheme : cardBrand
+    !showPaymentMethodsScreen && isNotBancontact ? cardScheme : cardBrand
   )
 
-  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showFields)
+  let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentMethodsScreen)
   let supportedCardBrands = React.useMemo(() => {
     switch (paymentType, GlobalVars.sdkVersion) {
     | (Payment, V2) => paymentsListValue->PaymentUtilsV2.getSupportedCardBrandsV2
@@ -51,7 +52,7 @@ let useCardForm = (~logger, ~paymentType) => {
 
   let maxCardLength = React.useMemo(() => {
     getMaxLength(cardBrand)
-  }, (cardNumber, cardScheme, cardBrand, showFields))
+  }, (cardNumber, cardScheme, cardBrand, showPaymentMethodsScreen))
 
   React.useEffect(() => {
     setIsCardSupported(_ =>
@@ -82,10 +83,10 @@ let useCardForm = (~logger, ~paymentType) => {
     setIsExpiryValid(_ => None)
     setIsCVCValid(_ => None)
     None
-  }, [showFields])
+  }, [showPaymentMethodsScreen])
 
   React.useEffect(() => {
-    if prevCardBrandRef.current !== "" {
+    if !isCoBadgedCardDetectedOnce.current {
       setCvcNumber(_ => "")
       setCardExpiry(_ => "")
       setIsExpiryValid(_ => None)
@@ -102,7 +103,7 @@ let useCardForm = (~logger, ~paymentType) => {
     setCardError(_ => "")
     setExpiryError(_ => "")
     None
-  }, (paymentToken.paymentToken, showFields))
+  }, (paymentToken.paymentToken, showPaymentMethodsScreen))
 
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
@@ -297,7 +298,7 @@ let useCardForm = (~logger, ~paymentType) => {
   }, [cardNumber])
 
   let icon = React.useMemo(() => {
-    <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand />
+    <CardSchemeComponent cardNumber paymentType cardBrand setCardBrand isCoBadgedCardDetectedOnce />
   }, (cardType, paymentType, cardBrand, cardNumber))
 
   let cardProps: CardUtils.cardProps = {

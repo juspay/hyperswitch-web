@@ -28,7 +28,7 @@ let retrievePaymentIntent = async (
   ~isForceSync=false,
 ) => {
   let uri = APIUtils.generateApiUrl(
-    RetrievePaymentIntent,
+    V1(RetrievePaymentIntent),
     ~params={
       clientSecret: Some(clientSecret),
       publishableKey: Some(publishableKey),
@@ -63,7 +63,7 @@ let retrievePaymentIntent = async (
 
 let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) => {
   let url = APIUtils.generateApiUrl(
-    FetchThreeDsAuth,
+    V1(FetchThreeDsAuth),
     ~params={
       clientSecret: Some(clientSecret),
       publishableKey: None,
@@ -164,7 +164,7 @@ let rec pollRetrievePaymentIntent = (
 
 let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger) => {
   let uri = APIUtils.generateApiUrl(
-    RetrieveStatus,
+    V1(RetrieveStatus),
     ~params={
       clientSecret: None,
       publishableKey: Some(publishableKey),
@@ -1122,6 +1122,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
   let blockConfirm = Recoil.useRecoilValueFromAtom(isConfirmBlocked)
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let paymentMethodList = Recoil.useRecoilValueFromAtom(paymentMethodList)
+  let paymentMethodListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodsListV2)
   let keys = Recoil.useRecoilValueFromAtom(keys)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
   let redirectionFlags = Recoil.useRecoilValueFromAtom(redirectionFlagsAtom)
@@ -1279,9 +1280,9 @@ let usePaymentIntent = (optLogger, paymentType) => {
         callIntent(bodyStr)
       }
 
-      switch paymentMethodList {
-      | LoadError(data)
-      | Loaded(data) =>
+      switch (GlobalVars.sdkVersion, paymentMethodList, paymentMethodListV2) {
+      | (V1, LoadError(data), _)
+      | (V1, Loaded(data), _) =>
         let paymentList = data->getDictFromJson->PaymentMethodsRecord.itemToObjMapper
         let mandatePaymentType =
           paymentList.payment_type->PaymentMethodsRecord.paymentTypeToStringMapper
@@ -1307,7 +1308,19 @@ let usePaymentIntent = (optLogger, paymentType) => {
           )
           Console.warn("Please enable atleast one Payment method.")
         }
-      | SemiLoaded => intentWithoutMandate("")
+      | (V2, _, LoadedV2(data)) =>
+        if data.paymentMethodsEnabled->Array.length > 0 {
+          intentWithoutMandate("")
+        } else {
+          postFailedSubmitResponse(
+            ~errortype="payment_methods_empty",
+            ~message="Payment Failed. Try again!",
+          )
+          Console.warn("Please enable atleast one Payment method.")
+        }
+      | (V1, SemiLoaded, _)
+      | (V2, _, SemiLoadedV2) =>
+        intentWithoutMandate("")
       | _ =>
         postFailedSubmitResponse(
           ~errortype="payment_methods_loading",
@@ -1344,7 +1357,7 @@ let fetchSessions = async (
       ("delayed_session_token", isDelayedSessionToken->JSON.Encode.bool),
     ]->getJsonFromArrayOfJson
   let uri = APIUtils.generateApiUrl(
-    FetchSessions,
+    V1(FetchSessions),
     ~params={
       customBackendBaseUrl: Some(endpoint),
       clientSecret: None,
@@ -1383,7 +1396,7 @@ let confirmPayout = async (
   ~body,
 ) => {
   let uri = APIUtils.generateApiUrl(
-    ConfirmPayout,
+    V1(ConfirmPayout),
     ~params={
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
@@ -1425,7 +1438,7 @@ let createPaymentMethod = async (
   ~body,
 ) => {
   let uri = APIUtils.generateApiUrl(
-    CreatePaymentMethod,
+    V1(CreatePaymentMethod),
     ~params={
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
@@ -1466,7 +1479,7 @@ let fetchPaymentMethodList = async (
   ~endpoint,
 ) => {
   let uri = APIUtils.generateApiUrl(
-    FetchPaymentMethodList,
+    V1(FetchPaymentMethodList),
     ~params={
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
@@ -1502,7 +1515,7 @@ let fetchCustomerPaymentMethodList = async (
   ~isPaymentSession=false,
 ) => {
   let uri = APIUtils.generateApiUrl(
-    FetchCustomerPaymentMethodList,
+    V1(FetchCustomerPaymentMethodList),
     ~params={
       clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
@@ -1608,7 +1621,7 @@ let callAuthLink = async (
   ~logger,
 ) => {
   let uri = APIUtils.generateApiUrl(
-    CallAuthLink,
+    V1(CallAuthLink),
     ~params={
       clientSecret: None,
       publishableKey: Some(publishableKey),
@@ -1671,7 +1684,7 @@ let callAuthExchange = async (
   open Promise
   open PaymentType
   let uri = APIUtils.generateApiUrl(
-    CallAuthExchange,
+    V1(CallAuthExchange),
     ~params={
       clientSecret: None,
       publishableKey: Some(publishableKey),
@@ -1743,7 +1756,7 @@ let fetchSavedPaymentMethodList = async (
   ~isPaymentSession=false,
 ) => {
   let uri = APIUtils.generateApiUrl(
-    FetchSavedPaymentMethodList,
+    V1(FetchSavedPaymentMethodList),
     ~params={
       customBackendBaseUrl: Some(endpoint),
       clientSecret: None,
@@ -1773,7 +1786,7 @@ let fetchSavedPaymentMethodList = async (
 
 let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~customPodUri) => {
   let uri = APIUtils.generateApiUrl(
-    DeletePaymentMethod,
+    V1(DeletePaymentMethod),
     ~params={
       customBackendBaseUrl: None,
       clientSecret: None,
@@ -1810,7 +1823,7 @@ let calculateTax = async (
   ~sessionId,
 ) => {
   let uri = APIUtils.generateApiUrl(
-    CalculateTax,
+    V1(CalculateTax),
     ~params={
       customBackendBaseUrl: None,
       clientSecret: Some(clientSecret),

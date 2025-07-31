@@ -44,9 +44,7 @@ let make = (
   let (savedPaymentMethodsV2, setSavedPaymentMethodsV2) = Recoil.useRecoilState(
     PaymentUtils.paymentManagementListValue,
   )
-  let {showCardFormByDefault, displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(
-    optionAtom,
-  )
+  let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
   React.useEffect(() => {
     switch paymentManagementList {
     | LoadedV2(val) =>
@@ -55,7 +53,7 @@ let make = (
     | _ => ()
     }
     None
-  }, (paymentManagementList, showCardFormByDefault))
+  }, [paymentManagementList])
 
   React.useEffect(() => {
     switch savedPaymentMethods {

@@ -332,7 +332,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
       let retrievePaymentIntentFn = async clientSecret => {
         let uri = APIUtils.generateApiUrl(
-          RetrievePaymentIntent,
+          V1(RetrievePaymentIntent),
           ~params={
             clientSecret: Some(clientSecret),
             publishableKey: Some(publishableKey),

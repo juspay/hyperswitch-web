@@ -1,4 +1,4 @@
-type apiCall =
+type apiCallV1 =
   | FetchPaymentMethodList
   | FetchCustomerPaymentMethodList
   | FetchSessions
@@ -12,6 +12,12 @@ type apiCall =
   | CallAuthExchange
   | RetrieveStatus
   | ConfirmPayout
+
+type apiCallV2 = FetchSessionsV2
+
+type apiCall =
+  | V1(apiCallV1)
+  | V2(apiCallV2)
 
 type apiParams = {
   clientSecret: option<string>,
@@ -52,48 +58,64 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
       ->List.reduce("", (acc, param) => acc === "" ? `?${param}` : `${acc}&${param}`)
     }
 
+  let isRetrieveIntent = switch apiCallType {
+  | V1(RetrievePaymentIntent) => true
+  | _ => false
+  }
+
   let defaultParams = list{
     switch clientSecret {
     | Some(cs) => Some(("client_secret", cs))
     | None => None
     },
     switch forceSync {
-    | Some(fs) if apiCallType === RetrievePaymentIntent => Some(("false_sync", fs))
+    | Some(fs) if isRetrieveIntent => Some(("force_sync", fs))
     | _ => None
     },
   }->List.filterMap(x => x)
 
   let queryParams = switch apiCallType {
-  | FetchPaymentMethodList
-  | FetchCustomerPaymentMethodList
-  | RetrievePaymentIntent => defaultParams
-  | FetchSessions
-  | FetchThreeDsAuth
-  | FetchSavedPaymentMethodList
-  | DeletePaymentMethod
-  | CalculateTax
-  | CreatePaymentMethod
-  | CallAuthLink
-  | CallAuthExchange
-  | RetrieveStatus
-  | ConfirmPayout =>
-    list{}
+  | V1(inner) =>
+    switch inner {
+    | FetchPaymentMethodList
+    | FetchCustomerPaymentMethodList
+    | RetrievePaymentIntent => defaultParams
+    | FetchSessions
+    | FetchThreeDsAuth
+    | FetchSavedPaymentMethodList
+    | DeletePaymentMethod
+    | CalculateTax
+    | CreatePaymentMethod
+    | CallAuthLink
+    | CallAuthExchange
+    | RetrieveStatus
+    | ConfirmPayout =>
+      list{}
+    }
+  | V2(_) => list{}
   }
 
   let path = switch apiCallType {
-  | FetchPaymentMethodList => "account/payment_methods"
-  | FetchSessions => "payments/session_tokens"
-  | FetchThreeDsAuth => `payments/${paymentIntentID}/3ds/authentication`
-  | FetchCustomerPaymentMethodList
-  | FetchSavedPaymentMethodList => "customers/payment_methods"
-  | DeletePaymentMethod => `payment_methods/${paymentMethodIdVal}`
-  | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
-  | CreatePaymentMethod => "payment_methods"
-  | RetrievePaymentIntent => `payments/${paymentIntentID}`
-  | CallAuthLink => "payment_methods/auth/link"
-  | CallAuthExchange => "payment_methods/auth/exchange"
-  | RetrieveStatus => `poll/status/${pollIdVal}`
-  | ConfirmPayout => `payouts/${paymentIntentID}/confirm`
+  | V1(inner) =>
+    switch inner {
+    | FetchPaymentMethodList => "account/payment_methods"
+    | FetchSessions => "payments/session_tokens"
+    | FetchThreeDsAuth => `payments/${paymentIntentID}/3ds/authentication`
+    | FetchCustomerPaymentMethodList
+    | FetchSavedPaymentMethodList => "customers/payment_methods"
+    | DeletePaymentMethod => `payment_methods/${paymentMethodIdVal}`
+    | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
+    | CreatePaymentMethod => "payment_methods"
+    | RetrievePaymentIntent => `payments/${paymentIntentID}`
+    | CallAuthLink => "payment_methods/auth/link"
+    | CallAuthExchange => "payment_methods/auth/exchange"
+    | RetrieveStatus => `poll/status/${pollIdVal}`
+    | ConfirmPayout => `payouts/${paymentIntentID}/confirm`
+    }
+  | V2(inner) =>
+    switch inner {
+    | FetchSessionsV2 => `v2/payments/${paymentIntentID}/create-external-sdk-tokens`
+    }
   }
 
   `${baseUrl}/${path}${buildQueryParams(queryParams)}`

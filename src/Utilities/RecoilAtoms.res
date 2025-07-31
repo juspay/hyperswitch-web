@@ -20,7 +20,7 @@ let paymentTokenAtom = Recoil.atom(
     customerId: "",
   },
 )
-let showCardFieldsAtom = Recoil.atom("showCardFields", false)
+let showPaymentMethodsScreen = Recoil.atom("showPaymentMethodsScreen", false)
 let phoneJson = Recoil.atom("phoneJson", Loading)
 let cardBrand = Recoil.atom("cardBrand", "")
 let paymentMethodCollectOptionAtom = Recoil.atom(
@@ -79,7 +79,6 @@ let userPixCNPJ = Recoil.atom("userPixCNPJ", defaultFieldValues)
 let isCompleteCallbackUsed = Recoil.atom("isCompleteCallbackUsed", false)
 let isPaymentButtonHandlerProvidedAtom = Recoil.atom("isPaymentButtonHandlerProvidedAtom", false)
 let userBankAccountNumber = Recoil.atom("userBankAccountNumber", defaultFieldValues)
-let destinationBankAccountId = Recoil.atom("destinationBankAccountId", defaultFieldValues)
 let sourceBankAccountId = Recoil.atom("sourceBankAccountId", defaultFieldValues)
 
 type areOneClickWalletsRendered = {

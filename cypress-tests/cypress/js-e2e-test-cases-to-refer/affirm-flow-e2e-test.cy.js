@@ -8,7 +8,7 @@ describe("affirm payment flow test", () => {
     cy.wrap(
       Cypress.automation("remote:debugger:protocol", {
         command: "Network.clearBrowserCache",
-      })
+      }),
     );
 
     cy.fixture("testCustomer").then((customer) => {
@@ -27,7 +27,7 @@ describe("affirm payment flow test", () => {
 
   it("orca-payment-element iframe loaded", () => {
     cy.get(
-      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element"
+      "#orca-payment-element-iframeRef-orca-elements-payment-element-payment-element",
     )
       .should("be.visible")
       .its("0.contentDocument")
