@@ -135,6 +135,7 @@ const getEnvVariable = (variable, defaultValue) => {
 
 const sdkEnv = getEnvVariable("sdkEnv", "local");
 const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
+const DISABLE_CSP = getEnvVariable("DISABLE_CSP", "false") === "true";
 const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
 const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
 const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
@@ -257,13 +258,15 @@ module.exports = (publicPath = "auto") => {
       template: "./public/build.html",
       chunks: ["app"],
       scriptLoading: "blocking",
-      //       // Add CSP meta tag
-      meta: {
-        "Content-Security-Policy": {
-          "http-equiv": "Content-Security-Policy",
-          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-            " "
-          )};
+      //       // Add CSP meta tag conditionally
+      meta: DISABLE_CSP
+        ? {}
+        : {
+            "Content-Security-Policy": {
+              "http-equiv": "Content-Security-Policy",
+              content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+                " "
+              )};
                 style-src ${authorizedStyleSources.join(" ")};
                 frame-src ${authorizedFrameSources.join(" ")};
                 img-src ${authorizedImageSources.join(" ")};
@@ -272,21 +275,23 @@ module.exports = (publicPath = "auto") => {
                   " "
                 )} ${logEndpoint} ${backendEndPoint};
       `,
-        },
-      },
+            },
+          },
     }),
     new HtmlWebpackPlugin({
       // Also generate a test.html
       inject: true,
       filename: "fullscreenIndex.html",
       template: "./public/fullscreenIndexTemplate.html",
-      // Add CSP meta tag
-      meta: {
-        "Content-Security-Policy": {
-          "http-equiv": "Content-Security-Policy",
-          content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-            " "
-          )};
+      // Add CSP meta tag conditionally
+      meta: DISABLE_CSP
+        ? {}
+        : {
+            "Content-Security-Policy": {
+              "http-equiv": "Content-Security-Policy",
+              content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
+                " "
+              )};
           style-src ${authorizedStyleSources.join(" ")};
           frame-src ${authorizedFrameSources.join(" ")};
           img-src ${authorizedImageSources.join(" ")};
@@ -295,8 +300,8 @@ module.exports = (publicPath = "auto") => {
             " "
           )} ${logEndpoint} ${backendEndPoint};
           `,
-        },
-      },
+            },
+          },
     }),
     new SubresourceIntegrityPlugin({
       hashFuncNames: ["sha384"],
