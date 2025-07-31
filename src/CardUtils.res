@@ -205,7 +205,6 @@ let getCardStringFromType = val => {
   }
 }
 
-
 let getCurrentMonthAndYear = (dateTimeIsoString: string) => {
   let tempTimeDateString = dateTimeIsoString->String.replace("Z", "")
   let tempTimeDate = tempTimeDateString->String.split("T")
@@ -262,7 +261,6 @@ let isExpiryComplete = val => {
   let (month, year) = splitExpiryDates(val)
   month->String.length == 2 && year->String.length == 2
 }
-
 
 let getCardBrand = cardNumber => {
   try {
@@ -698,7 +696,6 @@ let getPaymentMethodBrand = (customerMethod: PaymentType.customerMethods) => {
     )
   }
 }
-
 
 let getFirstValidCardSchemeFromPML = (~cardNumber, ~enabledCardSchemes) => {
   let allMatchedCards = getAllMatchedCardSchemes(cardNumber->clearSpaces)
