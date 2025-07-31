@@ -6,10 +6,10 @@ let cleanSocialSecurityNumber = socialSecurityNumber =>
 
 let formatSocialSecurityNumber = socialSecurityNumber => {
   let formatted = socialSecurityNumber->cleanSocialSecurityNumber
-  let firstPart = formatted->CardValidations.slice(0, 3)
-  let secondPart = formatted->CardValidations.slice(3, 6)
-  let thirdPart = formatted->CardValidations.slice(6, 9)
-  let fourthPart = formatted->CardValidations.slice(9, 11)
+  let firstPart = formatted->String.slice(~start=0, ~end=3)
+  let secondPart = formatted->String.slice(~start=3, ~end=6)
+  let thirdPart = formatted->String.slice(~start=6, ~end=9)
+  let fourthPart = formatted->String.slice(~start=9, ~end=11)
 
   if formatted->String.length <= 3 {
     firstPart
