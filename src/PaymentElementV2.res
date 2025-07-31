@@ -20,7 +20,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   )
   let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let (vaultMode, setVaultMode) = Recoil.useRecoilState(RecoilAtomsV2.vaultMode)
-  let setPaymentsListValue = Recoil.useSetRecoilState(RecoilAtomsV2.paymentMethodListValueV2)
+  let setPaymentMethodListValueV2 = Recoil.useSetRecoilState(RecoilAtomsV2.paymentMethodListValueV2)
   let isShowOrPayUsing = Recoil.useRecoilValueFromAtom(RecoilAtoms.isShowOrPayUsing)
   let (paymentOptions, setPaymentOptions) = React.useState(_ => [])
   let (walletOptions, setWalletOptions) = React.useState(_ => [])
@@ -79,7 +79,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     | (_, LoadedV2(paymentlist)) =>
       setWalletOptions(_ => walletsList)
       updatePaymentOptions()
-      setPaymentsListValue(_ => paymentlist)
+      setPaymentMethodListValueV2(_ => paymentlist)
     | (LoadErrorV2(_), _)
     | (_, LoadErrorV2(_))
     | (SemiLoadedV2, _)

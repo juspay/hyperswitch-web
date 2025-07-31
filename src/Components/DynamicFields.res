@@ -37,12 +37,14 @@ let make = (
   let paymentManagementListValue = Recoil.useRecoilValueFromAtom(
     PaymentUtils.paymentManagementListValue,
   )
-  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodListValueV2)
+  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
+    RecoilAtomsV2.paymentMethodListValueV2,
+  )
   let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let contextPaymentType = usePaymentType()
   let listValue = switch contextPaymentType {
   | PaymentMethodsManagement => paymentManagementListValue
-  | _ => paymentsListValueV2
+  | _ => paymentMethodListValueV2
   }
   React.useEffect(() => {
     setRequiredFieldsBody(_ => Dict.make())

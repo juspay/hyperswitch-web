@@ -333,11 +333,10 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
     ->getDictFromJson
     ->SessionsType.itemToObjMapper(Others)
 
-  let {
-    paypalToken,
-    isPaypalSDKFlow,
-    isPaypalRedirectFlow,
-  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
+  let {paypalToken, isPaypalSDKFlow, isPaypalRedirectFlow} = PayPalHelpers.usePaymentMethodData(
+    ~paymentMethodListValue,
+    ~sessionObj,
+  )
 
   let isPaypalTokenExist = switch paypalToken {
   | OtherTokenOptional(optToken) =>

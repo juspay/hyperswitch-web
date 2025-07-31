@@ -58,8 +58,8 @@ let make = (~walletOptions) => {
       let result = result->JSON.Decode.bool->Option.getOr(false)
       if result {
         let body = switch GlobalVars.sdkVersion {
-        | V1 => PaymentBody.paypalRedirectionBody()
-        | V2 => PaymentBodyV2.paypalRedirectionBody()
+        | V1 => PaymentBody.dynamicPaymentBody("wallet", "paypal")
+        | V2 => PaymentBodyV2.dynamicPaymentBodyV2("wallet", "paypal")
         }
         let basePaymentBody = PaymentUtils.appendedCustomerAcceptance(
           ~isGuestCustomer,

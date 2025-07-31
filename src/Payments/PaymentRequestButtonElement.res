@@ -50,16 +50,18 @@ let make = (~sessions, ~walletOptions) => {
   open PayPalHelpers
   let dict = sessions->Utils.getDictFromJson
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let paymentMethodsListV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentMethodListValueV2)
+  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
+    RecoilAtomsV2.paymentMethodListValueV2,
+  )
 
   let sessionObj = React.useMemo(() => itemToObjMapper(dict, Others), [dict])
 
-  let paypalFlowExperienceV1 = usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
-  let paypalFlowExperienceV2 = usePaymentMethodExperienceV2(~paymentMethodsListV2, ~sessionObj)
+  let paypalPaymentMethodDataV1 = usePaymentMethodData(~paymentMethodListValue, ~sessionObj)
+  let paypalPaymentMethodDataV2 = usePaymentMethodDataV2(~paymentMethodListValueV2, ~sessionObj)
 
   let {paypalToken, isPaypalSDKFlow, isPaypalRedirectFlow} = switch GlobalVars.sdkVersion {
-  | V1 => paypalFlowExperienceV1
-  | V2 => paypalFlowExperienceV2
+  | V1 => paypalPaymentMethodDataV1
+  | V2 => paypalPaymentMethodDataV2
   }
 
   let gPayToken = getPaymentSessionObj(sessionObj.sessionsToken, Gpay)

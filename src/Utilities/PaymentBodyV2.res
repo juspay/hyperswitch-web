@@ -1,5 +1,14 @@
 open Utils
 
+let paymentExperiencePaymentMethodsV2 = []
+
+let appendPaymentExperienceV2 = (paymentBodyArr, paymentMethodType) =>
+  if paymentExperiencePaymentMethodsV2->Array.includes(paymentMethodType) {
+    paymentBodyArr->Array.concat([("payment_experience", "redirect_to_url"->JSON.Encode.string)])
+  } else {
+    paymentBodyArr
+  }
+
 let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentMethod=false) => {
   open PaymentBody
 
@@ -22,7 +31,7 @@ let dynamicPaymentBodyV2 = (paymentMethod, paymentMethodTypeInput, ~isQrPaymentM
     ("payment_method_data", paymentMethodData),
   ]
 
-  baseBody->appendPaymentExperience(resolvedPaymentMethodType)
+  baseBody->appendPaymentExperienceV2(resolvedPaymentMethodType)
 }
 
 let epsBody = (~name, ~bankName) => {
@@ -39,17 +48,6 @@ let epsBody = (~name, ~bankName) => {
     ("payment_method_type", "bank_redirect"->JSON.Encode.string),
     ("payment_method_subtype", "eps"->JSON.Encode.string),
     ("payment_method_data", paymentMethodData),
-  ]
-}
-
-let paypalRedirectionBody = () => {
-  let paypalRedirectField =
-    [("paypal_redirect", []->Utils.getJsonFromArrayOfJson)]->Utils.getJsonFromArrayOfJson
-  let walletData = [("wallet", paypalRedirectField)]->Utils.getJsonFromArrayOfJson
-  [
-    ("payment_method_type", "wallet"->JSON.Encode.string),
-    ("payment_method_subtype", "paypal"->JSON.Encode.string),
-    ("payment_method_data", walletData),
   ]
 }
 

@@ -26,7 +26,7 @@ let usePaypalTokenAndFlowFromExperience = (
   }
 }
 
-let usePaymentMethodExperience = (~paymentMethodListValue, ~sessionObj: sessions) => {
+let usePaymentMethodData = (~paymentMethodListValue, ~sessionObj: sessions) => {
   let paypalPaymentMethodExperience = React.useMemo(() => {
     getPaymentExperienceTypeFromPML(
       ~paymentMethodList=paymentMethodListValue,
@@ -38,17 +38,17 @@ let usePaymentMethodExperience = (~paymentMethodListValue, ~sessionObj: sessions
   usePaypalTokenAndFlowFromExperience(~paypalPaymentMethodExperience, ~sessionObj)
 }
 
-let usePaymentMethodExperienceV2 = (
-  ~paymentMethodsListV2: UnifiedPaymentsTypesV2.paymentMethodsManagement,
+let usePaymentMethodDataV2 = (
+  ~paymentMethodListValueV2: UnifiedPaymentsTypesV2.paymentMethodsManagement,
   ~sessionObj: sessions,
 ) => {
   let paypalPaymentMethodExperience = React.useMemo(() => {
     PaymentMethodsRecordV2.getPaymentExperienceTypeFromPML(
-      ~paymentMethodList=paymentMethodsListV2,
+      ~paymentMethodList=paymentMethodListValueV2,
       ~paymentMethodName="wallet",
       ~paymentMethodType="paypal",
     )
-  }, [paymentMethodsListV2])
+  }, [paymentMethodListValueV2])
 
   usePaypalTokenAndFlowFromExperience(~paypalPaymentMethodExperience, ~sessionObj)
 }
