@@ -11,7 +11,7 @@ let make = () => {
   let customPodUri = Recoil.useRecoilValueFromAtom(customPodUri)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(isManualRetryEnabled)
 
-  let paymentsListValue = Recoil.useRecoilValueFromAtom(paymentsListValue)
+  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(paymentMethodListValueV2)
   let setVaultPublishableKey = Recoil.useSetRecoilState(vaultPublishableKey)
   let setVaultProfileId = Recoil.useSetRecoilState(vaultProfileId)
 
@@ -70,7 +70,7 @@ let make = () => {
             ("pmClientSecret", pmClientSecret->JSON.Encode.string),
             ("vaultPublishableKey", vaultPublishableKey->JSON.Encode.string),
             ("vaultProfileId", vaultProfileId->JSON.Encode.string),
-            ("paymentList", paymentsListValue->Identity.anyTypeToJson),
+            ("paymentList", paymentMethodListValueV2->Identity.anyTypeToJson),
             ("endpoint", ApiEndpoint.getApiEndPoint()->JSON.Encode.string),
             ("customPodUri", customPodUri->JSON.Encode.string),
           ]->getJsonFromArrayOfJson

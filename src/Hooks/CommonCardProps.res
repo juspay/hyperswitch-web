@@ -11,7 +11,9 @@ let useCardForm = (~logger, ~paymentType) => {
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let paymentsListValue = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
+    RecoilAtomsV2.paymentMethodListValueV2,
+  )
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -45,10 +47,10 @@ let useCardForm = (~logger, ~paymentType) => {
   let cardBrand = CardUtils.getCardBrandFromStates(cardBrand, cardScheme, showPaymentMethodsScreen)
   let supportedCardBrands = React.useMemo(() => {
     switch (paymentType, GlobalVars.sdkVersion) {
-    | (Payment, V2) => paymentsListValue->PaymentUtilsV2.getSupportedCardBrandsV2
+    | (Payment, V2) => paymentMethodListValueV2->PaymentUtilsV2.getSupportedCardBrandsV2
     | _ => paymentMethodListValue->PaymentUtils.getSupportedCardBrands
     }
-  }, (paymentMethodListValue, paymentsListValue))
+  }, (paymentMethodListValue, paymentMethodListValueV2))
 
   let maxCardLength = React.useMemo(() => {
     getMaxLength(cardBrand)
@@ -66,7 +68,7 @@ let useCardForm = (~logger, ~paymentType) => {
   }, [cardBrand])
 
   React.useEffect(() => {
-    let obj = getobjFromCardPattern(cardBrand)
+    let obj = CardValidations.getobjFromCardPattern(cardBrand)
     let cvcLength = obj.maxCVCLength
     if (
       cvcNumberInRange(cvcNumber, cardBrand)->Array.includes(true) &&
@@ -109,7 +111,7 @@ let useCardForm = (~logger, ~paymentType) => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
     let card = val->formatCardNumber(cardType)
-    let clearValue = card->clearSpaces
+    let clearValue = card->CardValidations.clearSpaces
     setCardValid(clearValue, cardBrand, setIsCardValid)
     if (
       focusCardValid(clearValue, cardBrand) &&
@@ -137,7 +139,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let changeCardExpiry = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardExpiry", logger)
-    let formattedExpiry = val->formatCardExpiryNumber
+    let formattedExpiry = val->CardValidations.formatCardExpiryNumber
     if isExipryValid(formattedExpiry) {
       handleInputFocus(~currentRef=expiryRef, ~destinationRef=cvcRef)
       emitExpiryDate(formattedExpiry)
@@ -149,7 +151,7 @@ let useCardForm = (~logger, ~paymentType) => {
   let changeCVCNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardCVC", logger)
-    let cvc = val->formatCVCNumber(cardBrand)
+    let cvc = val->CardValidations.formatCVCNumber(cardBrand)
     setCvcNumber(_ => cvc)
     if cvc->String.length > 0 && cvcNumberInRange(cvc, cardBrand)->Array.includes(true) {
       zipRef.current->Nullable.toOption->Option.forEach(input => input->focus)->ignore

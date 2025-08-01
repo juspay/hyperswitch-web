@@ -4,6 +4,9 @@ let vaultMode = Recoil.atom("vaultMode", VaultHelpers.None)
 let managePaymentMethod = Recoil.atom("managePaymentMethod", "")
 let savedMethodsV2 = Recoil.atom("savedMethodsV2", [UnifiedHelpersV2.defaultCustomerMethods])
 let paymentMethodsListV2 = Recoil.atom("paymentMethodsListV2", UnifiedPaymentsTypesV2.LoadingV2)
-let paymentsListValue = Recoil.atom("paymentsListValue", UnifiedHelpersV2.defaultPaymentsList)
+let paymentMethodListValueV2 = Recoil.atom(
+  "paymentMethodListValueV2",
+  UnifiedHelpersV2.defaultPaymentsList,
+)
 let vaultPublishableKey = Recoil.atom("vaultPublishableKey", "")
 let vaultProfileId = Recoil.atom("vaultProfileId", "")

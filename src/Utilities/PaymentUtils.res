@@ -34,7 +34,9 @@ let paymentListLookupNew = (
     "momo",
     "touch_n_go",
     "mifinity",
+    "bluecode",
     "revolut_pay",
+    "skrill",
   ]
   let otherPaymentList = []
 
@@ -332,11 +334,10 @@ let usePaypalFlowStatus = (~sessions, ~paymentMethodListValue) => {
     ->getDictFromJson
     ->SessionsType.itemToObjMapper(Others)
 
-  let {
-    paypalToken,
-    isPaypalSDKFlow,
-    isPaypalRedirectFlow,
-  } = PayPalHelpers.usePaymentMethodExperience(~paymentMethodListValue, ~sessionObj)
+  let {paypalToken, isPaypalSDKFlow, isPaypalRedirectFlow} = PayPalHelpers.usePaymentMethodData(
+    ~paymentMethodListValue,
+    ~sessionObj,
+  )
 
   let isPaypalTokenExist = switch paypalToken {
   | OtherTokenOptional(optToken) =>
@@ -560,7 +561,7 @@ let getSupportedCardBrands = (paymentMethodListValue: PaymentMethodsRecord.payme
 }
 
 let checkIsCardSupported = (cardNumber, cardBrand, supportedCardBrands) => {
-  let clearValue = cardNumber->CardUtils.clearSpaces
+  let clearValue = cardNumber->CardValidations.clearSpaces
   if cardBrand == "" {
     Some(CardUtils.cardValid(clearValue, cardBrand))
   } else if CardUtils.cardValid(clearValue, cardBrand) {

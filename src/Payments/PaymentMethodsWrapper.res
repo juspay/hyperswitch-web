@@ -14,11 +14,13 @@ let make = (~paymentMethodName: string) => {
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Other)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let paymentManagementList = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentManagementListValue)
-  let paymentsListValueV2 = Recoil.useRecoilValueFromAtom(RecoilAtomsV2.paymentsListValue)
+  let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
+    RecoilAtomsV2.paymentMethodListValueV2,
+  )
   let contextPaymentType = usePaymentType()
   let listValue = switch contextPaymentType {
   | PaymentMethodsManagement => paymentManagementList
-  | _ => paymentsListValueV2
+  | _ => paymentMethodListValueV2
   }
   let optionPaymentMethodDetails =
     paymentMethodListValue
@@ -97,7 +99,7 @@ let make = (~paymentMethodName: string) => {
             ~country=countryCode.isoAlpha2,
             ~fullName=fullName.value,
             ~email=email.value,
-            ~bank=bank.hyperSwitch,
+            ~bank=bank.value,
             ~blikCode=blikCode.value->removeHyphen,
             ~phoneNumber=cleanPhoneNumber(
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
@@ -111,7 +113,7 @@ let make = (~paymentMethodName: string) => {
             ~country=countryCode.isoAlpha2,
             ~fullName=fullName.value,
             ~email=email.value,
-            ~bank=bank.hyperSwitch,
+            ~bank=bank.value,
             ~blikCode=blikCode.value->removeHyphen,
             ~phoneNumber=cleanPhoneNumber(
               phoneNumber.countryCode->Option.getOr("") ++ phoneNumber.value,
