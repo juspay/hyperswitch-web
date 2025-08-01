@@ -6,25 +6,25 @@ echo ""
 echo "🚀 Starting submodule update script..."
 echo "--------------------------------------"
 
-# Initialize and fetch recursively
+# Step 1: Initialize and fetch submodules recursively
 echo "🔍 Initializing submodules..."
 git submodule update --init --recursive
 
 echo ""
 echo "🔄 Updating submodules to latest commits..."
 
-# For each submodule, do:
+# Step 2: Loop through each submodule and update
 git submodule foreach --recursive '
   echo ""
   echo "👉 Processing submodule: $name"
-  
-  # Check if we are inside a git repo
-  if [ ! -d ".git" ]; then
-    echo "⚠️  Skipping: .git not found in $name"
+
+  # Check if inside a valid Git working tree
+  if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    echo "⚠️  Skipping: not a Git working tree in $name"
     exit 0
   fi
 
-  # Try to checkout main or master
+  # Try to find the appropriate remote branch
   if git rev-parse --verify origin/main > /dev/null 2>&1; then
     BRANCH="main"
   elif git rev-parse --verify origin/master > /dev/null 2>&1; then
