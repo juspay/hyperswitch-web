@@ -53,11 +53,11 @@ let preloader = () => {
     ~type_="style",
     ~href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Qwitcher+Grypen:wght@400;700&display=swap",
   )
-  preloadFile(
-    ~type_="script",
-    ~href="https://js.braintreegateway.com/web/3.88.4/js/paypal-checkout.min.js",
-  )
-  preloadFile(~type_="script", ~href="https://js.braintreegateway.com/web/3.88.4/js/client.min.js")
+  // preloadFile(
+  //   ~type_="script",
+  //   ~href="https://js.braintreegateway.com/web/3.88.4/js/paypal-checkout.min.js",
+  // )
+  // preloadFile(~type_="script", ~href="https://js.braintreegateway.com/web/3.88.4/js/client.min.js")
 }
 
 let handleHyperApplePayMounted = (event: Types.event) => {

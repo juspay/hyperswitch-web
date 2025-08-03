@@ -1,5 +1,4 @@
 open PaypalSDKTypes
-open PaymentTypeContext
 
 @react.component
 let make = (~sessionObj: SessionsType.token) => {
@@ -17,20 +16,13 @@ let make = (~sessionObj: SessionsType.token) => {
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let (isCompleted, setIsCompleted) = React.useState(_ => false)
   let isCallbackUsedVal = Recoil.useRecoilValueFromAtom(RecoilAtoms.isCompleteCallbackUsed)
-  let paymentType = usePaymentType()
 
-  let token = sessionObj.token
-  let orderDetails = sessionObj.orderDetails->getOrderDetails(paymentType)
   let intent = PaymentHelpers.usePostSessionTokens(Some(loggerState), Paypal, Wallet)
   let confirm = PaymentHelpers.usePaymentIntent(Some(loggerState), Paypal)
   let sessions = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
   let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
   let completeAuthorize = PaymentHelpers.useCompleteAuthorize(Some(loggerState), Paypal)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
-  let checkoutScript =
-    Window.document(Window.window)->Window.getElementById("braintree-checkout")->Nullable.toOption
-  let clientScript =
-    Window.document(Window.window)->Window.getElementById("braintree-client")->Nullable.toOption
 
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (_, _, buttonType, _) = options.wallets.style.type_
@@ -110,31 +102,7 @@ let make = (~sessionObj: SessionsType.token) => {
 
   React.useEffect(() => {
     try {
-      switch sessionObj.connector {
-      | "paypal" => mountPaypalSDK()
-      | _ =>
-        switch (checkoutScript, clientScript) {
-        | (Some(_), Some(_)) =>
-          PaypalSDKHelpers.loadBraintreePaypalSdk(
-            ~loggerState,
-            ~sdkHandleOneClickConfirmPayment,
-            ~token,
-            ~buttonStyle,
-            ~iframeId,
-            ~paymentMethodListValue,
-            ~isGuestCustomer,
-            ~intent,
-            ~options,
-            ~orderDetails,
-            ~publishableKey,
-            ~paymentMethodTypes,
-            ~handleCloseLoader,
-            ~areOneClickWalletsRendered,
-            ~isManualRetryEnabled,
-          )
-        | _ => ()
-        }
-      }
+      mountPaypalSDK()
     } catch {
     | _ =>
       loggerState.setLogError(
