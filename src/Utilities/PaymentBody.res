@@ -941,6 +941,7 @@ let appendRedirectPaymentMethods = [
   "paypal",
   "breadpay",
   "flexiti",
+  "bluecode",
 ]
 
 let appendBankeDebitMethods = ["sepa"]
