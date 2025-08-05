@@ -11,7 +11,7 @@ const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const AddReactDisplayNamePlugin = require("babel-plugin-add-react-displayname");
 const { SubresourceIntegrityPlugin } = require("webpack-subresource-integrity");
 
-const localhostSources = [
+const LOCALHOST_SOURCES = [
   "http://localhost:8080",
   "http://localhost:8207",
   "http://localhost:3103",
@@ -22,162 +22,112 @@ const localhostSources = [
   "http://127.0.0.1:5252",
 ];
 
-// List of authorized external script sources (for Content Security Policy)
-const authorizedScriptSources = [
-  "'self'",
-  "https://js.braintreegateway.com",
-  "https://tpgw.trustpay.eu/js/v1.js",
-  "https://test-tpgw.trustpay.eu/js/v1.js",
-  "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js",
-  "https://pay.google.com",
-  "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js",
-  "https://apple.com/apple-pay",
-  "https://x.klarnacdn.net/kp/lib/v1/api.js",
-  "https://www.paypal.com/sdk/js",
-  "https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js",
-  "https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js",
-  "https://cdn.plaid.com/link/v2/stable/link-initialize.js",
-  "https://www.sandbox.paypal.com",
-  "https://www.paypal.com",
-  "https://www.google.com/pay",
-  "https://sandbox.secure.checkout.visa.com",
-  "https://secure.checkout.visa.com",
-  "https://src.mastercard.com",
-  "https://sandbox.src.mastercard.com",
-  "https://x.klarnacdn.net",
-  "https://js.playground.klarna.com",
-  "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
-  "https://vgs-collect-keeper.apps.verygood.systems/vgs",
-  "blob:",
-  // Add other trusted sources here
-];
+const CSP_SOURCES = {
+  scripts: [
+    "'self'",
+    "https://js.braintreegateway.com",
+    "https://tpgw.trustpay.eu/js/v1.js",
+    "https://test-tpgw.trustpay.eu/js/v1.js",
+    "https://applepay.cdn-apple.com/jsapi/v1/apple-pay-sdk.js",
+    "https://pay.google.com",
+    "https://img.mpay.samsung.com/gsmpi/sdk/samsungpay_web_sdk.js",
+    "https://apple.com/apple-pay",
+    "https://x.klarnacdn.net/kp/lib/v1/api.js",
+    "https://www.paypal.com/sdk/js",
+    "https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js",
+    "https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js",
+    "https://cdn.plaid.com/link/v2/stable/link-initialize.js",
+    "https://www.sandbox.paypal.com",
+    "https://www.paypal.com",
+    "https://www.google.com/pay",
+    "https://sandbox.secure.checkout.visa.com",
+    "https://secure.checkout.visa.com",
+    "https://src.mastercard.com",
+    "https://sandbox.src.mastercard.com",
+    "https://x.klarnacdn.net",
+    "https://js.playground.klarna.com",
+    "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
+    "https://vgs-collect-keeper.apps.verygood.systems/vgs",
+    "blob:",
+  ],
 
-// List of authorized external styles sources
-const authorizedStyleSources = [
-  "'self'",
-  "'unsafe-inline'",
-  "https://fonts.googleapis.com",
-  "http://fonts.googleapis.com",
-  "https://src.mastercard.com",
-  // Add other trusted sources here
-];
+  styles: [
+    "'self'",
+    "'unsafe-inline'",
+    "https://fonts.googleapis.com",
+    "http://fonts.googleapis.com",
+    "https://src.mastercard.com",
+  ],
 
-// List of authorized external font sources
-const authorizedFontSources = [
-  "'self'",
-  "https://fonts.gstatic.com",
-  "http://fonts.gstatic.com",
-  // Add other trusted sources here
-];
+  fonts: ["'self'", "https://fonts.gstatic.com", "http://fonts.gstatic.com"],
 
-// List of authorized external image sources
-const authorizedImageSources = [
-  "'self'",
-  "https://www.gstatic.com",
-  "https://static.scarf.sh/a.png",
-  "https://www.paypalobjects.com",
-  "https://googleads.g.doubleclick.net",
-  "https://www.google.com",
-  "data: *",
-  // Add other trusted sources here
-];
+  images: [
+    "'self'",
+    "https://www.gstatic.com",
+    "https://static.scarf.sh/a.png",
+    "https://www.paypalobjects.com",
+    "https://googleads.g.doubleclick.net",
+    "https://www.google.com",
+    "data: *",
+  ],
 
-// List of authorized external frame sources
-const authorizedFrameSources = [
-  "'self'",
-  "https:",
-  ...localhostSources,
-  // Add other trusted sources here
-];
-function extractBaseDSNUrl(dsn) {
-  const match = dsn.match(/^https:\/\/[^@]+@([^/]+)\//);
-  if (match && match[1]) {
-    return `https://${match[1]}`;
-  }
-  return null;
-}
-// List of authorized external connect sources
-const authorizedConnectSources = [
-  "'self'",
-  "https://checkout.hyperswitch.io",
-  "https://dev.hyperswitch.io",
-  "https://beta.hyperswitch.io",
-  "https://live.hyperswitch.io",
-  "https://integ.hyperswitch.io",
-  "https://integ-api.hyperswitch.io",
-  "https://app.hyperswitch.io",
-  "https://sandbox.hyperswitch.io",
-  "https://api.hyperswitch.io",
-  "https://www.google.com/pay",
-  "https://pay.google.com",
-  "https://google.com/pay",
-  "https://www.sandbox.paypal.com",
-  "https://www.paypal.com",
-  "https://integ-api.hyperswitch.io",
-  "https://sandbox.secure.checkout.visa.com",
-  "https://secure.checkout.visa.com",
-  "https://src.mastercard.com",
-  "https://sandbox.src.mastercard.com",
-  "https://eu.klarnaevt.com",
-  "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
-  "https://vgs-collect-keeper.apps.verygood.systems/vgs",
-  "https://eu.playground.klarnaevt.com",
-  extractBaseDSNUrl(process.env.SENTRY_DSN),
-  ...localhostSources,
-  // Add other trusted sources here
-];
+  frames: ["'self'", "https:", ...LOCALHOST_SOURCES],
 
-// Helper function to get environment variables with fallback
+  connect: [
+    "'self'",
+    "https://checkout.hyperswitch.io",
+    "https://dev.hyperswitch.io",
+    "https://beta.hyperswitch.io",
+    "https://live.hyperswitch.io",
+    "https://integ.hyperswitch.io",
+    "https://integ-api.hyperswitch.io",
+    "https://app.hyperswitch.io",
+    "https://sandbox.hyperswitch.io",
+    "https://api.hyperswitch.io",
+    "https://www.google.com/pay",
+    "https://pay.google.com",
+    "https://google.com/pay",
+    "https://www.sandbox.paypal.com",
+    "https://www.paypal.com",
+    "https://integ-api.hyperswitch.io",
+    "https://sandbox.secure.checkout.visa.com",
+    "https://secure.checkout.visa.com",
+    "https://src.mastercard.com",
+    "https://sandbox.src.mastercard.com",
+    "https://eu.klarnaevt.com",
+    "https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js",
+    "https://vgs-collect-keeper.apps.verygood.systems/vgs",
+    "https://eu.playground.klarnaevt.com",
+    ...LOCALHOST_SOURCES,
+  ],
+};
+
+const SDK_URLS = {
+  prod: "https://checkout.hyperswitch.io",
+  sandbox: "https://beta.hyperswitch.io",
+  integ: "https://dev.hyperswitch.io",
+  local: "http://localhost:9050",
+};
+
+const LOGGING_CONFIG = {
+  level: "DEBUG",
+  maxLogsPushedPerEventName: 100,
+};
+
 const getEnvVariable = (variable, defaultValue) => {
   const value = process.env[variable];
   return value && value.length > 0 ? value : defaultValue;
 };
 
-const sdkEnv = getEnvVariable("sdkEnv", "local");
-const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
-const DISABLE_CSP = getEnvVariable("DISABLE_CSP", "false") === "true";
-const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
-const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
-const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
-const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
-const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
-const repoVersion = getEnvVariable(
-  "SDK_TAG_VERSION",
-  require("./package.json").version
-);
-
-/*
-* SDK Version Compatibility:
-
-* v0: Compatible with API v1
-* v1: Compatible with API v1
-* v2: Compatible with API v2
-
-* The default SDK version is "v1".
-*/
-const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
-
-// Repository info
-const repoName = require("./package.json").name;
-const repoPublicPath =
-  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersionValue}`;
-
-// Helper function to get SDK URL based on environment
-const getSdkUrl = (env, customUrl) => {
-  if (customUrl) return customUrl;
-  const urls = {
-    prod: "https://checkout.hyperswitch.io",
-    sandbox: "https://beta.hyperswitch.io",
-    integ: "https://dev.hyperswitch.io",
-    local: "http://localhost:9050",
-  };
-  return urls[env] || urls.local;
+const extractBaseDSNUrl = (dsn) => {
+  const match = dsn?.match(/^https:\/\/[^@]+@([^/]+)\//);
+  return match?.[1] ? `https://${match[1]}` : null;
 };
 
-// Determine SDK URL
-const sdkUrl = getSdkUrl(sdkEnv, envSdkUrl);
+const getSdkUrl = (env, customUrl) => {
+  return customUrl || SDK_URLS[env] || SDK_URLS.local;
+};
 
-// Helper function to determine environment domains
 const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
   switch (sdkEnv) {
     case "prod":
@@ -189,140 +139,153 @@ const getEnvironmentDomain = (prodDomain, integDomain, defaultDomain) => {
   }
 };
 
-// Environment endpoints
+const getEnvironmentType = (env) => ({
+  isLocal: env === "local",
+  isIntegrationEnv: env === "integ",
+  isProductionEnv: env === "prod",
+  isSandboxEnv: env === "sandbox" || env === "local",
+});
+
+const generateCSPPolicy = (sources, logEndpoint, backendEndPoint) => {
+  const sentryDSN = extractBaseDSNUrl(process.env.SENTRY_DSN);
+  const connectSources = [...sources.connect];
+
+  if (sentryDSN) connectSources.push(sentryDSN);
+
+  return [
+    `default-src 'self'`,
+    `script-src ${sources.scripts.join(" ")}`,
+    `style-src ${sources.styles.join(" ")}`,
+    `frame-src ${sources.frames.join(" ")}`,
+    `img-src ${sources.images.join(" ")}`,
+    `font-src ${sources.fonts.join(" ")}`,
+    `connect-src ${connectSources.join(" ")} ${logEndpoint} ${backendEndPoint}`,
+  ].join("; ");
+};
+
+const sdkEnv = getEnvVariable("sdkEnv", "local");
+const ENABLE_LOGGING = getEnvVariable("ENABLE_LOGGING", "false") === "true";
+const DISABLE_CSP = getEnvVariable("DISABLE_CSP", "false") === "true";
+
+const envSdkUrl = getEnvVariable("ENV_SDK_URL", "");
+const envBackendUrl = getEnvVariable("ENV_BACKEND_URL", "");
+const envLoggingUrl = getEnvVariable("ENV_LOGGING_URL", "");
+const sdkUrl = getSdkUrl(sdkEnv, envSdkUrl);
+
+const visaAPIKeyId = getEnvVariable("VISA_API_KEY_ID", "");
+const visaAPICertificatePem = getEnvVariable("VISA_API_CERTIFICATE_PEM", "");
+
+const repoVersion = getEnvVariable(
+  "SDK_TAG_VERSION",
+  require("./package.json").version
+);
+const sdkVersionValue = getEnvVariable("SDK_VERSION", "v1");
+const repoName = require("./package.json").name;
+const repoPublicPath =
+  sdkEnv === "local" ? "" : `/web/${repoVersion}/${sdkVersionValue}`;
+
 const backendDomain = getEnvironmentDomain("checkout", "dev", "beta");
 const confirmDomain = getEnvironmentDomain("live", "integ", "app");
-
-// Backend and confirm endpoints
 const backendEndPoint =
   envBackendUrl || `https://${backendDomain}.hyperswitch.io/api`;
-
 const confirmEndPoint =
   envBackendUrl || `https://${confirmDomain}.hyperswitch.io/api`;
-
 const logEndpoint = envLoggingUrl;
-
-const loggingLevel = "DEBUG";
-const maxLogsPushedPerEventName = 100;
-
-// Function to determine the current environment type
-const getEnvironmentType = (env) => {
-  const envType = {
-    isLocal: env === "local",
-    isIntegrationEnv: env === "integ",
-    isProductionEnv: env === "prod",
-    isSandboxEnv: env === "sandbox" || env === "local",
-  };
-  return envType;
-};
 
 const { isLocal, isIntegrationEnv, isProductionEnv, isSandboxEnv } =
   getEnvironmentType(sdkEnv);
 
-module.exports = (publicPath = "auto") => {
-  const entries = {
-    app: "./index.js",
-    HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
+const createDefinePluginValues = () => ({
+  repoName: JSON.stringify(repoName),
+  repoVersion: JSON.stringify(repoVersion),
+  publicPath: JSON.stringify(repoPublicPath),
+  sdkUrl: JSON.stringify(sdkUrl),
+  backendEndPoint: JSON.stringify(backendEndPoint),
+  confirmEndPoint: JSON.stringify(confirmEndPoint),
+  logEndpoint: JSON.stringify(logEndpoint),
+  sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
+  sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
+  enableLogging: ENABLE_LOGGING,
+  loggingLevel: JSON.stringify(LOGGING_CONFIG.level),
+  maxLogsPushedPerEventName: JSON.stringify(
+    LOGGING_CONFIG.maxLogsPushedPerEventName
+  ),
+  sdkVersionValue: JSON.stringify(sdkVersionValue),
+  isIntegrationEnv,
+  isSandboxEnv,
+  isProductionEnv,
+  isLocal,
+  visaAPIKeyId: JSON.stringify(visaAPIKeyId),
+  visaAPICertificatePem: JSON.stringify(visaAPICertificatePem),
+});
+
+const createHtmlPlugin = ({ filename = "index.html", template, chunks }) => {
+  const cspPolicy = generateCSPPolicy(
+    CSP_SOURCES,
+    logEndpoint,
+    backendEndPoint
+  );
+
+  const config = {
+    inject: true,
+    template,
+    scriptLoading: "blocking",
+    meta: DISABLE_CSP
+      ? {}
+      : {
+          "Content-Security-Policy": {
+            "http-equiv": "Content-Security-Policy",
+            content: cspPolicy,
+          },
+        },
   };
 
-  const definePluginValues = {
-    repoName: JSON.stringify(repoName),
-    repoVersion: JSON.stringify(repoVersion),
-    publicPath: JSON.stringify(repoPublicPath),
-    sdkUrl: JSON.stringify(sdkUrl),
-    backendEndPoint: JSON.stringify(backendEndPoint),
-    confirmEndPoint: JSON.stringify(confirmEndPoint),
-    logEndpoint: JSON.stringify(logEndpoint),
-    sentryDSN: JSON.stringify(process.env.SENTRY_DSN),
-    sentryScriptUrl: JSON.stringify(process.env.SENTRY_SCRIPT_URL),
-    enableLogging: ENABLE_LOGGING,
-    loggingLevel: JSON.stringify(loggingLevel),
-    maxLogsPushedPerEventName: JSON.stringify(maxLogsPushedPerEventName),
-    sdkVersionValue: JSON.stringify(sdkVersionValue),
-    isIntegrationEnv,
-    isSandboxEnv,
-    isProductionEnv,
-    isLocal,
-    visaAPIKeyId: JSON.stringify(visaAPIKeyId),
-    visaAPICertificatePem: JSON.stringify(visaAPICertificatePem),
-  };
-
-  const plugins = [
-    new MiniCssExtractPlugin(),
-    new CopyPlugin({
-      patterns: [{ from: "public" }],
-    }),
-    new webpack.DefinePlugin(definePluginValues),
-    new HtmlWebpackPlugin({
-      inject: true,
-      template: "./public/build.html",
-      chunks: ["app"],
-      scriptLoading: "blocking",
-      // Add CSP meta tag conditionally
-      meta: DISABLE_CSP
-        ? {}
-        : {
-            "Content-Security-Policy": {
-              "http-equiv": "Content-Security-Policy",
-              content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
-              )};
-                style-src ${authorizedStyleSources.join(" ")};
-                frame-src ${authorizedFrameSources.join(" ")};
-                img-src ${authorizedImageSources.join(" ")};
-                font-src ${authorizedFontSources.join(" ")};
-                connect-src ${authorizedConnectSources.join(
-                  " "
-                )} ${logEndpoint} ${backendEndPoint};
-      `,
-            },
-          },
-    }),
-    new HtmlWebpackPlugin({
-      // Also generate a test.html
-      inject: true,
-      filename: "fullscreenIndex.html",
-      template: "./public/fullscreenIndexTemplate.html",
-      // Add CSP meta tag conditionally
-      meta: DISABLE_CSP
-        ? {}
-        : {
-            "Content-Security-Policy": {
-              "http-equiv": "Content-Security-Policy",
-              content: `default-src 'self' ; script-src ${authorizedScriptSources.join(
-                " "
-              )};
-          style-src ${authorizedStyleSources.join(" ")};
-          frame-src ${authorizedFrameSources.join(" ")};
-          img-src ${authorizedImageSources.join(" ")};
-          font-src ${authorizedFontSources.join(" ")};
-          connect-src ${authorizedConnectSources.join(
-            " "
-          )} ${logEndpoint} ${backendEndPoint};
-          `,
-            },
-          },
-    }),
-    new SubresourceIntegrityPlugin({
-      hashFuncNames: ["sha384"],
-      enabled: process.env.NODE_ENV === "production",
-    }),
-    // Build-time verification plugin
-    new webpack.DefinePlugin({
-      // Custom verification to ensure SRI is enforced
-      __VERIFY_SRI__: JSON.stringify(process.env.NODE_ENV === "production"),
-    }),
-  ];
-
-  if (process.env.NODE_ENV === "production") {
-    plugins.push(
-      new BundleAnalyzerPlugin({
-        analyzerMode: "static",
-        reportFilename: "bundle-report.html",
-        openAnalyzer: false,
-      })
-    );
+  if (filename !== "index.html") {
+    config.filename = filename;
   }
+
+  if (chunks) {
+    config.chunks = chunks;
+  }
+
+  return new HtmlWebpackPlugin(config);
+};
+
+const createBasePlugins = () => [
+  new MiniCssExtractPlugin(),
+  new CopyPlugin({
+    patterns: [{ from: "public" }],
+  }),
+  new webpack.DefinePlugin(createDefinePluginValues()),
+
+  createHtmlPlugin({
+    template: "./public/build.html",
+    chunks: ["app"],
+  }),
+
+  createHtmlPlugin({
+    filename: "fullscreenIndex.html",
+    template: "./public/fullscreenIndexTemplate.html",
+  }),
+
+  new SubresourceIntegrityPlugin({
+    hashFuncNames: ["sha384"],
+    enabled: true,
+  }),
+
+  new webpack.DefinePlugin({
+    __VERIFY_SRI__: JSON.stringify(true),
+  }),
+];
+
+const addConditionalPlugins = (plugins) => {
+  plugins.push(
+    new BundleAnalyzerPlugin({
+      analyzerMode: "static",
+      reportFilename: "bundle-report.html",
+      openAnalyzer: false,
+    })
+  );
 
   if (
     process.env.SENTRY_AUTH_TOKEN &&
@@ -344,9 +307,77 @@ module.exports = (publicPath = "auto") => {
     );
   }
 
+  return plugins;
+};
+
+const createOptimization = () => {
+  if (isLocal) return {};
+
+  return {
+    sideEffects: true,
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          compress: {
+            drop_console: false,
+          },
+          mangle: {
+            keep_fnames: true,
+            keep_classnames: true,
+          },
+        },
+      }),
+    ],
+  };
+};
+
+const createModuleRules = () => ({
+  rules: [
+    {
+      test: /\.css$/i,
+      use: [
+        MiniCssExtractPlugin.loader,
+        "css-loader",
+        {
+          loader: "postcss-loader",
+          options: {
+            postcssOptions: {
+              plugins: [[tailwindcss("./tailwind.config.js")]],
+            },
+          },
+        },
+      ],
+    },
+    {
+      test: /\.jsx?$/,
+      exclude: /node_modules/,
+      use: {
+        loader: "babel-loader",
+        options: {
+          presets: ["@babel/preset-env", "@babel/preset-react"],
+          plugins: [AddReactDisplayNamePlugin],
+        },
+      },
+    },
+  ],
+});
+
+module.exports = (publicPath = "auto") => {
+  const entries = {
+    app: "./index.js",
+    HyperLoader: "./src/hyper-loader/HyperLoader.bs.js",
+  };
+
+  const basePlugins = createBasePlugins();
+  const plugins = addConditionalPlugins(basePlugins);
+
   return {
     mode: isLocal ? "development" : "production",
     devtool: isLocal ? "cheap-module-source-map" : "source-map",
+
+    entry: entries,
+
     output: {
       path: isLocal
         ? path.resolve(__dirname, "dist")
@@ -356,57 +387,11 @@ module.exports = (publicPath = "auto") => {
       publicPath: `${repoPublicPath}/`,
       hashFunction: "sha384",
     },
-    optimization: isLocal
-      ? {}
-      : {
-          sideEffects: true,
-          minimize: true,
-          minimizer: [
-            new TerserPlugin({
-              terserOptions: {
-                compress: {
-                  drop_console: false,
-                },
-                mangle: {
-                  keep_fnames: true, // Prevent function names from being mangled
-                  keep_classnames: true, // Prevent class names from being mangled
-                },
-              },
-            }),
-          ],
-        },
+
+    optimization: createOptimization(),
     plugins,
-    module: {
-      rules: [
-        {
-          test: /\.css$/i,
-          use: [
-            MiniCssExtractPlugin.loader,
-            "css-loader",
-            {
-              loader: "postcss-loader",
-              options: {
-                postcssOptions: {
-                  plugins: [[tailwindcss("./tailwind.config.js")]],
-                },
-              },
-            },
-          ],
-        },
-        {
-          test: /\.jsx?$/, // Matches both .js and .jsx files
-          exclude: /node_modules/,
-          use: {
-            loader: "babel-loader",
-            options: {
-              presets: ["@babel/preset-env", "@babel/preset-react"],
-              plugins: [AddReactDisplayNamePlugin],
-            },
-          },
-        },
-      ],
-    },
-    entry: entries,
+    module: createModuleRules(),
+
     resolve: {
       extensions: [".js", ".jsx"],
     },
