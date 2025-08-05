@@ -211,7 +211,7 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "✅ Version will be bumped from $CURRENT_VERSION to $NEW_VERSION"
 
-      - name: Update package.json version
+      - name: Update package.json version and regenerate lock file
         run: |
           NEW_VERSION="${{ steps.version.outputs.new_version }}"
 
@@ -224,6 +224,10 @@ jobs:
           "
 
           echo "✅ Updated package.json to version $NEW_VERSION"
+
+          # Regenerate package-lock.json
+          npm install --package-lock-only
+          echo "🔄 Regenerated package-lock.json"
 
       - name: Create version bump branch and commit
         id: version_bump
