@@ -257,6 +257,18 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "✅ Created branch $BRANCH_NAME and committed version bump (package.json + package-lock.json)"
 
+      - name: Create and push tag
+        id: tag
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          TAG_NAME="v$NEW_VERSION"
+
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
+
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Created and pushed tag: $TAG_NAME"
+
       - name: Create Pull Request
         id: cpr
         continue-on-error: true
@@ -280,7 +292,9 @@ jobs:
 
             **Next Steps:**
             1. Review and merge this PR
-            2. Manually create the release and tag from the main branch after merging`;
+            2. Manually create the GitHub release from the tag after merging
+
+            **Tag Created:** \`${{ steps.tag.outputs.tag_name }}\` has been created and pushed.`;
 
             try {
               // Try to create PR automatically
@@ -336,7 +350,9 @@ jobs:
 
             **Next Steps:**
             1. Review and merge this PR
-            2. Manually create the release and tag from the main branch after merging`;
+            2. Manually create the GitHub release from the tag after merging
+
+            **Tag Created:** \`v${newVersion}\` has been created and pushed.`;
 
             if (prNumber) {
               console.log(`✅ Successfully ${prOperation} PR #${prNumber}: ${prUrl}`);
@@ -345,16 +361,16 @@ jobs:
               core.summary
                 .addHeading('🎉 Version Bump PR Created Successfully')
                 .addTable([
-                  [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'PR Number', header: true}, {data: 'Files Updated', header: true}],
-                  ['${{ steps.version.outputs.current_version }}', newVersion, `#${prNumber}`, 'package.json + package-lock.json']
+                  [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'PR Number', header: true}, {data: 'Tag Created', header: true}],
+                  ['${{ steps.version.outputs.current_version }}', newVersion, `#${prNumber}`, 'v' + newVersion]
                 ])
                 .addLink('View Pull Request', prUrl)
                 .addHeading('📋 Next Steps')
                 .addList([
                   'Review and merge the PR above',
-                  'After merging, manually create the release and tag from the main branch'
+                  'After merging, manually create the GitHub release from the existing tag'
                 ])
-                .addRaw('<br><br>**Note:** This workflow only creates the version bump PR. Release creation is manual.')
+                .addRaw('<br><br>**Note:** The tag has been created and pushed. Only GitHub release creation is manual.')
                 .write();
             } else {
               console.log(`⚠️ Automatic PR creation failed`);
@@ -364,8 +380,8 @@ jobs:
               core.summary
                 .addHeading('📋 Version Bump Changes Ready')
                 .addTable([
-                  [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'Branch', header: true}, {data: 'Files Updated', header: true}],
-                  ['${{ steps.version.outputs.current_version }}', newVersion, branchName, 'package.json + package-lock.json']
+                  [{data: 'Previous Version', header: true}, {data: 'New Version', header: true}, {data: 'Branch', header: true}, {data: 'Tag Created', header: true}],
+                  ['${{ steps.version.outputs.current_version }}', newVersion, branchName, 'v' + newVersion]
                 ])
                 .addHeading('⚠️ Automatic PR Creation Failed')
                 .addRaw(`<p><strong>Reason:</strong> The automatic PR creation failed.</p>`)
@@ -386,8 +402,8 @@ jobs:
                 .addHeading('📋 Next Steps After PR Creation')
                 .addList([
                   'Review and merge the PR',
-                  'After merging, manually create the release and tag from the main branch'
+                  'After merging, manually create the GitHub release from the existing tag'
                 ])
-                .addRaw('<br><br>**Note:** This workflow only creates the version bump PR. Release creation is manual.')
+                .addRaw('<br><br>**Note:** The tag has been created and pushed. Only GitHub release creation is manual.')
                 .write();
             }
