@@ -122,4 +122,22 @@ describe("Card CVC Checks", () => {
           .should("have.value", "1234");
       });
   });
+
+  it("should display an error when CVC is empty for a saved card", () => {
+    cy.wait(2000);
+
+    getIframeBody()
+      .contains("div", "4 digit cvc t..")
+      .should("exist")
+      .click();
+    cy.wait(1000);
+
+    getIframeBody().get("#submit").click();
+
+    getIframeBody()
+      .contains("CVC Number cannot be empty")
+      .should("be.visible");
+
+    cy.contains("Please enter all fields").should("be.visible");
+  });
 });
