@@ -175,6 +175,11 @@ type sdkHandleSavePayment = {
   confirmParams: ConfirmType.confirmParams,
 }
 
+type savedMethods = {
+  isShowButton: bool,
+  buttonText?: string,
+}
+
 type options = {
   defaultValues: defaultValues,
   layout: layoutType,
@@ -202,6 +207,7 @@ type options = {
   displayBillingDetails: bool,
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
+  savedMethods: savedMethods,
 }
 
 type payerDetails = {
@@ -348,6 +354,10 @@ let defaultSdkHandleSavePayment = {
   confirmParams: ConfirmType.defaultConfirm,
 }
 
+let defaultSavedMethods = {
+  isShowButton: false,
+}
+
 let defaultOptions = {
   defaultValues: defaultDefaultValues,
   business: defaultBusiness,
@@ -373,6 +383,7 @@ let defaultOptions = {
   displayBillingDetails: false,
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
+  savedMethods: defaultSavedMethods,
 }
 
 let getLayout = str => {
@@ -1038,6 +1049,21 @@ let getSdkHandleSavePaymentProps = dict => {
   confirmParams: dict->getDictFromDict("confirmParams")->getConfirmParams,
 }
 
+let getSavedMethods = (dict, str, logger) => {
+  dict
+  ->Dict.get(str)
+  ->Option.flatMap(JSON.Decode.object)
+  ->Option.map(json => {
+    unknownKeysWarning(["isShowButton", "buttonText"], json, "options.savedMethods")
+
+    {
+      isShowButton: getBoolWithWarning(json, "isShowButton", false, ~logger),
+      buttonText: getWarningString(json, "buttonText", "auto", ~logger),
+    }
+  })
+  ->Option.getOr(defaultSavedMethods)
+}
+
 let itemToObjMapper = (dict, logger) => {
   unknownKeysWarning(
     [
@@ -1109,6 +1135,7 @@ let itemToObjMapper = (dict, logger) => {
     displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
+    savedMethods: getSavedMethods(dict, "savedMethods", logger),
   }
 }
 

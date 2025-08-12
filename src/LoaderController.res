@@ -8,6 +8,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (keys, setKeys) = Recoil.useRecoilState(keys)
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
+  let setEnabledAuthnMethodsToken = Recoil.useSetRecoilState(enabledAuthnMethodsToken)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
   let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
@@ -43,6 +44,9 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let setUserAddressCountry = Recoil.useSetRecoilState(userAddressCountry)
   let setCountry = Recoil.useSetRecoilState(userCountry)
   let setIsCompleteCallbackUsed = Recoil.useSetRecoilState(isCompleteCallbackUsed)
+  let setIsSavedMethodChangedCallbackEnabled = Recoil.useSetRecoilState(
+    isSavedMethodChangedCallbackEnabled,
+  )
   let setIsPaymentButtonHandlerProvided = Recoil.useSetRecoilState(
     isPaymentButtonHandlerProvidedAtom,
   )
@@ -103,7 +107,8 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
     | PazeElement
     | ExpressCheckoutElement
     | PaymentMethodsManagement
-    | Payment => {
+    | Payment
+    | SavedCardElement => {
         let paymentOptions = PaymentType.itemToObjMapper(optionsDict, logger)
         setOptionsPayment(_ => paymentOptions)
         optionsCallback(paymentOptions)
@@ -143,6 +148,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
           pmClientSecret: config.pmClientSecret,
           pmSessionId: config.pmSessionId,
           loader: config.loader,
+          // authenticationClientSecret: config.authenticationClientSecret,
         },
         themeObj: appearance.variables,
         localeString,
@@ -268,6 +274,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let isCallbackUsedVal = dict->Utils.getBool("onCompleteDoThisUsed", false)
                 setIsCompleteCallbackUsed(_ => isCallbackUsedVal)
               }
+              if dict->getDictIsSome("onSavedMethodChanged") {
+                let isSavedMethodChangedCallbackEnabled =
+                  dict->Utils.getBool("onSavedMethodChanged", false)
+                setIsSavedMethodChangedCallbackEnabled(_ => isSavedMethodChangedCallbackEnabled)
+              }
               if dict->getDictIsSome("isPaymentButtonHandlerProvided") {
                 let isSDKClick = dict->Utils.getBool("isPaymentButtonHandlerProvided", false)
                 setIsPaymentButtonHandlerProvided(_ => isSDKClick)
@@ -342,12 +353,20 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
             let ephemeralKey = getWarningString(paymentOptions, "ephemeralKey", "", ~logger)
             let pmClientSecret = getWarningString(paymentOptions, "pmClientSecret", "", ~logger)
             let pmSessionId = getWarningString(paymentOptions, "pmSessionId", "", ~logger)
+            let authenticationClientSecret = getWarningString(
+              paymentOptions,
+              "authenticationClientSecret",
+              "",
+              ~logger,
+            )
+
             setKeys(prev => {
               ...prev,
               clientSecret: Some(clientSecret),
               ephemeralKey,
               pmClientSecret,
               pmSessionId,
+              authenticationClientSecret,
             })
             logger.setClientSecret(clientSecret)
 
@@ -416,6 +435,11 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         }
         if dict->getDictIsSome("sessions") {
           setSessions(_ => Loaded(dict->getJsonObjectFromDict("sessions")))
+        }
+        if dict->getDictIsSome("enabledAuthnMethodsToken") {
+          setEnabledAuthnMethodsToken(_ => Loaded(
+            dict->getJsonObjectFromDict("enabledAuthnMethodsToken"),
+          ))
         }
         if dict->getDictIsSome("sessionUpdate") {
           setUpdateSession(_ => {

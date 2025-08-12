@@ -67,6 +67,8 @@ let make = () => {
     Some(() => Window.removeEventListener("message", handleMetaDataPostMessage))
   })
 
+  Console.log2("===> Payment Mode", paymentMode)
+
   let renderFullscreen = switch paymentMode {
   | "paymentMethodCollect" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>
@@ -76,6 +78,7 @@ let make = () => {
     switch fullscreenMode {
     | "paymentloader" => <PaymentLoader />
     | "clickToPayLearnMore" => <ClickToPayLearnMore />
+    | "clickToPayHidden" => <ClickToPayHidden />
     | "plaidSDK" => <PlaidSDKIframe />
     | "pazeWallet" => <PazeWallet logger />
     | "fullscreen" =>
@@ -99,6 +102,11 @@ let make = () => {
         let ephemeralKey = getQueryParamsDictforKey(url.search, "ephemeralKey")
         let pmClientSecret = getQueryParamsDictforKey(url.search, "pmClientSecret")
         let pmSessionId = getQueryParamsDictforKey(url.search, "pmSessionId")
+        let authenticationClientSecret = getQueryParamsDictforKey(
+          url.search,
+          "authenticationClientSecret",
+        )
+        let authenticationId = getQueryParamsDictforKey(url.search, "authenticationId")
         let hyperComponentName =
           getQueryParamsDictforKey(
             url.search,
@@ -120,6 +128,8 @@ let make = () => {
           hyperComponentName
           merchantHostname
           customPodUri
+          authenticationClientSecret
+          authenticationId
         />
       }
     | "achBankTransfer"

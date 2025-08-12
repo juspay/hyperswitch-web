@@ -10,6 +10,7 @@ type eventData = {
   newClassType: string,
   confirmTriggered: bool,
   oneClickConfirmTriggered: bool,
+  savedMethodChanged: bool,
 }
 type event = {key: string, data: eventData, source: Dom.element}
 type eventParam = Event(event) | EventData(eventData) | Empty
@@ -58,6 +59,12 @@ type initPaymentSession = {
   getPaymentManagementMethods: unit => promise<JSON.t>,
 }
 
+type authenticationSession = {
+  widgets: JSON.t => element,
+  // widgets: JSON.t => paymentElement,
+  confirmAuthentication: JSON.t => promise<JSON.t>,
+}
+
 type confirmParams = {return_url: string}
 
 type confirmPaymentParams = {
@@ -77,6 +84,7 @@ type hyperInstance = {
   paymentMethodsManagementElements: JSON.t => element,
   completeUpdateIntent: string => promise<JSON.t>,
   initiateUpdateIntent: unit => promise<JSON.t>,
+  authenticationSession: JSON.t => authenticationSession,
 }
 
 let oneClickConfirmPaymentFn = (_, _) => {
@@ -178,6 +186,15 @@ let defaultInitPaymentSession: initPaymentSession = {
   getPaymentManagementMethods: defaultGetPaymentManagementMethods,
 }
 
+let confirmAuthenticationFn = (_elements: JSON.t) => {
+  Promise.resolve(Dict.make()->JSON.Encode.object)
+}
+
+let defaultAuthenticationSession: authenticationSession = {
+  widgets: _ev => defaultElement,
+  confirmAuthentication: confirmAuthenticationFn,
+}
+
 let defaultHyperInstance = {
   confirmOneClickPayment: oneClickConfirmPaymentFn,
   confirmPayment: confirmPaymentFn,
@@ -190,6 +207,7 @@ let defaultHyperInstance = {
   paymentMethodsManagementElements: _ev => defaultElement,
   completeUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
   initiateUpdateIntent: _ => Promise.resolve(Dict.make()->JSON.Encode.object),
+  authenticationSession: _ev => defaultAuthenticationSession,
 }
 
 type eventType =
@@ -202,6 +220,7 @@ type eventType =
   | CompleteDoThis
   | ConfirmPayment
   | OneClickConfirmPayment
+  | SavedMethodChanged
   | None
 
 let eventTypeMapper = event => {
@@ -215,6 +234,7 @@ let eventTypeMapper = event => {
   | "blur" => Blur
   | "confirmTriggered" => ConfirmPayment
   | "oneClickConfirmTriggered" => OneClickConfirmPayment
+  | "savedMethodChanged" => SavedMethodChanged
   | _ => None
   }
 }
@@ -236,18 +256,21 @@ type rec ele = {
 
 @send external appendChild: (Dom.element, ele) => unit = "appendChild"
 
-type hyperComponentName = Elements | PaymentMethodsManagementElements
+type hyperComponentName =
+  Elements | PaymentMethodsManagementElements | AuthenticationSessionElements
 
 let getStrFromHyperComponentName = hyperComponentName => {
   switch hyperComponentName {
   | Elements => "Elements"
   | PaymentMethodsManagementElements => "PaymentMethodsManagementElements"
+  | AuthenticationSessionElements => "AuthenticationSessionElements"
   }
 }
 
 let getHyperComponentNameFromStr = hyperComponentName => {
   switch hyperComponentName {
   | "PaymentMethodsManagementElements" => PaymentMethodsManagementElements
+  | "AuthenticationSessionElements" => AuthenticationSessionElements
   | _ => Elements
   }
 }

@@ -10,6 +10,7 @@ let make = (
   ~setIsClickToPayAuthenticateError,
   ~getVisaCards,
   ~closeComponentIfSavedMethodsAreEmpty,
+  ~isSavedCardElement=false,
 ) => {
   open CardUtils
   open Utils
@@ -66,6 +67,8 @@ let make = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
+  Console.log2("## clickToPayConfig.isReady", clickToPayConfig.isReady)
+
   let bottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
@@ -81,6 +84,7 @@ let make = (
           savedCardlength
           cvcProps
           setRequiredFieldsBody
+          isClickToPayRememberMe
         />
       )
       ->React.array}
@@ -96,6 +100,7 @@ let make = (
           getVisaCards
           setIsClickToPayRememberMe
           closeComponentIfSavedMethodsAreEmpty
+          isClickToPayRememberMe
         />
       </RenderIf>
     </div>
@@ -334,11 +339,15 @@ let make = (
   ))
 
   let enableSavedPaymentShimmer = React.useMemo(() => {
-    savedCardlength === 0 &&
-      (loadSavedCards === PaymentType.LoadingSavedCards ||
-      !showPaymentMethodsScreen ||
-      clickToPayConfig.isReady->Option.isNone)
+    // savedCardlength === 0 &&
+    //   (loadSavedCards === PaymentType.LoadingSavedCards ||
+    //   !showPaymentMethodsScreen ||
+    //   clickToPayConfig.isReady->Option.isNone)
+    savedCardlength === 0 && clickToPayConfig.isReady->Option.isNone
   }, (savedCardlength, loadSavedCards, showPaymentMethodsScreen, clickToPayConfig.isReady))
+
+  Console.log2("## enableSavedPaymentShimmer", enableSavedPaymentShimmer)
+  Console.log2("## showPaymentMethodsScreen", showPaymentMethodsScreen)
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if enableSavedPaymentShimmer {
@@ -361,7 +370,7 @@ let make = (
         }
       />
     </RenderIf>
-    <RenderIf condition={!enableSavedPaymentShimmer}>
+    <RenderIf condition={!enableSavedPaymentShimmer && !isSavedCardElement}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={

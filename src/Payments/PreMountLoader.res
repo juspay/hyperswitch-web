@@ -176,6 +176,30 @@ let getMessageHandlerV2PMM = (
   }
 }
 
+let getMessageHandlerAuthenticationSession = (
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~authenticationClientSecret,
+  ~authenticationId,
+) => {
+  let listPromise = PaymentHelpersV2.fetchEnabledAuthnMethodsToken(
+    ~publishableKey,
+    ~logger,
+    ~customPodUri,
+    ~authenticationClientSecret,
+    ~authenticationId,
+  )
+
+  ev => {
+    open Utils
+    let dict = ev.data->safeParse->getDictFromJson
+    if dict->isKeyPresentInDict("sendEnabledAuthnMethodsTokenResponse") {
+      listPromise->sendPromiseData("enabled_authn_methods_token")
+    }
+  }
+}
+
 module PreMountLoaderForElements = {
   @react.component
   let make = (
@@ -248,6 +272,29 @@ module PreMountLoaderForPMMElements = {
   }
 }
 
+module PreMountLoaderForAuthenticationSession = {
+  @react.component
+  let make = (
+    ~publishableKey,
+    ~logger,
+    ~customPodUri,
+    ~authenticationClientSecret,
+    ~authenticationId,
+  ) => {
+    useMessageHandler(() =>
+      getMessageHandlerAuthenticationSession(
+        ~publishableKey,
+        ~logger,
+        ~customPodUri,
+        ~authenticationClientSecret,
+        ~authenticationId,
+      )
+    )
+
+    React.null
+  }
+}
+
 @react.component
 let make = (
   ~sessionId,
@@ -262,6 +309,8 @@ let make = (
   ~hyperComponentName: Types.hyperComponentName,
   ~merchantHostname,
   ~customPodUri,
+  ~authenticationClientSecret,
+  ~authenticationId,
 ) => {
   let logger = HyperLogger.make(
     ~sessionId,
@@ -278,6 +327,10 @@ let make = (
   | PaymentMethodsManagementElements =>
     <PreMountLoaderForPMMElements
       logger endpoint ephemeralKey customPodUri pmSessionId pmClientSecret publishableKey profileId
+    />
+  | AuthenticationSessionElements =>
+    <PreMountLoaderForAuthenticationSession
+      publishableKey logger customPodUri authenticationClientSecret authenticationId
     />
   }
 }

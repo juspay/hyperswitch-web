@@ -50,6 +50,7 @@ type elementRef
 @val @scope("document") external querySelectorAll: string => array<Dom.element> = "querySelectorAll"
 @module("/package.json") @val external packageJson: packageJson = "default"
 @val @scope("document") external body: body = "body"
+@val @scope("document") external documentBody: Dom.element = "body"
 @val @scope("window") external getHyper: Nullable.t<Types.hyperInstance> = "HyperMethod"
 @val @scope("window") external addEventListener: (string, _ => unit) => unit = "addEventListener"
 @send

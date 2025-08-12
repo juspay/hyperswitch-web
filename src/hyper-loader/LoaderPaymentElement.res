@@ -15,6 +15,7 @@ let make = (
   iframeRef,
   mountPostMessage,
   ~isPaymentManagementElement=false,
+  ~isAuthenticationSessionElements=false,
   ~redirectionFlags: RecoilAtomTypes.redirectionFlags,
 ) => {
   try {
@@ -25,6 +26,8 @@ let make = (
 
     let (elementIframeWrapperDivId, elementIframeId) = if isPaymentManagementElement {
       ("management-element", "payment-methods-management-element")
+    } else if isAuthenticationSessionElements {
+      ("authentication-element", "authentication-session-element")
     } else {
       ("element", "payment-element")
     }
@@ -80,6 +83,7 @@ let make = (
     }
 
     let on = (eventType, eventHandler) => {
+      Console.log2("===> Event Type", eventType)
       switch eventType->eventTypeMapper {
       | Escape =>
         addSmartEventListener(
@@ -101,6 +105,15 @@ let make = (
             eventHandler,
             CompleteDoThis,
             "onCompleteDoThis",
+          )
+        }
+      | SavedMethodChanged =>
+        if eventHandler->Option.isSome {
+          eventHandlerFunc(
+            ev => ev.data.savedMethodChanged,
+            eventHandler,
+            SavedMethodChanged,
+            "onSavedMethodChanged",
           )
         }
       | Change =>
@@ -282,6 +295,8 @@ let make = (
 
         let iframeMounted = eventDataObject->getOptionalJsonFromJson("iframeMounted")
         let fullscreenIframe = eventDataObject->getOptionalJsonFromJson("fullscreen")
+        let hiddenIframe =
+          eventDataObject->getOptionalJsonFromJson("hiddenIframe")->getBoolFromOptionalJson(false)
         let param = eventDataObject->getOptionalJsonFromJson("param")
         let metadata = eventDataObject->getOptionalJsonFromJson("metadata")
         let iframeID =
@@ -295,9 +310,16 @@ let make = (
             ->Option.flatMap(JSON.Decode.object)
             ->Option.getOr(Dict.make())
             ->JSON.Encode.object
+
+          Console.log2("===> Fullscreen Mode", fullscreen.contents)
+          Console.log2("===> localSelectorString", localSelectorString)
+          Console.log2("===> Fullscreen Param", fullscreenParam)
+
           let fullscreenElem = Window.querySelector(
             `#orca-fullscreen-iframeRef-${localSelectorString}`,
           )
+
+          Console.log2("===> fullscreenElem", fullscreenElem)
 
           switch fullscreenElem->Nullable.toOption {
           | Some(ele) =>
@@ -309,6 +331,7 @@ let make = (
               fullscreenParam.contents != ""
                 ? `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=${fullscreenParam.contents}`
                 : `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=fullscreen`
+            Console.log2("===> iframeURL", iframeURL)
             fullscreen.contents
               ? {
                   if iframeID == localSelectorString {
@@ -348,7 +371,18 @@ let make = (
                   }
                 }
               : {
-                  ele->Window.innerHTML("")
+                  if hiddenIframe {
+                    Console.log2("===> My Element", ele)
+                    Window.documentBody
+                    ->makeIframe(iframeURL, ~height="0vh", ~width="0vw", ~id="orca-hidden-iframe")
+                    ->Promise.then(_ => {
+                      setPaymentIframeRef(Window.querySelector("#orca-hidden-iframe"))
+                      Promise.resolve()
+                    })
+                    ->ignore
+                  } else {
+                    ele->Window.innerHTML("")
+                  }
                   mainElement->Window.iframePostMessage(
                     [
                       ("fullScreenIframeMounted", false->JSON.Encode.bool),

@@ -6,6 +6,7 @@ let useClickToPay = (
   ~setAreClickToPayUIScriptsLoaded,
   ~savedMethods,
   ~loadSavedCards,
+  ~isSavedCardElement=false,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
@@ -18,6 +19,11 @@ let useClickToPay = (
 
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let sessionsObj = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
+
+  let getEnabledAuthnMethodsToken = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.enabledAuthnMethodsToken,
+  )
+
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
 
   let closeComponentIfSavedMethodsAreEmpty = () => {
@@ -32,128 +38,121 @@ let useClickToPay = (
       isReady: Some(false),
     })
 
-  let getVisaCards: (
-    ~identityValue: string,
-    ~otp: string,
-    ~identityType: ClickToPayHelpers.identityType,
-  ) => promise<unit> = async (~identityValue, ~otp, ~identityType) => {
-    let consumerIdentity = {
-      identityProvider: "SRC",
-      identityValue: identityType == EMAIL_ADDRESS
-        ? identityValue
-        : identityValue->String.replaceAll(" ", ""),
-      identityType,
-    }
-    let getCardsConfig = if otp->String.length == 6 {
-      {consumerIdentity, validationData: otp}
-    } else {
-      {consumerIdentity: consumerIdentity}
-    }
+  let (keys, setKeys) = Recoil.useRecoilState(RecoilAtoms.keys)
 
-    try {
-      let cardsResult = await getCardsVisaUnified(~getCardsConfig)
-      switch cardsResult.actionCode {
-      | SUCCESS => {
-          let cards = switch cardsResult.profiles {
-          | Some(profilesArray) =>
-            loggerState.setLogInfo(
-              ~value={
-                "message": "Cards fetched successfully",
-                "scheme": clickToPayProvider,
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
-            )
-            switch profilesArray[0] {
-            | Some(profile) => Some(profile.maskedCards)
-            | None => None
+  let {iframeId} = keys
+
+  let visaScriptOnLoadCallback = (ctpToken: option<ClickToPayHelpers.clickToPayToken>) => {
+    switch ctpToken {
+    | Some(clickToPayToken) =>
+      setClickToPayConfig(prev => {
+        ...prev,
+        isReady: Some(true),
+        availableCardBrands: clickToPayToken.cardBrands,
+        email: clickToPayToken.email,
+        dpaName: clickToPayToken.dpaName,
+      })
+    | None => setClickToPayNotReady()
+    }
+  }
+
+  let handleVisaGetCardsResult = (cardsResult: ClickToPayHelpers.getCardsResultType, ~otp) => {
+    switch cardsResult.actionCode {
+    | SUCCESS => {
+        let cards = switch cardsResult.profiles {
+        | Some(profilesArray) =>
+          loggerState.setLogInfo(
+            ~value={
+              "message": "Cards fetched successfully",
+              "scheme": clickToPayProvider,
             }
+            ->JSON.stringifyAny
+            ->Option.getOr(""),
+            ~eventName=CLICK_TO_PAY_FLOW,
+          )
+          switch profilesArray[0] {
+          | Some(profile) => Some(profile.maskedCards)
           | None => None
           }
-          setClickToPayConfig(prev => {
-            ...prev,
-            visaComponentState: NONE,
-          })
-
-          setClickToPayConfig(prev => {
-            ...prev,
-            clickToPayCards: cards,
-          })
+        | None => None
         }
-      | PENDING_CONSUMER_IDV =>
-        setClickToPayConfig(prev => {
-          ...prev,
-          visaComponentState: OTP_INPUT,
-          maskedIdentity: cardsResult.maskedValidationChannel->Option.getOr(""),
-        })
-      | ADD_CARD =>
         setClickToPayConfig(prev => {
           ...prev,
           visaComponentState: NONE,
         })
-      | FAILED
-      | ERROR =>
-        if otp != "" {
-          switch cardsResult.error {
-          | Some(err) =>
-            switch err.reason {
-            | Some(reason) =>
-              switch reason {
-              | "VALIDATION_DATA_INVALID" =>
-                setClickToPayConfig(prev => {
-                  ...prev,
-                  otpError: "VALIDATION_DATA_INVALID",
-                })
-              | "OTP_SEND_FAILED" =>
-                loggerState.setLogError(
-                  ~value={
-                    "message": "OTP SEND FAILED",
-                    "scheme": clickToPayProvider,
-                  }
-                  ->JSON.stringifyAny
-                  ->Option.getOr(""),
-                  ~eventName=CLICK_TO_PAY_FLOW,
-                )
-                setClickToPayConfig(prev => {
-                  ...prev,
-                  otpError: "NONE",
-                })
 
-              | "ACCT_INACCESSIBLE" =>
-                loggerState.setLogError(
-                  ~value={
-                    "message": `Maximum getCard call attempts reached (ACCT_INACCESSIBLE) - ${reason}`,
-                    "scheme": clickToPayProvider,
-                  }
-                  ->JSON.stringifyAny
-                  ->Option.getOr(""),
-                  ~eventName=CLICK_TO_PAY_FLOW,
-                )
-                setClickToPayConfig(prev => {
-                  ...prev,
-                  otpError: "ACCT_INACCESSIBLE",
-                })
-              | _ =>
-                setClickToPayConfig(prev => {
-                  ...prev,
-                  otpError: "NONE",
-                })
-                loggerState.setLogError(
-                  ~value={
-                    "message": `get cards call failed - ${reason}`,
-                    "scheme": clickToPayProvider,
-                  }
-                  ->JSON.stringifyAny
-                  ->Option.getOr(""),
-                  ~eventName=CLICK_TO_PAY_FLOW,
-                )
-              }
-            | None =>
+        setClickToPayConfig(prev => {
+          ...prev,
+          clickToPayCards: cards,
+        })
+      }
+    | PENDING_CONSUMER_IDV =>
+      setClickToPayConfig(prev => {
+        ...prev,
+        visaComponentState: OTP_INPUT,
+        maskedIdentity: cardsResult.maskedValidationChannel->Option.getOr(""),
+      })
+    | ADD_CARD =>
+      setClickToPayConfig(prev => {
+        ...prev,
+        visaComponentState: NONE,
+      })
+    | FAILED
+    | ERROR =>
+      if otp != "" {
+        switch cardsResult.error {
+        | Some(err) =>
+          switch err.reason {
+          | Some(reason) =>
+            switch reason {
+            | "VALIDATION_DATA_INVALID" =>
               setClickToPayConfig(prev => {
                 ...prev,
-                visaComponentState: NONE,
+                otpError: "VALIDATION_DATA_INVALID",
               })
+            | "OTP_SEND_FAILED" =>
+              loggerState.setLogError(
+                ~value={
+                  "message": "OTP SEND FAILED",
+                  "scheme": clickToPayProvider,
+                }
+                ->JSON.stringifyAny
+                ->Option.getOr(""),
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
+              setClickToPayConfig(prev => {
+                ...prev,
+                otpError: "NONE",
+              })
+
+            | "ACCT_INACCESSIBLE" =>
+              loggerState.setLogError(
+                ~value={
+                  "message": `Maximum getCard call attempts reached (ACCT_INACCESSIBLE) - ${reason}`,
+                  "scheme": clickToPayProvider,
+                }
+                ->JSON.stringifyAny
+                ->Option.getOr(""),
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
+              setClickToPayConfig(prev => {
+                ...prev,
+                otpError: "ACCT_INACCESSIBLE",
+              })
+            | _ =>
+              setClickToPayConfig(prev => {
+                ...prev,
+                otpError: "NONE",
+              })
+              loggerState.setLogError(
+                ~value={
+                  "message": `get cards call failed - ${reason}`,
+                  "scheme": clickToPayProvider,
+                }
+                ->JSON.stringifyAny
+                ->Option.getOr(""),
+                ~eventName=CLICK_TO_PAY_FLOW,
+              )
             }
           | None =>
             setClickToPayConfig(prev => {
@@ -161,28 +160,20 @@ let useClickToPay = (
               visaComponentState: NONE,
             })
           }
-        } else {
+        | None =>
           setClickToPayConfig(prev => {
             ...prev,
             visaComponentState: NONE,
           })
-          loggerState.setLogError(
-            ~value={
-              "message": "initial get cards call failed",
-              "scheme": clickToPayProvider,
-            }
-            ->JSON.stringifyAny
-            ->Option.getOr(""),
-            ~eventName=CLICK_TO_PAY_FLOW,
-          )
         }
-      }
-    } catch {
-    | err => {
-        setClickToPayNotReady()
+      } else {
+        setClickToPayConfig(prev => {
+          ...prev,
+          visaComponentState: NONE,
+        })
         loggerState.setLogError(
           ~value={
-            "message": `get cards call failed - ${err->Utils.formatException->JSON.stringify}`,
+            "message": "initial get cards call failed",
             "scheme": clickToPayProvider,
           }
           ->JSON.stringifyAny
@@ -191,7 +182,349 @@ let useClickToPay = (
         )
       }
     }
+    // } catch {
+    // | err => {
+    // setClickToPayNotReady()
+    // loggerState.setLogError(
+    //   ~value={
+    //     "message": `get cards call failed - ${err->Utils.formatException->JSON.stringify}`,
+    //     "scheme": clickToPayProvider,
+    //   }
+    //   ->JSON.stringifyAny
+    //   ->Option.getOr(""),
+    //   ~eventName=CLICK_TO_PAY_FLOW,
+    // )
+    //   }
   }
+
+  let getVisaCards: (
+    ~identityValue: string,
+    ~otp: string,
+    ~identityType: ClickToPayHelpers.identityType,
+  ) => promise<unit> = async (~identityValue, ~otp, ~identityType) => {
+    messageParentWindow([
+      ("getVisaCards", true->JSON.Encode.bool),
+      ("identityValue", identityValue->JSON.Encode.string),
+      ("otp", otp->JSON.Encode.string),
+      ("identityType", ClickToPayHelpers.getIdentityType(identityType)->JSON.Encode.string),
+    ])
+    // try {
+    //   let cardsResult = await getCardsVisaUnified(~identityValue, ~otp, ~identityType)
+
+    //   switch cardsResult.actionCode {
+    //   | SUCCESS => {
+    //       let cards = switch cardsResult.profiles {
+    //       | Some(profilesArray) =>
+    //         loggerState.setLogInfo(
+    //           ~value={
+    //             "message": "Cards fetched successfully",
+    //             "scheme": clickToPayProvider,
+    //           }
+    //           ->JSON.stringifyAny
+    //           ->Option.getOr(""),
+    //           ~eventName=CLICK_TO_PAY_FLOW,
+    //         )
+    //         switch profilesArray[0] {
+    //         | Some(profile) => Some(profile.maskedCards)
+    //         | None => None
+    //         }
+    //       | None => None
+    //       }
+    //       setClickToPayConfig(prev => {
+    //         ...prev,
+    //         visaComponentState: NONE,
+    //       })
+
+    //       setClickToPayConfig(prev => {
+    //         ...prev,
+    //         clickToPayCards: cards,
+    //       })
+    //     }
+    //   | PENDING_CONSUMER_IDV =>
+    //     setClickToPayConfig(prev => {
+    //       ...prev,
+    //       visaComponentState: OTP_INPUT,
+    //       maskedIdentity: cardsResult.maskedValidationChannel->Option.getOr(""),
+    //     })
+    //   | ADD_CARD =>
+    //     setClickToPayConfig(prev => {
+    //       ...prev,
+    //       visaComponentState: NONE,
+    //     })
+    //   | FAILED
+    //   | ERROR =>
+    //     if otp != "" {
+    //       switch cardsResult.error {
+    //       | Some(err) =>
+    //         switch err.reason {
+    //         | Some(reason) =>
+    //           switch reason {
+    //           | "VALIDATION_DATA_INVALID" =>
+    //             setClickToPayConfig(prev => {
+    //               ...prev,
+    //               otpError: "VALIDATION_DATA_INVALID",
+    //             })
+    //           | "OTP_SEND_FAILED" =>
+    //             loggerState.setLogError(
+    //               ~value={
+    //                 "message": "OTP SEND FAILED",
+    //                 "scheme": clickToPayProvider,
+    //               }
+    //               ->JSON.stringifyAny
+    //               ->Option.getOr(""),
+    //               ~eventName=CLICK_TO_PAY_FLOW,
+    //             )
+    //             setClickToPayConfig(prev => {
+    //               ...prev,
+    //               otpError: "NONE",
+    //             })
+
+    //           | "ACCT_INACCESSIBLE" =>
+    //             loggerState.setLogError(
+    //               ~value={
+    //                 "message": `Maximum getCard call attempts reached (ACCT_INACCESSIBLE) - ${reason}`,
+    //                 "scheme": clickToPayProvider,
+    //               }
+    //               ->JSON.stringifyAny
+    //               ->Option.getOr(""),
+    //               ~eventName=CLICK_TO_PAY_FLOW,
+    //             )
+    //             setClickToPayConfig(prev => {
+    //               ...prev,
+    //               otpError: "ACCT_INACCESSIBLE",
+    //             })
+    //           | _ =>
+    //             setClickToPayConfig(prev => {
+    //               ...prev,
+    //               otpError: "NONE",
+    //             })
+    //             loggerState.setLogError(
+    //               ~value={
+    //                 "message": `get cards call failed - ${reason}`,
+    //                 "scheme": clickToPayProvider,
+    //               }
+    //               ->JSON.stringifyAny
+    //               ->Option.getOr(""),
+    //               ~eventName=CLICK_TO_PAY_FLOW,
+    //             )
+    //           }
+    //         | None =>
+    //           setClickToPayConfig(prev => {
+    //             ...prev,
+    //             visaComponentState: NONE,
+    //           })
+    //         }
+    //       | None =>
+    //         setClickToPayConfig(prev => {
+    //           ...prev,
+    //           visaComponentState: NONE,
+    //         })
+    //       }
+    //     } else {
+    //       setClickToPayConfig(prev => {
+    //         ...prev,
+    //         visaComponentState: NONE,
+    //       })
+    //       loggerState.setLogError(
+    //         ~value={
+    //           "message": "initial get cards call failed",
+    //           "scheme": clickToPayProvider,
+    //         }
+    //         ->JSON.stringifyAny
+    //         ->Option.getOr(""),
+    //         ~eventName=CLICK_TO_PAY_FLOW,
+    //       )
+    //     }
+    //   }
+    // } catch {
+    // | err => {
+    //     setClickToPayNotReady()
+    //     loggerState.setLogError(
+    //       ~value={
+    //         "message": `get cards call failed - ${err->Utils.formatException->JSON.stringify}`,
+    //         "scheme": clickToPayProvider,
+    //       }
+    //       ->JSON.stringifyAny
+    //       ->Option.getOr(""),
+    //       ~eventName=CLICK_TO_PAY_FLOW,
+    //     )
+    //   }
+    // }
+    ()
+  }
+
+  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
+  let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+
+  let handlePostAuthentication = async clickToPayBody => {
+    let data = await PaymentHelpersV2.fetchPostAuthentication(
+      ~publishableKey=keys.publishableKey,
+      ~logger=loggerState,
+      ~customPodUri,
+      ~authenticationClientSecret=clientSecret->Option.getOr(""),
+      ~authenticationId=keys.clientSecret
+      ->Option.getOr("")
+      ->String.split("_")
+      ->Array.at(0)
+      ->Option.getOr(""),
+      ~bodyArr=clickToPayBody,
+    )
+
+    Console.log2("===> Data", data)
+
+    let newResp = `{
+    "status": "success",
+    }`->JSON.parseExn
+
+    messageParentWindow([("authenticationSuccessful", true->JSON.Encode.bool), ("data", newResp)])
+  }
+
+  React.useEffect0(() => {
+    let handleVisaClickToPayOnLoad = (ev: Window.event) => {
+      let json = ev.data->safeParse
+      try {
+        let dict = json->getDictFromJson
+        if dict->Dict.get("finishLoadingClickToPayScript")->Option.isSome {
+          if dict->Dict.get("clickToPayToken")->Option.isSome {
+            messageParentWindow([
+              ("param", `clickToPayHidden`->JSON.Encode.string),
+              ("iframeId", iframeId->JSON.Encode.string),
+            ])
+
+            let clickToPayToken =
+              dict
+              ->Dict.get("clickToPayToken")
+              ->Option.getOr(JSON.Encode.null)
+              ->ClickToPayHelpers.clickToPayTokenItemToObjMapper
+            visaScriptOnLoadCallback(Some(clickToPayToken))
+          } else {
+            setClickToPayNotReady()
+            loggerState.setLogError(
+              ~value={
+                "message": "CTP UI script loading failed",
+                "scheme": clickToPayProvider,
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
+          }
+        } else if dict->Dict.get("initializedClickToPay")->Option.isSome {
+          if dict->Dict.get("error")->Option.isNone {
+            let identityValue =
+              dict
+              ->Dict.get("identityValue")
+              ->Option.getOr(JSON.Encode.null)
+              ->JSON.Decode.string
+              ->Option.getOr("")
+            let otp = dict->Utils.getString("otp", "")
+            let identityType =
+              dict
+              ->Utils.getString("identityType", "")
+              ->ClickToPayHelpers.getIdentityTypeFromString
+
+            getVisaCards(~identityValue, ~otp, ~identityType)->ignore
+          } else {
+            setClickToPayNotReady()
+            closeComponentIfSavedMethodsAreEmpty()
+            loggerState.setLogError(
+              ~value={
+                "message": `SDK initialization failed - Error Initializing Click to Pay - ${dict
+                  ->Dict.get("error")
+                  ->Option.getOr(JSON.Encode.null)
+                  ->JSON.Decode.string
+                  ->Option.getOr("")}`,
+                "scheme": clickToPayProvider,
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
+          }
+        } else if dict->Dict.get("fetchedVisaCardsResult")->Option.isSome {
+          if dict->Dict.get("cardsResult")->Option.isSome {
+            let cardsResult =
+              dict
+              ->Dict.get("cardsResult")
+              ->Option.getOr(JSON.Encode.null)
+              ->ClickToPayHelpers.jsonToCardsResultType
+            let otp = dict->Utils.getString("otp", "")
+
+            handleVisaGetCardsResult(cardsResult, ~otp)
+          } else {
+            setClickToPayNotReady()
+            loggerState.setLogError(
+              ~value={
+                "message": `get cards call failed - Something Went Wrong`,
+                // "message": `get cards call failed - ${err->Utils.formatException->JSON.stringify}`,
+                "scheme": clickToPayProvider,
+              }
+              ->JSON.stringifyAny
+              ->Option.getOr(""),
+              ~eventName=CLICK_TO_PAY_FLOW,
+            )
+          }
+        } else if dict->Dict.get("doAuthentication")->Option.isSome {
+          messageParentWindow([("handleClickToPayAuthentication", true->JSON.Encode.bool)])
+        } else if dict->Dict.get("handleClickToPayAuthenticationComplete")->Option.isSome {
+          let payload = dict->Utils.getDictFromDict("payload")
+
+          switch clickToPayProvider {
+          | MASTERCARD => {
+              let headers = dict->Utils.getDictFromDict("headers")
+              let merchantTransactionId = headers->Utils.getString("merchant-transaction-id", "")
+              let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
+              let correlationId =
+                dict
+                ->Utils.getDictFromDict("checkoutResponseData")
+                ->Utils.getString("srcCorrelationId", "")
+
+              let clickToPayBody = PaymentBody.mastercardClickToPayBody(
+                ~merchantTransactionId,
+                ~correlationId,
+                ~xSrcFlowId,
+              )
+              // intent(
+              //   ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+              //   ~confirmParam=confirm.confirmParams,
+              //   ~handleUserError=false,
+              //   ~manualRetry=isManualRetryEnabled,
+              // )
+            }
+          | VISA => {
+              let clickToPayBody = PaymentBody.visaClickToPayBody(
+                ~email=clickToPayConfig.email,
+                ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
+              )
+
+              handlePostAuthentication(clickToPayBody)->ignore
+              // intent(
+              //   ~bodyArr=clickToPayBody,
+              //   ~confirmParam=confirm.confirmParams,
+              //   ~handleUserError=false,
+              //   ~manualRetry=isManualRetryEnabled,
+              // )
+            }
+          | NONE => ()
+          }
+        }
+      } catch {
+      | _ => Console.warn("Something went wrong while receiving data")
+      // logger.setLogError(
+      //   ~value="Error in parsing Apple Pay Data",
+      //   ~eventName=APPLE_PAY_FLOW,
+      //   ~paymentMethod="APPLE_PAY",
+      //   // ~internalMetadata=err->formatException->JSON.stringify,
+      // )
+      }
+    }
+    Window.addEventListener("message", handleVisaClickToPayOnLoad)
+    Some(
+      () => {
+        Window.removeEventListener("message", handleVisaClickToPayOnLoad)
+      },
+    )
+  })
 
   let initVisaUnified = async email => {
     try {
@@ -203,8 +536,17 @@ let useClickToPay = (
             ...prev,
             visaComponentState: CARDS_LOADING,
           })
-          let _ = await vsdk.initialize(initConfig)
-          let _ = await getVisaCards(~identityValue=email, ~otp="", ~identityType=EMAIL_ADDRESS)
+
+          messageParentWindow([
+            ("initializeVisaClickToPay", true->JSON.Encode.bool),
+            ("clickToPayToken", token->ClickToPayHelpers.clickToPayToJsonItemToObjMapper),
+            ("clientSecret", clientSecret->Option.getOr("")->JSON.Encode.string),
+            ("identityValue", email->JSON.Encode.string),
+            ("otp", ""->JSON.Encode.string),
+            ("identityType", EMAIL_ADDRESS->ClickToPayHelpers.getIdentityType->JSON.Encode.string),
+          ])
+          // let _ = await vsdk.initialize(initConfig)
+          // let _ = await getVisaCards(~identityValue=email, ~otp="", ~identityType=EMAIL_ADDRESS)
         }
       | None => ()
       }
@@ -241,17 +583,20 @@ let useClickToPay = (
     }
   }
 
-  let visaScriptOnLoadCallback = (ctpToken: option<ClickToPayHelpers.clickToPayToken>) => {
-    switch ctpToken {
-    | Some(clickToPayToken) =>
+  let getClickToPayTokenV2 = ssn => {
+    let dict = ssn->getDictFromJson
+    let clickToPaySessionObj = SessionsType.itemToObjMapper(dict, ClickToPayObject)
+    switch SessionsType.getPaymentSessionObjV2(clickToPaySessionObj.sessionsToken, ClickToPay) {
+    | ClickToPayTokenOptional(Some(token)) =>
       setClickToPayConfig(prev => {
         ...prev,
-        isReady: Some(true),
-        availableCardBrands: clickToPayToken.cardBrands,
-        email: clickToPayToken.email,
-        dpaName: clickToPayToken.dpaName,
+        clickToPayToken: ClickToPayHelpers.clickToPayTokenItemToObjMapper(token),
       })
-    | None => setClickToPayNotReady()
+      Some(ClickToPayHelpers.clickToPayTokenItemToObjMapper(token))
+    | _ => {
+        setClickToPayNotReady()
+        None
+      }
     }
   }
 
@@ -264,22 +609,33 @@ let useClickToPay = (
       )
       switch ctpToken {
       | Some(clickToPayToken) =>
-        ClickToPayHelpers.loadVisaScript(
-          clickToPayToken,
-          () => visaScriptOnLoadCallback(ctpToken),
-          () => {
-            setClickToPayNotReady()
-            loggerState.setLogError(
-              ~value={
-                "message": "CTP UI script loading failed",
-                "scheme": clickToPayProvider,
-              }
-              ->JSON.stringifyAny
-              ->Option.getOr(""),
-              ~eventName=CLICK_TO_PAY_FLOW,
-            )
-          },
-        )
+        messageParentWindow([
+          ("loadClickToPayScript", true->JSON.Encode.bool),
+          ("clickToPayToken", clickToPayToken->ClickToPayHelpers.clickToPayToJsonItemToObjMapper),
+        ])
+
+        messageParentWindow([
+          ("fullscreen", false->JSON.Encode.bool),
+          ("hiddenIframe", true->JSON.Encode.bool),
+          ("param", `clickToPayHidden`->JSON.Encode.string),
+          ("iframeId", iframeId->JSON.Encode.string),
+        ])
+      // ClickToPayHelpers.loadVisaScript(
+      //   clickToPayToken,
+      //   () => visaScriptOnLoadCallback(ctpToken),
+      //   () => {
+      //     setClickToPayNotReady()
+      //     loggerState.setLogError(
+      //       ~value={
+      //         "message": "CTP UI script loading failed",
+      //         "scheme": clickToPayProvider,
+      //       }
+      //       ->JSON.stringifyAny
+      //       ->Option.getOr(""),
+      //       ~eventName=CLICK_TO_PAY_FLOW,
+      //     )
+      //   },
+      // )
 
       | None => setClickToPayNotReady()
       }
@@ -351,6 +707,7 @@ let useClickToPay = (
       areClickToPayUIScriptsLoaded &&
       clickToPayConfig.clickToPayToken->Option.isSome
     ) {
+      Console.log("$$$ Initializing Visa Click to Pay")
       initVisaUnified(clickToPayConfig.email)->ignore
     }
     None
@@ -392,30 +749,61 @@ let useClickToPay = (
     None
   }, (isReady, clickToPayProvider))
 
+  // React.useEffect(() => {
+  //   if !isSavedCardElement {
+  //     switch sessionsObj {
+  //     | Loaded(ssn) => {
+  //         setSessions(_ => ssn)
+  //         let ctpToken = ssn->getClickToPayToken
+  //         ctpToken->Option.forEach(token => {
+  //           switch token.provider->String.toLowerCase {
+  //           | "visa" =>
+  //             loadVisaScript(ctpToken)->ignore
+  //             setClickToPayProvider(VISA)
+  //           | "mastercard" => {
+  //               loadMastercardClickToPayScript(ctpToken)
+  //               setClickToPayProvider(MASTERCARD)
+  //             }
+  //           | _ =>
+  //             setClickToPayNotReady()
+  //             setClickToPayProvider(NONE)
+  //           }
+  //         })
+  //       }
+  //     | _ => ()
+  //     }
+  //   }
+  //   None
+  // }, [sessionsObj])
+
   React.useEffect(() => {
-    switch sessionsObj {
-    | Loaded(ssn) => {
-        setSessions(_ => ssn)
-        let ctpToken = ssn->getClickToPayToken
-        ctpToken->Option.forEach(token => {
-          switch token.provider->String.toLowerCase {
-          | "visa" =>
-            loadVisaScript(ctpToken)->ignore
-            setClickToPayProvider(VISA)
-          | "mastercard" => {
-              loadMastercardClickToPayScript(ctpToken)
-              setClickToPayProvider(MASTERCARD)
+    if isSavedCardElement {
+      switch getEnabledAuthnMethodsToken {
+      | Loaded(ssn) => {
+          setSessions(_ => ssn)
+          let ctpToken = ssn->getClickToPayTokenV2
+          //     ()
+          // }
+          ctpToken->Option.forEach(token => {
+            switch token.provider->String.toLowerCase {
+            | "visa" =>
+              loadVisaScript(ctpToken)->ignore
+              setClickToPayProvider(VISA)
+            | "mastercard" => {
+                loadMastercardClickToPayScript(ctpToken)
+                setClickToPayProvider(MASTERCARD)
+              }
+            | _ =>
+              setClickToPayNotReady()
+              setClickToPayProvider(NONE)
             }
-          | _ =>
-            setClickToPayNotReady()
-            setClickToPayProvider(NONE)
-          }
-        })
+          })
+        }
+      | _ => ()
       }
-    | _ => ()
     }
     None
-  }, [sessionsObj])
+  }, [getEnabledAuthnMethodsToken])
 
   (getVisaCards, closeComponentIfSavedMethodsAreEmpty)
 }

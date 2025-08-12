@@ -13,7 +13,10 @@ type apiCallV1 =
   | RetrieveStatus
   | ConfirmPayout
 
-type apiCallV2 = FetchSessionsV2
+type apiCallV2 =
+  | FetchSessionsV2
+  | FetchEnabledAuthnMethodsToken
+  | PostAuthentication
 
 type apiCall =
   | V1(apiCallV1)
@@ -26,6 +29,8 @@ type apiParams = {
   paymentMethodId: option<string>,
   forceSync: option<string>,
   pollId: option<string>,
+  authenticationClientSecret?: string,
+  authenticationId?: string,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
@@ -43,6 +48,8 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
   let pollIdVal = pollId->Option.getOr("")
+  let authenticationId = params.authenticationId->Option.getOr("")
+  let authenticationClientSecret = params.authenticationClientSecret->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -92,7 +99,17 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | ConfirmPayout =>
       list{}
     }
-  | V2(_) => list{}
+  | V2(inner) =>
+    switch inner {
+    | FetchEnabledAuthnMethodsToken =>
+      list{
+        switch authenticationClientSecret {
+        | "" => None
+        | authClientSecret => Some(("client_secret", authClientSecret))
+        },
+      }->List.filterMap(x => x)
+    | _ => list{}
+    }
   }
 
   let path = switch apiCallType {
@@ -115,6 +132,9 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | V2(inner) =>
     switch inner {
     | FetchSessionsV2 => `v2/payments/${paymentIntentID}/create-external-sdk-tokens`
+    | FetchEnabledAuthnMethodsToken =>
+      `authentication/${authenticationId}/enabled_authn_methods_token`
+    | PostAuthentication => `v2/authentication/${authenticationId}/post_authentication`
     }
   }
 

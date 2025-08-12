@@ -166,6 +166,16 @@ let getWalletFromTokenType = (arr, val) =>
     ->getWallet === val
   )
 
+let getWalletFromTokenTypeV2 = (arr, val) =>
+  arr->Array.find(item =>
+    item
+    ->JSON.Decode.object
+    ->Option.flatMap(x => x->Dict.get("product_name"))
+    ->Option.flatMap(JSON.Decode.string)
+    ->Option.getOr("")
+    ->getWallet === val
+  )
+
 let getPaymentSessionObj = (tokenType, val) =>
   switch tokenType {
   | ApplePayToken(arr) => ApplePayTokenOptional(getWalletFromTokenType(arr, val))
@@ -174,5 +184,16 @@ let getPaymentSessionObj = (tokenType, val) =>
   | PazeToken(arr) => PazeTokenOptional(getWalletFromTokenType(arr, val))
   | SamsungPayToken(arr) => SamsungPayTokenOptional(getWalletFromTokenType(arr, val))
   | ClickToPayToken(arr) => ClickToPayTokenOptional(getWalletFromTokenType(arr, val))
+  | OtherToken(arr) => OtherTokenOptional(arr->Array.find(item => item.walletName == val))
+  }
+
+let getPaymentSessionObjV2 = (tokenType, val) =>
+  switch tokenType {
+  | ApplePayToken(arr) => ApplePayTokenOptional(getWalletFromTokenType(arr, val))
+  | GooglePayThirdPartyToken(arr) =>
+    GooglePayThirdPartyTokenOptional(getWalletFromTokenType(arr, val))
+  | PazeToken(arr) => PazeTokenOptional(getWalletFromTokenType(arr, val))
+  | SamsungPayToken(arr) => SamsungPayTokenOptional(getWalletFromTokenType(arr, val))
+  | ClickToPayToken(arr) => ClickToPayTokenOptional(getWalletFromTokenTypeV2(arr, val))
   | OtherToken(arr) => OtherTokenOptional(arr->Array.find(item => item.walletName == val))
   }

@@ -326,6 +326,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       let ephemeralKey = ref("")
       let pmSessionId = ref("")
       let pmClientSecret = ref("")
+      let authenticationClientSecret = ref("")
       let setIframeRef = ref => {
         iframeRef.contents->Array.push(ref)->ignore
       }
@@ -701,6 +702,56 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         )
       }
 
+      let authenticationSession = authenticationSessionOptions => {
+        open Promise
+
+        let clientSecretId =
+          authenticationSessionOptions
+          ->JSON.Decode.object
+          ->Option.flatMap(x => x->Dict.get("clientSecret"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+        authenticationClientSecret := clientSecretId
+        Promise.make((resolve, _) => {
+          // logger.setClientSecret(clientSecretId)
+          resolve(JSON.Encode.null)
+        })
+        ->then(_ => {
+          // logger.setLogInfo(~value=Window.hrefWithoutSearch, ~eventName=PAYMENT_SESSION_INITIATED)
+          resolve()
+        })
+        ->catch(_ => resolve())
+        ->ignore
+
+        // PaymentSession.make(
+        //   paymentSessionOptions,
+        //   ~clientSecret={clientSecretId},
+        //   ~publishableKey,
+        //   ~logger=Some(logger),
+        //   ~ephemeralKey=ephemeralKey.contents,
+        //   ~redirectionFlags,
+        // )
+
+        AuthenticationSession.make(
+          ~clientSecret={clientSecretId},
+          ~publishableKey,
+          ~logger=Some(logger),
+          ~iframeRef,
+          ~setIframeRef,
+          ~profileId,
+          ~sdkSessionId=sessionID,
+          ~analyticsMetadata,
+          ~customBackendUrl=options
+          ->Option.getOr(JSON.Encode.null)
+          ->getDictFromJson
+          ->getString("customBackendUrl", ""),
+        )
+
+        // let authenticationSessionResponse: Types.authenticationSession = {}
+
+        // authenticationSessionResponse
+      }
+
       let sessionUpdate = async clientSecret => {
         try {
           let endpoint = ApiEndpoint.getApiEndPoint(~publishableKey)
@@ -751,6 +802,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
         paymentMethodsManagementElements,
         completeUpdateIntent,
         initiateUpdateIntent,
+        authenticationSession,
       }
       Window.setHyper(Window.window, returnObject)
       returnObject

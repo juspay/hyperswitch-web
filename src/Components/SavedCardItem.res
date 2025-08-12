@@ -56,8 +56,20 @@ let make = (
   ~savedCardlength,
   ~cvcProps: CardUtils.cvcProps,
   ~setRequiredFieldsBody,
+  ~isClickToPayRememberMe,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {savedMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+
+  let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
+
+  let isSavedMethodChangedCallbackEnabled = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.isSavedMethodChangedCallbackEnabled,
+  )
+
+  Console.log2("savedMethods", savedMethods)
+
   let {
     hideExpiredPaymentMethods,
     displayDefaultSavedPaymentIcon,
@@ -164,6 +176,46 @@ let make = (
           paymentToken: paymentItem.paymentToken,
           customerId: paymentItem.customerId,
         })
+
+        let clickToPayToken = clickToPayConfig.clickToPayToken
+
+        // switch clickToPayToken {
+        // | Some(token) =>
+        //   Utils.messageParentWindow([
+        //     ("handleClickToPayPayment", true->JSON.Encode.bool),
+        //     ("paymentToken", paymentItem.paymentToken->JSON.Encode.string),
+        //     ("clickToPayToken", token->ClickToPayHelpers.clickToPayToJsonItemToObjMapper),
+        //   ])
+        // | None => ()
+        // }
+
+        switch clickToPayToken {
+        | Some(token) =>
+          Utils.messageParentWindow([
+            ("onSavedMethodChanged", true->JSON.Encode.bool),
+            ("paymentToken", paymentItem.paymentToken->JSON.Encode.string),
+            ("clickToPayToken", token->ClickToPayHelpers.clickToPayToJsonItemToObjMapper),
+            (
+              "clickToPayProvider",
+              clickToPayConfig.clickToPayProvider
+              ->ClickToPayHelpers.getStrFromCtpProvider
+              ->JSON.Encode.string,
+            ),
+            ("isClickToPayRememberMe", isClickToPayRememberMe->JSON.Encode.bool),
+          ])
+
+          Console.log2(
+            "===> isSavedMethodChangedCallbackEnabled",
+            isSavedMethodChangedCallbackEnabled,
+          )
+
+          if isSavedMethodChangedCallbackEnabled {
+            Utils.handleOnSavedMethodChangedPostMessage(~paymentToken=paymentItem.paymentToken)
+          }
+        | None => ()
+        }
+
+        // Send Data to the top level iframe
       }}>
       <div className="w-full">
         <div>
@@ -171,17 +223,19 @@ let make = (
             <div
               className={`flex flex-row justify-center items-center`}
               style={columnGap: themeObj.spacingUnit}>
-              <div style={color: isActive ? themeObj.colorPrimary : ""}>
-                <Radio
-                  checked=isActive
-                  height="18px"
-                  className="savedcard"
-                  marginTop="-2px"
-                  opacity="20%"
-                  padding="46%"
-                  border="1px solid currentColor"
-                />
-              </div>
+              <RenderIf condition={!savedMethods.isShowButton}>
+                <div style={color: isActive ? themeObj.colorPrimary : ""}>
+                  <Radio
+                    checked=isActive
+                    height="18px"
+                    className="savedcard"
+                    marginTop="-2px"
+                    opacity="20%"
+                    padding="46%"
+                    border="1px solid currentColor"
+                  />
+                </div>
+              </RenderIf>
               <div className={`PickerItemIcon mx-3 flex  items-center `}> brandIcon </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-4">
@@ -195,14 +249,24 @@ let make = (
               </div>
             </div>
             <RenderIf condition={isCard}>
-              <div
-                className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                style={fontSize: "14px", opacity: "0.5"}
-                ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
-                <div className="flex" ariaHidden=true>
-                  {React.string(`${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`)}
-                </div>
-              </div>
+              {!savedMethods.isShowButton
+                ? <div
+                    className={`flex flex-row items-center justify-end gap-3 -mt-1`}
+                    style={fontSize: "14px", opacity: "0.5"}
+                    ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
+                    <div className="flex" ariaHidden=true>
+                      {React.string(
+                        `${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`,
+                      )}
+                    </div>
+                  </div>
+                : <div
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    {switch savedMethods.buttonText->Option.getOr("") {
+                    | "" => React.string("Choose")
+                    | text => React.string(text)
+                    }}
+                  </div>}
             </RenderIf>
           </div>
           <div className="w-full">

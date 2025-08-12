@@ -63,6 +63,14 @@ let make = (
               paymentType cardProps expiryProps cvcProps zipProps handleElementFocus isFocus
             />
           </ReusableReactSuspense>
+        | SavedCardElement =>
+          <ReusableReactSuspense
+            loaderComponent={<RenderIf condition={showLoader}>
+              <CardElementShimmer />
+            </RenderIf>}
+            componentName="SavedMethodsWrapperLazy">
+            <SavedMethodsWrapperLazy paymentType cardProps expiryProps cvcProps />
+          </ReusableReactSuspense>
         | GooglePayElement
         | PayPalElement
         | ApplePayElement

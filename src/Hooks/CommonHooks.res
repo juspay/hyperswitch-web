@@ -12,6 +12,7 @@ type keys = {
   iframeId: string,
   parentURL: string,
   sdkHandleOneClickConfirmPayment: bool,
+  authenticationClientSecret?: string,
 }
 @val @scope("document") external querySelector: string => Nullable.t<element> = "querySelector"
 

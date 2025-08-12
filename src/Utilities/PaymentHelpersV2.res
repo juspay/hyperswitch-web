@@ -585,3 +585,156 @@ let fetchSessions = (
     JSON.Encode.null->resolve
   })
 }
+
+let fetchEnabledAuthnMethodsToken = async (
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~authenticationClientSecret,
+  ~authenticationId,
+) => {
+  let uri = APIUtils.generateApiUrl(
+    V2(FetchEnabledAuthnMethodsToken),
+    ~params={
+      customBackendBaseUrl: None,
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      authenticationClientSecret,
+      authenticationId,
+    },
+  )
+
+  let onSuccess = data => data
+
+  let onFailure = _ =>
+    `{
+  "client_secret": "string",
+  "session_token": [
+    {
+      "product_name": "click_to_pay",
+      "dpa_id": "498WCF39JVQVH1UK4TGG21leLAj_MJQoapP5f12IanfEYaSno",
+      "dpa_name": "TestMerchant",
+      "locale": "en_US",
+      "card_brands": [
+        "visa",
+        "mastercard"
+      ],
+      "acquirer_bin": "455555",
+      "acquirer_merchant_id": "12345678",
+      "merchant_category_code": "4829",
+      "merchant_country_code": "US",
+      "transaction_amount": "10.00",
+      "transaction_currency_code": "USD",
+      "phone_number": "9779004471",
+      "email": "arush.kapoor@juspay.in",
+      "phone_country_code": "91",
+      "provider": "visa",
+      "dpa_client_id": "string",
+      "next_api_action": "/authentication/post_authentication"
+    },
+    {
+      "product_name": "three_ds",
+      "next_api_action": "/authentication/eligibility"
+    },
+    {
+      "type": "NoSessionTokenReceived"
+    }
+  ]
+}`->JSON.parseExn
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=SAVED_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+    ~isPaymentSession=false,
+  )
+}
+
+let fetchPostAuthentication = async (
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~authenticationClientSecret,
+  ~authenticationId,
+  ~merchantHostname=Window.getRootHostName(),
+  ~bodyArr,
+) => {
+  Console.log2("===> Fetching post authentication", bodyArr)
+
+  let uri = APIUtils.generateApiUrl(
+    V2(PostAuthentication),
+    ~params={
+      customBackendBaseUrl: None,
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      authenticationClientSecret,
+      authenticationId,
+    },
+  )
+
+  let headers = [("X-Merchant-Domain", merchantHostname)]->Dict.fromArray
+  let body = bodyArr->getJsonFromArrayOfJson
+
+  let onSuccess = data => data
+
+  let onFailure = _ =>
+    `{
+  "client_secret": "string",
+  "session_token": [
+    {
+      "product_name": "click_to_pay",
+      "dpa_id": "498WCF39JVQVH1UK4TGG21leLAj_MJQoapP5f12IanfEYaSno",
+      "dpa_name": "TestMerchant",
+      "locale": "en_US",
+      "card_brands": [
+        "visa",
+        "mastercard"
+      ],
+      "acquirer_bin": "455555",
+      "acquirer_merchant_id": "12345678",
+      "merchant_category_code": "4829",
+      "merchant_country_code": "US",
+      "transaction_amount": "10.00",
+      "transaction_currency_code": "USD",
+      "phone_number": "9779004471",
+      "email": "arush.kapoor@juspay.in",
+      "phone_country_code": "91",
+      "provider": "visa",
+      "dpa_client_id": "string",
+      "next_api_action": "/authentication/post_authentication"
+    },
+    {
+      "product_name": "three_ds",
+      "next_api_action": "/authentication/eligibility"
+    },
+    {
+      "type": "NoSessionTokenReceived"
+    }
+  ]
+}`->JSON.parseExn
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=SAVED_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~headers,
+    ~bodyStr=body->JSON.stringify,
+    ~method=#POST,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+    ~isPaymentSession=false,
+  )
+}

@@ -19,6 +19,22 @@ let orderIdRef = ref("")
 
 type ctpProviderType = VISA | MASTERCARD | NONE
 
+let getStrFromCtpProvider = provider => {
+  switch provider {
+  | VISA => "VISA"
+  | MASTERCARD => "MASTERCARD"
+  | NONE => "NONE"
+  }
+}
+
+let getCtpProvider = providerStr => {
+  switch providerStr {
+  | "VISA" => VISA
+  | "MASTERCARD" => MASTERCARD
+  | _ => NONE // Default to NONE if unknown
+  }
+}
+
 type element = {
   mutable innerHTML: string,
   appendChild: Window.element => unit,
@@ -146,6 +162,14 @@ let getIdentityType = identityType => {
   }
 }
 
+let getIdentityTypeFromString = identityTypeStr => {
+  switch identityTypeStr {
+  | "EMAIL_ADDRESS" => EMAIL_ADDRESS
+  | "MOBILE_PHONE_NUMBER" => MOBILE_PHONE_NUMBER
+  | _ => EMAIL_ADDRESS // Default to EMAIL_ADDRESS if unknown
+  }
+}
+
 type consumerIdentity = {
   identityProvider?: string,
   identityType: identityType,
@@ -240,6 +264,35 @@ let clickToPayTokenItemToObjMapper = (json: JSON.t) => {
     email: dict->Utils.getString("email", ""),
     provider: dict->Utils.getString("provider", "mastercard"),
   }
+}
+
+let clickToPayToJsonItemToObjMapper = (clickToPayToken: clickToPayToken) => {
+  let dict = Js.Dict.empty()
+  dict->Js.Dict.set("dpa_id", JSON.Encode.string(clickToPayToken.dpaId))
+  dict->Js.Dict.set("dpa_name", JSON.Encode.string(clickToPayToken.dpaName))
+  dict->Js.Dict.set("locale", JSON.Encode.string(clickToPayToken.locale))
+  dict->Js.Dict.set("transaction_amount", JSON.Encode.float(clickToPayToken.transactionAmount))
+  dict->Js.Dict.set(
+    "transaction_currency_code",
+    JSON.Encode.string(clickToPayToken.transactionCurrencyCode),
+  )
+  dict->Js.Dict.set("acquirer_bin", JSON.Encode.string(clickToPayToken.acquirerBIN))
+  dict->Js.Dict.set("acquirer_merchant_id", JSON.Encode.string(clickToPayToken.acquirerMerchantId))
+  dict->Js.Dict.set(
+    "merchant_category_code",
+    JSON.Encode.string(clickToPayToken.merchantCategoryCode),
+  )
+  dict->Js.Dict.set(
+    "merchant_country_code",
+    JSON.Encode.string(clickToPayToken.merchantCountryCode),
+  )
+  dict->Js.Dict.set(
+    "card_brands",
+    JSON.Encode.array(clickToPayToken.cardBrands->Array.map(JSON.Encode.string)),
+  )
+  dict->Js.Dict.set("email", JSON.Encode.string(clickToPayToken.email))
+  dict->Js.Dict.set("provider", JSON.Encode.string(clickToPayToken.provider))
+  JSON.Encode.object(dict)
 }
 
 // Update the previously defined mastercardCheckoutServices type
@@ -1071,6 +1124,19 @@ type getCardsResultType = {
   maskedValidationChannel?: string,
 }
 
+let getActionCode = actionCodeStr => {
+  switch actionCodeStr {
+  | "SUCCESS" => SUCCESS
+  | "PENDING_CONSUMER_IDV" => PENDING_CONSUMER_IDV
+  | "FAILED" => FAILED
+  | "ERROR" => ERROR
+  | "ADD_CARD" => ADD_CARD
+  | _ => SUCCESS // Default to SUCCESS if unknown
+  }
+}
+
+external jsonToCardsResultType: JSON.t => getCardsResultType = "%identity"
+
 type vsdk = {
   initialize: visaInitConfig => promise<{.}>,
   getCards: getCardsConfig => promise<getCardsResultType>,
@@ -1094,7 +1160,22 @@ type visaEncryptCardPayload = {
 
 @val external vsdk: vsdk = "window.VSDK"
 
-let getCardsVisaUnified = (~getCardsConfig) => vsdk.getCards(getCardsConfig)
+let getCardsVisaUnified = (~identityType, ~identityValue, ~otp) => {
+  let consumerIdentity = {
+    identityProvider: "SRC",
+    identityValue: identityType == EMAIL_ADDRESS
+      ? identityValue
+      : identityValue->String.replaceAll(" ", ""),
+    identityType,
+  }
+  let getCardsConfig = if otp->String.length == 6 {
+    {consumerIdentity, validationData: otp}
+  } else {
+    {consumerIdentity: consumerIdentity}
+  }
+
+  vsdk.getCards(getCardsConfig)
+}
 let signOutVisaUnified = () => vsdk.unbindAppInstance()
 
 let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorCallback) => {

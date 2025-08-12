@@ -51,6 +51,16 @@ let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
   messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
+let handleOnSavedMethodChangedPostMessage = (~targetOrigin="*", ~paymentToken) => {
+  messageParentWindow(
+    [
+      ("savedMethodChanged", true->JSON.Encode.bool),
+      ("paymentToken", paymentToken->JSON.Encode.string),
+    ],
+    ~targetOrigin,
+  )
+}
+
 let handleOnBlurPostMessage = (~targetOrigin="*") => {
   messageParentWindow([("blur", true->JSON.Encode.bool)], ~targetOrigin)
 }
@@ -1319,9 +1329,13 @@ let eventHandlerFunc = (
       | CompleteDoThis
       | ConfirmPayment
       | OneClickConfirmPayment
+      | SavedMethodChanged
       | Blur =>
         switch eventHandler {
-        | Some(eH) => eH(Some(ev.data))
+        | Some(eH) => {
+            Console.log2("===> Reaching Event Handler Func", eventHandler)
+            eH(Some(ev.data))
+          }
         | None => ()
         }
       | _ => ()
@@ -1331,14 +1345,14 @@ let eventHandlerFunc = (
   EventListenerManager.addSmartEventListener("message", changeHandler, activity)
 }
 
-let makeIframe = (element, url) => {
+let makeIframe = (element, url, ~height="100vh", ~width="100vw", ~id="orca-fullscreen") => {
   open Types
   Promise.make((resolve, _) => {
     let iframe = createElement("iframe")
-    iframe.id = "orca-fullscreen"
+    iframe.id = id
     iframe.src = url
     iframe.name = "fullscreen"
-    iframe.style = "position: fixed; inset: 0; width: 100vw; height: 100vh; border: 0; z-index: 422222133323; "
+    iframe.style = `position: fixed; inset: 0; width: ${width}; height: ${height}; border: 0; z-index: 422222133323; `
     iframe.onload = () => {
       resolve(Dict.make())
     }
@@ -1437,7 +1451,7 @@ let expressCheckoutComponents = [
 let spmComponents = ["paymentMethodCollect"]->Array.concat(expressCheckoutComponents)
 
 let componentsForPaymentElementCreate =
-  ["payment", "paymentMethodCollect", "paymentMethodsManagement"]->Array.concat(
+  ["payment", "paymentMethodCollect", "paymentMethodsManagement", "savedCardElement"]->Array.concat(
     expressCheckoutComponents,
   )
 
