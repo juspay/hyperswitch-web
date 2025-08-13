@@ -3,7 +3,7 @@ open Utils
 
 @react.component
 let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVisaCards) => {
-  let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {config, themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {savedMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
 
@@ -173,12 +173,18 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
         fontSize: themeObj.buttonTextFontSize,
       }
 
+  let theme = config.appearance.theme
+  let isDarkTheme = switch theme {
+  | Default => false
+  | _ => true
+  }
+  let arrowName = isDarkTheme ? "arrow-back-white" : "arrow-back"
   <div
     className="PickerItemContainer p-4 rounded-lg border border-[#E6E1E1] flex flex-col space-y-4">
     <div className="flex flex-col">
       <RenderIf condition={!isCTPAuthenticateNotYouClicked}>
         <button onClick={onBack}>
-          <Icon name="arrow-back" size=16 />
+          <Icon name=arrowName size=16 className={themeObj.buttonBackgroundColor} />
         </button>
       </RenderIf>
       <div className="flex justify-center items-center">
@@ -191,38 +197,36 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
     </div>
     <div className="flex flex-col justify-center items-center space-y-4 px-4">
       <p className="text-sm font-normal">
-        {React.string(
-          "Enter a new email or mobile number to access a different set of linked cards.",
-        )}
+        {React.string("Enter a new email to access a different set of linked cards.")}
       </p>
       <form
         onSubmit={handleSubmit}
         className={`w-full flex flex-col justify-center items-center space-y-4 text-[${themeObj.colorText}]`}>
         <div className="w-full flex space-x-2">
-          <div className="relative w-1/3">
-            <select
-              value={identifierType->getIdentityType}
-              onChange={handleTypeChange}
-              className={`w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none text-${themeObj.colorText}`}>
-              <option value={EMAIL_ADDRESS->getIdentityType}> {React.string("Email")} </option>
-              <option value={MOBILE_PHONE_NUMBER->getIdentityType}>
-                {React.string("Phone")}
-              </option>
-            </select>
-            <div
-              className="absolute inset-y-0 right-4 flex items-center selection:pointer-events-none">
-              <Icon
-                className="absolute z-10 pointer pointer-events-none" name="arrow-down" size=10
-              />
-            </div>
-          </div>
+          // <div className="relative w-1/3">
+          // <select
+          //   value={identifierType->getIdentityType}
+          //   onChange={handleTypeChange}
+          //   className={`w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none text-${themeObj.colorText}`}>
+          //   <option value={EMAIL_ADDRESS->getIdentityType}> {React.string("Email")} </option>
+          //   <option value={MOBILE_PHONE_NUMBER->getIdentityType}>
+          //     {React.string("Phone")}
+          //   </option>
+          // </select>
+          // <div
+          //   className="absolute inset-y-0 right-4 flex items-center selection:pointer-events-none">
+          //   <Icon
+          //     className="absolute z-10 pointer pointer-events-none" name="arrow-down" size=10
+          //   />
+          // </div>
+          // </div>
           {identifierType === EMAIL_ADDRESS
             ? <input
                 type_="text"
                 value={identifier}
                 onChange={handleInputChange}
                 placeholder="Enter email"
-                className={`w-2/3 p-3 border border-gray-300 rounded-md text-${themeObj.colorText}`}
+                className={`w-full p-3 border border-gray-300 rounded-md text-black`}
                 required=true
               />
             : <div className="w-2/3 flex border border-gray-300 rounded-md overflow-hidden">
