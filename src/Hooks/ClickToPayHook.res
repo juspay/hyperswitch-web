@@ -201,12 +201,14 @@ let useClickToPay = (
     ~identityValue: string,
     ~otp: string,
     ~identityType: ClickToPayHelpers.identityType,
-  ) => promise<unit> = async (~identityValue, ~otp, ~identityType) => {
+    ~signOut: bool,
+  ) => promise<unit> = async (~identityValue, ~otp, ~identityType, ~signOut) => {
     messageParentWindow([
       ("getVisaCards", true->JSON.Encode.bool),
       ("identityValue", identityValue->JSON.Encode.string),
       ("otp", otp->JSON.Encode.string),
       ("identityType", ClickToPayHelpers.getIdentityType(identityType)->JSON.Encode.string),
+      ("signOut", signOut->JSON.Encode.bool),
     ])
     // try {
     //   let cardsResult = await getCardsVisaUnified(~identityValue, ~otp, ~identityType)
@@ -401,7 +403,7 @@ let useClickToPay = (
             setClickToPayNotReady()
             loggerState.setLogError(
               ~value={
-                "message": "CTP UI script loading failed",
+                "message": "CTP script loading failed",
                 "scheme": clickToPayProvider,
               }
               ->JSON.stringifyAny
@@ -423,7 +425,7 @@ let useClickToPay = (
               ->Utils.getString("identityType", "")
               ->ClickToPayHelpers.getIdentityTypeFromString
 
-            getVisaCards(~identityValue, ~otp, ~identityType)->ignore
+            getVisaCards(~identityValue, ~otp, ~identityType, ~signOut=false)->ignore
           } else {
             setClickToPayNotReady()
             closeComponentIfSavedMethodsAreEmpty()

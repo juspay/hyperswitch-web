@@ -25,6 +25,12 @@ let make = (
     false
   )
 
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let theme = config.appearance.theme
+  let isDarkTheme = switch theme {
+  | Default => false
+  | _ => true
+  }
   let {
     consumerIdentity,
     clickToPayCards,
@@ -183,6 +189,7 @@ let make = (
                   ~identityValue=consumerIdentity.identityValue,
                   ~otp,
                   ~identityType=consumerIdentity.identityType,
+                  ~signOut=false,
                 )
               }
             )()
@@ -220,7 +227,9 @@ let make = (
 
   <>
     <RenderIf condition={!isClickToPayAuthenticateError && email !== ""}>
-      <ClickToPayHelpers.SrcMark cardBrands={availableCardBrands->Array.join(",")} height="32" />
+      <ClickToPayHelpers.SrcMark
+        dark=isDarkTheme cardBrands={availableCardBrands->Array.join(",")} height="32"
+      />
     </RenderIf>
     {if isShowClickToPayNotYou {
       <ClickToPayNotYou setIsShowClickToPayNotYou isCTPAuthenticateNotYouClicked getVisaCards />

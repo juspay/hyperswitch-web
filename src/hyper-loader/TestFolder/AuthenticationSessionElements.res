@@ -4,6 +4,11 @@ open Identity
 open Utils
 open EventListenerManager
 
+let isVisaScriptLoaded = ref(false)
+let isVisaInitialized = ref(false)
+let visaGetCardsResponse = ref(Nullable.null)
+let initConfigRef = ref(Nullable.null)
+
 let make = (
   options,
   setIframeRef,
@@ -235,7 +240,7 @@ let make = (
     //   }
     // }
 
-    // let handleApplePayMounted = (event: Types.event) => {
+    // let handleVisaClickToPayMounted = (event: Types.event) => {
     //   let json = event.data->anyTypeToJson
     //   let dict = json->getDictFromJson
     //   let componentName = getString(dict, "componentName", "payment")
@@ -323,7 +328,7 @@ let make = (
     //   }
     // }
 
-    // addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
+    // addSmartEventListener("message", handleVisaClickToPayMounted, "onVisaClickToPayMount")
 
     let setElementIframeRef = ref => {
       iframeRef->Array.push(ref)->ignore
@@ -464,22 +469,58 @@ let make = (
           })
         }
 
-        let handleVisaGetCards = async (~identityValue, ~otp, ~identityType, ~event) => {
+        let handleVisaGetCards = async (
+          ~identityValue,
+          ~otp,
+          ~identityType,
+          ~event,
+          ~doSignOut=false,
+        ) => {
           try {
-            let cardsResult = await ClickToPayHelpers.getCardsVisaUnified(
-              ~identityValue,
-              ~otp,
-              ~identityType,
-            )
+            if doSignOut {
+              switch initConfigRef.contents->Nullable.toOption {
+              | Some(initConfig) => {
+                  visaGetCardsResponse := Nullable.null
+                  let _ = await ClickToPayHelpers.signOutVisaUnified()
+                  let _ = await ClickToPayHelpers.vsdk.initialize(initConfig)
+                }
+              | None => ()
+              }
+            }
+            switch visaGetCardsResponse.contents->Nullable.toOption {
+            | Some(cardsResult) => {
+                Console.log2("====================> Cards Result", cardsResult)
+                let msg =
+                  [
+                    ("fetchedVisaCardsResult", true->JSON.Encode.bool),
+                    ("cardsResult", cardsResult->Identity.anyTypeToJson),
+                    ("otp", otp->JSON.Encode.string),
+                  ]->Dict.fromArray
+                // event.source->Window.sendPostMessageJSON(msg)
+                mountedIframeRef->Window.iframePostMessage(msg)
+              }
+            | None => {
+                let cardsResult = await ClickToPayHelpers.getCardsVisaUnified(
+                  ~identityValue,
+                  ~otp,
+                  ~identityType,
+                )
 
-            let msg =
-              [
-                ("fetchedVisaCardsResult", true->JSON.Encode.bool),
-                ("cardsResult", cardsResult->Identity.anyTypeToJson),
-                ("otp", otp->JSON.Encode.string),
-              ]->Dict.fromArray
-            // event.source->Window.sendPostMessageJSON(msg)
-            mountedIframeRef->Window.iframePostMessage(msg)
+                Console.log2("====================> Cards Result", cardsResult)
+
+                if cardsResult.actionCode == SUCCESS {
+                  visaGetCardsResponse := Nullable.make(cardsResult)
+                }
+                let msg =
+                  [
+                    ("fetchedVisaCardsResult", true->JSON.Encode.bool),
+                    ("cardsResult", cardsResult->Identity.anyTypeToJson),
+                    ("otp", otp->JSON.Encode.string),
+                  ]->Dict.fromArray
+                // event.source->Window.sendPostMessageJSON(msg)
+                mountedIframeRef->Window.iframePostMessage(msg)
+              }
+            }
           } catch {
           | _ => {
               let msg =
@@ -501,8 +542,11 @@ let make = (
           ~identityType,
         ) => {
           try {
-            let _ = await ClickToPayHelpers.vsdk.initialize(initConfig)
-
+            if !isVisaInitialized.contents {
+              initConfigRef := Nullable.make(initConfig)
+              let _ = await ClickToPayHelpers.vsdk.initialize(initConfig)
+              isVisaInitialized := true
+            }
             let msg =
               [
                 ("initializedClickToPay", true->JSON.Encode.bool),
@@ -526,7 +570,7 @@ let make = (
           }
         }
 
-        let handleApplePayMounted = (event: Types.event) => {
+        let handleVisaClickToPayMounted = (event: Types.event) => {
           let json = event.data->anyTypeToJson
           let dict = json->getDictFromJson
           let componentName = getString(dict, "componentName", "payment")
@@ -538,43 +582,56 @@ let make = (
               ->Option.getOr(JSON.Encode.null)
               ->ClickToPayHelpers.clickToPayTokenItemToObjMapper
 
-            ClickToPayHelpers.loadVisaScript(
-              clickToPayToken,
-              () => {
-                let msg =
-                  [
-                    ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
-                    (
-                      "clickToPayToken",
-                      clickToPayToken->ClickToPayHelpers.clickToPayToJsonItemToObjMapper,
-                    ),
-                  ]->Dict.fromArray
-                // ->JSON.Encode.object
-                // event.source->Window.sendPostMessageJSON(msg)
-                mountedIframeRef->Window.iframePostMessage(msg)
-                // visaScriptOnLoadCallback(ctpToken)
-              },
-              () => {
-                let msg =
-                  [
-                    ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
-                    ("clickToPayLoadFailure", true->JSON.Encode.bool),
-                  ]->Dict.fromArray
-                // event.source->Window.sendPostMessageJSON(msg)
-                mountedIframeRef->Window.iframePostMessage(msg)
+            if isVisaScriptLoaded.contents {
+              let msg =
+                [
+                  ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
+                  (
+                    "clickToPayToken",
+                    clickToPayToken->ClickToPayHelpers.clickToPayToJsonItemToObjMapper,
+                  ),
+                ]->Dict.fromArray
+              mountedIframeRef->Window.iframePostMessage(msg)
+            } else {
+              ClickToPayHelpers.loadVisaScript(
+                clickToPayToken,
+                () => {
+                  isVisaScriptLoaded := true
+                  let msg =
+                    [
+                      ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
+                      (
+                        "clickToPayToken",
+                        clickToPayToken->ClickToPayHelpers.clickToPayToJsonItemToObjMapper,
+                      ),
+                    ]->Dict.fromArray
+                  // ->JSON.Encode.object
+                  // event.source->Window.sendPostMessageJSON(msg)
+                  mountedIframeRef->Window.iframePostMessage(msg)
+                  // visaScriptOnLoadCallback(ctpToken)
+                },
+                () => {
+                  let msg =
+                    [
+                      ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
+                      ("clickToPayLoadFailure", true->JSON.Encode.bool),
+                    ]->Dict.fromArray
+                  // event.source->Window.sendPostMessageJSON(msg)
+                  mountedIframeRef->Window.iframePostMessage(msg)
 
-                // setClickToPayNotReady()
-                // loggerState.setLogError(
-                //   ~value={
-                //     "message": "CTP UI script loading failed",
-                //     "scheme": clickToPayProvider,
-                //   }
-                //   ->JSON.stringifyAny
-                //   ->Option.getOr(""),
-                //   ~eventName=CLICK_TO_PAY_FLOW,
-                // )
-              },
-            )
+                  // setClickToPayNotReady()
+                  // loggerState.setLogError(
+                  //   ~value={
+                  //     "message": "CTP UI script loading failed",
+                  //     "scheme": clickToPayProvider,
+                  //   }
+                  //   ->JSON.stringifyAny
+                  //   ->Option.getOr(""),
+                  //   ~eventName=CLICK_TO_PAY_FLOW,
+                  // )
+                },
+              )
+            }
           } else if dict->Dict.get("initializeVisaClickToPay")->Option.isSome {
             let clickToPayToken =
               dict
@@ -602,12 +659,13 @@ let make = (
           } else if dict->Dict.get("getVisaCards")->Option.isSome {
             let identityValue = dict->getString("identityValue", "")
             let otp = dict->getString("otp", "")
+            let doSignOut = dict->getBool("signOut", false)
             let identityType =
               dict
               ->getString("identityType", "EMAIL_ADDRESS")
               ->ClickToPayHelpers.getIdentityTypeFromString
 
-            handleVisaGetCards(~identityValue, ~otp, ~identityType, ~event)->ignore
+            handleVisaGetCards(~identityValue, ~otp, ~identityType, ~event, ~doSignOut)->ignore
           } else if dict->Dict.get("onSavedMethodChanged")->Option.isSome {
             let paymentToken = dict->Utils.getString("paymentToken", "")
             let clickToPayToken = dict->Utils.getJsonFromDict("clickToPayToken", JSON.Encode.null)
@@ -657,7 +715,7 @@ let make = (
           }
         }
 
-        addSmartEventListener("message", handleApplePayMounted, "onApplePayMount")
+        addSmartEventListener("message", handleVisaClickToPayMounted, "onVisaClickToPayMount")
       }
 
       let paymentElement = LoaderPaymentElement.make(

@@ -83,7 +83,12 @@ let make = (
   )
   let setComplete = Recoil.useSetRecoilState(RecoilAtoms.fieldsComplete)
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
-
+  let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let theme = config.appearance.theme
+  let isDarkTheme = switch theme {
+  | Default => false
+  | _ => true
+  }
   let setUserError = message => {
     postFailedSubmitResponse(~errortype="validation_error", ~message)
   }
@@ -594,7 +599,7 @@ let make = (
     </RenderIf>
     <RenderIf condition={clickToPayCardBrand !== ""}>
       <div className="space-y-3 mt-2">
-        <ClickToPayHelpers.SrcMark cardBrands=clickToPayCardBrand height="32" />
+        <ClickToPayHelpers.SrcMark dark=isDarkTheme cardBrands=clickToPayCardBrand height="32" />
         <ClickToPayDetails
           isSaveDetailsWithClickToPay
           setIsSaveDetailsWithClickToPay

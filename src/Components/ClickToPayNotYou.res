@@ -43,11 +43,12 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
             visaComponentState: CARDS_LOADING,
           })
           try {
-            await signOutVisaUnified()
+            // await signOutVisaUnified()
             await getVisaCards(
               ~identityValue=consumerIdentity.identityValue,
               ~otp="",
               ~identityType=consumerIdentity.identityType,
+              ~signOut=true,
             )
           } catch {
           | _ =>
@@ -183,7 +184,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
       <div className="flex justify-center items-center">
         <div>
           <ClickToPayHelpers.SrcMark
-            cardBrands={clickToPayConfig.availableCardBrands->Array.join(",")} height="32"
+            dark=true cardBrands={clickToPayConfig.availableCardBrands->Array.join(",")} height="32"
           />
         </div>
       </div>

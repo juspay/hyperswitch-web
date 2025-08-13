@@ -947,11 +947,13 @@ type srcMarkProps = {
   height?: string,
   width?: string,
   className?: string,
+  dark?: bool,
 }
 
 type srcLoaderProps = {
   className?: string,
   size?: string,
+  dark?: bool,
 }
 
 type srcLearnMoreProps = {
@@ -1044,6 +1046,7 @@ type srcOtpInputProps = {
   @as("masked-identity-value") maskedIdentityValue?: string,
   @as("network-id") network: string,
   @as("auto-submit") isAutoSubmit?: bool,
+  @as("dark") dark?: bool,
 }
 
 module SrcOtpInput = {

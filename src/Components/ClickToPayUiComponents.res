@@ -16,7 +16,7 @@ type listener = {
 module LoadingState = {
   @react.component
   let make = () => {
-    <ClickToPayHelpers.SrcLoader />
+    <ClickToPayHelpers.SrcLoader dark=true />
   }
 }
 
@@ -24,15 +24,20 @@ module OtpInput = {
   @react.component
   let make = (~getCards: string => promise<unit>, ~setIsClickToPayRememberMe) => {
     let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
-    let (isOtpSubmitting, setIsOtpSubmitting) = React.useState(_ => false)
     let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(
       RecoilAtoms.clickToPayConfig,
     )
     let otpValueRef = React.useRef("")
-    let (resendLoading, setResendLoading) = React.useState(_ => false)
     let addListener = (~element, ~event, ~callback, ~options=?) =>
       element.addEventListener->Option.forEach(func => func(event, callback, options))
-
+    let isResendingOtp = React.useRef(false)
+    let isSubmittingOtp = React.useRef(false)
+    let {config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let theme = config.appearance.theme
+    let isDarkTheme = switch theme {
+    | Default => false
+    | _ => true
+    }
     let callBacks = {
       otpChanged: ev => {
         setClickToPayConfig(prev => {
@@ -51,9 +56,9 @@ module OtpInput = {
       continueClicked: _ => {
         let verifyUserAndGetCards = async () => {
           try {
-            setIsOtpSubmitting(_ => true)
+            isSubmittingOtp.current = true
             await getCards(otpValueRef.current)
-            setIsOtpSubmitting(_ => false)
+            isSubmittingOtp.current = false
           } catch {
           | err =>
             loggerState.setLogError(
@@ -76,9 +81,9 @@ module OtpInput = {
         })
         let resendOtp = async () => {
           try {
-            setResendLoading(_ => true)
+            isResendingOtp.current = true
             await getCards("")
-            setResendLoading(_ => false)
+            isResendingOtp.current = false
           } catch {
           | err =>
             loggerState.setLogError(
@@ -143,9 +148,10 @@ module OtpInput = {
       maskedIdentityValue=clickToPayConfig.maskedIdentity
       typeName=""
       isOtpValid=false
-      disableElements=isOtpSubmitting
+      disableElements=isSubmittingOtp.current
       displayRememberMe=true
-      isOtpResendLoading=resendLoading
+      isOtpResendLoading=isResendingOtp.current
+      dark=isDarkTheme
     />
   }
 }
