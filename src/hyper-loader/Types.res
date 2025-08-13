@@ -63,6 +63,7 @@ type authenticationSession = {
   widgets: JSON.t => element,
   // widgets: JSON.t => paymentElement,
   confirmAuthentication: JSON.t => promise<JSON.t>,
+  resetSelectedSavedMethod: unit => unit,
 }
 
 type confirmParams = {return_url: string}
@@ -193,6 +194,7 @@ let confirmAuthenticationFn = (_elements: JSON.t) => {
 let defaultAuthenticationSession: authenticationSession = {
   widgets: _ev => defaultElement,
   confirmAuthentication: confirmAuthenticationFn,
+  resetSelectedSavedMethod: _ => (),
 }
 
 let defaultHyperInstance = {

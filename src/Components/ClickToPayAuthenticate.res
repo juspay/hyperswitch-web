@@ -18,6 +18,10 @@ let make = (
 ) => {
   Console.log("## Coming inside ClickToPayAuthenticate component")
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
+  let optionAtom = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let isSavedMethodChangedCallbackEnabled = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.isSavedMethodChangedCallbackEnabled,
+  )
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
   let (_, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let (isShowClickToPayNotYou, setIsShowClickToPayNotYou) = React.useState(_ => false)
@@ -31,6 +35,8 @@ let make = (
   | Default => false
   | _ => true
   }
+  let (isRenderedForFirstTime, setIsRenderedForFirstTime) = React.useState(() => false)
+
   let {
     consumerIdentity,
     clickToPayCards,
@@ -41,6 +47,24 @@ let make = (
   } = clickToPayConfig
 
   let ctpCards = clickToPayCards->Option.getOr([])
+
+  let handleSelectFirstByDefault = (customerMethod: PaymentType.customerMethods) => {
+    if (
+      paymentTokenVal == "" &&
+      optionAtom.savedMethods.isSelectFirstByDefault->Option.getOr(false) &&
+      !isRenderedForFirstTime
+    ) {
+      Console.log("===> Selecting first saved method by default")
+      setIsRenderedForFirstTime(_ => true)
+      SavedMethodsUtils.handleSavedMethodChanged(
+        ~setPaymentToken,
+        ~paymentItem=customerMethod,
+        ~clickToPayConfig,
+        ~isClickToPayRememberMe,
+        ~isSavedMethodChangedCallbackEnabled,
+      )
+    }
+  }
 
   let mastercardAuth = cards => {
     if cards->Array.length == 0 {
@@ -209,6 +233,11 @@ let make = (
       ->Array.mapWithIndex((obj, i) => {
         let customerMethod =
           obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider)
+
+        if i == 0 {
+          handleSelectFirstByDefault(customerMethod)
+        }
+
         <SavedCardItem
           key={"ctp_" ++ i->Int.toString}
           setPaymentToken
@@ -220,6 +249,7 @@ let make = (
           cvcProps
           setRequiredFieldsBody
           isClickToPayRememberMe
+          paymentTokenVal
         />
       })
       ->React.array}

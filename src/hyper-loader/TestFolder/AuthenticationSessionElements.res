@@ -521,6 +521,21 @@ let make = (
                 mountedIframeRef->Window.iframePostMessage(msg)
               }
             }
+
+            // let cardsResult = await ClickToPayHelpers.getCardsVisaUnified(
+            //   ~identityValue,
+            //   ~otp,
+            //   ~identityType,
+            // )
+            // Console.log2("Cards Result", cardsResult)
+            // let msg =
+            //   [
+            //     ("fetchedVisaCardsResult", true->JSON.Encode.bool),
+            //     ("cardsResult", cardsResult->Identity.anyTypeToJson),
+            //     ("otp", otp->JSON.Encode.string),
+            //   ]->Dict.fromArray
+            // // event.source->Window.sendPostMessageJSON(msg)
+            // mountedIframeRef->Window.iframePostMessage(msg)
           } catch {
           | _ => {
               let msg =
@@ -543,6 +558,7 @@ let make = (
         ) => {
           try {
             if !isVisaInitialized.contents {
+              Console.log("#### Initializing Visa Click to Pay")
               initConfigRef := Nullable.make(initConfig)
               let _ = await ClickToPayHelpers.vsdk.initialize(initConfig)
               isVisaInitialized := true
@@ -583,6 +599,7 @@ let make = (
               ->ClickToPayHelpers.clickToPayTokenItemToObjMapper
 
             if isVisaScriptLoaded.contents {
+              Console.log("#### Click to Pay Script Already Loaded")
               let msg =
                 [
                   ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
@@ -593,6 +610,7 @@ let make = (
                 ]->Dict.fromArray
               mountedIframeRef->Window.iframePostMessage(msg)
             } else {
+              Console.log("#### Loading Visa Click to Pay Script")
               ClickToPayHelpers.loadVisaScript(
                 clickToPayToken,
                 () => {
@@ -684,6 +702,11 @@ let make = (
               clickToPayProviderRef.contents->ClickToPayHelpers.getCtpProvider
             let isClickToPayRememberMe = isClickToPayRememberMeRef.contents
 
+            Console.log2("===> paymentToken", paymentToken)
+            Console.log2("===> clickToPayToken", clickToPayToken)
+            Console.log2("===> clickToPayProvider", clickToPayProvider)
+            Console.log2("===> isClickToPayRememberMe", isClickToPayRememberMe)
+
             ClickToPayHelpers.handleProceedToPay(
               ~srcDigitalCardId=paymentToken,
               ~logger,
@@ -712,6 +735,11 @@ let make = (
             })
             ->ignore
             ()
+          } else if dict->Dict.get("resetSelectedSavedMethod")->Option.isSome {
+            paymentTokenRef := ""
+            clickToPayTokenRef := JSON.Encode.null
+            clickToPayProviderRef := ""
+            isClickToPayRememberMeRef := false
           }
         }
 

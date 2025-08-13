@@ -57,6 +57,7 @@ let make = (
   ~cvcProps: CardUtils.cvcProps,
   ~setRequiredFieldsBody,
   ~isClickToPayRememberMe,
+  ~paymentTokenVal,
 ) => {
   let {themeObj, config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {savedMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
@@ -171,49 +172,55 @@ let make = (
         opacity: {isCardExpired ? "0.7" : "1"},
       }
       onClick={_ => {
-        open RecoilAtomTypes
-        setPaymentToken(_ => {
-          paymentToken: paymentItem.paymentToken,
-          customerId: paymentItem.customerId,
-        })
+        SavedMethodsUtils.handleSavedMethodChanged(
+          ~setPaymentToken,
+          ~paymentItem,
+          ~clickToPayConfig,
+          ~isClickToPayRememberMe,
+          ~isSavedMethodChangedCallbackEnabled,
+        )
+        // setPaymentToken(_ => {
+        //   paymentToken: paymentItem.paymentToken,
+        //   customerId: paymentItem.customerId,
+        // })
 
-        let clickToPayToken = clickToPayConfig.clickToPayToken
+        // let clickToPayToken = clickToPayConfig.clickToPayToken
+
+        // // switch clickToPayToken {
+        // // | Some(token) =>
+        // //   Utils.messageParentWindow([
+        // //     ("handleClickToPayPayment", true->JSON.Encode.bool),
+        // //     ("paymentToken", paymentItem.paymentToken->JSON.Encode.string),
+        // //     ("clickToPayToken", token->ClickToPayHelpers.clickToPayToJsonItemToObjMapper),
+        // //   ])
+        // // | None => ()
+        // // }
 
         // switch clickToPayToken {
         // | Some(token) =>
         //   Utils.messageParentWindow([
-        //     ("handleClickToPayPayment", true->JSON.Encode.bool),
+        //     ("onSavedMethodChanged", true->JSON.Encode.bool),
         //     ("paymentToken", paymentItem.paymentToken->JSON.Encode.string),
         //     ("clickToPayToken", token->ClickToPayHelpers.clickToPayToJsonItemToObjMapper),
+        //     (
+        //       "clickToPayProvider",
+        //       clickToPayConfig.clickToPayProvider
+        //       ->ClickToPayHelpers.getStrFromCtpProvider
+        //       ->JSON.Encode.string,
+        //     ),
+        //     ("isClickToPayRememberMe", isClickToPayRememberMe->JSON.Encode.bool),
         //   ])
+
+        //   Console.log2(
+        //     "===> isSavedMethodChangedCallbackEnabled",
+        //     isSavedMethodChangedCallbackEnabled,
+        //   )
+
+        //   if isSavedMethodChangedCallbackEnabled {
+        //     Utils.handleOnSavedMethodChangedPostMessage(~paymentToken=paymentItem.paymentToken)
+        //   }
         // | None => ()
         // }
-
-        switch clickToPayToken {
-        | Some(token) =>
-          Utils.messageParentWindow([
-            ("onSavedMethodChanged", true->JSON.Encode.bool),
-            ("paymentToken", paymentItem.paymentToken->JSON.Encode.string),
-            ("clickToPayToken", token->ClickToPayHelpers.clickToPayToJsonItemToObjMapper),
-            (
-              "clickToPayProvider",
-              clickToPayConfig.clickToPayProvider
-              ->ClickToPayHelpers.getStrFromCtpProvider
-              ->JSON.Encode.string,
-            ),
-            ("isClickToPayRememberMe", isClickToPayRememberMe->JSON.Encode.bool),
-          ])
-
-          Console.log2(
-            "===> isSavedMethodChangedCallbackEnabled",
-            isSavedMethodChangedCallbackEnabled,
-          )
-
-          if isSavedMethodChangedCallbackEnabled {
-            Utils.handleOnSavedMethodChangedPostMessage(~paymentToken=paymentItem.paymentToken)
-          }
-        | None => ()
-        }
 
         // Send Data to the top level iframe
       }}>
@@ -249,23 +256,26 @@ let make = (
               </div>
             </div>
             <RenderIf condition={isCard}>
-              {!savedMethods.isShowButton
-                ? <div
-                    className={`flex flex-row items-center justify-end gap-3 -mt-1`}
-                    style={fontSize: "14px", opacity: "0.5"}
-                    ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
-                    <div className="flex" ariaHidden=true>
-                      {React.string(
-                        `${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`,
-                      )}
-                    </div>
+              <RenderIf condition={!savedMethods.isShowButton}>
+                <div
+                  className={`flex flex-row items-center justify-end gap-3 -mt-1`}
+                  style={fontSize: "14px", opacity: "0.5"}
+                  ariaLabel={`Expires ${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`}>
+                  <div className="flex" ariaHidden=true>
+                    {React.string(
+                      `${expiryMonth} / ${expiryYear->CardUtils.formatExpiryToTwoDigit}`,
+                    )}
                   </div>
-                : <div className="CustomButton">
-                    {switch savedMethods.buttonText->Option.getOr("") {
-                    | "" => React.string("Choose")
-                    | text => React.string(text)
-                    }}
-                  </div>}
+                </div>
+              </RenderIf>
+              <RenderIf condition={savedMethods.isShowButton && !isActive}>
+                <div className="CustomButton">
+                  {switch savedMethods.buttonText->Option.getOr("") {
+                  | "" => React.string("Choose")
+                  | text => React.string(text)
+                  }}
+                </div>
+              </RenderIf>
             </RenderIf>
           </div>
           <div className="w-full">

@@ -40,6 +40,13 @@ let make = (
     )
   }
 
+  let postSubmitMessage = message => {
+    iframeRef.contents->Array.forEach(ifR => {
+      Console.log3("===> Posting message to iframe", ifR, message)
+      ifR->Window.iframePostMessage(message)
+    })
+  }
+
   // let confirmAuthentication = (payload, isOneClick, result, ~isSdkButton=false) => {
   let confirmAuthentication = _ => {
     let confirmTimestamp = Date.now()
@@ -57,13 +64,6 @@ let make = (
     //   ->Option.flatMap(x => x->Dict.get("return_url"))
     //   ->Option.flatMap(JSON.Decode.string)
     //   ->Option.getOr("")
-
-    let postSubmitMessage = message => {
-      iframeRef.contents->Array.forEach(ifR => {
-        Console.log3("===> Posting message to iframe", ifR, message)
-        ifR->Window.iframePostMessage(message)
-      })
-    }
 
     Promise.make((resolve1, _) => {
       let handleMessage = (event: Types.event) => {
@@ -142,9 +142,17 @@ let make = (
     })
   }
 
+  let resetSelectedSavedMethod = () => {
+    let message = [("resetSelectedSavedMethod", true->JSON.Encode.bool)]
+    postSubmitMessage(message->Dict.fromArray)
+
+    messageTopWindow(message)
+  }
+
   let returnObject: Types.authenticationSession = {
     widgets,
     confirmAuthentication,
+    resetSelectedSavedMethod,
   }
 
   returnObject

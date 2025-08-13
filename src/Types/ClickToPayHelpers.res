@@ -1425,6 +1425,7 @@ let handleProceedToPay = async (
           }
           switch clickToPayToken {
           | Some(token) => {
+              Console.log2("Click to Pay Token:", token)
               let checkoutResp = await checkoutVisaUnified(
                 ~srcDigitalCardId,
                 ~clickToPayToken=token,

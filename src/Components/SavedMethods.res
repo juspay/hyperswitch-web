@@ -69,6 +69,26 @@ let make = (
 
   Console.log2("## clickToPayConfig.isReady", clickToPayConfig.isReady)
 
+  React.useEffect0(() => {
+    let handleResetSelectedSavedMethod = (ev: Window.event) => {
+      let json = ev.data->safeParse
+      try {
+        let dict = json->getDictFromJson
+        if dict->Dict.get("resetSelectedSavedMethod")->Option.isSome {
+          setPaymentToken(_ => RecoilAtoms.defaultPaymentToken)
+        }
+      } catch {
+      | _ => Console.warn("Something went wrong while receiving data")
+      }
+    }
+    Window.addEventListener("message", handleResetSelectedSavedMethod)
+    Some(
+      () => {
+        Window.removeEventListener("message", handleResetSelectedSavedMethod)
+      },
+    )
+  })
+
   let bottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
@@ -85,6 +105,7 @@ let make = (
           cvcProps
           setRequiredFieldsBody
           isClickToPayRememberMe
+          paymentTokenVal
         />
       )
       ->React.array}

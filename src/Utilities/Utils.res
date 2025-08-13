@@ -51,14 +51,8 @@ let handleOnCompleteDoThisMessage = (~targetOrigin="*") => {
   messageParentWindow([("completeDoThis", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
-let handleOnSavedMethodChangedPostMessage = (~targetOrigin="*", ~paymentToken) => {
-  messageParentWindow(
-    [
-      ("savedMethodChanged", true->JSON.Encode.bool),
-      ("paymentToken", paymentToken->JSON.Encode.string),
-    ],
-    ~targetOrigin,
-  )
+let handleOnSavedMethodChangedPostMessage = (~targetOrigin="*") => {
+  messageParentWindow([("savedMethodChanged", true->JSON.Encode.bool)], ~targetOrigin)
 }
 
 let handleOnBlurPostMessage = (~targetOrigin="*") => {

@@ -178,6 +178,7 @@ type sdkHandleSavePayment = {
 type savedMethods = {
   isShowButton: bool,
   buttonText?: string,
+  isSelectFirstByDefault?: bool,
 }
 
 type options = {
@@ -356,6 +357,7 @@ let defaultSdkHandleSavePayment = {
 
 let defaultSavedMethods = {
   isShowButton: false,
+  isSelectFirstByDefault: false,
 }
 
 let defaultOptions = {
@@ -1054,11 +1056,16 @@ let getSavedMethods = (dict, str, logger) => {
   ->Dict.get(str)
   ->Option.flatMap(JSON.Decode.object)
   ->Option.map(json => {
-    unknownKeysWarning(["isShowButton", "buttonText"], json, "options.savedMethods")
+    unknownKeysWarning(
+      ["isShowButton", "buttonText", "isSelectFirstByDefault"],
+      json,
+      "options.savedMethods",
+    )
 
     {
       isShowButton: getBoolWithWarning(json, "isShowButton", false, ~logger),
       buttonText: getWarningString(json, "buttonText", "", ~logger),
+      isSelectFirstByDefault: getBoolWithWarning(json, "isSelectFirstByDefault", false, ~logger),
     }
   })
   ->Option.getOr(defaultSavedMethods)
