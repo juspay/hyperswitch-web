@@ -556,13 +556,7 @@ let make = (
           ~otp,
           ~identityType,
         ) => {
-          try {
-            if !isVisaInitialized.contents {
-              Console.log("#### Initializing Visa Click to Pay")
-              initConfigRef := Nullable.make(initConfig)
-              let _ = await ClickToPayHelpers.vsdk.initialize(initConfig)
-              isVisaInitialized := true
-            }
+          let handleSuccessPostMessage = () => {
             let msg =
               [
                 ("initializedClickToPay", true->JSON.Encode.bool),
@@ -573,15 +567,45 @@ let make = (
             // ->JSON.Encode.object
             // event.source->Window.sendPostMessageJSON(msg)
             mountedIframeRef->Window.iframePostMessage(msg)
+          }
+
+          let handleErrorPostMessage = () => {
+            let msg =
+              [
+                ("initializedClickToPay", true->JSON.Encode.bool),
+                ("error", "Failed to initialize Click to Pay"->JSON.Encode.string),
+              ]->Dict.fromArray
+            // event.source->Window.sendPostMessageJSON(msg)
+            mountedIframeRef->Window.iframePostMessage(msg)
+          }
+
+          try {
+            if !isVisaInitialized.contents {
+              initConfigRef := Nullable.make(initConfig)
+              let timeOut = delay(15000)->then(_ => {
+                let errorMsg =
+                  [("error", "Request Timed Out"->JSON.Encode.string)]->getJsonFromArrayOfJson
+                reject(Exn.anyToExnInternal(errorMsg))
+              })
+
+              Promise.race([ClickToPayHelpers.vsdk.initialize(initConfig), timeOut])
+              ->then(_ => {
+                isVisaInitialized := true
+                handleSuccessPostMessage()
+                resolve()
+              })
+              ->catch(_ => {
+                handleErrorPostMessage()
+                resolve()
+              })
+              ->ignore
+            } else {
+              handleSuccessPostMessage()
+            }
           } catch {
-          | _ => {
-              let msg =
-                [
-                  ("initializedClickToPay", true->JSON.Encode.bool),
-                  ("error", "Failed to initialize Click to Pay"->JSON.Encode.string),
-                ]->Dict.fromArray
-              // event.source->Window.sendPostMessageJSON(msg)
-              mountedIframeRef->Window.iframePostMessage(msg)
+          | err => {
+              Console.log2("===> Error", err)
+              handleErrorPostMessage()
             }
           }
         }
