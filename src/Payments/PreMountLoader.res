@@ -182,6 +182,8 @@ let getMessageHandlerAuthenticationSession = (
   ~customPodUri,
   ~authenticationClientSecret,
   ~authenticationId,
+  ~profileId,
+  ~endpoint,
 ) => {
   let listPromise = PaymentHelpersV2.fetchEnabledAuthnMethodsToken(
     ~publishableKey,
@@ -189,6 +191,8 @@ let getMessageHandlerAuthenticationSession = (
     ~customPodUri,
     ~authenticationClientSecret,
     ~authenticationId,
+    ~profileId,
+    ~endpoint,
   )
 
   ev => {
@@ -280,6 +284,8 @@ module PreMountLoaderForAuthenticationSession = {
     ~customPodUri,
     ~authenticationClientSecret,
     ~authenticationId,
+    ~profileId,
+    ~endpoint,
   ) => {
     useMessageHandler(() =>
       getMessageHandlerAuthenticationSession(
@@ -288,6 +294,8 @@ module PreMountLoaderForAuthenticationSession = {
         ~customPodUri,
         ~authenticationClientSecret,
         ~authenticationId,
+        ~profileId,
+        ~endpoint,
       )
     )
 
@@ -330,7 +338,13 @@ let make = (
     />
   | AuthenticationSessionElements =>
     <PreMountLoaderForAuthenticationSession
-      publishableKey logger customPodUri authenticationClientSecret authenticationId
+      publishableKey
+      logger
+      customPodUri
+      authenticationClientSecret
+      authenticationId
+      profileId
+      endpoint
     />
   }
 }

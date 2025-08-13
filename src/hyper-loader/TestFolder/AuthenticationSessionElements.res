@@ -438,36 +438,36 @@ let make = (
         ->ignore
         mountedIframeRef->Window.iframePostMessage(message)
 
-        let fetchEnabledAuthnMethodsToken = (mountedIframeRef, disableSaveCards, componentType) => {
-          Promise.make((resolve, _) => {
-            if !disableSaveCards {
-              let handleEnabledAuthnMethodsLoaded = (event: Types.event) => {
-                let json = event.data->Identity.anyTypeToJson
-                let dict = json->getDictFromJson
-                let isEnabledAuthnMethodsData =
-                  dict->getString("data", "") === "enabled_authn_methods_token"
-                if isEnabledAuthnMethodsData {
-                  resolve()
-                  let json = dict->getJsonFromDict("response", JSON.Encode.null)
-                  let msg = [("enabledAuthnMethodsToken", json)]->Dict.fromArray
-                  mountedIframeRef->Window.iframePostMessage(msg)
-                }
-              }
-              addSmartEventListener(
-                "message",
-                handleEnabledAuthnMethodsLoaded,
-                `onEnabledAuthnMethodsLoaded-${componentType}`,
-              )
-            } else {
-              resolve()
-            }
-            let msg =
-              [
-                ("sendEnabledAuthnMethodsTokenResponse", !disableSaveCards->JSON.Encode.bool),
-              ]->Dict.fromArray
-            preMountLoaderIframeDiv->Window.iframePostMessage(msg)
-          })
-        }
+        // let fetchEnabledAuthnMethodsToken = (mountedIframeRef, disableSaveCards, componentType) => {
+        //   Promise.make((resolve, _) => {
+        //     if !disableSaveCards {
+        //       let handleEnabledAuthnMethodsLoaded = (event: Types.event) => {
+        //         let json = event.data->Identity.anyTypeToJson
+        //         let dict = json->getDictFromJson
+        //         let isEnabledAuthnMethodsData =
+        //           dict->getString("data", "") === "enabled_authn_methods_token"
+        //         if isEnabledAuthnMethodsData {
+        //           resolve()
+        //           let json = dict->getJsonFromDict("response", JSON.Encode.null)
+        //           let msg = [("enabledAuthnMethodsToken", json)]->Dict.fromArray
+        //           mountedIframeRef->Window.iframePostMessage(msg)
+        //         }
+        //       }
+        //       addSmartEventListener(
+        //         "message",
+        //         handleEnabledAuthnMethodsLoaded,
+        //         `onEnabledAuthnMethodsLoaded-${componentType}`,
+        //       )
+        //     } else {
+        //       resolve()
+        //     }
+        //     let msg =
+        //       [
+        //         ("sendEnabledAuthnMethodsTokenResponse", !disableSaveCards->JSON.Encode.bool),
+        //       ]->Dict.fromArray
+        //     preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+        //   })
+        // }
 
         let handleVisaGetCards = async (
           ~identityValue,
@@ -726,6 +726,9 @@ let make = (
                   ("publishableKey", publishableKey->JSON.Encode.string),
                   ("customPodUri", customPodUri->JSON.Encode.string),
                   ("clientSecret", clientSecret->JSON.Encode.string),
+                  ("authenticationId", authenticationId->JSON.Encode.string),
+                  ("profileId", profileId->JSON.Encode.string),
+                  ("endpoint", endpoint->JSON.Encode.string),
                 ]->Dict.fromArray
 
               Console.log2("===> Event Source", event.source)

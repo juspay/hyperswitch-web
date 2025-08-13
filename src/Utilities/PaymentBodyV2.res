@@ -66,3 +66,16 @@ let getPaymentBody = (
   | "eps" => epsBody(~name=fullName, ~bankName=bank)
   | _ => dynamicPaymentBodyV2(paymentMethod, paymentMethodType)
   }
+
+let visaClickToPayBodyV2 = (~encryptedPayload) => {
+  let visaPaymentMethodData =
+    [("encrypted_payload", encryptedPayload->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
+
+  let paymentMethodData =
+    [
+      ("payment_method_type", "ctp"->JSON.Encode.string),
+      ("payment_method_data", visaPaymentMethodData),
+    ]->Utils.getJsonFromArrayOfJson
+
+  [("payment_method_data", paymentMethodData)]
+}

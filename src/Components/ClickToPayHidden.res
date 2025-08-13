@@ -11,6 +11,9 @@ let make = () => {
     ~publishableKey,
     ~clientSecret,
     ~customPodUri,
+    ~authenticationId,
+    ~profileId,
+    ~endpoint,
   ) => {
     try {
       let data = await PaymentHelpersV2.fetchPostAuthentication(
@@ -18,19 +21,15 @@ let make = () => {
         ~logger,
         ~customPodUri,
         ~authenticationClientSecret=clientSecret->Option.getOr(""),
-        ~authenticationId=clientSecret
-        ->Option.getOr("")
-        ->String.split("_")
-        ->Array.at(0)
-        ->Option.getOr(""),
+        ~authenticationId,
+        ~profileId,
+        ~endpoint,
         ~bodyArr=clickToPayBody,
       )
 
       Console.log2("===> Data", data)
 
-      let newResp = [("status", "succeeded"->JSON.Encode.string)]->Utils.getJsonFromArrayOfJson
-
-      messageParentWindow([("authenticationSuccessful", true->JSON.Encode.bool), ("data", newResp)])
+      messageParentWindow([("authenticationSuccessful", true->JSON.Encode.bool), ("data", data)])
     } catch {
     | err => Console.log2("===> Error in post authentication", err)
     }
@@ -64,6 +63,10 @@ let make = () => {
         let customPodUri = dict->Utils.getString("customPodUri", "")
         let clientSecret = dict->Utils.getOptionString("clientSecret")
 
+        let authenticationId = dict->Utils.getString("authenticationId", "")
+        let profileId = dict->Utils.getString("profileId", "")
+        let endpoint = dict->Utils.getString("endpoint", "")
+
         Console.log2("===> ClickToPayProvider", clickToPayProvider)
 
         switch clickToPayProvider {
@@ -89,9 +92,7 @@ let make = () => {
             // )
           }
         | VISA => {
-            let clickToPayBody = PaymentBody.visaClickToPayBody(
-              //   ~email=clickToPayConfig.email,
-              ~email,
+            let clickToPayBody = PaymentBodyV2.visaClickToPayBodyV2(
               ~encryptedPayload=payload->Utils.getString("checkoutResponse", ""),
             )
 
@@ -102,6 +103,9 @@ let make = () => {
               ~publishableKey,
               ~clientSecret,
               ~customPodUri,
+              ~authenticationId,
+              ~profileId,
+              ~endpoint,
             )->ignore
             // intent(
             //   ~bodyArr=clickToPayBody,

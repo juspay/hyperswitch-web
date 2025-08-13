@@ -711,6 +711,18 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
           ->Option.flatMap(x => x->Dict.get("clientSecret"))
           ->Option.flatMap(JSON.Decode.string)
           ->Option.getOr("")
+        let profileId =
+          authenticationSessionOptions
+          ->JSON.Decode.object
+          ->Option.flatMap(x => x->Dict.get("profileId"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
+        let authenticationId =
+          authenticationSessionOptions
+          ->JSON.Decode.object
+          ->Option.flatMap(x => x->Dict.get("authenticationId"))
+          ->Option.flatMap(JSON.Decode.string)
+          ->Option.getOr("")
         authenticationClientSecret := clientSecretId
         Promise.make((resolve, _) => {
           // logger.setClientSecret(clientSecretId)
@@ -734,6 +746,7 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
 
         AuthenticationSession.make(
           ~clientSecret={clientSecretId},
+          ~authenticationId,
           ~publishableKey,
           ~logger=Some(logger),
           ~iframeRef,

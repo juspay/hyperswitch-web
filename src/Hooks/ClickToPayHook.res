@@ -355,31 +355,7 @@ let useClickToPay = (
     ()
   }
 
-  let customPodUri = Recoil.useRecoilValueFromAtom(RecoilAtoms.customPodUri)
   let {clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
-
-  let handlePostAuthentication = async clickToPayBody => {
-    let data = await PaymentHelpersV2.fetchPostAuthentication(
-      ~publishableKey=keys.publishableKey,
-      ~logger=loggerState,
-      ~customPodUri,
-      ~authenticationClientSecret=clientSecret->Option.getOr(""),
-      ~authenticationId=keys.clientSecret
-      ->Option.getOr("")
-      ->String.split("_")
-      ->Array.at(0)
-      ->Option.getOr(""),
-      ~bodyArr=clickToPayBody,
-    )
-
-    Console.log2("===> Data", data)
-
-    let newResp = `{
-    "status": "success",
-    }`->JSON.parseExn
-
-    messageParentWindow([("authenticationSuccessful", true->JSON.Encode.bool), ("data", newResp)])
-  }
 
   React.useEffect0(() => {
     let handleVisaClickToPayOnLoad = (ev: Window.event) => {
@@ -468,47 +444,6 @@ let useClickToPay = (
           }
         } else if dict->Dict.get("doAuthentication")->Option.isSome {
           messageParentWindow([("handleClickToPayAuthentication", true->JSON.Encode.bool)])
-        } else if dict->Dict.get("handleClickToPayAuthenticationComplete")->Option.isSome {
-          let payload = dict->Utils.getDictFromDict("payload")
-
-          switch clickToPayProvider {
-          | MASTERCARD => {
-              let headers = dict->Utils.getDictFromDict("headers")
-              let merchantTransactionId = headers->Utils.getString("merchant-transaction-id", "")
-              let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
-              let correlationId =
-                dict
-                ->Utils.getDictFromDict("checkoutResponseData")
-                ->Utils.getString("srcCorrelationId", "")
-
-              let clickToPayBody = PaymentBody.mastercardClickToPayBody(
-                ~merchantTransactionId,
-                ~correlationId,
-                ~xSrcFlowId,
-              )
-              // intent(
-              //   ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
-              //   ~confirmParam=confirm.confirmParams,
-              //   ~handleUserError=false,
-              //   ~manualRetry=isManualRetryEnabled,
-              // )
-            }
-          | VISA => {
-              let clickToPayBody = PaymentBody.visaClickToPayBody(
-                ~email=clickToPayConfig.email,
-                ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
-              )
-
-              handlePostAuthentication(clickToPayBody)->ignore
-              // intent(
-              //   ~bodyArr=clickToPayBody,
-              //   ~confirmParam=confirm.confirmParams,
-              //   ~handleUserError=false,
-              //   ~manualRetry=isManualRetryEnabled,
-              // )
-            }
-          | NONE => ()
-          }
         }
       } catch {
       | _ => Console.warn("Something went wrong while receiving data")
@@ -572,23 +507,6 @@ let useClickToPay = (
     let dict = ssn->getDictFromJson
     let clickToPaySessionObj = SessionsType.itemToObjMapper(dict, ClickToPayObject)
     switch SessionsType.getPaymentSessionObj(clickToPaySessionObj.sessionsToken, ClickToPay) {
-    | ClickToPayTokenOptional(Some(token)) =>
-      setClickToPayConfig(prev => {
-        ...prev,
-        clickToPayToken: ClickToPayHelpers.clickToPayTokenItemToObjMapper(token),
-      })
-      Some(ClickToPayHelpers.clickToPayTokenItemToObjMapper(token))
-    | _ => {
-        setClickToPayNotReady()
-        None
-      }
-    }
-  }
-
-  let getClickToPayTokenV2 = ssn => {
-    let dict = ssn->getDictFromJson
-    let clickToPaySessionObj = SessionsType.itemToObjMapper(dict, ClickToPayObject)
-    switch SessionsType.getPaymentSessionObjV2(clickToPaySessionObj.sessionsToken, ClickToPay) {
     | ClickToPayTokenOptional(Some(token)) =>
       setClickToPayConfig(prev => {
         ...prev,
@@ -783,7 +701,7 @@ let useClickToPay = (
       switch getEnabledAuthnMethodsToken {
       | Loaded(ssn) => {
           setSessions(_ => ssn)
-          let ctpToken = ssn->getClickToPayTokenV2
+          let ctpToken = ssn->getClickToPayToken
           //     ()
           // }
           ctpToken->Option.forEach(token => {

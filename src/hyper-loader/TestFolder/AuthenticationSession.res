@@ -5,6 +5,7 @@ open EventListenerManager
 
 let make = (
   ~clientSecret,
+  ~authenticationId,
   ~publishableKey,
   ~logger: option<HyperLoggerTypes.loggerMake>,
   ~iframeRef,
@@ -20,8 +21,6 @@ let make = (
     // elementsOptionsDict
     // ->Option.forEach(x => x->Dict.set("launchTime", Date.now()->JSON.Encode.float))
     // ->ignore
-
-    let authenticationId = clientSecret->String.split("_secret")->Array.get(0)->Option.getOr("")
 
     AuthenticationSessionElements.make(
       widgetOptions,
