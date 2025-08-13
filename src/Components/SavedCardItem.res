@@ -7,7 +7,7 @@ module RenderSavedPaymentMethodItem = {
         className="flex flex-col items-start"
         role="group"
         ariaLabel={`Card ${paymentItem.card.nickname}, ending in ${paymentItem.card.last4Digits}`}>
-        <div className="text-base tracking-wide">
+        <div className="PickerItemLabel text-base tracking-wide">
           {React.string(
             paymentItem.card.nickname->String.length > 15
               ? paymentItem.card.nickname->String.slice(~start=0, ~end=13)->String.concat("..")
@@ -260,8 +260,7 @@ let make = (
                       )}
                     </div>
                   </div>
-                : <div
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                : <div className="CustomButton">
                     {switch savedMethods.buttonText->Option.getOr("") {
                     | "" => React.string("Choose")
                     | text => React.string(text)

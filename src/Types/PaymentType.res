@@ -1058,7 +1058,7 @@ let getSavedMethods = (dict, str, logger) => {
 
     {
       isShowButton: getBoolWithWarning(json, "isShowButton", false, ~logger),
-      buttonText: getWarningString(json, "buttonText", "auto", ~logger),
+      buttonText: getWarningString(json, "buttonText", "", ~logger),
     }
   })
   ->Option.getOr(defaultSavedMethods)

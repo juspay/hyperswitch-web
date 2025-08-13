@@ -215,6 +215,24 @@ let defaultRules = theme =>
       "fontWeight": theme.fontWeightMedium,
       "marginBottom": "1.5rem",
     },
+    ".CustomButton": {
+      "padding": "0.5rem 1rem",
+      "backgroundColor": "#1e3742",
+      "color": "#009de0",
+      "borderRadius": "0.5rem",
+      "transitionProperty": "color, background-color, border-color, text-decoration-color, fill, stroke",
+      "transitionDuration": "150ms",
+    },
+    ".CustomButton:hover": {
+      "backgroundColor": "#1b4151",
+    },
+    ".CustomFlexText": {
+      "display": "flex",
+      "columnGap": "0.5rem",
+      "fontSize": "0.875rem",
+      "color": "#009de0",
+      "paddingLeft": "0.8rem",
+    },
   }->Identity.anyTypeToJson
 
 let default = default

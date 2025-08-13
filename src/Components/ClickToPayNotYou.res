@@ -4,6 +4,7 @@ open Utils
 @react.component
 let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVisaCards) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {savedMethods} = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
 
   let (identifier, setIdentifier) = React.useState(_ => "")
@@ -162,7 +163,17 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
     </div>
   }
 
-  <div className="p-4 bg-white rounded-lg border border-[#E6E1E1] flex flex-col space-y-4">
+  let switchButtonStyle: JsxDOM.style = savedMethods.isShowButton
+    ? {}
+    : {
+        backgroundColor: themeObj.buttonBackgroundColor,
+        color: themeObj.buttonTextColor,
+        borderRadius: themeObj.buttonBorderRadius,
+        fontSize: themeObj.buttonTextFontSize,
+      }
+
+  <div
+    className="PickerItemContainer p-4 rounded-lg border border-[#E6E1E1] flex flex-col space-y-4">
     <div className="flex flex-col">
       <RenderIf condition={!isCTPAuthenticateNotYouClicked}>
         <button onClick={onBack}>
@@ -185,13 +196,13 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
       </p>
       <form
         onSubmit={handleSubmit}
-        className="w-full flex flex-col justify-center items-center space-y-4">
+        className={`w-full flex flex-col justify-center items-center space-y-4 text-[${themeObj.colorText}]`}>
         <div className="w-full flex space-x-2">
           <div className="relative w-1/3">
             <select
               value={identifierType->getIdentityType}
               onChange={handleTypeChange}
-              className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none">
+              className={`w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none text-${themeObj.colorText}`}>
               <option value={EMAIL_ADDRESS->getIdentityType}> {React.string("Email")} </option>
               <option value={MOBILE_PHONE_NUMBER->getIdentityType}>
                 {React.string("Phone")}
@@ -210,7 +221,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                 value={identifier}
                 onChange={handleInputChange}
                 placeholder="Enter email"
-                className="w-2/3 p-3 border border-gray-300 rounded-md"
+                className={`w-2/3 p-3 border border-gray-300 rounded-md text-${themeObj.colorText}`}
                 required=true
               />
             : <div className="w-2/3 flex border border-gray-300 rounded-md overflow-hidden">
@@ -218,7 +229,7 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                   <select
                     value={countryCode}
                     onChange={handleCountryCodeChange}
-                    className="h-full p-3 appearance-none focus:outline-none">
+                    className={`h-full p-3 appearance-none focus:outline-none text-${themeObj.colorText}`}>
                     {countryCodes
                     ->Array.map(country =>
                       <option
@@ -242,20 +253,17 @@ let make = (~setIsShowClickToPayNotYou, ~isCTPAuthenticateNotYouClicked, ~getVis
                   value={identifier}
                   onChange={handlePhoneInputChange}
                   placeholder="Mobile number"
-                  className="flex-grow p-3 focus:outline-none w-full"
+                  className={`flex-grow p-3 focus:outline-none w-full text-${themeObj.colorText}`}
                   required=true
                 />
               </div>}
         </div>
         <button
           type_="submit"
-          className={`w-full p-3 ${isValid ? "" : "opacity-50 cursor-not-allowed"}`}
-          style={
-            backgroundColor: themeObj.buttonBackgroundColor,
-            color: themeObj.buttonTextColor,
-            borderRadius: themeObj.buttonBorderRadius,
-            fontSize: themeObj.buttonTextFontSize,
-          }
+          className={`${savedMethods.isShowButton ? "CustomButton" : ""} w-full p-3 ${isValid
+              ? ""
+              : "opacity-50 cursor-not-allowed"}`}
+          style=switchButtonStyle
           disabled={!isValid}>
           {React.string("Switch ID")}
         </button>
@@ -271,7 +279,7 @@ module ClickToPayNotYouText = {
       setIsShowClickToPayNotYou(_ => true)
     }
 
-    <div className="flex space-x-2 text-sm text-[#484848]">
+    <div className="CustomFlexText">
       <button
         onClick={onNotYouClick} className="underline cursor-pointer [text-underline-offset:0.2rem]">
         {React.string("Not you?")}
