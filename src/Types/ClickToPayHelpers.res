@@ -244,6 +244,7 @@ type clickToPayToken = {
   cardBrands: array<string>,
   email: string,
   provider: string,
+  dpaClientId: option<string>,
 }
 
 let clickToPayTokenItemToObjMapper = (json: JSON.t) => {
@@ -263,6 +264,7 @@ let clickToPayTokenItemToObjMapper = (json: JSON.t) => {
     ->Array.map(item => item->JSON.Decode.string->Option.getOr("")),
     email: dict->Utils.getString("email", ""),
     provider: dict->Utils.getString("provider", "mastercard"),
+    dpaClientId: dict->Utils.getOptionString("dpa_client_id"),
   }
 }
 
@@ -1183,9 +1185,10 @@ let signOutVisaUnified = () => vsdk.unbindAppInstance()
 
 let loadVisaScript = (clickToPayToken: clickToPayToken, onLoadCallback, onErrorCallback) => {
   let cardBrands = clickToPayToken.cardBrands->Array.join(",")
+  let dpaClientId = clickToPayToken.dpaClientId->Option.getOr("TestMerchant")
   let scriptSrc = GlobalVars.isProd
-    ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=TestMerchant`
-    : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=TestMerchant`
+    ? `https://secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${dpaClientId}`
+    : `https://sandbox.secure.checkout.visa.com/checkout-widget/resources/js/integration/v2/sdk.js?dpaId=${clickToPayToken.dpaId}&locale=${clickToPayToken.locale}&cardBrands=${cardBrands}&dpaClientId=${dpaClientId}`
   let script = createElement("script")
   script->setType("text/javascript")
   script->setSrc(scriptSrc)
