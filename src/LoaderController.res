@@ -9,6 +9,7 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
   let (paymentMethodList, setPaymentMethodList) = Recoil.useRecoilState(paymentMethodList)
   let (_, setSessions) = Recoil.useRecoilState(sessions)
   let setEnabledAuthnMethodsToken = Recoil.useSetRecoilState(enabledAuthnMethodsToken)
+  let setPaymentToken = Recoil.useSetRecoilState(RecoilAtoms.paymentTokenAtom)
   let (options, setOptions) = Recoil.useRecoilState(elementOptions)
   let (optionsPayment, setOptionsPayment) = Recoil.useRecoilState(optionAtom)
   let setPaymentManagementList = Recoil.useSetRecoilState(paymentManagementList)
@@ -278,6 +279,15 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
                 let isSavedMethodChangedCallbackEnabled =
                   dict->Utils.getBool("onSavedMethodChanged", false)
                 setIsSavedMethodChangedCallbackEnabled(_ => isSavedMethodChangedCallbackEnabled)
+              }
+              if dict->getDictIsSome("selectedPaymentToken") {
+                let selectedPaymentToken = dict->getString("selectedPaymentToken", "")
+                if selectedPaymentToken->String.length > 0 {
+                  setPaymentToken(_ => {
+                    customerId: "",
+                    paymentToken: selectedPaymentToken,
+                  })
+                }
               }
               if dict->getDictIsSome("isPaymentButtonHandlerProvided") {
                 let isSDKClick = dict->Utils.getBool("isPaymentButtonHandlerProvided", false)

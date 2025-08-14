@@ -35,7 +35,7 @@ let make = (
   | Default => false
   | _ => true
   }
-  let (isRenderedForFirstTime, setIsRenderedForFirstTime) = React.useState(() => false)
+  let (isRenderedForFirstTime, setIsRenderedForFirstTime) = React.useState(() => true)
 
   let {
     consumerIdentity,
@@ -52,10 +52,9 @@ let make = (
     if (
       paymentTokenVal == "" &&
       optionAtom.savedMethods.isSelectFirstByDefault->Option.getOr(false) &&
-      !isRenderedForFirstTime
+      isRenderedForFirstTime
     ) {
-      Console.log("===> Selecting first saved method by default")
-      setIsRenderedForFirstTime(_ => true)
+      setIsRenderedForFirstTime(_ => false)
       SavedMethodsUtils.handleSavedMethodChanged(
         ~setPaymentToken,
         ~paymentItem=customerMethod,
@@ -65,6 +64,20 @@ let make = (
       )
     }
   }
+
+  React.useEffect(() => {
+    if ctpCards->Array.length > 0 {
+      let customerMethod =
+        ctpCards
+        ->Array.get(0)
+        ->Option.flatMap(obj => Some(
+          obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider),
+        ))
+
+      handleSelectFirstByDefault(customerMethod->Option.getOr(PaymentType.defaultCustomerMethods))
+    }
+    None
+  }, (ctpCards, isRenderedForFirstTime, clickToPayProvider))
 
   let mastercardAuth = cards => {
     if cards->Array.length == 0 {
@@ -233,10 +246,6 @@ let make = (
       ->Array.mapWithIndex((obj, i) => {
         let customerMethod =
           obj->PaymentType.convertClickToPayCardToCustomerMethod(clickToPayProvider)
-
-        if i == 0 {
-          handleSelectFirstByDefault(customerMethod)
-        }
 
         <SavedCardItem
           key={"ctp_" ++ i->Int.toString}

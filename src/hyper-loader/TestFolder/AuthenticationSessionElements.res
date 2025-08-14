@@ -9,6 +9,11 @@ let isVisaInitialized = ref(false)
 let visaGetCardsResponse = ref(Nullable.null)
 let initConfigRef = ref(Nullable.null)
 
+let paymentTokenRef = ref("")
+let clickToPayTokenRef = ref(JSON.Encode.null)
+let clickToPayProviderRef = ref("")
+let isClickToPayRememberMeRef = ref(false)
+
 let make = (
   options,
   setIframeRef,
@@ -51,10 +56,7 @@ let make = (
       ->Option.flatMap(JSON.Decode.string)
       ->Option.getOr("")
 
-    let paymentTokenRef = ref("")
-    let clickToPayTokenRef = ref(JSON.Encode.null)
-    let clickToPayProviderRef = ref("")
-    let isClickToPayRememberMeRef = ref(false)
+    Console.log2("===> PaymentTokenRef", paymentTokenRef)
 
     let localSelectorString = "hyper-preMountLoader-iframe"
     let mountPreMountLoaderIframe = () => {
@@ -413,6 +415,7 @@ let make = (
             ->Option.isSome
             ->JSON.Encode.bool,
           ),
+          ("selectedPaymentToken", paymentTokenRef.contents->JSON.Encode.string),
         ]->Dict.fromArray
 
         preMountLoaderMountedPromise
