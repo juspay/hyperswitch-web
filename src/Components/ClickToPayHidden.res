@@ -38,8 +38,6 @@ let make = () => {
 
       if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
         () // Console.log("===> ClickToPayHidden component mounted")
-      } else if dict->Dict.get("doAuthentication")->Option.isSome {
-        messageParentWindow([("handleClickToPayAuthentication", true->JSON.Encode.bool)])
       } else if dict->Dict.get("handleClickToPayAuthenticationComplete")->Option.isSome {
         let payload = dict->Utils.getDictFromDict("payload")
         let email = dict->Utils.getString("email", "")

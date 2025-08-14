@@ -364,10 +364,16 @@ let useClickToPay = (
         let dict = json->getDictFromJson
         if dict->Dict.get("finishLoadingClickToPayScript")->Option.isSome {
           if dict->Dict.get("clickToPayToken")->Option.isSome {
-            messageParentWindow([
-              ("param", `clickToPayHidden`->JSON.Encode.string),
-              ("iframeId", iframeId->JSON.Encode.string),
-            ])
+            let isFirstTimeMounting = dict->Utils.getBool("firstTimeMounting", false)
+
+            if isFirstTimeMounting {
+              messageParentWindow([
+                ("fullscreen", false->JSON.Encode.bool),
+                ("hiddenIframe", true->JSON.Encode.bool),
+                ("param", `clickToPayHidden`->JSON.Encode.string),
+                ("iframeId", iframeId->JSON.Encode.string),
+              ])
+            }
 
             let clickToPayToken =
               dict
@@ -442,8 +448,6 @@ let useClickToPay = (
               ~eventName=CLICK_TO_PAY_FLOW,
             )
           }
-        } else if dict->Dict.get("doAuthentication")->Option.isSome {
-          messageParentWindow([("handleClickToPayAuthentication", true->JSON.Encode.bool)])
         }
       } catch {
       | _ => Console.warn("Something went wrong while receiving data")
@@ -532,13 +536,6 @@ let useClickToPay = (
         messageParentWindow([
           ("loadClickToPayScript", true->JSON.Encode.bool),
           ("clickToPayToken", clickToPayToken->ClickToPayHelpers.clickToPayToJsonItemToObjMapper),
-        ])
-
-        messageParentWindow([
-          ("fullscreen", false->JSON.Encode.bool),
-          ("hiddenIframe", true->JSON.Encode.bool),
-          ("param", `clickToPayHidden`->JSON.Encode.string),
-          ("iframeId", iframeId->JSON.Encode.string),
         ])
       // ClickToPayHelpers.loadVisaScript(
       //   clickToPayToken,

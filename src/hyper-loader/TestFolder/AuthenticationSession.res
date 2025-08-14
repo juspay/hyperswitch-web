@@ -118,7 +118,7 @@ let make = (
       //       ),
       //     ]->Dict.fromArray
       let message = [
-        ("doAuthentication", true->JSON.Encode.bool),
+        ("handleClickToPayAuthentication", true->JSON.Encode.bool),
         ("clientSecret", clientSecret->JSON.Encode.string),
         // ("confirmTimestamp", confirmTimestamp->JSON.Encode.float),
         // ("readyTimestamp", Date.now()->JSON.Encode.float),
@@ -130,10 +130,12 @@ let make = (
         //     ("redirect", redirect->JSON.Encode.string),
         //   ]->getJsonFromArrayOfJson,
         // ),
-      ]->Dict.fromArray
+      ]
+      // ->Dict.fromArray
       addSmartEventListener("message", handleMessage, "onSubmit")
 
-      postSubmitMessage(message)
+      // postSubmitMessage(message)
+      messageTopWindow(message)
     })
   }
 

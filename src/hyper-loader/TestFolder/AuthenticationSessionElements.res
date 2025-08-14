@@ -619,32 +619,44 @@ let make = (
               ->Option.getOr(JSON.Encode.null)
               ->ClickToPayHelpers.clickToPayTokenItemToObjMapper
 
+            let handleSuccessPostMessage = isFirstTimeMounting => {
+              let msg = [
+                ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
+                (
+                  "clickToPayToken",
+                  clickToPayToken->ClickToPayHelpers.clickToPayToJsonItemToObjMapper,
+                ),
+              ]
+
+              if isFirstTimeMounting {
+                msg->Array.push(("firstTimeMounting", true->JSON.Encode.bool))
+              } else {
+                let hiddenIframeRef = Window.querySelector(`#orca-hidden-iframe`)
+                iframeRef->Array.push(hiddenIframeRef)->ignore
+              }
+
+              mountedIframeRef->Window.iframePostMessage(msg->Dict.fromArray)
+            }
+
             if isVisaScriptLoaded.contents {
-              let msg =
-                [
-                  ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
-                  (
-                    "clickToPayToken",
-                    clickToPayToken->ClickToPayHelpers.clickToPayToJsonItemToObjMapper,
-                  ),
-                ]->Dict.fromArray
-              mountedIframeRef->Window.iframePostMessage(msg)
+              handleSuccessPostMessage(false)
             } else {
               ClickToPayHelpers.loadVisaScript(
                 clickToPayToken,
                 () => {
                   isVisaScriptLoaded := true
-                  let msg =
-                    [
-                      ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
-                      (
-                        "clickToPayToken",
-                        clickToPayToken->ClickToPayHelpers.clickToPayToJsonItemToObjMapper,
-                      ),
-                    ]->Dict.fromArray
-                  // ->JSON.Encode.object
-                  // event.source->Window.sendPostMessageJSON(msg)
-                  mountedIframeRef->Window.iframePostMessage(msg)
+                  handleSuccessPostMessage(true)
+                  // let msg =
+                  //   [
+                  //     ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
+                  //     (
+                  //       "clickToPayToken",
+                  //       clickToPayToken->ClickToPayHelpers.clickToPayToJsonItemToObjMapper,
+                  //     ),
+                  //   ]->Dict.fromArray
+                  // // ->JSON.Encode.object
+                  // // event.source->Window.sendPostMessageJSON(msg)
+                  // mountedIframeRef->Window.iframePostMessage(msg)
                   // visaScriptOnLoadCallback(ctpToken)
                 },
                 () => {
@@ -742,8 +754,12 @@ let make = (
                   ("endpoint", endpoint->JSON.Encode.string),
                 ]->Dict.fromArray
 
-              event.source->Window.sendPostMessage(msg)
+              // event.source->Window.sendPostMessage(msg)
               // mountedIframeRef->Window.iframePostMessage(msg)
+              iframeRef->Array.forEach(iframe => {
+                iframe->Window.iframePostMessage(msg)
+              })
+
               resolve()
             })
             ->ignore
