@@ -663,11 +663,7 @@ let fetchPostAuthentication = async (
 
   let onSuccess = data => data
 
-  let onFailure = _ =>
-    `{
-    "authentication_status": "success",
-    "tokenization_id": "12345_tok_0198a42fcd407333a1162c86ff0d5ae8"
-}`->JSON.parseExn
+  let onFailure = err => err
 
   await fetchApiWithLogging(
     uri,
