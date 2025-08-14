@@ -69,8 +69,6 @@ let make = (
     RecoilAtoms.isSavedMethodChangedCallbackEnabled,
   )
 
-  Console.log2("savedMethods", savedMethods)
-
   let {
     hideExpiredPaymentMethods,
     displayDefaultSavedPaymentIcon,

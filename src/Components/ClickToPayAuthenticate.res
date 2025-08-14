@@ -16,7 +16,6 @@ let make = (
   ~closeComponentIfSavedMethodsAreEmpty,
   ~isClickToPayRememberMe,
 ) => {
-  Console.log("## Coming inside ClickToPayAuthenticate component")
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
   let optionAtom = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let isSavedMethodChangedCallbackEnabled = Recoil.useRecoilValueFromAtom(

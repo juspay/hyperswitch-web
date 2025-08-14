@@ -38,8 +38,6 @@ let handleSavedMethodChanged = (
       ("isClickToPayRememberMe", isClickToPayRememberMe->JSON.Encode.bool),
     ])
 
-    Console.log2("===> isSavedMethodChangedCallbackEnabled", isSavedMethodChangedCallbackEnabled)
-
     if isSavedMethodChangedCallbackEnabled {
       Utils.handleOnSavedMethodChangedPostMessage()
     }

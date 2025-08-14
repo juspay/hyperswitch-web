@@ -56,8 +56,6 @@ let make = (
       ->Option.flatMap(JSON.Decode.string)
       ->Option.getOr("")
 
-    Console.log2("===> PaymentTokenRef", paymentTokenRef)
-
     let localSelectorString = "hyper-preMountLoader-iframe"
     let mountPreMountLoaderIframe = () => {
       if (
@@ -368,7 +366,6 @@ let make = (
     let create = (componentType, newOptions) => {
       componentType == "" ? manageErrorWarning(REQUIRED_PARAMETER, ~dynamicStr="type", ~logger) : ()
       let otherElements = componentType->isOtherElements
-      Console.log("Hello World Reaching Till Here")
       switch componentType {
       | "savedCardElement" => ()
       | str => Console.warn(`Unknown Key: ${str} type in create`)
@@ -492,7 +489,6 @@ let make = (
             }
             switch visaGetCardsResponse.contents->Nullable.toOption {
             | Some(cardsResult) => {
-                Console.log2("====================> Cards Result", cardsResult)
                 let msg =
                   [
                     ("fetchedVisaCardsResult", true->JSON.Encode.bool),
@@ -508,8 +504,6 @@ let make = (
                   ~otp,
                   ~identityType,
                 )
-
-                Console.log2("====================> Cards Result", cardsResult)
 
                 if cardsResult.actionCode == SUCCESS {
                   visaGetCardsResponse := Nullable.make(cardsResult)
@@ -626,7 +620,6 @@ let make = (
               ->ClickToPayHelpers.clickToPayTokenItemToObjMapper
 
             if isVisaScriptLoaded.contents {
-              Console.log("#### Click to Pay Script Already Loaded")
               let msg =
                 [
                   ("finishLoadingClickToPayScript", true->JSON.Encode.bool),
@@ -637,7 +630,6 @@ let make = (
                 ]->Dict.fromArray
               mountedIframeRef->Window.iframePostMessage(msg)
             } else {
-              Console.log("#### Loading Visa Click to Pay Script")
               ClickToPayHelpers.loadVisaScript(
                 clickToPayToken,
                 () => {
@@ -692,8 +684,6 @@ let make = (
             let otp = dict->getString("otp", "")
             let identityType = dict->getString("identityType", "EMAIL_ADDRESS")
 
-            Console.log("===> Trying to Initialize Visa Click to Pay At Top Level")
-
             handleInitializeVisaClickToPay(
               ~initConfig,
               ~event,
@@ -729,11 +719,6 @@ let make = (
               clickToPayProviderRef.contents->ClickToPayHelpers.getCtpProvider
             let isClickToPayRememberMe = isClickToPayRememberMeRef.contents
 
-            Console.log2("===> paymentToken", paymentToken)
-            Console.log2("===> clickToPayToken", clickToPayToken)
-            Console.log2("===> clickToPayProvider", clickToPayProvider)
-            Console.log2("===> isClickToPayRememberMe", isClickToPayRememberMe)
-
             ClickToPayHelpers.handleProceedToPay(
               ~srcDigitalCardId=paymentToken,
               ~logger,
@@ -743,7 +728,6 @@ let make = (
               ~orderId=clientSecret,
             )
             ->then(resp => {
-              Console.log2("===> Click to Pay Payment Response", resp)
               let msg =
                 [
                   ("handleClickToPayAuthenticationComplete", true->JSON.Encode.bool),
@@ -758,7 +742,6 @@ let make = (
                   ("endpoint", endpoint->JSON.Encode.string),
                 ]->Dict.fromArray
 
-              Console.log2("===> Event Source", event.source)
               event.source->Window.sendPostMessage(msg)
               // mountedIframeRef->Window.iframePostMessage(msg)
               resolve()

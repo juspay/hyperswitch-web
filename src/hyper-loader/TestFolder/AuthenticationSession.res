@@ -41,7 +41,6 @@ let make = (
 
   let postSubmitMessage = message => {
     iframeRef.contents->Array.forEach(ifR => {
-      Console.log3("===> Posting message to iframe", ifR, message)
       ifR->Window.iframePostMessage(message)
     })
   }
@@ -102,7 +101,6 @@ let make = (
         }
       }
 
-      Console.log("===> Inside confirmAuthentication")
       // let message = isOneClick
       //   ? [("oneClickDoSubmit", result->JSON.Encode.bool)]->Dict.fromArray
       //   : [
@@ -134,8 +132,6 @@ let make = (
         // ),
       ]->Dict.fromArray
       addSmartEventListener("message", handleMessage, "onSubmit")
-
-      Console.log2("===> IframRef", iframeRef)
 
       postSubmitMessage(message)
     })

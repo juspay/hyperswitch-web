@@ -67,8 +67,6 @@ let make = () => {
     Some(() => Window.removeEventListener("message", handleMetaDataPostMessage))
   })
 
-  Console.log2("===> Payment Mode", paymentMode)
-
   let renderFullscreen = switch paymentMode {
   | "paymentMethodCollect" =>
     <LoaderController paymentMode setIntegrateErrorError logger initTimestamp>

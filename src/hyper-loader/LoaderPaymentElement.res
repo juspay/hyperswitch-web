@@ -83,7 +83,6 @@ let make = (
     }
 
     let on = (eventType, eventHandler) => {
-      Console.log2("===> Event Type", eventType)
       switch eventType->eventTypeMapper {
       | Escape =>
         addSmartEventListener(
@@ -311,15 +310,9 @@ let make = (
             ->Option.getOr(Dict.make())
             ->JSON.Encode.object
 
-          Console.log2("===> Fullscreen Mode", fullscreen.contents)
-          Console.log2("===> localSelectorString", localSelectorString)
-          Console.log2("===> Fullscreen Param", fullscreenParam)
-
           let fullscreenElem = Window.querySelector(
             `#orca-fullscreen-iframeRef-${localSelectorString}`,
           )
-
-          Console.log2("===> fullscreenElem", fullscreenElem)
 
           switch fullscreenElem->Nullable.toOption {
           | Some(ele) =>
@@ -331,7 +324,6 @@ let make = (
               fullscreenParam.contents != ""
                 ? `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=${fullscreenParam.contents}`
                 : `${ApiEndpoint.sdkDomainUrl}/fullscreenIndex.html?fullscreenType=fullscreen`
-            Console.log2("===> iframeURL", iframeURL)
             fullscreen.contents
               ? {
                   if iframeID == localSelectorString {
@@ -372,7 +364,6 @@ let make = (
                 }
               : {
                   if hiddenIframe {
-                    Console.log2("===> My Element", ele)
                     Window.documentBody
                     ->makeIframe(iframeURL, ~height="0vh", ~width="0vw", ~id="orca-hidden-iframe")
                     ->Promise.then(_ => {

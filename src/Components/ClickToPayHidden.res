@@ -4,8 +4,6 @@ open Utils
 let make = () => {
   let logger = HyperLogger.make(~source=Elements(Payment))
 
-  Console.log("===> ClickToPayHidden component mounted")
-
   let handlePostAuthentication = async (
     clickToPayBody,
     ~publishableKey,
@@ -27,8 +25,6 @@ let make = () => {
         ~bodyArr=clickToPayBody,
       )
 
-      Console.log2("===> Data", data)
-
       messageParentWindow([("authenticationSuccessful", true->JSON.Encode.bool), ("data", data)])
     } catch {
     | err => Console.log2("===> Error in post authentication", err)
@@ -40,17 +36,8 @@ let make = () => {
       let json = ev.data->safeParse
       let dict = json->getDictFromJson
 
-      Console.log2("===> ClickToPayHidden received message", ev)
-      Console.log2("===> ClickToPayHidden received message Ev Data", ev.data)
-      Console.log2("===> ClickToPayHidden received message JSON", json)
-      Console.log2("===> ClickToPayHidden received message dict", dict)
-      Console.log2(
-        "===> ClickToPayHidden is handleClickToPayauthenticationComplete Present",
-        dict->Dict.get("handleClickToPayAuthenticationComplete")->Option.isSome,
-      )
-
       if dict->Dict.get("fullScreenIframeMounted")->Option.isSome {
-        Console.log("===> ClickToPayHidden component mounted")
+        () // Console.log("===> ClickToPayHidden component mounted")
       } else if dict->Dict.get("doAuthentication")->Option.isSome {
         messageParentWindow([("handleClickToPayAuthentication", true->JSON.Encode.bool)])
       } else if dict->Dict.get("handleClickToPayAuthenticationComplete")->Option.isSome {
@@ -66,8 +53,6 @@ let make = () => {
         let authenticationId = dict->Utils.getString("authenticationId", "")
         let profileId = dict->Utils.getString("profileId", "")
         let endpoint = dict->Utils.getString("endpoint", "")
-
-        Console.log2("===> ClickToPayProvider", clickToPayProvider)
 
         switch clickToPayProvider {
         | MASTERCARD => {
@@ -95,8 +80,6 @@ let make = () => {
             let clickToPayBody = PaymentBodyV2.visaClickToPayBodyV2(
               ~encryptedPayload=payload->Utils.getString("checkoutResponse", ""),
             )
-
-            Console.log2("===> ClickToPayBody", clickToPayBody)
 
             handlePostAuthentication(
               clickToPayBody,

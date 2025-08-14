@@ -1326,10 +1326,7 @@ let eventHandlerFunc = (
       | SavedMethodChanged
       | Blur =>
         switch eventHandler {
-        | Some(eH) => {
-            Console.log2("===> Reaching Event Handler Func", eventHandler)
-            eH(Some(ev.data))
-          }
+        | Some(eH) => eH(Some(ev.data))
         | None => ()
         }
       | _ => ()

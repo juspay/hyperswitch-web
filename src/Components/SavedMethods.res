@@ -67,8 +67,6 @@ let make = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
-  Console.log2("## clickToPayConfig.isReady", clickToPayConfig.isReady)
-
   React.useEffect0(() => {
     let handleResetSelectedSavedMethod = (ev: Window.event) => {
       let json = ev.data->safeParse
@@ -366,9 +364,6 @@ let make = (
     //   clickToPayConfig.isReady->Option.isNone)
     savedCardlength === 0 && clickToPayConfig.isReady->Option.isNone
   }, (savedCardlength, loadSavedCards, showPaymentMethodsScreen, clickToPayConfig.isReady))
-
-  Console.log2("## enableSavedPaymentShimmer", enableSavedPaymentShimmer)
-  Console.log2("## showPaymentMethodsScreen", showPaymentMethodsScreen)
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if enableSavedPaymentShimmer {

@@ -638,7 +638,6 @@ let fetchPostAuthentication = async (
   ~customPodUri,
   ~authenticationClientSecret,
   ~authenticationId,
-  ~merchantHostname=Window.getRootHostName(),
   ~profileId,
   ~endpoint,
   ~bodyArr,
