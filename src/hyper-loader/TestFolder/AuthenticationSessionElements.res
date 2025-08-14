@@ -690,7 +690,11 @@ let make = (
 
             let clientSecret = dict->getOptionString("clientSecret")
 
-            let initConfig = ClickToPayHelpers.getVisaInitConfig(clickToPayToken, clientSecret)
+            let initConfig = ClickToPayHelpers.getVisaInitConfig(
+              clickToPayToken,
+              clientSecret,
+              ~isNonAuthenticatedPayloadRequested=true,
+            )
 
             let identityValue = dict->getString("identityValue", "")
             let otp = dict->getString("otp", "")
@@ -738,6 +742,7 @@ let make = (
               ~isClickToPayRememberMe,
               ~clickToPayToken=Some(clickToPayToken),
               ~orderId=clientSecret,
+              ~isNonAuthenticatedPayloadRequested=true,
             )
             ->then(resp => {
               let msg =

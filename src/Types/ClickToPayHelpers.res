@@ -1071,7 +1071,7 @@ type authenticationMethodsVisa = {
   methodAttributes: authenticationmethodAttributes,
 }
 type authenticationPreferencesVisa = {
-  authenticationMethods: array<authenticationMethodsVisa>,
+  authenticationMethods?: array<authenticationMethodsVisa>,
   payloadRequested: string,
 }
 
@@ -1085,8 +1085,8 @@ type dpaTransactionOptionsVisa = {
   merchantCountryCode?: string,
   consumerNationalIdentifierRequested?: bool,
   merchantCategoryCode?: string,
-  acquirerBIN: string,
-  acquirerMerchantId: string,
+  acquirerBIN?: string,
+  acquirerMerchantId?: string,
   merchantName?: string,
   merchantOrderId?: string,
 }
@@ -1244,29 +1244,59 @@ let formatOrderId = orderId =>
   ->Option.getOr("")
   ->String.slice(~start=0, ~end=40)
 
-let getVisaInitConfig = (token: clickToPayToken, clientSecret) => {
-  {
-    dpaTransactionOptions: {
-      dpaLocale: token.locale,
-      paymentOptions: [
-        {
-          dpaDynamicDataTtlMinutes: 15,
-          dynamicDataType: CARD_APPLICATION_CRYPTOGRAM_LONG_FORM,
+let getVisaInitConfig = (
+  token: clickToPayToken,
+  clientSecret,
+  ~isNonAuthenticatedPayloadRequested=false,
+) => {
+  if isNonAuthenticatedPayloadRequested {
+    {
+      dpaTransactionOptions: {
+        dpaLocale: token.locale,
+        authenticationPreferences: {
+          payloadRequested: isNonAuthenticatedPayloadRequested
+            ? "NON_AUTHENTICATED"
+            : "AUTHENTICATED",
         },
-      ],
-      transactionAmount: {
-        transactionAmount: token.transactionAmount->Float.toString,
-        transactionCurrencyCode: token.transactionCurrencyCode,
+        transactionAmount: {
+          transactionAmount: token.transactionAmount->Float.toString,
+          transactionCurrencyCode: token.transactionCurrencyCode,
+        },
+        dpaBillingPreference: "NONE",
+        consumerNationalIdentifierRequested: false,
+        payloadTypeIndicator: "FULL",
+        merchantOrderId: clientSecret->Option.getOr("")->formatOrderId,
       },
-      dpaBillingPreference: "NONE",
-      consumerNationalIdentifierRequested: false,
-      payloadTypeIndicator: "FULL",
-      acquirerBIN: token.acquirerBIN,
-      acquirerMerchantId: token.acquirerMerchantId,
-      merchantCategoryCode: token.merchantCategoryCode,
-      merchantCountryCode: token.merchantCountryCode,
-      merchantOrderId: clientSecret->Option.getOr("")->formatOrderId,
-    },
+    }
+  } else {
+    {
+      dpaTransactionOptions: {
+        dpaLocale: token.locale,
+        authenticationPreferences: {
+          payloadRequested: isNonAuthenticatedPayloadRequested
+            ? "NON_AUTHENTICATED"
+            : "AUTHENTICATED",
+        },
+        paymentOptions: [
+          {
+            dpaDynamicDataTtlMinutes: 15,
+            dynamicDataType: NONE,
+          },
+        ],
+        transactionAmount: {
+          transactionAmount: token.transactionAmount->Float.toString,
+          transactionCurrencyCode: token.transactionCurrencyCode,
+        },
+        dpaBillingPreference: "NONE",
+        consumerNationalIdentifierRequested: false,
+        payloadTypeIndicator: "FULL",
+        acquirerBIN: token.acquirerBIN,
+        acquirerMerchantId: token.acquirerMerchantId,
+        merchantCategoryCode: token.merchantCategoryCode,
+        merchantCountryCode: token.merchantCountryCode,
+        merchantOrderId: clientSecret->Option.getOr("")->formatOrderId,
+      },
+    }
   }
 }
 
@@ -1284,29 +1314,53 @@ let checkoutVisaUnified = async (
   ~clickToPayToken: clickToPayToken,
   ~orderId,
   ~consumer: consumer,
+  ~isNonAuthenticatedPayloadRequested=false,
 ) => {
-  let defaultConfig = {
-    payloadTypeIndicatorCheckout: "FULL",
-    windowRef,
-    dpaTransactionOptions: {
-      authenticationPreferences: {
-        authenticationMethods: [
-          {
-            authenticationMethodType: "3DS",
-            authenticationSubject: "CARDHOLDER",
-            methodAttributes: {
-              challengeIndicator: "01",
-            },
+  let defaultConfig = isNonAuthenticatedPayloadRequested
+    ? {
+        payloadTypeIndicatorCheckout: "FULL",
+        windowRef,
+        dpaTransactionOptions: {
+          authenticationPreferences: {
+            authenticationMethods: [
+              {
+                authenticationMethodType: "3DS",
+                authenticationSubject: "CARDHOLDER",
+                methodAttributes: {
+                  challengeIndicator: "02",
+                },
+              },
+            ],
+            payloadRequested: "NON_AUTHENTICATED",
           },
-        ],
-        payloadRequested: "AUTHENTICATED",
-      },
-      acquirerBIN: clickToPayToken.acquirerBIN,
-      acquirerMerchantId: clickToPayToken.acquirerMerchantId,
-      merchantName: clickToPayToken.dpaName,
-      merchantOrderId: orderId->formatOrderId,
-    },
-  }
+          // acquirerBIN: clickToPayToken.acquirerBIN,
+          // acquirerMerchantId: clickToPayToken.acquirerMerchantId,
+          merchantName: clickToPayToken.dpaName,
+          merchantOrderId: orderId->formatOrderId,
+        },
+      }
+    : {
+        payloadTypeIndicatorCheckout: "FULL",
+        windowRef,
+        dpaTransactionOptions: {
+          authenticationPreferences: {
+            authenticationMethods: [
+              {
+                authenticationMethodType: "3DS",
+                authenticationSubject: "CARDHOLDER",
+                methodAttributes: {
+                  challengeIndicator: "01",
+                },
+              },
+            ],
+            payloadRequested: "AUTHENTICATED",
+          },
+          acquirerBIN: clickToPayToken.acquirerBIN,
+          acquirerMerchantId: clickToPayToken.acquirerMerchantId,
+          merchantName: clickToPayToken.dpaName,
+          merchantOrderId: orderId->formatOrderId,
+        },
+      }
 
   let complianceSettings = {
     complianceResources: [
@@ -1382,6 +1436,7 @@ let handleProceedToPay = async (
   ~clickToPayToken,
   ~orderId="",
   ~fullName="",
+  ~isNonAuthenticatedPayloadRequested=false,
 ) => {
   let closeWindow = (status, payload: JSON.t) => {
     handleCloseClickToPayWindow()
@@ -1435,6 +1490,7 @@ let handleProceedToPay = async (
                 ~rememberMe=isClickToPayRememberMe,
                 ~orderId,
                 ~consumer,
+                ~isNonAuthenticatedPayloadRequested,
               )
               let actionCode =
                 checkoutResp->Utils.getDictFromJson->Utils.getString("actionCode", "")

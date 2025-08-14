@@ -471,8 +471,6 @@ let useClickToPay = (
     try {
       switch clickToPayConfig.clickToPayToken {
       | Some(token) => {
-          let initConfig = getVisaInitConfig(token, clientSecret)
-
           setClickToPayConfig(prev => {
             ...prev,
             visaComponentState: CARDS_LOADING,
