@@ -202,6 +202,7 @@ type options = {
   displayBillingDetails: bool,
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
+  enableUnifiedView: bool,
 }
 
 type payerDetails = {
@@ -373,6 +374,7 @@ let defaultOptions = {
   displayBillingDetails: false,
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
+  enableUnifiedView: false,
 }
 
 let getLayout = str => {
@@ -1064,6 +1066,7 @@ let itemToObjMapper = (dict, logger) => {
       "displayBillingDetails",
       "customMessageForCardTerms",
       "showShortSurchargeMessage",
+      "enableUnifiedView",
     ],
     dict,
     "options",
@@ -1109,6 +1112,7 @@ let itemToObjMapper = (dict, logger) => {
     displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
+    enableUnifiedView: getBool(dict, "enableUnifiedView", false),
   }
 }
 

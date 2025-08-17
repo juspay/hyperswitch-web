@@ -14,6 +14,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
 
   let {
     paymentMethodOrder,
+    enableUnifiedView,
     layout,
     customerPaymentMethods,
     displaySavedPaymentMethods,
@@ -278,6 +279,11 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, [selectedOption])
   useSubmitPaymentData(submitCallback)
   React.useEffect(() => {
+    if enableUnifiedView && selectedOption == "saved_methods" {
+      setShowPaymentMethodsScreen(_ => false)
+    } else if enableUnifiedView {
+      setShowPaymentMethodsScreen(_ => true)
+    }
     setSelectedOption(prev =>
       selectedOption !== ""
         ? prev
@@ -402,6 +408,19 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
             </RenderIf>
           }}
         </SessionPaymentWrapper>
+      | SavedMethods =>
+        <SavedMethods
+          paymentToken
+          setPaymentToken
+          savedMethods
+          loadSavedCards
+          cvcProps
+          sessions
+          isClickToPayAuthenticateError
+          setIsClickToPayAuthenticateError
+          getVisaCards
+          closeComponentIfSavedMethodsAreEmpty
+        />
       | _ =>
         <ReusableReactSuspense loaderComponent={loader()} componentName="PaymentMethodsWrapperLazy">
           <PaymentMethodsWrapperLazy paymentMethodName=selectedOption />
@@ -458,7 +477,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     } else {
       <RenderIf
         condition={!showPaymentMethodsScreen &&
-        (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay)}>
+        (displaySavedPaymentMethods || isShowPaymentMethodsDependingOnClickToPay) &&
+        !optionAtomValue.enableUnifiedView}>
         <SavedMethods
           paymentToken
           setPaymentToken
@@ -475,7 +495,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     }}
     <RenderIf
       condition={(paymentOptions->Array.length > 0 || walletOptions->Array.length > 0) &&
-      showPaymentMethodsScreen &&
+      (showPaymentMethodsScreen || optionAtomValue.enableUnifiedView) &&
       clickToPayConfig.isReady->Option.isSome}>
       <div
         className="flex flex-col place-items-center"
@@ -510,7 +530,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     </RenderIf>
     <RenderIf
       condition={((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
-        isShowPaymentMethodsDependingOnClickToPay) && showPaymentMethodsScreen}>
+        isShowPaymentMethodsDependingOnClickToPay) &&
+      showPaymentMethodsScreen &&
+      !optionAtomValue.enableUnifiedView}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
@@ -542,7 +564,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </RenderIf>
     | _ =>
       <RenderIf
-        condition={!displaySavedPaymentMethods &&
+        condition={(!displaySavedPaymentMethods ||
+        (optionAtomValue.enableUnifiedView && savedMethods->Array.length == 0)) &&
         paymentOptions->Array.length == 0 &&
         walletOptions->Array.length == 0}>
         <PaymentElementShimmer />

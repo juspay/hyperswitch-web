@@ -37,9 +37,11 @@ let make = (
     loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT)
   }
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
-  let {displaySavedPaymentMethodsCheckbox, readOnly} = Recoil.useRecoilValueFromAtom(
-    RecoilAtoms.optionAtom,
-  )
+  let {
+    displaySavedPaymentMethodsCheckbox,
+    readOnly,
+    enableUnifiedView,
+  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let isGuestCustomer = useIsGuestCustomer()
 
   let {iframeId, clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -336,14 +338,17 @@ let make = (
   let enableSavedPaymentShimmer = React.useMemo(() => {
     savedCardlength === 0 &&
     !showPaymentMethodsScreen &&
-    (loadSavedCards === PaymentType.LoadingSavedCards || clickToPayConfig.isReady->Option.isNone)
+    (loadSavedCards === PaymentType.LoadingSavedCards || clickToPayConfig.isReady->Option.isNone) &&
+    !enableUnifiedView
   }, (savedCardlength, loadSavedCards, showPaymentMethodsScreen, clickToPayConfig.isReady))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if enableSavedPaymentShimmer {
       <PaymentElementShimmer.SavedPaymentCardShimmer />
     } else {
-      <RenderIf condition={!showPaymentMethodsScreen}> {bottomElement} </RenderIf>
+      <RenderIf condition={!showPaymentMethodsScreen || enableUnifiedView}>
+        {bottomElement}
+      </RenderIf>
     }}
     <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
       <div className="pt-4 pb-2 flex items-center justify-start">
@@ -360,7 +365,7 @@ let make = (
         }
       />
     </RenderIf>
-    <RenderIf condition={!enableSavedPaymentShimmer}>
+    <RenderIf condition={!enableSavedPaymentShimmer && !enableUnifiedView}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
