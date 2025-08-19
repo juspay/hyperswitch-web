@@ -37,6 +37,7 @@ let make = (
     ~savedMethods,
     ~loadSavedCards,
     ~isSavedCardElement=true,
+    ~setIsClickToPayAuthenticateError,
   )
 
   let isShowPaymentMethodsDependingOnClickToPay = React.useMemo(() => {

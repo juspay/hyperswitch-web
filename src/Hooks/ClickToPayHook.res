@@ -7,6 +7,7 @@ let useClickToPay = (
   ~savedMethods,
   ~loadSavedCards,
   ~isSavedCardElement=false,
+  ~setIsClickToPayAuthenticateError,
 ) => {
   let (clickToPayConfig, setClickToPayConfig) = Recoil.useRecoilState(RecoilAtoms.clickToPayConfig)
   let setShowPaymentMethodsScreen = Recoil.useSetRecoilState(RecoilAtoms.showPaymentMethodsScreen)
@@ -97,6 +98,7 @@ let useClickToPay = (
         ...prev,
         visaComponentState: NONE,
       })
+      setIsClickToPayAuthenticateError(_ => true)
     | FAILED
     | ERROR =>
       if otp != "" {
@@ -171,6 +173,7 @@ let useClickToPay = (
           ...prev,
           visaComponentState: NONE,
         })
+        setIsClickToPayAuthenticateError(_ => true)
         loggerState.setLogError(
           ~value={
             "message": "initial get cards call failed",
