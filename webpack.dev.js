@@ -9,7 +9,7 @@ const endpointMap = {
   prod: "https://api.hyperswitch.io/payments",
   sandbox: "https://sandbox.hyperswitch.io/payments",
   integ: "https://integ.hyperswitch.io/api/payments",
-  local: "https://sandbox.hyperswitch.io/payments", // Default or local environment endpoint
+  local: "http://localhost:8080", // Default or local environment endpoint
 };
 
 const backendEndPoint = endpointMap[sdkEnv] || endpointMap.local;
@@ -21,13 +21,17 @@ const devServer = {
   hot: true,
   host: "0.0.0.0",
   port: process.env.PORT || 9050,
+  allowedHosts: "all",
   historyApiFallback: true,
+  client: {
+    webSocketURL: "ws://localhost:9050/ws",
+  },
   proxy: [
     {
       context: ["/payments"],
       target: backendEndPoint,
       changeOrigin: true,
-      secure: true,
+      secure: sdkEnv !== "local", // Disable SSL verification for local development
       pathRewrite: { "^/payments": "" },
     },
     {

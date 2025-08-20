@@ -230,10 +230,12 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
     }->Sentry.sentryLogger
     let isSecure = Window.Location.protocol === "https:"
     let isLocal =
-      ["localhost", "127.0.0.1"]
+      ["localhost", "127.0.0.1", "0.0.0.0"]
       ->Array.find(url => Window.Location.hostname->String.includes(url))
       ->Option.isSome
-    if !isSecure && !isLocal {
+    // Skip HTTPS validation for local development or when running in iframe/srcdoc
+    let isLocalDevelopment = isLocal || Window.Location.hostname === "" || GlobalVars.isLocal
+    if !isSecure && !isLocalDevelopment {
       manageErrorWarning(HTTP_NOT_ALLOWED, ~dynamicStr=Window.hrefWithoutSearch, ~logger)
       Exn.raiseError("Insecure domain: " ++ Window.hrefWithoutSearch)
     }
