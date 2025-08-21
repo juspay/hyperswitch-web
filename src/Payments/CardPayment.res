@@ -543,13 +543,13 @@ let make = (
               </div>
             </RenderIf>
           </RenderIf>
-          <DynamicFields
+          <DynamicFieldWrapper
             paymentMethod
             paymentMethodType
             setRequiredFieldsBody
-            cardProps={Some(cardProps)}
-            expiryProps={Some(expiryProps)}
-            cvcProps={Some(cvcProps)}
+            cardProps={cardProps}
+            expiryProps={expiryProps}
+            cvcProps={cvcProps}
             isBancontact
             isSaveDetailsWithClickToPay
           />

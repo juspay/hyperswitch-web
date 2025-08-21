@@ -27,6 +27,7 @@ let make = (
   ~disabled=false,
   ~className="",
   ~width="w-full",
+  ~onChange=(ev: ReactEvent.Form.t) => (),
 ) => {
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {readOnly} = Recoil.useRecoilValueFromAtom(optionAtom)
@@ -42,6 +43,7 @@ let make = (
   }
 
   let handleChange = ev => {
+    onChange(ev)
     let target = ev->ReactEvent.Form.target
     let value = target["value"]
 
