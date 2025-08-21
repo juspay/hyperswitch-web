@@ -142,3 +142,4 @@ export const bluesnapTestCard = "4000000000001091";
 export const amexTestCard = "378282246310005";
 export const visaTestCard = "4242424242424242";
 export const netceteraChallengeTestCard = "348638267931507";
+export const netceteraFrictionlessTestCard = "4929251897047956";
