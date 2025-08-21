@@ -75,7 +75,7 @@ let make = (
       `${initialLabel}--empty`
     } else {
       switch isValid {
-      | Some(valid) => valid ? "" : `${initialLabel}--invalid`
+      | Some(valid) => valid ? `${initialLabel}--valid` : `${initialLabel}--invalid`
       | None => ""
       }
     }
