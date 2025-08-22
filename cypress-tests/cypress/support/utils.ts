@@ -14,6 +14,7 @@ export const enum connectorEnum {
   CRYPTOPAY,
   BANK_OF_AMERICA,
   CYBERSOURCE,
+  CASHTOCODE
 }
 export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.TRUSTPAY, "pro_eP323T9e4ApKpilWBfPA"],
@@ -25,6 +26,7 @@ export const connectorProfileIdMapping = new Map<connectorEnum, string>([
   [connectorEnum.CRYPTOPAY, "pro_cy1AdBRB5jfCuiWgJUZM"],
   [connectorEnum.BANK_OF_AMERICA, "pro_Y90w9nPTg5eBOblKa2L9"],
   [connectorEnum.CYBERSOURCE, "pro_h9VHXnJx8s6W4KSZfSUL"],
+  [connectorEnum.CASHTOCODE, "pro_JRdEyK7YyQaDAAzvJuMJ"],
 ]);
 
 export const createPaymentBody = {
