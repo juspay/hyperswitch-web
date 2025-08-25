@@ -37,11 +37,12 @@ let make = (
     loggerState.setLogError(~value=message, ~eventName=INVALID_FORMAT)
   }
   let (isSaveCardsChecked, setIsSaveCardsChecked) = React.useState(_ => false)
-  let {
-    displaySavedPaymentMethodsCheckbox,
-    readOnly,
-    enableUnifiedView,
-  } = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
+  let (showMore, setShowMore) = React.useState(_ => true)
+  let {displaySavedPaymentMethodsCheckbox, readOnly, layout} = Recoil.useRecoilValueFromAtom(
+    RecoilAtoms.optionAtom,
+  )
+  let layoutClass = CardUtils.getLayoutClass(layout)
+  let isMergedSavedMethodsList = layoutClass.mergeSavedMethods.isMergedSavedMethodsList
   let isGuestCustomer = useIsGuestCustomer()
 
   let {iframeId, clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -68,24 +69,43 @@ let make = (
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let {paymentToken: paymentTokenVal, customerId} = paymentToken
 
+  let (cardOptionDetails, dropDownOptionsDetails) = React.useMemo(() => {
+    (
+      savedMethods->Array.slice(~start=0, ~end=layoutClass.mergeSavedMethods.maxSavedItems),
+      savedMethods->Array.sliceToEnd(~start=layoutClass.mergeSavedMethods.maxSavedItems),
+    )
+  }, [savedMethods])
+
+  let renderSavedCards = (cardsArr: array<PaymentType.customerMethods>) => {
+    cardsArr
+    ->Array.mapWithIndex((obj, i) =>
+      <SavedCardItem
+        key={i->Int.toString}
+        setPaymentToken
+        isActive={paymentTokenVal == obj.paymentToken}
+        paymentItem=obj
+        brandIcon={obj->getPaymentMethodBrand}
+        index=i
+        savedCardlength
+        cvcProps
+        setRequiredFieldsBody
+      />
+    )
+    ->React.array
+  }
+
+  let mergedViewBottomElement = {
+    <div
+      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
+      {renderSavedCards(cardOptionDetails)}
+      <RenderIf condition={!showMore}> {renderSavedCards(dropDownOptionsDetails)} </RenderIf>
+    </div>
+  }
+
   let bottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
-      {savedMethods
-      ->Array.mapWithIndex((obj, i) =>
-        <SavedCardItem
-          key={i->Int.toString}
-          setPaymentToken
-          isActive={paymentTokenVal == obj.paymentToken}
-          paymentItem=obj
-          brandIcon={obj->getPaymentMethodBrand}
-          index=i
-          savedCardlength
-          cvcProps
-          setRequiredFieldsBody
-        />
-      )
-      ->React.array}
+      <RenderIf condition={!isMergedSavedMethodsList}> {renderSavedCards(savedMethods)} </RenderIf>
       <RenderIf condition={clickToPayConfig.isReady == Some(true)}>
         <ClickToPayAuthenticate
           loggerState
@@ -339,15 +359,21 @@ let make = (
     savedCardlength === 0 &&
     !showPaymentMethodsScreen &&
     (loadSavedCards === PaymentType.LoadingSavedCards || clickToPayConfig.isReady->Option.isNone) &&
-    !enableUnifiedView
-  }, (savedCardlength, loadSavedCards, showPaymentMethodsScreen, clickToPayConfig.isReady))
+    !isMergedSavedMethodsList
+  }, (
+    savedCardlength,
+    loadSavedCards,
+    showPaymentMethodsScreen,
+    clickToPayConfig.isReady,
+    isMergedSavedMethodsList,
+  ))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
     {if enableSavedPaymentShimmer {
       <PaymentElementShimmer.SavedPaymentCardShimmer />
     } else {
-      <RenderIf condition={!showPaymentMethodsScreen || enableUnifiedView}>
-        {bottomElement}
+      <RenderIf condition={!showPaymentMethodsScreen}>
+        {isMergedSavedMethodsList ? mergedViewBottomElement : bottomElement}
       </RenderIf>
     }}
     <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
@@ -365,7 +391,7 @@ let make = (
         }
       />
     </RenderIf>
-    <RenderIf condition={!enableSavedPaymentShimmer && !enableUnifiedView}>
+    <RenderIf condition={!enableSavedPaymentShimmer && !isMergedSavedMethodsList}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
@@ -391,5 +417,6 @@ let make = (
         {React.string(localeString.morePaymentMethods)}
       </div>
     </RenderIf>
+    <ShowToggle isMergedSavedMethodsList dropDownOptionsDetails showMore setShowMore />
   </div>
 }

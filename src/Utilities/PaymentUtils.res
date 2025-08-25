@@ -396,6 +396,9 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     ~paymentMethodListValue,
   )
 
+  let layoutClass = CardUtils.getLayoutClass(optionAtomValue.layout)
+  let isMergedSavedMethodsList = layoutClass.mergeSavedMethods.isMergedSavedMethodsList
+
   let processPaymentsList = (
     ~paymentList,
     ~savedPaymentMethods: option<array<PaymentType.customerMethods>>,
@@ -433,7 +436,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     }
 
     let showSavedPaymentMethodsTab =
-      optionAtomValue.enableUnifiedView &&
+      isMergedSavedMethodsList &&
       filteredSaved->Array.length != 0 &&
       optionAtomValue.displaySavedPaymentMethods
 
@@ -481,11 +484,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
   }
 
   React.useMemo(() => {
-    switch (
-      methodslist,
-      optionAtomValue.customerPaymentMethods,
-      optionAtomValue.enableUnifiedView,
-    ) {
+    switch (methodslist, optionAtomValue.customerPaymentMethods, isMergedSavedMethodsList) {
     | (Loaded(paymentlist), _, false)
     | (Loaded(paymentlist), NoResult(_), _) =>
       processPaymentsList(~paymentList=paymentlist, ~savedPaymentMethods=None)
@@ -508,7 +507,7 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
     isGooglePayReady,
     optionAtomValue.customerPaymentMethods,
     optionAtomValue.displaySavedPaymentMethods,
-    optionAtomValue.enableUnifiedView,
+    isMergedSavedMethodsList,
   ))
 }
 

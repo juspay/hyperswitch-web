@@ -103,11 +103,16 @@ type wallets = {
   style: style,
 }
 type business = {name: string}
+type mergeSavedMethods = {
+  maxSavedItems: int,
+  isMergedSavedMethodsList: bool,
+}
 type layoutConfig = {
   defaultCollapsed: bool,
   radios: bool,
   spacedAccordionItems: bool,
   maxAccordionItems: int,
+  mergeSavedMethods: mergeSavedMethods,
   \"type": layout,
 }
 
@@ -202,7 +207,6 @@ type options = {
   displayBillingDetails: bool,
   customMessageForCardTerms: string,
   showShortSurchargeMessage: bool,
-  enableUnifiedView: bool,
 }
 
 type payerDetails = {
@@ -250,11 +254,16 @@ let defaultCustomerMethods = {
   recurringEnabled: false,
   billing: defaultDisplayBillingDetails,
 }
+let defaultMergeSavedMethods = {
+  maxSavedItems: 2,
+  isMergedSavedMethodsList: false,
+}
 let defaultLayout = {
   defaultCollapsed: false,
   radios: false,
   spacedAccordionItems: false,
   maxAccordionItems: 4,
+  mergeSavedMethods: defaultMergeSavedMethods,
   \"type": Tabs,
 }
 let defaultAddress: address = {
@@ -374,7 +383,6 @@ let defaultOptions = {
   displayBillingDetails: false,
   customMessageForCardTerms: "",
   showShortSurchargeMessage: false,
-  enableUnifiedView: false,
 }
 
 let getLayout = str => {
@@ -661,6 +669,18 @@ let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
   })
   ->Option.getOr(defaultFields)
 }
+let getMergedViewValues = (json, logger) => {
+  let dict = json->Utils.getDictFromDict("mergeSavedMethods")
+  unknownKeysWarning(
+    ["maxSavedItems", "isMergedSavedMethodsList"],
+    dict,
+    "options.layout.mergedSavedMethods",
+  )
+  {
+    maxSavedItems: getNumberWithWarning(dict, "maxSavedItems", 2, ~logger),
+    isMergedSavedMethodsList: getBoolWithWarning(dict, "isMergedSavedMethodsList", false, ~logger),
+  }
+}
 let getLayoutValues = (val, logger) => {
   switch val->JSON.Classify.classify {
   | String(str) => StringLayout(str->getLayout)
@@ -668,7 +688,14 @@ let getLayoutValues = (val, logger) => {
     ObjectLayout({
       let layoutType = getWarningString(json, "type", "tabs", ~logger)
       unknownKeysWarning(
-        ["defaultCollapsed", "radios", "spacedAccordionItems", "type", "maxAccordionItems"],
+        [
+          "defaultCollapsed",
+          "radios",
+          "spacedAccordionItems",
+          "type",
+          "maxAccordionItems",
+          "mergeSavedMethods",
+        ],
         json,
         "options.layout",
       )
@@ -677,6 +704,7 @@ let getLayoutValues = (val, logger) => {
         radios: getBoolWithWarning(json, "radios", false, ~logger),
         spacedAccordionItems: getBoolWithWarning(json, "spacedAccordionItems", false, ~logger),
         maxAccordionItems: getNumberWithWarning(json, "maxAccordionItems", 4, ~logger),
+        mergeSavedMethods: getMergedViewValues(json, logger),
         \"type": layoutType->getLayout,
       }
     })
@@ -1066,7 +1094,6 @@ let itemToObjMapper = (dict, logger) => {
       "displayBillingDetails",
       "customMessageForCardTerms",
       "showShortSurchargeMessage",
-      "enableUnifiedView",
     ],
     dict,
     "options",
@@ -1112,7 +1139,6 @@ let itemToObjMapper = (dict, logger) => {
     displayBillingDetails: getBool(dict, "displayBillingDetails", false),
     customMessageForCardTerms: getString(dict, "customMessageForCardTerms", ""),
     showShortSurchargeMessage: getBool(dict, "showShortSurchargeMessage", false),
-    enableUnifiedView: getBool(dict, "enableUnifiedView", false),
   }
 }
 
