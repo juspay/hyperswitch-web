@@ -1,6 +1,34 @@
 open Utils
 open PaymentType
 
+let months = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+]
+
+let startYear = 1900
+let currentYear = Date.getFullYear(Date.make())
+let years = Array.fromInitializer(~length=currentYear - startYear, i => currentYear - i)
+
+let getDropdownOptions = fieldType => {
+  switch fieldType {
+  | "month_select" => months->DropdownField.updateArrayOfStringToOptionsTypeArray
+  | "year_select" =>
+    years->Array.map(val => val->Int.toString)->DropdownField.updateArrayOfStringToOptionsTypeArray
+  | _ => [DropdownField.defaultValue]
+  }
+}
+
 module PhoneInput = {
   @react.component
   let make = (
@@ -32,7 +60,6 @@ module PhoneInput = {
       ->getDictFromJson
       ->getString("phone_number_code", "")
     let (valueDropDown, setValueDropDown) = React.useState(_ => defaultCountryCodeFilteredValue)
-    let getCountryCodeSplitValue = val => val->String.split("#")->Array.get(1)->Option.getOr("")
     let phoneNumberCodeOptions: array<
       DropdownField.optionType,
     > = countryAndCodeCodeList->Array.reduce([], (acc, countryObj) => {
@@ -49,6 +76,16 @@ module PhoneInput = {
       acc->Array.push(phoneNumberOptionsValue)
       acc
     })
+
+    let handlePhoneNumberChange = ev => {
+      let typedInput = input->ReactFinalForm.toTypedField
+
+      typedInput.onChange({
+        "number": ReactEvent.Form.target(ev)["value"],
+        "country_code": valueDropDown->String.split("#")->Array.get(1)->Option.getOr(""),
+      })
+    }
+
     React.useEffect(() => {
       let findDisplayValue =
         phoneNumberCodeOptions
@@ -61,14 +98,25 @@ module PhoneInput = {
       )
       None
     }, [phoneNumberCodeOptions])
+
+    React.useEffect(() => {
+      let typedInput = input->ReactFinalForm.toTypedField
+
+      typedInput.onChange({
+        "number": input.value->Utils.getDictFromJson->getString("number", ""),
+        "country_code": valueDropDown->String.split("#")->Array.get(1)->Option.getOr(""),
+      })
+      None
+    }, [valueDropDown])
+
     <PaymentField
       fieldName="Phone Number"
       value={{
-        value: input.value->JSON.Decode.string->Option.getOr(""),
+        value: input.value->Utils.getDictFromJson->getString("number", ""),
         isValid: Some(meta.valid),
         errorString: meta.error->Nullable.toOption->Option.getOr(""),
       }}
-      onChange=input.onChange
+      onChange=handlePhoneNumberChange
       paymentType=Payment
       type_="tel"
       name="phone"
@@ -99,6 +147,13 @@ module InputFieldRendrer = {
     let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
+    let getInputLabel = fieldType => {
+      switch fieldType {
+      | "country_select" => localeString.countryLabel
+      | _ => fieldName
+      }
+    }
+
     let errorString = switch (meta.touched, meta.error->Nullable.toOption) {
     | (true, Some(err)) => err
     | _ => ""
@@ -115,13 +170,26 @@ module InputFieldRendrer = {
         }}
         onChange=input.onChange
         onBlur=input.onBlur
-        type_="text"
+        type_="email"
         inputRef
         placeholder
       />
-    | "password_input"
-    | "number"
-    | "text_input" =>
+    | "password_input" =>
+      <PaymentField
+        fieldName
+        value={{
+          value: input.value->JSON.Decode.string->Option.getOr(""),
+          isValid: Some(meta.valid),
+          errorString: meta.error->Nullable.toOption->Option.getOr(""),
+        }}
+        onChange=input.onChange
+        onBlur=input.onBlur
+        type_="password"
+        inputRef
+        placeholder
+      />
+    | "text_input"
+    | "number" =>
       <PaymentField
         fieldName
         value={{
@@ -136,29 +204,38 @@ module InputFieldRendrer = {
         placeholder
       />
     | "phone_input" => <PhoneInput input meta inputRef />
-
+    | "month_select"
+    | "currency_select"
+    | "country_code_select"
+    | "year_select"
+    | "dropdown_select"
     | "country_select" =>
+      let typedInput = input->ReactFinalForm.toTypedField
+      let options = options->Array.length > 0 ? options : getDropdownOptions(fieldType)
+
       <DropdownField
         appearance=config.appearance
-        fieldName=localeString.countryLabel
-        value={input.value->JSON.Decode.string->Option.getOr("")}
-        onChange=input.onChange
-        setValue={_ => ()}
+        fieldName={getInputLabel(fieldType)}
+        value={typedInput.value}
+        setValue={fn => typedInput.onChange(fn())}
         disabled=false
         options
         className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
       />
 
-    | "dropdown_select" =>
-      <DropdownField
-        appearance=config.appearance
+    | "date_picker" =>
+      <PaymentField
         fieldName
-        value={input.value->JSON.Decode.string->Option.getOr("")}
+        value={{
+          value: input.value->JSON.Decode.string->Option.getOr(""),
+          isValid: Some(meta.valid),
+          errorString: meta.error->Nullable.toOption->Option.getOr(""),
+        }}
         onChange=input.onChange
-        setValue={_ => ()}
-        disabled=false
-        options
-        className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
+        onBlur=input.onBlur
+        type_="date"
+        inputRef
+        placeholder
       />
 
     | _ => <div> {fieldName->React.string} </div>

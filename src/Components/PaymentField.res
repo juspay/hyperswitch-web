@@ -183,10 +183,14 @@ let make = (
               className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
               style={
                 marginBottom: {
-                  inputFocused || value.value->String.length > 0 ? "" : themeObj.spacingUnit
+                  inputFocused || value.value->String.length > 0 || type_ == "date"
+                    ? ""
+                    : themeObj.spacingUnit
                 },
                 fontSize: {
-                  inputFocused || value.value->String.length > 0 ? themeObj.fontSizeXs : ""
+                  inputFocused || value.value->String.length > 0 || type_ == "date"
+                    ? themeObj.fontSizeXs
+                    : ""
                 },
                 opacity: "0.6",
               }
