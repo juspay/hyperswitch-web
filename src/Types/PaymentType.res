@@ -103,16 +103,16 @@ type wallets = {
   style: style,
 }
 type business = {name: string}
-type mergeSavedMethods = {
+type savedMethodsLayout = {
   maxSavedItems: int,
-  isMergedSavedMethodsList: bool,
+  displayMergedSavedMethods: bool,
 }
 type layoutConfig = {
   defaultCollapsed: bool,
   radios: bool,
   spacedAccordionItems: bool,
   maxAccordionItems: int,
-  mergeSavedMethods: mergeSavedMethods,
+  savedMethodsLayout: savedMethodsLayout,
   \"type": layout,
 }
 
@@ -254,16 +254,16 @@ let defaultCustomerMethods = {
   recurringEnabled: false,
   billing: defaultDisplayBillingDetails,
 }
-let defaultMergeSavedMethods = {
+let defaultSavedMethodsLayout = {
   maxSavedItems: 2,
-  isMergedSavedMethodsList: false,
+  displayMergedSavedMethods: false,
 }
 let defaultLayout = {
   defaultCollapsed: false,
   radios: false,
   spacedAccordionItems: false,
   maxAccordionItems: 4,
-  mergeSavedMethods: defaultMergeSavedMethods,
+  savedMethodsLayout: defaultSavedMethodsLayout,
   \"type": Tabs,
 }
 let defaultAddress: address = {
@@ -670,15 +670,20 @@ let getFields: (Dict.t<JSON.t>, string, 'a) => fields = (dict, str, logger) => {
   ->Option.getOr(defaultFields)
 }
 let getMergedViewValues = (json, logger) => {
-  let dict = json->Utils.getDictFromDict("mergeSavedMethods")
+  let dict = json->Utils.getDictFromDict("savedMethodsLayout")
   unknownKeysWarning(
-    ["maxSavedItems", "isMergedSavedMethodsList"],
+    ["maxSavedItems", "displayMergedSavedMethods"],
     dict,
-    "options.layout.mergedSavedMethods",
+    "options.layout.savedMethodsLayout",
   )
   {
     maxSavedItems: getNumberWithWarning(dict, "maxSavedItems", 2, ~logger),
-    isMergedSavedMethodsList: getBoolWithWarning(dict, "isMergedSavedMethodsList", false, ~logger),
+    displayMergedSavedMethods: getBoolWithWarning(
+      dict,
+      "displayMergedSavedMethods",
+      false,
+      ~logger,
+    ),
   }
 }
 let getLayoutValues = (val, logger) => {
@@ -694,7 +699,7 @@ let getLayoutValues = (val, logger) => {
           "spacedAccordionItems",
           "type",
           "maxAccordionItems",
-          "mergeSavedMethods",
+          "savedMethodsLayout",
         ],
         json,
         "options.layout",
@@ -704,7 +709,7 @@ let getLayoutValues = (val, logger) => {
         radios: getBoolWithWarning(json, "radios", false, ~logger),
         spacedAccordionItems: getBoolWithWarning(json, "spacedAccordionItems", false, ~logger),
         maxAccordionItems: getNumberWithWarning(json, "maxAccordionItems", 4, ~logger),
-        mergeSavedMethods: getMergedViewValues(json, logger),
+        savedMethodsLayout: getMergedViewValues(json, logger),
         \"type": layoutType->getLayout,
       }
     })

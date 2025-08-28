@@ -1,8 +1,8 @@
 @react.component
-let make = (~isMergedSavedMethodsList, ~dropDownOptionsDetails, ~showMore, ~setShowMore) => {
+let make = (~displayMergedSavedMethods, ~dropDownOptionsDetails, ~showMore, ~setShowMore) => {
   let {themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
-  <RenderIf condition={isMergedSavedMethodsList && dropDownOptionsDetails->Array.length > 0}>
+  <RenderIf condition={displayMergedSavedMethods && dropDownOptionsDetails->Array.length > 0}>
     <div
       className="Label flex flex-row gap-1 items-end cursor-pointer mt-3"
       style={

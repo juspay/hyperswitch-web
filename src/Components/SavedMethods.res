@@ -42,7 +42,7 @@ let make = (
     RecoilAtoms.optionAtom,
   )
   let layoutClass = CardUtils.getLayoutClass(layout)
-  let isMergedSavedMethodsList = layoutClass.mergeSavedMethods.isMergedSavedMethodsList
+  let displayMergedSavedMethods = layoutClass.savedMethodsLayout.displayMergedSavedMethods
   let isGuestCustomer = useIsGuestCustomer()
 
   let {iframeId, clientSecret} = Recoil.useRecoilValueFromAtom(RecoilAtoms.keys)
@@ -71,8 +71,8 @@ let make = (
 
   let (cardOptionDetails, dropDownOptionsDetails) = React.useMemo(() => {
     (
-      savedMethods->Array.slice(~start=0, ~end=layoutClass.mergeSavedMethods.maxSavedItems),
-      savedMethods->Array.sliceToEnd(~start=layoutClass.mergeSavedMethods.maxSavedItems),
+      savedMethods->Array.slice(~start=0, ~end=layoutClass.savedMethodsLayout.maxSavedItems),
+      savedMethods->Array.sliceToEnd(~start=layoutClass.savedMethodsLayout.maxSavedItems),
     )
   }, [savedMethods])
 
@@ -105,7 +105,7 @@ let make = (
   let bottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
-      <RenderIf condition={!isMergedSavedMethodsList}> {renderSavedCards(savedMethods)} </RenderIf>
+      <RenderIf condition={!displayMergedSavedMethods}> {renderSavedCards(savedMethods)} </RenderIf>
       <RenderIf condition={clickToPayConfig.isReady == Some(true)}>
         <ClickToPayAuthenticate
           loggerState
@@ -359,13 +359,13 @@ let make = (
     savedCardlength === 0 &&
     !showPaymentMethodsScreen &&
     (loadSavedCards === PaymentType.LoadingSavedCards || clickToPayConfig.isReady->Option.isNone) &&
-    !isMergedSavedMethodsList
+    !displayMergedSavedMethods
   }, (
     savedCardlength,
     loadSavedCards,
     showPaymentMethodsScreen,
     clickToPayConfig.isReady,
-    isMergedSavedMethodsList,
+    displayMergedSavedMethods,
   ))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
@@ -373,7 +373,7 @@ let make = (
       <PaymentElementShimmer.SavedPaymentCardShimmer />
     } else {
       <RenderIf condition={!showPaymentMethodsScreen}>
-        {isMergedSavedMethodsList ? mergedViewBottomElement : bottomElement}
+        {displayMergedSavedMethods ? mergedViewBottomElement : bottomElement}
       </RenderIf>
     }}
     <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
@@ -391,7 +391,7 @@ let make = (
         }
       />
     </RenderIf>
-    <RenderIf condition={!enableSavedPaymentShimmer && !isMergedSavedMethodsList}>
+    <RenderIf condition={!enableSavedPaymentShimmer && !displayMergedSavedMethods}>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
@@ -417,6 +417,6 @@ let make = (
         {React.string(localeString.morePaymentMethods)}
       </div>
     </RenderIf>
-    <ShowToggle isMergedSavedMethodsList dropDownOptionsDetails showMore setShowMore />
+    <ShowMoreButton displayMergedSavedMethods dropDownOptionsDetails showMore setShowMore />
   </div>
 }
