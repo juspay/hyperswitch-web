@@ -44,6 +44,8 @@ let make = (
               "Phone Number",
               ~parent="phone",
             )
+            ->mergeFields(["city", "state"], "city_state_merged", "City and State")
+            ->mergeFields(["zip", "country"], "zip_country_merged", "Zip and Country")
             ->sortFields(componentName)
           (componentName, sortedFields)
         }

@@ -16,15 +16,17 @@ let months = [
   "December",
 ]
 
-let startYear = 1900
 let currentYear = Date.getFullYear(Date.make())
-let years = Array.fromInitializer(~length=currentYear - startYear, i => currentYear - i)
+let length = 100
+let cardExpiryYears = Array.fromInitializer(~length, i => currentYear + i)
 
 let getDropdownOptions = fieldType => {
   switch fieldType {
   | "month_select" => months->DropdownField.updateArrayOfStringToOptionsTypeArray
   | "year_select" =>
-    years->Array.map(val => val->Int.toString)->DropdownField.updateArrayOfStringToOptionsTypeArray
+    cardExpiryYears
+    ->Array.map(val => val->Int.toString)
+    ->DropdownField.updateArrayOfStringToOptionsTypeArray
   | _ => [DropdownField.defaultValue]
   }
 }
@@ -136,10 +138,11 @@ module PhoneInput = {
 module InputFieldRendrer = {
   @react.component
   let make = (
+    ~name: string,
     ~input: ReactFinalForm.fieldRenderPropsInput,
     ~meta: ReactFinalForm.fieldRenderPropsMeta,
     ~inputRef,
-    ~fieldName,
+    ~label,
     ~placeholder,
     ~fieldType,
     ~options,
@@ -150,7 +153,7 @@ module InputFieldRendrer = {
     let getInputLabel = fieldType => {
       switch fieldType {
       | "country_select" => localeString.countryLabel
-      | _ => fieldName
+      | _ => label
       }
     }
 
@@ -162,7 +165,7 @@ module InputFieldRendrer = {
     switch fieldType {
     | "email_input" =>
       <PaymentField
-        fieldName
+        fieldName=label
         value={{
           value: input.value->JSON.Decode.string->Option.getOr(""),
           isValid: errorString == "" ? Some(true) : Some(false),
@@ -176,7 +179,7 @@ module InputFieldRendrer = {
       />
     | "password_input" =>
       <PaymentField
-        fieldName
+        fieldName=label
         value={{
           value: input.value->JSON.Decode.string->Option.getOr(""),
           isValid: Some(meta.valid),
@@ -191,7 +194,7 @@ module InputFieldRendrer = {
     | "text_input"
     | "number" =>
       <PaymentField
-        fieldName
+        fieldName=label
         value={{
           value: input.value->JSON.Decode.string->Option.getOr(""),
           isValid: Some(meta.valid),
@@ -225,7 +228,7 @@ module InputFieldRendrer = {
 
     | "date_picker" =>
       <PaymentField
-        fieldName
+        fieldName=label
         value={{
           value: input.value->JSON.Decode.string->Option.getOr(""),
           isValid: Some(meta.valid),
@@ -238,7 +241,7 @@ module InputFieldRendrer = {
         placeholder
       />
 
-    | _ => <div> {fieldName->React.string} </div>
+    | _ => <div> {label->React.string} </div>
     }
   }
 }
