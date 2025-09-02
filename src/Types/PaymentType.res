@@ -255,7 +255,7 @@ let defaultCustomerMethods = {
   billing: defaultDisplayBillingDetails,
 }
 let defaultSavedMethodsLayout = {
-  maxSavedItems: 2,
+  maxSavedItems: 4,
   displayMergedSavedMethods: false,
 }
 let defaultLayout = {
@@ -677,7 +677,7 @@ let getMergedViewValues = (json, logger) => {
     "options.layout.savedMethodsLayout",
   )
   {
-    maxSavedItems: getNumberWithWarning(dict, "maxSavedItems", 2, ~logger),
+    maxSavedItems: getNumberWithWarning(dict, "maxSavedItems", 4, ~logger),
     displayMergedSavedMethods: getBoolWithWarning(
       dict,
       "displayMergedSavedMethods",
