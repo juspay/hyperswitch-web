@@ -9,6 +9,8 @@ let make = (~isBancontact=false) => {
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let isManualRetryEnabled = Recoil.useRecoilValueFromAtom(RecoilAtoms.isManualRetryEnabled)
   let sessionToken = Recoil.useRecoilValueFromAtom(RecoilAtoms.sessions)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
+  let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
 
   let {themeObj, localeString, config} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let {innerLayout} = config.appearance
@@ -29,6 +31,8 @@ let make = (~isBancontact=false) => {
   let (id, setId) = React.useState(() => "")
   let (vgsEnv, setVgsEnv) = React.useState(() => "")
   let (vgsScriptLoaded, setVgsScriptLoaded) = React.useState(() => false)
+
+  let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
 
@@ -110,13 +114,20 @@ let make = (~isBancontact=false) => {
           let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
 
           let cardBody = PaymentManagementBody.vgsCardBody(~cardNumber, ~month, ~year, ~cvcNumber)
-          intent(
-            ~bodyArr={cardBody},
-            ~confirmParam=confirm.confirmParams,
-            ~handleUserError=false,
-            ~manualRetry=isManualRetryEnabled,
-            ~isExternalVaultFlow=true,
-          )
+          if areRequiredFieldsValid && !areRequiredFieldsEmpty {
+            intent(
+              ~bodyArr={cardBody->mergeAndFlattenToTuples(requiredFieldsBody)},
+              ~confirmParam=confirm.confirmParams,
+              ~handleUserError=false,
+              ~manualRetry=isManualRetryEnabled,
+              ~isExternalVaultFlow=true,
+            )
+          } else {
+            postFailedSubmitResponse(
+              ~errortype="validation_error",
+              ~message=localeString.enterValidDetailsText,
+            )
+          }
         }
 
         let onError = err => {
@@ -135,7 +146,7 @@ let make = (~isBancontact=false) => {
       | None => Console.error("VGS Vault not initialized for submission")
       }
     }
-  }, [form])
+  }, (form, requiredFieldsBody, areRequiredFieldsValid, areRequiredFieldsEmpty))
 
   useSubmitPaymentData(submitCallback)
 
@@ -181,6 +192,7 @@ let make = (~isBancontact=false) => {
           </div>
         </div>
         <ErrorComponent cardError=vgsCardError expiryError=vgsExpiryError cvcError=vgsCVCError />
+        <DynamicFields paymentMethod="card" paymentMethodType="credit" setRequiredFieldsBody />
       </div>
     </div>
   </div>

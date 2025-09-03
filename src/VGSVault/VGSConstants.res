@@ -2,12 +2,19 @@ open VGSTypes
 
 let vgsScriptURL = `https://js.verygoodvault.com/vgs-collect/2.27.2/vgs-collect.js`
 
+let fieldsCssValue = {
+  fontSize: "16px",
+  fontWeight: "400",
+  opacity: "0.6",
+}
+
 let cardNumberOptions = {
   type_: "card-number",
   name: "card_number",
   placeholder: "1234 1234 1234 1234",
   validations: ["required", "validCardNumber"],
   showCardIcon: true,
+  css: fieldsCssValue,
 }
 
 let cardExpiryOptions = (~expiryPlaceholder, ~vault) => {
@@ -18,6 +25,7 @@ let cardExpiryOptions = (~expiryPlaceholder, ~vault) => {
   yearLength: 2,
   showCardIcon: false,
   serializers: [VGS.separate({monthName: "card_exp_month", yearName: "card_exp_year"})],
+  css: fieldsCssValue,
 }
 
 let cardCvcOptions = {
@@ -26,4 +34,5 @@ let cardCvcOptions = {
   placeholder: "123",
   validations: ["required", "validCardSecurityCode"],
   showCardIcon: true,
+  css: fieldsCssValue,
 }

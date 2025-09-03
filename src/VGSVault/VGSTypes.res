@@ -4,6 +4,9 @@ type vgsFieldCss = {
   // fontSize?: string,
   // color?: string,
   // etc.
+  @as("font-size") fontSize?: string,
+  @as("font-weight") fontWeight?: string,
+  opacity?: string,
 }
 
 module VGS = {
