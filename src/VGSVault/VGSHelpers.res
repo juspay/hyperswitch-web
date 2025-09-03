@@ -26,7 +26,8 @@ let getTokenizedData = data => {
   let expiryDetails = getExpiryToken(dict)
   let cardNumber = dict->getString("card_number", "")
   let cardCvc = dict->getString("card_cvc", "")
-  (cardNumber, expiryDetails.month, expiryDetails.year, cardCvc)
+  let prefix = CardUtils.getExpiryYearPrefix()
+  (cardNumber, expiryDetails.month, `${prefix}${expiryDetails.year}`, cardCvc)
 }
 
 let getErrorStr = (fieldname, ~empty=false, localeString: LocaleStringTypes.localeStrings) => {

@@ -1136,6 +1136,7 @@ let usePaymentIntent = (optLogger, paymentType) => {
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry=false,
+    ~isExternalVaultFlow=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>
@@ -1174,7 +1175,9 @@ let usePaymentIntent = (optLogger, paymentType) => {
       )
       let path = switch GlobalVars.sdkVersion {
       | V1 => `payments/${paymentIntentID}/confirm`
-      | V2 => `v2/payments/${keys.paymentId}/confirm-intent`
+      | V2 =>
+        let baseUrl = `v2/payments/${keys.paymentId}/confirm-intent`
+        isExternalVaultFlow ? `${baseUrl}/external-vault-proxy` : baseUrl
       }
       let uri = `${endpoint}/${path}`
 
@@ -1880,6 +1883,7 @@ let usePostSessionTokens = (
     ~isThirdPartyFlow=false,
     ~intentCallback=_ => (),
     ~manualRetry as _=false,
+    ~isExternalVaultFlow as _=false,
   ) => {
     switch keys.clientSecret {
     | Some(clientSecret) =>

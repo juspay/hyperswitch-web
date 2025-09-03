@@ -252,11 +252,14 @@ let formatCardNumber = (val, cardType) => {
 
   formatedCard->trim
 }
-let getExpiryDates = val => {
+let getExpiryYearPrefix = () => {
   let date = Date.make()->Date.toISOString
-  let (month, year) = CardValidations.splitExpiryDates(val)
   let (_, currentYear) = getCurrentMonthAndYear(date)
-  let prefix = currentYear->Int.toString->String.slice(~start=0, ~end=2)
+  currentYear->Int.toString->String.slice(~start=0, ~end=2)
+}
+let getExpiryDates = val => {
+  let (month, year) = CardValidations.splitExpiryDates(val)
+  let prefix = getExpiryYearPrefix()
   (month, `${prefix}${year}`)
 }
 let formatExpiryToTwoDigit = expiry => {
