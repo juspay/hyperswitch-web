@@ -26,7 +26,9 @@ let getTokenizedData = data => {
   let expiryDetails = getExpiryToken(dict)
   let cardNumber = dict->getString("card_number", "")
   let cardCvc = dict->getString("card_cvc", "")
-  (cardNumber, expiryDetails.month, expiryDetails.year, cardCvc)
+  let binNumber = cardNumber->String.slice(~start=0, ~end=5)
+  let lastFour = cardNumber->String.sliceToEnd(~start=-4)
+  (cardNumber, expiryDetails.month, expiryDetails.year, cardCvc, binNumber, lastFour)
 }
 
 let getErrorStr = (fieldname, ~empty=false, localeString: LocaleStringTypes.localeStrings) => {

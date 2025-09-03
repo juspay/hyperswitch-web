@@ -107,15 +107,22 @@ let make = (~isBancontact=false) => {
         let emptyPayload = JSON.Encode.object(Dict.make())
 
         let onSuccess = (_, data) => {
-          let (cardNumber, month, year, cvcNumber) = getTokenizedData(data)
+          let (cardNumber, month, year, cvcNumber, binNumber, lastFour) = getTokenizedData(data)
 
-          let cardBody = PaymentManagementBody.vgsCardBody(~cardNumber, ~month, ~year, ~cvcNumber)
-
+          let cardBody = PaymentManagementBody.vgsCardBody(
+            ~cardNumber,
+            ~month,
+            ~year,
+            ~cvcNumber,
+            ~binNumber,
+            ~lastFour,
+          )
           intent(
             ~bodyArr={cardBody},
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
             ~manualRetry=isManualRetryEnabled,
+            ~isExternalVaultFlow=true,
           )
         }
 
