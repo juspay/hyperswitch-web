@@ -469,7 +469,9 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
       </div>
     </RenderIf>
     {if clickToPayConfig.isReady->Option.isNone {
-      if areClickToPayUIScriptsLoaded {
+      if displayMergedSavedMethods {
+        <PaymentElementShimmer />
+      } else if areClickToPayUIScriptsLoaded {
         <ClickToPayHelpers.SrcLoader />
       } else {
         <PaymentElementShimmer.SavedPaymentCardShimmer />

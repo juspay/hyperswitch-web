@@ -94,11 +94,34 @@ let make = (
     ->React.array
   }
 
+  let clickToPayElement = {
+    <RenderIf condition={clickToPayConfig.isReady == Some(true)}>
+      <ClickToPayAuthenticate
+        loggerState
+        savedMethods
+        isClickToPayAuthenticateError
+        setIsClickToPayAuthenticateError
+        setPaymentToken
+        paymentTokenVal
+        cvcProps
+        getVisaCards
+        setIsClickToPayRememberMe
+        closeComponentIfSavedMethodsAreEmpty
+      />
+    </RenderIf>
+  }
+
   let mergedViewBottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
       {renderSavedCards(cardOptionDetails)}
-      <RenderIf condition={!showMore}> {renderSavedCards(dropDownOptionsDetails)} </RenderIf>
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden
+          ${showMore ? "max-h-0 opacity-0" : "max-h-screen opacity-100"}
+        `}>
+        {renderSavedCards(dropDownOptionsDetails)}
+      </div>
+      clickToPayElement
     </div>
   }
 
@@ -106,20 +129,7 @@ let make = (
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
       <RenderIf condition={!displayMergedSavedMethods}> {renderSavedCards(savedMethods)} </RenderIf>
-      <RenderIf condition={clickToPayConfig.isReady == Some(true)}>
-        <ClickToPayAuthenticate
-          loggerState
-          savedMethods
-          isClickToPayAuthenticateError
-          setIsClickToPayAuthenticateError
-          setPaymentToken
-          paymentTokenVal
-          cvcProps
-          getVisaCards
-          setIsClickToPayRememberMe
-          closeComponentIfSavedMethodsAreEmpty
-        />
-      </RenderIf>
+      clickToPayElement
     </div>
   }
 
