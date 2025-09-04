@@ -746,6 +746,41 @@ let rec intentCall = (
                     ("nextActionData", nextActionData),
                   ]->getJsonFromArrayOfJson
                 resolve(response)
+              } else if intent.payment_method_type == "upi_collect" {
+                let paymentIntentID = clientSecret->Utils.getPaymentId
+                let headers = [
+                  ("Content-Type", "application/json"),
+                  ("api-key", confirmParam.publishableKey),
+                ]
+                let endpoint = ApiEndpoint.getApiEndPoint(
+                  ~publishableKey=confirmParam.publishableKey,
+                )
+                let uri = `${endpoint}/payments/${paymentIntentID}?force_sync=true&client_secret=${clientSecret}`
+                messageParentWindow([
+                  ("fullscreen", true->JSON.Encode.bool),
+                  ("param", "paymentloader"->JSON.Encode.string),
+                  ("iframeId", iframeId->JSON.Encode.string),
+                ])
+                // Do Payments sync call
+                intentCall(
+                  ~fetchApi,
+                  ~uri,
+                  ~headers,
+                  ~bodyStr="",
+                  ~confirmParam: ConfirmType.confirmParams,
+                  ~clientSecret,
+                  ~optLogger,
+                  ~handleUserError,
+                  ~paymentType,
+                  ~iframeId,
+                  ~fetchMethod=#GET,
+                  ~setIsManualRetryEnabled,
+                  ~customPodUri,
+                  ~sdkHandleOneClickConfirmPayment=false,
+                  ~counter=0,
+                  ~isCallbackUsedVal=false,
+                  ~redirectionFlags,
+                )->ignore
               } else {
                 if !isPaymentSession {
                   postFailedSubmitResponse(
