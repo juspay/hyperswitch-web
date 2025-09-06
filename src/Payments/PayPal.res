@@ -23,6 +23,25 @@ let make = (~walletOptions) => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let updateSession = Recoil.useRecoilValueFromAtom(updateSession)
 
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let paymentExperienceArray =
+    paymentMethodListValue.payment_methods
+    ->Array.find(ele => ele.payment_method === "card")
+    ->Option.map(ele =>
+      ele.payment_method_types
+      ->Array.find(ele => ele.payment_method_type == "credit")
+      ->Option.map(ele => ele.payment_experience)
+      ->Option.getOr([])
+    )
+    ->Option.getOr([])
+
+  let eligibleConnectors =
+    paymentExperienceArray
+    ->Array.at(0)
+    ->Option.map(ele => ele.eligible_connectors)
+    ->Option.getOr([])
+
   let (_, _, labelType, _) = options.wallets.style.type_
   let _label = switch labelType {
   | Paypal(val) => val->PaypalSDKTypes.getLabel
@@ -151,7 +170,9 @@ let make = (~walletOptions) => {
       </div>
     </button>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="paypal" setRequiredFieldsBody />
+    <DynamicFieldWrapper
+      eligibleConnectors paymentMethod="wallet" paymentMethodType="paypal" setRequiredFieldsBody
+    />
   }
 }
 

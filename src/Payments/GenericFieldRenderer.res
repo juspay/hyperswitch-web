@@ -1,108 +1,141 @@
 open SuperpositionHelper
+open SuperpositionTypes
 
 @react.component
-let make = (
-  ~field: fieldConfig,
-  ~fieldIndex: string,
-  ~validateField: (option<'a>, fieldConfig) => promise<Nullable.t<string>>,
-) => {
+let make = (~field: fieldConfig, ~fieldIndex: string) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
   let dummyRef = React.useRef(Nullable.null)
-  let getFieldNameFromLocale = (name: string): string => {
-    switch name {
-    | "email" => localeString.emailLabel
-    | "line1" => localeString.line1Label
-    | "line2" => localeString.line2Label
-    | "city" => localeString.cityLabel
-    | "state" => localeString.stateLabel
-    | "zip" => localeString.postalCodeLabel
-    | "country" => localeString.countryLabel
-    | "full_name" => localeString.fullNameLabel
-    | "first_name"
-    | "last_name" =>
+  let getFieldNameFromLocale = fieldName => {
+    switch fieldName {
+    | Email => localeString.emailLabel
+    | Line1 => localeString.line1Label
+    | Line2 => localeString.line2Label
+    | City => localeString.cityLabel
+    | State => localeString.stateLabel
+    | Zip => localeString.postalCodeLabel
+    | Country => localeString.countryLabel
+    | FullName => localeString.fullNameLabel
+    | FirstName
+    | LastName =>
       field.displayName
-    | "number" => localeString.formFieldPhoneNumberLabel
-    | "phone_number_with_country_code" => localeString.formFieldPhoneNumberLabel
-    | "account_number" => localeString.accountNumberText
-    | "routing_number" => localeString.formFieldACHRoutingNumberLabel
-    | "sort_code" => localeString.sortCodeText
-    | "bsb_number" => "BSB Number"
-    | "becs_sort_code" => localeString.sortCodeText
-    | "iban" => "IBAN"
-    | "blik_code" => localeString.payment_methods_blik
-    | "bank_name" => localeString.formFieldBankNameLabel
-    | "issuer" => field.displayName
-    | "cnpj" => field.displayName
-    | "cpf" => field.displayName
-    | "key" => field.displayName
-    | "source_bank_account_id" => "Source Bank Account ID"
-    | "date_of_birth" => localeString.dateOfBirth
-    | "language_preference" => field.displayName
-    | "network" => field.displayName
-    | "pay_currency" => localeString.payment_methods_crypto_currency
-    | "vpa_id" => localeString.vpaIdLabel
-    | "social_security_number" => localeString.socialSecurityNumberLabel
-    | "cvc" => localeString.cvcTextLabel
-    | "client_uid" => field.displayName
-    | "msisdn" => field.displayName
-    | "product_name" => field.displayName
+    | Number => localeString.formFieldPhoneNumberLabel
+    | PhoneNumberWithCountryCode => localeString.formFieldPhoneNumberLabel
+    | AccountNumber => localeString.accountNumberText
+    | RoutingNumber => localeString.formFieldACHRoutingNumberLabel
+    | SortCode => localeString.sortCodeText
+    | BsbNumber => "BSB Number"
+    | BecsSortCode => localeString.sortCodeText
+    | Iban => "IBAN"
+    | BlikCode => localeString.payment_methods_blik
+    | BankName => localeString.formFieldBankNameLabel
+    | Issuer => field.displayName
+    | Cnpj => field.displayName
+    | Cpf => field.displayName
+    | Key => field.displayName
+    | SourceBankAccountId => "Source Bank Account ID"
+    | DateOfBirth => localeString.dateOfBirth
+    | LanguagePreference => field.displayName
+    | Network => field.displayName
+    | PayCurrency => localeString.payment_methods_crypto_currency
+    | VpaId => localeString.vpaIdLabel
+    | SocialSecurityNumber => localeString.socialSecurityNumberLabel
+    | Cvc => localeString.cvcTextLabel
+    | ClientUid => field.displayName
+    | Msisdn => field.displayName
+    | ProductName => field.displayName
     | _ => field.displayName
     }
   }
 
-  let getPlaceholderFromLocale = (name: string): string => {
-    switch name {
-    | "email" => "Eg: johndoe@gmail.com"
-    | "line1" => localeString.line1Placeholder
-    | "line2" => localeString.line2Placeholder
-    | "city" => localeString.cityLabel
-    | "state" => localeString.stateLabel
-    | "zip" => localeString.postalCodeLabel
-    | "country" => localeString.countryLabel
-    | "full_name" => localeString.fullNamePlaceholder
-    | "first_name" => "First Name"
-    | "last_name" => field.displayName
-    | "number" => localeString.formFieldPhoneNumberPlaceholder
-    | "phone_number_with_country_code" => localeString.formFieldPhoneNumberPlaceholder
-    | "account_number" => "DE00 0000 0000 0000 0000 00"
-    | "routing_number" => "DE00 0000 0000 0000 0000 00"
-    | "sort_code" => "10-80-00"
-    | "bsb_number" => "BSB Number"
-    | "becs_sort_code" => "10-80-00"
-    | "iban" => "IBAN"
-    | "blik_code" => localeString.payment_methods_blik
-    | "bank_name" => localeString.formFieldBankNamePlaceholder
-    | "source_bank_account_id" => "DE00 0000 0000 0000 0000 00"
-    | "date_of_birth" => localeString.dateOfBirthPlaceholderText
-    | "pay_currency" => field.displayName
-    | "vpa_id" => "Eg: johndoe@upi"
-    | "social_security_number" => "000.000.000-00"
-    | "cvc" => localeString.cvcTextLabel
+  let getPlaceholderFromLocale = fieldName => {
+    switch fieldName {
+    | Email => "Eg: johndoe@gmail.com"
+    | Line1 => localeString.line1Placeholder
+    | Line2 => localeString.line2Placeholder
+    | City => localeString.cityLabel
+    | State => localeString.stateLabel
+    | Zip => localeString.postalCodeLabel
+    | Country => localeString.countryLabel
+    | FullName => localeString.fullNamePlaceholder
+    | FirstName => "First Name"
+    | LastName => field.displayName
+    | Number => localeString.formFieldPhoneNumberPlaceholder
+    | PhoneNumberWithCountryCode => localeString.formFieldPhoneNumberPlaceholder
+    | AccountNumber => "DE00 0000 0000 0000 0000 00"
+    | RoutingNumber => "DE00 0000 0000 0000 0000 00"
+    | SortCode => "10-80-00"
+    | BsbNumber => "BSB Number"
+    | BecsSortCode => "10-80-00"
+    | Iban => "IBAN"
+    | BlikCode => localeString.payment_methods_blik
+    | BankName => localeString.formFieldBankNamePlaceholder
+    | SourceBankAccountId => "DE00 0000 0000 0000 0000 00"
+    | DateOfBirth => localeString.dateOfBirthPlaceholderText
+    | PayCurrency => field.displayName
+    | VpaId => "Eg: johndoe@upi"
+    | SocialSecurityNumber => "000.000.000-00"
+    | Cvc => localeString.cvcTextLabel
     | _ => field.displayName
     }
   }
 
-  let fieldName = getFieldNameFromOutputPath(field.name)
-  let parent = getFieldNameFromOutputPath(field.name, ~level=2)
+  let fieldName = field.name->getFieldNameFromPath
+  let parent = getFieldNameFromPath(field.name, ~level=2)
+  let fieldNameType = SuperpositionTypes.stringToFieldName(fieldName)
 
-  let name = switch fieldName {
-  | "phone_number_with_country_code" => getParentPathFromOutputPath(field.name)
-  | "number" if parent == "phone" => getParentPathFromOutputPath(field.name)
+  let name = switch fieldNameType {
+  | PhoneNumberWithCountryCode
+  | Number if parent == "phone" =>
+    getParentPathFromOutputPath(field.name)
   | _ => field.name
   }
-
-  let fieldType = field.fieldType
-  let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
   let getFieldFromMergedFields = index =>
     field.mergedFields->Array.get(index)->Option.getOr(defaultFieldConfig)
 
-  switch fieldName {
-  | "city_state_merged" =>
+  let validateField = (value, field) => {
+    let res = switch value {
+    | Some(val) =>
+      switch (field.fieldType, field.fieldName) {
+      | (EmailInput, _) =>
+        if val->EmailValidation.isEmailValid->Option.getOr(false) {
+          Nullable.null
+        } else {
+          Nullable.make(localeString.emailInvalidText)
+        }
+      | (PhoneInput, _) => {
+          let phoneNo =
+            val
+            ->Identity.anyTypeToJson
+            ->Utils.getDictFromJson
+            ->Utils.getString("number", "")
+            ->String.trim
+          if phoneNo->String.length == 0 {
+            Nullable.make("Invalid phone number")
+          } else {
+            Nullable.null
+          }
+        }
+      | _ =>
+        Console.log3("Validating generic field:", field.fieldName, val)
+        if val != "adslg" {
+          Nullable.make(localeString.emailInvalidText)
+        } else {
+          Nullable.null
+        }
+      }
+
+    | None => Nullable.null
+    }
+    Promise.resolve(res)
+  }
+
+  switch fieldNameType {
+  | CityStateMerged =>
     <div className="flex gap-4 w-full">
       {
         let field = getFieldFromMergedFields(0)
-        let fieldName = getFieldNameFromOutputPath(field.name)
+        let fieldName = getFieldNameFromPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
@@ -114,8 +147,10 @@ let make = (
               input
               meta
               inputRef=dummyRef
-              label={getFieldNameFromLocale(fieldName)}
-              placeholder={getPlaceholderFromLocale(fieldName)}
+              label={getFieldNameFromLocale(SuperpositionTypes.stringToFieldName(fieldName))}
+              placeholder={getPlaceholderFromLocale(
+                SuperpositionTypes.stringToFieldName(fieldName),
+              )}
               fieldType
               options
             />
@@ -124,7 +159,7 @@ let make = (
       }
       {
         let field = getFieldFromMergedFields(1)
-        let fieldName = getFieldNameFromOutputPath(field.name)
+        let fieldName = getFieldNameFromPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
@@ -136,8 +171,10 @@ let make = (
               input
               meta
               inputRef=dummyRef
-              label={getFieldNameFromLocale(fieldName)}
-              placeholder={getPlaceholderFromLocale(fieldName)}
+              label={getFieldNameFromLocale(SuperpositionTypes.stringToFieldName(fieldName))}
+              placeholder={getPlaceholderFromLocale(
+                SuperpositionTypes.stringToFieldName(fieldName),
+              )}
               fieldType
               options
             />
@@ -145,11 +182,11 @@ let make = (
         </ReactFinalForm.Field>
       }
     </div>
-  | "zip_country_merged" =>
+  | ZipCountryMerged =>
     <div className="flex gap-4 w-full">
       {
         let field = getFieldFromMergedFields(0)
-        let fieldName = getFieldNameFromOutputPath(field.name)
+        let fieldName = getFieldNameFromPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
@@ -161,8 +198,10 @@ let make = (
               input
               meta
               inputRef=dummyRef
-              label={getFieldNameFromLocale(fieldName)}
-              placeholder={getPlaceholderFromLocale(fieldName)}
+              label={getFieldNameFromLocale(SuperpositionTypes.stringToFieldName(fieldName))}
+              placeholder={getPlaceholderFromLocale(
+                SuperpositionTypes.stringToFieldName(fieldName),
+              )}
               fieldType
               options
             />
@@ -171,7 +210,7 @@ let make = (
       }
       {
         let field = getFieldFromMergedFields(1)
-        let fieldName = getFieldNameFromOutputPath(field.name)
+        let fieldName = getFieldNameFromPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
@@ -185,8 +224,10 @@ let make = (
               input
               meta
               inputRef=dummyRef
-              label={getFieldNameFromLocale(fieldName)}
-              placeholder={getPlaceholderFromLocale(fieldName)}
+              label={getFieldNameFromLocale(SuperpositionTypes.stringToFieldName(fieldName))}
+              placeholder={getPlaceholderFromLocale(
+                SuperpositionTypes.stringToFieldName(fieldName),
+              )}
               fieldType
               options
             />
@@ -194,6 +235,23 @@ let make = (
         </ReactFinalForm.Field>
       }
     </div>
+  | PhoneNumberWithCountryCode =>
+    <ReactFinalForm.Field name key={fieldIndex} validate={(v, _) => validateField(v, field)}>
+      {({input, meta}) => {
+        let fieldType = field.fieldType
+        let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
+        <InputFields.InputFieldRendrer
+          name={fieldName}
+          input
+          meta
+          inputRef=dummyRef
+          label={getFieldNameFromLocale(SuperpositionTypes.stringToFieldName(fieldName))}
+          placeholder={getPlaceholderFromLocale(SuperpositionTypes.stringToFieldName(fieldName))}
+          fieldType
+          options
+        />
+      }}
+    </ReactFinalForm.Field>
   | _ =>
     <ReactFinalForm.Field name key={fieldIndex} validate={(v, _) => validateField(v, field)}>
       {({input, meta}) => {
@@ -204,8 +262,8 @@ let make = (
           input
           meta
           inputRef=dummyRef
-          label={getFieldNameFromLocale(fieldName)}
-          placeholder={getPlaceholderFromLocale(fieldName)}
+          label={getFieldNameFromLocale(SuperpositionTypes.stringToFieldName(fieldName))}
+          placeholder={getPlaceholderFromLocale(SuperpositionTypes.stringToFieldName(fieldName))}
           fieldType
           options
         />

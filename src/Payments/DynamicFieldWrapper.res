@@ -1,18 +1,32 @@
 open SuperpositionHelper
-open ConfigurationService
+open SuperpositionTypes
 
 @react.component
 let make = (
+  ~eligibleConnectors: array<string>,
   ~paymentMethod,
   ~paymentMethodType,
   ~setRequiredFieldsBody,
-  ~cardProps,
-  ~expiryProps,
-  ~cvcProps,
-  ~isBancontact,
-  ~isSaveDetailsWithClickToPay,
+  ~cardProps=None,
+  ~expiryProps=None,
+  ~cvcProps=None,
+  ~isBancontact=false,
+  ~isSaveDetailsWithClickToPay=false,
+  ~isSavedCardFlow=false,
+  ~savedMethod=PaymentType.defaultCustomerMethods,
 ) => {
   let (componentWiseRequiredFields, setComponentWiseRequiredFields) = React.useState(() => None)
+  let contextWithConnectorArray: SuperpositionTypes.connectorArrayContext = {
+    eligibleConnectors: eligibleConnectors->Array.map(value =>
+      value->CommonUtils.snakeToPascalCase
+    ),
+    payment_method: paymentMethod->CommonUtils.snakeToPascalCase,
+    payment_method_type: Some(paymentMethodType->CommonUtils.snakeToPascalCase),
+    country: Some("US"),
+    mandate_type: Some("non_mandate"),
+    collect_shipping_details_from_wallet_connector: Some("required"),
+    collect_billing_details_from_wallet_connector: Some("required"),
+  }
 
   let processCardComponentFields = componentWiseFields => {
     componentWiseFields->Array.map(((componentName, fields)) => {
@@ -20,33 +34,29 @@ let make = (
       | "card" => {
           let sortedFields =
             fields
+            ->mergeFields([CardNumber, CardNetwork], CardNumberNetworkMerged, "Card Number")
             ->mergeFields(
-              ["card_number", "card_network"],
-              "card_number_network_merged",
-              "Card Number",
-            )
-            ->mergeFields(
-              ["card_exp_month", "card_exp_year", "card_cvc"],
-              "card_expiry_cvc_merged",
+              [CardExpMonth, CardExpYear, CardCvc],
+              CardExpiryCvcMerged,
               "Expiry Date and CVC",
             )
-            ->sortFields(componentName)
+            ->sortFields(SuperpositionTypes.stringToComponentType(componentName))
           (componentName, sortedFields)
         }
       | "shipping"
       | "billing" => {
           let sortedFields =
             fields
-            ->mergeFields(["first_name", "last_name"], "full_name", "Full Name")
+            ->mergeFields([FirstName, LastName], FullName, "Full Name")
             ->mergeFields(
-              ["number", "country_code"],
-              "phone_number_with_country_code",
+              [Number, CountryCode],
+              PhoneNumberWithCountryCode,
               "Phone Number",
               ~parent="phone",
             )
-            ->mergeFields(["city", "state"], "city_state_merged", "City and State")
-            ->mergeFields(["zip", "country"], "zip_country_merged", "Zip and Country")
-            ->sortFields(componentName)
+            ->mergeFields([City, State], CityStateMerged, "City and State")
+            ->mergeFields([Zip, Country], ZipCountryMerged, "Zip and Country")
+            ->sortFields(SuperpositionTypes.stringToComponentType(componentName))
           (componentName, sortedFields)
         }
 
@@ -56,16 +66,15 @@ let make = (
   }
 
   let initSuperposition = async () => {
-    let componentRequiredFields = await SuperpositionHelper.initSuperpositionAndGetRequiredFields()
-
+    let componentRequiredFields = await SuperpositionHelper.initSuperpositionAndGetRequiredFields(
+      ~contextWithConnectorArray,
+    )
     let processedFields = switch componentRequiredFields {
     | Some(fields) => Some(processCardComponentFields(fields))
     | None => None
     }
-
+    Console.log2("Processed Fields:", processedFields)
     setComponentWiseRequiredFields(_ => processedFields)
-    Console.log2("Component required fields:", componentRequiredFields)
-    Console.log2("Processed fields with merging:", processedFields)
   }
 
   React.useEffect0(() => {
@@ -87,9 +96,9 @@ let make = (
       paymentMethod
       paymentMethodType
       setRequiredFieldsBody
-      cardProps={Some(cardProps)}
-      expiryProps={Some(expiryProps)}
-      cvcProps={Some(cvcProps)}
+      cardProps={cardProps}
+      expiryProps={expiryProps}
+      cvcProps={cvcProps}
       isBancontact
       isSaveDetailsWithClickToPay
     />

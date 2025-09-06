@@ -1,4 +1,5 @@
 open SuperpositionHelper
+open SuperpositionTypes
 
 @react.component
 let make = (
@@ -7,30 +8,7 @@ let make = (
   ~expiryProps=?,
   ~cvcProps=?,
 ) => {
-  let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
-
-  let (cardBrand, setCardBrand) = React.useState(_ => "")
-  let (isCardValid, setIsCardValid) = React.useState(_ => None)
-  let (isExpiryValid, setIsExpiryValid) = React.useState(_ => None)
-  let (isCVCValid, setIsCVCValid) = React.useState(_ => None)
-  let (currentCVC, setCurrentCVC) = React.useState(_ => "")
-
-  let validateField = (value, field) => {
-    switch value {
-    | Some(val) =>
-      switch field.fieldType {
-      | "email_input" =>
-        Console.log2("Validating email:", val)
-        if val->EmailValidation.isEmailValid->Option.getOr(false) {
-          Promise.resolve(Nullable.null)
-        } else {
-          Promise.resolve(Nullable.make(localeString.emailInvalidText))
-        }
-      | _ => Promise.resolve(Nullable.null)
-      }
-    | None => Promise.resolve(Nullable.null)
-    }
-  }
+  let {config, themeObj} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
 
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
@@ -42,9 +20,9 @@ let make = (
     }
   }
 
-  let handleFormSubmit = (values, form) => {
+  let handleFormSubmit = (values, form: ReactFinalForm.formApi) => {
+    Console.log2("Form state", form.getState())
     Console.log2("Form values:", values)
-    Console.log2("Form api:", form)
     Promise.resolve(Nullable.null)
   }
 
@@ -52,9 +30,10 @@ let make = (
     <ReactFinalForm.Form
       key="dynamic-fields-form"
       onSubmit={handleFormSubmit}
-      render={({handleSubmit, form}) => {
+      subscription={Dict.fromArray([("submitting", true), ("submitError", true)])}
+      render={({form}) => {
         Utils.useSubmitPaymentData(ev => submitCallback(ev, form))
-        <form onSubmit={handleSubmit}>
+        <form>
           <div
             className="flex flex-col w-full place-content-between"
             style={
@@ -68,51 +47,33 @@ let make = (
               {componentWiseRequiredFields
               ->Array.mapWithIndex((componentWithField, _index) => {
                 let (componentName, fields) = componentWithField
-                switch componentName {
-                | "card" =>
+                let componentType = SuperpositionTypes.stringToComponentType(componentName)
+                switch componentType {
+                | Card =>
                   fields
                   ->Array.mapWithIndex((field, _fieldIndex) => {
-                    <CardFieldRenderer
-                      fieldIndex={field.outputPath}
-                      field
-                      cardBrand
-                      setCardBrand
-                      isCardValid
-                      setIsCardValid
-                      isExpiryValid
-                      setIsExpiryValid
-                      isCVCValid
-                      setIsCVCValid
-                      currentCVC
-                      setCurrentCVC
-                    />
+                    <CardFieldRenderer fieldIndex={field.outputPath} field />
                   })
                   ->React.array
-                | "billing"
-                | "shipping" =>
+                | Billing
+                | Shipping
+                | Bank
+                | Wallet
+                | Crypto
+                | Upi
+                | Voucher
+                | GiftCard
+                | MobilePayment
+                | Other =>
                   fields
                   ->Array.mapWithIndex((field, _fieldIndex) => {
-                    <GenericFieldRenderer fieldIndex={field.outputPath} field validateField />
+                    <GenericFieldRenderer fieldIndex={field.outputPath} field />
                   })
                   ->React.array
-                | "bank"
-                | "wallet"
-                | "crypto"
-                | "upi"
-                | "voucher"
-                | "gift_card"
-                | "mobile_payment"
-                | "other" =>
-                  fields
-                  ->Array.mapWithIndex((field, _fieldIndex) => {
-                    <GenericFieldRenderer fieldIndex={field.outputPath} field validateField />
-                  })
-                  ->React.array
-                | _ => React.null
                 }
               })
               ->React.array}
-              <ReactFinalForm.FormValuesSpy />
+              <Utils.FormValuesSpy />
             </div>
           </div>
         </form>

@@ -15,6 +15,24 @@ let make = () => {
 
   let complete = email.value != "" && email.isValid->Option.getOr(false)
   let empty = email.value == ""
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let paymentExperienceArray =
+    paymentMethodListValue.payment_methods
+    ->Array.find(ele => ele.payment_method === "bank_transfer")
+    ->Option.map(ele =>
+      ele.payment_method_types
+      ->Array.find(ele => ele.payment_method_type == "ach")
+      ->Option.map(ele => ele.payment_experience)
+      ->Option.getOr([])
+    )
+    ->Option.getOr([])
+
+  let eligibleConnectors =
+    paymentExperienceArray
+    ->Array.at(0)
+    ->Option.map(ele => ele.eligible_connectors)
+    ->Option.getOr([])
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
 
@@ -23,31 +41,33 @@ let make = () => {
     None
   }, [complete])
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    if confirm.doSubmit {
-      if complete {
-        let bodyArr =
-          PaymentBody.dynamicPaymentBody("bank_transfer", "ach")->mergeAndFlattenToTuples(
-            requiredFieldsBody,
-          )
-        intent(
-          ~bodyArr,
-          ~confirmParam=confirm.confirmParams,
-          ~handleUserError=false,
-          ~iframeId,
-          ~manualRetry=isManualRetryEnabled,
-        )
-      } else {
-        postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
-      }
-    }
-  }, (email, isManualRetryEnabled))
-  useSubmitPaymentData(submitCallback)
+  // let submitCallback = React.useCallback((ev: Window.event) => {
+  //   let json = ev.data->safeParse
+  //   let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+  //   if confirm.doSubmit {
+  //     if complete {
+  //       let bodyArr =
+  //         PaymentBody.dynamicPaymentBody("bank_transfer", "ach")->mergeAndFlattenToTuples(
+  //           requiredFieldsBody,
+  //         )
+  //       intent(
+  //         ~bodyArr,
+  //         ~confirmParam=confirm.confirmParams,
+  //         ~handleUserError=false,
+  //         ~iframeId,
+  //         ~manualRetry=isManualRetryEnabled,
+  //       )
+  //     } else {
+  //       postFailedSubmitResponse(~errortype="validation_error", ~message="Please enter all fields")
+  //     }
+  //   }
+  // }, (email, isManualRetryEnabled))
+  // useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields paymentMethod="bank_transfer" paymentMethodType="ach" setRequiredFieldsBody />
+    <DynamicFieldWrapper
+      eligibleConnectors paymentMethod="BankTransfer" paymentMethodType="Ach" setRequiredFieldsBody
+    />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="ach" />
     <InfoElement />
   </div>

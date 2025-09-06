@@ -24,6 +24,7 @@ let make = (
   ~inputRef,
   ~displayValue=?,
   ~setDisplayValue=?,
+  ~onFocus=?,
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -36,7 +37,8 @@ let make = (
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
-  let handleFocus = _ => {
+  let handleFocus = ev => {
+    onFocus->Option.forEach(fn => fn(ev))
     setInputFocused(_ => true)
     switch setValue {
     | Some(fn) =>
@@ -94,13 +96,10 @@ let make = (
 
   let flexDirectionBasedOnType = type_ === "tel" ? "flex-row" : "flex-col"
 
-  // Wrap onChange to include logging
   let wrappedOnChange = ev => {
-    // Log the input change using the name parameter
     if name->String.length > 0 {
       LoggerUtils.logInputChangeInfo(name, loggerState)
     }
-    // Call the original onChange handler
     onChange(ev)
   }
 
@@ -153,67 +152,69 @@ let make = (
           {React.string(fieldName)}
         </div>
       </RenderIf>
-      <div className="flex flex-row w-full" style={direction: direction}>
-        <div className="relative w-full">
-          <input
-            style={
-              background: backgroundClass,
-              padding: themeObj.spacingUnit,
-              width: "100%",
-            }
-            disabled=readOnly
-            ref={inputRef->ReactDOM.Ref.domRef}
-            type_
-            name
-            ?maxLength
-            ?pattern
-            className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
-            placeholder={config.appearance.labels == Above || config.appearance.labels == Never
-              ? placeholder
-              : ""}
-            value={value.value}
-            autoComplete="on"
-            onChange=wrappedOnChange
-            onBlur=handleBlur
-            onFocus=handleFocus
-            ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
-          />
-          <RenderIf condition={config.appearance.labels == Floating}>
-            <div
-              className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
+      <div className="flex flex-col w-full">
+        <div className="flex flex-row w-full" style={direction: direction}>
+          <div className="relative w-full">
+            <input
               style={
-                marginBottom: {
-                  inputFocused || value.value->String.length > 0 || type_ == "date"
-                    ? ""
-                    : themeObj.spacingUnit
-                },
-                fontSize: {
-                  inputFocused || value.value->String.length > 0 || type_ == "date"
-                    ? themeObj.fontSizeXs
-                    : ""
-                },
-                opacity: "0.6",
+                background: backgroundClass,
+                padding: themeObj.spacingUnit,
+                width: "100%",
               }
-              ariaHidden=true>
-              {React.string(fieldName)}
-            </div>
-          </RenderIf>
+              disabled=readOnly
+              ref={inputRef->ReactDOM.Ref.domRef}
+              type_
+              name
+              ?maxLength
+              ?pattern
+              className={`${inputClassStyles} ${inputClass} ${className} focus:outline-none transition-shadow ease-out duration-200`}
+              placeholder={config.appearance.labels == Above || config.appearance.labels == Never
+                ? placeholder
+                : ""}
+              value={value.value}
+              autoComplete="on"
+              onChange=wrappedOnChange
+              onBlur=handleBlur
+              onFocus=handleFocus
+              ariaLabel={`Type to fill ${fieldName->String.length > 0 ? fieldName : name} input`}
+            />
+            <RenderIf condition={config.appearance.labels == Floating}>
+              <div
+                className={`Label ${floatinglabelClass} ${labelClass} absolute bottom-0 ml-3 ${focusClass}`}
+                style={
+                  marginBottom: {
+                    inputFocused || value.value->String.length > 0 || type_ == "date"
+                      ? ""
+                      : themeObj.spacingUnit
+                  },
+                  fontSize: {
+                    inputFocused || value.value->String.length > 0 || type_ == "date"
+                      ? themeObj.fontSizeXs
+                      : ""
+                  },
+                  opacity: "0.6",
+                }
+                ariaHidden=true>
+                {React.string(fieldName)}
+              </div>
+            </RenderIf>
+          </div>
+          <div className={`relative flex -ml-10  items-center`}> {rightIcon} </div>
         </div>
-        <div className={`relative flex -ml-10  items-center`}> {rightIcon} </div>
+        <RenderIf condition={value.errorString->String.length > 0}>
+          <div
+            className="Error pt-1"
+            style={
+              color: themeObj.colorDangerText,
+              fontSize: themeObj.fontSizeSm,
+              alignSelf: "start",
+              textAlign: "left",
+            }
+            ariaHidden=true>
+            {React.string(value.errorString)}
+          </div>
+        </RenderIf>
       </div>
-      <RenderIf condition={value.errorString->String.length > 0}>
-        <div
-          className="Error pt-1"
-          style={
-            color: themeObj.colorDangerText,
-            fontSize: themeObj.fontSizeSm,
-            alignSelf: "start",
-            textAlign: "left",
-          }
-          ariaHidden=true>
-          {React.string(value.errorString)}
-        </div>
-      </RenderIf>
     </div>
   </div>
 }

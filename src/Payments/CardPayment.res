@@ -21,6 +21,24 @@ let make = (
   let options = Recoil.useRecoilValueFromAtom(RecoilAtoms.optionAtom)
   let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let paymentExperienceArray =
+    paymentMethodListValue.payment_methods
+    ->Array.find(ele => ele.payment_method === "card")
+    ->Option.map(ele =>
+      ele.payment_method_types
+      ->Array.find(ele => ele.payment_method_type == "credit")
+      ->Option.map(ele => ele.payment_experience)
+      ->Option.getOr([])
+    )
+    ->Option.getOr([])
+
+  let eligibleConnectors =
+    paymentExperienceArray
+    ->Array.at(0)
+    ->Option.map(ele => ele.eligible_connectors)
+    ->Option.getOr([])
+
   let email = Recoil.useRecoilValueFromAtom(RecoilAtoms.userEmailAddress)
   let fullName = Recoil.useRecoilValueFromAtom(RecoilAtoms.userFullName)
   let phoneNumber = Recoil.useRecoilValueFromAtom(RecoilAtoms.userPhoneNumber)
@@ -154,280 +172,280 @@ let make = (
     ~isGuestCustomer,
   )
 
-  let submitCallback = React.useCallback((ev: Window.event) => {
-    let json = ev.data->safeParse
-    let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
-    let (month, year) = CardUtils.getExpiryDates(cardExpiry)
+  // let submitCallback = React.useCallback((ev: Window.event) => {
+  //   let json = ev.data->safeParse
+  //   let confirm = json->getDictFromJson->ConfirmType.itemToObjMapper
+  //   let (month, year) = CardUtils.getExpiryDates(cardExpiry)
 
-    let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
-    let cardNetwork = [
-      ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
-    ]
+  //   let onSessionBody = [("customer_acceptance", PaymentBody.customerAcceptanceBody)]
+  //   let cardNetwork = [
+  //     ("card_network", cardBrand != "" ? cardBrand->JSON.Encode.string : JSON.Encode.null),
+  //   ]
 
-    let defaultCardBody = switch GlobalVars.sdkVersion {
-    | V1 =>
-      PaymentBody.cardPaymentBody(
-        ~cardNumber,
-        ~month,
-        ~year,
-        ~cardHolderName=None,
-        ~cvcNumber,
-        ~cardBrand=cardNetwork,
-        ~nickname=nickname.value,
-      )
-    | V2 =>
-      PaymentManagementBody.saveCardBody(
-        ~cardNumber,
-        ~month,
-        ~year,
-        ~cardHolderName=None,
-        ~cvcNumber,
-        ~cardBrand=cardNetwork,
-        ~nickname=nickname.value,
-      )
-    }
+  //   let defaultCardBody = switch GlobalVars.sdkVersion {
+  //   | V1 =>
+  //     PaymentBody.cardPaymentBody(
+  //       ~cardNumber,
+  //       ~month,
+  //       ~year,
+  //       ~cardHolderName=None,
+  //       ~cvcNumber,
+  //       ~cardBrand=cardNetwork,
+  //       ~nickname=nickname.value,
+  //     )
+  //   | V2 =>
+  //     PaymentManagementBody.saveCardBody(
+  //       ~cardNumber,
+  //       ~month,
+  //       ~year,
+  //       ~cardHolderName=None,
+  //       ~cvcNumber,
+  //       ~cardBrand=cardNetwork,
+  //       ~nickname=nickname.value,
+  //     )
+  //   }
 
-    let banContactBody = PaymentBody.bancontactBody()
-    let cardBody = if isCustomerAcceptanceRequired {
-      defaultCardBody->Array.concat(onSessionBody)
-    } else {
-      defaultCardBody
-    }
+  //   let banContactBody = PaymentBody.bancontactBody()
+  //   let cardBody = if isCustomerAcceptanceRequired {
+  //     defaultCardBody->Array.concat(onSessionBody)
+  //   } else {
+  //     defaultCardBody
+  //   }
 
-    let isRecognizedClickToPayPayment = ctpCards->Array.length > 0 && clickToPayCardBrand !== ""
+  //   let isRecognizedClickToPayPayment = ctpCards->Array.length > 0 && clickToPayCardBrand !== ""
 
-    let isUnrecognizedClickToPayPayment = isSaveDetailsWithClickToPay
+  //   let isUnrecognizedClickToPayPayment = isSaveDetailsWithClickToPay
 
-    if confirm.doSubmit {
-      let isCardDetailsValid =
-        isCVCValid->Option.getOr(false) &&
-        isCardValid->Option.getOr(false) &&
-        isCardSupported->Option.getOr(false) &&
-        isExpiryValid->Option.getOr(false)
+  //   if confirm.doSubmit {
+  //     let isCardDetailsValid =
+  //       isCVCValid->Option.getOr(false) &&
+  //       isCardValid->Option.getOr(false) &&
+  //       isCardSupported->Option.getOr(false) &&
+  //       isExpiryValid->Option.getOr(false)
 
-      let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
+  //     let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
 
-      let validFormat =
-        (isBancontact || isCardDetailsValid) && isNicknameValid && areRequiredFieldsValid
+  //     let validFormat =
+  //       (isBancontact || isCardDetailsValid) && isNicknameValid && areRequiredFieldsValid
 
-      if validFormat && (showPaymentMethodsScreen || isBancontact) {
-        if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
-          ClickToPayHelpers.handleOpenClickToPayWindow()
+  //     if validFormat && (showPaymentMethodsScreen || isBancontact) {
+  //       if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
+  //         ClickToPayHelpers.handleOpenClickToPayWindow()
 
-          switch clickToPayProvider {
-          | MASTERCARD =>
-            try {
-              (
-                async () => {
-                  let res = await ClickToPayHelpers.encryptCardForClickToPay(
-                    ~cardNumber=cardNumber->CardValidations.clearSpaces,
-                    ~expiryMonth=month,
-                    ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
-                    ~cvcNumber,
-                    ~logger=loggerState,
-                  )
+  //         switch clickToPayProvider {
+  //         | MASTERCARD =>
+  //           try {
+  //             (
+  //               async () => {
+  //                 let res = await ClickToPayHelpers.encryptCardForClickToPay(
+  //                   ~cardNumber=cardNumber->CardValidations.clearSpaces,
+  //                   ~expiryMonth=month,
+  //                   ~expiryYear=year->CardUtils.formatExpiryToTwoDigit,
+  //                   ~cvcNumber,
+  //                   ~logger=loggerState,
+  //                 )
 
-                  switch res {
-                  | Ok(res) => {
-                      let resp = await ClickToPayHelpers.handleProceedToPay(
-                        ~encryptedCard=res,
-                        ~isCheckoutWithNewCard=true,
-                        ~isUnrecognizedUser=ctpCards->Array.length == 0,
-                        ~email=email.value,
-                        ~phoneNumber=phoneNumber.value,
-                        ~countryCode=phoneNumber.countryCode
-                        ->Option.getOr("")
-                        ->String.replace("+", ""),
-                        ~rememberMe=isClickToPayRememberMe,
-                        ~logger=loggerState,
-                        ~clickToPayProvider,
-                        ~clickToPayToken=clickToPayConfig.clickToPayToken,
-                      )
-                      let dict = resp.payload->Utils.getDictFromJson
-                      let headers = dict->Utils.getDictFromDict("headers")
-                      let merchantTransactionId =
-                        headers->Utils.getString("merchant-transaction-id", "")
-                      let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
-                      let correlationId =
-                        dict
-                        ->Utils.getDictFromDict("checkoutResponseData")
-                        ->Utils.getString("srcCorrelationId", "")
+  //                 switch res {
+  //                 | Ok(res) => {
+  //                     let resp = await ClickToPayHelpers.handleProceedToPay(
+  //                       ~encryptedCard=res,
+  //                       ~isCheckoutWithNewCard=true,
+  //                       ~isUnrecognizedUser=ctpCards->Array.length == 0,
+  //                       ~email=email.value,
+  //                       ~phoneNumber=phoneNumber.value,
+  //                       ~countryCode=phoneNumber.countryCode
+  //                       ->Option.getOr("")
+  //                       ->String.replace("+", ""),
+  //                       ~rememberMe=isClickToPayRememberMe,
+  //                       ~logger=loggerState,
+  //                       ~clickToPayProvider,
+  //                       ~clickToPayToken=clickToPayConfig.clickToPayToken,
+  //                     )
+  //                     let dict = resp.payload->Utils.getDictFromJson
+  //                     let headers = dict->Utils.getDictFromDict("headers")
+  //                     let merchantTransactionId =
+  //                       headers->Utils.getString("merchant-transaction-id", "")
+  //                     let xSrcFlowId = headers->Utils.getString("x-src-cx-flow-id", "")
+  //                     let correlationId =
+  //                       dict
+  //                       ->Utils.getDictFromDict("checkoutResponseData")
+  //                       ->Utils.getString("srcCorrelationId", "")
 
-                      let clickToPayBody = PaymentBody.mastercardClickToPayBody(
-                        ~merchantTransactionId,
-                        ~correlationId,
-                        ~xSrcFlowId,
-                      )
-                      intent(
-                        ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
-                        ~confirmParam=confirm.confirmParams,
-                        ~handleUserError=false,
-                        ~manualRetry=isManualRetryEnabled,
-                      )
-                    }
-                  | Error(err) =>
-                    loggerState.setLogError(
-                      ~value={
-                        "message": `Error during checkout - ${err
-                          ->Utils.formatException
-                          ->JSON.stringify}`,
-                        "scheme": clickToPayProvider,
-                      }
-                      ->JSON.stringifyAny
-                      ->Option.getOr(""),
-                      ~eventName=CLICK_TO_PAY_FLOW,
-                    )
-                  }
-                }
-              )()->ignore
-            } catch {
-            | err =>
-              loggerState.setLogError(
-                ~value={
-                  "message": `Error during checkout - ${err
-                    ->Utils.formatException
-                    ->JSON.stringify}`,
-                  "scheme": clickToPayProvider,
-                }
-                ->JSON.stringifyAny
-                ->Option.getOr(""),
-                ~eventName=CLICK_TO_PAY_FLOW,
-              )
-            }
+  //                     let clickToPayBody = PaymentBody.mastercardClickToPayBody(
+  //                       ~merchantTransactionId,
+  //                       ~correlationId,
+  //                       ~xSrcFlowId,
+  //                     )
+  //                     intent(
+  //                       ~bodyArr=clickToPayBody->mergeAndFlattenToTuples(requiredFieldsBody),
+  //                       ~confirmParam=confirm.confirmParams,
+  //                       ~handleUserError=false,
+  //                       ~manualRetry=isManualRetryEnabled,
+  //                     )
+  //                   }
+  //                 | Error(err) =>
+  //                   loggerState.setLogError(
+  //                     ~value={
+  //                       "message": `Error during checkout - ${err
+  //                         ->Utils.formatException
+  //                         ->JSON.stringify}`,
+  //                       "scheme": clickToPayProvider,
+  //                     }
+  //                     ->JSON.stringifyAny
+  //                     ->Option.getOr(""),
+  //                     ~eventName=CLICK_TO_PAY_FLOW,
+  //                   )
+  //                 }
+  //               }
+  //             )()->ignore
+  //           } catch {
+  //           | err =>
+  //             loggerState.setLogError(
+  //               ~value={
+  //                 "message": `Error during checkout - ${err
+  //                   ->Utils.formatException
+  //                   ->JSON.stringify}`,
+  //                 "scheme": clickToPayProvider,
+  //               }
+  //               ->JSON.stringifyAny
+  //               ->Option.getOr(""),
+  //               ~eventName=CLICK_TO_PAY_FLOW,
+  //             )
+  //           }
 
-          | VISA => {
-              let expiry = cardExpiry->String.split("/")->Array.map(String.trim)
-              let month = expiry->Array.at(0)->Option.getOr("")
-              let year = "20" ++ expiry->Array.at(1)->Option.getOr("")
-              let payload = [
-                convertKeyValueToJsonStringPair(
-                  "primaryAccountNumber",
-                  cardNumber->String.replaceAll(" ", ""),
-                ),
-                convertKeyValueToJsonStringPair("panExpirationMonth", month),
-                convertKeyValueToJsonStringPair("panExpirationYear", year),
-                convertKeyValueToJsonStringPair("cardSecurityCode", cvcNumber->String.trim),
-                convertKeyValueToJsonStringPair("cardHolderName", fullName.value->String.trim),
-              ]
+  //         | VISA => {
+  //             let expiry = cardExpiry->String.split("/")->Array.map(String.trim)
+  //             let month = expiry->Array.at(0)->Option.getOr("")
+  //             let year = "20" ++ expiry->Array.at(1)->Option.getOr("")
+  //             let payload = [
+  //               convertKeyValueToJsonStringPair(
+  //                 "primaryAccountNumber",
+  //                 cardNumber->String.replaceAll(" ", ""),
+  //               ),
+  //               convertKeyValueToJsonStringPair("panExpirationMonth", month),
+  //               convertKeyValueToJsonStringPair("panExpirationYear", year),
+  //               convertKeyValueToJsonStringPair("cardSecurityCode", cvcNumber->String.trim),
+  //               convertKeyValueToJsonStringPair("cardHolderName", fullName.value->String.trim),
+  //             ]
 
-              let dict = Dict.make()
-              payload->Array.forEach(((key, value)) => Dict.set(dict, key, value))
-              let cardPayloadJson = JSON.Encode.object(dict)
+  //             let dict = Dict.make()
+  //             payload->Array.forEach(((key, value)) => Dict.set(dict, key, value))
+  //             let cardPayloadJson = JSON.Encode.object(dict)
 
-              (
-                async () => {
-                  let encryptedCard =
-                    await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard
+  //             (
+  //               async () => {
+  //                 let encryptedCard =
+  //                   await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard
 
-                  try {
-                    let res = await ClickToPayHelpers.handleProceedToPay(
-                      ~visaEncryptedCard=encryptedCard,
-                      ~isCheckoutWithNewCard=true,
-                      ~isUnrecognizedUser=ctpCards->Array.length == 0,
-                      ~email=email.value,
-                      ~phoneNumber=phoneNumber.value,
-                      ~countryCode=phoneNumber.countryCode
-                      ->Option.getOr("")
-                      ->String.replace("+", ""),
-                      ~rememberMe=isClickToPayRememberMe,
-                      ~logger=loggerState,
-                      ~clickToPayProvider,
-                      ~clickToPayToken=clickToPayConfig.clickToPayToken,
-                      ~orderId=clientSecret->Option.getOr(""),
-                      ~fullName=fullName.value,
-                    )
-                    let dict = res.payload->Utils.getDictFromJson
-                    let clickToPayBody = PaymentBody.visaClickToPayBody(
-                      ~email=clickToPayConfig.email,
-                      ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
-                    )
-                    intent(
-                      ~bodyArr=clickToPayBody,
-                      ~confirmParam=confirm.confirmParams,
-                      ~handleUserError=false,
-                      ~manualRetry=isManualRetryEnabled,
-                    )
-                  } catch {
-                  | err =>
-                    loggerState.setLogError(
-                      ~value={
-                        "message": `Error during checkout - ${err
-                          ->Utils.formatException
-                          ->JSON.stringify}`,
-                        "scheme": clickToPayProvider,
-                      }
-                      ->JSON.stringifyAny
-                      ->Option.getOr(""),
-                      ~eventName=CLICK_TO_PAY_FLOW,
-                    )
-                  }
-                }
-              )()->ignore
-            }
-          | NONE => ()
-          }
-        } else if isPMMFlow {
-          saveCard(
-            ~bodyArr=cardBody->mergeAndFlattenToTuples(requiredFieldsBody),
-            ~confirmParam={
-              return_url: options.sdkHandleSavePayment.confirmParams.return_url,
-              publishableKey,
-            },
-            ~handleUserError=true,
-          )
-        } else {
-          intent(
-            ~bodyArr={
-              (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(
-                requiredFieldsBody,
-              )
-            },
-            ~confirmParam=confirm.confirmParams,
-            ~handleUserError=false,
-            ~manualRetry=isManualRetryEnabled,
-          )
-        }
-      } else {
-        if cardNumber === "" {
-          setCardError(_ => localeString.cardNumberEmptyText)
-          setUserError(localeString.enterFieldsText)
-        } else if isCardSupported->Option.getOr(true)->not {
-          if cardBrand == "" {
-            setCardError(_ => localeString.enterValidCardNumberErrorText)
-            setUserError(localeString.enterValidDetailsText)
-          } else {
-            setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
-            setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
-          }
-        }
-        if cardExpiry === "" {
-          setExpiryError(_ => localeString.cardExpiryDateEmptyText)
-          setUserError(localeString.enterFieldsText)
-        }
-        if !isBancontact && cvcNumber === "" {
-          setCvcError(_ => localeString.cvcNumberEmptyText)
-          setUserError(localeString.enterFieldsText)
-        }
-        if !validFormat {
-          setUserError(localeString.enterValidDetailsText)
-        }
-      }
-    }
-  }, (
-    areRequiredFieldsValid,
-    requiredFieldsBody,
-    empty,
-    complete,
-    isCustomerAcceptanceRequired,
-    nickname,
-    isCardBrandValid,
-    isManualRetryEnabled,
-    cardProps,
-    clickToPayConfig,
-    clickToPayCardBrand,
-    isClickToPayRememberMe,
-  ))
-  useSubmitPaymentData(submitCallback)
+  //                 try {
+  //                   let res = await ClickToPayHelpers.handleProceedToPay(
+  //                     ~visaEncryptedCard=encryptedCard,
+  //                     ~isCheckoutWithNewCard=true,
+  //                     ~isUnrecognizedUser=ctpCards->Array.length == 0,
+  //                     ~email=email.value,
+  //                     ~phoneNumber=phoneNumber.value,
+  //                     ~countryCode=phoneNumber.countryCode
+  //                     ->Option.getOr("")
+  //                     ->String.replace("+", ""),
+  //                     ~rememberMe=isClickToPayRememberMe,
+  //                     ~logger=loggerState,
+  //                     ~clickToPayProvider,
+  //                     ~clickToPayToken=clickToPayConfig.clickToPayToken,
+  //                     ~orderId=clientSecret->Option.getOr(""),
+  //                     ~fullName=fullName.value,
+  //                   )
+  //                   let dict = res.payload->Utils.getDictFromJson
+  //                   let clickToPayBody = PaymentBody.visaClickToPayBody(
+  //                     ~email=clickToPayConfig.email,
+  //                     ~encryptedPayload=dict->Utils.getString("checkoutResponse", ""),
+  //                   )
+  //                   intent(
+  //                     ~bodyArr=clickToPayBody,
+  //                     ~confirmParam=confirm.confirmParams,
+  //                     ~handleUserError=false,
+  //                     ~manualRetry=isManualRetryEnabled,
+  //                   )
+  //                 } catch {
+  //                 | err =>
+  //                   loggerState.setLogError(
+  //                     ~value={
+  //                       "message": `Error during checkout - ${err
+  //                         ->Utils.formatException
+  //                         ->JSON.stringify}`,
+  //                       "scheme": clickToPayProvider,
+  //                     }
+  //                     ->JSON.stringifyAny
+  //                     ->Option.getOr(""),
+  //                     ~eventName=CLICK_TO_PAY_FLOW,
+  //                   )
+  //                 }
+  //               }
+  //             )()->ignore
+  //           }
+  //         | NONE => ()
+  //         }
+  //       } else if isPMMFlow {
+  //         saveCard(
+  //           ~bodyArr=cardBody->mergeAndFlattenToTuples(requiredFieldsBody),
+  //           ~confirmParam={
+  //             return_url: options.sdkHandleSavePayment.confirmParams.return_url,
+  //             publishableKey,
+  //           },
+  //           ~handleUserError=true,
+  //         )
+  //       } else {
+  //         intent(
+  //           ~bodyArr={
+  //             (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(
+  //               requiredFieldsBody,
+  //             )
+  //           },
+  //           ~confirmParam=confirm.confirmParams,
+  //           ~handleUserError=false,
+  //           ~manualRetry=isManualRetryEnabled,
+  //         )
+  //       }
+  //     } else {
+  //       if cardNumber === "" {
+  //         setCardError(_ => localeString.cardNumberEmptyText)
+  //         setUserError(localeString.enterFieldsText)
+  //       } else if isCardSupported->Option.getOr(true)->not {
+  //         if cardBrand == "" {
+  //           setCardError(_ => localeString.enterValidCardNumberErrorText)
+  //           setUserError(localeString.enterValidDetailsText)
+  //         } else {
+  //           setCardError(_ => localeString.cardBrandConfiguredErrorText(cardBrand))
+  //           setUserError(localeString.cardBrandConfiguredErrorText(cardBrand))
+  //         }
+  //       }
+  //       if cardExpiry === "" {
+  //         setExpiryError(_ => localeString.cardExpiryDateEmptyText)
+  //         setUserError(localeString.enterFieldsText)
+  //       }
+  //       if !isBancontact && cvcNumber === "" {
+  //         setCvcError(_ => localeString.cvcNumberEmptyText)
+  //         setUserError(localeString.enterFieldsText)
+  //       }
+  //       if !validFormat {
+  //         setUserError(localeString.enterValidDetailsText)
+  //       }
+  //     }
+  //   }
+  // }, (
+  //   areRequiredFieldsValid,
+  //   requiredFieldsBody,
+  //   empty,
+  //   complete,
+  //   isCustomerAcceptanceRequired,
+  //   nickname,
+  //   isCardBrandValid,
+  //   isManualRetryEnabled,
+  //   cardProps,
+  //   clickToPayConfig,
+  //   clickToPayCardBrand,
+  //   isClickToPayRememberMe,
+  // ))
+  // useSubmitPaymentData(submitCallback)
 
   let paymentMethod = isBancontact ? "bank_redirect" : "card"
   let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
@@ -544,12 +562,13 @@ let make = (
           //   </RenderIf>
           // </RenderIf>
           <DynamicFieldWrapper
+            eligibleConnectors
             paymentMethod
             paymentMethodType
             setRequiredFieldsBody
-            cardProps={cardProps}
-            expiryProps={expiryProps}
-            cvcProps={cvcProps}
+            cardProps={Some(cardProps)}
+            expiryProps={Some(expiryProps)}
+            cvcProps={Some(cvcProps)}
             isBancontact
             isSaveDetailsWithClickToPay
           />

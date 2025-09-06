@@ -12,6 +12,24 @@ let make = () => {
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankTransfer)
 
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentExperienceArray =
+    paymentMethodListValue.payment_methods
+    ->Array.find(ele => ele.payment_method === "card")
+    ->Option.map(ele =>
+      ele.payment_method_types
+      ->Array.find(ele => ele.payment_method_type == "credit")
+      ->Option.map(ele => ele.payment_experience)
+      ->Option.getOr([])
+    )
+    ->Option.getOr([])
+
+  let eligibleConnectors =
+    paymentExperienceArray
+    ->Array.at(0)
+    ->Option.map(ele => ele.eligible_connectors)
+    ->Option.getOr([])
+
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   UtilityHooks.useHandlePostMessages(
@@ -46,8 +64,11 @@ let make = () => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields
-      paymentMethod="bank_transfer" paymentMethodType="instant_bank_transfer" setRequiredFieldsBody
+    <DynamicFieldWrapper
+      eligibleConnectors
+      paymentMethod="bank_transfer"
+      paymentMethodType="instant_bank_transfer"
+      setRequiredFieldsBody
     />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="instant" />
     <InfoElement />

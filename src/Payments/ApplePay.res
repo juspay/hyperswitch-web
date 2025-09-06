@@ -21,7 +21,25 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
   let (applePayClicked, setApplePayClicked) = React.useState(_ => false)
   let isApplePaySDKFlow = sessionObj->Option.isSome
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
+
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+
+  let paymentExperienceArray =
+    paymentMethodListValue.payment_methods
+    ->Array.find(ele => ele.payment_method === "card")
+    ->Option.map(ele =>
+      ele.payment_method_types
+      ->Array.find(ele => ele.payment_method_type == "credit")
+      ->Option.map(ele => ele.payment_experience)
+      ->Option.getOr([])
+    )
+    ->Option.getOr([])
+
+  let eligibleConnectors =
+    paymentExperienceArray
+    ->Array.at(0)
+    ->Option.map(ele => ele.eligible_connectors)
+    ->Option.getOr([])
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsEmpty)
@@ -332,7 +350,9 @@ let make = (~sessionObj: option<JSON.t>, ~walletOptions) => {
       </div>
     </RenderIf>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="apple_pay" setRequiredFieldsBody />
+    <DynamicFieldWrapper
+      eligibleConnectors paymentMethod="wallet" paymentMethodType="apple_pay" setRequiredFieldsBody
+    />
   }
 }
 

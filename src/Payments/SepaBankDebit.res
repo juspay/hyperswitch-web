@@ -11,9 +11,26 @@ let make = () => {
   let {config, themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), BankDebits)
   let {displaySavedPaymentMethods} = Recoil.useRecoilValueFromAtom(optionAtom)
-  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
-  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
+  let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
+
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentExperienceArray =
+    paymentMethodListValue.payment_methods
+    ->Array.find(ele => ele.payment_method === "card")
+    ->Option.map(ele =>
+      ele.payment_method_types
+      ->Array.find(ele => ele.payment_method_type == "credit")
+      ->Option.map(ele => ele.payment_experience)
+      ->Option.getOr([])
+    )
+    ->Option.getOr([])
+
+  let eligibleConnectors =
+    paymentExperienceArray
+    ->Array.at(0)
+    ->Option.map(ele => ele.eligible_connectors)
+    ->Option.getOr([])
 
   let pmAuthMapper = React.useMemo1(
     () =>
@@ -66,7 +83,12 @@ let make = () => {
         style={
           gridGap: {config.appearance.innerLayout === Spaced ? themeObj.spacingGridColumn : ""},
         }>
-        <DynamicFields paymentMethod="bank_debit" paymentMethodType="sepa" setRequiredFieldsBody />
+        <DynamicFieldWrapper
+          eligibleConnectors
+          paymentMethod="bank_debit"
+          paymentMethodType="sepa"
+          setRequiredFieldsBody
+        />
         <Surcharge paymentMethod="bank_debit" paymentMethodType="sepa" />
         <Terms mode=SepaBankDebit />
       </div>

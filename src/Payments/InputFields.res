@@ -1,5 +1,4 @@
 open Utils
-open PaymentType
 
 let months = [
   "January",
@@ -20,10 +19,10 @@ let currentYear = Date.getFullYear(Date.make())
 let length = 100
 let cardExpiryYears = Array.fromInitializer(~length, i => currentYear + i)
 
-let getDropdownOptions = fieldType => {
+let getDropdownOptions = (fieldType: SuperpositionTypes.fieldType) => {
   switch fieldType {
-  | "month_select" => months->DropdownField.updateArrayOfStringToOptionsTypeArray
-  | "year_select" =>
+  | MonthSelect => months->DropdownField.updateArrayOfStringToOptionsTypeArray
+  | YearSelect =>
     cardExpiryYears
     ->Array.map(val => val->Int.toString)
     ->DropdownField.updateArrayOfStringToOptionsTypeArray
@@ -37,6 +36,8 @@ module PhoneInput = {
     ~input: ReactFinalForm.fieldRenderPropsInput,
     ~meta: ReactFinalForm.fieldRenderPropsMeta,
     ~inputRef,
+    ~errorString,
+    ~isValid,
   ) => {
     let (displayValue, setDisplayValue) = React.useState(_ => "")
 
@@ -101,11 +102,13 @@ module PhoneInput = {
       None
     }, [phoneNumberCodeOptions])
 
+    let phoneNo = input.value->Utils.getDictFromJson->getString("number", "")
+
     React.useEffect(() => {
       let typedInput = input->ReactFinalForm.toTypedField
 
       typedInput.onChange({
-        "number": input.value->Utils.getDictFromJson->getString("number", ""),
+        "number": phoneNo,
         "country_code": valueDropDown->String.split("#")->Array.get(1)->Option.getOr(""),
       })
       None
@@ -114,9 +117,9 @@ module PhoneInput = {
     <PaymentField
       fieldName="Phone Number"
       value={{
-        value: input.value->Utils.getDictFromJson->getString("number", ""),
-        isValid: Some(meta.valid),
-        errorString: meta.error->Nullable.toOption->Option.getOr(""),
+        value: phoneNo,
+        isValid,
+        errorString,
       }}
       onChange=handlePhoneNumberChange
       paymentType=Payment
@@ -131,6 +134,7 @@ module PhoneInput = {
       displayValue
       setDisplayValue
       onBlur=input.onBlur
+      onFocus=input.onFocus
     />
   }
 }
@@ -138,21 +142,21 @@ module PhoneInput = {
 module InputFieldRendrer = {
   @react.component
   let make = (
-    ~name: string,
+    ~name,
     ~input: ReactFinalForm.fieldRenderPropsInput,
     ~meta: ReactFinalForm.fieldRenderPropsMeta,
     ~inputRef,
     ~label,
     ~placeholder,
-    ~fieldType,
+    ~fieldType: SuperpositionTypes.fieldType,
     ~options,
   ) => {
-    let {config, themeObj, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+    let {config, localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
     let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
-    let getInputLabel = fieldType => {
+    let getInputLabel = (fieldType: SuperpositionTypes.fieldType) => {
       switch fieldType {
-      | "country_select" => localeString.countryLabel
+      | CountrySelect => localeString.countryLabel
       | _ => label
       }
     }
@@ -162,57 +166,62 @@ module InputFieldRendrer = {
     | _ => ""
     }
 
+    let isValid = Some(!(!meta.valid && meta.touched))
+
     switch fieldType {
-    | "email_input" =>
+    | EmailInput =>
       <PaymentField
         fieldName=label
         value={{
           value: input.value->JSON.Decode.string->Option.getOr(""),
-          isValid: errorString == "" ? Some(true) : Some(false),
+          isValid,
           errorString,
         }}
         onChange=input.onChange
         onBlur=input.onBlur
+        onFocus=input.onFocus
         type_="email"
         inputRef
         placeholder
       />
-    | "password_input" =>
+    | PasswordInput =>
       <PaymentField
         fieldName=label
         value={{
           value: input.value->JSON.Decode.string->Option.getOr(""),
-          isValid: Some(meta.valid),
-          errorString: meta.error->Nullable.toOption->Option.getOr(""),
+          isValid,
+          errorString,
         }}
         onChange=input.onChange
         onBlur=input.onBlur
+        onFocus=input.onFocus
         type_="password"
         inputRef
         placeholder
       />
-    | "text_input"
-    | "number" =>
+    | TextInput
+    | Number =>
       <PaymentField
         fieldName=label
         value={{
           value: input.value->JSON.Decode.string->Option.getOr(""),
-          isValid: Some(meta.valid),
-          errorString: meta.error->Nullable.toOption->Option.getOr(""),
+          isValid,
+          errorString,
         }}
         onChange=input.onChange
         onBlur=input.onBlur
+        onFocus=input.onFocus
         type_="text"
         inputRef
         placeholder
       />
-    | "phone_input" => <PhoneInput input meta inputRef />
-    | "month_select"
-    | "currency_select"
-    | "country_code_select"
-    | "year_select"
-    | "dropdown_select"
-    | "country_select" =>
+    | PhoneInput => <PhoneInput input meta errorString inputRef isValid />
+    | MonthSelect
+    | CurrencySelect
+    | CountryCodeSelect
+    | YearSelect
+    | DropdownSelect
+    | CountrySelect =>
       let typedInput = input->ReactFinalForm.toTypedField
       let options = options->Array.length > 0 ? options : getDropdownOptions(fieldType)
 
@@ -225,22 +234,21 @@ module InputFieldRendrer = {
         options
         className={isSpacedInnerLayout ? "" : "!border-t-0 !border-r-0"}
       />
-
-    | "date_picker" =>
+    | DatePicker =>
       <PaymentField
         fieldName=label
         value={{
           value: input.value->JSON.Decode.string->Option.getOr(""),
-          isValid: Some(meta.valid),
-          errorString: meta.error->Nullable.toOption->Option.getOr(""),
+          isValid,
+          errorString,
         }}
         onChange=input.onChange
         onBlur=input.onBlur
+        onFocus=input.onFocus
         type_="date"
         inputRef
         placeholder
       />
-
     | _ => <div> {label->React.string} </div>
     }
   }

@@ -32,6 +32,25 @@ let make = (
   }, [sessionObj])
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
 
+  let paymentExperienceArray =
+    paymentMethodListValue.payment_methods
+    ->Array.find(ele => ele.payment_method === "wallet")
+    ->Option.map(ele =>
+      ele.payment_method_types
+      ->Array.find(ele => ele.payment_method_type == "google_pay")
+      ->Option.map(ele => ele.payment_experience)
+      ->Option.getOr([])
+    )
+    ->Option.getOr([])
+
+  let eligibleConnectors =
+    paymentExperienceArray
+    ->Array.at(0)
+    ->Option.map(ele => ele.eligible_connectors)
+    ->Option.getOr([])
+
+  let connector = eligibleConnectors
+
   let areOneClickWalletsRendered = Recoil.useSetRecoilState(RecoilAtoms.areOneClickWalletsRendered)
 
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(RecoilAtoms.areRequiredFieldsValid)
@@ -237,7 +256,9 @@ let make = (
       />
     </RenderIf>
   } else {
-    <DynamicFields paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody />
+    <DynamicFieldWrapper
+      eligibleConnectors paymentMethod="wallet" paymentMethodType="google_pay" setRequiredFieldsBody
+    />
   }
 }
 

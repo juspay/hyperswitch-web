@@ -19,6 +19,24 @@ let default = () => {
 
   UtilityHooks.useHandlePostMessages(~complete, ~empty, ~paymentType="bank_transfer")
 
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let paymentExperienceArray =
+    paymentMethodListValue.payment_methods
+    ->Array.find(ele => ele.payment_method === "card")
+    ->Option.map(ele =>
+      ele.payment_method_types
+      ->Array.find(ele => ele.payment_method_type == "credit")
+      ->Option.map(ele => ele.payment_experience)
+      ->Option.getOr([])
+    )
+    ->Option.getOr([])
+
+  let eligibleConnectors =
+    paymentExperienceArray
+    ->Array.at(0)
+    ->Option.map(ele => ele.eligible_connectors)
+    ->Option.getOr([])
+
   React.useEffect(() => {
     setComplete(_ => complete)
     None
@@ -48,7 +66,12 @@ let default = () => {
   useSubmitPaymentData(submitCallback)
 
   <div className="flex flex-col animate-slowShow" style={gridGap: themeObj.spacingTab}>
-    <DynamicFields paymentMethod="bank_transfer" paymentMethodType="bacs" setRequiredFieldsBody />
+    <DynamicFieldWrapper
+      eligibleConnectors
+      paymentMethod="bank_transfer"
+      paymentMethodType="bacs"
+      setRequiredFieldsBody
+    />
     <Surcharge paymentMethod="bank_transfer" paymentMethodType="bacs" />
     <InfoElement />
   </div>
