@@ -17,9 +17,6 @@ let getStringValue = (input: ReactFinalForm.fieldRenderPropsInput, key, default)
 let getDecodedStringValue = (input: ReactFinalForm.fieldRenderPropsInput) =>
   input.value->JSON.Decode.string->Option.getOr("")
 
-let buildFieldName = (parentPath, fieldName) =>
-  parentPath != "" ? parentPath ++ "." ++ fieldName : fieldName
-
 let getCardBrandFromForm = (form: ReactFinalForm.formApi, fieldName) => {
   let formState = form.getState()
   let cardData =
@@ -29,11 +26,6 @@ let getCardBrandFromForm = (form: ReactFinalForm.formApi, fieldName) => {
   cardData->Utils.getDictFromJson->Utils.getString("card_brand", "")
 }
 
-let getCVCFromForm = (form: ReactFinalForm.formApi, fieldName) => {
-  let formState = form.getState()
-  formState.values->Utils.getDictFromJson->Utils.getString(fieldName, "")
-}
-
 let validateCardField = (value, _) => {
   switch value {
   | Some(val) =>
@@ -41,7 +33,6 @@ let validateCardField = (value, _) => {
 
     let cardNumber = cardData->Utils.getString("card_number", "")
     let cardBrand = cardData->Utils.getString("card_brand", "")
-    Console.log2("Validating card number:", cardData)
 
     if cardNumber->String.length == 0 {
       Promise.resolve(Nullable.null)
@@ -61,15 +52,11 @@ let validateCardField = (value, _) => {
 let validateExpiryField = (value, _) => {
   switch value {
   | Some(val) =>
-    if val->String.length == 0 {
+    let isValid = CardUtils.isExipryValid(val)
+    if isValid {
       Promise.resolve(Nullable.null)
     } else {
-      let isValid = CardUtils.isExipryValid(val)
-      if isValid {
-        Promise.resolve(Nullable.null)
-      } else {
-        Promise.resolve(Nullable.make("invalid expiry date"))
-      }
+      Promise.resolve(Nullable.make("invalid expiry date"))
     }
   | None => Promise.resolve(Nullable.null)
   }
@@ -81,7 +68,6 @@ let validateCVCField = (value, formValues, cardFieldName) => {
     if val->String.length == 0 {
       Promise.resolve(Nullable.null)
     } else {
-      // Get card brand from form values
       let cardData = formValues->Utils.getDictFromJson->Utils.getJsonObjectFromDict(cardFieldName)
       let cardBrand = cardData->Utils.getDictFromJson->Utils.getString("card_brand", "")
 
@@ -106,12 +92,8 @@ module CardNumberField = {
   let handleChange = (originalOnChange, ev) => {
     let val = ReactEvent.Form.target(ev)["value"]
     let formattedCard = val->CardUtils.formatCardNumber(CardUtils.NOTFOUND)
-    let detectedBrand = formattedCard->CardUtils.getCardBrand
 
-    originalOnChange({
-      "card_number": formattedCard,
-      "card_brand": detectedBrand,
-    })
+    originalOnChange(formattedCard)
   }
 
   let getDynamicIcon = cardBrand => {
@@ -122,37 +104,59 @@ module CardNumberField = {
   let getDynamicMaxLength = cardBrand => CardUtils.getMaxLength(cardBrand)
 
   let renderField = (fieldProps, fieldName, key) => {
-    <ReactFinalForm.Field
-      name=fieldName key validate={(v, formValues) => validateCardField(v, formValues)}>
-      {({input, meta}) => {
-        let typedInput = ReactFinalForm.toTypedField(input)
+    let cardNumberField = fieldProps.field->getFieldFromMergedFields(0)
+    let cardBrandsField = fieldProps.field->getFieldFromMergedFields(1)
+    let form = ReactFinalForm.useForm()
 
-        let cardBrand = getStringValue(input, "card_brand", "")
-        let cardNumber = getStringValue(input, "card_number", "")
-        Console.log2("Card brand in render:", cardBrand)
+    let _ = form.subscribe(_ => {
+      let cardNumber = switch form.getFieldState(cardNumberField.name) {
+      | Some(fieldState) => fieldState.value->JSON.Decode.string->Option.getOr("")
+      | None => ""
+      }
+      let detectedBrand = cardNumber->CardUtils.getCardBrand
+      form.change(cardBrandsField.name, detectedBrand->JSON.Encode.string)
+    }, {"values": "true"}->Identity.anyTypeToJson)
 
-        let errorString = switch (meta.touched, meta.error->Nullable.toOption) {
-        | (true, Some(err)) => err
-        | _ => ""
-        }
+    <>
+      <ReactFinalForm.Field
+        name=cardNumberField.name
+        initialValue=""
+        key
+        validate={(v, formValues) => validateCardField(v, formValues)}>
+        {({input, meta}) => {
+          let typedInput = ReactFinalForm.toTypedField(input)
+          let cardNumber = input.value->JSON.Decode.string->Option.getOr("")
+          let errorString = switch (meta.touched, meta.error->Nullable.toOption) {
+          | (true, Some(err)) => err
+          | _ => ""
+          }
 
-        <PaymentInputField
-          fieldName=fieldProps.localeString.cardNumberLabel
-          isValid={errorString == "" ? None : Some(false)}
-          setIsValid={_ => ()}
-          value=cardNumber
-          onChange={ev => handleChange(typedInput.onChange, ev)}
-          onBlur=input.onBlur
-          rightIcon={getDynamicIcon(cardBrand)}
-          errorString
-          type_="tel"
-          maxLength={getDynamicMaxLength(cardBrand)}
-          inputRef=fieldProps.dummyRef
-          placeholder="1234 1234 1234 1234"
-          autocomplete="cc-number"
-        />
-      }}
-    </ReactFinalForm.Field>
+          let currentCardBrand = switch form.getFieldState(cardBrandsField.name) {
+          | Some(fieldState) => fieldState.value->JSON.Decode.string->Option.getOr("")
+          | None => ""
+          }
+
+          <PaymentInputField
+            fieldName=fieldProps.localeString.cardNumberLabel
+            isValid={errorString == "" ? None : Some(false)}
+            setIsValid={_ => ()}
+            value=cardNumber
+            onChange={ev => handleChange(typedInput.onChange, ev)}
+            onBlur=input.onBlur
+            rightIcon={getDynamicIcon(currentCardBrand)}
+            errorString
+            type_="tel"
+            maxLength={getDynamicMaxLength(currentCardBrand)}
+            inputRef=fieldProps.dummyRef
+            placeholder="1234 1234 1234 1234"
+            autocomplete="cc-number"
+          />
+        }}
+      </ReactFinalForm.Field>
+      <ReactFinalForm.Field initialValue="" name=cardBrandsField.name>
+        {_ => React.null}
+      </ReactFinalForm.Field>
+    </>
   }
 }
 
@@ -165,7 +169,10 @@ module ExpiryField = {
 
   let renderField = (fieldProps, fieldName, key) => {
     <ReactFinalForm.Field
-      name=fieldName key validate={(v, formValues) => validateExpiryField(v, formValues)}>
+      name=fieldName
+      key
+      initialValue=""
+      validate={(v, formValues) => validateExpiryField(v, formValues)}>
       {({input, meta}) => {
         let typedInput = ReactFinalForm.toTypedField(input)
         let expiryValue = getDecodedStringValue(input)
@@ -215,13 +222,19 @@ module CVCField = {
   ) => {
     <ReactFinalForm.Field
       name=fieldName
+      initialValue=""
       key
       validate={(v, formValues) => validateCVCField(v, formValues, cardFieldName)}>
       {({input, meta}) => {
         let form = ReactFinalForm.useForm()
         let typedInput = ReactFinalForm.toTypedField(input)
         let cvcValue = getDecodedStringValue(input)
-        let cardBrand = getCardBrandFromForm(form, cardFieldName)
+        let cardBrand =
+          form.getFieldState(
+            cardFieldName != "" ? cardFieldName ++ ".card_network" : "card_network",
+          )
+          ->Option.map(fieldState => fieldState.value->JSON.Decode.string->Option.getOr(""))
+          ->Option.getOr("")
 
         <PaymentInputField
           fieldName=fieldProps.localeString.cvcTextLabel
@@ -267,19 +280,20 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
   switch cardFieldName {
   | CardNumber => CardNumberField.renderField(fieldProps, field.name, fieldIndex)
 
-  | CardNumberNetworkMerged => CardNumberField.renderField(fieldProps, parentPath, fieldIndex)
+  | CardNumberNetworkMerged => CardNumberField.renderField(fieldProps, field.name, fieldIndex)
 
   | CardExpMonth => ExpiryField.renderField(fieldProps, field.name, fieldIndex)
 
   | CardExpiryCvcMerged =>
     <div className="flex gap-4 w-full">
-      {ExpiryField.renderField(fieldProps, buildFieldName(parentPath, "card_expiry"), fieldIndex)}
-      {CVCField.renderField(
-        fieldProps,
-        buildFieldName(parentPath, "card_cvc"),
-        parentPath,
-        fieldIndex ++ "_cvc",
-      )}
+      {
+        let field = field->SuperpositionHelper.getFieldFromMergedFields(0)
+        ExpiryField.renderField(fieldProps, field.name, fieldIndex ++ "_expiry")
+      }
+      {
+        let field = field->SuperpositionHelper.getFieldFromMergedFields(1)
+        CVCField.renderField(fieldProps, field.name, parentPath, fieldIndex ++ "_cvc")
+      }
     </div>
 
   | CardCvc => CVCField.renderField(fieldProps, field.name, parentPath, fieldIndex)

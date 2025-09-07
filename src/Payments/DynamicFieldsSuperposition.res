@@ -13,6 +13,8 @@ let make = (
   let isSpacedInnerLayout = config.appearance.innerLayout === Spaced
 
   let submitCallback = (ev: Window.event, form: ReactFinalForm.formApi) => {
+    Console.log2("Form state", form.getState())
+
     let json = ev.data->Utils.safeParse
     let confirm = json->Utils.getDictFromJson->ConfirmType.itemToObjMapper
     if confirm.doSubmit {
@@ -21,8 +23,8 @@ let make = (
   }
 
   let handleFormSubmit = (values, form: ReactFinalForm.formApi) => {
-    Console.log2("Form state", form.getState())
-    Console.log2("Form values:", values)
+    // Console.log2("Form state", form.getState())
+    // Console.log2("Form values:", values)
     Promise.resolve(Nullable.null)
   }
 

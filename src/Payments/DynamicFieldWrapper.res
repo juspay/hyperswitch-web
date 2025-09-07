@@ -84,12 +84,7 @@ let make = (
 
   switch componentWiseRequiredFields {
   | Some(fields) if fields->Array.length > 0 =>
-    <DynamicFieldsSuperposition
-      componentWiseRequiredFields=fields
-      cardProps={Some(cardProps)}
-      expiryProps={Some(expiryProps)}
-      cvcProps={Some(cvcProps)}
-    />
+    <DynamicFieldsSuperposition componentWiseRequiredFields=fields />
   | None
   | _ =>
     <DynamicFields

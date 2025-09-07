@@ -90,9 +90,6 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
   | _ => field.name
   }
 
-  let getFieldFromMergedFields = index =>
-    field.mergedFields->Array.get(index)->Option.getOr(defaultFieldConfig)
-
   let validateField = (value, field) => {
     let res = switch value {
     | Some(val) =>
@@ -117,15 +114,14 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
           }
         }
       | _ =>
-        Console.log3("Validating generic field:", field.fieldName, val)
-        if val != "adslg" {
-          Nullable.make(localeString.emailInvalidText)
+        if val == "" {
+          Nullable.make("This field is required")
         } else {
           Nullable.null
         }
       }
 
-    | None => Nullable.null
+    | None => Nullable.make("This field is required")
     }
     Promise.resolve(res)
   }
@@ -134,13 +130,16 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
   | CityStateMerged =>
     <div className="flex gap-4 w-full">
       {
-        let field = getFieldFromMergedFields(0)
+        let field = field->getFieldFromMergedFields(0)
         let fieldName = getFieldNameFromPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
         <ReactFinalForm.Field
-          name=field.name key={fieldIndex ++ "city"} validate={(v, _) => validateField(v, field)}>
+          name=field.name
+          initialValue=""
+          key={fieldIndex ++ "city"}
+          validate={(v, _) => validateField(v, field)}>
           {({input, meta}) => {
             <InputFields.InputFieldRendrer
               name={field.name}
@@ -158,13 +157,16 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
         </ReactFinalForm.Field>
       }
       {
-        let field = getFieldFromMergedFields(1)
+        let field = field->getFieldFromMergedFields(1)
         let fieldName = getFieldNameFromPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
         <ReactFinalForm.Field
-          name=field.name key={fieldIndex ++ "state"} validate={(v, _) => validateField(v, field)}>
+          name=field.name
+          initialValue=""
+          key={fieldIndex ++ "state"}
+          validate={(v, _) => validateField(v, field)}>
           {({input, meta}) => {
             <InputFields.InputFieldRendrer
               name={field.name}
@@ -185,13 +187,16 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
   | ZipCountryMerged =>
     <div className="flex gap-4 w-full">
       {
-        let field = getFieldFromMergedFields(0)
+        let field = field->getFieldFromMergedFields(0)
         let fieldName = getFieldNameFromPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
         <ReactFinalForm.Field
-          name=field.name key={fieldIndex ++ "zip"} validate={(v, _) => validateField(v, field)}>
+          name=field.name
+          initialValue=""
+          key={fieldIndex ++ "zip"}
+          validate={(v, _) => validateField(v, field)}>
           {({input, meta}) => {
             <InputFields.InputFieldRendrer
               name={field.name}
@@ -209,13 +214,14 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
         </ReactFinalForm.Field>
       }
       {
-        let field = getFieldFromMergedFields(1)
+        let field = field->getFieldFromMergedFields(1)
         let fieldName = getFieldNameFromPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
         <ReactFinalForm.Field
           name=field.name
+          initialValue=""
           key={fieldIndex ++ "country"}
           validate={(v, _) => validateField(v, field)}>
           {({input, meta}) => {
@@ -236,7 +242,8 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
       }
     </div>
   | PhoneNumberWithCountryCode =>
-    <ReactFinalForm.Field name key={fieldIndex} validate={(v, _) => validateField(v, field)}>
+    <ReactFinalForm.Field
+      initialValue="" name key={fieldIndex} validate={(v, _) => validateField(v, field)}>
       {({input, meta}) => {
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
@@ -253,7 +260,8 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
       }}
     </ReactFinalForm.Field>
   | _ =>
-    <ReactFinalForm.Field name key={fieldIndex} validate={(v, _) => validateField(v, field)}>
+    <ReactFinalForm.Field
+      initialValue="" name key={fieldIndex} validate={(v, _) => validateField(v, field)}>
       {({input, meta}) => {
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
