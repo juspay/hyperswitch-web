@@ -9,7 +9,6 @@ external dictToObj: Dict.t<'a> => {..} = "%identity"
 
 @module("./Phone_number.json")
 external phoneNumberJson: JSON.t = "default"
-
 type options = {timeZone: string}
 type dateTimeFormat = {resolvedOptions: unit => options}
 @val @scope("Intl") external dateTimeFormat: unit => dateTimeFormat = "DateTimeFormat"

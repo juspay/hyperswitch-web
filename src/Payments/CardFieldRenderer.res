@@ -120,7 +120,6 @@ module CardNumberField = {
     <>
       <ReactFinalForm.Field
         name=cardNumberField.name
-        initialValue=""
         key
         validate={(v, formValues) => validateCardField(v, formValues)}>
         {({input, meta}) => {
@@ -153,9 +152,7 @@ module CardNumberField = {
           />
         }}
       </ReactFinalForm.Field>
-      <ReactFinalForm.Field initialValue="" name=cardBrandsField.name>
-        {_ => React.null}
-      </ReactFinalForm.Field>
+      <ReactFinalForm.Field name=cardBrandsField.name> {_ => React.null} </ReactFinalForm.Field>
     </>
   }
 }
@@ -169,10 +166,7 @@ module ExpiryField = {
 
   let renderField = (fieldProps, fieldName, key) => {
     <ReactFinalForm.Field
-      name=fieldName
-      key
-      initialValue=""
-      validate={(v, formValues) => validateExpiryField(v, formValues)}>
+      name=fieldName key validate={(v, formValues) => validateExpiryField(v, formValues)}>
       {({input, meta}) => {
         let typedInput = ReactFinalForm.toTypedField(input)
         let expiryValue = getDecodedStringValue(input)
@@ -222,7 +216,6 @@ module CVCField = {
   ) => {
     <ReactFinalForm.Field
       name=fieldName
-      initialValue=""
       key
       validate={(v, formValues) => validateCVCField(v, formValues, cardFieldName)}>
       {({input, meta}) => {

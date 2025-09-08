@@ -136,10 +136,7 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
         <ReactFinalForm.Field
-          name=field.name
-          initialValue=""
-          key={fieldIndex ++ "city"}
-          validate={(v, _) => validateField(v, field)}>
+          name=field.name key={fieldIndex ++ "city"} validate={(v, _) => validateField(v, field)}>
           {({input, meta}) => {
             <InputFields.InputFieldRendrer
               name={field.name}
@@ -163,10 +160,7 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
         <ReactFinalForm.Field
-          name=field.name
-          initialValue=""
-          key={fieldIndex ++ "state"}
-          validate={(v, _) => validateField(v, field)}>
+          name=field.name key={fieldIndex ++ "state"} validate={(v, _) => validateField(v, field)}>
           {({input, meta}) => {
             <InputFields.InputFieldRendrer
               name={field.name}
@@ -193,10 +187,7 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
         <ReactFinalForm.Field
-          name=field.name
-          initialValue=""
-          key={fieldIndex ++ "zip"}
-          validate={(v, _) => validateField(v, field)}>
+          name=field.name key={fieldIndex ++ "zip"} validate={(v, _) => validateField(v, field)}>
           {({input, meta}) => {
             <InputFields.InputFieldRendrer
               name={field.name}
@@ -221,7 +212,6 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
 
         <ReactFinalForm.Field
           name=field.name
-          initialValue=""
           key={fieldIndex ++ "country"}
           validate={(v, _) => validateField(v, field)}>
           {({input, meta}) => {
@@ -242,8 +232,7 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
       }
     </div>
   | PhoneNumberWithCountryCode =>
-    <ReactFinalForm.Field
-      initialValue="" name key={fieldIndex} validate={(v, _) => validateField(v, field)}>
+    <ReactFinalForm.Field name key={fieldIndex} validate={(v, _) => validateField(v, field)}>
       {({input, meta}) => {
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
@@ -260,8 +249,7 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
       }}
     </ReactFinalForm.Field>
   | _ =>
-    <ReactFinalForm.Field
-      initialValue="" name key={fieldIndex} validate={(v, _) => validateField(v, field)}>
+    <ReactFinalForm.Field name key={fieldIndex} validate={(v, _) => validateField(v, field)}>
       {({input, meta}) => {
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
