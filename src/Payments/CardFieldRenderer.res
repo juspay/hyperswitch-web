@@ -266,7 +266,7 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
     dummyRef,
   }
 
-  let name = getFieldNameFromPath(field.outputPath)
+  let name = getFieldNameFromOutputPath(field.outputPath)
   let parentPath = field.name->getParentPathFromOutputPath
   let cardFieldName = SuperpositionTypes.stringToFieldName(name)
 

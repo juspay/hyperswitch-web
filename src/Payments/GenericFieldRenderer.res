@@ -79,8 +79,8 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
     }
   }
 
-  let fieldName = field.name->getFieldNameFromPath
-  let parent = getFieldNameFromPath(field.name, ~level=2)
+  let fieldName = field.name->getFieldNameFromOutputPath
+  let parent = getFieldNameFromOutputPath(field.name, ~level=2)
   let fieldNameType = SuperpositionTypes.stringToFieldName(fieldName)
 
   let name = switch fieldNameType {
@@ -93,14 +93,14 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
   let validateField = (value, field) => {
     let res = switch value {
     | Some(val) =>
-      switch (field.fieldType, field.fieldName) {
-      | (EmailInput, _) =>
+      switch field.fieldType {
+      | EmailInput =>
         if val->EmailValidation.isEmailValid->Option.getOr(false) {
           Nullable.null
         } else {
           Nullable.make(localeString.emailInvalidText)
         }
-      | (PhoneInput, _) => {
+      | PhoneInput => {
           let phoneNo =
             val
             ->Identity.anyTypeToJson
@@ -131,7 +131,7 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
     <div className="flex gap-4 w-full">
       {
         let field = field->getFieldFromMergedFields(0)
-        let fieldName = getFieldNameFromPath(field.name)
+        let fieldName = getFieldNameFromOutputPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
@@ -155,7 +155,7 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
       }
       {
         let field = field->getFieldFromMergedFields(1)
-        let fieldName = getFieldNameFromPath(field.name)
+        let fieldName = getFieldNameFromOutputPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
@@ -182,7 +182,7 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
     <div className="flex gap-4 w-full">
       {
         let field = field->getFieldFromMergedFields(0)
-        let fieldName = getFieldNameFromPath(field.name)
+        let fieldName = getFieldNameFromOutputPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 
@@ -206,7 +206,7 @@ let make = (~field: fieldConfig, ~fieldIndex: string) => {
       }
       {
         let field = field->getFieldFromMergedFields(1)
-        let fieldName = getFieldNameFromPath(field.name)
+        let fieldName = getFieldNameFromOutputPath(field.name)
         let fieldType = field.fieldType
         let options = field.options->DropdownField.updateArrayOfStringToOptionsTypeArray
 

@@ -21,11 +21,11 @@ let make = (
       value->CommonUtils.snakeToPascalCase
     ),
     payment_method: paymentMethod->CommonUtils.snakeToPascalCase,
-    payment_method_type: Some(paymentMethodType->CommonUtils.snakeToPascalCase),
-    country: Some("US"),
+    payment_method_type: paymentMethodType->CommonUtils.snakeToPascalCase,
+    country: "US",
     mandate_type: Some("non_mandate"),
-    collect_shipping_details_from_wallet_connector: Some("required"),
-    collect_billing_details_from_wallet_connector: Some("required"),
+    collect_shipping_details_from_wallet_connector: false,
+    collect_billing_details_from_wallet_connector: false,
   }
 
   let processCardComponentFields = componentWiseFields => {

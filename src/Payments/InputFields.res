@@ -199,8 +199,7 @@ module InputFieldRendrer = {
         inputRef
         placeholder
       />
-    | TextInput
-    | Number =>
+    | TextInput =>
       <PaymentField
         fieldName=label
         value={{
