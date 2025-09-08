@@ -279,10 +279,8 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
   }, [selectedOption])
   useSubmitPaymentData(submitCallback)
   React.useEffect(() => {
-    if displayMergedSavedMethods && selectedOption == "saved_methods" {
-      setShowPaymentMethodsScreen(_ => false)
-    } else if displayMergedSavedMethods {
-      setShowPaymentMethodsScreen(_ => true)
+    if displayMergedSavedMethods {
+      setShowPaymentMethodsScreen(_ => selectedOption != "saved_methods")
     }
     setSelectedOption(prev =>
       selectedOption !== ""
