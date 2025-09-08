@@ -1,4 +1,4 @@
-module RenderSavedCards = {
+module SavedCardsElement = {
   @react.component
   let make = (
     ~cardsArr: array<PaymentType.customerMethods>,
@@ -142,7 +142,7 @@ let make = (
   let mergedViewBottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
-      <RenderSavedCards
+      <SavedCardsElement
         cardsArr=cardOptionDetails
         setPaymentToken
         paymentTokenVal
@@ -151,7 +151,7 @@ let make = (
         setRequiredFieldsBody
       />
       <RenderIf condition={!showMore}>
-        <RenderSavedCards
+        <SavedCardsElement
           cardsArr=dropDownOptionsDetails
           setPaymentToken
           paymentTokenVal
@@ -178,7 +178,7 @@ let make = (
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
       <RenderIf condition={!displayMergedSavedMethods}>
-        <RenderSavedCards
+        <SavedCardsElement
           cardsArr=savedMethods
           setPaymentToken
           paymentTokenVal
