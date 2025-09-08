@@ -137,7 +137,7 @@ let make = (
       savedMethods->Array.slice(~start=0, ~end=layoutClass.savedMethodsLayout.maxSavedItems),
       savedMethods->Array.sliceToEnd(~start=layoutClass.savedMethodsLayout.maxSavedItems),
     )
-  }, [savedMethods])
+  }, (savedMethods, layoutClass))
 
   let mergedViewBottomElement = {
     <div
@@ -450,7 +450,7 @@ let make = (
     <RenderIf condition={enableSavedPaymentShimmer}>
       <PaymentElementShimmer.SavedPaymentCardShimmer />
     </RenderIf>
-    <RenderIf condition={!enableSavedPaymentShimmer && !showPaymentMethodsScreen}>
+    <RenderIf condition={!enableSavedPaymentShimmer}>
       {displayMergedSavedMethods ? mergedViewBottomElement : bottomElement}
     </RenderIf>
     <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
@@ -494,6 +494,8 @@ let make = (
         {React.string(localeString.morePaymentMethods)}
       </div>
     </RenderIf>
-    <ShowMoreButton displayMergedSavedMethods dropDownOptionsDetails showMore setShowMore />
+    <RenderIf condition={displayMergedSavedMethods && dropDownOptionsDetails->Array.length > 0}>
+      <ShowMoreToggle showMore setShowMore />
+    </RenderIf>
   </div>
 }

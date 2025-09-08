@@ -457,6 +457,32 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
     None
   }, (paymentMethodList, customerPaymentMethods))
 
+  let enablePaymentElementShimmer = React.useMemo(() => {
+    (!displaySavedPaymentMethods ||
+    (displayMergedSavedMethods && savedMethods->Array.length == 0)) &&
+    paymentOptions->Array.length == 0 &&
+    walletOptions->Array.length == 0
+  }, (
+    displaySavedPaymentMethods,
+    displayMergedSavedMethods,
+    savedMethods,
+    paymentOptions,
+    walletOptions,
+  ))
+
+  let isShowUseExistingPaymentMethods = React.useMemo(() => {
+    ((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
+      isShowPaymentMethodsDependingOnClickToPay) &&
+    showPaymentMethodsScreen &&
+    !displayMergedSavedMethods
+  }, (
+    displaySavedPaymentMethods,
+    isShowPaymentMethodsDependingOnClickToPay,
+    displayMergedSavedMethods,
+    savedMethods,
+    showPaymentMethodsScreen,
+  ))
+
   <>
     <RenderIf condition={paymentLabel->Option.isSome}>
       <div
@@ -528,11 +554,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         }}
       </div>
     </RenderIf>
-    <RenderIf
-      condition={((displaySavedPaymentMethods && savedMethods->Array.length > 0) ||
-        isShowPaymentMethodsDependingOnClickToPay) &&
-      showPaymentMethodsScreen &&
-      !displayMergedSavedMethods}>
+    <RenderIf condition=isShowUseExistingPaymentMethods>
       <div
         className="Label flex flex-row gap-3 items-end cursor-pointer mt-4"
         style={
@@ -563,11 +585,7 @@ let make = (~cardProps, ~expiryProps, ~cvcProps, ~paymentType: CardThemeType.mod
         <ErrorBoundary.ErrorTextAndImage divRef level={Top} />
       </RenderIf>
     | _ =>
-      <RenderIf
-        condition={(!displaySavedPaymentMethods ||
-        (displayMergedSavedMethods && savedMethods->Array.length == 0)) &&
-        paymentOptions->Array.length == 0 &&
-        walletOptions->Array.length == 0}>
+      <RenderIf condition=enablePaymentElementShimmer>
         <PaymentElementShimmer />
       </RenderIf>
     }}
