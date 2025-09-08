@@ -1,3 +1,66 @@
+module RenderSavedCards = {
+  @react.component
+  let make = (
+    ~cardsArr: array<PaymentType.customerMethods>,
+    ~setPaymentToken,
+    ~paymentTokenVal,
+    ~savedCardlength,
+    ~cvcProps,
+    ~setRequiredFieldsBody,
+  ) => {
+    open CardUtils
+
+    cardsArr
+    ->Array.mapWithIndex((obj, i) =>
+      <SavedCardItem
+        key={i->Int.toString}
+        setPaymentToken
+        isActive={paymentTokenVal == obj.paymentToken}
+        paymentItem=obj
+        brandIcon={obj->getPaymentMethodBrand}
+        index=i
+        savedCardlength
+        cvcProps
+        setRequiredFieldsBody
+      />
+    )
+    ->React.array
+  }
+}
+
+module ClickToPayElement = {
+  @react.component
+  let make = (
+    ~savedMethods,
+    ~isClickToPayAuthenticateError,
+    ~setIsClickToPayAuthenticateError,
+    ~setPaymentToken,
+    ~paymentTokenVal,
+    ~cvcProps,
+    ~getVisaCards,
+    ~setIsClickToPayRememberMe,
+    ~closeComponentIfSavedMethodsAreEmpty,
+  ) => {
+    let clickToPayConfig = Recoil.useRecoilValueFromAtom(RecoilAtoms.clickToPayConfig)
+    let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+
+    <RenderIf condition={clickToPayConfig.isReady == Some(true)}>
+      <ClickToPayAuthenticate
+        loggerState
+        savedMethods
+        isClickToPayAuthenticateError
+        setIsClickToPayAuthenticateError
+        setPaymentToken
+        paymentTokenVal
+        cvcProps
+        getVisaCards
+        setIsClickToPayRememberMe
+        closeComponentIfSavedMethodsAreEmpty
+      />
+    </RenderIf>
+  }
+}
+
 @react.component
 let make = (
   ~paymentToken: RecoilAtomTypes.paymentToken,
@@ -76,28 +139,28 @@ let make = (
     )
   }, [savedMethods])
 
-  let renderSavedCards = (cardsArr: array<PaymentType.customerMethods>) => {
-    cardsArr
-    ->Array.mapWithIndex((obj, i) =>
-      <SavedCardItem
-        key={i->Int.toString}
+  let mergedViewBottomElement = {
+    <div
+      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
+      <RenderSavedCards
+        cardsArr=cardOptionDetails
         setPaymentToken
-        isActive={paymentTokenVal == obj.paymentToken}
-        paymentItem=obj
-        brandIcon={obj->getPaymentMethodBrand}
-        index=i
+        paymentTokenVal
         savedCardlength
         cvcProps
         setRequiredFieldsBody
       />
-    )
-    ->React.array
-  }
-
-  let clickToPayElement = {
-    <RenderIf condition={clickToPayConfig.isReady == Some(true)}>
-      <ClickToPayAuthenticate
-        loggerState
+      <RenderIf condition={!showMore}>
+        <RenderSavedCards
+          cardsArr=dropDownOptionsDetails
+          setPaymentToken
+          paymentTokenVal
+          savedCardlength
+          cvcProps
+          setRequiredFieldsBody
+        />
+      </RenderIf>
+      <ClickToPayElement
         savedMethods
         isClickToPayAuthenticateError
         setIsClickToPayAuthenticateError
@@ -108,28 +171,33 @@ let make = (
         setIsClickToPayRememberMe
         closeComponentIfSavedMethodsAreEmpty
       />
-    </RenderIf>
-  }
-
-  let mergedViewBottomElement = {
-    <div
-      className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
-      {renderSavedCards(cardOptionDetails)}
-      <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden
-          ${showMore ? "max-h-0 opacity-0" : "max-h-screen opacity-100"}
-        `}>
-        {renderSavedCards(dropDownOptionsDetails)}
-      </div>
-      clickToPayElement
     </div>
   }
 
   let bottomElement = {
     <div
       className="PickerItemContainer" tabIndex={0} role="region" ariaLabel="Saved payment methods">
-      <RenderIf condition={!displayMergedSavedMethods}> {renderSavedCards(savedMethods)} </RenderIf>
-      clickToPayElement
+      <RenderIf condition={!displayMergedSavedMethods}>
+        <RenderSavedCards
+          cardsArr=savedMethods
+          setPaymentToken
+          paymentTokenVal
+          savedCardlength
+          cvcProps
+          setRequiredFieldsBody
+        />
+      </RenderIf>
+      <ClickToPayElement
+        savedMethods
+        isClickToPayAuthenticateError
+        setIsClickToPayAuthenticateError
+        setPaymentToken
+        paymentTokenVal
+        cvcProps
+        getVisaCards
+        setIsClickToPayRememberMe
+        closeComponentIfSavedMethodsAreEmpty
+      />
     </div>
   }
 
@@ -379,13 +447,12 @@ let make = (
   ))
 
   <div className="flex flex-col overflow-auto h-auto no-scrollbar animate-slowShow">
-    {if enableSavedPaymentShimmer {
+    <RenderIf condition={enableSavedPaymentShimmer}>
       <PaymentElementShimmer.SavedPaymentCardShimmer />
-    } else {
-      <RenderIf condition={!showPaymentMethodsScreen}>
-        {displayMergedSavedMethods ? mergedViewBottomElement : bottomElement}
-      </RenderIf>
-    }}
+    </RenderIf>
+    <RenderIf condition={!enableSavedPaymentShimmer && !showPaymentMethodsScreen}>
+      {displayMergedSavedMethods ? mergedViewBottomElement : bottomElement}
+    </RenderIf>
     <RenderIf condition={conditionsForShowingSaveCardCheckbox}>
       <div className="pt-4 pb-2 flex items-center justify-start">
         <SaveDetailsCheckbox isChecked=isSaveCardsChecked setIsChecked=setIsSaveCardsChecked />

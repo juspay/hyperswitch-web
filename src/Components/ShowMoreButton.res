@@ -4,12 +4,8 @@ let make = (~displayMergedSavedMethods, ~dropDownOptionsDetails, ~showMore, ~set
 
   <RenderIf condition={displayMergedSavedMethods && dropDownOptionsDetails->Array.length > 0}>
     <div
-      className="Label flex flex-row gap-1 items-end cursor-pointer mt-3"
+      className="Label flex flex-row gap-1 items-end cursor-pointer mt-3 text-[14px] font-medium float-left w-fit"
       style={
-        fontSize: "14px",
-        float: "left",
-        fontWeight: "500",
-        width: "fit-content",
         color: themeObj.colorPrimary,
       }
       onClick={_ => {
