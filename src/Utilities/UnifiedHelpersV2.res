@@ -149,6 +149,23 @@ let itemToPaymentDetails = cust => {
   }
 }
 
+let itemToIntentObjMapper = dict => {
+  {
+    paymentType: getString(dict, "payment_type", "")->paymentTypeMapper,
+  }
+}
+
+let createIntentDetails = (dict, key) => {
+  let intentDict =
+    dict
+    ->Dict.get(key)
+    ->Option.flatMap(JSON.Decode.object)
+    ->Option.getOr(Dict.make())
+  let response = intentDict->itemToIntentObjMapper
+
+  LoadedIntent(response)
+}
+
 let defaultAddress = {
   city: "",
   country: "",

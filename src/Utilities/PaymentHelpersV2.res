@@ -585,3 +585,44 @@ let fetchSessions = (
     JSON.Encode.null->resolve
   })
 }
+
+let fetchIntent = (
+  ~clientSecret,
+  ~publishableKey,
+  ~paymentId,
+  ~logger as _,
+  ~customPodUri,
+  ~endpoint,
+  ~profileId,
+) => {
+  open Promise
+  let baseHeaders = [
+    ("Content-Type", "application/json"),
+    ("x-profile-id", profileId),
+    ("Authorization", `publishable-key=${publishableKey},client-secret=${clientSecret}`),
+  ]
+
+  let headers = switch customPodUri {
+  | value if value != "" => [...baseHeaders, ("x-feature", value)]
+  | _ => baseHeaders
+  }
+
+  let uri = `${endpoint}/v2/payments/${paymentId}/get-intent`
+  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
+  ->then(resp => {
+    if !(resp->Fetch.Response.ok) {
+      resp
+      ->Fetch.Response.json
+      ->then(_ => {
+        JSON.Encode.null->resolve
+      })
+    } else {
+      Fetch.Response.json(resp)
+    }
+  })
+  ->catch(err => {
+    let exceptionMessage = err->formatException
+    Console.error2("Error ", exceptionMessage)
+    JSON.Encode.null->resolve
+  })
+}
