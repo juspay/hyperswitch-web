@@ -45,6 +45,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
   let pollIdVal = pollId->Option.getOr("")
+  let payoutIdVal = payoutId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -112,7 +113,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | CallAuthLink => "payment_methods/auth/link"
     | CallAuthExchange => "payment_methods/auth/exchange"
     | RetrieveStatus => `poll/status/${pollIdVal}`
-    | ConfirmPayout => `payouts/${payoutId->Option.getOr("")}/confirm`
+    | ConfirmPayout => `payouts/${payoutIdVal}/confirm`
     }
   | V2(inner) =>
     switch inner {
