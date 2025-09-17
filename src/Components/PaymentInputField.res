@@ -24,6 +24,7 @@ let make = (
   ~paymentType=?,
   ~isDisabled=false,
   ~autocomplete="on",
+  ~isSavedCardCVC=false,
 ) => {
   let {themeObj, config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {innerLayout} = config.appearance
@@ -81,9 +82,16 @@ let make = (
     }
   }
   let labelClass = getClassName("Label")
-  let inputClass = getClassName("Input")
+  let inputClass =
+    (isSavedCardCVC ? getClassName("Input--saved-cvc") ++ " " : "") ++ getClassName("Input")
+
   let inputLogoClass = getClassName("InputLogo")
-  let inputClassStyles = innerLayout === Spaced ? "Input" : "Input-Compressed"
+  let inputClassStyles =
+    (
+      isSavedCardCVC
+        ? (innerLayout === Spaced ? "Input--saved-cvc" : "Input-Compressed--saved-cvc") ++ " "
+        : ""
+    ) ++ (innerLayout === Spaced ? "Input" : "Input-Compressed")
 
   <div className="flex flex-col w-full" style={color: themeObj.colorText}>
     <RenderIf
