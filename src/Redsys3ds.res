@@ -2,11 +2,11 @@ open Utils
 
 @react.component
 let make = () => {
-  let logger = HyperLogger.make(~source=Elements(Payment))
   let isCompleteAuthorizeCalledRef = React.useRef(false)
   let timeoutRef = React.useRef(None)
   let eventsToSendToParent = ["confirmParams", "poll_status", "openurl_if_required"]
-  let completeAuthorize = PaymentHelpers.useRedsysCompleteAuthorize(Some(logger))
+  let loggerState = Recoil.useRecoilValueFromAtom(RecoilAtoms.loggerAtom)
+  let completeAuthorize = PaymentHelpers.useRedsysCompleteAuthorize(Some(loggerState))
 
   let handleCompleteAuthorizeCall = (
     threeDsMethodComp,
@@ -14,6 +14,7 @@ let make = () => {
     publishableKey,
     headers,
     returnUrl,
+    iframeId,
   ) => {
     isCompleteAuthorizeCalledRef.current = true
     let body = [
@@ -27,7 +28,7 @@ let make = () => {
         publishableKey,
       },
       ~headers,
-      ~iframeId="redsys3ds",
+      ~iframeId,
       ~clientSecret=Some(paymentIntentId),
     )
   }
@@ -45,9 +46,9 @@ let make = () => {
           let metaDataDict = metadata->JSON.Decode.object->Option.getOr(Dict.make())
           let paymentIntentId = metaDataDict->getString("paymentIntentId", "")
           let publishableKey = metaDataDict->getString("publishableKey", "")
-
-          logger.setClientSecret(paymentIntentId)
-          logger.setMerchantId(publishableKey)
+          loggerState.setClientSecret(paymentIntentId)
+          loggerState.setMerchantId(publishableKey)
+          let iframeId = metaDataDict->getString("iframeId", "")
 
           let headersDict = metaDataDict->getDictFromDict("headers")
 
@@ -71,6 +72,11 @@ let make = () => {
               form.target = "threeDsAuthFrame"
               form.appendChild(input)
               form.submit()
+            } else {
+              loggerState.setLogError(
+                ~value="three_ds_method_url is empty in metadata",
+                ~eventName=REDSYS_3DS,
+              )
             }
           | None => ()
           }
@@ -78,12 +84,17 @@ let make = () => {
           timeoutRef.current->Option.forEach(clearTimeout)
 
           timeoutRef.current = Some(setTimeout(() => {
+              loggerState.setLogInfo(
+                ~value="Fallback timeout reached for 3DS method completion",
+                ~eventName=REDSYS_3DS,
+              )
               handleCompleteAuthorizeCall(
                 "N",
                 paymentIntentId,
                 publishableKey,
                 headers,
                 returnUrl,
+                iframeId,
               )->ignore
             }, 10000))
 
@@ -98,17 +109,31 @@ let make = () => {
                   publishableKey,
                   headers,
                   returnUrl,
+                  iframeId,
                 )->ignore
               }
             })
-          | None => ()
+          | None =>
+            loggerState.setLogError(
+              ~value="Unable to locate threeDsAuthFrame iframe",
+              ~eventName=REDSYS_3DS,
+            )
           }
         }
       } catch {
-      | _ =>
+      | e =>
         postFailedSubmitResponse(
           ~errortype="complete_authorize_failed",
           ~message="Something went wrong.",
+        )
+        loggerState.setLogError(
+          ~value={
+            "message": "Exception in Redsys3DS iframe message handler",
+            "error": e->Utils.formatException,
+          }
+          ->JSON.stringifyAny
+          ->Option.getOr(""),
+          ~eventName=REDSYS_3DS,
         )
       }
     }
