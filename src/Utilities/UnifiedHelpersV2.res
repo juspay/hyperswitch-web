@@ -156,11 +156,7 @@ let itemToIntentObjMapper = dict => {
 }
 
 let createIntentDetails = (dict, key) => {
-  let intentDict =
-    dict
-    ->Dict.get(key)
-    ->Option.flatMap(JSON.Decode.object)
-    ->Option.getOr(Dict.make())
+  let intentDict = dict->Utils.getDictFromDict(key)
   let response = intentDict->itemToIntentObjMapper
 
   LoadedIntent(response)

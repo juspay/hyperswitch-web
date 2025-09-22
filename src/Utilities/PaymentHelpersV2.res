@@ -586,43 +586,43 @@ let fetchSessions = (
   })
 }
 
-let fetchIntent = (
+let fetchIntent = async (
   ~clientSecret,
   ~publishableKey,
   ~paymentId,
-  ~logger as _,
+  ~logger,
   ~customPodUri,
   ~endpoint,
   ~profileId,
 ) => {
-  open Promise
-  let baseHeaders = [
-    ("Content-Type", "application/json"),
-    ("x-profile-id", profileId),
-    ("Authorization", `publishable-key=${publishableKey},client-secret=${clientSecret}`),
-  ]
+  let uri = APIUtils.generateApiUrl(
+    V2(FetchIntent),
+    ~params={
+      clientSecret: Some(clientSecret),
+      customBackendBaseUrl: Some(endpoint),
+      publishableKey: Some(publishableKey),
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      paymentIdV2: Some(paymentId),
+    },
+  )
 
-  let headers = switch customPodUri {
-  | value if value != "" => [...baseHeaders, ("x-feature", value)]
-  | _ => baseHeaders
-  }
+  let onSuccess = data => data
 
-  let uri = `${endpoint}/v2/payments/${paymentId}/get-intent`
-  fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
-  ->then(resp => {
-    if !(resp->Fetch.Response.ok) {
-      resp
-      ->Fetch.Response.json
-      ->then(_ => {
-        JSON.Encode.null->resolve
-      })
-    } else {
-      Fetch.Response.json(resp)
-    }
-  })
-  ->catch(err => {
-    let exceptionMessage = err->formatException
-    Console.error2("Error ", exceptionMessage)
-    JSON.Encode.null->resolve
-  })
+  let onFailure = _ => JSON.Encode.null
+
+  // Todo: Add logger
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=CUSTOMER_PAYMENT_METHODS_CALL,
+    ~logger,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~clientSecret=Some(clientSecret),
+    ~profileId=Some(profileId),
+    ~onSuccess,
+    ~onFailure,
+  )
 }

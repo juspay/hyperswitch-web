@@ -13,7 +13,7 @@ type apiCallV1 =
   | RetrieveStatus
   | ConfirmPayout
 
-type apiCallV2 = FetchSessionsV2
+type apiCallV2 = FetchSessionsV2 | FetchIntent
 
 type apiCall =
   | V1(apiCallV1)
@@ -26,6 +26,7 @@ type apiParams = {
   paymentMethodId: option<string>,
   forceSync: option<string>,
   pollId: option<string>,
+  paymentIdV2: option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
@@ -36,6 +37,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     paymentMethodId,
     forceSync,
     pollId,
+    paymentIdV2,
   } = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
@@ -43,6 +45,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
   let pollIdVal = pollId->Option.getOr("")
+  let paymentIdVal = paymentIdV2->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -115,6 +118,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | V2(inner) =>
     switch inner {
     | FetchSessionsV2 => `v2/payments/${paymentIntentID}/create-external-sdk-tokens`
+    | FetchIntent => `v2/payments/${paymentIdVal}/get-intent`
     }
   }
 
