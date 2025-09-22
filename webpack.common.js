@@ -404,6 +404,10 @@ module.exports = (publicPath = "auto") => {
             },
           },
         },
+        {
+          test: /shared-code\/assets\/jsons\/location\/[^/]+$/,
+          type: "json",
+        },
       ],
     },
     entry: entries,

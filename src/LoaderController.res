@@ -132,7 +132,6 @@ let make = (~children, ~paymentMode, ~setIntegrateErrorError, ~logger, ~initTime
         optionsLocaleString == "" ? config.locale : optionsLocaleString,
       )
       let constantString = await CardTheme.getConstantStringsObject()
-      let _ = await S3Utils.initializeCountryData(~locale=config.locale, ~logger)
       setConfig(_ => {
         config: {
           appearance,
