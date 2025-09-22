@@ -27,6 +27,7 @@ type apiParams = {
   forceSync: option<string>,
   pollId: option<string>,
   paymentIdV2: option<string>,
+  payoutId: option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
@@ -38,6 +39,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     forceSync,
     pollId,
     paymentIdV2,
+    payoutId,
   } = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
@@ -46,6 +48,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
   let pollIdVal = pollId->Option.getOr("")
   let paymentIdVal = paymentIdV2->Option.getOr("")
+  let payoutIdVal = payoutId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -113,7 +116,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | CallAuthLink => "payment_methods/auth/link"
     | CallAuthExchange => "payment_methods/auth/exchange"
     | RetrieveStatus => `poll/status/${pollIdVal}`
-    | ConfirmPayout => `payouts/${paymentIntentID}/confirm`
+    | ConfirmPayout => `payouts/${payoutIdVal}/confirm`
     }
   | V2(inner) =>
     switch inner {
