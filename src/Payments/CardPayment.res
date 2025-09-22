@@ -7,6 +7,7 @@ let make = (
   ~expiryProps: CardUtils.expiryProps,
   ~cvcProps: CardUtils.cvcProps,
   ~isBancontact=false,
+  ~isGiftCard=false,
   ~isVault=None,
 ) => {
   open PaymentType
@@ -39,6 +40,7 @@ let make = (
   | _ => false
   }
   let paymentType = usePaymentType()
+  let selectedOption = Recoil.useRecoilValueFromAtom(RecoilAtoms.selectedOptionAtom)
   let {
     isCardValid,
     setIsCardValid,
@@ -208,9 +210,11 @@ let make = (
       let isNicknameValid = nickname.value === "" || nickname.isValid->Option.getOr(false)
 
       let validFormat =
-        (isBancontact || isCardDetailsValid) && isNicknameValid && areRequiredFieldsValid
+        (isBancontact || isGiftCard || isCardDetailsValid) &&
+        isNicknameValid &&
+        areRequiredFieldsValid
 
-      if validFormat && (showPaymentMethodsScreen || isBancontact) {
+      if validFormat && (showPaymentMethodsScreen || isBancontact || isGiftCard) {
         if isRecognizedClickToPayPayment || isUnrecognizedClickToPayPayment {
           ClickToPayHelpers.handleOpenClickToPayWindow()
 
@@ -376,12 +380,13 @@ let make = (
             ~handleUserError=true,
           )
         } else {
+          let paymentBody = switch (isBancontact, isGiftCard) {
+          | (true, _) => banContactBody
+          | (_, true) => PaymentBodyV2.dynamicPaymentBodyV2("gift_card", selectedOption)
+          | _ => cardBody
+          }
           intent(
-            ~bodyArr={
-              (isBancontact ? banContactBody : cardBody)->mergeAndFlattenToTuples(
-                requiredFieldsBody,
-              )
-            },
+            ~bodyArr=paymentBody->mergeAndFlattenToTuples(requiredFieldsBody),
             ~confirmParam=confirm.confirmParams,
             ~handleUserError=false,
             ~manualRetry=isManualRetryEnabled,
@@ -391,7 +396,7 @@ let make = (
         if cardNumber === "" {
           setCardError(_ => localeString.cardNumberEmptyText)
           setUserError(localeString.enterFieldsText)
-        } else if isCardSupported->Option.getOr(true)->not {
+        } else if isCardSupported->Option.getOr(true)->not && !isGiftCard {
           if cardBrand == "" {
             setCardError(_ => localeString.enterValidCardNumberErrorText)
             setUserError(localeString.enterValidDetailsText)
@@ -426,17 +431,27 @@ let make = (
     clickToPayConfig,
     clickToPayCardBrand,
     isClickToPayRememberMe,
+    selectedOption,
   ))
   useSubmitPaymentData(submitCallback)
 
-  let paymentMethod = isBancontact ? "bank_redirect" : "card"
-  let paymentMethodType = isBancontact ? "bancontact_card" : "debit"
+  let paymentMethod = switch (isBancontact, isGiftCard) {
+  | (true, _) => "bank_redirect"
+  | (_, true) => "gift_card"
+  | _ => "card"
+  }
+  let paymentMethodType = switch (isBancontact, isGiftCard) {
+  | (true, _) => "bancontact_card"
+  | (_, true) => selectedOption
+  | _ => "debit"
+  }
   let conditionsForShowingSaveCardCheckbox =
     paymentMethodListValue.mandate_payment->Option.isNone &&
     !isGuestCustomer &&
     paymentMethodListValue.payment_type !== SETUP_MANDATE &&
     options.displaySavedPaymentMethodsCheckbox &&
-    !isBancontact
+    !isBancontact &&
+    !isGiftCard
 
   let compressedLayoutStyleForCvcError =
     innerLayout === Compressed && cvcError->String.length > 0 ? "!border-l-0" : ""
@@ -446,7 +461,7 @@ let make = (
   }
 
   <div className="animate-slowShow">
-    <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
+    <RenderIf condition={showPaymentMethodsScreen || isBancontact || isGiftCard}>
       <div className={`flex flex-col ${vaultClass}`} style={gridGap: themeObj.spacingGridColumn}>
         <div className="flex flex-col w-full" style={gridGap: themeObj.spacingGridColumn}>
           <RenderIf condition={innerLayout === Compressed}>
@@ -459,7 +474,7 @@ let make = (
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
-          <RenderIf condition={!isBancontact}>
+          <RenderIf condition={!isBancontact && !isGiftCard}>
             <PaymentInputField
               fieldName=localeString.cardNumberLabel
               isValid=isCardValid
@@ -568,10 +583,10 @@ let make = (
         </div>
       </div>
     </RenderIf>
-    <RenderIf condition={showPaymentMethodsScreen || isBancontact}>
+    <RenderIf condition={showPaymentMethodsScreen || isBancontact || isGiftCard}>
       <Surcharge paymentMethod paymentMethodType cardBrand={cardBrand->CardUtils.getCardType} />
     </RenderIf>
-    <RenderIf condition={!isBancontact}>
+    <RenderIf condition={!isBancontact && !isGiftCard}>
       {switch (
         paymentMethodListValue.mandate_payment,
         options.terms.card,

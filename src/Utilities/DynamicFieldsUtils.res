@@ -36,6 +36,7 @@ let dynamicFieldsEnabledPaymentMethods = [
   "skrill",
   "flexiti",
   "breadpay",
+  "givex",
 ]
 
 let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomTypes.field) => {

@@ -354,10 +354,10 @@ let make = (
               value=cardNumber
               onChange=changeCardNumber
               onBlur=handleCardBlur
-              rightIcon={icon}
+              rightIcon={paymentMethod == "gift_card" ? React.null : icon}
               errorString=cardError
               type_="tel"
-              maxLength=maxCardLength
+              maxLength={paymentMethod == "gift_card" ? 32 : maxCardLength}
               inputRef=cardRef
               placeholder="1234 1234 1234 1234"
               autocomplete="cc-number"
@@ -388,12 +388,14 @@ let make = (
               onChange=changeCVCNumber
               onBlur=handleCVCBlur
               errorString=cvcError
-              rightIcon={CardUtils.setRightIconForCvc(
-                ~cardEmpty,
-                ~cardInvalid,
-                ~color=themeObj.colorIconCardCvcError,
-                ~cardComplete,
-              )}
+              rightIcon={paymentMethod == "gift_card"
+                ? React.null
+                : CardUtils.setRightIconForCvc(
+                    ~cardEmpty,
+                    ~cardInvalid,
+                    ~color=themeObj.colorIconCardCvcError,
+                    ~cardComplete,
+                  )}
               type_="tel"
               className="tracking-widest w-full"
               maxLength=4
@@ -425,12 +427,14 @@ let make = (
                 onChange=changeCVCNumber
                 onBlur=handleCVCBlur
                 errorString=cvcError
-                rightIcon={CardUtils.setRightIconForCvc(
-                  ~cardEmpty,
-                  ~cardInvalid,
-                  ~color=themeObj.colorIconCardCvcError,
-                  ~cardComplete,
-                )}
+                rightIcon={paymentMethod == "gift_card"
+                  ? React.null
+                  : CardUtils.setRightIconForCvc(
+                      ~cardEmpty,
+                      ~cardInvalid,
+                      ~color=themeObj.colorIconCardCvcError,
+                      ~cardComplete,
+                    )}
                 type_="tel"
                 className="tracking-widest w-full"
                 maxLength=4
