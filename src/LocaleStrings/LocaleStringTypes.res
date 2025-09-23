@@ -159,6 +159,7 @@ type localeStrings = {
   payment_methods_duit_now: string,
   payment_methods_revolut_pay: string,
   payment_methods_affirm: string,
+  payment_methods_pay_safe_card: string,
   payment_methods_crypto_currency: string,
   payment_methods_card: string,
   payment_methods_klarna: string,
