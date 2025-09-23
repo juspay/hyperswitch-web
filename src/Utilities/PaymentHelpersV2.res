@@ -595,15 +595,11 @@ let fetchIntent = async (
   ~endpoint,
   ~profileId,
 ) => {
-  let uri = APIUtils.generateApiUrl(
-    V2(FetchIntent),
+  let uri = APIUtils.generateApiUrlV2(
+    ~apiCallType=FetchIntent,
     ~params={
-      clientSecret: Some(clientSecret),
       customBackendBaseUrl: Some(endpoint),
       publishableKey: Some(publishableKey),
-      paymentMethodId: None,
-      forceSync: None,
-      pollId: None,
       paymentIdV2: Some(paymentId),
     },
   )
