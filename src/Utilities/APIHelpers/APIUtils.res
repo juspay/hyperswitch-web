@@ -84,14 +84,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | FetchPaymentMethodList
     | FetchCustomerPaymentMethodList
     | RetrievePaymentIntent => defaultParams
-    | FetchBlockedBins =>
-      list{
-        ("data_kind", "card_bin"),
-        ...switch clientSecret {
-        | Some(cs) => list{("client_secret", cs)}
-        | None => list{}
-        },
-      }
+    | FetchBlockedBins => list{("data_kind", "card_bin"), ...defaultParams}
     | FetchSessions
     | FetchThreeDsAuth
     | FetchSavedPaymentMethodList

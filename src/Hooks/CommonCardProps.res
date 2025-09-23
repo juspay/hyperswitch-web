@@ -4,11 +4,11 @@ open LoggerUtils
 open RecoilAtoms
 
 let useCardForm = (~logger, ~paymentType) => {
-  let {localeString} = Recoil.useRecoilValueFromAtom(RecoilAtoms.configAtom)
+  let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
   let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(showPaymentMethodsScreen)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
-  let blockedBinsList = Recoil.useRecoilValueFromAtom(RecoilAtoms.blockedBins)
+  let blockedBinsList = Recoil.useRecoilValueFromAtom(blockedBins)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
@@ -270,19 +270,17 @@ let useCardForm = (~logger, ~paymentType) => {
       blockedBinsList,
     )
 
-    let cardError = if isCardBlocked {
-      localeString.blockedCardText
-    } else {
-      switch (
-        isCardSupported->Option.getOr(true),
-        isCardValid->Option.getOr(true),
-        cardNumber->String.length == 0,
-      ) {
-      | (_, _, true) => ""
-      | (true, true, _) => ""
-      | (true, _, _) => localeString.inValidCardErrorText
-      | (_, _, _) => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
-      }
+    let cardError = switch (
+      isCardSupported->Option.getOr(true),
+      isCardValid->Option.getOr(true),
+      cardNumber->String.length == 0,
+      isCardBlocked,
+    ) {
+    | (_, _, _, true) => localeString.blockedCardText
+    | (_, _, true, _) => ""
+    | (true, true, _, _) => ""
+    | (true, _, _, _) => localeString.inValidCardErrorText
+    | _ => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
     }
     let cardError = isCardValid->Option.isSome ? cardError : ""
     setCardError(_ => cardError)

@@ -753,8 +753,9 @@ let emitIsFormReadyForSubmission = isFormReadyForSubmission =>
 let checkIfCardBinIsBlocked = (cardNumber, blockedBinsList) => {
   open PaymentType
   switch blockedBinsList {
-  | Loading => false // If still loading, allow payment to proceed
-  | LoadError(_) => false // If error loading, allow payment to proceed
+  | Loading // If still loading, allow payment to proceed
+  | LoadError(_) // If error loading, allow payment to proceed
+  | SemiLoaded => false // If semi-loaded, allow payment to proceed
   | Loaded(data) => {
       let cardBin = cardNumber->CardValidations.clearSpaces->String.substring(~start=0, ~end=6)
       if cardBin->String.length >= 6 {
@@ -769,6 +770,5 @@ let checkIfCardBinIsBlocked = (cardNumber, blockedBinsList) => {
         false // If card number is too short, don't block
       }
     }
-  | SemiLoaded => false // If semi-loaded, allow payment to proceed
   }
 }
