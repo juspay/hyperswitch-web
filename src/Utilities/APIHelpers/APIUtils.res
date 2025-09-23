@@ -28,7 +28,6 @@ type apiParamsV1 = {
   paymentMethodId: option<string>,
   forceSync: option<string>,
   pollId: option<string>,
-  paymentIdV2: option<string>,
   payoutId: option<string>,
 }
 

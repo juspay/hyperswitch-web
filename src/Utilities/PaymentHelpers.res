@@ -36,7 +36,6 @@ let retrievePaymentIntent = async (
       paymentMethodId: None,
       forceSync: isForceSync ? Some("true") : None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -73,7 +72,6 @@ let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) =
       paymentMethodId: None,
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -176,7 +174,6 @@ let retrieveStatus = async (~publishableKey, ~customPodUri, pollID, logger) => {
       paymentMethodId: None,
       forceSync: None,
       pollId: Some(pollID),
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -1374,7 +1371,6 @@ let fetchSessions = async (
       paymentMethodId: None,
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -1416,7 +1412,6 @@ let confirmPayout = async (
       paymentMethodId: None,
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: Some(payoutId),
     },
   )
@@ -1460,7 +1455,6 @@ let createPaymentMethod = async (
       paymentMethodId: None,
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -1503,7 +1497,6 @@ let fetchPaymentMethodList = async (
       paymentMethodId: None,
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -1541,7 +1534,6 @@ let fetchCustomerPaymentMethodList = async (
       paymentMethodId: None,
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -1649,7 +1641,6 @@ let callAuthLink = async (
       paymentMethodId: None,
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -1714,7 +1705,6 @@ let callAuthExchange = async (
       paymentMethodId: None,
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -1788,7 +1778,6 @@ let fetchSavedPaymentMethodList = async (
       paymentMethodId: None,
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -1820,7 +1809,6 @@ let deletePaymentMethod = async (~ephemeralKey, ~paymentMethodId, ~logger, ~cust
       paymentMethodId: Some(paymentMethodId),
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
@@ -1859,7 +1847,6 @@ let calculateTax = async (
       paymentMethodId: None,
       forceSync: None,
       pollId: None,
-      paymentIdV2: None,
       payoutId: None,
     },
   )
