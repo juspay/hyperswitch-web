@@ -171,6 +171,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_duit_now: `DuitNow`,
   payment_methods_revolut_pay: `Revolut Pay`,
   payment_methods_affirm: `Affirm`,
+  payment_methods_pay_safe_card: `PaysafeCard`,
   payment_methods_crypto_currency: `Cripto`,
   payment_methods_card: `Cartão`,
   payment_methods_klarna: `Klarna`,
