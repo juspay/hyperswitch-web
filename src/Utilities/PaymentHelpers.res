@@ -69,8 +69,8 @@ let fetchBlockedBins = async (
   ~customPodUri,
   ~endpoint,
 ) => {
-  let uri = APIUtils.generateApiUrl(
-    V1(FetchBlockedBins),
+  let uri = APIUtils.generateApiUrlV1(
+    ~apiCallType=FetchBlockedBins,
     ~params={
       clientSecret: Some(clientSecret),
       publishableKey: None,
