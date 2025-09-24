@@ -333,7 +333,6 @@ let useCardForm = (~logger, ~paymentType) => {
       cardNumber->CardValidations.clearSpaces,
       blockedBinsList,
     )
-
     let cardError = switch (
       isCardSupported->Option.getOr(true),
       isCardValid->Option.getOr(true),
@@ -341,11 +340,10 @@ let useCardForm = (~logger, ~paymentType) => {
       paymentMethodDetails.methodType,
       isCardBlocked,
     ) {
-    | (_, _, true, "gift_card", _) => localeString.cardNumberEmptyText
+    | (true, true, _, _, _) => ""
+    | (_, _, true, _, _) => ""
     | (_, true, _, "gift_card", _) => ""
     | (_, _, _, _, true) => localeString.blockedCardText
-    | (_, _, true, _, _) => ""
-    | (true, true, _, _, _) => ""
     | (true, _, _, _, _) => localeString.inValidCardErrorText
     | _ => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
     }
