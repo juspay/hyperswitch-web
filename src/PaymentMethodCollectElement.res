@@ -122,6 +122,7 @@ let make = (~integrateError, ~logger) => {
         ~customPodUri="",
         ~endpoint,
         ~body=pmdBody,
+        ~payoutId=options.payoutId,
       )
       ->then(res => {
         let data = res->decodePayoutConfirmResponse

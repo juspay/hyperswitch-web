@@ -12,6 +12,7 @@ type apiCallV1 =
   | CallAuthExchange
   | RetrieveStatus
   | ConfirmPayout
+  | FetchBlockedBins
 
 type apiCallV2 = FetchSessionsV2
 
@@ -26,6 +27,7 @@ type apiParams = {
   paymentMethodId: option<string>,
   forceSync: option<string>,
   pollId: option<string>,
+  payoutId: option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
@@ -36,6 +38,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     paymentMethodId,
     forceSync,
     pollId,
+    payoutId,
   } = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
@@ -43,6 +46,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let paymentIntentID = Utils.getPaymentId(clientSecretVal)
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
   let pollIdVal = pollId->Option.getOr("")
+  let payoutIdVal = payoutId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -80,6 +84,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | FetchPaymentMethodList
     | FetchCustomerPaymentMethodList
     | RetrievePaymentIntent => defaultParams
+    | FetchBlockedBins => list{("data_kind", "card_bin"), ...defaultParams}
     | FetchSessions
     | FetchThreeDsAuth
     | FetchSavedPaymentMethodList
@@ -110,7 +115,8 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | CallAuthLink => "payment_methods/auth/link"
     | CallAuthExchange => "payment_methods/auth/exchange"
     | RetrieveStatus => `poll/status/${pollIdVal}`
-    | ConfirmPayout => `payouts/${paymentIntentID}/confirm`
+    | ConfirmPayout => `payouts/${payoutIdVal}/confirm`
+    | FetchBlockedBins => "blocklist"
     }
   | V2(inner) =>
     switch inner {
