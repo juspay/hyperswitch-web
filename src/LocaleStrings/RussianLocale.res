@@ -93,6 +93,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardHeader: `Информация о карте`,
   cardBrandConfiguredErrorText: str =>
     `${str} в данный момент не поддерживается.`,
+  blockedCardText: "Эта карта не разрешена для платежей.",
   currencyNetwork: `Валютные сети`,
   expiryPlaceholder: `MM / ГГ`,
   dateOfBirth: `Дата рождения`,
@@ -179,6 +180,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   payment_methods_duit_now: `DuitNow`,
   payment_methods_revolut_pay: `Revolut Pay`,
   payment_methods_affirm: `Affirm`,
+  payment_methods_pay_safe_card: `PaysafeCard`,
   payment_methods_crypto_currency: `Крипто`,
   payment_methods_card: `Карта`,
   payment_methods_klarna: `Klarna`,

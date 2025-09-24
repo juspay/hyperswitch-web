@@ -519,7 +519,7 @@ let defaultSepaFields = [
 ]
 let defaultPaypalFields = [
   {
-    pmdMap: "payout_method_data.wallet.telephone_number",
+    pmdMap: "payout_method_data.wallet.paypal.telephone_number",
     displayName: "user_phone_number",
     fieldType: PaypalMobNumber,
     value: None,
