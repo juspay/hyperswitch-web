@@ -23,31 +23,36 @@ let useCardForm = (~logger, ~paymentType) => {
   | _ => paymentMethodListValueV2
   }
 
-  let optionPaymentMethodDetails =
-    paymentMethodListValue
-    ->PaymentMethodsRecord.buildFromPaymentList(~localeString)
-    ->Array.find(x =>
-      x.paymentMethodName ===
-        PaymentUtils.getPaymentMethodName(
-          ~paymentMethodType=x.methodType,
-          ~paymentMethodName=selectedOption,
-        )
-    )
-  let optionPaymentMethodDetailsV2 =
-    listValue
-    ->PaymentMethodsRecordV2.buildFromPaymentListV2(~localeString)
-    ->Array.find(x =>
-      x.paymentMethodName ===
-        PaymentUtils.getPaymentMethodName(
-          ~paymentMethodType=x.methodType,
-          ~paymentMethodName=selectedOption,
-        )
-    )
-  let paymentMethodDetails = switch GlobalVars.sdkVersion {
-  | V1 => optionPaymentMethodDetails->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
-  | V2 =>
-    optionPaymentMethodDetailsV2->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
-  }
+  let paymentMethodDetails = React.useMemo(() => {
+    switch GlobalVars.sdkVersion {
+    | V1 => {
+        let optionPaymentMethodDetails =
+          paymentMethodListValue
+          ->PaymentMethodsRecord.buildFromPaymentList(~localeString)
+          ->Array.find(x =>
+            x.paymentMethodName ===
+              PaymentUtils.getPaymentMethodName(
+                ~paymentMethodType=x.methodType,
+                ~paymentMethodName=selectedOption,
+              )
+          )
+        optionPaymentMethodDetails->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
+      }
+    | V2 => {
+        let optionPaymentMethodDetailsV2 =
+          listValue
+          ->PaymentMethodsRecordV2.buildFromPaymentListV2(~localeString)
+          ->Array.find(x =>
+            x.paymentMethodName ===
+              PaymentUtils.getPaymentMethodName(
+                ~paymentMethodType=x.methodType,
+                ~paymentMethodName=selectedOption,
+              )
+          )
+        optionPaymentMethodDetailsV2->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
+      }
+    }
+  }, (paymentMethodListValue, paymentMethodListValueV2, listValue, selectedOption, localeString))
 
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
@@ -154,11 +159,7 @@ let useCardForm = (~logger, ~paymentType) => {
 
     // Handle gift_card payment method differently
     if paymentMethodDetails.methodType == "gift_card" {
-      if val->String.length > 0 {
-        setIsCardValid(_ => Some(true))
-      } else {
-        setIsCardValid(_ => Some(false))
-      }
+      setIsCardValid(_ => Some(val->String.length > 0))
       setCardNumber(_ => val)
     } else {
       // Normal card validation for other payment methods
