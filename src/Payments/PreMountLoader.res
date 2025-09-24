@@ -78,6 +78,14 @@ let getMessageHandlerV1Elements = (
     ~merchantHostname,
   )
 
+  let blockedBinsPromise = PaymentHelpers.fetchBlockedBins(
+    ~clientSecret,
+    ~publishableKey,
+    ~logger,
+    ~customPodUri,
+    ~endpoint,
+  )
+
   ev => {
     open Utils
     let dict = ev.data->safeParse->getDictFromJson
@@ -87,6 +95,8 @@ let getMessageHandlerV1Elements = (
       customerPaymentMethodsPromise->sendPromiseData("customer_payment_methods")
     } else if dict->isKeyPresentInDict("sendSessionTokensResponse") {
       sessionTokensPromise->sendPromiseData("session_tokens")
+    } else if dict->isKeyPresentInDict("sendBlockedBinsResponse") {
+      blockedBinsPromise->sendPromiseData("blocked_bins")
     }
   }
 }

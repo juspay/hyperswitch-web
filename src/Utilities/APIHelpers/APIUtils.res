@@ -12,6 +12,7 @@ type apiCallV1 =
   | CallAuthExchange
   | RetrieveStatus
   | ConfirmPayout
+  | FetchBlockedBins
 
 type apiCallV2 = FetchSessionsV2 | FetchIntent
 
@@ -85,6 +86,7 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | FetchPaymentMethodList
   | FetchCustomerPaymentMethodList
   | RetrievePaymentIntent => defaultParams
+  | FetchBlockedBins => list{("data_kind", "card_bin"), ...defaultParams}
   | FetchSessions
   | FetchThreeDsAuth
   | FetchSavedPaymentMethodList
@@ -112,6 +114,7 @@ let generateApiUrlV1 = (~params: apiParamsV1, ~apiCallType: apiCallV1) => {
   | CallAuthExchange => "payment_methods/auth/exchange"
   | RetrieveStatus => `poll/status/${pollIdVal}`
   | ConfirmPayout => `payouts/${payoutIdVal}/confirm`
+  | FetchBlockedBins => "blocklist"
   }
 
   `${baseUrl}/${path}${CommonUtils.buildQueryParams(queryParams)}`

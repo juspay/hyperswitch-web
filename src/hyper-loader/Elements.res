@@ -294,6 +294,29 @@ let make = (
       })
     }
 
+    let fetchBlockedBins = (mountedIframeRef, componentType) => {
+      Promise.make((resolve, _) => {
+        let handleBlockedBinsLoaded = (event: Types.event) => {
+          let json = event.data->anyTypeToJson
+          let dict = json->getDictFromJson
+          let isBlockedBinsData = dict->getString("data", "") === "blocked_bins"
+          if isBlockedBinsData {
+            let json = dict->getJsonFromDict("response", JSON.Encode.null)
+            let msg = [("blockedBins", json)]->Dict.fromArray
+            mountedIframeRef->Window.iframePostMessage(msg)
+            resolve()
+          }
+        }
+        let msg = [("sendBlockedBinsResponse", true->JSON.Encode.bool)]->Dict.fromArray
+        addSmartEventListener(
+          "message",
+          handleBlockedBinsLoaded,
+          `onBlockedBinsLoaded-${componentType}`,
+        )
+        preMountLoaderIframeDiv->Window.iframePostMessage(msg)
+      })
+    }
+
     switch clientSecretReMatch {
     | Some(false) =>
       manageErrorWarning(
@@ -1405,6 +1428,7 @@ let make = (
                 disableSavedPaymentMethods,
                 componentType,
               ),
+              fetchBlockedBins(mountedIframeRef, componentType),
               sessionTokensPromise,
             ]
           | V2 => [
