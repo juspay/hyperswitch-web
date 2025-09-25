@@ -188,7 +188,7 @@ let make = () => {
     if isStartTimeout {
       let timeoutId = setTimeout(() => {
         handleOnError("Timeout while waiting for ThreeDS Method completion")
-      }, 10000) // 10 seconds timeout
+      }, 15000) // 15 seconds timeout
 
       Some(
         () => {
