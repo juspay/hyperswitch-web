@@ -101,7 +101,7 @@ let getPaymentMethodType = (paymentMethodType: paymentMethodType): string => {
     | ACH => "ach"
     | Bacs => "bacs"
     | Pix => "pix"
-    | Sepa => "sepa"
+    | Sepa => "sepa_bank_transfer"
     }
   | Wallet(walletType) =>
     switch walletType {
