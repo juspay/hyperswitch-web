@@ -209,7 +209,7 @@ let make = (
             <div className="flex flex-col items-start mx-8">
               <RenderIf condition={isActive && isRenderCvv}>
                 <div
-                  className={`flex flex-row items-start justify-start gap-2`}
+                  className={`flex flex-row items-start justify-start gap-2 SavedCardItem`}
                   style={fontSize: "14px", opacity: "0.5"}>
                   <div className="tracking-widest w-12 mt-6">
                     {React.string(`${localeString.cvcTextLabel}: `)}
@@ -234,6 +234,7 @@ let make = (
                       height="1.8rem"
                       name={TestUtils.cardCVVInputTestId}
                       autocomplete="cc-csc"
+                      isSavedCardCVC=true
                     />
                   </div>
                 </div>
