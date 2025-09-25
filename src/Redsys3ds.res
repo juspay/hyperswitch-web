@@ -121,18 +121,13 @@ let make = () => {
           }
         }
       } catch {
-      | e =>
+      | _ =>
         postFailedSubmitResponse(
           ~errortype="complete_authorize_failed",
           ~message="Something went wrong.",
         )
         loggerState.setLogError(
-          ~value={
-            "message": "Exception in Redsys3DS iframe message handler",
-            "error": e->Utils.formatException,
-          }
-          ->JSON.stringifyAny
-          ->Option.getOr(""),
+          ~value="Exception in Redsys3DS iframe message handler",
           ~eventName=REDSYS_3DS,
         )
       }
