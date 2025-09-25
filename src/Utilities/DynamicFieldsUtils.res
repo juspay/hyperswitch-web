@@ -52,7 +52,7 @@ let getName = (item: PaymentMethodsRecord.required_fields, field: RecoilAtomType
   }
 }
 
-let countryList = CountryStateDataRefs.countryDataRef.contents
+let countryList = Utils.countryDataRef.contents
 let countryNames = Utils.getCountryNames(countryList)
 
 let billingAddressFields: array<PaymentMethodsRecord.paymentMethodsFields> = [

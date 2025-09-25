@@ -1,3 +1,5 @@
+open Country
+
 @val external document: 'a = "document"
 @val external window: Dom.element = "window"
 @val @scope("window") external iframeParent: Dom.element = "parent"
@@ -9,6 +11,9 @@ external dictToObj: Dict.t<'a> => {..} = "%identity"
 
 @module("./Phone_number.json")
 external phoneNumberJson: JSON.t = "default"
+
+@module("./../../shared-code/assets/jsons/location/en")
+external countryStateJson: JSON.t = "default"
 
 type options = {timeZone: string}
 type dateTimeFormat = {resolvedOptions: unit => options}
@@ -430,12 +435,6 @@ let rec transformKeys = (json: JSON.t, to: case) => {
   ->getJsonFromArrayOfJson
 }
 
-let getClientCountry = clientTimeZone => {
-  CountryStateDataRefs.countryDataRef.contents
-  ->Array.find(item => item.timeZones->Array.find(i => i == clientTimeZone)->Option.isSome)
-  ->Option.getOr(Country.defaultTimeZone)
-}
-
 let removeDuplicate = arr => {
   arr->Array.filterWithIndex((item, i) => {
     arr->Array.indexOf(item) === i
@@ -722,31 +721,6 @@ let handlePostMessageEvents = (
 }
 
 let onlyDigits = str => str->String.replaceRegExp(%re(`/\D/g`), "")
-
-let getCountryCode = country => {
-  CountryStateDataRefs.countryDataRef.contents
-  ->Array.find(item => item.countryName == country)
-  ->Option.getOr(Country.defaultTimeZone)
-}
-
-let getStateNames = (country: RecoilAtomTypes.field) => {
-  let options =
-    CountryStateDataRefs.stateDataRef.contents
-    ->getDictFromJson
-    ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
-    ->Option.getOr([])
-
-  options->Array.reduce([], (arr, item) => {
-    arr
-    ->Array.push(
-      item
-      ->getDictFromJson
-      ->getString("value", ""),
-    )
-    ->ignore
-    arr
-  })
-}
 
 let isAddressComplete = (
   line1: RecoilAtomTypes.field,
@@ -1487,29 +1461,6 @@ let getStateNameFromStateCodeAndCountry = (list: JSON.t, stateCode: string, coun
   ->Option.getOr(stateCode)
 }
 
-let getStateCodeFromStateName = (stateName: string, countryCode: string): string => {
-  let countryStates =
-    CountryStateDataRefs.stateDataRef.contents
-    ->getDictFromJson
-    ->getOptionalArrayFromDict(countryCode)
-
-  let stateCode =
-    countryStates
-    ->Option.flatMap(states =>
-      states->Array.find(state => {
-        let stateDict = state->getDictFromJson
-        let stateValue = stateDict->getString("value", "")
-        stateValue === stateName
-      })
-    )
-    ->Option.flatMap(foundState =>
-      foundState
-      ->getDictFromJson
-      ->getOptionString("code")
-    )
-
-  stateCode->Option.getOr(stateName)
-}
 let removeHyphen = str => str->String.replaceRegExp(%re("/-/g"), "")
 
 let compareLogic = (a, b) => {
@@ -1698,4 +1649,89 @@ let getStringFromDict = (dict, key, defaultValue: string) => {
   ->Option.flatMap(x => x->Dict.get(key))
   ->Option.flatMap(JSON.Decode.string)
   ->Option.getOr(defaultValue)
+}
+
+// Country and state data initialization
+let decodeCountryArray = data => {
+  data->Array.map(item =>
+    switch item->JSON.Decode.object {
+    | Some(res) => {
+        isoAlpha2: res->getString("isoAlpha2", ""),
+        timeZones: res->getStrArray("timeZones"),
+        countryName: res->getString("value", ""),
+      }
+    | None => defaultTimeZone
+    }
+  )
+}
+
+let countryDataRef: ref<array<timezoneType>> = ref(
+  countryStateJson
+  ->JSON.Decode.object
+  ->Option.getOr(Dict.make())
+  ->getArray("country")
+  ->decodeCountryArray,
+)
+
+let stateDataRef: ref<JSON.t> = ref(
+  countryStateJson
+  ->JSON.Decode.object
+  ->Option.getOr(Dict.make())
+  ->getJsonFromDict("states", JSON.Encode.null),
+)
+
+// Functions that use the country and state data refs
+let getClientCountry = clientTimeZone => {
+  countryDataRef.contents
+  ->Array.find(item => item.timeZones->Array.find(i => i == clientTimeZone)->Option.isSome)
+  ->Option.getOr(defaultTimeZone)
+}
+
+let getCountryCode = country => {
+  countryDataRef.contents
+  ->Array.find(item => item.countryName == country)
+  ->Option.getOr(defaultTimeZone)
+}
+
+let getStateNames = (country: RecoilAtomTypes.field) => {
+  let options =
+    stateDataRef.contents
+    ->getDictFromJson
+    ->getOptionalArrayFromDict(getCountryCode(country.value).isoAlpha2)
+    ->Option.getOr([])
+
+  options->Array.reduce([], (arr, item) => {
+    arr
+    ->Array.push(
+      item
+      ->getDictFromJson
+      ->getString("value", ""),
+    )
+    ->ignore
+    arr
+  })
+}
+
+let getStateCodeFromStateName = (stateName: string, countryCode: string): string => {
+  let countryStates =
+    stateDataRef.contents
+    ->getDictFromJson
+    ->getOptionalArrayFromDict(countryCode)
+
+  let stateCode =
+    countryStates
+    ->Option.flatMap(states =>
+      states->Array.find(state => {
+        let stateDict = state->getDictFromJson
+        let stateValue = stateDict->getString("value", "")
+        stateValue === stateName
+      })
+    )
+    ->Option.flatMap(foundState =>
+      foundState
+      ->getDictFromJson
+      ->getOptionString("code")
+    )
+
+  stateCode->Option.getOr(stateName)
 }

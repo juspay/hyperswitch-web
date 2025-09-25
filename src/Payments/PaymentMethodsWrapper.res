@@ -59,7 +59,7 @@ let make = (~paymentMethodName: string) => {
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
   let areRequiredFieldsValid = Recoil.useRecoilValueFromAtom(areRequiredFieldsValid)
   let areRequiredFieldsEmpty = Recoil.useRecoilValueFromAtom(areRequiredFieldsEmpty)
-  let countryList = CountryStateDataRefs.countryDataRef.contents
+  let countryList = countryDataRef.contents
 
   React.useEffect(() => {
     setFieldComplete(_ => areRequiredFieldsValid)
