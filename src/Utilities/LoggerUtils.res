@@ -330,7 +330,6 @@ let apiEventInitMapper = (eventName: HyperLoggerTypes.eventName): option<
   | THREE_DS_POPUP_REDIRECTION
   | NETWORK_STATE
   | CARD_SCHEME_SELECTION
-  | S3_API
-  | BLOCKED_BIN_CALL =>
+  | S3_API =>
     None
   }
