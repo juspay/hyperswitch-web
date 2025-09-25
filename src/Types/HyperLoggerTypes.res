@@ -95,7 +95,6 @@ type eventName =
   | THREE_DS_POPUP_REDIRECTION
   | S3_API
   | CARD_SCHEME_SELECTION
-  | BLOCKED_BIN_CALL
 
 type maskableDetails = Email | CardDetails
 type source = Loader | Elements(CardThemeType.mode) | Headless
