@@ -14,6 +14,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cvcTextLabel: "CVC",
   emailLabel: "Email",
   ibanEmptyText: "IBAN cannot be empty",
+  ibanInvalidText: "Please enter valid IBAN",
   emailEmptyText: "Email cannot be empty",
   emailInvalidText: "Invalid email address",
   line1Label: "Address line 1",

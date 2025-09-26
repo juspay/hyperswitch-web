@@ -28,6 +28,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   accountNumberText: "帳戶號碼",
   emailLabel: "電子郵件",
   ibanEmptyText: "IBAN不能為空",
+  ibanInvalidText: `請輸入有效的 IBAN`,
   emailEmptyText: "電子郵件不能為空",
   emailInvalidText: "無效的電子郵件地址",
   fullNameLabel: "全名",

@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardNickname: `Kortets smeknamn`,
   billingNamePlaceholder: `Förnamn och efternamn`,
   ibanEmptyText: `IBAN får inte vara tomt`,
+  ibanInvalidText: `Vänligen ange ett giltigt IBAN`,
   emailEmptyText: `E-post får inte vara tom`,
   emailInvalidText: `Ogiltig e-postadress`,
   line1EmptyText: `Adressrad 1 får inte vara tom`,

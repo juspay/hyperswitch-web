@@ -400,7 +400,21 @@ let getPaymentMethodDataErrorString = (
   | (PayoutMethodData(CardExpDate(_)), false) => localeString.inCompleteExpiryErrorText
   | (PayoutMethodData(CardExpDate(_)), true) => localeString.pastExpiryErrorText
   | (PayoutMethodData(ACHRoutingNumber), false) => localeString.formFieldInvalidRoutingNumber
+  | (PayoutMethodData(CardHolderName), _) =>
+    if value->String.trim->String.length === 0 {
+      localeString.cardHolderName->localeString.nameEmptyText
+    } else {
+      localeString.cardHolderName->localeString.completeNameEmptyText
+    }
+  | (PayoutMethodData(SepaIban), _) =>
+    if value->String.trim->String.length === 0 {
+      localeString.ibanEmptyText
+    } else {
+      localeString.ibanInvalidText
+    }
   | (BillingAddress(AddressState), _) => "Invalid state"
+  | (PayoutMethodData(PaypalMobNumber), _) | (PayoutMethodData(VenmoMobNumber), _) =>
+    localeString.formFieldPhoneNumberLabel->localeString.nameEmptyText
   | _ => ""
   }
 }
@@ -653,6 +667,14 @@ let calculateValidity = (key, value, cardBrand, ~default=None) => {
     }
   | PayoutMethodData(CardExpDate(_)) =>
     if value->String.length > 0 && getExpiryValidity(value) {
+      Some(true)
+    } else if value->String.length == 0 {
+      default
+    } else {
+      Some(false)
+    }
+  | PayoutMethodData(CardHolderName) =>
+    if value->String.trim->String.includes(" ") {
       Some(true)
     } else if value->String.length == 0 {
       default
