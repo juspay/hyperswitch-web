@@ -31,6 +31,7 @@ type element = {
   mutable id: string,
   mutable width: string,
   mutable height: string,
+  remove: unit => unit,
   contentWindow: option<window>,
   setAttribute: (string, string) => unit,
   addEventListener?: (string, callback, option<options>) => unit,

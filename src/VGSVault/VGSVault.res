@@ -30,11 +30,11 @@ let make = (~isBancontact=false) => {
 
   let (id, setId) = React.useState(() => "")
   let (vgsEnv, setVgsEnv) = React.useState(() => "")
-  let (vgsScriptLoaded, setVgsScriptLoaded) = React.useState(() => false)
 
   let (requiredFieldsBody, setRequiredFieldsBody) = React.useState(_ => Dict.make())
 
   let intent = PaymentHelpers.usePaymentIntent(Some(loggerState), Card)
+  let status = CommonHooks.useScript(vgsScriptURL)
 
   handleVGSField(cardField, setIsCardFocused, setVgsCardError)
   handleVGSField(expiryField, setIsExpiryFocused, setVgsExpiryError)
@@ -59,31 +59,6 @@ let make = (~isBancontact=false) => {
     setVgsCVCError(_ => vgsErrorHandler(dict, "card_cvc", localeString))
   }
 
-  let mountVGSSDK = () => {
-    let scriptEl = Window.createElement("script")
-
-    scriptEl->Window.setAttribute("type", "text/javascript")
-    scriptEl->Window.setAttribute("crossorigin", "anonymous")
-    scriptEl->Window.setAttribute(
-      "integrity",
-      "sha384-ddxU1XAc77oB4EIpKOgJQ3FN2a6STYPK0JipRqg1x/eW+n5MFn1XbbZa7+KRjkqc",
-    )
-    scriptEl->Window.elementSrc(vgsScriptURL)
-
-    scriptEl->Window.elementOnerror(exn => {
-      Console.error2("Error loading VGS script", exn)
-    })
-
-    scriptEl->Window.elementOnload(_ => {
-      setVgsScriptLoaded(_ => true)
-
-      let vault = create(id, vgsEnv, handleVGSErrors)
-      initializeVGSFields(vault)
-    })
-
-    Window.body->Window.appendChild(scriptEl)
-  }
-
   React.useEffect(() => {
     let {vaultId, vaultEnv} = VaultHelpers.getVGSVaultDetails(
       sessionToken,
@@ -95,11 +70,12 @@ let make = (~isBancontact=false) => {
   }, (sessionToken, vaultMode))
 
   React.useEffect(() => {
-    if !vgsScriptLoaded && id != "" && vgsEnv != "" {
-      mountVGSSDK()
+    if status == "ready" && id != "" && vgsEnv != "" {
+      let vault = create(id, vgsEnv, handleVGSErrors)
+      initializeVGSFields(vault)
     }
     None
-  }, (id, vgsEnv, vgsScriptLoaded))
+  }, (id, vgsEnv, status))
 
   let submitCallback = React.useCallback((ev: Window.event) => {
     let json = ev.data->safeParse
