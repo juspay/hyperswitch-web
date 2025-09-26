@@ -15,6 +15,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   accountNumberText: `口座番号`,
   emailLabel: `Eメール`,
   ibanEmptyText: `IBANは空にできません`,
+  ibanInvalidText: `有効なIBANを入力してください`,
   emailEmptyText: `電子メールを空にすることはできません`,
   emailInvalidText: `無効なメールアドレス`,
   fullNameLabel: `フルネーム`,

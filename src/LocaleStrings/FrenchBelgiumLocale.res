@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardNickname: `Pseudonyme de la carte`,
   billingNamePlaceholder: `Nom et prénom`,
   ibanEmptyText: `L'IBAN ne peut pas être vide`,
+  ibanInvalidText: `Veuillez saisir un IBAN valide`,
   emailEmptyText: `L'e-mail ne peut pas être vide`,
   emailInvalidText: `Adresse e-mail invalide`,
   line1EmptyText: `La ligne d'adresse 1 ne peut pas être vide`,

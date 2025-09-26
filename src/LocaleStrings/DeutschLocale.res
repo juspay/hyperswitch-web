@@ -28,6 +28,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   accountNumberText: `Accountnummer`,
   emailLabel: `Email`,
   ibanEmptyText: `IBAN darf nicht leer sein`,
+  ibanInvalidText: `Bitte geben Sie eine gültige IBAN ein`,
   emailEmptyText: `E-Mail darf nicht leer sein`,
   emailInvalidText: `Ungültige E-Mail-Adresse`,
   fullNameLabel: `Vollständiger Name`,

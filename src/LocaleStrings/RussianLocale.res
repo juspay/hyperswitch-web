@@ -52,6 +52,7 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   cardNickname: `Прозвище карты`,
   billingNamePlaceholder: `Имя и фамилия`,
   ibanEmptyText: `IBAN не может быть пустым`,
+  ibanInvalidText: `Пожалуйста, введите действительный IBAN`,
   emailEmptyText: `Электронная почта не может быть пустой`,
   emailInvalidText: `Неверный адрес электронной почты`,
   line1EmptyText: `Адресная строка 1 не может быть пустой.`,
