@@ -1,5 +1,6 @@
 open CardUtils
 open CardThemeType
+open CardTheme
 open LoggerUtils
 open RecoilAtoms
 open PaymentTypeContext
@@ -9,7 +10,6 @@ let useCardForm = (~logger, ~paymentType) => {
   let cardScheme = Recoil.useRecoilValueFromAtom(cardBrand)
   let showPaymentMethodsScreen = Recoil.useRecoilValueFromAtom(showPaymentMethodsScreen)
   let selectedOption = Recoil.useRecoilValueFromAtom(selectedOptionAtom)
-  let blockedBinsList = Recoil.useRecoilValueFromAtom(blockedBins)
   let paymentToken = Recoil.useRecoilValueFromAtom(paymentTokenAtom)
   let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
   let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
@@ -166,20 +166,15 @@ let useCardForm = (~logger, ~paymentType) => {
       let card = val->formatCardNumber(cardType)
       let clearValue = card->CardValidations.clearSpaces
       // Check if card BIN is blocked
-      let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(clearValue, blockedBinsList)
-      if isCardBlocked {
-        setCardError(_ => localeString.blockedCardText)
-        setIsCardValid(_ => Some(false))
-      } else {
+
         setCardValid(clearValue, cardBrand, setIsCardValid)
-      }
+
 
       if (
         focusCardValid(clearValue, cardBrand) &&
         PaymentUtils.checkIsCardSupported(clearValue, cardBrand, supportedCardBrands)->Option.getOr(
           false,
-        ) &&
-        !isCardBlocked
+        ) 
       ) {
         handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
       }
@@ -197,7 +192,7 @@ let useCardForm = (~logger, ~paymentType) => {
         setIsCVCValid(_ => None)
         setIsCardValid(_ => Some(false))
       }
-    }
+  }
   }
 
   let changeCardExpiry = ev => {
@@ -328,29 +323,25 @@ let useCardForm = (~logger, ~paymentType) => {
   }
 
   React.useEffect(() => {
-    // Check if card is blocked first
-    let isCardBlocked = CardUtils.checkIfCardBinIsBlocked(
-      cardNumber->CardValidations.clearSpaces,
-      blockedBinsList,
-    )
     let cardError = switch (
       isCardSupported->Option.getOr(true),
       isCardValid->Option.getOr(true),
       cardNumber->String.length == 0,
       paymentMethodDetails.methodType,
-      isCardBlocked,
+
     ) {
-    | (true, true, _, _, _) => ""
-    | (_, _, true, _, _) => ""
-    | (_, true, _, "gift_card", _) => ""
-    | (_, _, _, _, true) => localeString.blockedCardText
-    | (true, _, _, _, _) => localeString.inValidCardErrorText
+    | (true, true, _, _) => ""
+    | (_, _, true, _) => ""
+    | (_, true, _, "gift_card") => ""
+    | (true, _, _, _) => localeString.inValidCardErrorText
     | _ => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
+    
     }
     let cardError = isCardValid->Option.isSome ? cardError : ""
     setCardError(_ => cardError)
     None
-  }, (isCardValid, isCardSupported, selectedOption, cardNumber, blockedBinsList))
+  }, (isCardValid, isCardSupported, selectedOption, cardNumber))
+
 
   React.useEffect(() => {
     setCvcError(_ => isCVCValid->Option.getOr(true) ? "" : localeString.inCompleteCVCErrorText)

@@ -226,7 +226,7 @@ let decodeCard = (cardType: string): option<card> =>
 let decodeTransfer = (value: string): option<bankTransfer> =>
   switch value {
   | "ach" => Some(ACH)
-  | "sepa" => Some(Sepa)
+  | "sepa_bank_transfer" => Some(Sepa)
   | "bacs" => Some(Bacs)
   | "pix" => Some(Pix)
   | _ => None
