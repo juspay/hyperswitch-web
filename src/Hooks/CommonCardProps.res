@@ -3,6 +3,7 @@ open CardThemeType
 open CardTheme
 open LoggerUtils
 open RecoilAtoms
+open PaymentTypeContext
 
 let useCardForm = (~logger, ~paymentType) => {
   let {localeString} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -14,6 +15,45 @@ let useCardForm = (~logger, ~paymentType) => {
   let paymentMethodListValueV2 = Recoil.useRecoilValueFromAtom(
     RecoilAtomsV2.paymentMethodListValueV2,
   )
+  let paymentManagementList = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentManagementListValue)
+
+  let contextPaymentType = usePaymentType()
+  let listValue = switch contextPaymentType {
+  | PaymentMethodsManagement => paymentManagementList
+  | _ => paymentMethodListValueV2
+  }
+
+  let paymentMethodDetails = React.useMemo(() => {
+    switch GlobalVars.sdkVersion {
+    | V1 => {
+        let optionPaymentMethodDetails =
+          paymentMethodListValue
+          ->PaymentMethodsRecord.buildFromPaymentList(~localeString)
+          ->Array.find(x =>
+            x.paymentMethodName ===
+              PaymentUtils.getPaymentMethodName(
+                ~paymentMethodType=x.methodType,
+                ~paymentMethodName=selectedOption,
+              )
+          )
+        optionPaymentMethodDetails->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
+      }
+    | V2 => {
+        let optionPaymentMethodDetailsV2 =
+          listValue
+          ->PaymentMethodsRecordV2.buildFromPaymentListV2(~localeString)
+          ->Array.find(x =>
+            x.paymentMethodName ===
+              PaymentUtils.getPaymentMethodName(
+                ~paymentMethodType=x.methodType,
+                ~paymentMethodName=selectedOption,
+              )
+          )
+        optionPaymentMethodDetailsV2->Option.getOr(PaymentMethodsRecord.defaultPaymentMethodContent)
+      }
+    }
+  }, (paymentMethodListValue, paymentMethodListValueV2, listValue, selectedOption, localeString))
+
   let (cardNumber, setCardNumber) = React.useState(_ => "")
   let (cardExpiry, setCardExpiry) = React.useState(_ => "")
   let (cvcNumber, setCvcNumber) = React.useState(_ => "")
@@ -105,34 +145,52 @@ let useCardForm = (~logger, ~paymentType) => {
     setCardError(_ => "")
     setExpiryError(_ => "")
     None
-  }, (paymentToken.paymentToken, showPaymentMethodsScreen))
+  }, (paymentToken.paymentToken, showPaymentMethodsScreen, selectedOption))
+
+  React.useEffect(() => {
+    setCardNumber(_ => "")
+    setIsCardValid(_ => None)
+    None
+  }, [selectedOption])
 
   let changeCardNumber = ev => {
     let val = ReactEvent.Form.target(ev)["value"]
     logInputChangeInfo("cardNumber", logger)
-    let card = val->formatCardNumber(cardType)
-    let clearValue = card->CardValidations.clearSpaces
-    setCardValid(clearValue, cardBrand, setIsCardValid)
-    if (
-      focusCardValid(clearValue, cardBrand) &&
-      PaymentUtils.checkIsCardSupported(clearValue, cardBrand, supportedCardBrands)->Option.getOr(
-        false,
-      )
-    ) {
-      handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
-    }
-    if card->String.length > 6 && cardBrand->pincodeVisibility {
-      setDisplayPincode(_ => true)
-    } else if card->String.length < 8 {
-      setDisplayPincode(_ => false)
-    }
-    setCardNumber(_ => card)
-    if card->String.length == 0 && prevCardBrandRef.current !== "" {
-      setCvcNumber(_ => "")
-      setCardExpiry(_ => "")
-      setIsExpiryValid(_ => None)
-      setIsCVCValid(_ => None)
-      setIsCardValid(_ => Some(false))
+
+    // Handle gift_card payment method differently
+    if paymentMethodDetails.methodType == "gift_card" {
+      setIsCardValid(_ => Some(val->String.length > 0))
+      setCardNumber(_ => val)
+    } else {
+      // Normal card validation for other payment methods
+      let card = val->formatCardNumber(cardType)
+      let clearValue = card->CardValidations.clearSpaces
+      // Check if card BIN is blocked
+
+      setCardValid(clearValue, cardBrand, setIsCardValid)
+
+      if (
+        focusCardValid(clearValue, cardBrand) &&
+        PaymentUtils.checkIsCardSupported(clearValue, cardBrand, supportedCardBrands)->Option.getOr(
+          false,
+        )
+      ) {
+        handleInputFocus(~currentRef=cardRef, ~destinationRef=expiryRef)
+      }
+
+      if card->String.length > 6 && cardBrand->pincodeVisibility {
+        setDisplayPincode(_ => true)
+      } else if card->String.length < 8 {
+        setDisplayPincode(_ => false)
+      }
+      setCardNumber(_ => card)
+      if card->String.length == 0 && prevCardBrandRef.current !== "" {
+        setCvcNumber(_ => "")
+        setCardExpiry(_ => "")
+        setIsExpiryValid(_ => None)
+        setIsCVCValid(_ => None)
+        setIsCardValid(_ => Some(false))
+      }
     }
   }
 
@@ -209,7 +267,13 @@ let useCardForm = (~logger, ~paymentType) => {
 
   let handleCardBlur = ev => {
     let cardNumber = ReactEvent.Focus.target(ev)["value"]
-    if cardNumberInRange(cardNumber, cardBrand)->Array.includes(true) && calculateLuhn(cardNumber) {
+
+    // Handle gift_card payment method differently
+    if paymentMethodDetails.methodType == "gift_card" {
+      setIsCardValid(_ => Some(cardNumber->String.length > 0))
+    } else if (
+      cardNumberInRange(cardNumber, cardBrand)->Array.includes(true) && calculateLuhn(cardNumber)
+    ) {
       setIsCardValid(_ =>
         PaymentUtils.checkIsCardSupported(cardNumber, cardBrand, supportedCardBrands)
       )
@@ -258,16 +322,18 @@ let useCardForm = (~logger, ~paymentType) => {
       isCardSupported->Option.getOr(true),
       isCardValid->Option.getOr(true),
       cardNumber->String.length == 0,
+      paymentMethodDetails.methodType,
     ) {
-    | (_, _, true) => ""
-    | (true, true, _) => ""
-    | (true, _, _) => localeString.inValidCardErrorText
-    | (_, _, _) => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
+    | (true, true, _, _) => ""
+    | (_, _, true, _) => ""
+    | (_, true, _, "gift_card") => ""
+    | (true, _, _, _) => localeString.inValidCardErrorText
+    | _ => CardUtils.getCardBrandInvalidError(~cardBrand, ~localeString)
     }
     let cardError = isCardValid->Option.isSome ? cardError : ""
     setCardError(_ => cardError)
     None
-  }, [isCardValid, isCardSupported])
+  }, (isCardValid, isCardSupported, selectedOption, cardNumber))
 
   React.useEffect(() => {
     setCvcError(_ => isCVCValid->Option.getOr(true) ? "" : localeString.inCompleteCVCErrorText)

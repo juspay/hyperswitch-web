@@ -44,14 +44,14 @@ let itemToCustomerMapper = customerArray => {
   customerMethods
 }
 
-let getDynamicFieldsFromJsonDictV2 = (dict, isBancontact) => {
+let getDynamicFieldsFromJsonDictV2 = (dict, isBancontact, isGiftCard) => {
   let requiredFields = getArray(dict, "required_fields")
   requiredFields->Array.map(requiredField => {
     let requiredFieldsDict = requiredField->getDictFromJson
     {
       required_field: requiredFieldsDict->getString("required_field", ""),
       display_name: requiredFieldsDict->getString("display_name", ""),
-      field_type: requiredFieldsDict->getFieldType(isBancontact),
+      field_type: requiredFieldsDict->getFieldType(isBancontact, isGiftCard),
       value: requiredFieldsDict->getString("value", ""),
     }
   })
@@ -75,14 +75,16 @@ let itemToPaymentsEnabledMapper = methodsArray => {
     ->Belt.Array.keepMap(JSON.Decode.object)
     ->Array.map(dict => {
       let paymentMethodSubtype = getString(dict, "payment_method_subtype", "")
+      let paymentMethodType = getString(dict, "payment_method_type", "")
       {
         cardNetworks: dict->getArray("card_networks")->getCardNetworks,
         surchargeDetails: dict->getSurchargeDetails,
-        paymentMethodType: getString(dict, "payment_method_type", ""),
+        paymentMethodType,
         paymentMethodSubtype,
         bankNames: dict->getStrArray("bank_names"),
         requiredFields: dict->getDynamicFieldsFromJsonDictV2(
           paymentMethodSubtype == "bancontact_card",
+          paymentMethodType == "gift_card",
         ),
         paymentExperience: dict
         ->getArray("payment_experience")
