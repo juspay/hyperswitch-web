@@ -12,6 +12,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   validThruText: `صالحة من خلال`,
   sortCodeText: `الكود البنكى`,
   accountNumberText: `رقم حساب`,
+  accountNumberInvalidText: `رقم الحساب غير صحيح`,
+  sortCodeInvalidText: `الكود البنكي غير صحيح`,
   cvcTextLabel: `رمز الحماية`,
   emailLabel: `البريد الإلكتروني`,
   ibanEmptyText: `لا يمكن أن يكون رقم IBAN فارغًا`,

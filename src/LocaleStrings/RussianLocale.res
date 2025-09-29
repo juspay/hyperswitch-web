@@ -20,6 +20,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   postalCodeLabel: `Почтовый индекс`,
   stateLabel: `Область`,
   accountNumberText: `Номер счета`,
+  accountNumberInvalidText: `Номер счета недействителен`,
+  sortCodeInvalidText: `Номер отделения банка недействителен`,
   emailLabel: `Электронная почта`,
   fullNameLabel: `Ф.И.О.`,
   fullNamePlaceholder: `Имя и фамилия`,

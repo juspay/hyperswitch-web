@@ -21,6 +21,8 @@ type localeStrings = {
   emailEmptyText: string,
   emailInvalidText: string,
   accountNumberText: string,
+  accountNumberInvalidText: string,
+  sortCodeInvalidText: string,
   fullNameLabel: string,
   line1Label: string,
   line1Placeholder: string,
