@@ -13,7 +13,9 @@ type apiCallV1 =
   | RetrieveStatus
   | ConfirmPayout
 
-type apiCallV2 = FetchSessionsV2
+type apiCallV2 = 
+  | FetchSessionsV2
+  | UpdatePaymentMethodV2
 
 type apiCall =
   | V1(apiCallV1)
@@ -27,6 +29,7 @@ type apiParams = {
   forceSync: option<string>,
   pollId: option<string>,
   payoutId: option<string>,
+  pmSessionId : option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
@@ -38,6 +41,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     forceSync,
     pollId,
     payoutId,
+    pmSessionId,
   } = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
@@ -46,6 +50,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
   let pollIdVal = pollId->Option.getOr("")
   let payoutIdVal = payoutId->Option.getOr("")
+  let pmSessionIdVal = pmSessionId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -118,6 +123,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | V2(inner) =>
     switch inner {
     | FetchSessionsV2 => `v2/payments/${paymentIntentID}/create-external-sdk-tokens`
+    | UpdatePaymentMethodV2 => `v2/payment-method-sessions/${pmSessionIdVal}/update-saved-payment-method`
     }
   }
 
