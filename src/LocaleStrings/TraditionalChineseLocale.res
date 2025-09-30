@@ -26,6 +26,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   stateLabel: "州/省",
   stateEmptyText: "州/省不能為空",
   accountNumberText: "帳戶號碼",
+  accountNumberInvalidText: "帳戶號碼無效",
+  sortCodeInvalidText: "排序碼無效",
   emailLabel: "電子郵件",
   ibanEmptyText: "IBAN不能為空",
   ibanInvalidText: `請輸入有效的 IBAN`,

@@ -13,6 +13,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   sortCodeText: `ソートコード`,
   cvcTextLabel: `セキュリティコード`,
   accountNumberText: `口座番号`,
+  accountNumberInvalidText: `口座番号が無効です`,
+  sortCodeInvalidText: `ソートコードが無効です`,
   emailLabel: `Eメール`,
   ibanEmptyText: `IBANは空にできません`,
   ibanInvalidText: `有効なIBANを入力してください`,

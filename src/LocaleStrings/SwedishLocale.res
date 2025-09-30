@@ -20,6 +20,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   postalCodeLabel: `Postnummer`,
   stateLabel: `Region`,
   accountNumberText: `Kontonummer`,
+  accountNumberInvalidText: `Kontonumret är ogiltigt`,
+  sortCodeInvalidText: `Sorteringskoden är ogiltig`,
   emailLabel: `E-postadress`,
   fullNameLabel: `Fullständigt namn`,
   fullNamePlaceholder: `För- och efternamn`,
