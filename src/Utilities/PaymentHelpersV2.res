@@ -351,14 +351,27 @@ let updatePaymentMethod = (
   ~customPodUri,
 ) => {
   open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
+  
   let headers = [
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
     ("Content-Type", "application/json"),
   ]
-  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}/update-saved-payment-method`
 
+  let uri = APIUtils.generateApiUrl(
+    V2(UpdatePaymentMethodV2),
+    ~params={
+      customBackendBaseUrl: None,
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: Some(pmSessionId),  
+    },
+  )
+  
   fetchApi(
     uri,
     ~method=#PUT,
