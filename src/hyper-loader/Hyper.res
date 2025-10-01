@@ -729,7 +729,11 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       let completeUpdateIntent = clientSecret => {
-        sessionUpdate(clientSecret)
+        if clientSecret != "" {
+          sessionUpdate(clientSecret)
+        } else {
+          Promise.resolve(Dict.make()->JSON.Encode.object)
+        }
       }
 
       let initiateUpdateIntent = () => {
