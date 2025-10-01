@@ -309,12 +309,26 @@ let deletePaymentMethodV2 = (
   ~customPodUri,
 ) => {
   open Promise
-  let endpoint = ApiEndpoint.getApiEndPoint()
+  
   let headers = [
     ("x-profile-id", `${profileId}`),
     ("Authorization", `publishable-key=${publishableKey},client-secret=${pmClientSecret}`),
   ]
-  let uri = `${endpoint}/v2/payment-method-sessions/${pmSessionId}`
+  
+  let uri = APIUtils.generateApiUrl(
+    V2(DeletePaymentMethodV2),
+    ~params={
+      customBackendBaseUrl: None,
+      clientSecret: None,
+      publishableKey: Some(publishableKey),
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+      pmSessionId: Some(pmSessionId),  
+    },
+  )
+
   fetchApi(
     uri,
     ~method=#DELETE,
