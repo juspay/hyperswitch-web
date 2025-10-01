@@ -729,6 +729,9 @@ let make = (keys, options: option<JSON.t>, analyticsInfo: option<JSON.t>) => {
       }
 
       let completeUpdateIntent = clientSecret => {
+        if clientSecret->String.length == 0 {
+          ()
+        }
         sessionUpdate(clientSecret)
       }
 
