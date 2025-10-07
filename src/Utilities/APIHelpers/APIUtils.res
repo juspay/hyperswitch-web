@@ -6,15 +6,21 @@ type apiCallV1 =
   | FetchSavedPaymentMethodList
   | DeletePaymentMethod
   | CalculateTax
-  | CreatePaymentMethod
+  | createpaymentmethod
   | RetrievePaymentIntent
   | CallAuthLink
   | CallAuthExchange
   | RetrieveStatus
   | ConfirmPayout
 
-type apiCallV2 = FetchSessionsV2
-
+type apiCallV2 =
+  | FetchSessionsV2
+  | FetchPaymentManagementListV2
+  | DeletePaymentMethodV2
+  | UpdatePaymentMethodV2
+  | SavePaymentMethodV2
+  | FetchPaymentMethodListV2
+  | CreateExternalSDKTokensV2
 type apiCall =
   | V1(apiCallV1)
   | V2(apiCallV2)
@@ -27,6 +33,7 @@ type apiParams = {
   forceSync: option<string>,
   pollId: option<string>,
   payoutId: option<string>,
+  paymentMethodSessionId: option<string>,
 }
 
 let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
@@ -38,6 +45,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     forceSync,
     pollId,
     payoutId,
+    paymentMethodSessionId,
   } = params
 
   let clientSecretVal = clientSecret->Option.getOr("")
@@ -46,6 +54,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   let paymentMethodIdVal = paymentMethodId->Option.getOr("")
   let pollIdVal = pollId->Option.getOr("")
   let payoutIdVal = payoutId->Option.getOr("")
+  let pmSessionIdVal = paymentMethodSessionId->Option.getOr("")
 
   let baseUrl =
     customBackendBaseUrl->Option.getOr(
@@ -118,6 +127,12 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
   | V2(inner) =>
     switch inner {
     | FetchSessionsV2 => `v2/payments/${paymentIntentID}/create-external-sdk-tokens`
+    | FetchPaymentManagementListV2 => `v2/payment-method-sessions/${pmSessionIdVal}/list-payment-methods`
+    | DeletePaymentMethodV2 => `v2/payment-method-sessions/${pmSessionIdVal}`
+    | UpdatePaymentMethodV2 => `v2/payment-method-sessions/${pmSessionIdVal}/update-saved-payment-method`
+    | SavePaymentMethodV2 => `v2/payment-method-sessions/${pmSessionIdVal}/confirm`
+    | FetchPaymentMethodListV2 => `v2/payments/${paymentIntentID}/payment-methods`
+    | CreateExternalSDKTokensV2 => `v2/payments/${paymentIntentID}/create-external-sdk-tokens`
     }
   }
 
