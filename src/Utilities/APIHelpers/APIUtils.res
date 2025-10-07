@@ -6,7 +6,7 @@ type apiCallV1 =
   | FetchSavedPaymentMethodList
   | DeletePaymentMethod
   | CalculateTax
-  | createpaymentmethod
+  | CreatePaymentMethod
   | RetrievePaymentIntent
   | CallAuthLink
   | CallAuthExchange
