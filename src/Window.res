@@ -71,6 +71,7 @@ external removeEventListener: (string, 'ev => unit) => unit = "removeEventListen
 @get external name: window => string = "name"
 @get external contentWindow: Dom.element => Dom.element = "contentWindow"
 @get external style: Dom.element => style = "style"
+@get external readyState: document => string = "readyState"
 @send external getAttribute: (Dom.element, string) => Nullable.t<string> = "getAttribute"
 @send external postMessage: (Dom.element, string, string) => unit = "postMessage"
 @send external postMessageJSON: (Dom.element, JSON.t, string) => unit = "postMessage"
@@ -134,6 +135,9 @@ module Location = {
 
   @val @scope(("window", "location"))
   external pathname: string = "pathname"
+
+  @get @scope("location")
+  external documentHref: document => string = "href"
 }
 
 module Top = {
@@ -166,6 +170,9 @@ module LocalStorage = {
 
 module Element = {
   @get external clientWidth: Dom.element => int = "clientWidth"
+  @get external nullableContentWindow: Dom.element => Nullable.t<Dom.element> = "contentWindow"
+  @get external nullableContentDocument: Dom.element => Nullable.t<document> = "contentDocument"
+  @get external document: Dom.element => Nullable.t<document> = "document"
 }
 
 /* Helper Functions */
