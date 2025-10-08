@@ -104,7 +104,7 @@ let make = (
         )
         let formattedCardNumber = formatCardNumber(value, cardType)
         if (
-          cardValid(
+          focusCardValid(
             CardValidations.clearSpaces(formattedCardNumber),
             getCardStringFromType(cardType),
           )
