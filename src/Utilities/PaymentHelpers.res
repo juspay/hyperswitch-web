@@ -62,6 +62,42 @@ let retrievePaymentIntent = async (
   )
 }
 
+let fetchBlockedBins = async (
+  ~clientSecret,
+  ~publishableKey,
+  ~logger,
+  ~customPodUri,
+  ~endpoint,
+) => {
+  let uri = APIUtils.generateApiUrl(
+    V1(FetchBlockedBins),
+    ~params={
+      clientSecret: Some(clientSecret),
+      publishableKey: None,
+      customBackendBaseUrl: Some(endpoint),
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+    },
+  )
+
+  let onSuccess = data => data
+
+  let onFailure = _ => JSON.Encode.null
+
+  await fetchApiWithLogging(
+    uri,
+    ~eventName=BLOCKED_BIN_CALL,
+    ~logger,
+    ~method=#GET,
+    ~customPodUri=Some(customPodUri),
+    ~publishableKey=Some(publishableKey),
+    ~onSuccess,
+    ~onFailure,
+  )
+}
+
 let threeDsAuth = async (~clientSecret, ~logger, ~threeDsMethodComp, ~headers) => {
   let url = APIUtils.generateApiUrl(
     V1(FetchThreeDsAuth),
