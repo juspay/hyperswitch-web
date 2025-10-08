@@ -271,11 +271,7 @@ let useCardForm = (~logger, ~paymentType) => {
 
     // Handle gift_card payment method differently
     if paymentMethodDetails.methodType == "gift_card" {
-      if cardNumber->String.length > 0 {
-        setIsCardValid(_ => Some(true))
-      } else {
-        setIsCardValid(_ => Some(false))
-      }
+      setIsCardValid(_ => Some(val->String.length > 0))
     } else if (
       cardNumberInRange(cardNumber, cardBrand)->Array.includes(true) && calculateLuhn(cardNumber)
     ) {
