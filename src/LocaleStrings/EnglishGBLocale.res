@@ -31,6 +31,8 @@ let localeStrings: LocaleStringTypes.localeStrings = {
   stateLabel: "State",
   stateEmptyText: "State cannot be empty",
   accountNumberText: "Account Number",
+  accountNumberInvalidText: "Account number is invalid",
+  sortCodeInvalidText: "Sort code is invalid",
   fullNameLabel: "Full name",
   fullNamePlaceholder: "First and last name",
   countryLabel: "Country",
