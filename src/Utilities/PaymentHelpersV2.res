@@ -492,11 +492,9 @@ let useSaveCard = (optLogger: option<HyperLoggerTypes.loggerMake>, paymentType: 
 
 let fetchPaymentMethodList = (
   ~clientSecret,
-  ~paymentId,
   ~publishableKey,
   ~logger as _,
   ~customPodUri,
-  ~endpoint,
   ~profileId,
 ) => {
   open Promise
@@ -510,7 +508,18 @@ let fetchPaymentMethodList = (
   | value if value != "" => [...baseHeaders, ("x-feature", value)]
   | _ => baseHeaders
   }
-  let uri = `${endpoint}/v2/payments/${paymentId}/payment-methods`
+  let uri = APIUtils.generateApiUrl(
+    V2(FetchPaymentMethodListV2),
+    ~params={
+      clientSecret: Some(clientSecret),
+      publishableKey: Some(publishableKey),
+      customBackendBaseUrl: Some(customPodUri),
+      paymentMethodId: None,
+      forceSync: None,
+      pollId: None,
+      payoutId: None,
+    },
+  )
 
   fetchApi(uri, ~method=#GET, ~headers=headers->ApiEndpoint.addCustomPodHeader(~customPodUri))
   ->then(resp => {
