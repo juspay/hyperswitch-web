@@ -112,11 +112,9 @@ let getMessageHandlerV2Elements = (
 ) => {
   let paymentMethodsListPromise = PaymentHelpersV2.fetchPaymentMethodList(
     ~clientSecret,
-    ~paymentId,
     ~publishableKey,
     ~logger,
     ~customPodUri,
-    ~endpoint,
     ~profileId,
   )
 
