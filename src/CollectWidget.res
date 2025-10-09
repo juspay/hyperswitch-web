@@ -91,12 +91,12 @@ let make = (
     | (_, _, "") => (true, "")
     | (PayoutMethodData(CardExpDate(_)), "number" | "tel", _) => {
         let formattedExpiry = CardValidations.formatCardExpiryNumber(value)
-        let checkCardExpiryIsValid = isExipryValid(formattedExpiry)
-        if checkCardExpiryIsValid {
+        let isCardExpiryValid = isExipryValid(formattedExpiry)
+        if isCardExpiryValid {
           handleInputFocus(~currentRef=cardExpRef, ~destinationRef=cardHolderRef)
         }
         if formattedExpiry->String.length == getPaymentMethodDataFieldMaxLength(key) {
-          setValidityDictVal("card.cardExp", Some(checkCardExpiryIsValid))
+          setValidityDictVal("card.cardExp", Some(isCardExpiryValid))
         } else {
           setValidityDictVal("card.cardExp", Some(true))
         }
