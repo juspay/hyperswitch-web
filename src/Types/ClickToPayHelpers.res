@@ -1013,7 +1013,7 @@ type authenticationMethodsVisa = {
   methodAttributes: authenticationmethodAttributes,
 }
 type authenticationPreferencesVisa = {
-  authenticationMethods: array<authenticationMethodsVisa>,
+  authenticationMethods?: array<authenticationMethodsVisa>,
   payloadRequested: string,
 }
 
@@ -1202,18 +1202,33 @@ let checkoutVisaUnified = async (
     payloadTypeIndicatorCheckout: "FULL",
     windowRef,
     dpaTransactionOptions: {
+      transactionAmount: {
+        transactionAmount: clickToPayToken.transactionAmount->Float.toString,
+        transactionCurrencyCode: clickToPayToken.transactionCurrencyCode,
+      },
+      dpaBillingPreference: "NONE",
+      consumerNationalIdentifierRequested: false,
+      merchantCategoryCode: clickToPayToken.merchantCategoryCode,
+      merchantCountryCode: clickToPayToken.merchantCountryCode,
       authenticationPreferences: {
-        authenticationMethods: [
-          {
-            authenticationMethodType: "3DS",
-            authenticationSubject: "CARDHOLDER",
-            methodAttributes: {
-              challengeIndicator: "01",
-            },
-          },
-        ],
+        // authenticationMethods: [
+        //   {
+        //     authenticationMethodType: "3DS",
+        //     authenticationSubject: "CARDHOLDER",
+        //     methodAttributes: {
+        //       challengeIndicator: "01",
+        //     },
+        //   },
+        // ],
         payloadRequested: "AUTHENTICATED",
       },
+      paymentOptions: [
+        {
+          dpaDynamicDataTtlMinutes: 2,
+          dynamicDataType: CARD_APPLICATION_CRYPTOGRAM_LONG_FORM,
+        },
+      ],
+      dpaLocale: clickToPayToken.locale,
       acquirerBIN: clickToPayToken.acquirerBIN,
       acquirerMerchantId: clickToPayToken.acquirerMerchantId,
       merchantName: clickToPayToken.dpaName,
@@ -1276,7 +1291,10 @@ let checkoutVisaUnified = async (
       }
     }
   }
-  await vsdk.checkout(checkoutConfig)
+  // Console.log2("Visa Checkout Config: ", JSON.stringify(checkoutConfig->Obj.magic))
+  let x = await vsdk.checkout(checkoutConfig)
+  Console.log2("Visa Checkout Response: ", x)
+  x
 }
 
 let handleProceedToPay = async (

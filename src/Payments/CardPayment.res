@@ -38,6 +38,27 @@ let make = (
   | PaymentMethodsManagement => true
   | _ => false
   }
+
+  let x = ConfigurationService.useConfigurationService()
+
+  let a = ["Stripe"->JSON.Encode.string, "Airwallex"->JSON.Encode.string]
+
+  let b: SuperpositionTypes.superpositionBaseContext = {
+    payment_method: "Card",
+    payment_method_type: "Credit",
+    country: "US",
+    mandate_type: "",
+    collect_shipping_details_from_wallet_connector: "",
+    collect_billing_details_from_wallet_connector: "",
+  }
+
+  let (requiredFieldsFromSuperPosition, _, _) = React.useMemo0(() => x(a, b, Dict.make()))
+  let groupedFields = SuperpositionHelper.categorizedFields(requiredFieldsFromSuperPosition)
+
+  Console.log2("Grouped fields", groupedFields)
+
+  Console.log2("Config fields", requiredFieldsFromSuperPosition)
+
   let paymentType = usePaymentType()
   let {
     isCardValid,
@@ -194,7 +215,7 @@ let make = (
       defaultCardBody
     }
 
-    let isRecognizedClickToPayPayment = ctpCards->Array.length > 0 && clickToPayCardBrand !== ""
+    let isRecognizedClickToPayPayment = ctpCards->Array.length > 0
 
     let isUnrecognizedClickToPayPayment = isSaveDetailsWithClickToPay
 
@@ -313,11 +334,13 @@ let make = (
               let dict = Dict.make()
               payload->Array.forEach(((key, value)) => Dict.set(dict, key, value))
               let cardPayloadJson = JSON.Encode.object(dict)
+              Console.log2("Card payload json", cardPayloadJson)
 
               (
                 async () => {
                   let encryptedCard =
                     await cardPayloadJson->ClickToPayCardEncryption.getEncryptedCard
+                  Console.log2("Encrypted card", encryptedCard)
 
                   try {
                     let res = await ClickToPayHelpers.handleProceedToPay(
@@ -459,91 +482,102 @@ let make = (
               {React.string(localeString.cardHeader)}
             </div>
           </RenderIf>
-          <RenderIf condition={!isBancontact}>
-            <PaymentInputField
-              fieldName=localeString.cardNumberLabel
-              isValid=isCardValid
-              setIsValid=setIsCardValid
-              value=cardNumber
-              onChange=changeCardNumber
-              onBlur=handleCardBlur
-              rightIcon={icon}
-              errorString=cardError
-              type_="tel"
-              maxLength=maxCardLength
-              inputRef=cardRef
-              placeholder="1234 1234 1234 1234"
-              className={innerLayout === Compressed && cardError->String.length > 0
-                ? "border-b-0"
-                : ""}
-              name=TestUtils.cardNoInputTestId
-              autocomplete="cc-number"
-            />
-            <div
-              className="flex flex-row w-full place-content-between"
-              style={
-                gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
-              }>
-              <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
-                <PaymentInputField
-                  fieldName=localeString.validThruText
-                  isValid=isExpiryValid
-                  setIsValid=setIsExpiryValid
-                  value=cardExpiry
-                  onChange=changeCardExpiry
-                  onBlur=handleExpiryBlur
-                  errorString=expiryError
-                  type_="tel"
-                  maxLength=7
-                  inputRef=expiryRef
-                  placeholder=localeString.expiryPlaceholder
-                  name=TestUtils.expiryInputTestId
-                  autocomplete="cc-exp"
-                />
-              </div>
-              <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
-                <PaymentInputField
-                  fieldName=localeString.cvcTextLabel
-                  isValid=isCVCValid
-                  setIsValid=setIsCVCValid
-                  value=cvcNumber
-                  onChange=changeCVCNumber
-                  onBlur=handleCVCBlur
-                  errorString=cvcError
-                  rightIcon={CardUtils.setRightIconForCvc(
-                    ~cardComplete,
-                    ~cardEmpty,
-                    ~cardInvalid,
-                    ~color=themeObj.colorIconCardCvcError,
-                  )}
-                  type_="tel"
-                  className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
-                  maxLength=4
-                  inputRef=cvcRef
-                  placeholder="123"
-                  name=TestUtils.cardCVVInputTestId
-                  autocomplete="cc-csc"
-                />
-              </div>
-            </div>
-            <RenderIf
-              condition={innerLayout === Compressed &&
-                (cardError->String.length > 0 ||
-                cvcError->String.length > 0 ||
-                expiryError->String.length > 0)}>
-              <div
-                className="Error pt-1"
-                style={
-                  color: themeObj.colorDangerText,
-                  fontSize: themeObj.fontSizeSm,
-                  alignSelf: "start",
-                  textAlign: "left",
-                }>
-                {React.string("Invalid input")}
-              </div>
-            </RenderIf>
-          </RenderIf>
-          <DynamicFields
+          // <RenderIf condition={!isBancontact}>
+          //   <PaymentInputField
+          //     fieldName=localeString.cardNumberLabel
+          //     isValid=isCardValid
+          //     setIsValid=setIsCardValid
+          //     value=cardNumber
+          //     onChange=changeCardNumber
+          //     onBlur=handleCardBlur
+          //     rightIcon={icon}
+          //     errorString=cardError
+          //     type_="tel"
+          //     maxLength=maxCardLength
+          //     inputRef=cardRef
+          //     placeholder="1234 1234 1234 1234"
+          //     className={innerLayout === Compressed && cardError->String.length > 0
+          //       ? "border-b-0"
+          //       : ""}
+          //     name=TestUtils.cardNoInputTestId
+          //     autocomplete="cc-number"
+          //   />
+          //   <div
+          //     className="flex flex-row w-full place-content-between"
+          //     style={
+          //       gridColumnGap: {innerLayout === Spaced ? themeObj.spacingGridRow : ""},
+          //     }>
+          //     <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
+          //       <PaymentInputField
+          //         fieldName=localeString.validThruText
+          //         isValid=isExpiryValid
+          //         setIsValid=setIsExpiryValid
+          //         value=cardExpiry
+          //         onChange=changeCardExpiry
+          //         onBlur=handleExpiryBlur
+          //         errorString=expiryError
+          //         type_="tel"
+          //         maxLength=7
+          //         inputRef=expiryRef
+          //         placeholder=localeString.expiryPlaceholder
+          //         name=TestUtils.expiryInputTestId
+          //         autocomplete="cc-exp"
+          //       />
+          //     </div>
+          //     <div className={innerLayout === Spaced ? "w-[47%]" : "w-[50%]"}>
+          //       <PaymentInputField
+          //         fieldName=localeString.cvcTextLabel
+          //         isValid=isCVCValid
+          //         setIsValid=setIsCVCValid
+          //         value=cvcNumber
+          //         onChange=changeCVCNumber
+          //         onBlur=handleCVCBlur
+          //         errorString=cvcError
+          //         rightIcon={CardUtils.setRightIconForCvc(
+          //           ~cardComplete,
+          //           ~cardEmpty,
+          //           ~cardInvalid,
+          //           ~color=themeObj.colorIconCardCvcError,
+          //         )}
+          //         type_="tel"
+          //         className={`tracking-widest w-full ${compressedLayoutStyleForCvcError}`}
+          //         maxLength=4
+          //         inputRef=cvcRef
+          //         placeholder="123"
+          //         name=TestUtils.cardCVVInputTestId
+          //         autocomplete="cc-csc"
+          //       />
+          //     </div>
+          //   </div>
+          //   <RenderIf
+          //     condition={innerLayout === Compressed &&
+          //       (cardError->String.length > 0 ||
+          //       cvcError->String.length > 0 ||
+          //       expiryError->String.length > 0)}>
+          //     <div
+          //       className="Error pt-1"
+          //       style={
+          //         color: themeObj.colorDangerText,
+          //         fontSize: themeObj.fontSizeSm,
+          //         alignSelf: "start",
+          //         textAlign: "left",
+          //       }>
+          //       {React.string("Invalid input")}
+          //     </div>
+          //   </RenderIf>
+          // </RenderIf>
+          // <DynamicFields
+          //   paymentMethod
+          //   paymentMethodType
+          //   setRequiredFieldsBody
+          //   cardProps={Some(cardProps)}
+          //   expiryProps={Some(expiryProps)}
+          //   cvcProps={Some(cvcProps)}
+          //   isBancontact
+          //   isSaveDetailsWithClickToPay
+          // />
+          <DynamicFieldsSuperposition
+            groupedFields
             paymentMethod
             paymentMethodType
             setRequiredFieldsBody

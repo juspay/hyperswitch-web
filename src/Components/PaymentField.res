@@ -24,6 +24,7 @@ let make = (
   ~inputRef,
   ~displayValue=?,
   ~setDisplayValue=?,
+  ~onFocus=?,
 ) => {
   let {config} = Recoil.useRecoilValueFromAtom(configAtom)
   let {themeObj} = Recoil.useRecoilValueFromAtom(configAtom)
@@ -36,7 +37,8 @@ let make = (
 
   let (inputFocused, setInputFocused) = React.useState(_ => false)
 
-  let handleFocus = _ => {
+  let handleFocus = ev => {
+    onFocus->Option.forEach(fn => fn(ev))
     setInputFocused(_ => true)
     switch setValue {
     | Some(fn) =>
