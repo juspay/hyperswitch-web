@@ -323,14 +323,12 @@ let make = (
     !isGuestCustomer &&
     paymentMethodListValue.payment_type === NEW_MANDATE &&
     displaySavedPaymentMethodsCheckbox &&
-    savedMethods->Array.some(ele => {
-      ele.paymentMethod === "card" && ele.requiresCvv
-    })
+    customerMethod.requiresCvv
   }, (
     isGuestCustomer,
     paymentMethodListValue.payment_type,
     displaySavedPaymentMethodsCheckbox,
-    savedMethods,
+    customerMethod,
   ))
 
   let enableSavedPaymentShimmer = React.useMemo(() => {
