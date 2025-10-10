@@ -688,7 +688,7 @@ let getPaymentMethodsFieldTypeFromString = (str, isBancontact) => {
   }
 }
 
-let countryData = CountryStateDataRefs.countryDataRef.contents
+let countryData = countryDataRef.contents
 
 let getOptionsFromPaymentMethodFieldType = (dict, key, ~isAddressCountry=true) => {
   let options = dict->getArrayValFromJsonDict(key, "options")

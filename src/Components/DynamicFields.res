@@ -168,7 +168,7 @@ let make = (
 
   let (bankAccountNumber, setBankAccountNumber) = Recoil.useRecoilState(userBankAccountNumber)
   let (sourceBankAccountId, setSourceBankAccountId) = Recoil.useRecoilState(sourceBankAccountId)
-  let countryList = CountryStateDataRefs.countryDataRef.contents
+  let countryList = countryDataRef.contents
   let stateNames = getStateNames({
     value: country,
     isValid: None,

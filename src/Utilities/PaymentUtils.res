@@ -470,23 +470,12 @@ let useGetPaymentMethodList = (~paymentOptions, ~paymentType, ~sessions) => {
 }
 
 let useStatesJson = setStatesJson => {
-  let stateList = CountryStateDataRefs.stateDataRef.contents
+  let stateList = Utils.stateDataRef.contents
 
   React.useEffect0(_ => {
     setStatesJson(_ => stateList)
     None
   })
-}
-
-let getStateJson = async _ => {
-  try {
-    let res = await S3Utils.getCountryStateData()
-    res.states
-  } catch {
-  | err =>
-    Console.error2("Error importing states:", err)
-    JSON.Encode.null
-  }
 }
 
 let sortCustomerMethodsBasedOnPriority = (
