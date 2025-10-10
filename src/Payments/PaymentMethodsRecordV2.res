@@ -36,3 +36,8 @@ let getPaymentExperienceTypeFromPML = (
       : acc
   })
 }
+test("generateApiUrl replaces paymentMethodId in v2.deletePaymentMethod", () => {
+  const tpl = APIUtils.v2.deletePaymentMethod
+  expect(generateApiUrl({ template: tpl, params: { paymentMethodId: "pm_123" } }))
+    .toBe("/v2/payment-methods/pm_123")
+})
