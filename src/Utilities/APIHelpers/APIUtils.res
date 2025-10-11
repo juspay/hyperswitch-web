@@ -5,6 +5,7 @@ type apiCallV1 =
   | FetchThreeDsAuth
   | FetchSavedPaymentMethodList
   | DeletePaymentMethod
+  | RetrievePaymentMethod
   | CalculateTax
   | CreatePaymentMethod
   | RetrievePaymentIntent
@@ -89,6 +90,7 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | FetchThreeDsAuth
     | FetchSavedPaymentMethodList
     | DeletePaymentMethod
+    | RetrievePaymentMethod
     | CalculateTax
     | CreatePaymentMethod
     | CallAuthLink
@@ -108,7 +110,8 @@ let generateApiUrl = (apiCallType: apiCall, ~params: apiParams) => {
     | FetchThreeDsAuth => `payments/${paymentIntentID}/3ds/authentication`
     | FetchCustomerPaymentMethodList
     | FetchSavedPaymentMethodList => "customers/payment_methods"
-    | DeletePaymentMethod => `payment_methods/${paymentMethodIdVal}`
+    | DeletePaymentMethod
+    | RetrievePaymentMethod => `payment_methods/${paymentMethodIdVal}`
     | CalculateTax => `payments/${paymentIntentID}/calculate_tax`
     | CreatePaymentMethod => "payment_methods"
     | RetrievePaymentIntent => `payments/${paymentIntentID}`
