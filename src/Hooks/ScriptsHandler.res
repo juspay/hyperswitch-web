@@ -149,7 +149,7 @@ let loadOnce = (src, opts) => {
           let scriptRef = ref(None)
 
           let existingScript = if checkForExisting {
-            querySelector(`script[src="${cssEscape(src)}"]`)->Nullable.toOption
+            querySelector(`script[src="${src}"]`)->Nullable.toOption
           } else {
             None
           }

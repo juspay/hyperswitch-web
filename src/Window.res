@@ -101,10 +101,6 @@ external getEntriesByName: string => array<{..}> = "getEntriesByName"
 @val @scope("window")
 external performance: option<{..}> = "performance"
 
-/* CSS API */
-@val @scope("CSS")
-external cssEscape: string => string = "escape"
-
 /* External Methods */
 @scope("window") @get external cardNumberElement: window => option<window> = "cardNumber"
 @get external cardCVCElement: window => option<window> = "cardCvc"
