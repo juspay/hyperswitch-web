@@ -6,7 +6,7 @@ open Utils
 let make = (~sessionObj: option<SessionsType.token>) => {
   let sessionToken = sessionObj->Option.getOr(SessionsType.defaultToken)
   let paypalSDKUrl = generatePayPalSDKUrl(sessionToken.token)
-
+  let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
   let {readyAll} = ScriptsHandler.useScripts([braintreeClientUrl, braintreePayPalUrl, paypalSDKUrl])
 
   let transactionInfo = sessionToken.transaction_info->getDictFromJson
@@ -105,7 +105,10 @@ let make = (~sessionObj: option<SessionsType.token>) => {
   }, [readyAll])
 
   <div className="w-full">
-    <div id="paypal-button" />
+    <div
+      id="paypal-button"
+      style={pointerEvents: updateSession ? "none" : "auto", opacity: updateSession ? "0.5" : "1.0"}
+    />
   </div>
 }
 
