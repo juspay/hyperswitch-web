@@ -268,10 +268,10 @@ let getPaymentMethodDataFieldMaxLength = (key): int =>
   | PayoutMethodData(CardNumber) => 23
   | PayoutMethodData(CardExpDate(_)) => 7
   | PayoutMethodData(ACHRoutingNumber) => 9
-  | PayoutMethodData(ACHAccountNumber) => 12
+  | PayoutMethodData(ACHAccountNumber) => 17
   | PayoutMethodData(BacsSortCode) => 6
   | PayoutMethodData(BacsAccountNumber) => 18
-  | PayoutMethodData(SepaBic) => 8
+  | PayoutMethodData(SepaBic) => 11
   | PayoutMethodData(SepaIban) => 34
   | _ => 32
   }
@@ -287,7 +287,7 @@ let getPaymentMethodDataFieldCharacterPattern = (key): option<Js.Re.t> =>
   | PayoutMethodData(PaypalMail) =>
     Some(%re("/^[a-zA-Z0-9._%+-]*[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]*$/"))
   | PayoutMethodData(PaypalMobNumber) => Some(%re("/^[0-9]{1,12}$/"))
-  | PayoutMethodData(SepaBic) => Some(%re("/^([A-Z0-9]| ){1,8}$/"))
+  | PayoutMethodData(SepaBic) => Some(%re("/^([A-Z0-9]| ){1,11}$/"))
   | PayoutMethodData(SepaIban) => Some(%re("/^([A-Z0-9]| ){1,34}$/"))
   | BillingAddress(AddressPincode) => Some(%re("/^([0-9A-Z]| ){1,10}$/"))
   | BillingAddress(PhoneNumber) => Some(%re("/^[0-9]{1,12}$/"))
