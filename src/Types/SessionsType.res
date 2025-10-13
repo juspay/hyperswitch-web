@@ -30,6 +30,8 @@ type token = {
   email_address: string,
   transaction_amount: string,
   transaction_currency_code: string,
+  client_token: string,
+  sdk_next_action: JSON.t,
 }
 
 type tokenType =
@@ -71,6 +73,8 @@ let defaultToken = {
   email_address: "",
   transaction_amount: "",
   transaction_currency_code: "",
+  client_token: "",
+  sdk_next_action: Dict.make()->JSON.Encode.object,
 }
 let getWallet = str => {
   switch str {
@@ -110,6 +114,8 @@ let getSessionsToken = (dict, str) =>
         email_address: getString(dict, "email_address", ""),
         transaction_amount: getString(dict, "transaction_amount", ""),
         transaction_currency_code: getString(dict, "transaction_currency_code", ""),
+        client_token: getString(dict, "client_token", ""),
+        sdk_next_action: getJsonObjectFromDict(dict, "sdk_next_action"),
       }
     })
   })

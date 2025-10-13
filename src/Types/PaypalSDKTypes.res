@@ -59,10 +59,7 @@ type client = {create: (authType, (clientErr, clientInstance) => unit) => unit}
 type paypalCheckout = {
   create: (checkoutClient, (Nullable.t<paypalCheckoutErr>, paypalCheckoutInstance) => unit) => unit,
 }
-type braintree = {
-  client: client,
-  paypalCheckout: paypalCheckout,
-}
+
 type funding = {"PAYPAL": string}
 type style = {
   layout: string,
@@ -94,7 +91,6 @@ let getLabel = (var: PaymentType.paypalStyleType) => {
 type some = {render: string => unit}
 type paypal = {"Buttons": buttons => some, "FUNDING": funding}
 
-@val external braintree: braintree = "braintree"
 @val external paypal: paypal = "paypal"
 
 let getShippingDetails = shippingAddressOverrideObj => {
