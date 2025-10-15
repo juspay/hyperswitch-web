@@ -27,7 +27,6 @@ type entry = {
   mutable el: option<Dom.element>,
   mutable subscribers: array<scriptStatus => unit>,
   mutable promise: option<t<unit>>,
-  mutable refCount: int,
   mutable onLoadHandler: option<Dom.event => unit>,
   mutable onErrorHandler: option<Dom.event => unit>,
 }
@@ -50,14 +49,6 @@ type useScriptResult = {
 
 let store = Dict.make()
 
-let hasDOM = () => {
-  try {
-    Js.typeof(Window.window) == "object" && Js.typeof(Window.window->Window.document) == "object"
-  } catch {
-  | _ => false
-  }
-}
-
 let getOrInitEntry = src => {
   switch store->Dict.get(src) {
   | Some(entry) => entry
@@ -68,7 +59,6 @@ let getOrInitEntry = src => {
         el: None,
         subscribers: [],
         promise: None,
-        refCount: 0,
         onLoadHandler: None,
         onErrorHandler: None,
       }
@@ -170,104 +160,95 @@ let validateAndFixSRIAttrs = attrs =>
   }
 
 let loadOnce = (src, opts) => {
-  if !hasDOM() {
-    resolve()
-  } else {
-    let entry = getOrInitEntry(src)
+  let entry = getOrInitEntry(src)
+  switch entry.status {
+  | Ready => resolve()
+  | _ =>
+    switch entry.promise {
+    | Some(existingPromise) => existingPromise
+    | None => {
+        let checkForExisting = opts->Option.flatMap(o => o.checkForExisting)->Option.getOr(true)
+        let attrs = opts->Option.flatMap(o => o.attrs)->Option.getOr(Dict.make())
+        let defaultAsync = opts->Option.flatMap(o => o.defaultAsync)->Option.getOr(true)
+        let isOrdered = opts->Option.flatMap(o => o.ordered)->Option.getOr(false)
 
-    switch entry.status {
-    | Ready => resolve()
-    | _ =>
-      switch entry.promise {
-      | Some(existingPromise) => existingPromise
-      | None => {
-          let checkForExisting = opts->Option.flatMap(o => o.checkForExisting)->Option.getOr(true)
-          let attrs = opts->Option.flatMap(o => o.attrs)->Option.getOr(Dict.make())
-          let defaultAsync = opts->Option.flatMap(o => o.defaultAsync)->Option.getOr(true)
-          let isOrdered = opts->Option.flatMap(o => o.ordered)->Option.getOr(false)
+        let promise = make((resolve, reject) => {
+          let scriptRef = ref(None)
 
-          let promise = make((resolve, reject) => {
-            let scriptRef = ref(None)
+          let existingScript = if checkForExisting {
+            querySelector(`script[src="${src}"]`)->Nullable.toOption
+          } else {
+            None
+          }
 
-            let existingScript = if checkForExisting {
-              querySelector(`script[src="${src}"]`)->Nullable.toOption
-            } else {
-              None
+          let onLoad = _ => {
+            cleanupDomListeners(entry)
+            entry.error = None
+            switch scriptRef.contents {
+            | Some(script) => markDataset(script, Ready)
+            | None => ()
             }
+            emit(entry, Ready)
+            resolve()
+          }
 
-            let onLoad = _ => {
-              cleanupDomListeners(entry)
-              entry.error = None
-              switch scriptRef.contents {
-              | Some(script) => markDataset(script, Ready)
-              | None => ()
-              }
+          let onError = ev => {
+            cleanupDomListeners(entry)
+            entry.error = Some(ev)
+            entry.promise = None
+            switch scriptRef.contents {
+            | Some(script) => markDataset(script, Error)
+            | None => ()
+            }
+            emit(entry, Error)
+            reject(ev)
+          }
+
+          entry.onLoadHandler = Some(onLoad)
+          entry.onErrorHandler = Some(onError)
+
+          switch existingScript {
+          | Some(existing) =>
+            if isLikelyAlreadyLoaded(existing, src) {
+              entry.el = Some(existing)
+              markDataset(existing, Ready)
               emit(entry, Ready)
               resolve()
+            } else {
+              scriptRef := Some(existing)
+              entry.el = Some(existing)
+              emit(entry, Loading)
+              existing->addElementEventListener("load", onLoad)
+              existing->addElementEventListener("error", onError)
             }
+          | None => {
+              let newScript = createElement("script")
+              let scriptAttrs = attrs->Dict.get(src)->validateAndFixSRIAttrs
+              applyScriptAttrs(newScript, scriptAttrs)
+              let userSpecifiedAsync = scriptAttrs->Option.flatMap(a => a.async)->Option.isSome
 
-            let onError = ev => {
-              cleanupDomListeners(entry)
-              entry.error = Some(ev)
-              entry.promise = None
-              switch scriptRef.contents {
-              | Some(script) => markDataset(script, Error)
-              | None => ()
+              if isOrdered {
+                newScript->setAsync(false)
+                newScript->setDefer(false)
+              } else if !userSpecifiedAsync && defaultAsync {
+                newScript->setAsync(true)
               }
-              emit(entry, Error)
-              reject(ev)
+
+              newScript->setSrc(src)
+              markDataset(newScript, Loading)
+              appendChildToHead(newScript)
+
+              scriptRef := Some(newScript)
+              entry.el = Some(newScript)
+              emit(entry, Loading)
+
+              newScript->addElementEventListener("load", onLoad)
+              newScript->addElementEventListener("error", onError)
             }
-
-            entry.onLoadHandler = Some(onLoad)
-            entry.onErrorHandler = Some(onError)
-
-            switch existingScript {
-            | Some(existing) =>
-              if isLikelyAlreadyLoaded(existing, src) {
-                entry.el = Some(existing)
-                markDataset(existing, Ready)
-                emit(entry, Ready)
-                resolve()
-              } else {
-                scriptRef := Some(existing)
-                entry.el = Some(existing)
-                emit(entry, Loading)
-                existing->addElementEventListener("load", onLoad)
-                existing->addElementEventListener("error", onError)
-              }
-            | None => {
-                let newScript = createElement("script")
-
-                let scriptAttrs = attrs->Dict.get(src)->validateAndFixSRIAttrs
-
-                applyScriptAttrs(newScript, scriptAttrs)
-
-                let userSpecifiedAsync = scriptAttrs->Option.flatMap(a => a.async)->Option.isSome
-
-                if isOrdered {
-                  newScript->setAsync(false)
-                  newScript->setDefer(false)
-                } else if !userSpecifiedAsync && defaultAsync {
-                  newScript->setAsync(true)
-                }
-
-                newScript->setSrc(src)
-                markDataset(newScript, Loading)
-                appendChildToHead(newScript)
-
-                scriptRef := Some(newScript)
-                entry.el = Some(newScript)
-                emit(entry, Loading)
-
-                newScript->addElementEventListener("load", onLoad)
-                newScript->addElementEventListener("error", onError)
-              }
-            }
-          })
-
-          entry.promise = Some(promise)
-          promise
-        }
+          }
+        })
+        entry.promise = Some(promise)
+        promise
       }
     }
   }
@@ -275,7 +256,7 @@ let loadOnce = (src, opts) => {
 
 let unloadIfUnused = src => {
   switch store->Dict.get(src) {
-  | Some(entry) if entry.refCount <= 0 =>
+  | Some(entry) if entry.subscribers->Array.length <= 0 =>
     switch (entry.status, entry.el) {
     | (Idle | Error, Some(element)) => {
         cleanupDomListeners(entry)
@@ -359,7 +340,6 @@ let useScripts = (srcs, ~opts=Some({ordered: false})) => {
 
         let subscribe = src => {
           let entry = getOrInitEntry(src)
-          entry.refCount = entry.refCount + 1
 
           let handler = status => {
             setStatuses(prev => {
@@ -421,11 +401,10 @@ let useScripts = (srcs, ~opts=Some({ordered: false})) => {
               switch store->Dict.get(src) {
               | Some(entry) => {
                   entry.subscribers = entry.subscribers->Array.filter(sub => sub !== handler)
-                  entry.refCount = max(0, entry.refCount - 1)
 
                   let shouldUnload =
                     opts->Option.flatMap(o => o.unloadWhenNoSubscribers)->Option.getOr(false)
-                  if shouldUnload && entry.refCount == 0 {
+                  if shouldUnload && entry.subscribers->Array.length == 0 {
                     unloadIfUnused(src)
                   }
                 }

@@ -8,7 +8,8 @@ let make = (~sessionObj: option<SessionsType.token>) => {
   let paypalSDKUrl = generatePayPalSDKUrl(sessionToken.token)
   let updateSession = Recoil.useRecoilValueFromAtom(RecoilAtoms.updateSession)
   let {readyAll} = ScriptsHandler.useScripts([braintreeClientUrl, braintreePayPalUrl, paypalSDKUrl])
-
+  let paymentMethodListValue = Recoil.useRecoilValueFromAtom(PaymentUtils.paymentMethodListValue)
+  let (connectors, _) = paymentMethodListValue->PaymentUtils.getConnectors(Wallets(Paypal(SDK)))
   let transactionInfo = sessionToken.transaction_info->getDictFromJson
   let createPaymentConfig = {
     flow: transactionInfo->getString("flow", ""),
@@ -28,10 +29,7 @@ let make = (~sessionObj: option<SessionsType.token>) => {
     switch paypalCheckoutInstanceRef.current->Nullable.toOption {
     | Some(paypalCheckoutInstance) =>
       paypalCheckoutInstance.tokenizePayment(data, (_err, payload) => {
-        //Todo: check this with backend
-        let connectors = ["braintree"]
         let body = PaymentBody.paypalSdkBody(~token=payload.nonce, ~connectors)
-
         intent(
           ~bodyArr=body,
           ~confirmParam={
@@ -60,7 +58,6 @@ let make = (~sessionObj: option<SessionsType.token>) => {
                 switch element->Nullable.toOption {
                 | Some(_) => {
                     paypalCheckoutInstanceRef.current = Nullable.make(paypalCheckoutInstance)
-
                     paypalCheckoutInstance.loadPayPalSDK(
                       {
                         currency: createPaymentConfig.currency,
