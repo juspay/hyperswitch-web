@@ -18,8 +18,8 @@ let generatePayPalSDKUrl = clientId =>
 
 let paypalButtonStyle = {
   layout: "vertical",
-  color: "blue",
-  shape: "rect",
+  color: "gold",
+  shape: "sharp",
   label: "paypal",
   height: 50,
 }
