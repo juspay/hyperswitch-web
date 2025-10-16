@@ -52,7 +52,9 @@ export default function CheckoutForm({ subscriptionId, subscriptionSecret }) {
         },
       });
 
-      const { error, status } = confirmSubscriptionResult;
+      const { error } = confirmSubscriptionResult;
+      const payment = confirmSubscriptionResult?.payment;
+      const status = payment?.status || confirmSubscriptionResult?.status;
 
       if (error) {
         setMessage(error.message || "An unknown error occurred.");
