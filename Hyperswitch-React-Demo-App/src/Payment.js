@@ -44,12 +44,20 @@ function Payment() {
         //   setError,
         // });
 
-        const subscriptionIntentData = await getSubscriptionIntentData({
-          baseUrl,
-          isCypressTestMode,
-          clientSecretQueryParam,
-          setError,
-        });
+        //dummy
+        const subscriptionIntentData = {
+          clientSecret: "pay_EXIeTndU9RaHe9mHOIPb_secret_o26N3HtNKjg9ew80ZFsj",
+          subscriptionId: "sub_7wqn0zxOqbbocjM9Qz3h",
+          subscriptionSecret:
+            "sub_7wqn0zxOqbbocjM9Qz3h_secret_lyHur4RfiaFRYCHV3Xs0",
+        };
+
+        // const subscriptionIntentData = await getSubscriptionIntentData({
+        //   baseUrl,
+        //   isCypressTestMode,
+        //   clientSecretQueryParam,
+        //   setError,
+        // });
 
         setSubscriptionId(subscriptionIntentData?.subscriptionId);
         setSubscriptionSecret(subscriptionIntentData?.subscriptionSecret);
